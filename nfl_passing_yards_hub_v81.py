@@ -47,6 +47,18 @@ def _piece(captured: dict[str, list[str]], key: str, index: int) -> str:
     return str(rows[index]) if index < len(rows) else ""
 
 
+
+def _selected_payload_sizes(captured: dict[str, list[str]], slot: int) -> dict[str, int]:
+    index = max(0, int(slot) - 1)
+    keys = (
+        "identity", "market", "projection", "context", "distribution",
+        "profile", "defense", "pressure", "personnel", "environment",
+    )
+    return {
+        key: len(_piece(captured, key, index).encode("utf-8"))
+        for key in keys
+    }
+
 def _duplicate_payload_bytes(captured: dict[str, list[str]], slot: int) -> int:
     index = max(0, int(slot) - 1)
     total = 0
@@ -56,7 +68,13 @@ def _duplicate_payload_bytes(captured: dict[str, list[str]], slot: int) -> int:
 
 
 def build_compact_deep_evidence(captured: dict[str, list[str]], slot: int) -> str:
+    sizes = _selected_payload_sizes(captured, slot)
     avoided = _duplicate_payload_bytes(captured, slot)
+    selected_total = sum(sizes.values())
+    size_attrs = " ".join(
+        f'data-step5-bytes-{key}="{value}"'
+        for key, value in sizes.items()
+    )
     labels = (
         "Recent QB Games + Profile",
         "Opponent Pass-Defense Evidence",
@@ -71,7 +89,9 @@ def build_compact_deep_evidence(captured: dict[str, list[str]], slot: int) -> st
         '<section class="ks-py67-deep" data-passing-yards-deep-evidence="v67" '
         'data-passing-yards-payload-dedupe="v81" '
         'data-passing-yards-payload-dedupe-ready="v81" '
-        f'data-step5-avoided-duplicate-bytes="{avoided}">'
+        f'data-step5-avoided-duplicate-bytes="{avoided}" '
+        f'data-step5-selected-payload-bytes="{selected_total}" '
+        f'{size_attrs}>'
         '<div class="ks-py67-head"><div>'
         '<div class="ks-py67-kicker">Receipts behind the analysis</div>'
         '<div class="ks-py67-title">Deep Evidence</div>'
@@ -119,6 +139,6 @@ __all__ = [
     "MAY_MODIFY_SPORTSBOOK_BEHAVIOR","MAY_MODIFY_WIDGET_KEYS","MODEL_VERSION",
     "PAYLOAD_DEDUPE_VERSION","PRESENTATION_ONLY","SPEED_PHASE_STEP",
     "SPORTSBOOK_PROJECTION_INFLUENCE","STAKE_SIZING_ENABLED",
-    "_duplicate_payload_bytes","_piece","build_compact_deep_evidence",
+    "_duplicate_payload_bytes","_piece","_selected_payload_sizes","build_compact_deep_evidence",
     "render_nfl_hub","render_nfl_passing_yards_hub",
 ]
