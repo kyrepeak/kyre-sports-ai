@@ -1,0 +1,30 @@
+{
+  "task": "passing-yards-step9-permanent-freeze-v1",
+  "status": "DONE",
+  "step9_status": "DONE",
+  "purpose": "Permanent regression lock for the already-certified Passing Yards Steps 1-8 surface. No product changes.",
+  "baseline_main_sha": "91f8d2210334f4fb5d8cba4fbe692e50f0322daa",
+  "frozen_owner": "nfl_passing_yards_hub_v77.py",
+  "frozen_router": "streamlit_memory_lazy_router_v228.py",
+  "frozen_prior_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "sportsbook_projection_influence": 0,
+  "stake_sizing_enabled": false,
+  "allowed_step9_scope": [
+    ".github/workflows/passing-yards-step9-permanent-freeze-v1.yml",
+    "devsystem/task_ledgers/passing-yards-step9-permanent-freeze-v1.json"
+  ],
+  "public_proof_viewports": [
+    390,
+    768,
+    1440
+  ]
+}
