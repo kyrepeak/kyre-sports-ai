@@ -52,10 +52,8 @@ jobs:
           devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json
           nfl_passing_yards_hub_v79.py
           streamlit_memory_lazy_router_v230.py
-          tests/test_passing_yards_speed-step3-lazy-detail-v1.py
+          tests/test_passing_yards_speed_step3_lazy_detail_v1.py
           EOF
-          # Correct the test filename in a deterministic way.
-          sed -i 's/speed-step3/speed_step3/' /tmp/expected.txt
           sort -o /tmp/expected.txt /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
           echo "PASSING_YARDS_SPEED_STEP3_SCOPE_GREEN"
