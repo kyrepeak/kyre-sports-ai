@@ -42,6 +42,7 @@
     "type": "no-behavior app marker refresh",
     "product_code_changed": false,
     "model_math_changed": false,
-    "target": "V79/V230"
+    "target": "V79/V230",
+    "revision": 2
   }
 }
