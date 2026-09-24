@@ -175,6 +175,7 @@ jobs:
           from urllib.parse import urlencode
           import requests
           from playwright.sync_api import sync_playwright
+          from playwright._impl._errors import TargetClosedError
 
           base="http://127.0.0.1:8501"
           route=base+"/?"+urlencode({
@@ -186,98 +187,227 @@ jobs:
           })
           budget=180.0
 
+          class BrowserCrash(RuntimeError):
+              pass
+
+          def streamlit_health():
+              try:
+                  response=requests.get(base,timeout=3)
+                  return response.status_code < 500, f"HTTP_{response.status_code}"
+              except Exception as exc:
+                  return False, f"ERROR_{type(exc).__name__}"
+
           deadline=time.monotonic()+150
           while time.monotonic()<deadline:
-              try:
-                  if requests.get(base,timeout=3).status_code < 500:
-                      break
-              except Exception:
-                  pass
+              healthy,status=streamlit_health()
+              if healthy:
+                  break
               time.sleep(.5)
           else:
-              raise RuntimeError("STEP8_LOCAL_STREAMLIT_NOT_READY")
+              raise RuntimeError("STEP8_STREAMLIT_SERVER_UNHEALTHY")
 
-          def find(page,selector,timeout=210):
+          def ensure_alive(page,browser,flags,selector):
+              if flags["page_crashed"]:
+                  raise BrowserCrash("STEP8_PAGE_CRASHED:"+selector)
+              if flags["browser_disconnected"] or not browser.is_connected():
+                  raise BrowserCrash("STEP8_BROWSER_DISCONNECTED:"+selector)
+              if page.is_closed():
+                  raise BrowserCrash("STEP8_PAGE_CLOSED:"+selector)
+
+          def find(page,browser,flags,selector,timeout=210):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
-                  for frame in page.frames:
+                  ensure_alive(page,browser,flags,selector)
+                  try:
+                      frames=list(page.frames)
+                  except TargetClosedError as exc:
+                      raise BrowserCrash("STEP8_TARGET_CLOSED:"+selector) from exc
+                  for frame in frames:
                       try:
                           loc=frame.locator(selector)
                           if loc.count()>=1:
                               return frame,loc.first
+                      except TargetClosedError as exc:
+                          raise BrowserCrash("STEP8_TARGET_CLOSED:"+selector) from exc
                       except Exception:
                           pass
-                  page.wait_for_timeout(450)
+                  time.sleep(.45)
               raise RuntimeError("STEP8_SELECTOR_NOT_READY:"+selector)
 
-          def runtime_text(frame,root):
+          def runtime_text(page,browser,flags,frame,root):
+              ensure_alive(page,browser,flags,"runtime-text")
               try:
                   owner=frame.locator('[data-testid="stAppViewContainer"]')
                   if owner.count()>=1:
                       return owner.first.inner_text(timeout=5000)
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:runtime-text") from exc
               except Exception:
                   pass
               try:
                   return root.inner_text(timeout=5000)
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:runtime-root") from exc
               except Exception:
                   return ""
 
-          def assert_no_runtime_errors(frame,root):
-              text=runtime_text(frame,root)
+          def assert_no_runtime_errors(page,browser,flags,frame,root):
+              text=runtime_text(page,browser,flags,frame,root)
               for token in ("TypeError","KeyError","Traceback","RecursionError"):
                   if token in text:
-                      print(text[:50000])
-                      raise RuntimeError("STEP8_RUNTIME_ERROR:"+token)
+                      raise RuntimeError("STEP8_RUNTIME_ERROR_"+token)
 
-          def certify(page,width,height):
+          def require_contract(condition,detail):
+              if not condition:
+                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:"+detail)
+
+          def crash_evidence(width,height,page,browser):
+              print(f"STEP8_CRASH_EVIDENCE VIEWPORT={width}x{height}")
+              try:
+                  print("PAGE_URL="+str(page.url))
+              except Exception as exc:
+                  print("PAGE_URL=UNAVAILABLE_"+type(exc).__name__)
+              try:
+                  print("PAGE_CLOSED="+str(page.is_closed()).lower())
+              except Exception as exc:
+                  print("PAGE_CLOSED=UNAVAILABLE_"+type(exc).__name__)
+              try:
+                  print("BROWSER_CONNECTED="+str(browser.is_connected()).lower())
+              except Exception as exc:
+                  print("BROWSER_CONNECTED=UNAVAILABLE_"+type(exc).__name__)
+              try:
+                  frames=list(page.frames)
+                  print("FRAME_COUNT="+str(len(frames)))
+                  print("FRAME_URLS="+" | ".join(str(frame.url) for frame in frames))
+              except Exception as exc:
+                  print("FRAME_COUNT=UNAVAILABLE_"+type(exc).__name__)
+                  print("FRAME_URLS=UNAVAILABLE_"+type(exc).__name__)
+              healthy,status=streamlit_health()
+              print("STREAMLIT_HTTP_HEALTH="+status)
+              try:
+                  wanted=("MemAvailable:","MemFree:","SwapFree:")
+                  with open("/proc/meminfo","r",encoding="utf-8") as handle:
+                      for line in handle:
+                          if line.startswith(wanted):
+                              print("MEMINFO_"+line.strip())
+              except Exception as exc:
+                  print("MEMINFO=UNAVAILABLE_"+type(exc).__name__)
+
+          def safe_close(page,context,browser):
+              for obj in (page,context,browser):
+                  if obj is None:
+                      continue
+                  try:
+                      obj.close()
+                  except Exception:
+                      pass
+
+          def certify(page,browser,flags,width,height):
               started=time.monotonic()
-              page.set_viewport_size({"width":width,"height":height})
-              page.goto(route,wait_until="domcontentloaded",timeout=120000)
-              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              try:
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:navigation") from exc
+              except Exception as exc:
+                  raise RuntimeError("STEP8_SELECTOR_NOT_READY:NAVIGATION") from exc
+
+              frame,root=find(
+                  page,browser,flags,
+                  '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
+              )
               runtime_frame,runtime=find(
-                  page,
+                  page,browser,flags,
                   '[data-passing-yards-performance-ready="v77"][data-passing-yards-performance-runtime="v77"]',
               )
               ready_s=time.monotonic()-started
-              assert ready_s <= budget,ready_s
-              assert_no_runtime_errors(frame,root)
-              find(page, "text=Jordan Love", timeout=30)
-              assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
-              assert root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72"
-              assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
-              assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
-              assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
-              assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
-              assert runtime.get_attribute("data-passing-yards-performance")=="v77"
-              assert runtime.get_attribute("data-passing-yards-performance-ready")=="v77"
+              if ready_s > budget:
+                  raise RuntimeError(f"STEP8_PERFORMANCE_BUDGET_FAILED:{width}:{ready_s:.3f}")
 
-              before=int(runtime.get_attribute("data-step8-html-bytes-before"))
-              after=int(runtime.get_attribute("data-step8-html-bytes-after"))
-              compose=float(runtime.get_attribute("data-step8-compose-ms"))
-              assert 0 < after <= before,(before,after)
-              assert math.isfinite(compose) and compose >= 0.0,compose
+              assert_no_runtime_errors(page,browser,flags,frame,root)
+              find(page,browser,flags,"text=Jordan Love",timeout=30)
 
-              render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
-              assert math.isfinite(render_ms) and render_ms >= 0.0,render_ms
+              try:
+                  require_contract(root.get_attribute("data-passing-yards-explainability-ready")=="v71","V71")
+                  require_contract(root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72","V72")
+                  require_contract(root.get_attribute("data-passing-yards-live-market-ready")=="v73","V73")
+                  require_contract(root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74","V74")
+                  require_contract(root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75","V75")
+                  require_contract(root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76","V76")
+                  require_contract(runtime.get_attribute("data-passing-yards-performance")=="v77","V77")
+                  require_contract(runtime.get_attribute("data-passing-yards-performance-ready")=="v77","V77_READY")
 
-              dims=frame.locator("body").evaluate("""e => ({
-                bodyScroll:e.scrollWidth,
-                docScroll:document.documentElement.scrollWidth,
-                viewport:window.innerWidth
-              })""")
-              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
-              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+                  before=int(runtime.get_attribute("data-step8-html-bytes-before"))
+                  after=int(runtime.get_attribute("data-step8-html-bytes-after"))
+                  compose=float(runtime.get_attribute("data-step8-compose-ms"))
+                  render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:contract") from exc
+              except RuntimeError:
+                  raise
+              except Exception as exc:
+                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:METRICS") from exc
+
+              require_contract(0 < after <= before,f"HTML_BYTES:{before}->{after}")
+              require_contract(math.isfinite(compose) and compose >= 0.0,f"COMPOSE_MS:{compose}")
+              require_contract(math.isfinite(render_ms) and render_ms >= 0.0,f"SERVER_RENDER_MS:{render_ms}")
+
+              try:
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:overflow") from exc
+              except Exception as exc:
+                  raise RuntimeError("STEP8_OVERFLOW_FAILED:EVALUATION") from exc
+              if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
+                  raise RuntimeError(f"STEP8_OVERFLOW_FAILED:{width}:{dims}")
+
               print(f"PASSING_YARDS_PERFORMANCE_STEP8_{width}_GREEN ready_s={ready_s:.3f} server_ms={render_ms:.3f} html={before}->{after}")
+              return ready_s
+
+          def run_viewport(p,width,height):
+              for attempt in (1,2):
+                  browser=context=page=None
+                  flags={"page_crashed":False,"browser_disconnected":False}
+                  try:
+                      browser=p.chromium.launch(
+                          headless=True,
+                          args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+                      )
+                      browser.on("disconnected",lambda *_: flags.__setitem__("browser_disconnected",True))
+                      context=browser.new_context(viewport={"width":width,"height":height})
+                      page=context.new_page()
+                      page.on("crash",lambda *_: flags.__setitem__("page_crashed",True))
+                      ready_s=certify(page,browser,flags,width,height)
+                      if attempt==2:
+                          print(f"RETRY_READY_S={ready_s:.3f}")
+                      safe_close(page,context,browser)
+                      return
+                  except TargetClosedError as exc:
+                      crash=BrowserCrash("STEP8_TARGET_CLOSED:viewport")
+                      crash.__cause__=exc
+                  except BrowserCrash as exc:
+                      crash=exc
+                  except Exception:
+                      safe_close(page,context,browser)
+                      raise
+
+                  crash_evidence(width,height,page,browser)
+                  safe_close(page,context,browser)
+                  if attempt==1:
+                      healthy,status=streamlit_health()
+                      if not healthy:
+                          raise RuntimeError("STEP8_STREAMLIT_SERVER_UNHEALTHY")
+                      print(f"FIRST_ATTEMPT_CRASHED viewport={width}x{height} token={crash}")
+                      continue
+                  raise RuntimeError(f"STEP8_CHROMIUM_CRASH_REPRODUCED_{width}") from crash
 
           with sync_playwright() as p:
-              browser=p.chromium.launch(headless=True,channel="chromium",args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
-              page=browser.new_page(viewport={"width":390,"height":844})
-              certify(page,390,844)
-              certify(page,768,1024)
-              certify(page,1440,1000)
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  run_viewport(p,width,height)
               print("PASSING_YARDS_PERFORMANCE_STEP8_BRANCH_GREEN")
-              page.close()
-              browser.close()
           PY
 
       - name: Print Streamlit log on failure
@@ -315,7 +445,9 @@ jobs:
           import math
           import time
           from urllib.parse import urlencode
+          import requests
           from playwright.sync_api import sync_playwright
+          from playwright._impl._errors import TargetClosedError
 
           base="https://kyre-sports-ai.streamlit.app"
           route=base+"/?"+urlencode({
@@ -327,76 +459,217 @@ jobs:
           })
           budget=180.0
 
-          def find(page,selector,timeout=260):
+          class BrowserCrash(RuntimeError):
+              pass
+
+          def streamlit_health():
+              try:
+                  response=requests.get(base,timeout=5)
+                  return response.status_code < 500, f"HTTP_{response.status_code}"
+              except Exception as exc:
+                  return False, f"ERROR_{type(exc).__name__}"
+
+          def ensure_alive(page,browser,flags,selector):
+              if flags["page_crashed"]:
+                  raise BrowserCrash("STEP8_PAGE_CRASHED:"+selector)
+              if flags["browser_disconnected"] or not browser.is_connected():
+                  raise BrowserCrash("STEP8_BROWSER_DISCONNECTED:"+selector)
+              if page.is_closed():
+                  raise BrowserCrash("STEP8_PAGE_CLOSED:"+selector)
+
+          def find(page,browser,flags,selector,timeout=260):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
-                  for frame in page.frames:
+                  ensure_alive(page,browser,flags,selector)
+                  try:
+                      frames=list(page.frames)
+                  except TargetClosedError as exc:
+                      raise BrowserCrash("STEP8_TARGET_CLOSED:"+selector) from exc
+                  for frame in frames:
                       try:
                           loc=frame.locator(selector)
                           if loc.count()>=1:
                               return frame,loc.first
+                      except TargetClosedError as exc:
+                          raise BrowserCrash("STEP8_TARGET_CLOSED:"+selector) from exc
                       except Exception:
                           pass
-                  page.wait_for_timeout(500)
-              raise RuntimeError("STEP8_PUBLIC_SELECTOR_NOT_READY:"+selector)
+                  time.sleep(.5)
+              raise RuntimeError("STEP8_SELECTOR_NOT_READY:"+selector)
 
-          def runtime_text(frame,root):
+          def runtime_text(page,browser,flags,frame,root):
+              ensure_alive(page,browser,flags,"runtime-text")
               try:
                   owner=frame.locator('[data-testid="stAppViewContainer"]')
                   if owner.count()>=1:
                       return owner.first.inner_text(timeout=5000)
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:runtime-text") from exc
               except Exception:
                   pass
               try:
                   return root.inner_text(timeout=5000)
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:runtime-root") from exc
               except Exception:
                   return ""
 
-          def assert_no_runtime_errors(frame,root):
-              text=runtime_text(frame,root)
+          def assert_no_runtime_errors(page,browser,flags,frame,root):
+              text=runtime_text(page,browser,flags,frame,root)
               for token in ("TypeError","KeyError","Traceback","RecursionError"):
                   if token in text:
-                      print(text[:50000])
-                      raise RuntimeError("STEP8_PUBLIC_RUNTIME_ERROR:"+token)
+                      raise RuntimeError("STEP8_RUNTIME_ERROR_"+token)
 
-          with sync_playwright() as p:
-              browser=p.chromium.launch(headless=True,channel="chromium",args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
-              for width,height in ((390,844),(768,1024),(1440,1000)):
-                  started=time.monotonic()
-                  page=browser.new_page(viewport={"width":width,"height":height})
+          def require_contract(condition,detail):
+              if not condition:
+                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:"+detail)
+
+          def crash_evidence(width,height,page,browser):
+              print(f"STEP8_CRASH_EVIDENCE VIEWPORT={width}x{height}")
+              try:
+                  print("PAGE_URL="+str(page.url))
+              except Exception as exc:
+                  print("PAGE_URL=UNAVAILABLE_"+type(exc).__name__)
+              try:
+                  print("PAGE_CLOSED="+str(page.is_closed()).lower())
+              except Exception as exc:
+                  print("PAGE_CLOSED=UNAVAILABLE_"+type(exc).__name__)
+              try:
+                  print("BROWSER_CONNECTED="+str(browser.is_connected()).lower())
+              except Exception as exc:
+                  print("BROWSER_CONNECTED=UNAVAILABLE_"+type(exc).__name__)
+              try:
+                  frames=list(page.frames)
+                  print("FRAME_COUNT="+str(len(frames)))
+                  print("FRAME_URLS="+" | ".join(str(frame.url) for frame in frames))
+              except Exception as exc:
+                  print("FRAME_COUNT=UNAVAILABLE_"+type(exc).__name__)
+                  print("FRAME_URLS=UNAVAILABLE_"+type(exc).__name__)
+              healthy,status=streamlit_health()
+              print("STREAMLIT_HTTP_HEALTH="+status)
+              try:
+                  wanted=("MemAvailable:","MemFree:","SwapFree:")
+                  with open("/proc/meminfo","r",encoding="utf-8") as handle:
+                      for line in handle:
+                          if line.startswith(wanted):
+                              print("MEMINFO_"+line.strip())
+              except Exception as exc:
+                  print("MEMINFO=UNAVAILABLE_"+type(exc).__name__)
+
+          def safe_close(page,context,browser):
+              for obj in (page,context,browser):
+                  if obj is None:
+                      continue
+                  try:
+                      obj.close()
+                  except Exception:
+                      pass
+
+          def certify(page,browser,flags,width,height):
+              started=time.monotonic()
+              try:
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
-                  frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
-                  runtime_frame,runtime=find(
-                      page,
-                      '[data-passing-yards-performance-ready="v77"][data-passing-yards-performance-runtime="v77"]',
-                  )
-                  ready_s=time.monotonic()-started
-                  assert ready_s <= budget,ready_s
-                  assert_no_runtime_errors(frame,root)
-                  assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
-                  assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
-                  assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
-                  assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
-                  assert runtime.get_attribute("data-passing-yards-performance")=="v77"
-                  assert runtime.get_attribute("data-passing-yards-performance-ready")=="v77"
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:navigation") from exc
+              except Exception as exc:
+                  raise RuntimeError("STEP8_SELECTOR_NOT_READY:NAVIGATION") from exc
+
+              frame,root=find(
+                  page,browser,flags,
+                  '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
+              )
+              runtime_frame,runtime=find(
+                  page,browser,flags,
+                  '[data-passing-yards-performance-ready="v77"][data-passing-yards-performance-runtime="v77"]',
+              )
+              ready_s=time.monotonic()-started
+              if ready_s > budget:
+                  raise RuntimeError(f"STEP8_PERFORMANCE_BUDGET_FAILED:{width}:{ready_s:.3f}")
+
+              assert_no_runtime_errors(page,browser,flags,frame,root)
+              find(page,browser,flags,"text=Jordan Love",timeout=30)
+
+              try:
+                  require_contract(root.get_attribute("data-passing-yards-explainability-ready")=="v71","V71")
+                  require_contract(root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72","V72")
+                  require_contract(root.get_attribute("data-passing-yards-live-market-ready")=="v73","V73")
+                  require_contract(root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74","V74")
+                  require_contract(root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75","V75")
+                  require_contract(root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76","V76")
+                  require_contract(runtime.get_attribute("data-passing-yards-performance")=="v77","V77")
+                  require_contract(runtime.get_attribute("data-passing-yards-performance-ready")=="v77","V77_READY")
+
                   before=int(runtime.get_attribute("data-step8-html-bytes-before"))
                   after=int(runtime.get_attribute("data-step8-html-bytes-after"))
                   compose=float(runtime.get_attribute("data-step8-compose-ms"))
-                  assert 0 < after <= before,(before,after)
-                  assert math.isfinite(compose) and compose >= 0.0,compose
                   render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
-                  assert math.isfinite(render_ms) and render_ms >= 0.0,render_ms
-                  find(page, "text=Jordan Love", timeout=30)
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:contract") from exc
+              except RuntimeError:
+                  raise
+              except Exception as exc:
+                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:METRICS") from exc
+
+              require_contract(0 < after <= before,f"HTML_BYTES:{before}->{after}")
+              require_contract(math.isfinite(compose) and compose >= 0.0,f"COMPOSE_MS:{compose}")
+              require_contract(math.isfinite(render_ms) and render_ms >= 0.0,f"SERVER_RENDER_MS:{render_ms}")
+
+              try:
                   dims=frame.locator("body").evaluate("""e => ({
                     bodyScroll:e.scrollWidth,
                     docScroll:document.documentElement.scrollWidth,
                     viewport:window.innerWidth
                   })""")
-                  assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
-                  assert dims["docScroll"] <= dims["viewport"] + 2,dims
-                  print(f"PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_{width}_GREEN ready_s={ready_s:.3f} server_ms={render_ms:.3f} html={before}->{after}")
-                  page.close()
-              browser.close()
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:overflow") from exc
+              except Exception as exc:
+                  raise RuntimeError("STEP8_OVERFLOW_FAILED:EVALUATION") from exc
+              if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
+                  raise RuntimeError(f"STEP8_OVERFLOW_FAILED:{width}:{dims}")
+
+              print(f"PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_{width}_GREEN ready_s={ready_s:.3f} server_ms={render_ms:.3f} html={before}->{after}")
+              return ready_s
+
+          def run_viewport(p,width,height):
+              for attempt in (1,2):
+                  browser=context=page=None
+                  flags={"page_crashed":False,"browser_disconnected":False}
+                  try:
+                      browser=p.chromium.launch(
+                          headless=True,
+                          args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+                      )
+                      browser.on("disconnected",lambda *_: flags.__setitem__("browser_disconnected",True))
+                      context=browser.new_context(viewport={"width":width,"height":height})
+                      page=context.new_page()
+                      page.on("crash",lambda *_: flags.__setitem__("page_crashed",True))
+                      ready_s=certify(page,browser,flags,width,height)
+                      if attempt==2:
+                          print(f"RETRY_READY_S={ready_s:.3f}")
+                      safe_close(page,context,browser)
+                      return
+                  except TargetClosedError as exc:
+                      crash=BrowserCrash("STEP8_TARGET_CLOSED:viewport")
+                      crash.__cause__=exc
+                  except BrowserCrash as exc:
+                      crash=exc
+                  except Exception:
+                      safe_close(page,context,browser)
+                      raise
+
+                  crash_evidence(width,height,page,browser)
+                  safe_close(page,context,browser)
+                  if attempt==1:
+                      healthy,status=streamlit_health()
+                      if not healthy:
+                          raise RuntimeError("STEP8_STREAMLIT_SERVER_UNHEALTHY")
+                      print(f"FIRST_ATTEMPT_CRASHED viewport={width}x{height} token={crash}")
+                      continue
+                  raise RuntimeError(f"STEP8_CHROMIUM_CRASH_REPRODUCED_{width}") from crash
+
+          with sync_playwright() as p:
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  run_viewport(p,width,height)
           print("PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_GREEN")
           print("PASSING_YARDS_PERFORMANCE_STEP8_FROZEN")
           PY
