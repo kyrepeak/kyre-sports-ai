@@ -53,5 +53,24 @@
     "model_math_changed": false,
     "sportsbook_behavior_changed": false,
     "new_theory": false
+  },
+  "public_runtime_refresh": {
+    "trigger": "NFL_PASSING_YARDS_SPEED_STEPS34_PUBLIC_REFRESH_2026_09_24_R1",
+    "reason": "Certified main owns V231 -> V80 -> V79, but public production did not expose the V79 lazy-detail selector. Force a Streamlit restart with an unused app marker and recertify Steps 3 and 4 together.",
+    "failed_runs": [
+      36036705312,
+      36038106367
+    ],
+    "product_logic_changed": false,
+    "model_math_changed": false,
+    "projection_changed": false,
+    "context_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_behavior_changed": false,
+    "steps": [
+      3,
+      4
+    ]
   }
 }
