@@ -10,6 +10,14 @@ Sportsbook projection influence remains 0.0%. Stake sizing stays OFF.
 """
 from __future__ import annotations
 
+import builtins
+import threading
+from types import SimpleNamespace
+from typing import Callable
+
+import nfl_passing_yards_defense_v1 as defense_v1
+import nfl_passing_yards_defense_v2 as defense_v2
+import nfl_passing_yards_defense_v3 as defense_v3
 import nfl_passing_yards_hub_v75 as prior
 
 _FROZEN_SELECTED_ANALYSIS = prior._selected_analysis_v75
@@ -31,6 +39,28 @@ MAY_MODIFY_WIDGET_KEYS = False
 MAY_MODIFY_NAVIGATION_STATE = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
+PUBLIC_DEFENSE_BRIDGE_ISOLATION = "passing-yards-v76-defense-base-proxy-v1"
+PROCESS_RENDER_LOCK = "passing-yards-builtins-render-rlock-v1"
+
+# Capture the certified V1 defense callables before legacy V17 temporarily
+# monkeypatches the shared defense module during a render. V2/V3 are designed to
+# call the V1 implementation underneath the verified early-season bridge; when
+# every alias points at the same mutable module object, V17's temporary bridge can
+# become V2's own base function and recurse. A tiny per-render namespace preserves
+# the intended call graph without changing any data/provider function.
+_FROZEN_V1_BUILD = defense_v1.build_pass_defense_profile
+_FROZEN_V1_TEAM_SCHEDULE = defense_v1._team_schedule_payload
+_FROZEN_V1_COMPLETED_ROWS = defense_v1._completed_event_rows
+_FROZEN_V1_SUMMARY = defense_v1._summary_payload
+_FROZEN_V1_PARSE_RECENT = defense_v1.parse_recent_defense_game
+_FROZEN_V1_NORM = defense_v1._norm
+_FROZEN_V1_MATCHUP_GRADE = defense_v1.matchup_grade
+_FROZEN_V1_PARSE_SEASON = defense_v1.parse_season_pass_defense
+
+_LOCK_ATTR = "_kyre_passing_yards_process_render_rlock_v1"
+if not hasattr(builtins, _LOCK_ATTR):
+    setattr(builtins, _LOCK_ATTR, threading.RLock())
+_PROCESS_RENDER_RLOCK = getattr(builtins, _LOCK_ATTR)
 
 _UX_CSS = r"""
 <style data-passing-yards-ux-presentation-css="v76">
@@ -293,19 +323,56 @@ def _selected_analysis_v76(captured: dict[str, list[str]], slot: int) -> str:
     )
 
 
+def _fresh_defense_base_proxy() -> SimpleNamespace:
+    """Return an isolated view of the certified V1 defense entry points."""
+    return SimpleNamespace(
+        build_pass_defense_profile=_FROZEN_V1_BUILD,
+        _team_schedule_payload=_FROZEN_V1_TEAM_SCHEDULE,
+        _completed_event_rows=_FROZEN_V1_COMPLETED_ROWS,
+        _summary_payload=_FROZEN_V1_SUMMARY,
+        parse_recent_defense_game=_FROZEN_V1_PARSE_RECENT,
+        _norm=_FROZEN_V1_NORM,
+        matchup_grade=_FROZEN_V1_MATCHUP_GRADE,
+        parse_season_pass_defense=_FROZEN_V1_PARSE_SEASON,
+    )
+
+
+def _with_defense_bridge_isolation(render_func: Callable[[], None]):
+    """Keep V17's temporary V1 monkeypatch out of the V2/V3 base alias.
+
+    This does not replace a provider or recalculate data. It preserves the
+    already-certified V3 -> V2 -> V1 call graph while V17 temporarily installs
+    its bridge on the shared V1 module for the legacy UI path.
+    """
+    proxy = _fresh_defense_base_proxy()
+    original_v2_base = defense_v2.base
+    original_v3_base = defense_v3.base
+    defense_v2.base = proxy
+    defense_v3.base = proxy
+    try:
+        return render_func()
+    finally:
+        defense_v2.base = original_v2_base
+        defense_v3.base = original_v3_base
+
+
 def _render_step7_locked() -> None:
     original = prior._selected_analysis_v75
     prior._selected_analysis_v75 = _selected_analysis_v76
     try:
-        return prior._render_step6_locked()
+        return _with_defense_bridge_isolation(prior._render_step6_locked)
     finally:
         prior._selected_analysis_v75 = original
 
 
 def render_nfl_passing_yards_hub() -> None:
-    # Reuse Step 6's certified global render lock so this new monkeypatch cannot
-    # race across overlapping Streamlit sessions.
-    return prior._run_serialized(_render_step7_locked)
+    # Builtins owns the lock so a Streamlit module purge/re-import cannot create
+    # a second independent lock while an older session is still rendering.
+    with _PROCESS_RENDER_RLOCK:
+        # Point the frozen Step 6 lock at the same process-wide object for any
+        # active V75 callers that share this module instance.
+        prior._RENDER_LOCK = _PROCESS_RENDER_RLOCK
+        return _render_step7_locked()
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
@@ -329,11 +396,15 @@ __all__ = [
     "MODEL_VERSION",
     "NEW_PHASE_STEP",
     "PRESENTATION_ONLY",
+    "PROCESS_RENDER_LOCK",
+    "PUBLIC_DEFENSE_BRIDGE_ISOLATION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "UX_PRESENTATION_VERSION",
+    "_fresh_defense_base_proxy",
     "_inject_ux_presentation",
     "_selected_analysis_v76",
+    "_with_defense_bridge_isolation",
     "render_nfl_hub",
     "render_nfl_passing_yards_hub",
 ]
