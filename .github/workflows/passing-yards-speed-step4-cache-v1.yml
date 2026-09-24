@@ -1,0 +1,291 @@
+name: NFL Passing Yards Speed Step 4 Cache
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step4-cache-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json"
+      - "nfl_passing_yards_hub_v80.py"
+      - "streamlit_memory_lazy_router_v231.py"
+      - "tests/test_passing_yards_speed_step4_cache_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step4-cache-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json"
+      - "nfl_passing_yards_hub_v80.py"
+      - "streamlit_memory_lazy_router_v231.py"
+      - "tests/test_passing_yards_speed_step4_cache_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-speed-step4-cache-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce exact Step 4 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step4-cache-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
+          nfl_passing_yards_hub_v80.py
+          streamlit_memory_lazy_router_v231.py
+          tests/test_passing_yards_speed_step4_cache_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_SPEED_STEP4_SCOPE_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install and test cache contract
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_speed_step4_cache_v1.py
+          python -m py_compile nfl_passing_yards_hub_v80.py streamlit_memory_lazy_router_v231.py app.py
+          grep -F 'from streamlit_memory_lazy_router_v231 import record_bootstrap_import_ms, render_app' app.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json").read_text())
+          assert ledger["sportsbook_market_cached"] is False
+          assert ledger["model_math_changed"] is False
+          assert ledger["projection_changed"] is False
+          assert ledger["context_math_changed"] is False
+          assert ledger["probability_changed"] is False
+          assert ledger["market_math_changed"] is False
+          assert ledger["sportsbook_logic_changed"] is False
+          assert ledger["sportsbook_projection_influence"] == 0
+          assert ledger["stake_sizing_enabled"] is False
+          hub=Path("nfl_passing_yards_hub_v80.py").read_text()
+          for token in ("_cached_profile","_cached_defense","_cached_pressure","_cached_environment"):
+              assert token in hub
+          assert "_cached_market" not in hub
+          assert "market_api" not in hub
+          print("PASSING_YARDS_SPEED_STEP4_SPORTSBOOK_UNCACHED_GREEN")
+          print("PASSING_YARDS_SPEED_STEP4_MODEL_MATH_FROZEN_GREEN")
+          PY
+          echo "PASSING_YARDS_SPEED_STEP4_STATIC_GREEN"
+
+  branch-live-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install branch browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch app
+        run: |
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/py_step4.log 2>&1 &
+          echo $! >/tmp/py_step4_pid
+
+      - name: Prove cache owner plus lazy/full route integrity
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          common={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
+          }
+          lazy=base+"/?"+urlencode(common)
+          full=base+"/?"+urlencode({**common,"ks_py_full":"1"})
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+            try:
+              if requests.get(base,timeout=2).status_code < 500:
+                break
+            except Exception:
+              pass
+            time.sleep(.3)
+          else:
+            raise RuntimeError("SPEED_STEP4_BRANCH_APP_NOT_READY")
+
+          def find(page,selector,timeout,interval=.15):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame,loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP4_BRANCH_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+
+            page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+            _,lazy_shell=find(page,'[data-passing-yards-lazy-detail="v79"]',30)
+            if "Jordan Love" not in lazy_shell.inner_text(timeout=5000):
+              raise RuntimeError("SPEED_STEP4_BRANCH_LAZY_IDENTITY_MISSING")
+
+            page.goto(full,wait_until="domcontentloaded",timeout=120000)
+            find(page,'[data-passing-yards-evidence-cache="v80"]',60)
+            frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',220,.35)
+            if root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()!="Jordan Love":
+              raise RuntimeError("SPEED_STEP4_BRANCH_FULL_IDENTITY_MISSING")
+
+            body=frame.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body:
+                raise RuntimeError("SPEED_STEP4_BRANCH_RUNTIME_"+token)
+
+            print("PASSING_YARDS_SPEED_STEP4_BRANCH_CACHE_OWNER_GREEN")
+            print("PASSING_YARDS_SPEED_STEP4_BRANCH_LAZY_ROUTE_GREEN")
+            print("PASSING_YARDS_SPEED_STEP4_BRANCH_FULL_ANALYSIS_GREEN")
+            context.close(); browser.close()
+          PY
+
+      - name: Print branch log on failure
+        if: failure()
+        run: tail -n 800 /tmp/py_step4.log || true
+
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_step4_pid)" 2>/dev/null || true
+
+  public-cache-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove public cache owner and warm full-analysis reuse
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER","ks_py_full":"1"
+          }
+          full=base+"/?"+urlencode(params)
+
+          def find(page,selector,timeout,interval=.2):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1: return frame,loc.first
+                except Exception: pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP4_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            deadline=time.monotonic()+480
+            while True:
+              b=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              c=b.new_context(viewport={"width":390,"height":844}); page=c.new_page()
+              try:
+                page.goto(full,wait_until="domcontentloaded",timeout=120000)
+                try:
+                  find(page,'[data-passing-yards-evidence-cache="v80"]',30)
+                  print("PASSING_YARDS_SPEED_STEP4_PUBLIC_DEPLOYMENT_ACTIVE")
+                  c.close(); b.close(); break
+                except Exception: pass
+              finally:
+                try:c.close()
+                except Exception:pass
+                try:b.close()
+                except Exception:pass
+              if time.monotonic()>=deadline: raise RuntimeError("SPEED_STEP4_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+              time.sleep(12)
+
+            b=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            c=b.new_context(viewport={"width":390,"height":844}); page=c.new_page()
+
+            started=time.monotonic()
+            page.goto(full,wait_until="domcontentloaded",timeout=120000)
+            frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',240,.4)
+            cold=time.monotonic()-started
+            name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name!="Jordan Love": raise RuntimeError("SPEED_STEP4_PUBLIC_COLD_IDENTITY:"+name)
+
+            started=time.monotonic()
+            page.reload(wait_until="domcontentloaded",timeout=120000)
+            frame2,root2=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',240,.4)
+            warm=time.monotonic()-started
+            name2=root2.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name2!="Jordan Love": raise RuntimeError("SPEED_STEP4_PUBLIC_WARM_IDENTITY:"+name2)
+            find(page,'[data-passing-yards-evidence-cache="v80"]',30)
+
+            if warm > cold + 8.0:
+              raise RuntimeError(f"SPEED_STEP4_WARM_REGRESSION:cold={cold:.3f}:warm={warm:.3f}")
+
+            body=frame2.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body: raise RuntimeError("SPEED_STEP4_PUBLIC_RUNTIME_"+token)
+
+            print(f"PASSING_YARDS_SPEED_STEP4_PUBLIC_COLD_SECONDS={cold:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP4_PUBLIC_WARM_SECONDS={warm:.3f}")
+            print("PASSING_YARDS_SPEED_STEP4_CACHE_REUSE_GREEN")
+            print("PASSING_YARDS_SPEED_STEP4_GREEN")
+            print("PASSING_YARDS_SPEED_STEP4_FROZEN")
+            c.close(); b.close()
+          PY
