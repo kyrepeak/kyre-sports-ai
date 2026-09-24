@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "a639e7f84184be46ab0e82cda2f385d22345dfd0",
   "scope": "Passing Yards Step 6: Failure-Proofing. Add a presentation-only containment boundary over frozen V74/V225. Healthy requests preserve Step 5 and expose a reliability-ready marker. Unexpected Step 5 additive selected-analysis exceptions fall back to the frozen V73 selected analysis with an explicit DEGRADED notice and no synthesized evidence. Router V226 preflight-imports the new Step 6 hub and falls back to frozen V225/V74 if the new additive module is unavailable. Preserve the Step 5 public-session route-purge guard. No projection/model/context/probability/market/personnel/environment math or provider behavior changes.",
-  "failed_layer": "NONE",
+  "failed_layer": "BRANCH_VERIFIER_TEXT_TRANSFORM",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-failure-proofing-step6-v1",
@@ -98,5 +98,11 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair_epoch": "step6-verifier-text-transform-v1",
+  "repair_failed_run": 35937627367,
+  "repair_failed_job": 107438781475,
+  "repair_root_cause": "The Step 6 panel rendered with the expected HEALTHY markers, but CSS text-transform uppercased the visible title. Playwright inner_text therefore returned FAILURE-PROOFING ACTIVE while the verifier compared case-sensitively against Failure-proofing active.",
+  "repair_patch": "Make the branch/public title assertion case-insensitive only. Product code, Steps 1-5, model/data/math, and the Step 6 failure boundary are unchanged.",
+  "repair_state": "PATCH_PENDING_PROOF"
 }
