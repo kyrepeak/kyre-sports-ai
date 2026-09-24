@@ -45,5 +45,14 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
-  }
+  },
+  "current_failure_epoch": {
+    "run": 36068463884,
+    "failed_job": 107863657466,
+    "failure_token": "SPEED_STEP7_PROFILE_SELECTOR_NOT_READY:[data-passing-yards-qb-detail=\"v59\"][data-qb-analysis-slot=\"2\"]",
+    "failed_layer": "VERIFIER",
+    "root_cause": "The first transition profiler waited only for final V59 readiness and did not record the post-click page/tab/URL state, so the failing transition owner could not be proven.",
+    "patch": "Instrument href target, context page count, active URL and post-click page selection only. No product/runtime/model/data/math changes."
+  },
+  "diagnostic_status": "RERUN_PENDING"
 }
