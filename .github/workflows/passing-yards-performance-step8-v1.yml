@@ -58,7 +58,6 @@ jobs:
           streamlit_memory_lazy_router_v228.py
           tests/test_passing-yards-performance-step8-v1.py
           EOF
-          sed -i 's#tests/test-passing-yards-performance-step8-v1.py#tests/test_passing_yards_performance_step8_v1.py#' /tmp/expected.txt
           sort -o /tmp/expected.txt /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
           echo "PASSING_YARDS_PERFORMANCE_STEP8_SCOPE_GREEN"
