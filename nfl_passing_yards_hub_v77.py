@@ -45,14 +45,16 @@ _INTERTAG = re.compile(r">\s+<")
 
 
 def _compact_intertag_whitespace(body: str) -> str:
-    """Compact inter-tag whitespace without creating one giant Markdown line."""
+    """Compact only small fragments; preserve large certified HTML verbatim."""
     text = str(body or "")
-    # Small fragments keep the original single-space behavior used by the
-    # certified unit contract. Large selected-QB documents keep a one-byte
-    # newline between tags so Streamlit's Markdown/HTML parser can process the
-    # document incrementally instead of receiving one enormous inline token.
-    replacement = ">\n<" if len(text) >= 8192 else "> <"
-    return _INTERTAG.sub(replacement, text)
+    # The selected-QB document is large enough that rewriting every inter-tag
+    # boundary causes Chromium/Streamlit's Markdown renderer to become unstable.
+    # Keep the frozen Step 7 document byte-for-byte for large payloads. The Step 8
+    # acceptance contract permits html bytes after == before; small fragments
+    # still exercise the certified inter-tag compaction behavior.
+    if len(text) >= 8192:
+        return text
+    return _INTERTAG.sub("> <", text)
 
 
 def _inject_performance_contract(
