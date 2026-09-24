@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "d622c10fb32280d7b5ef65a14e5149400d0292eb",
   "scope": "Passing Yards Step 7: UX / Presentation. Add presentation-only wayfinding and responsive polish over frozen V75/V226. Add an in-page analysis guide, stable section anchors, improved mobile touch targets, consistent spacing and single-column phone behavior for the certified Step 2-6 panels. No Streamlit/query/session navigation state changes. Preserve Step 6 serialization and Step 5 fresh-session purge protection. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or data behavior changes.",
-  "failed_layer": "BRANCH_STEP7_SECTION_ANCHOR_MATCH",
+  "failed_layer": "PUBLIC_STEP7_DEFENSE_BRIDGE_ALIAS_RECURSION",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-ux-presentation-step7-v1",
@@ -100,13 +100,24 @@
       "evidence_run": 35940964789,
       "evidence_job": 107449408884,
       "failure_token": "AssertionError: ks-py76-why"
+    },
+    {
+      "from": "PUBLIC_STEP7_RUNTIME_PROOF",
+      "to": "PUBLIC_STEP7_DEFENSE_BRIDGE_ALIAS_RECURSION",
+      "evidence_run": 35941859882,
+      "evidence_job": 107453110019,
+      "failure_token": "STEP7_PUBLIC_RUNTIME_ERROR:Traceback"
     }
   ],
   "override_events": [],
-  "repair_epoch": "step7-section-anchor-partial-v2",
-  "repair_failed_run": 35940964789,
-  "repair_failed_job": 107449408884,
-  "repair_root_cause": "Guide now renders, but the Why anchor was absent. V71/V72 section opening tags carry additional runtime attributes after their version marker, while Step 7 matched an exact closing-angle token.",
-  "repair_patch": "Match V71/V72 section prefixes through the stable version attribute and insert IDs before the remaining attributes. Strengthen focused fixtures with trailing runtime attributes.",
-  "repair_state": "PATCH_PENDING_PROOF"
+  "repair_epoch": "step7-public-defense-bridge-isolation-v1",
+  "repair_failed_run": 35941859882,
+  "repair_failed_job": 107453110019,
+  "repair_root_cause": "Hosted public Step 7 repeatedly entered a recursion loop: V17 temporarily monkeypatched the shared V1 defense module to bridged_defense, while V2/V3 could resolve their base alias to that same mutable module object. The intended V3 -> V2 -> V1 call graph then became V17 bridged_defense -> V3 -> V2 -> V17 bridged_defense.",
+  "repair_patch": "V76 now creates a per-render isolated namespace containing the frozen certified V1 defense entry points, temporarily points V2/V3 base aliases at that namespace, restores both aliases after render, and uses a builtins-owned process RLock so module purge/re-import cannot create competing Step 7 render locks. Frozen Steps 1-6 files remain untouched; provider functions and math are unchanged.",
+  "repair_state": "PATCH_PENDING_PROOF",
+  "repair_failure_token": "STEP7_PUBLIC_RUNTIME_ERROR:Traceback",
+  "public_freeze_pending": true,
+  "public_defense_bridge_isolation": "passing-yards-v76-defense-base-proxy-v1",
+  "process_render_lock": "passing-yards-builtins-render-rlock-v1"
 }
