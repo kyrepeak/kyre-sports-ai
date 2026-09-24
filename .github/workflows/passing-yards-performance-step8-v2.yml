@@ -197,28 +197,37 @@ jobs:
           else:
               raise RuntimeError("STEP8_LOCAL_STREAMLIT_NOT_READY")
 
-          def body_text(page):
-              out=[]
-              for frame in page.frames:
-                  try: out.append(frame.locator("body").inner_text(timeout=2200))
-                  except Exception: pass
-              return "\n".join(out)
-
           def find(page,selector,timeout=210):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
-                  body=body_text(page)
-                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
-                      if token in body:
-                          print(body[:50000])
-                          raise RuntimeError("STEP8_RUNTIME_ERROR:"+token)
                   for frame in page.frames:
                       try:
                           loc=frame.locator(selector)
-                          if loc.count()>=1: return frame,loc.first
-                      except Exception: pass
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
                   page.wait_for_timeout(450)
               raise RuntimeError("STEP8_SELECTOR_NOT_READY:"+selector)
+
+          def runtime_text(frame,root):
+              try:
+                  owner=frame.locator('[data-testid="stAppViewContainer"]')
+                  if owner.count()>=1:
+                      return owner.first.inner_text(timeout=5000)
+              except Exception:
+                  pass
+              try:
+                  return root.inner_text(timeout=5000)
+              except Exception:
+                  return ""
+
+          def assert_no_runtime_errors(frame,root):
+              text=runtime_text(frame,root)
+              for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                  if token in text:
+                      print(text[:50000])
+                      raise RuntimeError("STEP8_RUNTIME_ERROR:"+token)
 
           def certify(page,width,height):
               started=time.monotonic()
@@ -227,6 +236,7 @@ jobs:
               frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
               ready_s=time.monotonic()-started
               assert ready_s <= budget,ready_s
+              assert_no_runtime_errors(frame,root)
               find(page, "text=Jordan Love", timeout=30)
               assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
               assert root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72"
@@ -314,28 +324,37 @@ jobs:
           })
           budget=180.0
 
-          def body_text(page):
-              out=[]
-              for frame in page.frames:
-                  try: out.append(frame.locator("body").inner_text(timeout=2500))
-                  except Exception: pass
-              return "\n".join(out)
-
           def find(page,selector,timeout=260):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
-                  body=body_text(page)
-                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
-                      if token in body:
-                          print(body[:50000])
-                          raise RuntimeError("STEP8_PUBLIC_RUNTIME_ERROR:"+token)
                   for frame in page.frames:
                       try:
                           loc=frame.locator(selector)
-                          if loc.count()>=1: return frame,loc.first
-                      except Exception: pass
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
                   page.wait_for_timeout(500)
               raise RuntimeError("STEP8_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def runtime_text(frame,root):
+              try:
+                  owner=frame.locator('[data-testid="stAppViewContainer"]')
+                  if owner.count()>=1:
+                      return owner.first.inner_text(timeout=5000)
+              except Exception:
+                  pass
+              try:
+                  return root.inner_text(timeout=5000)
+              except Exception:
+                  return ""
+
+          def assert_no_runtime_errors(frame,root):
+              text=runtime_text(frame,root)
+              for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                  if token in text:
+                      print(text[:50000])
+                      raise RuntimeError("STEP8_PUBLIC_RUNTIME_ERROR:"+token)
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
@@ -346,6 +365,7 @@ jobs:
                   frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
                   ready_s=time.monotonic()-started
                   assert ready_s <= budget,ready_s
+                  assert_no_runtime_errors(frame,root)
                   assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
                   assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
                   assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
