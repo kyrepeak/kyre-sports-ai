@@ -1,0 +1,118 @@
+name: NFL Passing Yards Speed Step 1 Bottleneck
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step1-bottleneck-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step1-bottleneck-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json"
+
+permissions:
+  contents: read
+
+jobs:
+  bottleneck-isolation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce verifier-only Step 1 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step1-bottleneck-v1.yml
+          devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_SPEED_STEP1_SCOPE_GREEN"
+
+      - name: Prove Steps 1-10 owners remain frozen
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "SPEED_STEP1_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob app.py 233b7295706db346b570f15241758b35bb76d6f3
+          check_blob nfl_passing_yards_hub_v77.py b201bfac5af278ebbd7bdff63f0900526af686d1
+          check_blob streamlit_memory_lazy_router_v228.py 643d0c05efbde8593f197f0142fea205572e36af
+          check_blob .github/workflows/passing-yards-step10-final-release-freeze-v1.yml a4f82298640fd5049b0b1c50b7db191ade51d0eb
+          check_blob devsystem/task_ledgers/passing-yards-step10-final-release-freeze-v1.json dfb7bb4a8ef554b61b9eb01bd2695767c8a99911
+          echo "PASSING_YARDS_SPEED_STEP1_PRIOR_FREEZE_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Classify selected-QB bottleneck from certified evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-performance-step8-v1.json").read_text())
+          evidence=ledger["public_hidden_marker_root_cause"]["evidence"]
+          branch=evidence["branch_v77_390"]
+          assert "html=43826899->43826899" in branch
+
+          v59=Path("nfl_passing_yards_hub_v59.py").read_text()
+          v67=Path("nfl_passing_yards_hub_v67.py").read_text()
+          v77=Path("nfl_passing_yards_hub_v77.py").read_text()
+
+          # V59's selected page waits on the complete captured payload.
+          for token in (
+              '_piece(captured, "profile", index)',
+              '_piece(captured, "defense", index)',
+              '_piece(captured, "pressure", index)',
+              '_piece(captured, "personnel", index)',
+              '_piece(captured, "environment", index)',
+          ):
+              assert token in v59, token
+
+          # V67 then presents those same heavy evidence families again.
+          for token in (
+              '_evidence_card("recent"',
+              '_evidence_card("opponent"',
+              '_evidence_card("pressure"',
+              '_evidence_card("personnel"',
+              '_evidence_card("environment"',
+          ):
+              assert token in v67, token
+
+          assert 'if len(text) >= 8192:' in v77
+          assert 'return text' in v77
+          print("PASSING_YARDS_SPEED_STEP1_ROOT_CAUSE_GREEN")
+          print("ROOT_CAUSE=FULL_PIPELINE_PLUS_GIANT_SELECTED_QB_HTML_BEFORE_USABLE_DETAIL")
+          print("CERTIFIED_SELECTED_QB_HTML_BYTES=43826899")
+          PY
+
+      - name: Freeze bottleneck classification
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step1_status"] == "DONE"
+          assert ledger["product_files_changed"] is False
+          assert ledger["root_cause_evidence"]["step8_branch_html_bytes"] == 43826899
+          print("PASSING_YARDS_SPEED_STEP1_GREEN")
+          print("PASSING_YARDS_SPEED_STEP1_FROZEN")
+          PY
