@@ -48,5 +48,23 @@
   "branch_html_target_max_bytes": 10000000,
   "branch_reduction_target_pct": 75,
   "presentation_parser_changed": true,
-  "presentation_values_recomputed": false
+  "presentation_values_recomputed": false,
+  "final_public_deployment_repair": {
+    "failed_run": 36050387646,
+    "failed_job": 107805757735,
+    "failure_token": "SPEED_STEP5_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+    "classification": "public deployment activation only",
+    "branch_proof_run": 36049568645,
+    "branch_html_bytes": 250053,
+    "branch_html_reduction_pct": 99.43,
+    "product_code_changed": false,
+    "model_math_changed": false,
+    "projection_changed": false,
+    "context_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_logic_changed": false,
+    "prior_steps_reopened": false,
+    "redeploy_trigger": "requirements comment R2 + app heartbeat R2"
+  }
 }
