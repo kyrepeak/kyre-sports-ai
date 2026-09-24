@@ -104,6 +104,12 @@ jobs:
           ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json").read_text())
           assert ledger["frozen_speed_steps"] == [1,2,3,4]
           assert ledger["original_evidence_sections_preserved"] is True
+          assert ledger["parser_guard_version"] == "bounded-b-v1"
+          assert ledger["max_detail_value_chars"] == 240
+          assert ledger["branch_html_target_max_bytes"] == 10000000
+          assert ledger["branch_reduction_target_pct"] == 75
+          assert ledger["presentation_parser_changed"] is True
+          assert ledger["presentation_values_recomputed"] is False
           assert ledger["dependency_versions_changed"] is False
           assert ledger["model_math_changed"] is False
           assert ledger["projection_changed"] is False
@@ -115,6 +121,9 @@ jobs:
           assert ledger["stake_sizing_enabled"] is False
           hub=Path("nfl_passing_yards_hub_v81.py").read_text()
           assert 'data-passing-yards-payload-dedupe="v81"' in hub
+          assert 'data-passing-yards-bounded-detail-parser="v81"' in hub
+          assert 'PARSER_GUARD_VERSION = "bounded-b-v1"' in hub
+          assert 'MAX_DETAIL_VALUE_CHARS = 240' in hub
           assert 'data-step5-avoided-duplicate-bytes' in hub
           print("PASSING_YARDS_SPEED_STEP5_MODEL_MATH_FROZEN_GREEN")
           print("PASSING_YARDS_SPEED_STEP5_STATIC_GREEN")
@@ -219,17 +228,24 @@ jobs:
               if token in body:
                 raise RuntimeError("SPEED_STEP5_BRANCH_RUNTIME_"+token)
 
-            try:
-              _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',30)
-              html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
-            except Exception:
-              html_bytes=0
+            _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',30)
+            html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
+            baseline_bytes=43819503
+            if html_bytes <= 0:
+              raise RuntimeError("SPEED_STEP5_BRANCH_HTML_BYTES_MISSING")
+            if html_bytes >= 10000000:
+              raise RuntimeError(f"SPEED_STEP5_BRANCH_HTML_TARGET_MISSED:{html_bytes}")
+            reduction_pct=(1.0-(html_bytes/baseline_bytes))*100.0
+            if reduction_pct < 75.0:
+              raise RuntimeError(f"SPEED_STEP5_BRANCH_REDUCTION_TARGET_MISSED:{reduction_pct:.2f}")
 
             print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_AVOIDED_DUPLICATE_BYTES={avoided}")
             print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_SELECTED_PAYLOAD_BYTES={selected_total}")
             for key,value in payload_sizes.items():
               print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_PAYLOAD_{key.upper()}_BYTES={value}")
             print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_HTML_BYTES={html_bytes}")
+            print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_HTML_REDUCTION_PCT={reduction_pct:.2f}")
+            print("PASSING_YARDS_SPEED_STEP5_BRANCH_BOUNDED_PARSER_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_BRANCH_V81_OWNER_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_BRANCH_LAZY_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_BRANCH_FULL_ANALYSIS_GREEN")
@@ -282,6 +298,8 @@ jobs:
             raise RuntimeError("SPEED_STEP5_PUBLIC_SOURCE_OWNER_V81_NOT_V80")
           if 'data-passing-yards-payload-dedupe="v81"' not in hub_source:
             raise RuntimeError("SPEED_STEP5_PUBLIC_SOURCE_DEDUPE_CONTRACT_MISSING")
+          if 'PARSER_GUARD_VERSION = "bounded-b-v1"' not in hub_source:
+            raise RuntimeError("SPEED_STEP5_PUBLIC_SOURCE_PARSER_GUARD_MISSING")
 
           print("PASSING_YARDS_SPEED_STEP5_PUBLIC_SOURCE_OWNERSHIP_GREEN")
 
@@ -294,6 +312,7 @@ jobs:
             "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
           }
           lazy=base+"/?"+urlencode(params)
+          full=base+"/?"+urlencode({**params,"ks_py_full":"1"})
 
           def find(page,selector,timeout,interval=.25):
             end=time.monotonic()+timeout
@@ -341,15 +360,39 @@ jobs:
             if "Jordan Love" not in text:
               raise RuntimeError("SPEED_STEP5_PUBLIC_IDENTITY_MISSING")
 
-            body=frame.locator("body").inner_text(timeout=5000)
-            for token in ("TypeError","KeyError","Traceback","RecursionError"):
-              if token in body:
-                raise RuntimeError("SPEED_STEP5_PUBLIC_RUNTIME_"+token)
-
             print("PASSING_YARDS_SPEED_STEP5_PUBLIC_V81_OWNER_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_PUBLIC_V80_DESCENDANT_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_PUBLIC_V79_LAZY_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_PUBLIC_DEPLOYMENT_ACTIVE")
+
+            started=time.monotonic()
+            page.goto(full,wait_until="domcontentloaded",timeout=120000)
+            full_frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',150,.3)
+            full_ready=time.monotonic()-started
+            name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name!="Jordan Love":
+              raise RuntimeError("SPEED_STEP5_PUBLIC_FULL_IDENTITY:"+name)
+            _,dedupe=find(page,'[data-passing-yards-payload-dedupe="v81"]',30)
+            _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',30)
+            html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
+            baseline_bytes=43819503
+            if html_bytes <= 0:
+              raise RuntimeError("SPEED_STEP5_PUBLIC_HTML_BYTES_MISSING")
+            if html_bytes >= 10000000:
+              raise RuntimeError(f"SPEED_STEP5_PUBLIC_HTML_TARGET_MISSED:{html_bytes}")
+            reduction_pct=(1.0-(html_bytes/baseline_bytes))*100.0
+            if reduction_pct < 75.0:
+              raise RuntimeError(f"SPEED_STEP5_PUBLIC_REDUCTION_TARGET_MISSED:{reduction_pct:.2f}")
+
+            body=full_frame.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body:
+                raise RuntimeError("SPEED_STEP5_PUBLIC_RUNTIME_"+token)
+
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_FULL_READY_SECONDS={full_ready:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_HTML_BYTES={html_bytes}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_HTML_REDUCTION_PCT={reduction_pct:.2f}")
+            print("PASSING_YARDS_SPEED_STEP5_PUBLIC_BOUNDED_PARSER_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_PAYLOAD_DEDUPE_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_FROZEN")
