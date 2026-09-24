@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import threading
+import time
+
 import nfl_passing_yards_hub_v75 as v75
 import streamlit_memory_lazy_router_v226 as v226
 
@@ -35,6 +38,7 @@ def test_step6_contract_is_additive_and_math_frozen() -> None:
     assert v75.MAY_MODIFY_DATA_PROVIDER_BEHAVIOR is False
     assert v75.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert v75.STAKE_SIZING_ENABLED is False
+    assert v75.PUBLIC_RENDER_SERIALIZATION == "passing-yards-global-render-rlock-v1"
     assert v226.FROZEN_ROUTER == "streamlit_memory_lazy_router_v225"
     assert v226.PASSING_HUB == "nfl_passing_yards_hub_v75"
     assert v226.FALLBACK_HUB == "nfl_passing_yards_hub_v74"
@@ -90,3 +94,30 @@ def test_step6_router_preflight_fails_closed_to_frozen_step5() -> None:
     assert v226._step6_hub_importable(broken_importer) is False
     assert v226._step6_hub_importable(lambda name: object()) is True
     assert v226.FALLBACK_HUB == "nfl_passing_yards_hub_v74"
+
+
+def test_step6_global_render_serialization_allows_only_one_critical_section() -> None:
+    active = 0
+    maximum = 0
+    state_lock = threading.Lock()
+
+    def probe() -> None:
+        nonlocal active, maximum
+        with state_lock:
+            active += 1
+            maximum = max(maximum, active)
+        time.sleep(0.05)
+        with state_lock:
+            active -= 1
+
+    threads = [
+        threading.Thread(target=lambda: v75._run_serialized(probe))
+        for _ in range(3)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=2)
+        assert not thread.is_alive()
+
+    assert maximum == 1
