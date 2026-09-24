@@ -1,0 +1,376 @@
+name: NFL Passing Yards Performance Step 8 V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-performance-step8-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-performance-step8-v1.json"
+      - "nfl_passing_yards_hub_v77.py"
+      - "streamlit_memory_lazy_router_v228.py"
+      - "tests/test_passing_yards_performance_step8_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-performance-step8-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-performance-step8-v1.json"
+      - "nfl_passing_yards_hub_v77.py"
+      - "streamlit_memory_lazy_router_v228.py"
+      - "tests/test_passing_yards_performance_step8_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-performance-step8-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step 8 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-performance-step8-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-performance-step8-v1.json
+          nfl_passing_yards_hub_v77.py
+          streamlit_memory_lazy_router_v228.py
+          tests/test_passing-yards-performance-step8-v1.py
+          EOF
+          sed -i 's#tests/test-passing-yards-performance-step8-v1.py#tests/test_passing_yards_performance_step8_v1.py#' /tmp/expected.txt
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_PERFORMANCE_STEP8_SCOPE_GREEN"
+
+      - name: Prove Steps 1-7 and data-math owners remain frozen
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" -- \
+            nfl_passing_yards_hub_v71.py \
+            nfl_passing_yards_hub_v72.py \
+            nfl_passing_yards_hub_v73.py \
+            nfl_passing_yards_hub_v74.py \
+            nfl_passing_yards_hub_v75.py \
+            nfl_passing_yards_hub_v76.py \
+            streamlit_memory_lazy_router_v222.py \
+            streamlit_memory_lazy_router_v223.py \
+            streamlit_memory_lazy_router_v224.py \
+            streamlit_memory_lazy_router_v225.py \
+            streamlit_memory_lazy_router_v226.py \
+            streamlit_memory_lazy_router_v227.py \
+            nfl_game_day_availability_v1.py \
+            nfl_passing_yards_personnel_v3.py \
+            nfl_passing_yards_environment_v2.py \
+            nfl_passing_yards_market_v1.py \
+            nfl_passing_yards_market_api_v2.py
+          echo "PASSING_YARDS_STEPS1_7_AND_DATA_MATH_OWNERS_FROZEN_GREEN"
+
+      - name: Install static test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and test Step 8 performance contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v77.py streamlit_memory_lazy_router_v228.py app.py
+          python -m pytest -q \
+            tests/test_passing_yards_ux_presentation_step7_v1.py \
+            tests/test_passing_yards_performance_step8_v1.py
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import nfl_passing_yards_hub_v77 as v77
+          import streamlit_memory_lazy_router_v228 as v228
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-performance-step8-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step8_status"] == "DONE"
+          assert ledger["sportsbook_projection_influence"] == 0
+          assert ledger["stake_sizing_enabled"] is False
+
+          assert v77.FROZEN_PRIOR == "nfl_passing_yards_hub_v76"
+          assert v77.NEW_PHASE_STEP == 8
+          assert v77.HTML_COMPACTION == "intertag-whitespace-v1"
+          assert v77.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v228.FROZEN_ROUTER == "streamlit_memory_lazy_router_v227"
+          assert v228.PASSING_HUB == "nfl_passing_yards_hub_v77"
+          assert v228.FALLBACK_HUB == "nfl_passing_yards_hub_v76"
+
+          source=Path("nfl_passing_yards_hub_v77.py").read_text()
+          for token in (
+              'data-passing-yards-performance="v77"',
+              'data-passing-yards-performance-ready="v77"',
+              'data-step8-compose-ms=',
+              'data-step8-html-bytes-before=',
+              'data-step8-html-bytes-after=',
+              'data-step8-server-render-ms=',
+          ):
+              assert token in source, token
+          for forbidden in ("build_baseline_projection(", "evaluate_market(", "collect_fanduel_nfl_passing_yards("):
+              assert forbidden not in source, forbidden
+
+          app=Path("app.py").read_text()
+          assert "from streamlit_memory_lazy_router_v228 import record_bootstrap_import_ms, render_app" in app
+          assert "PASSING_YARDS_PERFORMANCE_STEP8_RUNTIME" in app
+          print("PASSING_YARDS_PERFORMANCE_STEP8_STATIC_GREEN")
+          PY
+
+  branch-step8-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-performance-step8
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-performance-step8/streamlit.log 2>&1 &
+          echo $! > /tmp/py_step8_pid
+
+      - name: Prove Step 8 at phone tablet desktop
+        run: |
+          python - <<'PY'
+          import math
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+          budget=180.0
+
+          deadline=time.monotonic()+150
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("STEP8_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2200))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=210):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                      if token in body:
+                          print(body[:50000])
+                          raise RuntimeError("STEP8_RUNTIME_ERROR:"+token)
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(450)
+              raise RuntimeError("STEP8_SELECTOR_NOT_READY:"+selector)
+
+          def certify(page,width,height):
+              started=time.monotonic()
+              page.set_viewport_size({"width":width,"height":height})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              ready_s=time.monotonic()-started
+              assert ready_s <= budget,ready_s
+              assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
+              assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
+              assert root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72"
+              assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
+              assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
+              assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
+              assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
+              assert root.get_attribute("data-passing-yards-performance-ready")=="v77"
+              assert root.get_attribute("data-passing-yards-performance")=="v77"
+
+              before=int(root.get_attribute("data-step8-html-bytes-before"))
+              after=int(root.get_attribute("data-step8-html-bytes-after"))
+              compose=float(root.get_attribute("data-step8-compose-ms"))
+              assert 0 < after <= before,(before,after)
+              assert math.isfinite(compose) and compose >= 0.0,compose
+
+              runtime_frame,runtime=find(page,'[data-passing-yards-performance-runtime="v77"]')
+              render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
+              assert math.isfinite(render_ms) and render_ms >= 0.0,render_ms
+
+              dims=frame.locator("body").evaluate("""e => ({
+                bodyScroll:e.scrollWidth,
+                docScroll:document.documentElement.scrollWidth,
+                viewport:window.innerWidth
+              })""")
+              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+              print(f"PASSING_YARDS_PERFORMANCE_STEP8_{width}_GREEN ready_s={ready_s:.3f} server_ms={render_ms:.3f} html={before}->{after}")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              certify(page,390,844)
+              certify(page,768,1024)
+              certify(page,1440,1000)
+              print("PASSING_YARDS_PERFORMANCE_STEP8_BRANCH_GREEN")
+              page.close()
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 900 artifacts/passing-yards-performance-step8/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py_step8_pid ]; then kill "$(cat /tmp/py_step8_pid)" 2>/dev/null || true; fi
+
+  public-step8-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Allow Streamlit deployment to publish
+        run: sleep 120
+
+      - name: Prove public Step 8 and freeze
+        run: |
+          python - <<'PY'
+          import math
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+          budget=180.0
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=260):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                      if token in body:
+                          print(body[:50000])
+                          raise RuntimeError("STEP8_PUBLIC_RUNTIME_ERROR:"+token)
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError("STEP8_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  started=time.monotonic()
+                  page=browser.new_page(viewport={"width":width,"height":height})
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
+                  frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                  ready_s=time.monotonic()-started
+                  assert ready_s <= budget,ready_s
+                  assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
+                  assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
+                  assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
+                  assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
+                  assert root.get_attribute("data-passing-yards-performance-ready")=="v77"
+                  before=int(root.get_attribute("data-step8-html-bytes-before"))
+                  after=int(root.get_attribute("data-step8-html-bytes-after"))
+                  compose=float(root.get_attribute("data-step8-compose-ms"))
+                  assert 0 < after <= before,(before,after)
+                  assert math.isfinite(compose) and compose >= 0.0,compose
+                  runtime_frame,runtime=find(page,'[data-passing-yards-performance-runtime="v77"]')
+                  render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
+                  assert math.isfinite(render_ms) and render_ms >= 0.0,render_ms
+                  assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+                  assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+                  assert dims["docScroll"] <= dims["viewport"] + 2,dims
+                  print(f"PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_{width}_GREEN ready_s={ready_s:.3f} server_ms={render_ms:.3f} html={before}->{after}")
+                  page.close()
+              browser.close()
+          print("PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_GREEN")
+          print("PASSING_YARDS_PERFORMANCE_STEP8_FROZEN")
+          PY
