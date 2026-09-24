@@ -66,5 +66,15 @@
     "sportsbook_logic_changed": false,
     "prior_steps_reopened": false,
     "redeploy_trigger": "requirements comment R2 + app heartbeat R2"
+  },
+  "public_runtime_classifier_v1": {
+    "purpose": "single focused diagnostic to identify which Passing Yards runtime the public Streamlit app is actually serving after repeated SPEED_STEP5_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+    "authoritative_failed_runs": [
+      36050387646,
+      36052887345
+    ],
+    "failure_token": "SPEED_STEP5_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+    "product_code_changed": false,
+    "prior_steps_reopened": false
   }
 }
