@@ -1,0 +1,380 @@
+name: NFL Passing Yards UX Presentation Step 7 V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-ux-presentation-step7-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-ux-presentation-step7-v1.json"
+      - "nfl_passing_yards_hub_v76.py"
+      - "streamlit_memory_lazy_router_v227.py"
+      - "tests/test_passing_yards_ux_presentation_step7_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-ux-presentation-step7-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-ux-presentation-step7-v1.json"
+      - "nfl_passing_yards_hub_v76.py"
+      - "streamlit_memory_lazy_router_v227.py"
+      - "tests/test_passing_yards_ux_presentation_step7_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-ux-presentation-step7-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step 7 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-ux-presentation-step7-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-ux-presentation-step7-v1.json
+          nfl_passing_yards_hub_v76.py
+          streamlit_memory_lazy_router_v227.py
+          tests/test_passing_yards_ux_presentation_step7_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_UX_PRESENTATION_STEP7_SCOPE_GREEN"
+
+      - name: Prove Steps 1-6 and data-math owners remain frozen
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" -- \
+            nfl_passing_yards_hub_v71.py \
+            nfl_passing_yards_hub_v72.py \
+            nfl_passing_yards_hub_v73.py \
+            nfl_passing_yards_hub_v74.py \
+            nfl_passing_yards_hub_v75.py \
+            streamlit_memory_lazy_router_v222.py \
+            streamlit_memory_lazy_router_v223.py \
+            streamlit_memory_lazy_router_v224.py \
+            streamlit_memory_lazy_router_v225.py \
+            streamlit_memory_lazy_router_v226.py \
+            nfl_game_day_availability_v1.py \
+            nfl_passing_yards_personnel_v3.py \
+            nfl_passing_yards_environment_v2.py \
+            nfl_passing_yards_market_v1.py \
+            nfl_passing_yards_market_api_v2.py
+          echo "PASSING_YARDS_STEPS1_6_AND_DATA_MATH_OWNERS_FROZEN_GREEN"
+
+      - name: Install static test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and test Step 7 UX contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v76.py streamlit_memory_lazy_router_v227.py app.py
+          python -m pytest -q \
+            tests/test_passing_yards_failure_proofing_step6_v1.py \
+            tests/test_passing_yards_ux_presentation_step7_v1.py
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import nfl_passing_yards_hub_v76 as v76
+          import streamlit_memory_lazy_router_v227 as v227
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-ux-presentation-step7-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step7_status"] == "DONE"
+          assert ledger["sportsbook_projection_influence"] == 0
+          assert ledger["stake_sizing_enabled"] is False
+
+          assert v76.FROZEN_PRIOR == "nfl_passing_yards_hub_v75"
+          assert v76.NEW_PHASE_STEP == 7
+          assert v76.DISPLAY_ONLY is True
+          assert v76.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v227.FROZEN_ROUTER == "streamlit_memory_lazy_router_v226"
+          assert v227.PASSING_HUB == "nfl_passing_yards_hub_v76"
+          assert v227.FALLBACK_HUB == "nfl_passing_yards_hub_v75"
+
+          source=Path("nfl_passing_yards_hub_v76.py").read_text()
+          for token in (
+              'data-passing-yards-ux-presentation="v76"',
+              'data-passing-yards-ux-presentation-ready="v76"',
+              'data-passing-yards-ux-guide="v76"',
+              'href="#ks-py76-overview"',
+              'href="#ks-py76-why"',
+              'href="#ks-py76-matchup"',
+              'href="#ks-py76-market"',
+              'href="#ks-py76-gameday"',
+              'href="#ks-py76-reliability"',
+          ):
+              assert token in source, token
+          for forbidden in ("build_baseline_projection(", "evaluate_market(", "collect_fanduel_nfl_passing_yards("):
+              assert forbidden not in source, forbidden
+
+          app=Path("app.py").read_text()
+          assert "from streamlit_memory_lazy_router_v227 import record_bootstrap_import_ms, render_app" in app
+          assert "PASSING_YARDS_UX_PRESENTATION_STEP7_RUNTIME" in app
+          print("PASSING_YARDS_UX_PRESENTATION_STEP7_STATIC_GREEN")
+          PY
+
+  branch-step7-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-ux-presentation-step7
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-ux-presentation-step7/streamlit.log 2>&1 &
+          echo $! > /tmp/py_step7_pid
+
+      - name: Prove Step 7 at phone tablet desktop
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+
+          deadline=time.monotonic()+150
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("STEP7_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2200))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=210):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                      if token in body:
+                          print(body[:50000])
+                          raise RuntimeError("STEP7_RUNTIME_ERROR:"+token)
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(450)
+              raise RuntimeError("STEP7_SELECTOR_NOT_READY:"+selector)
+
+          def certify(page,width,height):
+              page.set_viewport_size({"width":width,"height":height})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              body=frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in body
+              assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
+              assert root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72"
+              assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
+              assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
+              assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
+              assert root.get_attribute("data-passing-yards-failure-mode")=="HEALTHY"
+              assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
+              assert root.get_attribute("data-passing-yards-ux-presentation")=="v76"
+
+              guide=root.locator('[data-passing-yards-ux-guide="v76"]')
+              assert guide.count()==1
+              assert guide.locator("a").count()==6
+              labels=[guide.locator("a").nth(i).inner_text().strip() for i in range(6)]
+              assert labels==["Overview","Why","Matchup","Market","Game Day","Reliability"],labels
+
+              for anchor in (
+                  "ks-py76-overview",
+                  "ks-py76-why",
+                  "ks-py76-matchup",
+                  "ks-py76-market",
+                  "ks-py76-gameday",
+                  "ks-py76-reliability",
+              ):
+                  assert root.locator(f"#{anchor}").count()==1,anchor
+
+              assert root.locator('[data-passing-yards-failure-proofing="v75"]').count()==1
+              assert root.locator('[data-passing-yards-availability-game-day="v74"]').count()==1
+              dims=frame.locator("body").evaluate("""e => ({
+                bodyScroll:e.scrollWidth,
+                docScroll:document.documentElement.scrollWidth,
+                viewport:window.innerWidth
+              })""")
+              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+              print(f"PASSING_YARDS_UX_PRESENTATION_STEP7_{width}_GREEN")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              certify(page,390,844)
+              certify(page,768,1024)
+              certify(page,1440,1000)
+              print("PASSING_YARDS_UX_PRESENTATION_STEP7_BRANCH_GREEN")
+              page.close()
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 900 artifacts/passing-yards-ux-presentation-step7/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py_step7_pid ]; then kill "$(cat /tmp/py_step7_pid)" 2>/dev/null || true; fi
+
+  public-step7-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Allow Streamlit deployment to publish
+        run: sleep 120
+
+      - name: Prove public Step 7 and freeze
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=260):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                      if token in body:
+                          print(body[:50000])
+                          raise RuntimeError("STEP7_PUBLIC_RUNTIME_ERROR:"+token)
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError("STEP7_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page=browser.new_page(viewport={"width":width,"height":height})
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
+                  frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                  assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
+                  assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
+                  assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
+                  assert root.get_attribute("data-passing-yards-failure-mode")=="HEALTHY"
+                  assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
+                  assert root.get_attribute("data-passing-yards-ux-presentation")=="v76"
+                  guide=root.locator('[data-passing-yards-ux-guide="v76"]')
+                  assert guide.count()==1
+                  assert guide.locator("a").count()==6
+                  for anchor in (
+                      "ks-py76-overview",
+                      "ks-py76-why",
+                      "ks-py76-matchup",
+                      "ks-py76-market",
+                      "ks-py76-gameday",
+                      "ks-py76-reliability",
+                  ):
+                      assert root.locator(f"#{anchor}").count()==1,anchor
+                  assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+                  assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+                  assert dims["docScroll"] <= dims["viewport"] + 2,dims
+                  print(f"PASSING_YARDS_UX_PRESENTATION_STEP7_PUBLIC_{width}_GREEN")
+                  page.close()
+              browser.close()
+          print("PASSING_YARDS_UX_PRESENTATION_STEP7_PUBLIC_GREEN")
+          print("PASSING_YARDS_UX_PRESENTATION_STEP7_FROZEN")
+          PY
