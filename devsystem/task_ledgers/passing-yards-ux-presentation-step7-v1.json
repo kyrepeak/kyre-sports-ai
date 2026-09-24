@@ -1,0 +1,112 @@
+{
+  "task": "passing-yards-ux-presentation-step7-v1",
+  "task_id": "passing-yards-ux-presentation-step7-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "d622c10fb32280d7b5ef65a14e5149400d0292eb",
+  "scope": "Passing Yards Step 7: UX / Presentation. Add presentation-only wayfinding and responsive polish over frozen V75/V226. Add an in-page analysis guide, stable section anchors, improved mobile touch targets, consistent spacing and single-column phone behavior for the certified Step 2-6 panels. No Streamlit/query/session navigation state changes. Preserve Step 6 serialization and Step 5 fresh-session purge protection. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or data behavior changes.",
+  "failed_layer": "BRANCH_STEP7_SECTION_ANCHOR_MATCH",
+  "new_build_mode": true,
+  "product_files_changed": true,
+  "id": "passing-yards-ux-presentation-step7-v1",
+  "step": 7,
+  "step7_status": "DONE",
+  "title": "Passing Yards UX / Presentation Step 7",
+  "base_main_sha": "d622c10fb32280d7b5ef65a14e5149400d0292eb",
+  "frozen_prior_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "frozen_prior_owner": "nfl_passing_yards_hub_v75",
+  "new_hub_owner": "nfl_passing_yards_hub_v76",
+  "new_router_owner": "streamlit_memory_lazy_router_v227",
+  "contract": {
+    "wayfinding": "six-link in-page analysis guide: Overview, Why, Matchup, Market, Game Day, Reliability",
+    "anchors": "stable HTML-only section anchors; no session/query/navigation state mutation",
+    "responsive": "390/768/1440 no horizontal overflow; touch-friendly links; one-column phone presentation",
+    "reliability": "reuse Step 6 global render serialization",
+    "route_safety": "new Step 7 module import failure falls back to frozen V226/V75",
+    "session_race_guard": "preserve Step 5 route-token prime before active Passing Yards routing"
+  },
+  "required": [
+    "Steps 1-6 remain frozen and unchanged",
+    "selected-QB page preserves V71/V72/V73/V74/V75 panels",
+    "Step 7 V76 root ready marker present",
+    "analysis guide renders exactly once",
+    "Overview/Why/Matchup/Market/Game Day/Reliability anchors all resolve",
+    "390px browser proof passes",
+    "768px browser proof passes",
+    "1440px browser proof passes",
+    "no horizontal overflow",
+    "public production proof passes",
+    "no TypeError",
+    "no KeyError",
+    "no Traceback",
+    "no RecursionError"
+  ],
+  "important": [
+    "Sportsbook projection influence remains 0.0%",
+    "stake sizing remains OFF",
+    "Step 7 is display-only",
+    "unrelated routes delegate unchanged"
+  ],
+  "optional": [
+    "retain browser artifacts when workflow infrastructure supports them"
+  ],
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v71.py",
+    "nfl_passing_yards_hub_v72.py",
+    "nfl_passing_yards_hub_v73.py",
+    "nfl_passing_yards_hub_v74.py",
+    "nfl_passing_yards_hub_v75.py",
+    "streamlit_memory_lazy_router_v222.py",
+    "streamlit_memory_lazy_router_v223.py",
+    "streamlit_memory_lazy_router_v224.py",
+    "streamlit_memory_lazy_router_v225.py",
+    "streamlit_memory_lazy_router_v226.py",
+    "nfl_game_day_availability_v1.py",
+    "nfl_passing_yards_personnel_v3.py",
+    "nfl_passing_yards_environment_v2.py",
+    "nfl_passing_yards_market_v1.py",
+    "nfl_passing_yards_market_api_v2.py"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "personnel_math_changed": false,
+  "environment_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_provider_behavior_changed": false,
+  "widget_keys_changed": false,
+  "navigation_state_changed": false,
+  "sportsbook_projection_influence": 0,
+  "stake_sizing_enabled": false,
+  "freeze_on_public_success": true,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [
+    {
+      "from": "BRANCH_STEP7_GUIDE_PLACEMENT",
+      "to": "BRANCH_STEP7_SECTION_ANCHOR_MATCH",
+      "evidence_run": 35940964789,
+      "evidence_job": 107449408884,
+      "failure_token": "AssertionError: ks-py76-why"
+    }
+  ],
+  "override_events": [],
+  "repair_epoch": "step7-section-anchor-partial-v2",
+  "repair_failed_run": 35940964789,
+  "repair_failed_job": 107449408884,
+  "repair_root_cause": "Guide now renders, but the Why anchor was absent. V71/V72 section opening tags carry additional runtime attributes after their version marker, while Step 7 matched an exact closing-angle token.",
+  "repair_patch": "Match V71/V72 section prefixes through the stable version attribute and insert IDs before the remaining attributes. Strengthen focused fixtures with trailing runtime attributes.",
+  "repair_state": "PATCH_PENDING_PROOF"
+}
