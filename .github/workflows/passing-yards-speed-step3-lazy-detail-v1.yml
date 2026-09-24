@@ -1,0 +1,265 @@
+name: NFL Passing Yards Speed Step 3 Lazy Detail
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json"
+      - "nfl_passing_yards_hub_v79.py"
+      - "streamlit_memory_lazy_router_v230.py"
+      - "tests/test_passing_yards_speed_step3_lazy_detail_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json"
+      - "nfl_passing_yards_hub_v79.py"
+      - "streamlit_memory_lazy_router_v230.py"
+      - "tests/test_passing_yards_speed_step3_lazy_detail_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-speed-step3-lazy-detail-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce exact Step 3 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json
+          nfl_passing_yards_hub_v79.py
+          streamlit_memory_lazy_router_v230.py
+          tests/test_passing_yards_speed-step3-lazy-detail-v1.py
+          EOF
+          # Correct the test filename in a deterministic way.
+          sed -i 's/speed-step3/speed_step3/' /tmp/expected.txt
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_SPEED_STEP3_SCOPE_GREEN"
+
+      - name: Prove Speed Steps 1-2 and frozen V78/V229 unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "SPEED_STEP3_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob nfl_passing_yards_hub_v78.py 0b07389adefb1731ff2934300c7ba1c86e709acd
+          check_blob streamlit_memory_lazy_router_v229.py 2ba4e85e45bd153c467dff0d588ed92d274f82e6
+          check_blob devsystem/task_ledgers/passing-yards-speed-step2-first-paint-v1.json 0856679b5097f8e8df3fb51633c0d3adb013eadc
+          echo "PASSING_YARDS_SPEED_STEP3_PRIOR_FREEZE_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install and test
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_speed_step3_lazy_detail_v1.py
+          python -m py_compile nfl_passing_yards_hub_v79.py streamlit_memory_lazy_router_v230.py app.py
+          grep -F 'from streamlit_memory_lazy_router_v230 import record_bootstrap_import_ms, render_app' app.py
+          echo "PASSING_YARDS_SPEED_STEP3_STATIC_GREEN"
+
+  branch-lazy-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Start branch app
+        run: |
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/py_step3.log 2>&1 &
+          echo $! >/tmp/py_step3_pid
+      - name: Prove lazy shell precedes heavy analysis
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          params={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
+          }
+          route=base+"/?"+urlencode(params)
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+            try:
+              if requests.get(base,timeout=2).status_code<500: break
+            except Exception: pass
+            time.sleep(.3)
+          else: raise RuntimeError("SPEED_STEP3_BRANCH_APP_NOT_READY")
+
+          def find(page,selector,timeout):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1: return frame,loc.first
+                except Exception: pass
+              time.sleep(.15)
+            raise RuntimeError("SPEED_STEP3_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+            started=time.monotonic()
+            page.goto(route,wait_until="domcontentloaded",timeout=120000)
+            frame,shell=find(page,'[data-passing-yards-lazy-detail="v79"]',30)
+            ready=time.monotonic()-started
+            if ready>12: raise RuntimeError(f"SPEED_STEP3_BRANCH_LAZY_BUDGET:{ready:.3f}")
+            text=shell.inner_text(timeout=5000)
+            if "Jordan Love" not in text or "Load Full Analysis" not in text:
+              raise RuntimeError("SPEED_STEP3_BRANCH_LAZY_CONTENT_MISSING")
+            time.sleep(2)
+            for fr in page.frames:
+              if fr.locator('[data-passing-yards-qb-detail="v59"]').count():
+                raise RuntimeError("SPEED_STEP3_BRANCH_HEAVY_PIPELINE_RAN_EARLY")
+            print(f"PASSING_YARDS_SPEED_STEP3_BRANCH_LAZY_GREEN seconds={ready:.3f}")
+            print("PASSING_YARDS_SPEED_STEP3_BRANCH_HEAVY_DEFERRED_GREEN")
+            context.close(); browser.close()
+          PY
+      - name: Print log on failure
+        if: failure()
+        run: tail -n 700 /tmp/py_step3.log || true
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_step3_pid)" 2>/dev/null || true
+
+  public-lazy-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove public lazy route and full opt-in
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
+          }
+          lazy=base+"/?"+urlencode(params)
+
+          def find(page,selector,timeout,interval=.2):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1: return frame,loc.first
+                except Exception: pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP3_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            # deployment activation
+            deadline=time.monotonic()+480
+            while True:
+              b=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              c=b.new_context(viewport={"width":390,"height":844}); page=c.new_page()
+              try:
+                page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+                try:
+                  find(page,'[data-passing-yards-lazy-detail="v79"]',30)
+                  print("PASSING_YARDS_SPEED_STEP3_PUBLIC_DEPLOYMENT_ACTIVE")
+                  c.close(); b.close(); break
+                except Exception: pass
+              finally:
+                try:c.close()
+                except Exception:pass
+                try:b.close()
+                except Exception:pass
+              if time.monotonic()>=deadline: raise RuntimeError("SPEED_STEP3_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+              time.sleep(12)
+
+            b=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            c=b.new_context(viewport={"width":390,"height":844}); page=c.new_page()
+            started=time.monotonic(); page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+            frame,shell=find(page,'[data-passing-yards-lazy-detail="v79"]',45)
+            ready=time.monotonic()-started
+            if ready>15: raise RuntimeError(f"SPEED_STEP3_PUBLIC_LAZY_BUDGET:{ready:.3f}")
+            text=shell.inner_text(timeout=5000)
+            if "Jordan Love" not in text: raise RuntimeError("SPEED_STEP3_PUBLIC_IDENTITY_MISSING")
+            for width,height in ((390,844),(768,1024),(1440,1000)):
+              page.set_viewport_size({"width":width,"height":height})
+              dims=frame.locator("body").evaluate("""e=>({body:e.scrollWidth,doc:document.documentElement.scrollWidth,vp:window.innerWidth})""")
+              if dims["body"]>dims["vp"]+2 or dims["doc"]>dims["vp"]+2:
+                raise RuntimeError(f"SPEED_STEP3_PUBLIC_LAZY_OVERFLOW:{width}:{dims}")
+              print(f"PASSING_YARDS_SPEED_STEP3_PUBLIC_LAZY_{width}_GREEN")
+
+            full=lazy+"&ks_py_full=1"
+            page.goto(full,wait_until="domcontentloaded",timeout=120000)
+            full_frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',240,.4)
+            name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name!="Jordan Love": raise RuntimeError("SPEED_STEP3_PUBLIC_FULL_IDENTITY:"+name)
+            body=full_frame.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body: raise RuntimeError("SPEED_STEP3_PUBLIC_FULL_RUNTIME_"+token)
+
+            print(f"PASSING_YARDS_SPEED_STEP3_PUBLIC_LAZY_GREEN seconds={ready:.3f}")
+            print("PASSING_YARDS_SPEED_STEP3_PUBLIC_FULL_OPT_IN_GREEN")
+            print("PASSING_YARDS_SPEED_STEP3_GREEN")
+            print("PASSING_YARDS_SPEED_STEP3_FROZEN")
+            c.close(); b.close()
+          PY
