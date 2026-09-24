@@ -9,3 +9,4 @@ posthog~=7.48
 # V180 Streamlit hard rebuild: refresh CFB Game Total Step 5 module cache
 # NFL Passing Yards Speed Steps 3-4 certified full-redeploy trigger 2026-09-24 R1
 # NFL Passing Yards Speed Step 5 payload-dedupe full-redeploy trigger 2026-09-24 R1
+# NFL Passing Yards Speed Step 5 certified public full-redeploy trigger 2026-09-24 R2
