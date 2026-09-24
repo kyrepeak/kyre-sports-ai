@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "bf93a6b988d120f9da225cabd3b81ae14ecc38f4",
   "scope": "Passing Yards Step 8: Performance. Preserve frozen Steps 1-7 while adding machine-readable selected-QB composition timing, full Passing Yards server-render timing, safe inter-tag HTML whitespace compaction, and memoized active-route Step 8 import preflight. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or navigation-state behavior changes.",
-  "failed_layer": "NONE",
+  "failed_layer": "STEP8_STATIC_SCOPE_VERIFIER_PATH",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-performance-step8-v1",
@@ -97,6 +97,20 @@
     "events": [],
     "consumed_receipts": []
   },
-  "transition_history": [],
-  "override_events": []
+  "transition_history": [
+    {
+      "from": "STEP8_STATIC_CONTRACT",
+      "to": "STEP8_STATIC_SCOPE_VERIFIER_PATH",
+      "evidence_run": 35944246747,
+      "evidence_job": 107458563606,
+      "failure_token": "expected tests/test-passing-yards-performance-step8-v1.py; actual tests/test_passing_yards_performance_step8_v1.py"
+    }
+  ],
+  "override_events": [],
+  "repair_epoch": "step8-static-scope-path-v1",
+  "repair_failed_run": 35944246747,
+  "repair_failed_job": 107458563606,
+  "repair_root_cause": "The Step 8 workflow exact-scope verifier expected a hyphenated test filename while the repository file uses the underscore filename tests/test_passing_yards_performance_step8_v1.py.",
+  "repair_patch": "Correct the exact-scope expected test path only; product code and frozen Steps 1-7 remain unchanged.",
+  "repair_state": "PATCH_PENDING_PROOF"
 }
