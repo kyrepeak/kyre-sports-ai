@@ -203,6 +203,10 @@ jobs:
             frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',300,.35)
             _,dedupe=find(page,'[data-passing-yards-payload-dedupe="v81"]',30)
             avoided=int(dedupe.get_attribute("data-step5-avoided-duplicate-bytes") or "0")
+            selected_total=int(dedupe.get_attribute("data-step5-selected-payload-bytes") or "0")
+            payload_sizes={}
+            for key in ("identity","market","projection","context","distribution","profile","defense","pressure","personnel","environment"):
+              payload_sizes[key]=int(dedupe.get_attribute(f"data-step5-bytes-{key}") or "0")
             if avoided <= 1024:
               raise RuntimeError(f"SPEED_STEP5_BRANCH_DEDUPE_TOO_SMALL:{avoided}")
 
@@ -222,6 +226,9 @@ jobs:
               html_bytes=0
 
             print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_AVOIDED_DUPLICATE_BYTES={avoided}")
+            print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_SELECTED_PAYLOAD_BYTES={selected_total}")
+            for key,value in payload_sizes.items():
+              print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_PAYLOAD_{key.upper()}_BYTES={value}")
             print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_HTML_BYTES={html_bytes}")
             print("PASSING_YARDS_SPEED_STEP5_BRANCH_V81_OWNER_GREEN")
             print("PASSING_YARDS_SPEED_STEP5_BRANCH_LAZY_GREEN")
