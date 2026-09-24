@@ -1,0 +1,173 @@
+name: NFL Passing Yards Speed Step 6 Full Latency
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step6-full-latency-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json"
+      - "nfl_passing_yards_hub_v82.py"
+      - "streamlit_memory_lazy_router_v233.py"
+      - "tests/test_passing_yards_speed_step6_full_latency_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step6-full-latency-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json"
+      - "nfl_passing_yards_hub_v82.py"
+      - "streamlit_memory_lazy_router_v233.py"
+      - "tests/test_passing_yards_speed_step6_full_latency_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-speed-step6-full-latency-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce Step 6 scope and protect Steps 1-5
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+            cat > /tmp/profile.txt <<'EOF'
+            .github/workflows/passing-yards-speed-step6-full-latency-v1.yml
+            devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json
+            EOF
+            cat > /tmp/build.txt <<'EOF'
+            .github/workflows/passing-yards-speed-step6-full-latency-v1.yml
+            app.py
+            devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json
+            nfl_passing_yards_hub_v82.py
+            streamlit_memory_lazy_router_v233.py
+            tests/test_passing_yards_speed-step6-full-latency-v1.py
+            EOF
+            sort -o /tmp/profile.txt /tmp/profile.txt
+            sort -o /tmp/build.txt /tmp/build.txt
+            if diff -q /tmp/profile.txt /tmp/actual.txt >/dev/null; then
+              echo "PASSING_YARDS_SPEED_STEP6_PROFILE_SCOPE_GREEN"
+            elif diff -q /tmp/build.txt /tmp/actual.txt >/dev/null; then
+              echo "PASSING_YARDS_SPEED_STEP6_BUILD_SCOPE_GREEN"
+            else
+              echo "Unexpected Step 6 diff:"; cat /tmp/actual.txt; exit 1
+            fi
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "SPEED_STEP6_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob nfl_passing_yards_hub_v81.py a57d01f1adf051b16508abbd646ed22f4267075e
+          check_blob streamlit_memory_lazy_router_v232.py e094ef9a73f69130364f4fcd830040c85c4d87fd
+          check_blob devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json 4f8e8d67a41d3861803253bf0b331534e3cfee41
+          check_blob .github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml c95832f396f63d6fb44dc63f9b1877bb6f6622cb
+          grep -F 'from streamlit_memory_lazy_router_v232 import record_bootstrap_import_ms, render_app' app.py
+          echo "PASSING_YARDS_SPEED_STEP6_STEPS1_5_FROZEN_GREEN"
+
+  profile-current-full-analysis:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install one-shot browser profiler
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Classify remaining full-analysis latency owner
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER","ks_py_full":"1",
+            "ks_step6_profile":"1"
+          }
+          url=base+"/?"+urlencode(params)
+
+          def find(page,selector,timeout,interval=.2):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame,loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP6_PROFILE_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+            started=time.monotonic()
+            page.goto(url,wait_until="domcontentloaded",timeout=120000)
+
+            find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',45)
+            owner_ready=time.monotonic()-started
+            frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',120,.25)
+            root_ready=time.monotonic()-started
+            _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',60,.2)
+            perf_ready=time.monotonic()-started
+
+            name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name!="Jordan Love":
+              raise RuntimeError("SPEED_STEP6_PROFILE_IDENTITY:"+name)
+
+            server_ms=float(perf.get_attribute("data-step8-server-render-ms") or "0")
+            compose_ms=float(perf.get_attribute("data-step8-compose-ms") or "0")
+            html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
+            if server_ms<=0:
+              raise RuntimeError("SPEED_STEP6_PROFILE_SERVER_MS_MISSING")
+
+            perf_ms=perf_ready*1000.0
+            server_ratio=server_ms/perf_ms if perf_ms else 0.0
+            nonserver_ms=max(0.0,perf_ms-server_ms)
+            if server_ratio>=0.60:
+              owner="SERVER_PIPELINE"
+            elif nonserver_ms>=5000:
+              owner="BROWSER_TRANSPORT_DOM"
+            else:
+              owner="MIXED"
+
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_OWNER_READY_SECONDS={owner_ready:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_ROOT_READY_SECONDS={root_ready:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_PERF_READY_SECONDS={perf_ready:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_SERVER_RENDER_MS={server_ms:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_COMPOSE_MS={compose_ms:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_NSERVER_MS={nonserver_ms:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_SERVER_RATIO={server_ratio:.4f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_HTML_BYTES={html_bytes}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_OWNER={owner}")
+            print("PASSING_YARDS_SPEED_STEP6_PROFILE_GREEN")
+            context.close(); browser.close()
+          PY
