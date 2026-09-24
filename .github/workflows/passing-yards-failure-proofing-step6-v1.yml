@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce exact Step 6 scope
+      - name: Enforce exact Step 6 build or public-render repair scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -50,7 +50,8 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/build_scope.txt <<'EOF'
           .github/workflows/passing-yards-failure-proofing-step6-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-failure-proofing-step6-v1.json
@@ -58,9 +59,25 @@ jobs:
           streamlit_memory_lazy_router_v226.py
           tests/test_passing_yards_failure_proofing_step6_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_FAILURE_PROOFING_STEP6_SCOPE_GREEN"
+          sort -o /tmp/build_scope.txt /tmp/build_scope.txt
+
+          cat > /tmp/public_render_repair_scope.txt <<'EOF'
+          .github/workflows/passing-yards-failure-proofing-step6-v1.yml
+          devsystem/task_ledgers/passing-yards-failure-proofing-step6-v1.json
+          nfl_passing_yards_hub_v75.py
+          tests/test_passing_yards_failure_proofing_step6_v1.py
+          EOF
+          sort -o /tmp/public_render_repair_scope.txt /tmp/public_render_repair_scope.txt
+
+          if diff -q /tmp/build_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_FAILURE_PROOFING_STEP6_SCOPE_GREEN"
+          elif diff -q /tmp/public_render_repair_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_FAILURE_PROOFING_STEP6_PUBLIC_RENDER_REPAIR_SCOPE_GREEN"
+          else
+            echo "PASSING_YARDS_FAILURE_PROOFING_STEP6_SCOPE_MISMATCH"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - name: Prove Steps 1-5 and data-math owners remain frozen
         if: github.event_name == 'pull_request'
@@ -119,6 +136,7 @@ jobs:
           assert v75.FROZEN_FALLBACK == "nfl_passing_yards_hub_v73"
           assert v75.NEW_PHASE_STEP == 6
           assert v75.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v75.PUBLIC_RENDER_SERIALIZATION == "passing-yards-global-render-rlock-v1"
           assert v226.FROZEN_ROUTER == "streamlit_memory_lazy_router_v225"
           assert v226.PASSING_HUB == "nfl_passing_yards_hub_v75"
           assert v226.FALLBACK_HUB == "nfl_passing_yards_hub_v74"
