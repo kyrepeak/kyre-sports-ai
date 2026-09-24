@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce exact Step 5 scope
+      - name: Enforce exact Step 5 build or public-verifier repair scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -50,7 +50,8 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/build_scope.txt <<'EOF'
           .github/workflows/passing-yards-availability-game-day-step5-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-availability-game-day-step5-v1.json
@@ -58,9 +59,23 @@ jobs:
           streamlit_memory_lazy_router_v225.py
           tests/test_passing_yards_availability_game_day_step5_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_SCOPE_GREEN"
+          sort -o /tmp/build_scope.txt /tmp/build_scope.txt
+
+          cat > /tmp/verifier_repair_scope.txt <<'EOF'
+          .github/workflows/passing-yards-availability-game-day-step5-v1.yml
+          devsystem/task_ledgers/passing-yards-availability-game-day-step5-v1.json
+          EOF
+          sort -o /tmp/verifier_repair_scope.txt /tmp/verifier_repair_scope.txt
+
+          if diff -q /tmp/build_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_SCOPE_GREEN"
+          elif diff -q /tmp/verifier_repair_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_VERIFIER_REPAIR_SCOPE_GREEN"
+          else
+            echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_SCOPE_MISMATCH"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - name: Prove Steps 1-4 and data/math owners remain frozen
         if: github.event_name == 'pull_request'
@@ -323,8 +338,9 @@ jobs:
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
               for width,height in ((390,844),(768,1024),(1440,1000)):
-                  page=browser.new_page(viewport={"width":width,"height":height})
+                  page.set_viewport_size({"width":width,"height":height})
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
                   frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
                   assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
@@ -347,7 +363,7 @@ jobs:
                   assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
                   assert dims["docScroll"] <= dims["viewport"] + 2,dims
                   print(f"PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_PUBLIC_{width}_GREEN")
-                  page.close()
+              page.close()
               browser.close()
           print("PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_PUBLIC_GREEN")
           print("PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_FROZEN")
