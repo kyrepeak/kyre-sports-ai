@@ -39,9 +39,14 @@ MAY_MODIFY_NAVIGATION_STATE = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
 HTML_COMPACTION = "intertag-whitespace-v1"
+SESSION_COMPOSE_KEY = "passing_yards_performance_step8_v1_compose"
 SESSION_PERF_KEY = "passing_yards_performance_step8_v1_last"
 
 _INTERTAG = re.compile(r">\s+<")
+
+
+def _utf8_size(value: str) -> int:
+    return len(str(value or "").encode("utf-8"))
 
 
 def _compact_intertag_whitespace(body: str) -> str:
