@@ -11,7 +11,7 @@ BODY = """
          data-passing-yards-live-market-ready="v73"
          data-passing-yards-availability-game-day-ready="v74"
          data-passing-yards-failure-proofing-ready="v75">
-  <section class="ks-py59-player"><b>Jordan Love</b></section>
+  <article class="ks-py59-player"><b>Jordan Love</b></article>
   <section class="ks-py71-explain" data-passing-yards-projection-explainability="v71"></section>
   <section class="ks-py72-matchup" data-passing-yards-matchup-intelligence="v72"></section>
   <section class="ks-py73-market" data-passing-yards-live-market="v73"></section>
