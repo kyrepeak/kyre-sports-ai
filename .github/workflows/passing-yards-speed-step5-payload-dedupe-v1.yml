@@ -61,12 +61,21 @@ jobs:
           .github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml
           devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json
           EOF
+          cat > /tmp/expected-deployment-repair.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json
+          requirements.txt
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
+          sort -o /tmp/expected-deployment-repair.txt /tmp/expected-deployment-repair.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_SPEED_STEP5_SCOPE_GREEN"
           elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_SPEED_STEP5_VERIFIER_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/expected-deployment-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEP5_DEPLOYMENT_REPAIR_SCOPE_GREEN"
           else
             echo "Unexpected Speed Step 5 diff:"
             cat /tmp/actual.txt
