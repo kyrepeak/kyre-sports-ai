@@ -1,0 +1,257 @@
+name: NFL Passing Yards Step 9 Permanent Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-step9-permanent-freeze-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-step9-permanent-freeze-v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-step9-permanent-freeze-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-step9-permanent-freeze-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-step9-freeze-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  permanent-freeze-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce verifier-only Step 9 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-step9-permanent-freeze-v1.yml
+          devsystem/task_ledgers/passing-yards-step9-permanent-freeze-v1.json
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_STEP9_VERIFIER_ONLY_SCOPE_GREEN"
+
+      - name: Prove Steps 1-8 frozen byte-for-byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              "app.py": "233b7295706db346b570f15241758b35bb76d6f3",
+              ".github/workflows/passing-yards-performance-step8-v2.yml": "a28c0f721c03d2117dd8af4e25fea40d2eec1dd6",
+              "nfl_passing_yards_hub_v71.py": "96fe4d3ca27b75e6b40cb86f4128cab3e72ca1c9",
+              "nfl_passing_yards_hub_v72.py": "f6765b74582f6ed7581fe30717f0cd86b73ceb96",
+              "nfl_passing_yards_hub_v73.py": "d5c01c05f02a622cc4f087ec0d60766427c3b518",
+              "nfl_passing_yards_hub_v74.py": "381d95d5059eafcbbb7d9e0d108fcd54c5e43951",
+              "nfl_passing_yards_hub_v75.py": "91364a18e2da45ea9b1908dfa65db794cd9cd6b6",
+              "nfl_passing_yards_hub_v76.py": "509368a9a7ad6618f1470f287c9d1b3f22e486ad",
+              "nfl_passing_yards_hub_v77.py": "b201bfac5af278ebbd7bdff63f0900526af686d1",
+              "streamlit_memory_lazy_router_v222.py": "507ef5da545f000d582e9a64d9cb80eb9c77f1e7",
+              "streamlit_memory_lazy_router_v223.py": "81965b6a2f6942b0d30151831f7e288b59699484",
+              "streamlit_memory_lazy_router_v224.py": "49890ce7828b720df25b3d53a8faed0043403d7b",
+              "streamlit_memory_lazy_router_v225.py": "0de2e2ec55cf5300db1b2d9dddc913b96a0de63d",
+              "streamlit_memory_lazy_router_v226.py": "9b22e1e52d48ea5bc5749aae8c303dfa964f4c08",
+              "streamlit_memory_lazy_router_v227.py": "571f50dae1e5f6489ca6ce40ac4fd3256f6ce7e0",
+              "streamlit_memory_lazy_router_v228.py": "643d0c05efbde8593f197f0142fea205572e36af",
+              "nfl_game_day_availability_v1.py": "8f534b8183f380b988dfb4d7b585c6984bfa85de",
+              "nfl_passing_yards_personnel_v3.py": "a2104db826d5183dd6c4c126216ac22f0488a780",
+              "nfl_passing_yards_environment_v2.py": "99a10d3cd08b86599860066184fc242b599028ec",
+              "nfl_passing_yards_market_v1.py": "892bd14ae62a5040dcf5d9c9c7c308def0dfde64",
+              "nfl_passing_yards_market_api_v2.py": "f18c9aa9c122d306d1670538e45ebe0caabe5d92",
+              "devsystem/task_ledgers/passing-yards-performance-step8-v1.json": "9cbb88400b3b6e5920410799baa37ae1ed487c3c",
+              "tests/test_passing_yards_ux_presentation_step7_v1.py": "f950561d3a0719e26fbe47c613d0e2fd104211e5",
+              "tests/test_passing_yards_performance_step8_v1.py": "0555c28f03e7c0d76c901f8424fc95d470bc52c9",
+          }
+
+          for path, wanted in expected.items():
+              got = subprocess.check_output(["git", "hash-object", path], text=True).strip()
+              if got != wanted:
+                  raise SystemExit(f"STEP9_FROZEN_BLOB_CHANGED:{path}:{got}:{wanted}")
+
+          print("PASSING_YARDS_STEPS1_8_BYTE_FREEZE_GREEN")
+          PY
+
+      - name: Install frozen test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Re-prove frozen Step 7 and Step 8 contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile app.py nfl_passing_yards_hub_v77.py streamlit_memory_lazy_router_v228.py
+          python -m pytest -q \
+            tests/test_passing_yards_ux_presentation_step7_v1.py \
+            tests/test_passing_yards_performance_step8_v1.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-step9-permanent-freeze-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step9_status"] == "DONE"
+          assert ledger["baseline_main_sha"] == "91f8d2210334f4fb5d8cba4fbe692e50f0322daa"
+          assert ledger["sportsbook_projection_influence"] == 0
+          assert ledger["stake_sizing_enabled"] is False
+          assert ledger["frozen_prior_steps"] == [1,2,3,4,5,6,7,8]
+
+          app=Path("app.py").read_text()
+          router=Path("streamlit_memory_lazy_router_v228.py").read_text()
+          hub=Path("nfl_passing_yards_hub_v77.py").read_text()
+
+          assert "from streamlit_memory_lazy_router_v228 import record_bootstrap_import_ms, render_app" in app
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v77"' in router
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v76"' in hub
+          assert 'data-passing-yards-performance-ready="v77"' in hub
+
+          print("PASSING_YARDS_STEP9_STATIC_FREEZE_GREEN")
+          PY
+
+  public-production-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: permanent-freeze-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Steps 1-8 are still live and freeze Step 9
+        run: |
+          python - <<'PY'
+          import time
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+          budget=180.0
+
+          app=Path("app.py").read_text()
+          router=Path("streamlit_memory_lazy_router_v228.py").read_text()
+          hub=Path("nfl_passing_yards_hub_v77.py").read_text()
+          assert "from streamlit_memory_lazy_router_v228 import record_bootstrap_import_ms, render_app" in app
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v77"' in router
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v76"' in hub
+          print("PASSING_YARDS_STEP9_PUBLIC_SOURCE_OWNERSHIP_GREEN")
+
+          def find(page, selector, timeout):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count() >= 1:
+                              return frame, loc.first
+                      except Exception:
+                          pass
+                  time.sleep(.5)
+              raise RuntimeError("STEP9_SELECTOR_NOT_READY:"+selector)
+
+          def certify(p,width,height):
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":width,"height":height})
+              page=context.new_page()
+              try:
+                  started=time.monotonic()
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
+                  frame,root=find(
+                      page,
+                      '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
+                      260,
+                  )
+                  _,style=find(page,'style[data-passing-yards-ux-presentation-css="v76"]',30)
+                  _,guide=find(page,'[data-passing-yards-ux-guide="v76"]',30)
+                  ready_s=time.monotonic()-started
+                  if ready_s > budget:
+                      raise RuntimeError(f"STEP9_PUBLIC_PERFORMANCE_BUDGET_FAILED:{width}:{ready_s:.3f}")
+
+                  name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+                  if name != "Jordan Love":
+                      raise RuntimeError("STEP9_PUBLIC_QB_IDENTITY_FAILED:"+name)
+
+                  attrs={
+                      "v71":root.get_attribute("data-passing-yards-explainability-ready"),
+                      "v72":root.get_attribute("data-passing-yards-matchup-intelligence-ready"),
+                      "v73":root.get_attribute("data-passing-yards-live-market-ready"),
+                      "v74":root.get_attribute("data-passing-yards-availability-game-day-ready"),
+                      "v75":root.get_attribute("data-passing-yards-failure-proofing-ready"),
+                      "v76":root.get_attribute("data-passing-yards-ux-presentation-ready"),
+                  }
+                  expected={"v71":"v71","v72":"v72","v73":"v73","v74":"v74","v75":"v75","v76":"v76"}
+                  if attrs != expected:
+                      raise RuntimeError(f"STEP9_PUBLIC_FROZEN_CONTRACT_FAILED:{attrs}")
+                  if style.count() != 1 or guide.count() != 1:
+                      raise RuntimeError("STEP9_PUBLIC_V76_STRUCTURE_FAILED")
+
+                  body=frame.locator("body").inner_text(timeout=5000)
+                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                      if token in body:
+                          raise RuntimeError("STEP9_PUBLIC_RUNTIME_ERROR_"+token)
+
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+                  if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
+                      raise RuntimeError(f"STEP9_PUBLIC_OVERFLOW_FAILED:{width}:{dims}")
+
+                  print(f"PASSING_YARDS_STEP9_PUBLIC_{width}_GREEN ready_s={ready_s:.3f}")
+              finally:
+                  try:
+                      context.close()
+                  except Exception:
+                      pass
+                  try:
+                      browser.close()
+                  except Exception:
+                      pass
+
+          with sync_playwright() as p:
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  certify(p,width,height)
+
+          print("PASSING_YARDS_STEP9_PUBLIC_GREEN")
+          print("PASSING_YARDS_STEP9_FROZEN")
+          PY
