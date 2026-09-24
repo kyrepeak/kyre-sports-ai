@@ -14,6 +14,7 @@ state, or sportsbook handling.
 from __future__ import annotations
 
 from html import escape
+import threading
 from typing import Any
 
 import nfl_passing_yards_hub_v73 as step4_owner
@@ -39,6 +40,8 @@ MAY_MODIFY_WIDGET_KEYS = False
 MAY_MODIFY_NAVIGATION_STATE = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
+PUBLIC_RENDER_SERIALIZATION = "passing-yards-global-render-rlock-v1"
+_RENDER_LOCK = threading.RLock()
 
 _FAILURE_CSS = r"""
 <style data-passing-yards-failure-proofing-css="v75">
@@ -140,13 +143,29 @@ def _selected_analysis_v75(captured: dict[str, list[str]], slot: int) -> str:
     return _inject_failure_proofing(body, "HEALTHY")
 
 
-def render_nfl_passing_yards_hub() -> None:
+def _run_serialized(render_func):
+    """Serialize the legacy Passing Yards render stack inside one process.
+
+    Frozen lower layers temporarily monkeypatch shared module-level builders.
+    Streamlit sessions share one interpreter, so overlapping sessions can observe
+    another session's temporary builder and recurse. V75 owns the containment
+    boundary and serializes only the Passing Yards render critical section.
+    """
+    with _RENDER_LOCK:
+        return render_func()
+
+
+def _render_step6_locked() -> None:
     original = prior._selected_analysis_v74
     prior._selected_analysis_v74 = _selected_analysis_v75
     try:
         return prior.render_nfl_passing_yards_hub()
     finally:
         prior._selected_analysis_v74 = original
+
+
+def render_nfl_passing_yards_hub() -> None:
+    return _run_serialized(_render_step6_locked)
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
@@ -171,9 +190,11 @@ __all__ = [
     "MODEL_VERSION",
     "NEW_PHASE_STEP",
     "PRESENTATION_ONLY",
+    "PUBLIC_RENDER_SERIALIZATION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "_inject_failure_proofing",
+    "_run_serialized",
     "_selected_analysis_v75",
     "render_nfl_hub",
     "render_nfl_passing_yards_hub",
