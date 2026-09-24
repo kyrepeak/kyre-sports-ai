@@ -129,8 +129,25 @@ jobs:
             if "ks_py_full=1" not in href:
               raise RuntimeError("SPEED_STEP7_PROFILE_FULL_LINK_CONTRACT_MISSING")
 
+            target=load.get_attribute("target") or ""
+            print(f"PASSING_YARDS_SPEED_STEP7_PROFILE_HREF={href}")
+            print(f"PASSING_YARDS_SPEED_STEP7_PROFILE_TARGET={target or 'SAME_DOCUMENT'}")
             started=time.monotonic()
             load.click(timeout=10000,no_wait_after=True)
+            time.sleep(2)
+            print(f"PASSING_YARDS_SPEED_STEP7_PROFILE_CONTEXT_PAGES={len(context.pages)}")
+            for idx,candidate in enumerate(context.pages):
+              try:
+                print(f"PASSING_YARDS_SPEED_STEP7_PROFILE_PAGE_{idx}_URL={candidate.url}")
+              except Exception:
+                pass
+            active=context.pages[-1]
+            page=active
+            try:
+              page.wait_for_url("**ks_py_full=1**",timeout=15000)
+            except Exception:
+              pass
+            print(f"PASSING_YARDS_SPEED_STEP7_PROFILE_ACTIVE_URL={page.url}")
             frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',90,.15)
             click_ready=time.monotonic()-started
             origin_after=float(page.evaluate("performance.timeOrigin"))
