@@ -72,5 +72,19 @@
       3,
       4
     ]
+  },
+  "public_route_diagnostic_v2": {
+    "source_main": "5352f1f8be28f501f5f8c1b8218015e74d5b3fa4",
+    "failed_run": 36042311652,
+    "failure_token": "SPEED_STEP4_PUBLIC_SELECTOR_NOT_READY:[data-passing-yards-lazy-detail=\"v79\"]",
+    "purpose": "Inspect live Streamlit HTTP status, frame URLs, visible body text, console/page errors, and Passing Yards DOM marker counts from a GitHub-hosted browser without changing product/runtime behavior.",
+    "product_code_changed": false,
+    "app_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_changed": false,
+    "context_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_behavior_changed": false
   }
 }
