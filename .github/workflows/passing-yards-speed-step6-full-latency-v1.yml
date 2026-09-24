@@ -37,7 +37,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Enforce Step 6 scope and protect Steps 1-5
+      - name: Enforce Step 6 build scope and protect Steps 1-5
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -45,28 +45,14 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-            printf '%s\n' \
-              '.github/workflows/passing-yards-speed-step6-full-latency-v1.yml' \
-              'devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json' \
-              > /tmp/profile.txt
-            printf '%s\n' \
-              '.github/workflows/passing-yards-speed-step6-full-latency-v1.yml' \
-              'app.py' \
-              'devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json' \
-              'nfl_passing_yards_hub_v82.py' \
-              'streamlit_memory_lazy_router_v233.py' \
-              'tests/test_passing_yards_speed_step6_full_latency_v1.py' \
-              > /tmp/build.txt
-            sort -o /tmp/profile.txt /tmp/profile.txt
-            sort -o /tmp/build.txt /tmp/build.txt
-            if diff -q /tmp/profile.txt /tmp/actual.txt >/dev/null; then
-              echo "PASSING_YARDS_SPEED_STEP6_PROFILE_SCOPE_GREEN"
-            elif diff -q /tmp/build.txt /tmp/actual.txt >/dev/null; then
-              echo "PASSING_YARDS_SPEED_STEP6_BUILD_SCOPE_GREEN"
-            else
-              echo "Unexpected Step 6 diff:"; cat /tmp/actual.txt; exit 1
+            actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+            expected="$(printf '%s\n'               '.github/workflows/passing-yards-speed-step6-full-latency-v1.yml'               'app.py'               'devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json'               'nfl_passing_yards_hub_v82.py'               'streamlit_memory_lazy_router_v233.py'               'tests/test_passing_yards_speed_step6_full_latency_v1.py' | sort)"
+            if [ "$actual" != "$expected" ]; then
+              echo "Unexpected Step 6 diff:"
+              printf '%s\n' "$actual"
+              exit 1
             fi
+            echo "PASSING_YARDS_SPEED_STEP6_SCOPE_GREEN"
           fi
 
           check_blob () {
@@ -77,40 +63,170 @@ jobs:
           check_blob streamlit_memory_lazy_router_v232.py e094ef9a73f69130364f4fcd830040c85c4d87fd
           check_blob devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json 4f8e8d67a41d3861803253bf0b331534e3cfee41
           check_blob .github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml c95832f396f63d6fb44dc63f9b1877bb6f6622cb
-          grep -F 'from streamlit_memory_lazy_router_v232 import record_bootstrap_import_ms, render_app' app.py
           echo "PASSING_YARDS_SPEED_STEP6_STEPS1_5_FROZEN_GREEN"
 
-  profile-current-full-analysis:
-    if: github.event_name == 'pull_request'
-    needs: static-contract
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install one-shot browser profiler
+
+      - name: Test concurrent evidence contract
         run: |
-          python -m pip install --disable-pip-version-check -q playwright
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q             tests/test_passing_yards_speed_step6_full_latency_v1.py             tests/test_passing_yards_speed_step5_payload_dedupe_v1.py
+          python -m py_compile nfl_passing_yards_hub_v82.py streamlit_memory_lazy_router_v233.py app.py
+          grep -F 'from streamlit_memory_lazy_router_v233 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v81"' nfl_passing_yards_hub_v82.py
+          grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v82"' streamlit_memory_lazy_router_v233.py
+          echo "PASSING_YARDS_SPEED_STEP6_STATIC_GREEN"
+
+  branch-live-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install branch browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q requests playwright
           python -m playwright install --with-deps chromium
-      - name: Classify remaining full-analysis latency owner
+      - name: Start branch app
+        run: |
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/py_step6.log 2>&1 &
+          echo $! >/tmp/py_step6_pid
+      - name: Prove concurrent cold full analysis
         run: |
           python - <<'PY'
           import time
           from urllib.parse import urlencode
+          import requests
           from playwright.sync_api import sync_playwright
 
-          base="https://kyre-sports-ai.streamlit.app"
+          base="http://127.0.0.1:8501"
           params={
             "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
             "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
             "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
             "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
-            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER","ks_py_full":"1",
-            "ks_step6_profile":"1"
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER","ks_py_full":"1"
           }
-          url=base+"/?"+urlencode(params)
+          full=base+"/?"+urlencode(params)
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+            try:
+              if requests.get(base,timeout=2).status_code<500: break
+            except Exception: pass
+            time.sleep(.3)
+          else: raise RuntimeError("SPEED_STEP6_BRANCH_APP_NOT_READY")
+
+          def find(page,selector,timeout,interval=.15):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1: return frame,loc.first
+                except Exception: pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP6_BRANCH_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+            started=time.monotonic()
+            page.goto(full,wait_until="domcontentloaded",timeout=120000)
+            find(page,'[data-passing-yards-concurrent-prefetch-owner="v82"]',20)
+            find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',20)
+            find(page,'[data-passing-yards-evidence-cache="v80"]',20)
+            frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',90,.2)
+            ready=time.monotonic()-started
+            _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',15)
+            _,step6=find(page,'[data-passing-yards-concurrent-prefetch="v82"]',15)
+
+            name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name!="Jordan Love": raise RuntimeError("SPEED_STEP6_BRANCH_IDENTITY:"+name)
+            server_ms=float(perf.get_attribute("data-step8-server-render-ms") or "0")
+            html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
+            launched=int(step6.get_attribute("data-step6-prefetch-launched") or "0")
+            hits=int(step6.get_attribute("data-step6-prefetch-hits") or "0")
+            fallbacks=int(step6.get_attribute("data-step6-prefetch-fallbacks") or "0")
+            reduction=(1.0-(ready/42.594))*100.0
+            if ready>24.0: raise RuntimeError(f"SPEED_STEP6_BRANCH_READY_BUDGET:{ready:.3f}")
+            if reduction<40.0: raise RuntimeError(f"SPEED_STEP6_BRANCH_REDUCTION_TARGET:{reduction:.2f}")
+            if launched<7 or hits<7: raise RuntimeError(f"SPEED_STEP6_BRANCH_PREFETCH_NOT_CONSUMED:{launched}:{hits}")
+            if fallbacks>0: raise RuntimeError(f"SPEED_STEP6_BRANCH_PREFETCH_FALLBACK:{fallbacks}")
+            if html_bytes>=10000000: raise RuntimeError(f"SPEED_STEP6_BRANCH_STEP5_PAYLOAD_REGRESSION:{html_bytes}")
+            body=frame.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body: raise RuntimeError("SPEED_STEP6_BRANCH_RUNTIME_"+token)
+
+            print(f"PASSING_YARDS_SPEED_STEP6_BRANCH_FULL_READY_SECONDS={ready:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_BRANCH_SERVER_RENDER_MS={server_ms:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_BRANCH_REDUCTION_PCT={reduction:.2f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_BRANCH_PREFETCH_LAUNCHED={launched}")
+            print(f"PASSING_YARDS_SPEED_STEP6_BRANCH_PREFETCH_HITS={hits}")
+            print(f"PASSING_YARDS_SPEED_STEP6_BRANCH_HTML_BYTES={html_bytes}")
+            print("PASSING_YARDS_SPEED_STEP6_BRANCH_CONCURRENT_PREFETCH_GREEN")
+            context.close(); browser.close()
+          PY
+      - name: Print branch log on failure
+        if: failure()
+        run: tail -n 900 /tmp/py_step6.log || true
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_step6_pid)" 2>/dev/null || true
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove public Step 6 owner, latency and freeze
+        run: |
+          python - <<'PY'
+          import time
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          app=Path("app.py").read_text()
+          router=Path("streamlit_memory_lazy_router_v233.py").read_text()
+          hub=Path("nfl_passing_yards_hub_v82.py").read_text()
+          if 'from streamlit_memory_lazy_router_v233 import record_bootstrap_import_ms, render_app' not in app:
+            raise RuntimeError("SPEED_STEP6_PUBLIC_SOURCE_APP_NOT_V233")
+          if 'PASSING_HUB = "nfl_passing_yards_hub_v82"' not in router:
+            raise RuntimeError("SPEED_STEP6_PUBLIC_SOURCE_ROUTER_NOT_V82")
+          if 'FROZEN_PRIOR = "nfl_passing_yards_hub_v81"' not in hub:
+            raise RuntimeError("SPEED_STEP6_PUBLIC_SOURCE_V82_NOT_V81")
+          print("PASSING_YARDS_SPEED_STEP6_PUBLIC_SOURCE_OWNERSHIP_GREEN")
+
+          base="https://kyre-sports-ai.streamlit.app"
+          common={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
+          }
+          lazy=base+"/?"+urlencode(common)
+          full=base+"/?"+urlencode({**common,"ks_py_full":"1"})
 
           def find(page,selector,timeout,interval=.2):
             end=time.monotonic()+timeout
@@ -118,56 +234,78 @@ jobs:
               for frame in page.frames:
                 try:
                   loc=frame.locator(selector)
-                  if loc.count()>=1:
-                    return frame,loc.first
-                except Exception:
-                  pass
+                  if loc.count()>=1: return frame,loc.first
+                except Exception: pass
               time.sleep(interval)
-            raise RuntimeError("SPEED_STEP6_PROFILE_SELECTOR_NOT_READY:"+selector)
+            raise RuntimeError("SPEED_STEP6_PUBLIC_SELECTOR_NOT_READY:"+selector)
 
           with sync_playwright() as p:
-            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
-            context=browser.new_context(viewport={"width":390,"height":844})
-            page=context.new_page()
+            deadline=time.monotonic()+600
+            while True:
+              b=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              c=b.new_context(viewport={"width":390,"height":844}); page=c.new_page()
+              active=False
+              try:
+                page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+                try:
+                  find(page,'[data-passing-yards-concurrent-prefetch-owner="v82"]',25)
+                  find(page,'[data-passing-yards-lazy-detail="v79"]',25)
+                  active=True
+                except Exception:
+                  active=False
+              finally:
+                if not active:
+                  try:c.close()
+                  except Exception:pass
+                  try:b.close()
+                  except Exception:pass
+              if active: break
+              if time.monotonic()>=deadline:
+                raise RuntimeError("SPEED_STEP6_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+              time.sleep(12)
+
+            lazy_text=find(page,'[data-passing-yards-lazy-detail="v79"]',20)[1].inner_text(timeout=5000)
+            if "Jordan Love" not in lazy_text: raise RuntimeError("SPEED_STEP6_PUBLIC_LAZY_IDENTITY_MISSING")
+            print("PASSING_YARDS_SPEED_STEP6_PUBLIC_DEPLOYMENT_ACTIVE")
+            print("PASSING_YARDS_SPEED_STEP6_PUBLIC_V82_OWNER_GREEN")
+            print("PASSING_YARDS_SPEED_STEP6_PUBLIC_V81_DESCENDANT_GREEN")
+            print("PASSING_YARDS_SPEED_STEP6_PUBLIC_V79_LAZY_GREEN")
+
             started=time.monotonic()
-            page.goto(url,wait_until="domcontentloaded",timeout=120000)
-
-            find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',45)
-            owner_ready=time.monotonic()-started
-            frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',120,.25)
-            root_ready=time.monotonic()-started
-            _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',60,.2)
-            perf_ready=time.monotonic()-started
-
+            page.goto(full,wait_until="domcontentloaded",timeout=120000)
+            find(page,'[data-passing-yards-concurrent-prefetch-owner="v82"]',25)
+            find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',25)
+            find(page,'[data-passing-yards-evidence-cache="v80"]',25)
+            frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',90,.2)
+            ready=time.monotonic()-started
+            _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',20)
+            _,step6=find(page,'[data-passing-yards-concurrent-prefetch="v82"]',20)
             name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
-            if name!="Jordan Love":
-              raise RuntimeError("SPEED_STEP6_PROFILE_IDENTITY:"+name)
+            if name!="Jordan Love": raise RuntimeError("SPEED_STEP6_PUBLIC_IDENTITY:"+name)
 
             server_ms=float(perf.get_attribute("data-step8-server-render-ms") or "0")
-            compose_ms=float(perf.get_attribute("data-step8-compose-ms") or "0")
             html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
-            if server_ms<=0:
-              raise RuntimeError("SPEED_STEP6_PROFILE_SERVER_MS_MISSING")
+            launched=int(step6.get_attribute("data-step6-prefetch-launched") or "0")
+            hits=int(step6.get_attribute("data-step6-prefetch-hits") or "0")
+            fallbacks=int(step6.get_attribute("data-step6-prefetch-fallbacks") or "0")
+            reduction=(1.0-(ready/42.594))*100.0
+            if ready>24.0: raise RuntimeError(f"SPEED_STEP6_PUBLIC_READY_BUDGET:{ready:.3f}")
+            if reduction<40.0: raise RuntimeError(f"SPEED_STEP6_PUBLIC_REDUCTION_TARGET:{reduction:.2f}")
+            if launched<7 or hits<7: raise RuntimeError(f"SPEED_STEP6_PUBLIC_PREFETCH_NOT_CONSUMED:{launched}:{hits}")
+            if fallbacks>0: raise RuntimeError(f"SPEED_STEP6_PUBLIC_PREFETCH_FALLBACK:{fallbacks}")
+            if html_bytes>=10000000: raise RuntimeError(f"SPEED_STEP6_PUBLIC_STEP5_PAYLOAD_REGRESSION:{html_bytes}")
+            body=frame.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body: raise RuntimeError("SPEED_STEP6_PUBLIC_RUNTIME_"+token)
 
-            perf_ms=perf_ready*1000.0
-            server_ratio=server_ms/perf_ms if perf_ms else 0.0
-            nonserver_ms=max(0.0,perf_ms-server_ms)
-            if server_ratio>=0.60:
-              owner="SERVER_PIPELINE"
-            elif nonserver_ms>=5000:
-              owner="BROWSER_TRANSPORT_DOM"
-            else:
-              owner="MIXED"
-
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_OWNER_READY_SECONDS={owner_ready:.3f}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_ROOT_READY_SECONDS={root_ready:.3f}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_PERF_READY_SECONDS={perf_ready:.3f}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_SERVER_RENDER_MS={server_ms:.3f}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_COMPOSE_MS={compose_ms:.3f}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_NSERVER_MS={nonserver_ms:.3f}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_SERVER_RATIO={server_ratio:.4f}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_HTML_BYTES={html_bytes}")
-            print(f"PASSING_YARDS_SPEED_STEP6_PROFILE_OWNER={owner}")
-            print("PASSING_YARDS_SPEED_STEP6_PROFILE_GREEN")
-            context.close(); browser.close()
+            print(f"PASSING_YARDS_SPEED_STEP6_PUBLIC_FULL_READY_SECONDS={ready:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PUBLIC_SERVER_RENDER_MS={server_ms:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PUBLIC_REDUCTION_PCT={reduction:.2f}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PUBLIC_PREFETCH_LAUNCHED={launched}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PUBLIC_PREFETCH_HITS={hits}")
+            print(f"PASSING_YARDS_SPEED_STEP6_PUBLIC_HTML_BYTES={html_bytes}")
+            print("PASSING_YARDS_SPEED_STEP6_CONCURRENT_PREFETCH_GREEN")
+            print("PASSING_YARDS_SPEED_STEP6_GREEN")
+            print("PASSING_YARDS_SPEED_STEP6_FROZEN")
+            c.close(); b.close()
           PY
