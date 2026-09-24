@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce exact Step 7 scope
+      - name: Enforce exact Step 7 build or public-runtime repair scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -50,7 +50,8 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/build_scope.txt <<'EOF'
           .github/workflows/passing-yards-ux-presentation-step7-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-ux-presentation-step7-v1.json
@@ -58,9 +59,25 @@ jobs:
           streamlit_memory_lazy_router_v227.py
           tests/test_passing_yards_ux_presentation_step7_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_UX_PRESENTATION_STEP7_SCOPE_GREEN"
+          sort -o /tmp/build_scope.txt /tmp/build_scope.txt
+
+          cat > /tmp/public_runtime_repair_scope.txt <<'EOF'
+          .github/workflows/passing-yards-ux-presentation-step7-v1.yml
+          devsystem/task_ledgers/passing-yards-ux-presentation-step7-v1.json
+          nfl_passing_yards_hub_v76.py
+          tests/test_passing_yards_ux_presentation_step7_v1.py
+          EOF
+          sort -o /tmp/public_runtime_repair_scope.txt /tmp/public_runtime_repair_scope.txt
+
+          if diff -q /tmp/build_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_UX_PRESENTATION_STEP7_SCOPE_GREEN"
+          elif diff -q /tmp/public_runtime_repair_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_UX_PRESENTATION_STEP7_PUBLIC_RUNTIME_REPAIR_SCOPE_GREEN"
+          else
+            echo "PASSING_YARDS_UX_PRESENTATION_STEP7_SCOPE_MISMATCH"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - name: Prove Steps 1-6 and data-math owners remain frozen
         if: github.event_name == 'pull_request'
@@ -116,6 +133,8 @@ jobs:
           assert v76.NEW_PHASE_STEP == 7
           assert v76.DISPLAY_ONLY is True
           assert v76.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v76.PUBLIC_DEFENSE_BRIDGE_ISOLATION == "passing-yards-v76-defense-base-proxy-v1"
+          assert v76.PROCESS_RENDER_LOCK == "passing-yards-builtins-render-rlock-v1"
           assert v227.FROZEN_ROUTER == "streamlit_memory_lazy_router_v226"
           assert v227.PASSING_HUB == "nfl_passing_yards_hub_v76"
           assert v227.FALLBACK_HUB == "nfl_passing_yards_hub_v75"

@@ -88,3 +88,39 @@ def test_step7_router_preflight_falls_back_to_frozen_step6() -> None:
     assert v227._step7_hub_importable(broken_importer) is False
     assert v227._step7_hub_importable(lambda name: object()) is True
     assert v227.FALLBACK_HUB == "nfl_passing_yards_hub_v75"
+
+
+def test_public_defense_bridge_isolation_preserves_frozen_v1_entrypoint() -> None:
+    original_v1 = v76.defense_v1.build_pass_defense_profile
+    original_v2_base = v76.defense_v2.base
+    original_v3_base = v76.defense_v3.base
+    marker = object()
+
+    def synthetic_bridge(*args, **kwargs):
+        return marker
+
+    seen = {}
+    try:
+        # Simulate V17's temporary mutation of the shared V1 module.
+        v76.defense_v1.build_pass_defense_profile = synthetic_bridge
+
+        def inspect_isolated_call():
+            seen["same_proxy"] = v76.defense_v2.base is v76.defense_v3.base
+            seen["isolated_build"] = v76.defense_v2.base.build_pass_defense_profile
+            seen["shared_v1_build"] = v76.defense_v1.build_pass_defense_profile
+
+        v76._with_defense_bridge_isolation(inspect_isolated_call)
+    finally:
+        v76.defense_v1.build_pass_defense_profile = original_v1
+
+    assert seen["same_proxy"] is True
+    assert seen["isolated_build"] is v76._FROZEN_V1_BUILD
+    assert seen["isolated_build"] is not seen["shared_v1_build"]
+    assert v76.defense_v2.base is original_v2_base
+    assert v76.defense_v3.base is original_v3_base
+
+
+def test_step7_process_lock_survives_module_level_step6_lock_rebinding() -> None:
+    assert v76.PUBLIC_DEFENSE_BRIDGE_ISOLATION == "passing-yards-v76-defense-base-proxy-v1"
+    assert v76.PROCESS_RENDER_LOCK == "passing-yards-builtins-render-rlock-v1"
+    assert v76._PROCESS_RENDER_RLOCK is getattr(__import__("builtins"), v76._LOCK_ATTR)
