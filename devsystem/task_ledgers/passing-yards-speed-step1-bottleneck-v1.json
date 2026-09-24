@@ -1,0 +1,29 @@
+{
+  "task": "passing-yards-speed-step1-bottleneck-v1",
+  "task_id": "passing-yards-speed-step1-bottleneck-v1",
+  "id": "passing-yards-speed-step1-bottleneck-v1",
+  "title": "Passing Yards Speed Step 1 Bottleneck Isolation",
+  "version": 1,
+  "phase": "selected-qb-speed",
+  "step": 1,
+  "status": "DONE",
+  "step1_status": "DONE",
+  "scope": "Verifier-only bottleneck isolation for the selected-quarterback Passing Yards page. No product, model, data, math, sportsbook, router-owner, V77, or app changes.",
+  "source_main": "73d9db0c4c9e01d82326ae3e5c8f017bbf0f9219",
+  "root_cause": "The selected-QB route waits for the full frozen upstream analysis pipeline and then composes/serializes an extremely large selected-QB HTML document before the detail root becomes usable. Existing certified Step 8 evidence recorded ~43.8 MB selected-QB HTML and public readiness of roughly 35-43 seconds. V59 includes all heavy support payloads in the selected page, and V67 adds the same deep evidence again as a second presentation surface. This makes initial usability depend on completion of the giant full-detail render.",
+  "root_cause_evidence": {
+    "step8_branch_html_bytes": 43826899,
+    "observed_public_ready_seconds_range": "34.829-43.240",
+    "v59_blocks_on_full_selected_analysis": true,
+    "v67_reembeds_deep_evidence": true,
+    "initial_first_paint_decoupled_from_full_render": false
+  },
+  "product_files_changed": false,
+  "frozen_prior_steps": [1,2,3,4,5,6,7,8,9,10],
+  "next_patch": "Step 2 will add an immediate lightweight selected-QB first-paint shell before the unchanged frozen full analysis render, using bounded cached summary data when available and a generic verified loading shell otherwise.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
