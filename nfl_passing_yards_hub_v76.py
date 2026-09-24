@@ -245,12 +245,12 @@ def _inject_ux_presentation(body: str) -> str:
     )
     text = _add_id_once(
         text,
-        '<section class="ks-py71-explain" data-passing-yards-projection-explainability="v71">',
+        '<section class="ks-py71-explain" data-passing-yards-projection-explainability="v71"',
         "ks-py76-why",
     )
     text = _add_id_once(
         text,
-        '<section class="ks-py72-matchup" data-passing-yards-matchup-intelligence="v72">',
+        '<section class="ks-py72-matchup" data-passing-yards-matchup-intelligence="v72"',
         "ks-py76-matchup",
     )
     text = _add_id_once(
