@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "d622c10fb32280d7b5ef65a14e5149400d0292eb",
   "scope": "Passing Yards Step 7: UX / Presentation. Add presentation-only wayfinding and responsive polish over frozen V75/V226. Add an in-page analysis guide, stable section anchors, improved mobile touch targets, consistent spacing and single-column phone behavior for the certified Step 2-6 panels. No Streamlit/query/session navigation state changes. Preserve Step 6 serialization and Step 5 fresh-session purge protection. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or data behavior changes.",
-  "failed_layer": "BRANCH_STEP7_GUIDE_PLACEMENT",
+  "failed_layer": "BRANCH_STEP7_SECTION_ANCHOR_MATCH",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-ux-presentation-step7-v1",
@@ -93,12 +93,20 @@
     "events": [],
     "consumed_receipts": []
   },
-  "transition_history": [],
+  "transition_history": [
+    {
+      "from": "BRANCH_STEP7_GUIDE_PLACEMENT",
+      "to": "BRANCH_STEP7_SECTION_ANCHOR_MATCH",
+      "evidence_run": 35940964789,
+      "evidence_job": 107449408884,
+      "failure_token": "AssertionError: ks-py76-why"
+    }
+  ],
   "override_events": [],
-  "repair_epoch": "step7-guide-article-v1",
-  "repair_failed_run": 35940571136,
-  "repair_failed_job": 107447700261,
-  "repair_root_cause": "Verifier proved the V76 root marker but found zero UX guide nodes. The implementation searched for a section.ks-py59-player, while the frozen V59 selected-QB owner renders article.ks-py59-player.",
-  "repair_patch": "Anchor the Overview ID to the real article.ks-py59-player and inject the guide immediately after that article opening tag; update the focused test fixture to match frozen V59 structure.",
+  "repair_epoch": "step7-section-anchor-partial-v2",
+  "repair_failed_run": 35940964789,
+  "repair_failed_job": 107449408884,
+  "repair_root_cause": "Guide now renders, but the Why anchor was absent. V71/V72 section opening tags carry additional runtime attributes after their version marker, while Step 7 matched an exact closing-angle token.",
+  "repair_patch": "Match V71/V72 section prefixes through the stable version attribute and insert IDs before the remaining attributes. Strengthen focused fixtures with trailing runtime attributes.",
   "repair_state": "PATCH_PENDING_PROOF"
 }
