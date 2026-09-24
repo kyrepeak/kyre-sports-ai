@@ -1,4 +1,5 @@
 name: NFL Passing Yards Speed Step 4 Cache
+# Step 4 certification trigger: current-head branch proof
 
 on:
   pull_request:
