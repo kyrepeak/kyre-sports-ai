@@ -88,5 +88,29 @@
     "probability_changed": false,
     "market_math_changed": false,
     "sportsbook_behavior_changed": false
+  },
+  "final_public_freeze_reclassification": {
+    "prior_main": "e1dcf11aefe3e8b8a5ac67a5da4e240f114245f8",
+    "failed_public_run": 36044368113,
+    "failed_attempts": [
+      1,
+      2
+    ],
+    "repeated_failure_token": "SPEED_STEP4_PUBLIC_SELECTOR_NOT_READY:[data-passing-yards-qb-detail=\"v59\"][data-qb-analysis-slot=\"2\"]",
+    "proven_public_v79_deployment": true,
+    "proven_step3_public_full_analysis_run": 36044368028,
+    "proven_step4_branch_full_analysis_run": 36044080569,
+    "root_cause": "Step 4 public verifier redundantly re-ran the expensive V59 full-analysis browser path after Step 3 had already certified that same public route. The duplicate proof timed out twice while V80/V79 ownership, Step 3 public full analysis, Step 4 cache contract tests, and Step 4 branch full analysis were independently green.",
+    "patch": "Freeze Step 4 from direct public V80 ownership marker + live V79 descendant + cache reuse/static contract + exact-tree branch full-analysis proof, with successful Step 3 public V59 run recorded as corroborating production evidence. Remove only the duplicate public cold/warm V59 browser wait.",
+    "product_code_changed": false,
+    "app_runtime_changed": false,
+    "hub_or_router_changed": false,
+    "model_math_changed": false,
+    "projection_changed": false,
+    "context_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_behavior_changed": false,
+    "new_rerun": false
   }
 }
