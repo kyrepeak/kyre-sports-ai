@@ -324,7 +324,13 @@ jobs:
                   raise RuntimeError(f"STEP8_PERFORMANCE_BUDGET_FAILED:{width}:{ready_s:.3f}")
 
               assert_no_runtime_errors(page,browser,flags,frame,root)
-              find(page,browser,flags,"text=Jordan Love",timeout=30)
+              try:
+                  identity_name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:qb-identity") from exc
+              except Exception as exc:
+                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:QB_IDENTITY_MISSING") from exc
+              require_contract(identity_name=="Jordan Love",f"QB_IDENTITY:{identity_name}")
 
               try:
                   require_contract(root.get_attribute("data-passing-yards-explainability-ready")=="v71","V71")
@@ -587,7 +593,13 @@ jobs:
                   raise RuntimeError(f"STEP8_PERFORMANCE_BUDGET_FAILED:{width}:{ready_s:.3f}")
 
               assert_no_runtime_errors(page,browser,flags,frame,root)
-              find(page,browser,flags,"text=Jordan Love",timeout=30)
+              try:
+                  identity_name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+              except TargetClosedError as exc:
+                  raise BrowserCrash("STEP8_TARGET_CLOSED:qb-identity") from exc
+              except Exception as exc:
+                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:QB_IDENTITY_MISSING") from exc
+              require_contract(identity_name=="Jordan Love",f"QB_IDENTITY:{identity_name}")
 
               try:
                   require_contract(root.get_attribute("data-passing-yards-explainability-ready")=="v71","V71")
