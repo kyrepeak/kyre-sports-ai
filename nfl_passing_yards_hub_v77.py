@@ -111,10 +111,8 @@ def _render_step8_locked() -> None:
 
 
 def render_nfl_passing_yards_hub() -> None:
-    # Keep the exact certified Step 7 process-wide lock boundary, including
-    # V75 callers that still enter through the older serialized owner.
+    # Keep the exact certified Step 7 process-wide lock boundary.
     with prior._PROCESS_RENDER_RLOCK:
-        prior.prior._RENDER_LOCK = prior._PROCESS_RENDER_RLOCK
         started = perf_counter()
         result = _render_step8_locked()
         total_ms = (perf_counter() - started) * 1000.0
