@@ -66,5 +66,16 @@
     "sportsbook_logic_changed": false,
     "prior_steps_reopened": false,
     "redeploy_trigger": "requirements comment R2 + app heartbeat R2"
+  },
+  "public_owner_diagnostic": {
+    "reason": "R1 and R2 public freeze runs both ended SPEED_STEP5_PUBLIC_DEPLOYMENT_NOT_ACTIVE despite certified branch V81 proof and two deployment triggers.",
+    "product_code_changed": false,
+    "diagnostic_only": true,
+    "expected_states": [
+      "V81_ACTIVE",
+      "V80_V79_ACTIVE",
+      "V79_ACTIVE",
+      "OWNER_NOT_OBSERVED"
+    ]
   }
 }
