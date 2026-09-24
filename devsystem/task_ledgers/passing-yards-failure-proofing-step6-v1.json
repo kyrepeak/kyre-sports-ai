@@ -33,7 +33,7 @@
   "required": [
     "Steps 1-5 remain frozen and unchanged",
     "healthy selected-QB page renders Step 5 V74 and Step 6 V75 exactly once",
-    "healthy failure-proofing mode is HEALTY/HEALTHY marker with reliability-ready v75",
+    "healthy failure-proofing mode is HEALTHY marker with reliability-ready v75",
     "synthetic Step 5 additive exception is contained",
     "degraded mode preserves frozen V73 selected analysis",
     "degraded mode explicitly states no unavailable evidence was synthesized",
