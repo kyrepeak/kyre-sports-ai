@@ -1,9 +1,19 @@
 {
   "task": "passing-yards-step9-permanent-freeze-v1",
+  "task_id": "passing-yards-step9-permanent-freeze-v1",
+  "id": "passing-yards-step9-permanent-freeze-v1",
+  "title": "Passing Yards Step 9 Permanent Freeze",
+  "version": 1,
+  "step": 9,
   "status": "DONE",
   "step9_status": "DONE",
+  "scope": "Verifier-only permanent regression lock for the already-certified Passing Yards Steps 1-8 surface. No product, model, data, math, sportsbook, app-owner, V77, or V228 changes.",
   "purpose": "Permanent regression lock for the already-certified Passing Yards Steps 1-8 surface. No product changes.",
+  "source_main": "91f8d2210334f4fb5d8cba4fbe692e50f0322daa",
+  "base_main_sha": "91f8d2210334f4fb5d8cba4fbe692e50f0322daa",
   "baseline_main_sha": "91f8d2210334f4fb5d8cba4fbe692e50f0322daa",
+  "new_build_mode": false,
+  "product_files_changed": false,
   "frozen_owner": "nfl_passing_yards_hub_v77.py",
   "frozen_router": "streamlit_memory_lazy_router_v228.py",
   "frozen_prior_steps": [
@@ -16,8 +26,20 @@
     7,
     8
   ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "personnel_math_changed": false,
+  "environment_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_provider_behavior_changed": false,
+  "widget_keys_changed": false,
+  "navigation_state_changed": false,
   "sportsbook_projection_influence": 0,
   "stake_sizing_enabled": false,
+  "freeze_on_public_success": true,
   "allowed_step9_scope": [
     ".github/workflows/passing-yards-step9-permanent-freeze-v1.yml",
     "devsystem/task_ledgers/passing-yards-step9-permanent-freeze-v1.json"
@@ -26,5 +48,10 @@
     390,
     768,
     1440
-  ]
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
 }
