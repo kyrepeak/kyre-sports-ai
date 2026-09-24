@@ -69,5 +69,17 @@
   "reduction_target_pct": 40,
   "transport_scheduling_only": true,
   "data_provider_behavior_changed": false,
-  "patch_state": "PENDING_PROOF"
+  "patch_state": "PENDING_PROOF",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "devsystem_action_log_repair": {
+    "run": 36063786065,
+    "failed_job": 107849278728,
+    "failure_token": "ActionLedgerFailure: task ledger requires action_log",
+    "failed_layer": "CI",
+    "patch": "Add the required empty deterministic action_log contract only; no product/runtime/model/data/math changes."
+  }
 }
