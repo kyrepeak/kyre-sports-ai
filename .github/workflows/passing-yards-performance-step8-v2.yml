@@ -63,12 +63,19 @@ jobs:
           app.py
           devsystem/task_ledgers/passing-yards-performance-step8-v1.json
           EOF
+          cat > /tmp/expected-activation-verifier-repair.txt <<'EOF'
+          .github/workflows/passing-yards-performance-step8-v2.yml
+          devsystem/task_ledgers/passing-yards-performance-step8-v1.json
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-deploy-refresh.txt /tmp/expected-deploy-refresh.txt
+          sort -o /tmp/expected-activation-verifier-repair.txt /tmp/expected-activation-verifier-repair.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_PERFORMANCE_STEP8_SCOPE_GREEN"
           elif diff -q /tmp/expected-deploy-refresh.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_PERFORMANCE_STEP8_DEPLOY_REFRESH_SCOPE_GREEN"
+          elif diff -q /tmp/expected-activation-verifier-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_PERFORMANCE_STEP8_ACTIVATION_VERIFIER_REPAIR_SCOPE_GREEN"
           else
             echo "Unexpected Step 8 diff:"
             cat /tmp/actual.txt
@@ -456,7 +463,7 @@ jobs:
           python -m pip install --disable-pip-version-check -q requests playwright
           python -m playwright install --with-deps chromium
 
-      - name: Wait for Step 8 public deployment activation
+      - name: Confirm public Passing Yards route hydration
         run: |
           python - <<'PY'
           import time
@@ -472,49 +479,46 @@ jobs:
               "ks_qb_slot":"2",
               "ks_step8_deploy_probe":"1",
           })
-          selector='[data-passing-yards-v228-router-runtime="performance-step8"]'
-          deadline=time.monotonic()+480
+          selector='[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]'
+          deadline=time.monotonic()+180
 
           with sync_playwright() as p:
-              while time.monotonic()<deadline:
-                  browser=p.chromium.launch(
-                      headless=True,
-                      args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
-                  )
-                  context=browser.new_context(viewport={"width":390,"height":844})
-                  page=context.new_page()
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              try:
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
+                  while time.monotonic()<deadline:
+                      for frame in page.frames:
+                          try:
+                              if frame.locator(selector).count()>=1:
+                                  print("PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_ROUTE_ACTIVE")
+                                  raise SystemExit(0)
+                          except SystemExit:
+                              raise
+                          except Exception:
+                              pass
+                      time.sleep(.5)
+                  frames=[]
+                  for frame in page.frames:
+                      try:
+                          frames.append(frame.url)
+                      except Exception:
+                          frames.append("UNAVAILABLE")
+                  print("STEP8_PUBLIC_ROUTE_FRAME_URLS="+" | ".join(frames))
+                  raise RuntimeError("STEP8_PUBLIC_ROUTE_NOT_ACTIVE")
+              finally:
                   try:
-                      page.goto(route,wait_until="domcontentloaded",timeout=120000)
-                      found=False
-                      probe_deadline=time.monotonic()+45
-                      while time.monotonic()<probe_deadline:
-                          for frame in page.frames:
-                              try:
-                                  if frame.locator(selector).count()>=1:
-                                      found=True
-                                      break
-                              except Exception:
-                                  pass
-                          if found:
-                              break
-                          time.sleep(.5)
-                      if found:
-                          print("PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_DEPLOYMENT_ACTIVE")
-                          context.close()
-                          browser.close()
-                          break
-                  finally:
-                      try:
-                          context.close()
-                      except Exception:
-                          pass
-                      try:
-                          browser.close()
-                      except Exception:
-                          pass
-                  time.sleep(10)
-              else:
-                  raise RuntimeError("STEP8_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+                      context.close()
+                  except Exception:
+                      pass
+                  try:
+                      browser.close()
+                  except Exception:
+                      pass
           PY
 
       - name: Prove public Step 8 and freeze

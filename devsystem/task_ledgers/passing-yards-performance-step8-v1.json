@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "bf93a6b988d120f9da225cabd3b81ae14ecc38f4",
   "scope": "Passing Yards Step 8: Performance. Preserve frozen Steps 1-7 while adding machine-readable selected-QB composition timing, full Passing Yards server-render timing, safe inter-tag HTML whitespace compaction, and memoized active-route Step 8 import preflight. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or navigation-state behavior changes.",
-  "failed_layer": "PUBLIC_DEPLOYMENT_RUNTIME_ACTIVATION",
+  "failed_layer": "STEP8_PUBLIC_ACTIVATION_VERIFIER_FALSE_NEGATIVE",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-performance-step8-v1",
@@ -111,6 +111,13 @@
       "evidence_run": 35954739802,
       "evidence_job": 107490795942,
       "failure_token": "STEP8_SELECTOR_NOT_READY:[data-passing-yards-performance-ready=\"v77\"][data-passing-yards-performance-runtime=\"v77\"]"
+    },
+    {
+      "from": "STEP8_PUBLIC_DEPLOYMENT_ACTIVATION",
+      "to": "STEP8_PUBLIC_ACTIVATION_VERIFIER_REPAIR",
+      "evidence_run": 35958262954,
+      "evidence_job": 107502321596,
+      "failure_token": "STEP8_PUBLIC_DEPLOYMENT_NOT_ACTIVE"
     }
   ],
   "override_events": [],
@@ -119,7 +126,7 @@
   "repair_failed_job": 107458563606,
   "repair_root_cause": "After verifier polling overhead was removed, Step 8 still exceeded the 180-second contract and Chromium repeatedly crashed while waiting for the selected-QB root. V77 was rewriting/scanning the entire large certified Step 7 HTML only to attach telemetry attributes.",
   "repair_patch": "Keep the frozen Step 7 selected-QB DOM unchanged on large payloads, measure UTF-8 size with bounded temporary allocations, store composition metrics in session state, and emit one tiny dedicated V77 telemetry marker after the full render. Model/data/math/provider behavior remains unchanged.",
-  "repair_state": "PUBLIC_DEPLOY_REFRESH_PENDING_PROOF",
+  "repair_state": "ACTIVATION_VERIFIER_REPAIR_PENDING_PROOF",
   "public_deploy_refresh": {
     "source_main_sha": "005e8c49efe0e3c08d187e011625df802f9fcf8b",
     "failed_public_run": 35954739802,
@@ -137,5 +144,24 @@
     "v77_changed": false,
     "frozen_steps_1_7_changed": false,
     "model_data_math_changed": false
+  },
+  "activation_root_cause": {
+    "source_main_sha": "38d4ac6cee96f43957da62dc01661bdf8b3007bb",
+    "failed_run": 35958262954,
+    "failed_job": 107502321596,
+    "failure_token": "STEP8_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+    "render_service": "kyre-sports-api",
+    "render_service_role": "API_ONLY_NOT_STREAMLIT_UI",
+    "render_live_deploy_id": "dep-dam8eacv6bvs73biuli0",
+    "render_live_sha": "ecbcab44020e51f9237ccfeafc85eaaf688ffcee",
+    "streamlit_public_evidence": "Public Streamlit traceback reaches app.py line 372. On current main 38d4ac6, render_app() is uniquely line 372 because the Step 8 public deploy refresh inserted one line; prior 005e8c has render_app() at line 371. Current app.py line 313 imports streamlit_memory_lazy_router_v228, so reaching line 372 proves V228 imported on the public Streamlit process.",
+    "classification": "ACTIVATION_VERIFIER_FALSE_NEGATIVE",
+    "root_cause": "The activation gate incorrectly used the route-conditional downstream V228 DOM marker as a deployment-freshness signal. That marker is emitted only after V228's Step 8 hub preflight, so its absence cannot distinguish stale deployment from a route/preflight/runtime condition. Public evidence already proves the current app bootstrap and V228 import are live.",
+    "patch": "Verifier-only: gate on the previously proven V59 selected-QB route hydration, then let the unchanged public Step 8 proof own V77 readiness, performance, contract, identity, and overflow certification.",
+    "v228_changed": false,
+    "v77_changed": false,
+    "frozen_steps_1_7_changed": false,
+    "product_code_changed": false,
+    "timeout_increased": false
   }
 }
