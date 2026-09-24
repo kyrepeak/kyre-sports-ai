@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "bf93a6b988d120f9da225cabd3b81ae14ecc38f4",
   "scope": "Passing Yards Step 8: Performance. Preserve frozen Steps 1-7 while adding machine-readable selected-QB composition timing, full Passing Yards server-render timing, safe inter-tag HTML whitespace compaction, and memoized active-route Step 8 import preflight. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or navigation-state behavior changes.",
-  "failed_layer": "STEP8_SELECTED_HTML_HOT_PATH_OVERHEAD",
+  "failed_layer": "PUBLIC_DEPLOYMENT_RUNTIME_ACTIVATION",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-performance-step8-v1",
@@ -104,6 +104,13 @@
       "evidence_run": 35944246747,
       "evidence_job": 107458563606,
       "failure_token": "expected tests/test-passing-yards-performance-step8-v1.py; actual tests/test_passing_yards_performance_step8_v1.py"
+    },
+    {
+      "from": "STEP8_BRANCH_GREEN_MERGED",
+      "to": "STEP8_PUBLIC_DEPLOYMENT_ACTIVATION",
+      "evidence_run": 35954739802,
+      "evidence_job": 107490795942,
+      "failure_token": "STEP8_SELECTOR_NOT_READY:[data-passing-yards-performance-ready=\"v77\"][data-passing-yards-performance-runtime=\"v77\"]"
     }
   ],
   "override_events": [],
@@ -112,5 +119,23 @@
   "repair_failed_job": 107458563606,
   "repair_root_cause": "After verifier polling overhead was removed, Step 8 still exceeded the 180-second contract and Chromium repeatedly crashed while waiting for the selected-QB root. V77 was rewriting/scanning the entire large certified Step 7 HTML only to attach telemetry attributes.",
   "repair_patch": "Keep the frozen Step 7 selected-QB DOM unchanged on large payloads, measure UTF-8 size with bounded temporary allocations, store composition metrics in session state, and emit one tiny dedicated V77 telemetry marker after the full render. Model/data/math/provider behavior remains unchanged.",
-  "repair_state": "PATCH_PENDING_PROOF"
+  "repair_state": "PUBLIC_DEPLOY_REFRESH_PENDING_PROOF",
+  "public_deploy_refresh": {
+    "source_main_sha": "005e8c49efe0e3c08d187e011625df802f9fcf8b",
+    "failed_public_run": 35954739802,
+    "failed_public_job": 107490795942,
+    "failure_token": "STEP8_SELECTOR_NOT_READY:[data-passing-yards-performance-ready=\"v77\"][data-passing-yards-performance-runtime=\"v77\"]",
+    "last_green_action": "public 390px selected-QB V59 root found",
+    "first_broken_arrow": "V59 selected-QB root -> V77 performance runtime marker not present",
+    "failed_layer": "PUBLIC_DEPLOYMENT_RUNTIME_ACTIVATION",
+    "branch_step8_proof_run": 35954236387,
+    "branch_step8_proof_result": "SUCCESS",
+    "devsystem_run": 35954235324,
+    "devsystem_result": "SUCCESS",
+    "patch": "Entrypoint-only Step 8 public deployment refresh plus V228 runtime-ownership activation gate before public performance timing starts. No V77, Steps 1-7, model, data, math, projection, or sportsbook changes.",
+    "product_changed": false,
+    "v77_changed": false,
+    "frozen_steps_1_7_changed": false,
+    "model_data_math_changed": false
+  }
 }
