@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml"
+      - ".streamlit/passing-yards-speed-step3-forward-freeze-v1.txt"
       - "app.py"
       - "devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json"
       - "nfl_passing_yards_hub_v79.py"
@@ -14,6 +15,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml"
+      - ".streamlit/passing-yards-speed-step3-forward-freeze-v1.txt"
       - "app.py"
       - "devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json"
       - "nfl_passing_yards_hub_v79.py"
@@ -46,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+          cat > /tmp/expected-build.txt <<'EOF'
           .github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json
@@ -54,9 +56,22 @@ jobs:
           streamlit_memory_lazy_router_v230.py
           tests/test_passing_yards_speed_step3_lazy_detail_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_SPEED_STEP3_SCOPE_GREEN"
+          cat > /tmp/expected-forward-freeze.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
+          .streamlit/passing-yards-speed-step3-forward-freeze-v1.txt
+          devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json
+          EOF
+          sort -o /tmp/expected-build.txt /tmp/expected-build.txt
+          sort -o /tmp/expected-forward-freeze.txt /tmp/expected-forward-freeze.txt
+          if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEP3_SCOPE_GREEN"
+          elif diff -q /tmp/expected-forward-freeze.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEP3_FORWARD_FREEZE_SCOPE_GREEN"
+          else
+            echo "Unexpected Speed Step 3 diff:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - name: Prove Speed Steps 1-2 and frozen V78/V229 unchanged
         shell: bash
@@ -80,8 +95,23 @@ jobs:
           python -m pip install --disable-pip-version-check -q -r requirements.txt
           python -m pip install --disable-pip-version-check -q pytest
           PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_speed_step3_lazy_detail_v1.py
-          python -m py_compile nfl_passing_yards_hub_v79.py streamlit_memory_lazy_router_v230.py app.py
-          grep -F 'from streamlit_memory_lazy_router_v230 import record_bootstrap_import_ms, render_app' app.py
+          python -m py_compile nfl_passing_yards_hub_v79.py streamlit_memory_lazy_router_v230.py nfl_passing_yards_hub_v80.py streamlit_memory_lazy_router_v231.py app.py
+          python - <<'PY'
+          from pathlib import Path
+          app=Path("app.py").read_text()
+          direct='from streamlit_memory_lazy_router_v230 import record_bootstrap_import_ms, render_app'
+          descendant='from streamlit_memory_lazy_router_v231 import record_bootstrap_import_ms, render_app'
+          if direct in app:
+              print("PASSING_YARDS_SPEED_STEP3_SOURCE_OWNER_V230_GREEN")
+          elif descendant in app:
+              router=Path("streamlit_memory_lazy_router_v231.py").read_text()
+              hub=Path("nfl_passing_yards_hub_v80.py").read_text()
+              assert 'PASSING_HUB = "nfl_passing_yards_hub_v80"' in router
+              assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v79"' in hub
+              print("PASSING_YARDS_SPEED_STEP3_SOURCE_OWNER_V231_TO_V80_TO_V79_GREEN")
+          else:
+              raise RuntimeError("SPEED_STEP3_SOURCE_OWNER_NOT_V230_OR_CERTIFIED_DESCENDANT")
+          PY
           echo "PASSING_YARDS_SPEED_STEP3_STATIC_GREEN"
 
   branch-lazy-proof:
