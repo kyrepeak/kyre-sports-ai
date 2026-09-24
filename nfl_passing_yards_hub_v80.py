@@ -85,8 +85,7 @@ def _cached_environment(
 
 
 def render_nfl_passing_yards_hub() -> None:
-    # Install wrappers only for this route/render and restore every owner after.
-    original_profile = step7_ui.profile.build_qb_profile
+    st.markdown(\'<span data-passing-yards-evidence-cache="v80" style="display:none" aria-hidden="true"></span>\', unsafe_allow_html=True)\n    # Install wrappers only for this route/render and restore every owner after.\n    original_profile = step7_ui.profile.build_qb_profile
     original_defense = defense_v3.build_pass_defense_profile
     original_pressure = pressure_v2.build_pressure_matchup
     original_environment = environment_v2.build_game_environment
