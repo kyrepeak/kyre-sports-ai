@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "a710a7b8f6cb60d3571d9d563a4840a8b61327fb",
   "scope": "Passing Yards Step 5: Availability + Game-Day Conditions. Add an additive selected-QB evidence panel over frozen V73/V224. Reuse frozen personnel and environment evidence, resolve exact matchup identity, read exact-event game-day availability as CONFIRMED/PENDING/UNVERIFIED, fail closed when provider evidence is unavailable, and preserve Steps 1-4 plus all model/projection/context/probability/market math.",
-  "failed_layer": "NONE",
+  "failed_layer": "PUBLIC_MULTI_SESSION_NFL_MODULE_PURGE",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-availability-game-day-step5-v1",
@@ -72,5 +72,15 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair_epoch": "step5-public-session-purge-v1",
+  "repair_source_main": "9de8ba0c41c183c1ce8f2fd6ce694261c229e42d",
+  "repair_failed_run": 35935130862,
+  "repair_failed_job": 107430544823,
+  "repair_first_viewport_green": 390,
+  "repair_root_cause": "Public 390px proof passed, then a fresh public session hit an importlib KeyError while the frozen V187 direct-prop path temporarily included nfl_ in its global route-purge prefixes. Streamlit sessions share one interpreter, so purging shared NFL modules on fresh Passing Yards session entry is unsafe across overlapping public sessions.",
+  "repair_patch": "Prime only the active Passing Yards session route token in V225 so the frozen root route purge is a no-op on direct Passing Yards entry; no frozen model, data, personnel, environment, market, or Step 1-4 owner is changed.",
+  "repair_state": "PATCH_PENDING_PROOF",
+  "public_freeze_pending": true,
+  "public_session_purge_guard": "passing-yards-session-route-token-v1"
 }
