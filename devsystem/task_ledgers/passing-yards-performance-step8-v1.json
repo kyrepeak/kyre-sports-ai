@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "bf93a6b988d120f9da225cabd3b81ae14ecc38f4",
   "scope": "Passing Yards Step 8: Performance. Preserve frozen Steps 1-7 while adding machine-readable selected-QB composition timing, full Passing Yards server-render timing, safe inter-tag HTML whitespace compaction, and memoized active-route Step 8 import preflight. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or navigation-state behavior changes.",
-  "failed_layer": "STEP8_STATIC_SCOPE_VERIFIER_PATH",
+  "failed_layer": "STEP8_SELECTED_HTML_HOT_PATH_OVERHEAD",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-performance-step8-v1",
@@ -26,8 +26,8 @@
   "new_hub_owner": "nfl_passing_yards_hub_v77",
   "new_router_owner": "streamlit_memory_lazy_router_v228",
   "contract": {
-    "html_compaction": "inter-tag indentation/newlines collapse to one semantic space only",
-    "selected_composition_timing": "data-step8-compose-ms on selected-QB root",
+    "html_compaction": "small fragments compact inter-tag whitespace; large certified selected-QB HTML remains byte-for-byte unchanged",
+    "selected_composition_timing": "data-step8-compose-ms on dedicated V77 performance runtime marker",
     "full_render_timing": "hidden data-step8-server-render-ms runtime marker",
     "router_performance": "memoize successful/failed V77 import probe after first active-route check",
     "responsive": "390/768/1440 no horizontal overflow",
@@ -37,7 +37,7 @@
   "required": [
     "Steps 1-7 remain frozen and unchanged",
     "selected-QB page preserves V71/V72/V73/V74/V75/V76 contracts",
-    "Step 8 V77 root ready marker present",
+    "Step 8 V77 dedicated performance-ready runtime marker present",
     "HTML bytes after compaction are <= bytes before",
     "performance runtime marker exposes finite nonnegative server render duration",
     "390px browser proof passes within 180 seconds",
@@ -107,10 +107,10 @@
     }
   ],
   "override_events": [],
-  "repair_epoch": "step8-static-scope-path-v1",
+  "repair_epoch": "step8-dedicated-telemetry-marker-v1",
   "repair_failed_run": 35944246747,
   "repair_failed_job": 107458563606,
-  "repair_root_cause": "The Step 8 workflow exact-scope verifier expected a hyphenated test filename while the repository file uses the underscore filename tests/test_passing_yards_performance_step8_v1.py.",
-  "repair_patch": "Correct the exact-scope expected test path only; product code and frozen Steps 1-7 remain unchanged.",
+  "repair_root_cause": "After verifier polling overhead was removed, Step 8 still exceeded the 180-second contract and Chromium repeatedly crashed while waiting for the selected-QB root. V77 was rewriting/scanning the entire large certified Step 7 HTML only to attach telemetry attributes.",
+  "repair_patch": "Keep the frozen Step 7 selected-QB DOM unchanged on large payloads, measure UTF-8 size with bounded temporary allocations, store composition metrics in session state, and emit one tiny dedicated V77 telemetry marker after the full render. Model/data/math/provider behavior remains unchanged.",
   "repair_state": "PATCH_PENDING_PROOF"
 }

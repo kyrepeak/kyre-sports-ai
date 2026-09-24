@@ -234,6 +234,10 @@ jobs:
               page.set_viewport_size({"width":width,"height":height})
               page.goto(route,wait_until="domcontentloaded",timeout=120000)
               frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              runtime_frame,runtime=find(
+                  page,
+                  '[data-passing-yards-performance-ready="v77"][data-passing-yards-performance-runtime="v77"]',
+              )
               ready_s=time.monotonic()-started
               assert ready_s <= budget,ready_s
               assert_no_runtime_errors(frame,root)
@@ -244,16 +248,15 @@ jobs:
               assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
               assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
               assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
-              assert root.get_attribute("data-passing-yards-performance-ready")=="v77"
-              assert root.get_attribute("data-passing-yards-performance")=="v77"
+              assert runtime.get_attribute("data-passing-yards-performance")=="v77"
+              assert runtime.get_attribute("data-passing-yards-performance-ready")=="v77"
 
-              before=int(root.get_attribute("data-step8-html-bytes-before"))
-              after=int(root.get_attribute("data-step8-html-bytes-after"))
-              compose=float(root.get_attribute("data-step8-compose-ms"))
+              before=int(runtime.get_attribute("data-step8-html-bytes-before"))
+              after=int(runtime.get_attribute("data-step8-html-bytes-after"))
+              compose=float(runtime.get_attribute("data-step8-compose-ms"))
               assert 0 < after <= before,(before,after)
               assert math.isfinite(compose) and compose >= 0.0,compose
 
-              runtime_frame,runtime=find(page,'[data-passing-yards-performance-runtime="v77"]')
               render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
               assert math.isfinite(render_ms) and render_ms >= 0.0,render_ms
 
@@ -363,6 +366,10 @@ jobs:
                   page=browser.new_page(viewport={"width":width,"height":height})
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
                   frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                  runtime_frame,runtime=find(
+                      page,
+                      '[data-passing-yards-performance-ready="v77"][data-passing-yards-performance-runtime="v77"]',
+                  )
                   ready_s=time.monotonic()-started
                   assert ready_s <= budget,ready_s
                   assert_no_runtime_errors(frame,root)
@@ -370,13 +377,13 @@ jobs:
                   assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
                   assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
                   assert root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76"
-                  assert root.get_attribute("data-passing-yards-performance-ready")=="v77"
-                  before=int(root.get_attribute("data-step8-html-bytes-before"))
-                  after=int(root.get_attribute("data-step8-html-bytes-after"))
-                  compose=float(root.get_attribute("data-step8-compose-ms"))
+                  assert runtime.get_attribute("data-passing-yards-performance")=="v77"
+                  assert runtime.get_attribute("data-passing-yards-performance-ready")=="v77"
+                  before=int(runtime.get_attribute("data-step8-html-bytes-before"))
+                  after=int(runtime.get_attribute("data-step8-html-bytes-after"))
+                  compose=float(runtime.get_attribute("data-step8-compose-ms"))
                   assert 0 < after <= before,(before,after)
                   assert math.isfinite(compose) and compose >= 0.0,compose
-                  runtime_frame,runtime=find(page,'[data-passing-yards-performance-runtime="v77"]')
                   render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
                   assert math.isfinite(render_ms) and render_ms >= 0.0,render_ms
                   find(page, "text=Jordan Love", timeout=30)

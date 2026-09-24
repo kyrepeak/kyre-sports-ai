@@ -90,15 +90,20 @@ def _selected_analysis_v77(captured: dict[str, list[str]], slot: int) -> str:
     body = _FROZEN_SELECTED_ANALYSIS(captured, slot)
     compose_ms = (perf_counter() - started) * 1000.0
 
-    before = len(str(body or "").encode("utf-8"))
-    compacted = _compact_intertag_whitespace(body)
-    after = len(compacted.encode("utf-8"))
-    return _inject_performance_contract(
-        compacted,
-        compose_ms=compose_ms,
-        bytes_before=before,
-        bytes_after=after,
-    )
+    text = str(body or "")
+    before = _utf8_size(text)
+    compacted = _compact_intertag_whitespace(text)
+    after = before if compacted is text else _utf8_size(compacted)
+
+    # Keep the certified Step 7 selected-QB DOM untouched on the real large page.
+    # Step 8 telemetry is emitted once as a tiny dedicated runtime marker after
+    # the full render, avoiding a second giant HTML rewrite/copy in the hot path.
+    st.session_state[SESSION_COMPOSE_KEY] = {
+        "compose_ms": round(compose_ms, 3),
+        "html_bytes_before": before,
+        "html_bytes_after": after,
+    }
+    return compacted
 
 
 def _render_step8_locked() -> None:
@@ -116,8 +121,12 @@ def render_nfl_passing_yards_hub() -> None:
         started = perf_counter()
         result = _render_step8_locked()
         total_ms = (perf_counter() - started) * 1000.0
+        compose_snapshot = st.session_state.get(SESSION_COMPOSE_KEY, {})
         snapshot = {
             "version": PERFORMANCE_VERSION,
+            "compose_ms": float(compose_snapshot.get("compose_ms", 0.0)),
+            "html_bytes_before": int(compose_snapshot.get("html_bytes_before", 0)),
+            "html_bytes_after": int(compose_snapshot.get("html_bytes_after", 0)),
             "server_render_ms": round(total_ms, 3),
             "html_compaction": HTML_COMPACTION,
             "sportsbook_projection_influence": 0.0,
@@ -125,7 +134,12 @@ def render_nfl_passing_yards_hub() -> None:
         }
         st.session_state[SESSION_PERF_KEY] = snapshot
         st.markdown(
-            '<span data-passing-yards-performance-runtime="v77" '
+            '<span data-passing-yards-performance="v77" '
+            'data-passing-yards-performance-ready="v77" '
+            'data-passing-yards-performance-runtime="v77" '
+            f'data-step8-compose-ms="{snapshot["compose_ms"]:.3f}" '
+            f'data-step8-html-bytes-before="{snapshot["html_bytes_before"]}" '
+            f'data-step8-html-bytes-after="{snapshot["html_bytes_after"]}" '
             f'data-step8-server-render-ms="{snapshot["server_render_ms"]:.3f}" '
             f'data-step8-html-compaction="{escape(HTML_COMPACTION, quote=True)}" '
             'style="display:none" aria-hidden="true"></span>',
@@ -156,6 +170,7 @@ __all__ = [
     "NEW_PHASE_STEP",
     "PERFORMANCE_VERSION",
     "PRESENTATION_ONLY",
+    "SESSION_COMPOSE_KEY",
     "SESSION_PERF_KEY",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
