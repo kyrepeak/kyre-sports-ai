@@ -1,0 +1,3 @@
+NFL Passing Yards speed Step 3 forward-freeze deployment refresh
+Current active descendant: V231 -> V80 -> V79
+No model/data/math/sportsbook behavior changes.
