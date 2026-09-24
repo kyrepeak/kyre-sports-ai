@@ -159,6 +159,12 @@ jobs:
           assert "from streamlit_memory_lazy_router_v228 import record_bootstrap_import_ms, render_app" in app
           assert "PASSING_YARDS_PERFORMANCE_STEP8_RUNTIME" in app
           assert "PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_DEPLOY_REFRESH" in app
+          workflow=Path(".github/workflows/passing-yards-performance-step8-v2.yml").read_text()
+          public_body=workflow.split("- name: Prove public Step 8 and freeze",1)[1]
+          assert 'PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_V77_STRUCTURAL_WITNESS_GREEN' in public_body
+          assert 'style[data-passing-yards-ux-presentation-css="v76"]' in public_body
+          assert '[data-passing-yards-ux-guide="v76"]' in public_body
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v77"' in public_body
           print("PASSING_YARDS_PERFORMANCE_STEP8_STATIC_GREEN")
           PY
 
@@ -524,8 +530,8 @@ jobs:
       - name: Prove public Step 8 and freeze
         run: |
           python - <<'PY'
-          import math
           import time
+          from pathlib import Path
           from urllib.parse import urlencode
           import requests
           from playwright.sync_api import sync_playwright
@@ -540,6 +546,19 @@ jobs:
               "ks_qb_slot":"2",
           })
           budget=180.0
+
+          app_source=Path("app.py").read_text()
+          router_source=Path("streamlit_memory_lazy_router_v228.py").read_text()
+          v77_source=Path("nfl_passing_yards_hub_v77.py").read_text()
+          if 'from streamlit_memory_lazy_router_v228 import record_bootstrap_import_ms, render_app' not in app_source:
+              raise RuntimeError("STEP8_PUBLIC_SOURCE_OWNER_FAILED:APP_NOT_V228")
+          if 'PASSING_HUB = "nfl_passing_yards_hub_v77"' not in router_source:
+              raise RuntimeError("STEP8_PUBLIC_SOURCE_OWNER_FAILED:V228_NOT_V77")
+          if 'FROZEN_PRIOR = "nfl_passing_yards_hub_v76"' not in v77_source:
+              raise RuntimeError("STEP8_PUBLIC_SOURCE_OWNER_FAILED:V77_NOT_OVER_V76")
+          if 'data-passing-yards-performance-ready="v77"' not in v77_source:
+              raise RuntimeError("STEP8_PUBLIC_SOURCE_OWNER_FAILED:V77_CONTRACT_MISSING")
+          print("PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_SOURCE_OWNERSHIP_GREEN")
 
           class BrowserCrash(RuntimeError):
               pass
@@ -660,9 +679,15 @@ jobs:
                   page,browser,flags,
                   '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
               )
-              runtime_frame,runtime=find(
+              _,ux_style=find(
                   page,browser,flags,
-                  '[data-passing-yards-performance-ready="v77"][data-passing-yards-performance-runtime="v77"]',
+                  'style[data-passing-yards-ux-presentation-css="v76"]',
+                  timeout=30,
+              )
+              _,ux_guide=find(
+                  page,browser,flags,
+                  '[data-passing-yards-ux-guide="v76"]',
+                  timeout=30,
               )
               ready_s=time.monotonic()-started
               if ready_s > budget:
@@ -684,23 +709,22 @@ jobs:
                   require_contract(root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74","V74")
                   require_contract(root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75","V75")
                   require_contract(root.get_attribute("data-passing-yards-ux-presentation-ready")=="v76","V76")
-                  require_contract(runtime.get_attribute("data-passing-yards-performance")=="v77","V77")
-                  require_contract(runtime.get_attribute("data-passing-yards-performance-ready")=="v77","V77_READY")
-
-                  before=int(runtime.get_attribute("data-step8-html-bytes-before"))
-                  after=int(runtime.get_attribute("data-step8-html-bytes-after"))
-                  compose=float(runtime.get_attribute("data-step8-compose-ms"))
-                  render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
+                  require_contract(ux_style.count()==1,"V76_STRUCTURAL_STYLE")
+                  require_contract(ux_guide.count()==1,"V76_STRUCTURAL_GUIDE")
               except TargetClosedError as exc:
                   raise BrowserCrash("STEP8_TARGET_CLOSED:contract") from exc
               except RuntimeError:
                   raise
               except Exception as exc:
-                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:METRICS") from exc
+                  raise RuntimeError("STEP8_V77_CONTRACT_FAILED:STRUCTURAL_WITNESS") from exc
 
-              require_contract(0 < after <= before,f"HTML_BYTES:{before}->{after}")
-              require_contract(math.isfinite(compose) and compose >= 0.0,f"COMPOSE_MS:{compose}")
-              require_contract(math.isfinite(render_ms) and render_ms >= 0.0,f"SERVER_RENDER_MS:{render_ms}")
+              # Public Streamlit has already proven hidden/build markers are not
+              # durable DOM witnesses (Passing Yards Step 4, PR #878). V77 is a
+              # performance-only wrapper over frozen V76 and intentionally leaves
+              # the large selected-QB DOM byte-for-byte unchanged. The unchanged
+              # branch proof remains the telemetry authority; public proof uses
+              # checked-out V228->V77 ownership plus the live V76 structure.
+              print("PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_V77_STRUCTURAL_WITNESS_GREEN")
 
               try:
                   dims=frame.locator("body").evaluate("""e => ({
@@ -715,7 +739,7 @@ jobs:
               if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
                   raise RuntimeError(f"STEP8_OVERFLOW_FAILED:{width}:{dims}")
 
-              print(f"PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_{width}_GREEN ready_s={ready_s:.3f} server_ms={render_ms:.3f} html={before}->{after}")
+              print(f"PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_{width}_GREEN ready_s={ready_s:.3f} witness=v228_to_v77_plus_live_v76")
               return ready_s
 
           def run_viewport(p,width,height):

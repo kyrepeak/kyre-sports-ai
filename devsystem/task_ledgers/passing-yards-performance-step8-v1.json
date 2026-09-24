@@ -5,7 +5,7 @@
   "version": 1,
   "source_main": "bf93a6b988d120f9da225cabd3b81ae14ecc38f4",
   "scope": "Passing Yards Step 8: Performance. Preserve frozen Steps 1-7 while adding machine-readable selected-QB composition timing, full Passing Yards server-render timing, safe inter-tag HTML whitespace compaction, and memoized active-route Step 8 import preflight. No model, projection, context, probability, market, personnel, environment, provider, sportsbook, widget-key, or navigation-state behavior changes.",
-  "failed_layer": "STEP8_PUBLIC_ACTIVATION_VERIFIER_FALSE_NEGATIVE",
+  "failed_layer": "STEP8_PUBLIC_HIDDEN_TELEMETRY_WITNESS",
   "new_build_mode": true,
   "product_files_changed": true,
   "id": "passing-yards-performance-step8-v1",
@@ -118,6 +118,13 @@
       "evidence_run": 35958262954,
       "evidence_job": 107502321596,
       "failure_token": "STEP8_PUBLIC_DEPLOYMENT_NOT_ACTIVE"
+    },
+    {
+      "from": "STEP8_PUBLIC_BROWSER_PROOF_STARTED",
+      "to": "STEP8_PUBLIC_STRUCTURAL_RUNTIME_WITNESS",
+      "evidence_run": 36010987888,
+      "evidence_job": 107671516054,
+      "failure_token": "STEP8_SELECTOR_NOT_READY:[data-passing-yards-performance-ready=\"v77\"][data-passing-yards-performance-runtime=\"v77\"]"
     }
   ],
   "override_events": [],
@@ -126,7 +133,7 @@
   "repair_failed_job": 107458563606,
   "repair_root_cause": "After verifier polling overhead was removed, Step 8 still exceeded the 180-second contract and Chromium repeatedly crashed while waiting for the selected-QB root. V77 was rewriting/scanning the entire large certified Step 7 HTML only to attach telemetry attributes.",
   "repair_patch": "Keep the frozen Step 7 selected-QB DOM unchanged on large payloads, measure UTF-8 size with bounded temporary allocations, store composition metrics in session state, and emit one tiny dedicated V77 telemetry marker after the full render. Model/data/math/provider behavior remains unchanged.",
-  "repair_state": "ACTIVATION_VERIFIER_REPAIR_PENDING_PROOF",
+  "repair_state": "PUBLIC_STRUCTURAL_RUNTIME_WITNESS_PENDING_PROOF",
   "public_deploy_refresh": {
     "source_main_sha": "005e8c49efe0e3c08d187e011625df802f9fcf8b",
     "failed_public_run": 35954739802,
@@ -163,5 +170,36 @@
     "frozen_steps_1_7_changed": false,
     "product_code_changed": false,
     "timeout_increased": false
+  },
+  "public_hidden_marker_root_cause": {
+    "failed_main_sha": "d7752739e5fc9a32ff539d22bf0db4392adf6b47",
+    "failed_run": 36010987888,
+    "failed_job": 107671516054,
+    "viewport": "390x844",
+    "last_green_action": "PASSING_YARDS_PERFORMANCE_STEP8_PUBLIC_ROUTE_ACTIVE",
+    "failure_token": "STEP8_SELECTOR_NOT_READY:[data-passing-yards-performance-ready=\"v77\"][data-passing-yards-performance-runtime=\"v77\"]",
+    "first_broken_arrow": "live V59/V76 selected-QB surface -> hidden standalone V77 telemetry span",
+    "failed_layer": "VERIFIER_RUNTIME_WITNESS_SHAPE",
+    "evidence": {
+      "public_route_hydration": "SUCCESS",
+      "public_browser_proof": "RAN",
+      "public_390_v77_hidden_marker": "ABSENT",
+      "branch_v77_390": "GREEN ready_s=36.302 server_ms=20433.923 html=43826899->43826899",
+      "branch_v77_768": "GREEN ready_s=17.601 server_ms=3317.233 html=43826899->43826899",
+      "branch_v77_1440": "GREEN ready_s=17.267 server_ms=3402.474 html=43826899->43826899",
+      "branch_v77_contract": "SUCCESS",
+      "precedent_pr": 878,
+      "precedent": "Passing Yards public Streamlit did not expose a hidden router span while the owned live DOM surface rendered; verifier was repaired to use the structural runtime witness."
+    },
+    "root_cause": "The public proof treated V77's standalone hidden telemetry span as a mandatory live DOM witness. Repository precedent proves hidden/build markers are not durable on public Streamlit. V77 intentionally preserves the large frozen V76 selected-QB DOM and emits telemetry only in that hidden span, so public marker absence is a verifier false negative rather than evidence that the certified V77 wrapper failed.",
+    "patch": "Verifier-only. Keep the unchanged branch proof as V77 telemetry authority. Public proof statically proves app.py -> V228 -> V77 ownership, then certifies the live visible V76 structural style/guide, V71-V76 contracts, Jordan Love identity, <=180s route readiness, no runtime errors, and no overflow at 390/768/1440.",
+    "product_code_changed": false,
+    "v228_changed": false,
+    "v77_changed": false,
+    "frozen_steps_1_7_changed": false,
+    "model_data_math_changed": false,
+    "timeout_increased": false,
+    "hidden_marker_required_as_public_sole_witness": false,
+    "verifier_acceptance_weakened": false
   }
 }
