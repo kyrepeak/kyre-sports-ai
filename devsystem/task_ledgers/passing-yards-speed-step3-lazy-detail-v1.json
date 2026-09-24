@@ -39,10 +39,12 @@
   },
   "public_deploy_refresh": {
     "reason": "Step 3 product and branch proof were green, but public activation did not move from the prior deployment within two verifier windows.",
-    "type": "no-behavior app marker refresh",
+    "type": "isolated repository deployment marker refresh",
+    "marker": ".streamlit/passing-yards-speed-step3-deploy-refresh-v1.txt",
+    "app_runtime_changed": false,
     "product_code_changed": false,
     "model_math_changed": false,
     "target": "V79/V230",
-    "revision": 2
+    "revision": 3
   }
 }
