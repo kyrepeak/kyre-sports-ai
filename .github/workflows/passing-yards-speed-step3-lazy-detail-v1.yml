@@ -65,7 +65,6 @@ jobs:
           .github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
           .github/workflows/passing-yards-speed-step4-cache-v1.yml
           app.py
-          devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json
           devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
           EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
