@@ -67,15 +67,24 @@ jobs:
           app.py
           devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
           EOF
+          cat > /tmp/expected-full-redeploy.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
+          .github/workflows/passing-yards-speed-step4-cache-v1.yml
+          devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
+          requirements.txt
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-forward-freeze.txt /tmp/expected-forward-freeze.txt
           sort -o /tmp/expected-public-refresh.txt /tmp/expected-public-refresh.txt
+          sort -o /tmp/expected-full-redeploy.txt /tmp/expected-full-redeploy.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_SPEED_STEP3_SCOPE_GREEN"
           elif diff -q /tmp/expected-forward-freeze.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_SPEED_STEP3_FORWARD_FREEZE_SCOPE_GREEN"
           elif diff -q /tmp/expected-public-refresh.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_SPEED_STEPS34_PUBLIC_REFRESH_SCOPE_GREEN"
+          elif diff -q /tmp/expected-full-redeploy.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEPS34_FULL_REDEPLOY_SCOPE_GREEN"
           else
             echo "Unexpected Speed Step 3 diff:"
             cat /tmp/actual.txt
