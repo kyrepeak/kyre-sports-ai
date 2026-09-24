@@ -72,5 +72,21 @@
       3,
       4
     ]
+  },
+  "full_redeploy_repair": {
+    "trigger": "NFL_PASSING_YARDS_SPEED_STEPS34_FULL_REDEPLOY_2026_09_24_R1",
+    "prior_main": "5352f1f8be28f501f5f8c1b8218015e74d5b3fa4",
+    "failed_step3_run": 36042311901,
+    "failed_step4_run": 36042311652,
+    "reason": "App-only refresh merged successfully but public Streamlit still did not expose certified V79. Touch requirements.txt without changing dependency versions to force a full Community Cloud redeploy, then recertify Steps 3 and 4 on public production.",
+    "dependency_versions_changed": false,
+    "product_logic_changed": false,
+    "hub_or_router_changed": false,
+    "model_math_changed": false,
+    "projection_changed": false,
+    "context_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_behavior_changed": false
   }
 }

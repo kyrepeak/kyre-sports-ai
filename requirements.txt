@@ -7,3 +7,4 @@ streamlit-local-storage==0.0.25
 tzdata>=2025.2
 posthog~=7.48
 # V180 Streamlit hard rebuild: refresh CFB Game Total Step 5 module cache
+# NFL Passing Yards Speed Steps 3-4 certified full-redeploy trigger 2026-09-24 R1
