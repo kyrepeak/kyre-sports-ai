@@ -227,7 +227,7 @@ jobs:
               frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
               ready_s=time.monotonic()-started
               assert ready_s <= budget,ready_s
-              assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in root.inner_text(timeout=5000)
               assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
               assert root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72"
               assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
@@ -359,7 +359,7 @@ jobs:
                   runtime_frame,runtime=find(page,'[data-passing-yards-performance-runtime="v77"]')
                   render_ms=float(runtime.get_attribute("data-step8-server-render-ms"))
                   assert math.isfinite(render_ms) and render_ms >= 0.0,render_ms
-                  assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
+                  assert "Jordan Love" in root.inner_text(timeout=5000)
                   dims=frame.locator("body").evaluate("""e => ({
                     bodyScroll:e.scrollWidth,
                     docScroll:document.documentElement.scrollWidth,
