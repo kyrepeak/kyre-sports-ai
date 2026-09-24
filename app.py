@@ -45,7 +45,8 @@ PASSING_YARDS_NEW_PHASE_STEP7_RUNTIME = "NFL_PASSING_YARDS_V68_NAVIGATION_MOBILE
 PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_RUNTIME = "NFL_PASSING_YARDS_V74_AVAILABILITY_GAME_DAY_STEP5_2026_09_23"
 PASSING_YARDS_STEP5_PUBLIC_SESSION_PURGE_GUARD_RUNTIME = "NFL_PASSING_YARDS_V225_PUBLIC_SESSION_PURGE_GUARD_2026_09_23"
 PASSING_YARDS_FAILURE_PROOFING_STEP6_RUNTIME = "NFL_PASSING_YARDS_V75_V226_FAILURE_PROOFING_STEP6_2026_09_23"
-PASSING_YARDS_UX_PRESENTATION_STEP7_RUNTIME = "NFL_PASSING_YARDS_V76_V227_UX_PRESENTATION_STEP7_2026_09_23"\nPASSING_YARDS_PERFORMANCE_STEP8_RUNTIME = "NFL_PASSING_YARDS_V77_V228_PERFORMANCE_STEP8_2026_09_23"
+PASSING_YARDS_UX_PRESENTATION_STEP7_RUNTIME = "NFL_PASSING_YARDS_V76_V227_UX_PRESENTATION_STEP7_2026_09_23"
+PASSING_YARDS_PERFORMANCE_STEP8_RUNTIME = "NFL_PASSING_YARDS_V77_V228_PERFORMANCE_STEP8_2026_09_23"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
 
@@ -308,7 +309,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v228 import record_bootstrap_import_ms, render_app\n    # Frozen Passing Yards Step 7 activation: from streamlit_memory_lazy_router_v227 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v228 import record_bootstrap_import_ms, render_app
+    # Frozen Passing Yards Step 7 activation: from streamlit_memory_lazy_router_v227 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 6 activation: from streamlit_memory_lazy_router_v226 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 5 activation: from streamlit_memory_lazy_router_v225 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 4 activation: from streamlit_memory_lazy_router_v224 import record_bootstrap_import_ms, render_app
