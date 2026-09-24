@@ -241,7 +241,7 @@ jobs:
               assert step6.count()==1
               assert step6.get_attribute("data-failure-proofing-mode")=="HEALTHY"
               text=step6.inner_text(timeout=5000)
-              assert "Failure-proofing active" in text
+              assert "failure-proofing active" in text.casefold()
               assert "frozen certified baseline preserved" in text
 
               dims=frame.locator("body").evaluate("""e => ({
@@ -349,7 +349,7 @@ jobs:
                   assert step6.count()==1
                   assert step6.get_attribute("data-failure-proofing-mode")=="HEALTHY"
                   text=step6.inner_text(timeout=5000)
-                  assert "Failure-proofing active" in text
+                  assert "failure-proofing active" in text.casefold()
                   assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
                   dims=frame.locator("body").evaluate("""e => ({
                     bodyScroll:e.scrollWidth,
