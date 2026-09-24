@@ -46,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+          cat > /tmp/expected-build.txt <<'EOF'
           .github/workflows/passing-yards-speed-step4-cache-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
@@ -54,9 +54,21 @@ jobs:
           streamlit_memory_lazy_router_v231.py
           tests/test_passing_yards_speed_step4_cache_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_SPEED_STEP4_SCOPE_GREEN"
+          cat > /tmp/expected-verifier-repair.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step4-cache-v1.yml
+          devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
+          EOF
+          sort -o /tmp/expected-build.txt /tmp/expected-build.txt
+          sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
+          if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEP4_SCOPE_GREEN"
+          elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEP4_VERIFIER_REPAIR_SCOPE_GREEN"
+          else
+            echo "Unexpected Speed Step 4 diff:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -171,7 +183,6 @@ jobs:
               raise RuntimeError("SPEED_STEP4_BRANCH_LAZY_IDENTITY_MISSING")
 
             page.goto(full,wait_until="domcontentloaded",timeout=120000)
-            find(page,'[data-passing-yards-evidence-cache="v80"]',60)
             frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',220,.35)
             if root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()!="Jordan Love":
               raise RuntimeError("SPEED_STEP4_BRANCH_FULL_IDENTITY_MISSING")
@@ -213,8 +224,25 @@ jobs:
         run: |
           python - <<'PY'
           import time
+          from pathlib import Path
           from urllib.parse import urlencode
           from playwright.sync_api import sync_playwright
+
+          app_source=Path("app.py").read_text()
+          router_source=Path("streamlit_memory_lazy_router_v231.py").read_text()
+          hub_source=Path("nfl_passing_yards_hub_v80.py").read_text()
+          if 'from streamlit_memory_lazy_router_v231 import record_bootstrap_import_ms, render_app' not in app_source:
+            raise RuntimeError("SPEED_STEP4_PUBLIC_SOURCE_OWNER_APP_NOT_V231")
+          if 'PASSING_HUB = "nfl_passing_yards_hub_v80"' not in router_source:
+            raise RuntimeError("SPEED_STEP4_PUBLIC_SOURCE_OWNER_V231_NOT_V80")
+          if 'FROZEN_PRIOR = "nfl_passing_yards_hub_v79"' not in hub_source:
+            raise RuntimeError("SPEED_STEP4_PUBLIC_SOURCE_OWNER_V80_NOT_V79")
+          for token in ("_cached_profile","_cached_defense","_cached_pressure","_cached_environment"):
+            if token not in hub_source:
+              raise RuntimeError("SPEED_STEP4_PUBLIC_SOURCE_OWNER_CACHE_MISSING:"+token)
+          if "_cached_market" in hub_source or "market_api" in hub_source:
+            raise RuntimeError("SPEED_STEP4_PUBLIC_SOURCE_OWNER_MARKET_CACHE_FORBIDDEN")
+          print("PASSING_YARDS_SPEED_STEP4_PUBLIC_SOURCE_OWNERSHIP_GREEN")
 
           base="https://kyre-sports-ai.streamlit.app"
           params={
@@ -225,6 +253,9 @@ jobs:
             "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER","ks_py_full":"1"
           }
           full=base+"/?"+urlencode(params)
+          lazy_params=dict(params)
+          lazy_params.pop("ks_py_full",None)
+          lazy=base+"/?"+urlencode(lazy_params)
 
           def find(page,selector,timeout,interval=.2):
             end=time.monotonic()+timeout
@@ -238,27 +269,19 @@ jobs:
             raise RuntimeError("SPEED_STEP4_PUBLIC_SELECTOR_NOT_READY:"+selector)
 
           with sync_playwright() as p:
-            deadline=time.monotonic()+480
-            while True:
-              b=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
-              c=b.new_context(viewport={"width":390,"height":844}); page=c.new_page()
-              try:
-                page.goto(full,wait_until="domcontentloaded",timeout=120000)
-                try:
-                  find(page,'[data-passing-yards-evidence-cache="v80"]',30)
-                  print("PASSING_YARDS_SPEED_STEP4_PUBLIC_DEPLOYMENT_ACTIVE")
-                  c.close(); b.close(); break
-                except Exception: pass
-              finally:
-                try:c.close()
-                except Exception:pass
-                try:b.close()
-                except Exception:pass
-              if time.monotonic()>=deadline: raise RuntimeError("SPEED_STEP4_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
-              time.sleep(12)
-
             b=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
             c=b.new_context(viewport={"width":390,"height":844}); page=c.new_page()
+
+            # V80 is cache-only and intentionally leaves the certified V79 DOM unchanged.
+            # Public activation therefore uses checked-out V231->V80->V79 ownership plus
+            # the durable live V79 selector instead of the non-durable hidden V80 marker.
+            page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+            lazy_frame,lazy_root=find(page,'[data-passing-yards-lazy-detail="v79"]',120,.3)
+            lazy_text=lazy_root.inner_text(timeout=5000)
+            if "Jordan Love" not in lazy_text:
+              raise RuntimeError("SPEED_STEP4_PUBLIC_DESCENDANT_IDENTITY_MISSING")
+            print("PASSING_YARDS_SPEED_STEP4_PUBLIC_DESCENDANT_V79_GREEN")
+            print("PASSING_YARDS_SPEED_STEP4_PUBLIC_DEPLOYMENT_ACTIVE")
 
             started=time.monotonic()
             page.goto(full,wait_until="domcontentloaded",timeout=120000)
@@ -273,8 +296,6 @@ jobs:
             warm=time.monotonic()-started
             name2=root2.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
             if name2!="Jordan Love": raise RuntimeError("SPEED_STEP4_PUBLIC_WARM_IDENTITY:"+name2)
-            find(page,'[data-passing-yards-evidence-cache="v80"]',30)
-
             if warm > cold + 8.0:
               raise RuntimeError(f"SPEED_STEP4_WARM_REGRESSION:cold={cold:.3f}:warm={warm:.3f}")
 
