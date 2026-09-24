@@ -5,9 +5,9 @@
   "version": 1,
   "source_main": "a710a7b8f6cb60d3571d9d563a4840a8b61327fb",
   "scope": "Passing Yards Step 5: Availability + Game-Day Conditions. Add an additive selected-QB evidence panel over frozen V73/V224. Reuse frozen personnel and environment evidence, resolve exact matchup identity, read exact-event game-day availability as CONFIRMED/PENDING/UNVERIFIED, fail closed when provider evidence is unavailable, and preserve Steps 1-4 plus all model/projection/context/probability/market math.",
-  "failed_layer": "NONE",
+  "failed_layer": "PUBLIC_VERIFIER_SESSION_LIFECYCLE",
   "new_build_mode": true,
-  "product_files_changed": true,
+  "product_files_changed": false,
   "id": "passing-yards-availability-game-day-step5-v1",
   "step": 5,
   "step5_status": "DONE",
@@ -72,5 +72,12 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair_epoch": "step5-public-verifier-session-v1",
+  "repair_source_main": "9de8ba0c41c183c1ce8f2fd6ce694261c229e42d",
+  "repair_root_cause": "The first hosted 390px Step 5 proof passed, then the verifier closed that page and opened a second fresh Streamlit page in the same browser context. That second-session cold import hit a redacted hosted KeyError before Step 5 evaluation. Branch proof had already certified all three widths on one continuous page/session. Repair the verifier to reuse one page/session while resizing to 390/768/1440; product code and frozen Steps 1-4 remain unchanged.",
+  "repair_failed_run": 35935130862,
+  "repair_first_public_width_green": 390,
+  "repair_state": "PATCH_PENDING_PROOF",
+  "public_freeze_pending": true
 }
