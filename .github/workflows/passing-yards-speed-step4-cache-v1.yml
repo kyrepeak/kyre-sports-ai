@@ -58,12 +58,21 @@ jobs:
           .github/workflows/passing-yards-speed-step4-cache-v1.yml
           devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
           EOF
+          cat > /tmp/expected-public-refresh.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
+          .github/workflows/passing-yards-speed-step4-cache-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
+          sort -o /tmp/expected-public-refresh.txt /tmp/expected-public-refresh.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_SPEED_STEP4_SCOPE_GREEN"
           elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_SPEED_STEP4_VERIFIER_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/expected-public-refresh.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEPS34_PUBLIC_REFRESH_SCOPE_GREEN"
           else
             echo "Unexpected Speed Step 4 diff:"
             cat /tmp/actual.txt
