@@ -215,6 +215,80 @@ jobs:
         if: always()
         run: kill "$(cat /tmp/py_step4_pid)" 2>/dev/null || true
 
+  public-route-diagnostic:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public diagnostic browser
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Inspect live Streamlit Passing Yards route
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
+          }
+          url=base+"/?"+urlencode(params)
+          selectors=[
+            '[data-passing-yards-lazy-detail="v79"]',
+            '[data-passing-yards-evidence-cache="v80"]',
+            '[data-passing-yards-qb-detail="v59"]',
+            '[data-passing-yards-lazy-detail]',
+            '[data-passing-yards-qb-detail]',
+            '[data-testid="stApp"]',
+            '[data-testid="stAppViewContainer"]',
+          ]
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+            page.on("console", lambda msg: print("PUBLIC_DIAG_CONSOLE",msg.type,msg.text[:500]))
+            page.on("pageerror", lambda exc: print("PUBLIC_DIAG_PAGEERROR",str(exc)[:1000]))
+            response=page.goto(url,wait_until="domcontentloaded",timeout=120000)
+            print("PUBLIC_DIAG_HTTP_STATUS", response.status if response else "NONE")
+            print("PUBLIC_DIAG_FINAL_URL", page.url)
+            print("PUBLIC_DIAG_TITLE", page.title())
+            for checkpoint in (2,10,30):
+              time.sleep(checkpoint if checkpoint == 2 else checkpoint - (2 if checkpoint == 10 else 10))
+              print("PUBLIC_DIAG_CHECKPOINT_SECONDS",checkpoint)
+              print("PUBLIC_DIAG_FRAME_COUNT",len(page.frames))
+              for i,frame in enumerate(page.frames):
+                print(f"PUBLIC_DIAG_FRAME_{i}_URL",frame.url)
+                for selector in selectors:
+                  try:
+                    print(f"PUBLIC_DIAG_FRAME_{i}_COUNT",selector,frame.locator(selector).count())
+                  except Exception as exc:
+                    print(f"PUBLIC_DIAG_FRAME_{i}_COUNT_ERROR",selector,type(exc).__name__)
+                try:
+                  text=frame.locator("body").inner_text(timeout=3000)
+                  print(f"PUBLIC_DIAG_FRAME_{i}_BODY_BEGIN")
+                  print(text[:12000])
+                  print(f"PUBLIC_DIAG_FRAME_{i}_BODY_END")
+                except Exception as exc:
+                  print(f"PUBLIC_DIAG_FRAME_{i}_BODY_ERROR",type(exc).__name__,str(exc)[:500])
+            print("PASSING_YARDS_SPEED_STEP4_PUBLIC_DIAGNOSTIC_COMPLETE")
+            context.close(); browser.close()
+          PY
+
   public-cache-freeze:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: static-contract
