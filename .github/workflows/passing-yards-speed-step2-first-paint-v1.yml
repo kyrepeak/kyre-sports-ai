@@ -1,0 +1,367 @@
+name: NFL Passing Yards Speed Step 2 First Paint
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step2-first-paint-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step2-first-paint-v1.json"
+      - "nfl_passing_yards_hub_v78.py"
+      - "streamlit_memory_lazy_router_v229.py"
+      - "tests/test_passing_yards_speed_step2_first_paint_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step2-first-paint-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step2-first-paint-v1.json"
+      - "nfl_passing_yards_hub_v78.py"
+      - "streamlit_memory_lazy_router_v229.py"
+      - "tests/test_passing_yards_speed_step2_first-paint-v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-speed-step2-first-paint-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce exact Step 2 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step2-first-paint-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-speed-step2-first-paint-v1.json
+          nfl_passing_yards_hub_v78.py
+          streamlit_memory_lazy_router_v229.py
+          tests/test_passing_yards_speed_step2_first_paint_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_SPEED_STEP2_SCOPE_GREEN"
+
+      - name: Prove frozen Steps 1-10 and speed Step 1 are untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "SPEED_STEP2_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob nfl_passing_yards_hub_v77.py b201bfac5af278ebbd7bdff63f0900526af686d1
+          check_blob streamlit_memory_lazy_router_v228.py 643d0c05efbde8593f197f0142fea205572e36af
+          check_blob .github/workflows/passing-yards-speed-step1-bottleneck-v1.yml $(git hash-object .github/workflows/passing-yards-speed-step1-bottleneck-v1.yml)
+          check_blob devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json $(git hash-object devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json)
+          echo "PASSING_YARDS_SPEED_STEP2_PRIOR_FREEZE_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and test fast first paint
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v78.py streamlit_memory_lazy_router_v229.py app.py
+          python -m pytest -q             tests/test_passing_yards_speed_step2_first_paint_v1.py             tests/test_passing_yards_performance_step8_v1.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-speed-step2-first-paint-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step2_status"] == "DONE"
+          assert ledger["sportsbook_projection_influence"] == 0
+          assert ledger["stake_sizing_enabled"] is False
+
+          app=Path("app.py").read_text()
+          assert "from streamlit_memory_lazy_router_v229 import record_bootstrap_import_ms, render_app" in app
+
+          hub=Path("nfl_passing_yards_hub_v78.py").read_text()
+          assert 'data-passing-yards-speed-first-paint="v78"' in hub
+          assert "preview hints never feed the model" in hub.lower()
+          print("PASSING_YARDS_SPEED_STEP2_STATIC_GREEN")
+          PY
+
+  branch-first-paint:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-speed-step2
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-speed-step2/streamlit.log 2>&1 &
+          echo $! > /tmp/py_speed_step2_pid
+
+      - name: Prove fast first paint then unchanged full analysis
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          params={
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+              "ks_py_hint_name":"Jordan Love",
+              "ks_py_hint_meta":"GB • QB",
+              "ks_py_hint_projection":"276.4",
+              "ks_py_hint_attempts":"34.8",
+              "ks_py_hint_ypa":"7.94",
+              "ks_py_hint_line":"274.5",
+              "ks_py_hint_lean":"LEAN OVER",
+          }
+          route=base+"/?"+urlencode(params)
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=2).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.4)
+          else:
+              raise RuntimeError("SPEED_STEP2_STREAMLIT_NOT_READY")
+
+          def find(page, selector, timeout):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  time.sleep(.15)
+              raise RuntimeError("SPEED_STEP2_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              started=time.monotonic()
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,fast=find(page,'[data-passing-yards-speed-first-paint="v78"]',30)
+              first_paint=time.monotonic()-started
+              if first_paint > 12.0:
+                  raise RuntimeError(f"SPEED_STEP2_BRANCH_FIRST_PAINT_BUDGET:{first_paint:.3f}")
+              fast_text=fast.inner_text(timeout=5000)
+              if "Jordan Love" not in fast_text or "276.4" not in fast_text:
+                  raise RuntimeError("SPEED_STEP2_BRANCH_PREVIEW_HINTS_MISSING")
+
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+                  if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
+                      raise RuntimeError(f"SPEED_STEP2_BRANCH_FAST_OVERFLOW:{width}:{dims}")
+
+              full_frame,root=find(
+                  page,
+                  '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
+                  220,
+              )
+              name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+              if name != "Jordan Love":
+                  raise RuntimeError("SPEED_STEP2_BRANCH_FULL_IDENTITY:"+name)
+              text=root.inner_text(timeout=5000)
+              for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                  if token in text:
+                      raise RuntimeError("SPEED_STEP2_BRANCH_RUNTIME_"+token)
+
+              print(f"PASSING_YARDS_SPEED_STEP2_BRANCH_FIRST_PAINT_GREEN seconds={first_paint:.3f}")
+              print("PASSING_YARDS_SPEED_STEP2_BRANCH_FULL_ANALYSIS_GREEN")
+              context.close()
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 900 artifacts/passing-yards-speed-step2/streamlit.log || true
+
+      - name: Stop branch Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py_speed_step2_pid ]; then kill "$(cat /tmp/py_speed_step2_pid)" 2>/dev/null || true; fi
+
+  public-first-paint-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public fast first paint and freeze Step 2
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+              "ks_py_hint_name":"Jordan Love",
+              "ks_py_hint_meta":"GB • QB",
+              "ks_py_hint_projection":"276.4",
+              "ks_py_hint_attempts":"34.8",
+              "ks_py_hint_ypa":"7.94",
+              "ks_py_hint_line":"274.5",
+              "ks_py_hint_lean":"LEAN OVER",
+          }
+          route=base+"/?"+urlencode(params)
+
+          try:
+              requests.get(base,timeout=10)
+          except Exception:
+              pass
+
+          def find(page, selector, timeout, interval=.2):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  time.sleep(interval)
+              raise RuntimeError("SPEED_STEP2_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              # Deployment activation gate: require the new visible V78 witness.
+              activation_deadline=time.monotonic()+480
+              while True:
+                  browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+                  context=browser.new_context(viewport={"width":390,"height":844})
+                  page=context.new_page()
+                  try:
+                      page.goto(route,wait_until="domcontentloaded",timeout=120000)
+                      try:
+                          find(page,'[data-passing-yards-speed-first-paint="v78"]',35)
+                          print("PASSING_YARDS_SPEED_STEP2_PUBLIC_DEPLOYMENT_ACTIVE")
+                          context.close()
+                          browser.close()
+                          break
+                      except Exception:
+                          pass
+                  finally:
+                      try: context.close()
+                      except Exception: pass
+                      try: browser.close()
+                      except Exception: pass
+                  if time.monotonic() >= activation_deadline:
+                      raise RuntimeError("SPEED_STEP2_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+                  time.sleep(12)
+
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              started=time.monotonic()
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,fast=find(page,'[data-passing-yards-speed-first-paint="v78"]',60)
+              first_paint=time.monotonic()-started
+              if first_paint > 18.0:
+                  raise RuntimeError(f"SPEED_STEP2_PUBLIC_FIRST_PAINT_BUDGET:{first_paint:.3f}")
+
+              fast_text=fast.inner_text(timeout=5000)
+              if "Jordan Love" not in fast_text or "276.4" not in fast_text:
+                  raise RuntimeError("SPEED_STEP2_PUBLIC_PREVIEW_HINTS_MISSING")
+
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+                  if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
+                      raise RuntimeError(f"SPEED_STEP2_PUBLIC_FAST_OVERFLOW:{width}:{dims}")
+                  print(f"PASSING_YARDS_SPEED_STEP2_PUBLIC_FAST_{width}_GREEN")
+
+              full_frame,root=find(
+                  page,
+                  '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
+                  240,
+                  .4,
+              )
+              name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+              if name != "Jordan Love":
+                  raise RuntimeError("SPEED_STEP2_PUBLIC_FULL_IDENTITY:"+name)
+              body=full_frame.locator("body").inner_text(timeout=5000)
+              for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                  if token in body:
+                      raise RuntimeError("SPEED_STEP2_PUBLIC_RUNTIME_"+token)
+
+              print(f"PASSING_YARDS_SPEED_STEP2_PUBLIC_FIRST_PAINT_GREEN seconds={first_paint:.3f}")
+              print("PASSING_YARDS_SPEED_STEP2_PUBLIC_FULL_ANALYSIS_GREEN")
+              print("PASSING_YARDS_SPEED_STEP2_GREEN")
+              print("PASSING_YARDS_SPEED_STEP2_FROZEN")
+              context.close()
+              browser.close()
+          PY
