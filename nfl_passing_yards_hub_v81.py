@@ -1,29 +1,39 @@
-"""NFL Passing Yards V81 — full-analysis payload deduplication.
+"""NFL Passing Yards V81 — bounded detail parsing + payload deduplication.
 
-Speed Phase Step 5. The frozen full-analysis chain already presents the selected
-quarterback's profile, opponent defense, pressure/protection, personnel, and
-environment evidence in the dedicated analysis sections. Frozen V67 then embeds
-those same captured HTML payloads a second time inside Deep Evidence.
+Speed Phase Step 5 fixes the real selected-QB payload explosion without changing
+any certified football/model calculation. Frozen V63-V66 detail wrappers parse
+values from composed HTML with unbounded bold-tag expressions. Those expressions
+can cross earlier closing bold tags, copy a large page prefix into one field, and
+then feed that enlarged string into the next wrapper. Across successive detail
+layers this can snowball a normal document into tens of MB.
 
-V81 preserves the certified evidence sections and V67 selectors/provenance while
-replacing only that duplicate second copy with a compact pointer. No model,
-projection, probability, context, market, provider, sportsbook, widget-key, or
-navigation calculations are changed.
+V81 temporarily installs boundary-safe, length-bounded value extractors for the
+V63-V66 presentation wrappers and also removes V67's redundant second copy of
+already-visible evidence. Original frozen values, sections, model math, provider
+behavior, market math, sportsbook influence, widget keys, and navigation state
+remain unchanged.
 """
 from __future__ import annotations
 
-from html import escape
+from html import escape, unescape
+import re
 from threading import RLock
 
 import streamlit as st
 
+import nfl_passing_yards_hub_v63 as detail_v63
+import nfl_passing_yards_hub_v64 as detail_v64
+import nfl_passing_yards_hub_v65 as detail_v65
+import nfl_passing_yards_hub_v66 as detail_v66
 import nfl_passing_yards_hub_v67 as deep_v67
 import nfl_passing_yards_hub_v80 as prior
 
-MODEL_VERSION = "NFL PASSING YARDS V81 • SPEED STEP 5 PAYLOAD DEDUPE"
+MODEL_VERSION = "NFL PASSING YARDS V81 • SPEED STEP 5 BOUNDED DETAIL PARSER + PAYLOAD DEDUPE"
 FROZEN_PRIOR = "nfl_passing_yards_hub_v80"
 SPEED_PHASE_STEP = 5
 PAYLOAD_DEDUPE_VERSION = "v81"
+PARSER_GUARD_VERSION = "bounded-b-v1"
+MAX_DETAIL_VALUE_CHARS = 240
 PRESENTATION_ONLY = True
 DISPLAY_ONLY = True
 MAY_MODIFY_PROJECTION = False
@@ -38,6 +48,56 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
 
 _PROCESS_DEDUPE_RLOCK = RLock()
+_BOUNDED_B_VALUE = rf"((?:(?!</b>).){{0,{MAX_DETAIL_VALUE_CHARS}}})"
+
+
+def _plain(value: str) -> str:
+    text = re.sub(r"<[^>]+>", " ", str(value or ""))
+    return " ".join(unescape(text).split()).strip()
+
+
+def _bounded_b_span(source: str, label: str) -> str:
+    """Read the adjacent bold value without crossing an earlier closing bold tag."""
+    pattern = (
+        rf"<b(?:\s[^>]*)?>{_BOUNDED_B_VALUE}</b>\s*"
+        rf"<span(?:\s[^>]*)?>\s*{re.escape(label)}\s*</span>"
+    )
+    match = re.search(pattern, str(source or ""), flags=re.S | re.I)
+    return _plain(match.group(1)) if match else "—"
+
+
+def _bounded_b_label(source: str, label: str) -> str:
+    """Read a nearby bold value + text label without cross-tag page capture."""
+    pattern = (
+        rf"<b(?:\s[^>]*)?>{_BOUNDED_B_VALUE}</b>\s*"
+        rf"{re.escape(label)}"
+    )
+    match = re.search(pattern, str(source or ""), flags=re.S | re.I)
+    return _plain(match.group(1)) if match else "—"
+
+
+def _install_bounded_detail_extractors() -> list[tuple[object, str, object]]:
+    patches = (
+        (detail_v63, "_extract_b_span", _bounded_b_span),
+        (detail_v63, "_extract_b_label", _bounded_b_label),
+        (detail_v64, "_extract_b_span", _bounded_b_span),
+        (detail_v64, "_extract_b_label", _bounded_b_label),
+        (detail_v65, "_extract_b_span", _bounded_b_span),
+        (detail_v65, "_extract_b_label", _bounded_b_label),
+        (detail_v66, "_extract_b_span", _bounded_b_span),
+    )
+    originals: list[tuple[object, str, object]] = []
+    for module, name, replacement in patches:
+        originals.append((module, name, getattr(module, name)))
+        setattr(module, name, replacement)
+    return originals
+
+
+def _restore_bounded_detail_extractors(
+    originals: list[tuple[object, str, object]],
+) -> None:
+    for module, name, original in reversed(originals):
+        setattr(module, name, original)
 
 
 def _piece(captured: dict[str, list[str]], key: str, index: int) -> str:
@@ -45,7 +105,6 @@ def _piece(captured: dict[str, list[str]], key: str, index: int) -> str:
     if key == "environment":
         return str(rows[0]) if rows else ""
     return str(rows[index]) if index < len(rows) else ""
-
 
 
 def _selected_payload_sizes(captured: dict[str, list[str]], slot: int) -> dict[str, int]:
@@ -58,6 +117,7 @@ def _selected_payload_sizes(captured: dict[str, list[str]], slot: int) -> dict[s
         key: len(_piece(captured, key, index).encode("utf-8"))
         for key in keys
     }
+
 
 def _duplicate_payload_bytes(captured: dict[str, list[str]], slot: int) -> int:
     index = max(0, int(slot) - 1)
@@ -88,6 +148,7 @@ def build_compact_deep_evidence(captured: dict[str, list[str]], slot: int) -> st
     return (
         '<section class="ks-py67-deep" data-passing-yards-deep-evidence="v67" '
         'data-passing-yards-payload-dedupe="v81" '
+        'data-passing-yards-bounded-detail-parser="v81" '
         'data-passing-yards-payload-dedupe-ready="v81" '
         f'data-step5-avoided-duplicate-bytes="{avoided}" '
         f'data-step5-selected-payload-bytes="{selected_total}" '
@@ -97,16 +158,17 @@ def build_compact_deep_evidence(captured: dict[str, list[str]], slot: int) -> st
         '<div class="ks-py67-title">Deep Evidence</div>'
         '</div><div class="ks-py67-badge">FROZEN EVIDENCE • SINGLE COPY</div></div>'
         '<div class="ks-py67-provenance" data-passing-yards-evidence-provenance="v67">'
-        '<strong>Evidence preserved without duplicate payload:</strong> the certified '
+        '<strong>Evidence preserved with bounded parsing:</strong> the certified '
         'profile, defense, pressure, personnel, and environment evidence remains in '
-        'the original analysis sections above. Step 5 removes only V67\'s second raw '
-        'HTML copy to reduce full-analysis transfer and render cost.</div>'
+        'the original analysis sections above. Step 5 prevents V63-V66 detail parsers '
+        'from crossing bold-tag boundaries and removes V67\'s second raw HTML copy.</div>'
         f'<div class="ks-py67-head" style="margin-top:10px;justify-content:flex-start;flex-wrap:wrap">{chips}</div>'
         '<details class="ks-py67-method" data-passing-yards-deep-evidence-method="v67">'
         '<summary>What Speed Step 5 changes</summary>'
-        '<p>Presentation transport only. No evidence builder, projection, probability, '
-        'context, market, sportsbook, provider, or navigation calculation changes. '
-        'Sportsbook projection influence remains 0.0%.</p></details>'
+        '<p>Presentation parsing/transport only. Extracted values are the same adjacent '
+        'bold values, now boundary-safe and capped at 240 characters. No evidence builder, '
+        'projection, probability, context, market, sportsbook, provider, or navigation '
+        'calculation changes. Sportsbook projection influence remains 0.0%.</p></details>'
         '</section>'
     )
 
@@ -114,16 +176,19 @@ def build_compact_deep_evidence(captured: dict[str, list[str]], slot: int) -> st
 def render_nfl_passing_yards_hub() -> None:
     st.markdown(
         '<span data-passing-yards-payload-dedupe-owner="v81" '
+        'data-passing-yards-bounded-parser-owner="v81" '
         'style="display:none" aria-hidden="true"></span>',
         unsafe_allow_html=True,
     )
     with _PROCESS_DEDUPE_RLOCK:
-        original = deep_v67.build_deep_evidence
+        originals = _install_bounded_detail_extractors()
+        original_deep = deep_v67.build_deep_evidence
         deep_v67.build_deep_evidence = build_compact_deep_evidence
         try:
             return prior.render_nfl_passing_yards_hub()
         finally:
-            deep_v67.build_deep_evidence = original
+            deep_v67.build_deep_evidence = original_deep
+            _restore_bounded_detail_extractors(originals)
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
@@ -133,12 +198,15 @@ def render_nfl_hub(market: str = "Passing Yards") -> None:
 
 
 __all__ = [
-    "DISPLAY_ONLY","FROZEN_PRIOR","MAY_MODIFY_CONTEXT_MATH",
-    "MAY_MODIFY_DATA_PROVIDER_BEHAVIOR","MAY_MODIFY_MARKET_MATH",
-    "MAY_MODIFY_NAVIGATION_STATE","MAY_MODIFY_PROBABILITY","MAY_MODIFY_PROJECTION",
-    "MAY_MODIFY_SPORTSBOOK_BEHAVIOR","MAY_MODIFY_WIDGET_KEYS","MODEL_VERSION",
+    "DISPLAY_ONLY","FROZEN_PRIOR","MAX_DETAIL_VALUE_CHARS",
+    "MAY_MODIFY_CONTEXT_MATH","MAY_MODIFY_DATA_PROVIDER_BEHAVIOR",
+    "MAY_MODIFY_MARKET_MATH","MAY_MODIFY_NAVIGATION_STATE",
+    "MAY_MODIFY_PROBABILITY","MAY_MODIFY_PROJECTION","MAY_MODIFY_SPORTSBOOK_BEHAVIOR",
+    "MAY_MODIFY_WIDGET_KEYS","MODEL_VERSION","PARSER_GUARD_VERSION",
     "PAYLOAD_DEDUPE_VERSION","PRESENTATION_ONLY","SPEED_PHASE_STEP",
     "SPORTSBOOK_PROJECTION_INFLUENCE","STAKE_SIZING_ENABLED",
-    "_duplicate_payload_bytes","_piece","_selected_payload_sizes","build_compact_deep_evidence",
+    "_bounded_b_label","_bounded_b_span","_duplicate_payload_bytes",
+    "_install_bounded_detail_extractors","_piece","_restore_bounded_detail_extractors",
+    "_selected_payload_sizes","build_compact_deep_evidence",
     "render_nfl_hub","render_nfl_passing_yards_hub",
 ]
