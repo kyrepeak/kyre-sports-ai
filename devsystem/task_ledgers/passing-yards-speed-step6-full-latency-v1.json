@@ -51,7 +51,7 @@
     "failure_token": "ActionLedgerFailure: future task ledger must finish in DONE state",
     "patch": "Mark the diagnostic task ledger DONE while preserving Step 6 product state as not yet patched."
   },
-  "step6_status": "PENDING_PROOF",
+  "step6_status": "BRANCH_PROVEN",
   "root_cause": "The frozen selected-QB full-analysis pipeline consumes independent cold profile, defense, pressure, personnel, and environment evidence sequentially. The authoritative profiler measured 38.557s server render inside 42.594s total readiness (90.52%), while HTML composition was only 168.430ms.",
   "authoritative_profiler_run": 36060132179,
   "authoritative_profiler_job": 107836887467,
@@ -69,7 +69,7 @@
   "reduction_target_pct": 40,
   "transport_scheduling_only": true,
   "data_provider_behavior_changed": false,
-  "patch_state": "PENDING_PROOF",
+  "patch_state": "PROVEN_ON_BRANCH",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
@@ -81,5 +81,19 @@
     "failure_token": "ActionLedgerFailure: task ledger requires action_log",
     "failed_layer": "CI",
     "patch": "Add the required empty deterministic action_log contract only; no product/runtime/model/data/math changes."
-  }
+  },
+  "branch_proof": {
+    "run": 36064654818,
+    "job": 107852229030,
+    "head_sha": "424b687374a5912154f2a99ddfa276a30d59b266",
+    "full_ready_seconds": 10.549,
+    "server_render_ms": 7585.483,
+    "reduction_pct": 75.23,
+    "prefetch_launched": 9,
+    "prefetch_hits": 7,
+    "html_bytes": 243278,
+    "token": "PASSING_YARDS_SPEED_STEP6_BRANCH_CONCURRENT_PREFETCH_GREEN",
+    "status": "GREEN"
+  },
+  "next_required_state": "DevSystem current-head GREEN -> merge -> main/public freeze proof"
 }
