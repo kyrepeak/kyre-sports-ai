@@ -47,6 +47,8 @@
     "product_code_changed": false,
     "app_runtime_changed": false,
     "model_math_changed": false,
-    "sportsbook_projection_influence": 0
+    "sportsbook_projection_influence": 0,
+    "revision": 2,
+    "trigger": "pull_request_synchronize"
   }
 }
