@@ -45,8 +45,14 @@ _INTERTAG = re.compile(r">\s+<")
 
 
 def _compact_intertag_whitespace(body: str) -> str:
-    """Collapse indentation between HTML tags to one semantic whitespace byte."""
-    return _INTERTAG.sub("> <", str(body or ""))
+    """Compact inter-tag whitespace without creating one giant Markdown line."""
+    text = str(body or "")
+    # Small fragments keep the original single-space behavior used by the
+    # certified unit contract. Large selected-QB documents keep a one-byte
+    # newline between tags so Streamlit's Markdown/HTML parser can process the
+    # document incrementally instead of receiving one enormous inline token.
+    replacement = ">\n<" if len(text) >= 8192 else "> <"
+    return _INTERTAG.sub(replacement, text)
 
 
 def _inject_performance_contract(
