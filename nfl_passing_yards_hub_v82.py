@@ -23,6 +23,7 @@ from typing import Any, Callable
 import streamlit as st
 
 import nfl_passing_yards_hub_v8 as step7_ui
+import nfl_passing_yards_hub_v42 as identity_bridge_v42
 import nfl_passing_yards_hub_v58 as selection
 import nfl_passing_yards_hub_v80 as cache_v80
 import nfl_passing_yards_hub_v81 as prior
@@ -129,6 +130,7 @@ def render_nfl_passing_yards_hub() -> None:
 
     with _PROCESS_STEP6_RLOCK:
         original_identity = step7_ui.identity.resolve_matchup_identity
+        original_v42_resolve = identity_bridge_v42._ORIGINAL_RESOLVE
         original_profile = cache_v80._cached_profile
         original_defense = cache_v80._cached_defense
         original_pressure = cache_v80._cached_pressure
@@ -290,6 +292,7 @@ def render_nfl_passing_yards_hub() -> None:
             )
 
         step7_ui.identity.resolve_matchup_identity = wrapped_identity
+        identity_bridge_v42._ORIGINAL_RESOLVE = wrapped_identity
         cache_v80._cached_profile = fast_profile
         cache_v80._cached_defense = fast_defense
         cache_v80._cached_pressure = fast_pressure
@@ -311,6 +314,7 @@ def render_nfl_passing_yards_hub() -> None:
             return result
         finally:
             step7_ui.identity.resolve_matchup_identity = original_identity
+            identity_bridge_v42._ORIGINAL_RESOLVE = original_v42_resolve
             cache_v80._cached_profile = original_profile
             cache_v80._cached_defense = original_defense
             cache_v80._cached_pressure = original_pressure
