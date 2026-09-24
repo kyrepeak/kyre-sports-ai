@@ -6,7 +6,7 @@
   "version": 1,
   "phase": "selected-qb-speed",
   "step": 6,
-  "status": "ACTIVE",
+  "status": "DONE",
   "source_main": "47a1ee35840099f16af4ad84c3004db54750f44a",
   "frozen_speed_steps": [
     1,
@@ -35,5 +35,20 @@
   "sportsbook_logic_changed": false,
   "sportsbook_projection_influence": 0,
   "stake_sizing_enabled": false,
-  "freeze_on_public_success": true
+  "freeze_on_public_success": true,
+  "diagnostic_status": "DONE",
+  "current_failure_epoch": {
+    "run": 36058784910,
+    "failed_job": 107832337573,
+    "failure_token": "bash syntax error: unexpected end of file",
+    "failed_layer": "VERIFIER",
+    "root_cause": "Indented heredoc EOF delimiters in the Step 6 static-contract shell were treated as data, so Bash reached end-of-file before closing the heredoc.",
+    "patch": "Replace heredocs with deterministic printf lists; no product/runtime/model/data/math changes."
+  },
+  "devsystem_contract_repair": {
+    "run": 36058784804,
+    "failed_job": 107832405706,
+    "failure_token": "ActionLedgerFailure: future task ledger must finish in DONE state",
+    "patch": "Mark the diagnostic task ledger DONE while preserving Step 6 product state as not yet patched."
+  }
 }
