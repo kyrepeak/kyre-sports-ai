@@ -6,7 +6,16 @@
   "status": "DONE",
   "source_main_sha": "91f8d2210334f4fb5d8cba4fbe692e50f0322daa",
   "scope": "Verifier-only model validation. Recompute the frozen Passing Yards projection from underlying football inputs, validate bounded context math and probability invariants, and prove sportsbook lines/prices cannot feed back into projection or distribution. Steps 1-8 product owners remain unchanged.",
-  "frozen_prior_steps": [1,2,3,4,5,6,7,8],
+  "frozen_prior_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
   "product_code_changed": false,
   "model_math_changed": false,
   "projection_changed": false,
@@ -33,5 +42,10 @@
     "nfl_passing_yards_market_v1.py": "892bd14ae62a5040dcf5d9c9c7c308def0dfde64",
     "nfl_passing_yards_hub_v77.py": "b201bfac5af278ebbd7bdff63f0900526af686d1",
     "streamlit_memory_lazy_router_v228.py": "643d0c05efbde8593f197f0142fea205572e36af"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
   }
 }
