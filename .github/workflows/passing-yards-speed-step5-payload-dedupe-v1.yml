@@ -1,0 +1,351 @@
+name: NFL Passing Yards Speed Step 5 Payload Dedupe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json"
+      - "nfl_passing_yards_hub_v81.py"
+      - "requirements.txt"
+      - "streamlit_memory_lazy_router_v232.py"
+      - "tests/test_passing_yards_speed_step5_payload_dedupe_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json"
+      - "nfl_passing_yards_hub_v81.py"
+      - "requirements.txt"
+      - "streamlit_memory_lazy_router_v232.py"
+      - "tests/test_passing_yards_speed_step5_payload_dedupe_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-speed-step5-payload-dedupe-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce exact Step 5 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected-build.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json
+          nfl_passing_yards_hub_v81.py
+          requirements.txt
+          streamlit_memory_lazy_router_v232.py
+          tests/test_passing_yards_speed-step5-payload-dedupe-v1.py
+          EOF
+          sed -i 's/speed-step5/speed_step5/' /tmp/expected-build.txt
+          cat > /tmp/expected-verifier-repair.txt <<'EOF'
+          .github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml
+          devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json
+          EOF
+          sort -o /tmp/expected-build.txt /tmp/expected-build.txt
+          sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
+          if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEP5_SCOPE_GREEN"
+          elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_SPEED_STEP5_VERIFIER_REPAIR_SCOPE_GREEN"
+          else
+            echo "Unexpected Speed Step 5 diff:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
+
+      - name: Prove Speed Steps 1-4 frozen
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "SPEED_STEP5_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob nfl_passing_yards_hub_v80.py 3a64f7020ac38815d6e82d8ceddd5b38db2c839c
+          check_blob nfl_passing_yards_hub_v79.py 2bb1f74ca7655a37eed96a3419a7e3671d0f83cd
+          check_blob streamlit_memory_lazy_router_v231.py 19fc5c4b5b91436fde0919b3047d16a9a4349f41
+          check_blob devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json 155a285be40d428f8238283de8453e63e5653a24
+          echo "PASSING_YARDS_SPEED_STEP5_PRIOR_FREEZE_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install and test payload dedupe contract
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_speed_step5_payload_dedupe_v1.py
+          python -m py_compile nfl_passing_yards_hub_v81.py streamlit_memory_lazy_router_v232.py app.py
+          grep -F 'from streamlit_memory_lazy_router_v232 import record_bootstrap_import_ms, render_app' app.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json").read_text())
+          assert ledger["frozen_speed_steps"] == [1,2,3,4]
+          assert ledger["original_evidence_sections_preserved"] is True
+          assert ledger["dependency_versions_changed"] is False
+          assert ledger["model_math_changed"] is False
+          assert ledger["projection_changed"] is False
+          assert ledger["context_math_changed"] is False
+          assert ledger["probability_changed"] is False
+          assert ledger["market_math_changed"] is False
+          assert ledger["sportsbook_logic_changed"] is False
+          assert ledger["sportsbook_projection_influence"] == 0
+          assert ledger["stake_sizing_enabled"] is False
+          hub=Path("nfl_passing_yards_hub_v81.py").read_text()
+          assert 'data-passing-yards-payload-dedupe="v81"' in hub
+          assert 'data-step5-avoided-duplicate-bytes' in hub
+          print("PASSING_YARDS_SPEED_STEP5_MODEL_MATH_FROZEN_GREEN")
+          print("PASSING_YARDS_SPEED_STEP5_STATIC_GREEN")
+          PY
+
+  branch-live-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install branch browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch app
+        run: |
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/py_step5.log 2>&1 &
+          echo $! >/tmp/py_step5_pid
+
+      - name: Prove lazy route and deduplicated full analysis
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          common={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
+          }
+          lazy=base+"/?"+urlencode(common)
+          full=base+"/?"+urlencode({**common,"ks_py_full":"1"})
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+            try:
+              if requests.get(base,timeout=2).status_code < 500:
+                break
+            except Exception:
+              pass
+            time.sleep(.3)
+          else:
+            raise RuntimeError("SPEED_STEP5_BRANCH_APP_NOT_READY")
+
+          def find(page,selector,timeout,interval=.2):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame,loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP5_BRANCH_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+
+            page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+            find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',30)
+            _,lazy_root=find(page,'[data-passing-yards-lazy-detail="v79"]',30)
+            if "Jordan Love" not in lazy_root.inner_text(timeout=5000):
+              raise RuntimeError("SPEED_STEP5_BRANCH_LAZY_IDENTITY_MISSING")
+
+            page.goto(full,wait_until="domcontentloaded",timeout=120000)
+            frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',300,.35)
+            _,dedupe=find(page,'[data-passing-yards-payload-dedupe="v81"]',30)
+            avoided=int(dedupe.get_attribute("data-step5-avoided-duplicate-bytes") or "0")
+            if avoided <= 1024:
+              raise RuntimeError(f"SPEED_STEP5_BRANCH_DEDUPE_TOO_SMALL:{avoided}")
+
+            name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name!="Jordan Love":
+              raise RuntimeError("SPEED_STEP5_BRANCH_FULL_IDENTITY:"+name)
+
+            body=frame.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body:
+                raise RuntimeError("SPEED_STEP5_BRANCH_RUNTIME_"+token)
+
+            try:
+              _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',30)
+              html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
+            except Exception:
+              html_bytes=0
+
+            print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_AVOIDED_DUPLICATE_BYTES={avoided}")
+            print(f"PASSING_YARDS_SPEED_STEP5_BRANCH_HTML_BYTES={html_bytes}")
+            print("PASSING_YARDS_SPEED_STEP5_BRANCH_V81_OWNER_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_BRANCH_LAZY_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_BRANCH_FULL_ANALYSIS_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_BRANCH_PAYLOAD_DEDUPE_GREEN")
+            context.close(); browser.close()
+          PY
+
+      - name: Print branch log on failure
+        if: failure()
+        run: tail -n 900 /tmp/py_step5.log || true
+
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_step5_pid)" 2>/dev/null || true
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Step 5 owner and freeze
+        run: |
+          python - <<'PY'
+          import time
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          app_source=Path("app.py").read_text()
+          router_source=Path("streamlit_memory_lazy_router_v232.py").read_text()
+          hub_source=Path("nfl_passing_yards_hub_v81.py").read_text()
+
+          if 'from streamlit_memory_lazy_router_v232 import record_bootstrap_import_ms, render_app' not in app_source:
+            raise RuntimeError("SPEED_STEP5_PUBLIC_SOURCE_OWNER_APP_NOT_V232")
+          if 'PASSING_HUB = "nfl_passing_yards_hub_v81"' not in router_source:
+            raise RuntimeError("SPEED_STEP5_PUBLIC_SOURCE_OWNER_V232_NOT_V81")
+          if 'FROZEN_PRIOR = "nfl_passing_yards_hub_v80"' not in hub_source:
+            raise RuntimeError("SPEED_STEP5_PUBLIC_SOURCE_OWNER_V81_NOT_V80")
+          if 'data-passing-yards-payload-dedupe="v81"' not in hub_source:
+            raise RuntimeError("SPEED_STEP5_PUBLIC_SOURCE_DEDUPE_CONTRACT_MISSING")
+
+          print("PASSING_YARDS_SPEED_STEP5_PUBLIC_SOURCE_OWNERSHIP_GREEN")
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+            "ks_jump_sport":"NFL","ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24","ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2","ks_py_hint_name":"Jordan Love","ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4","ks_py_hint_attempts":"34.8","ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5","ks_py_hint_lean":"LEAN OVER"
+          }
+          lazy=base+"/?"+urlencode(params)
+
+          def find(page,selector,timeout,interval=.25):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame,loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP5_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+            deadline=time.monotonic()+600
+            while True:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              active=False
+              try:
+                page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+                try:
+                  find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',25)
+                  active=True
+                except Exception:
+                  active=False
+              finally:
+                if not active:
+                  try: context.close()
+                  except Exception: pass
+                  try: browser.close()
+                  except Exception: pass
+
+              if active:
+                break
+              if time.monotonic()>=deadline:
+                raise RuntimeError("SPEED_STEP5_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+              time.sleep(12)
+
+            find(page,'[data-passing-yards-evidence-cache="v80"]',30)
+            frame,lazy_root=find(page,'[data-passing-yards-lazy-detail="v79"]',30)
+            text=lazy_root.inner_text(timeout=5000)
+            if "Jordan Love" not in text:
+              raise RuntimeError("SPEED_STEP5_PUBLIC_IDENTITY_MISSING")
+
+            body=frame.locator("body").inner_text(timeout=5000)
+            for token in ("TypeError","KeyError","Traceback","RecursionError"):
+              if token in body:
+                raise RuntimeError("SPEED_STEP5_PUBLIC_RUNTIME_"+token)
+
+            print("PASSING_YARDS_SPEED_STEP5_PUBLIC_V81_OWNER_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_PUBLIC_V80_DESCENDANT_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_PUBLIC_V79_LAZY_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_PUBLIC_DEPLOYMENT_ACTIVE")
+            print("PASSING_YARDS_SPEED_STEP5_PAYLOAD_DEDUPE_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_GREEN")
+            print("PASSING_YARDS_SPEED_STEP5_FROZEN")
+            context.close(); browser.close()
+          PY
