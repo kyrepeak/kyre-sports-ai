@@ -270,7 +270,7 @@ jobs:
               print(f"PASSING_YARDS_PERFORMANCE_STEP8_{width}_GREEN ready_s={ready_s:.3f} server_ms={render_ms:.3f} html={before}->{after}")
 
           with sync_playwright() as p:
-              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              browser=p.chromium.launch(headless=True,channel="chromium",args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
               page=browser.new_page(viewport={"width":390,"height":844})
               certify(page,390,844)
               certify(page,768,1024)
@@ -360,7 +360,7 @@ jobs:
                       raise RuntimeError("STEP8_PUBLIC_RUNTIME_ERROR:"+token)
 
           with sync_playwright() as p:
-              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              browser=p.chromium.launch(headless=True,channel="chromium",args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
               for width,height in ((390,844),(768,1024),(1440,1000)):
                   started=time.monotonic()
                   page=browser.new_page(viewport={"width":width,"height":height})
