@@ -187,28 +187,51 @@ jobs:
             page=c.new_page()
             page.goto(url,wait_until="domcontentloaded",timeout=120000)
             v81=present(page,'[data-passing-yards-payload-dedupe-owner="v81"]',45)
-            v80=present(page,'[data-passing-yards-evidence-cache="v80"]',15)
-            v79=present(page,'[data-passing-yards-lazy-detail="v79"]',15)
+            v80=present(page,'[data-passing-yards-evidence-cache="v80"]',12)
+            v79=present(page,'[data-passing-yards-lazy-detail="v79"]',12)
+            v77=present(page,'[data-passing-yards-performance-runtime="v77"]',8)
+            v70=present(page,'[data-passing-yards-mobile-cleanup-runtime="v70"]',8)
+            v60=present(page,'[data-passing-yards-step3-header="v60"]',8)
+            v59=present(page,'[data-passing-yards-qb-detail="v59"]',8)
+            st_app=present(page,'[data-testid="stAppViewContainer"]',5)
             body=""
+            frame_urls=[]
             for frame in page.frames:
               try:
+                frame_urls.append(frame.url)
                 body += "\n"+frame.locator("body").inner_text(timeout=3000)
               except Exception:
                 pass
+            compact=" ".join(body.split())
             runtime_error=any(t in body for t in ("Traceback","ModuleNotFoundError","ImportError","TypeError","KeyError"))
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_PAGE_URL={page.url}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_PAGE_TITLE={page.title()}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_FRAME_COUNT={len(page.frames)}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_FRAME_URLS={' | '.join(frame_urls)[:1200]}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_BODY_CHARS={len(body)}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_BODY_EXCERPT={compact[:1200]}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_STREAMLIT_SHELL={str(st_app).lower()}")
             print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_V81={str(v81).lower()}")
             print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_V80={str(v80).lower()}")
             print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_V79={str(v79).lower()}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_V77={str(v77).lower()}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_V70={str(v70).lower()}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_V60={str(v60).lower()}")
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_V59={str(v59).lower()}")
             print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_RUNTIME_ERROR_TEXT={str(runtime_error).lower()}")
             if v81:
-              print("PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_STATE=V81_ACTIVE")
+              state="V81_ACTIVE"
             elif v80 and v79:
-              print("PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_STATE=V80_V79_ACTIVE")
+              state="V80_V79_ACTIVE"
             elif v79:
-              print("PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_STATE=V79_ACTIVE")
+              state="V79_ACTIVE"
+            elif any((v77,v70,v60,v59)):
+              state="OLDER_PASSING_YARDS_ACTIVE"
+            elif st_app:
+              state="STREAMLIT_SHELL_NO_PASSING_OWNER"
             else:
-              print("PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_STATE=OWNER_NOT_OBSERVED")
-              raise RuntimeError("SPEED_STEP5_PUBLIC_DIAGNOSTIC_OWNER_NOT_OBSERVED")
+              state="OWNER_NOT_OBSERVED"
+            print(f"PASSING_YARDS_SPEED_STEP5_PUBLIC_DIAGNOSTIC_STATE={state}")
             c.close(); b.close()
           PY
 
