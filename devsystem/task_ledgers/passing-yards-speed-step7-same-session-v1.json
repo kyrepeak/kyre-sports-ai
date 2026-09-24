@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "DIAGNOSTIC_PENDING",
+  "step7_status": "PATCH_PENDING_PROOF",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -25,10 +25,10 @@
   "objective": "Measure and remove the remaining user-visible delay caused by the lazy-shell Load Full Analysis transition, without changing any frozen football/model/data/projection/context/probability/market/sportsbook behavior.",
   "current_first_broken_arrow": "Lazy shell -> Load Full Analysis -> selected-QB full detail ready",
   "failed_layer": "NAVIGATION",
-  "root_cause_status": "PENDING_DIAGNOSTIC",
+  "root_cause_status": "LOCKED",
   "diagnostic_budget": 1,
   "diagnostic_action": "One branch browser profile proving whether the current V79 Load Full Analysis anchor causes a full document navigation and measuring click-to-ready versus frozen V77 server-render telemetry.",
-  "product_code_changed": false,
+  "product_code_changed": true,
   "model_math_changed": false,
   "projection_changed": false,
   "context_math_changed": false,
@@ -37,7 +37,7 @@
   "sportsbook_logic_changed": false,
   "data_provider_behavior_changed": false,
   "widget_keys_changed": false,
-  "navigation_state_changed": false,
+  "navigation_state_changed": true,
   "sportsbook_projection_influence": 0,
   "stake_sizing_enabled": false,
   "freeze_on_public_success": true,
@@ -54,5 +54,43 @@
     "root_cause": "The first transition profiler waited only for final V59 readiness and did not record the post-click page/tab/URL state, so the failing transition owner could not be proven.",
     "patch": "Instrument href target, context page count, active URL and post-click page selection only. No product/runtime/model/data/math changes."
   },
-  "diagnostic_status": "RERUN_PENDING"
+  "diagnostic_status": "RERUN_PENDING",
+  "root_cause": {
+    "evidence_run": 36070024703,
+    "failed_job": 107868597212,
+    "failure_token": "SPEED_STEP7_PROFILE_SELECTOR_NOT_READY:[data-passing-yards-qb-detail=\"v59\"][data-qb-analysis-slot=\"2\"]",
+    "href_contract": "ks_py_full=1 present",
+    "rendered_target": "_blank",
+    "context_pages_after_click": 1,
+    "active_document_full_flag": false,
+    "conclusion": "Legacy V79 Load Full Analysis anchor is sanitized/rendered with target=_blank. The current Streamlit document remains on the lazy URL, so ks_py_full=1 never activates in the existing session."
+  },
+  "product_patch": {
+    "owner": "nfl_passing_yards_hub_v83",
+    "router": "streamlit_memory_lazy_router_v234",
+    "description": "Remove the active legacy V79 load anchor from the lazy shell and replace activation with a native Streamlit button that sets ks_py_full=1 and reruns the same session. Delegate full analysis unchanged to frozen V82.",
+    "prior_owner_preserved": "nfl_passing_yards_hub_v82",
+    "files": [
+      "nfl_passing_yards_hub_v83.py",
+      "streamlit_memory_lazy_router_v234.py",
+      "app.py",
+      "tests/test_passing_yards_speed_step7_same_session_v1.py",
+      ".github/workflows/passing-yards-speed-step7-same-session-v1.yml",
+      "devsystem/task_ledgers/passing-yards-speed-step7-same-session-v1.json"
+    ]
+  },
+  "navigation_change_scope": "Activation transport only: ks_py_full=1 in current session; existing date/matchup/QB/hints preserved.",
+  "acceptance_gates": [
+    "1 root cause locked from live transition evidence",
+    "2 one minimal V83/V234 same-session patch",
+    "3 static/unit contract GREEN",
+    "4 branch same-session browser proof GREEN",
+    "5 DevSystem current-head GREEN",
+    "6 PR merged",
+    "7 main SHA ownership confirmed",
+    "8 public V83 deployment active",
+    "9 public same-session transition faster than Step6 4.320s baseline",
+    "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
+  ],
+  "next_required_state": "Current-head Step7 static + branch live proof GREEN and DevSystem GREEN"
 }
