@@ -46,18 +46,18 @@ jobs:
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-            cat > /tmp/profile.txt <<'EOF'
-            .github/workflows/passing-yards-speed-step6-full-latency-v1.yml
-            devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json
-            EOF
-            cat > /tmp/build.txt <<'EOF'
-            .github/workflows/passing-yards-speed-step6-full-latency-v1.yml
-            app.py
-            devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json
-            nfl_passing_yards_hub_v82.py
-            streamlit_memory_lazy_router_v233.py
-            tests/test_passing_yards_speed-step6-full-latency-v1.py
-            EOF
+            printf '%s\n' \
+              '.github/workflows/passing-yards-speed-step6-full-latency-v1.yml' \
+              'devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json' \
+              > /tmp/profile.txt
+            printf '%s\n' \
+              '.github/workflows/passing-yards-speed-step6-full-latency-v1.yml' \
+              'app.py' \
+              'devsystem/task_ledgers/passing-yards-speed-step6-full-latency-v1.json' \
+              'nfl_passing_yards_hub_v82.py' \
+              'streamlit_memory_lazy_router_v233.py' \
+              'tests/test_passing_yards_speed_step6_full_latency_v1.py' \
+              > /tmp/build.txt
             sort -o /tmp/profile.txt /tmp/profile.txt
             sort -o /tmp/build.txt /tmp/build.txt
             if diff -q /tmp/profile.txt /tmp/actual.txt >/dev/null; then
