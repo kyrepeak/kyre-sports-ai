@@ -1,0 +1,174 @@
+name: NFL Passing Yards Model Validation Step 9
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-model-validation-step9-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-model-validation-step9-v1.json"
+      - "tests/test_passing_yards_model_validation_step9_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-model-validation-step9-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-model-validation-step9-v1.json"
+      - "tests/test_passing_yards_model_validation_step9_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-model-validation-step9-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  MODEL_VALIDATION_STEP9:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce verifier-only Step 9 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-model-validation-step9-v1.yml
+          devsystem/task_ledgers/passing-yards-model-validation-step9-v1.json
+          tests/test_passing_yards_model_validation_step9_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_MODEL_VALIDATION_STEP9_SCOPE_GREEN"
+
+      - name: Prove Steps 1-8 frozen blob identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            file="$1"; expected="$2"
+            actual="$(git hash-object "$file")"
+            test "$actual" = "$expected" || {
+              echo "STEP9_FROZEN_BLOB_MISMATCH:$file:$actual:$expected"
+              exit 1
+            }
+          }
+          check_blob app.py 233b7295706db346b570f15241758b35bb76d6f3
+          check_blob nfl_passing_yards_projection_v1.py b65aae26bcb2476b674b34a797766136ba42595f
+          check_blob nfl_passing_yards_context_v1.py f958fbc1960b464264eb70e47564bf5bf22ded48
+          check_blob nfl_passing_yards_distribution_v1.py 67ab23866f61aef2b9c495fd376574cbdfd77197
+          check_blob nfl_passing_yards_market_v1.py 892bd14ae62a5040dcf5d9c9c7c308def0dfde64
+          check_blob nfl_passing_yards_hub_v77.py b201bfac5af278ebbd7bdff63f0900526af686d1
+          check_blob streamlit_memory_lazy_router_v228.py 643d0c05efbde8593f197f0142fea205572e36af
+          echo "PASSING_YARDS_STEPS1_8_FROZEN_GREEN"
+
+      - name: Install validation test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Validate model chain against football inputs
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q             tests/test_nfl_passing_yards_step7_projection_v1.py             tests/test_nfl_passing_yards_step8_context_v1.py             tests/test_nfl_passing_yards_step9_distribution_v1.py             tests/test_passing_yards_model_validation_step9_v1.py
+          echo "PASSING_YARDS_MODEL_VALIDATION_STEP9_STATIC_GREEN"
+
+  public-model-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: MODEL_VALIDATION_STEP9
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser proof
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove live Jordan Love model arithmetic and market isolation
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          route="https://kyre-sports-ai.streamlit.app/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+
+          def find(page, selector, timeout=240):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count() >= 1:
+                              return frame, loc.first
+                      except Exception:
+                          pass
+                  time.sleep(.5)
+              raise RuntimeError("STEP9_SELECTOR_NOT_READY:"+selector)
+
+          def number_before(text, label):
+              pattern=rf"([0-9]+(?:\.[0-9]+)?)\s*{re.escape(label)}"
+              match=re.search(pattern, text, flags=re.I)
+              if not match:
+                  raise RuntimeError("STEP9_DISPLAY_FIELD_NOT_FOUND:"+label+":"+text[:1200])
+              return float(match.group(1))
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+
+              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              text=root.inner_text(timeout=10000)
+              for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                  if token in text:
+                      raise RuntimeError("STEP9_PUBLIC_RUNTIME_ERROR_"+token)
+
+              name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+              if name != "Jordan Love":
+                  raise RuntimeError("STEP9_PUBLIC_QB_IDENTITY:"+name)
+
+              projection=root.locator('[data-qb-analysis-section="projection"]').first.inner_text(timeout=10000)
+              baseline=number_before(projection,"Baseline Pass Yards")
+              attempts=number_before(projection,"Expected Attempts")
+              ypa=number_before(projection,"Expected YPA")
+              product=attempts*ypa
+              if abs(baseline-product) > 2.0:
+                  raise RuntimeError(f"STEP9_PUBLIC_MODEL_ARITHMETIC:{baseline}:{attempts}:{ypa}:{product}")
+
+              explain=root.locator('[data-passing-yards-projection-explainability="v71"]').first.inner_text(timeout=10000)
+              if "Sportsbook projection influence remains 0.0%" not in explain:
+                  raise RuntimeError("STEP9_PUBLIC_SPORTSBOOK_ISOLATION_MISSING")
+
+              print(f"PASSING_YARDS_MODEL_VALIDATION_STEP9_PUBLIC_GREEN qb={name} baseline={baseline} attempts={attempts} ypa={ypa}")
+              print("PASSING_YARDS_MODEL_VALIDATION_STEP9_FROZEN")
+              context.close()
+              browser.close()
+          PY
