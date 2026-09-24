@@ -56,7 +56,7 @@ jobs:
           EOF
           cat > /tmp/expected-deploy-refresh.txt <<'EOF'
           .github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
-          app.py
+          .streamlit/passing-yards-speed-step3-deploy-refresh-v1.txt
           devsystem/task_ledgers/passing-yards-speed-step3-lazy-detail-v1.json
           EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
