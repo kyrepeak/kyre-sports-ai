@@ -1,0 +1,3 @@
+NFL Passing Yards speed Step 3 public deployment refresh
+Target: V79 / Router V230
+No runtime behavior or model/data/math changes.
