@@ -240,7 +240,7 @@ def _inject_ux_presentation(body: str) -> str:
     # Stable in-page anchors only; no Streamlit/query/session navigation state changes.
     text = _add_id_once(
         text,
-        '<section class="ks-py59-player">',
+        '<article class="ks-py59-player"',
         "ks-py76-overview",
     )
     text = _add_id_once(
@@ -269,12 +269,12 @@ def _inject_ux_presentation(body: str) -> str:
         "ks-py76-reliability",
     )
 
-    player_start = text.find('<section class="ks-py59-player"')
+    player_start = text.find('<article class="ks-py59-player"')
     if player_start >= 0:
-        player_end = text.find("</section>", player_start)
-        if player_end >= 0:
-            player_end += len("</section>")
-            text = text[:player_end] + _GUIDE + text[player_end:]
+        player_open_end = text.find(">", player_start)
+        if player_open_end >= 0:
+            player_open_end += 1
+            text = text[:player_open_end] + _GUIDE + text[player_open_end:]
 
     ready = 'data-passing-yards-failure-proofing-ready="v75"'
     if ready in text and 'data-passing-yards-ux-presentation-ready="v76"' not in text:
