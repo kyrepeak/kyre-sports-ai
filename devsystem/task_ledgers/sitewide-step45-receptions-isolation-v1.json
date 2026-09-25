@@ -1,0 +1,46 @@
+{
+  "task": "sitewide-step45-receptions-isolation-v1",
+  "task_id": "sitewide-step45-receptions-isolation-v1",
+  "title": "Sitewide Steps 4-5 Receptions Isolation Retry",
+  "version": 1,
+  "status": "DONE",
+  "source_main": "19da3e8ace6325327aeb1ebded154c6ffa46acbc",
+  "protected_steps": {
+    "1": "GREEN_FROZEN",
+    "2": "GREEN_FROZEN",
+    "3": "GREEN_FROZEN"
+  },
+  "failure_epoch": {
+    "authoritative_run": 36083256978,
+    "failed_route": "NFL / Receptions",
+    "failure_token": "FIRST_MEANINGFUL_RENDER_NOT_READY",
+    "previous_public_proof": 36082636218,
+    "previous_route_state": "GREEN",
+    "classification": "VERIFIER_SESSION_STATE_FLAKE"
+  },
+  "patch": {
+    "layer": "VERIFIER",
+    "product_code_changed": false,
+    "behavior": "One failed Step 2/3 route receives exactly one retry in a fresh Playwright browser context before terminal classification."
+  },
+  "target_tokens": [
+    "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN",
+    "SITEWIDE_PAGE_LOAD_STEP4_FROZEN",
+    "SITEWIDE_PAGE_LOAD_STEP5_REPAIR_CERTIFIED_GREEN",
+    "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+  ],
+  "guardrails": {
+    "passing_yards_changed": false,
+    "runtime_router_changed": false,
+    "model_math_changed": false,
+    "projection_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "step6_started": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
