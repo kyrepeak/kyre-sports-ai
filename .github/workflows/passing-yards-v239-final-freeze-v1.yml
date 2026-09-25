@@ -155,13 +155,31 @@ jobs:
               raise RuntimeError("PY_VISIBLE_FINAL_PASSING_FRAME_NOT_READY")
 
           def passing_deck(page,timeout=60):
-              frame=passing_frame(page,timeout)
-              deck=frame.locator(".st-key-kyre_passing_yards_top_v46")
-              if deck.count()!=1:
-                  raise RuntimeError(
-                      "PY_VISIBLE_FINAL_V46_DECK_COUNT:"+str(deck.count())
-                  )
-              return frame,deck
+              # During date changes Streamlit may transiently remove/recreate
+              # the V85 marker before the V46 control deck remounts. Date-scan
+              # ownership therefore follows the V46 deck directly across live
+              # frames instead of requiring the V85 marker to survive every
+              # rerun boundary. V85 is still independently required before
+              # scanning begins and again on player detail.
+              end=time.monotonic()+timeout
+              last=[]
+              while time.monotonic()<end:
+                  last=[]
+                  for index,candidate in enumerate(page.frames):
+                      try:
+                          deck=candidate.locator(
+                              ".st-key-kyre_passing_yards_top_v46"
+                          )
+                          count=deck.count()
+                      except Exception:
+                          count=0
+                      last.append((index,candidate.url,count))
+                      if count==1:
+                          return candidate,deck
+                  page.wait_for_timeout(200)
+              raise RuntimeError(
+                  "PY_VISIBLE_FINAL_V46_DECK_NOT_READY:"+repr(last)
+              )
 
           def passing_date_state(page,timeout=30):
               frame,deck=passing_deck(page,timeout)
