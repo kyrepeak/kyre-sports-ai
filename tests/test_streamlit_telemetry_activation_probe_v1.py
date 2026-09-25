@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import time
 
 import sports_api.posthog_error_radar_v1 as radar
 from sports_api.posthog_error_radar_v1 import run_streamlit_activation_probe
@@ -122,3 +123,28 @@ def test_streamlit_entrypoint_invokes_probe_before_render() -> None:
     app_source = Path("app.py").read_text(encoding="utf-8")
     assert "run_streamlit_activation_probe" in app_source
     assert app_source.index("run_streamlit_activation_probe()") < app_source.index("render_app()")
+
+
+def test_streamlit_activation_probe_bounds_hung_flush(monkeypatch) -> None:
+    monkeypatch.setattr(radar, "_STREAMLIT_PROBE_RAN", False, raising=False)
+
+    def hanging_flush() -> bool:
+        time.sleep(2.0)
+        return True
+
+    started = time.monotonic()
+    result = run_streamlit_activation_probe(
+        argv=["streamlit", "run", "app.py"],
+        environ={},
+        ping_fn=lambda marker: True,
+        capture_fn=lambda *args, **kwargs: True,
+        flush_fn=hanging_flush,
+        marker_factory=lambda: "monster-a8-hung-flush",
+    )
+    elapsed = time.monotonic() - started
+
+    assert elapsed < 1.5
+    assert result["eligible"] is True
+    assert result["accepted"] is True
+    assert result["flushed"] is False
+    assert result["status"] == "queued"
