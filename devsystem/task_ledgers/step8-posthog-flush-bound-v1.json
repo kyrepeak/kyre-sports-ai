@@ -1,0 +1,33 @@
+{
+  "task": "step8-posthog-flush-bound-v1",
+  "task_id": "step8-posthog-flush-bound-v1",
+  "id": "step8-posthog-flush-bound-v1",
+  "title": "Step 8 Streamlit PostHog Flush Bound",
+  "version": 1,
+  "phase": "production-reliability",
+  "status": "DONE",
+  "execution_state": "PATCH_READY",
+  "source_main": "9931794db0bd27cc5db631f0c0156541fb883b94",
+  "classification": "SHARED_TELEMETRY_FAIL_OPEN_REPAIR",
+  "root_cause": "Streamlit activation probe could synchronously block before first UI paint when PostHog client.flush() did not return.",
+  "patch": "Run activation-probe flush on a daemon thread with a 0.75s bound. Immediate flushes preserve existing flushed semantics; slow flushes degrade to queued.",
+  "product_changes": false,
+  "passing_yards_product_changes": false,
+  "router_changes": false,
+  "model_changes": false,
+  "data_changes": false,
+  "projection_changes": false,
+  "probability_changes": false,
+  "market_changes": false,
+  "widget_changes": false,
+  "presentation_changes": false,
+  "telemetry_changes": true,
+  "regression_test": "test_streamlit_activation_probe_bounds_hung_flush",
+  "monster_error_radar_ci": "GREEN",
+  "sportsbook_projection_influence": 0,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
