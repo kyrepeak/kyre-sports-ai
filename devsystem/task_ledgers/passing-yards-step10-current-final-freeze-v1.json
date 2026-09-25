@@ -1,0 +1,71 @@
+{
+  "task": "passing-yards-step10-current-final-freeze-v1",
+  "task_id": "passing-yards-step10-current-final-freeze-v1",
+  "id": "passing-yards-step10-current-final-freeze-v1",
+  "title": "Passing Yards Step 10 Current Final Release Freeze",
+  "version": 1,
+  "phase": "current-production-final-release-lock",
+  "status": "DONE",
+  "source_main": "1edea6fc944d7c672ccccd085b7ab76ce14b7cf2",
+  "step": 10,
+  "step10_status": "DONE",
+  "step10_name": "Final Release Freeze",
+  "classification": "VERIFIER_ONLY_FINAL_RELEASE_LOCK",
+  "product_changes": false,
+  "provider_changes": false,
+  "model_changes": false,
+  "frozen_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "step9_freeze_owners": {
+    "workflow": "e922ef70e0016e208fc7790fa214aaf44e377384",
+    "ledger": "572b50f93b294975e34cd93fa10f3af04bb696c1"
+  },
+  "release_owners": {
+    "app_py": "2d389ca7464e33344d5719ab48cdec2c0f5bc9ee",
+    "v71": "96fe4d3ca27b75e6b40cb86f4128cab3e72ca1c9",
+    "v72": "f6765b74582f6ed7581fe30717f0cd86b73ceb96",
+    "v73": "d5c01c05f02a622cc4f087ec0d60766427c3b518",
+    "v74": "381d95d5059eafcbbb7d9e0d108fcd54c5e43951",
+    "v75": "91364a18e2da45ea9b1908dfa65db794cd9cd6b6",
+    "v76": "509368a9a7ad6618f1470f287c9d1b3f22e486ad",
+    "v77": "b201bfac5af278ebbd7bdff63f0900526af686d1",
+    "router_v222": "507ef5da545f000d582e9a64d9cb80eb9c77f1e7",
+    "router_v223": "81965b6a2f6942b0d30151831f7e288b59699484",
+    "router_v224": "49890ce7828b720df25b3d53a8faed0043403d7b",
+    "router_v225": "0de2e2ec55cf5300db1b2d9dddc913b96a0de63d",
+    "router_v226": "9b22e1e52d48ea5bc5749aae8c303dfa964f4c08",
+    "router_v227": "571f50dae1e5f6489ca6ce40ac4fd3256f6ce7e0",
+    "router_v228": "643d0c05efbde8593f197f0142fea205572e36af"
+  },
+  "acceptance": [
+    "Only the Step 10 verifier workflow and ledger may differ from Step-9-frozen main.",
+    "Current Step 9 permanent-freeze workflow and ledger remain byte-for-byte frozen.",
+    "Steps 1-9 product, data, model, market, routing, reliability, UX and performance contracts remain frozen.",
+    "Reuse the certified dynamic real-UI path: NFL -> Passing Yards -> current/next verified slate -> matchup -> QB -> full analysis.",
+    "Step 5 truth remains valid, Step 6 remains HEALTHY, Step 7 guide/anchors remain intact, and Step 8 remains inside the existing 180-second readiness budget.",
+    "390/768/1440 public release proof passes with no horizontal overflow.",
+    "Independent Receptions V236 real-UI proof remains green.",
+    "Success emits PASSING_YARDS_STEP10_FINAL_RELEASE_LOCK_GREEN, PASSING_YARDS_STEP10_GREEN and PASSING_YARDS_STEP10_FROZEN."
+  ],
+  "stale_target_law": {
+    "hardcoded_date": false,
+    "hardcoded_matchup": false,
+    "hardcoded_qb": false,
+    "completed_2026_09_24_atl_gb_is_blocking": false
+  },
+  "final_release_on_public_success": true,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
