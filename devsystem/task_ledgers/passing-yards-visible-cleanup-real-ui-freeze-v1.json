@@ -52,5 +52,13 @@
     "proof_rule": "Do not require V85/V84 wrapper markers after QB navigation. Require the settled selected-QB Load Full Analysis control, click it, then fail closed on the stable V74 Availability/Game-Day user-facing panel: exactly 8 bounded cells, no raw dump tokens, one compact inactive report, and no horizontal overflow at 390/768/1440.",
     "product_changes": false,
     "monster_changes": false
+  },
+  "acceptance_reclassification": {
+    "classification": "VISIBLE_TARGET_PANEL_OUTCOME",
+    "prior_failure_run": 36093195761,
+    "prior_failure_token": "PY_VISIBLE_REAL_UI_V85_NOT_ACTIVE_AFTER_ALL_ENTRY_PATHS:last_owner=UNKNOWN",
+    "rule": "Do not gate on hidden V85/V84 owner markers or require one lazy transport shape. Reach the selected QB through the real public UI, obtain the V74 availability/game-day target panel either directly or after Load Full Analysis, then assert the visible cleanup outcome at 390/768/1440.",
+    "product_changes": false,
+    "monster_changes": false
   }
 }
