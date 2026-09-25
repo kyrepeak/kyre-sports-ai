@@ -38,9 +38,9 @@ def test_step1_is_route_only_no_schedule_or_props_yet():
         "requests.get(",
         "httpx.",
         "pandas.read_",
-        "sportsbook",
-        "projection",
-        "player_prop",
+        "collect_fanduel",
+        "evaluate_market(",
+        "build_baseline_projection(",
     )
     lower = hub.lower()
     for token in forbidden:
