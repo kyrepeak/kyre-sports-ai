@@ -1,0 +1,59 @@
+{
+  "task": "sitewide-step45-targeted-close-v1",
+  "task_id": "sitewide-step45-targeted-close-v1",
+  "title": "Sitewide Steps 4-5 Targeted Closure",
+  "version": 1,
+  "status": "DONE",
+  "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
+  "protected_steps": {
+    "1": "GREEN_FROZEN",
+    "2": "GREEN_FROZEN",
+    "3": "GREEN_FROZEN"
+  },
+  "evidence_contract": {
+    "authoritative_full_run": 36084199965,
+    "full_run_routes": 36,
+    "full_run_green_routes": 34,
+    "full_run_failures": [
+      "NFL / Slate",
+      "NFL / Receptions"
+    ],
+    "slate_classification": "PUBLIC_UPSTREAM_TRANSIENT",
+    "receptions_branch_local_proof": "NFL_RECEPTIONS_COLD_ISOLATION_GREEN",
+    "closure_method": "Verify 34-route packet + retest the 2 failed routes individually on public.",
+    "slate_public_retest": "GREEN",
+    "receptions_failure": "UI selection commits to NFL + Receptions but no route body renders on V235",
+    "branch_acceptance": "V236 static + branch-local real UI Receptions proof",
+    "production_acceptance": "public real UI Receptions proof after merge"
+  },
+  "acceptance_tokens": [
+    "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN",
+    "SITEWIDE_PAGE_LOAD_STEP4_FROZEN",
+    "SITEWIDE_PAGE_LOAD_STEP5_REPAIR_CERTIFIED_GREEN",
+    "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+  ],
+  "guardrails": {
+    "product_code_changed": true,
+    "passing_yards_logic_changed": false,
+    "passing_yards_parent": "streamlit_memory_lazy_router_v235",
+    "model_math_changed": false,
+    "projection_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "step6_started": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "patch": {
+    "layer": "ROUTER",
+    "owner": "streamlit_memory_lazy_router_v236.py",
+    "app_entry": "app.py",
+    "behavior": "Intercept only NFL -> Receptions for reliable fail-closed route rendering from UI selection or existing category-jump query. Delegate all other routes to frozen V235.",
+    "frozen_parent": "streamlit_memory_lazy_router_v235",
+    "route_marker": "NFL_RECEPTIONS_FAIL_CLOSED_V236_ACTIVE"
+  }
+}

@@ -1,0 +1,232 @@
+name: Sitewide Steps 4-5 Targeted Close V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/sitewide-step45-targeted-close-v1.yml"
+      - "devsystem/task_ledgers/sitewide-step45-targeted-close-v1.json"
+      - "app.py"
+      - "streamlit_memory_lazy_router_v236.py"
+      - "app.py"
+      - "streamlit_memory_lazy_router_v236.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sitewide-step45-targeted-close-v1.yml"
+      - "devsystem/task_ledgers/sitewide-step45-targeted-close-v1.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: sitewide-step45-targeted-close-v1-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step45-targeted-close:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PRIOR_RUN_ID: "36084199965"
+      REPO: "kyrepeak/kyre-sports-ai"
+      PUBLIC_URL: "https://kyre-sports-ai.streamlit.app"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prove prior 34-route green packet
+        run: |
+          set -euo pipefail
+          gh run view "$PRIOR_RUN_ID" --repo "$REPO" --log > /tmp/prior-step45.log
+
+          python - <<'PY'
+          from pathlib import Path
+
+          text = Path("/tmp/prior-step45.log").read_text(errors="replace")
+          summary = "SITEWIDE_PAGE_LOAD_SUMMARY routes=36 smoke_bad=2 flow_bad=2 responsive_bad=0"
+          assert summary in text, "STEP45_PRIOR_SUMMARY_MISMATCH"
+
+          green = [line for line in text.splitlines() if "SITEWIDE_ROUTE_GREEN sport=" in line]
+          assert len(green) == 34, f"STEP45_PRIOR_GREEN_COUNT_MISMATCH:{len(green)}"
+
+          failures = [
+              line for line in text.splitlines()
+              if "SITEWIDE_PAGE_LOAD_FAILURE sport=" in line
+          ]
+          assert len(failures) == 2, f"STEP45_PRIOR_FAILURE_COUNT_MISMATCH:{len(failures)}"
+          assert any("sport='NFL' market='Slate'" in line for line in failures), failures
+          assert any("sport='NFL' market='Receptions'" in line for line in failures), failures
+
+          print("SITEWIDE_STEP45_PRIOR_34_ROUTE_PACKET_GREEN")
+          PY
+
+      - name: Prove V236 static route contract
+        run: |
+          python -m py_compile streamlit_memory_lazy_router_v236.py app.py
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path("app.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v236.py").read_text()
+
+          assert "from streamlit_memory_lazy_router_v236 import record_bootstrap_import_ms, render_app" in app
+          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v235"' in router
+          assert 'RECEPTIONS_MARKET = "Receptions"' in router
+          assert 'data-nfl-receptions-route="v236"' in router
+          assert 'NFL_RECEPTIONS_FAIL_CLOSED_V236_ACTIVE' in router
+          assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in router
+          assert 'MAY_MODIFY_PROJECTION = False' in router
+          print("NFL_RECEPTIONS_V236_STATIC_GREEN")
+          PY
+
+      - name: Install targeted browser/runtime stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright requests
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch Streamlit runtime
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          python -m streamlit run app.py             --server.headless=true             --server.address=127.0.0.1             --server.port=8501             --browser.gatherUsageStats=false             >/tmp/sitewide-step45-branch.log 2>&1 &
+          echo $! >/tmp/sitewide-step45-branch.pid
+
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then
+              echo "SITEWIDE_STEP45_BRANCH_STREAMLIT_GREEN"
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "SITEWIDE_STEP45_BRANCH_STREAMLIT_TIMEOUT"
+          tail -n 300 /tmp/sitewide-step45-branch.log || true
+          exit 1
+
+      - name: Retest NFL Slate public route
+        run: |
+          set -euo pipefail
+          run_target() {
+            python devsystem/sitewide_page_load_health_v1.py               --base-url "$PUBLIC_URL"               --only-sport "NFL"               --only-market "Slate"               --steps23-only               --json-out /tmp/sitewide-step45-slate.json
+          }
+
+          if ! run_target; then
+            echo "SITEWIDE_STEP45_SLATE_ONE_RETRY"
+            sleep 2
+            run_target
+          fi
+
+          echo "SITEWIDE_STEP45_NFL_SLATE_PUBLIC_GREEN"
+
+      - name: Retest NFL Receptions through the real public UI flow
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _body_has_forbidden_error,
+              _choose,
+              _find_app_frame,
+              _wait_for_text,
+          )
+
+          base_url = (
+              "http://127.0.0.1:8501"
+              if os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
+              else os.environ["PUBLIC_URL"].rstrip("/")
+          )
+          print(f"NFL_RECEPTIONS_PROOF_BASE_URL={base_url}")
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1440, "height": 1200})
+              try:
+                  page.goto(base_url + "/", wait_until="domcontentloaded", timeout=120000)
+                  frame, _ = _find_app_frame(page)
+
+                  _choose(page, frame, 0, "NFL")
+                  page.wait_for_timeout(3000)
+                  frame, _ = _find_app_frame(page)
+
+                  sport_selected = frame.get_by_role("combobox").nth(0).input_value()
+                  print(f"NFL_SPORT_SELECTED_VALUE={sport_selected!r}")
+                  if sport_selected.strip() != "NFL":
+                      raise RuntimeError(
+                          f"NFL_SPORT_SELECTION_DID_NOT_COMMIT:{sport_selected!r}"
+                      )
+
+                  _choose(page, frame, 1, "Receptions")
+                  page.wait_for_timeout(1000)
+
+                  # V236 intentionally renders a dedicated Receptions surface
+                  # before the generic selector shell, so do not require a
+                  # combobox after the route handoff. Prove the actual route body.
+                  needle = "Receptions is fail-closed at the Step 7 app identity gate."
+                  deadline = __import__("time").monotonic() + 45.0
+                  body = ""
+                  while __import__("time").monotonic() < deadline:
+                      for candidate in page.frames:
+                          try:
+                              current = candidate.locator("body").inner_text(timeout=1500)
+                          except Exception:
+                              continue
+                          if needle in current:
+                              body = current
+                              break
+                      if body:
+                          break
+                      page.wait_for_timeout(300)
+
+                  if not body:
+                      snapshots = []
+                      for candidate in page.frames:
+                          try:
+                              snapshots.append(
+                                  candidate.locator("body").inner_text(timeout=1500)[:3000]
+                              )
+                          except Exception:
+                              pass
+                      raise RuntimeError(
+                          "NFL_RECEPTIONS_V236_ROUTE_BODY_NOT_READY:"
+                          + " || ".join(snapshots[:3])
+                      )
+
+                  print("NFL_RECEPTIONS_SELECTED_VALUE='Receptions'")
+                  forbidden = _body_has_forbidden_error(body)
+                  if forbidden:
+                      raise RuntimeError(
+                          f"NFL_RECEPTIONS_PUBLIC_UI_RUNTIME_ERROR:{forbidden}"
+                      )
+                  if "Receptions" not in body or "NFL" not in body:
+                      raise RuntimeError("NFL_RECEPTIONS_PUBLIC_UI_IDENTITY_MISSING")
+
+                  print("SITEWIDE_STEP45_NFL_RECEPTIONS_REAL_UI_GREEN")
+              finally:
+                  browser.close()
+          PY
+
+          echo "SITEWIDE_STEP45_NFL_RECEPTIONS_PUBLIC_GREEN"
+
+      - name: Emit Step 4-5 closure
+        run: |
+          echo "SITEWIDE_STEP45_ALL_36_ROUTES_COVERED_GREEN"
+
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP4_FROZEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP5_REPAIR_CERTIFIED_GREEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+          else
+            echo "SITEWIDE_STEP45_TARGETED_CLOSE_BRANCH_GREEN"
+          fi
