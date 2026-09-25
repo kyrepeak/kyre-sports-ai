@@ -1,0 +1,56 @@
+{
+  "task": "passing-yards-step6-current-freeze-v1",
+  "task_id": "passing-yards-step6-current-freeze-v1",
+  "id": "passing-yards-step6-current-freeze-v1",
+  "title": "Passing Yards Step 6 Current Failure-Proofing Freeze",
+  "version": 1,
+  "phase": "current-production-recertification",
+  "status": "DONE",
+  "source_main": "7177162ec3d290090a3f7af9d559f79e8353aa0b",
+  "step": 6,
+  "step6_name": "Failure-Proofing",
+  "classification": "VERIFIER_ONLY_CURRENT_MAIN_RECERTIFICATION",
+  "product_changes": false,
+  "provider_changes": false,
+  "model_changes": false,
+  "frozen_steps": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "frozen_owners": {
+    "app_py": "2d389ca7464e33344d5719ab48cdec2c0f5bc9ee",
+    "step5_v74": "381d95d5059eafcbbb7d9e0d108fcd54c5e43951",
+    "step6_v75": "91364a18e2da45ea9b1908dfa65db794cd9cd6b6",
+    "visible_cleanup_v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "router_v225": "0de2e2ec55cf5300db1b2d9dddc913b96a0de63d",
+    "router_v226": "9b22e1e52d48ea5bc5749aae8c303dfa964f4c08",
+    "router_v239": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "game_day_provider": "8f534b8183f380b988dfb4d7b585c6984bfa85de",
+    "receptions_v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2"
+  },
+  "acceptance": [
+    "Reuse the certified dynamic real-UI path: NFL -> Passing Yards -> current/next verified slate -> matchup -> QB -> full analysis.",
+    "Step 5 V74 remains healthy and frozen.",
+    "Step 6 V75 renders exactly once with reliability-ready=v75 and failure mode HEALTHY on the real public selected-QB page.",
+    "Healthy Step 6 panel explicitly states failure-proofing is active and the frozen certified baseline is preserved.",
+    "Exact V75 source contract still contains the additive-exception containment path to frozen V73 with explicit DEGRADED/no-synthesized-evidence semantics.",
+    "Exact V226 source contract still contains the new-hub import fallback to frozen V225/V74 and preserves the Step 5 route-token prime.",
+    "390/768/1440 responsive proof passes with no Step 5 or Step 6 horizontal overflow.",
+    "Independent Receptions V236 real-UI proof remains green.",
+    "Success emits PASSING_YARDS_FAILURE_PROOFING_STEP6_GREEN and PASSING_YARDS_FAILURE_PROOFING_STEP6_FROZEN."
+  ],
+  "stale_target_law": {
+    "hardcoded_date": false,
+    "hardcoded_matchup": false,
+    "hardcoded_qb": false,
+    "completed_2026_09_24_atl_gb_is_blocking": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
