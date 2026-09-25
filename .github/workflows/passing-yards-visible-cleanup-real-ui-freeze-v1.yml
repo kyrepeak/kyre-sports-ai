@@ -141,8 +141,9 @@ jobs:
 
               passing_context=None
               page=None
+              panel=None
               entry_used=None
-              load_button=None
+              last_error="NONE"
 
               for entry_label,entry_url in (
                   ("shell",base+"/"),
@@ -169,66 +170,75 @@ jobs:
                       _,qb=find(candidate,'a[data-qb-select="2"]',30,.15)
                       qb.click(timeout=10000)
 
-                      # Hosted Streamlit settles after query/navigation reruns.
-                      # PR #940 established that transient wrapper/runtime markers
-                      # can disappear while the stable product surface remains live.
-                      # Certify the user-facing settled state directly: the selected
-                      # QB must expose the native Load Full Analysis control.
-                      button_deadline=time.monotonic()+30
-                      button=None
-                      while time.monotonic()<button_deadline and button is None:
+                      # Outcome-first acceptance. The public route may settle on
+                      # either a lazy CTA or already-rendered full detail. Do not
+                      # require hidden generation markers or one transport shape.
+                      route_deadline=time.monotonic()+45
+                      live_panel=None
+                      live_button=None
+                      while time.monotonic()<route_deadline:
                           for rendered in candidate.frames:
                               try:
-                                  loc=rendered.locator("button").filter(has_text="Load Full Analysis")
+                                  loc=rendered.locator(
+                                      '[data-passing-yards-availability-game-day="v74"]'
+                                  )
                                   if loc.count()>=1:
-                                      button=loc.first
+                                      live_panel=loc.first
                                       break
                               except Exception:
                                   pass
-                          if button is None:
-                              candidate.wait_for_timeout(200)
+                              try:
+                                  loc=rendered.locator("button").filter(
+                                      has_text="Load Full Analysis"
+                                  )
+                                  if loc.count()>=1:
+                                      live_button=loc.first
+                              except Exception:
+                                  pass
+                          if live_panel is not None or live_button is not None:
+                              break
+                          candidate.wait_for_timeout(200)
 
-                      if button is None:
-                          print(
-                              f"PASSING_YARDS_VISIBLE_CLEANUP_ENTRY_MISS "
-                              f"entry={entry_label} reason=LOAD_FULL_ANALYSIS_NOT_READY"
+                      if live_panel is None and live_button is None:
+                          raise RuntimeError(
+                              "PY_VISIBLE_REAL_UI_SELECTED_QB_SURFACE_NOT_READY"
                           )
-                          context.close()
-                          continue
+
+                      if live_panel is None:
+                          live_button.click(timeout=10000)
+                          _,live_panel=find(
+                              candidate,
+                              '[data-passing-yards-availability-game-day="v74"]',
+                              35,
+                              .15,
+                          )
 
                       print(
-                          f"PASSING_YARDS_VISIBLE_CLEANUP_SETTLED_QB_READY "
+                          f"PASSING_YARDS_VISIBLE_CLEANUP_TARGET_PANEL_READY "
                           f"entry={entry_label}"
                       )
                       passing_context=context
                       page=candidate
+                      panel=live_panel
                       entry_used=entry_label
-                      load_button=button
                       break
                   except Exception as exc:
+                      last_error=f"{type(exc).__name__}:{exc}"
                       print(
                           f"PASSING_YARDS_VISIBLE_CLEANUP_ENTRY_ERROR "
-                          f"entry={entry_label} error={type(exc).__name__}:{exc}"
+                          f"entry={entry_label} error={last_error}"
                       )
                       try:
                           context.close()
                       except Exception:
                           pass
 
-              if passing_context is None or page is None or load_button is None:
+              if passing_context is None or page is None or panel is None:
                   browser.close()
                   raise RuntimeError(
-                      "PY_VISIBLE_REAL_UI_SETTLED_QB_NOT_READY_AFTER_ALL_ENTRY_PATHS"
+                      "PY_VISIBLE_REAL_UI_TARGET_PANEL_NOT_REACHABLE_AFTER_ALL_ENTRY_PATHS:"
+                      +last_error
                   )
-
-              load_button.click(timeout=10000)
-
-              panel_frame,panel=find(
-                  page,
-                  '[data-passing-yards-availability-game-day="v74"]',
-                  30,
-                  .15,
-              )
 
               for width,height,label in ((390,844,"390"),(768,1024,"768"),(1440,1000,"1440")):
                   page.set_viewport_size({"width":width,"height":height})
