@@ -6,11 +6,11 @@
   "version": 1,
   "phase": "final-public-production-certification",
   "status": "DONE",
-  "source_main": "c19a9c76bfcdc629ed1c35e421c73888a00e03a7",
-  "classification": "VERIFIER_ONLY_LOCKLESS_FINAL_PUBLIC_FREEZE",
+  "source_main": "9dc676d52dfb1733d0f02bdc88edfcf1f91567fc",
+  "classification": "VERIFIER_ONLY_V238_FINAL_PUBLIC_FREEZE",
   "product_changes": false,
   "monster_changes": false,
-  "root_cause_closed": "Merged V237 now intercepts live NFL -> Passing Yards state and temporarily redirects V187's legacy Passing Yards owner to V85, preventing the public V187 RuntimeError.",
+  "root_cause_closed": "V238 is merged and active in app.py as a new module identity, preventing hosted Streamlit from satisfying the entrypoint with stale V237 runtime state. V238 owns only NFL Passing Yards, installs V85 ownership, and enters the certified direct V187 root-shell dispatcher.",
   "proof_scope": [
     "Reach Passing Yards through the real public UI.",
     "Use certified V58 QB picker and popup-aware selected-QB navigation.",
@@ -21,7 +21,8 @@
   ],
   "protected_blobs": {
     "app": "a0329d64e226e57b7fb39624e3d4e68b604ed0ff",
-    "v237": "8260e8e218df58845e687b5f492d0c27fb733636",
+    "v238": "aee3624198c9e290902b0bf967ec85704a967698",
+    "v237": "b02ca727a920d50bd2f5add1dd9881ab9d5ae248",
     "v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
     "v187": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
     "v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
@@ -71,5 +72,15 @@
     "main_sha": "c19a9c76bfcdc629ed1c35e421c73888a00e03a7",
     "merged_pr": 1027,
     "effect": "Removes render-wide cross-session lock from V237 while preserving Passing Yards-only V85 ownership and non-Passing-Yards V236 delegation."
+  },
+  "v238_activation": {
+    "merged_pr": 1031,
+    "branch_proof_run": 36103105432,
+    "branch_proof_tokens": [
+      "PASSING_YARDS_V238_RUNTIME_OWNER_GREEN",
+      "PASSING_YARDS_V238_V85_GREEN",
+      "PASSING_YARDS_V238_BRANCH_GREEN"
+    ],
+    "final_public_requirement": "Public real UI must expose V238 and V85, then pass V74 cleanup checks at 390/768/1440 and Receptions V236."
   }
 }
