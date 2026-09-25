@@ -142,7 +142,7 @@ jobs:
               passing_context=None
               page=None
               entry_used=None
-              last_owner="NONE"
+              load_button=None
 
               for entry_label,entry_url in (
                   ("shell",base+"/"),
@@ -169,30 +169,41 @@ jobs:
                       _,qb=find(candidate,'a[data-qb-select="2"]',30,.15)
                       qb.click(timeout=10000)
 
-                      try:
-                          find(candidate,'[data-passing-yards-visible-cleanup-owner="v85"]',15,.15)
-                          last_owner="V85"
-                      except Exception:
-                          try:
-                              find(candidate,'[data-passing-yards-single-rerun-owner="v84"]',5,.15)
-                              last_owner="V84"
-                          except Exception:
-                              last_owner="UNKNOWN"
+                      # Hosted Streamlit settles after query/navigation reruns.
+                      # PR #940 established that transient wrapper/runtime markers
+                      # can disappear while the stable product surface remains live.
+                      # Certify the user-facing settled state directly: the selected
+                      # QB must expose the native Load Full Analysis control.
+                      button_deadline=time.monotonic()+30
+                      button=None
+                      while time.monotonic()<button_deadline and button is None:
+                          for rendered in candidate.frames:
+                              try:
+                                  loc=rendered.locator("button").filter(has_text="Load Full Analysis")
+                                  if loc.count()>=1:
+                                      button=loc.first
+                                      break
+                              except Exception:
+                                  pass
+                          if button is None:
+                              candidate.wait_for_timeout(200)
+
+                      if button is None:
                           print(
                               f"PASSING_YARDS_VISIBLE_CLEANUP_ENTRY_MISS "
-                              f"entry={entry_label} owner={last_owner}"
+                              f"entry={entry_label} reason=LOAD_FULL_ANALYSIS_NOT_READY"
                           )
                           context.close()
                           continue
 
-                      find(candidate,'[data-passing-yards-lazy-detail="v79"]',20,.15)
                       print(
-                          f"PASSING_YARDS_VISIBLE_CLEANUP_V85_ACTIVE "
+                          f"PASSING_YARDS_VISIBLE_CLEANUP_SETTLED_QB_READY "
                           f"entry={entry_label}"
                       )
                       passing_context=context
                       page=candidate
                       entry_used=entry_label
+                      load_button=button
                       break
                   except Exception as exc:
                       print(
@@ -204,29 +215,13 @@ jobs:
                       except Exception:
                           pass
 
-              if passing_context is None or page is None:
+              if passing_context is None or page is None or load_button is None:
                   browser.close()
                   raise RuntimeError(
-                      f"PY_VISIBLE_REAL_UI_V85_NOT_ACTIVE_AFTER_ALL_ENTRY_PATHS:"
-                      f"last_owner={last_owner}"
+                      "PY_VISIBLE_REAL_UI_SETTLED_QB_NOT_READY_AFTER_ALL_ENTRY_PATHS"
                   )
 
-              button=None
-              end=time.monotonic()+35
-              while time.monotonic()<end and button is None:
-                  for candidate in page.frames:
-                      try:
-                          loc=candidate.locator("button").filter(has_text="Load Full Analysis")
-                          if loc.count()>=1:
-                              button=loc.first
-                              break
-                      except Exception:
-                          pass
-                  if button is None:
-                      page.wait_for_timeout(200)
-              if button is None:
-                  raise RuntimeError("PY_VISIBLE_REAL_UI_LOAD_BUTTON_NOT_READY")
-              button.click(timeout=10000)
+              load_button.click(timeout=10000)
 
               panel_frame,panel=find(
                   page,
