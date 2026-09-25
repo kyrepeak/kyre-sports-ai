@@ -130,5 +130,10 @@
       "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
     ],
     "behavior_change": false
+  },
+  "ci_resync": {
+    "reason": "GitHub did not attach check suites to head 004da19ba4b963cdffa094335faac5d2194680db after the deployment-scope update.",
+    "behavior_change": false,
+    "marker": "STEP8_DEPLOY_REFRESH_CI_RESYNC_R1"
   }
 }
