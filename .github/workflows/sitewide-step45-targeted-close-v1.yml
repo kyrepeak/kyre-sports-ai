@@ -71,19 +71,56 @@ jobs:
         run: |
           python -m py_compile streamlit_memory_lazy_router_v236.py app.py
           python - <<'PY'
+          import re
           from pathlib import Path
 
           app = Path("app.py").read_text()
           router = Path("streamlit_memory_lazy_router_v236.py").read_text()
 
-          assert "from streamlit_memory_lazy_router_v236 import record_bootstrap_import_ms, render_app" in app
+          imports = re.findall(
+              r"from (streamlit_memory_lazy_router_v\d+) import record_bootstrap_import_ms, render_app",
+              app,
+          )
+          assert imports, "ACTIVE_ROUTER_IMPORT_NOT_FOUND"
+          active = imports[-1]
+
+          chain = [active]
+          owner = active
+          seen = set()
+          for _ in range(32):
+              if owner == "streamlit_memory_lazy_router_v236":
+                  break
+              if owner in seen:
+                  raise AssertionError(f"ROUTER_DESCENDANT_CYCLE:{chain}")
+              seen.add(owner)
+
+              path = Path(owner + ".py")
+              assert path.exists(), f"ROUTER_DESCENDANT_FILE_MISSING:{owner}"
+              text = path.read_text()
+              match = re.search(
+                  r'FROZEN_ROUTER\s*=\s*"(streamlit_memory_lazy_router_v\d+)"',
+                  text,
+              )
+              assert match, f"ROUTER_DESCENDANT_PARENT_MISSING:{owner}"
+              owner = match.group(1)
+              chain.append(owner)
+          else:
+              raise AssertionError(f"ROUTER_DESCENDANT_DEPTH_EXCEEDED:{chain}")
+
+          assert "streamlit_memory_lazy_router_v236" in chain, (
+              f"V236_NOT_IN_ACTIVE_DESCENDANT_CHAIN:{chain}"
+          )
           assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v235"' in router
           assert 'RECEPTIONS_MARKET = "Receptions"' in router
           assert 'data-nfl-receptions-route="v236"' in router
           assert 'NFL_RECEPTIONS_FAIL_CLOSED_V236_ACTIVE' in router
           assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in router
           assert 'MAY_MODIFY_PROJECTION = False' in router
-          print("NFL_RECEPTIONS_V236_STATIC_GREEN")
+
+          print(
+              "NFL_RECEPTIONS_V236_STATIC_GREEN "
+              f"active={active} chain={' -> '.join(chain)}"
+          )
           PY
 
       - name: Install targeted browser/runtime stack
