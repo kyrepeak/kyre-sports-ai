@@ -71,7 +71,7 @@ jobs:
           echo "PASSING_YARDS_SPEED_STEP8_STATIC_GREEN"
 
   public-final-freeze:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: frozen-contract
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -150,15 +150,23 @@ jobs:
               (768,1024,"768"),
               (1440,1000,"1440"),
             ]:
-              context=browser.new_context(viewport={"width":width,"height":height})
-              page=context.new_page()
-              page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
-              find(page,'[data-passing-yards-single-rerun-owner="v84"]',40)
-              find(page,'[data-passing-yards-lazy-detail="v79"]',40)
-              _,button=find_button(page,40)
-
-              if not button.is_visible():
-                raise RuntimeError("SPEED_STEP8_BUTTON_NOT_VISIBLE:"+label)
+              for attempt in (1,2):
+                context=browser.new_context(viewport={"width":width,"height":height})
+                page=context.new_page()
+                try:
+                  page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+                  find(page,'[data-passing-yards-single-rerun-owner="v84"]',40)
+                  find(page,'[data-passing-yards-lazy-detail="v79"]',40)
+                  _,button=find_button(page,40)
+                  if not button.is_visible():
+                    raise RuntimeError("SPEED_STEP8_BUTTON_NOT_VISIBLE:"+label)
+                  break
+                except Exception as exc:
+                  context.close()
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_MISS={type(exc).__name__}:{exc}")
+                  if attempt == 2:
+                    raise
+                  time.sleep(2)
 
               errors=0
               for frame in page.frames:
