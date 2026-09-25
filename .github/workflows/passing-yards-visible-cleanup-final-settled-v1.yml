@@ -191,15 +191,39 @@ jobs:
               if sport.count()!=1:
                   raise RuntimeError("PY_VISIBLE_FINAL_SPORT_COMBO_COUNT:"+str(sport.count()))
               exact_option(page,frame,sport.first,"NFL")
-              frame=app_frame(page,60)
 
-              market_combo=frame.get_by_role("combobox",name="🎯 NFL Market",exact=True)
-              if market_combo.count()!=1:
+              # The NFL option commit triggers a Streamlit rerun. Do not reuse
+              # the pre-rerun frame or merely wait for the shell; wait for the
+              # NFL-specific market widget itself.
+              deadline=time.monotonic()+75
+              frame=None
+              market_combo=None
+              while time.monotonic()<deadline:
+                  for candidate in page.frames:
+                      try:
+                          loc=candidate.get_by_role(
+                              "combobox",
+                              name="🎯 NFL Market",
+                              exact=True,
+                          )
+                          if loc.count()==1:
+                              frame=candidate
+                              market_combo=loc.first
+                              break
+                      except Exception:
+                          pass
+                  if market_combo is not None:
+                      break
+                  page.wait_for_timeout(200)
+
+              if frame is None or market_combo is None:
                   raise RuntimeError(
-                      "PY_VISIBLE_FINAL_NFL_MARKET_COMBO_COUNT:"
-                      +str(market_combo.count())
+                      "PY_VISIBLE_FINAL_NFL_MARKET_COMBO_NOT_READY:"
+                      +" | ".join(all_body(page).split())[-2200:]
                   )
-              exact_option(page,frame,market_combo.first,market)
+
+              print("PASSING_YARDS_VISIBLE_CLEANUP_NFL_MARKET_READY")
+              exact_option(page,frame,market_combo,market)
               return app_frame(page,60)
 
           def choose_matchup(page,frame):
