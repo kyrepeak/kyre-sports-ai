@@ -31,7 +31,13 @@
       "Verified NFL schedule",
       "NFL build status"
     ],
-    "slate_acceptance_v2": "Public route must render both 'NFL slate date' and 'Verified NFL schedule' with no forbidden runtime marker."
+    "slate_acceptance_v2": "Public route must render both 'NFL slate date' and 'Verified NFL schedule' with no forbidden runtime marker.",
+    "deployment_activation": "On main push, wait up to 300s for public V236 Receptions fail-closed surface before public closure checks.",
+    "slate_branch_acceptance": "Branch-local Slate must render `NFL slate date` plus `Verified NFL schedule` or `NFL build status`.",
+    "slate_public_acceptance": "After V236 deployment activation, public Slate must render the real Slate surface; up to 3 bounded retries are allowed only for transient Streamlit navigation/runtime errors.",
+    "receptions_public_acceptance": "After V236 deployment activation, public real UI flow NFL -> Receptions must render the V236 fail-closed route body.",
+    "last_public_runtime_failure_run": 36087703829,
+    "last_public_runtime_failure": "Platform-level `This app has encountered an error` during immediate post-merge Slate check before Receptions proof."
   },
   "acceptance_tokens": [
     "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN",
@@ -51,7 +57,10 @@
     "step6_started": false,
     "slate_product_code_changed": false,
     "receptions_product_code_changed": false,
-    "verifier_only_followup": true
+    "verifier_only_followup": true,
+    "product_code_changed_in_followup": false,
+    "deployment_wait_bounded_seconds": 300,
+    "slate_public_retry_count": 3
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
