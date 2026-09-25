@@ -1,0 +1,239 @@
+name: NFL Passing Yards Visible Cleanup Real UI Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-visible-cleanup-real-ui-freeze-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-visible-cleanup-real-ui-freeze-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-visible-cleanup-real-ui-freeze-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-ui-public-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Protect merged cleanup and Monster owners
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/passing-yards-visible-cleanup-real-ui-freeze-v1.yml' \
+            'devsystem/task_ledgers/passing-yards-visible-cleanup-real-ui-freeze-v1.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "PY_VISIBLE_REAL_UI_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PY_VISIBLE_REAL_UI_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob app.py 92fee94202f0c4be91487fb1b878e9493fedf751
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob streamlit_memory_lazy_router_v237.py 6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml 8fdf57caa41828988adb1389fa34979a224385cc
+
+          grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v85"' streamlit_memory_lazy_router_v237.py
+          grep -F 'import streamlit_memory_lazy_router_v236 as prior' streamlit_memory_lazy_router_v237.py
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_MONSTER_ISOLATION_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install real UI browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright requests
+          python -m playwright install --with-deps chromium
+
+      - name: Certify cleanup through real public UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import time
+
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _choose, _find_app_frame
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page, selector, timeout=45, interval=.2):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for candidate in page.frames:
+                      try:
+                          loc=candidate.locator(selector)
+                          if loc.count()>=1:
+                              return candidate,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(int(interval*1000))
+              raise RuntimeError("PY_VISIBLE_REAL_UI_SELECTOR_NOT_READY:"+selector)
+
+          def wait_text(page, needle, timeout=60):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for candidate in page.frames:
+                      try:
+                          body=candidate.locator("body").inner_text(timeout=1500)
+                      except Exception:
+                          continue
+                      if needle.casefold() in body.casefold():
+                          return candidate,body
+                  page.wait_for_timeout(300)
+              raise RuntimeError("PY_VISIBLE_REAL_UI_TEXT_NOT_READY:"+needle)
+
+          def choose_matchup(page, frame):
+              end=time.monotonic()+60
+              while time.monotonic()<end:
+                  try:
+                      combos=frame.get_by_role("combobox")
+                      count=combos.count()
+                  except Exception:
+                      count=0
+                  if count>=3:
+                      _choose(page,frame,2,"Atlanta Falcons")
+                      return
+                  page.wait_for_timeout(500)
+                  frame,_=_find_app_frame(page)
+              raise RuntimeError("PY_VISIBLE_REAL_UI_MATCHUP_COMBO_NOT_READY")
+
+          forbidden=(
+              "Market Decision Detail",
+              "How to read this clean detail",
+              "Projection Detail",
+              "Context + Uncertainty Detail",
+              "Distribution + Probability Detail",
+              "Model Confidence",
+              "Model Over / Under",
+          )
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":1440,"height":1000})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+              frame,_=_find_app_frame(page)
+
+              _choose(page,frame,0,"NFL")
+              page.wait_for_timeout(2500)
+              frame,_=_find_app_frame(page)
+
+              _choose(page,frame,1,"Passing Yards")
+              wait_text(page,"PASSING YARDS CONTROL DECK",60)
+              frame,_=_find_app_frame(page)
+
+              choose_matchup(page,frame)
+              wait_text(page,"Choose a quarterback",60)
+              frame,_=_find_app_frame(page)
+
+              qb=frame.locator('a[data-qb-select="2"]')
+              if qb.count()!=1:
+                  raise RuntimeError(f"PY_VISIBLE_REAL_UI_QB_CARD_COUNT:{qb.count()}")
+              qb.click(timeout=10000)
+
+              find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',45)
+              find(page,'[data-passing-yards-lazy-detail="v79"]',45)
+
+              button=None
+              end=time.monotonic()+45
+              while time.monotonic()<end and button is None:
+                  for candidate in page.frames:
+                      try:
+                          loc=candidate.locator("button").filter(has_text="Load Full Analysis")
+                          if loc.count()>=1:
+                              button=loc.first
+                              break
+                      except Exception:
+                          pass
+                  if button is None:
+                      page.wait_for_timeout(200)
+              if button is None:
+                  raise RuntimeError("PY_VISIBLE_REAL_UI_LOAD_BUTTON_NOT_READY")
+              button.click(timeout=10000)
+
+              panel_frame,panel=find(
+                  page,
+                  '[data-passing-yards-availability-game-day="v74"]',
+                  30,
+                  .15,
+              )
+
+              for width,height,label in ((390,844,"390"),(768,1024,"768"),(1440,1000,"1440")):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(350)
+
+                  panel_text=panel.inner_text(timeout=5000)
+                  cells=panel.locator(".ks-py74-cell b").all_inner_texts()
+                  report=panel.locator(".ks-py74-report").first.inner_text(timeout=5000)
+                  overflow=panel.evaluate("(el) => el.scrollWidth > el.clientWidth + 4")
+                  longest=max((len(v.strip()) for v in cells),default=0)
+
+                  if len(cells)!=8:
+                      raise RuntimeError(f"PY_VISIBLE_REAL_UI_CELL_COUNT:{label}:{len(cells)}")
+                  if longest>120:
+                      raise RuntimeError(f"PY_VISIBLE_REAL_UI_CELL_TOO_LONG:{label}:{longest}")
+                  for token in forbidden:
+                      if token.casefold() in panel_text.casefold():
+                          raise RuntimeError(f"PY_VISIBLE_REAL_UI_RAW_DUMP:{label}:{token}")
+                  if len(report)>900:
+                      raise RuntimeError(f"PY_VISIBLE_REAL_UI_REPORT_TOO_LONG:{label}:{len(report)}")
+                  if report.count("Final inactive report:")!=1:
+                      raise RuntimeError(f"PY_VISIBLE_REAL_UI_REPORT_COUNT:{label}")
+                  if overflow:
+                      raise RuntimeError(f"PY_VISIBLE_REAL_UI_HORIZONTAL_OVERFLOW:{label}")
+
+                  print(f"PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_VIEWPORT_{label}_GREEN")
+                  print(f"PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_VIEWPORT_{label}_MAX_CELL_CHARS={longest}")
+                  print(f"PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_VIEWPORT_{label}_REPORT_CHARS={len(report)}")
+
+              rec_context=browser.new_context(viewport={"width":1440,"height":1000})
+              rec=rec_context.new_page()
+              rec.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+              rec_frame,_=_find_app_frame(rec)
+              _choose(rec,rec_frame,0,"NFL")
+              rec.wait_for_timeout(2500)
+              rec_frame,_=_find_app_frame(rec)
+              _choose(rec,rec_frame,1,"Receptions")
+              find(rec,'[data-nfl-receptions-route="v236"]',45)
+              print("PASSING_YARDS_VISIBLE_CLEANUP_MONSTER_RECEPTIONS_V236_GREEN")
+
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP1_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP2_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP3_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP4_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_FROZEN")
+
+              rec_context.close()
+              context.close()
+              browser.close()
+          PY
