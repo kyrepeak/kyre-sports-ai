@@ -10,7 +10,7 @@ def test_step1_route_owner_contract():
         'PROP_ANALYTICS_MARKET = "Prop Analytics"',
         'PROP_ANALYTICS_HUB = "nfl_prop_analytics_hub_v1"',
         'MAY_MODIFY_PASSING_YARDS = False',
-        'return prior.render_app()',
+        '_with_prop_analytics_selectbox(prior.render_app)',
         'root.NFL_MARKETS = _prop_market_options()',
         'str(label or "").strip() == "🎯 NFL Market"',
         'st.selectbox = original_selectbox',
