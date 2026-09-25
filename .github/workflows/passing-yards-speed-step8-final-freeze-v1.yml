@@ -71,7 +71,7 @@ jobs:
           echo "PASSING_YARDS_SPEED_STEP8_STATIC_GREEN"
 
   public-final-freeze:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: frozen-contract
     runs-on: ubuntu-24.04
     timeout-minutes: 20
