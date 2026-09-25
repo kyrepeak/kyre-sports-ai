@@ -1,0 +1,21 @@
+{
+  "task": "passing-yards-visible-cleanup-public-freeze-v1",
+  "task_id": "passing-yards-visible-cleanup-public-freeze-v1",
+  "id": "passing-yards-visible-cleanup-public-freeze-v1",
+  "title": "Passing Yards Visible Cleanup Public Freeze",
+  "version": 1,
+  "phase": "production-certification",
+  "status": "DONE",
+  "execution_state": "PUBLIC_PROOF_RUNNING",
+  "source_main": "db5c4cbd60cb43eda9bb1accf75df63667d083c1",
+  "classification": "VERIFIER_ONLY_DEPLOYMENT_ACTIVATION_PROOF",
+  "previous_public_failure": "PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+  "product_reclassification": "NO_PRODUCT_FAILURE_OBSERVED",
+  "product_changes": false,
+  "monster_changes": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
