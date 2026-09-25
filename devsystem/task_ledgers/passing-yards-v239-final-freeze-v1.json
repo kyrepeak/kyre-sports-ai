@@ -1,0 +1,159 @@
+{
+  "task": "passing-yards-v239-final-freeze-v1",
+  "task_id": "passing-yards-v239-final-freeze-v1",
+  "id": "passing-yards-v239-final-freeze-v1",
+  "title": "Passing Yards V239 Final Public Freeze",
+  "version": 12,
+  "phase": "final-public-proof",
+  "status": "DONE",
+  "source_main": "112d4972d6db30d6df19e9f7557909c788ab8bbf",
+  "acceptance": [
+    "Current main remains 980381dcdd99d73cc75a0cc2a64f0ca60deec26f or a newer non-overlapping certified main is explicitly reconciled before proof interpretation.",
+    "Public exact UI commits NFL and Passing Yards without query-string shortcuts.",
+    "Public runtime exposes V239 router marker and V85 cleanup marker.",
+    "Public flow sets the certified slate date, selects Atlanta Falcons at Green Bay Packers, opens Jordan Love, and reaches the full analysis.",
+    "Responsive cleanup passes at 390, 768, and 1440 widths with no horizontal overflow or forbidden raw detail blocks.",
+    "Independent Receptions proof remains owned by V236.",
+    "Success emits PASSING_YARDS_VISIBLE_CLEANUP_STEP4_GREEN, PASSING_YARDS_VISIBLE_CLEANUP_GREEN, and PASSING_YARDS_VISIBLE_CLEANUP_FROZEN."
+  ],
+  "frozen_manifest": {
+    "app.py": "2d389ca7464e33344d5719ab48cdec2c0f5bc9ee",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "streamlit_memory_lazy_router_v238.py": "aee3624198c9e290902b0bf967ec85704a967698",
+    "streamlit_memory_lazy_router_v237.py": "b02ca727a920d50bd2f5add1dd9881ab9d5ae248",
+    "streamlit_memory_lazy_router_v236.py": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "streamlit_memory_lazy_router_v225.py": "0de2e2ec55cf5300db1b2d9dddc913b96a0de63d",
+    "streamlit_memory_lazy_router_v188.py": "ff9804e7698c34bb87ae3e2bfe4f3777926f1553",
+    "streamlit_memory_lazy_router_v187.py": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db"
+  },
+  "product_changes": false,
+  "monster_changes": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "verifier_epoch": {
+    "failure_token": "Locator.fill attempted on role=group Slate date wrapper",
+    "failed_layer": "VERIFIER",
+    "first_broken_arrow": "Public V239/V85 PASS -> Slate date verifier interaction FAIL",
+    "root_cause": "Current Streamlit exposes Slate date as a labelled role=group with segmented editable controls; the verifier treated the wrapper itself as a fillable input.",
+    "patch": "Verifier-only: descend into a real input when present, otherwise fill the three date spinbutton segments inside the labelled Slate date group.",
+    "product_owner_cleared": true,
+    "public_runtime_cleared": true,
+    "evidence": [
+      "PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_V239_GREEN",
+      "PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_V85_GREEN"
+    ]
+  },
+  "verifier_epoch_matchup": {
+    "failure_token": "PY_VISIBLE_FINAL_MATCHUP_COMBO_NOT_READY",
+    "failed_layer": "VERIFIER",
+    "first_broken_arrow": "Slate date commit PASS -> matchup verifier targeting FAIL",
+    "root_cause": "Verifier selected the matchup by combobox ordinal; frozen V46 exposes a stable accessible label 'Matchup • {N} verified games'.",
+    "patch": "Verifier-only: target the V46 matchup combobox by its accessible label pattern and select the Atlanta Falcons option.",
+    "product_owner_cleared": true,
+    "prior_proof": [
+      "PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_V239_GREEN",
+      "PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_V85_GREEN",
+      "PASSING_YARDS_VISIBLE_CLEANUP_DATE_COMMIT_GREEN"
+    ]
+  },
+  "matchup_diagnostic_epoch": {
+    "failure_token": "PY_VISIBLE_FINAL_MATCHUP_COMBO_NOT_READY",
+    "state": "OWNER_UNRESOLVED",
+    "diagnostic_budget": "1/1",
+    "diagnostic_goal": "Distinguish whether the segmented Slate date edit failed to commit to Streamlit state versus whether the matchup control exists under an unexpected DOM/accessibility identity.",
+    "external_schedule_proof": "NFL official 2026 schedule confirms Atlanta Falcons at Green Bay Packers on 2026-09-24.",
+    "product_changes": false
+  },
+  "date_commit_epoch": {
+    "failed_layer": "VERIFIER",
+    "first_broken_arrow": "Date keystrokes completed -> V46 matchup control never appeared",
+    "root_cause": "Verifier treated segmented React Aria date edits as committed without forcing blur/Tab and waiting for the Streamlit rerun boundary.",
+    "patch": "Verifier-only: keyboard-edit each date segment, Tab/blur each segment, then wait for V46 matchup selector or explicit no-games state before declaring date GREEN.",
+    "product_changes": false,
+    "protected_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+  },
+  "date_segment_convergence_epoch": {
+    "failure_token": "PY_VISIBLE_FINAL_DATE_COMMITTED_NO_VERIFIED_GAMES",
+    "observed_value": "9/02/26",
+    "expected_value": "9/24/26",
+    "failed_layer": "VERIFIER",
+    "root_cause": "Text typing into React-Aria spinbutton date segments produced partial/truncated values. The app correctly showed no verified games for the malformed date.",
+    "patch": "Verifier-only: converge month/day/year via aria-valuenow with ArrowUp/ArrowDown, reacquiring each segment after every key, then blur once and require the V46 matchup control.",
+    "product_changes": false,
+    "main_sha": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+  },
+  "regex_epoch": {
+    "failure_token": "PY_VISIBLE_FINAL_DATE_SEGMENT_VALUE_MISSING:0:2026",
+    "failed_layer": "VERIFIER",
+    "root_cause": "Verifier over-escaped the digit regex and failed to parse a valid aria segment value of 2026.",
+    "patch": "Verifier-only: correct the regex from a literal backslash-d match to the intended digit matcher.",
+    "product_changes": false,
+    "main_sha": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+  },
+  "semantic_date_epoch": {
+    "failure_token": "PY_VISIBLE_FINAL_DATE_SEGMENT_CONVERGENCE:0",
+    "failed_layer": "VERIFIER",
+    "root_cause": "Verifier assumed DOM segment order month/day/year. Prior evidence showed segment 0 carried value 2026, proving DOM order differs from visual order.",
+    "patch": "Verifier-only: identify year/month/day segments by aria-label, with aria-valuemax fallback, then converge each semantic segment to 2026-09-24.",
+    "product_changes": false,
+    "main_sha": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+  },
+  "frame_ownership_epoch": {
+    "failure_token": "PY_VISIBLE_FINAL_DATE_GROUP_COUNT:0",
+    "failed_layer": "VERIFIER",
+    "first_broken_arrow": "V85 proven -> verifier resolves V46 Slate date owner frame -> FAIL",
+    "root_cause_status": "LOCKED",
+    "root_cause": "Generic app_frame() can return a valid shell frame that does not own the V85/V46 Passing Yards control deck after Streamlit reruns.",
+    "patch": "Verifier-only: bind date/matchup work to passing_frame() selected by the V85 owner marker, require the V46 deck, and reacquire owner/deck/date semantic state after every rerun-producing action.",
+    "diagnostic_budget": "1/1 CLOSED",
+    "patch_budget": "1/1 USED",
+    "product_changes": false,
+    "protected_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+  },
+  "v46_frame_ownership_diagnostic_epoch": {
+    "state": "OWNER_UNRESOLVED",
+    "failure_token": "PY_VISIBLE_FINAL_V46_DECK_COUNT:0",
+    "failed_layer": "VERIFIER",
+    "first_broken_arrow": "V85 owner frame found -> V46 deck inside same frame FAIL",
+    "closed_theory": "V85 marker frame also owns V46 deck",
+    "diagnostic_budget": "1/1 USED",
+    "diagnostic_goal": "Map every live frame for V239 marker, V85 marker, V46 deck, Slate date, control-deck caption, combobox count, and body fingerprint to lock the actual V46 owner.",
+    "patch_budget": "0/1",
+    "product_changes": false,
+    "protected_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+  },
+  "provider_ownership_diagnostic_epoch": {
+    "state": "OWNER_UNRESOLVED",
+    "failure_token": "PY_VISIBLE_FINAL_DATE_COMMITTED_NO_VERIFIED_GAMES",
+    "failed_layer": "SCHEDULE / PROVIDER",
+    "first_broken_arrow": "2026-09-24 committed -> V42 verified-slate loader -> zero games",
+    "closed_owners": [
+      "verifier",
+      "frame ownership",
+      "date entry",
+      "regex",
+      "DOM order",
+      "semantic date segments"
+    ],
+    "diagnostic_budget": "1/1 USED",
+    "patch_budget": "0/1",
+    "diagnostic_goal": "Execute the production 2026-09-24 provider decision chain and print daily ESPN, nflverse completeness, weekly ESPN fallback, and final router output.",
+    "product_changes": false,
+    "protected_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+  },
+  "post_provider_fix_rebase": {
+    "state": "READY_FOR_FINAL_PUBLIC_PROOF",
+    "product_main": "112d4972d6db30d6df19e9f7557909c788ab8bbf",
+    "product_pr": 1037,
+    "product_patch": "V42 shared loader isolation",
+    "schedule_field_verified": true,
+    "verified_game": "2026-09-24 Atlanta Falcons @ Green Bay Packers",
+    "prior_ci_provider_result": "ESPN daily rows=1; nflverse expected_games=1; final router games=1",
+    "prior_public_failure": "PY_VISIBLE_FINAL_DATE_COMMITTED_NO_VERIFIED_GAMES",
+    "note": "Final proof branch rebased onto merged product main before rerun."
+  }
+}
