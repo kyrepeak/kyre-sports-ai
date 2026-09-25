@@ -58,5 +58,13 @@
     "patch": "Verifier-only. Navigate from the public root, click the exact BaseWeb option elements for NFL and Passing Yards, require the V85 marker, set Sep 24 through the real Slate date input, select Atlanta Falcons matchup through its real option, select Jordan Love from the V58 picker, then certify the V74 cleanup at 390/768/1440. Verify Receptions V236 with the same exact-option flow.",
     "product_changes": false,
     "monster_changes": false
+  },
+  "public_real_ui_rerun_wait_fix": {
+    "prior_run": 36101282730,
+    "prior_failure": "PY_VISIBLE_FINAL_NFL_MARKET_COMBO_COUNT:0",
+    "evidence": "PASSING_YARDS_VISIBLE_CLEANUP_OPTION_COMMIT value=NFL printed immediately before failure. NFL selection committed, but the verifier reacquired the generic shell before Streamlit had rendered the NFL-specific market widget.",
+    "patch": "Verifier-only: after exact NFL option click, wait up to 75 seconds for the exact '🎯 NFL Market' combobox before selecting Passing Yards.",
+    "product_changes": false,
+    "monster_changes": false
   }
 }
