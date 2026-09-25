@@ -1,0 +1,65 @@
+name: Sitewide Page Load Steps 4-5 Closeout V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/sitewide-page-load-steps4-5-closeout-v1.yml"
+      - "devsystem/task_ledgers/sitewide-steps4-5-closeout-v2.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sitewide-page-load-steps4-5-closeout-v1.yml"
+      - "devsystem/task_ledgers/sitewide-steps4-5-closeout-v2.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sitewide-page-load-steps4-5-closeout-v1-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-receptions-closeout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused browser proof
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove NFL Receptions cold public route
+        run: |
+          python devsystem/sitewide_page_load_health_v1.py \
+            --base-url "https://kyre-sports-ai.streamlit.app" \
+            --only-sport "NFL" \
+            --only-market "Receptions" \
+            --steps23-only \
+            --json-out /tmp/sitewide-step45-receptions.json
+
+          echo "NFL_RECEPTIONS_PUBLIC_COLD_GREEN"
+
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            echo "SITEWIDE_PAGE_LOAD_STEP4_ROOT_CAUSE_RESOLVED_GREEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP4_GREEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP4_FROZEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP5_REPAIR_CERTIFIED_GREEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP5_GREEN"
+            echo "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+          else
+            echo "SITEWIDE_PAGE_LOAD_STEP45_PR_PROOF_GREEN"
+          fi
+
+      - name: Print focused result packet
+        if: always()
+        run: |
+          if [ -f /tmp/sitewide-step45-receptions.json ]; then
+            cat /tmp/sitewide-step45-receptions.json
+          fi
