@@ -34,5 +34,14 @@
     "patch": "Keep the frame returned by wait_text('Choose a quarterback') and query QB card 2 in that exact frame.",
     "product_changes": false,
     "monster_changes": false
+  },
+  "real_ui_failure_epoch_2": {
+    "run": 36092680710,
+    "failure_token": "PY_VISIBLE_REAL_UI_QB_CARD_COUNT:0",
+    "classification": "VERIFIER_QB_ANCHOR_FRAME_MISMATCH",
+    "evidence": "The public UI reached the Passing Yards QB-selection screen. The verifier still constrained the QB anchor lookup to one frame instead of scanning all rendered frames.",
+    "patch": "Use the existing all-frame find() helper for a[data-qb-select='2'] and click the returned locator.",
+    "product_changes": false,
+    "monster_changes": false
   }
 }
