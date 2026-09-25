@@ -1,0 +1,53 @@
+{
+  "task": "passing-yards-visible-cleanup-final-settled-v1",
+  "task_id": "passing-yards-visible-cleanup-final-settled-v1",
+  "id": "passing-yards-visible-cleanup-final-settled-v1",
+  "title": "Passing Yards Visible Cleanup Final Settled Freeze",
+  "version": 1,
+  "phase": "final-public-production-certification",
+  "status": "DONE",
+  "source_main": "7fad8206fa9eb4439bcaee0206e200ca6b29df1d",
+  "classification": "VERIFIER_ONLY_LONG_SETTLED_PUBLIC_FREEZE",
+  "product_changes": false,
+  "monster_changes": false,
+  "root_cause_closed": "Merged V237 now intercepts live NFL -> Passing Yards state and temporarily redirects V187's legacy Passing Yards owner to V85, preventing the public V187 RuntimeError.",
+  "proof_scope": [
+    "Reach Passing Yards through the real public UI.",
+    "Use certified V58 QB picker and popup-aware selected-QB navigation.",
+    "Reach V74 availability/game-day panel directly or after Load Full Analysis.",
+    "At 390/768/1440: exactly eight cells, no cell >120 chars, no market/model raw-dump tokens, compact inactive report, no horizontal overflow.",
+    "Verify NFL Receptions still renders through V236.",
+    "Emit PASSING_YARDS_VISIBLE_CLEANUP_GREEN and PASSING_YARDS_VISIBLE_CLEANUP_FROZEN only after all checks pass."
+  ],
+  "protected_blobs": {
+    "app": "a0329d64e226e57b7fb39624e3d4e68b604ed0ff",
+    "v237": "3cc48636554c77dba4dead8325a3fc049185c255",
+    "v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "v187": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "sitewide_health": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow": "8fdf57caa41828988adb1389fa34979a224385cc"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "public_proof_reclassification": {
+    "prior_run": 36098497504,
+    "prior_failure": "PY_VISIBLE_REAL_UI_TARGET_PANEL_NOT_REACHABLE_AFTER_ALL_ENTRY_PATHS: PY_VISIBLE_REAL_UI_TEXT_NOT_READY: PASSING YARDS CONTROL DECK",
+    "classification": "VERIFIER_REAL_UI_DROPDOWN_HANDOFF_STALE_BODY",
+    "evidence": "Fresh public identity diagnostic after merge shows no V187 RuntimeError, but the real-UI dropdown can display Passing Yards while the body remains the previous NFL Slate route. The frozen Step 7 public proof already certifies the cold selected-QB query route with fresh-browser deployment retries.",
+    "patch": "Verifier-only: use the frozen Step 7 cold selected-QB route contract, wait for V85/V84/V79 + Load Full Analysis in fresh contexts, then certify the V74 cleanup at 390/768/1440 and independently verify Receptions V236.",
+    "product_changes": false,
+    "monster_changes": false
+  },
+  "public_settle_reclassification": {
+    "prior_run": 36099110230,
+    "prior_failure": "PASSING_YARDS_VISIBLE_CLEANUP_FINAL_DEPLOYMENT_NOT_ACTIVE after 14 fresh contexts",
+    "evidence": "Public identity snapshots still showed Streamlit's Stop control while short fresh-context attempts were being abandoned.",
+    "patch": "Keep one selected-QB production session alive for up to 420 seconds, logging V85/V84/V79/Stop state every 20 seconds. Do not restart the cold route while it is still executing.",
+    "product_changes": false,
+    "monster_changes": false
+  }
+}
