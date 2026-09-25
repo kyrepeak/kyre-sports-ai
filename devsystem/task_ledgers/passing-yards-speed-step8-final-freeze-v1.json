@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 8,
   "status": "DONE",
-  "source_main": "1c5f3652ce6f46b2758bb347a64c4c629ab030e7",
+  "source_main": "2bc776ebb6bef60db16fc72d342f89958df69bed",
   "frozen_speed_steps": [
     1,
     2,
@@ -44,8 +44,8 @@
     "9 final job emits PASSING_YARDS_SPEED_STEP8_GREEN and PASSING_YARDS_SPEED_STEP8_FROZEN"
   ],
   "freeze_on_public_success": true,
-  "next_required_state": "DevSystem GREEN on current-main rebase -> merge -> public Streamlit activation -> one final public freeze proof -> Step 8 GREEN + FROZEN",
-  "step8_status": "CURRENT_MAIN_REBASE_DEPLOYMENT_REFRESH_READY",
+  "next_required_state": "Frozen contract GREEN on repaired V237 -> merge -> hosted Streamlit activates repaired V237 -> final 390/768/1440 proof -> Step 8 GREEN + FROZEN",
+  "step8_status": "POST_V237_FIX_PUBLIC_ACTIVATION_R2_PENDING",
   "devsystem_repair": {
     "failure": "future task ledger must finish in DONE state",
     "classification": "LEDGER_STATE_ONLY",
@@ -137,5 +137,28 @@
     "current_main": "1c5f3652ce6f46b2758bb347a64c4c629ab030e7",
     "protected_sitewide_work": true,
     "product_change": false
+  },
+  "final_root_cause": {
+    "known_good_public_run": 36087075005,
+    "known_good_public_job": 107921374417,
+    "regression_layer": "streamlit_memory_lazy_router_v237",
+    "regression": "same-run NFL Passing Yards handoff could fall through into V187 legacy player-prop identity handling",
+    "repaired_pr": 1022,
+    "repaired_main": "2bc776ebb6bef60db16fc72d342f89958df69bed",
+    "repaired_v237_blob": "3cc48636554c77dba4dead8325a3fc049185c255",
+    "branch_real_ui_proof": "GREEN",
+    "devsystem_proof": "GREEN"
+  },
+  "final_activation": {
+    "reason": "PR #1022 changed only imported V237. Repository history shows imported-module-only Streamlit changes can remain stale until app.py changes. This R2 heartbeat forces the hosted process to import repaired V237.",
+    "marker": "NFL_PASSING_YARDS_SPEED_STEP8_V237_FIX_PUBLIC_REFRESH_2026_09_25_R2",
+    "app_blob": "a0329d64e226e57b7fb39624e3d4e68b604ed0ff",
+    "product_behavior_change": false,
+    "router_behavior_change": false,
+    "model_change": false,
+    "data_change": false,
+    "projection_change": false,
+    "probability_change": false,
+    "market_change": false
   }
 }
