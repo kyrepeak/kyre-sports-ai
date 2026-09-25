@@ -1,0 +1,19 @@
+SITEWIDE_STEP45_V237_STREAMLIT_REDEPLOY_TRIGGER_V1
+
+Purpose: force Streamlit Community Cloud to consume the already-merged certified
+V237 runtime, which freezes V236 and preserves the NFL Receptions route repair.
+
+Pinned runtime lineage:
+- Current production main: 919dcebe19ce8c20df4a986b98e5d219ddc9c5ea
+- Active router: streamlit_memory_lazy_router_v237
+- Frozen Receptions owner: streamlit_memory_lazy_router_v236
+
+Production evidence:
+- V236/V237 source is merged and certified.
+- Public deployment activation proof did not observe the V236 Receptions surface
+  within two bounded production attempts.
+- This marker changes no runtime behavior, routing, model logic, projection math,
+  probability logic, market logic, API behavior, sportsbook influence, or UI.
+
+This file exists only to trigger Streamlit Cloud to refresh the already-merged
+production revision.

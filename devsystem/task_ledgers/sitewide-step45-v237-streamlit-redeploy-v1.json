@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "task_id": "sitewide-step45-v237-streamlit-redeploy-v1",
+  "status": "DONE",
+  "scope": "Deployment-only Streamlit Cloud refresh marker for already-merged V237/V236 sitewide Step 4-5 runtime. No product code changes.",
+  "trigger": "Public deployment activation did not expose the merged V236 Receptions surface after two bounded production attempts.",
+  "guardrails": {
+    "pinned_main_sha": "919dcebe19ce8c20df4a986b98e5d219ddc9c5ea",
+    "active_router": "streamlit_memory_lazy_router_v237",
+    "frozen_receptions_router": "streamlit_memory_lazy_router_v236",
+    "runtime_code_changed": false,
+    "router_code_changed": false,
+    "model_code_changed": false,
+    "data_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "presentation_code_changed": false,
+    "sportsbook_projection_influence": 0,
+    "step6_started": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
