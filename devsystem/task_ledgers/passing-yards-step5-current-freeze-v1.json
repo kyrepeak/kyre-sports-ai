@@ -3,7 +3,7 @@
   "task_id": "passing-yards-step5-current-freeze-v1",
   "id": "passing-yards-step5-current-freeze-v1",
   "title": "Passing Yards Step 5 Current Availability + Game-Day Freeze",
-  "version": 1,
+  "version": 2,
   "phase": "current-production-recertification",
   "status": "DONE",
   "source_main": "e88ecea5c583c42abc33ae36bb0215a82e7a3f28",
@@ -46,5 +46,17 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "verifier_epoch_duplicate_v46": {
+    "state": "PATCH_PENDING_PROOF",
+    "failure_token": "PY_VISIBLE_FINAL_V46_DECK_NOT_READY",
+    "observed": "app frame exposed 2 V46 control decks during Streamlit rerun",
+    "failed_layer": "VERIFIER / TRANSIENT RERUN CARDINALITY",
+    "first_broken_arrow": "dynamic Step 5 route load -> V46 deck present twice transiently -> verifier demanded exactly one -> false failure",
+    "root_cause": "The verifier treated transient duplicate V46 deck nodes during Streamlit rerender as absence because passing_deck() only accepted count==1.",
+    "patch": "Verifier-only: search visible V46 decks and select the latest one that owns exactly one Slate date control; tolerate stale retiring deck nodes.",
+    "product_changes": false,
+    "provider_changes": false,
+    "step4_reopened": false
   }
 }
