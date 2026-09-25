@@ -1,0 +1,182 @@
+name: NFL Passing Yards Visible Cleanup Public Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-visible-cleanup-public-freeze-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-visible-cleanup-public-freeze-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Protect cleanup + Monster owners
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PY_VISIBLE_PUBLIC_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+          check_blob app.py 92fee94202f0c4be91487fb1b878e9493fedf751
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob streamlit_memory_lazy_router_v237.py 6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml f1cd18361b27a777ded1dc6ac2314e01196b10b6
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_MONSTER_ISOLATION_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public cleanup at 390 768 1440
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+            "ks_jump_sport":"NFL",
+            "ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24",
+            "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2",
+            "ks_py_hint_name":"Jordan Love",
+            "ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4",
+            "ks_py_hint_attempts":"34.8",
+            "ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5",
+            "ks_py_hint_lean":"LEAN OVER",
+          }
+          url=base+"/?"+urlencode(params)
+
+          def find(page, selector, timeout=35, interval=.2):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame,loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("PY_VISIBLE_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def find_button(page, timeout=35):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator("button").filter(has_text="Load Full Analysis")
+                  if loc.count()>=1:
+                    return loc.first
+                except Exception:
+                  pass
+              time.sleep(.2)
+            raise RuntimeError("PY_VISIBLE_PUBLIC_BUTTON_NOT_READY")
+
+          forbidden=(
+            "Market Decision Detail",
+            "How to read this clean detail",
+            "Projection Detail",
+            "Context + Uncertainty Detail",
+            "Distribution + Probability Detail",
+            "Model Confidence",
+            "Model Over / Under",
+          )
+
+          with sync_playwright() as p:
+            deadline=time.monotonic()+600
+            browser=None
+            context=None
+            page=None
+            while time.monotonic()<deadline:
+              if browser:
+                try: browser.close()
+                except Exception: pass
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              try:
+                page.goto(url,wait_until="domcontentloaded",timeout=120000)
+                find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',25)
+                find(page,'[data-passing-yards-lazy-detail="v79"]',25)
+                find_button(page,25)
+                break
+              except Exception as exc:
+                print("PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_DEPLOY_WAIT",type(exc).__name__,str(exc))
+                time.sleep(10)
+            else:
+              raise RuntimeError("PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+
+            button=find_button(page,20)
+            button.click(timeout=10000)
+            frame,panel=find(page,'[data-passing-yards-availability-game-day="v74"]',24,.15)
+
+            for width,height,label in ((390,844,"390"),(768,1024,"768"),(1440,1000,"1440")):
+              page.set_viewport_size({"width":width,"height":height})
+              time.sleep(.25)
+              panel_text=panel.inner_text(timeout=5000)
+              cells=panel.locator(".ks-py74-cell b").all_inner_texts()
+              report=panel.locator(".ks-py74-report").first.inner_text(timeout=5000)
+              overflow=panel.evaluate("(el) => el.scrollWidth > el.clientWidth + 4")
+              longest=max((len(v.strip()) for v in cells),default=0)
+
+              if len(cells)!=8:
+                raise RuntimeError(f"PY_VISIBLE_PUBLIC_CELL_COUNT:{label}:{len(cells)}")
+              if longest>120:
+                raise RuntimeError(f"PY_VISIBLE_PUBLIC_CELL_VALUE_TOO_LONG:{label}:{longest}")
+              for token in forbidden:
+                if token.lower() in panel_text.lower():
+                  raise RuntimeError(f"PY_VISIBLE_PUBLIC_RAW_DUMP_TOKEN:{label}:{token}")
+              if len(report)>900:
+                raise RuntimeError(f"PY_VISIBLE_PUBLIC_REPORT_TOO_LONG:{label}:{len(report)}")
+              if report.count("Final inactive report:")!=1:
+                raise RuntimeError(f"PY_VISIBLE_PUBLIC_REPORT_COUNT:{label}")
+              if overflow:
+                raise RuntimeError(f"PY_VISIBLE_PUBLIC_HORIZONTAL_OVERFLOW:{label}")
+
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_GREEN")
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_MAX_CELL_CHARS={longest}")
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_REPORT_CHARS={len(report)}")
+
+            # Prove V237 still delegates Monster's Receptions surface to frozen V236.
+            rec=context.new_page()
+            rec.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Receptions"}),wait_until="domcontentloaded",timeout=120000)
+            find(rec,'[data-nfl-receptions-route="v236"]',35)
+            print("PASSING_YARDS_VISIBLE_CLEANUP_MONSTER_RECEPTIONS_V236_GREEN")
+
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP1_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP2_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP3_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP4_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_FROZEN")
+            context.close()
+            browser.close()
+          PY
