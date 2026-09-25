@@ -44,8 +44,8 @@
     "9 final job emits PASSING_YARDS_SPEED_STEP8_GREEN and PASSING_YARDS_SPEED_STEP8_FROZEN"
   ],
   "freeze_on_public_success": true,
-  "next_required_state": "V85-owner verifier GREEN -> merge -> public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete",
-  "step8_status": "FINITE_PUBLIC_DOM_IDENTITY_DIAGNOSTIC",
+  "next_required_state": "DevSystem GREEN on deployment-only scope -> merge PR #1013 -> Streamlit public activation -> rerun final public freeze -> Step 8 GREEN + FROZEN",
+  "step8_status": "PUBLIC_DEPLOYMENT_REFRESH_READY_TO_MERGE",
   "devsystem_repair": {
     "failure": "future task ledger must finish in DONE state",
     "classification": "LEDGER_STATE_ONLY",
@@ -63,25 +63,32 @@
     "product_change": false
   },
   "current_public_failure": {
-    "run": 36094378752,
-    "job": 107943893626,
+    "run": 36095005564,
+    "job": 107945328298,
     "failure_token": "SPEED_STEP8_SELECTOR_NOT_READY:[data-passing-yards-visible-cleanup-owner=\"v85\"]",
     "evidence": {
-      "attempt_1": {
-        "v85": 0,
-        "v84": 0,
-        "lazy": 0
+      "public_route_counts": {
+        "V203": 0,
+        "V206": 0,
+        "V220": 0,
+        "V225": 0,
+        "V228": 0,
+        "V230": 0,
+        "V84": 0,
+        "V85": 0
       },
-      "attempt_2": {
-        "v85": 0,
-        "v84": 0,
-        "lazy": 0
-      },
-      "route_jump_params_consumed": true
+      "public_dom_attrs": [],
+      "public_body_text": "",
+      "branch_devsystem_run": 36095005537,
+      "branch_browser_qa_job": 107945506696,
+      "branch_browser_qa": "SUCCESS",
+      "branch_nfl_critical": "SUCCESS",
+      "branch_core_smoke": "SUCCESS",
+      "branch_final_gate": "SUCCESS"
     },
-    "classification": "PUBLIC_ROUTE_OR_RUNTIME_IDENTITY_UNRESOLVED",
-    "product_change": false,
-    "next_diagnostic": "One bounded public rerun emits route-layer marker counts, Passing Yards DOM attributes, and visible body text. No timeout increase and no product patch."
+    "classification": "PUBLIC_STREAMLIT_ACTIVATION_FAILURE",
+    "reasoning": "The exact branch passes browser QA, NFL critical, core smoke, and the final DevSystem gate, while public returns an empty rendered body with zero route-layer owners. Product/router logic is therefore certified branch-local; the remaining failure is public Streamlit activation/runtime freshness.",
+    "patch": "Deployment-only app.py heartbeat following the repository's established Streamlit Community Cloud refresh pattern. No runtime import, router, model, data, math, market, widget, or presentation behavior changes."
   },
   "active_router": "streamlit_memory_lazy_router_v237",
   "active_product_wrapper": "nfl_passing_yards_hub_v85",
@@ -112,5 +119,16 @@
       "html_bytes": 241254,
       "terminal_token": "PASSING_YARDS_SPEED_PHASE_8_OF_8_GREEN_FROZEN"
     }
+  },
+  "entrypoint_marker_changed": true,
+  "deployment_refresh": {
+    "marker": "NFL_PASSING_YARDS_SPEED_STEP8_PUBLIC_REFRESH_2026_09_25_R1",
+    "app_blob": "b8a24f2d866c80a46e86317effe77025ba02be4a",
+    "scope": [
+      "app.py",
+      ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml",
+      "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
+    ],
+    "behavior_change": false
   }
 }
