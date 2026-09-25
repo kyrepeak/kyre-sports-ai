@@ -109,7 +109,7 @@ jobs:
               'PROP_ANALYTICS_HUB = "nfl_prop_analytics_hub_v1"',
               'MAY_MODIFY_PASSING_YARDS = False',
               'root.NFL_MARKETS = _prop_market_options()',
-              'return prior.render_app()',
+              '_with_prop_analytics_selectbox(prior.render_app)',
           )
           for token in required_router:
               assert token in router, token
