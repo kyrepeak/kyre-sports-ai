@@ -1,0 +1,55 @@
+{
+  "task": "sitewide-step45-slate-alias-v1",
+  "task_id": "sitewide-step45-slate-alias-v1",
+  "title": "Sitewide Step 4-5 NFL Slate verifier identity repair",
+  "version": 1,
+  "status": "DONE",
+  "source_main": "e7c5829c4c105268639b9ce59e3832c8991bca92",
+  "protected_steps": {
+    "1": "GREEN_FROZEN",
+    "2": "GREEN_FROZEN",
+    "3": "GREEN_FROZEN"
+  },
+  "failure_epoch": {
+    "production_run": 36087703829,
+    "route": "NFL / Slate",
+    "classification": "VERIFIER_IDENTITY_DRIFT",
+    "evidence": [
+      "Public page rendered NFL slate date",
+      "Verified NFL schedule was visible",
+      "Real game/team/score/venue/broadcast content rendered",
+      "Verifier still expected stale Slate identity/DOM"
+    ]
+  },
+  "patch": {
+    "layer": "VERIFIER",
+    "file": "devsystem/sitewide_page_load_health_v1.py",
+    "route_markers": [
+      "NFL slate date",
+      "Verified NFL schedule"
+    ],
+    "product_code_changed": false
+  },
+  "preserved_product": {
+    "active_router": "streamlit_memory_lazy_router_v236",
+    "receptions_route_repair": true,
+    "passing_yards_logic_changed": false,
+    "model_math_changed": false,
+    "projection_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "step6_started": false
+  },
+  "target_tokens": [
+    "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN",
+    "SITEWIDE_PAGE_LOAD_STEP4_FROZEN",
+    "SITEWIDE_PAGE_LOAD_STEP5_REPAIR_CERTIFIED_GREEN",
+    "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

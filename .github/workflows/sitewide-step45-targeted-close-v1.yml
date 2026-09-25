@@ -5,16 +5,20 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/sitewide-step45-targeted-close-v1.yml"
+      - "devsystem/sitewide_page_load_health_v1.py"
       - "devsystem/task_ledgers/sitewide-step45-targeted-close-v1.json"
-      - "app.py"
-      - "streamlit_memory_lazy_router_v236.py"
+      - "devsystem/task_ledgers/sitewide-step45-slate-alias-v1.json"
       - "app.py"
       - "streamlit_memory_lazy_router_v236.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/sitewide-step45-targeted-close-v1.yml"
+      - "devsystem/sitewide_page_load_health_v1.py"
       - "devsystem/task_ledgers/sitewide-step45-targeted-close-v1.json"
+      - "devsystem/task_ledgers/sitewide-step45-slate-alias-v1.json"
+      - "app.py"
+      - "streamlit_memory_lazy_router_v236.py"
   workflow_dispatch:
 
 permissions:
