@@ -152,11 +152,9 @@ jobs:
               frame,_=_find_app_frame(page)
 
               choose_matchup(page,frame)
-              frame,_=wait_text(page,"Choose a quarterback",60)
+              wait_text(page,"Choose a quarterback",60)
 
-              qb=frame.locator('a[data-qb-select="2"]')
-              if qb.count()!=1:
-                  raise RuntimeError(f"PY_VISIBLE_REAL_UI_QB_CARD_COUNT:{qb.count()}")
+              frame,qb=find(page,'a[data-qb-select="2"]',45,.15)
               qb.click(timeout=10000)
 
               find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',45)
