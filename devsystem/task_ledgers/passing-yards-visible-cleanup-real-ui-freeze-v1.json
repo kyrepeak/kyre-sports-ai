@@ -25,5 +25,14 @@
     "consumed_receipts": []
   },
   "deploy_refresh_inherited": true,
-  "deploy_refresh_main": "aa8505250ad9c2960c3675ba9b8a761b5d096f50"
+  "deploy_refresh_main": "aa8505250ad9c2960c3675ba9b8a761b5d096f50",
+  "real_ui_failure_epoch": {
+    "run": 36092499027,
+    "failure_token": "PY_VISIBLE_REAL_UI_QB_CARD_COUNT:0",
+    "classification": "VERIFIER_FRAME_RESCAN_MISMATCH",
+    "evidence": "The real UI reached 'Choose a quarterback'. The verifier then discarded that exact frame and called the generic app-frame scanner again, producing a false zero-card count.",
+    "patch": "Keep the frame returned by wait_text('Choose a quarterback') and query QB card 2 in that exact frame.",
+    "product_changes": false,
+    "monster_changes": false
+  }
 }
