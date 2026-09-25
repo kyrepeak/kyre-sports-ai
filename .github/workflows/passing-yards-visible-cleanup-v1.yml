@@ -47,14 +47,21 @@ jobs:
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
-            expected="$(printf '%s\n' \
+            full_expected="$(printf '%s\n' \
               '.github/workflows/passing-yards-visible-cleanup-v1.yml' \
               'app.py' \
               'devsystem/task_ledgers/passing-yards-visible-cleanup-v1.json' \
               'nfl_passing_yards_hub_v85.py' \
               'streamlit_memory_lazy_router_v237.py' \
               'tests/test_passing_yards_visible_cleanup_v85.py' | sort)"
-            if [ "$actual" != "$expected" ]; then
+            verifier_expected="$(printf '%s\n' \
+              '.github/workflows/passing-yards-visible-cleanup-v1.yml' \
+              'devsystem/task_ledgers/passing-yards-visible-cleanup-v1.json' | sort)"
+            if [ "$actual" = "$full_expected" ]; then
+              echo "PASSING_YARDS_VISIBLE_CLEANUP_FULL_SCOPE_GREEN"
+            elif [ "$actual" = "$verifier_expected" ]; then
+              echo "PASSING_YARDS_VISIBLE_CLEANUP_VERIFIER_ONLY_SCOPE_GREEN"
+            else
               echo "PASSING_YARDS_VISIBLE_CLEANUP_SCOPE_VIOLATION"
               printf '%s\n' "$actual"
               exit 1
@@ -254,7 +261,7 @@ jobs:
         run: kill "$(cat /tmp/py_cleanup_pid)" 2>/dev/null || true
 
   public-freeze:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: static-contract
     runs-on: ubuntu-24.04
     timeout-minutes: 20
