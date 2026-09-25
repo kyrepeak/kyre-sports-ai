@@ -1,0 +1,29 @@
+{
+  "task": "passing-yards-visible-cleanup-real-ui-freeze-v1",
+  "task_id": "passing-yards-visible-cleanup-real-ui-freeze-v1",
+  "id": "passing-yards-visible-cleanup-real-ui-freeze-v1",
+  "title": "Passing Yards Visible Cleanup Real UI Freeze",
+  "version": 1,
+  "phase": "production-certification-real-ui",
+  "status": "DONE",
+  "source_main": "aa8505250ad9c2960c3675ba9b8a761b5d096f50",
+  "classification": "VERIFIER_ONLY_REAL_UI_RECLASSIFICATION",
+  "prior_failure": "PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+  "root_cause": "Public deep-link verifier did not mirror the accepted real Streamlit UI flow. Sitewide V236 deployment proof independently demonstrated the same deep-link mismatch class and passed through real UI navigation.",
+  "patch": "Verifier-only real UI navigation: homepage -> NFL -> Passing Yards -> verified matchup -> QB card -> Load Full Analysis -> inspect V74 cleanup at 390/768/1440. Also confirm Receptions remains V236.",
+  "product_changes": false,
+  "monster_changes": false,
+  "frozen_owners": {
+    "app": "2d4248636ec5a8f5e0d7d2d04f3d433009d90970",
+    "v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "router_v237": "6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44",
+    "monster_router_v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "deploy_refresh_inherited": true,
+  "deploy_refresh_main": "aa8505250ad9c2960c3675ba9b8a761b5d096f50"
+}
