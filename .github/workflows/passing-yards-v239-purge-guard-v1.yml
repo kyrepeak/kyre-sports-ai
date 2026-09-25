@@ -1,0 +1,209 @@
+name: NFL Passing Yards V239 Purge Guard
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-v239-purge-guard-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-v239-purge-guard-v1.json"
+      - "streamlit_memory_lazy_router_v239.py"
+      - "tests/test_passing_yards_v239_purge_guard.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-v239-purge-guard-v1-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  v239-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: \${{ github.event.pull_request.head.sha }}
+
+      - name: Enforce V239 scope and protect frozen owners
+        shell: bash
+        env:
+          BASE_SHA: \${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: \${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/passing-yards-v239-purge-guard-v1.yml' \
+            'app.py' \
+            'devsystem/task_ledgers/passing-yards-v239-purge-guard-v1.json' \
+            'streamlit_memory_lazy_router_v239.py' \
+            'tests/test_passing_yards_v239_purge_guard.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "PASSING_YARDS_V239_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PASSING_YARDS_V239_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob streamlit_memory_lazy_router_v238.py aee3624198c9e290902b0bf967ec85704a967698
+          check_blob streamlit_memory_lazy_router_v237.py b02ca727a920d50bd2f5add1dd9881ab9d5ae248
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob streamlit_memory_lazy_router_v225.py 0de2e2ec55cf5300db1b2d9dddc913b96a0de63d
+          check_blob streamlit_memory_lazy_router_v188.py ff9804e7698c34bb87ae3e2bfe4f3777926f1553
+          check_blob streamlit_memory_lazy_router_v187.py 449a6a0712ab0f6be70cebe5a3822e59f279e3b6
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob requirements.txt ff1adb99af7cf829f291e6edd1813de9d0040849
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml 8fdf57caa41828988adb1389fa34979a224385cc
+
+          grep -F 'from streamlit_memory_lazy_router_v239 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'return route_guard._prime_passing_route_token_for_session()' streamlit_memory_lazy_router_v239.py
+          grep -F 'return passing_base._render_passing_v188()' streamlit_memory_lazy_router_v239.py
+          grep -F 'data-passing-yards-router-owner="v239"' streamlit_memory_lazy_router_v239.py
+          echo "PASSING_YARDS_V239_MONSTER_ISOLATION_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run focused V239 tests
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest requests playwright
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_v239_purge_guard.py
+          python -m py_compile streamlit_memory_lazy_router_v239.py app.py
+          echo "PASSING_YARDS_V239_STATIC_GREEN"
+
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Start branch app
+        run: |
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/py_v239.log 2>&1 &
+          echo $! >/tmp/py_v239_pid
+
+      - name: Prove exact real UI activates V239 and V85
+        run: |
+          python - <<'PY'
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=2).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.3)
+          else:
+              raise RuntimeError("PY_V239_BRANCH_APP_NOT_READY")
+
+          def app_frame(page,timeout=45):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          body=frame.locator("body").inner_text(timeout=1000)
+                          combos=frame.get_by_role("combobox").count()
+                      except Exception:
+                          continue
+                      if combos>=1 and "KYRE SPORTS AI" in body:
+                          return frame
+                  page.wait_for_timeout(150)
+              raise RuntimeError("PY_V239_APP_FRAME_NOT_READY")
+
+          def exact_option(page,combo,value,timeout=30):
+              combo.click(timeout=10000)
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("option",name=value,exact=True)
+                          if loc.count()>=1:
+                              loc.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(100)
+              raise RuntimeError("PY_V239_OPTION_NOT_READY:"+value)
+
+          def marker(page,selector,timeout=60):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(100)
+              body="\n".join(
+                  f.locator("body").inner_text(timeout=1000)
+                  for f in page.frames
+                  if f.locator("body").count()
+              )
+              raise RuntimeError("PY_V239_MARKER_NOT_READY:"+selector+":"+body[-1800:])
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              page=browser.new_page(viewport={"width":1440,"height":1000})
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              frame=app_frame(page)
+              sport=frame.get_by_role("combobox",name="🏟️ Sport",exact=True)
+              if sport.count()!=1:
+                  raise RuntimeError("PY_V239_SPORT_COMBO_COUNT:"+str(sport.count()))
+              exact_option(page,sport.first,"NFL")
+
+              end=time.monotonic()+45
+              market=None
+              while time.monotonic()<end:
+                  for candidate in page.frames:
+                      try:
+                          loc=candidate.get_by_role("combobox",name="🎯 NFL Market",exact=True)
+                          if loc.count()==1:
+                              market=loc.first
+                              break
+                      except Exception:
+                          pass
+                  if market is not None:
+                      break
+                  page.wait_for_timeout(100)
+              if market is None:
+                  raise RuntimeError("PY_V239_NFL_MARKET_NOT_READY")
+
+              exact_option(page,market,"Passing Yards")
+              marker(page,'[data-passing-yards-router-owner="v239"]',45)
+              marker(page,'[data-passing-yards-visible-cleanup-owner="v85"]',60)
+
+              print("PASSING_YARDS_V239_RUNTIME_OWNER_GREEN")
+              print("PASSING_YARDS_V239_V85_GREEN")
+              print("PASSING_YARDS_V239_BRANCH_GREEN")
+              browser.close()
+          PY
+
+      - name: Print branch log on failure
+        if: failure()
+        run: tail -n 1200 /tmp/py_v239.log || true
+
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_v239_pid)" 2>/dev/null || true
