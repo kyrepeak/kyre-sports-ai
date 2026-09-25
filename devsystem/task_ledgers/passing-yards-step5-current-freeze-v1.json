@@ -3,7 +3,7 @@
   "task_id": "passing-yards-step5-current-freeze-v1",
   "id": "passing-yards-step5-current-freeze-v1",
   "title": "Passing Yards Step 5 Current Availability + Game-Day Freeze",
-  "version": 2,
+  "version": 3,
   "phase": "current-production-recertification",
   "status": "DONE",
   "source_main": "e88ecea5c583c42abc33ae36bb0215a82e7a3f28",
@@ -55,6 +55,21 @@
     "first_broken_arrow": "dynamic Step 5 route load -> V46 deck present twice transiently -> verifier demanded exactly one -> false failure",
     "root_cause": "The verifier treated transient duplicate V46 deck nodes during Streamlit rerender as absence because passing_deck() only accepted count==1.",
     "patch": "Verifier-only: search visible V46 decks and select the latest one that owns exactly one Slate date control; tolerate stale retiring deck nodes.",
+    "product_changes": false,
+    "provider_changes": false,
+    "step4_reopened": false
+  },
+  "verifier_epoch_stale_offday_race": {
+    "state": "PATCH_PENDING_PROOF",
+    "failure_token": "PY_VISIBLE_FINAL_NO_CURRENT_OR_NEXT_VERIFIED_SLATE",
+    "failed_layer": "VERIFIER / DATE-RERUN SETTLED-STATE",
+    "decisive_evidence": [
+      "Step 4 previously certified 2026-09-27 as a valid live slate with no product changes afterward.",
+      "Step 5 run skipped every date 2026-09-25 through 2026-10-05, including 2026-09-27.",
+      "All skips occurred rapidly, proving the scanner classified transient no-games state before the candidate-date rerun settled."
+    ],
+    "root_cause": "After tolerating duplicate V46 decks, the scanner could read the retiring/interim deck's no-games message immediately after local date control changes and mark a real candidate date as an off-day before Streamlit's server rerun committed.",
+    "patch": "Verifier-only: bind scan reads to a visible V46 deck whose semantic Slate date equals the candidate and require a settled scan window before declaring the date empty. A transient no-games message no longer causes an immediate skip.",
     "product_changes": false,
     "provider_changes": false,
     "step4_reopened": false
