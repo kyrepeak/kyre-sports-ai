@@ -1,0 +1,27 @@
+{
+  "task": "passing-yards-step8-local-cold-route-diagnostic-v1",
+  "task_id": "passing-yards-step8-local-cold-route-diagnostic-v1",
+  "id": "passing-yards-step8-local-cold-route-diagnostic-v1",
+  "title": "Passing Yards Step 8 Local Cold Route Diagnostic",
+  "version": 1,
+  "phase": "step8-root-cause-forensics",
+  "status": "DONE",
+  "execution_state": "DIAGNOSTIC_READY",
+  "source_main": "7987a5ccf2133b4b9ee19d60b380a2457245ed11",
+  "classification": "VERIFIER_ONLY_LOCAL_EXACT_ROUTE_REPRODUCTION",
+  "product_changes": false,
+  "router_changes": false,
+  "model_changes": false,
+  "data_changes": false,
+  "projection_changes": false,
+  "probability_changes": false,
+  "market_changes": false,
+  "widget_changes": false,
+  "presentation_changes": false,
+  "purpose": "Boot current main locally and drive the exact public-failing NFL Passing Yards cold route at 390px. Distinguish code regression from hosted Streamlit-only failure.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
