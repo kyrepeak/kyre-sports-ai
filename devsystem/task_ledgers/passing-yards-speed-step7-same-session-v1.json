@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "V85_SAME_TAB_PATCH_PENDING_PROOF",
+  "step7_status": "V85_BRANCH_VERIFIER_REPAIR_PENDING",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -24,7 +24,7 @@
   "certified_step6_public_reduction_pct": 89.86,
   "objective": "Measure and remove the remaining user-visible delay caused by the lazy-shell Load Full Analysis transition, without changing any frozen football/model/data/projection/context/probability/market/sportsbook behavior.",
   "current_first_broken_arrow": "Lazy shell -> Load Full Analysis -> selected-QB full detail ready",
-  "failed_layer": "PUBLIC_RUNTIME",
+  "failed_layer": "VERIFIER",
   "root_cause_status": "LOCKED",
   "diagnostic_budget": 1,
   "diagnostic_action": "One branch browser profile proving whether the current V79 Load Full Analysis anchor causes a full document navigation and measuring click-to-ready versus frozen V77 server-render telemetry.",
@@ -47,28 +47,12 @@
     "consumed_receipts": []
   },
   "current_failure_epoch": {
-    "run": 36079121696,
-    "attempt": 3,
-    "failed_job": 107902459991,
-    "failure_token": "SPEED_STEP7_PUBLIC_TRANSPORT_BUDGET:7.781",
-    "failed_layer": "PUBLIC_RUNTIME",
-    "evidence": {
-      "public_deployment_active": true,
-      "v84_owner": true,
-      "v83_descendant": true,
-      "v82_descendant": true,
-      "full_flag_active": true,
-      "same_document": 1,
-      "page_count": 1,
-      "click_ready_seconds": 12.075,
-      "v82_wrapper_render_ms": 4293.851,
-      "transport_overhead_seconds": 7.781,
-      "prefetch_launched": 9,
-      "prefetch_hits": 7,
-      "html_bytes": 235815
-    },
-    "root_cause": "The public Streamlit widget rerun transport adds 7.781s outside the frozen V82 wrapper even after V84 removes the explicit second rerun. The remaining bottleneck is the widget/server rerun transport itself, not football computation.",
-    "patch": "V85 replaces the Streamlit widget activation path with st.html same-tab direct navigation to the existing ks_py_full=1 URL. This bypasses the public widget rerun transport while preserving all query context and the frozen V84 -> V83 -> V82 full-analysis chain."
+    "run": 36081360658,
+    "failed_job": 107904117346,
+    "failure_token": "SPEED_STEP7_BRANCH_TARGET_NOT_SELF:",
+    "failed_layer": "VERIFIER",
+    "root_cause": "st.html/DOM sanitization removed the explicit target=_self attribute. An empty target already uses the current browsing context, and V85 also binds window.location.assign(). The verifier failed before clicking, so it did not test actual navigation behavior.",
+    "patch": "Verifier-only: accept target='' or '_self', print the observed target, then prove one-page direct navigation via document timeOrigin change, ks_py_full=1 activation and V59 detail readiness."
   },
   "diagnostic_status": "RERUN_PENDING",
   "root_cause": {
@@ -109,9 +93,9 @@
     "9 public same-tab direct-full proof keeps one page, activates ks_py_full=1, preserves Step6 <=24s ready ceiling, and reduces V84 7.781s transport overhead by at least 25%",
     "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
   ],
-  "next_required_state": "Current-head V85 static + branch same-tab proof GREEN and DevSystem GREEN -> merge -> public freeze proof",
+  "next_required_state": "Current-head V85 static + actual same-tab branch click proof GREEN and DevSystem GREEN -> merge -> public freeze proof",
   "verifier_only_repair": true,
-  "product_patch_unchanged": false,
+  "product_patch_unchanged": true,
   "public_deployment_activation_proven": {
     "run": 36077345479,
     "tokens": [
