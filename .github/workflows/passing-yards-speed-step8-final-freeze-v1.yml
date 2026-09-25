@@ -4,11 +4,13 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "app.py"
       - ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml"
       - "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
   push:
     branches: [main]
     paths:
+      - "app.py"
       - ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml"
       - "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
 
@@ -40,6 +42,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
             expected="$(printf '%s\n' \
+              'app.py' \
               '.github/workflows/passing-yards-speed-step8-final-freeze-v1.yml' \
               'devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json' | sort)"
             if [ "$actual" != "$expected" ]; then
@@ -57,7 +60,7 @@ jobs:
             }
           }
 
-          check_blob app.py 2d4248636ec5a8f5e0d7d2d04f3d433009d90970
+          check_blob app.py b8a24f2d866c80a46e86317effe77025ba02be4a
           check_blob nfl_passing_yards_hub_v84.py 8a0f89d62c195890e5c7b3ef77d30948117d40f5
           check_blob streamlit_memory_lazy_router_v235.py 2ab569276697a7bb2020708558f45333df14e4fe
           check_blob streamlit_memory_lazy_router_v237.py 6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44
@@ -65,6 +68,8 @@ jobs:
           check_blob .github/workflows/passing-yards-speed-step7-same-session-v1.yml 9269c95eec77e46dfcb5a18a69d7ddffdec87a06
 
           grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'PASSING_YARDS_SPEED_STEP8_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_SPEED_STEP8_PUBLIC_REFRESH_2026_09_25_R1"' app.py
+          echo "PASSING_YARDS_SPEED_STEP8_DEPLOY_REFRESH_SCOPE_GREEN"
           grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v83"' nfl_passing_yards_hub_v84.py
           grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v84"' streamlit_memory_lazy_router_v235.py
           grep -F 'import streamlit_memory_lazy_router_v235 as passing_router' streamlit_memory_lazy_router_v237.py
