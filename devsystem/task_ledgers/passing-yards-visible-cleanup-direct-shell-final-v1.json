@@ -1,0 +1,41 @@
+{
+  "task": "passing-yards-visible-cleanup-direct-shell-final-v1",
+  "task_id": "passing-yards-visible-cleanup-direct-shell-final-v1",
+  "id": "passing-yards-visible-cleanup-direct-shell-final-v1",
+  "title": "Passing Yards Visible Cleanup Direct Shell Final Freeze",
+  "version": 1,
+  "phase": "final-public-production-certification",
+  "status": "DONE",
+  "source_main": "f8c127b7812bcebf6db7e25664bb2d6db93136db",
+  "classification": "VERIFIER_ONLY_DIRECT_SHELL_FINAL_PUBLIC_FREEZE",
+  "product_changes": false,
+  "monster_changes": false,
+  "product_fix": {
+    "merged_pr": 1029,
+    "main_sha": "f8c127b7812bcebf6db7e25664bb2d6db93136db",
+    "summary": "V237 now installs V85 ownership and enters V187's certified direct root shell for Passing Yards instead of re-entering V236/V235 historical routing."
+  },
+  "proof_scope": [
+    "Use real public UI exact option clicks for NFL and Passing Yards.",
+    "Wait for V85 after the actual Streamlit rerun.",
+    "Set Sep 24, 2026 and choose Atlanta Falcons @ Green Bay Packers.",
+    "Open Jordan Love and full analysis if needed.",
+    "At 390/768/1440 verify eight compact V74 cells, no raw market/model leak tokens, compact inactive report, and no horizontal overflow.",
+    "Independently verify Receptions remains V236.",
+    "Emit cleanup GREEN/FROZEN tokens only after all checks pass."
+  ],
+  "protected_blobs": {
+    "app": "a0329d64e226e57b7fb39624e3d4e68b604ed0ff",
+    "v237": "b02ca727a920d50bd2f5add1dd9881ab9d5ae248",
+    "v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "v187": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "sitewide_health": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow": "8fdf57caa41828988adb1389fa34979a224385cc"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
