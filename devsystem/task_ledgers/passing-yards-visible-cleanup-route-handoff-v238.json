@@ -1,0 +1,51 @@
+{
+  "task": "passing-yards-visible-cleanup-route-handoff-v238",
+  "task_id": "passing-yards-visible-cleanup-route-handoff-v238",
+  "id": "passing-yards-visible-cleanup-route-handoff-v238",
+  "title": "Passing Yards Visible Cleanup Route Handoff V238",
+  "version": 1,
+  "phase": "public-route-recovery",
+  "status": "DONE",
+  "source_main": "1c5f3652ce6f46b2758bb347a64c4c629ab030e7",
+  "root_cause": "Live production is current V237, but NFL routing can fall through to V187. The terminal public exception is Router V187 direct handler is player-prop identity only. V188 is the certified Passing Yards boundary before V187; the current top stack is failing to reach that Passing Yards direct handoff reliably from real UI state.",
+  "patch": "Add V238 above V237. Only when NFL -> Passing Yards is active (or its cold query is present), V238 primes the frozen V225 Passing Yards route token and reuses frozen V188's direct-prop handoff with V85. Every other route delegates unchanged to V237 -> V236.",
+  "scope": {
+    "route_handoff_only": true,
+    "presentation_only": true,
+    "projection_changed": false,
+    "context_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "data_provider_behavior_changed": false,
+    "widget_keys_changed": false,
+    "sportsbook_projection_influence": 0,
+    "stake_sizing_enabled": false
+  },
+  "monster_isolation": {
+    "monster_router_v236_unchanged": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "v237_unchanged": "6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44",
+    "v188_unchanged": "ff9804e7698c34bb87ae3e2bfe4f3777926f1553",
+    "v225_unchanged": "0de2e2ec55cf5300db1b2d9dddc913b96a0de63d",
+    "v85_unchanged": "ec33cd092e249a701d510cac2b95a8ffd780b4db"
+  },
+  "public_evidence": {
+    "diagnostic_pr": 1016,
+    "diagnostic_run": 36095249014,
+    "terminal_exception": "RuntimeError: Router V187 direct handler is player-prop identity only.",
+    "deepest_file": "streamlit_memory_lazy_router_v187.py",
+    "deepest_line": 54
+  },
+  "acceptance": [
+    "Static regression tests pass",
+    "Real UI MLB -> NFL -> Passing Yards recovers through V238 despite the intermediate frozen Slate failure",
+    "V238 and V85 markers render",
+    "QB picker/detail route works",
+    "V74 cleanup panel passes 390/768/1440 compact/no-raw-dump checks",
+    "NFL Receptions remains owned by V236"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
