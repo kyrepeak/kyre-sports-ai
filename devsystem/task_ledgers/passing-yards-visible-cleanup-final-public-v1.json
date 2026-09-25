@@ -32,5 +32,14 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "public_proof_reclassification": {
+    "prior_run": 36098497504,
+    "prior_failure": "PY_VISIBLE_REAL_UI_TARGET_PANEL_NOT_REACHABLE_AFTER_ALL_ENTRY_PATHS: PY_VISIBLE_REAL_UI_TEXT_NOT_READY: PASSING YARDS CONTROL DECK",
+    "classification": "VERIFIER_REAL_UI_DROPDOWN_HANDOFF_STALE_BODY",
+    "evidence": "Fresh public identity diagnostic after merge shows no V187 RuntimeError, but the real-UI dropdown can display Passing Yards while the body remains the previous NFL Slate route. The frozen Step 7 public proof already certifies the cold selected-QB query route with fresh-browser deployment retries.",
+    "patch": "Verifier-only: use the frozen Step 7 cold selected-QB route contract, wait for V85/V84/V79 + Load Full Analysis in fresh contexts, then certify the V74 cleanup at 390/768/1440 and independently verify Receptions V236.",
+    "product_changes": false,
+    "monster_changes": false
   }
 }
