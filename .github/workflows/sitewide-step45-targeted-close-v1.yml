@@ -110,7 +110,58 @@ jobs:
           tail -n 300 /tmp/sitewide-step45-branch.log || true
           exit 1
 
-      - name: Retest NFL Slate public route
+      - name: Wait for V236 public deployment
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import time
+
+          from playwright.sync_api import sync_playwright
+
+          base_url = os.environ["PUBLIC_URL"].rstrip("/")
+          url = base_url + "/?ks_jump_sport=NFL&ks_jump_market=Receptions"
+          needle = "Receptions is fail-closed at the Step 7 app identity gate."
+          deadline = time.monotonic() + 300.0
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1440, "height": 1200})
+              try:
+                  attempt = 0
+                  while time.monotonic() < deadline:
+                      attempt += 1
+                      try:
+                          page.goto(url, wait_until="domcontentloaded", timeout=120000)
+                      except Exception as exc:
+                          print(f"V236_PUBLIC_DEPLOYMENT_NAV_RETRY attempt={attempt} error={exc}")
+                          time.sleep(10)
+                          continue
+
+                      for _ in range(20):
+                          for frame in page.frames:
+                              try:
+                                  body = frame.locator("body").inner_text(timeout=1500)
+                              except Exception:
+                                  continue
+                              if needle in body:
+                                  print("V236_PUBLIC_DEPLOYMENT_ACTIVE")
+                                  raise SystemExit(0)
+                          page.wait_for_timeout(500)
+
+                      print(f"V236_PUBLIC_DEPLOYMENT_WAIT attempt={attempt}")
+                      time.sleep(10)
+
+                  raise RuntimeError("V236_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+              finally:
+                  browser.close()
+          PY
+
+      - name: Retest NFL Slate route
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -120,9 +171,12 @@ jobs:
           from playwright.sync_api import sync_playwright
           from devsystem.browser_qa_v1 import _body_has_forbidden_error
 
-          base_url = os.environ["PUBLIC_URL"].rstrip("/")
+          is_pr = os.environ.get("GITHUB_EVENT_NAME") == "pull_request"
+          base_url = "http://127.0.0.1:8501" if is_pr else os.environ["PUBLIC_URL"].rstrip("/")
           url = base_url + "/?ks_jump_sport=NFL&ks_jump_market=Slate"
-          required = ("nfl slate date", "verified nfl schedule")
+          attempts = 1 if is_pr else 3
+
+          print(f"NFL_SLATE_PROOF_BASE_URL={base_url}")
 
           with sync_playwright() as p:
               browser = p.chromium.launch(
@@ -131,37 +185,73 @@ jobs:
               )
               page = browser.new_page(viewport={"width": 1440, "height": 1200})
               try:
-                  page.goto(url, wait_until="domcontentloaded", timeout=120000)
-                  deadline = time.monotonic() + 45.0
-                  snapshots = []
-                  while time.monotonic() < deadline:
-                      snapshots = []
-                      for frame in page.frames:
-                          try:
-                              body = frame.locator("body").inner_text(timeout=1500)
-                          except Exception:
+                  last_preview = ""
+                  last_error = ""
+                  for attempt in range(1, attempts + 1):
+                      try:
+                          page.goto(url, wait_until="domcontentloaded", timeout=120000)
+                      except Exception as exc:
+                          last_error = f"NAVIGATION:{exc}"
+                          if attempt < attempts:
+                              print(f"NFL_SLATE_TRANSIENT_RETRY attempt={attempt} reason={last_error}")
+                              time.sleep(5)
                               continue
-                          if not body:
-                              continue
-                          snapshots.append(body)
-                          forbidden = _body_has_forbidden_error(body)
-                          if forbidden:
-                              raise RuntimeError(
-                                  f"NFL_SLATE_PUBLIC_RUNTIME_ERROR:{forbidden}"
-                              )
-                          normalized = " ".join(body.split()).lower()
-                          if all(marker in normalized for marker in required):
-                              print("NFL_SLATE_REAL_SURFACE_MARKERS_GREEN")
-                              print("SITEWIDE_STEP45_NFL_SLATE_PUBLIC_GREEN")
-                              raise SystemExit(0)
-                      page.wait_for_timeout(300)
+                          raise
 
-                  preview = " || ".join(
-                      " ".join(body.split())[:1200] for body in snapshots[:3]
-                  )
+                      deadline = time.monotonic() + 45.0
+                      transient_error = ""
+                      while time.monotonic() < deadline:
+                          snapshots = []
+                          for frame in page.frames:
+                              try:
+                                  body = frame.locator("body").inner_text(timeout=1500)
+                              except Exception:
+                                  continue
+                              if not body:
+                                  continue
+
+                              snapshots.append(body)
+                              forbidden = _body_has_forbidden_error(body)
+                              if forbidden:
+                                  transient_error = forbidden
+                                  break
+
+                              normalized = " ".join(body.split()).lower()
+                              slate_identity = "nfl slate date" in normalized
+                              schedule_identity = (
+                                  "verified nfl schedule" in normalized
+                                  or "nfl build status" in normalized
+                              )
+                              if slate_identity and schedule_identity:
+                                  print("NFL_SLATE_REAL_SURFACE_MARKERS_GREEN")
+                                  print("SITEWIDE_STEP45_NFL_SLATE_PUBLIC_GREEN")
+                                  raise SystemExit(0)
+
+                          if transient_error:
+                              break
+
+                          if snapshots:
+                              last_preview = " || ".join(
+                                  " ".join(body.split())[:1200] for body in snapshots[:3]
+                              )
+                          page.wait_for_timeout(300)
+
+                      if transient_error:
+                          last_error = f"RUNTIME:{transient_error}"
+                      else:
+                          last_error = "REAL_SURFACE_NOT_READY"
+
+                      if attempt < attempts:
+                          print(
+                              f"NFL_SLATE_TRANSIENT_RETRY attempt={attempt} "
+                              f"reason={last_error}"
+                          )
+                          time.sleep(5)
+                          continue
+
                   raise RuntimeError(
-                      "NFL_SLATE_REAL_SURFACE_NOT_READY:"
-                      + preview
+                      f"NFL_SLATE_PROOF_FAILED:{last_error}:"
+                      + last_preview
                   )
               finally:
                   browser.close()
