@@ -1,0 +1,38 @@
+{
+  "task": "passing-yards-visible-cleanup-public-proof-v1",
+  "task_id": "passing-yards-visible-cleanup-public-proof-v1",
+  "id": "passing-yards-visible-cleanup-public-proof-v1",
+  "title": "Passing Yards Visible Cleanup Public Freeze Proof",
+  "status": "DONE",
+  "source_main": "db5c4cbd60cb43eda9bb1accf75df63667d083c1",
+  "product_pr": 1001,
+  "product_merge_sha": "db5c4cbd60cb43eda9bb1accf75df63667d083c1",
+  "purpose": "Verifier-only public production certification of the already-merged V85/V237 Passing Yards presentation cleanup.",
+  "product_change": false,
+  "monster_change": false,
+  "protected_hashes": {
+    "app_py": "92fee94202f0c4be91487fb1b878e9493fedf751",
+    "passing_v74": "381d95d5059eafcbbb7d9e0d108fcd54c5e43951",
+    "passing_v84": "8a0f89d62c195890e5c7b3ef77d30948117d40f5",
+    "passing_v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "router_v235": "2ab569276697a7bb2020708558f45333df14e4fe",
+    "router_v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "router_v237": "6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44",
+    "sitewide_health": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow": "f1cd18361b27a777ded1dc6ac2314e01196b10b6"
+  },
+  "acceptance": [
+    "Public app exposes V85 cleanup owner",
+    "Selected QB full detail loads",
+    "Availability panel has exactly 8 compact cells",
+    "No cross-section raw-dump tokens appear in availability panel/report",
+    "Final inactive report occurs once and remains compact",
+    "390/768/1440 panel has no horizontal overflow",
+    "Emit PASSING_YARDS_VISIBLE_CLEANUP_GREEN and PASSING_YARDS_VISIBLE_CLEANUP_FROZEN"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
