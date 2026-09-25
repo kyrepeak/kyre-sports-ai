@@ -152,8 +152,7 @@ jobs:
               frame,_=_find_app_frame(page)
 
               choose_matchup(page,frame)
-              wait_text(page,"Choose a quarterback",60)
-              frame,_=_find_app_frame(page)
+              frame,_=wait_text(page,"Choose a quarterback",60)
 
               qb=frame.locator('a[data-qb-select="2"]')
               if qb.count()!=1:
