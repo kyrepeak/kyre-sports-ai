@@ -91,6 +91,7 @@ WIDTHS = ((390, 844), (768, 1024), (1440, 1000))
 # prevent the verifier from requiring navigation-label wording to be repeated
 # verbatim inside a page that has already rendered its certified owner.
 ROUTE_RENDER_MARKERS = {
+    ("NFL", "Slate"): ("NFL slate date", "Verified NFL schedule"),
     ("CFB", "Over/Under"): ("CFB O/U", "CLEAN PAGE V39 ACTIVE"),
     ("CFB", "Game Total"): ("Game Total matchup", "CFB_GAME_TOTAL_"),
     ("MLB", "Matchup Explorer"): ("Find your matchup + hitter",),
