@@ -209,6 +209,12 @@ jobs:
                   "comboboxes":combo_state(page),
                   "body_chars":len(body),
                   "body_excerpt":compact[:3500],
+                  "body_tail":compact[-7000:],
+                  "traceback_tail":[
+                      line.strip()
+                      for line in body.splitlines()
+                      if line.strip()
+                  ][-80:],
                   "runtime_error_text":runtime_error,
               }
               print("PASSING_YARDS_VISIBLE_CLEANUP_IDENTITY_SNAPSHOT="+json.dumps(data,sort_keys=True))
