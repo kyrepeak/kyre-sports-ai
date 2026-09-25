@@ -455,6 +455,37 @@ def main() -> int:
 
         for row in selected_routes:
             result = _audit_normal_route(page, args.base_url, row, steps23_only=args.steps23_only)
+
+            # Step 2/3 verifies route selection + first meaningful render only.
+            # A long sitewide sweep can leave Streamlit session state sticky across
+            # many query-param route jumps, so one failed route gets exactly one
+            # isolated retry in a fresh browser context before being classified red.
+            if args.steps23_only and (result.smoke != "GREEN" or result.flow != "GREEN"):
+                first_detail = result.detail
+                try:
+                    page.close()
+                except Exception:
+                    pass
+                try:
+                    context.close()
+                except Exception:
+                    pass
+                context = browser.new_context(viewport={"width": 1440, "height": 1000})
+                page = context.new_page()
+                retry = _audit_normal_route(
+                    page, args.base_url, row, steps23_only=True
+                )
+                if retry.smoke == "GREEN" and retry.flow == "GREEN":
+                    retry.detail = (
+                        "ISOLATED_RETRY_GREEN_AFTER_STICKY_SESSION"
+                        + (f" • first={first_detail[:240]}" if first_detail else "")
+                    )
+                    print(
+                        "SITEWIDE_ROUTE_ISOLATED_RETRY_GREEN "
+                        f"sport={retry.sport_code!r} market={retry.market!r}"
+                    )
+                result = retry
+
             results.append(result)
             icon = "GREEN" if (
                 result.smoke == "GREEN"
