@@ -34,7 +34,9 @@ jobs:
           actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
           expected="$(printf '%s\n' \
             '.github/workflows/passing-yards-visible-cleanup-lockless-final-v1.yml' \
-            'devsystem/task_ledgers/passing-yards-visible-cleanup-lockless-final-v1.json' | sort)"
+            'devsystem/task_ledgers/passing-yards-visible-cleanup-lockless-final-v1.json' \
+            'streamlit_memory_lazy_router_v237.py' \
+            'tests/test_passing_yards_v237_lockless_owner.py' | sort)"
           if [ "$actual" != "$expected" ]; then
             echo "PASSING_YARDS_VISIBLE_CLEANUP_FINAL_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
@@ -51,7 +53,6 @@ jobs:
 
           check_blob app.py a0329d64e226e57b7fb39624e3d4e68b604ed0ff
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
-          check_blob streamlit_memory_lazy_router_v237.py 8260e8e218df58845e687b5f492d0c27fb733636
           check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
           check_blob streamlit_memory_lazy_router_v187.py 449a6a0712ab0f6be70cebe5a3822e59f279e3b6
           check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
@@ -60,16 +61,33 @@ jobs:
           grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
           grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v85"' streamlit_memory_lazy_router_v237.py
           grep -F 'identity_router.PROP_HUBS[PASSING_MARKET] = PASSING_HUB' streamlit_memory_lazy_router_v237.py
+          python - <<'PY'
+from pathlib import Path
+src=Path("streamlit_memory_lazy_router_v237.py").read_text()
+render=src.split("def render_app() -> None:",1)[1]
+install=render.index("_install_passing_owners()")
+detect=render.index("if not _passing_requested():")
+assert install < detect, "V85 owner must install before route detection"
+print("PASSING_YARDS_V237_OWNER_PREINSTALL_STATIC_GREEN")
+PY
           echo "PASSING_YARDS_VISIBLE_CLEANUP_FINAL_MONSTER_ISOLATION_GREEN"
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install public browser stack
+      - name: Install proof stack
         run: |
-          python -m pip install --disable-pip-version-check -q playwright
-          python -m playwright install --with-deps chromium
+          python -m pip install --disable-pip-version-check -q -r requirements.txt pytest playwright
+
+      - name: Prove V237 owner preinstall
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_v237_lockless_owner.py
+          python -m py_compile streamlit_memory_lazy_router_v237.py
+          echo "PASSING_YARDS_V237_OWNER_PREINSTALL_TEST_GREEN"
+
+      - name: Install public browser stack
+        run: python -m playwright install --with-deps chromium
 
       - name: Certify cleanup through exact real UI commits
         shell: bash
