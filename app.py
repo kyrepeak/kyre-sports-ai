@@ -58,6 +58,7 @@ PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_VISIBLE
 PASSING_YARDS_SPEED_STEP8_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_SPEED_STEP8_PUBLIC_REFRESH_2026_09_25_R1"
 PASSING_YARDS_SPEED_STEP8_V237_FIX_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_SPEED_STEP8_V237_FIX_PUBLIC_REFRESH_2026_09_25_R2"
 PASSING_YARDS_V238_PUBLIC_HARD_REFRESH = "NFL_PASSING_YARDS_V238_PUBLIC_HARD_REFRESH_2026_09_25_R1"
+PASSING_YARDS_V239_PURGE_GUARD_RUNTIME = "NFL_PASSING_YARDS_V239_PURGE_GUARD_2026_09_25_R1"
 SITEWIDE_STEP45_PUBLIC_DEPLOY_REFRESH = "SITEWIDE_STEP45_V237_PUBLIC_REFRESH_2026_09_25_R1"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
@@ -321,7 +322,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v238 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v239 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 7 activation: from streamlit_memory_lazy_router_v227 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 6 activation: from streamlit_memory_lazy_router_v226 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 5 activation: from streamlit_memory_lazy_router_v225 import record_bootstrap_import_ms, render_app
