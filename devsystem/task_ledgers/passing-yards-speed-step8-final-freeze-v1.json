@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 8,
   "status": "DONE",
-  "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
+  "source_main": "1c5f3652ce6f46b2758bb347a64c4c629ab030e7",
   "frozen_speed_steps": [
     1,
     2,
@@ -34,8 +34,8 @@
   "navigation_state_changed": false,
   "acceptance_gates": [
     "1 Step 8 diff is verifier/ledger only",
-    "2 V84/V235/app.py and Step 7 verifier blobs remain frozen",
-    "3 390/768/1440 public lazy-shell ownership and Load Full Analysis control are visible",
+    "2 Frozen V84/V235/Step7 blobs remain exact while current app.py -> V237 -> V85 -> V84 additive wrapper chain is pinned",
+    "3 390/768/1440 public V85 wrapper ownership, V79 lazy shell, and Load Full Analysis control are visible",
     "4 selected-QB full-detail DOM renders in the same document",
     "5 click-to-ready remains <=24s",
     "6 V82-wrapper transport overhead remains <=1.5s",
@@ -44,8 +44,8 @@
     "9 final job emits PASSING_YARDS_SPEED_STEP8_GREEN and PASSING_YARDS_SPEED_STEP8_FROZEN"
   ],
   "freeze_on_public_success": true,
-  "next_required_state": "Branch verifier GREEN -> merge -> one public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete",
-  "step8_status": "PUBLIC_VIEWPORT_SESSION_RETRY_REPAIR",
+  "next_required_state": "DevSystem GREEN on current-main rebase -> merge -> public Streamlit activation -> one final public freeze proof -> Step 8 GREEN + FROZEN",
+  "step8_status": "CURRENT_MAIN_REBASE_DEPLOYMENT_REFRESH_READY",
   "devsystem_repair": {
     "failure": "future task ledger must finish in DONE state",
     "classification": "LEDGER_STATE_ONLY",
@@ -63,17 +63,79 @@
     "product_change": false
   },
   "current_public_failure": {
-    "run": 36086565896,
-    "job": 107920150619,
-    "failure_token": "SPEED_STEP8_SELECTOR_NOT_READY:[data-passing-yards-single-rerun-owner=\"v84\"]",
+    "run": 36095005564,
+    "job": 107945328298,
+    "failure_token": "SPEED_STEP8_SELECTOR_NOT_READY:[data-passing-yards-visible-cleanup-owner=\"v85\"]",
     "evidence": {
-      "viewport_390_green": true,
-      "next_fresh_viewport": "768",
-      "next_context_v84_not_ready_within_seconds": 40,
-      "frozen_contract_green": true
+      "public_route_counts": {
+        "V203": 0,
+        "V206": 0,
+        "V220": 0,
+        "V225": 0,
+        "V228": 0,
+        "V230": 0,
+        "V84": 0,
+        "V85": 0
+      },
+      "public_dom_attrs": [],
+      "public_body_text": "",
+      "branch_devsystem_run": 36095005537,
+      "branch_browser_qa_job": 107945506696,
+      "branch_browser_qa": "SUCCESS",
+      "branch_nfl_critical": "SUCCESS",
+      "branch_core_smoke": "SUCCESS",
+      "branch_final_gate": "SUCCESS"
     },
-    "classification": "PUBLIC_SESSION_STARTUP_VARIABILITY",
-    "reasoning": "The 390px public context had already proven V84 live in the same run. The next independent 768px context failed before any product assertion because V84 never appeared, so global deployment absence is ruled out. Treat one fresh-context retry as verifier robustness; fail closed on a second miss.",
-    "patch": "Verifier-only: permit exactly one fresh browser-context retry per viewport. Product V84/V235/app.py and all speed Steps 1-7 remain unchanged."
+    "classification": "PUBLIC_STREAMLIT_ACTIVATION_FAILURE",
+    "reasoning": "The exact branch passes browser QA, NFL critical, core smoke, and the final DevSystem gate, while public returns an empty rendered body with zero route-layer owners. Product/router logic is therefore certified branch-local; the remaining failure is public Streamlit activation/runtime freshness.",
+    "patch": "Deployment-only app.py heartbeat following the repository's established Streamlit Community Cloud refresh pattern. No runtime import, router, model, data, math, market, widget, or presentation behavior changes."
+  },
+  "active_router": "streamlit_memory_lazy_router_v237",
+  "active_product_wrapper": "nfl_passing_yards_hub_v85",
+  "current_main_repin": {
+    "classification": "ADDITIVE_WRAPPER_CHAIN_REPIN",
+    "product_change": false,
+    "reason": "Post-cert sitewide work advanced app.py from V235 to additive V237 and Passing Yards from direct V84 to presentation-only V85 over frozen V84. Re-pin the Step 8 verifier to current main without modifying product code.",
+    "frozen_underlay": {
+      "step7_verifier": "9269c95eec77e46dfcb5a18a69d7ddffdec87a06",
+      "passing_hub_v84": "8a0f89d62c195890e5c7b3ef77d30948117d40f5",
+      "router_v235": "2ab569276697a7bb2020708558f45333df14e4fe"
+    },
+    "current_additive_chain": {
+      "app_py": "2d4248636ec5a8f5e0d7d2d04f3d433009d90970",
+      "router_v237": "6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44",
+      "passing_hub_v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db"
+    },
+    "prior_success": {
+      "run": 36087075005,
+      "public_final_freeze_job": 107921374417,
+      "viewport_390_green": true,
+      "viewport_768_green": true,
+      "viewport_1440_green": true,
+      "click_ready_seconds": 5.913,
+      "transport_overhead_seconds": 0.473,
+      "prefetch_launched": 9,
+      "prefetch_hits": 7,
+      "html_bytes": 241254,
+      "terminal_token": "PASSING_YARDS_SPEED_PHASE_8_OF_8_GREEN_FROZEN"
+    }
+  },
+  "entrypoint_marker_changed": true,
+  "deployment_refresh": {
+    "marker": "NFL_PASSING_YARDS_SPEED_STEP8_PUBLIC_REFRESH_2026_09_25_R1",
+    "app_blob": "98ea3f9c9df2ef409e17a23db4e524d531a16162",
+    "scope": [
+      "app.py",
+      ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml",
+      "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
+    ],
+    "behavior_change": false
+  },
+  "rebase": {
+    "reason": "Main advanced with the certified sitewide Step 4-5 Streamlit entrypoint refresh while Step 8 was active.",
+    "previous_pr": 1013,
+    "current_main": "1c5f3652ce6f46b2758bb347a64c4c629ab030e7",
+    "protected_sitewide_work": true,
+    "product_change": false
   }
 }
