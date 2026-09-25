@@ -1,0 +1,80 @@
+{
+  "task": "sitewide-page-load-health-v1",
+  "task_id": "sitewide-page-load-health-v1",
+  "title": "Sitewide Page Load Health Steps 1-6",
+  "version": 1,
+  "status": "DONE",
+  "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
+  "protected_active_area": {
+    "route": [
+      "NFL",
+      "Passing Yards"
+    ],
+    "active_router": "streamlit_memory_lazy_router_v233",
+    "mutation_authorized": false
+  },
+  "route_inventory": {
+    "total": 36,
+    "NFL": 11,
+    "CFB": 3,
+    "MLB": 13,
+    "WNBA": 9,
+    "includes_special_route": "MLB Live Odds"
+  },
+  "steps": {
+    "1": {
+      "name": "Route inventory",
+      "status": "DONE"
+    },
+    "2": {
+      "name": "Public first-load smoke",
+      "status": "PENDING"
+    },
+    "3": {
+      "name": "Real route-selection user flow",
+      "status": "PENDING"
+    },
+    "4": {
+      "name": "Root-cause broken routes",
+      "status": "PENDING"
+    },
+    "5": {
+      "name": "Repair and certify broken routes",
+      "status": "PENDING"
+    },
+    "6": {
+      "name": "Responsive/runtime health 390/768/1440",
+      "status": "PENDING"
+    }
+  },
+  "guardrails": {
+    "passing_yards_product_files_changed": false,
+    "shared_app_changed": false,
+    "shared_active_router_changed": false,
+    "model_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": {
+    "all_36_routes_first_render": true,
+    "route_selection_visible": true,
+    "fatal_runtime_markers_absent": true,
+    "widths": [
+      390,
+      768,
+      1440
+    ],
+    "root_overflow_absent": true,
+    "step6_final_tokens": [
+      "SITEWIDE_PAGE_LOAD_STEP6_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP6_FROZEN"
+    ]
+  },
+  "known_nonblocking_note": "MLB 2+ Hits may load an intentional placeholder; page-load health does not certify an unbuilt standalone betting model.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

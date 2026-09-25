@@ -1,0 +1,181 @@
+name: Sitewide Page Load Health V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/sitewide-page-load-health-v1.yml"
+      - "devsystem/sitewide_page_load_health_v1.py"
+      - "devsystem/task_ledgers/sitewide-page-load-health-v1.json"
+      - "wnba_points_hub_v198435.py"
+      - "wnba_points_hub_v19847.py"
+      - "wnba_points_v10.py"
+      - "wnba_points_hub_v1984.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sitewide-page-load-health-v1.yml"
+      - "devsystem/sitewide_page_load_health_v1.py"
+      - "devsystem/task_ledgers/sitewide-page-load-health-v1.json"
+      - "wnba_points_hub_v198435.py"
+      - "wnba_points_hub_v19847.py"
+      - "wnba_points_v10.py"
+      - "wnba_points_hub_v1984.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sitewide-page-load-health-v1-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  inventory-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prove frozen 36-route inventory
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python devsystem/sitewide_page_load_health_v1.py --inventory-only
+          echo "SITEWIDE_PAGE_LOAD_STEP1_GREEN"
+          echo "SITEWIDE_PAGE_LOAD_STEP1_FROZEN"
+
+  wnba-points-static-contract:
+    needs: inventory-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prove bounded transport without bare Streamlit import
+        run: |
+          python -m py_compile wnba_points_hub_v198435.py wnba_points_hub_v19847.py wnba_points_v10.py wnba_points_hub_v1984.py
+          python - <<'PY'
+          from pathlib import Path
+
+          wrapper = Path("wnba_points_hub_v198435.py").read_text()
+          shim = Path("wnba_points_hub_v19847.py").read_text()
+          core_persistence = Path("wnba_points_v10.py").read_text()
+          calibration_persistence = Path("wnba_points_hub_v1984.py").read_text()
+
+          assert 'DISPLAY_MARKET_BUDGET_SECONDS = 8.0' in wrapper
+          assert 'PER_REQUEST_CAP_SECONDS = 2.5' in wrapper
+          assert 'prior._fetch_points_events_two_stage = _fetch_points_events_bounded' in wrapper
+          assert 'import wnba_points_hub_v198435 as presentation' in shim
+          assert 'data-wnba-points-first-paint="v198435"' in wrapper
+          assert 'SCHEDULE_API_TIMEOUT_SECONDS = 2.5' in wrapper
+          assert 'SCHEDULE_API_ATTEMPTS = 1' in wrapper
+          assert 'USAGE_REQUEST_CAP_SECONDS = 1.5' in wrapper
+          assert 'USAGE_WINDOW_BUDGET_SECONDS = 2.5' in wrapper
+          assert 'role_base._advanced_usage_fetch = _advanced_usage_fetch_bounded' in wrapper
+          assert 'calibration._schedule_for = _calibration_schedule_for_bounded' in wrapper
+          assert 'frame = schedule25.schedule_for_date(day)' in wrapper
+          assert 'HISTORY_OPT_IN_KEY = "_wnba_points_history_context_opt_in_v198435"' in wrapper
+          assert '_V432._history_context_market_optional = _history_context_on_demand' in wrapper
+          assert 'prior._BASE_HISTORY_OPTIONAL = _history_context_on_demand' in wrapper
+          assert 'Load detailed Top-5 history evidence' in wrapper
+          assert 'schedule25.schedule_for_date = _schedule_for_date_bounded' in wrapper
+          assert 'schedule25.schedule_diagnostics = _schedule_diagnostics_bounded' in wrapper
+          assert "_LOCAL = None" in core_persistence
+          assert "_LOCAL = None" in calibration_persistence
+          assert "_LOCAL = LocalStorage()" not in core_persistence
+          assert "_LOCAL = LocalStorage()" not in calibration_persistence
+
+          forbidden = (
+              "np.random",
+              "default_rng",
+              "_fit_calibration_model(",
+              "_build_game_output(",
+          )
+          for token in forbidden:
+              assert token not in wrapper, token
+
+          print("WNBA_POINTS_BOUNDED_TRANSPORT_STATIC_GREEN")
+          PY
+
+  branch-wnba-points-browser:
+    if: github.event_name == 'pull_request'
+    needs: [inventory-contract, wnba-points-static-contract]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install branch browser runtime
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+      - name: Start branch Streamlit runtime
+        run: |
+          set -euo pipefail
+          cat > devsystem/_sitewide_debug_app.py <<'PY'
+          import faulthandler
+          import runpy
+
+          faulthandler.enable()
+          faulthandler.dump_traceback_later(20, repeat=True)
+          runpy.run_path("app.py", run_name="__main__")
+          PY
+          python -m streamlit run devsystem/_sitewide_debug_app.py             --server.headless=true             --server.address=127.0.0.1             --server.port=8501             --browser.gatherUsageStats=false             >/tmp/sitewide-branch-streamlit.log 2>&1 &
+          echo $! >/tmp/sitewide-branch-streamlit.pid
+
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then
+              echo "SITEWIDE_BRANCH_STREAMLIT_HEALTH_GREEN"
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "SITEWIDE_BRANCH_STREAMLIT_HEALTH_TIMEOUT"
+          cat /tmp/sitewide-branch-streamlit.log || true
+          exit 1
+      - name: Prove WNBA Points Step 2-3 first render and route handoff
+        run: |
+          python devsystem/sitewide_page_load_health_v1.py             --base-url "http://127.0.0.1:8501"             --only-sport "WNBA"             --only-market "Points"             --steps23-only             --json-out /tmp/sitewide-wnba-points-branch.json
+          echo "WNBA_POINTS_STEPS23_BRANCH_GREEN"
+      - name: Print branch runtime log on failure
+        if: failure()
+        run: |
+          echo "===== BRANCH STREAMLIT LOG ====="
+          tail -n 400 /tmp/sitewide-branch-streamlit.log || true
+
+  public-browser-health:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [inventory-contract, wnba-points-static-contract]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Freeze Steps 2-3 across all 36 public routes
+        run: |
+          python devsystem/sitewide_page_load_health_v1.py             --base-url "https://kyre-sports-ai.streamlit.app"             --steps23-only             --json-out /tmp/sitewide-page-load-health-v1.json
+      - name: Print result packet
+        if: always()
+        run: |
+          if [ -f /tmp/sitewide-page-load-health-v1.json ]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("/tmp/sitewide-page-load-health-v1.json")
+          data=json.loads(p.read_text())
+          print(json.dumps(data, indent=2, sort_keys=True))
+          PY
+          fi

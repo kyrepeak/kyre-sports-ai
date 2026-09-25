@@ -35,11 +35,11 @@ from __future__ import annotations
 
 import streamlit as st
 
-import wnba_points_hub_v198434 as presentation
+import wnba_points_hub_v198435 as presentation
 
 base = presentation.base
 
-MODEL_VERSION = "WNBA POINTS V1.9.8.4.34 • TWO-STAGE CURRENT-LINE TRANSPORT REPAIR VIA HOT-RELOAD-SAFE ROUTE"
+MODEL_VERSION = "WNBA POINTS V1.9.8.4.35 • BOUNDED FIRST-PAINT MARKET TRANSPORT VIA HOT-RELOAD-SAFE ROUTE"
 PRA_FROZEN_BRANCH = base.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = base.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH

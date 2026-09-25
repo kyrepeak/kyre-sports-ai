@@ -51,9 +51,11 @@ _PACK_FORMAT = "kyre-zlib-b64-v1"
 
 _ORIGINAL_RENDER_LAB = lab._render_calibration_lab
 
-# One component manager per Python process. Method calls are still Streamlit
-# components, but keeping the manager stable avoids needless component churn.
-_LOCAL = LocalStorage() if LocalStorage is not None else None
+# Browser localStorage is an optional fourth persistence tier. Do not construct
+# the Streamlit component during module import: that can block the entire WNBA
+# Points route before first paint. The existing UNAVAILABLE/DEVICE BLOCKED path
+# preserves session + dual server copies and fails browser backup closed.
+_LOCAL = None
 
 
 def _utcnow() -> str:
