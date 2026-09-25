@@ -1,0 +1,470 @@
+name: NFL Passing Yards Visible Cleanup Direct Shell Final Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-visible-cleanup-direct-shell-final-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-visible-cleanup-direct-shell-final-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-visible-cleanup-direct-shell-final-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  final-public-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Protect merged cleanup and Monster owners
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/passing-yards-visible-cleanup-direct-shell-final-v1.yml' \
+            'devsystem/task_ledgers/passing-yards-visible-cleanup-direct-shell-final-v1.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "PASSING_YARDS_VISIBLE_CLEANUP_FINAL_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PASSING_YARDS_VISIBLE_CLEANUP_FINAL_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob app.py a0329d64e226e57b7fb39624e3d4e68b604ed0ff
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob streamlit_memory_lazy_router_v237.py b02ca727a920d50bd2f5add1dd9881ab9d5ae248
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob streamlit_memory_lazy_router_v187.py 449a6a0712ab0f6be70cebe5a3822e59f279e3b6
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml 8fdf57caa41828988adb1389fa34979a224385cc
+
+          grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v85"' streamlit_memory_lazy_router_v237.py
+          grep -F 'identity_router.PROP_HUBS[PASSING_MARKET] = PASSING_HUB' streamlit_memory_lazy_router_v237.py
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_FINAL_MONSTER_ISOLATION_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Certify cleanup through exact real UI commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import re
+          import time
+
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          forbidden=(
+              "Market Decision Detail",
+              "How to read this clean detail",
+              "Projection Detail",
+              "Context + Uncertainty Detail",
+              "Distribution + Probability Detail",
+              "Model Confidence",
+              "Model Over / Under",
+          )
+
+          def all_body(page):
+              chunks=[]
+              for frame in page.frames:
+                  try:
+                      chunks.append(frame.locator("body").inner_text(timeout=1500))
+                  except Exception:
+                      pass
+              return "\n".join(chunks)
+
+          def app_frame(page,timeout=60):
+              end=time.monotonic()+timeout
+              last=[]
+              while time.monotonic()<end:
+                  last=[]
+                  for index,frame in enumerate(page.frames):
+                      try:
+                          body=frame.locator("body").inner_text(timeout=1200)
+                      except Exception:
+                          body=""
+                      try:
+                          combos=frame.get_by_role("combobox").count()
+                      except Exception:
+                          combos=0
+                      last.append((index,frame.url,combos," ".join(body.split())[:280]))
+                      if "get this app back up" in body.casefold():
+                          try:
+                              wake=frame.get_by_text("Yes, get this app back up!",exact=False)
+                              if wake.count():
+                                  wake.first.click()
+                                  page.wait_for_timeout(5000)
+                                  continue
+                          except Exception:
+                              pass
+                      if combos>=1 and "KYRE SPORTS AI" in body:
+                          return frame
+                  page.wait_for_timeout(300)
+              raise RuntimeError("PY_VISIBLE_FINAL_APP_FRAME_NOT_READY:"+repr(last))
+
+          def find(page,selector,timeout=60,interval=.2):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(int(interval*1000))
+              raise RuntimeError("PY_VISIBLE_FINAL_SELECTOR_NOT_READY:"+selector)
+
+          def exact_option(page,frame,combo,value,timeout=45):
+              combo.click(timeout=10000)
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  # BaseWeb options may live in the app frame or a portal in
+                  # another frame. Click the actual option instead of typing.
+                  for candidate in page.frames:
+                      try:
+                          opt=candidate.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              print(
+                                  f"PASSING_YARDS_VISIBLE_CLEANUP_OPTION_COMMIT "
+                                  f"value={value}"
+                              )
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(150)
+              raise RuntimeError("PY_VISIBLE_FINAL_OPTION_NOT_READY:"+value)
+
+          def wait_marker(page,selector,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  body=all_body(page)
+                  if "RuntimeError: This app has encountered an error" in body:
+                      raise RuntimeError("PY_VISIBLE_FINAL_RUNTIME_ERROR:"+body[-2200:])
+                  page.wait_for_timeout(250)
+              raise RuntimeError(
+                  "PY_VISIBLE_FINAL_MARKER_TIMEOUT:"
+                  +selector+":"
+                  +" | ".join(all_body(page).split())[-3200:]
+              )
+
+          def choose_shell_market(page,market):
+              frame=app_frame(page,60)
+              sport=frame.get_by_role("combobox",name="🏟️ Sport",exact=True)
+              if sport.count()!=1:
+                  raise RuntimeError("PY_VISIBLE_FINAL_SPORT_COMBO_COUNT:"+str(sport.count()))
+              exact_option(page,frame,sport.first,"NFL")
+
+              # The NFL option commit triggers a Streamlit rerun. Do not reuse
+              # the pre-rerun frame or merely wait for the shell; wait for the
+              # NFL-specific market widget itself.
+              deadline=time.monotonic()+75
+              frame=None
+              market_combo=None
+              while time.monotonic()<deadline:
+                  for candidate in page.frames:
+                      try:
+                          loc=candidate.get_by_role(
+                              "combobox",
+                              name="🎯 NFL Market",
+                              exact=True,
+                          )
+                          if loc.count()==1:
+                              frame=candidate
+                              market_combo=loc.first
+                              break
+                      except Exception:
+                          pass
+                  if market_combo is not None:
+                      break
+                  page.wait_for_timeout(200)
+
+              if frame is None or market_combo is None:
+                  raise RuntimeError(
+                      "PY_VISIBLE_FINAL_NFL_MARKET_COMBO_NOT_READY:"
+                      +" | ".join(all_body(page).split())[-2200:]
+                  )
+
+              print("PASSING_YARDS_VISIBLE_CLEANUP_NFL_MARKET_READY")
+              exact_option(page,frame,market_combo,market)
+              return app_frame(page,60)
+
+          def choose_matchup(page,frame):
+              end=time.monotonic()+60
+              while time.monotonic()<end:
+                  combos=frame.get_by_role("combobox")
+                  if combos.count()>=3:
+                      matchup=combos.nth(2)
+                      matchup.click(timeout=10000)
+                      opt=None
+                      opt_end=time.monotonic()+20
+                      while time.monotonic()<opt_end and opt is None:
+                          for candidate in page.frames:
+                              try:
+                                  options=candidate.get_by_role("option").filter(
+                                      has_text="Atlanta Falcons"
+                                  )
+                                  if options.count()>=1:
+                                      opt=options.first
+                                      break
+                              except Exception:
+                                  pass
+                          if opt is None:
+                              page.wait_for_timeout(150)
+                      if opt is None:
+                          raise RuntimeError(
+                              "PY_VISIBLE_FINAL_MATCHUP_OPTION_NOT_READY"
+                          )
+                      opt.click(timeout=10000)
+                      return
+                  page.wait_for_timeout(300)
+                  frame=app_frame(page,15)
+              raise RuntimeError("PY_VISIBLE_FINAL_MATCHUP_COMBO_NOT_READY")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(
+                  viewport={"width":1440,"height":1000},
+                  locale="en-US",
+              )
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              frame=choose_shell_market(page,"Passing Yards")
+
+              # The exact option click must result in the real V85 route. This
+              # proves the browser committed the widget value and Streamlit
+              # reran; no query-string shortcut is involved.
+              wait_marker(
+                  page,
+                  '[data-passing-yards-visible-cleanup-owner="v85"]',
+                  180,
+              )
+              print("PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_V85_GREEN")
+
+              # Move the compact Passing Yards control deck to the known slate.
+              frame=app_frame(page,30)
+              date_input=frame.get_by_label("Slate date",exact=True)
+              if date_input.count()!=1:
+                  # Streamlit can expose the input by test id without an ARIA
+                  # label on some versions.
+                  date_input=frame.locator(
+                      '[data-testid="stDateInput"] input'
+                  ).first
+              date_input.fill("2026-09-24")
+              date_input.press("Enter")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_DATE_COMMIT_GREEN")
+
+              frame=app_frame(page,60)
+              choose_matchup(page,frame)
+
+              # Wait for the real V58 picker, then select Jordan Love by visible
+              # card text rather than assuming a slot.
+              picker_frame,_=wait_marker(
+                  page,
+                  '[data-passing-yards-selection-screen="v58"]',
+                  90,
+              )
+              links=picker_frame.locator('a[data-qb-select]').filter(
+                  has_text="Jordan Love"
+              )
+              if links.count()!=1:
+                  raise RuntimeError(
+                      "PY_VISIBLE_FINAL_JORDAN_LINK_COUNT:"+str(links.count())
+                  )
+              qb=links.first
+              slot=(qb.get_attribute("data-qb-select") or "").strip()
+              if slot not in {"1","2"}:
+                  raise RuntimeError("PY_VISIBLE_FINAL_QB_SLOT:"+slot)
+
+              target=(qb.get_attribute("target") or "").strip()
+              if target=="_blank":
+                  with page.expect_popup(timeout=15000) as popup_info:
+                      qb.click(timeout=10000)
+                  detail=popup_info.value
+                  detail.wait_for_load_state("domcontentloaded",timeout=120000)
+              else:
+                  qb.click(timeout=10000)
+                  detail=page
+
+              wait_marker(
+                  detail,
+                  '[data-passing-yards-visible-cleanup-owner="v85"]',
+                  60,
+              )
+
+              # Full detail may already be rendered or may require the lazy CTA.
+              panel=None
+              for candidate in detail.frames:
+                  try:
+                      loc=candidate.locator(
+                          '[data-passing-yards-availability-game-day="v74"]'
+                      )
+                      if loc.count()>=1:
+                          panel=loc.first
+                          break
+                  except Exception:
+                      pass
+
+              if panel is None:
+                  button=None
+                  end=time.monotonic()+60
+                  while time.monotonic()<end and button is None:
+                      for candidate in detail.frames:
+                          try:
+                              loc=candidate.locator("button").filter(
+                                  has_text="Load Full Analysis"
+                              )
+                              if loc.count()>=1:
+                                  button=loc.first
+                                  break
+                          except Exception:
+                              pass
+                      if button is None:
+                          detail.wait_for_timeout(200)
+                  if button is None:
+                      raise RuntimeError("PY_VISIBLE_FINAL_BUTTON_NOT_READY")
+                  button.click(timeout=10000)
+                  _,panel=find(
+                      detail,
+                      '[data-passing-yards-availability-game-day="v74"]',
+                      60,
+                      .15,
+                  )
+
+              _,root=find(
+                  detail,
+                  f'[data-passing-yards-qb-detail="v59"]'
+                  f'[data-qb-analysis-slot="{slot}"]',
+                  60,
+                  .15,
+              )
+              name=root.locator(".kpass29-name").first.inner_text(
+                  timeout=5000
+              ).strip()
+              if name!="Jordan Love":
+                  raise RuntimeError("PY_VISIBLE_FINAL_IDENTITY:"+name)
+
+              for width,height,label in (
+                  (390,844,"390"),
+                  (768,1024,"768"),
+                  (1440,1000,"1440"),
+              ):
+                  detail.set_viewport_size({"width":width,"height":height})
+                  detail.wait_for_timeout(350)
+
+                  panel_text=panel.inner_text(timeout=5000)
+                  cells=panel.locator(".ks-py74-cell b").all_inner_texts()
+                  report=panel.locator(".ks-py74-report").first.inner_text(
+                      timeout=5000
+                  )
+                  overflow=panel.evaluate(
+                      "(el) => el.scrollWidth > el.clientWidth + 4"
+                  )
+                  longest=max((len(v.strip()) for v in cells),default=0)
+
+                  if len(cells)!=8:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_FINAL_CELL_COUNT:{label}:{len(cells)}"
+                      )
+                  if longest>120:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_FINAL_CELL_TOO_LONG:{label}:{longest}"
+                      )
+                  for token in forbidden:
+                      if token.casefold() in panel_text.casefold():
+                          raise RuntimeError(
+                              f"PY_VISIBLE_FINAL_RAW_DUMP:{label}:{token}"
+                          )
+                  if len(report)>900:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_FINAL_REPORT_TOO_LONG:{label}:{len(report)}"
+                      )
+                  if report.count("Final inactive report:")!=1:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_FINAL_REPORT_COUNT:{label}"
+                      )
+                  if overflow:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_FINAL_HORIZONTAL_OVERFLOW:{label}"
+                      )
+
+                  print(
+                      f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_GREEN"
+                  )
+                  print(
+                      f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_"
+                      f"MAX_CELL_CHARS={longest}"
+                  )
+                  print(
+                      f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_"
+                      f"REPORT_CHARS={len(report)}"
+                  )
+
+              context.close()
+              browser.close()
+
+              # Independent real-UI Monster protection proof.
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(
+                  viewport={"width":1440,"height":1000},
+                  locale="en-US",
+              )
+              rec=context.new_page()
+              rec.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+              choose_shell_market(rec,"Receptions")
+              wait_marker(rec,'[data-nfl-receptions-route="v236"]',90)
+              print("PASSING_YARDS_VISIBLE_CLEANUP_MONSTER_RECEPTIONS_V236_GREEN")
+              context.close()
+              browser.close()
+
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP1_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP2_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP3_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP4_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_FROZEN")
+          PY
