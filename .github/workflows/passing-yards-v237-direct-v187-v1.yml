@@ -38,7 +38,7 @@ jobs:
             '.github/workflows/passing-yards-v237-direct-v187-v1.yml' \
             'devsystem/task_ledgers/passing-yards-v237-direct-v187-v1.json' \
             'streamlit_memory_lazy_router_v237.py' \
-            'tests/test_passing-yards_v237_lockless_owner.py' | sort)"
+            'tests/test_passing_yards_v237_lockless_owner.py' | sort)"
           if [ "$actual" != "$expected" ]; then
             echo "PASSING_YARDS_V237_DIRECT_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
