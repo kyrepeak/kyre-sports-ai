@@ -12,7 +12,6 @@ import importlib
 
 import streamlit as st
 
-import streamlit_memory_lazy_router_v1 as root
 import streamlit_memory_lazy_router_v239 as prior
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V240 • NFL PROP ANALYTICS STEP 1"
@@ -31,6 +30,11 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _IMPORT_CACHE: dict[str, bool] = {}
 
 
+def _root_router():
+    """Load the shared root only after frozen V239 has fully initialized."""
+    return importlib.import_module("streamlit_memory_lazy_router_v1")
+
+
 def record_bootstrap_import_ms(value: float) -> None:
     return prior.record_bootstrap_import_ms(value)
 
@@ -43,6 +47,7 @@ def _query_value(key: str) -> str:
 
 
 def _prop_market_options() -> list[str]:
+    root = _root_router()
     options = list(root.NFL_MARKETS)
     if PROP_ANALYTICS_MARKET not in options:
         options.append(PROP_ANALYTICS_MARKET)
@@ -94,6 +99,7 @@ def _render_nfl_v240(market: str) -> None:
 
 
 def _render_direct_prop_analytics() -> None:
+    root = _root_router()
     original_render_nfl = root._render_nfl
     original_markets = root.NFL_MARKETS
     root.NFL_MARKETS = _prop_market_options()
@@ -108,6 +114,7 @@ def _render_direct_prop_analytics() -> None:
 def _delegate_with_prop_option() -> None:
     # Make the new sibling route selectable while preserving every existing
     # route's current owner and behavior beneath frozen V239.
+    root = _root_router()
     original_markets = root.NFL_MARKETS
     root.NFL_MARKETS = _prop_market_options()
     try:
@@ -149,6 +156,7 @@ __all__ = [
     "_prop_hub_importable",
     "_prop_market_options",
     "_query_value",
+    "_root_router",
     "_render_direct_prop_analytics",
     "_render_nfl_v240",
     "record_bootstrap_import_ms",
