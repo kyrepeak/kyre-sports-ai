@@ -178,13 +178,22 @@ jobs:
                       except Exception:
                           pass
                   body=all_body(page)
-                  if "RuntimeError: This app has encountered an error" in body:
-                      raise RuntimeError("PY_VISIBLE_FINAL_RUNTIME_ERROR:"+body[-2200:])
+                  if (
+                      "This app has encountered an error" in body
+                      or "Traceback (most recent call last)" in body
+                      or "/mount/src/kyre-sports-ai/" in body
+                  ):
+                      compact=" | ".join(body.split())
+                      print("PY_VISIBLE_FINAL_RUNTIME_ERROR_BODY_HEAD:"+compact[:6000])
+                      print("PY_VISIBLE_FINAL_RUNTIME_ERROR_BODY_TAIL:"+compact[-6000:])
+                      raise RuntimeError("PY_VISIBLE_FINAL_RUNTIME_ERROR")
                   page.wait_for_timeout(250)
+              compact=" | ".join(all_body(page).split())
+              print("PY_VISIBLE_FINAL_TIMEOUT_BODY_HEAD:"+compact[:6000])
+              print("PY_VISIBLE_FINAL_TIMEOUT_BODY_TAIL:"+compact[-6000:])
               raise RuntimeError(
                   "PY_VISIBLE_FINAL_MARKER_TIMEOUT:"
-                  +selector+":"
-                  +" | ".join(all_body(page).split())[-3200:]
+                  +selector
               )
 
           def choose_shell_market(page,market):
