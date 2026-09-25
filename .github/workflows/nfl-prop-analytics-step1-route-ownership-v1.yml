@@ -1,0 +1,435 @@
+name: NFL Prop Analytics Step 1 Route Ownership
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step1-route-ownership-v1.json"
+      - "nfl_prop_analytics_hub_v1.py"
+      - "streamlit_memory_lazy_router_v240.py"
+      - "tests/test_nfl_prop_analytics_step1_route_ownership_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step1-route-ownership-v1.json"
+      - "nfl_prop_analytics_hub_v1.py"
+      - "streamlit_memory_lazy_router_v240.py"
+      - "tests/test_nfl_prop_analytics_step1_route_ownership_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-analytics-step1-route-ownership-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step 1 scope and protect frozen Passing Yards
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
+            'app.py' \
+            'devsystem/task_ledgers/nfl-prop-analytics-step1-route-ownership-v1.json' \
+            'nfl_prop_analytics_hub_v1.py' \
+            'streamlit_memory_lazy_router_v240.py' \
+            'tests/test_nfl_prop_analytics_step1_route_ownership_v1.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "NFL_PROP_ANALYTICS_STEP1_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "NFL_PROP_ANALYTICS_STEP1_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+
+          check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob .github/workflows/passing-yards-step10-current-final-freeze-v1.yml 7b23f9d9ed9967a74cee9f1328c9817c2f71d956
+          check_blob devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5
+
+          grep -F 'from streamlit_memory_lazy_router_v240 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'import streamlit_memory_lazy_router_v239 as prior' streamlit_memory_lazy_router_v240.py
+          grep -F 'PROP_ANALYTICS_MARKET = "Prop Analytics"' streamlit_memory_lazy_router_v240.py
+          grep -F 'PROP_ANALYTICS_HUB = "nfl_prop_analytics_hub_v1"' streamlit_memory_lazy_router_v240.py
+
+          echo "NFL_PROP_ANALYTICS_STEP1_PASSING_YARDS_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP1_SCOPE_GREEN"
+
+      - name: Install static test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and test Step 1 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile app.py nfl_prop_analytics_hub_v1.py streamlit_memory_lazy_router_v240.py
+          python -m pytest -q tests/test_nfl_prop_analytics_step1_route_ownership_v1.py
+          python - <<'PY'
+          from pathlib import Path
+
+          router=Path("streamlit_memory_lazy_router_v240.py").read_text()
+          hub=Path("nfl_prop_analytics_hub_v1.py").read_text()
+          app=Path("app.py").read_text()
+
+          required_router=(
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v239"',
+              'PROP_ANALYTICS_MARKET = "Prop Analytics"',
+              'PROP_ANALYTICS_HUB = "nfl_prop_analytics_hub_v1"',
+              'MAY_MODIFY_PASSING_YARDS = False',
+              'root.NFL_MARKETS = _prop_market_options()',
+              'return prior.render_app()',
+          )
+          for token in required_router:
+              assert token in router, token
+
+          required_hub=(
+              'data-nfl-prop-analytics-route="v1"',
+              'data-prop-analytics-owner="nfl_prop_analytics_hub_v1"',
+              'data-prop-analytics-step="1"',
+              'ROUTE_ONLY = True',
+          )
+          for token in required_hub:
+              assert token in hub, token
+
+          assert (
+              "from streamlit_memory_lazy_router_v240 "
+              "import record_bootstrap_import_ms, render_app"
+          ) in app
+
+          print("NFL_PROP_ANALYTICS_STEP1_STATIC_GREEN")
+          PY
+
+  branch-route-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/nfl-prop-analytics-step1
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/nfl-prop-analytics-step1/streamlit.log 2>&1 &
+          echo $! > /tmp/prop_analytics_step1_pid
+
+      - name: Prove selectable Prop Analytics route and frozen Passing Yards delegation
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("PROP_ANALYTICS_STEP1_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              chunks=[]
+              for frame in page.frames:
+                  try:
+                      chunks.append(frame.locator("body").inner_text(timeout=1200))
+                  except Exception:
+                      pass
+              return "\n".join(chunks)
+
+          def find(page,selector,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("PROP_ANALYTICS_STEP1_SELECTOR_NOT_READY:"+selector)
+
+          def find_combo(page,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("PROP_ANALYTICS_STEP1_COMBO_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              frame,combo=find_combo(page,name)
+              combo.click(timeout=10000)
+              end=time.monotonic()+30
+              while time.monotonic()<end:
+                  for candidate in page.frames:
+                      try:
+                          opt=candidate.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(150)
+              raise RuntimeError("PROP_ANALYTICS_STEP1_OPTION_NOT_READY:"+value)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":1440,"height":1000})
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              choose(page,"🏟️ Sport","NFL")
+              choose(page,"🎯 NFL Market","Prop Analytics")
+
+              _,root=find(page,'[data-nfl-prop-analytics-route="v1"]',90)
+              assert root.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
+              assert root.get_attribute("data-prop-analytics-step")=="1"
+              assert root.get_attribute("data-prop-analytics-page")=="1"
+              assert "Prop Analytics" in root.inner_text(timeout=5000)
+              print("NFL_PROP_ANALYTICS_STEP1_SELECTOR_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP1_ROUTE_OWNER_GREEN")
+
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(150)
+                  dims=root.evaluate("""e => ({
+                    scroll:e.scrollWidth,
+                    client:e.clientWidth
+                  })""")
+                  if dims["scroll"] > dims["client"] + 4:
+                      raise RuntimeError(
+                          f"PROP_ANALYTICS_STEP1_OVERFLOW:{width}:{dims}"
+                      )
+                  print(f"NFL_PROP_ANALYTICS_STEP1_BRANCH_{width}_GREEN")
+
+              passing=browser.new_page(viewport={"width":390,"height":844})
+              route=base+"/?"+urlencode({
+                  "ks_jump_sport":"NFL",
+                  "ks_jump_market":"Passing Yards",
+              })
+              passing.goto(route,wait_until="domcontentloaded",timeout=120000)
+              find(passing,'[data-passing-yards-router-owner="v239"]',120)
+              print("NFL_PROP_ANALYTICS_STEP1_PASSING_YARDS_ROUTE_FROZEN_GREEN")
+
+              text=body_text(page)
+              for token in ("Traceback","RecursionError","KeyError","TypeError"):
+                  if token in text:
+                      raise RuntimeError("PROP_ANALYTICS_STEP1_RUNTIME_ERROR:"+token)
+
+              passing.close()
+              page.close()
+              browser.close()
+
+          print("NFL_PROP_ANALYTICS_STEP1_BRANCH_GREEN")
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 1000 artifacts/nfl-prop-analytics-step1/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/prop_analytics_step1_pid ]; then
+            kill "$(cat /tmp/prop_analytics_step1_pid)" 2>/dev/null || true
+          fi
+
+  public-route-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Prop Analytics route and freeze Step 1
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PROP_ANALYTICS_STEP1_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def find_combo(page,name,timeout=75):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PROP_ANALYTICS_STEP1_PUBLIC_COMBO_NOT_READY:"+name)
+
+          def choose(page,name,value,timeout=35):
+              _,combo=find_combo(page,name)
+              combo.click(timeout=10000)
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for candidate in page.frames:
+                      try:
+                          opt=candidate.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return True
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(200)
+              return False
+
+          def open_prop_route(browser):
+              deadline=time.monotonic()+420
+              last=""
+              while time.monotonic()<deadline:
+                  context=browser.new_context(viewport={"width":390,"height":844})
+                  page=context.new_page()
+                  try:
+                      page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+                      choose(page,"🏟️ Sport","NFL")
+                      if not choose(page,"🎯 NFL Market","Prop Analytics"):
+                          last="PROP_ANALYTICS_OPTION_NOT_PUBLISHED"
+                          context.close()
+                          time.sleep(8)
+                          continue
+                      _,root=find(page,'[data-nfl-prop-analytics-route="v1"]',75)
+                      return context,page,root
+                  except Exception as exc:
+                      last=f"{type(exc).__name__}:{exc}"
+                      try:
+                          context.close()
+                      except Exception:
+                          pass
+                      time.sleep(8)
+              raise RuntimeError("PROP_ANALYTICS_STEP1_PUBLIC_DEPLOYMENT_NOT_ACTIVE:"+last)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context,page,root=open_prop_route(browser)
+
+              assert root.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
+              assert root.get_attribute("data-prop-analytics-step")=="1"
+              assert root.get_attribute("data-prop-analytics-page")=="1"
+              assert "Prop Analytics" in root.inner_text(timeout=5000)
+              print("NFL_PROP_ANALYTICS_STEP1_PUBLIC_SELECTOR_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP1_PUBLIC_ROUTE_OWNER_GREEN")
+
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(200)
+                  dims=root.evaluate("""e => ({
+                    scroll:e.scrollWidth,
+                    client:e.clientWidth
+                  })""")
+                  if dims["scroll"] > dims["client"] + 4:
+                      raise RuntimeError(
+                          f"PROP_ANALYTICS_STEP1_PUBLIC_OVERFLOW:{width}:{dims}"
+                      )
+                  print(f"NFL_PROP_ANALYTICS_STEP1_PUBLIC_{width}_GREEN")
+
+              passing=context.new_page()
+              passing.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL",
+                      "ks_jump_market":"Passing Yards",
+                  }),
+                  wait_until="domcontentloaded",
+                  timeout=120000,
+              )
+              find(passing,'[data-passing-yards-router-owner="v239"]',150)
+              print("NFL_PROP_ANALYTICS_STEP1_PASSING_YARDS_PUBLIC_FROZEN_GREEN")
+
+              passing.close()
+              page.close()
+              context.close()
+              browser.close()
+
+          print("NFL_PROP_ANALYTICS_STEP1_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP1_PUBLIC_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP1_FROZEN")
+          PY
