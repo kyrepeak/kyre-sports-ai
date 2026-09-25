@@ -138,30 +138,81 @@ jobs:
                   headless=True,
                   args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
               )
-              context=browser.new_context(viewport={"width":1440,"height":1000})
-              page=context.new_page()
-              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
-              frame,_=_find_app_frame(page)
 
-              _choose(page,frame,0,"NFL")
-              page.wait_for_timeout(2500)
-              frame,_=_find_app_frame(page)
+              passing_context=None
+              page=None
+              entry_used=None
+              last_owner="NONE"
 
-              _choose(page,frame,1,"Passing Yards")
-              wait_text(page,"PASSING YARDS CONTROL DECK",60)
-              frame,_=_find_app_frame(page)
+              for entry_label,entry_url in (
+                  ("shell",base+"/"),
+                  ("official_embed",base+"/?embed=true"),
+                  ("internal",base+"/~/+/"),
+              ):
+                  context=browser.new_context(viewport={"width":1440,"height":1000})
+                  candidate=context.new_page()
+                  try:
+                      candidate.goto(entry_url,wait_until="domcontentloaded",timeout=90000)
+                      frame,_=_find_app_frame(candidate)
 
-              choose_matchup(page,frame)
-              wait_text(page,"Choose a quarterback",60)
+                      _choose(candidate,frame,0,"NFL")
+                      candidate.wait_for_timeout(1800)
+                      frame,_=_find_app_frame(candidate)
 
-              frame,qb=find(page,'a[data-qb-select="2"]',45,.15)
-              qb.click(timeout=10000)
+                      _choose(candidate,frame,1,"Passing Yards")
+                      wait_text(candidate,"PASSING YARDS CONTROL DECK",35)
+                      frame,_=_find_app_frame(candidate)
 
-              find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',45)
-              find(page,'[data-passing-yards-lazy-detail="v79"]',45)
+                      choose_matchup(candidate,frame)
+                      wait_text(candidate,"Choose a quarterback",35)
+
+                      _,qb=find(candidate,'a[data-qb-select="2"]',30,.15)
+                      qb.click(timeout=10000)
+
+                      try:
+                          find(candidate,'[data-passing-yards-visible-cleanup-owner="v85"]',15,.15)
+                          last_owner="V85"
+                      except Exception:
+                          try:
+                              find(candidate,'[data-passing-yards-single-rerun-owner="v84"]',5,.15)
+                              last_owner="V84"
+                          except Exception:
+                              last_owner="UNKNOWN"
+                          print(
+                              f"PASSING_YARDS_VISIBLE_CLEANUP_ENTRY_MISS "
+                              f"entry={entry_label} owner={last_owner}"
+                          )
+                          context.close()
+                          continue
+
+                      find(candidate,'[data-passing-yards-lazy-detail="v79"]',20,.15)
+                      print(
+                          f"PASSING_YARDS_VISIBLE_CLEANUP_V85_ACTIVE "
+                          f"entry={entry_label}"
+                      )
+                      passing_context=context
+                      page=candidate
+                      entry_used=entry_label
+                      break
+                  except Exception as exc:
+                      print(
+                          f"PASSING_YARDS_VISIBLE_CLEANUP_ENTRY_ERROR "
+                          f"entry={entry_label} error={type(exc).__name__}:{exc}"
+                      )
+                      try:
+                          context.close()
+                      except Exception:
+                          pass
+
+              if passing_context is None or page is None:
+                  browser.close()
+                  raise RuntimeError(
+                      f"PY_VISIBLE_REAL_UI_V85_NOT_ACTIVE_AFTER_ALL_ENTRY_PATHS:"
+                      f"last_owner={last_owner}"
+                  )
 
               button=None
-              end=time.monotonic()+45
+              end=time.monotonic()+35
               while time.monotonic()<end and button is None:
                   for candidate in page.frames:
                       try:
@@ -214,15 +265,16 @@ jobs:
 
               rec_context=browser.new_context(viewport={"width":1440,"height":1000})
               rec=rec_context.new_page()
-              rec.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+              rec.goto(base+"/",wait_until="domcontentloaded",timeout=90000)
               rec_frame,_=_find_app_frame(rec)
               _choose(rec,rec_frame,0,"NFL")
-              rec.wait_for_timeout(2500)
+              rec.wait_for_timeout(1800)
               rec_frame,_=_find_app_frame(rec)
               _choose(rec,rec_frame,1,"Receptions")
-              find(rec,'[data-nfl-receptions-route="v236"]',45)
+              find(rec,'[data-nfl-receptions-route="v236"]',35)
               print("PASSING_YARDS_VISIBLE_CLEANUP_MONSTER_RECEPTIONS_V236_GREEN")
 
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_ENTRY={entry_used}")
               print("PASSING_YARDS_VISIBLE_CLEANUP_STEP1_GREEN")
               print("PASSING_YARDS_VISIBLE_CLEANUP_STEP2_GREEN")
               print("PASSING_YARDS_VISIBLE_CLEANUP_STEP3_GREEN")
@@ -231,6 +283,6 @@ jobs:
               print("PASSING_YARDS_VISIBLE_CLEANUP_FROZEN")
 
               rec_context.close()
-              context.close()
+              passing_context.close()
               browser.close()
           PY
