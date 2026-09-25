@@ -7,7 +7,11 @@ from frozen V84 to presentation-only V85.
 from __future__ import annotations
 
 import importlib
+from threading import RLock
 
+import streamlit as st
+
+import streamlit_memory_lazy_router_v187 as identity_router
 import streamlit_memory_lazy_router_v235 as passing_router
 import streamlit_memory_lazy_router_v236 as prior
 
@@ -25,6 +29,9 @@ MAY_MODIFY_MARKET_MATH = False
 MAY_MODIFY_WIDGET_KEYS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _IMPORT_CACHE: dict[str, bool] = {}
+_PROCESS_PASSING_ROUTE_RLOCK = RLock()
+SPORT_KEY = "ks_sport_touch"
+NFL_MARKET_KEY = "ks_nfl_market_touch"
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -32,6 +39,14 @@ def record_bootstrap_import_ms(value: float) -> None:
 
 
 def _passing_requested() -> bool:
+    # Read the live Streamlit widget state first. The historical delegated
+    # _active_route() chain can miss the same-run NFL -> Passing Yards handoff
+    # and fall all the way back to V187's legacy player-prop identity handler.
+    sport_state = str(st.session_state.get(SPORT_KEY) or "").strip()
+    market_state = str(st.session_state.get(NFL_MARKET_KEY) or "").strip()
+    if sport_state == "NFL" and market_state == PASSING_MARKET:
+        return True
+
     if passing_router._cold_passing_yards_query_requested():
         return True
     sport, market = passing_router._active_route()
@@ -57,12 +72,23 @@ def render_app() -> None:
     if not _cleanup_hub_importable():
         return prior.render_app()
 
-    original = passing_router.PASSING_HUB
-    passing_router.PASSING_HUB = PASSING_HUB
-    try:
-        return prior.render_app()
-    finally:
-        passing_router.PASSING_HUB = original
+    # Preserve the certified shell and every intermediate router. Only while a
+    # Passing Yards request is rendering, redirect V187's legacy Passing Yards
+    # owner from V42 to V85. This closes the current public crash without
+    # modifying V187, V236, Receptions, or any other market.
+    with _PROCESS_PASSING_ROUTE_RLOCK:
+        original_passing_hub = passing_router.PASSING_HUB
+        original_identity_hub = identity_router.PROP_HUBS.get(PASSING_MARKET)
+        passing_router.PASSING_HUB = PASSING_HUB
+        identity_router.PROP_HUBS[PASSING_MARKET] = PASSING_HUB
+        try:
+            return prior.render_app()
+        finally:
+            passing_router.PASSING_HUB = original_passing_hub
+            if original_identity_hub is None:
+                identity_router.PROP_HUBS.pop(PASSING_MARKET, None)
+            else:
+                identity_router.PROP_HUBS[PASSING_MARKET] = original_identity_hub
 
 
 __all__ = [
@@ -79,6 +105,8 @@ __all__ = [
     "PASSING_MARKET",
     "PRESENTATION_ONLY",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "SPORT_KEY",
+    "NFL_MARKET_KEY",
     "_cleanup_hub_importable",
     "_passing_requested",
     "record_bootstrap_import_ms",
