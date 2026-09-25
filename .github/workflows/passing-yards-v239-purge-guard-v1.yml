@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: passing-yards-v239-purge-guard-v1-\${{ github.ref }}
+  group: passing-yards-v239-purge-guard-v1-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -25,13 +25,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: \${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Enforce V239 scope and protect frozen owners
         shell: bash
         env:
-          BASE_SHA: \${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: \${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
 
