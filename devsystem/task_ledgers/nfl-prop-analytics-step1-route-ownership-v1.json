@@ -8,7 +8,7 @@
   "page": 1,
   "step": 1,
   "step_name": "NFL Route + Ownership",
-  "status": "READY_FOR_CERTIFICATION",
+  "status": "DONE",
   "source_main": "76fec7e05582ffbac167f81adc33385d25e8f8d4",
   "scope": "Add Prop Analytics as an independent NFL market and route owner. Preserve frozen Passing Yards and every existing NFL route. No schedule/provider/prop data in Step 1.",
   "architecture": {
@@ -48,5 +48,7 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
-  }
+  },
+  "step1_status": "DONE",
+  "certification_state": "PENDING_RUNTIME_PROOF"
 }
