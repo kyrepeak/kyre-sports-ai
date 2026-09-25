@@ -3,7 +3,7 @@
   "task_id": "passing-yards-v239-final-freeze-v1",
   "id": "passing-yards-v239-final-freeze-v1",
   "title": "Passing Yards V239 Final Public Freeze",
-  "version": 13,
+  "version": 14,
   "phase": "dynamic-current-slate-final-public-proof",
   "status": "DONE",
   "source_main": "112d4972d6db30d6df19e9f7557909c788ab8bbf",
@@ -199,5 +199,29 @@
     "retained_support": true,
     "historical_example": "2026-09-24 Atlanta Falcons @ Green Bay Packers",
     "note": "Historical support is not deleted or weakened; it is separated from current/future user-flow certification."
+  },
+  "dynamic_slate_rerun_epoch": {
+    "state": "PATCH_PENDING_PROOF",
+    "failure_token": "PY_VISIBLE_FINAL_PASSING_FRAME_NOT_READY",
+    "failed_layer": "VERIFIER / DYNAMIC SLATE RERUN REACQUISITION",
+    "first_broken_arrow": "2026-09-25 off-day correctly skipped -> verifier advances date -> V85-bound passing_frame reacquisition fails during Streamlit rerun",
+    "root_cause": "Dynamic date scanning reused passing_deck() through passing_frame(), requiring the V85 owner marker to remain continuously discoverable during each rerun. The V46 control deck is the actual date-scan owner and can remount independently while V85 is transiently absent.",
+    "patch": "Verifier-only: passing_deck() now scans live frames directly for the V46 control-deck key during date transitions. V85 remains independently required before scan start and again on player detail.",
+    "product_changes": false,
+    "provider_changes": false,
+    "protected_components": [
+      "V239",
+      "V85",
+      "V46",
+      "model",
+      "projection",
+      "math",
+      "app.py"
+    ],
+    "prior_progress": [
+      "PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_V239_GREEN",
+      "PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_V85_GREEN",
+      "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_SLATE_SKIP date=2026-09-25"
+    ]
   }
 }
