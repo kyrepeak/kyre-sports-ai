@@ -4,7 +4,7 @@
   "title": "Sitewide Steps 4-5 Targeted Closure",
   "version": 1,
   "status": "DONE",
-  "source_main": "31e14ce43ec5a1e043a94d5821a33f23a790af48",
+  "source_main": "db5c4cbd60cb43eda9bb1accf75df63667d083c1",
   "protected_steps": {
     "1": "GREEN_FROZEN",
     "2": "GREEN_FROZEN",
@@ -61,7 +61,12 @@
     "product_code_changed_in_followup": false,
     "deployment_wait_bounded_seconds": 300,
     "slate_public_retry_count": 3,
-    "followup_product_code_changed": false
+    "followup_product_code_changed": false,
+    "deployment_verifier_only": true,
+    "product_code_changed_in_deployment_followup": false,
+    "receptions_v236_changed": false,
+    "descendant_verifier_only": true,
+    "product_code_changed_in_static_followup": false
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -92,5 +97,26 @@
     "owner": "devsystem/sitewide_page_load_health_v1.py",
     "behavior": "Recognize the actual NFL Slate production markers without changing product/runtime behavior.",
     "product_code_changed": false
+  },
+  "deployment_failure_epoch": {
+    "authoritative_run": 36088934888,
+    "attempts_failed": 2,
+    "failure_token": "V236_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+    "classification": "DEPLOYMENT_VERIFIER_DEEP_LINK_MISMATCH",
+    "evidence": "V236 is merged on main; branch real-UI V236 proof passed; deployment gate used only the deep-link shortcut instead of the accepted real UI flow."
+  },
+  "deployment_verifier_patch": {
+    "layer": "DEPLOYMENT_VERIFIER",
+    "owner": ".github/workflows/sitewide-step45-targeted-close-v1.yml",
+    "behavior": "Verify V236 production activation through the real public UI flow NFL -> Receptions, using a fresh browser context for each bounded attempt.",
+    "product_code_changed": false
+  },
+  "static_verifier_epoch": {
+    "failure_run": 36091195124,
+    "failure_token": "V236 direct app import assertion failed after valid V237 router advance",
+    "classification": "STALE_EXACT_OWNER_VERIFIER",
+    "current_active_router": "streamlit_memory_lazy_router_v237",
+    "preserved_owner": "streamlit_memory_lazy_router_v236",
+    "proof_rule": "Walk FROZEN_ROUTER descendant chain from the active app router and require V236 in the chain."
   }
 }
