@@ -1,0 +1,247 @@
+name: NFL Passing Yards Speed Step 8 Final Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-speed-step8-final-freeze-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frozen-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Protect frozen Speed Steps 1-7
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+            expected="$(printf '%s\n' \
+              '.github/workflows/passing-yards-speed-step8-final-freeze-v1.yml' \
+              'devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json' | sort)"
+            if [ "$actual" != "$expected" ]; then
+              echo "SPEED_STEP8_SCOPE_VIOLATION"
+              printf '%s\n' "$actual"
+              exit 1
+            fi
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "SPEED_STEP8_FROZEN_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob app.py 0dac0bbae02f47dfc9fe815d0835cc5bef0b33e9
+          check_blob nfl_passing_yards_hub_v84.py 8a0f89d62c195890e5c7b3ef77d30948117d40f5
+          check_blob streamlit_memory_lazy_router_v235.py 2ab569276697a7bb2020708558f45333df14e4fe
+          check_blob .github/workflows/passing-yards-speed-step7-same-session-v1.yml 9269c95eec77e46dfcb5a18a69d7ddffdec87a06
+
+          grep -F 'from streamlit_memory_lazy_router_v235 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v83"' nfl_passing_yards_hub_v84.py
+          grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v84"' streamlit_memory_lazy_router_v235.py
+
+          echo "PASSING_YARDS_SPEED_STEP8_SCOPE_GREEN"
+          echo "PASSING_YARDS_SPEED_STEPS1_7_FROZEN_GREEN"
+          echo "PASSING_YARDS_SPEED_STEP8_STATIC_GREEN"
+
+  public-final-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: frozen-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Final 390 768 1440 public certification
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          common={
+            "ks_jump_sport":"NFL",
+            "ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24",
+            "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2",
+            "ks_py_hint_name":"Jordan Love",
+            "ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4",
+            "ks_py_hint_attempts":"34.8",
+            "ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5",
+            "ks_py_hint_lean":"LEAN OVER",
+          }
+          lazy=base+"/?"+urlencode(common)
+
+          def find(page, selector, timeout=30, interval=.2):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame, loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("SPEED_STEP8_SELECTOR_NOT_READY:"+selector)
+
+          def find_button(page, timeout=30):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator("button").filter(has_text="Load Full Analysis")
+                  if loc.count()>=1:
+                    return frame, loc.first
+                except Exception:
+                  pass
+              time.sleep(.2)
+            raise RuntimeError("SPEED_STEP8_BUTTON_NOT_READY")
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(
+              headless=True,
+              args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+            )
+
+            mobile_page=None
+            mobile_context=None
+            for width,height,label in [
+              (390,844,"390"),
+              (768,1024,"768"),
+              (1440,1000,"1440"),
+            ]:
+              context=browser.new_context(viewport={"width":width,"height":height})
+              page=context.new_page()
+              page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
+              find(page,'[data-passing-yards-single-rerun-owner="v84"]',40)
+              find(page,'[data-passing-yards-lazy-detail="v79"]',40)
+              _,button=find_button(page,40)
+
+              if not button.is_visible():
+                raise RuntimeError("SPEED_STEP8_BUTTON_NOT_VISIBLE:"+label)
+
+              errors=0
+              for frame in page.frames:
+                for token in ("Traceback","TypeError"):
+                  try:
+                    errors += frame.get_by_text(token, exact=False).count()
+                  except Exception:
+                    pass
+              if errors:
+                raise RuntimeError(f"SPEED_STEP8_RUNTIME_ERROR_TEXT:{label}:{errors}")
+
+              print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_GREEN")
+
+              if width==390:
+                mobile_context=context
+                mobile_page=page
+              else:
+                context.close()
+
+            page=mobile_page
+            context=mobile_context
+            _,button=find_button(page,20)
+            origin_before=float(page.evaluate("performance.timeOrigin"))
+            started=time.monotonic()
+            button.click(timeout=10000)
+            frame,root=find(
+              page,
+              '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
+              24,
+              .15,
+            )
+            ready=time.monotonic()-started
+            origin_after=float(page.evaluate("performance.timeOrigin"))
+            same_document=1 if abs(origin_after-origin_before)<=1 else 0
+            if same_document != 1:
+              raise RuntimeError("SPEED_STEP8_DOCUMENT_RELOADED")
+
+            find(page,'[data-passing-yards-single-rerun-owner="v84"]',20)
+            find(page,'[data-passing-yards-same-session-owner="v83"]',20)
+            find(page,'[data-passing-yards-concurrent-prefetch-owner="v82"]',20)
+            find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',20)
+            find(page,'[data-passing-yards-evidence-cache="v80"]',20)
+            _,perf=find(page,'[data-passing-yards-performance-runtime="v77"]',20)
+            _,step6=find(page,'[data-passing-yards-concurrent-prefetch="v82"]',20)
+
+            name=root.locator(".kpass29-name").first.inner_text(timeout=5000).strip()
+            if name!="Jordan Love":
+              raise RuntimeError("SPEED_STEP8_IDENTITY:"+name)
+
+            server_ms=float(perf.get_attribute("data-step8-server-render-ms") or "0")
+            html_bytes=int(perf.get_attribute("data-step8-html-bytes-after") or "0")
+            launched=int(step6.get_attribute("data-step6-prefetch-launched") or "0")
+            hits=int(step6.get_attribute("data-step6-prefetch-hits") or "0")
+            fallbacks=int(step6.get_attribute("data-step6-prefetch-fallbacks") or "0")
+            wrapper_ms=float(step6.get_attribute("data-step6-wrapper-render-ms") or "0")
+            transport=max(0.0, ready-(wrapper_ms/1000.0))
+
+            if wrapper_ms<=0:
+              raise RuntimeError("SPEED_STEP8_WRAPPER_TELEMETRY_MISSING")
+            if ready>24.0:
+              raise RuntimeError(f"SPEED_STEP8_READY_BUDGET:{ready:.3f}")
+            if transport>1.5:
+              raise RuntimeError(f"SPEED_STEP8_TRANSPORT_BUDGET:{transport:.3f}")
+            if launched<7 or hits<7:
+              raise RuntimeError(f"SPEED_STEP8_PREFETCH_REGRESSION:{launched}:{hits}")
+            if fallbacks>0:
+              raise RuntimeError(f"SPEED_STEP8_PREFETCH_FALLBACK:{fallbacks}")
+            if html_bytes>=10000000:
+              raise RuntimeError(f"SPEED_STEP8_PAYLOAD_REGRESSION:{html_bytes}")
+
+            print(f"PASSING_YARDS_SPEED_STEP8_CLICK_READY_SECONDS={ready:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP8_SERVER_RENDER_MS={server_ms:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP8_V82_WRAPPER_RENDER_MS={wrapper_ms:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP8_TRANSPORT_OVERHEAD_SECONDS={transport:.3f}")
+            print(f"PASSING_YARDS_SPEED_STEP8_PREFETCH_LAUNCHED={launched}")
+            print(f"PASSING_YARDS_SPEED_STEP8_PREFETCH_HITS={hits}")
+            print(f"PASSING_YARDS_SPEED_STEP8_HTML_BYTES={html_bytes}")
+            print("PASSING_YARDS_SPEED_STEP8_PUBLIC_FULL_DETAIL_GREEN")
+            print("PASSING_YARDS_SPEED_STEP8_PUBLIC_FINAL_CERTIFICATION_GREEN")
+            print("PASSING_YARDS_SPEED_STEP8_GREEN")
+            print("PASSING_YARDS_SPEED_STEP8_FROZEN")
+            print("PASSING_YARDS_SPEED_PHASE_8_OF_8_GREEN_FROZEN")
+
+            context.close()
+            browser.close()
+          PY
