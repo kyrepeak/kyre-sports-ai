@@ -1,0 +1,60 @@
+{
+  "task": "passing-yards-v42-shared-loader-isolation-v1",
+  "task_id": "passing-yards-v42-shared-loader-isolation-v1",
+  "id": "passing-yards-v42-shared-loader-isolation-v1",
+  "title": "Passing Yards V42 Shared Slate Loader Isolation",
+  "version": 1,
+  "phase": "step4-public-runtime-provider-ownership-repair",
+  "status": "DONE",
+  "source_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f",
+  "required_schedule_field": {
+    "game_exists": true,
+    "game_date": "2026-09-24",
+    "away": "Atlanta Falcons",
+    "home": "Green Bay Packers",
+    "kickoff_et": "8:15 PM ET",
+    "kickoff_ct": "7:15 PM CT",
+    "season": 2026,
+    "week": 3,
+    "season_type": "REG",
+    "canonical_nflverse_game_id": "2026_03_ATL_GB",
+    "official_proof": [
+      "NFL.com 2026 Week 3 schedule: Falcons at Packers, Thursday Sept. 24, 8:15 PM",
+      "Green Bay Packers official 2026 schedule: Week 3, Thu 09/24, Falcons, 7:15 PM CDT"
+    ],
+    "runtime_provider_proof": [
+      "GitHub runner ESPN daily: request_ok=True, http=200, rows=1",
+      "GitHub runner nflverse completeness: ready=True, expected_games=1, season=2026, week=3, season_type=2",
+      "GitHub runner final full-slate router output: games=1, fallback_used=False"
+    ]
+  },
+  "root_cause": "Hosted Streamlit and CI disagreed even after a hosted reboot: CI resolved one verified 2026-09-24 ATL@GB game while the public V46 control deck returned zero. V42 temporarily mutated the shared nfl_hub_v25.load_nfl_slate module attribute during render. Streamlit sessions share an interpreter, so concurrent sessions can observe or restore that temporary mutation across reruns; single-session CI does not reproduce that interleaving.",
+  "patch": "Pin the primary ESPN daily loader to nfl_hub_v1.load_nfl_slate, have V42 visible labels call the full-slate router directly, and give frozen V8 a temporary module proxy whose load_nfl_slate resolves to the full-slate router without mutating nfl_hub_v25 globally.",
+  "product_scope": {
+    "nfl_passing_yards_hub_v42_changed": true,
+    "existing_full_slate_tests_changed": true,
+    "v239_changed": false,
+    "v85_changed": false,
+    "v46_changed": false,
+    "app_changed": false,
+    "date_logic_changed": false,
+    "frame_logic_changed": false,
+    "model_changed": false,
+    "projection_math_changed": false,
+    "market_logic_changed": false
+  },
+  "acceptance": [
+    "Official NFL and official Packers schedule independently verify 2026-09-24 Atlanta Falcons at Green Bay Packers as 2026 regular-season Week 3 at 8:15 PM ET / 7:15 PM CT.",
+    "V42 never mutates shared nfl_hub_v25.load_nfl_slate during render.",
+    "V42 visible matchup labels and frozen V8 both receive the same full-slate router result.",
+    "Frozen V8 module reference is restored after render.",
+    "Passing Yards identity and live source certification stay green.",
+    "DevSystem final gate passes before merge.",
+    "Post-merge public exact UI proof reaches the 2026-09-24 matchup and completes Step 4 GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
