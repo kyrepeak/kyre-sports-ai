@@ -157,27 +157,35 @@ jobs:
               raise RuntimeError("PY_VISIBLE_FINAL_PASSING_FRAME_NOT_READY")
 
           def passing_deck(page,timeout=60):
-              # During date changes Streamlit may transiently remove/recreate
-              # the V85 marker before the V46 control deck remounts. Date-scan
-              # ownership therefore follows the V46 deck directly across live
-              # frames instead of requiring the V85 marker to survive every
-              # rerun boundary. V85 is still independently required before
-              # scanning begins and again on player detail.
+              # Streamlit reruns can briefly leave both the retiring and newly
+              # mounted V46 deck in the same app frame. That is not a product
+              # failure. Select the current visible deck that actually owns the
+              # Slate date control instead of requiring exact cardinality 1.
               end=time.monotonic()+timeout
               last=[]
               while time.monotonic()<end:
                   last=[]
                   for index,candidate in enumerate(page.frames):
                       try:
-                          deck=candidate.locator(
-                              ".st-key-kyre_passing_yards_top_v46"
+                          decks=candidate.locator(
+                              ".st-key-kyre_passing_yards_top_v46:visible"
                           )
-                          count=deck.count()
+                          count=decks.count()
                       except Exception:
                           count=0
+                          decks=None
                       last.append((index,candidate.url,count))
-                      if count==1:
-                          return candidate,deck
+                      if decks is not None and count>=1:
+                          for deck_index in range(count-1,-1,-1):
+                              deck=decks.nth(deck_index)
+                              try:
+                                  if deck.get_by_label(
+                                      "Slate date",
+                                      exact=True,
+                                  ).count()==1:
+                                      return candidate,deck
+                              except Exception:
+                                  pass
                   page.wait_for_timeout(200)
               raise RuntimeError(
                   "PY_VISIBLE_FINAL_V46_DECK_NOT_READY:"+repr(last)
