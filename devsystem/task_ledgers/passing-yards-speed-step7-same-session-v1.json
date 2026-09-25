@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "V84_SINGLE_RERUN_PATCH_PENDING_PROOF",
+  "step7_status": "V84_VERIFIER_RECLASS_PENDING_PUBLIC_PROOF",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -67,7 +67,7 @@
     "root_cause": "V83 uses a normal Streamlit button event (which already reruns the app) and then calls st.rerun() explicitly after setting ks_py_full=1. Production therefore pays for an avoidable second rerun/roundtrip. Local branch latency masked the transport penalty; public wrapper telemetry proves the extra transport cost.",
     "patch": "V84 single-rerun transport: set ks_py_full=1 in the button on_click callback and remove the explicit second st.rerun. The button's native rerun renders the unchanged V83/V82 full-analysis descendant."
   },
-  "diagnostic_status": "RERUN_PENDING",
+  "diagnostic_status": "VERIFIER_ONLY_REPAIR_PENDING",
   "root_cause": {
     "evidence_run": 36070024703,
     "failed_job": 107868597212,
@@ -105,9 +105,9 @@
     "9 public single-rerun proof preserves Step6 <=24s ready ceiling and V82-wrapper transport overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
     "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
   ],
-  "next_required_state": "Current-head V84 static + branch transport proof GREEN and DevSystem GREEN -> merge -> public V84 freeze proof",
+  "next_required_state": "Verifier-only PR GREEN -> merge -> public V84 full-detail DOM + latency/prefetch/payload proof -> PASSING_YARDS_SPEED_STEP7_GREEN + FROZEN",
   "verifier_only_repair": true,
-  "product_patch_unchanged": false,
+  "product_patch_unchanged": true,
   "public_deployment_activation_proven": {
     "run": 36077345479,
     "tokens": [
@@ -116,5 +116,25 @@
       "PASSING_YARDS_SPEED_STEP7_PUBLIC_V82_DESCENDANT_GREEN",
       "PASSING_YARDS_SPEED_STEP7_PUBLIC_V79_LAZY_GREEN"
     ]
+  },
+  "current_public_reclassification": {
+    "run": 36079121696,
+    "failed_attempt": 2,
+    "failed_job": 107899848213,
+    "failure_token": "SPEED_STEP7_PUBLIC_FULL_FLAG_NOT_ACTIVE",
+    "evidence": {
+      "public_v84_deployment_active": true,
+      "public_v84_owner_active": true,
+      "v83_descendant_active": true,
+      "v82_descendant_active": true,
+      "v79_lazy_initially_active": true,
+      "post_click_same_document": 1,
+      "post_click_page_count": 1,
+      "post_click_v84_owner_count": 1,
+      "post_click_lazy_count": 0,
+      "browser_url_full_flag_visible": false
+    },
+    "conclusion": "Public Streamlit activated V84 and exited the lazy shell in the same document, but the browser URL did not retain ks_py_full=1. URL persistence is not a Step 7 acceptance gate. Reclassify the failure as verifier-only and prove the selected-QB full-detail DOM plus the frozen latency/prefetch/payload contracts directly.",
+    "patch": "Verifier-only: keep same-document proof, treat URL flag visibility as telemetry, require full-detail DOM readiness, then enforce <=24s click-to-ready, <=1.5s V82-wrapper transport overhead, prefetch hits/fallbacks, and payload ceiling. Product V84/V235 remains unchanged."
   }
 }
