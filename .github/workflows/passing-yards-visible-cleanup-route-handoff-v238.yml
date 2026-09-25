@@ -1,0 +1,322 @@
+name: NFL Passing Yards Visible Cleanup Route Handoff V238
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-visible-cleanup-route-handoff-v238.yml"
+      - "app.py"
+      - "streamlit_memory_lazy_router_v238.py"
+      - "tests/test_passing_yards_route_handoff_v238.py"
+      - "devsystem/task_ledgers/passing-yards-visible-cleanup-route-handoff-v238.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-visible-cleanup-route-handoff-v238-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Enforce isolated V238 scope and protect Monster
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/passing-yards-visible-cleanup-route-handoff-v238.yml' \
+            'app.py' \
+            'devsystem/task_ledgers/passing-yards-visible-cleanup-route-handoff-v238.json' \
+            'streamlit_memory_lazy_router_v238.py' \
+            'tests/test_passing_yards_route_handoff_v238.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "PASSING_YARDS_V238_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PASSING_YARDS_V238_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob streamlit_memory_lazy_router_v237.py 6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob streamlit_memory_lazy_router_v225.py 0de2e2ec55cf5300db1b2d9dddc913b96a0de63d
+          check_blob streamlit_memory_lazy_router_v188.py ff9804e7698c34bb87ae3e2bfe4f3777926f1553
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml 8fdf57caa41828988adb1389fa34979a224385cc
+
+          grep -F 'from streamlit_memory_lazy_router_v238 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'import streamlit_memory_lazy_router_v237 as prior' streamlit_memory_lazy_router_v238.py
+          grep -F 'import streamlit_memory_lazy_router_v236' streamlit_memory_lazy_router_v238.py && exit 1 || true
+          grep -F 'import streamlit_memory_lazy_router_v188 as passing_base' streamlit_memory_lazy_router_v238.py
+          grep -F 'import streamlit_memory_lazy_router_v225 as route_guard' streamlit_memory_lazy_router_v238.py
+          echo "PASSING_YARDS_V238_MONSTER_ISOLATION_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run V238 regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_route_handoff_v238.py
+          python -m py_compile streamlit_memory_lazy_router_v238.py app.py
+          echo "PASSING_YARDS_V238_STATIC_GREEN"
+
+  branch-browser-proof:
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install branch browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright requests
+          python -m playwright install --with-deps chromium
+
+      - name: Start V238 branch app
+        run: |
+          nohup python -m streamlit run app.py \
+            --server.headless=true \
+            --server.address=127.0.0.1 \
+            --server.port=8501 \
+            --browser.gatherUsageStats=false \
+            >/tmp/py_v238.log 2>&1 &
+          echo $! >/tmp/py_v238.pid
+
+          for i in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then
+              echo "PASSING_YARDS_V238_BRANCH_STREAMLIT_GREEN"
+              exit 0
+            fi
+            sleep 1
+          done
+          tail -n 500 /tmp/py_v238.log || true
+          exit 1
+
+      - name: Prove real-UI route recovery and cleaned detail
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+
+          def find_app_frame(page,timeout=45):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          body=frame.locator("body").inner_text(timeout=1500)
+                          combos=frame.get_by_role("combobox").count()
+                      except Exception:
+                          continue
+                      if combos>=1 and ("KYRE SPORTS AI" in body or "Sport" in body):
+                          return frame
+                  page.wait_for_timeout(250)
+              raise RuntimeError("V238_BRANCH_APP_FRAME_NOT_READY")
+
+          def choose(page,frame,index,value):
+              combos=frame.get_by_role("combobox")
+              if combos.count()<=index:
+                  raise RuntimeError(f"V238_BRANCH_COMBO_MISSING:{index}:{combos.count()}")
+              combo=combos.nth(index)
+              combo.click()
+              page.keyboard.type(value)
+              page.keyboard.press("Enter")
+
+          def find(page,selector,timeout=45,interval=.2):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(int(interval*1000))
+              raise RuntimeError("V238_BRANCH_SELECTOR_NOT_READY:"+selector)
+
+          def picker(page,timeout=60):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          screen=frame.locator('[data-passing-yards-selection-screen="v58"]').count()
+                          links=frame.locator('a[data-qb-select]').count()
+                          if screen>=1 and links>=1:
+                              return frame,links
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("V238_BRANCH_PICKER_NOT_READY")
+
+          def click_qb(page,frame,links):
+              locs=frame.locator('a[data-qb-select]')
+              pick=locs.nth(1 if links>=2 else 0)
+              target=(pick.get_attribute("target") or "").strip()
+              slot=(pick.get_attribute("data-qb-select") or "").strip()
+              if target=="_blank":
+                  with page.expect_popup(timeout=15000) as info:
+                      pick.click()
+                  detail=info.value
+                  detail.wait_for_load_state("domcontentloaded",timeout=120000)
+                  return detail,slot,target
+              pick.click()
+              return page,slot,target or "same"
+
+          forbidden=(
+              "Market Decision Detail",
+              "How to read this clean detail",
+              "Projection Detail",
+              "Context + Uncertainty Detail",
+              "Distribution + Probability Detail",
+              "Model Confidence",
+              "Model Over / Under",
+          )
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":1440,"height":1000})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              # Recreate the public failure exactly: switch MLB -> NFL. Frozen
+              # V187 may show its Slate error, but the market selector remains
+              # available. Then select Passing Yards and V238 must recover.
+              frame=find_app_frame(page)
+              choose(page,frame,0,"NFL")
+              page.wait_for_timeout(1200)
+              frame=find_app_frame(page)
+              choose(page,frame,1,"Passing Yards")
+
+              find(page,'[data-passing-yards-route-handoff-owner="v238"]',35)
+              find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',35)
+              frame,link_count=picker(page,50)
+              detail,slot,target=click_qb(page,frame,link_count)
+
+              # Selected QB can be lazy or already full.
+              panel=None
+              for rendered in detail.frames:
+                  try:
+                      loc=rendered.locator('[data-passing-yards-availability-game-day="v74"]')
+                      if loc.count()>=1:
+                          panel=loc.first
+                          break
+                  except Exception:
+                      pass
+
+              if panel is None:
+                  button=None
+                  end=time.monotonic()+45
+                  while time.monotonic()<end and button is None:
+                      for rendered in detail.frames:
+                          try:
+                              loc=rendered.locator("button").filter(has_text="Load Full Analysis")
+                              if loc.count()>=1:
+                                  button=loc.first
+                                  break
+                          except Exception:
+                              pass
+                      if button is None:
+                          detail.wait_for_timeout(200)
+                  if button is None:
+                      raise RuntimeError("V238_BRANCH_LOAD_FULL_ANALYSIS_NOT_READY")
+                  button.click(timeout=10000)
+                  _,panel=find(
+                      detail,
+                      '[data-passing-yards-availability-game-day="v74"]',
+                      35,
+                      .15,
+                  )
+
+              for width,height,label in ((390,844,"390"),(768,1024,"768"),(1440,1000,"1440")):
+                  detail.set_viewport_size({"width":width,"height":height})
+                  detail.wait_for_timeout(300)
+                  text=panel.inner_text(timeout=5000)
+                  cells=panel.locator(".ks-py74-cell b").all_inner_texts()
+                  report_loc=panel.locator(".ks-py74-report")
+                  if report_loc.count()!=1:
+                      raise RuntimeError(f"V238_BRANCH_REPORT_NODE_COUNT:{label}:{report_loc.count()}")
+                  report=report_loc.first.inner_text(timeout=5000)
+                  overflow=panel.evaluate("(el) => el.scrollWidth > el.clientWidth + 4")
+                  longest=max((len(v.strip()) for v in cells),default=0)
+
+                  if len(cells)!=8:
+                      raise RuntimeError(f"V238_BRANCH_CELL_COUNT:{label}:{len(cells)}")
+                  if longest>120:
+                      raise RuntimeError(f"V238_BRANCH_CELL_TOO_LONG:{label}:{longest}")
+                  for token in forbidden:
+                      if token.casefold() in text.casefold():
+                          raise RuntimeError(f"V238_BRANCH_RAW_DUMP:{label}:{token}")
+                  if len(report)>900:
+                      raise RuntimeError(f"V238_BRANCH_REPORT_TOO_LONG:{label}:{len(report)}")
+                  if report.count("Final inactive report:")!=1:
+                      raise RuntimeError(f"V238_BRANCH_REPORT_COUNT:{label}")
+                  if overflow:
+                      raise RuntimeError(f"V238_BRANCH_HORIZONTAL_OVERFLOW:{label}")
+
+                  print(f"PASSING_YARDS_V238_VIEWPORT_{label}_GREEN")
+
+              # Independent non-Passing route proof: V238 must leave V236's
+              # Receptions handoff intact.
+              rec_context=browser.new_context(viewport={"width":1440,"height":1000})
+              rec=rec_context.new_page()
+              rec_url=base+"/?"+urlencode({
+                  "ks_jump_sport":"NFL",
+                  "ks_jump_market":"Receptions",
+              })
+              rec.goto(rec_url,wait_until="domcontentloaded",timeout=120000)
+              find(rec,'[data-nfl-receptions-route="v236"]',40)
+
+              print(f"PASSING_YARDS_V238_QB_NAV_GREEN slot={slot} target={target}")
+              print("PASSING_YARDS_V238_REAL_UI_ROUTE_RECOVERY_GREEN")
+              print("PASSING_YARDS_V238_V85_CLEANUP_GREEN")
+              print("PASSING_YARDS_V238_MONSTER_V236_PRESERVED_GREEN")
+              print("PASSING_YARDS_V238_BRANCH_GREEN")
+
+              rec_context.close()
+              context.close()
+              browser.close()
+          PY
+
+      - name: Print branch log on failure
+        if: failure()
+        run: tail -n 1200 /tmp/py_v238.log || true
+
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_v238.pid)" 2>/dev/null || true
