@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "V84_VERIFIER_RECLASS_PENDING_PUBLIC_PROOF",
+  "step7_status": "V84_TIMING_VERIFIER_REPAIR_PENDING_PUBLIC_PROOF",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -67,7 +67,7 @@
     "root_cause": "V83 uses a normal Streamlit button event (which already reruns the app) and then calls st.rerun() explicitly after setting ks_py_full=1. Production therefore pays for an avoidable second rerun/roundtrip. Local branch latency masked the transport penalty; public wrapper telemetry proves the extra transport cost.",
     "patch": "V84 single-rerun transport: set ks_py_full=1 in the button on_click callback and remove the explicit second st.rerun. The button's native rerun renders the unchanged V83/V82 full-analysis descendant."
   },
-  "diagnostic_status": "VERIFIER_ONLY_REPAIR_PENDING",
+  "diagnostic_status": "TIMING_VERIFIER_REPAIR_PENDING",
   "root_cause": {
     "evidence_run": 36070024703,
     "failed_job": 107868597212,
@@ -105,7 +105,7 @@
     "9 public single-rerun proof preserves Step6 <=24s ready ceiling and V82-wrapper transport overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
     "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
   ],
-  "next_required_state": "Verifier-only PR GREEN -> merge -> public V84 full-detail DOM + latency/prefetch/payload proof -> PASSING_YARDS_SPEED_STEP7_GREEN + FROZEN",
+  "next_required_state": "Timing-verifier-only PR GREEN -> merge -> public immediate-DOM timing proof -> PASSING_YARDS_SPEED_STEP7_GREEN + FROZEN",
   "verifier_only_repair": true,
   "product_patch_unchanged": true,
   "public_deployment_activation_proven": {
@@ -136,5 +136,24 @@
     },
     "conclusion": "Public Streamlit activated V84 and exited the lazy shell in the same document, but the browser URL did not retain ks_py_full=1. URL persistence is not a Step 7 acceptance gate. Reclassify the failure as verifier-only and prove the selected-QB full-detail DOM plus the frozen latency/prefetch/payload contracts directly.",
     "patch": "Verifier-only: keep same-document proof, treat URL flag visibility as telemetry, require full-detail DOM readiness, then enforce <=24s click-to-ready, <=1.5s V82-wrapper transport overhead, prefetch hits/fallbacks, and payload ceiling. Product V84/V235 remains unchanged."
+  },
+  "current_timing_reclassification": {
+    "run": 36081375447,
+    "failed_job": 107904303540,
+    "failure_token": "SPEED_STEP7_PUBLIC_TRANSPORT_BUDGET:7.019",
+    "evidence": {
+      "public_full_detail_render_green": true,
+      "click_ready_seconds": 12.194,
+      "server_render_ms": 5173.324,
+      "v82_wrapper_render_ms": 5175.145,
+      "reported_transport_overhead_seconds": 7.019,
+      "same_document": 1,
+      "prefetch_launched": 9,
+      "prefetch_hits": 7,
+      "html_bytes": 241254,
+      "full_flag_visible": 1
+    },
+    "root_cause": "The public verifier waited up to 12 seconds for ks_py_full=1 to appear in page.url before looking for the full-detail DOM, then included that URL synchronization wait inside click_ready_seconds. The measured 12.194s therefore does not represent detail readiness; subtracting the 5.175s wrapper time produces an artificial 7.019s transport overhead.",
+    "patch": "Verifier-only timing repair: start the full-detail selector wait immediately after button.click(), capture click_ready_seconds as soon as the selected-QB detail DOM is ready, then sample URL visibility and same-document state as telemetry. Keep all existing <=24s, <=1.5s, prefetch/fallback, payload, and identity gates unchanged."
   }
 }

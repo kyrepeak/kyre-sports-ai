@@ -342,27 +342,10 @@ jobs:
             started=time.monotonic()
             button.click(timeout=10000)
 
-            flag_deadline=time.monotonic()+12
-            while time.monotonic()<flag_deadline and "ks_py_full=1" not in page.url:
-              time.sleep(.1)
-            origin_after_click=float(page.evaluate("performance.timeOrigin"))
-            same_document=1 if abs(origin_after_click-origin_before)<=1 else 0
-            full_flag_visible=1 if "ks_py_full=1" in page.url else 0
-            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_URL={page.url}")
-            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_SAME_DOCUMENT={same_document}")
-            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_PAGE_COUNT={len(c.pages)}")
-            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_FULL_FLAG_VISIBLE={full_flag_visible}")
-            owner_after_click=sum(frame.locator('[data-passing-yards-single-rerun-owner="v84"]').count() for frame in page.frames)
-            lazy_after_click=sum(frame.locator('[data-passing-yards-lazy-detail="v79"]').count() for frame in page.frames)
-            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_V84_OWNER_COUNT={owner_after_click}")
-            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_LAZY_COUNT={lazy_after_click}")
-
-            if same_document != 1:
-              raise RuntimeError("SPEED_STEP7_PUBLIC_DOCUMENT_RELOADED")
-
             try:
               frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',24,.15)
             except Exception:
+              full_flag_visible=1 if "ks_py_full=1" in page.url else 0
               owner_now=sum(frame.locator('[data-passing-yards-single-rerun-owner="v84"]').count() for frame in page.frames)
               lazy_now=sum(frame.locator('[data-passing-yards-lazy-detail="v79"]').count() for frame in page.frames)
               print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_DETAIL_TIMEOUT_URL={page.url}")
@@ -370,10 +353,22 @@ jobs:
               print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_DETAIL_TIMEOUT_V84_OWNER_COUNT={owner_now}")
               print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_DETAIL_TIMEOUT_LAZY_COUNT={lazy_now}")
               raise RuntimeError("SPEED_STEP7_PUBLIC_DETAIL_NOT_READY_AFTER_CLICK")
+
             ready=time.monotonic()-started
-            print("PASSING_YARDS_SPEED_STEP7_PUBLIC_FULL_DETAIL_RENDER_GREEN")
             origin_after=float(page.evaluate("performance.timeOrigin"))
             same_document=1 if abs(origin_after-origin_before)<=1 else 0
+            full_flag_visible=1 if "ks_py_full=1" in page.url else 0
+            owner_after_click=sum(frame.locator('[data-passing-yards-single-rerun-owner="v84"]').count() for frame in page.frames)
+            lazy_after_click=sum(frame.locator('[data-passing-yards-lazy-detail="v79"]').count() for frame in page.frames)
+            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_URL={page.url}")
+            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_SAME_DOCUMENT={same_document}")
+            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_PAGE_COUNT={len(c.pages)}")
+            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_FULL_FLAG_VISIBLE={full_flag_visible}")
+            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_V84_OWNER_COUNT={owner_after_click}")
+            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_POST_CLICK_LAZY_COUNT={lazy_after_click}")
+            if same_document != 1:
+              raise RuntimeError("SPEED_STEP7_PUBLIC_DOCUMENT_RELOADED")
+            print("PASSING_YARDS_SPEED_STEP7_PUBLIC_FULL_DETAIL_RENDER_GREEN")
 
             find(page,'[data-passing-yards-single-rerun-owner="v84"]',20)
             find(page,'[data-passing-yards-same-session-owner="v83"]',20)
