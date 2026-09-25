@@ -25,7 +25,7 @@ def test_non_passing_route_delegates_without_owner_install(monkeypatch):
         calls["count"] += 1
         return "DELEGATED"
 
-    monkeypatch.setattr(router.identity_router, "_render_direct_prop", fake_render)
+    monkeypatch.setattr(router.prior, "render_app", fake_render)
 
     assert router.render_app() == "DELEGATED"
     assert calls["count"] == 1
@@ -62,7 +62,7 @@ def test_two_passing_sessions_can_enter_direct_shell_concurrently(monkeypatch):
             raise RuntimeError("synthetic render release timeout")
         return "GREEN"
 
-    monkeypatch.setattr(router.prior, "render_app", fake_render)
+    monkeypatch.setattr(router.identity_router, "_render_direct_prop", fake_render)
 
     def worker():
         try:
