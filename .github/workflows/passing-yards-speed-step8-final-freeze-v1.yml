@@ -57,14 +57,21 @@ jobs:
             }
           }
 
-          check_blob app.py 0dac0bbae02f47dfc9fe815d0835cc5bef0b33e9
+          check_blob app.py 2d4248636ec5a8f5e0d7d2d04f3d433009d90970
           check_blob nfl_passing_yards_hub_v84.py 8a0f89d62c195890e5c7b3ef77d30948117d40f5
           check_blob streamlit_memory_lazy_router_v235.py 2ab569276697a7bb2020708558f45333df14e4fe
+          check_blob streamlit_memory_lazy_router_v237.py 6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
           check_blob .github/workflows/passing-yards-speed-step7-same-session-v1.yml 9269c95eec77e46dfcb5a18a69d7ddffdec87a06
 
-          grep -F 'from streamlit_memory_lazy_router_v235 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
           grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v83"' nfl_passing_yards_hub_v84.py
           grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v84"' streamlit_memory_lazy_router_v235.py
+          grep -F 'import streamlit_memory_lazy_router_v235 as passing_router' streamlit_memory_lazy_router_v237.py
+          grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v85"' streamlit_memory_lazy_router_v237.py
+          grep -F 'FALLBACK_HUB = "nfl_passing_yards_hub_v84"' streamlit_memory_lazy_router_v237.py
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v84"' nfl_passing_yards_hub_v85.py
+          echo "PASSING_YARDS_SPEED_STEP8_CURRENT_MAIN_CHAIN_GREEN"
 
           echo "PASSING_YARDS_SPEED_STEP8_SCOPE_GREEN"
           echo "PASSING_YARDS_SPEED_STEPS1_7_FROZEN_GREEN"
