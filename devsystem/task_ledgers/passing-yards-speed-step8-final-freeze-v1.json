@@ -51,5 +51,10 @@
     "classification": "LEDGER_STATE_ONLY",
     "product_change": false,
     "patch": "Mark final-certification task ledger DONE; public freeze remains enforced by the push workflow tokens."
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
   }
 }
