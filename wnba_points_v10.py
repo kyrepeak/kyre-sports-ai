@@ -44,7 +44,11 @@ FINAL_SIMS = 10_000_000
 BATCH_SIZE = 250_000
 CONVERGENCE_BATCH_SPREAD = 0.006
 CACHE_DIR = Path(".kyre_runtime_cache")
-_LOCAL = LocalStorage() if LocalStorage is not None else None
+# Browser localStorage is optional persistence only. Constructing its Streamlit
+# component at module import can block/raise before the Points page reaches first
+# paint. Keep import bootstrap non-blocking; disk + session persistence remain
+# active and every browser-storage call already fails closed when _LOCAL is None.
+_LOCAL = None
 
 
 def _num(v, default=np.nan):
