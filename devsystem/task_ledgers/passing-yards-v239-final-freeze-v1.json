@@ -3,15 +3,17 @@
   "task_id": "passing-yards-v239-final-freeze-v1",
   "id": "passing-yards-v239-final-freeze-v1",
   "title": "Passing Yards V239 Final Public Freeze",
-  "version": 12,
-  "phase": "final-public-proof",
+  "version": 13,
+  "phase": "dynamic-current-slate-final-public-proof",
   "status": "DONE",
   "source_main": "112d4972d6db30d6df19e9f7557909c788ab8bbf",
   "acceptance": [
-    "Current main remains 980381dcdd99d73cc75a0cc2a64f0ca60deec26f or a newer non-overlapping certified main is explicitly reconciled before proof interpretation.",
     "Public exact UI commits NFL and Passing Yards without query-string shortcuts.",
-    "Public runtime exposes V239 router marker and V85 cleanup marker.",
-    "Public flow sets the certified slate date, selects Atlanta Falcons at Green Bay Packers, opens Jordan Love, and reaches the full analysis.",
+    "Public runtime exposes the protected V239 router marker and V85 cleanup marker.",
+    "Verifier starts from the current Eastern date and scans forward to the first live V46 slate exposing one or more verified matchup options; off-days do not fail Step 4.",
+    "Verifier selects a real matchup dynamically from the live verified matchup options; no team is hardcoded.",
+    "Verifier selects the first available V58 quarterback card with a real rendered identity; no player is hardcoded.",
+    "Selected quarterback opens player detail/full analysis and the rendered detail identity matches the dynamically selected quarterback.",
     "Responsive cleanup passes at 390, 768, and 1440 widths with no horizontal overflow or forbidden raw detail blocks.",
     "Independent Receptions proof remains owned by V236.",
     "Success emits PASSING_YARDS_VISIBLE_CLEANUP_STEP4_GREEN, PASSING_YARDS_VISIBLE_CLEANUP_GREEN, and PASSING_YARDS_VISIBLE_CLEANUP_FROZEN."
@@ -127,7 +129,7 @@
     "protected_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
   },
   "provider_ownership_diagnostic_epoch": {
-    "state": "OWNER_UNRESOLVED",
+    "state": "CLOSED_STALE_TARGET",
     "failure_token": "PY_VISIBLE_FINAL_DATE_COMMITTED_NO_VERIFIED_GAMES",
     "failed_layer": "SCHEDULE / PROVIDER",
     "first_broken_arrow": "2026-09-24 committed -> V42 verified-slate loader -> zero games",
@@ -143,10 +145,11 @@
     "patch_budget": "0/1",
     "diagnostic_goal": "Execute the production 2026-09-24 provider decision chain and print daily ESPN, nflverse completeness, weekly ESPN fallback, and final router output.",
     "product_changes": false,
-    "protected_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f"
+    "protected_main": "980381dcdd99d73cc75a0cc2a64f0ca60deec26f",
+    "current_step4_blocker": false
   },
   "post_provider_fix_rebase": {
-    "state": "READY_FOR_FINAL_PUBLIC_PROOF",
+    "state": "HISTORICAL_EVIDENCE",
     "product_main": "112d4972d6db30d6df19e9f7557909c788ab8bbf",
     "product_pr": 1037,
     "product_patch": "V42 shared loader isolation",
@@ -154,6 +157,47 @@
     "verified_game": "2026-09-24 Atlanta Falcons @ Green Bay Packers",
     "prior_ci_provider_result": "ESPN daily rows=1; nflverse expected_games=1; final router games=1",
     "prior_public_failure": "PY_VISIBLE_FINAL_DATE_COMMITTED_NO_VERIFIED_GAMES",
-    "note": "Final proof branch rebased onto merged product main before rerun."
+    "note": "Retained as historical evidence only; 2026-09-24 is no longer an active Step 4 certification target.",
+    "current_step4_blocker": false
+  },
+  "stale_target_reset": {
+    "state": "ROOT_CAUSE_LOCKED",
+    "root_cause_class": "STALE_ACCEPTANCE_CONTRACT",
+    "prior_blocking_target": {
+      "date": "2026-09-24",
+      "matchup": "Atlanta Falcons @ Green Bay Packers",
+      "quarterback": "Jordan Love",
+      "status": "completed/historical"
+    },
+    "current_contract": "current-or-next verified NFL slate -> dynamic verified matchup -> dynamic selectable QB -> full public analysis",
+    "verifier_behavior": {
+      "start_timezone": "America/New_York",
+      "search_forward_days": 10,
+      "hardcoded_date": false,
+      "hardcoded_matchup": false,
+      "hardcoded_qb": false
+    },
+    "external_current_slate_corroboration": [
+      "NFL official league calendar identifies scheduled NFL play on 2026-09-27.",
+      "ESPN 2026 Week 3 schedule independently lists Sunday 2026-09-27 NFL games."
+    ],
+    "product_patch_required": false,
+    "closed_owners": [
+      "V239",
+      "V85",
+      "V46",
+      "frame ownership",
+      "date semantics",
+      "regex",
+      "DOM order",
+      "2026-09-24 provider forcing"
+    ]
+  },
+  "historical_completed_game_regression": {
+    "blocking_step4": false,
+    "purpose": "Preserve historical/completed-game retrieval as a separate regression concern without using a completed game as the current Step 4 public acceptance target.",
+    "retained_support": true,
+    "historical_example": "2026-09-24 Atlanta Falcons @ Green Bay Packers",
+    "note": "Historical support is not deleted or weakened; it is separated from current/future user-flow certification."
   }
 }
