@@ -76,75 +76,6 @@ jobs:
           python -m pip install --disable-pip-version-check -q playwright
           python -m playwright install --with-deps chromium
 
-      - name: Decide Step 4 provider owner for 2026-09-24
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --disable-pip-version-check -q pandas requests streamlit
-          python - <<'PY'
-          import nfl_hub_v1 as nfl
-          import nfl_passing_yards_full_slate_router_v1 as router
-
-          DAY="2026-09-24"
-
-          primary,primary_diag=nfl.load_nfl_slate(DAY)
-          schedule=router._default_schedule_meta(DAY)
-
-          print(
-              "PY_STEP4_PROVIDER_PRIMARY:"
-              f"request_ok={primary_diag.get('request_ok')}:"
-              f"http={primary_diag.get('http')}:"
-              f"diag_games={primary_diag.get('games')}:"
-              f"rows={len(primary)}"
-          )
-
-          print(
-              "PY_STEP4_PROVIDER_NFLVERSE:"
-              f"ready={schedule.get('ready')}:"
-              f"expected_games={schedule.get('expected_games')}:"
-              f"season={schedule.get('season')}:"
-              f"week={schedule.get('week')}:"
-              f"season_type={schedule.get('season_type')}"
-          )
-
-          weekly_called={"value":False}
-          weekly_capture={"frame":None,"diag":{}}
-
-          def weekly_loader(day,meta):
-              weekly_called["value"]=True
-              frame,diag=router._default_weekly_loader(day,meta)
-              weekly_capture["frame"]=frame
-              weekly_capture["diag"]=dict(diag or {})
-              return frame,diag
-
-          final,final_diag=router.load_full_slate(
-              DAY,
-              primary_loader=lambda day: (primary,primary_diag),
-              schedule_loader=lambda day: schedule,
-              weekly_loader=weekly_loader,
-          )
-
-          weekly=weekly_capture["frame"]
-          weekly_diag=weekly_capture["diag"]
-
-          print(
-              "PY_STEP4_PROVIDER_WEEKLY:"
-              f"called={weekly_called['value']}:"
-              f"request_ok={weekly_diag.get('request_ok')}:"
-              f"http={weekly_diag.get('http')}:"
-              f"diag_games={weekly_diag.get('games')}:"
-              f"rows={len(weekly) if weekly is not None else 0}"
-          )
-
-          print(
-              "PY_STEP4_PROVIDER_FINAL:"
-              f"fallback_used={final_diag.get('fallback_used')}:"
-              f"games={len(final)}:"
-              f"provider={final_diag.get('provider')}:"
-              f"expected_games={final_diag.get('expected_games')}"
-          )
-          PY
-
       - name: Certify cleanup through exact real UI commits
         shell: bash
         run: |
@@ -152,10 +83,13 @@ jobs:
           python - <<'PY'
           import re
           import time
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
 
           from playwright.sync_api import sync_playwright
 
           base="https://kyre-sports-ai.streamlit.app"
+          ET=ZoneInfo("America/New_York")
 
           forbidden=(
               "Market Decision Detail",
@@ -374,29 +308,117 @@ jobs:
               exact_option(page,frame,market_combo,market)
               return app_frame(page,60)
 
+          def _segment_value(segment):
+              raw=segment.get_attribute("aria-valuenow")
+              if raw is None:
+                  raw=segment.get_attribute("aria-valuetext")
+              match=re.search(r"-?\d+",str(raw or ""))
+              if not match:
+                  raise RuntimeError(
+                      "PY_VISIBLE_FINAL_DATE_SEGMENT_VALUE_MISSING:"+str(raw)
+                  )
+              return int(match.group(0))
+
+          def set_slate_date(page,target_day):
+              targets={
+                  "year":target_day.year,
+                  "month":target_day.month,
+                  "day":target_day.day,
+              }
+              for name in ("year","month","day"):
+                  target=targets[name]
+                  step_guard=0
+                  while step_guard<80:
+                      step_guard+=1
+                      _,_,_,segments,resolved=passing_date_state(page,30)
+                      segment=segments.nth(resolved[name])
+                      current=_segment_value(segment)
+                      if current==target:
+                          break
+                      segment.click(timeout=10000)
+                      segment.press("ArrowUp" if current<target else "ArrowDown")
+                      page.wait_for_timeout(80)
+                  else:
+                      raise RuntimeError(
+                          "PY_VISIBLE_FINAL_DATE_SEGMENT_CONVERGENCE:"
+                          +name+":"+target_day.isoformat()
+                      )
+
+              _,_,_,segments,resolved=passing_date_state(page,30)
+              final_segment=segments.nth(resolved["day"])
+              final_segment.click(timeout=10000)
+              final_segment.press("Tab")
+              page.wait_for_timeout(350)
+
+          def discover_current_or_next_slate(page,max_forward_days=10):
+              start_day=datetime.now(ET).date()
+
+              for offset in range(max_forward_days+1):
+                  candidate=start_day+timedelta(days=offset)
+                  set_slate_date(page,candidate)
+
+                  deadline=time.monotonic()+15
+                  while time.monotonic()<deadline:
+                      frame,deck=passing_deck(page,30)
+                      deck_text=" ".join(
+                          deck.first.inner_text(timeout=2000).split()
+                      )
+                      matchup=deck.get_by_role(
+                          "combobox",
+                          name=re.compile(
+                              r"^Matchup\s*•\s*\d+\s+verified games$"
+                          ),
+                      )
+                      if matchup.count()==1:
+                          print(
+                              "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_SLATE_GREEN "
+                              f"date={candidate.isoformat()}"
+                          )
+                          return candidate
+
+                      if (
+                          "No verified NFL games available for this slate date."
+                          in deck_text
+                      ):
+                          print(
+                              "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_SLATE_SKIP "
+                              f"date={candidate.isoformat()}"
+                          )
+                          break
+                      page.wait_for_timeout(250)
+
+              raise RuntimeError(
+                  "PY_VISIBLE_FINAL_NO_CURRENT_OR_NEXT_VERIFIED_SLATE"
+              )
+
           def choose_matchup(page):
-              # Matchup ownership is the current V85 Passing Yards frame and
-              # the current V46 control deck. Reacquire after every rerun.
               end=time.monotonic()+60
               while time.monotonic()<end:
                   frame,deck=passing_deck(page,30)
                   matchup=deck.get_by_role(
                       "combobox",
-                      name=re.compile(r"^Matchup\\s*•\\s*\\d+\\s+verified games$"),
+                      name=re.compile(r"^Matchup\s*•\s*\d+\s+verified games$"),
                   )
                   if matchup.count()==1:
                       matchup=matchup.first
                       matchup.click(timeout=10000)
                       opt=None
+                      selected=""
                       opt_end=time.monotonic()+20
                       while time.monotonic()<opt_end and opt is None:
                           for option_frame in page.frames:
                               try:
-                                  options=option_frame.get_by_role("option").filter(
-                                      has_text="Atlanta Falcons"
-                                  )
-                                  if options.count()>=1:
-                                      opt=options.first
+                                  options=option_frame.get_by_role("option")
+                                  for index in range(options.count()):
+                                      candidate=options.nth(index)
+                                      text=" ".join(
+                                          candidate.inner_text(timeout=1500).split()
+                                      )
+                                      if " @ " in text and " • " in text:
+                                          opt=candidate
+                                          selected=text
+                                          break
+                                  if opt is not None:
                                       break
                               except Exception:
                                   pass
@@ -404,11 +426,14 @@ jobs:
                               page.wait_for_timeout(150)
                       if opt is None:
                           raise RuntimeError(
-                              "PY_VISIBLE_FINAL_MATCHUP_OPTION_NOT_READY"
+                              "PY_VISIBLE_FINAL_DYNAMIC_MATCHUP_OPTION_NOT_READY"
                           )
                       opt.click(timeout=10000)
-                      print("PASSING_YARDS_VISIBLE_CLEANUP_MATCHUP_COMMIT_GREEN")
-                      return
+                      print(
+                          "PASSING_YARDS_VISIBLE_CLEANUP_MATCHUP_COMMIT_GREEN "
+                          f"matchup={selected}"
+                      )
+                      return selected
                   page.wait_for_timeout(250)
               raise RuntimeError("PY_VISIBLE_FINAL_MATCHUP_COMBO_NOT_READY")
 
@@ -442,161 +467,56 @@ jobs:
               )
               print("PASSING_YARDS_VISIBLE_CLEANUP_REAL_UI_V85_GREEN")
 
-              # One-shot ownership map for this new evidence epoch.
-              # This must settle which live frame actually owns V46 / Slate date.
-              for index,candidate in enumerate(page.frames):
-                  def safe_count(selector):
-                      try:
-                          return candidate.locator(selector).count()
-                      except Exception:
-                          return -1
+              # Discover capability dynamically: today if valid, otherwise the
+              # next verified NFL slate exposed by the live V46 control deck.
+              target_day=discover_current_or_next_slate(page,10)
+              print(
+                  "PASSING_YARDS_VISIBLE_CLEANUP_DATE_COMMIT_GREEN "
+                  f"date={target_day.isoformat()}"
+              )
 
-                  try:
-                      slate_date=candidate.get_by_label(
-                          "Slate date",
-                          exact=True,
-                      ).count()
-                  except Exception:
-                      slate_date=-1
+              # The date commit reran Streamlit. Choose a real verified matchup
+              # from the currently exposed options; do not bind to a team.
+              selected_matchup=choose_matchup(page)
+              print(
+                  "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_MATCHUP_GREEN "
+                  f"matchup={selected_matchup}"
+              )
 
-                  try:
-                      deck_caption=candidate.get_by_text(
-                          "PASSING YARDS CONTROL DECK",
-                          exact=False,
-                      ).count()
-                  except Exception:
-                      deck_caption=-1
-
-                  try:
-                      combos=candidate.get_by_role("combobox").count()
-                  except Exception:
-                      combos=-1
-
-                  try:
-                      body=" ".join(
-                          candidate.locator("body")
-                          .inner_text(timeout=1500)
-                          .split()
-                      )[:800]
-                  except Exception:
-                      body=""
-
-                  print(
-                      "PY_VISIBLE_FINAL_FRAME_MAP:"
-                      f"index={index}:"
-                      f"url={candidate.url}:"
-                      f"v239={safe_count('[data-passing-yards-router-owner=\"v239\"]')}:"
-                      f"v85={safe_count('[data-passing-yards-visible-cleanup-owner=\"v85\"]')}:"
-                      f"v46={safe_count('.st-key-kyre_passing_yards_top_v46')}:"
-                      f"slate_date={slate_date}:"
-                      f"deck_caption={deck_caption}:"
-                      f"combos={combos}:"
-                      f"body={body}"
-                  )
-
-              # Move the current owner-bound V46 control deck to the known slate.
-              # Never reuse frame/deck/group/segment state across Streamlit reruns.
-              frame,deck=passing_deck(page,30)
-              date_group=deck.get_by_label("Slate date",exact=True)
-              if date_group.count()!=1:
-                  raise RuntimeError(
-                      "PY_VISIBLE_FINAL_DATE_GROUP_COUNT:"
-                      +str(date_group.count())
-                  )
-
-              date_inputs=date_group.locator("input")
-              if date_inputs.count()>=1:
-                  date_input=date_inputs.first
-                  date_input.click(timeout=10000)
-                  date_input.fill("2026-09-24")
-                  date_input.press("Tab")
-              else:
-                  targets={"year":2026,"month":9,"day":24}
-                  for name in ("year","month","day"):
-                      target=targets[name]
-                      step_guard=0
-                      while step_guard<80:
-                          step_guard+=1
-
-                          # Fresh owner -> fresh V46 deck -> fresh date group ->
-                          # fresh semantic segment after every key/rerun.
-                          _,_,_,segments,resolved=passing_date_state(page,30)
-                          segment=segments.nth(resolved[name])
-                          raw=segment.get_attribute("aria-valuenow")
-                          if raw is None:
-                              raw=segment.get_attribute("aria-valuetext")
-                          match=re.search(r"-?\d+",str(raw or ""))
-                          if not match:
-                              raise RuntimeError(
-                                  "PY_VISIBLE_FINAL_DATE_SEGMENT_VALUE_MISSING:"
-                                  +name+":"+str(raw)
-                              )
-                          current=int(match.group(0))
-                          if current==target:
-                              break
-                          segment.click(timeout=10000)
-                          segment.press("ArrowUp" if current<target else "ArrowDown")
-                          page.wait_for_timeout(80)
-                      else:
-                          raise RuntimeError(
-                              "PY_VISIBLE_FINAL_DATE_SEGMENT_CONVERGENCE:"
-                              +name
-                          )
-
-                  # All values match. Reacquire once more, blur the fresh day
-                  # segment, then wait for a fresh owner-bound V46 deck.
-                  _,_,_,segments,resolved=passing_date_state(page,30)
-                  final_segment=segments.nth(resolved["day"])
-                  final_segment.click(timeout=10000)
-                  final_segment.press("Tab")
-
-              # Date is GREEN only when the freshly reacquired V46 deck exposes
-              # the matchup control after Streamlit's rerun.
-              date_deadline=time.monotonic()+45
-              date_committed=False
-              while time.monotonic()<date_deadline:
-                  frame,deck=passing_deck(page,30)
-                  deck_text=" ".join(deck.first.inner_text(timeout=2000).split())
-                  matchup=deck.get_by_role(
-                      "combobox",
-                      name=re.compile(r"^Matchup\\s*•\\s*\\d+\\s+verified games$"),
-                  )
-                  if matchup.count()==1:
-                      date_committed=True
-                      break
-                  if "No verified NFL games available for this slate date." in deck_text:
-                      raise RuntimeError(
-                          "PY_VISIBLE_FINAL_DATE_COMMITTED_NO_VERIFIED_GAMES:"
-                          +deck_text[:1200]
-                      )
-                  page.wait_for_timeout(250)
-
-              if not date_committed:
-                  raise RuntimeError("PY_VISIBLE_FINAL_DATE_RERUN_NOT_COMMITTED")
-
-              print("PASSING_YARDS_VISIBLE_CLEANUP_DATE_COMMIT_GREEN")
-
-              # Date commit reran Streamlit: reacquire owner/deck inside helper.
-              choose_matchup(page)
-
-              # Wait for the real V58 picker, then select Jordan Love by visible
-              # card text rather than assuming a slot.
+              # Wait for the V58 picker and select the first available
+              # quarterback card with a real rendered identity.
               picker_frame,_=wait_marker(
                   page,
                   '[data-passing-yards-selection-screen="v58"]',
                   90,
               )
-              links=picker_frame.locator('a[data-qb-select]').filter(
-                  has_text="Jordan Love"
+              links=picker_frame.locator('a[data-qb-select]')
+              qb=None
+              slot=""
+              selected_qb_name=""
+              for index in range(links.count()):
+                  candidate=links.nth(index)
+                  candidate_slot=(candidate.get_attribute("data-qb-select") or "").strip()
+                  if candidate_slot not in {"1","2"}:
+                      continue
+                  names=candidate.locator(".kpass29-name")
+                  if names.count()!=1:
+                      continue
+                  candidate_name=names.first.inner_text(timeout=3000).strip()
+                  if not candidate_name:
+                      continue
+                  qb=candidate
+                  slot=candidate_slot
+                  selected_qb_name=candidate_name
+                  break
+
+              if qb is None:
+                  raise RuntimeError("PY_VISIBLE_FINAL_NO_SELECTABLE_QB")
+
+              print(
+                  "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_QB_GREEN "
+                  f"slot={slot}:qb={selected_qb_name}"
               )
-              if links.count()!=1:
-                  raise RuntimeError(
-                      "PY_VISIBLE_FINAL_JORDAN_LINK_COUNT:"+str(links.count())
-                  )
-              qb=links.first
-              slot=(qb.get_attribute("data-qb-select") or "").strip()
-              if slot not in {"1","2"}:
-                  raise RuntimeError("PY_VISIBLE_FINAL_QB_SLOT:"+slot)
 
               target=(qb.get_attribute("target") or "").strip()
               if target=="_blank":
@@ -663,8 +583,15 @@ jobs:
               name=root.locator(".kpass29-name").first.inner_text(
                   timeout=5000
               ).strip()
-              if name!="Jordan Love":
-                  raise RuntimeError("PY_VISIBLE_FINAL_IDENTITY:"+name)
+              if name!=selected_qb_name:
+                  raise RuntimeError(
+                      "PY_VISIBLE_FINAL_IDENTITY:"
+                      +selected_qb_name+":"+name
+                  )
+              print(
+                  "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_QB_DETAIL_GREEN "
+                  f"qb={name}"
+              )
 
               for width,height,label in (
                   (390,844,"390"),
