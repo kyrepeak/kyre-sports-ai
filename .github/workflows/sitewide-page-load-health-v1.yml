@@ -140,10 +140,10 @@ jobs:
           echo "SITEWIDE_BRANCH_STREAMLIT_HEALTH_TIMEOUT"
           cat /tmp/sitewide-branch-streamlit.log || true
           exit 1
-      - name: Prove WNBA Points Step 2-3 first render and route handoff
+      - name: Prove NFL Receptions cold-isolated route handoff
         run: |
-          python devsystem/sitewide_page_load_health_v1.py             --base-url "http://127.0.0.1:8501"             --only-sport "WNBA"             --only-market "Points"             --steps23-only             --json-out /tmp/sitewide-wnba-points-branch.json
-          echo "WNBA_POINTS_STEPS23_BRANCH_GREEN"
+          python devsystem/sitewide_page_load_health_v1.py             --base-url "http://127.0.0.1:8501"             --only-sport "NFL"             --only-market "Receptions"             --steps23-only             --json-out /tmp/sitewide-nfl-receptions-branch.json
+          echo "NFL_RECEPTIONS_COLD_ISOLATION_GREEN"
       - name: Print branch runtime log on failure
         if: failure()
         run: |
