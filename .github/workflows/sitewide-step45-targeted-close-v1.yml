@@ -119,9 +119,9 @@ jobs:
           import time
 
           from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _choose, _find_app_frame
 
           base_url = os.environ["PUBLIC_URL"].rstrip("/")
-          url = base_url + "/?ks_jump_sport=NFL&ks_jump_market=Receptions"
           needle = "Receptions is fail-closed at the Step 7 app identity gate."
           deadline = time.monotonic() + 300.0
 
@@ -130,33 +130,52 @@ jobs:
                   headless=True,
                   args=["--disable-dev-shm-usage", "--no-sandbox"],
               )
-              page = browser.new_page(viewport={"width": 1440, "height": 1200})
               try:
                   attempt = 0
                   while time.monotonic() < deadline:
                       attempt += 1
+                      context = browser.new_context(viewport={"width": 1440, "height": 1200})
+                      page = context.new_page()
                       try:
-                          page.goto(url, wait_until="domcontentloaded", timeout=120000)
+                          page.goto(base_url + "/", wait_until="domcontentloaded", timeout=120000)
+                          frame, _ = _find_app_frame(page)
+
+                          _choose(page, frame, 0, "NFL")
+                          page.wait_for_timeout(2500)
+                          frame, _ = _find_app_frame(page)
+
+                          _choose(page, frame, 1, "Receptions")
+                          page.wait_for_timeout(1000)
+
+                          route_deadline = time.monotonic() + 20.0
+                          while time.monotonic() < route_deadline:
+                              for candidate in page.frames:
+                                  try:
+                                      body = candidate.locator("body").inner_text(timeout=1500)
+                                  except Exception:
+                                      continue
+                                  if needle in body:
+                                      print(
+                                          "V236_PUBLIC_DEPLOYMENT_ACTIVE "
+                                          f"attempt={attempt} via=real_ui"
+                                      )
+                                      raise SystemExit(0)
+                              page.wait_for_timeout(300)
+
+                          print(f"V236_PUBLIC_DEPLOYMENT_WAIT attempt={attempt} via=real_ui")
+                      except SystemExit:
+                          raise
                       except Exception as exc:
-                          print(f"V236_PUBLIC_DEPLOYMENT_NAV_RETRY attempt={attempt} error={exc}")
-                          time.sleep(10)
-                          continue
+                          print(
+                              f"V236_PUBLIC_DEPLOYMENT_UI_RETRY "
+                              f"attempt={attempt} error={type(exc).__name__}:{exc}"
+                          )
+                      finally:
+                          context.close()
 
-                      for _ in range(20):
-                          for frame in page.frames:
-                              try:
-                                  body = frame.locator("body").inner_text(timeout=1500)
-                              except Exception:
-                                  continue
-                              if needle in body:
-                                  print("V236_PUBLIC_DEPLOYMENT_ACTIVE")
-                                  raise SystemExit(0)
-                          page.wait_for_timeout(500)
-
-                      print(f"V236_PUBLIC_DEPLOYMENT_WAIT attempt={attempt}")
                       time.sleep(10)
 
-                  raise RuntimeError("V236_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+                  raise RuntimeError("V236_PUBLIC_DEPLOYMENT_NOT_ACTIVE_REAL_UI")
               finally:
                   browser.close()
           PY
