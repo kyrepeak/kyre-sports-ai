@@ -1,0 +1,50 @@
+{
+  "task": "passing-yards-step5-current-freeze-v1",
+  "task_id": "passing-yards-step5-current-freeze-v1",
+  "id": "passing-yards-step5-current-freeze-v1",
+  "title": "Passing Yards Step 5 Current Availability + Game-Day Freeze",
+  "version": 1,
+  "phase": "current-production-recertification",
+  "status": "DONE",
+  "source_main": "e88ecea5c583c42abc33ae36bb0215a82e7a3f28",
+  "step": 5,
+  "step5_name": "Availability + Game-Day Conditions",
+  "classification": "VERIFIER_ONLY_CURRENT_MAIN_RECERTIFICATION",
+  "product_changes": false,
+  "provider_changes": false,
+  "model_changes": false,
+  "frozen_step4_main": "e88ecea5c583c42abc33ae36bb0215a82e7a3f28",
+  "frozen_owners": {
+    "app_py": "2d389ca7464e33344d5719ab48cdec2c0f5bc9ee",
+    "passing_yards_v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "passing_yards_v74": "381d95d5059eafcbbb7d9e0d108fcd54c5e43951",
+    "router_v239": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "game_day_provider": "8f534b8183f380b988dfb4d7b585c6984bfa85de",
+    "receptions_v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2"
+  },
+  "acceptance": [
+    "Use the real public app and commit NFL -> Passing Yards without query shortcut.",
+    "Discover the current or next verified NFL slate dynamically from the live V46 control deck.",
+    "Select a live verified matchup dynamically and select the first available quarterback dynamically.",
+    "Open selected-quarterback detail/full analysis and preserve dynamic quarterback identity.",
+    "V73 live-market prerequisite remains present and frozen.",
+    "V74 Availability + Game-Day Conditions renders exactly once and reports availability-ready=true.",
+    "Game-day inactive state is truthful PENDING or CONFIRMED; UNVERIFIED fails the current Step 5 certification.",
+    "Exactly eight Step 5 fields are present: QB status, skill hard, OL hard, opponent secondary hard, venue, surface, weather, wind.",
+    "Final inactive report, sportsbook projection influence 0.0%, and stake sizing OFF remain visible.",
+    "390/768/1440 responsive proof passes without horizontal overflow or leaked raw detail blocks.",
+    "Independent Receptions V236 real-UI proof remains green.",
+    "Success emits PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_GREEN and PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_FROZEN."
+  ],
+  "stale_target_law": {
+    "hardcoded_date": false,
+    "hardcoded_matchup": false,
+    "hardcoded_qb": false,
+    "completed_2026_09_24_atl_gb_is_blocking": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
