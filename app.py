@@ -319,7 +319,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v238 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 7 activation: from streamlit_memory_lazy_router_v227 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 6 activation: from streamlit_memory_lazy_router_v226 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 5 activation: from streamlit_memory_lazy_router_v225 import record_bootstrap_import_ms, render_app
