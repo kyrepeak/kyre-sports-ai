@@ -162,13 +162,20 @@ jobs:
                 page=context.new_page()
                 try:
                   page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
-                  find(page,'[data-passing-yards-single-rerun-owner="v84"]',40)
-                  find(page,'[data-passing-yards-lazy-detail="v79"]',40)
-                  _,button=find_button(page,40)
+                  find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',60)
+                  find(page,'[data-passing-yards-lazy-detail="v79"]',60)
+                  _,button=find_button(page,60)
                   if not button.is_visible():
                     raise RuntimeError("SPEED_STEP8_BUTTON_NOT_VISIBLE:"+label)
                   break
                 except Exception as exc:
+                  v85=sum(frame.locator('[data-passing-yards-visible-cleanup-owner="v85"]').count() for frame in page.frames)
+                  v84=sum(frame.locator('[data-passing-yards-single-rerun-owner="v84"]').count() for frame in page.frames)
+                  lazy_count=sum(frame.locator('[data-passing-yards-lazy-detail="v79"]').count() for frame in page.frames)
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_V85_COUNT={v85}")
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_V84_COUNT={v84}")
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_LAZY_COUNT={lazy_count}")
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_URL={page.url}")
                   context.close()
                   print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_MISS={type(exc).__name__}:{exc}")
                   if attempt == 2:
@@ -185,7 +192,7 @@ jobs:
               if errors:
                 raise RuntimeError(f"SPEED_STEP8_RUNTIME_ERROR_TEXT:{label}:{errors}")
 
-              print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_GREEN")
+              print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_GREEN")\n              print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_V85_OWNER_GREEN")
 
               if width==390:
                 mobile_context=context
