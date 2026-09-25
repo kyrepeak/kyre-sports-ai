@@ -1,0 +1,59 @@
+{
+  "task": "sitewide-steps4-5-closeout-v2",
+  "task_id": "sitewide-steps4-5-closeout-v2",
+  "title": "Sitewide Page Load Steps 4-5 Focused Closeout",
+  "version": 2,
+  "status": "DONE",
+  "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
+  "protected_steps": {
+    "1": "GREEN_FROZEN",
+    "2": "GREEN_FROZEN",
+    "3": "GREEN_FROZEN"
+  },
+  "evidence": {
+    "frozen_step23_public_run": 36082636218,
+    "frozen_step23_routes": 36,
+    "frozen_step23_smoke_bad": 0,
+    "frozen_step23_flow_bad": 0,
+    "repeated_step45_failure_route": [
+      "NFL",
+      "Receptions"
+    ],
+    "failed_step45_run": 36083256978,
+    "failed_step45_attempts": 2,
+    "cold_branch_receptions_proof": "GREEN",
+    "unrelated_latest_noise": "NFL Slate upstream connection reset during an over-broad all-36 rerun; excluded by frozen-step law"
+  },
+  "root_cause": {
+    "owner": "VERIFIER / PROOF SCOPE",
+    "statement": "Steps 4-5 were incorrectly reopening the already-frozen 36-route Steps 2-3 contract. The only identified Step-4 route requiring focused closeout is NFL Receptions.",
+    "legal_proof": "Cold public NFL Receptions route only"
+  },
+  "acceptance": {
+    "public_route": [
+      "NFL",
+      "Receptions"
+    ],
+    "required_tokens": [
+      "NFL_RECEPTIONS_PUBLIC_COLD_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP4_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP4_FROZEN",
+      "SITEWIDE_PAGE_LOAD_STEP5_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+    ]
+  },
+  "guardrails": {
+    "product_code_changed": false,
+    "passing_yards_changed": false,
+    "steps_1_3_reopened": false,
+    "step6_started": false,
+    "model_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
