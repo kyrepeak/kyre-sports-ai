@@ -45,7 +45,7 @@
   ],
   "freeze_on_public_success": true,
   "next_required_state": "V85-owner verifier GREEN -> merge -> public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete",
-  "step8_status": "CURRENT_WRAPPER_PUBLIC_OWNER_REPAIR_PENDING_PROOF",
+  "step8_status": "V85_OWNER_VERIFIER_SYNTAX_REPAIR_PENDING_PROOF",
   "devsystem_repair": {
     "failure": "future task ledger must finish in DONE state",
     "classification": "LEDGER_STATE_ONLY",
@@ -63,18 +63,13 @@
     "product_change": false
   },
   "current_public_failure": {
-    "run": 36093792581,
-    "job": 107941666687,
-    "failure_token": "SPEED_STEP8_SELECTOR_NOT_READY:[data-passing-yards-single-rerun-owner=\"v84\"]",
-    "evidence": {
-      "frozen_contract_green": true,
-      "viewport": "390",
-      "attempts": 2,
-      "active_chain": "app.py -> V237 -> V85 -> frozen V84"
-    },
-    "classification": "STALE_PRECLICK_UNDERLAY_OWNER_ASSERTION",
-    "reasoning": "Current main intentionally routes Passing Yards through active presentation wrapper V85 over frozen V84. The final verifier was still requiring the V84 hidden owner before click. Pre-click ownership must prove V85 + the V79 lazy shell + visible Load Full Analysis control; post-click proof continues to require V84/V83/V82/V81/V80 and all latency/prefetch/payload gates.",
-    "patch": "Verifier-only: assert V85 as the current public pre-click owner with bounded retry/diagnostics, then retain the existing post-click frozen V84 speed-chain proof. No product code changes."
+    "run": 36094122919,
+    "job": 107942718939,
+    "failure_token": "SyntaxError: unexpected character after line continuation character",
+    "classification": "VERIFIER_EMBEDDED_PYTHON_SYNTAX_ONLY",
+    "product_change": false,
+    "reasoning": "The V85 owner reclassification did not execute. The workflow contained a literal backslash-n between two print statements inside the embedded Python block, so parsing failed before public browser assertions ran.",
+    "patch": "Replace the literal backslash-n text with a real newline. No acceptance gate, product code, timeout, or frozen dependency changes."
   },
   "active_router": "streamlit_memory_lazy_router_v237",
   "active_product_wrapper": "nfl_passing_yards_hub_v85",
