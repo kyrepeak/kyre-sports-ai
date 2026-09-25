@@ -45,7 +45,7 @@
   ],
   "freeze_on_public_success": true,
   "next_required_state": "Branch verifier GREEN -> merge -> one public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete",
-  "step8_status": "PUBLIC_PROOF_VISIBILITY_REPAIR",
+  "step8_status": "PUBLIC_VIEWPORT_SESSION_RETRY_REPAIR",
   "devsystem_repair": {
     "failure": "future task ledger must finish in DONE state",
     "classification": "LEDGER_STATE_ONLY",
@@ -61,5 +61,19 @@
     "reason": "Connector cannot enumerate push-triggered workflow runs for final inspection.",
     "scope": "Verifier trigger only; run the unchanged public final certification on pull_request as well as main push.",
     "product_change": false
+  },
+  "current_public_failure": {
+    "run": 36086565896,
+    "job": 107920150619,
+    "failure_token": "SPEED_STEP8_SELECTOR_NOT_READY:[data-passing-yards-single-rerun-owner=\"v84\"]",
+    "evidence": {
+      "viewport_390_green": true,
+      "next_fresh_viewport": "768",
+      "next_context_v84_not_ready_within_seconds": 40,
+      "frozen_contract_green": true
+    },
+    "classification": "PUBLIC_SESSION_STARTUP_VARIABILITY",
+    "reasoning": "The 390px public context had already proven V84 live in the same run. The next independent 768px context failed before any product assertion because V84 never appeared, so global deployment absence is ruled out. Treat one fresh-context retry as verifier robustness; fail closed on a second miss.",
+    "patch": "Verifier-only: permit exactly one fresh browser-context retry per viewport. Product V84/V235/app.py and all speed Steps 1-7 remain unchanged."
   }
 }
