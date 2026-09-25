@@ -1,0 +1,60 @@
+{
+  "task": "passing-yards-visible-cleanup-v1",
+  "task_id": "passing-yards-visible-cleanup-v1",
+  "id": "passing-yards-visible-cleanup-v1",
+  "title": "Passing Yards Visible Leak Cleanup",
+  "version": 1,
+  "phase": "post-speed-presentation-cleanup",
+  "status": "DONE",
+  "execution_state": "REBASED_ON_CURRENT_MONSTER_MAIN_PENDING_REPROOF",
+  "source_main": "31e14ce43ec5a1e043a94d5821a33f23a790af48",
+  "cleanup_steps": {
+    "1_leak_isolation": "GREEN",
+    "2_card_cleanup": "IMPLEMENTED_PENDING_PROOF",
+    "3_raw_text_wall_cleanup": "IMPLEMENTED_PENDING_PROOF",
+    "4_responsive_production_certification": "PENDING"
+  },
+  "root_cause": "V74 _metric used an unbounded .*? capture between <b> and the requested label. The match could begin at an earlier bold tag and cross multiple closing bold tags/sections before reaching the target label, leaking market/model HTML into availability cells and the Final inactive report.",
+  "patch": "New V85 presentation wrapper temporarily replaces only V74 _metric with a bounded fail-closed adjacent-bold extractor. New V237 delegates every non-Passing-Yards route to frozen V236 and swaps only the Passing Yards hub to V85.",
+  "monster_isolation": {
+    "active_monster_router": "streamlit_memory_lazy_router_v236",
+    "v236_blob": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "sitewide_health_blob": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow_blob": "f1cd18361b27a777ded1dc6ac2314e01196b10b6",
+    "overlap_with_active_sitewide_pr": false
+  },
+  "frozen_speed_owners": {
+    "v74_blob": "381d95d5059eafcbbb7d9e0d108fcd54c5e43951",
+    "v84_blob": "8a0f89d62c195890e5c7b3ef77d30948117d40f5",
+    "router_v235_blob": "2ab569276697a7bb2020708558f45333df14e4fe"
+  },
+  "product_scope": {
+    "presentation_only": true,
+    "projection_changed": false,
+    "context_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_logic_changed": false,
+    "data_provider_behavior_changed": false,
+    "widget_keys_changed": false,
+    "navigation_state_changed": false
+  },
+  "acceptance_gates": [
+    "Step 1: root cause locked to V74 unbounded metric parser",
+    "Step 2: all V74 card values are adjacent bounded values <=120 chars",
+    "Step 3: availability panel/report contain no cross-section market/model dump tokens and report is compact",
+    "Step 4: 390/768/1440 browser proof has no horizontal panel overflow, public production proof passes, Monster V236/sitewide files remain byte-identical"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "rebase": {
+    "previous_base": "e7c5829c4c105268639b9ce59e3832c8991bca92",
+    "current_base": "31e14ce43ec5a1e043a94d5821a33f23a790af48",
+    "reason": "Monster/sitewide proof advanced main while cleanup PR checks were running.",
+    "cleanup_logic_changed": false,
+    "monster_files_modified": false
+  }
+}
