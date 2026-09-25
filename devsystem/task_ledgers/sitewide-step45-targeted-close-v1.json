@@ -4,7 +4,7 @@
   "title": "Sitewide Steps 4-5 Targeted Closure",
   "version": 1,
   "status": "DONE",
-  "source_main": "31e14ce43ec5a1e043a94d5821a33f23a790af48",
+  "source_main": "db5c4cbd60cb43eda9bb1accf75df63667d083c1",
   "protected_steps": {
     "1": "GREEN_FROZEN",
     "2": "GREEN_FROZEN",
@@ -37,7 +37,14 @@
     "slate_public_acceptance": "After V236 deployment activation, public Slate must render the real Slate surface; up to 3 bounded retries are allowed only for transient Streamlit navigation/runtime errors.",
     "receptions_public_acceptance": "After V236 deployment activation, public real UI flow NFL -> Receptions must render the V236 fail-closed route body.",
     "last_public_runtime_failure_run": 36087703829,
-    "last_public_runtime_failure": "Platform-level `This app has encountered an error` during immediate post-merge Slate check before Receptions proof."
+    "last_public_runtime_failure": "Platform-level `This app has encountered an error` during immediate post-merge Slate check before Receptions proof.",
+    "deployment_failure_run": 36088934888,
+    "deployment_failure_attempts": 2,
+    "deployment_failure_token": "V236_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+    "active_router_at_refresh": "streamlit_memory_lazy_router_v237",
+    "receptions_owner": "streamlit_memory_lazy_router_v236",
+    "deployment_refresh_method": "app.py heartbeat revision using established repository Streamlit Cloud refresh pattern",
+    "deployment_refresh_acceptance": "After merge, public descendant runtime must expose V236 Receptions fail-closed surface and targeted Step 4/5 proof must emit all four freeze tokens."
   },
   "acceptance_tokens": [
     "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN",
@@ -61,7 +68,14 @@
     "product_code_changed_in_followup": false,
     "deployment_wait_bounded_seconds": 300,
     "slate_public_retry_count": 3,
-    "followup_product_code_changed": false
+    "followup_product_code_changed": false,
+    "deployment_refresh_only": true,
+    "deployment_refresh_app_logic_changed": false,
+    "deployment_refresh_router_logic_changed": false,
+    "deployment_refresh_model_logic_changed": false,
+    "deployment_refresh_projection_changed": false,
+    "deployment_refresh_probability_changed": false,
+    "deployment_refresh_market_math_changed": false
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -91,6 +105,13 @@
     "layer": "VERIFIER",
     "owner": "devsystem/sitewide_page_load_health_v1.py",
     "behavior": "Recognize the actual NFL Slate production markers without changing product/runtime behavior.",
+    "product_code_changed": false
+  },
+  "deployment_refresh_patch": {
+    "layer": "DEPLOYMENT",
+    "owner": "app.py",
+    "heartbeat": "SITEWIDE_STEP45_V236_PUBLIC_DEPLOY_REFRESH",
+    "behavior": "Force Streamlit Cloud to restart and consume already-merged V237 -> V236 runtime. No runtime behavior change.",
     "product_code_changed": false
   }
 }
