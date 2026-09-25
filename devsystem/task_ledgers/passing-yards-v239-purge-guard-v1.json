@@ -1,0 +1,42 @@
+{
+  "task": "passing-yards-v239-purge-guard-v1",
+  "task_id": "passing-yards-v239-purge-guard-v1",
+  "id": "passing-yards-v239-purge-guard-v1",
+  "title": "Passing Yards V239 Shared-Interpreter Purge Guard",
+  "version": 1,
+  "phase": "public-route-import-race-repair",
+  "status": "DONE",
+  "source_main": "681554a0ce992cc49d5827586655b9950a775061",
+  "root_cause": "Fresh-process exact UI activation passes, while public hosted Streamlit commits NFL and Passing Yards but fails before V238/V85 render. V225 documents that Streamlit sessions share one interpreter and V187's temporary nfl_ route purge can remove shared NFL modules while another session is importing them. Current V238 bypasses V225's route-token guard.",
+  "patch": "Add V239 over frozen V238. Only NFL Passing Yards is intercepted. V239 primes V225's certified Passing Yards route token before V85 import/render and reuses frozen V188's direct Passing Yards handoff with V85. app.py advances from V238 to the new V239 module identity. Non-Passing routes delegate to V238 unchanged.",
+  "product_scope": {
+    "new_router_v239": true,
+    "app_import_only": true,
+    "v238_changed": false,
+    "v237_changed": false,
+    "v236_changed": false,
+    "v225_changed": false,
+    "v188_changed": false,
+    "v187_changed": false,
+    "v85_changed": false,
+    "model_math_changed": false,
+    "data_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "widget_keys_changed": false,
+    "monster_changed": false
+  },
+  "acceptance": [
+    "V239 primes V225 route token before V85 import and V188 render.",
+    "V239 uses V188 direct handoff with V85 only for NFL Passing Yards.",
+    "Every non-Passing route delegates to V238 unchanged.",
+    "V238, V237, V236, V225, V188, V187, V85 and Monster owners remain untouched.",
+    "DevSystem final gate passes before merge.",
+    "Post-merge public exact-UI proof reaches V239, V85, Jordan Love detail, Steps 1-4 GREEN and FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
