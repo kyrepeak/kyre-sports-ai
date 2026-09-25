@@ -1,0 +1,19 @@
+{
+  "task": "passing-yards-step8-exact-route-diagnostic-v1",
+  "status": "DIAGNOSTIC_ONLY",
+  "source_main": "9931794db0bd27cc5db631f0c0156541fb883b94",
+  "product_change": false,
+  "purpose": "Reproduce the exact Step 8 public URL against a branch-local Streamlit process and expose the server log if rendering fails.",
+  "exact_route": {
+    "sport": "NFL",
+    "market": "Passing Yards",
+    "date": "2026-09-24",
+    "matchup": "Atlanta Falcons @ Green Bay Packers",
+    "qb_slot": 2,
+    "qb": "Jordan Love"
+  },
+  "decision": {
+    "local_green": "Public/runtime environment problem; do not patch Passing Yards product.",
+    "local_red": "Use exact local Streamlit server traceback as the single root cause."
+  }
+}
