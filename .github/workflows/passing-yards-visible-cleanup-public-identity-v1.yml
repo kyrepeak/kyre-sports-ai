@@ -198,6 +198,20 @@ jobs:
                       "KeyError",
                   )
               )
+              anchors=[]
+              for frame_index,frame in enumerate(page.frames):
+                  try:
+                      links=frame.locator("a")
+                      for i in range(min(links.count(),80)):
+                          link=links.nth(i)
+                          anchors.append({
+                              "frame":frame_index,
+                              "text":" ".join((link.inner_text(timeout=800) or "").split())[:220],
+                              "href":link.get_attribute("href") or "",
+                              "target":link.get_attribute("target") or "",
+                          })
+                  except Exception:
+                      pass
               data={
                   "label":label,
                   "page_url":page.url,
@@ -216,6 +230,7 @@ jobs:
                       if line.strip()
                   ][-80:],
                   "runtime_error_text":runtime_error,
+                  "anchors":anchors,
               }
               print("PASSING_YARDS_VISIBLE_CLEANUP_IDENTITY_SNAPSHOT="+json.dumps(data,sort_keys=True))
               return data
@@ -266,6 +281,25 @@ jobs:
                       +f"{index}:{value}:{type(exc).__name__}:{exc}"
                   )
                   return False
+
+          import urllib.request
+
+          def deployment_coordinates_probe():
+              for endpoint in ("/_stcore/host-config","/_stcore/health"):
+                  try:
+                      with urllib.request.urlopen(base+endpoint,timeout=20) as resp:
+                          payload=resp.read().decode("utf-8","replace")[:12000]
+                          print(
+                              "PASSING_YARDS_VISIBLE_CLEANUP_DEPLOY_ENDPOINT="
+                              +endpoint+" STATUS="+str(resp.status)+" BODY="+payload
+                          )
+                  except Exception as exc:
+                      print(
+                          "PASSING_YARDS_VISIBLE_CLEANUP_DEPLOY_ENDPOINT_ERROR="
+                          +endpoint+":"+type(exc).__name__+":"+str(exc)
+                      )
+
+          deployment_coordinates_probe()
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
