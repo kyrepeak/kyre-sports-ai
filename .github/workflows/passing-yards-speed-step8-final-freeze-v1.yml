@@ -4,11 +4,13 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "app.py"
       - ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml"
       - "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
   push:
     branches: [main]
     paths:
+      - "app.py"
       - ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml"
       - "devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json"
 
@@ -40,6 +42,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
             expected="$(printf '%s\n' \
+              'app.py' \
               '.github/workflows/passing-yards-speed-step8-final-freeze-v1.yml' \
               'devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json' | sort)"
             if [ "$actual" != "$expected" ]; then
@@ -57,14 +60,23 @@ jobs:
             }
           }
 
-          check_blob app.py 0dac0bbae02f47dfc9fe815d0835cc5bef0b33e9
+          check_blob app.py 98ea3f9c9df2ef409e17a23db4e524d531a16162
           check_blob nfl_passing_yards_hub_v84.py 8a0f89d62c195890e5c7b3ef77d30948117d40f5
           check_blob streamlit_memory_lazy_router_v235.py 2ab569276697a7bb2020708558f45333df14e4fe
+          check_blob streamlit_memory_lazy_router_v237.py 6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
           check_blob .github/workflows/passing-yards-speed-step7-same-session-v1.yml 9269c95eec77e46dfcb5a18a69d7ddffdec87a06
 
-          grep -F 'from streamlit_memory_lazy_router_v235 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'PASSING_YARDS_SPEED_STEP8_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_SPEED_STEP8_PUBLIC_REFRESH_2026_09_25_R1"' app.py
+          echo "PASSING_YARDS_SPEED_STEP8_DEPLOY_REFRESH_SCOPE_GREEN"
           grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v83"' nfl_passing_yards_hub_v84.py
           grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v84"' streamlit_memory_lazy_router_v235.py
+          grep -F 'import streamlit_memory_lazy_router_v235 as passing_router' streamlit_memory_lazy_router_v237.py
+          grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v85"' streamlit_memory_lazy_router_v237.py
+          grep -F 'FALLBACK_HUB = "nfl_passing_yards_hub_v84"' streamlit_memory_lazy_router_v237.py
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v84"' nfl_passing_yards_hub_v85.py
+          echo "PASSING_YARDS_SPEED_STEP8_CURRENT_MAIN_CHAIN_GREEN"
 
           echo "PASSING_YARDS_SPEED_STEP8_SCOPE_GREEN"
           echo "PASSING_YARDS_SPEED_STEPS1_7_FROZEN_GREEN"
@@ -155,13 +167,43 @@ jobs:
                 page=context.new_page()
                 try:
                   page.goto(lazy,wait_until="domcontentloaded",timeout=120000)
-                  find(page,'[data-passing-yards-single-rerun-owner="v84"]',40)
-                  find(page,'[data-passing-yards-lazy-detail="v79"]',40)
-                  _,button=find_button(page,40)
+                  find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',60)
+                  find(page,'[data-passing-yards-lazy-detail="v79"]',60)
+                  _,button=find_button(page,60)
                   if not button.is_visible():
                     raise RuntimeError("SPEED_STEP8_BUTTON_NOT_VISIBLE:"+label)
                   break
                 except Exception as exc:
+                  v85=sum(frame.locator('[data-passing-yards-visible-cleanup-owner="v85"]').count() for frame in page.frames)
+                  v84=sum(frame.locator('[data-passing-yards-single-rerun-owner="v84"]').count() for frame in page.frames)
+                  lazy_count=sum(frame.locator('[data-passing-yards-lazy-detail="v79"]').count() for frame in page.frames)
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_V85_COUNT={v85}")
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_V84_COUNT={v84}")
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_LAZY_COUNT={lazy_count}")
+                  print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_URL={page.url}")
+                  route_counts = {}
+                  for key, selector in {
+                    "V203": '[data-passing-yards-v203-runtime]',
+                    "V206": '[data-passing-yards-v206-runtime]',
+                    "V220": '[data-passing-yards-v220-runtime]',
+                    "V225": '[data-passing-yards-v225-router-runtime]',
+                    "V228": '[data-passing-yards-v228-router-runtime]',
+                    "V230": '[data-passing-yards-lazy-detail-router="v230"]',
+                    "V84": '[data-passing-yards-single-rerun-owner="v84"]',
+                    "V85": '[data-passing-yards-visible-cleanup-owner="v85"]',
+                  }.items():
+                    route_counts[key] = sum(frame.locator(selector).count() for frame in page.frames)
+                  print(f"PASSING_YARDS_SPEED_STEP8_ROUTE_COUNTS_{label}_{attempt}={route_counts}")
+                  try:
+                    dom_attrs = page.evaluate("""() => Array.from(document.querySelectorAll('*')).flatMap(el => Array.from(el.attributes).filter(a => a.name.includes('passing-yards')).map(a => [a.name,a.value])).slice(0,120)""")
+                  except Exception as dom_exc:
+                    dom_attrs = [["DOM_ATTR_ERROR", type(dom_exc).__name__]]
+                  print(f"PASSING_YARDS_SPEED_STEP8_DOM_ATTRS_{label}_{attempt}={dom_attrs}")
+                  try:
+                    body_text = page.locator("body").inner_text(timeout=3000).replace("\\n"," | ")[:2500]
+                  except Exception as body_exc:
+                    body_text = f"BODY_TEXT_ERROR:{type(body_exc).__name__}"
+                  print(f"PASSING_YARDS_SPEED_STEP8_BODY_TEXT_{label}_{attempt}={body_text}")
                   context.close()
                   print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_MISS={type(exc).__name__}:{exc}")
                   if attempt == 2:
@@ -179,6 +221,7 @@ jobs:
                 raise RuntimeError(f"SPEED_STEP8_RUNTIME_ERROR_TEXT:{label}:{errors}")
 
               print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_GREEN")
+              print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_V85_OWNER_GREEN")
 
               if width==390:
                 mobile_context=context
