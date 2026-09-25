@@ -12,6 +12,8 @@ def test_step1_route_owner_contract():
         'MAY_MODIFY_PASSING_YARDS = False',
         'return prior.render_app()',
         'root.NFL_MARKETS = _prop_market_options()',
+        'str(label or "").strip() == "🎯 NFL Market"',
+        'st.selectbox = original_selectbox',
         'root._render_nfl = _render_nfl_v240',
     ):
         assert token in router, token
