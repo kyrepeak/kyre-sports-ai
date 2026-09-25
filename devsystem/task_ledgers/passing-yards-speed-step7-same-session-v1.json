@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "WRAPPER_TELEMETRY_PROOF_PENDING",
+  "step7_status": "V84_SINGLE_RERUN_PATCH_PENDING_PROOF",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -24,7 +24,7 @@
   "certified_step6_public_reduction_pct": 89.86,
   "objective": "Measure and remove the remaining user-visible delay caused by the lazy-shell Load Full Analysis transition, without changing any frozen football/model/data/projection/context/probability/market/sportsbook behavior.",
   "current_first_broken_arrow": "Lazy shell -> Load Full Analysis -> selected-QB full detail ready",
-  "failed_layer": "VERIFIER",
+  "failed_layer": "PUBLIC_RUNTIME",
   "root_cause_status": "LOCKED",
   "diagnostic_budget": 1,
   "diagnostic_action": "One branch browser profile proving whether the current V79 Load Full Analysis anchor causes a full document navigation and measuring click-to-ready versus frozen V77 server-render telemetry.",
@@ -47,24 +47,25 @@
     "consumed_receipts": []
   },
   "current_failure_epoch": {
-    "run": 36077863209,
-    "failed_job": 107893167387,
-    "failure_token": "SPEED_STEP7_PUBLIC_READY_BUDGET:12.092",
-    "failed_layer": "VERIFIER",
+    "run": 36078299044,
+    "failed_job": 107894492490,
+    "failure_token": "SPEED_STEP7_PUBLIC_TRANSPORT_BUDGET:6.284",
+    "failed_layer": "PUBLIC_RUNTIME",
     "evidence": {
-      "post_click_url_full_flag": true,
+      "post_click_full_flag": true,
       "same_document": 1,
       "page_count": 1,
-      "v83_owner_count": 1,
-      "lazy_count": 0,
-      "click_ready_seconds": 12.092,
-      "v77_server_render_ms": 6223.039,
+      "v83_owner_active": true,
+      "click_ready_seconds": 12.101,
+      "v77_server_render_ms": 5814.562,
+      "v82_wrapper_render_ms": 5816.54,
+      "public_transport_overhead_seconds": 6.284,
       "prefetch_launched": 9,
       "prefetch_hits": 7,
       "html_bytes": 235815
     },
-    "root_cause": "The verifier subtracts V77's narrower server timer from click-to-ready and labels the remainder non-server. V82 already emits a broader wrapper render timer that includes server-side work outside V77. Step 7 must grade transport overhead against the V82 wrapper owner and preserve Step 6's certified public <=24s ready ceiling.",
-    "patch": "Verifier-only: read data-step6-wrapper-render-ms, compute transport overhead as click_ready - V82 wrapper render, require wrapper telemetry, require total ready <=24s and transport overhead <=1.5s. Product V83/V234 unchanged."
+    "root_cause": "V83 uses a normal Streamlit button event (which already reruns the app) and then calls st.rerun() explicitly after setting ks_py_full=1. Production therefore pays for an avoidable second rerun/roundtrip. Local branch latency masked the transport penalty; public wrapper telemetry proves the extra transport cost.",
+    "patch": "V84 single-rerun transport: set ks_py_full=1 in the button on_click callback and remove the explicit second st.rerun. The button's native rerun renders the unchanged V83/V82 full-analysis descendant."
   },
   "diagnostic_status": "RERUN_PENDING",
   "root_cause": {
@@ -78,35 +79,35 @@
     "conclusion": "Legacy V79 Load Full Analysis anchor is sanitized/rendered with target=_blank. The current Streamlit document remains on the lazy URL, so ks_py_full=1 never activates in the existing session."
   },
   "product_patch": {
-    "owner": "nfl_passing_yards_hub_v83",
-    "router": "streamlit_memory_lazy_router_v234",
-    "description": "Remove the active legacy V79 load anchor from the lazy shell and replace activation with a native Streamlit button that sets ks_py_full=1 and reruns the same session. Delegate full analysis unchanged to frozen V82.",
-    "prior_owner_preserved": "nfl_passing_yards_hub_v82",
+    "owner": "nfl_passing_yards_hub_v84",
+    "router": "streamlit_memory_lazy_router_v235",
+    "frozen_ancestor": "nfl_passing_yards_hub_v83",
+    "description": "Single-rerun same-session activation using Streamlit on_click callback. No football/model/data/projection/context/probability/market/sportsbook changes.",
     "files": [
-      "nfl_passing_yards_hub_v83.py",
-      "streamlit_memory_lazy_router_v234.py",
+      "nfl_passing_yards_hub_v84.py",
+      "streamlit_memory_lazy_router_v235.py",
       "app.py",
-      "tests/test_passing_yards_speed_step7_same_session_v1.py",
+      "tests/test_passing_yards_speed_step7_single_rerun_v2.py",
       ".github/workflows/passing-yards-speed-step7-same-session-v1.yml",
       "devsystem/task_ledgers/passing-yards-speed-step7-same-session-v1.json"
     ]
   },
-  "navigation_change_scope": "Activation transport only: ks_py_full=1 in current session; existing date/matchup/QB/hints preserved.",
+  "navigation_change_scope": "Transport scheduling only: ks_py_full=1 is set in the button callback before the native Streamlit rerun; no explicit second rerun.",
   "acceptance_gates": [
-    "1 root cause locked from live transition evidence",
-    "2 one minimal V83/V234 same-session patch",
+    "1 root cause locked from live public wrapper telemetry",
+    "2 one minimal V84/V235 single-rerun patch",
     "3 static/unit contract GREEN",
-    "4 branch same-session browser proof GREEN",
+    "4 branch single-rerun browser proof GREEN with V82-wrapper transport <=1.5s",
     "5 DevSystem current-head GREEN",
     "6 PR merged",
     "7 main SHA ownership confirmed",
-    "8 public V83 deployment active",
-    "9 public same-document proof preserves Step6 <=24s ready ceiling and V82-wrapper transport overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
+    "8 public V84 deployment active",
+    "9 public single-rerun proof preserves Step6 <=24s ready ceiling and V82-wrapper transport overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
     "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
   ],
-  "next_required_state": "Verifier-only wrapper telemetry PR current-head Step7 proof + DevSystem GREEN -> merge -> public freeze proof",
+  "next_required_state": "Current-head V84 static + branch transport proof GREEN and DevSystem GREEN -> merge -> public V84 freeze proof",
   "verifier_only_repair": true,
-  "product_patch_unchanged": true,
+  "product_patch_unchanged": false,
   "public_deployment_activation_proven": {
     "run": 36077345479,
     "tokens": [
