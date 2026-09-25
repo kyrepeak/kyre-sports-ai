@@ -1,0 +1,52 @@
+{
+  "task": "passing-yards-v239-no-purge-direct-route-v1",
+  "task_id": "passing-yards-v239-no-purge-direct-route-v1",
+  "id": "passing-yards-v239-no-purge-direct-route-v1",
+  "title": "Passing Yards V239 Shared-Interpreter No-Purge Route",
+  "version": 1,
+  "phase": "hosted-shared-interpreter-import-race-fix",
+  "status": "DONE",
+  "source_main": "681554a0ce992cc49d5827586655b9950a775061",
+  "root_cause": "The public exact NFL -> Passing Yards proof now reaches the V85 import graph and fails inside the deep Passing Yards module import chain. Router V187 temporarily adds nfl_ to the global V1 purge prefixes before root rendering. V225 already documents that Streamlit sessions share one interpreter and this global nfl_ purge can remove modules while another public session is using or importing them. Fresh single-process branch proof passes, while hosted shared-process proof fails.",
+  "patch": "Add Router V239 over frozen V238. Only Passing Yards primes the certified V225 per-session route token, renders the existing V1 shell/selectors without mutating root._ROUTE_MODULE_PREFIXES or root._render_nfl, and imports V85 after the no-purge route is committed. Non-Passing routes delegate to V238 unchanged. app.py advances only the active router import from V238 to V239.",
+  "product_scope": {
+    "new_router_v239": true,
+    "app_import_only_plus_runtime_marker": true,
+    "v238_changed": false,
+    "v237_changed": false,
+    "v225_changed": false,
+    "v187_changed": false,
+    "v85_changed": false,
+    "requirements_changed": false,
+    "model_math_changed": false,
+    "data_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "widget_keys_changed": false,
+    "sportsbook_logic_changed": false,
+    "monster_changed": false
+  },
+  "protected_blobs": {
+    "v238": "aee3624198c9e290902b0bf967ec85704a967698",
+    "v225": "0de2e2ec55cf5300db1b2d9dddc913b96a0de63d",
+    "v187": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "requirements": "ff1adb99af7cf829f291e6edd1813de9d0040849",
+    "sitewide_health": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow": "8fdf57caa41828988adb1389fa34979a224385cc"
+  },
+  "acceptance": [
+    "app.py imports V239 and no longer imports V238 directly as the active runtime.",
+    "Passing Yards primes the V225 certified route token before the V85 import graph.",
+    "V239 never appends nfl_ to root._ROUTE_MODULE_PREFIXES.",
+    "V239 never replaces root._render_nfl.",
+    "Exact branch UI selection NFL -> Passing Yards exposes V239 and V85.",
+    "V238, V225, V187, V85, requirements and Monster sitewide owners remain byte-identical.",
+    "DevSystem final gate passes before merge."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
