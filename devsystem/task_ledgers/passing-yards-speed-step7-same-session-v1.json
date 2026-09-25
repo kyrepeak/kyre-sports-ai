@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "PUBLIC_TRANSITION_DIAGNOSTIC_PENDING_PROOF",
+  "step7_status": "WRAPPER_TELEMETRY_PROOF_PENDING",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -47,12 +47,24 @@
     "consumed_receipts": []
   },
   "current_failure_epoch": {
-    "run": 36077345479,
-    "failed_job": 107891535287,
-    "failure_token": "SPEED_STEP7_PUBLIC_SELECTOR_NOT_READY:[data-passing-yards-qb-detail=\"v59\"][data-qb-analysis-slot=\"2\"]",
+    "run": 36077863209,
+    "failed_job": 107893167387,
+    "failure_token": "SPEED_STEP7_PUBLIC_READY_BUDGET:12.092",
     "failed_layer": "VERIFIER",
-    "root_cause": "Public V83 deployment and owner activation are proven. The current public verifier waits directly for V59 detail and loses the post-click transition state when detail does not appear. Root owner cannot yet be distinguished between full-flag activation, same-document transport, public rerun stall, or detail readiness.",
-    "patch": "Verifier-only instrumentation: capture post-click URL, same-document status, page count, V83 owner count and lazy-shell count before waiting for V59; shorten blind detail wait to 20s and emit a specific active-full-flag detail timeout token."
+    "evidence": {
+      "post_click_url_full_flag": true,
+      "same_document": 1,
+      "page_count": 1,
+      "v83_owner_count": 1,
+      "lazy_count": 0,
+      "click_ready_seconds": 12.092,
+      "v77_server_render_ms": 6223.039,
+      "prefetch_launched": 9,
+      "prefetch_hits": 7,
+      "html_bytes": 235815
+    },
+    "root_cause": "The verifier subtracts V77's narrower server timer from click-to-ready and labels the remainder non-server. V82 already emits a broader wrapper render timer that includes server-side work outside V77. Step 7 must grade transport overhead against the V82 wrapper owner and preserve Step 6's certified public <=24s ready ceiling.",
+    "patch": "Verifier-only: read data-step6-wrapper-render-ms, compute transport overhead as click_ready - V82 wrapper render, require wrapper telemetry, require total ready <=24s and transport overhead <=1.5s. Product V83/V234 unchanged."
   },
   "diagnostic_status": "RERUN_PENDING",
   "root_cause": {
@@ -89,10 +101,10 @@
     "6 PR merged",
     "7 main SHA ownership confirmed",
     "8 public V83 deployment active",
-    "9 public same-document navigation proof: total ready <=12s and non-server transition overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
+    "9 public same-document proof preserves Step6 <=24s ready ceiling and V82-wrapper transport overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
     "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
   ],
-  "next_required_state": "Verifier-only transition diagnostic PR current-head Step7 proof + DevSystem GREEN -> merge -> public proof; product remains unchanged unless diagnostic identifies a product-owned first broken arrow.",
+  "next_required_state": "Verifier-only wrapper telemetry PR current-head Step7 proof + DevSystem GREEN -> merge -> public freeze proof",
   "verifier_only_repair": true,
   "product_patch_unchanged": true,
   "public_deployment_activation_proven": {
