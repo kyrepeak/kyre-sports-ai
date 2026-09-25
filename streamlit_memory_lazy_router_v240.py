@@ -54,6 +54,13 @@ def _prop_market_options() -> list[str]:
     return options
 
 
+def _install_prop_market_option() -> None:
+    """Register Prop Analytics as a stable additive NFL selector option."""
+    root = _root_router()
+    if PROP_ANALYTICS_MARKET not in root.NFL_MARKETS:
+        root.NFL_MARKETS = _prop_market_options()
+
+
 def _cold_prop_analytics_query_requested() -> bool:
     return (
         _query_value(SPORT_JUMP_QUERY_KEY).upper() == NFL_SPORT
@@ -100,27 +107,20 @@ def _render_nfl_v240(market: str) -> None:
 
 def _render_direct_prop_analytics() -> None:
     root = _root_router()
+    _install_prop_market_option()
     original_render_nfl = root._render_nfl
-    original_markets = root.NFL_MARKETS
-    root.NFL_MARKETS = _prop_market_options()
     root._render_nfl = _render_nfl_v240
     try:
         return root.render_app()
     finally:
         root._render_nfl = original_render_nfl
-        root.NFL_MARKETS = original_markets
 
 
 def _delegate_with_prop_option() -> None:
-    # Make the new sibling route selectable while preserving every existing
-    # route's current owner and behavior beneath frozen V239.
-    root = _root_router()
-    original_markets = root.NFL_MARKETS
-    root.NFL_MARKETS = _prop_market_options()
-    try:
-        return prior.render_app()
-    finally:
-        root.NFL_MARKETS = original_markets
+    # Register the new sibling route once, then preserve every existing route's
+    # current owner and behavior beneath frozen V239.
+    _install_prop_market_option()
+    return prior.render_app()
 
 
 def render_app() -> None:
@@ -152,6 +152,7 @@ __all__ = [
     "_active_prop_analytics_route",
     "_cold_prop_analytics_query_requested",
     "_delegate_with_prop_option",
+    "_install_prop_market_option",
     "_prime_cold_prop_analytics_state",
     "_prop_hub_importable",
     "_prop_market_options",
