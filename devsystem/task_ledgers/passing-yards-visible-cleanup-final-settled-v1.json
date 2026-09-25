@@ -49,5 +49,14 @@
     "patch": "Keep one selected-QB production session alive for up to 420 seconds, logging V85/V84/V79/Stop state every 20 seconds. Do not restart the cold route while it is still executing.",
     "product_changes": false,
     "monster_changes": false
+  },
+  "public_real_ui_commit_reclassification": {
+    "prior_run": 36100372753,
+    "prior_failure": "PASSING_YARDS_VISIBLE_CLEANUP_FINAL_SETTLE_TIMEOUT; hosted app stayed on MLB Live Odds / Run Line while cold Passing Yards query was present.",
+    "classification": "VERIFIER_COLD_QUERY_NOT_AUTHORITATIVE_ON_HOSTED_STREAMLIT",
+    "root_cause": "The public proof relied on custom query-string routing. Hosted Streamlit did not commit that route and remained on the default MLB surface. The shared browser helper also used click/type/Enter without proving an actual option element was committed.",
+    "patch": "Verifier-only. Navigate from the public root, click the exact BaseWeb option elements for NFL and Passing Yards, require the V85 marker, set Sep 24 through the real Slate date input, select Atlanta Falcons matchup through its real option, select Jordan Love from the V58 picker, then certify the V74 cleanup at 390/768/1440. Verify Receptions V236 with the same exact-option flow.",
+    "product_changes": false,
+    "monster_changes": false
   }
 }
