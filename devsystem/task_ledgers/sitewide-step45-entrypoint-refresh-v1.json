@@ -1,0 +1,24 @@
+{
+  "task": "sitewide-step45-entrypoint-refresh-v1",
+  "task_id": "sitewide-step45-entrypoint-refresh-v1",
+  "id": "sitewide-step45-entrypoint-refresh-v1",
+  "title": "Sitewide Steps 4-5 Entrypoint Deploy Refresh",
+  "version": 1,
+  "phase": "production-activation",
+  "status": "DONE",
+  "execution_state": "DEPLOY_REFRESH_READY",
+  "source_main": "31bb40ee5564f94794699aaaa3b611e42aa491b3",
+  "classification": "ENTRYPOINT_ONLY_NO_BEHAVIOR_DEPLOY_REFRESH",
+  "product_changes": false,
+  "monster_changes": false,
+  "runtime_import_changed": false,
+  "v237_router_unchanged": true,
+  "v236_receptions_owner_unchanged": true,
+  "sportsbook_projection_influence": 0,
+  "step6_started": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
