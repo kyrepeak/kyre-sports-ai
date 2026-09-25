@@ -1,0 +1,227 @@
+name: NFL Passing Yards Visible Cleanup Direct Settled Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-visible-cleanup-direct-settled-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-visible-cleanup-direct-settled-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-visible-cleanup-direct-settled-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-settled-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Protect cleanup and Monster product owners
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/passing-yards-visible-cleanup-direct-settled-v1.yml' \
+            'devsystem/task_ledgers/passing-yards-visible-cleanup-direct-settled-v1.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "PY_VISIBLE_DIRECT_SETTLED_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PY_VISIBLE_DIRECT_SETTLED_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob app.py 0d6d73d82945f25db16c31fe8737d93e49995efb
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob streamlit_memory_lazy_router_v237.py 6cc43e4ea5c9b892e03c721abb6cdb8689fa4e44
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml 8fdf57caa41828988adb1389fa34979a224385cc
+
+          grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'PASSING_HUB = "nfl_passing_yards_hub_v85"' streamlit_memory_lazy_router_v237.py
+          grep -F 'import streamlit_memory_lazy_router_v236 as prior' streamlit_memory_lazy_router_v237.py
+
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_DIRECT_SETTLED_MONSTER_ISOLATION_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Certify visible cleanup on stable selected-QB full state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+              "ks_py_full":"1",
+              "ks_py_hint_name":"Jordan Love",
+              "ks_py_hint_meta":"GB • QB",
+              "ks_py_hint_projection":"276.4",
+              "ks_py_hint_attempts":"34.8",
+              "ks_py_hint_ypa":"7.94",
+              "ks_py_hint_line":"274.5",
+              "ks_py_hint_lean":"LEAN OVER",
+          })
+
+          forbidden=(
+              "Market Decision Detail",
+              "How to read this clean detail",
+              "Projection Detail",
+              "Context + Uncertainty Detail",
+              "Distribution + Probability Detail",
+              "Model Confidence",
+              "Model Over / Under",
+          )
+
+          def all_body(page):
+              chunks=[]
+              for frame in page.frames:
+                  try:
+                      chunks.append(frame.locator("body").inner_text(timeout=2000))
+                  except Exception:
+                      pass
+              return "\n".join(chunks)
+
+          def find(page,selector,timeout=150,interval=.25):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=all_body(page)
+                  if "Traceback" in body or "TypeError" in body:
+                      raise RuntimeError("PY_VISIBLE_DIRECT_SETTLED_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(int(interval*1000))
+              raise RuntimeError("PY_VISIBLE_DIRECT_SETTLED_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+
+              detail_frame,root=find(
+                  page,
+                  '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]',
+                  150,
+                  .25,
+              )
+              body=detail_frame.locator("body").inner_text(timeout=5000)
+              if "Jordan Love" not in body:
+                  raise RuntimeError("PY_VISIBLE_DIRECT_SETTLED_QB_IDENTITY_MISSING")
+
+              panel_frame,panel=find(
+                  page,
+                  '[data-passing-yards-availability-game-day="v74"]',
+                  150,
+                  .25,
+              )
+
+              for width,height,label in (
+                  (390,844,"390"),
+                  (768,1024,"768"),
+                  (1440,1000,"1440"),
+              ):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(350)
+
+                  panel_text=panel.inner_text(timeout=5000)
+                  cells=panel.locator(".ks-py74-cell b").all_inner_texts()
+                  report_loc=panel.locator(".ks-py74-report")
+                  if report_loc.count()!=1:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_DIRECT_SETTLED_REPORT_NODE_COUNT:{label}:{report_loc.count()}"
+                      )
+                  report=report_loc.first.inner_text(timeout=5000)
+                  overflow=panel.evaluate("(el) => el.scrollWidth > el.clientWidth + 4")
+                  longest=max((len(v.strip()) for v in cells),default=0)
+
+                  if len(cells)!=8:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_DIRECT_SETTLED_CELL_COUNT:{label}:{len(cells)}"
+                      )
+                  if longest>120:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_DIRECT_SETTLED_CELL_TOO_LONG:{label}:{longest}"
+                      )
+                  for token in forbidden:
+                      if token.casefold() in panel_text.casefold():
+                          raise RuntimeError(
+                              f"PY_VISIBLE_DIRECT_SETTLED_RAW_DUMP:{label}:{token}"
+                          )
+                  if len(report)>900:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_DIRECT_SETTLED_REPORT_TOO_LONG:{label}:{len(report)}"
+                      )
+                  if report.count("Final inactive report:")!=1:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_DIRECT_SETTLED_REPORT_COUNT:{label}"
+                      )
+                  if overflow:
+                      raise RuntimeError(
+                          f"PY_VISIBLE_DIRECT_SETTLED_HORIZONTAL_OVERFLOW:{label}"
+                      )
+
+                  print(f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_GREEN")
+                  print(
+                      f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_MAX_CELL_CHARS={longest}"
+                  )
+                  print(
+                      f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_REPORT_CHARS={len(report)}"
+                  )
+
+              print("PASSING_YARDS_VISIBLE_CLEANUP_DIRECT_SETTLED_PRODUCT_SURFACE_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_MONSTER_PROTECTED_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP1_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP2_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP3_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_STEP4_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_GREEN")
+              print("PASSING_YARDS_VISIBLE_CLEANUP_FROZEN")
+
+              context.close()
+              browser.close()
+          PY
