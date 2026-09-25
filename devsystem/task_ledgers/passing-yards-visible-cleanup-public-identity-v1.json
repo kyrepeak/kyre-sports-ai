@@ -25,5 +25,12 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "diagnostic_epoch_2": {
+    "finding": "Production is running current app.py -> V237 -> V236 chain, but selecting NFL produces a live RuntimeError before Passing Yards markers render.",
+    "prior_run": 36095103713,
+    "next_probe": "Print the tail of the public body/traceback to identify the terminal exception and deepest owning file.",
+    "product_changes": false,
+    "monster_changes": false
   }
 }
