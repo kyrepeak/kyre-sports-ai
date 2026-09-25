@@ -1,0 +1,67 @@
+{
+  "task": "sitewide-steps4-5-closeout-v2",
+  "task_id": "sitewide-steps4-5-closeout-v2",
+  "title": "Sitewide Page Load Steps 4-5 Focused Closeout",
+  "version": 2,
+  "status": "DONE",
+  "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
+  "protected_steps": {
+    "1": "GREEN_FROZEN",
+    "2": "GREEN_FROZEN",
+    "3": "GREEN_FROZEN"
+  },
+  "evidence": {
+    "frozen_step23_public_run": 36082636218,
+    "frozen_step23_routes": 36,
+    "frozen_step23_smoke_bad": 0,
+    "frozen_step23_flow_bad": 0,
+    "repeated_step45_failure_route": [
+      "NFL",
+      "Receptions"
+    ],
+    "failed_step45_run": 36083256978,
+    "failed_step45_attempts": 2,
+    "cold_branch_receptions_proof": "GREEN",
+    "unrelated_latest_noise": "NFL Slate upstream connection reset during an over-broad all-36 rerun; excluded by frozen-step law"
+  },
+  "root_cause": {
+    "owner": "ROUTER",
+    "file": "streamlit_memory_lazy_router_v187.py",
+    "statement": "V187 explicitly intercepts NFL Receptions and returns a fail-closed warning instead of allowing the existing safe NFL foundation page to render.",
+    "locked": true
+  },
+  "acceptance": {
+    "branch_token": "NFL_RECEPTIONS_V236_BRANCH_GREEN",
+    "public_tokens": [
+      "NFL_RECEPTIONS_PUBLIC_V236_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP4_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP4_FROZEN",
+      "SITEWIDE_PAGE_LOAD_STEP5_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+    ]
+  },
+  "guardrails": {
+    "product_code_changed": true,
+    "passing_yards_changed": false,
+    "steps_1_3_reopened": false,
+    "step6_started": false,
+    "model_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "product_change_scope": "NFL Receptions routing only"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "patch": {
+    "file": "streamlit_memory_lazy_router_v236.py",
+    "behavior": "Intercept only NFL Receptions, preserve V185 category handoff, temporarily bypass V187's obsolete Receptions interception, and delegate through frozen V235 so the existing safe NFL foundation page renders.",
+    "app_owner": "streamlit_memory_lazy_router_v236",
+    "projection_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0
+  }
+}
