@@ -1,0 +1,137 @@
+name: Passing Yards Step 8 Exact Route Runtime Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-step8-exact-route-diagnostic-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-step8-exact-route-diagnostic-v1.json"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-route-local-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install exact-route runtime
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start exact branch Streamlit
+        run: |
+          set -euo pipefail
+          python -m streamlit run app.py \
+            --server.headless=true \
+            --server.address=127.0.0.1 \
+            --server.port=8501 \
+            --browser.gatherUsageStats=false \
+            >/tmp/step8-exact-streamlit.log 2>&1 &
+          echo $! >/tmp/step8-exact-streamlit.pid
+          for i in $(seq 1 120); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then
+              echo "STEP8_EXACT_LOCAL_STREAMLIT_HEALTH_GREEN"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "STEP8_EXACT_LOCAL_STREAMLIT_HEALTH_TIMEOUT"
+          cat /tmp/step8-exact-streamlit.log || true
+          exit 1
+
+      - name: Drive exact Step 8 URL
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          common={
+            "ks_jump_sport":"NFL",
+            "ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24",
+            "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2",
+            "ks_py_hint_name":"Jordan Love",
+            "ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4",
+            "ks_py_hint_attempts":"34.8",
+            "ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5",
+            "ks_py_hint_lean":"LEAN OVER",
+          }
+          target="http://127.0.0.1:8501/?"+urlencode(common)
+
+          def count(page, selector):
+            total=0
+            for frame in page.frames:
+              try:
+                total += frame.locator(selector).count()
+              except Exception:
+                pass
+            return total
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+            console=[]
+            page.on("console", lambda msg: console.append(f"{msg.type}:{msg.text}"))
+            page.goto(target,wait_until="domcontentloaded",timeout=120000)
+
+            deadline=time.monotonic()+90
+            while time.monotonic()<deadline:
+              if count(page,'[data-passing-yards-visible-cleanup-owner="v85"]')>0:
+                break
+              time.sleep(.25)
+
+            counts={
+              "V203":count(page,'[data-passing-yards-v203-runtime]'),
+              "V206":count(page,'[data-passing-yards-v206-runtime]'),
+              "V220":count(page,'[data-passing-yards-v220-runtime]'),
+              "V225":count(page,'[data-passing-yards-v225-router-runtime]'),
+              "V228":count(page,'[data-passing-yards-v228-router-runtime]'),
+              "V230":count(page,'[data-passing-yards-lazy-detail-router="v230"]'),
+              "V79":count(page,'[data-passing-yards-lazy-detail="v79"]'),
+              "V84":count(page,'[data-passing-yards-single-rerun-owner="v84"]'),
+              "V85":count(page,'[data-passing-yards-visible-cleanup-owner="v85"]'),
+            }
+            print("STEP8_EXACT_LOCAL_ROUTE_COUNTS="+repr(counts))
+            print("STEP8_EXACT_LOCAL_FRAME_URLS="+repr([f.url for f in page.frames]))
+            try:
+              body=" | ".join(page.locator("body").inner_text(timeout=3000).splitlines())[:4000]
+            except Exception as exc:
+              body=f"BODY_ERROR:{type(exc).__name__}"
+            print("STEP8_EXACT_LOCAL_BODY="+body)
+            print("STEP8_EXACT_LOCAL_CONSOLE="+repr(console[-80:]))
+
+            if counts["V85"]<1 or counts["V79"]<1:
+              raise RuntimeError("STEP8_EXACT_LOCAL_ROUTE_NOT_RENDERED:"+repr(counts))
+            print("STEP8_EXACT_LOCAL_V85_GREEN")
+            print("STEP8_EXACT_LOCAL_V79_GREEN")
+            context.close()
+            browser.close()
+          PY
+
+      - name: Print exact Streamlit server log
+        if: always()
+        run: |
+          echo "===== STEP8 EXACT STREAMLIT LOG ====="
+          tail -n 800 /tmp/step8-exact-streamlit.log || true
+
+      - name: Stop exact branch Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/step8-exact-streamlit.pid ]; then
+            kill "$(cat /tmp/step8-exact-streamlit.pid)" 2>/dev/null || true
+          fi
