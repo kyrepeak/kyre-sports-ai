@@ -45,7 +45,7 @@
   ],
   "freeze_on_public_success": true,
   "next_required_state": "Branch verifier GREEN -> merge -> one public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete",
-  "step8_status": "BRANCH_CONTRACT_GREEN_PUBLIC_FREEZE_PENDING",
+  "step8_status": "PUBLIC_PROOF_VISIBILITY_REPAIR",
   "devsystem_repair": {
     "failure": "future task ledger must finish in DONE state",
     "classification": "LEDGER_STATE_ONLY",
@@ -56,5 +56,10 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "public_proof_visibility_repair": {
+    "reason": "Connector cannot enumerate push-triggered workflow runs for final inspection.",
+    "scope": "Verifier trigger only; run the unchanged public final certification on pull_request as well as main push.",
+    "product_change": false
   }
 }
