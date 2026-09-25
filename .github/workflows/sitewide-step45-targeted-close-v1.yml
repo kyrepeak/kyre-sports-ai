@@ -82,7 +82,10 @@ jobs:
               app,
           )
           assert imports, "ACTIVE_ROUTER_IMPORT_NOT_FOUND"
-          active = imports[-1]
+          active = max(
+              imports,
+              key=lambda name: int(name.rsplit("v", 1)[1]),
+          )
 
           chain = [active]
           owner = active
