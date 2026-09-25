@@ -6,7 +6,7 @@
   "version": 1,
   "phase": "post-speed-presentation-cleanup",
   "status": "DONE",
-  "execution_state": "CURRENT_MONSTER_MAIN_REPROOF_PENDING",
+  "execution_state": "PUBLIC_PROOF_VISIBILITY_REPAIR",
   "source_main": "314f797f6ab036d71e0718ecc9e3b316e2cc33ac",
   "cleanup_steps": {
     "1_leak_isolation": "GREEN",
@@ -54,6 +54,13 @@
     "previous_base": "31e14ce43ec5a1e043a94d5821a33f23a790af48",
     "current_base": "314f797f6ab036d71e0718ecc9e3b316e2cc33ac",
     "reason": "Final sitewide Step 4-5 merge landed after prior cleanup rebase.",
+    "cleanup_logic_changed": false,
+    "monster_files_modified": false
+  },
+  "public_proof_visibility": {
+    "reason": "GitHub connector does not enumerate push-triggered workflow runs.",
+    "scope": "Verifier-only: expose the unchanged live-production cleanup proof on pull_request as well as main push.",
+    "product_change": false,
     "cleanup_logic_changed": false,
     "monster_files_modified": false
   }
