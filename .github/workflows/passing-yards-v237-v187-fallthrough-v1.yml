@@ -1,0 +1,160 @@
+name: NFL Passing Yards V237 V187 Fallthrough Fix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-v237-v187-fallthrough-v1.yml"
+      - "streamlit_memory_lazy_router_v237.py"
+      - "tests/test_passing_yards_v237_v187_fallthrough.py"
+      - "devsystem/task_ledgers/passing-yards-v237-v187-fallthrough-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-v237-v187-fallthrough-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-and-branch-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Enforce isolated scope and protect Monster
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/passing-yards-v237-v187-fallthrough-v1.yml' \
+            'devsystem/task_ledgers/passing-yards-v237-v187-fallthrough-v1.json' \
+            'streamlit_memory_lazy_router_v237.py' \
+            'tests/test_passing_yards_v237_v187_fallthrough.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "PASSING_YARDS_V237_FALLTHROUGH_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PASSING_YARDS_V237_FALLTHROUGH_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob app.py 98ea3f9c9df2ef409e17a23db4e524d531a16162
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob streamlit_memory_lazy_router_v187.py 449a6a0712ab0f6be70cebe5a3822e59f279e3b6
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml 8fdf57caa41828988adb1389fa34979a224385cc
+
+          grep -F 'identity_router.PROP_HUBS[PASSING_MARKET] = PASSING_HUB' streamlit_memory_lazy_router_v237.py
+          grep -F 'sport_state = str(st.session_state.get(SPORT_KEY)' streamlit_memory_lazy_router_v237.py
+          echo "PASSING_YARDS_V237_FALLTHROUGH_MONSTER_ISOLATION_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest requests playwright
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_v237_v187_fallthrough.py
+          python -m py_compile streamlit_memory_lazy_router_v237.py
+          echo "PASSING_YARDS_V237_FALLTHROUGH_STATIC_GREEN"
+
+      - name: Install Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Start branch app
+        run: |
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/py_v237.log 2>&1 &
+          echo $! >/tmp/py_v237_pid
+
+      - name: Prove real UI no longer reaches V187 crash
+        run: |
+          python - <<'PY'
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _choose, _find_app_frame
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=2).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.3)
+          else:
+              raise RuntimeError("PY_V237_BRANCH_APP_NOT_READY")
+
+          def present(page,selector,timeout=60):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("PY_V237_BRANCH_SELECTOR_NOT_READY:"+selector)
+
+          def all_body(page):
+              chunks=[]
+              for frame in page.frames:
+                  try:
+                      chunks.append(frame.locator("body").inner_text(timeout=1500))
+                  except Exception:
+                      pass
+              return "\n".join(chunks)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":1440,"height":1000})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              frame,_=_find_app_frame(page)
+              _choose(page,frame,0,"NFL")
+              page.wait_for_timeout(1800)
+              frame,_=_find_app_frame(page)
+              _choose(page,frame,1,"Passing Yards")
+
+              present(page,'[data-passing-yards-visible-cleanup-owner="v85"]',60)
+              body=all_body(page)
+              if 'Router V187 direct handler is player-prop identity only.' in body:
+                  raise RuntimeError("PY_V237_BRANCH_V187_CRASH_STILL_PRESENT")
+              if "RuntimeError: This app has encountered an error" in body:
+                  raise RuntimeError("PY_V237_BRANCH_RUNTIME_ERROR_TEXT")
+
+              print("PASSING_YARDS_V237_FALLTHROUGH_BRANCH_V85_GREEN")
+              print("PASSING_YARDS_V237_FALLTHROUGH_BRANCH_NO_V187_CRASH_GREEN")
+              context.close()
+              browser.close()
+          PY
+
+      - name: Print branch app log on failure
+        if: failure()
+        run: tail -n 1000 /tmp/py_v237.log || true
+
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_v237_pid)" 2>/dev/null || true
