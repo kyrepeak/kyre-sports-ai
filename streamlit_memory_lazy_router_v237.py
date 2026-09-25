@@ -76,13 +76,23 @@ def _install_passing_owners() -> None:
 
 
 def render_app() -> None:
+    # Install the Passing Yards owner before route detection. This is an
+    # idempotent string-map update only; it does not import V85 or affect any
+    # non-Passing-Yards market. If hosted Streamlit delays widget/session-state
+    # propagation, lower routers still cannot fall back to the legacy V42 owner.
+    _install_passing_owners()
+
     if not _passing_requested():
         return prior.render_app()
     if not _cleanup_hub_importable():
         return prior.render_app()
 
-    _install_passing_owners()
-    return prior.render_app()
+    # Passing Yards is already fully owned by the V85 hub chain. Once that
+    # route is positively identified, jump directly into V187's certified
+    # root-shell dispatcher instead of re-entering V236 -> V235 -> ... -> V187.
+    # The historical re-entry can stall hosted sessions before V85 emits its
+    # first marker. Non-Passing-Yards routes still delegate through V236 above.
+    return identity_router._render_direct_prop()
 
 
 __all__ = [
