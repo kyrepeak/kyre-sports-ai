@@ -113,17 +113,59 @@ jobs:
       - name: Retest NFL Slate public route
         run: |
           set -euo pipefail
-          run_target() {
-            python devsystem/sitewide_page_load_health_v1.py               --base-url "$PUBLIC_URL"               --only-sport "NFL"               --only-market "Slate"               --steps23-only               --json-out /tmp/sitewide-step45-slate.json
-          }
+          python - <<'PY'
+          import os
+          import time
 
-          if ! run_target; then
-            echo "SITEWIDE_STEP45_SLATE_ONE_RETRY"
-            sleep 2
-            run_target
-          fi
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _body_has_forbidden_error
 
-          echo "SITEWIDE_STEP45_NFL_SLATE_PUBLIC_GREEN"
+          base_url = os.environ["PUBLIC_URL"].rstrip("/")
+          url = base_url + "/?ks_jump_sport=NFL&ks_jump_market=Slate"
+          required = ("nfl slate date", "verified nfl schedule")
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1440, "height": 1200})
+              try:
+                  page.goto(url, wait_until="domcontentloaded", timeout=120000)
+                  deadline = time.monotonic() + 45.0
+                  snapshots = []
+                  while time.monotonic() < deadline:
+                      snapshots = []
+                      for frame in page.frames:
+                          try:
+                              body = frame.locator("body").inner_text(timeout=1500)
+                          except Exception:
+                              continue
+                          if not body:
+                              continue
+                          snapshots.append(body)
+                          forbidden = _body_has_forbidden_error(body)
+                          if forbidden:
+                              raise RuntimeError(
+                                  f"NFL_SLATE_PUBLIC_RUNTIME_ERROR:{forbidden}"
+                              )
+                          normalized = " ".join(body.split()).lower()
+                          if all(marker in normalized for marker in required):
+                              print("NFL_SLATE_REAL_SURFACE_MARKERS_GREEN")
+                              print("SITEWIDE_STEP45_NFL_SLATE_PUBLIC_GREEN")
+                              raise SystemExit(0)
+                      page.wait_for_timeout(300)
+
+                  preview = " || ".join(
+                      " ".join(body.split())[:1200] for body in snapshots[:3]
+                  )
+                  raise RuntimeError(
+                      "NFL_SLATE_REAL_SURFACE_NOT_READY:"
+                      + preview
+                  )
+              finally:
+                  browser.close()
+          PY
 
       - name: Retest NFL Receptions through the real public UI flow
         run: |
