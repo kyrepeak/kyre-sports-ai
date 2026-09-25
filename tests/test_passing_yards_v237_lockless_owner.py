@@ -14,7 +14,7 @@ def test_passing_owner_install_is_idempotent(monkeypatch):
     assert router.identity_router.PROP_HUBS[router.PASSING_MARKET] == router.PASSING_HUB
 
 
-def test_non_passing_route_delegates_without_owner_install(monkeypatch):
+def test_non_passing_route_delegates_with_passing_owner_preinstalled(monkeypatch):
     monkeypatch.setattr(router, "_passing_requested", lambda: False)
     monkeypatch.setattr(router.passing_router, "PASSING_HUB", "old-passing-owner")
     monkeypatch.setitem(router.identity_router.PROP_HUBS, router.PASSING_MARKET, "old-v187-owner")
@@ -23,14 +23,16 @@ def test_non_passing_route_delegates_without_owner_install(monkeypatch):
 
     def fake_render():
         calls["count"] += 1
+        assert router.passing_router.PASSING_HUB == router.PASSING_HUB
+        assert router.identity_router.PROP_HUBS[router.PASSING_MARKET] == router.PASSING_HUB
         return "DELEGATED"
 
     monkeypatch.setattr(router.prior, "render_app", fake_render)
 
     assert router.render_app() == "DELEGATED"
     assert calls["count"] == 1
-    assert router.passing_router.PASSING_HUB == "old-passing-owner"
-    assert router.identity_router.PROP_HUBS[router.PASSING_MARKET] == "old-v187-owner"
+    assert router.passing_router.PASSING_HUB == router.PASSING_HUB
+    assert router.identity_router.PROP_HUBS[router.PASSING_MARKET] == router.PASSING_HUB
 
 
 def test_two_passing_sessions_can_enter_render_concurrently(monkeypatch):
