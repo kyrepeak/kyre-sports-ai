@@ -36,5 +36,19 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "step4_failure_epoch": {
+    "failed_route": [
+      "NFL",
+      "Receptions"
+    ],
+    "failed_runs": [
+      36083256978
+    ],
+    "reproduced_attempts": 2,
+    "first_broken_arrow": "public deep-link handoff after prior route session -> NFL Receptions meaningful render",
+    "failed_layer": "VERIFIER_STATE",
+    "root_cause": "The 36-route verifier reused one browser context across independent direct-link routes, allowing prior Streamlit session/widget state to contaminate the next route.",
+    "patch": "Create a fresh browser context for every direct-link route and prove NFL Receptions in cold isolation."
   }
 }
