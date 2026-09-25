@@ -1,0 +1,40 @@
+{
+  "task": "sitewide-steps4-5-freeze-v1",
+  "task_id": "sitewide-steps4-5-freeze-v1",
+  "title": "Sitewide Page Load Steps 4-5 Closure",
+  "version": 1,
+  "status": "DONE",
+  "source_main": "ec1bc03b672563f13a08afeb9db5c52e6e94dbb9",
+  "protected_steps": {
+    "1": "GREEN_FROZEN",
+    "2": "GREEN_FROZEN",
+    "3": "GREEN_FROZEN"
+  },
+  "acceptance": {
+    "authoritative_public_run": 36082636218,
+    "routes": 36,
+    "smoke_bad": 0,
+    "flow_bad": 0,
+    "step4_tokens": [
+      "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP4_FROZEN"
+    ],
+    "step5_tokens": [
+      "SITEWIDE_PAGE_LOAD_STEP5_REPAIR_CERTIFIED_GREEN",
+      "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
+    ]
+  },
+  "guardrails": {
+    "product_code_changed": false,
+    "passing_yards_changed": false,
+    "model_math_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "step6_started": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
