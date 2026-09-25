@@ -4,7 +4,7 @@
   "title": "Sitewide Steps 4-5 Targeted Closure",
   "version": 1,
   "status": "DONE",
-  "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
+  "source_main": "e7c5829c4c105268639b9ce59e3832c8991bca92",
   "protected_steps": {
     "1": "GREEN_FROZEN",
     "2": "GREEN_FROZEN",
@@ -18,13 +18,20 @@
       "NFL / Slate",
       "NFL / Receptions"
     ],
-    "slate_classification": "PUBLIC_UPSTREAM_TRANSIENT",
+    "slate_classification": "VERIFIER_ROUTE_IDENTITY_CASE_MISMATCH",
     "receptions_branch_local_proof": "NFL_RECEPTIONS_COLD_ISOLATION_GREEN",
-    "closure_method": "Verify 34-route packet + retest the 2 failed routes individually on public.",
+    "closure_method": "Verify prior 34-route packet + prove real NFL Slate surface markers + prove V236 NFL Receptions through real UI.",
     "slate_public_retest": "GREEN",
     "receptions_failure": "UI selection commits to NFL + Receptions but no route body renders on V235",
     "branch_acceptance": "V236 static + branch-local real UI Receptions proof",
-    "production_acceptance": "public real UI Receptions proof after merge"
+    "production_acceptance": "public real UI Receptions proof after merge",
+    "slate_public_failure_run": 36087703829,
+    "slate_public_observed_markers": [
+      "NFL slate date",
+      "Verified NFL schedule",
+      "NFL build status"
+    ],
+    "slate_acceptance_v2": "Public route must render both 'NFL slate date' and 'Verified NFL schedule' with no forbidden runtime marker."
   },
   "acceptance_tokens": [
     "SITEWIDE_PAGE_LOAD_STEP4_NO_BROKEN_ROUTES_GREEN",
@@ -41,7 +48,10 @@
     "probability_changed": false,
     "market_math_changed": false,
     "sportsbook_projection_influence": 0,
-    "step6_started": false
+    "step6_started": false,
+    "slate_product_code_changed": false,
+    "receptions_product_code_changed": false,
+    "verifier_only_followup": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
