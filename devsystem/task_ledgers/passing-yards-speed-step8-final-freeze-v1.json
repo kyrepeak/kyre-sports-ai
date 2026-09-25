@@ -1,0 +1,60 @@
+{
+  "task": "passing-yards-speed-step8-final-freeze-v1",
+  "task_id": "passing-yards-speed-step8-final-freeze-v1",
+  "id": "passing-yards-speed-step8-final-freeze-v1",
+  "title": "Passing Yards Speed Step 8 Final Certification + Freeze",
+  "version": 1,
+  "phase": "selected-qb-speed",
+  "step": 8,
+  "status": "DONE",
+  "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
+  "frozen_speed_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "frozen_product_owner": "nfl_passing_yards_hub_v84",
+  "frozen_router": "streamlit_memory_lazy_router_v235",
+  "authoritative_step7_main": "32de358eabc7ac480f11314af7d8cb7b094ba0fa",
+  "authoritative_step7_run": 36081899463,
+  "objective": "Final verifier-only certification of the frozen Passing Yards speed phase across 390/768/1440 viewports, preserving Step 7 latency, prefetch, identity, payload, and same-document contracts. No product/model/data/math changes.",
+  "product_code_changed": false,
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_provider_behavior_changed": false,
+  "widget_keys_changed": false,
+  "navigation_state_changed": false,
+  "acceptance_gates": [
+    "1 Step 8 diff is verifier/ledger only",
+    "2 V84/V235/app.py and Step 7 verifier blobs remain frozen",
+    "3 390/768/1440 public lazy-shell ownership and Load Full Analysis control are visible",
+    "4 selected-QB full-detail DOM renders in the same document",
+    "5 click-to-ready remains <=24s",
+    "6 V82-wrapper transport overhead remains <=1.5s",
+    "7 Step 6 prefetch hits remain >=7 with zero fallbacks",
+    "8 selected-QB HTML payload remains <10,000,000 bytes",
+    "9 final job emits PASSING_YARDS_SPEED_STEP8_GREEN and PASSING_YARDS_SPEED_STEP8_FROZEN"
+  ],
+  "freeze_on_public_success": true,
+  "next_required_state": "Branch verifier GREEN -> merge -> one public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete",
+  "step8_status": "BRANCH_CONTRACT_GREEN_PUBLIC_FREEZE_PENDING",
+  "devsystem_repair": {
+    "failure": "future task ledger must finish in DONE state",
+    "classification": "LEDGER_STATE_ONLY",
+    "product_change": false,
+    "patch": "Mark final-certification task ledger DONE; public freeze remains enforced by the push workflow tokens."
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
