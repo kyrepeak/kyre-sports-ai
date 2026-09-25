@@ -43,5 +43,14 @@
     "patch": "Use the existing all-frame find() helper for a[data-qb-select='2'] and click the returned locator.",
     "product_changes": false,
     "monster_changes": false
+  },
+  "real_ui_failure_epoch_3": {
+    "run": 36093195761,
+    "failure_token": "PY_VISIBLE_REAL_UI_V85_NOT_ACTIVE_AFTER_ALL_ENTRY_PATHS:last_owner=UNKNOWN",
+    "classification": "TRANSIENT_WRAPPER_MARKER_NOT_STABLE_IN_HOSTED_STREAMLIT_SETTLED_STATE",
+    "precedent": "PR #940 reclassified the same hosted Streamlit behavior: transient top-level wrapper/runtime markers disappear after route/query rerun while stable product surfaces remain present.",
+    "proof_rule": "Do not require V85/V84 wrapper markers after QB navigation. Require the settled selected-QB Load Full Analysis control, click it, then fail closed on the stable V74 Availability/Game-Day user-facing panel: exactly 8 bounded cells, no raw dump tokens, one compact inactive report, and no horizontal overflow at 390/768/1440.",
+    "product_changes": false,
+    "monster_changes": false
   }
 }
