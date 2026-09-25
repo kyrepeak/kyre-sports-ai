@@ -11,7 +11,9 @@ from typing import Any
 
 import streamlit as st
 
+import nfl_hub_v1 as nfl_base
 import nfl_hub_v25 as nfl
+import nfl_passing_yards_hub_v8 as frozen_v8
 import nfl_passing_yards_hub_v40 as phoenix_display
 import nfl_passing_yards_hub_v41 as prior
 import nfl_passing_yards_identity_v1 as identity
@@ -24,7 +26,19 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 VISIBLE_MATCHUP_KEY = "nfl_passing_yards_v42_visible_matchup"
 _ORIGINAL_RESOLVE = identity.resolve_matchup_identity
-_ORIGINAL_LOAD_NFL_SLATE = nfl.load_nfl_slate
+_ORIGINAL_LOAD_NFL_SLATE = nfl_base.load_nfl_slate
+
+
+class _SlateLoaderProxy:
+    """Route only frozen V8 slate reads without mutating shared nfl_hub_v25."""
+
+    def __init__(self, wrapped) -> None:
+        self._wrapped = wrapped
+
+    def __getattr__(self, name):
+        if name == "load_nfl_slate":
+            return _load_full_slate
+        return getattr(self._wrapped, name)
 
 
 def _load_full_slate(day_str: str):
@@ -47,7 +61,7 @@ def _resolve_matchup_identity_step7(game: dict, season_year: int) -> dict:
 def _verified_matchup_labels(selected_day) -> tuple[list[str], dict[str, Any]]:
     """Return the same full verified slate V8 uses for its matchup lookup."""
     day_str = selected_day.isoformat()
-    games, diag = nfl.load_nfl_slate(day_str)
+    games, diag = _load_full_slate(day_str)
     labels: list[str] = []
     if not diag.get("request_ok") or games.empty:
         return labels, diag
@@ -104,13 +118,15 @@ def _render_visible_matchup_navigation(original_selectbox) -> str | None:
 def render_nfl_passing_yards_hub() -> None:
     original_resolve = identity.resolve_matchup_identity
     original_selectbox = st.selectbox
-    original_slate_loader = nfl.load_nfl_slate
+    original_v8_nfl = frozen_v8.nfl
 
-    # Scope the fallback to Passing Yards only. V8/V12/V41 all reference the
-    # same nfl_hub_v25 module object, so this one temporary route gives the
-    # visible selector and frozen downstream lookup the exact same full slate.
-    nfl.load_nfl_slate = _load_full_slate
+    # Never mutate the shared nfl_hub_v25 module object. Streamlit sessions
+    # share one interpreter, so a temporary global loader swap can be observed
+    # or restored by another session mid-rerun. The visible selector calls the
+    # full-slate router directly, while frozen V8 receives a per-module proxy
+    # reference for the same loader.
     chosen = _render_visible_matchup_navigation(original_selectbox)
+    frozen_v8.nfl = _SlateLoaderProxy(original_v8_nfl)
 
     def selectbox_proxy(label: str, options: Any, *args: Any, **kwargs: Any):
         if str(label) == "Verified matchup" and chosen is not None:
@@ -126,7 +142,7 @@ def render_nfl_passing_yards_hub() -> None:
     finally:
         st.selectbox = original_selectbox
         identity.resolve_matchup_identity = original_resolve
-        nfl.load_nfl_slate = original_slate_loader
+        frozen_v8.nfl = original_v8_nfl
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
