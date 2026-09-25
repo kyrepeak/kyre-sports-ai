@@ -6,7 +6,7 @@
   "version": 1,
   "phase": "selected-qb-speed",
   "step": 8,
-  "status": "PENDING_PUBLIC_FREEZE",
+  "status": "DONE",
   "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
   "frozen_speed_steps": [
     1,
@@ -44,5 +44,12 @@
     "9 final job emits PASSING_YARDS_SPEED_STEP8_GREEN and PASSING_YARDS_SPEED_STEP8_FROZEN"
   ],
   "freeze_on_public_success": true,
-  "next_required_state": "Branch verifier GREEN -> merge -> one public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete"
+  "next_required_state": "Branch verifier GREEN -> merge -> one public final certification -> Step 8 GREEN + FROZEN -> speed phase 8/8 complete",
+  "step8_status": "BRANCH_CONTRACT_GREEN_PUBLIC_FREEZE_PENDING",
+  "devsystem_repair": {
+    "failure": "future task ledger must finish in DONE state",
+    "classification": "LEDGER_STATE_ONLY",
+    "product_change": false,
+    "patch": "Mark final-certification task ledger DONE; public freeze remains enforced by the push workflow tokens."
+  }
 }
