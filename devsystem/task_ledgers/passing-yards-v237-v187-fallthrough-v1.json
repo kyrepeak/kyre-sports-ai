@@ -1,0 +1,44 @@
+{
+  "task": "passing-yards-v237-v187-fallthrough-v1",
+  "task_id": "passing-yards-v237-v187-fallthrough-v1",
+  "id": "passing-yards-v237-v187-fallthrough-v1",
+  "title": "Passing Yards V237 V187 Fallthrough Fix",
+  "version": 1,
+  "phase": "production-runtime-root-cause-fix",
+  "status": "DONE",
+  "source_main": "7987a5ccf2133b4b9ee19d60b380a2457245ed11",
+  "root_cause": "Public NFL -> Passing Yards reaches current V237 but the delegated route detection misses the same-run session state, falls through the historical router chain, and V187 raises RuntimeError('Router V187 direct handler is player-prop identity only.') before any Passing Yards hub renders.",
+  "patch": "V237 reads the live Streamlit sport/market session keys first. For Passing Yards only, it temporarily redirects V187 PROP_HUBS['Passing Yards'] to nfl_passing_yards_hub_v85 while preserving V235's Passing hub override. A process lock and finally block restore both globals after rendering. V187, V236, V85, app.py, and sitewide Monster owners remain unchanged.",
+  "product_scope": {
+    "passing_yards_router_only": true,
+    "monster_v236_changed": false,
+    "v187_changed": false,
+    "v85_changed": false,
+    "app_changed": false,
+    "model_math_changed": false,
+    "data_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_logic_changed": false
+  },
+  "protected_blobs": {
+    "app": "98ea3f9c9df2ef409e17a23db4e524d531a16162",
+    "monster_router_v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "legacy_router_v187": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "passing_hub_v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "sitewide_health": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow": "8fdf57caa41828988adb1389fa34979a224385cc"
+  },
+  "acceptance": [
+    "Focused tests prove live session-state Passing Yards detection.",
+    "Focused tests prove V187/V235 handoffs point to V85 only inside the Passing Yards render and restore on success and exception.",
+    "Branch real UI NFL -> Passing Yards exposes V85 and no V187 RuntimeError.",
+    "DevSystem final gate passes before merge.",
+    "Public production proof after merge must show no V187 RuntimeError and the cleaned V74 panel at 390/768/1440 before GREEN/FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
