@@ -1,0 +1,44 @@
+{
+  "task": "passing-yards-visible-cleanup-v238-final-v1",
+  "task_id": "passing-yards-visible-cleanup-v238-final-v1",
+  "id": "passing-yards-visible-cleanup-v238-final-v1",
+  "title": "Passing Yards Visible Cleanup V238 Final Freeze",
+  "version": 1,
+  "phase": "final-public-production-certification",
+  "status": "DONE",
+  "source_main": "9dc676d52dfb1733d0f02bdc88edfcf1f91567fc",
+  "classification": "VERIFIER_ONLY_V238_FINAL_PUBLIC_FREEZE",
+  "product_changes": false,
+  "monster_changes": false,
+  "activation": {
+    "merged_pr": 1031,
+    "main_sha": "9dc676d52dfb1733d0f02bdc88edfcf1f91567fc",
+    "app_import": "streamlit_memory_lazy_router_v238",
+    "v238_blob": "aee3624198c9e290902b0bf967ec85704a967698"
+  },
+  "proof_scope": [
+    "Real public UI exact NFL -> Passing Yards option clicks.",
+    "Require V238 runtime marker and V85 cleanup marker.",
+    "Set Sep 24, 2026, choose Atlanta Falcons @ Green Bay Packers, and open Jordan Love.",
+    "Load full analysis when needed.",
+    "At 390/768/1440 verify eight compact V74 cells, no leaked market/model text, one compact inactive report, and no horizontal overflow.",
+    "Independently verify Receptions remains V236.",
+    "Emit Steps 1-4 GREEN plus cleanup GREEN/FROZEN."
+  ],
+  "protected_blobs": {
+    "app": "801a176e89d2a5b0eff9cd248d11e4fbfe82c86a",
+    "v238": "aee3624198c9e290902b0bf967ec85704a967698",
+    "v237": "b02ca727a920d50bd2f5add1dd9881ab9d5ae248",
+    "v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "v187": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "requirements": "ff1adb99af7cf829f291e6edd1813de9d0040849",
+    "sitewide_health": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow": "8fdf57caa41828988adb1389fa34979a224385cc"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
