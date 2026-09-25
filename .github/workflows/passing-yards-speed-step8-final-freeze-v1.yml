@@ -176,6 +176,29 @@ jobs:
                   print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_V84_COUNT={v84}")
                   print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_LAZY_COUNT={lazy_count}")
                   print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_URL={page.url}")
+                  route_counts = {}
+                  for key, selector in {
+                    "V203": '[data-passing-yards-v203-runtime]',
+                    "V206": '[data-passing-yards-v206-runtime]',
+                    "V220": '[data-passing-yards-v220-runtime]',
+                    "V225": '[data-passing-yards-v225-router-runtime]',
+                    "V228": '[data-passing-yards-v228-router-runtime]',
+                    "V230": '[data-passing-yards-lazy-detail-router="v230"]',
+                    "V84": '[data-passing-yards-single-rerun-owner="v84"]',
+                    "V85": '[data-passing-yards-visible-cleanup-owner="v85"]',
+                  }.items():
+                    route_counts[key] = sum(frame.locator(selector).count() for frame in page.frames)
+                  print(f"PASSING_YARDS_SPEED_STEP8_ROUTE_COUNTS_{label}_{attempt}={route_counts}")
+                  try:
+                    dom_attrs = page.evaluate("""() => Array.from(document.querySelectorAll('*')).flatMap(el => Array.from(el.attributes).filter(a => a.name.includes('passing-yards')).map(a => [a.name,a.value])).slice(0,120)""")
+                  except Exception as dom_exc:
+                    dom_attrs = [["DOM_ATTR_ERROR", type(dom_exc).__name__]]
+                  print(f"PASSING_YARDS_SPEED_STEP8_DOM_ATTRS_{label}_{attempt}={dom_attrs}")
+                  try:
+                    body_text = page.locator("body").inner_text(timeout=3000).replace("\\n"," | ")[:2500]
+                  except Exception as body_exc:
+                    body_text = f"BODY_TEXT_ERROR:{type(body_exc).__name__}"
+                  print(f"PASSING_YARDS_SPEED_STEP8_BODY_TEXT_{label}_{attempt}={body_text}")
                   context.close()
                   print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_MISS={type(exc).__name__}:{exc}")
                   if attempt == 2:
