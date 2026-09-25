@@ -189,7 +189,6 @@ jobs:
               raise RuntimeError("SPEED_STEP7_BRANCH_FULL_FLAG_NOT_ACTIVE:"+page.url)
 
             find(page,'[data-passing-yards-single-rerun-owner="v84"]',20)
-            find(page,'[data-passing-yards-single-rerun-owner="v84"]',20)
             find(page,'[data-passing-yards-same-session-owner="v83"]',20)
             find(page,'[data-passing-yards-concurrent-prefetch-owner="v82"]',20)
             find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',20)
@@ -368,6 +367,8 @@ jobs:
             origin_after=float(page.evaluate("performance.timeOrigin"))
             same_document=1 if abs(origin_after-origin_before)<=1 else 0
 
+            find(page,'[data-passing-yards-single-rerun-owner="v84"]',20)
+            find(page,'[data-passing-yards-same-session-owner="v83"]',20)
             find(page,'[data-passing-yards-concurrent-prefetch-owner="v82"]',20)
             find(page,'[data-passing-yards-payload-dedupe-owner="v81"]',20)
             find(page,'[data-passing-yards-evidence-cache="v80"]',20)
