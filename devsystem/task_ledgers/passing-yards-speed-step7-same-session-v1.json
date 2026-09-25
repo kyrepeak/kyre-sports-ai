@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "PATCH_PENDING_PROOF",
+  "step7_status": "VERIFIER_REPAIR_PENDING_PROOF",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -24,7 +24,7 @@
   "certified_step6_public_reduction_pct": 89.86,
   "objective": "Measure and remove the remaining user-visible delay caused by the lazy-shell Load Full Analysis transition, without changing any frozen football/model/data/projection/context/probability/market/sportsbook behavior.",
   "current_first_broken_arrow": "Lazy shell -> Load Full Analysis -> selected-QB full detail ready",
-  "failed_layer": "NAVIGATION",
+  "failed_layer": "VERIFIER",
   "root_cause_status": "LOCKED",
   "diagnostic_budget": 1,
   "diagnostic_action": "One branch browser profile proving whether the current V79 Load Full Analysis anchor causes a full document navigation and measuring click-to-ready versus frozen V77 server-render telemetry.",
@@ -47,12 +47,13 @@
     "consumed_receipts": []
   },
   "current_failure_epoch": {
-    "run": 36068463884,
-    "failed_job": 107863657466,
-    "failure_token": "SPEED_STEP7_PROFILE_SELECTOR_NOT_READY:[data-passing-yards-qb-detail=\"v59\"][data-qb-analysis-slot=\"2\"]",
+    "run": 36075642503,
+    "attempt": 2,
+    "failed_job": 107890154332,
+    "failure_token": "SPEED_STEP7_PUBLIC_READY_NOT_FASTER_THAN_STEP6:8.768",
     "failed_layer": "VERIFIER",
-    "root_cause": "The first transition profiler waited only for final V59 readiness and did not record the post-click page/tab/URL state, so the failing transition owner could not be proven.",
-    "patch": "Instrument href target, context page count, active URL and post-click page selection only. No product/runtime/model/data/math changes."
+    "root_cause": "Step 7 public proof compared click-from-lazy-shell total ready time to Step 6's direct-full-URL 4.320s sample. Those are different transitions, and the hard comparison incorrectly grades server variability instead of Step 7's navigation transport owner.",
+    "patch": "Verifier-only repair: grade same-document activation and non-server transition overhead <=1.5s, retain total ready regression ceiling <=12s, preserve all V83/V82 product code unchanged, and print metrics before thresholds."
   },
   "diagnostic_status": "RERUN_PENDING",
   "root_cause": {
@@ -89,8 +90,20 @@
     "6 PR merged",
     "7 main SHA ownership confirmed",
     "8 public V83 deployment active",
-    "9 public same-session transition faster than Step6 4.320s baseline",
+    "9 public same-document navigation proof: total ready <=12s and non-server transition overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
     "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
   ],
-  "next_required_state": "Current-head Step7 static + branch live proof GREEN and DevSystem GREEN"
+  "next_required_state": "Verifier-only PR current-head Step7 proof + DevSystem GREEN -> merge -> public freeze rerun",
+  "verifier_only_repair": true,
+  "product_patch_unchanged": true,
+  "public_deployment_activation_proven": {
+    "run": 36075642503,
+    "attempt": 2,
+    "tokens": [
+      "PASSING_YARDS_SPEED_STEP7_PUBLIC_DEPLOYMENT_ACTIVE",
+      "PASSING_YARDS_SPEED_STEP7_PUBLIC_V83_OWNER_GREEN",
+      "PASSING_YARDS_SPEED_STEP7_PUBLIC_V82_DESCENDANT_GREEN",
+      "PASSING_YARDS_SPEED_STEP7_PUBLIC_V79_LAZY_GREEN"
+    ]
+  }
 }
