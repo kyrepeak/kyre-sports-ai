@@ -42,7 +42,6 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
             expected="$(printf '%s\n' \
-              'app.py' \
               '.github/workflows/passing-yards-speed-step8-final-freeze-v1.yml' \
               'devsystem/task_ledgers/passing-yards-speed-step8-final-freeze-v1.json' | sort)"
             if [ "$actual" != "$expected" ]; then
@@ -191,6 +190,8 @@ jobs:
                     "V230": '[data-passing-yards-lazy-detail-router="v230"]',
                     "V84": '[data-passing-yards-single-rerun-owner="v84"]',
                     "V85": '[data-passing-yards-visible-cleanup-owner="v85"]',
+                    "SITEWIDE_TOPBAR": '[data-kyre-sitewide-topbar="v1"]',
+                    "ST_EXCEPTION": '[data-testid="stException"]',
                   }.items():
                     route_counts[key] = sum(frame.locator(selector).count() for frame in page.frames)
                   print(f"PASSING_YARDS_SPEED_STEP8_ROUTE_COUNTS_{label}_{attempt}={route_counts}")
@@ -204,6 +205,28 @@ jobs:
                   except Exception as body_exc:
                     body_text = f"BODY_TEXT_ERROR:{type(body_exc).__name__}"
                   print(f"PASSING_YARDS_SPEED_STEP8_BODY_TEXT_{label}_{attempt}={body_text}")
+                  print(f"PASSING_YARDS_SPEED_STEP8_FRAME_COUNT_{label}_{attempt}={len(page.frames)}")
+                  for frame_index, frame in enumerate(page.frames):
+                    try:
+                      frame_url = frame.url
+                    except Exception as frame_url_exc:
+                      frame_url = f"FRAME_URL_ERROR:{type(frame_url_exc).__name__}"
+                    try:
+                      frame_text = frame.locator("body").inner_text(timeout=3000).replace("\\n"," | ")[:4000]
+                    except Exception as frame_text_exc:
+                      frame_text = f"FRAME_TEXT_ERROR:{type(frame_text_exc).__name__}"
+                    try:
+                      exception_text = frame.locator('[data-testid="stException"]').all_inner_texts()
+                    except Exception as frame_exc:
+                      exception_text = [f"FRAME_EXCEPTION_READ_ERROR:{type(frame_exc).__name__}"]
+                    try:
+                      topbar_count = frame.locator('[data-kyre-sitewide-topbar="v1"]').count()
+                    except Exception:
+                      topbar_count = -1
+                    print(f"PASSING_YARDS_SPEED_STEP8_FRAME_{label}_{attempt}_{frame_index}_URL={frame_url}")
+                    print(f"PASSING_YARDS_SPEED_STEP8_FRAME_{label}_{attempt}_{frame_index}_TOPBAR={topbar_count}")
+                    print(f"PASSING_YARDS_SPEED_STEP8_FRAME_{label}_{attempt}_{frame_index}_EXCEPTION={exception_text}")
+                    print(f"PASSING_YARDS_SPEED_STEP8_FRAME_{label}_{attempt}_{frame_index}_TEXT={frame_text}")
                   context.close()
                   print(f"PASSING_YARDS_SPEED_STEP8_VIEWPORT_{label}_ATTEMPT_{attempt}_MISS={type(exc).__name__}:{exc}")
                   if attempt == 2:
