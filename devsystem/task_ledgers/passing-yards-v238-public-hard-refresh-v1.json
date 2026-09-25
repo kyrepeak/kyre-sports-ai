@@ -1,0 +1,38 @@
+{
+  "task": "passing-yards-v238-public-hard-refresh-v1",
+  "task_id": "passing-yards-v238-public-hard-refresh-v1",
+  "id": "passing-yards-v238-public-hard-refresh-v1",
+  "title": "Passing Yards V238 Public Hard Refresh",
+  "version": 1,
+  "phase": "hosted-runtime-clean-process-refresh",
+  "status": "DONE",
+  "source_main": "9dc676d52dfb1733d0f02bdc88edfcf1f91567fc",
+  "root_cause": "The already-merged V238 router passes exact NFL to Passing Yards real-UI activation with V238 and V85 on a fresh Streamlit process, while the hosted public runtime commits the same controls but never exposes the V238 owner marker. The remaining failure is isolated to hosted runtime process freshness rather than Passing Yards product logic.",
+  "patch": "Add one inert app.py runtime refresh token so Streamlit Cloud boots a clean process on current main. No Passing Yards router, hub, model, data, probability, market, widget, sportsbook, Monster, or DevSystem behavior changes.",
+  "product_scope": {
+    "app_runtime_refresh_only": true,
+    "passing_yards_product_changed": false,
+    "router_changed": false,
+    "hub_changed": false,
+    "model_math_changed": false,
+    "data_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "widget_keys_changed": false,
+    "sportsbook_logic_changed": false,
+    "monster_changed": false
+  },
+  "acceptance": [
+    "Only app.py and this task ledger change.",
+    "V238, V237, V236, V187 and V85 remain untouched.",
+    "Passing Yards product/model/data/math/widget behavior remains unchanged.",
+    "Monster behavior remains unchanged.",
+    "DevSystem final gate passes before merge.",
+    "After merge, rerun the unchanged PR #1032 public freeze proof and require Step 1-4 GREEN plus FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
