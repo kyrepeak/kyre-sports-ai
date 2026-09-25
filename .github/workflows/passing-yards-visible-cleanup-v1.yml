@@ -1,0 +1,394 @@
+name: NFL Passing Yards Visible Cleanup V85
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-visible-cleanup-v1.yml"
+      - "app.py"
+      - "nfl_passing_yards_hub_v85.py"
+      - "streamlit_memory_lazy_router_v237.py"
+      - "tests/test_passing_yards_visible_cleanup_v85.py"
+      - "devsystem/task_ledgers/passing-yards-visible-cleanup-v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-visible-cleanup-v1.yml"
+      - "app.py"
+      - "nfl_passing_yards_hub_v85.py"
+      - "streamlit_memory_lazy_router_v237.py"
+      - "tests/test_passing_yards_visible_cleanup_v85.py"
+      - "devsystem/task_ledgers/passing-yards-visible-cleanup-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-visible-cleanup-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce isolated cleanup scope and protect Monster
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+            expected="$(printf '%s\n' \
+              '.github/workflows/passing-yards-visible-cleanup-v1.yml' \
+              'app.py' \
+              'devsystem/task_ledgers/passing-yards-visible-cleanup-v1.json' \
+              'nfl_passing_yards_hub_v85.py' \
+              'streamlit_memory_lazy_router_v237.py' \
+              'tests/test_passing_yards_visible_cleanup_v85.py' | sort)"
+            if [ "$actual" != "$expected" ]; then
+              echo "PASSING_YARDS_VISIBLE_CLEANUP_SCOPE_VIOLATION"
+              printf '%s\n' "$actual"
+              exit 1
+            fi
+          fi
+
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || {
+              echo "PASSING_YARDS_VISIBLE_CLEANUP_PROTECTED_BLOB_CHANGED:$1:$actual:$2"
+              exit 1
+            }
+          }
+
+          check_blob nfl_passing_yards_hub_v74.py 381d95d5059eafcbbb7d9e0d108fcd54c5e43951
+          check_blob nfl_passing_yards_hub_v84.py 8a0f89d62c195890e5c7b3ef77d30948117d40f5
+          check_blob streamlit_memory_lazy_router_v235.py 2ab569276697a7bb2020708558f45333df14e4fe
+          check_blob streamlit_memory_lazy_router_v236.py 0380da16cd91bcf3801b4d105218b508dbaf43f2
+          check_blob devsystem/sitewide_page_load_health_v1.py 6fb6750146a34b05f8ba2ff3b72da80e0153ec1e
+          check_blob .github/workflows/sitewide-step45-targeted-close-v1.yml f1cd18361b27a777ded1dc6ac2314e01196b10b6
+
+          grep -F 'from streamlit_memory_lazy_router_v237 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'import streamlit_memory_lazy_router_v236 as prior' streamlit_memory_lazy_router_v237.py
+          grep -F 'import streamlit_memory_lazy_router_v235 as passing_router' streamlit_memory_lazy_router_v237.py
+          grep -F 'import nfl_passing_yards_hub_v84 as prior' nfl_passing_yards_hub_v85.py
+          grep -F 'import nfl_passing_yards_hub_v74 as availability_v74' nfl_passing_yards_hub_v85.py
+
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_MONSTER_ISOLATION_GREEN"
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_STEP1_GREEN"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run bounded-parser cleanup tests
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_passing_yards_visible_cleanup_v85.py
+          python -m py_compile nfl_passing_yards_hub_v85.py streamlit_memory_lazy_router_v237.py app.py
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_STEP2_GREEN"
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_STEP3_GREEN"
+          echo "PASSING_YARDS_VISIBLE_CLEANUP_STATIC_GREEN"
+
+  branch-browser-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install branch browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch app
+        run: |
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/py_cleanup.log 2>&1 &
+          echo $! >/tmp/py_cleanup_pid
+
+      - name: Prove cleaned selected-QB page at 390 768 1440
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          params={
+            "ks_jump_sport":"NFL",
+            "ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24",
+            "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2",
+            "ks_py_hint_name":"Jordan Love",
+            "ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4",
+            "ks_py_hint_attempts":"34.8",
+            "ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5",
+            "ks_py_hint_lean":"LEAN OVER",
+          }
+          url=base+"/?"+urlencode(params)
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+            try:
+              if requests.get(base,timeout=2).status_code<500:
+                break
+            except Exception:
+              pass
+            time.sleep(.3)
+          else:
+            raise RuntimeError("PY_CLEANUP_BRANCH_APP_NOT_READY")
+
+          def find(page, selector, timeout=30, interval=.15):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame,loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("PY_CLEANUP_SELECTOR_NOT_READY:"+selector)
+
+          def find_button(page, timeout=30):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator("button").filter(has_text="Load Full Analysis")
+                  if loc.count()>=1:
+                    return loc.first
+                except Exception:
+                  pass
+              time.sleep(.15)
+            raise RuntimeError("PY_CLEANUP_BUTTON_NOT_READY")
+
+          forbidden=(
+            "Market Decision Detail",
+            "How to read this clean detail",
+            "Projection Detail",
+            "Context + Uncertainty Detail",
+            "Distribution + Probability Detail",
+            "Model Confidence",
+            "Model Over / Under",
+          )
+
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+            context=browser.new_context(viewport={"width":390,"height":844})
+            page=context.new_page()
+            page.goto(url,wait_until="domcontentloaded",timeout=120000)
+
+            find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',40)
+            find(page,'[data-passing-yards-lazy-detail="v79"]',40)
+            button=find_button(page,40)
+            button.click(timeout=10000)
+
+            frame,panel=find(page,'[data-passing-yards-availability-game-day="v74"]',24,.15)
+            find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',20)
+
+            for width,height,label in ((390,844,"390"),(768,1024,"768"),(1440,1000,"1440")):
+              page.set_viewport_size({"width":width,"height":height})
+              time.sleep(.25)
+
+              text=panel.inner_text(timeout=5000)
+              cells=panel.locator(".ks-py74-cell b").all_inner_texts()
+              report=panel.locator(".ks-py74-report").first.inner_text(timeout=5000)
+              overflow=panel.evaluate("(el) => el.scrollWidth > el.clientWidth + 4")
+
+              if len(cells) != 8:
+                raise RuntimeError(f"PY_CLEANUP_CELL_COUNT:{label}:{len(cells)}")
+              longest=max((len(v.strip()) for v in cells),default=0)
+              if longest>120:
+                raise RuntimeError(f"PY_CLEANUP_CELL_VALUE_TOO_LONG:{label}:{longest}")
+              for token in forbidden:
+                if token.lower() in text.lower():
+                  raise RuntimeError(f"PY_CLEANUP_RAW_DUMP_TOKEN:{label}:{token}")
+              if len(report)>900:
+                raise RuntimeError(f"PY_CLEANUP_REPORT_TOO_LONG:{label}:{len(report)}")
+              if report.count("Final inactive report:") != 1:
+                raise RuntimeError(f"PY_CLEANUP_REPORT_COUNT:{label}")
+              if overflow:
+                raise RuntimeError(f"PY_CLEANUP_HORIZONTAL_OVERFLOW:{label}")
+
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_VIEWPORT_{label}_GREEN")
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_VIEWPORT_{label}_MAX_CELL_CHARS={longest}")
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_VIEWPORT_{label}_REPORT_CHARS={len(report)}")
+
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP2_BRANCH_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP3_BRANCH_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP4_BRANCH_RESPONSIVE_GREEN")
+            context.close()
+            browser.close()
+          PY
+
+      - name: Print branch log on failure
+        if: failure()
+        run: tail -n 900 /tmp/py_cleanup.log || true
+
+      - name: Stop branch app
+        if: always()
+        run: kill "$(cat /tmp/py_cleanup_pid)" 2>/dev/null || true
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove public cleanup and freeze
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+            "ks_jump_sport":"NFL",
+            "ks_jump_market":"Passing Yards",
+            "ks_py_date":"2026-09-24",
+            "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+            "ks_qb_slot":"2",
+            "ks_py_hint_name":"Jordan Love",
+            "ks_py_hint_meta":"GB • QB",
+            "ks_py_hint_projection":"276.4",
+            "ks_py_hint_attempts":"34.8",
+            "ks_py_hint_ypa":"7.94",
+            "ks_py_hint_line":"274.5",
+            "ks_py_hint_lean":"LEAN OVER",
+          }
+          url=base+"/?"+urlencode(params)
+
+          def find(page, selector, timeout=40, interval=.2):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator(selector)
+                  if loc.count()>=1:
+                    return frame,loc.first
+                except Exception:
+                  pass
+              time.sleep(interval)
+            raise RuntimeError("PY_CLEANUP_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def find_button(page, timeout=40):
+            end=time.monotonic()+timeout
+            while time.monotonic()<end:
+              for frame in page.frames:
+                try:
+                  loc=frame.locator("button").filter(has_text="Load Full Analysis")
+                  if loc.count()>=1:
+                    return loc.first
+                except Exception:
+                  pass
+              time.sleep(.2)
+            raise RuntimeError("PY_CLEANUP_PUBLIC_BUTTON_NOT_READY")
+
+          forbidden=(
+            "Market Decision Detail",
+            "How to read this clean detail",
+            "Projection Detail",
+            "Context + Uncertainty Detail",
+            "Distribution + Probability Detail",
+            "Model Confidence",
+            "Model Over / Under",
+          )
+
+          with sync_playwright() as p:
+            deadline=time.monotonic()+600
+            while True:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              active=False
+              try:
+                page.goto(url,wait_until="domcontentloaded",timeout=120000)
+                try:
+                  find(page,'[data-passing-yards-visible-cleanup-owner="v85"]',25)
+                  find(page,'[data-passing-yards-lazy-detail="v79"]',25)
+                  find_button(page,25)
+                  active=True
+                except Exception:
+                  active=False
+              finally:
+                if not active:
+                  try: context.close()
+                  except Exception: pass
+                  try: browser.close()
+                  except Exception: pass
+              if active:
+                break
+              if time.monotonic()>=deadline:
+                raise RuntimeError("PY_CLEANUP_PUBLIC_DEPLOYMENT_NOT_ACTIVE")
+              time.sleep(12)
+
+            button=find_button(page,20)
+            button.click(timeout=10000)
+            frame,panel=find(page,'[data-passing-yards-availability-game-day="v74"]',24,.15)
+
+            for width,height,label in ((390,844,"390"),(768,1024,"768"),(1440,1000,"1440")):
+              page.set_viewport_size({"width":width,"height":height})
+              time.sleep(.25)
+              text=panel.inner_text(timeout=5000)
+              cells=panel.locator(".ks-py74-cell b").all_inner_texts()
+              report=panel.locator(".ks-py74-report").first.inner_text(timeout=5000)
+              overflow=panel.evaluate("(el) => el.scrollWidth > el.clientWidth + 4")
+              longest=max((len(v.strip()) for v in cells),default=0)
+
+              if len(cells)!=8:
+                raise RuntimeError(f"PY_CLEANUP_PUBLIC_CELL_COUNT:{label}:{len(cells)}")
+              if longest>120:
+                raise RuntimeError(f"PY_CLEANUP_PUBLIC_CELL_VALUE_TOO_LONG:{label}:{longest}")
+              for token in forbidden:
+                if token.lower() in text.lower():
+                  raise RuntimeError(f"PY_CLEANUP_PUBLIC_RAW_DUMP_TOKEN:{label}:{token}")
+              if len(report)>900:
+                raise RuntimeError(f"PY_CLEANUP_PUBLIC_REPORT_TOO_LONG:{label}:{len(report)}")
+              if report.count("Final inactive report:") != 1:
+                raise RuntimeError(f"PY_CLEANUP_PUBLIC_REPORT_COUNT:{label}")
+              if overflow:
+                raise RuntimeError(f"PY_CLEANUP_PUBLIC_HORIZONTAL_OVERFLOW:{label}")
+              print(f"PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_VIEWPORT_{label}_GREEN")
+
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP1_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP2_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP3_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_STEP4_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_GREEN")
+            print("PASSING_YARDS_VISIBLE_CLEANUP_FROZEN")
+            context.close()
+            browser.close()
+          PY
