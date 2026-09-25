@@ -177,8 +177,9 @@ jobs:
             target=link.get_attribute("target") or ""
             if "ks_py_full=1" not in href:
               raise RuntimeError("SPEED_STEP7_BRANCH_FULL_LINK_MISSING")
-            if target != "_self":
-              raise RuntimeError("SPEED_STEP7_BRANCH_TARGET_NOT_SELF:"+target)
+            print(f"PASSING_YARDS_SPEED_STEP7_BRANCH_LINK_TARGET={target or 'DEFAULT_SELF'}")
+            if target not in {"", "_self"}:
+              raise RuntimeError("SPEED_STEP7_BRANCH_TARGET_UNEXPECTED:"+target)
 
             origin_before=float(page.evaluate("performance.timeOrigin"))
             started=time.monotonic()
@@ -333,8 +334,9 @@ jobs:
             target=link.get_attribute("target") or ""
             if "ks_py_full=1" not in href:
               raise RuntimeError("SPEED_STEP7_PUBLIC_FULL_LINK_MISSING")
-            if target != "_self":
-              raise RuntimeError("SPEED_STEP7_PUBLIC_TARGET_NOT_SELF:"+target)
+            print(f"PASSING_YARDS_SPEED_STEP7_PUBLIC_LINK_TARGET={target or 'DEFAULT_SELF'}")
+            if target not in {"", "_self"}:
+              raise RuntimeError("SPEED_STEP7_PUBLIC_TARGET_UNEXPECTED:"+target)
 
             print("PASSING_YARDS_SPEED_STEP7_PUBLIC_DEPLOYMENT_ACTIVE")
             print("PASSING_YARDS_SPEED_STEP7_PUBLIC_V85_OWNER_GREEN")
