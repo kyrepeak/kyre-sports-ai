@@ -450,11 +450,22 @@ def main() -> int:
             headless=True,
             args=["--disable-dev-shm-usage", "--no-sandbox", "--disable-gpu"],
         )
-        context = browser.new_context(viewport={"width": 1440, "height": 1000})
-        page = context.new_page()
-
+        # Each direct-link route gets its own browser context. Step 2 is a
+        # first-load contract and Step 3 is a route-handoff contract; carrying
+        # session/widget state from the previous market can create a verifier-only
+        # false negative that a fresh public deep link does not have.
         for row in selected_routes:
-            result = _audit_normal_route(page, args.base_url, row, steps23_only=args.steps23_only)
+            context = browser.new_context(viewport={"width": 1440, "height": 1000})
+            page = context.new_page()
+            try:
+                result = _audit_normal_route(
+                    page,
+                    args.base_url,
+                    row,
+                    steps23_only=args.steps23_only,
+                )
+            finally:
+                context.close()
             results.append(result)
             icon = "GREEN" if (
                 result.smoke == "GREEN"
@@ -469,7 +480,16 @@ def main() -> int:
             )
 
         if include_live_odds:
-            result = _audit_mlb_live_odds(page, args.base_url, steps23_only=args.steps23_only)
+            context = browser.new_context(viewport={"width": 1440, "height": 1000})
+            page = context.new_page()
+            try:
+                result = _audit_mlb_live_odds(
+                    page,
+                    args.base_url,
+                    steps23_only=args.steps23_only,
+                )
+            finally:
+                context.close()
             results.append(result)
             icon = "GREEN" if (
                 result.smoke == "GREEN"
@@ -482,7 +502,6 @@ def main() -> int:
                 f"seconds={result.first_render_seconds} detail={result.detail!r}"
             )
 
-        context.close()
         browser.close()
 
     payload = {
