@@ -1,0 +1,58 @@
+{
+  "task": "passing-yards-v237-lockless-owner-v1",
+  "task_id": "passing-yards-v237-lockless-owner-v1",
+  "id": "passing-yards-v237-lockless-owner-v1",
+  "title": "Passing Yards V237 Lockless Owner",
+  "version": 1,
+  "phase": "hosted-cross-session-runtime-fix",
+  "status": "DONE",
+  "source_main": "7fad8206fa9eb4439bcaee0206e200ca6b29df1d",
+  "root_cause": "V237 holds a process-wide RLock across the entire Passing Yards render while temporarily mutating V235/V187 ownership. Local single-session proof passes, but hosted Streamlit can keep a disconnected or slow session executing. Any such session can hold the lock and make every subsequent Passing Yards session block before V85 emits its marker. Public 420-second settled proof showed Stop=1 continuously with V85=V84=V79=0.",
+  "patch": "Remove the render-wide process lock and temporary restore cycle. Install the certified Passing Yards owner idempotently in V235 and V187 only when Passing Yards is requested, then delegate normally. The assignments are stable, Passing-Yards-only, and do not affect V236/Receptions or any other market.",
+  "evidence": {
+    "local_exact_cold_route": "GREEN",
+    "public_pre_patch_settle_run": 36100372753,
+    "public_pre_patch_settle_job": 107961373887,
+    "settle_seconds": 420,
+    "observed_markers": "V85=0,V84=0,V79=0 throughout",
+    "observed_stop": "Stop=1 from ~23s through ~403s",
+    "v187_crash_after_prior_fix": "absent"
+  },
+  "product_scope": {
+    "changed_file": "streamlit_memory_lazy_router_v237.py",
+    "passing_yards_only": true,
+    "v236_changed": false,
+    "v187_changed": false,
+    "v85_changed": false,
+    "app_changed": false,
+    "requirements_changed": false,
+    "model_math_changed": false,
+    "data_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "sportsbook_logic_changed": false
+  },
+  "acceptance": [
+    "No process-wide render lock remains in V237.",
+    "Two synthetic Passing Yards sessions can enter prior.render_app concurrently while the first is blocked.",
+    "Passing Yards owner installation is idempotent and stable at V85.",
+    "Non-Passing-Yards route delegates without installing Passing Yards owners.",
+    "Exact local cold selected-QB route reaches V85 and V79 without V187 RuntimeError.",
+    "DevSystem final gate passes before merge.",
+    "Public production must expose V85 and the cleaned V74 panel before cleanup GREEN/FROZEN."
+  ],
+  "protected_blobs": {
+    "app": "a0329d64e226e57b7fb39624e3d4e68b604ed0ff",
+    "v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    "v187": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "requirements": "ff1adb99af7cf829f291e6edd1813de9d0040849",
+    "sitewide_health": "6fb6750146a34b05f8ba2ff3b72da80e0153ec1e",
+    "sitewide_workflow": "8fdf57caa41828988adb1389fa34979a224385cc"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

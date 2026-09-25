@@ -7,8 +7,6 @@ from frozen V84 to presentation-only V85.
 from __future__ import annotations
 
 import importlib
-from threading import RLock
-
 import streamlit as st
 
 import streamlit_memory_lazy_router_v187 as identity_router
@@ -29,7 +27,6 @@ MAY_MODIFY_MARKET_MATH = False
 MAY_MODIFY_WIDGET_KEYS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _IMPORT_CACHE: dict[str, bool] = {}
-_PROCESS_PASSING_ROUTE_RLOCK = RLock()
 SPORT_KEY = "ks_sport_touch"
 NFL_MARKET_KEY = "ks_nfl_market_touch"
 
@@ -66,29 +63,26 @@ def _cleanup_hub_importable(importer=importlib.import_module) -> bool:
     return ok
 
 
+def _install_passing_owners() -> None:
+    """Install the certified Passing Yards owner without render-wide locking.
+
+    Both assignments are idempotent and affect only the Passing Yards key.
+    Keeping the owner stable avoids cross-session global mutation/restore races
+    and, critically, avoids holding a process-wide lock for an entire Streamlit
+    render. Non-Passing-Yards routes continue to delegate through V236.
+    """
+    passing_router.PASSING_HUB = PASSING_HUB
+    identity_router.PROP_HUBS[PASSING_MARKET] = PASSING_HUB
+
+
 def render_app() -> None:
     if not _passing_requested():
         return prior.render_app()
     if not _cleanup_hub_importable():
         return prior.render_app()
 
-    # Preserve the certified shell and every intermediate router. Only while a
-    # Passing Yards request is rendering, redirect V187's legacy Passing Yards
-    # owner from V42 to V85. This closes the current public crash without
-    # modifying V187, V236, Receptions, or any other market.
-    with _PROCESS_PASSING_ROUTE_RLOCK:
-        original_passing_hub = passing_router.PASSING_HUB
-        original_identity_hub = identity_router.PROP_HUBS.get(PASSING_MARKET)
-        passing_router.PASSING_HUB = PASSING_HUB
-        identity_router.PROP_HUBS[PASSING_MARKET] = PASSING_HUB
-        try:
-            return prior.render_app()
-        finally:
-            passing_router.PASSING_HUB = original_passing_hub
-            if original_identity_hub is None:
-                identity_router.PROP_HUBS.pop(PASSING_MARKET, None)
-            else:
-                identity_router.PROP_HUBS[PASSING_MARKET] = original_identity_hub
+    _install_passing_owners()
+    return prior.render_app()
 
 
 __all__ = [
@@ -108,6 +102,7 @@ __all__ = [
     "SPORT_KEY",
     "NFL_MARKET_KEY",
     "_cleanup_hub_importable",
+    "_install_passing_owners",
     "_passing_requested",
     "record_bootstrap_import_ms",
     "render_app",
