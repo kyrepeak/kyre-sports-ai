@@ -156,11 +156,49 @@ jobs:
                   page.wait_for_timeout(200)
               raise RuntimeError("PY_VISIBLE_FINAL_PASSING_FRAME_NOT_READY")
 
-          def passing_deck(page,timeout=60):
-              # Streamlit reruns can briefly leave both the retiring and newly
-              # mounted V46 deck in the same app frame. That is not a product
-              # failure. Select the current visible deck that actually owns the
-              # Slate date control instead of requiring exact cardinality 1.
+          def _deck_date(deck):
+              try:
+                  group=deck.get_by_label("Slate date",exact=True)
+                  if group.count()!=1:
+                      return None
+                  segments=group.get_by_role("spinbutton")
+                  values={}
+                  for idx in range(segments.count()):
+                      seg=segments.nth(idx)
+                      label=str(
+                          seg.get_attribute("aria-label") or ""
+                      ).strip().lower()
+                      raw=seg.get_attribute("aria-valuenow")
+                      if raw is None:
+                          raw=seg.get_attribute("aria-valuetext")
+                      match=re.search(r"-?\d+",str(raw or ""))
+                      if not match:
+                          continue
+                      value=int(match.group(0))
+                      if "year" in label:
+                          values["year"]=value
+                      elif "month" in label:
+                          values["month"]=value
+                      elif "day" in label:
+                          values["day"]=value
+                  if set(values)=={"year","month","day"}:
+                      return (
+                          values["year"],
+                          values["month"],
+                          values["day"],
+                      )
+              except Exception:
+                  pass
+              return None
+
+          def passing_deck(page,timeout=60,expected_day=None):
+              # Streamlit can briefly expose retiring and newly mounted V46
+              # decks together. When a target day is known, accept only the
+              # visible deck whose own semantic Slate date matches that day.
+              expected_tuple=(
+                  (expected_day.year,expected_day.month,expected_day.day)
+                  if expected_day is not None else None
+              )
               end=time.monotonic()+timeout
               last=[]
               while time.monotonic()<end:
@@ -178,14 +216,14 @@ jobs:
                       if decks is not None and count>=1:
                           for deck_index in range(count-1,-1,-1):
                               deck=decks.nth(deck_index)
-                              try:
-                                  if deck.get_by_label(
-                                      "Slate date",
-                                      exact=True,
-                                  ).count()==1:
-                                      return candidate,deck
-                              except Exception:
-                                  pass
+                              actual_day=_deck_date(deck)
+                              if actual_day is None:
+                                  continue
+                              if (
+                                  expected_tuple is None
+                                  or actual_day==expected_tuple
+                              ):
+                                  return candidate,deck
                   page.wait_for_timeout(200)
               raise RuntimeError(
                   "PY_VISIBLE_FINAL_V46_DECK_NOT_READY:"+repr(last)
@@ -385,11 +423,20 @@ jobs:
                   candidate=start_day+timedelta(days=offset)
                   set_slate_date(page,candidate)
 
+                  # Do not classify an off-day from the first transient
+                  # "no games" render. First bind to a V46 deck whose semantic
+                  # date equals the candidate, then allow the server rerun time
+                  # to replace that interim state with verified matchups.
                   deadline=time.monotonic()+15
+                  no_games_seen=False
                   while time.monotonic()<deadline:
-                      frame,deck=passing_deck(page,30)
+                      frame,deck=passing_deck(
+                          page,
+                          30,
+                          expected_day=candidate,
+                      )
                       deck_text=" ".join(
-                          deck.first.inner_text(timeout=2000).split()
+                          deck.inner_text(timeout=2000).split()
                       )
                       matchup=deck.get_by_role(
                           "combobox",
@@ -408,12 +455,15 @@ jobs:
                           "No verified NFL games available for this slate date."
                           in deck_text
                       ):
-                          print(
-                              "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_SLATE_SKIP "
-                              f"date={candidate.isoformat()}"
-                          )
-                          break
-                      page.wait_for_timeout(250)
+                          no_games_seen=True
+
+                      page.wait_for_timeout(300)
+
+                  if no_games_seen:
+                      print(
+                          "PASSING_YARDS_VISIBLE_CLEANUP_DYNAMIC_SLATE_SKIP "
+                          f"date={candidate.isoformat()}"
+                      )
 
               raise RuntimeError(
                   "PY_VISIBLE_FINAL_NO_CURRENT_OR_NEXT_VERIFIED_SLATE"
