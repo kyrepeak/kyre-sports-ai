@@ -1,0 +1,23 @@
+{
+  "task": "passing-yards-visible-cleanup-deploy-refresh-v1",
+  "task_id": "passing-yards-visible-cleanup-deploy-refresh-v1",
+  "id": "passing-yards-visible-cleanup-deploy-refresh-v1",
+  "title": "Passing Yards Visible Cleanup Deploy Refresh",
+  "version": 1,
+  "phase": "production-activation",
+  "status": "DONE",
+  "execution_state": "DEPLOY_REFRESH_READY",
+  "source_main": "919dcebe19ce8c20df4a986b98e5d219ddc9c5ea",
+  "classification": "ENTRYPOINT_ONLY_NO_BEHAVIOR_DEPLOY_REFRESH",
+  "product_changes": false,
+  "monster_changes": false,
+  "runtime_import_changed": false,
+  "v85_owner_unchanged": true,
+  "v237_router_unchanged": true,
+  "sportsbook_projection_influence": 0,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
