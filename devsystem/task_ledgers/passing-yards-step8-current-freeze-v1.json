@@ -1,0 +1,62 @@
+{
+  "task": "passing-yards-step8-current-freeze-v1",
+  "task_id": "passing-yards-step8-current-freeze-v1",
+  "id": "passing-yards-step8-current-freeze-v1",
+  "title": "Passing Yards Step 8 Current Performance Freeze",
+  "version": 1,
+  "phase": "current-production-recertification",
+  "status": "DONE",
+  "source_main": "3c3a04fc4401a8e6766d5bcd47563a72bebabb34",
+  "step": 8,
+  "step8_name": "Performance",
+  "classification": "VERIFIER_ONLY_CURRENT_MAIN_RECERTIFICATION",
+  "product_changes": false,
+  "provider_changes": false,
+  "model_changes": false,
+  "frozen_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "frozen_owners": {
+    "app_py": "2d389ca7464e33344d5719ab48cdec2c0f5bc9ee",
+    "step7_v76": "509368a9a7ad6618f1470f287c9d1b3f22e486ad",
+    "step8_v77": "b201bfac5af278ebbd7bdff63f0900526af686d1",
+    "visible_cleanup_v85": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "router_v227": "571f50dae1e5f6489ca6ce40ac4fd3256f6ce7e0",
+    "router_v228": "643d0c05efbde8593f197f0142fea205572e36af",
+    "router_v239": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "receptions_v236": "0380da16cd91bcf3801b4d105218b508dbaf43f2"
+  },
+  "acceptance": [
+    "Reuse the certified dynamic real-UI path: NFL -> Passing Yards -> current/next verified slate -> matchup -> QB -> full analysis.",
+    "Steps 1-7 remain frozen; Step 6 stays HEALTHY and Step 7 guide/anchors remain intact.",
+    "Exact V77 source contract still records compose time, HTML bytes before/after, server render time, and preserves large certified Step 7 HTML byte-for-byte.",
+    "Exact V228 source contract still memoizes the V77 import probe and fails closed to frozen V227/V76.",
+    "Real public end-to-end current-slate user flow reaches the certified selected-QB structure within the 180-second Step 8 budget.",
+    "Public proof uses the live visible V76 structure plus exact checked-in V77/V228 ownership rather than requiring the historically non-durable hidden V77 telemetry span.",
+    "390/768/1440 responsive proof passes with no selected-analysis or guide horizontal overflow.",
+    "Independent Receptions V236 real-UI proof remains green.",
+    "Success emits PASSING_YARDS_PERFORMANCE_STEP8_GREEN and PASSING_YARDS_PERFORMANCE_STEP8_FROZEN."
+  ],
+  "anti_loop": {
+    "hidden_v77_span_is_sole_public_witness": false,
+    "timeout_band_aid": false,
+    "stale_2026_09_24_atl_gb_target": false
+  },
+  "stale_target_law": {
+    "hardcoded_date": false,
+    "hardcoded_matchup": false,
+    "hardcoded_qb": false,
+    "completed_2026_09_24_atl_gb_is_blocking": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
