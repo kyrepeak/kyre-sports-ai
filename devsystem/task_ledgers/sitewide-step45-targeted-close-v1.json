@@ -4,7 +4,7 @@
   "title": "Sitewide Steps 4-5 Targeted Closure",
   "version": 1,
   "status": "DONE",
-  "source_main": "e7c5829c4c105268639b9ce59e3832c8991bca92",
+  "source_main": "dc6b080d251db9153045f7ffc7f981595e747c04",
   "protected_steps": {
     "1": "GREEN_FROZEN",
     "2": "GREEN_FROZEN",
@@ -33,13 +33,14 @@
     "SITEWIDE_PAGE_LOAD_STEP5_FROZEN"
   ],
   "guardrails": {
-    "product_code_changed": false,
-    "receptions_v236_changed": false,
-    "passing_yards_changed": false,
+    "product_code_changed": true,
+    "passing_yards_logic_changed": false,
+    "passing_yards_parent": "streamlit_memory_lazy_router_v235",
     "model_math_changed": false,
     "projection_changed": false,
     "probability_changed": false,
     "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
     "step6_started": false
   },
   "action_log": {
@@ -48,19 +49,11 @@
     "consumed_receipts": []
   },
   "patch": {
-    "layer": "VERIFIER",
-    "owner": "devsystem/sitewide_page_load_health_v1.py",
-    "behavior": "Recognize the actual NFL Slate production markers without changing product/runtime behavior.",
-    "product_code_changed": false
-  },
-  "failure_epoch": {
-    "authoritative_run": 36087703829,
-    "failed_route": "NFL / Slate",
-    "failure_token": "FIRST_MEANINGFUL_RENDER_NOT_READY",
-    "observed_real_surface": [
-      "NFL slate date",
-      "Verified NFL schedule"
-    ],
-    "classification": "VERIFIER_ROUTE_IDENTITY_ALIAS_MISMATCH"
+    "layer": "ROUTER",
+    "owner": "streamlit_memory_lazy_router_v236.py",
+    "app_entry": "app.py",
+    "behavior": "Intercept only NFL -> Receptions for reliable fail-closed route rendering from UI selection or existing category-jump query. Delegate all other routes to frozen V235.",
+    "frozen_parent": "streamlit_memory_lazy_router_v235",
+    "route_marker": "NFL_RECEPTIONS_FAIL_CLOSED_V236_ACTIVE"
   }
 }
