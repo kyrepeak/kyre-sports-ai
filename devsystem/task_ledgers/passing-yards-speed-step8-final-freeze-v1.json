@@ -44,8 +44,8 @@
     "9 final job emits PASSING_YARDS_SPEED_STEP8_GREEN and PASSING_YARDS_SPEED_STEP8_FROZEN"
   ],
   "freeze_on_public_success": true,
-  "next_required_state": "DevSystem GREEN on current-main rebase -> merge -> public Streamlit activation -> one final public freeze proof -> Step 8 GREEN + FROZEN",
-  "step8_status": "CURRENT_MAIN_REBASE_DEPLOYMENT_REFRESH_READY",
+  "next_required_state": "Read one forensic public run -> identify exact hosted failure layer -> one targeted repair -> final public freeze",
+  "step8_status": "HOSTED_STREAMLIT_FRAME_FORENSICS",
   "devsystem_repair": {
     "failure": "future task ledger must finish in DONE state",
     "classification": "LEDGER_STATE_ONLY",
@@ -137,5 +137,30 @@
     "current_main": "1c5f3652ce6f46b2758bb347a64c4c629ab030e7",
     "protected_sitewide_work": true,
     "product_change": false
+  },
+  "forensics": {
+    "parent_main": "9931794db0bd27cc5db631f0c0156541fb883b94",
+    "prior_failed_job": 107951258437,
+    "prior_signature": {
+      "v85": 0,
+      "v84": 0,
+      "lazy": 0,
+      "public_body_text": "",
+      "public_route_markers": 0
+    },
+    "diagnostic_scope": [
+      "workflow",
+      "ledger"
+    ],
+    "product_change": false,
+    "app_change": false,
+    "purpose": "Identify hosted Streamlit frame/runtime exception after deployment freshness and product/router hypotheses were disproven.",
+    "emits": [
+      "frame count",
+      "frame URLs",
+      "frame body text",
+      "sitewide topbar count",
+      "Streamlit stException text"
+    ]
   }
 }
