@@ -33,12 +33,12 @@ def test_non_passing_route_delegates_without_owner_install(monkeypatch):
     assert router.identity_router.PROP_HUBS[router.PASSING_MARKET] == "old-v187-owner"
 
 
-def test_two_passing_sessions_can_enter_render_concurrently(monkeypatch):
+def test_two_passing_sessions_can_enter_direct_shell_concurrently(monkeypatch):
     """Regression proof for hosted Streamlit cross-session lock starvation.
 
-    The former V237 held one process-wide RLock around the entire render. This
-    test blocks the first synthetic render and proves a second session can
-    still enter prior.render_app before the first one is released.
+    Passing Yards now bypasses historical router re-entry and enters V187's
+    certified direct root-shell dispatcher. This test blocks the first
+    synthetic direct render and proves a second session can still enter.
     """
     monkeypatch.setattr(router, "_passing_requested", lambda: True)
     monkeypatch.setattr(router, "_cleanup_hub_importable", lambda: True)
@@ -62,7 +62,7 @@ def test_two_passing_sessions_can_enter_render_concurrently(monkeypatch):
             raise RuntimeError("synthetic render release timeout")
         return "GREEN"
 
-    monkeypatch.setattr(router.prior, "render_app", fake_render)
+    monkeypatch.setattr(router.identity_router, "_render_direct_prop", fake_render)
 
     def worker():
         try:
@@ -78,7 +78,7 @@ def test_two_passing_sessions_can_enter_render_concurrently(monkeypatch):
 
     t2.start()
     assert second_entered.wait(timeout=1.5), (
-        "second Passing Yards session was serialized behind the first render"
+        "second Passing Yards session was serialized behind the first direct render"
     )
 
     assert router.passing_router.PASSING_HUB == router.PASSING_HUB
@@ -97,3 +97,26 @@ def test_v237_has_no_render_wide_process_lock():
     source = __import__("inspect").getsource(router)
     assert "_PROCESS_PASSING_ROUTE_RLOCK" not in source
     assert "with _PROCESS_PASSING_ROUTE_RLOCK" not in source
+
+
+def test_passing_route_bypasses_historical_router_reentry(monkeypatch):
+    monkeypatch.setattr(router, "_passing_requested", lambda: True)
+    monkeypatch.setattr(router, "_cleanup_hub_importable", lambda: True)
+
+    calls = {"direct": 0, "prior": 0}
+
+    def direct():
+        calls["direct"] += 1
+        assert router.identity_router.PROP_HUBS[router.PASSING_MARKET] == router.PASSING_HUB
+        assert router.passing_router.PASSING_HUB == router.PASSING_HUB
+        return "DIRECT_GREEN"
+
+    def stale_prior():
+        calls["prior"] += 1
+        raise AssertionError("Passing Yards must not re-enter the historical V236 chain")
+
+    monkeypatch.setattr(router.identity_router, "_render_direct_prop", direct)
+    monkeypatch.setattr(router.prior, "render_app", stale_prior)
+
+    assert router.render_app() == "DIRECT_GREEN"
+    assert calls == {"direct": 1, "prior": 0}
