@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-step4-public-verifier-v1",
+  "status": "DONE",
+  "scope": "Verifier-only repair: prove the deployed layered Passing Yards V43 UI and reject the legacy Combined Player Cards layout.",
+  "trigger": "Generic production proof navigated to CFB and the old Passing Yards cert expected obsolete Step 10 markers.",
+  "guardrails": {
+    "product_code_changed": false,
+    "model_changed": false,
+    "projection_logic_changed": false,
+    "router_changed": false,
+    "app_entrypoint_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
