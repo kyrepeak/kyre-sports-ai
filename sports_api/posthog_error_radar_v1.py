@@ -30,6 +30,7 @@ STREAMLIT_PROBE_VERSION = "MONSTER_STREAMLIT_TELEMETRY_PROBE_V1"
 STREAMLIT_PROBE_FINGERPRINT = "MONSTER-A8-STREAMLIT-PROBE-V1"
 STREAMLIT_PROBE_MESSAGE = "Monster Streamlit certification synthetic exception probe"
 STREAMLIT_PROBE_SESSION_KEY = "monster_a9_streamlit_probe_v1"
+STREAMLIT_PROBE_FLUSH_TIMEOUT_SECONDS = 0.75
 _STREAMLIT_RUNTIME_SECRET_NAMES = (
     "POSTHOG_PROJECT_API_KEY",
     "POSTHOG_API_KEY",
@@ -215,6 +216,40 @@ def _flush_posthog_client() -> bool:
         return False
 
 
+def _flush_with_timeout(
+    flush_fn: Callable[[], bool],
+    timeout_seconds: float = STREAMLIT_PROBE_FLUSH_TIMEOUT_SECONDS,
+) -> bool:
+    """Bound telemetry flush so Streamlit first paint can never be held hostage."""
+    done = threading.Event()
+    result = {"flushed": False}
+
+    def _runner() -> None:
+        try:
+            result["flushed"] = bool(flush_fn())
+        except Exception as exc:
+            _LOGGER.warning(
+                "MONSTER_A8_STREAMLIT_FLUSH_FAILED %s",
+                exc.__class__.__name__,
+            )
+        finally:
+            done.set()
+
+    worker = threading.Thread(
+        target=_runner,
+        name="monster-streamlit-posthog-flush",
+        daemon=True,
+    )
+    worker.start()
+    if not done.wait(max(0.0, float(timeout_seconds))):
+        _LOGGER.warning(
+            "MONSTER_A8_STREAMLIT_FLUSH_TIMEOUT %.3fs",
+            float(timeout_seconds),
+        )
+        return False
+    return bool(result["flushed"])
+
+
 def _is_streamlit_runtime(argv: Sequence[str]) -> bool:
     try:
         import streamlit.runtime as streamlit_runtime
@@ -368,10 +403,7 @@ def run_streamlit_activation_probe(
         _LOGGER.warning("MONSTER_A8_STREAMLIT_CAPTURE_FAILED %s", exc.__class__.__name__)
 
     if accepted:
-        try:
-            flushed = bool(actual_flush())
-        except Exception as exc:
-            _LOGGER.warning("MONSTER_A8_STREAMLIT_FLUSH_FAILED %s", exc.__class__.__name__)
+        flushed = _flush_with_timeout(actual_flush)
 
     status = "flushed" if accepted and flushed else "queued" if accepted else "not_accepted"
     return _probe_result(
