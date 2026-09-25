@@ -7,7 +7,7 @@
   "phase": "selected-qb-speed",
   "step": 7,
   "status": "DONE",
-  "step7_status": "VERIFIER_REPAIR_PENDING_PROOF",
+  "step7_status": "PUBLIC_TRANSITION_DIAGNOSTIC_PENDING_PROOF",
   "source_main": "f9a482d5efa0f30463dcd310b38277a36747e39e",
   "frozen_speed_steps": [
     1,
@@ -47,13 +47,12 @@
     "consumed_receipts": []
   },
   "current_failure_epoch": {
-    "run": 36075642503,
-    "attempt": 2,
-    "failed_job": 107890154332,
-    "failure_token": "SPEED_STEP7_PUBLIC_READY_NOT_FASTER_THAN_STEP6:8.768",
+    "run": 36077345479,
+    "failed_job": 107891535287,
+    "failure_token": "SPEED_STEP7_PUBLIC_SELECTOR_NOT_READY:[data-passing-yards-qb-detail=\"v59\"][data-qb-analysis-slot=\"2\"]",
     "failed_layer": "VERIFIER",
-    "root_cause": "Step 7 public proof compared click-from-lazy-shell total ready time to Step 6's direct-full-URL 4.320s sample. Those are different transitions, and the hard comparison incorrectly grades server variability instead of Step 7's navigation transport owner.",
-    "patch": "Verifier-only repair: grade same-document activation and non-server transition overhead <=1.5s, retain total ready regression ceiling <=12s, preserve all V83/V82 product code unchanged, and print metrics before thresholds."
+    "root_cause": "Public V83 deployment and owner activation are proven. The current public verifier waits directly for V59 detail and loses the post-click transition state when detail does not appear. Root owner cannot yet be distinguished between full-flag activation, same-document transport, public rerun stall, or detail readiness.",
+    "patch": "Verifier-only instrumentation: capture post-click URL, same-document status, page count, V83 owner count and lazy-shell count before waiting for V59; shorten blind detail wait to 20s and emit a specific active-full-flag detail timeout token."
   },
   "diagnostic_status": "RERUN_PENDING",
   "root_cause": {
@@ -93,12 +92,11 @@
     "9 public same-document navigation proof: total ready <=12s and non-server transition overhead <=1.5s, with Step6 prefetch/payload contracts preserved",
     "10 successful public job emits PASSING_YARDS_SPEED_STEP7_GREEN + PASSING_YARDS_SPEED_STEP7_FROZEN"
   ],
-  "next_required_state": "Verifier-only PR current-head Step7 proof + DevSystem GREEN -> merge -> public freeze rerun",
+  "next_required_state": "Verifier-only transition diagnostic PR current-head Step7 proof + DevSystem GREEN -> merge -> public proof; product remains unchanged unless diagnostic identifies a product-owned first broken arrow.",
   "verifier_only_repair": true,
   "product_patch_unchanged": true,
   "public_deployment_activation_proven": {
-    "run": 36075642503,
-    "attempt": 2,
+    "run": 36077345479,
     "tokens": [
       "PASSING_YARDS_SPEED_STEP7_PUBLIC_DEPLOYMENT_ACTIVE",
       "PASSING_YARDS_SPEED_STEP7_PUBLIC_V83_OWNER_GREEN",
