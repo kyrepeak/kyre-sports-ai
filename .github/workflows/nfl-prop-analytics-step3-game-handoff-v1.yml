@@ -235,9 +235,9 @@ jobs:
               _,combo=find_combo(page,"Choose verified game",120)
               combo.click(timeout=10000)
               page.wait_for_timeout(250)
-              page.keyboard.press("End")
+              combo.press("ArrowDown")
               page.wait_for_timeout(150)
-              page.keyboard.press("Enter")
+              combo.press("Enter")
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
@@ -432,9 +432,9 @@ jobs:
               _,combo=find_combo(page,"Choose verified game",120)
               combo.click(timeout=10000)
               page.wait_for_timeout(250)
-              page.keyboard.press("End")
+              combo.press("ArrowDown")
               page.wait_for_timeout(150)
-              page.keyboard.press("Enter")
+              combo.press("Enter")
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
