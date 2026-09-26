@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page2-polish-step3-v1",
+  "title": "NFL Prop Analytics Page 2 Polish Step 3 — Position Filtering",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 3,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "a38f2150f02d4d383d495a4ca4de7807e071f1cd",
+  "scope": "Presentation-only Page 2 position filtering. Add ALL/QB/RB/WR/TE filtering to the unified roster board while preserving the frozen roster, availability, player-selection, schedule, matchup, router, and Passing Yards truth chains.",
+  "frozen_modules": [
+    "nfl_prop_analytics_roster_truth_v1.py",
+    "nfl_prop_analytics_availability_depth_v1.py",
+    "nfl_prop_analytics_player_select_v1.py",
+    "nfl_prop_analytics_matchup_shell_v1.py",
+    "nfl_prop_analytics_schedule_v1.py",
+    "nfl_prop_analytics_game_select_v1.py",
+    "streamlit_memory_lazy_router_v240.py",
+    "streamlit_memory_lazy_router_v239.py",
+    "nfl_passing_yards_hub_v85.py",
+    "app.py"
+  ],
+  "acceptance": [
+    "ALL/QB/RB/WR/TE position filters are available on Page 2.",
+    "Filtering changes presentation only and does not mutate frozen truth.",
+    "The original Step 6 truth object remains the downstream return value.",
+    "Step 5 roster truth remains protected.",
+    "Step 6 availability/depth truth remains protected.",
+    "Step 7 player handoff remains protected.",
+    "Passing Yards remains frozen.",
+    "Step 3 contract proof passes before merge.",
+    "Main/push freeze proof passes before Step 3 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

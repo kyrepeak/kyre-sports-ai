@@ -16,12 +16,14 @@ from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
 from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth
 
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 2 POLISH STEP 2 • UNIFIED ROSTER + AVAILABILITY"
-STEP = 2
+STEP = 3
 PAGE = 2
 PRESENTATION_ONLY = True
 MAY_MODIFY_PASSING_YARDS = False
 MAY_MODIFY_EXISTING_NFL_MARKETS = False
 POSITIONS = ("QB", "RB", "WR", "TE")
+FILTERS = ("ALL", "QB", "RB", "WR", "TE")
+FILTER_KEY = "nfl_prop_analytics_page2_position_filter_v1"
 
 
 def _text(value: Any) -> str:
@@ -73,9 +75,10 @@ def _player_card(row: dict[str, Any]) -> str:
 """
 
 
-def _team_column(team_truth: dict[str, Any], team_name: str) -> str:
+def _team_column(team_truth: dict[str, Any], team_name: str, selected_position: str = "ALL") -> str:
     sections = []
-    for position in POSITIONS:
+    positions = POSITIONS if selected_position == "ALL" else (selected_position,)
+    for position in positions:
         rows = team_truth.get("by_position", {}).get(position, []) or []
         cards = "".join(_player_card(row) for row in rows)
         sections.append(f"""
@@ -162,6 +165,52 @@ def render_unified_roster_availability(
         else "Pregame availability gate is closed."
     )
 
+    selected_position = st.segmented_control(
+        "Position",
+        options=FILTERS,
+        default="ALL",
+        selection_mode="single",
+        key=FILTER_KEY,
+    )
+    selected_position = selected_position if selected_position in FILTERS else "ALL"
+
+    filtered_truth = {
+        **truth,
+        "teams": {},
+    }
+    for team in (away, home):
+        source_team = truth["teams"][team]
+        filtered_by_position = {
+            position: (
+                list(source_team.get("by_position", {}).get(position, []) or [])
+                if selected_position in ("ALL", position)
+                else []
+            )
+            for position in POSITIONS
+        }
+        filtered_players = [
+            row
+            for row in source_team.get("players", []) or []
+            if selected_position == "ALL"
+            or _text(row.get("position")).upper() == selected_position
+        ]
+        filtered_truth["teams"][team] = {
+            **source_team,
+            "by_position": filtered_by_position,
+            "players": filtered_players,
+        }
+
+    st.markdown(
+        f"""
+<div
+ data-prop-page2-position-filter="v1"
+ data-prop-page2-position-filter-active="{html_lib.escape(selected_position)}"
+ data-prop-page2-position-filter-options="ALL,QB,RB,WR,TE">
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         f"""
 <section class="ks-pa-u-board"
@@ -185,8 +234,8 @@ def render_unified_roster_availability(
   </div>
 
   <div class="ks-pa-u-grid">
-    {_team_column(truth["teams"][away], away_name)}
-    {_team_column(truth["teams"][home], home_name)}
+    {_team_column(filtered_truth["teams"][away], away_name, selected_position)}
+    {_team_column(filtered_truth["teams"][home], home_name, selected_position)}
   </div>
 </section>
 
@@ -226,6 +275,8 @@ __all__ = [
     "MAY_MODIFY_PASSING_YARDS",
     "MODEL_VERSION",
     "PAGE",
+    "FILTERS",
+    "FILTER_KEY",
     "POSITIONS",
     "PRESENTATION_ONLY",
     "STEP",
