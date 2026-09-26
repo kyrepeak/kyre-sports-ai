@@ -89,11 +89,13 @@ div[data-testid="stButton"] button{
   .ks-pa-u-bottom{align-items:flex-start !important;flex-direction:column !important}
   .ks-pa-u-state{text-align:left !important}
 
-  div[data-testid="stHorizontalBlock"]{
+  body div[data-testid="stHorizontalBlock"]{
+    display:flex !important;
     flex-direction:column !important;
+    flex-wrap:nowrap !important;
     gap:.45rem !important;
   }
-  div[data-testid="stHorizontalBlock"] > div[data-testid="column"]{
+  body div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]{
     width:100% !important;
     min-width:100% !important;
     flex:1 1 100% !important;
