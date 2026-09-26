@@ -75,9 +75,10 @@ def _player_card(row: dict[str, Any]) -> str:
 """
 
 
-def _team_column(team_truth: dict[str, Any], team_name: str) -> str:
+def _team_column(team_truth: dict[str, Any], team_name: str, selected_position: str = "ALL") -> str:
     sections = []
-    for position in POSITIONS:
+    positions = POSITIONS if selected_position == "ALL" else (selected_position,)
+    for position in positions:
         rows = team_truth.get("by_position", {}).get(position, []) or []
         cards = "".join(_player_card(row) for row in rows)
         sections.append(f"""
@@ -162,6 +163,52 @@ def render_unified_roster_availability(
         else "Game-day availability is pending; no player is called available without final confirmation."
         if availability_state == "PENDING"
         else "Pregame availability gate is closed."
+    )
+
+    selected_position = st.segmented_control(
+        "Position",
+        options=FILTERS,
+        default="ALL",
+        selection_mode="single",
+        key=FILTER_KEY,
+    )
+    selected_position = selected_position if selected_position in FILTERS else "ALL"
+
+    filtered_truth = {
+        **truth,
+        "teams": {},
+    }
+    for team in (away, home):
+        source_team = truth["teams"][team]
+        filtered_by_position = {
+            position: (
+                list(source_team.get("by_position", {}).get(position, []) or [])
+                if selected_position in ("ALL", position)
+                else []
+            )
+            for position in POSITIONS
+        }
+        filtered_players = [
+            row
+            for row in source_team.get("players", []) or []
+            if selected_position == "ALL"
+            or _text(row.get("position")).upper() == selected_position
+        ]
+        filtered_truth["teams"][team] = {
+            **source_team,
+            "by_position": filtered_by_position,
+            "players": filtered_players,
+        }
+
+    st.markdown(
+        f"""
+<div
+ data-prop-page2-position-filter="v1"
+ data-prop-page2-position-filter-active="{html_lib.escape(selected_position)}"
+ data-prop-page2-position-filter-options="ALL,QB,RB,WR,TE">
+</div>
+""",
+        unsafe_allow_html=True,
     )
 
     st.markdown(
