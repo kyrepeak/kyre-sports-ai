@@ -1,0 +1,143 @@
+{
+  "task": "nfl-prop-analytics-step8-prop-page-shell-v1",
+  "task_id": "nfl-prop-analytics-step8-prop-page-shell-v1",
+  "id": "nfl-prop-analytics-step8-prop-page-shell-v1",
+  "title": "NFL Prop Analytics Step 8 Prop Page Shell + Market Navigation",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 8,
+  "step_name": "Prop Page Shell + Market Navigation",
+  "status": "DONE",
+  "step8_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "source_main": "5a29e03b4577508108212200150d9c58614e1089",
+  "scope": "Create Page 3 from the frozen Step 7 exact-player handoff with position-aware prop-market navigation. Preserve the frozen availability/prop-analysis gate exactly. No sportsbook lines, prices, odds, projections, probabilities, recommendations, Passing Yards changes, or existing NFL market changes.",
+  "field_contract": {
+    "required": [
+      "frozen Step 7 exact player id",
+      "player name",
+      "team",
+      "position",
+      "depth role",
+      "availability state",
+      "prop-analysis gate state",
+      "exact ESPN event id",
+      "matchup selection key",
+      "selected market navigation key"
+    ],
+    "important": [
+      "market label",
+      "position-aware market set",
+      "back navigation",
+      "deep-link continuity"
+    ],
+    "optional": [
+      "market query persistence"
+    ]
+  },
+  "page3_contract": {
+    "page_query_key": "ks_pa_page",
+    "page_query_value": "props",
+    "market_query_key": "ks_pa_prop",
+    "player_query_key": "ks_pa_player",
+    "direct_link_recovery": true,
+    "reconstruction_rule": "Rebuild exact context through frozen Steps 3-7; do not trust a stale session-only player object.",
+    "pending_rule": "PENDING player may view Page 3 navigation shell, but analytics_state=LOCKED and prop gate remains CLOSED.",
+    "available_rule": "AVAILABLE player may show analytics_state=READY, but Step 8 still contains no sportsbook/model data.",
+    "zero_data_contract": [
+      "sportsbook lines=0",
+      "odds=0",
+      "projections=0",
+      "recommendations=0"
+    ]
+  },
+  "market_navigation": {
+    "QB": [
+      "passing_yards",
+      "passing_touchdowns",
+      "interceptions",
+      "completions",
+      "attempts",
+      "rushing_yards"
+    ],
+    "RB": [
+      "rushing_yards",
+      "carries",
+      "receptions",
+      "receiving_yards",
+      "anytime_touchdown"
+    ],
+    "WR": [
+      "receptions",
+      "receiving_yards",
+      "longest_reception",
+      "anytime_touchdown"
+    ],
+    "TE": [
+      "receptions",
+      "receiving_yards",
+      "longest_reception",
+      "anytime_touchdown"
+    ],
+    "navigation_only": true
+  },
+  "architecture": {
+    "step1_owner": "nfl_prop_analytics_hub_v1",
+    "step2_module": "nfl_prop_analytics_schedule_v1",
+    "step3_module": "nfl_prop_analytics_game_select_v1",
+    "step4_module": "nfl_prop_analytics_matchup_shell_v1",
+    "step5_module": "nfl_prop_analytics_roster_truth_v1",
+    "step6_module": "nfl_prop_analytics_availability_depth_v1",
+    "step7_module": "nfl_prop_analytics_player_select_v1",
+    "step8_module": "nfl_prop_analytics_prop_page_v1",
+    "root_router": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239"
+  },
+  "frozen_protection": {
+    "nfl_prop_analytics_player_select_v1.py": "b9aa4ec194ffea970d6858dcd0e0ed7c31ae0426",
+    "devsystem/task_ledgers/nfl-prop-analytics-step7-player-handoff-v1.json": "bc7af68ebab57d59265b61c63e8766b3708758b9",
+    "nfl_prop_analytics_availability_depth_v1.py": "cf7fdeee4c18d95c19d2a737f59bda7818e059ae",
+    "nfl_prop_analytics_roster_truth_v1.py": "ad1a49ddd24d6f50da6c56280b34290b2c3312f3",
+    "nfl_prop_analytics_matchup_shell_v1.py": "0d2770ff641090e396ae43bea4bf512213c59564",
+    "nfl_prop_analytics_game_select_v1.py": "fcb4ffcd703d05579a318b8b8fbcb64036336b8c",
+    "nfl_prop_analytics_schedule_v1.py": "90fe5ff5bb087198484e4f59de01b72cf7155128",
+    "streamlit_memory_lazy_router_v240.py": "43a6ef5a541e945b0795f947e32f61fbbaeb5257",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "app.py": "d584693ab55e365bc7e76f9cbacd58a15f6d62d1"
+  },
+  "constraints": {
+    "step7_handoff_modified": false,
+    "step6_truth_modified": false,
+    "step5_identity_modified": false,
+    "pending_gate_may_open": false,
+    "sportsbook_lines_added": false,
+    "sportsbook_odds_added": false,
+    "projection_logic_added": false,
+    "recommendation_logic_added": false,
+    "passing_yards_modified": false,
+    "existing_nfl_market_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Page 2 exposes Open prop page only after a frozen Step 7 handoff is ready.",
+    "Page 3 reconstructs exact matchup/event/player context through frozen truth layers and exact player id.",
+    "QB/RB/WR/TE receive only their documented position-aware market navigation set.",
+    "Market deep links persist deterministically through ks_pa_prop.",
+    "PENDING player Page 3 shows prop gate CLOSED and analytics state LOCKED.",
+    "Page 3 contains zero sportsbook lines, zero odds, zero projections, and zero recommendations.",
+    "Back navigation returns to Page 2 player-selection context.",
+    "Step 7 product module and ledger remain byte-identical.",
+    "Steps 2-6 product modules remain byte-identical.",
+    "Passing Yards/router/app files remain byte-identical.",
+    "390/768/1440 Page 3 has no horizontal overflow.",
+    "Public production proof passes before Step 8 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "CURRENT 8-STEP NFL PROP ANALYTICS BUILD COMPLETE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
