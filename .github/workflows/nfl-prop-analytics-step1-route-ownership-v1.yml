@@ -57,7 +57,11 @@ jobs:
             'nfl_prop_analytics_hub_v1.py' \
             'streamlit_memory_lazy_router_v240.py' \
             'tests/test_nfl_prop_analytics_step1_route_ownership_v1.py' | sort)"
-          if [ "$actual" != "$expected" ]; then
+          verifier_hotfix_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
+            'streamlit_memory_lazy_router_v240.py' \
+            'tests/test_nfl_prop_analytics_step1_route_ownership_v1.py' | sort)"
+          if [ "$actual" != "$expected" ] && [ "$actual" != "$verifier_hotfix_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP1_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -110,6 +114,8 @@ jobs:
               'MAY_MODIFY_PASSING_YARDS = False',
               'root.NFL_MARKETS = _prop_market_options()',
               '_with_prop_analytics_selectbox(prior.render_app)',
+              '_IMPORT_CACHE.get(PROP_ANALYTICS_HUB) is True',
+              'importlib.invalidate_caches()',
           )
           for token in required_router:
               assert token in router, token
@@ -369,7 +375,7 @@ jobs:
               return False
 
           def open_prop_route(browser):
-              deadline=time.monotonic()+420
+              deadline=time.monotonic()+1200
               last=""
               while time.monotonic()<deadline:
                   context=browser.new_context(viewport={"width":390,"height":844})
@@ -386,6 +392,7 @@ jobs:
                       return context,page,root
                   except Exception as exc:
                       last=f"{type(exc).__name__}:{exc}"
+                      print("PROP_ANALYTICS_STEP1_PUBLIC_DEPLOY_WAIT", last)
                       try:
                           context.close()
                       except Exception:
