@@ -1,0 +1,394 @@
+name: NFL Prop Analytics Step 8 Prop Page Shell
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step7-player-handoff-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step8-prop-page-shell-v1.json"
+      - "nfl_prop_analytics_hub_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step7-player-handoff-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step8-prop-page-shell-v1.json"
+      - "nfl_prop_analytics_hub_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-analytics-step8-prop-page-shell-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step 8 scope and frozen Steps 1-7 / Passing Yards
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step7-player-handoff-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-step8-prop-page-shell-v1.json' \
+            'nfl_prop_analytics_hub_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "NFL_PROP_ANALYTICS_STEP8_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          fi
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "NFL_PROP_ANALYTICS_STEP8_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+
+          check_blob nfl_prop_analytics_player_select_v1.py b9aa4ec194ffea970d6858dcd0e0ed7c31ae0426
+          check_blob devsystem/task_ledgers/nfl-prop-analytics-step7-player-handoff-v1.json bc7af68ebab57d59265b61c63e8766b3708758b9
+          check_blob nfl_prop_analytics_availability_depth_v1.py cf7fdeee4c18d95c19d2a737f59bda7818e059ae
+          check_blob nfl_prop_analytics_roster_truth_v1.py ad1a49ddd24d6f50da6c56280b34290b2c3312f3
+          check_blob nfl_prop_analytics_matchup_shell_v1.py 0d2770ff641090e396ae43bea4bf512213c59564
+          check_blob nfl_prop_analytics_game_select_v1.py fcb4ffcd703d05579a318b8b8fbcb64036336b8c
+          check_blob nfl_prop_analytics_schedule_v1.py 90fe5ff5bb087198484e4f59de01b72cf7155128
+          check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
+          check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob app.py d584693ab55e365bc7e76f9cbacd58a15f6d62d1
+
+          grep -F 'if is_prop_page():' nfl_prop_analytics_hub_v1.py
+          grep -F 'render_prop_page_shell()' nfl_prop_analytics_hub_v1.py
+          grep -F 'render_prop_page_open_control(player_handoff)' nfl_prop_analytics_hub_v1.py
+
+          echo "NFL_PROP_ANALYTICS_STEP8_STEP7_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_STEP6_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_STEP5_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_STEP4_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_STEP3_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_STEP2_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_STEP1_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_PASSING_YARDS_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP8_SCOPE_GREEN"
+
+      - name: Install static test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and test Steps 1-8 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile nfl_prop_analytics_hub_v1.py nfl_prop_analytics_player_select_v1.py nfl_prop_analytics_prop_page_v1.py
+          python -m pytest -q \
+            tests/test_nfl_prop_analytics_step1_route_ownership_v1.py \
+            tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py \
+            tests/test_nfl_prop_analytics_step3_game_handoff_v1.py \
+            tests/test_nfl_prop_analytics_step4_page2_shell_v1.py \
+            tests/test_nfl_prop_analytics_step5_roster_truth_v1.py \
+            tests/test_nfl_prop_analytics_step6_availability_depth_v1.py \
+            tests/test_nfl_prop_analytics_step7_player_handoff_v1.py \
+            tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py
+          echo "NFL_PROP_ANALYTICS_STEP8_STATIC_GREEN"
+
+      - name: Prove live CAR-CLE Step 7 context has Step 8 market navigation
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
+          from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth
+          from nfl_prop_analytics_player_select_v1 import eligible_players, build_player_handoff
+          from nfl_prop_analytics_prop_page_v1 import market_options
+
+          matchup={"state":"ready","selection_key":"CAR-CLE","away":"CAR","home":"CLE","away_name":"Panthers","home_name":"Browns","target_date":"2026-09-27","week":3}
+          roster=load_verified_roster_truth(matchup)
+          if roster["state"]!="live": raise RuntimeError("PROP_ANALYTICS_STEP8_STEP5_NOT_LIVE")
+          step6=load_availability_depth_truth(matchup,roster)
+          if step6["state"]!="live": raise RuntimeError("PROP_ANALYTICS_STEP8_STEP6_NOT_LIVE")
+          players=eligible_players(step6)
+          if len(players)<8: raise RuntimeError(f"PROP_ANALYTICS_STEP8_STEP7_CANDIDATES:{len(players)}")
+          handoff=build_player_handoff(matchup,step6,players[0])
+          markets=market_options(handoff["position"])
+          if len(markets)<4: raise RuntimeError("PROP_ANALYTICS_STEP8_MARKETS_TOO_SMALL")
+          if step6["availability_state"]=="PENDING" and handoff["prop_analysis_gate_open"]:
+              raise RuntimeError("PROP_ANALYTICS_STEP8_PENDING_GATE_LEAK")
+          print("NFL_PROP_ANALYTICS_STEP8_LIVE_CONTEXT_GREEN",handoff["player_id"],handoff["position"])
+          print("NFL_PROP_ANALYTICS_STEP8_MARKET_NAV_GREEN",len(markets))
+          if not handoff["prop_analysis_gate_open"]: print("NFL_PROP_ANALYTICS_STEP8_LIVE_GATE_LOCKED_GREEN")
+          PY
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/nfl-prop-analytics-step8
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/nfl-prop-analytics-step8/streamlit.log 2>&1 &
+          echo $! > /tmp/prop_analytics_step8_pid
+
+      - name: Prove Page 2 to Page 3, market navigation, safety, responsive layout, back nav
+        run: |
+          python - <<'PY'
+          import time, requests
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500: break
+              except Exception: pass
+              time.sleep(.5)
+          else: raise RuntimeError("PROP_ANALYTICS_STEP8_LOCAL_STREAMLIT_NOT_READY")
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PROP_ANALYTICS_STEP8_SELECTOR_NOT_READY:"+selector)
+
+          def button(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1: return loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PROP_ANALYTICS_STEP8_BUTTON_NOT_READY:"+name)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":1440,"height":1000})
+              page.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics","ks_pa_game":"CAR-CLE","ks_pa_page":"matchup"}),wait_until="domcontentloaded",timeout=120000)
+              _,s7=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]')
+              player=s7.get_attribute("data-prop-step7-player-id")
+              availability=s7.get_attribute("data-prop-step7-availability")
+              button(page,"Open prop page").click(timeout=10000)
+              _,s8=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]')
+              assert s8.get_attribute("data-prop-step8-state")=="ready"
+              assert s8.get_attribute("data-prop-step8-page")=="3"
+              assert s8.get_attribute("data-prop-step8-player-id")==player
+              assert s8.get_attribute("data-prop-step8-event-id").isdigit()
+              assert int(s8.get_attribute("data-prop-step8-market-count") or 0)>=4
+              _,zero=find(page,'[data-prop-step8-sportsbook-lines="0"]')
+              assert zero.get_attribute("data-prop-step8-odds")=="0"
+              assert zero.get_attribute("data-prop-step8-projections")=="0"
+              assert zero.get_attribute("data-prop-step8-recommendations")=="0"
+              if availability=="PENDING":
+                  assert s8.get_attribute("data-prop-step8-prop-gate")=="CLOSED"
+                  assert s8.get_attribute("data-prop-step8-analytics-state")=="LOCKED"
+                  print("NFL_PROP_ANALYTICS_STEP8_BRANCH_PENDING_LOCK_GREEN")
+              keys=[x for x in (s8.get_attribute("data-prop-step8-market-keys") or "").split(",") if x]
+              first=s8.get_attribute("data-prop-step8-market")
+              second=next(k for k in keys if k!=first)
+              page.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics","ks_pa_game":"CAR-CLE","ks_pa_page":"props","ks_pa_player":player,"ks_pa_prop":second}),wait_until="domcontentloaded",timeout=120000)
+              _,changed=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]')
+              assert changed.get_attribute("data-prop-step8-market")==second
+              print("NFL_PROP_ANALYTICS_STEP8_BRANCH_MARKET_CHANGE_GREEN",first,second)
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height}); page.wait_for_timeout(200)
+                  dims=changed.evaluate("e=>({scroll:e.scrollWidth,client:e.clientWidth})")
+                  if dims["scroll"]>dims["client"]+4: raise RuntimeError(f"PROP_ANALYTICS_STEP8_OVERFLOW:{width}:{dims}")
+                  print(f"NFL_PROP_ANALYTICS_STEP8_BRANCH_{width}_GREEN")
+              button(page,"← Back to player selection").click(timeout=10000)
+              _,back=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]')
+              assert back.get_attribute("data-prop-step7-player-id")==player
+              print("NFL_PROP_ANALYTICS_STEP8_BRANCH_BACK_NAV_GREEN",player)
+              passing=browser.new_page(viewport={"width":390,"height":844})
+              passing.goto(base+"/?ks_jump_sport=NFL&ks_jump_market=Passing+Yards",wait_until="domcontentloaded",timeout=120000)
+              find(passing,'[data-passing-yards-router-owner="v239"]',150)
+              print("NFL_PROP_ANALYTICS_STEP8_PASSING_YARDS_BRANCH_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP7_BRANCH_FROZEN_GREEN")
+              passing.close(); page.close(); browser.close()
+          print("NFL_PROP_ANALYTICS_STEP8_BRANCH_GREEN")
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 2000 artifacts/nfl-prop-analytics-step8/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/prop_analytics_step8_pid ]; then kill "$(cat /tmp/prop_analytics_step8_pid)" 2>/dev/null || true; fi
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Step 8 Page 3 and freeze
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PROP_ANALYTICS_STEP8_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def button(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1: return loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PROP_ANALYTICS_STEP8_PUBLIC_BUTTON_NOT_READY:"+name)
+
+          def open_step8(browser):
+              deadline=time.monotonic()+1200; last=""
+              while time.monotonic()<deadline:
+                  context=browser.new_context(viewport={"width":390,"height":844}); page=context.new_page()
+                  try:
+                      page.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics","ks_pa_game":"CAR-CLE","ks_pa_page":"matchup"}),wait_until="domcontentloaded",timeout=120000)
+                      _,s7=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]',150)
+                      player=s7.get_attribute("data-prop-step7-player-id")
+                      button(page,"Open prop page",150).click(timeout=10000)
+                      _,s8=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]',180)
+                      if s8.get_attribute("data-prop-step8-state")!="ready": last="STEP8_NOT_READY"
+                      elif s8.get_attribute("data-prop-step8-player-id")!=player: last="STEP8_PLAYER_DRIFT"
+                      elif int(s8.get_attribute("data-prop-step8-market-count") or 0)<4: last="STEP8_MARKETS_TOO_SMALL"
+                      else: return context,page,s8,player
+                  except Exception as exc:
+                      last=f"{type(exc).__name__}:{exc}"; print("PROP_ANALYTICS_STEP8_PUBLIC_DEPLOY_WAIT",last)
+                  try: context.close()
+                  except Exception: pass
+                  time.sleep(8)
+              raise RuntimeError("PROP_ANALYTICS_STEP8_PUBLIC_DEPLOYMENT_NOT_ACTIVE:"+last)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context,page,s8,player=open_step8(browser)
+              if s8.get_attribute("data-prop-step8-availability")=="PENDING":
+                  assert s8.get_attribute("data-prop-step8-prop-gate")=="CLOSED"
+                  assert s8.get_attribute("data-prop-step8-analytics-state")=="LOCKED"
+                  print("NFL_PROP_ANALYTICS_STEP8_PUBLIC_PENDING_LOCK_GREEN")
+              _,zero=find(page,'[data-prop-step8-sportsbook-lines="0"]')
+              assert zero.get_attribute("data-prop-step8-odds")=="0"
+              assert zero.get_attribute("data-prop-step8-projections")=="0"
+              assert zero.get_attribute("data-prop-step8-recommendations")=="0"
+              print("NFL_PROP_ANALYTICS_STEP8_PUBLIC_ZERO_DATA_GREEN")
+              keys=[x for x in (s8.get_attribute("data-prop-step8-market-keys") or "").split(",") if x]
+              first=s8.get_attribute("data-prop-step8-market"); second=next(k for k in keys if k!=first)
+              page.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics","ks_pa_game":"CAR-CLE","ks_pa_page":"props","ks_pa_player":player,"ks_pa_prop":second}),wait_until="domcontentloaded",timeout=120000)
+              _,changed=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]',180)
+              assert changed.get_attribute("data-prop-step8-market")==second
+              print("NFL_PROP_ANALYTICS_STEP8_PUBLIC_MARKET_CHANGE_GREEN",first,second)
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height}); page.wait_for_timeout(200)
+                  dims=changed.evaluate("e=>({scroll:e.scrollWidth,client:e.clientWidth})")
+                  if dims["scroll"]>dims["client"]+4: raise RuntimeError(f"PROP_ANALYTICS_STEP8_PUBLIC_OVERFLOW:{width}:{dims}")
+                  print(f"NFL_PROP_ANALYTICS_STEP8_PUBLIC_{width}_GREEN")
+              button(page,"← Back to player selection").click(timeout=10000)
+              _,back=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]',180)
+              assert back.get_attribute("data-prop-step7-player-id")==player
+              print("NFL_PROP_ANALYTICS_STEP8_PUBLIC_BACK_NAV_GREEN",player)
+              passing=context.new_page()
+              passing.goto(base+"/?ks_jump_sport=NFL&ks_jump_market=Passing+Yards",wait_until="domcontentloaded",timeout=120000)
+              find(passing,'[data-passing-yards-router-owner="v239"]',150)
+              print("NFL_PROP_ANALYTICS_STEP8_PASSING_YARDS_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP7_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP6_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP5_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP4_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP3_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP2_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP8_STEP1_PUBLIC_FROZEN_GREEN")
+              passing.close(); page.close(); context.close(); browser.close()
+          print("NFL_PROP_ANALYTICS_STEP8_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP8_PUBLIC_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP8_FROZEN")
+          print("NFL_PROP_ANALYTICS_8_STEP_BUILD_COMPLETE")
+          PY
