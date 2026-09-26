@@ -200,18 +200,20 @@ jobs:
               tap_block=None
               for i in range(blocks.count()):
                   candidate=blocks.nth(i)
-                  if candidate.locator('button').count()>=2:
+                  texts=candidate.locator("button").all_text_contents()
+                  player_buttons=[t for t in texts if " • " in t and (t.startswith("CAR") or t.startswith("CLE"))]
+                  if len(player_buttons)>=2:
                       tap_block=candidate
                       break
               if tap_block is None:
                   raise RuntimeError("PAGE2_POLISH_STEP5_TAP_BLOCK_NOT_FOUND")
-              direction=tap_block.evaluate("e=>getComputedStyle(e).flexDirection")
-              if direction!="column":
-                  raise RuntimeError("PAGE2_POLISH_STEP5_PHONE_TAP_NOT_STACKED:"+direction)
-              first_button=tap_block.locator("button").first
-              button_height=first_button.evaluate("e=>e.getBoundingClientRect().height")
-              if button_height<47:
-                  raise RuntimeError(f"PAGE2_POLISH_STEP5_TOUCH_TARGET_TOO_SMALL:{button_height}")
+              buttons=tap_block.locator("button")
+              first_box=buttons.nth(0).evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
+              second_box=buttons.nth(1).evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
+              if second_box["top"] < first_box["bottom"]-1:
+                  raise RuntimeError(f"PAGE2_POLISH_STEP5_PHONE_TAP_NOT_STACKED:{first_box}:{second_box}")
+              if first_box["height"]<47 or second_box["height"]<47:
+                  raise RuntimeError(f"PAGE2_POLISH_STEP5_TOUCH_TARGET_TOO_SMALL:{first_box}:{second_box}")
 
               open_button=frame.get_by_role("button",name="Open prop page")
               assert open_button.count()>=1
@@ -343,17 +345,20 @@ jobs:
               tap_block=None
               for i in range(blocks.count()):
                   candidate=blocks.nth(i)
-                  if candidate.locator('button').count()>=2:
+                  texts=candidate.locator("button").all_text_contents()
+                  player_buttons=[t for t in texts if " • " in t and (t.startswith("CAR") or t.startswith("CLE"))]
+                  if len(player_buttons)>=2:
                       tap_block=candidate
                       break
               if tap_block is None:
                   raise RuntimeError("PAGE2_POLISH_STEP5_PUBLIC_TAP_BLOCK_NOT_FOUND")
-              direction=tap_block.evaluate("e=>getComputedStyle(e).flexDirection")
-              if direction!="column":
-                  raise RuntimeError("PAGE2_POLISH_STEP5_PUBLIC_PHONE_TAP_NOT_STACKED:"+direction)
-              button_height=tap_block.locator("button").first.evaluate("e=>e.getBoundingClientRect().height")
-              if button_height<47:
-                  raise RuntimeError(f"PAGE2_POLISH_STEP5_PUBLIC_TOUCH_TARGET_TOO_SMALL:{button_height}")
+              buttons=tap_block.locator("button")
+              first_box=buttons.nth(0).evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
+              second_box=buttons.nth(1).evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
+              if second_box["top"] < first_box["bottom"]-1:
+                  raise RuntimeError(f"PAGE2_POLISH_STEP5_PUBLIC_PHONE_TAP_NOT_STACKED:{first_box}:{second_box}")
+              if first_box["height"]<47 or second_box["height"]<47:
+                  raise RuntimeError(f"PAGE2_POLISH_STEP5_PUBLIC_TOUCH_TARGET_TOO_SMALL:{first_box}:{second_box}")
 
               open_button=frame.get_by_role("button",name="Open prop page")
               assert open_button.count()>=1
