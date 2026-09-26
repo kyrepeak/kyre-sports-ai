@@ -62,6 +62,7 @@ jobs:
             'tests/test_nfl_prop_analytics_page3_step3_stats_hit_rate_v1.py' | sort)"
           expected_review_fix="$(printf '%s\n' \
             '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-step3-stats-hit-rate-v1.json' \
             'nfl_prop_analytics_history_stats_v1.py' \
             'tests/test_nfl_prop_analytics_page3_step3_stats_hit_rate_v1.py' | sort)"
           if [[ "$actual" != "$expected_initial" && "$actual" != "$expected_review_fix" ]]; then
