@@ -1,0 +1,350 @@
+name: NFL Prop Analytics Page 3 Step 6
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "nfl_prop_analytics_page3_supporting_stats_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_step6_supporting_stats_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page3-step6-supporting-stats-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page3-step1-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step2-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step3-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step4-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step5-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step6-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "nfl_prop_analytics_page3_supporting_stats_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_step6_supporting_stats_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page3-step6-supporting-stats-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page3-step1-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step2-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step3-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step4-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step5-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step6-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-analytics-page3-step6-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce Page 3 Step 6 scope and frozen stack
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step6-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-step6-supporting-stats-v1.json' \
+            'nfl_prop_analytics_page3_supporting_stats_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_step6_supporting_stats_v1.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo PROP_ANALYTICS_PAGE3_STEP6_SCOPE_VIOLATION
+            printf '%s\n' "$actual"
+            exit 1
+          }
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "PROP_ANALYTICS_PAGE3_STEP6_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+          check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
+          check_blob nfl_prop_analytics_hub_v1.py 0a604db75dc630a1a75b2d5b43b8b2c9d2ebacfd
+          check_blob nfl_prop_analytics_schedule_v1.py 3558f4581c0301c4fc57f8b5e761e1e0cc1eb63c
+          check_blob nfl_prop_analytics_game_select_v1.py 1187c13fc5bee03a955d014e87f237ed055a27ef
+          check_blob nfl_prop_analytics_matchup_shell_v1.py 0441b2ca34a0206f92f32f5a14a47916067b98a1
+          check_blob nfl_prop_analytics_roster_truth_v1.py ad1a49ddd24d6f50da6c56280b34290b2c3312f3
+          check_blob nfl_prop_analytics_availability_depth_v1.py cf7fdeee4c18d95c19d2a737f59bda7818e059ae
+          check_blob nfl_prop_analytics_player_select_v1.py b9aa4ec194ffea970d6858dcd0e0ed7c31ae0426
+          check_blob nfl_prop_analytics_page2_tap_player_v1.py 2cd66941f23582d138f8fe92c2e9b0af25150a3b
+          check_blob nfl_prop_analytics_page2_unified_roster_v1.py 9c8e537f58528d3cc3091beebc6fb7244040a073
+          check_blob nfl_prop_analytics_history_stats_v1.py c54e686296e6fb8781b482a0375c266ddec9332f
+          check_blob nfl_prop_analytics_page3_line_control_v1.py fbeabc240196b30fc966f1a69779c543410e9e3c
+          check_blob nfl_prop_analytics_page3_game_chart_v1.py b21876dfe88bed91009e9edf65cb89f472745c8e
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob app.py 2a3922af385cd0fc43bfd540783be15d582aefad
+          echo PROP_ANALYTICS_PAGE3_STEP6_SCOPE_GREEN
+          echo PROP_ANALYTICS_PAGE3_STEP6_FROZEN_STACK_GREEN
+
+      - name: Install static test stack
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
+
+      - name: Prove Page 3 Steps 1-6 contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile \
+            nfl_prop_analytics_history_stats_v1.py \
+            nfl_prop_analytics_page3_line_control_v1.py \
+            nfl_prop_analytics_page3_game_chart_v1.py \
+            nfl_prop_analytics_page3_supporting_stats_v1.py \
+            nfl_prop_analytics_prop_page_v1.py
+          python -m pytest -q \
+            tests/test_nfl_prop_analytics_page3_step1_premium_hero_v1.py \
+            tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py \
+            tests/test_nfl_prop_analytics_page3_step3_stats_hit_rate_v1.py \
+            tests/test_nfl_prop_analytics_page3_step4_line_control_v1.py \
+            tests/test_nfl_prop_analytics_page3_step5_game_chart_v1.py \
+            tests/test_nfl_prop_analytics_page3_step6_supporting_stats_v1.py
+          echo PROP_ANALYTICS_PAGE3_STEP6_STATIC_GREEN
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+      - name: Start branch Streamlit
+        run: nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/page3-step6.log 2>&1 &
+      - name: Prove supporting stats average/median + responsive layout
+        run: |
+          python - <<'PY'
+          import re,time,requests
+          from playwright.sync_api import sync_playwright
+          base="http://127.0.0.1:8501"
+          end=time.monotonic()+120
+          while time.monotonic()<end:
+              try:
+                  if requests.get(base,timeout=3).status_code<500: break
+              except Exception: pass
+              time.sleep(.5)
+          else: raise RuntimeError("PAGE3_STEP6_LOCAL_NOT_READY")
+
+          def find(page,sel,timeout=300):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(sel)
+                          if loc.count(): return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("PAGE3_STEP6_SELECTOR_NOT_READY:"+sel)
+
+          def role(page,kind,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count(): return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"PAGE3_STEP6_ROLE_NOT_READY:{kind}:{name}")
+
+          def choose(page,name,value):
+              _,loc=role(page,"combobox",name,120); loc.click(timeout=10000)
+              page.keyboard.type(value,delay=15); _,opt=role(page,"option",value,30); opt.click(timeout=10000)
+
+          def segmented(page,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator("button").filter(has_text=name)
+                          for i in range(loc.count()):
+                              if loc.nth(i).inner_text().strip()==name: return frame,loc.nth(i)
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PAGE3_STEP6_SEGMENT_NOT_READY:"+name)
+
+          def wait_mode(page,mode,timeout=240):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      loc=frame.locator('[data-prop-page3-step6-supporting-stats="v1"]')
+                      if loc.count():
+                          item=loc.first
+                          if item.get_attribute("data-prop-page3-step6-state")=="ready" and item.get_attribute("data-prop-page3-step6-mode")==mode:
+                              return frame,item
+                  page.wait_for_timeout(300)
+              raise RuntimeError("PAGE3_STEP6_MODE_NOT_READY:"+mode)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              context=browser.new_context(viewport={"width":768,"height":1100}); page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+              choose(page,"🏟️ Sport","NFL"); choose(page,"🎯 NFL Market","Prop Analytics")
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',180); assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              _,b=role(page,"button","Open matchup"); b.click(timeout=10000)
+              frame2,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180); assert board.get_attribute("data-prop-page2-unified-state")=="live"
+              qb=frame2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first; assert qb.count()==1; qb.click(timeout=10000)
+              _,b=role(page,"button","Open prop page",60); b.click(timeout=10000)
+              find(page,'[data-prop-page3-step5-chart="v1"][data-prop-page3-step5-state="ready"]',240)
+              frame,s=wait_mode(page,"average",300)
+              metric_count=int(s.get_attribute("data-prop-page3-step6-metric-count") or 0)
+              event_count=int(s.get_attribute("data-prop-page3-step6-event-count") or 0)
+              assert metric_count>=4,(metric_count,event_count)
+              assert event_count>=1,event_count
+              assert frame.locator('[data-prop-page3-step6-metric="attempts"]').count()==1
+              assert frame.locator('[data-prop-page3-step6-metric="completions"]').count()==1
+              assert frame.locator('[data-prop-page3-step6-metric="yards_per_attempt"]').count()==1
+              _,median_btn=segmented(page,"MEDIAN",60); median_btn.click(timeout=10000)
+              frame,s2=wait_mode(page,"median",240)
+              assert int(s2.get_attribute("data-prop-page3-step6-event-count") or 0)==event_count
+              chart=frame.locator('[data-prop-page3-step5-chart="v1"][data-prop-page3-step5-state="ready"]').first
+              assert chart.count()==1
+              zero=frame.locator('[data-prop-step8-sportsbook-lines="0"]').first
+              assert zero.count()==1 and zero.get_attribute("data-prop-step8-projections")=="0"
+              for width in (390,768,1440):
+                  page.set_viewport_size({"width":width,"height":1100}); page.wait_for_timeout(350)
+                  metrics=frame.evaluate("() => ({inner:innerWidth,doc:document.documentElement.scrollWidth,body:document.body.scrollWidth})")
+                  assert max(metrics["doc"],metrics["body"])<=metrics["inner"]+2,(width,metrics)
+                  print(f"PROP_ANALYTICS_PAGE3_STEP6_BRANCH_{width}_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_BRANCH_SUPPORTING_STATS_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_BRANCH_AVERAGE_MEDIAN_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_BRANCH_EXACT_ID_SAMPLE_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_BRANCH_GREEN")
+              context.close(); browser.close()
+          PY
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove public supporting stats and freeze
+        run: |
+          python - <<'PY'
+          import re,time
+          from playwright.sync_api import sync_playwright
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,sel,timeout=300):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(sel)
+                          if loc.count(): return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("PAGE3_STEP6_PUBLIC_SELECTOR_NOT_READY:"+sel)
+
+          def role(page,kind,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count(): return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"PAGE3_STEP6_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
+
+          def choose(page,name,value):
+              _,loc=role(page,"combobox",name,120); loc.click(timeout=10000); page.keyboard.type(value,delay=15)
+              _,opt=role(page,"option",value,30); opt.click(timeout=10000)
+
+          def segmented(page,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator("button").filter(has_text=name)
+                          for i in range(loc.count()):
+                              if loc.nth(i).inner_text().strip()==name: return frame,loc.nth(i)
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("PAGE3_STEP6_PUBLIC_SEGMENT_NOT_READY:"+name)
+
+          def wait_mode(page,mode,timeout=300):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      loc=frame.locator('[data-prop-page3-step6-supporting-stats="v1"]')
+                      if loc.count():
+                          item=loc.first
+                          if item.get_attribute("data-prop-page3-step6-state")=="ready" and item.get_attribute("data-prop-page3-step6-mode")==mode:
+                              return frame,item
+                  page.wait_for_timeout(300)
+              raise RuntimeError("PAGE3_STEP6_PUBLIC_MODE_NOT_READY:"+mode)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
+              context=browser.new_context(viewport={"width":768,"height":1100}); page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+              choose(page,"🏟️ Sport","NFL"); choose(page,"🎯 NFL Market","Prop Analytics")
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',180); assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              _,b=role(page,"button","Open matchup"); b.click(timeout=10000)
+              frame2,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180); assert board.get_attribute("data-prop-page2-unified-state")=="live"
+              qb=frame2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first; assert qb.count()==1; qb.click(timeout=10000)
+              _,b=role(page,"button","Open prop page",60); b.click(timeout=10000)
+              find(page,'[data-prop-page3-step5-chart="v1"][data-prop-page3-step5-state="ready"]',300)
+              frame,s=wait_mode(page,"average",300)
+              metric_count=int(s.get_attribute("data-prop-page3-step6-metric-count") or 0)
+              event_count=int(s.get_attribute("data-prop-page3-step6-event-count") or 0)
+              assert metric_count>=4 and event_count>=1,(metric_count,event_count)
+              _,median_btn=segmented(page,"MEDIAN",60); median_btn.click(timeout=10000)
+              frame,s2=wait_mode(page,"median",300)
+              assert int(s2.get_attribute("data-prop-page3-step6-event-count") or 0)==event_count
+              assert frame.locator('[data-prop-step8-sportsbook-lines="0"]').first.count()==1
+              for width in (390,768,1440):
+                  page.set_viewport_size({"width":width,"height":1100}); page.wait_for_timeout(350)
+                  metrics=frame.evaluate("() => ({inner:innerWidth,doc:document.documentElement.scrollWidth,body:document.body.scrollWidth})")
+                  assert max(metrics["doc"],metrics["body"])<=metrics["inner"]+2,(width,metrics)
+                  print(f"PROP_ANALYTICS_PAGE3_STEP6_PUBLIC_{width}_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_PUBLIC_SUPPORTING_STATS_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_PUBLIC_AVERAGE_MEDIAN_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_PUBLIC_EXACT_ID_SAMPLE_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_PUBLIC_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP6_FROZEN")
+              context.close(); browser.close()
+          PY
