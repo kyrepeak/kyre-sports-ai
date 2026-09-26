@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 import streamlit as st
 
-from nfl_prop_analytics_schedule_v1 import load_schedule_truth
+from nfl_prop_analytics_schedule_v1 import load_schedule_truth, team_logo_url
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 3 GAME SELECTION + MATCHUP HANDOFF"
 STEP = 3
@@ -43,6 +43,17 @@ def _eligible_games(truth: dict[str, Any]) -> list[dict[str, Any]]:
         and game.get("away")
         and game.get("home")
     ]
+
+
+def _handoff_kickoff_label(handoff: dict[str, Any]) -> str:
+    raw = str(handoff.get("kickoff_utc") or "").strip()
+    if not raw:
+        return "Time TBD"
+    try:
+        kickoff = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return "Time TBD"
+    return kickoff.astimezone(ET).strftime("%-I:%M %p ET")
 
 
 def _game_label(game: dict[str, Any]) -> str:
@@ -170,6 +181,9 @@ def render_game_selection_handoff() -> dict[str, Any] | None:
     sources = " • ".join(handoff["sources"])
     network = handoff["network"] or "Network TBD"
     venue = handoff["venue"] or "Venue TBD"
+    kickoff_label = _handoff_kickoff_label(handoff)
+    away_logo = team_logo_url(handoff["away"])
+    home_logo = team_logo_url(handoff["home"])
 
     st.markdown(
         f"""
@@ -186,16 +200,34 @@ def render_game_selection_handoff() -> dict[str, Any] | None:
   <div class="ks-pa3-eyebrow">STEP 3 • GAME SELECTION</div>
   <div class="ks-pa3-matchup">
     <div class="ks-pa3-team">
-      <b>{html_lib.escape(handoff['away'])}</b>
-      <span>{html_lib.escape(str(handoff['away_name']))}</span>
+      <img class="ks-pa3-logo"
+           data-prop-selected-team-logo="{html_lib.escape(handoff['away'])}"
+           data-prop-logo-side="away"
+           src="{html_lib.escape(away_logo)}"
+           alt="{html_lib.escape(str(handoff['away_name']))} logo"
+           width="54" height="54" />
+      <div class="ks-pa3-teamcopy">
+        <b>{html_lib.escape(handoff['away'])}</b>
+        <span>{html_lib.escape(str(handoff['away_name']))}</span>
+      </div>
     </div>
     <div class="ks-pa3-arrow">→</div>
     <div class="ks-pa3-team ks-pa3-home">
-      <b>{html_lib.escape(handoff['home'])}</b>
-      <span>{html_lib.escape(str(handoff['home_name']))}</span>
+      <img class="ks-pa3-logo"
+           data-prop-selected-team-logo="{html_lib.escape(handoff['home'])}"
+           data-prop-logo-side="home"
+           src="{html_lib.escape(home_logo)}"
+           alt="{html_lib.escape(str(handoff['home_name']))} logo"
+           width="54" height="54" />
+      <div class="ks-pa3-teamcopy">
+        <b>{html_lib.escape(handoff['home'])}</b>
+        <span>{html_lib.escape(str(handoff['home_name']))}</span>
+      </div>
     </div>
   </div>
   <div class="ks-pa3-meta">
+    <span class="ks-pa3-kickoff"
+          data-prop-selected-kickoff="{html_lib.escape(kickoff_label)}">{html_lib.escape(kickoff_label)}</span>
     <span>{html_lib.escape(network)}</span>
     <span>{html_lib.escape(venue)}</span>
     <span>{html_lib.escape(sources)}</span>
@@ -213,10 +245,14 @@ def render_game_selection_handoff() -> dict[str, Any] | None:
 }}
 .ks-pa3-eyebrow{{font-size:.67rem;font-weight:900;letter-spacing:.14em;color:#7dd3fc}}
 .ks-pa3-matchup{{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;margin:13px 0}}
-.ks-pa3-team{{display:flex;flex-direction:column;min-width:0}}
+.ks-pa3-team{{display:flex;align-items:center;gap:10px;min-width:0}}
+.ks-pa3-logo{{width:54px;height:54px;object-fit:contain;flex:0 0 54px;filter:drop-shadow(0 3px 9px rgba(0,0,0,.30))}}
+.ks-pa3-teamcopy{{display:flex;flex-direction:column;min-width:0}}
 .ks-pa3-team b{{font-size:1.22rem;color:#f8fafc;line-height:1}}
 .ks-pa3-team span{{margin-top:4px;color:#a8bad0;font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
-.ks-pa3-home{{text-align:right;align-items:flex-end}}
+.ks-pa3-home{{text-align:right;justify-content:flex-start;flex-direction:row-reverse}}
+.ks-pa3-home .ks-pa3-teamcopy{{align-items:flex-end}}
+.ks-pa3-kickoff{{color:#bae6fd!important;font-weight:900}}
 .ks-pa3-arrow{{color:#38bdf8;font-weight:900}}
 .ks-pa3-meta{{display:flex;flex-wrap:wrap;gap:6px;color:#8297b0;font-size:.66rem}}
 .ks-pa3-meta span{{padding:5px 7px;border:1px solid rgba(148,163,184,.11);border-radius:999px}}
