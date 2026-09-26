@@ -81,6 +81,18 @@ TEAM_NAMES = {
     "SF": "49ers", "TB": "Buccaneers", "TEN": "Titans", "WAS": "Commanders",
 }
 
+ESPN_LOGO_CODES = {
+    "WAS": "wsh",
+}
+
+
+def team_logo_url(team: Any) -> str:
+    """Return the stable ESPN CDN logo URL for a canonical NFL abbreviation."""
+    canonical = _canon_team(team)
+    code = ESPN_LOGO_CODES.get(canonical, canonical.lower())
+    return f"https://a.espncdn.com/i/teamlogos/nfl/500/{code}.png"
+
+
 SOURCE_PRIORITY = ("NFL", "NFLVERSE", "ESPN")
 REQUEST_HEADERS = {
     "User-Agent": "KyreSportsAI/1.0 schedule-truth-layer (+https://kyre-sports-ai.streamlit.app)"
@@ -469,13 +481,29 @@ def render_schedule_truth_layer() -> None:
   </div>
   <div class="ks-pa2-matchup">
     <div class="ks-pa2-team">
-      <b>{html_lib.escape(game['away'])}</b>
-      <span>{html_lib.escape(game['away_name'])}</span>
+      <img class="ks-pa2-logo"
+           data-prop-team-logo="{html_lib.escape(game['away'])}"
+           data-prop-logo-side="away"
+           src="{html_lib.escape(team_logo_url(game['away']))}"
+           alt="{html_lib.escape(game['away_name'])} logo"
+           loading="lazy" width="42" height="42" />
+      <div class="ks-pa2-teamcopy">
+        <b>{html_lib.escape(game['away'])}</b>
+        <span>{html_lib.escape(game['away_name'])}</span>
+      </div>
     </div>
     <div class="ks-pa2-at">@</div>
     <div class="ks-pa2-team ks-pa2-home">
-      <b>{html_lib.escape(game['home'])}</b>
-      <span>{html_lib.escape(game['home_name'])}</span>
+      <img class="ks-pa2-logo"
+           data-prop-team-logo="{html_lib.escape(game['home'])}"
+           data-prop-logo-side="home"
+           src="{html_lib.escape(team_logo_url(game['home']))}"
+           alt="{html_lib.escape(game['home_name'])} logo"
+           loading="lazy" width="42" height="42" />
+      <div class="ks-pa2-teamcopy">
+        <b>{html_lib.escape(game['home'])}</b>
+        <span>{html_lib.escape(game['home_name'])}</span>
+      </div>
     </div>
   </div>
   <div class="ks-pa2-proof">
@@ -523,10 +551,13 @@ def render_schedule_truth_layer() -> None:
 .ks-pa2-game{{min-width:0;border:1px solid rgba(125,211,252,.16);border-radius:15px;background:linear-gradient(145deg,rgba(7,14,24,.98),rgba(10,22,38,.94));padding:13px;overflow:hidden}}
 .ks-pa2-cardtop,.ks-pa2-proof{{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#7890ab;font-size:.66rem;font-weight:800}}
 .ks-pa2-matchup{{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin:14px 0}}
-.ks-pa2-team{{display:flex;flex-direction:column;min-width:0}}
+.ks-pa2-team{{display:flex;align-items:center;gap:9px;min-width:0}}
+.ks-pa2-logo{{width:42px;height:42px;object-fit:contain;flex:0 0 42px;filter:drop-shadow(0 2px 7px rgba(0,0,0,.28))}}
+.ks-pa2-teamcopy{{display:flex;flex-direction:column;min-width:0}}
 .ks-pa2-team b{{color:#f8fafc;font-size:1.05rem;line-height:1}}
 .ks-pa2-team span{{margin-top:4px;color:#a8bad0;font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.ks-pa2-home{{text-align:right;align-items:flex-end}}
+.ks-pa2-home{{text-align:right;justify-content:flex-start;flex-direction:row-reverse}}
+.ks-pa2-home .ks-pa2-teamcopy{{align-items:flex-end}}
 .ks-pa2-at{{color:#38bdf8;font-size:.72rem;font-weight:900}}
 .ks-pa2-proof{{padding-top:10px;border-top:1px solid rgba(148,163,184,.10)}}
 .ks-pa2-badge{{color:#bae6fd!important;font-size:.61rem;letter-spacing:.07em}}
@@ -552,6 +583,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "MAY_MODIFY_PASSING_YARDS",
     "MAY_MODIFY_EXISTING_NFL_MARKETS",
+    "team_logo_url",
     "load_schedule_truth",
     "render_schedule_truth_layer",
 ]
