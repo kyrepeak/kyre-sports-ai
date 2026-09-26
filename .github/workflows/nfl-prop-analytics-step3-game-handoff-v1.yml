@@ -1,28 +1,32 @@
-name: NFL Prop Analytics Step 2 Schedule Truth
+name: NFL Prop Analytics Step 3 Game Handoff
 
 on:
   pull_request:
     branches: [main]
     paths:
+      - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
       - ".github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml"
-      - "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json"
+      - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step3-game-handoff-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
-      - "nfl_prop_analytics_schedule_v1.py"
-      - "tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py"
+      - "nfl_prop_analytics_game_select_v1.py"
+      - "tests/test_nfl_prop_analytics_step3_game_handoff_v1.py"
   push:
     branches: [main]
     paths:
+      - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
       - ".github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml"
-      - "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json"
+      - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step3-game-handoff-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
-      - "nfl_prop_analytics_schedule_v1.py"
-      - "tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py"
+      - "nfl_prop_analytics_game_select_v1.py"
+      - "tests/test_nfl_prop_analytics_step3_game_handoff_v1.py"
 
 permissions:
   contents: read
 
 concurrency:
-  group: nfl-prop-analytics-step2-schedule-truth-${{ github.ref }}
+  group: nfl-prop-analytics-step3-game-handoff-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +43,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce Step 2 scope and protect frozen Step 1 / Passing Yards
+      - name: Enforce exact Step 3 scope and protect frozen Steps 1-2 / Passing Yards
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -51,20 +55,13 @@ jobs:
           expected="$(printf '%s\n' \
             '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
-            'devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json' \
-            'nfl_prop_analytics_hub_v1.py' \
-            'nfl_prop_analytics_schedule_v1.py' \
-            'tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py' | sort)"
-          step3_additive_expected="$(printf '%s\n' \
-            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
             'devsystem/task_ledgers/nfl-prop-analytics-step3-game-handoff-v1.json' \
             'nfl_prop_analytics_hub_v1.py' \
             'nfl_prop_analytics_game_select_v1.py' \
             'tests/test_nfl_prop_analytics_step3_game_handoff_v1.py' | sort)"
-          if [ "$actual" != "$expected" ] && [ "$actual" != "$step3_additive_expected" ]; then
-            echo "NFL_PROP_ANALYTICS_STEP2_SCOPE_VIOLATION"
+          if [ "$actual" != "$expected" ]; then
+            echo "NFL_PROP_ANALYTICS_STEP3_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
           fi
@@ -72,11 +69,13 @@ jobs:
           check_blob () {
             got="$(git hash-object "$1")"
             test "$got" = "$2" || {
-              echo "NFL_PROP_ANALYTICS_STEP2_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              echo "NFL_PROP_ANALYTICS_STEP3_FROZEN_BLOB_CHANGED:$1:$got:$2"
               exit 1
             }
           }
 
+          check_blob nfl_prop_analytics_schedule_v1.py 90fe5ff5bb087198484e4f59de01b72cf7155128
+          check_blob devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json 62a37cd07cc25be80e439fe63dedc94fec095f59
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
@@ -85,60 +84,56 @@ jobs:
           check_blob devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5
 
           grep -F 'data-nfl-prop-analytics-route="v1"' nfl_prop_analytics_hub_v1.py
-          grep -F 'data-prop-analytics-owner="nfl_prop_analytics_hub_v1"' nfl_prop_analytics_hub_v1.py
-          grep -F 'data-prop-analytics-step="1"' nfl_prop_analytics_hub_v1.py
           grep -F 'render_schedule_truth_layer()' nfl_prop_analytics_hub_v1.py
+          grep -F 'render_game_selection_handoff()' nfl_prop_analytics_hub_v1.py
 
-          echo "NFL_PROP_ANALYTICS_STEP2_STEP1_FROZEN_GREEN"
-          echo "NFL_PROP_ANALYTICS_STEP2_PASSING_YARDS_FROZEN_GREEN"
-          echo "NFL_PROP_ANALYTICS_STEP2_SCOPE_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP3_STEP1_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP3_STEP2_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP3_PASSING_YARDS_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP3_SCOPE_GREEN"
 
       - name: Install static test stack
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt
           python -m pip install --disable-pip-version-check -q pytest
 
-      - name: Compile and test Step 2 contract
+      - name: Compile and test Step 3 contract
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -m py_compile nfl_prop_analytics_hub_v1.py nfl_prop_analytics_schedule_v1.py
+          python -m py_compile \
+            nfl_prop_analytics_hub_v1.py \
+            nfl_prop_analytics_schedule_v1.py \
+            nfl_prop_analytics_game_select_v1.py
           python -m pytest -q \
             tests/test_nfl_prop_analytics_step1_route_ownership_v1.py \
-            tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py
-          echo "NFL_PROP_ANALYTICS_STEP2_STATIC_GREEN"
+            tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py \
+            tests/test_nfl_prop_analytics_step3_game_handoff_v1.py
+          echo "NFL_PROP_ANALYTICS_STEP3_STATIC_GREEN"
 
-      - name: Prove live 2026 Week 3 Sunday schedule truth
+      - name: Prove live Step 2 schedule can build Step 3 handoffs
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
           from datetime import date
           from nfl_prop_analytics_schedule_v1 import _load_schedule_truth_uncached
+          from nfl_prop_analytics_game_select_v1 import _eligible_games, build_matchup_handoff
 
           truth=_load_schedule_truth_uncached(date(2026,9,27))
-          games=truth["games"]
-          pairs={(g["away"],g["home"]) for g in games}
+          games=_eligible_games(truth)
+          if len(games) < 10:
+              raise RuntimeError(f"PROP_ANALYTICS_STEP3_VERIFIED_GAMES_INCOMPLETE:{len(games)}")
 
-          if len(games) < 12:
-              raise RuntimeError(f"PROP_ANALYTICS_STEP2_LIVE_SLATE_INCOMPLETE:{len(games)}")
-          if truth["verified_count"] < 10:
-              raise RuntimeError(
-                  f"PROP_ANALYTICS_STEP2_LIVE_VERIFICATION_INCOMPLETE:{truth['verified_count']}"
-              )
-          if len(truth["sources_available"]) < 2:
-              raise RuntimeError(
-                  "PROP_ANALYTICS_STEP2_SOURCE_ROUTER_INCOMPLETE:"
-                  + ",".join(truth["sources_available"])
-              )
+          handoffs=[build_matchup_handoff(g,truth["target_date"]) for g in games]
+          keys={h["selection_key"] for h in handoffs}
+          if len(keys) != len(handoffs):
+              raise RuntimeError("PROP_ANALYTICS_STEP3_SELECTION_KEYS_NOT_UNIQUE")
+          if not all(h["verified"] and h["source_count"]>=2 for h in handoffs):
+              raise RuntimeError("PROP_ANALYTICS_STEP3_HANDOFF_NOT_VERIFIED")
 
-          for pair in (("BAL","DAL"),("KC","MIA"),("LAR","DEN")):
-              if pair not in pairs:
-                  raise RuntimeError(f"PROP_ANALYTICS_STEP2_EXPECTED_GAME_MISSING:{pair}")
-
-          print("NFL_PROP_ANALYTICS_STEP2_LIVE_SCHEDULE_GREEN",len(games))
-          print("NFL_PROP_ANALYTICS_STEP2_SOURCE_ROUTER_GREEN",truth["sources_available"])
-          print("NFL_PROP_ANALYTICS_STEP2_VERIFIED_GAMES_GREEN",truth["verified_count"])
+          print("NFL_PROP_ANALYTICS_STEP3_LIVE_HANDOFFS_GREEN",len(handoffs))
+          print("NFL_PROP_ANALYTICS_STEP3_VERIFIED_ONLY_GREEN")
           PY
 
   branch-ui-proof:
@@ -163,19 +158,18 @@ jobs:
 
       - name: Start branch-local Streamlit
         run: |
-          mkdir -p artifacts/nfl-prop-analytics-step2
+          mkdir -p artifacts/nfl-prop-analytics-step3
           nohup python -m streamlit run app.py \
             --server.headless true \
             --server.address 127.0.0.1 \
             --server.port 8501 \
-            > artifacts/nfl-prop-analytics-step2/streamlit.log 2>&1 &
-          echo $! > /tmp/prop_analytics_step2_pid
+            > artifacts/nfl-prop-analytics-step3/streamlit.log 2>&1 &
+          echo $! > /tmp/prop_analytics_step3_pid
 
-      - name: Prove Page 1 schedule truth and frozen routes
+      - name: Prove game selection, handoff, responsive layout, and frozen predecessors
         run: |
           python - <<'PY'
           import time
-          from datetime import date
           from urllib.parse import urlencode
 
           import requests
@@ -192,7 +186,7 @@ jobs:
                   pass
               time.sleep(.5)
           else:
-              raise RuntimeError("PROP_ANALYTICS_STEP2_LOCAL_STREAMLIT_NOT_READY")
+              raise RuntimeError("PROP_ANALYTICS_STEP3_LOCAL_STREAMLIT_NOT_READY")
 
           def find(page,selector,timeout=150):
               end=time.monotonic()+timeout
@@ -205,7 +199,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PROP_ANALYTICS_STEP2_SELECTOR_NOT_READY:"+selector)
+              raise RuntimeError("PROP_ANALYTICS_STEP3_SELECTOR_NOT_READY:"+selector)
 
           def find_combo(page,name,timeout=90):
               end=time.monotonic()+timeout
@@ -218,7 +212,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PROP_ANALYTICS_STEP2_COMBO_NOT_READY:"+name)
+              raise RuntimeError("PROP_ANALYTICS_STEP3_COMBO_NOT_READY:"+name)
 
           def choose(page,name,value):
               _,combo=find_combo(page,name)
@@ -235,7 +229,15 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(175)
-              raise RuntimeError("PROP_ANALYTICS_STEP2_OPTION_NOT_READY:"+value)
+              raise RuntimeError("PROP_ANALYTICS_STEP3_OPTION_NOT_READY:"+value)
+
+          def choose_different_game(page,current_key):
+              _,combo=find_combo(page,"Choose verified game",120)
+              combo.click(timeout=10000)
+              page.wait_for_timeout(250)
+              combo.press("ArrowDown")
+              page.wait_for_timeout(150)
+              combo.press("Enter")
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
@@ -248,36 +250,43 @@ jobs:
               choose(page,"🎯 NFL Market","Prop Analytics")
 
               _,owner=find(page,'[data-nfl-prop-analytics-route="v1"]')
-              assert owner.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
-              assert owner.get_attribute("data-prop-analytics-step")=="1"
-
               _,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]')
-              state=board.get_attribute("data-prop-schedule-state")
-              count=int(board.get_attribute("data-prop-schedule-count") or 0)
-              verified=int(board.get_attribute("data-prop-schedule-verified-count") or 0)
-              source_text=board.get_attribute("data-prop-schedule-sources") or ""
-              target=date.fromisoformat(board.get_attribute("data-prop-schedule-date"))
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]')
 
-              assert state=="live",state
-              assert target.weekday()==6,target
-              assert count>=1,count
-              assert verified>=1,verified
-              assert len([s for s in source_text.split(",") if s])>=2,source_text
-              print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SCHEDULE_GREEN",count)
-              print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SOURCE_ROUTER_GREEN",source_text)
+              assert owner.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
+              assert board.get_attribute("data-prop-schedule-state")=="live"
+              assert handoff.get_attribute("data-prop-selection-state")=="selected"
+              assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              assert int(handoff.get_attribute("data-prop-selected-source-count") or 0)>=2
+
+              first=handoff.get_attribute("data-prop-selected-game")
+              choose_different_game(page,first)
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',120)
+              end=time.monotonic()+60
+              second=first
+              while time.monotonic()<end:
+                  second=handoff.get_attribute("data-prop-selected-game")
+                  if second and second != first:
+                      break
+                  page.wait_for_timeout(300)
+              if not second or second==first:
+                  raise RuntimeError(f"PROP_ANALYTICS_STEP3_SELECTION_DID_NOT_CHANGE:{first}:{second}")
+
+              assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              assert int(handoff.get_attribute("data-prop-selected-source-count") or 0)>=2
+              print("NFL_PROP_ANALYTICS_STEP3_BRANCH_SELECTION_GREEN",first,"->",second)
+              print("NFL_PROP_ANALYTICS_STEP3_BRANCH_HANDOFF_GREEN",second)
 
               for width,height in ((390,844),(768,1024),(1440,1000)):
                   page.set_viewport_size({"width":width,"height":height})
                   page.wait_for_timeout(200)
-                  dims=board.evaluate("""e => ({
+                  dims=handoff.evaluate("""e => ({
                     scroll:e.scrollWidth,
                     client:e.clientWidth
                   })""")
                   if dims["scroll"] > dims["client"] + 4:
-                      raise RuntimeError(
-                          f"PROP_ANALYTICS_STEP2_OVERFLOW:{width}:{dims}"
-                      )
-                  print(f"NFL_PROP_ANALYTICS_STEP2_BRANCH_{width}_GREEN")
+                      raise RuntimeError(f"PROP_ANALYTICS_STEP3_OVERFLOW:{width}:{dims}")
+                  print(f"NFL_PROP_ANALYTICS_STEP3_BRANCH_{width}_GREEN")
 
               passing=browser.new_page(viewport={"width":390,"height":844})
               passing.goto(
@@ -289,25 +298,26 @@ jobs:
                   timeout=120000,
               )
               find(passing,'[data-passing-yards-router-owner="v239"]',150)
-              print("NFL_PROP_ANALYTICS_STEP2_PASSING_YARDS_BRANCH_FROZEN_GREEN")
-              print("NFL_PROP_ANALYTICS_STEP2_STEP1_BRANCH_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP3_PASSING_YARDS_BRANCH_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP3_STEP2_BRANCH_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP3_STEP1_BRANCH_FROZEN_GREEN")
 
               passing.close()
               page.close()
               browser.close()
 
-          print("NFL_PROP_ANALYTICS_STEP2_BRANCH_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP3_BRANCH_GREEN")
           PY
 
       - name: Print Streamlit log on failure
         if: failure()
-        run: tail -n 1200 artifacts/nfl-prop-analytics-step2/streamlit.log || true
+        run: tail -n 1400 artifacts/nfl-prop-analytics-step3/streamlit.log || true
 
       - name: Stop branch-local Streamlit
         if: always()
         run: |
-          if [ -f /tmp/prop_analytics_step2_pid ]; then
-            kill "$(cat /tmp/prop_analytics_step2_pid)" 2>/dev/null || true
+          if [ -f /tmp/prop_analytics_step3_pid ]; then
+            kill "$(cat /tmp/prop_analytics_step3_pid)" 2>/dev/null || true
           fi
 
   public-freeze:
@@ -327,11 +337,10 @@ jobs:
           python -m pip install --disable-pip-version-check -q playwright
           python -m playwright install --with-deps chromium
 
-      - name: Prove public Step 2 schedule truth and freeze
+      - name: Prove public Step 3 selection handoff and freeze
         run: |
           python - <<'PY'
           import time
-          from datetime import date
           from urllib.parse import urlencode
 
           from playwright.sync_api import sync_playwright
@@ -349,7 +358,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_SELECTOR_NOT_READY:"+selector)
+              raise RuntimeError("PROP_ANALYTICS_STEP3_PUBLIC_SELECTOR_NOT_READY:"+selector)
 
           def find_combo(page,name,timeout=90):
               end=time.monotonic()+timeout
@@ -362,7 +371,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_COMBO_NOT_READY:"+name)
+              raise RuntimeError("PROP_ANALYTICS_STEP3_PUBLIC_COMBO_NOT_READY:"+name)
 
           def choose(page,name,value,timeout=30):
               _,combo=find_combo(page,name)
@@ -370,9 +379,9 @@ jobs:
               page.keyboard.type(value,delay=20)
               end=time.monotonic()+timeout
               while time.monotonic()<end:
-                  for candidate in page.frames:
+                  for frame in page.frames:
                       try:
-                          opt=candidate.get_by_role("option",name=value,exact=True)
+                          opt=frame.get_by_role("option",name=value,exact=True)
                           if opt.count()>=1:
                               opt.first.click(timeout=10000)
                               return True
@@ -381,7 +390,7 @@ jobs:
                   page.wait_for_timeout(175)
               return False
 
-          def open_step2(browser):
+          def open_step3(browser):
               deadline=time.monotonic()+1200
               last=""
               while time.monotonic()<deadline:
@@ -391,72 +400,82 @@ jobs:
                       page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
                       choose(page,"🏟️ Sport","NFL")
                       if not choose(page,"🎯 NFL Market","Prop Analytics"):
-                          last="PROP_ANALYTICS_STEP2_OPTION_NOT_PUBLISHED"
+                          last="PROP_ANALYTICS_STEP3_OPTION_NOT_PUBLISHED"
                           context.close()
                           time.sleep(8)
                           continue
-
                       _,owner=find(page,'[data-nfl-prop-analytics-route="v1"]',90)
                       _,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]',120)
-                      state=board.get_attribute("data-prop-schedule-state")
-                      count=int(board.get_attribute("data-prop-schedule-count") or 0)
-                      verified=int(board.get_attribute("data-prop-schedule-verified-count") or 0)
-                      source_text=board.get_attribute("data-prop-schedule-sources") or ""
-                      if state!="live" or count<1 or verified<1:
-                          last=f"STEP2_NOT_LIVE:{state}:{count}:{verified}"
+                      _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',120)
+                      if board.get_attribute("data-prop-schedule-state")!="live":
+                          last="STEP2_NOT_LIVE"
                           context.close()
                           time.sleep(8)
                           continue
-                      if len([s for s in source_text.split(",") if s])<2:
-                          last="STEP2_SOURCE_ROUTER_NOT_READY:"+source_text
+                      if handoff.get_attribute("data-prop-handoff-state")!="ready":
+                          last="STEP3_HANDOFF_NOT_READY"
                           context.close()
                           time.sleep(8)
                           continue
-                      return context,page,owner,board
+                      return context,page,owner,board,handoff
                   except Exception as exc:
                       last=f"{type(exc).__name__}:{exc}"
-                      print("PROP_ANALYTICS_STEP2_PUBLIC_DEPLOY_WAIT",last)
+                      print("PROP_ANALYTICS_STEP3_PUBLIC_DEPLOY_WAIT",last)
                       try:
                           context.close()
                       except Exception:
                           pass
                       time.sleep(8)
-              raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_DEPLOYMENT_NOT_ACTIVE:"+last)
+              raise RuntimeError("PROP_ANALYTICS_STEP3_PUBLIC_DEPLOYMENT_NOT_ACTIVE:"+last)
+
+          def choose_different_game(page,current_key):
+              _,combo=find_combo(page,"Choose verified game",120)
+              combo.click(timeout=10000)
+              page.wait_for_timeout(250)
+              combo.press("ArrowDown")
+              page.wait_for_timeout(150)
+              combo.press("Enter")
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
                   headless=True,
                   args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
               )
-              context,page,owner,board=open_step2(browser)
+              context,page,owner,board,handoff=open_step3(browser)
 
               assert owner.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
-              assert owner.get_attribute("data-prop-analytics-step")=="1"
+              assert board.get_attribute("data-prop-schedule-state")=="live"
+              assert handoff.get_attribute("data-prop-selection-state")=="selected"
+              assert int(handoff.get_attribute("data-prop-selected-source-count") or 0)>=2
 
-              target=date.fromisoformat(board.get_attribute("data-prop-schedule-date"))
-              count=int(board.get_attribute("data-prop-schedule-count"))
-              verified=int(board.get_attribute("data-prop-schedule-verified-count"))
-              source_text=board.get_attribute("data-prop-schedule-sources") or ""
+              first=handoff.get_attribute("data-prop-selected-game")
+              choose_different_game(page,first)
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',120)
+              end=time.monotonic()+60
+              second=first
+              while time.monotonic()<end:
+                  second=handoff.get_attribute("data-prop-selected-game")
+                  if second and second != first:
+                      break
+                  page.wait_for_timeout(300)
+              if not second or second==first:
+                  raise RuntimeError(f"PROP_ANALYTICS_STEP3_PUBLIC_SELECTION_DID_NOT_CHANGE:{first}:{second}")
 
-              assert target.weekday()==6,target
-              assert count>=1,count
-              assert verified>=1,verified
-              print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_SCHEDULE_GREEN",count)
-              print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_SOURCE_ROUTER_GREEN",source_text)
-              print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_VERIFIED_GREEN",verified)
+              assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              assert int(handoff.get_attribute("data-prop-selected-source-count") or 0)>=2
+              print("NFL_PROP_ANALYTICS_STEP3_PUBLIC_SELECTION_GREEN",first,"->",second)
+              print("NFL_PROP_ANALYTICS_STEP3_PUBLIC_HANDOFF_GREEN",second)
 
               for width,height in ((390,844),(768,1024),(1440,1000)):
                   page.set_viewport_size({"width":width,"height":height})
                   page.wait_for_timeout(200)
-                  dims=board.evaluate("""e => ({
+                  dims=handoff.evaluate("""e => ({
                     scroll:e.scrollWidth,
                     client:e.clientWidth
                   })""")
                   if dims["scroll"] > dims["client"] + 4:
-                      raise RuntimeError(
-                          f"PROP_ANALYTICS_STEP2_PUBLIC_OVERFLOW:{width}:{dims}"
-                      )
-                  print(f"NFL_PROP_ANALYTICS_STEP2_PUBLIC_{width}_GREEN")
+                      raise RuntimeError(f"PROP_ANALYTICS_STEP3_PUBLIC_OVERFLOW:{width}:{dims}")
+                  print(f"NFL_PROP_ANALYTICS_STEP3_PUBLIC_{width}_GREEN")
 
               passing=context.new_page()
               passing.goto(
@@ -468,15 +487,16 @@ jobs:
                   timeout=120000,
               )
               find(passing,'[data-passing-yards-router-owner="v239"]',150)
-              print("NFL_PROP_ANALYTICS_STEP2_PASSING_YARDS_PUBLIC_FROZEN_GREEN")
-              print("NFL_PROP_ANALYTICS_STEP2_STEP1_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP3_PASSING_YARDS_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP3_STEP2_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP3_STEP1_PUBLIC_FROZEN_GREEN")
 
               passing.close()
               page.close()
               context.close()
               browser.close()
 
-          print("NFL_PROP_ANALYTICS_STEP2_GREEN")
-          print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_GREEN")
-          print("NFL_PROP_ANALYTICS_STEP2_FROZEN")
+          print("NFL_PROP_ANALYTICS_STEP3_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP3_PUBLIC_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP3_FROZEN")
           PY

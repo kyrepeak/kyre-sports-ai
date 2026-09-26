@@ -1,0 +1,87 @@
+{
+  "task": "nfl-prop-analytics-step3-game-handoff-v1",
+  "task_id": "nfl-prop-analytics-step3-game-handoff-v1",
+  "id": "nfl-prop-analytics-step3-game-handoff-v1",
+  "title": "NFL Prop Analytics Step 3 Game Selection + Matchup Handoff",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 1,
+  "step": 3,
+  "step_name": "Game Selection + Matchup Handoff",
+  "status": "DONE",
+  "step3_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "source_main": "d644bac2e23b8413d1e04c7b911eda2cdf490419",
+  "scope": "Consume the frozen Step 2 verified Sunday schedule, let the user select one verified matchup, persist that selection, and expose a clean handoff payload for future Page 2 work. No roster, player prop, sportsbook odds, projection, Passing Yards, or existing NFL market changes.",
+  "field_contract": {
+    "required": [
+      "verified matchup key",
+      "away team",
+      "home team",
+      "schedule date",
+      "kickoff"
+    ],
+    "important": [
+      "week",
+      "network",
+      "venue",
+      "source provenance"
+    ],
+    "optional": [
+      "provider game id",
+      "deep-link selection key"
+    ]
+  },
+  "selection_contract": {
+    "source": "nfl_prop_analytics_schedule_v1.load_schedule_truth",
+    "verified_only": true,
+    "query_key": "ks_pa_game",
+    "session_key": "nfl_prop_analytics_selected_game_v1",
+    "handoff_version": "v1",
+    "fail_closed_rule": "If Step 2 supplies no verified game, Step 3 emits no handoff and renders a not-ready state."
+  },
+  "architecture": {
+    "step1_owner": "nfl_prop_analytics_hub_v1",
+    "step2_module": "nfl_prop_analytics_schedule_v1",
+    "step3_module": "nfl_prop_analytics_game_select_v1",
+    "root_router": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239"
+  },
+  "frozen_protection": {
+    "nfl_prop_analytics_schedule_v1.py": "90fe5ff5bb087198484e4f59de01b72cf7155128",
+    "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json": "62a37cd07cc25be80e439fe63dedc94fec095f59",
+    "streamlit_memory_lazy_router_v240.py": "43a6ef5a541e945b0795f947e32f61fbbaeb5257",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "app.py": "d584693ab55e365bc7e76f9cbacd58a15f6d62d1",
+    ".github/workflows/passing-yards-step10-current-final-freeze-v1.yml": "7b23f9d9ed9967a74cee9f1328c9817c2f71d956",
+    "devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json": "b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5"
+  },
+  "constraints": {
+    "roster_logic_added": false,
+    "player_prop_logic_added": false,
+    "sportsbook_odds_added": false,
+    "projection_logic_added": false,
+    "passing_yards_modified": false,
+    "existing_nfl_market_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Only Step 2 VERIFIED games are selectable.",
+    "Selection survives Streamlit reruns through session state and supports ks_pa_game deep-link continuity.",
+    "A ready handoff includes matchup identity, schedule date, kickoff, week, network, venue, provider game id, and source provenance.",
+    "No verified games produces a fail-closed not-ready handoff.",
+    "Step 2 schedule module and ledger remain byte-identical.",
+    "Step 1 route owner remains active and Step 2 schedule remains publicly visible.",
+    "Frozen Passing Yards/router/app files remain byte-identical.",
+    "390/768/1440 Step 3 selected-matchup card has no horizontal overflow.",
+    "Changing the game picker updates the selected-game marker and handoff payload.",
+    "Public production proof passes before Step 3 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "Step 4 — Page 2 Matchup Shell + Position Sections",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

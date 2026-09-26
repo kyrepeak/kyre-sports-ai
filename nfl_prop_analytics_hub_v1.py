@@ -12,6 +12,7 @@ from __future__ import annotations
 import streamlit as st
 
 from nfl_prop_analytics_schedule_v1 import render_schedule_truth_layer
+from nfl_prop_analytics_game_select_v1 import render_game_selection_handoff
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 1 ROUTE OWNERSHIP"
 PROP_ANALYTICS_VERSION = "v1"
@@ -105,6 +106,7 @@ def render_prop_analytics_page() -> None:
         unsafe_allow_html=True,
     )
     render_schedule_truth_layer()
+    render_game_selection_handoff()
 
 
 def render_nfl_hub(market: str = MARKET) -> None:
@@ -124,6 +126,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP",
     "render_nfl_hub",
+    "render_game_selection_handoff",
     "render_schedule_truth_layer",
     "render_prop_analytics_page",
 ]
