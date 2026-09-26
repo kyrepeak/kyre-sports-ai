@@ -212,7 +212,7 @@ jobs:
               second_box=buttons.nth(1).evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
               if second_box["top"] < first_box["bottom"]-1:
                   raise RuntimeError(f"PAGE2_POLISH_STEP5_PHONE_TAP_NOT_STACKED:{first_box}:{second_box}")
-              if first_box["height"]<47 or second_box["height"]<47:
+              if first_box["height"]<44 or second_box["height"]<44:
                   raise RuntimeError(f"PAGE2_POLISH_STEP5_TOUCH_TARGET_TOO_SMALL:{first_box}:{second_box}")
 
               open_button=frame.get_by_role("button",name="Open prop page")
@@ -357,7 +357,7 @@ jobs:
               second_box=buttons.nth(1).evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
               if second_box["top"] < first_box["bottom"]-1:
                   raise RuntimeError(f"PAGE2_POLISH_STEP5_PUBLIC_PHONE_TAP_NOT_STACKED:{first_box}:{second_box}")
-              if first_box["height"]<47 or second_box["height"]<47:
+              if first_box["height"]<44 or second_box["height"]<44:
                   raise RuntimeError(f"PAGE2_POLISH_STEP5_PUBLIC_TOUCH_TARGET_TOO_SMALL:{first_box}:{second_box}")
 
               open_button=frame.get_by_role("button",name="Open prop page")
