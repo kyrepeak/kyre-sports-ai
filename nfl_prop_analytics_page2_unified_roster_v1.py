@@ -103,8 +103,12 @@ def _team_column(team_truth: dict[str, Any], team_name: str) -> str:
 """
 
 
-def render_unified_roster_availability(handoff: dict[str, Any]) -> dict[str, Any]:
-    roster_truth = load_verified_roster_truth(handoff)
+def render_unified_roster_availability(
+    handoff: dict[str, Any],
+    roster_truth: dict[str, Any] | None = None,
+    availability_truth: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    roster_truth = roster_truth if isinstance(roster_truth, dict) else load_verified_roster_truth(handoff)
     if roster_truth.get("state") != "live":
         st.markdown(
             f"""
@@ -121,7 +125,7 @@ def render_unified_roster_availability(handoff: dict[str, Any]) -> dict[str, Any
         )
         return roster_truth
 
-    truth = load_availability_depth_truth(handoff, roster_truth)
+    truth = availability_truth if isinstance(availability_truth, dict) else load_availability_depth_truth(handoff, roster_truth)
     if truth.get("state") != "live":
         st.markdown(
             f"""
