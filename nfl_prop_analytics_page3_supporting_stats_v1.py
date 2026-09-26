@@ -251,7 +251,12 @@ def _event_support(
         return None
 
     metrics = _history_row_metrics(row)
-    if required_metrics and all(key in metrics for key in required_metrics):
+    direct_required = [key for key in required_metrics if key in metrics]
+    # Passing-game history already carries several certified support fields.
+    # If it can populate a professional support panel, do not add a redundant
+    # per-game box-score network dependency just to chase optional fields.
+    direct_threshold = min(4, len(required_metrics))
+    if required_metrics and len(direct_required) >= direct_threshold:
         return {
             "official_event_id": event_id,
             "metrics": metrics,
