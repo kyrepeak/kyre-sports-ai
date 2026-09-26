@@ -49,6 +49,7 @@ jobs:
           set -euo pipefail
           actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
           expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
             'devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json' \
             'nfl_prop_analytics_hub_v1.py' \
