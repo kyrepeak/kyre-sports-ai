@@ -8,7 +8,7 @@
   "page": 1,
   "step": 2,
   "step_name": "Schedule Truth Layer",
-  "status": "IN_PROGRESS",
+  "status": "DONE",
   "source_main": "c5a7cbe95e992110f003912b386127914253dbe0",
   "scope": "Build Page 1 upcoming-Sunday NFL schedule truth layer under the frozen Step 1 Prop Analytics route. Reconcile NFL.com, nflverse, and ESPN schedule evidence field-by-field. No player props, odds, projections, Passing Yards changes, or existing NFL market changes.",
   "field_contract": {
@@ -79,5 +79,7 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
-  }
+  },
+  "step2_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF"
 }
