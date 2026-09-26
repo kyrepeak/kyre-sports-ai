@@ -32,6 +32,11 @@ from nfl_prop_analytics_history_stats_v1 import (
     load_player_history,
     summarize_history,
 )
+from nfl_prop_analytics_page3_line_control_v1 import (
+    PAGE3_LINE_STEP,
+    PAGE3_LINE_VERSION,
+    render_analysis_line_control,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -54,6 +59,9 @@ PAGE3_NAV_STEP = 2
 PAGE3_NAV_VERSION = "v1"
 PAGE3_STATS_STEP = 3
 PAGE3_STATS_VERSION = "v1"
+# Frozen Step 3 fallback copy remains available if verified history cannot
+# initialize the Step 4 manual threshold.
+PAGE3_STEP3_PRE_LINE_SENTINEL = "LINE REQUIRED • STEP 4"
 
 HISTORY_WINDOWS = (
     ("H2H", "H2H"),
@@ -546,8 +554,26 @@ def render_prop_page_shell() -> dict[str, Any]:
     sample_size = int(history_summary.get("sample_size") or 0)
     source_note = _text(history_payload.get("source")) or "ESPN exact-ID completed game books"
     history_reason = _text(history_payload.get("reason"))
+    line_control: dict[str, Any] = {
+        "ready": False,
+        "state": "unavailable",
+        "line": None,
+        "summary": history_summary,
+    }
 
     if history_ready:
+        line_control = render_analysis_line_control(
+            games=history_payload.get("games") or [],
+            player_id=handoff["player_id"],
+            market_key=chosen_key,
+            market_label=chosen_label,
+            history_key=chosen_history_key,
+            history_label=history_labels[chosen_history_key],
+        )
+        if line_control.get("ready") is True:
+            history_summary = dict(line_control.get("summary") or history_summary)
+            sample_size = int(history_summary.get("sample_size") or sample_size)
+
         hit_state = _text(history_summary.get("hit_rate_state")) or "awaiting-line"
         hit_value = (
             f"{float(history_summary['hit_rate_pct']):.0f}%"
@@ -557,7 +583,7 @@ def render_prop_page_shell() -> dict[str, Any]:
         hit_note = (
             f"{int(history_summary['hit_count'])}/{sample_size} OVER"
             if history_summary.get("hit_count") is not None
-            else "LINE REQUIRED • STEP 4"
+            else PAGE3_STEP3_PRE_LINE_SENTINEL
         )
         st.markdown(
             f"""
@@ -587,7 +613,7 @@ def render_prop_page_shell() -> dict[str, Any]:
     <article><span>HIGH</span><strong>{_format_stat(history_summary.get("high"))}</strong><small>SAMPLE HIGH</small></article>
     <article><span>LOW</span><strong>{_format_stat(history_summary.get("low"))}</strong><small>SAMPLE LOW</small></article>
     <article class="ks-pa3-hit-card"
-             data-prop-page3-step3-hit-rate="awaiting-line">
+             data-prop-page3-step3-hit-rate="{html_lib.escape(hit_state)}">
       <span>HIT RATE</span><strong>{hit_value}</strong><small>{html_lib.escape(hit_note)}</small>
     </article>
   </div>
@@ -658,9 +684,9 @@ def render_prop_page_shell() -> dict[str, Any]:
       <span>{analytics_state}</span>
     </div>
     <p>
-      {"Player is game-day cleared. Analytics data is intentionally not implemented in Step 8."
+      {"Verified historical analytics and the manual Line Lab are active above. Sportsbook market data remains intentionally out of scope."
        if gate_open
-       else "Game-day availability is still pending. Market navigation is available, but analytics remain locked."}
+       else "Verified historical analytics and the manual Line Lab are available above while game-day availability remains pending."}
     </p>
     <div class="ks-pa8-zero-data"
          data-prop-step8-sportsbook-lines="0"
@@ -813,6 +839,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "history_label": history_labels[chosen_history_key],
         "history_payload": history_payload,
         "history_summary": history_summary,
+        "line_control": line_control,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
@@ -836,6 +863,9 @@ __all__ = [
     "PAGE3_POLISH_STEP",
     "PAGE3_STATS_STEP",
     "PAGE3_STATS_VERSION",
+    "PAGE3_STEP3_PRE_LINE_SENTINEL",
+    "PAGE3_LINE_STEP",
+    "PAGE3_LINE_VERSION",
     "PLAYER_PROP_LOGIC",
     "PROJECTION_LOGIC",
     "SHELL_NAVIGATION_ONLY",
