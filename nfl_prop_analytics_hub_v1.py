@@ -13,6 +13,7 @@ import streamlit as st
 
 from nfl_prop_analytics_schedule_v1 import render_schedule_truth_layer
 from nfl_prop_analytics_game_select_v1 import render_game_selection_handoff
+from nfl_prop_analytics_roster_truth_v1 import render_verified_roster_truth
 from nfl_prop_analytics_matchup_shell_v1 import (
     is_matchup_page,
     render_matchup_open_control,
@@ -111,7 +112,9 @@ def render_prop_analytics_page() -> None:
         unsafe_allow_html=True,
     )
     if is_matchup_page():
-        render_matchup_shell()
+        handoff = render_matchup_shell()
+        if handoff:
+            render_verified_roster_truth(handoff)
         return
 
     render_schedule_truth_layer()
@@ -139,6 +142,7 @@ __all__ = [
     "render_game_selection_handoff",
     "render_matchup_open_control",
     "render_matchup_shell",
+    "render_verified_roster_truth",
     "render_schedule_truth_layer",
     "render_prop_analytics_page",
 ]
