@@ -10,3 +10,4 @@ posthog~=7.48
 # NFL Passing Yards Speed Steps 3-4 certified full-redeploy trigger 2026-09-24 R1
 # NFL Passing Yards Speed Step 5 payload-dedupe full-redeploy trigger 2026-09-24 R1
 # NFL Passing Yards Speed Step 5 certified public full-redeploy trigger 2026-09-24 R2
+# Streamlit Cloud full redeploy nudge — NFL Prop Analytics Step 1 public activation
