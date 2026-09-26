@@ -8,15 +8,17 @@ sportsbook odds, projections, or Passing Yards behavior.
 from __future__ import annotations
 
 import html as html_lib
+from datetime import date
 from typing import Any
 
 import streamlit as st
 
 from nfl_prop_analytics_game_select_v1 import (
+    _handoff_kickoff_label,
     build_matchup_handoff,
     get_selected_game_handoff,
 )
-from nfl_prop_analytics_schedule_v1 import load_schedule_truth
+from nfl_prop_analytics_schedule_v1 import load_schedule_truth, team_logo_url
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 4 PAGE 2 MATCHUP SHELL"
 STEP = 4
@@ -103,6 +105,81 @@ def render_matchup_open_control(handoff: dict[str, Any] | None) -> None:
         open_matchup_page(handoff)
 
 
+
+def _display_date(value: str) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return "DATE TBD"
+    try:
+        parsed = date.fromisoformat(raw)
+    except ValueError:
+        return raw
+    return f"{parsed.strftime('%a • %b').upper()} {parsed.day}"
+
+
+def _premium_matchup_header(handoff: dict[str, Any]) -> str:
+    away = str(handoff["away"])
+    home = str(handoff["home"])
+    away_name = str(handoff.get("away_name") or away)
+    home_name = str(handoff.get("home_name") or home)
+    kickoff = _handoff_kickoff_label(handoff)
+    target_date = str(handoff.get("target_date") or "")
+    display_date = _display_date(target_date)
+    network = str(handoff.get("network") or "Network TBD")
+    venue = str(handoff.get("venue") or "Venue TBD")
+    week = str(handoff.get("week") or "").strip()
+    away_logo = team_logo_url(away)
+    home_logo = team_logo_url(home)
+    week_label = f"WEEK {week} • NFL" if week else "NFL • MATCHUP"
+
+    return f"""
+<section class="ks-pa4-premium-head"
+         data-prop-page2-premium-header="v1"
+         data-prop-page2-header-away="{html_lib.escape(away)}"
+         data-prop-page2-header-home="{html_lib.escape(home)}"
+         data-prop-page2-header-kickoff="{html_lib.escape(kickoff)}"
+         data-prop-page2-header-date="{html_lib.escape(target_date)}"
+         data-prop-page2-header-network="{html_lib.escape(network)}"
+         data-prop-page2-header-venue="{html_lib.escape(venue)}">
+  <div class="ks-pa4-premium-team ks-pa4-premium-away">
+    <img class="ks-pa4-premium-logo"
+         data-prop-page2-header-logo="{html_lib.escape(away)}"
+         data-prop-page2-header-logo-side="away"
+         src="{html_lib.escape(away_logo)}"
+         alt="{html_lib.escape(away_name)} logo">
+    <div class="ks-pa4-premium-team-copy">
+      <b>{html_lib.escape(away)}</b>
+      <span>{html_lib.escape(away_name)}</span>
+    </div>
+  </div>
+
+  <div class="ks-pa4-premium-center">
+    <div class="ks-pa4-premium-kicker">{html_lib.escape(week_label)}</div>
+    <div class="ks-pa4-premium-at">@</div>
+    <strong data-prop-page2-header-kickoff-label>{html_lib.escape(kickoff)}</strong>
+    <span>{html_lib.escape(display_date)}</span>
+  </div>
+
+  <div class="ks-pa4-premium-team ks-pa4-premium-home">
+    <div class="ks-pa4-premium-team-copy">
+      <b>{html_lib.escape(home)}</b>
+      <span>{html_lib.escape(home_name)}</span>
+    </div>
+    <img class="ks-pa4-premium-logo"
+         data-prop-page2-header-logo="{html_lib.escape(home)}"
+         data-prop-page2-header-logo-side="home"
+         src="{html_lib.escape(home_logo)}"
+         alt="{html_lib.escape(home_name)} logo">
+  </div>
+</section>
+
+<div class="ks-pa4-premium-meta">
+  <span>{html_lib.escape(network)}</span>
+  <span>{html_lib.escape(venue)}</span>
+  <span>VERIFIED MATCHUP</span>
+</div>
+"""
+
 def _team_position_shell(team: str, name: str, side: str) -> str:
     sections = []
     for position in POSITIONS:
@@ -182,25 +259,7 @@ def render_matchup_shell() -> dict[str, Any] | None:
          data-prop-page2-position-count="8"
          data-prop-page2-positions="QB,RB,WR,TE">
   <div class="ks-pa4-eyebrow">PAGE 2 • MATCHUP HUB</div>
-
-  <div class="ks-pa4-matchup">
-    <div class="ks-pa4-match-team">
-      <b>{html_lib.escape(away)}</b>
-      <span>{html_lib.escape(away_name)}</span>
-    </div>
-    <div class="ks-pa4-at">@</div>
-    <div class="ks-pa4-match-team ks-pa4-home">
-      <b>{html_lib.escape(home)}</b>
-      <span>{html_lib.escape(home_name)}</span>
-    </div>
-  </div>
-
-  <div class="ks-pa4-meta">
-    <span>{html_lib.escape(network)}</span>
-    <span>{html_lib.escape(venue)}</span>
-    <span>{html_lib.escape(target_date)}</span>
-    <span>{source_count} source verification</span>
-  </div>
+  {_premium_matchup_header(handoff)}
 
   <div class="ks-pa4-status">
     <strong>Position shell ready</strong>
@@ -223,6 +282,26 @@ def render_matchup_shell() -> dict[str, Any] | None:
     linear-gradient(145deg,rgba(7,14,24,.99),rgba(10,22,38,.96));
 }}
 .ks-pa4-eyebrow{{color:#7dd3fc;font-size:.69rem;font-weight:900;letter-spacing:.15em}}
+.ks-pa4-premium-head{{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(118px,.62fr) minmax(0,1fr);
+  align-items:center;gap:14px;margin:14px 0 10px;padding:16px 18px;
+  border:1px solid rgba(125,211,252,.18);border-radius:16px;
+  background:linear-gradient(145deg,rgba(3,10,18,.72),rgba(10,27,46,.68));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}}
+.ks-pa4-premium-team{{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:11px;min-width:0}}
+.ks-pa4-premium-home{{grid-template-columns:minmax(0,1fr) auto;text-align:right}}
+.ks-pa4-premium-logo{{width:clamp(48px,7vw,70px);height:clamp(48px,7vw,70px);object-fit:contain;filter:drop-shadow(0 7px 12px rgba(0,0,0,.28))}}
+.ks-pa4-premium-team-copy{{display:flex;flex-direction:column;min-width:0}}
+.ks-pa4-premium-team-copy b{{color:#f8fafc;font-size:clamp(1.15rem,3vw,1.65rem);line-height:1;font-weight:950;letter-spacing:-.025em}}
+.ks-pa4-premium-team-copy span{{margin-top:5px;color:#93a8c0;font-size:.69rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ks-pa4-premium-center{{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}}
+.ks-pa4-premium-kicker{{color:#6f8aa7;font-size:.57rem;font-weight:900;letter-spacing:.12em;white-space:nowrap}}
+.ks-pa4-premium-at{{margin:2px 0 -1px;color:#38bdf8;font-size:.65rem;font-weight:950}}
+.ks-pa4-premium-center strong{{color:#e0f2fe;font-size:clamp(.98rem,2.8vw,1.28rem);line-height:1.1;white-space:nowrap}}
+.ks-pa4-premium-center span{{margin-top:4px;color:#8da3bc;font-size:.62rem;font-weight:800;white-space:nowrap}}
+.ks-pa4-premium-meta{{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:0 0 13px}}
+.ks-pa4-premium-meta span{{padding:5px 8px;border:1px solid rgba(125,211,252,.12);border-radius:999px;color:#7f95ae;background:rgba(14,165,233,.035);font-size:.58rem;font-weight:800}}
 .ks-pa4-matchup{{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;margin:15px 0 11px}}
 .ks-pa4-match-team{{display:flex;flex-direction:column;min-width:0}}
 .ks-pa4-match-team b{{color:#f8fafc;font-size:clamp(1.4rem,4vw,2.25rem);line-height:1}}
@@ -248,6 +327,17 @@ def render_matchup_shell() -> dict[str, Any] | None:
 .ks-pa4-empty span{{color:#cbd5e1;font-size:.8rem}}
 @media(max-width:720px){{
   .ks-pa4-teams{{grid-template-columns:1fr}}
+}}
+@media(max-width:520px){{
+  .ks-pa4-premium-head{{grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr);gap:6px;padding:12px 8px}}
+  .ks-pa4-premium-team{{gap:6px}}
+  .ks-pa4-premium-logo{{width:43px;height:43px}}
+  .ks-pa4-premium-team-copy b{{font-size:1rem}}
+  .ks-pa4-premium-team-copy span{{font-size:.56rem}}
+  .ks-pa4-premium-kicker{{font-size:.49rem;letter-spacing:.07em}}
+  .ks-pa4-premium-center strong{{font-size:.88rem}}
+  .ks-pa4-premium-center span{{font-size:.53rem}}
+  .ks-pa4-premium-meta span{{font-size:.52rem;padding:4px 6px}}
 }}
 @media(max-width:460px){{
   .ks-pa4-page{{padding:13px 11px;border-radius:15px}}
@@ -278,6 +368,8 @@ __all__ = [
     "SPORTSBOOK_ODDS_LOGIC",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP",
+    "_display_date",
+    "_premium_matchup_header",
     "is_matchup_page",
     "open_matchup_page",
     "render_matchup_open_control",
