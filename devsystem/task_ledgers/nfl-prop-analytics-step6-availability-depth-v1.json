@@ -1,0 +1,114 @@
+{
+  "task": "nfl-prop-analytics-step6-availability-depth-v1",
+  "task_id": "nfl-prop-analytics-step6-availability-depth-v1",
+  "id": "nfl-prop-analytics-step6-availability-depth-v1",
+  "title": "NFL Prop Analytics Step 6 Game-Day Availability + Depth Roles",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 6,
+  "step_name": "Game-Day Availability + Depth Roles",
+  "status": "DONE",
+  "step6_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "source_main": "3f7383ec342b96a801719fdbbe93dcea7fa4321f",
+  "scope": "Attach exact ESPN depth roles and exact-event game-day availability states to the frozen Step 5 two-source verified QB/RB/WR/TE identities. PENDING remains PENDING before final inactive reporting; exact-event unavailable status overrides depth. No props, odds, projections, Passing Yards changes, or existing NFL market changes.",
+  "field_contract": {
+    "required": [
+      "frozen Step 5 exact ESPN athlete id",
+      "exact ESPN event id resolved by date + away/home matchup",
+      "position",
+      "depth rank",
+      "availability truth state"
+    ],
+    "important": [
+      "depth source",
+      "event provider health",
+      "exact-event unavailable status",
+      "starter/depth label"
+    ],
+    "optional": [
+      "inactive status text",
+      "event HTTP diagnostics"
+    ]
+  },
+  "availability_contract": {
+    "provider": "ESPN exact event summary",
+    "event_resolution": "Resolve ESPN event independently from target date + away/home matchup; do not assume the frozen Step 3 game_id is an ESPN event id.",
+    "states": [
+      "PENDING",
+      "CONFIRMED",
+      "CLOSED",
+      "UNVERIFIED"
+    ],
+    "pregame_pending_rule": "PENDING is valid truth before final inactive reporting, but no unlisted player may be called AVAILABLE.",
+    "confirmed_rule": "Only CONFIRMED final inactive reporting may label an unlisted Step 5 player GAME-DAY AVAILABLE.",
+    "unavailable_override": "Exact-event OUT/INACTIVE/unavailable status overrides depth role and marks the player UNAVAILABLE.",
+    "unverified_rule": "UNVERIFIED event provider fails Step 6 closed."
+  },
+  "depth_contract": {
+    "primary": "ESPN Site depth chart",
+    "fallback": "ESPN Core season depth chart",
+    "identity_join": "Exact Step 5 ESPN athlete id only",
+    "positions": [
+      "QB",
+      "RB",
+      "WR",
+      "TE"
+    ],
+    "role_rule": "Depth rank 1 = position starter; rank >1 = depth; unmatched IDs remain depth-unverified.",
+    "live_gate": "Both teams require at least one exact-ID depth-verified player in QB/RB/WR/TE."
+  },
+  "architecture": {
+    "step1_owner": "nfl_prop_analytics_hub_v1",
+    "step2_module": "nfl_prop_analytics_schedule_v1",
+    "step3_module": "nfl_prop_analytics_game_select_v1",
+    "step4_module": "nfl_prop_analytics_matchup_shell_v1",
+    "step5_module": "nfl_prop_analytics_roster_truth_v1",
+    "step6_module": "nfl_prop_analytics_availability_depth_v1",
+    "root_router": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239"
+  },
+  "frozen_protection": {
+    "nfl_prop_analytics_roster_truth_v1.py": "ad1a49ddd24d6f50da6c56280b34290b2c3312f3",
+    "devsystem/task_ledgers/nfl-prop-analytics-step5-roster-truth-v1.json": "feee54609cc70337663bdadef3949271382b52f7",
+    "nfl_prop_analytics_matchup_shell_v1.py": "0d2770ff641090e396ae43bea4bf512213c59564",
+    "nfl_prop_analytics_game_select_v1.py": "fcb4ffcd703d05579a318b8b8fbcb64036336b8c",
+    "nfl_prop_analytics_schedule_v1.py": "90fe5ff5bb087198484e4f59de01b72cf7155128",
+    "streamlit_memory_lazy_router_v240.py": "43a6ef5a541e945b0795f947e32f61fbbaeb5257",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "app.py": "d584693ab55e365bc7e76f9cbacd58a15f6d62d1"
+  },
+  "constraints": {
+    "step5_identity_modified": false,
+    "early_available_inference_allowed": false,
+    "fake_depth_role_allowed": false,
+    "player_prop_logic_added": false,
+    "sportsbook_odds_added": false,
+    "projection_logic_added": false,
+    "passing_yards_modified": false,
+    "existing_nfl_market_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Step 6 consumes only Step 5 two-source verified player identities; it does not create new players.",
+    "ESPN event identity is independently resolved by target date + away/home matchup before exact-event availability is requested.",
+    "PENDING pregame availability renders as PENDING and cannot be promoted to AVAILABLE.",
+    "Exact-event unavailable status overrides any depth role for that exact player ID/name.",
+    "Only CONFIRMED final inactive reporting may label an otherwise eligible player GAME-DAY AVAILABLE.",
+    "Depth roles attach only by exact Step 5 ESPN athlete ID and expose depth rank/source.",
+    "Both teams have exact-ID depth evidence in QB/RB/WR/TE or Step 6 fails closed.",
+    "Step 5 product module and ledger remain byte-identical.",
+    "Steps 2-4 product modules remain byte-identical.",
+    "Passing Yards/router/app files remain byte-identical.",
+    "390/768/1440 Step 6 overlay has no horizontal overflow.",
+    "Public production proof passes before Step 6 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "Step 7 — Eligible Player Selection + Prop Page Handoff",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
