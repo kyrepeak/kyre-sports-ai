@@ -42,7 +42,15 @@ jobs:
           actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
           expected="$(printf '%s\n' \
             '.github/workflows/nfl-prop-analytics-page2-polish-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step7-player-handoff-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml' \
             'devsystem/task_ledgers/nfl-prop-analytics-page2-polish-step2-v1.json' \
             'nfl_prop_analytics_hub_v1.py' \
             'nfl_prop_analytics_page2_unified_roster_v1.py' \
