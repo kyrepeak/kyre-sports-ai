@@ -103,16 +103,20 @@ def _prime_cold_prop_analytics_state() -> None:
 
 
 def _prop_hub_importable(importer=importlib.import_module) -> bool:
-    if importer is importlib.import_module and PROP_ANALYTICS_HUB in _IMPORT_CACHE:
-        return _IMPORT_CACHE[PROP_ANALYTICS_HUB]
+    # Cache only a confirmed success. Streamlit Cloud can hot-reload the new
+    # router before a sibling module is visible on disk; caching that transient
+    # miss would poison the process for the rest of its lifetime.
+    if importer is importlib.import_module and _IMPORT_CACHE.get(PROP_ANALYTICS_HUB) is True:
+        return True
     try:
+        if importer is importlib.import_module:
+            importlib.invalidate_caches()
         importer(PROP_ANALYTICS_HUB)
-        ok = True
     except Exception:
-        ok = False
+        return False
     if importer is importlib.import_module:
-        _IMPORT_CACHE[PROP_ANALYTICS_HUB] = ok
-    return ok
+        _IMPORT_CACHE[PROP_ANALYTICS_HUB] = True
+    return True
 
 
 def _render_nfl_v240(market: str) -> None:
