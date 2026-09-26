@@ -18,6 +18,7 @@ from nfl_prop_analytics_availability_depth_v1 import render_availability_depth_t
 from nfl_prop_analytics_page2_unified_roster_v1 import render_unified_roster_availability
 from nfl_prop_analytics_player_select_v1 import render_player_selection_handoff
 from nfl_prop_analytics_page2_tap_player_v1 import render_tap_player_handoff
+from nfl_prop_analytics_page2_responsive_polish_v1 import render_page2_responsive_polish
 from nfl_prop_analytics_prop_page_v1 import (
     is_prop_page,
     render_prop_page_open_control,
@@ -127,6 +128,7 @@ def render_prop_analytics_page() -> None:
     if is_matchup_page():
         handoff = render_matchup_shell()
         if handoff:
+            render_page2_responsive_polish()
             roster_truth = load_verified_roster_truth(handoff)
             if roster_truth and roster_truth.get("state") == "live":
                 availability_truth = load_availability_depth_truth(handoff, roster_truth)
@@ -166,6 +168,7 @@ __all__ = [
     "render_unified_roster_availability",
     "render_player_selection_handoff",
     "render_tap_player_handoff",
+    "render_page2_responsive_polish",
     "render_prop_page_open_control",
     "render_prop_page_shell",
     "render_schedule_truth_layer",
