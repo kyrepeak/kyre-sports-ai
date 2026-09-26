@@ -94,8 +94,22 @@ jobs:
             'nfl_prop_analytics_hub_v1.py' \
             'nfl_prop_analytics_prop_page_v1.py' \
             'tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py' | sort)"
+          visual_polish_step3_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step7-player-handoff-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml' \\
+            'devsystem/task_ledgers/nfl-prop-analytics-visual-polish-step3-v1.json' \\
+            'nfl_prop_analytics_schedule_v1.py' \\
+            'nfl_prop_analytics_game_select_v1.py' \\
+            'tests/test_nfl_prop_analytics_visual_polish_step3_v1.py' | sort)"
           if [ "$actual" != "$expected" ] && [ "$actual" != "$step7_additive_expected" ] && \
-             [ "$actual" != "$step8_additive_expected" ]; then
+             [ "$actual" != "$step8_additive_expected" ] && \
+             [ "$actual" != "$visual_polish_step3_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP6_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -112,8 +126,8 @@ jobs:
           check_blob nfl_prop_analytics_roster_truth_v1.py ad1a49ddd24d6f50da6c56280b34290b2c3312f3
           check_blob devsystem/task_ledgers/nfl-prop-analytics-step5-roster-truth-v1.json feee54609cc70337663bdadef3949271382b52f7
           check_blob nfl_prop_analytics_matchup_shell_v1.py 0d2770ff641090e396ae43bea4bf512213c59564
-          check_blob nfl_prop_analytics_game_select_v1.py fcb4ffcd703d05579a318b8b8fbcb64036336b8c
-          check_blob nfl_prop_analytics_schedule_v1.py 90fe5ff5bb087198484e4f59de01b72cf7155128
+          check_blob nfl_prop_analytics_game_select_v1.py 1187c13fc5bee03a955d014e87f237ed055a27ef
+          check_blob nfl_prop_analytics_schedule_v1.py 3558f4581c0301c4fc57f8b5e761e1e0cc1eb63c
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
