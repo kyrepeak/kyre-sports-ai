@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-step2-prop-history-nav-v1",
+  "title": "NFL Prop Analytics Page 3 Step 2 — Prop + History Navigation",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 2,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "51e09709e111a7b3905587887adb636fc5f4978a",
+  "scope": "Add only the Page 3 premium prop-category and history-window navigation beneath the frozen Step 1 hero. Replace the generic prop selectbox with compact position-aware segmented tabs and add H2H/L5/L10/L20/2026/2025 navigation with query-state persistence. No stats, hit rates, chart, move-the-line, odds, projections, recommendations, or truth-engine changes.",
+  "acceptance": [
+    "Step 1 premium hero remains intact and above Step 2 navigation.",
+    "QB Page 3 shows PASS YDS, PASS TD, INT, COMP, ATT, RUSH prop tabs.",
+    "Other positions retain their existing position-aware market contract through compact labels.",
+    "History navigation shows H2H, L5, L10, L20, 2026, 2025 with L10 default.",
+    "Prop and history choices persist in query state.",
+    "Clicking L5 changes the active history state without changing player identity.",
+    "Clicking PASS TD changes the active QB market to passing_touchdowns.",
+    "PENDING remains analytics gate CLOSED and AVAILABLE remains gate OPEN.",
+    "No sportsbook lines, odds, projections, recommendations, chart, or hit-rate calculation is introduced.",
+    "No horizontal overflow at 390/768/1440.",
+    "Frozen Page 1/Page 2/router/Passing Yards stack remains untouched.",
+    "Branch real-flow proof and frozen Step 1 proof pass before merge.",
+    "Public real-flow proof passes before Step 2 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
