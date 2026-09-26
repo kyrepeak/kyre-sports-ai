@@ -16,7 +16,7 @@ from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
 from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth
 
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 2 POLISH STEP 2 • UNIFIED ROSTER + AVAILABILITY"
-STEP = 2
+STEP = 3
 PAGE = 2
 PRESENTATION_ONLY = True
 MAY_MODIFY_PASSING_YARDS = False
@@ -185,8 +185,8 @@ def render_unified_roster_availability(
   </div>
 
   <div class="ks-pa-u-grid">
-    {_team_column(truth["teams"][away], away_name)}
-    {_team_column(truth["teams"][home], home_name)}
+    {_team_column(filtered_truth["teams"][away], away_name)}
+    {_team_column(filtered_truth["teams"][home], home_name)}
   </div>
 </section>
 
