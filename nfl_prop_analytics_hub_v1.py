@@ -13,6 +13,8 @@ import streamlit as st
 
 from nfl_prop_analytics_schedule_v1 import render_schedule_truth_layer
 from nfl_prop_analytics_game_select_v1 import render_game_selection_handoff
+from nfl_prop_analytics_roster_truth_v1 import render_verified_roster_truth
+from nfl_prop_analytics_availability_depth_v1 import render_availability_depth_truth
 from nfl_prop_analytics_page2_unified_roster_v1 import render_unified_roster_availability
 from nfl_prop_analytics_player_select_v1 import render_player_selection_handoff
 from nfl_prop_analytics_prop_page_v1 import (
@@ -124,10 +126,13 @@ def render_prop_analytics_page() -> None:
     if is_matchup_page():
         handoff = render_matchup_shell()
         if handoff:
-            availability_truth = render_unified_roster_availability(handoff)
-            if availability_truth and availability_truth.get("state") == "live":
-                player_handoff = render_player_selection_handoff(handoff, availability_truth)
-                render_prop_page_open_control(player_handoff)
+            roster_truth = render_verified_roster_truth(handoff)
+            if roster_truth and roster_truth.get("state") == "live":
+                availability_truth = render_availability_depth_truth(handoff, roster_truth)
+                if availability_truth and availability_truth.get("state") == "live":
+                    render_unified_roster_availability(handoff, roster_truth, availability_truth)
+                    player_handoff = render_player_selection_handoff(handoff, availability_truth)
+                    render_prop_page_open_control(player_handoff)
         return
 
     render_schedule_truth_layer()
@@ -155,6 +160,8 @@ __all__ = [
     "render_game_selection_handoff",
     "render_matchup_open_control",
     "render_matchup_shell",
+    "render_verified_roster_truth",
+    "render_availability_depth_truth",
     "render_unified_roster_availability",
     "render_player_selection_handoff",
     "render_prop_page_open_control",
