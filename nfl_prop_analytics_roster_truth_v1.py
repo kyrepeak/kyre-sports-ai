@@ -421,7 +421,7 @@ def render_verified_roster_truth(
     truth = load_verified_roster_truth(handoff)
     away = _canon_team(handoff.get("away"))
     home = _canon_team(handoff.get("home"))
-    away_name = _text(handoff.get("away_name"), away) if False else _text(handoff.get("away_name")) or away
+    away_name = _text(handoff.get("away_name")) or away
     home_name = _text(handoff.get("home_name")) or home
 
     if truth.get("state") != "live":
