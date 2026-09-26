@@ -65,7 +65,9 @@ jobs:
             'nfl_prop_analytics_schedule_v1.py' \
             'nfl_prop_analytics_game_select_v1.py' \
             'tests/test_nfl_prop_analytics_visual_polish_step3_v1.py' | sort)"
-          verifier_only='.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml'
+          verifier_only="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-visual-polish-step3-v1.json' | sort)"
           if [ "$actual" = "$verifier_only" ]; then
             echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_VERIFIER_ONLY_SCOPE_GREEN"
           elif [ "$actual" = "$expected" ]; then
