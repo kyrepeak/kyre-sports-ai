@@ -81,6 +81,9 @@ jobs:
           echo PROP_ANALYTICS_PAGE2_POLISH_STEP5_FROZEN_STACK_GREEN
           echo PROP_ANALYTICS_PAGE2_POLISH_STEP5_SCOPE_GREEN
 
+      - name: Install static test stack
+        run: python -m pip install --disable-pip-version-check -q pytest
+
       - name: Compile and test responsive contract
         env:
           PYTHONPATH: ${{ github.workspace }}
