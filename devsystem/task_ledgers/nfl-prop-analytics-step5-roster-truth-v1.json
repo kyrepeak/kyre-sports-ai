@@ -1,0 +1,95 @@
+{
+  "task": "nfl-prop-analytics-step5-roster-truth-v1",
+  "task_id": "nfl-prop-analytics-step5-roster-truth-v1",
+  "id": "nfl-prop-analytics-step5-roster-truth-v1",
+  "title": "NFL Prop Analytics Step 5 Verified Roster Truth Layer",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 5,
+  "step_name": "Verified Roster Truth Layer",
+  "status": "DONE",
+  "step5_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "source_main": "c11461be6270afac9350b1f06b3d97fcab3fed0b",
+  "scope": "Populate the frozen Page 2 matchup shell with verified QB/RB/WR/TE roster identity using independent current-roster evidence. Require exact ESPN athlete IDs to match nflverse weekly roster espn_id values and require both sources to report roster-eligible status. No props, odds, projections, Passing Yards changes, or existing NFL market changes.",
+  "field_contract": {
+    "required": [
+      "exact ESPN athlete id",
+      "player name",
+      "team",
+      "position",
+      "ESPN current roster membership",
+      "nflverse weekly roster membership"
+    ],
+    "important": [
+      "jersey number",
+      "GSIS id",
+      "source provenance",
+      "source disagreement count"
+    ],
+    "optional": [
+      "headshot URL",
+      "roster status labels"
+    ]
+  },
+  "source_router": {
+    "sources": [
+      "ESPN CURRENT ROSTER",
+      "NFLVERSE WEEKLY ROSTER"
+    ],
+    "source_loyalty": false,
+    "identity_key": "ESPN athlete id / nflverse espn_id exact match",
+    "verified_rule": "Exact ID + exact QB/RB/WR/TE position + roster-eligible status from both independent sources.",
+    "disagreement_rule": "Any missing source, position disagreement, or ineligible status prevents VERIFIED publication.",
+    "fail_closed_rule": "Page 2 roster truth is not LIVE unless both teams have at least one independently verified QB, RB, WR, and TE."
+  },
+  "architecture": {
+    "step1_owner": "nfl_prop_analytics_hub_v1",
+    "step2_module": "nfl_prop_analytics_schedule_v1",
+    "step3_module": "nfl_prop_analytics_game_select_v1",
+    "step4_module": "nfl_prop_analytics_matchup_shell_v1",
+    "step5_module": "nfl_prop_analytics_roster_truth_v1",
+    "root_router": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239"
+  },
+  "frozen_protection": {
+    "nfl_prop_analytics_matchup_shell_v1.py": "0d2770ff641090e396ae43bea4bf512213c59564",
+    "nfl_prop_analytics_game_select_v1.py": "fcb4ffcd703d05579a318b8b8fbcb64036336b8c",
+    "nfl_prop_analytics_schedule_v1.py": "90fe5ff5bb087198484e4f59de01b72cf7155128",
+    "devsystem/task_ledgers/nfl-prop-analytics-step4-page2-shell-v1.json": "0f095b2b7eb26af05b4f0ecc34b63e0c14756f2c",
+    "streamlit_memory_lazy_router_v240.py": "43a6ef5a541e945b0795f947e32f61fbbaeb5257",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "app.py": "d584693ab55e365bc7e76f9cbacd58a15f6d62d1"
+  },
+  "constraints": {
+    "fake_players_added": false,
+    "single_source_verified_players_allowed": false,
+    "player_prop_logic_added": false,
+    "sportsbook_odds_added": false,
+    "projection_logic_added": false,
+    "passing_yards_modified": false,
+    "existing_nfl_market_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Only exact player IDs independently present in ESPN current roster and nflverse weekly roster may render VERIFIED.",
+    "QB/RB/WR/TE position must agree across both roster sources.",
+    "Inactive/reserve/practice-squad/suspended source rows cannot render VERIFIED.",
+    "Both selected teams must have at least one independently verified QB, RB, WR, and TE or Step 5 fails closed.",
+    "Page 2 renders verified player names grouped by away/home team and QB/RB/WR/TE.",
+    "Every published player exposes source_count=2 and VERIFIED provenance.",
+    "Step 4 product module and ledger remain byte-identical.",
+    "Steps 1-3 product modules remain frozen.",
+    "Passing Yards/router/app files remain byte-identical.",
+    "390/768/1440 roster truth has no horizontal overflow.",
+    "Public production proof passes before Step 5 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "Step 6 — Game-Day Availability + Depth Roles",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
