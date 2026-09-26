@@ -1,0 +1,33 @@
+name: NFL Prop Analytics Page 2 Polish Step 3
+on:
+  pull_request:
+    paths:
+      - "nfl_prop_analytics_page2_unified_roster_v1.py"
+      - "tests/test_nfl_prop_analytics_page2_polish_step3_v1.py"
+      - ".github/workflows/nfl-prop-analytics-page2-polish-step3-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "nfl_prop_analytics_page2_unified_roster_v1.py"
+      - "tests/test_nfl_prop_analytics_page2_polish-step3-v1.py"
+      - ".github/workflows/nfl-prop-analytics-page2-polish-step3-v1.yml"
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - run: pytest -q tests/test_nfl_prop_analytics_page2_polish_step3_v1.py
+      - name: Freeze contract
+        run: |
+          grep -q 'FILTERS = ("ALL", "QB", "RB", "WR", "TE")' nfl_prop_analytics_page2_unified_roster_v1.py
+          grep -q 'data-prop-page2-position-filter="v1"' nfl_prop_analytics_page2_unified_roster_v1.py
+          echo PROP_ANALYTICS_PAGE2_POLISH_STEP3_FILTER_CONTRACT_GREEN
+          echo PROP_ANALYTICS_PAGE2_POLISH_STEP3_GREEN
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo PROP_ANALYTICS_PAGE2_POLISH_STEP3_PUBLIC_GREEN
+            echo PROP_ANALYTICS_PAGE2_POLISH_STEP3_FROZEN
+          fi
