@@ -23,6 +23,7 @@ MAY_MODIFY_PASSING_YARDS = False
 MAY_MODIFY_EXISTING_NFL_MARKETS = False
 POSITIONS = ("QB", "RB", "WR", "TE")
 FILTERS = ("ALL", "QB", "RB", "WR", "TE")
+FILTER_KEY = "nfl_prop_analytics_page2_position_filter_v1"
 
 
 def _text(value: Any) -> str:
@@ -186,8 +187,8 @@ def render_unified_roster_availability(
   </div>
 
   <div class="ks-pa-u-grid">
-    {_team_column(filtered_truth["teams"][away], away_name)}
-    {_team_column(filtered_truth["teams"][home], home_name)}
+    {_team_column(filtered_truth["teams"][away], away_name, selected_position)}
+    {_team_column(filtered_truth["teams"][home], home_name, selected_position)}
   </div>
 </section>
 
@@ -228,6 +229,7 @@ __all__ = [
     "MODEL_VERSION",
     "PAGE",
     "FILTERS",
+    "FILTER_KEY",
     "POSITIONS",
     "PRESENTATION_ONLY",
     "STEP",
