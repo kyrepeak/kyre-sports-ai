@@ -1,0 +1,366 @@
+name: NFL Prop Analytics Page 2 Identity Visuals
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_prop_analytics_page2_unified_roster_v1.py"
+      - "tests/test_nfl_prop_analytics_page2_identity_visuals_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page2-identity-visuals-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page2-identity-visuals-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "nfl_prop_analytics_page2_unified_roster_v1.py"
+      - "tests/test_nfl_prop_analytics_page2_identity_visuals_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page2-identity-visuals-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page2-identity-visuals-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-analytics-page2-identity-visuals-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce presentation-only repair scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page2-identity-visuals-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page2-identity-visuals-v1.json' \
+            'nfl_prop_analytics_page2_unified_roster_v1.py' \
+            'tests/test_nfl_prop_analytics_page2_identity_visuals_v1.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_SCOPE_VIOLATION
+            printf '%s\n' "$actual"
+            exit 1
+          }
+          echo PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_SCOPE_GREEN
+
+      - name: Install static test stack
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
+
+      - name: Prove identity-card contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile nfl_prop_analytics_page2_unified_roster_v1.py
+          python -m pytest -q tests/test_nfl_prop_analytics_page2_identity_visuals_v1.py
+          echo PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_STATIC_GREEN
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch Streamlit
+        run: |
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            >/tmp/page2-identity.log 2>&1 &
+
+      - name: Prove team logos + player ID cards
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("IDENTITY_LOCAL_NOT_READY")
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("IDENTITY_LOCAL_SELECTOR_NOT_READY:"+selector)
+
+          def combo(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("IDENTITY_LOCAL_COMBO_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              _,loc=combo(page,name)
+              loc.click(timeout=10000)
+              page.keyboard.type(value,delay=15)
+              end=time.monotonic()+30
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          opt=frame.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(175)
+              raise RuntimeError("IDENTITY_LOCAL_OPTION_NOT_READY:"+value)
+
+          def button(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("IDENTITY_LOCAL_BUTTON_NOT_READY:"+name)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              context=browser.new_context(viewport={"width":768,"height":1100})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              choose(page,"🏟️ Sport","NFL")
+              choose(page,"🎯 NFL Market","Prop Analytics")
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',180)
+              assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              _,open_matchup=button(page,"Open matchup",180)
+              open_matchup.click(timeout=10000)
+
+              frame,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180)
+              assert board.get_attribute("data-prop-page2-unified-state")=="live"
+
+              logos=frame.locator('[data-prop-page2-roster-team-logo="v1"]')
+              assert logos.count()==2,logos.count()
+              for i in range(logos.count()):
+                  assert logos.nth(i).get_attribute("src"),i
+
+              cards=frame.locator('[data-prop-page2-player-id-card="v1"]')
+              assert cards.count()>=16,cards.count()
+              headshots=frame.locator('[data-prop-page2-player-headshot="v1"]')
+              assert headshots.count()==cards.count(),(headshots.count(),cards.count())
+
+              for i in range(min(cards.count(),6)):
+                  card=cards.nth(i)
+                  pid=card.get_attribute("data-prop-page2-unified-player-id")
+                  assert pid and pid.isdigit(),pid
+                  assert f"ESPN ID {pid}" in card.inner_text(),pid
+
+              _,flt=find(page,'[data-prop-page2-position-filter="v1"]',60)
+              assert flt.get_attribute("data-prop-page2-position-filter-options")=="ALL,QB,RB,WR,TE"
+              _,tap=find(page,'[data-prop-page2-tap-player="v1"]',180)
+              assert tap.get_attribute("data-prop-page2-tap-state")=="ready"
+
+              for width in (390,768,1440):
+                  page.set_viewport_size({"width":width,"height":1100})
+                  page.wait_for_timeout(350)
+                  metrics=frame.evaluate("""() => ({
+                    inner: window.innerWidth,
+                    doc: document.documentElement.scrollWidth,
+                    body: document.body.scrollWidth
+                  })""")
+                  assert max(metrics["doc"],metrics["body"]) <= metrics["inner"]+2,(width,metrics)
+                  print(f"PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_BRANCH_{width}_GREEN")
+
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_BRANCH_2_TEAM_LOGOS_GREEN")
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_BRANCH_ID_CARDS_GREEN")
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_BRANCH_GREEN")
+              context.close()
+              browser.close()
+          PY
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove live team logos + player ID cards and freeze
+        run: |
+          python - <<'PY'
+          import time
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("IDENTITY_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def combo(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("IDENTITY_PUBLIC_COMBO_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              _,loc=combo(page,name)
+              loc.click(timeout=10000)
+              page.keyboard.type(value,delay=15)
+              end=time.monotonic()+30
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          opt=frame.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(175)
+              raise RuntimeError("IDENTITY_PUBLIC_OPTION_NOT_READY:"+value)
+
+          def button(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("IDENTITY_PUBLIC_BUTTON_NOT_READY:"+name)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":768,"height":1100})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              choose(page,"🏟️ Sport","NFL")
+              choose(page,"🎯 NFL Market","Prop Analytics")
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',180)
+              assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              _,open_matchup=button(page,"Open matchup",180)
+              open_matchup.click(timeout=10000)
+
+              frame,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180)
+              assert board.get_attribute("data-prop-page2-unified-state")=="live"
+
+              logos=frame.locator('[data-prop-page2-roster-team-logo="v1"]')
+              assert logos.count()==2,logos.count()
+              cards=frame.locator('[data-prop-page2-player-id-card="v1"]')
+              assert cards.count()>=16,cards.count()
+              headshots=frame.locator('[data-prop-page2-player-headshot="v1"]')
+              assert headshots.count()==cards.count(),(headshots.count(),cards.count())
+
+              for i in range(min(cards.count(),6)):
+                  card=cards.nth(i)
+                  pid=card.get_attribute("data-prop-page2-unified-player-id")
+                  assert pid and pid.isdigit(),pid
+                  assert f"ESPN ID {pid}" in card.inner_text(),pid
+
+              _,flt=find(page,'[data-prop-page2-position-filter="v1"]',60)
+              assert flt.get_attribute("data-prop-page2-position-filter-options")=="ALL,QB,RB,WR,TE"
+              _,tap=find(page,'[data-prop-page2-tap-player="v1"]',180)
+              assert tap.get_attribute("data-prop-page2-tap-state")=="ready"
+
+              for width in (390,768,1440):
+                  page.set_viewport_size({"width":width,"height":1100})
+                  page.wait_for_timeout(350)
+                  metrics=frame.evaluate("""() => ({
+                    inner: window.innerWidth,
+                    doc: document.documentElement.scrollWidth,
+                    body: document.body.scrollWidth
+                  })""")
+                  assert max(metrics["doc"],metrics["body"]) <= metrics["inner"]+2,(width,metrics)
+                  print(f"PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_PUBLIC_{width}_GREEN")
+
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_PUBLIC_2_TEAM_LOGOS_GREEN")
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_PUBLIC_ID_CARDS_GREEN")
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_GREEN")
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_PUBLIC_GREEN")
+              print("PROP_ANALYTICS_PAGE2_IDENTITY_VISUALS_FROZEN")
+              context.close()
+              browser.close()
+          PY
