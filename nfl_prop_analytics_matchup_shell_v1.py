@@ -261,15 +261,6 @@ def render_matchup_shell() -> dict[str, Any] | None:
   <div class="ks-pa4-eyebrow">PAGE 2 • MATCHUP HUB</div>
   {_premium_matchup_header(handoff)}
 
-  <div class="ks-pa4-status">
-    <strong>Position shell ready</strong>
-    <span>Roster data is intentionally deferred to the next step.</span>
-  </div>
-
-  <div class="ks-pa4-teams">
-    {_team_position_shell(away, away_name, "away")}
-    {_team_position_shell(home, home_name, "home")}
-  </div>
 </section>
 
 <style data-nfl-prop-analytics-step4-css="v1">
