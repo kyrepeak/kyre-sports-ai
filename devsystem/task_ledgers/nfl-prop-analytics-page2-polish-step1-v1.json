@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page2-polish-step1-v1",
+  "title": "NFL Prop Analytics Page 2 Polish Step 1 — Premium Matchup Header + Team Logos",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 1,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "667569b61e65d8da238a62fb67fbb04c9de98d6b",
+  "scope": "Presentation-only Page 2 matchup header. Add away/home team logos, explicit ET kickoff, compact date, network and venue using the frozen verified matchup handoff. No roster, depth, availability, player-selection, prop, odds, projection, router, Passing Yards, or Page 1 data behavior changes.",
+  "product_changes": {
+    "nfl_prop_analytics_matchup_shell_v1.py": "Page 2 premium header presentation only"
+  },
+  "frozen_modules": [
+    "nfl_prop_analytics_schedule_v1.py",
+    "nfl_prop_analytics_game_select_v1.py",
+    "nfl_prop_analytics_hub_v1.py",
+    "nfl_prop_analytics_roster_truth_v1.py",
+    "nfl_prop_analytics_availability_depth_v1.py",
+    "nfl_prop_analytics_player_select_v1.py",
+    "nfl_prop_analytics_prop_page_v1.py",
+    "streamlit_memory_lazy_router_v240.py",
+    "streamlit_memory_lazy_router_v239.py",
+    "nfl_passing_yards_hub_v85.py",
+    "app.py"
+  ],
+  "acceptance": [
+    "Page 2 renders one correct away-team logo and one correct home-team logo.",
+    "Page 2 renders the selected matchup kickoff explicitly in ET.",
+    "CAR-CLE proves 1:00 PM ET on the Sep 27, 2026 slate.",
+    "Network, venue, compact date and verified-matchup state render in the premium header.",
+    "390/768/1440 remain overflow-free.",
+    "Steps 5-8 product modules remain byte-identical.",
+    "Page 1 schedule/selection truth remains byte-identical.",
+    "Passing Yards remains frozen.",
+    "Public browser proof passes before Page 2 Polish Step 1 is GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "PAGE 2 POLISH STEP 2 — UNIFIED ROSTER + AVAILABILITY CARDS",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
