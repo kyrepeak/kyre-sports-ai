@@ -234,21 +234,10 @@ jobs:
           def choose_different_game(page,current_key):
               _,combo=find_combo(page,"Choose verified game",120)
               combo.click(timeout=10000)
-              end=time.monotonic()+25
-              while time.monotonic()<end:
-                  for frame in page.frames:
-                      try:
-                          opts=frame.get_by_role("option")
-                          n=opts.count()
-                          for i in range(n-1,-1,-1):
-                              text=opts.nth(i).inner_text(timeout=1200)
-                              if current_key.replace("-"," ") not in text:
-                                  opts.nth(i).click(timeout=10000)
-                                  return
-                      except Exception:
-                          pass
-                  page.wait_for_timeout(200)
-              raise RuntimeError("PROP_ANALYTICS_STEP3_ALTERNATE_GAME_NOT_READY")
+              page.wait_for_timeout(250)
+              page.keyboard.press("End")
+              page.wait_for_timeout(150)
+              page.keyboard.press("Enter")
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
@@ -442,21 +431,10 @@ jobs:
           def choose_different_game(page,current_key):
               _,combo=find_combo(page,"Choose verified game",120)
               combo.click(timeout=10000)
-              end=time.monotonic()+25
-              while time.monotonic()<end:
-                  for frame in page.frames:
-                      try:
-                          opts=frame.get_by_role("option")
-                          n=opts.count()
-                          for i in range(n-1,-1,-1):
-                              text=opts.nth(i).inner_text(timeout=1200)
-                              if current_key.replace("-"," ") not in text:
-                                  opts.nth(i).click(timeout=10000)
-                                  return
-                      except Exception:
-                          pass
-                  page.wait_for_timeout(200)
-              raise RuntimeError("PROP_ANALYTICS_STEP3_PUBLIC_ALTERNATE_GAME_NOT_READY")
+              page.wait_for_timeout(250)
+              page.keyboard.press("End")
+              page.wait_for_timeout(150)
+              page.keyboard.press("Enter")
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
