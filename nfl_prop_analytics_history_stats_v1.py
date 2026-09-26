@@ -19,7 +19,8 @@ from typing import Any
 
 import requests
 
-from nfl_prop_analytics_schedule_v1 import _canon_team
+import nfl_passing_yards_profile_v1 as passing_profile
+from nfl_prop_analytics_schedule_v1 import TEAM_NAMES, _canon_team
 
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 3 STEP 3 • EXACT-ID HISTORY STATS V1"
 SOURCE = "ESPN exact-ID completed regular-season game books"
@@ -37,6 +38,14 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 PROJECTION_ENABLED = False
 MARKET_ENABLED = False
 WAGER_ACTIONS = False
+
+PASSING_GAMELOG_MARKETS = frozenset({
+    "passing_yards",
+    "passing_touchdowns",
+    "interceptions",
+    "completions",
+    "attempts",
+})
 
 SUPPORTED_MARKETS = frozenset({
     "passing_yards",
@@ -102,6 +111,106 @@ def _get_json(url: str, query_items: tuple[tuple[str, str], ...] = ()) -> dict[s
 
 def _query(**values: Any) -> tuple[tuple[str, str], ...]:
     return tuple(sorted((str(k), str(v)) for k, v in values.items()))
+
+
+def _canon_opponent(value: Any) -> str:
+    raw = _text(value)
+    canonical = _canon_team(raw)
+    if canonical in TEAM_NAMES:
+        return canonical
+    upper = raw.upper()
+    for abbr, name in TEAM_NAMES.items():
+        if upper == name.upper() or upper.endswith(" " + name.upper()):
+            return abbr
+    return canonical
+
+
+def _passing_value(row: dict[str, Any], market_key: str) -> float | None:
+    source_key = {
+        "passing_yards": "passing_yards",
+        "passing_touchdowns": "passing_tds",
+        "interceptions": "interceptions",
+        "completions": "completions",
+        "attempts": "attempts",
+    }.get(market_key, "")
+    if not source_key:
+        return None
+    return _number(row.get(source_key))
+
+
+@lru_cache(maxsize=96)
+def _passing_gamelog_season(athlete_id: str, season: int) -> tuple[dict[str, Any], ...]:
+    payload, diag = passing_profile._gamelog_payload(int(season), athlete_id)
+    if not diag.get("ok"):
+        raise PropHistoryError(
+            "ESPN athlete game log failed: "
+            + _text(diag.get("error") or diag.get("http") or "unknown")
+        )
+    rows = passing_profile.parse_recent_passing(payload)
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        event_id = _text(row.get("event_id"))
+        if not event_id.isdigit():
+            continue
+        out.append({
+            "official_event_id": event_id,
+            "date": _text(row.get("date")),
+            "season": int(season),
+            "opponent_abbr": _canon_opponent(row.get("opponent")),
+            **dict(row),
+        })
+    out.sort(key=lambda row: (row.get("date") or "", row.get("official_event_id") or ""), reverse=True)
+    return tuple(out)
+
+
+def _passing_history_games(
+    athlete_id: str,
+    opponent_abbr: str,
+    anchor_season: int,
+    history_key: str,
+    market_key: str,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    errors: list[str] = []
+    for season in range(int(anchor_season), int(anchor_season) - HISTORY_SEASONS, -1):
+        try:
+            season_rows = _passing_gamelog_season(athlete_id, season)
+        except PropHistoryError as exc:
+            errors.append(str(exc))
+            continue
+        for row in season_rows:
+            event_id = _text(row.get("official_event_id"))
+            if not event_id or event_id in seen:
+                continue
+            value = _passing_value(row, market_key)
+            if value is None:
+                continue
+            seen.add(event_id)
+            rows.append({
+                "official_event_id": event_id,
+                "official_athlete_id": athlete_id,
+                "date": _text(row.get("date")),
+                "season": int(row.get("season") or season),
+                "opponent_abbr": _canon_opponent(row.get("opponent_abbr") or row.get("opponent")),
+                "market_key": market_key,
+                "value": float(value),
+            })
+
+    rows.sort(key=lambda row: (row["date"], row["official_event_id"]), reverse=True)
+    key = _text(history_key).upper()
+    if key == "H2H":
+        return [row for row in rows if row.get("opponent_abbr") == opponent_abbr][:MAX_H2H_GAMES]
+    if key in {"L5", "L10", "L20"}:
+        return rows[: int(key[1:])]
+    if key.isdigit() and len(key) == 4:
+        season = int(key)
+        return [row for row in rows if int(row.get("season") or 0) == season]
+    if errors and not rows:
+        raise PropHistoryError(errors[0])
+    raise PropHistoryError(f"unsupported history window: {history_key}")
 
 
 def _competition(event: dict[str, Any]) -> dict[str, Any]:
@@ -469,6 +578,23 @@ def load_player_history(
         return base
 
     try:
+        if market in PASSING_GAMELOG_MARKETS:
+            games = _passing_history_games(
+                athlete_id,
+                opponent_abbr,
+                season,
+                history,
+                market,
+            )
+            base.update({
+                "ready": True,
+                "data_available": bool(games),
+                "reason": "" if games else "no exact-ID athlete game-log rows for selected window/market",
+                "games": games,
+                "source": "ESPN exact-ID athlete game log",
+            })
+            return base
+
         team_id, opponent_id = _team_identity_from_summary(event_id, team_abbr, opponent_abbr)
         candidates = _candidate_events(team_id, season)
         selected = _select_events(candidates, history, opponent_id)
@@ -558,6 +684,7 @@ __all__ = [
     "MAX_H2H_GAMES",
     "MAX_RECENT_GAMES",
     "MARKET_ENABLED",
+    "PASSING_GAMELOG_MARKETS",
     "MODEL_VERSION",
     "PROJECTION_ENABLED",
     "PropHistoryError",
