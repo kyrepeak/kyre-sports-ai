@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 import html as html_lib
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import streamlit as st
 
@@ -27,6 +28,7 @@ MAY_MODIFY_EXISTING_NFL_MARKETS = False
 SESSION_KEY = "nfl_prop_analytics_selected_game_v1"
 QUERY_KEY = "ks_pa_game"
 HANDOFF_VERSION = "v1"
+ET = ZoneInfo("America/New_York")
 
 
 def _selection_key(game: dict[str, Any]) -> str:
@@ -47,7 +49,7 @@ def _game_label(game: dict[str, Any]) -> str:
     kickoff = game.get("kickoff_utc")
     kickoff_label = "Time TBD"
     if isinstance(kickoff, datetime):
-        kickoff_label = kickoff.strftime("%-I:%M %p ET")
+        kickoff_label = kickoff.astimezone(ET).strftime("%-I:%M %p ET")
     network = str(game.get("network") or "Network TBD")
     return (
         f"{game['away']} {game.get('away_name', game['away'])} @ "
