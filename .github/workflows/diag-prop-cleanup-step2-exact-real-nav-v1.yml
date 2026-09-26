@@ -1,0 +1,234 @@
+name: DIAG Prop Cleanup Step 2 Exact Real Nav
+
+on:
+  push:
+    branches:
+      - "diag/prop-cleanup-step2-exact-real-nav-v1"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-parity-real-nav:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install exact-parity browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start fresh local Streamlit
+        run: |
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            >/tmp/cleanup-step2-exact-real-nav.log 2>&1 &
+
+      - name: Run ONE exact-parity fresh-session navigation diagnostic
+        run: |
+          python - <<'PY'
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+
+          deadline=time.monotonic()+90
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("DIAG_LOCAL_STREAMLIT_NOT_READY")
+
+          def find_combo(page,name,timeout=45):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("DIAG_COMBO_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              _,combo=find_combo(page,name)
+              combo.click(timeout=10000)
+              page.keyboard.type(value,delay=15)
+              end=time.monotonic()+20
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          opt=frame.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(150)
+              raise RuntimeError("DIAG_OPTION_NOT_READY:"+value)
+
+          def first_locator(page,selector):
+              for frame in page.frames:
+                  try:
+                      loc=frame.locator(selector)
+                      if loc.count()>=1:
+                          return frame,loc.first
+                  except Exception:
+                      pass
+              return None,None
+
+          def body_text(page):
+              chunks=[]
+              for i,frame in enumerate(page.frames):
+                  try:
+                      txt=frame.locator("body").inner_text(timeout=3000)
+                  except Exception as exc:
+                      txt=f"<body unavailable:{type(exc).__name__}:{exc}>"
+                  chunks.append(f"--- FRAME {i} {frame.url} ---\n{txt[:12000]}")
+              return "\n".join(chunks)
+
+          def route_text(page):
+              for frame in page.frames:
+                  try:
+                      loc=frame.locator(".ks-route")
+                      if loc.count()>=1:
+                          return loc.first.inner_text(timeout=3000)
+                  except Exception:
+                      pass
+              return "<NO .ks-route>"
+
+          def marker_state(page):
+              selectors=[
+                  ("PROP_ROUTE",'[data-nfl-prop-analytics-route="v1"]'),
+                  ("STEP2_SCHEDULE",'[data-nfl-prop-analytics-step2-schedule="v1"]'),
+                  ("STEP3_SELECTION",'[data-nfl-prop-analytics-step3-selection="v1"]'),
+              ]
+              out={}
+              for name,sel in selectors:
+                  found=False
+                  attrs={}
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(sel)
+                          if loc.count()>=1:
+                              found=True
+                              if name=="STEP2_SCHEDULE":
+                                  attrs={
+                                      "state":loc.first.get_attribute("data-prop-schedule-state"),
+                                      "count":loc.first.get_attribute("data-prop-schedule-count"),
+                                      "verified":loc.first.get_attribute("data-prop-schedule-verified-count"),
+                                  }
+                              elif name=="STEP3_SELECTION":
+                                  attrs={
+                                      "selection_state":loc.first.get_attribute("data-prop-selection-state"),
+                                      "handoff_state":loc.first.get_attribute("data-prop-handoff-state"),
+                                  }
+                              break
+                      except Exception:
+                          pass
+                  out[name]={"found":found,**attrs}
+              return out
+
+          def wait_route_text(page,needle,timeout=30):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  txt=route_text(page)
+                  if needle in txt:
+                      return txt
+                  page.wait_for_timeout(200)
+              return route_text(page)
+
+          def wait_marker(page,selector,timeout=30):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  frame,loc=first_locator(page,selector)
+                  if loc is not None:
+                      return frame,loc
+                  page.wait_for_timeout(200)
+              return None,None
+
+          def fail_at(label,page):
+              print(f"DIAG_FIRST_MISSING={label}")
+              print("DIAG_URL="+page.url)
+              print("DIAG_ROUTE_TEXT="+route_text(page))
+              print("DIAG_MARKERS="+repr(marker_state(page)))
+              print("DIAG_BODY_BEGIN")
+              print(body_text(page))
+              print("DIAG_BODY_END")
+              raise RuntimeError("DIAG_FIRST_MISSING:"+label)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":768,"height":1024})
+              page=context.new_page()
+
+              # EXACT PARITY: root only. No query params.
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=90000)
+
+              choose(page,"🏟️ Sport","NFL")
+              nfl_route=wait_route_text(page,"active: NFL →",30)
+              print("DIAG_AFTER_NFL_ROUTE_TEXT="+nfl_route)
+
+              choose(page,"🎯 NFL Market","Prop Analytics")
+              prop_route_text=wait_route_text(page,"active: NFL → Prop Analytics",30)
+              print("DIAG_ROOT_ACTIVE_ROUTE_TEXT="+prop_route_text)
+
+              if "active: NFL → Prop Analytics" not in prop_route_text:
+                  fail_at("ROOT_ACTIVE_ROUTE_TEXT",page)
+
+              frame,loc=wait_marker(page,'[data-nfl-prop-analytics-route="v1"]',30)
+              if loc is None:
+                  fail_at("PROP_ROUTE_OWNER",page)
+              print("DIAG_PROP_ROUTE_OWNER_GREEN")
+
+              frame,loc=wait_marker(page,'[data-nfl-prop-analytics-step2-schedule="v1"]',30)
+              if loc is None:
+                  fail_at("STEP2_SCHEDULE_OWNER",page)
+              print(
+                  "DIAG_STEP2_SCHEDULE_OWNER_GREEN "
+                  +str(loc.get_attribute("data-prop-schedule-state"))
+                  +" count="+str(loc.get_attribute("data-prop-schedule-count"))
+                  +" verified="+str(loc.get_attribute("data-prop-schedule-verified-count"))
+              )
+
+              frame,loc=wait_marker(page,'[data-nfl-prop-analytics-step3-selection="v1"]',30)
+              if loc is None:
+                  fail_at("STEP3_SELECTION_OWNER",page)
+
+              print(
+                  "DIAG_STEP3_SELECTION_OWNER_GREEN "
+                  +str(loc.get_attribute("data-prop-selection-state"))
+                  +" handoff="+str(loc.get_attribute("data-prop-handoff-state"))
+              )
+              print("DIAG_EXACT_PARITY_LOCAL_REAL_NAV_GREEN")
+              print("DIAG_OWNER_DECISION=LOCAL_PRODUCT_ROUTING_CLEARED")
+              context.close()
+              browser.close()
+          PY
+
+      - name: Print Streamlit log if diagnostic fails
+        if: failure()
+        run: |
+          echo "===== STREAMLIT LOG ====="
+          tail -n 1600 /tmp/cleanup-step2-exact-real-nav.log || true
