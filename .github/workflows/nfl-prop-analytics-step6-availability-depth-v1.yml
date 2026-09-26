@@ -1,4 +1,4 @@
-name: NFL Prop Analytics Step 5 Roster Truth
+name: NFL Prop Analytics Step 6 Availability Depth
 
 on:
   pull_request:
@@ -9,10 +9,11 @@ on:
       - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
       - ".github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml"
       - ".github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml"
-      - "devsystem/task_ledgers/nfl-prop-analytics-step5-roster-truth-v1.json"
+      - ".github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step6-availability-depth-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
-      - "nfl_prop_analytics_roster_truth_v1.py"
-      - "tests/test_nfl_prop_analytics_step5_roster_truth_v1.py"
+      - "nfl_prop_analytics_availability_depth_v1.py"
+      - "tests/test_nfl_prop_analytics_step6_availability_depth_v1.py"
   push:
     branches: [main]
     paths:
@@ -21,22 +22,23 @@ on:
       - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
       - ".github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml"
       - ".github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml"
-      - "devsystem/task_ledgers/nfl-prop-analytics-step5-roster-truth-v1.json"
+      - ".github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step6-availability-depth-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
-      - "nfl_prop_analytics_roster_truth_v1.py"
-      - "tests/test_nfl_prop_analytics_step5_roster_truth_v1.py"
+      - "nfl_prop_analytics_availability_depth_v1.py"
+      - "tests/test_nfl_prop_analytics_step6_availability_depth_v1.py"
 
 permissions:
   contents: read
 
 concurrency:
-  group: nfl-prop-analytics-step5-roster-truth-${{ github.ref }}
+  group: nfl-prop-analytics-step6-availability-depth-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   static-contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,7 +49,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce exact Step 5 scope and protect frozen Steps 1-4 / Passing Yards
+      - name: Enforce exact Step 6 scope and frozen Steps 1-5 / Passing Yards
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -62,23 +64,13 @@ jobs:
             '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml' \
-            'devsystem/task_ledgers/nfl-prop-analytics-step5-roster-truth-v1.json' \
-            'nfl_prop_analytics_hub_v1.py' \
-            'nfl_prop_analytics_roster_truth_v1.py' \
-            'tests/test_nfl_prop_analytics_step5_roster_truth_v1.py' | sort)"
-          step6_additive_expected="$(printf '%s\n' \
-            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml' \
             'devsystem/task_ledgers/nfl-prop-analytics-step6-availability-depth-v1.json' \
             'nfl_prop_analytics_hub_v1.py' \
             'nfl_prop_analytics_availability_depth_v1.py' \
             'tests/test_nfl_prop_analytics_step6_availability_depth_v1.py' | sort)"
-          if [ "$actual" != "$expected" ] && [ "$actual" != "$step6_additive_expected" ]; then
-            echo "NFL_PROP_ANALYTICS_STEP5_SCOPE_VIOLATION"
+          if [ "$actual" != "$expected" ]; then
+            echo "NFL_PROP_ANALYTICS_STEP6_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
           fi
@@ -86,57 +78,59 @@ jobs:
           check_blob () {
             got="$(git hash-object "$1")"
             test "$got" = "$2" || {
-              echo "NFL_PROP_ANALYTICS_STEP5_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              echo "NFL_PROP_ANALYTICS_STEP6_FROZEN_BLOB_CHANGED:$1:$got:$2"
               exit 1
             }
           }
 
+          check_blob nfl_prop_analytics_roster_truth_v1.py ad1a49ddd24d6f50da6c56280b34290b2c3312f3
+          check_blob devsystem/task_ledgers/nfl-prop-analytics-step5-roster-truth-v1.json feee54609cc70337663bdadef3949271382b52f7
           check_blob nfl_prop_analytics_matchup_shell_v1.py 0d2770ff641090e396ae43bea4bf512213c59564
           check_blob nfl_prop_analytics_game_select_v1.py fcb4ffcd703d05579a318b8b8fbcb64036336b8c
           check_blob nfl_prop_analytics_schedule_v1.py 90fe5ff5bb087198484e4f59de01b72cf7155128
-          check_blob devsystem/task_ledgers/nfl-prop-analytics-step4-page2-shell-v1.json 0f095b2b7eb26af05b4f0ecc34b63e0c14756f2c
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
           check_blob app.py d584693ab55e365bc7e76f9cbacd58a15f6d62d1
 
-          grep -F 'render_verified_roster_truth(handoff)' nfl_prop_analytics_hub_v1.py
-          echo "NFL_PROP_ANALYTICS_STEP5_STEP1_FROZEN_GREEN"
-          echo "NFL_PROP_ANALYTICS_STEP5_STEP2_FROZEN_GREEN"
-          echo "NFL_PROP_ANALYTICS_STEP5_STEP3_FROZEN_GREEN"
-          echo "NFL_PROP_ANALYTICS_STEP5_STEP4_FROZEN_GREEN"
-          echo "NFL_PROP_ANALYTICS_STEP5_PASSING_YARDS_FROZEN_GREEN"
-          echo "NFL_PROP_ANALYTICS_STEP5_SCOPE_GREEN"
+          grep -F 'render_availability_depth_truth(handoff, roster_truth)' nfl_prop_analytics_hub_v1.py
+          echo "NFL_PROP_ANALYTICS_STEP6_STEP5_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP6_STEP4_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP6_STEP3_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP6_STEP2_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP6_STEP1_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP6_PASSING_YARDS_FROZEN_GREEN"
+          echo "NFL_PROP_ANALYTICS_STEP6_SCOPE_GREEN"
 
       - name: Install static test stack
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt
           python -m pip install --disable-pip-version-check -q pytest
 
-      - name: Compile and test Steps 1-5 contract
+      - name: Compile and test Steps 1-6 contract
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -m py_compile \
             nfl_prop_analytics_hub_v1.py \
-            nfl_prop_analytics_schedule_v1.py \
-            nfl_prop_analytics_game_select_v1.py \
-            nfl_prop_analytics_matchup_shell_v1.py \
-            nfl_prop_analytics_roster_truth_v1.py
+            nfl_prop_analytics_roster_truth_v1.py \
+            nfl_prop_analytics_availability_depth_v1.py
           python -m pytest -q \
             tests/test_nfl_prop_analytics_step1_route_ownership_v1.py \
             tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py \
             tests/test_nfl_prop_analytics_step3_game_handoff_v1.py \
             tests/test_nfl_prop_analytics_step4_page2_shell_v1.py \
-            tests/test_nfl_prop_analytics_step5_roster_truth_v1.py
-          echo "NFL_PROP_ANALYTICS_STEP5_STATIC_GREEN"
+            tests/test_nfl_prop_analytics_step5_roster_truth_v1.py \
+            tests/test_nfl_prop_analytics_step6_availability_depth_v1.py
+          echo "NFL_PROP_ANALYTICS_STEP6_STATIC_GREEN"
 
-      - name: Prove live two-source roster truth for CAR-CLE
+      - name: Prove live CAR-CLE exact-event availability + exact-ID depth
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
-          from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth, POSITIONS
+          from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
+          from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth, POSITIONS
 
           handoff={
               "state":"ready",
@@ -148,36 +142,51 @@ jobs:
               "target_date":"2026-09-27",
               "week":3,
           }
-          truth=load_verified_roster_truth(handoff)
+          roster=load_verified_roster_truth(handoff)
+          if roster["state"]!="live":
+              raise RuntimeError("PROP_ANALYTICS_STEP6_STEP5_ROSTER_NOT_LIVE:"+str(roster.get("reason")))
+
+          truth=load_availability_depth_truth(handoff,roster)
           if truth["state"]!="live":
               raise RuntimeError(
-                  "PROP_ANALYTICS_STEP5_LIVE_ROSTER_NOT_READY:"
+                  "PROP_ANALYTICS_STEP6_LIVE_NOT_READY:"
                   + str({
-                      "state":truth.get("state"),
                       "reason":truth.get("reason"),
-                      "sources":truth.get("sources_available"),
-                      "verified":truth.get("verified_count"),
-                      "disagreements":truth.get("disagreement_count"),
-                      "nflverse":truth.get("nflverse_diag"),
-                      "espn":truth.get("espn_diag"),
+                      "event":truth.get("event"),
+                      "snapshot":truth.get("snapshot"),
+                      "teams":{
+                          k:(v.get("depth_diag") if isinstance(v,dict) else v)
+                          for k,v in (truth.get("teams") or {}).items()
+                      },
                   })
               )
-          if truth["source_count"] != 2:
-              raise RuntimeError(f"PROP_ANALYTICS_STEP5_SOURCE_COUNT:{truth['source_count']}")
+          if not str(truth["event_id"]).isdigit():
+              raise RuntimeError("PROP_ANALYTICS_STEP6_EVENT_ID_NOT_ESPN_NUMERIC")
+          if truth["availability_state"] not in {"PENDING","CONFIRMED","CLOSED"}:
+              raise RuntimeError("PROP_ANALYTICS_STEP6_AVAILABILITY_STATE:"+str(truth["availability_state"]))
 
           for team in ("CAR","CLE"):
-              team_truth=truth["teams"][team]
               for pos in POSITIONS:
-                  rows=team_truth["by_position"][pos]
-                  if not rows:
-                      raise RuntimeError(f"PROP_ANALYTICS_STEP5_POSITION_EMPTY:{team}:{pos}")
-                  if not all(row["verified"] and row["source_count"]==2 for row in rows):
-                      raise RuntimeError(f"PROP_ANALYTICS_STEP5_UNVERIFIED_PLAYER:{team}:{pos}")
+                  rows=truth["teams"][team]["by_position"][pos]
+                  if not any(row["depth_verified"] for row in rows):
+                      raise RuntimeError(f"PROP_ANALYTICS_STEP6_DEPTH_EMPTY:{team}:{pos}")
 
-          print("NFL_PROP_ANALYTICS_STEP5_LIVE_ROSTER_GREEN",truth["verified_count"])
-          print("NFL_PROP_ANALYTICS_STEP5_SOURCE_ROUTER_GREEN",truth["sources_available"])
-          print("NFL_PROP_ANALYTICS_STEP5_CAR_POSITIONS_GREEN")
-          print("NFL_PROP_ANALYTICS_STEP5_CLE_POSITIONS_GREEN")
+          all_players=[
+              row
+              for team in ("CAR","CLE")
+              for row in truth["teams"][team]["players"]
+          ]
+          if truth["availability_state"]=="PENDING":
+              leaked=[row["name"] for row in all_players if row["availability_state"]=="AVAILABLE"]
+              if leaked:
+                  raise RuntimeError("PROP_ANALYTICS_STEP6_EARLY_AVAILABLE_LEAK:"+str(leaked))
+
+          print("NFL_PROP_ANALYTICS_STEP6_LIVE_GREEN",truth["event_id"])
+          print("NFL_PROP_ANALYTICS_STEP6_AVAILABILITY_GREEN",truth["availability_state"])
+          print("NFL_PROP_ANALYTICS_STEP6_DEPTH_GREEN",truth["depth_verified_count"])
+          print("NFL_PROP_ANALYTICS_STEP6_STARTERS_GREEN",truth["starter_count"])
+          if truth["availability_state"]=="PENDING":
+              print("NFL_PROP_ANALYTICS_STEP6_PENDING_FAIL_CLOSED_GREEN")
           PY
 
   branch-ui-proof:
@@ -201,15 +210,15 @@ jobs:
 
       - name: Start branch-local Streamlit
         run: |
-          mkdir -p artifacts/nfl-prop-analytics-step5
+          mkdir -p artifacts/nfl-prop-analytics-step6
           nohup python -m streamlit run app.py \
             --server.headless true \
             --server.address 127.0.0.1 \
             --server.port 8501 \
-            > artifacts/nfl-prop-analytics-step5/streamlit.log 2>&1 &
-          echo $! > /tmp/prop_analytics_step5_pid
+            > artifacts/nfl-prop-analytics-step6/streamlit.log 2>&1 &
+          echo $! > /tmp/prop_analytics_step6_pid
 
-      - name: Prove Page 2 verified roster truth and frozen predecessors
+      - name: Prove Page 2 availability/depth overlay and frozen predecessors
         run: |
           python - <<'PY'
           import time
@@ -226,9 +235,9 @@ jobs:
                   pass
               time.sleep(.5)
           else:
-              raise RuntimeError("PROP_ANALYTICS_STEP5_LOCAL_STREAMLIT_NOT_READY")
+              raise RuntimeError("PROP_ANALYTICS_STEP6_LOCAL_STREAMLIT_NOT_READY")
 
-          def find(page,selector,timeout=150):
+          def find(page,selector,timeout=180):
               end=time.monotonic()+timeout
               while time.monotonic()<end:
                   for frame in page.frames:
@@ -239,7 +248,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PROP_ANALYTICS_STEP5_SELECTOR_NOT_READY:"+selector)
+              raise RuntimeError("PROP_ANALYTICS_STEP6_SELECTOR_NOT_READY:"+selector)
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
@@ -249,64 +258,64 @@ jobs:
                   wait_until="domcontentloaded",
                   timeout=120000,
               )
-
-              _,page2=find(page,'[data-nfl-prop-analytics-step4-page2="v1"]',150)
               _,roster=find(page,'[data-nfl-prop-analytics-step5-roster="v1"]',180)
+              _,step6=find(page,'[data-nfl-prop-analytics-step6-availability="v1"]',180)
 
-              assert page2.get_attribute("data-prop-page2-state")=="ready"
               assert roster.get_attribute("data-prop-roster-state")=="live"
-              assert roster.get_attribute("data-prop-roster-selection")=="CAR-CLE"
-              assert int(roster.get_attribute("data-prop-roster-source-count") or 0)==2
-              verified=int(roster.get_attribute("data-prop-roster-verified-count") or 0)
-              assert verified>=8,verified
-
-              total_players=0
-              for frame in page.frames:
-                  total_players+=frame.locator('[data-prop-roster-verified="true"]').count()
-              assert total_players==verified,(total_players,verified)
+              assert step6.get_attribute("data-prop-step6-state")=="live"
+              state=step6.get_attribute("data-prop-step6-availability-state")
+              assert state in {"PENDING","CONFIRMED","CLOSED"},state
+              event_id=step6.get_attribute("data-prop-step6-event-id")
+              assert event_id and event_id.isdigit(),event_id
+              depth_count=int(step6.get_attribute("data-prop-step6-depth-verified-count") or 0)
+              assert depth_count>=8,depth_count
 
               for team in ("CAR","CLE"):
                   for pos in ("QB","RB","WR","TE"):
                       count=0
                       for frame in page.frames:
                           count+=frame.locator(
-                              f'[data-prop-roster-position="{pos}"][data-prop-roster-team="{team}"]'
+                              f'[data-prop-step6-position="{pos}"][data-prop-step6-team="{team}"]'
                           ).count()
                       assert count==1,(team,pos,count)
 
-              print("NFL_PROP_ANALYTICS_STEP5_BRANCH_ROSTER_GREEN",verified)
-              print("NFL_PROP_ANALYTICS_STEP5_BRANCH_TWO_SOURCE_GREEN")
+              if state=="PENDING":
+                  available=0
+                  for frame in page.frames:
+                      available+=frame.locator('[data-prop-step6-availability="AVAILABLE"]').count()
+                  assert available==0,available
+                  print("NFL_PROP_ANALYTICS_STEP6_BRANCH_PENDING_FAIL_CLOSED_GREEN")
+
+              print("NFL_PROP_ANALYTICS_STEP6_BRANCH_GREEN",event_id,state,depth_count)
 
               for width,height in ((390,844),(768,1024),(1440,1000)):
                   page.set_viewport_size({"width":width,"height":height})
                   page.wait_for_timeout(200)
-                  dims=roster.evaluate("""e => ({scroll:e.scrollWidth,client:e.clientWidth})""")
+                  dims=step6.evaluate("""e => ({scroll:e.scrollWidth,client:e.clientWidth})""")
                   if dims["scroll"] > dims["client"] + 4:
-                      raise RuntimeError(f"PROP_ANALYTICS_STEP5_OVERFLOW:{width}:{dims}")
-                  print(f"NFL_PROP_ANALYTICS_STEP5_BRANCH_{width}_GREEN")
+                      raise RuntimeError(f"PROP_ANALYTICS_STEP6_OVERFLOW:{width}:{dims}")
+                  print(f"NFL_PROP_ANALYTICS_STEP6_BRANCH_{width}_GREEN")
 
               passing=browser.new_page(viewport={"width":390,"height":844})
               passing.goto(base+"/?ks_jump_sport=NFL&ks_jump_market=Passing+Yards",wait_until="domcontentloaded",timeout=120000)
               find(passing,'[data-passing-yards-router-owner="v239"]',150)
-              print("NFL_PROP_ANALYTICS_STEP5_PASSING_YARDS_BRANCH_FROZEN_GREEN")
-              print("NFL_PROP_ANALYTICS_STEP5_STEP4_BRANCH_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_PASSING_YARDS_BRANCH_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_STEP5_BRANCH_FROZEN_GREEN")
 
               passing.close()
               page.close()
               browser.close()
-
-          print("NFL_PROP_ANALYTICS_STEP5_BRANCH_GREEN")
           PY
 
       - name: Print Streamlit log on failure
         if: failure()
-        run: tail -n 1600 artifacts/nfl-prop-analytics-step5/streamlit.log || true
+        run: tail -n 1800 artifacts/nfl-prop-analytics-step6/streamlit.log || true
 
       - name: Stop branch-local Streamlit
         if: always()
         run: |
-          if [ -f /tmp/prop_analytics_step5_pid ]; then
-            kill "$(cat /tmp/prop_analytics_step5_pid)" 2>/dev/null || true
+          if [ -f /tmp/prop_analytics_step6_pid ]; then
+            kill "$(cat /tmp/prop_analytics_step6_pid)" 2>/dev/null || true
           fi
 
   public-freeze:
@@ -325,7 +334,7 @@ jobs:
           python -m pip install --disable-pip-version-check -q playwright
           python -m playwright install --with-deps chromium
 
-      - name: Prove public Step 5 roster truth and freeze
+      - name: Prove public Step 6 availability/depth and freeze
         run: |
           python - <<'PY'
           import time
@@ -333,7 +342,7 @@ jobs:
 
           base="https://kyre-sports-ai.streamlit.app"
 
-          def find(page,selector,timeout=120):
+          def find(page,selector,timeout=150):
               end=time.monotonic()+timeout
               while time.monotonic()<end:
                   for frame in page.frames:
@@ -344,9 +353,9 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PROP_ANALYTICS_STEP5_PUBLIC_SELECTOR_NOT_READY:"+selector)
+              raise RuntimeError("PROP_ANALYTICS_STEP6_PUBLIC_SELECTOR_NOT_READY:"+selector)
 
-          def open_step5(browser):
+          def open_step6(browser):
               deadline=time.monotonic()+1200
               last=""
               while time.monotonic()<deadline:
@@ -358,75 +367,79 @@ jobs:
                           wait_until="domcontentloaded",
                           timeout=120000,
                       )
-                      _,page2=find(page,'[data-nfl-prop-analytics-step4-page2="v1"]',100)
-                      _,roster=find(page,'[data-nfl-prop-analytics-step5-roster="v1"]',150)
-                      state=roster.get_attribute("data-prop-roster-state")
-                      sources=int(roster.get_attribute("data-prop-roster-source-count") or 0)
-                      verified=int(roster.get_attribute("data-prop-roster-verified-count") or 0)
-                      if page2.get_attribute("data-prop-page2-state")!="ready":
-                          last="STEP4_PAGE2_NOT_READY"
-                      elif state!="live":
-                          last=f"STEP5_ROSTER_NOT_LIVE:{state}"
-                      elif sources!=2:
-                          last=f"STEP5_SOURCE_COUNT:{sources}"
-                      elif verified<8:
-                          last=f"STEP5_VERIFIED_COUNT:{verified}"
+                      _,roster=find(page,'[data-nfl-prop-analytics-step5-roster="v1"]',120)
+                      _,step6=find(page,'[data-nfl-prop-analytics-step6-availability="v1"]',180)
+                      state=step6.get_attribute("data-prop-step6-availability-state")
+                      event_id=step6.get_attribute("data-prop-step6-event-id")
+                      depth=int(step6.get_attribute("data-prop-step6-depth-verified-count") or 0)
+                      if roster.get_attribute("data-prop-roster-state")!="live":
+                          last="STEP5_ROSTER_NOT_LIVE"
+                      elif step6.get_attribute("data-prop-step6-state")!="live":
+                          last="STEP6_NOT_LIVE"
+                      elif state not in {"PENDING","CONFIRMED","CLOSED"}:
+                          last=f"STEP6_AVAILABILITY_STATE:{state}"
+                      elif not event_id or not event_id.isdigit():
+                          last=f"STEP6_EVENT_ID:{event_id}"
+                      elif depth<8:
+                          last=f"STEP6_DEPTH_COUNT:{depth}"
                       else:
-                          return context,page,roster,verified
+                          return context,page,step6,state,event_id,depth
                   except Exception as exc:
                       last=f"{type(exc).__name__}:{exc}"
-                      print("PROP_ANALYTICS_STEP5_PUBLIC_DEPLOY_WAIT",last)
+                      print("PROP_ANALYTICS_STEP6_PUBLIC_DEPLOY_WAIT",last)
                   try:
                       context.close()
                   except Exception:
                       pass
                   time.sleep(8)
-              raise RuntimeError("PROP_ANALYTICS_STEP5_PUBLIC_DEPLOYMENT_NOT_ACTIVE:"+last)
+              raise RuntimeError("PROP_ANALYTICS_STEP6_PUBLIC_DEPLOYMENT_NOT_ACTIVE:"+last)
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"])
-              context,page,roster,verified=open_step5(browser)
+              context,page,step6,state,event_id,depth=open_step6(browser)
 
-              total=0
-              for frame in page.frames:
-                  total+=frame.locator('[data-prop-roster-verified="true"]').count()
-              assert total==verified,(total,verified)
+              if state=="PENDING":
+                  available=0
+                  for frame in page.frames:
+                      available+=frame.locator('[data-prop-step6-availability="AVAILABLE"]').count()
+                  assert available==0,available
+                  print("NFL_PROP_ANALYTICS_STEP6_PUBLIC_PENDING_FAIL_CLOSED_GREEN")
 
               for team in ("CAR","CLE"):
                   for pos in ("QB","RB","WR","TE"):
                       count=0
                       for frame in page.frames:
                           count+=frame.locator(
-                              f'[data-prop-roster-position="{pos}"][data-prop-roster-team="{team}"]'
+                              f'[data-prop-step6-position="{pos}"][data-prop-step6-team="{team}"]'
                           ).count()
                       assert count==1,(team,pos,count)
 
-              print("NFL_PROP_ANALYTICS_STEP5_PUBLIC_ROSTER_GREEN",verified)
-              print("NFL_PROP_ANALYTICS_STEP5_PUBLIC_TWO_SOURCE_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_PUBLIC_GREEN",event_id,state,depth)
 
               for width,height in ((390,844),(768,1024),(1440,1000)):
                   page.set_viewport_size({"width":width,"height":height})
                   page.wait_for_timeout(200)
-                  dims=roster.evaluate("""e => ({scroll:e.scrollWidth,client:e.clientWidth})""")
+                  dims=step6.evaluate("""e => ({scroll:e.scrollWidth,client:e.clientWidth})""")
                   if dims["scroll"] > dims["client"] + 4:
-                      raise RuntimeError(f"PROP_ANALYTICS_STEP5_PUBLIC_OVERFLOW:{width}:{dims}")
-                  print(f"NFL_PROP_ANALYTICS_STEP5_PUBLIC_{width}_GREEN")
+                      raise RuntimeError(f"PROP_ANALYTICS_STEP6_PUBLIC_OVERFLOW:{width}:{dims}")
+                  print(f"NFL_PROP_ANALYTICS_STEP6_PUBLIC_{width}_GREEN")
 
               passing=context.new_page()
               passing.goto(base+"/?ks_jump_sport=NFL&ks_jump_market=Passing+Yards",wait_until="domcontentloaded",timeout=120000)
               find(passing,'[data-passing-yards-router-owner="v239"]',150)
-              print("NFL_PROP_ANALYTICS_STEP5_PASSING_YARDS_PUBLIC_FROZEN_GREEN")
-              print("NFL_PROP_ANALYTICS_STEP5_STEP4_PUBLIC_FROZEN_GREEN")
-              print("NFL_PROP_ANALYTICS_STEP5_STEP3_PUBLIC_FROZEN_GREEN")
-              print("NFL_PROP_ANALYTICS_STEP5_STEP2_PUBLIC_FROZEN_GREEN")
-              print("NFL_PROP_ANALYTICS_STEP5_STEP1_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_PASSING_YARDS_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_STEP5_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_STEP4_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_STEP3_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_STEP2_PUBLIC_FROZEN_GREEN")
+              print("NFL_PROP_ANALYTICS_STEP6_STEP1_PUBLIC_FROZEN_GREEN")
 
               passing.close()
               page.close()
               context.close()
               browser.close()
 
-          print("NFL_PROP_ANALYTICS_STEP5_GREEN")
-          print("NFL_PROP_ANALYTICS_STEP5_PUBLIC_GREEN")
-          print("NFL_PROP_ANALYTICS_STEP5_FROZEN")
+          print("NFL_PROP_ANALYTICS_STEP6_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP6_PUBLIC_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP6_FROZEN")
           PY
