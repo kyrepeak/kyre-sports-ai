@@ -1,8 +1,8 @@
 """NFL Prop Analytics V1 — Step 1 route + ownership foundation.
 
-This module owns only NFL -> Prop Analytics. Step 1 intentionally contains no
-schedule/provider/prop analytics logic yet; it establishes an independent,
-fail-closed surface for the new three-page Prop Analytics experience.
+This module owns only NFL -> Prop Analytics. The Step 1 route foundation stays
+intact while Step 2 adds an independent, fail-closed Schedule Truth Layer for
+Page 1. Player-prop analytics remain out of scope.
 
 Passing Yards and every existing NFL market remain owned by their frozen
 routers/modules.
@@ -10,6 +10,8 @@ routers/modules.
 from __future__ import annotations
 
 import streamlit as st
+
+from nfl_prop_analytics_schedule_v1 import render_schedule_truth_layer
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 1 ROUTE OWNERSHIP"
 PROP_ANALYTICS_VERSION = "v1"
@@ -102,6 +104,7 @@ def render_prop_analytics_page() -> None:
 """,
         unsafe_allow_html=True,
     )
+    render_schedule_truth_layer()
 
 
 def render_nfl_hub(market: str = MARKET) -> None:
@@ -121,5 +124,6 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP",
     "render_nfl_hub",
+    "render_schedule_truth_layer",
     "render_prop_analytics_page",
 ]

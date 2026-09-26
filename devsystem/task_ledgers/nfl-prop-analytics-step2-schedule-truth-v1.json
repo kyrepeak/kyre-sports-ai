@@ -1,0 +1,85 @@
+{
+  "task": "nfl-prop-analytics-step2-schedule-truth-v1",
+  "task_id": "nfl-prop-analytics-step2-schedule-truth-v1",
+  "id": "nfl-prop-analytics-step2-schedule-truth-v1",
+  "title": "NFL Prop Analytics Step 2 Schedule Truth Layer",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 1,
+  "step": 2,
+  "step_name": "Schedule Truth Layer",
+  "status": "DONE",
+  "source_main": "c5a7cbe95e992110f003912b386127914253dbe0",
+  "scope": "Build Page 1 upcoming-Sunday NFL schedule truth layer under the frozen Step 1 Prop Analytics route. Reconcile NFL.com, nflverse, and ESPN schedule evidence field-by-field. No player props, odds, projections, Passing Yards changes, or existing NFL market changes.",
+  "field_contract": {
+    "required": [
+      "away team",
+      "home team",
+      "Sunday date",
+      "kickoff time"
+    ],
+    "important": [
+      "week",
+      "network",
+      "status"
+    ],
+    "optional": [
+      "venue",
+      "provider game id",
+      "source diagnostics"
+    ]
+  },
+  "source_router": {
+    "sources": [
+      "NFL",
+      "NFLVERSE",
+      "ESPN"
+    ],
+    "source_loyalty": false,
+    "verification_rule": "Two or more independent sources must agree on matchup and kickoff within 10 minutes for VERIFIED.",
+    "single_source_rule": "May display as SOURCE CONFIRMED, never VERIFIED.",
+    "fail_closed_rule": "If no real source returns a Sunday slate, display no games and a fail-closed message."
+  },
+  "architecture": {
+    "step1_owner": "nfl_prop_analytics_hub_v1",
+    "step2_module": "nfl_prop_analytics_schedule_v1",
+    "root_router": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239",
+    "app_entry": "streamlit_memory_lazy_router_v240"
+  },
+  "frozen_protection": {
+    "streamlit_memory_lazy_router_v240.py": "43a6ef5a541e945b0795f947e32f61fbbaeb5257",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "app.py": "d584693ab55e365bc7e76f9cbacd58a15f6d62d1",
+    ".github/workflows/passing-yards-step10-current-final-freeze-v1.yml": "7b23f9d9ed9967a74cee9f1328c9817c2f71d956",
+    "devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json": "b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5"
+  },
+  "constraints": {
+    "player_prop_logic_added": false,
+    "sportsbook_odds_added": false,
+    "projection_logic_added": false,
+    "passing_yards_modified": false,
+    "existing_nfl_market_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Upcoming Sunday slate is sourced from real external schedule evidence.",
+    "NFL.com, nflverse, and ESPN are routed independently; no single provider is mandatory for display.",
+    "A game is VERIFIED only when at least two independent sources agree and kickoff consensus is within 10 minutes.",
+    "Page 1 renders schedule cards with kickoff, teams, network when available, and source provenance.",
+    "No fabricated fallback schedule exists; empty-source state fails closed.",
+    "Step 1 route owner markers remain present and unchanged.",
+    "Frozen Passing Yards files and V239/V240/app entry remain byte-identical.",
+    "390/768/1440 Step 2 schedule board has no horizontal overflow.",
+    "Public production proof passes before Step 2 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "Step 3 — Game Selection + Matchup Handoff",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "step2_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF"
+}
