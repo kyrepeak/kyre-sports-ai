@@ -1,0 +1,25 @@
+NFL_PROP_ANALYTICS_VISUAL_POLISH_STEP3_STREAMLIT_REDEPLOY_V1
+
+Purpose: force Streamlit Community Cloud to consume the already-merged, branch-proven NFL Prop Analytics visual polish Step 3 revision.
+
+Certified source main before refresh:
+f2415e5e4dc567ea3753ebf21e399cf47c42edb9
+
+Authoritative merged PR:
+#1054 — NFL Prop Analytics Visual Polish Step 3 — Logos + Kickoff
+
+Authoritative public-freeze run being reclassified:
+36220613330
+
+Evidence before this refresh:
+- PR #1054 merged successfully.
+- Branch static contract passed.
+- Full Prop Analytics regression passed.
+- Branch browser proof passed 14 games / 28 schedule logos / 2 selected logos.
+- CAR-CLE selected kickoff passed at 1:00 PM ET.
+- Responsive proof passed at 390 / 768 / 1440.
+- Passing Yards frozen proof passed.
+- Main public-freeze remained in its deployment-activation wait rather than exposing a product-code failure.
+
+This file changes no runtime behavior, routing, schedule truth, selection semantics, roster logic, availability logic, props, odds, projections, Passing Yards, or Page 2/3 behavior.
+It exists only to create a fresh protected-main deployment signal and rerun the existing Step 3 public-freeze proof.
