@@ -1,0 +1,418 @@
+name: NFL Prop Analytics Page 2 Cleanup Step 2 Lazy Hub Activation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "nfl_prop_analytics_hub_v1.py"
+      - "tests/test_nfl_prop_analytics_page2_cleanup_step2_lazy_hub_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page2-cleanup-step2-lazy-hub-activation-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page2-cleanup-step2-lazy-hub-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "nfl_prop_analytics_hub_v1.py"
+      - "tests/test_nfl_prop_analytics_page2_cleanup_step2_lazy_hub_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page2-cleanup-step2-lazy-hub-activation-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page2-cleanup-step2-lazy-hub-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-analytics-page2-cleanup-step2-lazy-hub-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact activation scope and frozen product stack
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page2-cleanup-step2-lazy-hub-v1.yml' \
+            'app.py' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page2-cleanup-step2-lazy-hub-activation-v1.json' \
+            'nfl_prop_analytics_hub_v1.py' \
+            'tests/test_nfl_prop_analytics_page2_cleanup_step2_lazy_hub_v1.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_SCOPE_VIOLATION
+            printf '%s\n' "$actual"
+            exit 1
+          }
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+
+          check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
+          check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob nfl_prop_analytics_schedule_v1.py 3558f4581c0301c4fc57f8b5e761e1e0cc1eb63c
+          check_blob nfl_prop_analytics_game_select_v1.py 1187c13fc5bee03a955d014e87f237ed055a27ef
+          check_blob nfl_prop_analytics_matchup_shell_v1.py 0441b2ca34a0206f92f32f5a14a47916067b98a1
+          check_blob nfl_prop_analytics_roster_truth_v1.py ad1a49ddd24d6f50da6c56280b34290b2c3312f3
+          check_blob nfl_prop_analytics_availability_depth_v1.py cf7fdeee4c18d95c19d2a737f59bda7818e059ae
+          check_blob nfl_prop_analytics_page2_unified_roster_v1.py 2738254b5a914df777de5a66fc41b2bb4a9ea56c
+          check_blob nfl_prop_analytics_player_select_v1.py b9aa4ec194ffea970d6858dcd0e0ed7c31ae0426
+          check_blob nfl_prop_analytics_page2_tap_player_v1.py 2cd66941f23582d138f8fe92c2e9b0af25150a3b
+          check_blob nfl_prop_analytics_page2_responsive_polish_v1.py 61ae896231062e112cc6bb710d4f7c28a16e8d0a
+          check_blob nfl_prop_analytics_prop_page_v1.py c1dc331b6bb63558229ae2dba2e36b4b8c1951fe
+
+          echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_SCOPE_GREEN
+          echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_FROZEN_STACK_GREEN
+
+      - name: Install static test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Prove fresh import graph and cleanup contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile app.py nfl_prop_analytics_hub_v1.py
+          python - <<'PY'
+          import nfl_prop_analytics_hub_v1 as hub
+          assert hub.MARKET == "Prop Analytics"
+          print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_FRESH_IMPORT_GREEN")
+          PY
+          python -m pytest -q             tests/test_nfl_prop_analytics_page2_cleanup_step2_lazy_hub_v1.py             tests/test_nfl_prop_analytics_step1_route_ownership_v1.py             tests/test_nfl_prop_analytics_page2_cleanup_step2_v1.py
+          echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_STATIC_GREEN
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start clean branch Streamlit
+        run: |
+          nohup python -m streamlit run app.py             --server.headless true             --server.address 127.0.0.1             --server.port 8501             >/tmp/page2-cleanup-step2-lazy-hub.log 2>&1 &
+
+      - name: Prove clean-session real navigation through Page 2
+        run: |
+          python - <<'PY'
+          import time, requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("LAZY_HUB_LOCAL_STREAMLIT_NOT_READY")
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("LAZY_HUB_LOCAL_SELECTOR_NOT_READY:"+selector)
+
+          def find_combo(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("LAZY_HUB_LOCAL_COMBO_NOT_READY:"+name)
+
+          def find_button(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("LAZY_HUB_LOCAL_BUTTON_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              _,combo=find_combo(page,name)
+              combo.click(timeout=10000)
+              page.keyboard.type(value,delay=15)
+              end=time.monotonic()+30
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          opt=frame.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(175)
+              raise RuntimeError("LAZY_HUB_LOCAL_OPTION_NOT_READY:"+value)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":768,"height":1024})
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              choose(page,"🏟️ Sport","NFL")
+              choose(page,"🎯 NFL Market","Prop Analytics")
+
+              _,route=find(page,'[data-nfl-prop-analytics-route="v1"]',120)
+              assert route.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
+              _,selection=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',180)
+              assert selection.get_attribute("data-prop-handoff-state")=="ready"
+
+              _,open_button=find_button(page,"Open matchup",180)
+              open_button.click(timeout=10000)
+
+              frame,page2=find(page,'[data-nfl-prop-analytics-step4-page2="v1"]',180)
+              assert page2.get_attribute("data-prop-page2-state")=="ready"
+              find(page,'[data-prop-page2-premium-header="v1"]',60)
+              find(page,'[data-prop-page2-responsive-polish="v1"]',60)
+
+              body=frame.locator("body").inner_text()
+              assert frame.locator('[data-prop-page2-team-shell]').count()==0
+              assert frame.locator('[data-prop-page2-roster-state="pending"]').count()==0
+              for token in (
+                  "Position shell ready",
+                  "Roster data is intentionally deferred to the next step.",
+                  "Roster layer arrives in the next step.",
+              ):
+                  assert token not in body,token
+
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_BRANCH_ROUTE_GREEN")
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_BRANCH_PAGE2_GREEN")
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_BRANCH_GREEN")
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 1600 /tmp/page2-cleanup-step2-lazy-hub.log || true
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove refreshed public real navigation and freeze Cleanup Step 2
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("LAZY_HUB_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def find_combo(page,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("LAZY_HUB_PUBLIC_COMBO_NOT_READY:"+name)
+
+          def find_button(page,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("LAZY_HUB_PUBLIC_BUTTON_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              _,combo=find_combo(page,name)
+              combo.click(timeout=10000)
+              page.keyboard.type(value,delay=15)
+              end=time.monotonic()+30
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          opt=frame.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(175)
+              raise RuntimeError("LAZY_HUB_PUBLIC_OPTION_NOT_READY:"+value)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              deadline=time.monotonic()+1200
+              last=""
+
+              while time.monotonic()<deadline:
+                  context=browser.new_context(viewport={"width":768,"height":1024})
+                  page=context.new_page()
+                  try:
+                      page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+                      choose(page,"🏟️ Sport","NFL")
+                      choose(page,"🎯 NFL Market","Prop Analytics")
+
+                      _,route=find(page,'[data-nfl-prop-analytics-route="v1"]',90)
+                      if route.get_attribute("data-prop-analytics-owner")!="nfl_prop_analytics_hub_v1":
+                          raise RuntimeError("LAZY_HUB_PUBLIC_OWNER_MISMATCH")
+
+                      _,selection=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',90)
+                      if selection.get_attribute("data-prop-handoff-state")!="ready":
+                          raise RuntimeError(
+                              "LAZY_HUB_PUBLIC_HANDOFF_NOT_READY:"
+                              +str(selection.get_attribute("data-prop-selection-state"))
+                          )
+
+                      _,open_button=find_button(page,"Open matchup",90)
+                      open_button.click(timeout=10000)
+
+                      frame,page2=find(page,'[data-nfl-prop-analytics-step4-page2="v1"]',90)
+                      if page2.get_attribute("data-prop-page2-state")!="ready":
+                          raise RuntimeError("LAZY_HUB_PUBLIC_PAGE2_NOT_READY")
+
+                      find(page,'[data-prop-page2-premium-header="v1"]',60)
+                      find(page,'[data-prop-page2-responsive-polish="v1"]',60)
+
+                      body=frame.locator("body").inner_text()
+                      old_shell=frame.locator('[data-prop-page2-team-shell]').count()
+                      old_pending=frame.locator('[data-prop-page2-roster-state="pending"]').count()
+                      old_text=any(token in body for token in (
+                          "Position shell ready",
+                          "Roster data is intentionally deferred to the next step.",
+                          "Roster layer arrives in the next step.",
+                      ))
+                      if old_shell or old_pending or old_text:
+                          raise RuntimeError(
+                              f"LAZY_HUB_PUBLIC_OBSOLETE_SHELL:"
+                              f"shell={old_shell}:pending={old_pending}:text={old_text}"
+                          )
+
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_PUBLIC_ROUTE_GREEN")
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_PUBLIC_PAGE2_GREEN")
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_PUBLIC_OBSOLETE_SHELL_GONE_GREEN")
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_GREEN")
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_PUBLIC_GREEN")
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_FROZEN")
+
+                      passing=context.new_page()
+                      passing.goto(
+                          base+"/?"+urlencode({
+                              "ks_jump_sport":"NFL",
+                              "ks_jump_market":"Passing Yards",
+                          }),
+                          wait_until="domcontentloaded",
+                          timeout=120000,
+                      )
+                      find(passing,'[data-passing-yards-router-owner="v239"]',120)
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_PASSING_YARDS_PUBLIC_FROZEN_GREEN")
+
+                      passing.close()
+                      page.close()
+                      context.close()
+                      browser.close()
+                      raise SystemExit(0)
+
+                  except SystemExit:
+                      raise
+                  except Exception as exc:
+                      last=f"{type(exc).__name__}:{exc}"
+                      print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_DEPLOY_WAIT",last)
+                  try:
+                      context.close()
+                  except Exception:
+                      pass
+                  time.sleep(8)
+
+              browser.close()
+              raise RuntimeError(
+                  "PROP_ANALYTICS_PAGE2_CLEANUP_STEP2_LAZY_HUB_PUBLIC_NOT_ACTIVE:"+last
+              )
+          PY
