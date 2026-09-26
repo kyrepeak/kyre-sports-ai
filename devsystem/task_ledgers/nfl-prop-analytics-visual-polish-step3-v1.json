@@ -4,7 +4,7 @@
   "project": "NFL Prop Analytics",
   "step": 3,
   "status": "DONE",
-  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "certification_state": "VERIFIER_ONLY_PUBLIC_FRAME_FIX_PENDING_PROOF",
   "source_main": "7523d0b7bb7e4d4bd71407817779724b1a3f8268",
   "scope": "Visual-only polish for Page 1 schedule cards and Step 3 selected matchup: add correct NFL team logos and make selected kickoff time explicit. No schedule source, selection, roster, availability, prop, odds, projection, Passing Yards, or Page 2/3 behavior changes.",
   "product_changes": {
@@ -34,5 +34,13 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "verifier_fix": {
+    "scope": "Public-freeze verifier only; bind logo locators to the discovered Streamlit app frame.",
+    "root_cause": "Production app content is frame-hosted; the previous verifier found schedule/selection in the child frame but counted logo elements on the outer page.",
+    "product_files_changed": false,
+    "protected_steps_1_2": true,
+    "passing_yards_frozen": true,
+    "repair_pr": 1055
   }
 }
