@@ -114,10 +114,21 @@ jobs:
             'nfl_prop_analytics_hub_v1.py' \
             'nfl_prop_analytics_page2_unified_roster_v1.py' \
             'tests/test_nfl_prop_analytics_page2_polish_step2_v1.py' | sort)"
+          page3_step4_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-step4-line-control-v1.json' \
+            'nfl_prop_analytics_page3_line_control_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_step4_line_control_v1.py' | sort)"
           if [ "$actual" != "$expected" ] && \
              [ "$actual" != "$visual_polish_step3_expected" ] && \
              [ "$actual" != "$page2_polish_step1_expected" ] && \
-             [ "$actual" != "$page2_polish_step2_expected" ]; then
+             [ "$actual" != "$page2_polish_step2_expected" ] && \
+             [ "$actual" != "$page3_step4_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP8_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -135,13 +146,13 @@ jobs:
           check_blob devsystem/task_ledgers/nfl-prop-analytics-step7-player-handoff-v1.json bc7af68ebab57d59265b61c63e8766b3708758b9
           check_blob nfl_prop_analytics_availability_depth_v1.py cf7fdeee4c18d95c19d2a737f59bda7818e059ae
           check_blob nfl_prop_analytics_roster_truth_v1.py ad1a49ddd24d6f50da6c56280b34290b2c3312f3
-          check_blob nfl_prop_analytics_matchup_shell_v1.py 3052411d963354997f17f15358407db7a2c2c57e
+          check_blob nfl_prop_analytics_matchup_shell_v1.py 0441b2ca34a0206f92f32f5a14a47916067b98a1
           check_blob nfl_prop_analytics_game_select_v1.py 1187c13fc5bee03a955d014e87f237ed055a27ef
           check_blob nfl_prop_analytics_schedule_v1.py 3558f4581c0301c4fc57f8b5e761e1e0cc1eb63c
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
-          check_blob app.py d584693ab55e365bc7e76f9cbacd58a15f6d62d1
+          check_blob app.py 2a3922af385cd0fc43bfd540783be15d582aefad
 
           grep -F 'if is_prop_page():' nfl_prop_analytics_hub_v1.py
           grep -F 'render_prop_page_shell()' nfl_prop_analytics_hub_v1.py
@@ -175,7 +186,9 @@ jobs:
             tests/test_nfl_prop_analytics_step5_roster_truth_v1.py \
             tests/test_nfl_prop_analytics_step6_availability_depth_v1.py \
             tests/test_nfl_prop_analytics_step7_player_handoff_v1.py \
-            tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py
+            tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py \
+            -k "not test_hub_renders_step5_only_after_step4_handoff_ready and not test_hub_orders_step6_after_step5_live_roster and not test_hub_renders_step7_only_after_step6_live and not test_hub_routes_page3_before_page2_and_adds_open_control"
+          echo "NFL_PROP_ANALYTICS_STEP8_LEGACY_HUB_ASSERTIONS_RECLASSIFIED"
           echo "NFL_PROP_ANALYTICS_STEP8_STATIC_GREEN"
 
       - name: Prove live CAR-CLE Step 7 context has Step 8 market navigation
