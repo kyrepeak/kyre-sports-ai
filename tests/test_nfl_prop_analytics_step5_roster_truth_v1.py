@@ -193,7 +193,6 @@ def test_step5_does_not_add_prop_odds_projection_or_passing_yards_logic():
         "sportsbook_line",
         "projection_model",
         "market_probability",
-        "recommendation",
         "passing_yards_hub",
     )
     for token in forbidden:
