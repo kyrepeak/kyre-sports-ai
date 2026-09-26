@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page2-cleanup-step3-final-visual-proof-v1",
+  "title": "NFL Prop Analytics Page 2 Cleanup Step 3 — Final Visual Proof",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 3,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "0ec02155d10b212a190bcd1413cfbb03ff05da5b",
+  "scope": "Verifier-only final visual certification of the already-frozen Page 2 cleanup. No product code changes. Certify the real user flow at 390/768/1440, CSS source hidden, obsolete shell absent, premium header/logos preserved, real unified roster/filter/tap controls preserved, no horizontal overflow, and exact tap-player handoff into Page 3.",
+  "frozen_modules": [
+    "streamlit_memory_lazy_router_v240.py",
+    "streamlit_memory_lazy_router_v239.py",
+    "nfl_prop_analytics_schedule_v1.py",
+    "nfl_prop_analytics_game_select_v1.py",
+    "nfl_prop_analytics_roster_truth_v1.py",
+    "nfl_prop_analytics_availability_depth_v1.py",
+    "nfl_prop_analytics_matchup_shell_v1.py",
+    "nfl_prop_analytics_hub_v1.py",
+    "nfl_prop_analytics_page2_unified_roster_v1.py",
+    "nfl_prop_analytics_player_select_v1.py",
+    "nfl_prop_analytics_page2_tap_player_v1.py",
+    "nfl_prop_analytics_page2_responsive_polish_v1.py",
+    "nfl_prop_analytics_prop_page_v1.py",
+    "nfl_passing_yards_hub_v85.py",
+    "app.py"
+  ],
+  "acceptance": [
+    "Real navigation begins at / and selects NFL then Prop Analytics.",
+    "Verified Step 3 game handoff opens Page 2.",
+    "Page 2 premium header has exactly two team logos and a non-empty kickoff label.",
+    "Responsive polish is active and raw responsive CSS text is not visible.",
+    "Obsolete position-shell selectors and text are absent.",
+    "Unified roster is live and ALL/QB/RB/WR/TE filter contract is present.",
+    "Tap-player controls are ready.",
+    "No horizontal overflow at 390, 768, or 1440 pixels.",
+    "Phone roster grid is one column and tablet/desktop roster grid is two columns.",
+    "Phone tap target is at least 47 pixels high.",
+    "Tap-player selection opens Page 3 with the exact selected player id.",
+    "Branch exact-flow proof passes before merge.",
+    "Public exact-flow proof passes before Cleanup Step 3 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
