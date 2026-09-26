@@ -1,28 +1,32 @@
-name: NFL Prop Analytics Page 3 Step 2
+name: NFL Prop Analytics Page 3 Step 3
 
 on:
   pull_request:
     branches: [main]
     paths:
+      - "nfl_prop_analytics_history_stats_v1.py"
       - "nfl_prop_analytics_prop_page_v1.py"
-      - "tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py"
-      - "devsystem/task_ledgers/nfl-prop-analytics-page3-step2-prop-history-nav-v1.json"
+      - "tests/test_nfl_prop_analytics_page3_step3_stats_hit_rate_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page3-step3-stats-hit-rate-v1.json"
       - ".github/workflows/nfl-prop-analytics-page3-step1-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-step2-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step3-v1.yml"
   push:
     branches: [main]
     paths:
+      - "nfl_prop_analytics_history_stats_v1.py"
       - "nfl_prop_analytics_prop_page_v1.py"
-      - "tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py"
-      - "devsystem/task_ledgers/nfl-prop-analytics-page3-step2-prop-history-nav-v1.json"
+      - "tests/test_nfl_prop_analytics_page3_step3_stats_hit_rate_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-analytics-page3-step3-stats-hit-rate-v1.json"
       - ".github/workflows/nfl-prop-analytics-page3-step1-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-step2-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-step3-v1.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: nfl-prop-analytics-page3-step2-${{ github.ref }}-${{ github.sha }}
+  group: nfl-prop-analytics-page3-step3-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +43,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce Page 3 Step 2 scope and frozen stack
+      - name: Enforce Page 3 Step 3 scope and frozen stack
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -57,7 +61,7 @@ jobs:
             'nfl_prop_analytics_prop_page_v1.py' \
             'tests/test_nfl_prop_analytics_page3_step3_stats_hit_rate_v1.py' | sort)"
           test "$actual" = "$expected" || {
-            echo PROP_ANALYTICS_PAGE3_STEP2_SCOPE_VIOLATION
+            echo PROP_ANALYTICS_PAGE3_STEP3_SCOPE_VIOLATION
             printf '%s\n' "$actual"
             exit 1
           }
@@ -65,7 +69,7 @@ jobs:
           check_blob () {
             got="$(git hash-object "$1")"
             test "$got" = "$2" || {
-              echo "PROP_ANALYTICS_PAGE3_STEP2_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              echo "PROP_ANALYTICS_PAGE3_STEP3_FROZEN_BLOB_CHANGED:$1:$got:$2"
               exit 1
             }
           }
@@ -83,21 +87,24 @@ jobs:
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
           check_blob app.py 2a3922af385cd0fc43bfd540783be15d582aefad
 
-          echo PROP_ANALYTICS_PAGE3_STEP2_SCOPE_GREEN
-          echo PROP_ANALYTICS_PAGE3_STEP2_FROZEN_STACK_GREEN
+          echo PROP_ANALYTICS_PAGE3_STEP3_SCOPE_GREEN
+          echo PROP_ANALYTICS_PAGE3_STEP3_FROZEN_STACK_GREEN
 
       - name: Install static test stack
         run: python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
 
-      - name: Prove Page 3 Step 2 contract
+      - name: Prove Page 3 Steps 1-3 contracts
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -m py_compile nfl_prop_analytics_prop_page_v1.py
+          python -m py_compile \
+            nfl_prop_analytics_history_stats_v1.py \
+            nfl_prop_analytics_prop_page_v1.py
           python -m pytest -q \
             tests/test_nfl_prop_analytics_page3_step1_premium_hero_v1.py \
-            tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py
-          echo PROP_ANALYTICS_PAGE3_STEP2_STATIC_GREEN
+            tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py \
+            tests/test_nfl_prop_analytics_page3_step3_stats_hit_rate_v1.py
+          echo PROP_ANALYTICS_PAGE3_STEP3_STATIC_GREEN
 
   branch-ui-proof:
     if: github.event_name == 'pull_request'
@@ -124,9 +131,9 @@ jobs:
             --server.headless true \
             --server.address 127.0.0.1 \
             --server.port 8501 \
-            >/tmp/page3-step2.log 2>&1 &
+            >/tmp/page3-step3.log 2>&1 &
 
-      - name: Prove prop + history navigation through real flow
+      - name: Prove exact-ID statistics + hit-rate engine through real flow
         run: |
           python - <<'PY'
           import re
@@ -144,9 +151,9 @@ jobs:
                   pass
               time.sleep(.5)
           else:
-              raise RuntimeError("PAGE3_STEP2_LOCAL_NOT_READY")
+              raise RuntimeError("PAGE3_STEP3_LOCAL_NOT_READY")
 
-          def find(page,selector,timeout=180):
+          def find(page,selector,timeout=210):
               end=time.monotonic()+timeout
               while time.monotonic()<end:
                   for frame in page.frames:
@@ -157,7 +164,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PAGE3_STEP2_LOCAL_SELECTOR_NOT_READY:"+selector)
+              raise RuntimeError("PAGE3_STEP3_LOCAL_SELECTOR_NOT_READY:"+selector)
 
           def role(page,kind,name,timeout=180,exact=True):
               end=time.monotonic()+timeout
@@ -170,7 +177,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError(f"PAGE3_STEP2_LOCAL_ROLE_NOT_READY:{kind}:{name}")
+              raise RuntimeError(f"PAGE3_STEP3_LOCAL_ROLE_NOT_READY:{kind}:{name}")
 
           def choose(page,name,value):
               _,loc=role(page,"combobox",name,120)
@@ -195,20 +202,43 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PAGE3_STEP2_SEGMENTED_BUTTON_NOT_READY:"+name)
+              raise RuntimeError("PAGE3_STEP3_SEGMENTED_BUTTON_NOT_READY:"+name)
 
-          def wait_attr(page,selector,attribute,value,timeout=90):
+          def wait_stats(page,history,market,timeout=210):
               end=time.monotonic()+timeout
+              selector='[data-prop-page3-step3-stats="v1"]'
+              last=None
               while time.monotonic()<end:
                   for frame in page.frames:
                       try:
                           loc=frame.locator(selector)
-                          if loc.count()>=1 and loc.first.get_attribute(attribute)==value:
-                              return frame,loc.first
+                          if loc.count()>=1:
+                              item=loc.first
+                              last={
+                                  "state":item.get_attribute("data-prop-page3-step3-state"),
+                                  "history":item.get_attribute("data-prop-page3-step3-history"),
+                                  "market":item.get_attribute("data-prop-page3-step3-market"),
+                                  "sample":item.get_attribute("data-prop-page3-step3-sample"),
+                              }
+                              if (
+                                  last["history"]==history
+                                  and last["market"]==market
+                                  and last["state"]=="unavailable"
+                              ):
+                                  raise RuntimeError(
+                                      "PAGE3_STEP3_HISTORY_UNAVAILABLE:"
+                                      + item.inner_text().replace("\n"," | ")
+                                  )
+                              if (
+                                  last["state"]=="ready"
+                                  and last["history"]==history
+                                  and last["market"]==market
+                              ):
+                                  return frame,item
                       except Exception:
                           pass
-                  page.wait_for_timeout(250)
-              raise RuntimeError(f"PAGE3_STEP2_LOCAL_STATE_NOT_READY:{attribute}:{value}")
+                  page.wait_for_timeout(350)
+              raise RuntimeError("PAGE3_STEP3_STATS_NOT_READY:"+repr(last))
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
@@ -225,7 +255,6 @@ jobs:
 
               frame2,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180)
               assert board.get_attribute("data-prop-page2-unified-state")=="live"
-
               qb=frame2.get_by_role(
                   "button",
                   name=re.compile(r"^[A-Z]{2,3} • QB • "),
@@ -237,42 +266,47 @@ jobs:
               player_id=tap_handoff.get_attribute("data-prop-page2-tap-handoff-player-id")
               assert player_id and player_id.isdigit()
               assert tap_handoff.get_attribute("data-prop-page2-tap-handoff-position")=="QB"
-
               _,open_prop=role(page,"button","Open prop page",60)
               open_prop.click(timeout=10000)
 
               frame,hero=find(page,'[data-prop-page3-step1-hero="v1"]',180)
               assert hero.get_attribute("data-prop-page3-player-id")==player_id
               _,nav=find(page,'[data-prop-page3-step2-navigation="v1"]',60)
-              assert nav.get_attribute("data-prop-page3-step2-market-count")=="6"
-              assert nav.get_attribute("data-prop-page3-step2-history-count")=="6"
+              assert nav.get_attribute("data-prop-page3-step2-market")=="passing_yards"
 
-              _,state=wait_attr(
-                  page,'[data-prop-page3-step2-nav-state="ready"]',
-                  "data-prop-page3-step2-active-history","L10",60
-              )
-              assert state.get_attribute("data-prop-page3-step2-active-market")=="passing_yards"
-              assert state.get_attribute("data-prop-page3-step2-history-options")=="H2H,L5,L10,L20,2026,2025"
+              frame,stats=wait_stats(page,"L10","passing_yards",210)
+              sample=int(stats.get_attribute("data-prop-page3-step3-sample") or 0)
+              assert 1 <= sample <= 10,sample
+              assert "ESPN exact-ID" in (stats.get_attribute("data-prop-page3-step3-source") or "")
+              for attr in (
+                  "data-prop-page3-step3-average",
+                  "data-prop-page3-step3-median",
+                  "data-prop-page3-step3-high",
+                  "data-prop-page3-step3-low",
+              ):
+                  assert stats.get_attribute(attr) not in {None,"","—"},(attr,stats.get_attribute(attr))
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
+              assert "LINE REQUIRED" in stats.inner_text()
 
               _,l5=segmented_button(page,"L5",60)
               l5.click(timeout=10000)
-              _,state=wait_attr(
-                  page,'[data-prop-page3-step2-nav-state="ready"]',
-                  "data-prop-page3-step2-active-history","L5",90
-              )
-              assert state.get_attribute("data-prop-page3-step2-active-market")=="passing_yards"
+              frame,stats=wait_stats(page,"L5","passing_yards",210)
+              sample_l5=int(stats.get_attribute("data-prop-page3-step3-sample") or 0)
+              assert 1 <= sample_l5 <= 5,sample_l5
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
 
               _,pass_td=segmented_button(page,"PASS TD",60)
               pass_td.click(timeout=10000)
-              frame,state=wait_attr(
-                  page,'[data-prop-page3-step2-nav-state="ready"]',
-                  "data-prop-page3-step2-active-market","passing_touchdowns",90
-              )
-              assert state.get_attribute("data-prop-page3-step2-active-history")=="L5"
+              frame,stats=wait_stats(page,"L5","passing_touchdowns",210)
+              assert int(stats.get_attribute("data-prop-page3-step3-sample") or 0)>=1
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
 
               prop=frame.locator('[data-nfl-prop-analytics-step8-prop-page="v1"]').first
               assert prop.get_attribute("data-prop-step8-market")=="passing_touchdowns"
               assert prop.get_attribute("data-prop-page3-step2-history")=="L5"
+              assert prop.get_attribute("data-prop-step8-sportsbook-lines") is None
+              zero=frame.locator('[data-prop-step8-shell-content="navigation-only"] [data-prop-step8-sportsbook-lines="0"]').first
+              assert zero.count()==1
 
               availability=prop.get_attribute("data-prop-step8-availability")
               gate=prop.get_attribute("data-prop-step8-prop-gate")
@@ -290,12 +324,13 @@ jobs:
                     body: document.body.scrollWidth
                   })""")
                   assert max(metrics["doc"],metrics["body"]) <= metrics["inner"]+2,(width,metrics)
-                  print(f"PROP_ANALYTICS_PAGE3_STEP2_BRANCH_{width}_GREEN")
+                  print(f"PROP_ANALYTICS_PAGE3_STEP3_BRANCH_{width}_GREEN")
 
-              print("PROP_ANALYTICS_PAGE3_STEP2_BRANCH_HISTORY_NAV_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_BRANCH_PROP_NAV_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_BRANCH_GATE_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_BRANCH_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_BRANCH_EXACT_ID_HISTORY_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_BRANCH_STATS_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_BRANCH_HIT_RATE_ENGINE_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_BRANCH_GATE_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_BRANCH_GREEN")
               context.close()
               browser.close()
           PY
@@ -317,7 +352,7 @@ jobs:
           python -m pip install --disable-pip-version-check -q playwright
           python -m playwright install --with-deps chromium
 
-      - name: Prove live prop + history navigation and freeze
+      - name: Prove live statistics + hit-rate engine and freeze
         run: |
           python - <<'PY'
           import re
@@ -326,7 +361,7 @@ jobs:
 
           base="https://kyre-sports-ai.streamlit.app"
 
-          def find(page,selector,timeout=180):
+          def find(page,selector,timeout=210):
               end=time.monotonic()+timeout
               while time.monotonic()<end:
                   for frame in page.frames:
@@ -337,7 +372,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PAGE3_STEP2_PUBLIC_SELECTOR_NOT_READY:"+selector)
+              raise RuntimeError("PAGE3_STEP3_PUBLIC_SELECTOR_NOT_READY:"+selector)
 
           def role(page,kind,name,timeout=180,exact=True):
               end=time.monotonic()+timeout
@@ -350,7 +385,7 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError(f"PAGE3_STEP2_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
+              raise RuntimeError(f"PAGE3_STEP3_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
 
           def choose(page,name,value):
               _,loc=role(page,"combobox",name,120)
@@ -375,20 +410,43 @@ jobs:
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("PAGE3_STEP2_SEGMENTED_BUTTON_NOT_READY:"+name)
+              raise RuntimeError("PAGE3_STEP3_PUBLIC_SEGMENTED_BUTTON_NOT_READY:"+name)
 
-          def wait_attr(page,selector,attribute,value,timeout=90):
+          def wait_stats(page,history,market,timeout=210):
               end=time.monotonic()+timeout
+              selector='[data-prop-page3-step3-stats="v1"]'
+              last=None
               while time.monotonic()<end:
                   for frame in page.frames:
                       try:
                           loc=frame.locator(selector)
-                          if loc.count()>=1 and loc.first.get_attribute(attribute)==value:
-                              return frame,loc.first
+                          if loc.count()>=1:
+                              item=loc.first
+                              last={
+                                  "state":item.get_attribute("data-prop-page3-step3-state"),
+                                  "history":item.get_attribute("data-prop-page3-step3-history"),
+                                  "market":item.get_attribute("data-prop-page3-step3-market"),
+                                  "sample":item.get_attribute("data-prop-page3-step3-sample"),
+                              }
+                              if (
+                                  last["history"]==history
+                                  and last["market"]==market
+                                  and last["state"]=="unavailable"
+                              ):
+                                  raise RuntimeError(
+                                      "PAGE3_STEP3_HISTORY_UNAVAILABLE:"
+                                      + item.inner_text().replace("\n"," | ")
+                                  )
+                              if (
+                                  last["state"]=="ready"
+                                  and last["history"]==history
+                                  and last["market"]==market
+                              ):
+                                  return frame,item
                       except Exception:
                           pass
-                  page.wait_for_timeout(250)
-              raise RuntimeError(f"PAGE3_STEP2_PUBLIC_STATE_NOT_READY:{attribute}:{value}")
+                  page.wait_for_timeout(350)
+              raise RuntimeError("PAGE3_STEP3_PUBLIC_STATS_NOT_READY:"+repr(last))
 
           with sync_playwright() as p:
               browser=p.chromium.launch(
@@ -424,35 +482,27 @@ jobs:
 
               frame,hero=find(page,'[data-prop-page3-step1-hero="v1"]',180)
               assert hero.get_attribute("data-prop-page3-player-id")==player_id
-              _,nav=find(page,'[data-prop-page3-step2-navigation="v1"]',60)
-              assert nav.get_attribute("data-prop-page3-step2-market-count")=="6"
-              assert nav.get_attribute("data-prop-page3-step2-history-count")=="6"
+              find(page,'[data-prop-page3-step2-navigation="v1"]',60)
 
-              _,state=wait_attr(
-                  page,'[data-prop-page3-step2-nav-state="ready"]',
-                  "data-prop-page3-step2-active-history","L10",60
-              )
-              assert state.get_attribute("data-prop-page3-step2-active-market")=="passing_yards"
+              frame,stats=wait_stats(page,"L10","passing_yards",210)
+              sample=int(stats.get_attribute("data-prop-page3-step3-sample") or 0)
+              assert 1 <= sample <= 10,sample
+              assert "ESPN exact-ID" in (stats.get_attribute("data-prop-page3-step3-source") or "")
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
+              assert "LINE REQUIRED" in stats.inner_text()
 
               _,l5=segmented_button(page,"L5",60)
               l5.click(timeout=10000)
-              _,state=wait_attr(
-                  page,'[data-prop-page3-step2-nav-state="ready"]',
-                  "data-prop-page3-step2-active-history","L5",90
-              )
+              frame,stats=wait_stats(page,"L5","passing_yards",210)
+              assert 1 <= int(stats.get_attribute("data-prop-page3-step3-sample") or 0) <= 5
 
               _,pass_td=segmented_button(page,"PASS TD",60)
               pass_td.click(timeout=10000)
-              frame,state=wait_attr(
-                  page,'[data-prop-page3-step2-nav-state="ready"]',
-                  "data-prop-page3-step2-active-market","passing_touchdowns",90
-              )
-              assert state.get_attribute("data-prop-page3-step2-active-history")=="L5"
+              frame,stats=wait_stats(page,"L5","passing_touchdowns",210)
+              assert int(stats.get_attribute("data-prop-page3-step3-sample") or 0)>=1
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
 
               prop=frame.locator('[data-nfl-prop-analytics-step8-prop-page="v1"]').first
-              assert prop.get_attribute("data-prop-step8-market")=="passing_touchdowns"
-              assert prop.get_attribute("data-prop-page3-step2-history")=="L5"
-
               availability=prop.get_attribute("data-prop-step8-availability")
               gate=prop.get_attribute("data-prop-step8-prop-gate")
               if availability=="PENDING":
@@ -469,14 +519,15 @@ jobs:
                     body: document.body.scrollWidth
                   })""")
                   assert max(metrics["doc"],metrics["body"]) <= metrics["inner"]+2,(width,metrics)
-                  print(f"PROP_ANALYTICS_PAGE3_STEP2_PUBLIC_{width}_GREEN")
+                  print(f"PROP_ANALYTICS_PAGE3_STEP3_PUBLIC_{width}_GREEN")
 
-              print("PROP_ANALYTICS_PAGE3_STEP2_PUBLIC_HISTORY_NAV_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_PUBLIC_PROP_NAV_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_PUBLIC_GATE_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_PUBLIC_GREEN")
-              print("PROP_ANALYTICS_PAGE3_STEP2_FROZEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_PUBLIC_EXACT_ID_HISTORY_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_PUBLIC_STATS_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_PUBLIC_HIT_RATE_ENGINE_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_PUBLIC_GATE_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_PUBLIC_GREEN")
+              print("PROP_ANALYTICS_PAGE3_STEP3_FROZEN")
               context.close()
               browser.close()
           PY

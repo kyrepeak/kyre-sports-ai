@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import date
 import html as html_lib
+import math
 from typing import Any
 
 import streamlit as st
@@ -26,6 +27,10 @@ from nfl_prop_analytics_player_select_v1 import (
     QUERY_KEY as PLAYER_QUERY_KEY,
     build_player_handoff,
     eligible_players,
+)
+from nfl_prop_analytics_history_stats_v1 import (
+    load_player_history,
+    summarize_history,
 )
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
@@ -47,6 +52,8 @@ PAGE3_POLISH_STEP = 1
 PAGE3_HERO_VERSION = "v1"
 PAGE3_NAV_STEP = 2
 PAGE3_NAV_VERSION = "v1"
+PAGE3_STATS_STEP = 3
+PAGE3_STATS_VERSION = "v1"
 
 HISTORY_WINDOWS = (
     ("H2H", "H2H"),
@@ -173,6 +180,36 @@ def _resolve_history_key(requested: str | None) -> str:
 
 def _market_nav_label(market_key: str, fallback: str) -> str:
     return MARKET_NAV_LABELS.get(_text(market_key), _text(fallback).upper())
+
+
+def _anchor_season(matchup: dict[str, Any]) -> int:
+    raw = _text(matchup.get("target_date"))
+    if len(raw) >= 4 and raw[:4].isdigit():
+        return int(raw[:4])
+    for record in matchup.get("source_records") or []:
+        if not isinstance(record, dict):
+            continue
+        try:
+            season = int(record.get("season") or 0)
+        except (TypeError, ValueError):
+            season = 0
+        if season >= 2000:
+            return season
+    return 0
+
+
+def _format_stat(value: Any, *, average: bool = False) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    if not math.isfinite(number):
+        return "—"
+    if average:
+        return f"{number:.1f}"
+    if abs(number - round(number)) < 1e-9:
+        return str(int(round(number)))
+    return f"{number:.1f}"
 
 
 def resolve_prop_page_context() -> dict[str, Any]:
@@ -490,6 +527,97 @@ def render_prop_page_shell() -> dict[str, Any]:
         unsafe_allow_html=True,
     )
 
+    history_payload = load_player_history(
+        official_event_id=handoff["event_id"],
+        official_athlete_id=handoff["player_id"],
+        player_team=player_team,
+        opponent=opponent,
+        anchor_season=_anchor_season(matchup),
+        history_key=chosen_history_key,
+        market_key=chosen_key,
+    )
+    history_summary = summarize_history(history_payload.get("games") or [])
+    history_ready = (
+        history_payload.get("ready") is True
+        and history_payload.get("data_available") is True
+        and history_summary.get("ready") is True
+    )
+    history_state = "ready" if history_ready else "unavailable"
+    sample_size = int(history_summary.get("sample_size") or 0)
+    source_note = _text(history_payload.get("source")) or "ESPN exact-ID completed game books"
+    history_reason = _text(history_payload.get("reason"))
+
+    if history_ready:
+        hit_state = _text(history_summary.get("hit_rate_state")) or "awaiting-line"
+        hit_value = (
+            f"{float(history_summary['hit_rate_pct']):.0f}%"
+            if history_summary.get("hit_rate_pct") is not None
+            else "—"
+        )
+        hit_note = (
+            f"{int(history_summary['hit_count'])}/{sample_size} OVER"
+            if history_summary.get("hit_count") is not None
+            else "LINE REQUIRED • STEP 4"
+        )
+        st.markdown(
+            f"""
+<section class="ks-pa3-stats"
+         data-prop-page3-step3-stats="{PAGE3_STATS_VERSION}"
+         data-prop-page3-step3-state="ready"
+         data-prop-page3-step3-market="{html_lib.escape(chosen_key)}"
+         data-prop-page3-step3-history="{html_lib.escape(chosen_history_key)}"
+         data-prop-page3-step3-sample="{sample_size}"
+         data-prop-page3-step3-average="{_format_stat(history_summary.get('average'), average=True)}"
+         data-prop-page3-step3-median="{_format_stat(history_summary.get('median'), average=True)}"
+         data-prop-page3-step3-high="{_format_stat(history_summary.get('high'))}"
+         data-prop-page3-step3-low="{_format_stat(history_summary.get('low'))}"
+         data-prop-page3-step3-source="{html_lib.escape(source_note)}"
+         data-prop-page3-step3-hit-rate-state="{html_lib.escape(hit_state)}">
+  <div class="ks-pa3-stats-head">
+    <div>
+      <span>HISTORICAL STATISTICS</span>
+      <strong>{html_lib.escape(chosen_label)} • {html_lib.escape(history_labels[chosen_history_key])}</strong>
+    </div>
+    <em>HISTORICAL ONLY • {html_lib.escape(source_note)}</em>
+  </div>
+  <div class="ks-pa3-stat-grid">
+    <article><span>GAMES</span><strong>{sample_size}</strong><small>VERIFIED SAMPLE</small></article>
+    <article><span>AVERAGE</span><strong>{_format_stat(history_summary.get("average"), average=True)}</strong><small>{html_lib.escape(chosen_label.upper())}</small></article>
+    <article><span>MEDIAN</span><strong>{_format_stat(history_summary.get("median"), average=True)}</strong><small>MIDDLE RESULT</small></article>
+    <article><span>HIGH</span><strong>{_format_stat(history_summary.get("high"))}</strong><small>SAMPLE HIGH</small></article>
+    <article><span>LOW</span><strong>{_format_stat(history_summary.get("low"))}</strong><small>SAMPLE LOW</small></article>
+    <article class="ks-pa3-hit-card"
+             data-prop-page3-step3-hit-rate="awaiting-line">
+      <span>HIT RATE</span><strong>{hit_value}</strong><small>{html_lib.escape(hit_note)}</small>
+    </article>
+  </div>
+</section>
+""",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"""
+<section class="ks-pa3-stats ks-pa3-stats-unavailable"
+         data-prop-page3-step3-stats="{PAGE3_STATS_VERSION}"
+         data-prop-page3-step3-state="unavailable"
+         data-prop-page3-step3-market="{html_lib.escape(chosen_key)}"
+         data-prop-page3-step3-history="{html_lib.escape(chosen_history_key)}"
+         data-prop-page3-step3-sample="0"
+         data-prop-page3-step3-hit-rate-state="no-data">
+  <div class="ks-pa3-stats-head">
+    <div>
+      <span>HISTORICAL STATISTICS</span>
+      <strong>Exact-ID history unavailable</strong>
+    </div>
+    <em>FAIL CLOSED</em>
+  </div>
+  <p>{html_lib.escape(history_reason or "No exact-ID completed game-book rows for this player/window/market.")}</p>
+</section>
+""",
+            unsafe_allow_html=True,
+        )
+
     market_keys = ",".join(keys)
 
     st.markdown(
@@ -510,7 +638,9 @@ def render_prop_page_shell() -> dict[str, Any]:
          data-prop-step8-market-label="{html_lib.escape(chosen_label)}"
          data-prop-step8-market-count="{len(options)}"
          data-prop-step8-market-keys="{html_lib.escape(market_keys)}"
-         data-prop-page3-step2-history="{html_lib.escape(chosen_history_key)}">
+         data-prop-page3-step2-history="{html_lib.escape(chosen_history_key)}"
+         data-prop-page3-step3-history-state="{html_lib.escape(history_state)}"
+         data-prop-page3-step3-sample="{sample_size}">
   <div class="ks-pa8-eyebrow">PAGE 3 • PLAYER PROP HUB</div>
 
   <div class="ks-pa8-market">
@@ -603,6 +733,26 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
 .ks-pa3-matchup-strip span{{color:#7288a2;background:rgba(15,23,42,.34)}}
 .ks-pa3-matchup-strip strong{{color:#d9f3ff;background:rgba(14,165,233,.07)}}
 
+.ks-pa3-stats{{
+  width:100%;max-width:100%;min-width:0;margin:10px 0 12px;padding:13px;
+  border:1px solid rgba(125,211,252,.15);border-radius:15px;
+  background:linear-gradient(180deg,rgba(6,15,27,.95),rgba(3,10,18,.98));
+}}
+.ks-pa3-stats-head{{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:10px}}
+.ks-pa3-stats-head>div{{display:flex;flex-direction:column;gap:2px;min-width:0}}
+.ks-pa3-stats-head span{{color:#6f839c;font-size:.54rem;font-weight:900;letter-spacing:.12em}}
+.ks-pa3-stats-head strong{{color:#e5f5ff;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ks-pa3-stats-head em{{color:#60758d;font-size:.49rem;font-style:normal;font-weight:800;text-align:right}}
+.ks-pa3-stat-grid{{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}}
+.ks-pa3-stat-grid article{{min-width:0;padding:10px 8px;border:1px solid rgba(148,163,184,.09);border-radius:11px;background:rgba(15,23,42,.42);display:flex;flex-direction:column;gap:3px}}
+.ks-pa3-stat-grid article>span{{color:#6f839c;font-size:.48rem;font-weight:900;letter-spacing:.08em}}
+.ks-pa3-stat-grid article>strong{{color:#f8fafc;font-size:1.18rem;line-height:1}}
+.ks-pa3-stat-grid article>small{{color:#60758d;font-size:.44rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ks-pa3-stat-grid .ks-pa3-hit-card{{border-color:rgba(56,189,248,.20);background:linear-gradient(180deg,rgba(14,165,233,.09),rgba(15,23,42,.42))}}
+.ks-pa3-stat-grid .ks-pa3-hit-card>strong{{color:#7dd3fc}}
+.ks-pa3-stats-unavailable{{border-color:rgba(248,113,113,.16)}}
+.ks-pa3-stats-unavailable p{{margin:0;color:#8295aa;font-size:.62rem;line-height:1.45}}
+
 .ks-pa8-page{{
   width:100%;max-width:100%;min-width:0;overflow-x:clip;
   margin:8px 0 34px;padding:clamp(16px,2.6vw,26px);
@@ -625,6 +775,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
 .ks-pa8-empty strong{{color:#fecaca}}.ks-pa8-empty span{{color:#cbd5e1;font-size:.78rem}}
 
 @media(max-width:760px){{
+  .ks-pa3-stat-grid{{grid-template-columns:repeat(3,minmax(0,1fr))}}
   .ks-pa3-hero{{grid-template-columns:1fr minmax(250px,1.5fr) 1fr;gap:10px;padding:15px 12px 12px}}
   .ks-pa3-team-logo{{width:46px;height:46px;flex-basis:46px}}
   .ks-pa3-team-copy strong{{font-size:.68rem}}
@@ -634,6 +785,9 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
   div[data-testid="stSegmentedControl"] button{{min-height:44px!important;font-size:.62rem!important;padding-left:.42rem!important;padding-right:.42rem!important}}
 }}
 @media(max-width:560px){{
+  .ks-pa3-stats-head{{align-items:flex-start;flex-direction:column}}
+  .ks-pa3-stats-head em{{text-align:left}}
+  .ks-pa3-stat-grid{{grid-template-columns:repeat(2,minmax(0,1fr))}}
   div[data-testid="stSegmentedControl"] [role="radiogroup"]{{overflow-x:auto;justify-content:flex-start}}
   div[data-testid="stSegmentedControl"] button{{flex:0 0 auto!important;min-width:58px!important;min-height:46px!important}}
   .ks-pa3-hero{{grid-template-columns:1fr 1fr;padding:14px 11px}}
@@ -657,6 +811,8 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "market_label": chosen_label,
         "history_key": chosen_history_key,
         "history_label": history_labels[chosen_history_key],
+        "history_payload": history_payload,
+        "history_summary": history_summary,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
@@ -678,6 +834,8 @@ __all__ = [
     "PAGE3_NAV_STEP",
     "PAGE3_NAV_VERSION",
     "PAGE3_POLISH_STEP",
+    "PAGE3_STATS_STEP",
+    "PAGE3_STATS_VERSION",
     "PLAYER_PROP_LOGIC",
     "PROJECTION_LOGIC",
     "SHELL_NAVIGATION_ONLY",
