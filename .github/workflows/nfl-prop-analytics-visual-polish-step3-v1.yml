@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: nfl-prop-analytics-visual-polish-step3-${{ github.ref }}
+  group: nfl-prop-analytics-visual-polish-step3-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
