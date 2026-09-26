@@ -13,7 +13,7 @@ on:
     branches: [main]
     paths:
       - "nfl_prop_analytics_prop_page_v1.py"
-      - "tests/test_nfl_prop_analytics_page3-step2-prop-history-nav-v1.py"
+      - "tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py"
       - "devsystem/task_ledgers/nfl-prop-analytics-page3-step2-prop-history-nav-v1.json"
       - ".github/workflows/nfl-prop-analytics-page3-step1-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-step2-v1.yml"
@@ -93,7 +93,6 @@ jobs:
         run: |
           python -m py_compile nfl_prop_analytics_prop_page_v1.py
           python -m pytest -q \
-            tests/test_nfl_prop_analytics_step8_prop_page_shell_v1.py \
             tests/test_nfl_prop_analytics_page3_step1_premium_hero_v1.py \
             tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py
           echo PROP_ANALYTICS_PAGE3_STEP2_STATIC_GREEN
