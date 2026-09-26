@@ -1,0 +1,27 @@
+{
+  "task": "nfl-prop-analytics-visual-polish-step3-v1",
+  "title": "NFL Prop Analytics Visual Polish Step 3 — Logos + Kickoff Final Proof",
+  "project": "NFL Prop Analytics",
+  "step": 3,
+  "status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "source_main": "7523d0b7bb7e4d4bd71407817779724b1a3f8268",
+  "scope": "Visual-only polish for Page 1 schedule cards and Step 3 selected matchup: add correct NFL team logos and make selected kickoff time explicit. No schedule source, selection, roster, availability, prop, odds, projection, Passing Yards, or Page 2/3 behavior changes.",
+  "product_changes": {
+    "nfl_prop_analytics_schedule_v1.py": "logo rendering only",
+    "nfl_prop_analytics_game_select_v1.py": "logo rendering + visible kickoff label only"
+  },
+  "acceptance": [
+    "All 14 live Sunday game cards render one away and one home team logo.",
+    "All rendered logo URLs are non-empty and load successfully.",
+    "Existing Step 2 kickoff times remain visible.",
+    "Selected Step 3 matchup renders both team logos.",
+    "Selected Step 3 matchup renders explicit ET kickoff time.",
+    "CAR-CLE selected matchup proves 1:00 PM ET on the Sep 27, 2026 slate.",
+    "390/768/1440 remain overflow-free.",
+    "Steps 4-8 product modules remain byte-identical.",
+    "Passing Yards remains frozen.",
+    "Public proof passes before polish Step 3 is GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "LOGOS + TIMES POLISH COMPLETE"
+}
