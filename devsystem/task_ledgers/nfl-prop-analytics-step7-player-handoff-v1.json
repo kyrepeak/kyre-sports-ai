@@ -1,0 +1,127 @@
+{
+  "task": "nfl-prop-analytics-step7-player-handoff-v1",
+  "task_id": "nfl-prop-analytics-step7-player-handoff-v1",
+  "id": "nfl-prop-analytics-step7-player-handoff-v1",
+  "title": "NFL Prop Analytics Step 7 Eligible Player Selection + Prop Page Handoff",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 7,
+  "step_name": "Eligible Player Selection + Prop Page Handoff",
+  "status": "DONE",
+  "step7_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "source_main": "bdc8cc27a7df13b57e241a0bf52bed891d12457c",
+  "scope": "Select only players already admitted by frozen Steps 5-6 and build an exact player handoff for the future prop page. PENDING players may be navigation-selectable but keep the prop-analysis gate closed. UNAVAILABLE/CLOSED/UNVERIFIED/depth-unverified players are excluded. No props, odds, projections, Passing Yards changes, or existing NFL market changes.",
+  "field_contract": {
+    "required": [
+      "frozen Step 6 exact ESPN athlete id",
+      "team",
+      "position",
+      "depth rank",
+      "availability state",
+      "exact event id",
+      "matchup selection key"
+    ],
+    "important": [
+      "player name",
+      "depth role",
+      "roster source count",
+      "prop-analysis gate state"
+    ],
+    "optional": [
+      "query-param player deep link",
+      "session handoff continuity"
+    ]
+  },
+  "selection_contract": {
+    "admission": "Step 5 roster verified + source_count>=2 + Step 6 exact depth verified + availability in PENDING or AVAILABLE.",
+    "blocked_states": [
+      "UNAVAILABLE",
+      "CLOSED",
+      "UNVERIFIED"
+    ],
+    "pending_rule": "PENDING player may be selected for navigation/handoff, but prop_analysis_gate_open must remain false.",
+    "available_rule": "AVAILABLE player may be selected with prop_analysis_gate_open=true.",
+    "identity_rule": "Step 7 never creates or name-matches a new player; exact Step 6 ESPN athlete id is carried forward."
+  },
+  "handoff_contract": {
+    "version": "v1",
+    "query_key": "ks_pa_player",
+    "session_key": "nfl_prop_analytics_selected_player_v1",
+    "fields": [
+      "selection_key",
+      "event_id",
+      "player_id",
+      "player_name",
+      "team",
+      "position",
+      "depth_rank",
+      "depth_role",
+      "availability_state",
+      "roster_verified",
+      "roster_source_count",
+      "depth_verified",
+      "selection_eligible",
+      "prop_analysis_gate_open",
+      "prop_page_ready"
+    ],
+    "prop_page_ready_meaning": "Navigation/context handoff only; does not imply sportsbook or model analytics are unlocked.",
+    "downstream_rule": "Future prop page must preserve prop_analysis_gate_open and availability_state exactly."
+  },
+  "architecture": {
+    "step1_owner": "nfl_prop_analytics_hub_v1",
+    "step2_module": "nfl_prop_analytics_schedule_v1",
+    "step3_module": "nfl_prop_analytics_game_select_v1",
+    "step4_module": "nfl_prop_analytics_matchup_shell_v1",
+    "step5_module": "nfl_prop_analytics_roster_truth_v1",
+    "step6_module": "nfl_prop_analytics_availability_depth_v1",
+    "step7_module": "nfl_prop_analytics_player_select_v1",
+    "root_router": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239"
+  },
+  "frozen_protection": {
+    "nfl_prop_analytics_availability_depth_v1.py": "cf7fdeee4c18d95c19d2a737f59bda7818e059ae",
+    "devsystem/task_ledgers/nfl-prop-analytics-step6-availability-depth-v1.json": "e0d465cb15839fffa08cffe2126b839b91719c42",
+    "nfl_prop_analytics_roster_truth_v1.py": "ad1a49ddd24d6f50da6c56280b34290b2c3312f3",
+    "nfl_prop_analytics_matchup_shell_v1.py": "0d2770ff641090e396ae43bea4bf512213c59564",
+    "nfl_prop_analytics_game_select_v1.py": "fcb4ffcd703d05579a318b8b8fbcb64036336b8c",
+    "nfl_prop_analytics_schedule_v1.py": "90fe5ff5bb087198484e4f59de01b72cf7155128",
+    "streamlit_memory_lazy_router_v240.py": "43a6ef5a541e945b0795f947e32f61fbbaeb5257",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "app.py": "d584693ab55e365bc7e76f9cbacd58a15f6d62d1"
+  },
+  "constraints": {
+    "step6_truth_modified": false,
+    "step5_identity_modified": false,
+    "blocked_player_selectable": false,
+    "pending_prop_gate_open": false,
+    "player_prop_logic_added": false,
+    "sportsbook_odds_added": false,
+    "projection_logic_added": false,
+    "passing_yards_modified": false,
+    "existing_nfl_market_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Only exact Step 6 player IDs with verified roster/depth and PENDING or AVAILABLE availability may appear in the Step 7 selector.",
+    "UNAVAILABLE, CLOSED, UNVERIFIED, depth-unverified, single-source, or unverified identities never appear as Step 7 candidates.",
+    "PENDING player handoff is navigation-ready but prop_analysis_gate_open=false.",
+    "AVAILABLE player handoff may carry prop_analysis_gate_open=true.",
+    "Deep-link player selection resolves deterministically through ks_pa_player using exact ESPN athlete id.",
+    "Handoff preserves matchup key, exact ESPN event id, exact player id, team, position, depth role, and availability state.",
+    "Step 6 product module and ledger remain byte-identical.",
+    "Step 5 product module remains byte-identical.",
+    "Steps 2-4 product modules remain byte-identical.",
+    "Passing Yards/router/app files remain byte-identical.",
+    "390/768/1440 Step 7 selection UI has no horizontal overflow.",
+    "Public production proof passes before Step 7 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "Step 8 — Prop Page Shell + Market Navigation",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
