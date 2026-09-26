@@ -115,11 +115,24 @@ jobs:
             'nfl_prop_analytics_schedule_v1.py' \
             'nfl_prop_analytics_game_select_v1.py' \
             'tests/test_nfl_prop_analytics_visual_polish_step3_v1.py' | sort)"
+          page2_polish_step1_expected="$(printf '%s\\n' \\
+            '.github/workflows/nfl-prop-analytics-page2-polish-step1-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step7-player-handoff-v1.yml' \\
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \\
+            'devsystem/task_ledgers/nfl-prop-analytics-page2-polish-step1-v1.json' \\
+            'nfl_prop_analytics_matchup_shell_v1.py' \\
+            'tests/test_nfl_prop_analytics_page2_polish_step1_v1.py' \\
+            | sort)"
+
           if [ "$actual" != "$expected" ] && \
              [ "$actual" != "$step6_additive_expected" ] && \
              [ "$actual" != "$step7_additive_expected" ] && \
              [ "$actual" != "$step8_additive_expected" ] && \
-             [ "$actual" != "$visual_polish_step3_expected" ]; then
+             [ "$actual" != "$visual_polish_step3_expected" ] && \
+             [ "$actual" != "$page2_polish_step1_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP5_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -133,7 +146,7 @@ jobs:
             }
           }
 
-          check_blob nfl_prop_analytics_matchup_shell_v1.py 0d2770ff641090e396ae43bea4bf512213c59564
+          check_blob nfl_prop_analytics_matchup_shell_v1.py 3052411d963354997f17f15358407db7a2c2c57e
           check_blob nfl_prop_analytics_game_select_v1.py 1187c13fc5bee03a955d014e87f237ed055a27ef
           check_blob nfl_prop_analytics_schedule_v1.py 3558f4581c0301c4fc57f8b5e761e1e0cc1eb63c
           check_blob devsystem/task_ledgers/nfl-prop-analytics-step4-page2-shell-v1.json 0f095b2b7eb26af05b4f0ecc34b63e0c14756f2c
