@@ -295,21 +295,21 @@ jobs:
                   "data-prop-page3-step3-low",
               ):
                   assert stats.get_attribute(attr) not in {None,"","—"},(attr,stats.get_attribute(attr))
-              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
-              assert "LINE REQUIRED" in stats.inner_text()
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="ready"
+              assert "LINE REQUIRED" not in stats.inner_text()
 
               _,l5=segmented_button(page,"L5",60)
               l5.click(timeout=10000)
               frame,stats=wait_stats(page,"L5","passing_yards",210)
               sample_l5=int(stats.get_attribute("data-prop-page3-step3-sample") or 0)
               assert 1 <= sample_l5 <= 5,sample_l5
-              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="ready"
 
               _,pass_td=segmented_button(page,"PASS TD",60)
               pass_td.click(timeout=10000)
               frame,stats=wait_stats(page,"L5","passing_touchdowns",210)
               assert int(stats.get_attribute("data-prop-page3-step3-sample") or 0)>=1
-              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="ready"
 
               prop=frame.locator('[data-nfl-prop-analytics-step8-prop-page="v1"]').first
               assert prop.get_attribute("data-prop-step8-market")=="passing_touchdowns"
@@ -498,8 +498,8 @@ jobs:
               sample=int(stats.get_attribute("data-prop-page3-step3-sample") or 0)
               assert 1 <= sample <= 10,sample
               assert "ESPN exact-ID" in (stats.get_attribute("data-prop-page3-step3-source") or "")
-              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
-              assert "LINE REQUIRED" in stats.inner_text()
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="ready"
+              assert "LINE REQUIRED" not in stats.inner_text()
 
               _,l5=segmented_button(page,"L5",60)
               l5.click(timeout=10000)
@@ -510,7 +510,7 @@ jobs:
               pass_td.click(timeout=10000)
               frame,stats=wait_stats(page,"L5","passing_touchdowns",210)
               assert int(stats.get_attribute("data-prop-page3-step3-sample") or 0)>=1
-              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="awaiting-line"
+              assert stats.get_attribute("data-prop-page3-step3-hit-rate-state")=="ready"
 
               prop=frame.locator('[data-nfl-prop-analytics-step8-prop-page="v1"]').first
               availability=prop.get_attribute("data-prop-step8-availability")
