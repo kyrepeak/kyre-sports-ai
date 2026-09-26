@@ -221,6 +221,15 @@ jobs:
                                   "sample":item.get_attribute("data-prop-page3-step3-sample"),
                               }
                               if (
+                                  last["history"]==history
+                                  and last["market"]==market
+                                  and last["state"]=="unavailable"
+                              ):
+                                  raise RuntimeError(
+                                      "PAGE3_STEP3_HISTORY_UNAVAILABLE:"
+                                      + item.inner_text().replace("\n"," | ")
+                                  )
+                              if (
                                   last["state"]=="ready"
                                   and last["history"]==history
                                   and last["market"]==market
@@ -419,6 +428,15 @@ jobs:
                                   "market":item.get_attribute("data-prop-page3-step3-market"),
                                   "sample":item.get_attribute("data-prop-page3-step3-sample"),
                               }
+                              if (
+                                  last["history"]==history
+                                  and last["market"]==market
+                                  and last["state"]=="unavailable"
+                              ):
+                                  raise RuntimeError(
+                                      "PAGE3_STEP3_HISTORY_UNAVAILABLE:"
+                                      + item.inner_text().replace("\n"," | ")
+                                  )
                               if (
                                   last["state"]=="ready"
                                   and last["history"]==history
