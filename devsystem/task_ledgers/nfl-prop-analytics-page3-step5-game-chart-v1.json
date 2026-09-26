@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-step5-game-chart-v1",
+  "title": "NFL Prop Analytics Page 3 Step 5 — Game-by-Game Chart",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 5,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "8535c72317e3a712f3a7a3233a9cafe948643ad3",
+  "scope": "Add a compact professional game-by-game historical bar chart from the frozen Step 3 exact-ID game sample and the frozen Step 4 manual analysis line. Show opponent plus week/date labels, the selected manual analysis line across the chart, and clear OVER/UNDER/PUSH states. No sportsbook line, odds, projections, recommendations, rankings, staking, wager actions, Page 1/Page 2 truth changes, router changes, or Passing Yards changes.",
+  "acceptance": [
+    "Page 3 Steps 1-4 remain present and protected.",
+    "The chart uses only verified Step 3 historical game rows and the active Step 4 manual analysis line.",
+    "Each visible game has an exact event id, opponent label, week when available or date fallback, and verified stat value.",
+    "A horizontal selected analysis line is rendered across the game bars.",
+    "Bars classify deterministically as OVER, UNDER, or PUSH against the active manual line.",
+    "Moving the Step 4 line causes the Step 5 chart outcomes and line position to recalculate on rerun.",
+    "The chart remains compact and professional at 390/768/1440 without document overflow.",
+    "No sportsbook line source, odds logic, projection logic, recommendation logic, staking, or wager action is introduced.",
+    "Page 1/Page 2/router/Passing Yards stack remains untouched.",
+    "Branch real-flow proof passes before merge.",
+    "Public real-flow proof passes before Step 5 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

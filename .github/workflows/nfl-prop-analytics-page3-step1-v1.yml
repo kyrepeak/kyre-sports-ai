@@ -64,7 +64,18 @@ jobs:
             'nfl_prop_analytics_page3_line_control_v1.py' \
             'nfl_prop_analytics_prop_page_v1.py' \
             'tests/test_nfl_prop_analytics_page3_step4_line_control_v1.py' | sort)"
-          test "$actual" = "$expected" || test "$actual" = "$page3_step4_expected" || {
+          page3_step5_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-step5-game-chart-v1.json' \
+            'nfl_prop_analytics_page3_game_chart_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_step5_game_chart_v1.py' | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$page3_step4_expected" || test "$actual" = "$page3_step5_expected" || {
             echo PROP_ANALYTICS_PAGE3_STEP1_SCOPE_VIOLATION
             printf '%s\n' "$actual"
             exit 1
@@ -216,7 +227,7 @@ jobs:
               open_prop.click(timeout=10000)
 
               frame,hero=find(page,'[data-prop-page3-step1-hero="v1"]',180)
-              prop=frame.locator('[data-nfl-prop-analytics-step8-prop-page="v1"]').first
+              _,prop=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]',60)
               assert prop.count()==1
               assert prop.get_attribute("data-prop-step8-state")=="ready"
               assert hero.get_attribute("data-prop-page3-player-id")==player_id
@@ -370,7 +381,7 @@ jobs:
               open_prop.click(timeout=10000)
 
               frame,hero=find(page,'[data-prop-page3-step1-hero="v1"]',180)
-              prop=frame.locator('[data-nfl-prop-analytics-step8-prop-page="v1"]').first
+              _,prop=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]',60)
               assert prop.count()==1
               assert prop.get_attribute("data-prop-step8-state")=="ready"
               assert hero.get_attribute("data-prop-page3-player-id")==player_id
