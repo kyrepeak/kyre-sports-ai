@@ -138,7 +138,8 @@ jobs:
              [ "$actual" != "$step6_additive_expected" ] && \
              [ "$actual" != "$step7_additive_expected" ] && \
              [ "$actual" != "$step8_additive_expected" ] && \
-             [ "$actual" != "$visual_polish_step3_expected" ]; then
+             [ "$actual" != "$visual_polish_step3_expected" ] && \
+             [ "$actual" != "$page2_polish_step2_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP2_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -554,4 +555,10 @@ jobs:
           print("NFL_PROP_ANALYTICS_STEP2_GREEN")
           print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_GREEN")
           print("NFL_PROP_ANALYTICS_STEP2_FROZEN")
-          PY
+          PY          page2_polish_step2_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page2-polish-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            'nfl_prop_analytics_hub_v1.py' \
+            'nfl_prop_analytics_page2_unified_roster_v1.py' \
+            'tests/test_nfl_prop_analytics_page2_polish_step2_v1.py' | sort)"
+
