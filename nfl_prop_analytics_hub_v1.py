@@ -15,6 +15,7 @@ from nfl_prop_analytics_schedule_v1 import render_schedule_truth_layer
 from nfl_prop_analytics_game_select_v1 import render_game_selection_handoff
 from nfl_prop_analytics_roster_truth_v1 import render_verified_roster_truth
 from nfl_prop_analytics_availability_depth_v1 import render_availability_depth_truth
+from nfl_prop_analytics_player_select_v1 import render_player_selection_handoff
 from nfl_prop_analytics_matchup_shell_v1 import (
     is_matchup_page,
     render_matchup_open_control,
@@ -117,7 +118,9 @@ def render_prop_analytics_page() -> None:
         if handoff:
             roster_truth = render_verified_roster_truth(handoff)
             if roster_truth and roster_truth.get("state") == "live":
-                render_availability_depth_truth(handoff, roster_truth)
+                availability_truth = render_availability_depth_truth(handoff, roster_truth)
+                if availability_truth and availability_truth.get("state") == "live":
+                    render_player_selection_handoff(handoff, availability_truth)
         return
 
     render_schedule_truth_layer()
@@ -147,6 +150,7 @@ __all__ = [
     "render_matchup_shell",
     "render_verified_roster_truth",
     "render_availability_depth_truth",
+    "render_player_selection_handoff",
     "render_schedule_truth_layer",
     "render_prop_analytics_page",
 ]
