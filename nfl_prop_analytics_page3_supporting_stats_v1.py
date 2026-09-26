@@ -386,6 +386,16 @@ def render_supporting_stats(
   <div class="ks-pa6-head"><div><span>SUPPORTING STATS • STEP 6</span><strong>Verified box-score context unavailable</strong></div><em>FAIL CLOSED</em></div>
   <p>{html_lib.escape(str(payload.get("reason") or "Supporting metrics unavailable."))}</p>
 </section>
+<style data-prop-page3-step6-unavailable-css="{PAGE3_SUPPORT_VERSION}">
+.ks-pa6-support{{width:100%;max-width:100%;min-width:0;margin:10px 0 14px;padding:13px;border:1px solid rgba(248,113,113,.16);border-radius:16px;background:linear-gradient(180deg,rgba(6,16,28,.98),rgba(3,10,18,.99));overflow:hidden}}
+.ks-pa6-head{{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:10px}}
+.ks-pa6-head>div{{display:flex;flex-direction:column;gap:2px;min-width:0}}
+.ks-pa6-head span{{color:#38bdf8;font-size:.51rem;font-weight:950;letter-spacing:.12em}}
+.ks-pa6-head strong{{color:#edf8ff;font-size:.84rem}}
+.ks-pa6-head em{{color:#64748b;font-size:.48rem;font-style:normal;font-weight:850}}
+.ks-pa6-support-unavailable p{{margin:6px 0 0;color:#8295aa;font-size:.62rem}}
+@media(max-width:560px){{.ks-pa6-head{{align-items:flex-start;flex-direction:column}}}}
+</style>
 """,
             unsafe_allow_html=True,
         )
