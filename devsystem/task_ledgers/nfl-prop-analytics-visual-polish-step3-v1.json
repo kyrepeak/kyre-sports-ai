@@ -4,8 +4,8 @@
   "project": "NFL Prop Analytics",
   "step": 3,
   "status": "DONE",
-  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
-  "source_main": "7523d0b7bb7e4d4bd71407817779724b1a3f8268",
+  "certification_state": "PUBLIC_DEPLOYMENT_REFRESH_ARMED",
+  "source_main": "f2415e5e4dc567ea3753ebf21e399cf47c42edb9",
   "scope": "Visual-only polish for Page 1 schedule cards and Step 3 selected matchup: add correct NFL team logos and make selected kickoff time explicit. No schedule source, selection, roster, availability, prop, odds, projection, Passing Yards, or Page 2/3 behavior changes.",
   "product_changes": {
     "nfl_prop_analytics_schedule_v1.py": "logo rendering only",
@@ -34,5 +34,16 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "deployment_refresh": {
+    "version": 1,
+    "reason": "Merged product and branch proofs are green; main public-freeze is waiting on Streamlit deployment activation. Use a deployment-only refresh without product/runtime changes.",
+    "authoritative_run": 36220613330,
+    "merged_pr": 1054,
+    "merged_main": "f2415e5e4dc567ea3753ebf21e399cf47c42edb9",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "passing_yards_changed": false,
+    "marker": "devsystem/deployment_markers/nfl-prop-analytics-visual-polish-step3-streamlit-redeploy-v1.txt"
   }
 }
