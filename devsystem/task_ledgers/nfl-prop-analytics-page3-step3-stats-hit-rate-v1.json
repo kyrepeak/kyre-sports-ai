@@ -30,5 +30,16 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "review_hardening": {
+    "status": "DONE",
+    "scope": "Post-merge Step 3 review hardening only: athlete-event history discovery for traded players, active-season cache freshness, and verified zero-stat appearances. Frozen Page 1/Page 2/router/Passing Yards surfaces remain untouched.",
+    "acceptance": [
+      "Non-passing history follows exact athlete game-log events rather than current-team-only schedules.",
+      "Historical game summaries resolve the athlete's team per event.",
+      "Active-season schedule and athlete-game-log reads refresh on a bounded TTL bucket.",
+      "Verified appearances with no selected-category stat row count as zero; unverified/DNP rows remain excluded.",
+      "Step 3 branch static and real-flow proofs remain green."
+    ]
   }
 }

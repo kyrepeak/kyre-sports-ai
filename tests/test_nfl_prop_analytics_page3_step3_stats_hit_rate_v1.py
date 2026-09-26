@@ -144,9 +144,177 @@ def test_team_schedule_accepts_completed_regular_season_row_without_duplicate_se
         ]
     }
     monkeypatch.setattr(hist, "_get_json", lambda url, query_items=(): payload)
+    monkeypatch.setattr(hist, "_request_json", lambda url, query_items=(): payload)
     hist._team_schedule.cache_clear()
     rows = hist._team_schedule("4", 2026)
     assert len(rows) == 1
     assert rows[0]["event_id"] == "401999001"
     assert rows[0]["season"] == 2026
     assert rows[0]["team_ids"] == ("23", "4")
+
+
+
+def test_nonpassing_history_is_discovered_from_athlete_events_not_current_team(monkeypatch):
+    calls = []
+
+    def fake_gamelog(athlete_id, season):
+        calls.append((athlete_id, season))
+        if season == 2026:
+            return (
+                {
+                    "event_id": "401999101",
+                    "date": "2026-09-20T17:00Z",
+                    "season": 2026,
+                    "official_team_id": "7",
+                    "opponent_abbr": "DAL",
+                    "participation_proven": True,
+                },
+            )
+        if season == 2025:
+            return (
+                {
+                    "event_id": "401888101",
+                    "date": "2025-12-20T17:00Z",
+                    "season": 2025,
+                    "official_team_id": "20",
+                    "opponent_abbr": "NYG",
+                    "participation_proven": True,
+                },
+            )
+        return ()
+
+    monkeypatch.setattr(hist, "_athlete_gamelog_season", fake_gamelog)
+    rows = hist._candidate_events("999001", 2026)
+    assert [row["event_id"] for row in rows] == ["401999101", "401888101"]
+    assert {row["official_team_id"] for row in rows} == {"7", "20"}
+    assert calls[0] == ("999001", 2026)
+
+
+def test_verified_appearance_without_selected_category_counts_as_zero():
+    summary = {
+        "boxscore": {
+            "players": [
+                {
+                    "team": {"id": "7"},
+                    "statistics": [
+                        {
+                            "name": "defensive",
+                            "labels": ["TOT"],
+                            "athletes": [
+                                {"athlete": {"id": "999001"}, "stats": ["1"]}
+                            ],
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    assert hist._market_value(
+        summary,
+        "7",
+        "999001",
+        "receiving_yards",
+        participated=True,
+    ) == 0.0
+    assert hist._market_value(
+        summary,
+        "7",
+        "999001",
+        "anytime_touchdown",
+        participated=True,
+    ) == 0.0
+    assert hist._market_value(
+        summary,
+        "7",
+        "999001",
+        "receiving_yards",
+        participated=False,
+    ) is None
+
+
+def test_fetch_game_value_uses_historical_team_for_traded_player(monkeypatch):
+    summary = {
+        "header": {
+            "competitions": [
+                {
+                    "competitors": [
+                        {"team": {"id": "7", "abbreviation": "DEN"}},
+                        {"team": {"id": "6", "abbreviation": "DAL"}},
+                    ]
+                }
+            ]
+        },
+        "boxscore": {
+            "players": [
+                {
+                    "team": {"id": "7"},
+                    "statistics": [
+                        {
+                            "name": "rushing",
+                            "labels": ["CAR", "YDS", "AVG", "TD", "LONG"],
+                            "athletes": [
+                                {"athlete": {"id": "999001"}, "stats": ["4", "21", "5.3", "0", "8"]}
+                            ],
+                        }
+                    ],
+                }
+            ]
+        },
+    }
+    monkeypatch.setattr(hist, "_get_json", lambda url, query_items=(): summary)
+    row = {
+        "event_id": "401999101",
+        "date": "2026-09-20T17:00Z",
+        "season": 2026,
+        "official_team_id": "7",
+        "opponent_abbr": "DAL",
+        "participation_proven": True,
+    }
+    game = hist._fetch_game_value(row, "20", "999001", "rushing_yards")
+    assert game is not None
+    assert game["official_team_id"] == "7"
+    assert game["value"] == 21.0
+
+
+def test_active_season_schedule_cache_is_bucketed_and_bypasses_permanent_json_cache(monkeypatch):
+    payload = {
+        "events": [
+            {
+                "id": "401999001",
+                "date": "2026-09-20T17:00Z",
+                "season": {"year": 2026},
+                "competitions": [
+                    {
+                        "status": {"type": {"state": "post", "completed": True}},
+                        "competitors": [
+                            {"team": {"id": "4", "abbreviation": "CIN"}},
+                            {"team": {"id": "23", "abbreviation": "PIT"}},
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+    calls = []
+    monkeypatch.setattr(hist, "_active_season_year", lambda now=None: 2026)
+    monkeypatch.setattr(hist.time, "time", lambda: 600.0)
+    monkeypatch.setattr(
+        hist,
+        "_request_json",
+        lambda url, query_items=(): calls.append((url, query_items)) or payload,
+    )
+    monkeypatch.setattr(
+        hist,
+        "_get_json",
+        lambda url, query_items=(): (_ for _ in ()).throw(AssertionError("permanent cache used")),
+    )
+    hist._team_schedule.cache_clear()
+    first = hist._team_schedule("4", 2026)
+    second = hist._team_schedule("4", 2026)
+    assert first == second
+    assert len(calls) == 1
+
+    monkeypatch.setattr(hist.time, "time", lambda: 901.0)
+    third = hist._team_schedule("4", 2026)
+    assert third == first
+    assert len(calls) == 2

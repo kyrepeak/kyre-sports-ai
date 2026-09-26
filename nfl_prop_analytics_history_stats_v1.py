@@ -11,10 +11,12 @@ Without a line it returns "awaiting-line" rather than inventing a threshold.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from functools import lru_cache
 import math
 import re
 from statistics import mean, median
+import time
 from typing import Any
 
 import requests
@@ -30,6 +32,7 @@ REQUEST_HEADERS = {
     "User-Agent": "KyreSportsAI-PropAnalytics-History/1.0",
 }
 REQUEST_TIMEOUT_SECONDS = 8
+ACTIVE_CACHE_TTL_SECONDS = 300
 HISTORY_SEASONS = 3
 MAX_RECENT_GAMES = 20
 MAX_H2H_GAMES = 5
@@ -91,8 +94,7 @@ def _query_number(values: dict[str, float | None], *keys: str) -> float | None:
     return None
 
 
-@lru_cache(maxsize=512)
-def _get_json(url: str, query_items: tuple[tuple[str, str], ...] = ()) -> dict[str, Any]:
+def _request_json(url: str, query_items: tuple[tuple[str, str], ...] = ()) -> dict[str, Any]:
     try:
         response = requests.get(
             url,
@@ -107,6 +109,22 @@ def _get_json(url: str, query_items: tuple[tuple[str, str], ...] = ()) -> dict[s
     if not isinstance(payload, dict):
         raise PropHistoryError("ESPN history response was not an object")
     return payload
+
+
+@lru_cache(maxsize=512)
+def _get_json(url: str, query_items: tuple[tuple[str, str], ...] = ()) -> dict[str, Any]:
+    return _request_json(url, query_items)
+
+
+def _active_season_year(now: datetime | None = None) -> int:
+    stamp = now or datetime.now(timezone.utc)
+    return stamp.year if stamp.month >= 3 else stamp.year - 1
+
+
+def _freshness_bucket(season: int) -> int:
+    if int(season) != _active_season_year():
+        return 0
+    return int(time.time() // ACTIVE_CACHE_TTL_SECONDS)
 
 
 def _query(**values: Any) -> tuple[tuple[str, str], ...]:
@@ -138,8 +156,13 @@ def _passing_value(row: dict[str, Any], market_key: str) -> float | None:
     return _number(row.get(source_key))
 
 
-@lru_cache(maxsize=96)
-def _passing_gamelog_season(athlete_id: str, season: int) -> tuple[dict[str, Any], ...]:
+@lru_cache(maxsize=192)
+def _passing_gamelog_season_cached(
+    athlete_id: str,
+    season: int,
+    freshness_bucket: int,
+) -> tuple[dict[str, Any], ...]:
+    del freshness_bucket
     payload, diag = passing_profile._gamelog_payload(int(season), athlete_id)
     if not diag.get("ok"):
         raise PropHistoryError(
@@ -163,6 +186,17 @@ def _passing_gamelog_season(athlete_id: str, season: int) -> tuple[dict[str, Any
         })
     out.sort(key=lambda row: (row.get("date") or "", row.get("official_event_id") or ""), reverse=True)
     return tuple(out)
+
+
+def _passing_gamelog_season(athlete_id: str, season: int) -> tuple[dict[str, Any], ...]:
+    return _passing_gamelog_season_cached(
+        athlete_id,
+        int(season),
+        _freshness_bucket(int(season)),
+    )
+
+
+_passing_gamelog_season.cache_clear = _passing_gamelog_season_cached.cache_clear
 
 
 def _passing_history_games(
@@ -297,13 +331,20 @@ def _opponent_abbr(event: dict[str, Any], team_id: str) -> str:
     return ""
 
 
-@lru_cache(maxsize=96)
-def _team_schedule(team_id: str, season: int) -> tuple[dict[str, Any], ...]:
+@lru_cache(maxsize=192)
+def _team_schedule_cached(
+    team_id: str,
+    season: int,
+    freshness_bucket: int,
+) -> tuple[dict[str, Any], ...]:
     if not _text(team_id).isdigit():
         raise PropHistoryError("official ESPN team id is required")
-    payload = _get_json(
-        f"{ESPN_BASE}/teams/{team_id}/schedule",
-        _query(season=int(season), seasontype=2),
+    query = _query(season=int(season), seasontype=2)
+    url = f"{ESPN_BASE}/teams/{team_id}/schedule"
+    payload = (
+        _request_json(url, query)
+        if freshness_bucket
+        else _get_json(url, query)
     )
     out: list[dict[str, Any]] = []
     for event in payload.get("events") or []:
@@ -332,6 +373,17 @@ def _team_schedule(team_id: str, season: int) -> tuple[dict[str, Any], ...]:
         })
     out.sort(key=lambda row: (row["date"], row["event_id"]), reverse=True)
     return tuple(out)
+
+
+def _team_schedule(team_id: str, season: int) -> tuple[dict[str, Any], ...]:
+    return _team_schedule_cached(
+        team_id,
+        int(season),
+        _freshness_bucket(int(season)),
+    )
+
+
+_team_schedule.cache_clear = _team_schedule_cached.cache_clear
 
 
 def _category_row(
@@ -455,6 +507,8 @@ def _market_value(
     team_id: str,
     athlete_id: str,
     market_key: str,
+    *,
+    participated: bool = False,
 ) -> float | None:
     passing = _passing_stats(_category_row(summary, team_id, athlete_id, "passing"))
     rushing = _rushing_stats(_category_row(summary, team_id, athlete_id, "rushing"))
@@ -467,22 +521,211 @@ def _market_value(
     if market_key in receiving:
         return receiving[market_key]
     if market_key == "anytime_touchdown":
-        if not rushing and not receiving:
-            return None
-        return float(rushing.get("rushing_touchdowns", 0.0) + receiving.get("receiving_touchdowns", 0.0))
+        if rushing or receiving:
+            return float(rushing.get("rushing_touchdowns", 0.0) + receiving.get("receiving_touchdowns", 0.0))
+        return 0.0 if participated else None
+    if participated and market_key in {
+        "rushing_yards",
+        "carries",
+        "receptions",
+        "receiving_yards",
+        "longest_reception",
+    }:
+        return 0.0
     return None
 
 
-def _candidate_events(team_id: str, anchor_season: int) -> list[dict[str, Any]]:
+def _gamelog_event_meta(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    raw = (payload or {}).get("events") or {}
+    if isinstance(raw, dict):
+        items = raw.get("items") if isinstance(raw.get("items"), list) else None
+        if items is None:
+            return {
+                _text(key): dict(value)
+                for key, value in raw.items()
+                if _text(key).isdigit() and isinstance(value, dict)
+            }
+        raw = items
+    out: dict[str, dict[str, Any]] = {}
+    if isinstance(raw, list):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            event = item.get("event") if isinstance(item.get("event"), dict) else item
+            event_id = _text(event.get("id") or item.get("id") or item.get("eventId"))
+            if not event_id.isdigit():
+                continue
+            merged = dict(event)
+            merged.update({k: v for k, v in item.items() if k not in merged})
+            out[event_id] = merged
+    return out
+
+
+def _gamelog_team_id(value: Any) -> str:
+    if isinstance(value, dict):
+        candidate = _text(value.get("id") or value.get("teamId"))
+    else:
+        candidate = _text(value)
+    return candidate if candidate.isdigit() else ""
+
+
+def _gamelog_opponent(meta: dict[str, Any], item: dict[str, Any]) -> str:
+    opponent = meta.get("opponent") or item.get("opponent") or {}
+    if isinstance(opponent, dict):
+        return _canon_opponent(
+            opponent.get("abbreviation")
+            or opponent.get("displayName")
+            or opponent.get("name")
+        )
+    return _canon_opponent(opponent or meta.get("opponentName") or item.get("opponentName"))
+
+
+def _iter_proven_gamelog_events(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    meta_map = _gamelog_event_meta(payload)
+    rows: list[dict[str, Any]] = []
+
+    def add(item: Any) -> None:
+        if not isinstance(item, dict):
+            return
+        if "stats" not in item and "statistics" not in item:
+            return
+        event_obj = item.get("event") if isinstance(item.get("event"), dict) else {}
+        event_id = _text(item.get("eventId") or item.get("id") or event_obj.get("id"))
+        if not event_id.isdigit():
+            return
+        meta = meta_map.get(event_id) or event_obj or {}
+        team_id = (
+            _gamelog_team_id(item.get("team"))
+            or _gamelog_team_id(meta.get("team"))
+            or _text(item.get("teamId"))
+            or _text(meta.get("teamId"))
+        )
+        if not team_id.isdigit():
+            team_id = ""
+        rows.append({
+            "event_id": event_id,
+            "date": _text(
+                meta.get("gameDate")
+                or meta.get("date")
+                or item.get("gameDate")
+                or item.get("date")
+            ),
+            "opponent_abbr": _gamelog_opponent(meta, item),
+            "official_team_id": team_id,
+            "participation_proven": True,
+        })
+
+    for season_type in (payload or {}).get("seasonTypes") or []:
+        if not isinstance(season_type, dict):
+            continue
+        label = _text(season_type.get("displayName") or season_type.get("name")).lower()
+        type_value = _text(season_type.get("type") or season_type.get("id"))
+        if label and "regular" not in label:
+            continue
+        if type_value.isdigit() and int(type_value) != 2:
+            continue
+        for category in season_type.get("categories") or []:
+            if not isinstance(category, dict):
+                continue
+            if _text(category.get("type")).lower() not in {"", "event"}:
+                continue
+            events = category.get("events") or []
+            if isinstance(events, dict):
+                events = [
+                    dict(value, eventId=key)
+                    for key, value in events.items()
+                    if isinstance(value, dict)
+                ]
+            for item in events if isinstance(events, list) else []:
+                add(item)
+
+    for category in (payload or {}).get("categories") or []:
+        if not isinstance(category, dict):
+            continue
+        events = category.get("events") or []
+        if isinstance(events, dict):
+            events = [
+                dict(value, eventId=key)
+                for key, value in events.items()
+                if isinstance(value, dict)
+            ]
+        for item in events if isinstance(events, list) else []:
+            add(item)
+
+    raw_top = (payload or {}).get("events")
+    if isinstance(raw_top, list):
+        for item in raw_top:
+            add(item)
+    elif isinstance(raw_top, dict) and isinstance(raw_top.get("items"), list):
+        for item in raw_top.get("items") or []:
+            add(item)
+
+    dedup: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        event_id = row["event_id"]
+        previous = dedup.get(event_id)
+        if previous is None:
+            dedup[event_id] = row
+            continue
+        for key in ("date", "opponent_abbr", "official_team_id"):
+            if not previous.get(key) and row.get(key):
+                previous[key] = row[key]
+    return list(dedup.values())
+
+
+@lru_cache(maxsize=192)
+def _athlete_gamelog_season_cached(
+    athlete_id: str,
+    season: int,
+    freshness_bucket: int,
+) -> tuple[dict[str, Any], ...]:
+    del freshness_bucket
+    payload, diag = passing_profile._gamelog_payload(int(season), athlete_id)
+    if not diag.get("ok"):
+        raise PropHistoryError(
+            "ESPN athlete game log failed: "
+            + _text(diag.get("error") or diag.get("http") or "unknown")
+        )
+    rows = _iter_proven_gamelog_events(payload)
+    out = []
+    for row in rows:
+        item = dict(row)
+        item["season"] = int(season)
+        out.append(item)
+    out.sort(key=lambda row: (row.get("date") or "", row.get("event_id") or ""), reverse=True)
+    return tuple(out)
+
+
+def _athlete_gamelog_season(athlete_id: str, season: int) -> tuple[dict[str, Any], ...]:
+    return _athlete_gamelog_season_cached(
+        athlete_id,
+        int(season),
+        _freshness_bucket(int(season)),
+    )
+
+
+_athlete_gamelog_season.cache_clear = _athlete_gamelog_season_cached.cache_clear
+
+
+def _candidate_events(athlete_id: str, anchor_season: int) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
+    errors: list[str] = []
     for season in range(int(anchor_season), int(anchor_season) - HISTORY_SEASONS, -1):
-        for row in _team_schedule(team_id, season):
-            if row["event_id"] in seen:
+        try:
+            season_rows = _athlete_gamelog_season(athlete_id, season)
+        except PropHistoryError as exc:
+            errors.append(str(exc))
+            continue
+        for row in season_rows:
+            event_id = _text(row.get("event_id"))
+            if not event_id or event_id in seen:
                 continue
-            seen.add(row["event_id"])
+            seen.add(event_id)
             rows.append(dict(row))
-    rows.sort(key=lambda row: (row["date"], row["event_id"]), reverse=True)
+    rows.sort(key=lambda row: (row.get("date") or "", row["event_id"]), reverse=True)
+    if not rows and errors:
+        raise PropHistoryError(errors[0])
     return rows
 
 
@@ -490,12 +733,20 @@ def _select_events(
     rows: list[dict[str, Any]],
     history_key: str,
     opponent_id: str,
+    opponent_abbr: str = "",
 ) -> list[dict[str, Any]]:
     key = _text(history_key).upper()
     if key == "H2H":
+        target_abbr = _canon_team(opponent_abbr)
         selected = [
             row for row in rows
-            if opponent_id in set(row.get("team_ids") or ())
+            if (
+                opponent_id in set(row.get("team_ids") or ())
+                or (
+                    target_abbr
+                    and _canon_team(row.get("opponent_abbr")) == target_abbr
+                )
+            )
         ]
         return selected[:MAX_H2H_GAMES]
     if key in {"L5", "L10", "L20"}:
@@ -506,6 +757,46 @@ def _select_events(
     raise PropHistoryError(f"unsupported history window: {history_key}")
 
 
+def _athlete_team_id_from_summary(summary: dict[str, Any], athlete_id: str) -> str:
+    players = ((summary.get("boxscore") or {}).get("players") or [])
+    for block in players:
+        if not isinstance(block, dict):
+            continue
+        team_id = _text((block.get("team") or {}).get("id"))
+        if not team_id.isdigit():
+            continue
+        for category in block.get("statistics") or []:
+            if not isinstance(category, dict):
+                continue
+            for row in category.get("athletes") or []:
+                if not isinstance(row, dict):
+                    continue
+                athlete = row.get("athlete") or {}
+                if _text(athlete.get("id")) == athlete_id:
+                    return team_id
+
+    for block in summary.get("rosters") or []:
+        if not isinstance(block, dict):
+            continue
+        team_id = _text((block.get("team") or {}).get("id"))
+        if not team_id.isdigit():
+            continue
+        roster = block.get("roster") or block.get("athletes") or []
+        for row in roster if isinstance(roster, list) else []:
+            if not isinstance(row, dict):
+                continue
+            athlete = row.get("athlete") if isinstance(row.get("athlete"), dict) else row
+            if _text(athlete.get("id")) == athlete_id:
+                return team_id
+    return ""
+
+
+def _summary_team_ids(summary: dict[str, Any]) -> set[str]:
+    header = summary.get("header") or {}
+    comp = _competition(header)
+    return _event_team_ids({"competitions": [comp]}) if comp else set()
+
+
 def _fetch_game_value(
     row: dict[str, Any],
     team_id: str,
@@ -514,16 +805,35 @@ def _fetch_game_value(
 ) -> dict[str, Any] | None:
     event_id = _text(row.get("event_id"))
     summary = _get_json(f"{ESPN_BASE}/summary", _query(event=event_id))
-    value = _market_value(summary, team_id, athlete_id, market_key)
+    game_team_id = _text(row.get("official_team_id"))
+    if not game_team_id.isdigit():
+        game_team_id = _athlete_team_id_from_summary(summary, athlete_id)
+    if not game_team_id.isdigit():
+        return None
+    proven = row.get("participation_proven") is True
+    value = _market_value(
+        summary,
+        game_team_id,
+        athlete_id,
+        market_key,
+        participated=proven,
+    )
     if value is None or not math.isfinite(float(value)):
         return None
+    team_ids = _summary_team_ids(summary)
+    opponent_abbr = _text(row.get("opponent_abbr")).upper()
+    if not opponent_abbr and game_team_id in team_ids:
+        opponent_abbr = _opponent_abbr(
+            {"competitions": [_competition(summary.get("header") or {})]},
+            game_team_id,
+        )
     return {
         "official_event_id": event_id,
         "official_athlete_id": athlete_id,
-        "official_team_id": team_id,
+        "official_team_id": game_team_id,
         "date": _text(row.get("date")),
         "season": int(row.get("season") or 0),
-        "opponent_abbr": _text(row.get("opponent_abbr")).upper(),
+        "opponent_abbr": opponent_abbr,
         "market_key": market_key,
         "value": float(value),
     }
@@ -602,8 +912,13 @@ def load_player_history(
             return base
 
         team_id, opponent_id = _team_identity_from_summary(event_id, team_abbr, opponent_abbr)
-        candidates = _candidate_events(team_id, season)
-        selected = _select_events(candidates, history, opponent_id)
+        candidates = _candidate_events(athlete_id, season)
+        selected = _select_events(
+            candidates,
+            history,
+            opponent_id,
+            opponent_abbr,
+        )
 
         games: list[dict[str, Any]] = []
         with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, max(1, len(selected)))) as pool:
