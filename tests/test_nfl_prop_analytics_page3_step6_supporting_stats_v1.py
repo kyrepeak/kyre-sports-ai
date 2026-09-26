@@ -160,3 +160,50 @@ def test_prop_page_wires_step6_after_step5_chart():
     ):
         assert token in PAGE_SRC, token
     assert PAGE_SRC.index("render_game_chart(") < PAGE_SRC.index("render_supporting_stats(")
+
+
+
+def test_passing_support_reuses_frozen_step3_cached_gamelog_without_boxscore(monkeypatch):
+    cached = (
+        {
+            "official_event_id": "7001",
+            "season": 2026,
+            "completions": 25.0,
+            "attempts": 38.0,
+            "passing_yards": 305.0,
+            "passing_tds": 2.0,
+            "interceptions": 1.0,
+        },
+    )
+    monkeypatch.setattr(
+        support.history_stats,
+        "_passing_gamelog_season",
+        lambda athlete_id, season: cached,
+    )
+    monkeypatch.setattr(
+        support,
+        "_summary",
+        lambda event_id: (_ for _ in ()).throw(AssertionError("redundant boxscore read")),
+    )
+    payload = support.load_supporting_stats(
+        games=[
+            {
+                "official_event_id": "7001",
+                "season": 2026,
+                "value": 305.0,
+            }
+        ],
+        athlete_id="999001",
+        market_key="passing_yards",
+        mode="average",
+    )
+    assert payload["ready"] is True
+    assert payload["event_count"] == 1
+    assert [row["key"] for row in payload["metrics"]] == [
+        "attempts",
+        "completions",
+        "completion_pct",
+        "yards_per_attempt",
+        "passing_tds",
+        "interceptions",
+    ]
