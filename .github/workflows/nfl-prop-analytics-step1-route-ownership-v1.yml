@@ -215,20 +215,37 @@ jobs:
               raise RuntimeError("PROP_ANALYTICS_STEP1_COMBO_NOT_READY:"+name)
 
           def choose(page,name,value):
-              frame,combo=find_combo(page,name)
-              combo.click(timeout=10000)
-              end=time.monotonic()+30
+              end=time.monotonic()+45
+              last=""
               while time.monotonic()<end:
-                  for candidate in page.frames:
-                      try:
-                          opt=candidate.get_by_role("option",name=value,exact=True)
-                          if opt.count()>=1:
-                              opt.first.click(timeout=10000)
-                              return
-                      except Exception:
-                          pass
-                  page.wait_for_timeout(150)
-              raise RuntimeError("PROP_ANALYTICS_STEP1_OPTION_NOT_READY:"+value)
+                  try:
+                      _,combo=find_combo(page,name,timeout=8)
+                      combo.click(timeout=5000)
+                  except Exception as exc:
+                      last=f"combo:{type(exc).__name__}"
+                      page.wait_for_timeout(250)
+                      continue
+
+                  option_deadline=min(end,time.monotonic()+2.5)
+                  while time.monotonic()<option_deadline:
+                      for candidate in page.frames:
+                          try:
+                              opt=candidate.get_by_role("option",name=value,exact=True)
+                              if opt.count()>=1:
+                                  opt.first.click(timeout=5000)
+                                  return
+                          except Exception as exc:
+                              last=f"option:{type(exc).__name__}"
+                      page.wait_for_timeout(150)
+
+                  # Streamlit reruns can close the BaseWeb popover between the
+                  # combobox click and option lookup. Reacquire/reopen it.
+                  page.wait_for_timeout(250)
+
+              raise RuntimeError(
+                  "PROP_ANALYTICS_STEP1_OPTION_NOT_READY:"
+                  +value+":"+last
+              )
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
@@ -344,20 +361,29 @@ jobs:
                   page.wait_for_timeout(250)
               raise RuntimeError("PROP_ANALYTICS_STEP1_PUBLIC_COMBO_NOT_READY:"+name)
 
-          def choose(page,name,value,timeout=35):
-              _,combo=find_combo(page,name)
-              combo.click(timeout=10000)
+          def choose(page,name,value,timeout=45):
               end=time.monotonic()+timeout
               while time.monotonic()<end:
-                  for candidate in page.frames:
-                      try:
-                          opt=candidate.get_by_role("option",name=value,exact=True)
-                          if opt.count()>=1:
-                              opt.first.click(timeout=10000)
-                              return True
-                      except Exception:
-                          pass
-                  page.wait_for_timeout(200)
+                  try:
+                      _,combo=find_combo(page,name,timeout=8)
+                      combo.click(timeout=5000)
+                  except Exception:
+                      page.wait_for_timeout(250)
+                      continue
+
+                  option_deadline=min(end,time.monotonic()+2.5)
+                  while time.monotonic()<option_deadline:
+                      for candidate in page.frames:
+                          try:
+                              opt=candidate.get_by_role("option",name=value,exact=True)
+                              if opt.count()>=1:
+                                  opt.first.click(timeout=5000)
+                                  return True
+                          except Exception:
+                              pass
+                      page.wait_for_timeout(175)
+
+                  page.wait_for_timeout(250)
               return False
 
           def open_prop_route(browser):
