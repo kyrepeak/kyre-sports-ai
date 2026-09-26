@@ -217,17 +217,59 @@ def extract_event_metrics(summary: dict[str, Any], athlete_id: str) -> dict[str,
     return out
 
 
-def _event_support(row: dict[str, Any], athlete_id: str) -> dict[str, Any] | None:
+def _history_row_metrics(row: dict[str, Any]) -> dict[str, float]:
+    """Reuse certified Step 3 game-log fields before making any extra network read."""
+    out: dict[str, float] = {}
+    for source, target in (
+        ("completions", "completions"),
+        ("attempts", "attempts"),
+        ("passing_yards", "passing_yards"),
+        ("passing_tds", "passing_tds"),
+        ("interceptions", "interceptions"),
+    ):
+        value = _number(row.get(source))
+        if value is not None:
+            out[target] = value
+
+    completions = out.get("completions")
+    attempts = out.get("attempts")
+    passing_yards = out.get("passing_yards")
+    if completions is not None and attempts is not None and attempts > 0:
+        out["completion_pct"] = completions / attempts * 100.0
+    if passing_yards is not None and attempts is not None and attempts > 0:
+        out["yards_per_attempt"] = passing_yards / attempts
+    return out
+
+
+def _event_support(
+    row: dict[str, Any],
+    athlete_id: str,
+    required_metrics: tuple[str, ...],
+) -> dict[str, Any] | None:
     event_id = _text(row.get("official_event_id") or row.get("event_id"))
     if not event_id.isdigit():
         return None
+
+    metrics = _history_row_metrics(row)
+    if required_metrics and all(key in metrics for key in required_metrics):
+        return {
+            "official_event_id": event_id,
+            "metrics": metrics,
+            "source": "certified-step3-gamelog",
+        }
+
     try:
-        metrics = extract_event_metrics(_summary(event_id), athlete_id)
+        boxscore_metrics = extract_event_metrics(_summary(event_id), athlete_id)
     except RuntimeError:
-        return None
+        boxscore_metrics = {}
+    metrics.update(boxscore_metrics)
     if not metrics:
         return None
-    return {"official_event_id": event_id, "metrics": metrics}
+    return {
+        "official_event_id": event_id,
+        "metrics": metrics,
+        "source": "exact-id-boxscore" if boxscore_metrics else "certified-step3-gamelog",
+    }
 
 
 def load_supporting_stats(
@@ -249,15 +291,18 @@ def load_supporting_stats(
     if not selected:
         return {"ready": False, "reason": "verified historical games are required", "metrics": []}
 
+    profile = MARKET_METRICS.get(market, ())
     event_rows: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, max(1, len(selected)))) as pool:
-        futures = [pool.submit(_event_support, row, athlete) for row in selected]
+        futures = [
+            pool.submit(_event_support, row, athlete, tuple(profile))
+            for row in selected
+        ]
         for future in as_completed(futures):
             result = future.result()
             if result is not None:
                 event_rows.append(result)
 
-    profile = MARKET_METRICS.get(market, ())
     cards: list[dict[str, Any]] = []
     for key in profile:
         values = [
@@ -285,7 +330,11 @@ def load_supporting_stats(
         "event_count": len(event_rows),
         "requested_game_count": len(selected),
         "metrics": cards[:6],
-        "source": "ESPN exact-ID historical game box scores",
+        "source": (
+            "Certified Step 3 athlete game log + ESPN exact-ID box scores"
+            if any(row.get("source") == "exact-id-boxscore" for row in event_rows)
+            else "Certified Step 3 exact-ID athlete game log"
+        ),
         "sportsbook_line": False,
     }
 
