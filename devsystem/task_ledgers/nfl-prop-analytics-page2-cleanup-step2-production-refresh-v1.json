@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page2-cleanup-step2-production-refresh-v1",
+  "title": "NFL Prop Analytics Page 2 Cleanup Step 2 — Production Refresh",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 2,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "17b2d35211e7bf78c2b04c5f55c68e61e756361e",
+  "scope": "Entrypoint-only Streamlit production refresh after Cleanup Step 2 imported-module merge remained stale in production. Add one inert app.py runtime marker to force Streamlit Cloud restart. No shell, roster, availability, filtering, tap-player, Page 3, router, model, or Passing Yards behavior changes.",
+  "frozen_modules": [
+    "nfl_prop_analytics_matchup_shell_v1.py",
+    "nfl_prop_analytics_hub_v1.py",
+    "nfl_prop_analytics_page2_responsive_polish_v1.py",
+    "nfl_prop_analytics_page2_unified_roster_v1.py",
+    "nfl_prop_analytics_page2_tap_player_v1.py",
+    "nfl_prop_analytics_roster_truth_v1.py",
+    "nfl_prop_analytics_availability_depth_v1.py",
+    "nfl_prop_analytics_player_select_v1.py",
+    "nfl_prop_analytics_prop_page_v1.py",
+    "streamlit_memory_lazy_router_v240.py",
+    "streamlit_memory_lazy_router_v239.py",
+    "nfl_passing_yards_hub_v85.py"
+  ],
+  "acceptance": [
+    "Only an inert app.py production-refresh marker is added to runtime code.",
+    "Cleanup Step 2 product modules remain byte-identical.",
+    "DevSystem permanent contract and final gate pass.",
+    "After merge Streamlit production restarts onto the Cleanup Step 2 product.",
+    "The existing scoped Cleanup Step 2 public-freeze proof passes and emits the frozen token."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
