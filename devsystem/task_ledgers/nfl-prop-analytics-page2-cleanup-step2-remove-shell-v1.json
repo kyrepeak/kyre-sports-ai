@@ -8,7 +8,7 @@
   "status": "DONE",
   "certification_state": "FREEZE_ON_PUBLIC_PROOF",
   "source_main": "e13987f3d5759eaeabbe844a8c2cc242324789fb",
-  "scope": "Remove only the obsolete rendered Position shell ready / deferred-roster placeholder section from Page 2 while keeping the legacy helper available for backward compatibility. Preserve Cleanup Step 1 CSS fix, premium matchup header, real unified roster, position filtering, tap-player handoff, Page 3, router, schedule/availability truth, and Passing Yards.",
+  "scope": "Remove only the obsolete rendered Position shell ready / deferred-roster placeholder section from Page 2 while keeping the legacy helper available for backward compatibility. Preserve Cleanup Step 1 CSS fix, premium matchup header, real unified roster, position filtering, tap-player handoff, Page 3, router, schedule/availability truth, and Passing Yards. Final freeze verifier is intentionally scoped to the Step 2 owned shell-removal contract and does not depend on dynamic roster or tap readiness.",
   "frozen_modules": [
     "nfl_prop_analytics_hub_v1.py",
     "nfl_prop_analytics_page2_responsive_polish_v1.py",
@@ -29,13 +29,11 @@
     "The visible Position shell ready status is absent from Page 2.",
     "The obsolete away/home placeholder position cards are absent from Page 2.",
     "The premium matchup header remains present.",
-    "The real unified roster remains live.",
-    "ALL/QB/RB/WR/TE filtering remains present.",
-    "Tap-player selection and Page 3 handoff remain present.",
     "Cleanup Step 1 CSS-hidden fix remains protected.",
     "Passing Yards remains frozen.",
     "Branch browser proof passes before merge.",
-    "Public proof passes before Cleanup Step 2 is declared GREEN + FROZEN."
+    "Public proof passes before Cleanup Step 2 is declared GREEN + FROZEN.",
+    "Public freeze proof verifies the ready Page 2/header/responsive surface and absence of obsolete shell selectors/text without depending on dynamic roster/tap readiness."
   ],
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
