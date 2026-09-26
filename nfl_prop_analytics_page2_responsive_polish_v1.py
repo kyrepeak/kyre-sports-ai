@@ -74,7 +74,8 @@ button[data-testid^="stBaseButton"]{
     flex:1 1 100% !important;
   }
   div[data-testid="stButton"] button,
-  button[data-testid^="stBaseButton"]{
+  button[data-testid^="stBaseButton"],
+  body div[data-testid="stHorizontalBlock"] button{
     min-height:48px !important;
     width:100% !important;
     padding:.65rem .8rem !important;
