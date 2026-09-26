@@ -44,8 +44,9 @@ div[data-testid="stSegmentedControl"]{
   scrollbar-width:none;
 }
 div[data-testid="stSegmentedControl"]::-webkit-scrollbar{display:none}
-div[data-testid="stButton"] button{
-  min-height:44px;
+div[data-testid="stButton"] button,
+button[data-testid^="stBaseButton"]{
+  min-height:44px !important;
   border-radius:12px;
   white-space:normal;
   line-height:1.2;
@@ -72,10 +73,11 @@ div[data-testid="stButton"] button{
     min-width:100% !important;
     flex:1 1 100% !important;
   }
-  div[data-testid="stButton"] button{
-    min-height:48px;
-    width:100%;
-    padding:.65rem .8rem;
+  div[data-testid="stButton"] button,
+  button[data-testid^="stBaseButton"]{
+    min-height:48px !important;
+    width:100% !important;
+    padding:.65rem .8rem !important;
   }
 }
 
