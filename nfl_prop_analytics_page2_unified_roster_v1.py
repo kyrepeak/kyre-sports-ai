@@ -14,6 +14,7 @@ import streamlit as st
 
 from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
 from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth
+from nfl_prop_analytics_schedule_v1 import team_logo_url
 
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 2 POLISH STEP 2 • UNIFIED ROSTER + AVAILABILITY"
 STEP = 3
@@ -39,6 +40,16 @@ def _availability_class(value: str) -> str:
     }.get(_text(value).upper(), "ks-pa-u-unverified")
 
 
+def _player_headshot_url(row: dict[str, Any]) -> str:
+    explicit = _text(row.get("headshot_url"))
+    if explicit:
+        return explicit
+    athlete_id = _text(row.get("espn_id"))
+    if athlete_id.isdigit():
+        return f"https://a.espncdn.com/i/headshots/nfl/players/full/{athlete_id}.png"
+    return ""
+
+
 def _player_card(row: dict[str, Any]) -> str:
     athlete_id = _text(row.get("espn_id"))
     name = _text(row.get("name"))
@@ -50,8 +61,16 @@ def _player_card(row: dict[str, Any]) -> str:
     availability_label = _text(row.get("availability_label")) or availability or "UNVERIFIED"
     verified = bool(row.get("verified"))
     source_count = int(row.get("source_count") or 0)
+    headshot = _player_headshot_url(row)
+    headshot_html = (
+        f'<img class="ks-pa-u-headshot" data-prop-page2-player-headshot="v1" '
+        f'src="{html_lib.escape(headshot)}" alt="{html_lib.escape(name)} headshot">'
+        if headshot
+        else '<div class="ks-pa-u-headshot ks-pa-u-headshot-empty" data-prop-page2-player-headshot="missing">—</div>'
+    )
     return f"""
 <div class="ks-pa-u-player"
+     data-prop-page2-player-id-card="v1"
      data-prop-page2-unified-player-id="{html_lib.escape(athlete_id)}"
      data-prop-page2-unified-team="{html_lib.escape(team)}"
      data-prop-page2-unified-position="{html_lib.escape(position)}"
@@ -60,12 +79,21 @@ def _player_card(row: dict[str, Any]) -> str:
      data-prop-page2-unified-depth-verified="{str(bool(row.get('depth_verified'))).lower()}"
      data-prop-page2-unified-depth-rank="{html_lib.escape(_text(row.get('depth_rank')))}"
      data-prop-page2-unified-availability="{html_lib.escape(availability)}">
-  <div class="ks-pa-u-main">
-    <div class="ks-pa-u-name">
-      <strong>{html_lib.escape(name)}</strong>
-      <span>{html_lib.escape(jersey)} • {html_lib.escape(position)}</span>
+  <div class="ks-pa-u-idrow">
+    {headshot_html}
+    <div class="ks-pa-u-idbody">
+      <div class="ks-pa-u-main">
+        <div class="ks-pa-u-name">
+          <strong>{html_lib.escape(name)}</strong>
+          <span>{html_lib.escape(jersey)} • {html_lib.escape(position)}</span>
+        </div>
+        <span class="ks-pa-u-depth">{html_lib.escape(depth)}</span>
+      </div>
+      <div class="ks-pa-u-idmeta">
+        <span>ESPN ID {html_lib.escape(athlete_id)}</span>
+        <span>{html_lib.escape(team)}</span>
+      </div>
     </div>
-    <span class="ks-pa-u-depth">{html_lib.escape(depth)}</span>
   </div>
   <div class="ks-pa-u-bottom">
     <span class="ks-pa-u-verified">VERIFIED • ESPN + NFLVERSE</span>
@@ -98,8 +126,15 @@ def _team_column(team_truth: dict[str, Any], team_name: str, selected_position: 
          data-prop-page2-unified-team-shell="{html_lib.escape(_text(team_truth.get('team')))}"
          data-prop-page2-unified-team-count="{len(team_truth.get('players', []) or [])}">
   <div class="ks-pa-u-team-head">
-    <b>{html_lib.escape(_text(team_truth.get('team')))}</b>
-    <span>{html_lib.escape(team_name)}</span>
+    <img class="ks-pa-u-team-logo"
+         data-prop-page2-roster-team-logo="v1"
+         data-prop-page2-roster-team-logo-team="{html_lib.escape(_text(team_truth.get('team')))}"
+         src="{html_lib.escape(team_logo_url(_text(team_truth.get('team'))))}"
+         alt="{html_lib.escape(team_name)} logo">
+    <div class="ks-pa-u-team-copy">
+      <b>{html_lib.escape(_text(team_truth.get('team')))}</b>
+      <span>{html_lib.escape(team_name)}</span>
+    </div>
   </div>
   {''.join(sections)}
 </article>
@@ -248,14 +283,21 @@ def render_unified_roster_availability(
 .ks-pa-u-proof strong{{color:#bae6fd;font-size:.72rem}}.ks-pa-u-proof span{{color:#71869f;font-size:.62rem;line-height:1.35}}
 .ks-pa-u-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 .ks-pa-u-team{{min-width:0;padding:12px;border:1px solid rgba(125,211,252,.13);border-radius:15px;background:rgba(2,8,16,.35)}}
-.ks-pa-u-team-head{{display:flex;align-items:baseline;gap:7px;margin-bottom:9px}}
+.ks-pa-u-team-head{{display:flex;align-items:center;gap:9px;margin-bottom:9px}}
+.ks-pa-u-team-logo{{width:30px;height:30px;object-fit:contain;flex:0 0 30px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.28))}}
+.ks-pa-u-team-copy{{display:flex;align-items:baseline;gap:7px;min-width:0}}
 .ks-pa-u-team-head b{{color:#f8fafc;font-size:1rem}}.ks-pa-u-team-head span{{color:#8fa4bd;font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 .ks-pa-u-position{{padding:9px 0;border-top:1px solid rgba(148,163,184,.09)}}.ks-pa-u-position:first-of-type{{border-top:0}}
 .ks-pa-u-pos-head{{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}}.ks-pa-u-pos-head strong{{color:#e0f2fe;font-size:.73rem;letter-spacing:.07em}}.ks-pa-u-pos-head span{{color:#6f839c;font-size:.6rem}}
 .ks-pa-u-list{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}}
 .ks-pa-u-player{{min-width:0;padding:9px;border:1px solid rgba(148,163,184,.10);border-radius:11px;background:rgba(15,23,42,.44)}}
+.ks-pa-u-idrow{{display:flex;align-items:center;gap:8px;min-width:0}}
+.ks-pa-u-headshot{{width:42px;height:42px;flex:0 0 42px;object-fit:cover;object-position:top center;border-radius:10px;border:1px solid rgba(125,211,252,.14);background:rgba(2,8,16,.58)}}
+.ks-pa-u-headshot-empty{{display:grid;place-items:center;color:#64748b;font-size:.7rem}}
+.ks-pa-u-idbody{{min-width:0;flex:1}}
 .ks-pa-u-main{{display:flex;justify-content:space-between;gap:7px;align-items:flex-start}}
 .ks-pa-u-name{{display:flex;flex-direction:column;min-width:0}}.ks-pa-u-name strong{{color:#f1f5f9;font-size:.67rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.ks-pa-u-name span{{margin-top:2px;color:#7690aa;font-size:.54rem}}
+.ks-pa-u-idmeta{{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;color:#5f738b;font-size:.48rem;font-weight:800;letter-spacing:.025em}}
 .ks-pa-u-depth{{color:#7dd3fc;font-size:.54rem;font-weight:900;white-space:nowrap}}
 .ks-pa-u-bottom{{display:flex;justify-content:space-between;gap:7px;align-items:center;margin-top:6px;padding-top:5px;border-top:1px solid rgba(148,163,184,.07)}}
 .ks-pa-u-verified{{color:#5f738b;font-size:.49rem;white-space:nowrap}}.ks-pa-u-state{{font-size:.5rem;font-weight:900;letter-spacing:.025em;text-align:right}}

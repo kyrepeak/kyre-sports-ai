@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page2-identity-visuals-v1",
+  "title": "NFL Prop Analytics Page 2 — Team Logos + Player ID Cards",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "5fdafe0f76c4430729dcfd0d18c7dfafbfa77e5c",
+  "scope": "Presentation-only repair prompted by direct live screenshot evidence. Add exact team logos to each unified roster team header and render each verified player as a compact identity card with exact verified headshot/ESPN athlete ID. Preserve roster truth, availability/depth truth, filters, tap-player handoff, Page 3, Cleanup Steps 1-3, and Passing Yards.",
+  "acceptance": [
+    "Exactly two roster-team logos render on Page 2.",
+    "Every unified roster player is rendered as an ID card.",
+    "Each ID card contains the exact ESPN athlete ID.",
+    "Each ID card has a headshot URL from verified roster truth or exact ESPN-ID fallback.",
+    "Depth role, availability label, and verified source proof remain visible.",
+    "ALL/QB/RB/WR/TE filtering remains unchanged.",
+    "Tap-player and Page 3 handoff remain unchanged.",
+    "No horizontal overflow at 390/768/1440.",
+    "Public live proof passes before freeze."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
