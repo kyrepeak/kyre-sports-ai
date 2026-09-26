@@ -8,7 +8,7 @@
   "status": "DONE",
   "certification_state": "FREEZE_ON_PUBLIC_PROOF",
   "source_main": "e13987f3d5759eaeabbe844a8c2cc242324789fb",
-  "scope": "Remove only the obsolete rendered Position shell ready / deferred-roster placeholder section from Page 2 while keeping the legacy helper available for backward compatibility. Preserve Cleanup Step 1 CSS fix, premium matchup header, real unified roster, position filtering, tap-player handoff, Page 3, router, schedule/availability truth, and Passing Yards. Final freeze verifier is intentionally scoped to the Step 2 owned shell-removal contract and does not depend on dynamic roster or tap readiness.",
+  "scope": "Remove only the obsolete rendered Position shell ready / deferred-roster placeholder section from Page 2 while keeping the legacy helper available for backward compatibility. Preserve Cleanup Step 1 CSS fix, premium matchup header, real unified roster, position filtering, tap-player handoff, Page 3, router, schedule/availability truth, and Passing Yards. Final freeze verifier is intentionally scoped to the Step 2 owned shell-removal contract and does not depend on dynamic roster or tap readiness. Final public certification follows the real user navigation path (NFL -> Prop Analytics -> Open matchup) instead of relying on the cold deep-link path.",
   "frozen_modules": [
     "nfl_prop_analytics_hub_v1.py",
     "nfl_prop_analytics_page2_responsive_polish_v1.py",
@@ -33,7 +33,8 @@
     "Passing Yards remains frozen.",
     "Branch browser proof passes before merge.",
     "Public proof passes before Cleanup Step 2 is declared GREEN + FROZEN.",
-    "Public freeze proof verifies the ready Page 2/header/responsive surface and absence of obsolete shell selectors/text without depending on dynamic roster/tap readiness."
+    "Public freeze proof navigates through the live NFL selector into Prop Analytics, clicks Open matchup, and verifies the obsolete shell selectors/text are absent.",
+    "The legitimate app.py production-refresh blob is accepted as frozen infrastructure for this verifier revision."
   ],
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
