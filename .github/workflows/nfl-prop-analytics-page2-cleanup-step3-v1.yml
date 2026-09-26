@@ -1,0 +1,495 @@
+name: NFL Prop Analytics Page 2 Cleanup Step 3
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/task_ledgers/nfl-prop-analytics-page2-cleanup-step3-final-visual-proof-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page2-cleanup-step3-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "devsystem/task_ledgers/nfl-prop-analytics-page2-cleanup-step3-final-visual-proof-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page2-cleanup-step3-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-analytics-page2-cleanup-step3-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce verifier-only Step 3 scope and frozen product
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page2-cleanup-step3-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page2-cleanup-step3-final-visual-proof-v1.json' | sort)"
+          test "$actual" = "$expected" || {
+            echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_SCOPE_VIOLATION
+            printf '%s\n' "$actual"
+            exit 1
+          }
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_FROZEN_PRODUCT_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+
+          check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
+          check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
+          check_blob nfl_prop_analytics_schedule_v1.py 3558f4581c0301c4fc57f8b5e761e1e0cc1eb63c
+          check_blob nfl_prop_analytics_game_select_v1.py 1187c13fc5bee03a955d014e87f237ed055a27ef
+          check_blob nfl_prop_analytics_roster_truth_v1.py ad1a49ddd24d6f50da6c56280b34290b2c3312f3
+          check_blob nfl_prop_analytics_availability_depth_v1.py cf7fdeee4c18d95c19d2a737f59bda7818e059ae
+          check_blob nfl_prop_analytics_matchup_shell_v1.py 0441b2ca34a0206f92f32f5a14a47916067b98a1
+          check_blob nfl_prop_analytics_hub_v1.py 0a604db75dc630a1a75b2d5b43b8b2c9d2ebacfd
+          check_blob nfl_prop_analytics_page2_unified_roster_v1.py 2738254b5a914df777de5a66fc41b2bb4a9ea56c
+          check_blob nfl_prop_analytics_player_select_v1.py b9aa4ec194ffea970d6858dcd0e0ed7c31ae0426
+          check_blob nfl_prop_analytics_page2_tap_player_v1.py 2cd66941f23582d138f8fe92c2e9b0af25150a3b
+          check_blob nfl_prop_analytics_page2_responsive_polish_v1.py 61ae896231062e112cc6bb710d4f7c28a16e8d0a
+          check_blob nfl_prop_analytics_prop_page_v1.py c1dc331b6bb63558229ae2dba2e36b4b8c1951fe
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+          check_blob app.py 2a3922af385cd0fc43bfd540783be15d582aefad
+
+          echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_SCOPE_GREEN
+          echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_FROZEN_STACK_GREEN
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prove frozen syntax contracts
+        run: |
+          python -m py_compile \
+            nfl_prop_analytics_matchup_shell_v1.py \
+            nfl_prop_analytics_page2_responsive_polish_v1.py \
+            nfl_prop_analytics_page2_unified_roster_v1.py \
+            nfl_prop_analytics_page2_tap_player_v1.py \
+            nfl_prop_analytics_prop_page_v1.py
+          echo PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_STATIC_GREEN
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install exact-flow browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            >/tmp/page2-cleanup-step3.log 2>&1 &
+
+      - name: Prove final Page 2 visual contract
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("CLEANUP_STEP3_LOCAL_STREAMLIT_NOT_READY")
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("CLEANUP_STEP3_LOCAL_SELECTOR_NOT_READY:"+selector)
+
+          def combo(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("CLEANUP_STEP3_LOCAL_COMBO_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              _,loc=combo(page,name)
+              loc.click(timeout=10000)
+              page.keyboard.type(value,delay=15)
+              end=time.monotonic()+30
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          opt=frame.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(175)
+              raise RuntimeError("CLEANUP_STEP3_LOCAL_OPTION_NOT_READY:"+value)
+
+          def button(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("CLEANUP_STEP3_LOCAL_BUTTON_NOT_READY:"+name)
+
+          def assert_page2(frame,page,width):
+              page.set_viewport_size({"width":width,"height":1100})
+              page.wait_for_timeout(350)
+
+              body=frame.locator("body").inner_text()
+              for token in (
+                  "@media (max-width:900px)",
+                  "/* iPad / compact desktop:",
+                  ".ks-pa-u-list{grid-template-columns:1fr",
+                  "Position shell ready",
+                  "Roster data is intentionally deferred to the next step.",
+                  "Roster layer arrives in the next step.",
+              ):
+                  assert token not in body,(width,token)
+
+              assert frame.locator('[data-prop-page2-team-shell]').count()==0
+              assert frame.locator('[data-prop-page2-roster-state="pending"]').count()==0
+
+              metrics=frame.evaluate("""() => ({
+                inner: window.innerWidth,
+                scroll: document.documentElement.scrollWidth,
+                bodyScroll: document.body.scrollWidth
+              })""")
+              widest=max(metrics["scroll"],metrics["bodyScroll"])
+              assert widest <= metrics["inner"] + 2,(width,metrics)
+
+              grid=frame.locator(".ks-pa-u-grid").first
+              cols=grid.evaluate("e=>getComputedStyle(e).gridTemplateColumns").split()
+              if width==390:
+                  assert len(cols)==1,(width,cols)
+              else:
+                  assert len(cols)==2,(width,cols)
+
+              if width==390:
+                  tap_button=frame.get_by_role(
+                      "button",
+                      name=re.compile(r"^[A-Z]{2,3} • (QB|RB|WR|TE) • "),
+                  ).first
+                  assert tap_button.count()==1
+                  box=tap_button.bounding_box()
+                  assert box and box["height"]>=47,(width,box)
+
+              print(f"PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_BRANCH_{width}_GREEN")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":768,"height":1100})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              choose(page,"🏟️ Sport","NFL")
+              choose(page,"🎯 NFL Market","Prop Analytics")
+
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',180)
+              assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              _,open_button=button(page,"Open matchup",180)
+              open_button.click(timeout=10000)
+
+              frame,page2=find(page,'[data-nfl-prop-analytics-step4-page2="v1"]',180)
+              assert page2.get_attribute("data-prop-page2-state")=="ready"
+
+              _,header=find(page,'[data-prop-page2-premium-header="v1"]',60)
+              assert frame.locator('[data-prop-page2-header-logo]').count()==2
+              kickoff=header.get_attribute("data-prop-page2-header-kickoff")
+              assert kickoff and kickoff!="Time TBD",kickoff
+
+              _,responsive=find(page,'[data-prop-page2-responsive-polish="v1"]',60)
+              assert responsive.get_attribute("data-prop-page2-responsive-targets")=="390,768,1440"
+
+              _,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180)
+              assert board.get_attribute("data-prop-page2-unified-state")=="live"
+
+              _,flt=find(page,'[data-prop-page2-position-filter="v1"]',60)
+              assert flt.get_attribute("data-prop-page2-position-filter-options")=="ALL,QB,RB,WR,TE"
+
+              _,tap=find(page,'[data-prop-page2-tap-player="v1"]',180)
+              assert tap.get_attribute("data-prop-page2-tap-state")=="ready"
+
+              for width in (390,768,1440):
+                  assert_page2(frame,page,width)
+
+              page.set_viewport_size({"width":768,"height":1100})
+              page.wait_for_timeout(300)
+              tap_button=frame.get_by_role(
+                  "button",
+                  name=re.compile(r"^[A-Z]{2,3} • (QB|RB|WR|TE) • "),
+              ).first
+              tap_button.click(timeout=10000)
+
+              _,tap_handoff=find(page,'[data-prop-page2-tap-handoff="v1"]',60)
+              player_id=tap_handoff.get_attribute("data-prop-page2-tap-handoff-player-id")
+              assert player_id
+
+              _,open_prop=button(page,"Open prop page",60)
+              open_prop.click(timeout=10000)
+
+              frame3,prop=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]',180)
+              assert prop.get_attribute("data-prop-step8-state")=="ready"
+              assert prop.get_attribute("data-prop-step8-player-id")==player_id
+
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_BRANCH_TAP_HANDOFF_GREEN")
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_BRANCH_GREEN")
+              context.close()
+              browser.close()
+          PY
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove final live Page 2 visual contract and freeze
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("CLEANUP_STEP3_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def combo(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("combobox",name=name,exact=True)
+                          if loc.count()==1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("CLEANUP_STEP3_PUBLIC_COMBO_NOT_READY:"+name)
+
+          def choose(page,name,value):
+              _,loc=combo(page,name)
+              loc.click(timeout=10000)
+              page.keyboard.type(value,delay=15)
+              end=time.monotonic()+30
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          opt=frame.get_by_role("option",name=value,exact=True)
+                          if opt.count()>=1:
+                              opt.first.click(timeout=10000)
+                              return
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(175)
+              raise RuntimeError("CLEANUP_STEP3_PUBLIC_OPTION_NOT_READY:"+value)
+
+          def button(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("CLEANUP_STEP3_PUBLIC_BUTTON_NOT_READY:"+name)
+
+          def assert_page2(frame,page,width):
+              page.set_viewport_size({"width":width,"height":1100})
+              page.wait_for_timeout(350)
+
+              body=frame.locator("body").inner_text()
+              for token in (
+                  "@media (max-width:900px)",
+                  "/* iPad / compact desktop:",
+                  ".ks-pa-u-list{grid-template-columns:1fr",
+                  "Position shell ready",
+                  "Roster data is intentionally deferred to the next step.",
+                  "Roster layer arrives in the next step.",
+              ):
+                  assert token not in body,(width,token)
+
+              assert frame.locator('[data-prop-page2-team-shell]').count()==0
+              assert frame.locator('[data-prop-page2-roster-state="pending"]').count()==0
+
+              metrics=frame.evaluate("""() => ({
+                inner: window.innerWidth,
+                scroll: document.documentElement.scrollWidth,
+                bodyScroll: document.body.scrollWidth
+              })""")
+              widest=max(metrics["scroll"],metrics["bodyScroll"])
+              assert widest <= metrics["inner"] + 2,(width,metrics)
+
+              grid=frame.locator(".ks-pa-u-grid").first
+              cols=grid.evaluate("e=>getComputedStyle(e).gridTemplateColumns").split()
+              if width==390:
+                  assert len(cols)==1,(width,cols)
+              else:
+                  assert len(cols)==2,(width,cols)
+
+              if width==390:
+                  tap_button=frame.get_by_role(
+                      "button",
+                      name=re.compile(r"^[A-Z]{2,3} • (QB|RB|WR|TE) • "),
+                  ).first
+                  assert tap_button.count()==1
+                  box=tap_button.bounding_box()
+                  assert box and box["height"]>=47,(width,box)
+
+              print(f"PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_PUBLIC_{width}_GREEN")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
+              )
+              context=browser.new_context(viewport={"width":768,"height":1100})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+
+              choose(page,"🏟️ Sport","NFL")
+              choose(page,"🎯 NFL Market","Prop Analytics")
+
+              _,handoff=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',180)
+              assert handoff.get_attribute("data-prop-handoff-state")=="ready"
+              _,open_button=button(page,"Open matchup",180)
+              open_button.click(timeout=10000)
+
+              frame,page2=find(page,'[data-nfl-prop-analytics-step4-page2="v1"]',180)
+              assert page2.get_attribute("data-prop-page2-state")=="ready"
+
+              _,header=find(page,'[data-prop-page2-premium-header="v1"]',60)
+              assert frame.locator('[data-prop-page2-header-logo]').count()==2
+              kickoff=header.get_attribute("data-prop-page2-header-kickoff")
+              assert kickoff and kickoff!="Time TBD",kickoff
+
+              _,responsive=find(page,'[data-prop-page2-responsive-polish="v1"]',60)
+              assert responsive.get_attribute("data-prop-page2-responsive-targets")=="390,768,1440"
+
+              _,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180)
+              assert board.get_attribute("data-prop-page2-unified-state")=="live"
+
+              _,flt=find(page,'[data-prop-page2-position-filter="v1"]',60)
+              assert flt.get_attribute("data-prop-page2-position-filter-options")=="ALL,QB,RB,WR,TE"
+
+              _,tap=find(page,'[data-prop-page2-tap-player="v1"]',180)
+              assert tap.get_attribute("data-prop-page2-tap-state")=="ready"
+
+              for width in (390,768,1440):
+                  assert_page2(frame,page,width)
+
+              page.set_viewport_size({"width":768,"height":1100})
+              page.wait_for_timeout(300)
+              tap_button=frame.get_by_role(
+                  "button",
+                  name=re.compile(r"^[A-Z]{2,3} • (QB|RB|WR|TE) • "),
+              ).first
+              tap_button.click(timeout=10000)
+
+              _,tap_handoff=find(page,'[data-prop-page2-tap-handoff="v1"]',60)
+              player_id=tap_handoff.get_attribute("data-prop-page2-tap-handoff-player-id")
+              assert player_id
+
+              _,open_prop=button(page,"Open prop page",60)
+              open_prop.click(timeout=10000)
+
+              _,prop=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]',180)
+              assert prop.get_attribute("data-prop-step8-state")=="ready"
+              assert prop.get_attribute("data-prop-step8-player-id")==player_id
+
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_PUBLIC_TAP_HANDOFF_GREEN")
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_GREEN")
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_PUBLIC_GREEN")
+              print("PROP_ANALYTICS_PAGE2_CLEANUP_STEP3_FROZEN")
+              context.close()
+              browser.close()
+          PY
