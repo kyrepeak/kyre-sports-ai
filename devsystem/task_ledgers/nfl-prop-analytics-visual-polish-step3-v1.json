@@ -23,5 +23,16 @@
     "Passing Yards remains frozen.",
     "Public proof passes before polish Step 3 is GREEN + FROZEN."
   ],
-  "next_step_after_freeze": "LOGOS + TIMES POLISH COMPLETE"
+  "next_step_after_freeze": "LOGOS + TIMES POLISH COMPLETE",
+  "task_id": "nfl-prop-analytics-visual-polish-step3-v1",
+  "id": "nfl-prop-analytics-visual-polish-step3-v1",
+  "version": 1,
+  "page": 1,
+  "step_name": "Logos + Kickoff Final Visual Proof",
+  "step3_status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
 }
