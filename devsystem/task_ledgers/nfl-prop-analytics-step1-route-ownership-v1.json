@@ -1,0 +1,54 @@
+{
+  "task": "nfl-prop-analytics-step1-route-ownership-v1",
+  "task_id": "nfl-prop-analytics-step1-route-ownership-v1",
+  "id": "nfl-prop-analytics-step1-route-ownership-v1",
+  "title": "NFL Prop Analytics Step 1 Route + Ownership",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 1,
+  "step": 1,
+  "step_name": "NFL Route + Ownership",
+  "status": "DONE",
+  "source_main": "76fec7e05582ffbac167f81adc33385d25e8f8d4",
+  "scope": "Add Prop Analytics as an independent NFL market and route owner. Preserve frozen Passing Yards and every existing NFL route. No schedule/provider/prop data in Step 1.",
+  "architecture": {
+    "app_entry": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239",
+    "route_owner": "nfl_prop_analytics_hub_v1",
+    "market": "Prop Analytics",
+    "route_strategy": "additive root selector extension plus direct Prop Analytics ownership",
+    "existing_route_behavior": "delegate unchanged to V239"
+  },
+  "frozen_protection": {
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "streamlit_memory_lazy_router_v236.py": "0380da16cd91bcf3801b4d105218b508dbaf43f2",
+    ".github/workflows/passing-yards-step10-current-final-freeze-v1.yml": "7b23f9d9ed9967a74cee9f1328c9817c2f71d956",
+    "devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json": "b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5"
+  },
+  "constraints": {
+    "schedule_logic_added": false,
+    "provider_logic_added": false,
+    "player_prop_logic_added": false,
+    "existing_nfl_market_modified": false,
+    "passing_yards_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Prop Analytics appears as a selectable NFL market.",
+    "Selecting Prop Analytics renders exactly one V1 route owner.",
+    "Cold query NFL -> Prop Analytics resolves to the same owner.",
+    "Every non-Prop-Analytics route delegates to frozen V239.",
+    "Passing Yards V239 remains reachable after the new wrapper is active.",
+    "390/768/1440 Step 1 route surface has no horizontal overflow.",
+    "Public production proof passes before Step 1 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "Step 2 — Schedule Truth Layer",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "step1_status": "DONE",
+  "certification_state": "PENDING_RUNTIME_PROOF"
+}
