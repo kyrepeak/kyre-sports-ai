@@ -30,13 +30,15 @@ def _row(
 
 
 def _step6(players_car=None, players_cle=None):
-    players_car = players_car or [
+    if players_car is None:
+        players_car = [
         _row(101, "CAR QB", "CAR", "QB"),
         _row(102, "CAR RB", "CAR", "RB"),
         _row(103, "CAR WR", "CAR", "WR", depth_rank=2),
         _row(104, "CAR TE", "CAR", "TE"),
     ]
-    players_cle = players_cle or [
+    if players_cle is None:
+        players_cle = [
         _row(201, "CLE QB", "CLE", "QB"),
         _row(202, "CLE RB", "CLE", "RB"),
         _row(203, "CLE WR", "CLE", "WR", depth_rank=2),
