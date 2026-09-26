@@ -77,10 +77,20 @@ jobs:
             'nfl_prop_analytics_hub_v1.py' \
             'nfl_prop_analytics_game_select_v1.py' \
             'tests/test_nfl_prop_analytics_step3_game_handoff_v1.py' | sort)"
+          step4_additive_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-step4-page2-shell-v1.json' \
+            'nfl_prop_analytics_hub_v1.py' \
+            'nfl_prop_analytics_matchup_shell_v1.py' \
+            'tests/test_nfl_prop_analytics_step4_page2_shell_v1.py' | sort)"
           if [ "$actual" != "$expected" ] && \
              [ "$actual" != "$verifier_hotfix_expected" ] && \
              [ "$actual" != "$step2_additive_expected" ] && \
-             [ "$actual" != "$step3_additive_expected" ]; then
+             [ "$actual" != "$step3_additive_expected" ] && \
+             [ "$actual" != "$step4_additive_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP1_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
