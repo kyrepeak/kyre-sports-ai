@@ -19,7 +19,7 @@ RESPONSIVE_TARGETS = (390, 768, 1440)
 
 def render_page2_responsive_polish() -> None:
     """Inject final Page 2 responsive CSS without changing frozen data contracts."""
-    st.markdown(
+    st.html(
         """
 <div data-prop-page2-responsive-polish="v1"
      data-prop-page2-responsive-targets="390,768,1440"
@@ -144,8 +144,7 @@ button[data-testid^="stBaseButton"]{
   .ks-pa-u-verified{white-space:normal !important}
 }
 </style>
-""",
-        unsafe_allow_html=True,
+"""
     )
 
 
