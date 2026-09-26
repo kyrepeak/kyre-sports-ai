@@ -8,6 +8,7 @@ on:
       - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
       - ".github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml"
       - "devsystem/task_ledgers/nfl-prop-analytics-visual-polish-step3-v1.json"
+      - "devsystem/deployment_markers/nfl-prop-analytics-visual-polish-step3-streamlit-redeploy-v1.txt"
       - "nfl_prop_analytics_schedule_v1.py"
       - "nfl_prop_analytics_game_select_v1.py"
       - "tests/test_nfl_prop_analytics_visual_polish_step3_v1.py"
@@ -18,6 +19,7 @@ on:
       - ".github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml"
       - ".github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml"
       - "devsystem/task_ledgers/nfl-prop-analytics-visual-polish-step3-v1.json"
+      - "devsystem/deployment_markers/nfl-prop-analytics-visual-polish-step3-streamlit-redeploy-v1.txt"
       - "nfl_prop_analytics_schedule_v1.py"
       - "nfl_prop_analytics_game_select_v1.py"
       - "tests/test_nfl_prop_analytics_visual_polish_step3_v1.py"
@@ -52,7 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
-          expected="$(printf '%s\n' \
+          expected_feature="$(printf '%s\n' \
             '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
             '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \
@@ -65,11 +67,19 @@ jobs:
             'nfl_prop_analytics_schedule_v1.py' \
             'nfl_prop_analytics_game_select_v1.py' \
             'tests/test_nfl_prop_analytics_visual_polish_step3_v1.py' | sort)"
-          test "$actual" = "$expected" || {
+          expected_redeploy="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml' \
+            'devsystem/deployment_markers/nfl-prop-analytics-visual-polish-step3-streamlit-redeploy-v1.txt' \
+            'devsystem/task_ledgers/nfl-prop-analytics-visual-polish-step3-v1.json' | sort)"
+          if [ "$actual" = "$expected_feature" ]; then
+            echo "PROP_ANALYTICS_VISUAL_POLISH_FEATURE_SCOPE_GREEN"
+          elif [ "$actual" = "$expected_redeploy" ]; then
+            echo "PROP_ANALYTICS_VISUAL_POLISH_DEPLOYMENT_REFRESH_SCOPE_GREEN"
+          else
             echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
-          }
+          fi
 
           check_blob () {
             got="$(git hash-object "$1")"
