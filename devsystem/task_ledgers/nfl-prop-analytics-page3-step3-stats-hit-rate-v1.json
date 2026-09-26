@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-step3-stats-hit-rate-v1",
+  "title": "NFL Prop Analytics Page 3 Step 3 — Statistics + Hit Rate Engine",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 3,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "37ca5f6c314cd5932387d5bb1096c011e920928f",
+  "scope": "Add exact-ID historical player statistics and the hit-rate calculation engine beneath frozen Page 3 Steps 1-2. Use completed ESPN regular-season game books with exact event/team/athlete IDs. Render selected-window Games/Average/Median/High/Low. Implement hit-rate computation only when an explicit line is supplied; until Step 4 provides the movable line, display LINE REQUIRED rather than inventing a threshold. No sportsbook lines, odds, projections, recommendations, rankings, or Passing Yards changes.",
+  "acceptance": [
+    "Step 1 hero remains frozen and visible.",
+    "Step 2 prop/history navigation remains frozen and interactive.",
+    "Historical data uses exact ESPN event/team/athlete IDs and completed regular-season game books.",
+    "Selected history window and selected market drive the displayed sample.",
+    "Statistics show verified Games, Average, Median, High, and Low.",
+    "Hit-rate engine computes exact over-line rate when an explicit line is supplied.",
+    "Without a line, live hit-rate state is awaiting-line and UI says LINE REQUIRED • STEP 4.",
+    "No sportsbook line is invented or fetched in Step 3.",
+    "PENDING/AVAILABLE analytics gate remains unchanged.",
+    "No odds, projections, recommendations, rankings, stake sizing, or wager actions are introduced.",
+    "No horizontal overflow at 390/768/1440.",
+    "Frozen Page 1/Page 2/router/Passing Yards stack remains untouched.",
+    "Frozen Step 1 and Step 2 owner proofs pass before merge.",
+    "Branch Step 3 real-flow proof passes before merge.",
+    "Public Step 3 real-flow proof passes before Step 3 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
