@@ -11,12 +11,15 @@ analytics surface remains LOCKED until availability is AVAILABLE.
 """
 from __future__ import annotations
 
+from datetime import date
 import html as html_lib
 from typing import Any
 
 import streamlit as st
 
 from nfl_prop_analytics_matchup_shell_v1 import resolve_matchup_handoff
+from nfl_prop_analytics_game_select_v1 import _handoff_kickoff_label
+from nfl_prop_analytics_schedule_v1 import team_logo_url
 from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
 from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth
 from nfl_prop_analytics_player_select_v1 import (
@@ -39,6 +42,8 @@ MAY_MODIFY_EXISTING_NFL_MARKETS = False
 PAGE_QUERY_KEY = "ks_pa_page"
 PAGE_QUERY_VALUE = "props"
 MARKET_QUERY_KEY = "ks_pa_prop"
+PAGE3_POLISH_STEP = 1
+PAGE3_HERO_VERSION = "v1"
 
 MARKETS_BY_POSITION = {
     "QB": (
@@ -73,6 +78,27 @@ MARKETS_BY_POSITION = {
 
 def _text(value: Any) -> str:
     return str(value if value is not None else "").strip()
+
+
+def _display_date(value: Any) -> str:
+    raw = _text(value)
+    if not raw:
+        return "DATE TBD"
+    try:
+        parsed = date.fromisoformat(raw)
+    except ValueError:
+        return raw
+    return f"{parsed.strftime('%a • %b').upper()} {parsed.day}"
+
+
+def _player_headshot_url(player: dict[str, Any], player_id: str) -> str:
+    explicit = _text(player.get("headshot_url"))
+    if explicit:
+        return explicit
+    athlete_id = _text(player_id)
+    if athlete_id.isdigit():
+        return f"https://a.espncdn.com/i/headshots/nfl/players/full/{athlete_id}.png"
+    return ""
 
 
 def _query_value(key: str) -> str:
@@ -163,6 +189,7 @@ def resolve_prop_page_context() -> dict[str, Any]:
         "matchup": matchup,
         "step6": step6,
         "player_handoff": player_handoff,
+        "selected_player": selected,
         "market_key": market_key,
         "market_label": market_label,
         "markets": options,
@@ -202,11 +229,21 @@ def render_prop_page_open_control(player_handoff: dict[str, Any] | None) -> None
 def render_prop_page_shell() -> dict[str, Any]:
     context = resolve_prop_page_context()
 
-    if st.button(
-        "← Back to player selection",
-        key="nfl_prop_analytics_back_to_player_v1",
-    ):
-        return_to_player_page()
+    nav_left, nav_spacer, nav_right = st.columns([1.05, 5.0, 1.6])
+    with nav_left:
+        if st.button(
+            "✕",
+            key="nfl_prop_analytics_page3_close_v1",
+            use_container_width=True,
+        ):
+            return_to_player_page()
+    with nav_right:
+        if st.button(
+            "Matchup ›",
+            key="nfl_prop_analytics_page3_matchup_v1",
+            use_container_width=True,
+        ):
+            return_to_player_page()
 
     if context.get("state") != "ready":
         st.markdown(
@@ -224,12 +261,107 @@ def render_prop_page_shell() -> dict[str, Any]:
         return context
 
     handoff = context["player_handoff"]
+    player = context.get("selected_player") or {}
+    matchup = context["matchup"]
     options = list(context["markets"])
     keys = [key for key, _ in options]
     labels = dict(options)
     selected_key = context["market_key"]
-    index = keys.index(selected_key)
+    initial_label = labels[selected_key]
 
+    player_team = _text(handoff.get("team")).upper()
+    away = _text(matchup.get("away")).upper()
+    home = _text(matchup.get("home")).upper()
+    if player_team == away:
+        opponent = home
+        player_team_name = _text(matchup.get("away_name")) or away
+        opponent_name = _text(matchup.get("home_name")) or home
+    else:
+        opponent = away
+        player_team_name = _text(matchup.get("home_name")) or home
+        opponent_name = _text(matchup.get("away_name")) or away
+
+    headshot = _player_headshot_url(player, handoff["player_id"])
+    player_logo = team_logo_url(player_team)
+    opponent_logo = team_logo_url(opponent)
+    kickoff = _handoff_kickoff_label(matchup)
+    display_date = _display_date(matchup.get("target_date"))
+    network = _text(matchup.get("network")) or "Network TBD"
+    venue = _text(matchup.get("venue")) or "Venue TBD"
+    gate_open = bool(handoff.get("prop_analysis_gate_open"))
+    gate_state = "OPEN" if gate_open else "CLOSED"
+    analytics_state = "READY" if gate_open else "LOCKED"
+
+    st.markdown(
+        f"""
+<section class="ks-pa3-hero"
+         data-prop-page3-step1-hero="{PAGE3_HERO_VERSION}"
+         data-prop-page3-player-id="{html_lib.escape(handoff['player_id'])}"
+         data-prop-page3-player-team="{html_lib.escape(player_team)}"
+         data-prop-page3-opponent="{html_lib.escape(opponent)}"
+         data-prop-page3-kickoff="{html_lib.escape(kickoff)}"
+         data-prop-page3-market-label="{html_lib.escape(initial_label)}">
+  <div class="ks-pa3-hero-glow ks-pa3-hero-glow-left"></div>
+  <div class="ks-pa3-hero-glow ks-pa3-hero-glow-right"></div>
+
+  <div class="ks-pa3-team ks-pa3-team-left">
+    <img class="ks-pa3-team-logo"
+         data-prop-page3-team-logo="player"
+         src="{html_lib.escape(player_logo)}"
+         alt="{html_lib.escape(player_team_name)} logo">
+    <div class="ks-pa3-team-copy">
+      <span>{html_lib.escape(player_team)}</span>
+      <strong>{html_lib.escape(player_team_name)}</strong>
+    </div>
+  </div>
+
+  <div class="ks-pa3-player">
+    <div class="ks-pa3-headshot-wrap">
+      <img class="ks-pa3-headshot"
+           data-prop-page3-player-headshot="{PAGE3_HERO_VERSION}"
+           src="{html_lib.escape(headshot)}"
+           alt="{html_lib.escape(handoff['player_name'])} headshot">
+      <img class="ks-pa3-headshot-logo"
+           src="{html_lib.escape(player_logo)}"
+           alt="">
+    </div>
+    <div class="ks-pa3-player-copy">
+      <div class="ks-pa3-player-line">
+        <h1>{html_lib.escape(handoff['player_name'])}</h1>
+        <span>{html_lib.escape(handoff['position'])}</span>
+      </div>
+      <p>{html_lib.escape(handoff['player_name'])} • {html_lib.escape(initial_label)}</p>
+      <div class="ks-pa3-player-meta">
+        <span>{html_lib.escape(handoff['depth_role'])}</span>
+        <span>ESPN ID {html_lib.escape(handoff['player_id'])}</span>
+        <span class="ks-pa3-gate-pill">ANALYSIS {gate_state}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ks-pa3-team ks-pa3-team-right">
+    <div class="ks-pa3-team-copy">
+      <span>{html_lib.escape(opponent)}</span>
+      <strong>{html_lib.escape(opponent_name)}</strong>
+    </div>
+    <img class="ks-pa3-team-logo"
+         data-prop-page3-team-logo="opponent"
+         src="{html_lib.escape(opponent_logo)}"
+         alt="{html_lib.escape(opponent_name)} logo">
+  </div>
+
+  <div class="ks-pa3-matchup-strip">
+    <span>{html_lib.escape(display_date)}</span>
+    <strong>{html_lib.escape(kickoff)}</strong>
+    <span>{html_lib.escape(network)}</span>
+    <span>{html_lib.escape(venue)}</span>
+  </div>
+</section>
+""",
+        unsafe_allow_html=True,
+    )
+
+    index = keys.index(selected_key)
     chosen_key = st.selectbox(
         "Prop market",
         options=keys,
@@ -244,9 +376,6 @@ def render_prop_page_shell() -> dict[str, Any]:
     except Exception:
         pass
 
-    gate_open = bool(handoff.get("prop_analysis_gate_open"))
-    gate_state = "OPEN" if gate_open else "CLOSED"
-    analytics_state = "READY" if gate_open else "LOCKED"
     market_keys = ",".join(keys)
 
     st.markdown(
@@ -268,23 +397,6 @@ def render_prop_page_shell() -> dict[str, Any]:
          data-prop-step8-market-count="{len(options)}"
          data-prop-step8-market-keys="{html_lib.escape(market_keys)}">
   <div class="ks-pa8-eyebrow">PAGE 3 • PLAYER PROP HUB</div>
-
-  <div class="ks-pa8-hero">
-    <div>
-      <h2>{html_lib.escape(handoff['player_name'])}</h2>
-      <div class="ks-pa8-meta">
-        <span>{html_lib.escape(handoff['team'])}</span>
-        <span>{html_lib.escape(handoff['position'])}</span>
-        <span>{html_lib.escape(handoff['depth_role'])}</span>
-        <span>ESPN ID {html_lib.escape(handoff['player_id'])}</span>
-        <span>Event {html_lib.escape(handoff['event_id'])}</span>
-      </div>
-    </div>
-    <div class="ks-pa8-gate">
-      <strong>ANALYSIS GATE {gate_state}</strong>
-      <span>{html_lib.escape(handoff['availability_state'])}</span>
-    </div>
-  </div>
 
   <div class="ks-pa8-market">
     <div>
@@ -315,7 +427,47 @@ def render_prop_page_shell() -> dict[str, Any]:
   </div>
 </section>
 
-<style data-nfl-prop-analytics-step8-css="v1">
+<style data-nfl-prop-analytics-page8-css="v1">
+.ks-route,.ks-prop-analytics-v1{{display:none!important}}
+
+.ks-pa3-hero{{
+  position:relative;isolation:isolate;overflow:hidden;
+  width:100%;max-width:100%;min-width:0;margin:6px 0 14px;
+  padding:18px 20px 14px;border:1px solid rgba(125,211,252,.22);
+  border-radius:20px;
+  background:
+    linear-gradient(180deg,rgba(4,12,23,.90),rgba(3,10,18,.98)),
+    radial-gradient(circle at 50% -20%,rgba(14,165,233,.18),transparent 46%);
+  box-shadow:0 16px 44px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.035);
+  display:grid;grid-template-columns:minmax(150px,.75fr) minmax(280px,1.8fr) minmax(150px,.75fr);
+  align-items:center;gap:16px;
+}}
+.ks-pa3-hero-glow{{position:absolute;z-index:-1;top:0;width:38%;height:3px;filter:blur(.2px)}}
+.ks-pa3-hero-glow-left{{left:0;background:linear-gradient(90deg,#0ea5e9,transparent)}}
+.ks-pa3-hero-glow-right{{right:0;background:linear-gradient(270deg,#38bdf8,transparent)}}
+.ks-pa3-team{{display:flex;align-items:center;gap:10px;min-width:0}}
+.ks-pa3-team-right{{justify-content:flex-end;text-align:right}}
+.ks-pa3-team-logo{{width:58px;height:58px;object-fit:contain;flex:0 0 58px;filter:drop-shadow(0 7px 12px rgba(0,0,0,.30))}}
+.ks-pa3-team-copy{{display:flex;flex-direction:column;min-width:0}}
+.ks-pa3-team-copy span{{color:#7dd3fc;font-size:.63rem;font-weight:900;letter-spacing:.09em}}
+.ks-pa3-team-copy strong{{margin-top:2px;color:#e8f1fb;font-size:.82rem;line-height:1.05}}
+.ks-pa3-player{{display:flex;align-items:center;justify-content:center;gap:14px;min-width:0}}
+.ks-pa3-headshot-wrap{{position:relative;flex:0 0 76px;width:76px;height:76px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#22d3ee,#2563eb 55%,#7c3aed);box-shadow:0 0 0 4px rgba(14,165,233,.08),0 0 28px rgba(14,165,233,.20)}}
+.ks-pa3-headshot{{width:100%;height:100%;object-fit:cover;object-position:top center;border-radius:50%;background:#08111e}}
+.ks-pa3-headshot-logo{{position:absolute;right:-7px;bottom:-3px;width:31px;height:31px;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}}
+.ks-pa3-player-copy{{min-width:0}}
+.ks-pa3-player-line{{display:flex;align-items:flex-end;gap:8px;min-width:0}}
+.ks-pa3-player-line h1{{margin:0;color:#f8fafc;font-size:clamp(1.55rem,3.4vw,2.45rem);line-height:.95;letter-spacing:-.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ks-pa3-player-line>span{{color:#a9bbcf;font-size:.76rem;font-weight:900}}
+.ks-pa3-player-copy p{{margin:5px 0 0;color:#a9bbcf;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.ks-pa3-player-meta{{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}}
+.ks-pa3-player-meta span{{padding:4px 7px;border:1px solid rgba(125,211,252,.12);border-radius:999px;color:#7890ab;background:rgba(14,165,233,.035);font-size:.52rem;font-weight:800}}
+.ks-pa3-player-meta .ks-pa3-gate-pill{{color:#bae6fd;border-color:rgba(56,189,248,.24)}}
+.ks-pa3-matchup-strip{{grid-column:1/-1;display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:4px;padding-top:10px;border-top:1px solid rgba(148,163,184,.08)}}
+.ks-pa3-matchup-strip span,.ks-pa3-matchup-strip strong{{padding:4px 7px;border-radius:999px;font-size:.55rem}}
+.ks-pa3-matchup-strip span{{color:#7288a2;background:rgba(15,23,42,.34)}}
+.ks-pa3-matchup-strip strong{{color:#d9f3ff;background:rgba(14,165,233,.07)}}
+
 .ks-pa8-page{{
   width:100%;max-width:100%;min-width:0;overflow-x:clip;
   margin:8px 0 34px;padding:clamp(16px,2.6vw,26px);
@@ -325,13 +477,7 @@ def render_prop_page_shell() -> dict[str, Any]:
     linear-gradient(145deg,rgba(5,12,21,.99),rgba(8,20,35,.97));
 }}
 .ks-pa8-eyebrow{{color:#7dd3fc;font-size:.68rem;font-weight:900;letter-spacing:.15em}}
-.ks-pa8-hero{{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-top:10px}}
-.ks-pa8-hero h2{{margin:0 0 8px;color:#f8fafc;font-size:clamp(1.55rem,4vw,2.25rem);line-height:1}}
-.ks-pa8-meta{{display:flex;flex-wrap:wrap;gap:6px}}
-.ks-pa8-meta span{{padding:5px 8px;border:1px solid rgba(148,163,184,.11);border-radius:999px;color:#8fa4bd;font-size:.62rem}}
-.ks-pa8-gate{{display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right}}
-.ks-pa8-gate strong{{color:#bae6fd;font-size:.73rem}}.ks-pa8-gate span{{color:#71869f;font-size:.64rem}}
-.ks-pa8-market{{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;padding:12px;border:1px solid rgba(125,211,252,.12);border-radius:13px;background:rgba(3,10,18,.42)}}
+.ks-pa8-market{{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:10px;padding:12px;border:1px solid rgba(125,211,252,.12);border-radius:13px;background:rgba(3,10,18,.42)}}
 .ks-pa8-market div{{display:flex;flex-direction:column;gap:2px}}
 .ks-pa8-kicker{{color:#6f839c;font-size:.55rem;font-weight:900;letter-spacing:.12em}}
 .ks-pa8-market strong{{color:#e0f2fe;font-size:.9rem}}.ks-pa8-market>span{{color:#7890ab;font-size:.63rem;text-align:right}}
@@ -342,9 +488,23 @@ def render_prop_page_shell() -> dict[str, Any]:
 .ks-pa8-zero-data{{padding-top:9px;border-top:1px solid rgba(148,163,184,.09);color:#657b94;font-size:.6rem}}
 .ks-pa8-empty{{padding:15px;border:1px solid rgba(248,113,113,.3);border-radius:14px;background:rgba(127,29,29,.12);display:flex;flex-direction:column;gap:4px}}
 .ks-pa8-empty strong{{color:#fecaca}}.ks-pa8-empty span{{color:#cbd5e1;font-size:.78rem}}
-@media(max-width:620px){{
-  .ks-pa8-hero,.ks-pa8-market{{align-items:flex-start;flex-direction:column}}
-  .ks-pa8-gate{{align-items:flex-start;text-align:left}}
+
+@media(max-width:760px){{
+  .ks-pa3-hero{{grid-template-columns:1fr minmax(250px,1.5fr) 1fr;gap:10px;padding:15px 12px 12px}}
+  .ks-pa3-team-logo{{width:46px;height:46px;flex-basis:46px}}
+  .ks-pa3-team-copy strong{{font-size:.68rem}}
+  .ks-pa3-headshot-wrap{{width:64px;height:64px;flex-basis:64px}}
+}}
+@media(max-width:560px){{
+  .ks-pa3-hero{{grid-template-columns:1fr 1fr;padding:14px 11px}}
+  .ks-pa3-player{{grid-column:1/-1;grid-row:1;justify-content:flex-start}}
+  .ks-pa3-team{{grid-row:2;margin-top:5px}}
+  .ks-pa3-team-right{{justify-content:flex-end}}
+  .ks-pa3-matchup-strip{{grid-row:3}}
+  .ks-pa3-player-line h1{{font-size:1.48rem}}
+  .ks-pa3-player-copy p{{font-size:.7rem}}
+  .ks-pa3-team-logo{{width:40px;height:40px;flex-basis:40px}}
+  .ks-pa8-market{{align-items:flex-start;flex-direction:column}}
   .ks-pa8-market>span{{text-align:left}}
 }}
 </style>
@@ -369,6 +529,8 @@ __all__ = [
     "PAGE",
     "PAGE_QUERY_KEY",
     "PAGE_QUERY_VALUE",
+    "PAGE3_HERO_VERSION",
+    "PAGE3_POLISH_STEP",
     "PLAYER_PROP_LOGIC",
     "PROJECTION_LOGIC",
     "SHELL_NAVIGATION_ONLY",
