@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-step1-premium-hero-v1",
+  "title": "NFL Prop Analytics Page 3 Step 1 — Premium Player Matchup Hero",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 1,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "753971caf8af8d3213d6093d80ec3cfb49e71f41",
+  "scope": "Build only the Page 3 premium player + matchup hero. Use existing verified player/matchup context for player headshot, player team logo, opponent logo, names, position, depth role, ESPN ID, kickoff/date/network/venue, and navigation controls. Hide the generic Page 1 route banner only on Page 3. Preserve Step 8 analytics safety gate, market contract, Page 2, truth engines, router, and Passing Yards.",
+  "acceptance": [
+    "Page 3 opens from the real Page 2 player handoff.",
+    "Generic Page 1 route banner is hidden on Page 3.",
+    "Premium hero renders before the prop-market picker.",
+    "Hero contains exact player name, position, depth role and ESPN athlete ID.",
+    "Hero contains one exact player headshot.",
+    "Hero contains exactly two matchup team logos: player team and opponent.",
+    "Hero contains verified kickoff/date/network/venue context already present in the matchup handoff.",
+    "Top close and Matchup controls return to Page 2.",
+    "PENDING remains analytics gate CLOSED and AVAILABLE remains gate OPEN.",
+    "No sportsbook lines, odds, projections or recommendations are introduced.",
+    "No horizontal overflow at 390/768/1440.",
+    "Branch real-flow proof passes before merge.",
+    "Public real-flow proof passes before Page 3 Step 1 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
