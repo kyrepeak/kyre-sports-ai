@@ -252,7 +252,7 @@ jobs:
               assert line_control.get_attribute("data-prop-page3-step4-sportsbook-line")=="0"
               assert float(state["line"]) < float(state["max"])
 
-              slider=frame.get_by_role("slider",name="Move analysis line",exact=True).first
+              slider=frame.get_by_role("slider").first
               assert slider.count()==1
               slider.press("End")
               max_line=f"{float(state['max']):.1f}"
@@ -408,7 +408,7 @@ jobs:
               assert line_control.get_attribute("data-prop-page3-step4-market")=="passing_yards"
               assert line_control.get_attribute("data-prop-page3-step4-sportsbook-line")=="0"
 
-              slider=frame.get_by_role("slider",name="Move analysis line",exact=True).first
+              slider=frame.get_by_role("slider").first
               assert slider.count()==1
               slider.press("End")
               max_line=f"{float(state['max']):.1f}"
