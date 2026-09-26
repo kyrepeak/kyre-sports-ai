@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page2-polish-step2-v1",
+  "title": "NFL Prop Analytics Page 2 Polish Step 2 — Unified Roster + Availability Cards",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 2,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "03cccb11a7c7e91423c234c053e0cceeb097f052",
+  "scope": "Presentation-only Page 2 composition. Consume frozen Step 5 roster truth and frozen Step 6 availability/depth truth, render each verified player once, and pass exact Step 6 truth unchanged into Step 7.",
+  "frozen_modules": [
+    "nfl_prop_analytics_roster_truth_v1.py",
+    "nfl_prop_analytics_availability_depth_v1.py",
+    "nfl_prop_analytics_player_select_v1.py",
+    "nfl_prop_analytics_matchup_shell_v1.py",
+    "nfl_prop_analytics_schedule_v1.py",
+    "nfl_prop_analytics_game_select_v1.py",
+    "streamlit_memory_lazy_router_v240.py",
+    "streamlit_memory_lazy_router_v239.py",
+    "nfl_passing_yards_hub_v85.py",
+    "app.py"
+  ],
+  "acceptance": [
+    "Step 5 roster truth logic remains byte-identical.",
+    "Step 6 availability/depth logic remains byte-identical.",
+    "Each player appears exactly once in the unified Page 2 board.",
+    "Each card shows roster verification, depth role, and availability state.",
+    "Step 7 receives the exact Step 6 truth object.",
+    "390/768/1440 remain overflow-free.",
+    "Passing Yards remains frozen.",
+    "Public browser proof passes before Step 2 is GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "PAGE 2 POLISH STEP 3 — QB/RB/WR/TE FILTERING",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

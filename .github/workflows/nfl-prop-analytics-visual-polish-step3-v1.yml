@@ -68,9 +68,24 @@ jobs:
           verifier_only="$(printf '%s\n' \
             '.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml' \
             'devsystem/task_ledgers/nfl-prop-analytics-visual-polish-step3-v1.json' | sort)"
+          page2_polish_step2_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page2-polish-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step3-game-handoff-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step4-page2-shell-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step5-roster-truth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step6-availability-depth-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step7-player-handoff-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page2-polish-step2-v1.json' \
+            'nfl_prop_analytics_hub_v1.py' \
+            'nfl_prop_analytics_page2_unified_roster_v1.py' \
+            'tests/test_nfl_prop_analytics_page2_polish_step2_v1.py' | sort)"
           if [ "$actual" = "$verifier_only" ]; then
             echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_VERIFIER_ONLY_SCOPE_GREEN"
-          elif [ "$actual" = "$expected" ]; then
+          elif [ "$actual" = "$expected" ] || [ "$actual" = "$page2_polish_step2_expected" ]; then
             echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_ORIGINAL_SCOPE_GREEN"
           else
             echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_SCOPE_VIOLATION"
