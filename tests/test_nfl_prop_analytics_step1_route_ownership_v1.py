@@ -58,3 +58,12 @@ def test_app_boots_v240_and_keeps_v239_as_frozen_delegate():
         "import record_bootstrap_import_ms, render_app"
     ) in app
     assert "import streamlit_memory_lazy_router_v239 as prior" in router
+
+
+def test_prop_hub_transient_import_failure_is_retryable():
+    router = Path("streamlit_memory_lazy_router_v240.py").read_text()
+
+    assert "_IMPORT_CACHE.get(PROP_ANALYTICS_HUB) is True" in router
+    assert "importlib.invalidate_caches()" in router
+    assert "_IMPORT_CACHE[PROP_ANALYTICS_HUB] = True" in router
+    assert "_IMPORT_CACHE[PROP_ANALYTICS_HUB] = ok" not in router

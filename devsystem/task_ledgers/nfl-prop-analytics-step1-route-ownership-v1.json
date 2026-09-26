@@ -3,13 +3,13 @@
   "task_id": "nfl-prop-analytics-step1-route-ownership-v1",
   "id": "nfl-prop-analytics-step1-route-ownership-v1",
   "title": "NFL Prop Analytics Step 1 Route + Ownership",
-  "version": 1,
+  "version": 2,
   "project": "NFL Prop Analytics",
   "page": 1,
   "step": 1,
   "step_name": "NFL Route + Ownership",
   "status": "DONE",
-  "source_main": "76fec7e05582ffbac167f81adc33385d25e8f8d4",
+  "source_main": "45a6c0fc408e24a32e5926cfcfcc6ae2c468bd5a",
   "scope": "Add Prop Analytics as an independent NFL market and route owner. Preserve frozen Passing Yards and every existing NFL route. No schedule/provider/prop data in Step 1.",
   "architecture": {
     "app_entry": "streamlit_memory_lazy_router_v240",
@@ -50,5 +50,13 @@
     "consumed_receipts": []
   },
   "step1_status": "DONE",
-  "certification_state": "PENDING_RUNTIME_PROOF"
+  "certification_state": "PENDING_PUBLIC_RETRY",
+  "runtime_remediation": {
+    "reason": "Public V240 exposed the Prop Analytics selector, but the V1 owner marker never appeared after selection; a transient hub-import miss could remain cached false for the process lifetime.",
+    "negative_import_cache_removed": true,
+    "import_cache_invalidated_before_retry": true,
+    "successful_import_only_cache": true,
+    "public_activation_window_seconds": 1200,
+    "passing_yards_modified": false
+  }
 }
