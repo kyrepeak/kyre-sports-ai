@@ -42,8 +42,35 @@ MAY_MODIFY_EXISTING_NFL_MARKETS = False
 PAGE_QUERY_KEY = "ks_pa_page"
 PAGE_QUERY_VALUE = "props"
 MARKET_QUERY_KEY = "ks_pa_prop"
+HISTORY_QUERY_KEY = "ks_pa_history"
 PAGE3_POLISH_STEP = 1
 PAGE3_HERO_VERSION = "v1"
+PAGE3_NAV_STEP = 2
+PAGE3_NAV_VERSION = "v1"
+
+HISTORY_WINDOWS = (
+    ("H2H", "H2H"),
+    ("L5", "L5"),
+    ("L10", "L10"),
+    ("L20", "L20"),
+    ("2026", "2026"),
+    ("2025", "2025"),
+)
+DEFAULT_HISTORY_KEY = "L10"
+
+MARKET_NAV_LABELS = {
+    "passing_yards": "PASS YDS",
+    "passing_touchdowns": "PASS TD",
+    "completions": "COMP",
+    "attempts": "ATT",
+    "interceptions": "INT",
+    "rushing_yards": "RUSH",
+    "carries": "CARRIES",
+    "receptions": "REC",
+    "receiving_yards": "REC YDS",
+    "longest_reception": "LONG REC",
+    "anytime_touchdown": "TD",
+}
 
 MARKETS_BY_POSITION = {
     "QB": (
@@ -133,6 +160,21 @@ def _resolve_market_key(position: str, requested: str | None) -> str:
     return options[0][0]
 
 
+def _history_key_valid(value: str) -> bool:
+    return _text(value) in {key for key, _ in HISTORY_WINDOWS}
+
+
+def _resolve_history_key(requested: str | None) -> str:
+    requested = _text(requested)
+    if _history_key_valid(requested):
+        return requested
+    return DEFAULT_HISTORY_KEY
+
+
+def _market_nav_label(market_key: str, fallback: str) -> str:
+    return MARKET_NAV_LABELS.get(_text(market_key), _text(fallback).upper())
+
+
 def resolve_prop_page_context() -> dict[str, Any]:
     matchup = resolve_matchup_handoff()
     if not matchup or matchup.get("state") != "ready":
@@ -184,6 +226,8 @@ def resolve_prop_page_context() -> dict[str, Any]:
 
     market_key = _resolve_market_key(position, _query_value(MARKET_QUERY_KEY))
     market_label = dict(options)[market_key]
+    history_key = _resolve_history_key(_query_value(HISTORY_QUERY_KEY))
+    history_label = dict(HISTORY_WINDOWS)[history_key]
     return {
         "state": "ready",
         "matchup": matchup,
@@ -194,6 +238,9 @@ def resolve_prop_page_context() -> dict[str, Any]:
         "market_label": market_label,
         "markets": options,
         "market_count": len(options),
+        "history_key": history_key,
+        "history_label": history_label,
+        "history_windows": HISTORY_WINDOWS,
     }
 
 
@@ -203,6 +250,7 @@ def open_prop_page(player_handoff: dict[str, Any]) -> None:
     options = market_options(_text(player_handoff.get("position")))
     if options:
         st.query_params[MARKET_QUERY_KEY] = options[0][0]
+    st.query_params[HISTORY_QUERY_KEY] = DEFAULT_HISTORY_KEY
     st.rerun()
 
 
@@ -212,6 +260,10 @@ def return_to_player_page() -> None:
         del st.query_params[MARKET_QUERY_KEY]
     except Exception:
         st.query_params[MARKET_QUERY_KEY] = ""
+    try:
+        del st.query_params[HISTORY_QUERY_KEY]
+    except Exception:
+        st.query_params[HISTORY_QUERY_KEY] = ""
     st.rerun()
 
 
@@ -361,20 +413,82 @@ def render_prop_page_shell() -> dict[str, Any]:
         unsafe_allow_html=True,
     )
 
-    index = keys.index(selected_key)
-    chosen_key = st.selectbox(
-        "Prop market",
-        options=keys,
-        index=index,
-        format_func=lambda key: labels[key],
-        key="nfl_prop_analytics_step8_market_picker_v1",
+    history_options = list(context["history_windows"])
+    history_keys = [key for key, _ in history_options]
+    history_labels = dict(history_options)
+    selected_history_key = context["history_key"]
+    selected_history_label = history_labels[selected_history_key]
+
+    st.markdown(
+        f"""
+<div class="ks-pa3-nav-marker"
+     data-prop-page3-step2-navigation="{PAGE3_NAV_VERSION}"
+     data-prop-page3-step2-market="{html_lib.escape(selected_key)}"
+     data-prop-page3-step2-history="{html_lib.escape(selected_history_key)}"
+     data-prop-page3-step2-market-count="{len(keys)}"
+     data-prop-page3-step2-history-count="{len(history_keys)}">
+</div>
+""",
+        unsafe_allow_html=True,
     )
-    chosen_key = _text(chosen_key)
+
+    chosen_history_label = st.segmented_control(
+        "History window",
+        options=[history_labels[key] for key in history_keys],
+        default=selected_history_label,
+        selection_mode="single",
+        key="nfl_prop_analytics_page3_step2_history_nav_v1",
+    )
+    chosen_history_label = (
+        chosen_history_label
+        if chosen_history_label in history_labels.values()
+        else selected_history_label
+    )
+    chosen_history_key = next(
+        key for key, label in history_options if label == chosen_history_label
+    )
+    try:
+        st.query_params[HISTORY_QUERY_KEY] = chosen_history_key
+    except Exception:
+        pass
+
+    market_nav_labels = {
+        key: _market_nav_label(key, labels[key])
+        for key in keys
+    }
+    chosen_market_nav_label = st.segmented_control(
+        "Prop category",
+        options=[market_nav_labels[key] for key in keys],
+        default=market_nav_labels[selected_key],
+        selection_mode="single",
+        key="nfl_prop_analytics_page3_step2_market_nav_v1",
+    )
+    chosen_market_nav_label = (
+        chosen_market_nav_label
+        if chosen_market_nav_label in market_nav_labels.values()
+        else market_nav_labels[selected_key]
+    )
+    chosen_key = next(
+        key for key in keys if market_nav_labels[key] == chosen_market_nav_label
+    )
     chosen_label = labels[chosen_key]
     try:
         st.query_params[MARKET_QUERY_KEY] = chosen_key
     except Exception:
         pass
+
+    st.markdown(
+        f"""
+<div class="ks-pa3-nav-state"
+     data-prop-page3-step2-nav-state="ready"
+     data-prop-page3-step2-active-market="{html_lib.escape(chosen_key)}"
+     data-prop-page3-step2-active-history="{html_lib.escape(chosen_history_key)}"
+     data-prop-page3-step2-market-options="{html_lib.escape(','.join(keys))}"
+     data-prop-page3-step2-history-options="{html_lib.escape(','.join(history_keys))}">
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
     market_keys = ",".join(keys)
 
@@ -395,7 +509,8 @@ def render_prop_page_shell() -> dict[str, Any]:
          data-prop-step8-market="{html_lib.escape(chosen_key)}"
          data-prop-step8-market-label="{html_lib.escape(chosen_label)}"
          data-prop-step8-market-count="{len(options)}"
-         data-prop-step8-market-keys="{html_lib.escape(market_keys)}">
+         data-prop-step8-market-keys="{html_lib.escape(market_keys)}"
+         data-prop-page3-step2-history="{html_lib.escape(chosen_history_key)}">
   <div class="ks-pa8-eyebrow">PAGE 3 • PLAYER PROP HUB</div>
 
   <div class="ks-pa8-market">
@@ -429,6 +544,26 @@ def render_prop_page_shell() -> dict[str, Any]:
 
 <style data-nfl-prop-analytics-page8-css="v1">
 .ks-route,.ks-prop-analytics-v1{{display:none!important}}
+.ks-pa3-nav-marker,.ks-pa3-nav-state{{display:none!important}}
+div[data-testid="stSegmentedControl"]{{margin:.08rem 0 .4rem}}
+div[data-testid="stSegmentedControl"] [role="radiogroup"]{{
+  display:flex;gap:3px;width:100%;padding:4px;
+  border:1px solid rgba(125,211,252,.16);border-radius:13px;
+  background:linear-gradient(180deg,rgba(5,13,24,.96),rgba(4,10,18,.98));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}}
+div[data-testid="stSegmentedControl"] button{{
+  min-height:42px!important;flex:1 1 0!important;
+  border-radius:9px!important;border:1px solid transparent!important;
+  color:#91a4bc!important;background:transparent!important;
+  font-size:.69rem!important;font-weight:850!important;letter-spacing:.035em!important;
+}}
+div[data-testid="stSegmentedControl"] button[aria-checked="true"]{{
+  color:#effaff!important;border-color:rgba(56,189,248,.65)!important;
+  background:linear-gradient(180deg,rgba(14,165,233,.26),rgba(2,132,199,.13))!important;
+  box-shadow:0 0 0 1px rgba(56,189,248,.18),0 0 18px rgba(14,165,233,.16)!important;
+}}
+div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.58rem!important;font-weight:850!important;letter-spacing:.08em!important;text-transform:uppercase!important}}
 
 .ks-pa3-hero{{
   position:relative;isolation:isolate;overflow:hidden;
@@ -495,7 +630,12 @@ def render_prop_page_shell() -> dict[str, Any]:
   .ks-pa3-team-copy strong{{font-size:.68rem}}
   .ks-pa3-headshot-wrap{{width:64px;height:64px;flex-basis:64px}}
 }}
+@media(max-width:760px){{
+  div[data-testid="stSegmentedControl"] button{{min-height:44px!important;font-size:.62rem!important;padding-left:.42rem!important;padding-right:.42rem!important}}
+}}
 @media(max-width:560px){{
+  div[data-testid="stSegmentedControl"] [role="radiogroup"]{{overflow-x:auto;justify-content:flex-start}}
+  div[data-testid="stSegmentedControl"] button{{flex:0 0 auto!important;min-width:58px!important;min-height:46px!important}}
   .ks-pa3-hero{{grid-template-columns:1fr 1fr;padding:14px 11px}}
   .ks-pa3-player{{grid-column:1/-1;grid-row:1;justify-content:flex-start}}
   .ks-pa3-team{{grid-row:2;margin-top:5px}}
@@ -515,14 +655,19 @@ def render_prop_page_shell() -> dict[str, Any]:
         **context,
         "market_key": chosen_key,
         "market_label": chosen_label,
+        "history_key": chosen_history_key,
+        "history_label": history_labels[chosen_history_key],
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
 
 
 __all__ = [
+    "HISTORY_QUERY_KEY",
+    "HISTORY_WINDOWS",
     "MARKETS_BY_POSITION",
     "MARKET_QUERY_KEY",
+    "MARKET_NAV_LABELS",
     "MAY_MODIFY_EXISTING_NFL_MARKETS",
     "MAY_MODIFY_PASSING_YARDS",
     "MODEL_VERSION",
@@ -530,6 +675,8 @@ __all__ = [
     "PAGE_QUERY_KEY",
     "PAGE_QUERY_VALUE",
     "PAGE3_HERO_VERSION",
+    "PAGE3_NAV_STEP",
+    "PAGE3_NAV_VERSION",
     "PAGE3_POLISH_STEP",
     "PLAYER_PROP_LOGIC",
     "PROJECTION_LOGIC",
