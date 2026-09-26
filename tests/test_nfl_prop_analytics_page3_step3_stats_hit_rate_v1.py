@@ -122,3 +122,31 @@ def test_anchor_season_uses_verified_matchup_date_first():
         "target_date": "",
         "source_records": [{"season": 2025}],
     }) == 2025
+
+
+def test_team_schedule_accepts_completed_regular_season_row_without_duplicate_season_type(monkeypatch):
+    payload = {
+        "events": [
+            {
+                "id": "401999001",
+                "date": "2026-09-20T17:00Z",
+                "season": {"year": 2026},
+                "competitions": [
+                    {
+                        "status": {"type": {"state": "post", "completed": True}},
+                        "competitors": [
+                            {"team": {"id": "4", "abbreviation": "CIN"}},
+                            {"team": {"id": "23", "abbreviation": "PIT"}},
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+    monkeypatch.setattr(hist, "_get_json", lambda url, query_items=(): payload)
+    hist._team_schedule.cache_clear()
+    rows = hist._team_schedule("4", 2026)
+    assert len(rows) == 1
+    assert rows[0]["event_id"] == "401999001"
+    assert rows[0]["season"] == 2026
+    assert rows[0]["team_ids"] == ("23", "4")
