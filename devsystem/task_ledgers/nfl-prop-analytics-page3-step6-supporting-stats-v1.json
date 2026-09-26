@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-step6-supporting-stats-v1",
+  "title": "NFL Prop Analytics Page 3 Step 6 — Supporting Stats",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 6,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "9a78e09a3d118ccf3e2e6fa92bd861d861a3a1b6",
+  "scope": "Add an Average/Median supporting-stat surface after the frozen Step 5 game chart. Metrics are derived only from exact ESPN event + athlete box scores for the frozen Step 3 sample. Show prop-relevant context such as attempts, completions, completion percentage, yards per attempt, touchdowns, interceptions, carries, yards per carry, receptions, targets, catch rate, receiving efficiency, scrimmage yards, and touches when those verified fields exist. No sportsbook lines, odds, projections, recommendations, rankings, staking, wager actions, Page 1/Page 2 truth changes, router changes, or Passing Yards changes.",
+  "acceptance": [
+    "Page 3 Steps 1-5 remain present and protected.",
+    "Supporting stats render only after the verified Step 5 chart is ready.",
+    "Default summary mode is AVERAGE and user can switch to MEDIAN.",
+    "The same exact-ID Step 3 event sample is used for supporting box-score metrics.",
+    "Metric cards are market-relevant and each carries its own verified game sample count.",
+    "Unavailable box-score fields are omitted rather than invented.",
+    "QB passing-yards context includes attempts, completions, completion percentage, yards per attempt, pass TDs, and interceptions when available.",
+    "Receiving props prefer targets, receptions, catch rate, yards per reception, longest reception, and receiving TDs when available.",
+    "Rushing props prefer carries, yards per carry, receptions, receiving yards, scrimmage yards, touches, and skill-position TD context when available.",
+    "No sportsbook or projection influence is introduced.",
+    "390/768/1440 real-flow proof passes without document overflow.",
+    "Page 1/Page 2/router/Passing Yards stack remains untouched.",
+    "Branch real-flow proof passes before merge.",
+    "Public real-flow proof passes before Step 6 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

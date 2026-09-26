@@ -42,6 +42,11 @@ from nfl_prop_analytics_page3_game_chart_v1 import (
     PAGE3_CHART_VERSION,
     render_game_chart,
 )
+from nfl_prop_analytics_page3_supporting_stats_v1 import (
+    PAGE3_SUPPORT_STEP,
+    PAGE3_SUPPORT_VERSION,
+    render_supporting_stats,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -571,6 +576,11 @@ def render_prop_page_shell() -> dict[str, Any]:
         "line": None,
         "games": [],
     }
+    supporting_stats: dict[str, Any] = {
+        "ready": False,
+        "reason": "verified Step 5 chart is required",
+        "metrics": [],
+    }
 
     if history_ready:
         line_control = render_analysis_line_control(
@@ -636,6 +646,15 @@ def render_prop_page_shell() -> dict[str, Any]:
             game_chart = render_game_chart(
                 games=history_payload.get("games") or [],
                 line=line_control.get("line"),
+                market_key=chosen_key,
+                market_label=chosen_label,
+                history_key=chosen_history_key,
+                history_label=history_labels[chosen_history_key],
+            )
+        if game_chart.get("ready") is True:
+            supporting_stats = render_supporting_stats(
+                games=history_payload.get("games") or [],
+                athlete_id=handoff["player_id"],
                 market_key=chosen_key,
                 market_label=chosen_label,
                 history_key=chosen_history_key,
@@ -862,6 +881,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "history_summary": history_summary,
         "line_control": line_control,
         "game_chart": game_chart,
+        "supporting_stats": supporting_stats,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
@@ -890,6 +910,8 @@ __all__ = [
     "PAGE3_LINE_VERSION",
     "PAGE3_CHART_STEP",
     "PAGE3_CHART_VERSION",
+    "PAGE3_SUPPORT_STEP",
+    "PAGE3_SUPPORT_VERSION",
     "PLAYER_PROP_LOGIC",
     "PROJECTION_LOGIC",
     "SHELL_NAVIGATION_ONLY",
