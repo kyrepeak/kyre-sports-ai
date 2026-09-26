@@ -1,0 +1,110 @@
+{
+  "task": "nfl-prop-analytics-step4-page2-shell-v1",
+  "task_id": "nfl-prop-analytics-step4-page2-shell-v1",
+  "id": "nfl-prop-analytics-step4-page2-shell-v1",
+  "title": "NFL Prop Analytics Step 4 Page 2 Matchup Shell + Position Sections",
+  "version": 1,
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 4,
+  "step_name": "Page 2 Matchup Shell + Position Sections",
+  "status": "DONE",
+  "step4_status": "DONE",
+  "certification_state": "PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "source_main": "9df64114d56616fa872a2737e2f2f96315c9cec0",
+  "scope": "Turn the frozen Step 3 verified matchup handoff into a real Page 2 surface with selected matchup identity and compact QB/RB/WR/TE structural sections for both teams. No roster names, player props, sportsbook odds, projections, Passing Yards changes, or existing NFL market changes.",
+  "field_contract": {
+    "required": [
+      "verified matchup handoff",
+      "away team",
+      "home team",
+      "Page 2 state",
+      "QB section",
+      "RB section",
+      "WR section",
+      "TE section"
+    ],
+    "important": [
+      "schedule date",
+      "network",
+      "venue",
+      "source count",
+      "back navigation",
+      "direct-link continuity"
+    ],
+    "optional": [
+      "provider game id"
+    ]
+  },
+  "navigation_contract": {
+    "page1_control": "Open matchup",
+    "page_query_key": "ks_pa_page",
+    "page_query_value": "matchup",
+    "game_query_key": "ks_pa_game",
+    "direct_link_recovery": true,
+    "back_control": "All Sunday games",
+    "fail_closed_rule": "Page 2 renders no matchup shell when the selected game cannot be rebuilt as a verified Step 2/3 handoff."
+  },
+  "position_contract": {
+    "positions": [
+      "QB",
+      "RB",
+      "WR",
+      "TE"
+    ],
+    "team_sides": [
+      "away",
+      "home"
+    ],
+    "expected_sections": 8,
+    "roster_state": "pending",
+    "fake_players_allowed": false
+  },
+  "architecture": {
+    "step1_owner": "nfl_prop_analytics_hub_v1",
+    "step2_module": "nfl_prop_analytics_schedule_v1",
+    "step3_module": "nfl_prop_analytics_game_select_v1",
+    "step4_module": "nfl_prop_analytics_matchup_shell_v1",
+    "root_router": "streamlit_memory_lazy_router_v240",
+    "frozen_delegate": "streamlit_memory_lazy_router_v239"
+  },
+  "frozen_protection": {
+    "nfl_prop_analytics_schedule_v1.py": "90fe5ff5bb087198484e4f59de01b72cf7155128",
+    "nfl_prop_analytics_game_select_v1.py": "fcb4ffcd703d05579a318b8b8fbcb64036336b8c",
+    "devsystem/task_ledgers/nfl-prop-analytics-step3-game-handoff-v1.json": "b1348fefc18ca2d78f17949c92fc1404aa6711f0",
+    "streamlit_memory_lazy_router_v240.py": "43a6ef5a541e945b0795f947e32f61fbbaeb5257",
+    "streamlit_memory_lazy_router_v239.py": "1b7b98567b90919f546d025b927beb0b2acf8468",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "app.py": "d584693ab55e365bc7e76f9cbacd58a15f6d62d1",
+    ".github/workflows/passing-yards-step10-current-final-freeze-v1.yml": "7b23f9d9ed9967a74cee9f1328c9817c2f71d956",
+    "devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json": "b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5"
+  },
+  "constraints": {
+    "roster_data_added": false,
+    "fake_players_added": false,
+    "player_prop_logic_added": false,
+    "sportsbook_odds_added": false,
+    "projection_logic_added": false,
+    "passing_yards_modified": false,
+    "existing_nfl_market_modified": false,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "Page 1 Open matchup control routes the current verified Step 3 handoff to Page 2.",
+    "Page 2 selected-game marker matches the Step 3 handoff.",
+    "Fresh-session deep links can rebuild only verified matchups from Step 2 truth.",
+    "Page 2 contains exactly eight structural position sections: QB/RB/WR/TE for away and home teams.",
+    "Every position section is explicitly roster-state pending; Step 4 contains no fake or guessed player names.",
+    "Back navigation returns to Page 1 while retaining selected game continuity.",
+    "Step 2 and Step 3 product modules and Step 3 ledger remain byte-identical.",
+    "Frozen Passing Yards/router/app files remain byte-identical.",
+    "390/768/1440 Page 2 shell has no horizontal overflow.",
+    "Public production proof passes before Step 4 is declared GREEN + FROZEN."
+  ],
+  "next_step_after_freeze": "Step 5 — Verified Roster Truth Layer",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

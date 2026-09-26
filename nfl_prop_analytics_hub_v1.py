@@ -13,6 +13,11 @@ import streamlit as st
 
 from nfl_prop_analytics_schedule_v1 import render_schedule_truth_layer
 from nfl_prop_analytics_game_select_v1 import render_game_selection_handoff
+from nfl_prop_analytics_matchup_shell_v1 import (
+    is_matchup_page,
+    render_matchup_open_control,
+    render_matchup_shell,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 1 ROUTE OWNERSHIP"
 PROP_ANALYTICS_VERSION = "v1"
@@ -105,8 +110,13 @@ def render_prop_analytics_page() -> None:
 """,
         unsafe_allow_html=True,
     )
+    if is_matchup_page():
+        render_matchup_shell()
+        return
+
     render_schedule_truth_layer()
-    render_game_selection_handoff()
+    handoff = render_game_selection_handoff()
+    render_matchup_open_control(handoff)
 
 
 def render_nfl_hub(market: str = MARKET) -> None:
@@ -127,6 +137,8 @@ __all__ = [
     "STEP",
     "render_nfl_hub",
     "render_game_selection_handoff",
+    "render_matchup_open_control",
+    "render_matchup_shell",
     "render_schedule_truth_layer",
     "render_prop_analytics_page",
 ]
