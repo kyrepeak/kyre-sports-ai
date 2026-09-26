@@ -48,9 +48,10 @@ jobs:
           actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
           expected="$(printf '%s\n' \
             '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
-            'devsystem/task_ledgers/nfl-prop-analytics-page3-step1-premium-hero-v1.json' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-step2-prop-history-nav-v1.json' \
             'nfl_prop_analytics_prop_page_v1.py' \
-            'tests/test_nfl_prop_analytics_page3_step1_premium_hero_v1.py' | sort)"
+            'tests/test_nfl_prop_analytics_page3_step2_prop_history_nav_v1.py' | sort)"
           test "$actual" = "$expected" || {
             echo PROP_ANALYTICS_PAGE3_STEP1_SCOPE_VIOLATION
             printf '%s\n' "$actual"
@@ -234,11 +235,12 @@ jobs:
               if route_text.count():
                   assert route_text.evaluate("e=>getComputedStyle(e).display")=="none"
 
-              market_combo=frame.get_by_role("combobox",name="Prop market",exact=True)
-              assert market_combo.count()==1
-              hero_box=hero.bounding_box()
-              market_box=market_combo.bounding_box()
-              assert hero_box and market_box and hero_box["y"] < market_box["y"],(hero_box,market_box)
+              _,nav=find(page,'[data-prop-page3-step2-navigation="v1"]',60)
+              assert hero.evaluate("""h => Boolean(
+                h.compareDocumentPosition(
+                  document.querySelector('[data-prop-page3-step2-navigation="v1"]')
+                ) & Node.DOCUMENT_POSITION_FOLLOWING
+              )""")
 
               availability=prop.get_attribute("data-prop-step8-availability")
               gate=prop.get_attribute("data-prop-step8-prop-gate")
@@ -376,10 +378,12 @@ jobs:
               if route_banner.count():
                   assert route_banner.evaluate("e=>getComputedStyle(e).display")=="none"
 
-              market_combo=frame.get_by_role("combobox",name="Prop market",exact=True)
-              hero_box=hero.bounding_box()
-              market_box=market_combo.bounding_box()
-              assert hero_box and market_box and hero_box["y"] < market_box["y"]
+              _,nav=find(page,'[data-prop-page3-step2-navigation="v1"]',60)
+              assert hero.evaluate("""h => Boolean(
+                h.compareDocumentPosition(
+                  document.querySelector('[data-prop-page3-step2-navigation="v1"]')
+                ) & Node.DOCUMENT_POSITION_FOLLOWING
+              )""")
 
               availability=prop.get_attribute("data-prop-step8-availability")
               gate=prop.get_attribute("data-prop-step8-prop-gate")
