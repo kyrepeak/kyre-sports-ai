@@ -61,7 +61,25 @@ div[data-testid="stButton"] button{
   .ks-pa-u-bottom{gap:5px !important}
 }
 
-/* Phone: one team column, one tap-button column, tighter chrome. */
+/* Phone / compact Streamlit frame: stack tap controls reliably. */
+@media (max-width:760px){
+  div[data-testid="stHorizontalBlock"]{
+    flex-direction:column !important;
+    gap:.45rem !important;
+  }
+  div[data-testid="stHorizontalBlock"] > div[data-testid="column"]{
+    width:100% !important;
+    min-width:100% !important;
+    flex:1 1 100% !important;
+  }
+  div[data-testid="stButton"] button{
+    min-height:48px;
+    width:100%;
+    padding:.65rem .8rem;
+  }
+}
+
+/* Phone: one team column and tighter chrome. */
 @media (max-width:640px){
   [data-testid="stMainBlockContainer"]{
     padding-left:.72rem !important;
