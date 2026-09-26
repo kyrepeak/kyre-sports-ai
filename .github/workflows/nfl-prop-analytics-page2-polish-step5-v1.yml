@@ -123,6 +123,7 @@ jobs:
         run: |
           python - <<'PY'
           import time
+          import re
           from urllib.parse import urlencode
           import requests
           from playwright.sync_api import sync_playwright
@@ -261,6 +262,7 @@ jobs:
         run: |
           python - <<'PY'
           import time
+          import re
           from urllib.parse import urlencode
           from playwright.sync_api import sync_playwright
 
