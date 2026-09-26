@@ -18,6 +18,8 @@ from typing import Any
 import requests
 import streamlit as st
 
+import nfl_prop_analytics_history_stats_v1 as history_stats
+
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 3 STEP 6 • SUPPORTING STATS V1"
 PAGE3_SUPPORT_STEP = 6
 PAGE3_SUPPORT_VERSION = "v1"
@@ -58,6 +60,14 @@ METRIC_META = {
     "touches": ("TOUCHES", "TOT"),
     "skill_tds": ("RUSH + REC TD", "TD"),
 }
+
+PASSING_SUPPORT_MARKETS = frozenset({
+    "passing_yards",
+    "passing_touchdowns",
+    "interceptions",
+    "completions",
+    "attempts",
+})
 
 MARKET_METRICS = {
     "passing_yards": ("attempts", "completions", "completion_pct", "yards_per_attempt", "passing_tds", "interceptions"),
@@ -241,6 +251,45 @@ def _history_row_metrics(row: dict[str, Any]) -> dict[str, float]:
     return out
 
 
+def _enrich_from_certified_passing_gamelog(
+    rows: list[dict[str, Any]],
+    athlete_id: str,
+    market_key: str,
+) -> list[dict[str, Any]]:
+    """Join frozen Step 3 cached athlete game-log fields by exact event id."""
+    if market_key not in PASSING_SUPPORT_MARKETS:
+        return [dict(row) for row in rows]
+
+    seasons = sorted({
+        int(row.get("season") or 0)
+        for row in rows
+        if int(row.get("season") or 0) >= 2000
+    })
+    by_event: dict[str, dict[str, Any]] = {}
+    for season in seasons:
+        try:
+            season_rows = history_stats._passing_gamelog_season(athlete_id, season)
+        except Exception:
+            continue
+        for game in season_rows:
+            if not isinstance(game, dict):
+                continue
+            event_id = _text(game.get("official_event_id") or game.get("event_id"))
+            if event_id.isdigit():
+                by_event[event_id] = dict(game)
+
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        merged = dict(row)
+        event_id = _text(row.get("official_event_id") or row.get("event_id"))
+        source = by_event.get(event_id) or {}
+        for key in ("completions", "attempts", "passing_yards", "passing_tds", "interceptions"):
+            if key in source:
+                merged[key] = source[key]
+        out.append(merged)
+    return out
+
+
 def _event_support(
     row: dict[str, Any],
     athlete_id: str,
@@ -295,6 +344,7 @@ def load_supporting_stats(
     selected = [row for row in list(games or [])[:MAX_SUPPORT_GAMES] if isinstance(row, dict)]
     if not selected:
         return {"ready": False, "reason": "verified historical games are required", "metrics": []}
+    selected = _enrich_from_certified_passing_gamelog(selected, athlete, market)
 
     profile = MARKET_METRICS.get(market, ())
     event_rows: list[dict[str, Any]] = []
