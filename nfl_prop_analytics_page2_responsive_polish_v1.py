@@ -108,9 +108,8 @@ div[data-testid="stButton"] button{
   .ks-pa-u-state{text-align:left !important}
 
   body div[data-testid="stHorizontalBlock"]{
-    display:flex !important;
-    flex-direction:column !important;
-    flex-wrap:nowrap !important;
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) !important;
     gap:.45rem !important;
   }
   body div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]{
