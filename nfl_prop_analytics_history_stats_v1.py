@@ -309,7 +309,13 @@ def _team_schedule(team_id: str, season: int) -> tuple[dict[str, Any], ...]:
     for event in payload.get("events") or []:
         if not isinstance(event, dict):
             continue
-        if not _regular_season(event) or not _completed(event):
+        # The request itself is scoped to seasontype=2. Some ESPN schedule
+        # payloads omit the redundant event["seasonType"] object, so requiring
+        # it here can incorrectly discard every valid regular-season game.
+        # Keep the contract strict with season year + completed state + exact
+        # team identity instead of relying on that optional duplicate field.
+        event_season = _season_year(event, season)
+        if event_season != int(season) or not _completed(event):
             continue
         event_id = _text(event.get("id"))
         if not event_id.isdigit():
@@ -320,7 +326,7 @@ def _team_schedule(team_id: str, season: int) -> tuple[dict[str, Any], ...]:
         out.append({
             "event_id": event_id,
             "date": _text(event.get("date")),
-            "season": _season_year(event, season),
+            "season": event_season,
             "team_ids": tuple(sorted(ids)),
             "opponent_abbr": _opponent_abbr(event, team_id),
         })
