@@ -213,6 +213,7 @@ def render_player_selection_handoff(
     st.session_state[SESSION_KEY] = handoff
     _persist_query(handoff["player_id"])
 
+    candidate_ids = ",".join(_player_key(row) for row in players)
     gate_state = "OPEN" if handoff["prop_analysis_gate_open"] else "CLOSED"
     gate_copy = (
         "Game-day availability is confirmed for this player."
@@ -226,6 +227,7 @@ def render_player_selection_handoff(
          data-nfl-prop-analytics-step7-player-selection="v1"
          data-prop-step7-state="ready"
          data-prop-step7-candidate-count="{len(players)}"
+         data-prop-step7-candidate-ids="{html_lib.escape(candidate_ids)}"
          data-prop-step7-player-id="{html_lib.escape(handoff['player_id'])}"
          data-prop-step7-player-team="{html_lib.escape(handoff['team'])}"
          data-prop-step7-player-position="{html_lib.escape(handoff['position'])}"
