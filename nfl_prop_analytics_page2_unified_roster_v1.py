@@ -22,6 +22,7 @@ PRESENTATION_ONLY = True
 MAY_MODIFY_PASSING_YARDS = False
 MAY_MODIFY_EXISTING_NFL_MARKETS = False
 POSITIONS = ("QB", "RB", "WR", "TE")
+FILTERS = ("ALL", "QB", "RB", "WR", "TE")
 
 
 def _text(value: Any) -> str:
@@ -226,6 +227,7 @@ __all__ = [
     "MAY_MODIFY_PASSING_YARDS",
     "MODEL_VERSION",
     "PAGE",
+    "FILTERS",
     "POSITIONS",
     "PRESENTATION_ONLY",
     "STEP",
