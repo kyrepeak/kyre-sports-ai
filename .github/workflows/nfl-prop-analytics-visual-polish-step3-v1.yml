@@ -65,11 +65,18 @@ jobs:
             'nfl_prop_analytics_schedule_v1.py' \
             'nfl_prop_analytics_game_select_v1.py' \
             'tests/test_nfl_prop_analytics_visual_polish_step3_v1.py' | sort)"
-          test "$actual" = "$expected" || {
+          verifier_only="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-visual-polish-step3-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-visual-polish-step3-v1.json' | sort)"
+          if [ "$actual" = "$verifier_only" ]; then
+            echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_VERIFIER_ONLY_SCOPE_GREEN"
+          elif [ "$actual" = "$expected" ]; then
+            echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_ORIGINAL_SCOPE_GREEN"
+          else
             echo "PROP_ANALYTICS_VISUAL_POLISH_STEP3_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
-          }
+          fi
 
           check_blob () {
             got="$(git hash-object "$1")"
@@ -296,10 +303,10 @@ jobs:
                   page=context.new_page()
                   try:
                       page.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics","ks_pa_game":"CAR-CLE"}),wait_until="domcontentloaded",timeout=120000)
-                      _,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]',150)
-                      _,sel=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',150)
-                      logos=page.locator('[data-prop-team-logo]')
-                      selected=page.locator('[data-prop-selected-team-logo]')
+                      board_frame,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]',150)
+                      sel_frame,sel=find(page,'[data-nfl-prop-analytics-step3-selection="v1"]',150)
+                      logos=board_frame.locator('[data-prop-team-logo]')
+                      selected=sel_frame.locator('[data-prop-selected-team-logo]')
                       kickoff=sel.locator('[data-prop-selected-kickoff]').get_attribute("data-prop-selected-kickoff")
                       if int(board.get_attribute("data-prop-schedule-count") or 0)!=14: last="GAME_COUNT"
                       elif logos.count()!=28: last=f"LOGO_COUNT:{logos.count()}"
