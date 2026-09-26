@@ -567,6 +567,11 @@ def render_prop_page_shell() -> dict[str, Any]:
          data-prop-page3-step3-market="{html_lib.escape(chosen_key)}"
          data-prop-page3-step3-history="{html_lib.escape(chosen_history_key)}"
          data-prop-page3-step3-sample="{sample_size}"
+         data-prop-page3-step3-average="{_format_stat(history_summary.get('average'), average=True)}"
+         data-prop-page3-step3-median="{_format_stat(history_summary.get('median'), average=True)}"
+         data-prop-page3-step3-high="{_format_stat(history_summary.get('high'))}"
+         data-prop-page3-step3-low="{_format_stat(history_summary.get('low'))}"
+         data-prop-page3-step3-source="{html_lib.escape(source_note)}"
          data-prop-page3-step3-hit-rate-state="{html_lib.escape(hit_state)}">
   <div class="ks-pa3-stats-head">
     <div>
