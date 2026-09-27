@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-fun-polish-step5-streamlit-full-redeploy-v1",
+  "title": "NFL Prop Analytics Fun Polish Step 5 — Streamlit Full Redeploy Repair",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "fun-polish-5-control-plane-repair",
+  "status": "DONE",
+  "source_main": "8dedda7dfa80edf77f549b986ce79234cb7e93da",
+  "scope": "Control-plane-only Streamlit full redeploy trigger after Step 5 product, static contract, branch UI proof, frozen verifier lanes, and DevSystem targeted CI cleared but the public Step 5 marker remained absent.",
+  "repair": {
+    "failed_public_run": 36344508209,
+    "failed_public_job": 108690987965,
+    "failure_token": "PAGE3_POLISH_STEP5_PUBLIC_SELECTOR_NOT_READY:[data-prop-page3-fun-polish-step5=\"v1\"]",
+    "trigger": "requirements.txt comment-only full-redeploy marker",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "page3_steps_1_to_8_changed": false,
+    "fun_polish_steps_1_to_4_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
