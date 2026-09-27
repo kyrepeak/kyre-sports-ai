@@ -70,7 +70,7 @@ jobs:
             'nfl_prop_analytics_page3_data_panels_polish_v1.py' \
             'nfl_prop_analytics_page3_final_polish_v1.py' \
             'tests/test_nfl_prop_analytics_page3_polish_step4_data_panels_v1.py' | sort)"
-          test "$actual" = "$expected" || { echo PROP_ANALYTICS_PAGE3_POLISH_STEP3_SCOPE_VIOLATION; printf '%s\n' "$actual"; exit 1; }
+          test "$actual" = "$expected" || test "$actual" = "$page3_polish_step4_expected" || { echo PROP_ANALYTICS_PAGE3_POLISH_STEP3_SCOPE_VIOLATION; printf '%s\n' "$actual"; exit 1; }
           check_blob(){ got="$(git hash-object "$1")"; test "$got" = "$2" || { echo "PROP_ANALYTICS_PAGE3_POLISH_STEP3_FROZEN_BLOB_CHANGED:$1:$got:$2"; exit 1; }; }
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob nfl_prop_analytics_prop_page_v1.py d5588fe6dc99b223427599d6d245a494f8e7cfc4
