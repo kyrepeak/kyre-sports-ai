@@ -170,8 +170,8 @@ jobs:
               f2,_=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180); f2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first.click()
               _,o=role(page,"button","Open prop page",90); o.click()
               f,m=find(page,'[data-prop-page3-redesign-step4="v1"]',240)
-              assert m.get_attribute("data-prop-page3-redesign-step3-presentation-only")=="true"
-              assert m.get_attribute("data-prop-page3-redesign-step3-interaction-change")=="false"
+              assert m.get_attribute("data-prop-page3-redesign-step4-presentation-only")=="true"
+              assert m.get_attribute("data-prop-page3-redesign-step4-interaction-change")=="false"
               find(page,'[data-prop-page3-redesign-step2="v1"]',120)
               find(page,'[data-prop-page3-redesign-step3="v1"]',120)
               find(page,'[data-prop-page3-redesign-step4="v1"]',120)
@@ -249,8 +249,8 @@ jobs:
               f2,_=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180); f2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first.click()
               _,o=role(page,"button","Open prop page",90); o.click()
               f,m=find(page,'[data-prop-page3-redesign-step4="v1"]',300)
-              assert m.get_attribute("data-prop-page3-redesign-step3-presentation-only")=="true"
-              assert m.get_attribute("data-prop-page3-redesign-step3-interaction-change")=="false"
+              assert m.get_attribute("data-prop-page3-redesign-step4-presentation-only")=="true"
+              assert m.get_attribute("data-prop-page3-redesign-step4-interaction-change")=="false"
               find(page,'[data-prop-page3-redesign-step2="v1"]',120)
               _,heading=find(page,".ks-pa3-nav-marker",120); hs=heading.evaluate("e=>({d:getComputedStyle(e).display,r:getComputedStyle(e).borderTopLeftRadius})"); assert hs["d"]!="none" and hs["r"]!="0px",hs
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_LINE_LAB_GREEN")
