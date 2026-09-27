@@ -1,0 +1,113 @@
+{
+  "contract_version": "v1",
+  "series": "NFL_PROP_ANALYTICS_PAGE3_VISUAL_COMPOSITION_V2",
+  "step": 1,
+  "title": "Reference Visual Contract Lock",
+  "status": "LOCKED_ON_GREEN",
+  "source_of_truth": {
+    "reference": "User-approved Page 3 mockup shown in chat on 2026-09-27 at 23:30 UTC",
+    "reference_canvas_px": {"width": 1080, "height": 1440},
+    "instruction": "Match the approved mockup composition, hierarchy, spacing, grouping, and visual weight. Do not satisfy this contract with a CSS skin over the old composition.",
+    "dynamic_content_rule": "Player, team, opponent, logos, values, matchup metadata, historical values, market state, and chart data remain live and may vary; their placement and visual hierarchy must match the reference composition."
+  },
+  "global": {
+    "theme": "black + glacier blue",
+    "team_color_rule": "Real team colors/logos remain authentic and are used as localized hero accents only.",
+    "page_gutter_reference_px": 18,
+    "section_gap_reference_px": 14,
+    "card_radius_reference_px": 14,
+    "primary_border": "thin glacier-blue",
+    "surface_style": "dark navy/black layered cards with restrained glow",
+    "density": "compact professional sports terminal",
+    "minimum_touch_target_px": 44,
+    "focus_visible_required": true,
+    "reduced_motion_required": true,
+    "horizontal_document_overflow_forbidden": true,
+    "certified_viewports": [390, 768, 1440]
+  },
+  "reference_regions": [
+    {
+      "id": "app_header",
+      "order": 1,
+      "reference_bounds_px": {"x": 16, "y": 96, "w": 1048, "h": 58},
+      "required_composition": "Brand left; sport navigation right; one compact horizontal bar."
+    },
+    {
+      "id": "hero",
+      "order": 2,
+      "reference_bounds_px": {"x": 16, "y": 160, "w": 1048, "h": 228},
+      "required_composition": "One unified matchup card: home/team block left, player portrait and identity center-left, opponent block right, game metadata along bottom.",
+      "required_visual_nodes": ["team_logo", "team_abbreviation", "team_name", "player_headshot", "position_pill", "player_name", "prop_name", "starter_status", "player_id", "analysis_status", "opponent_logo", "opponent_abbreviation", "opponent_name", "game_date", "game_time", "broadcast", "venue"]
+    },
+    {
+      "id": "quick_stat_ribbon",
+      "order": 3,
+      "reference_bounds_px": {"x": 18, "y": 402, "w": 1044, "h": 88},
+      "required_composition": "Five equal-width stat cards in one row at reference width.",
+      "required_cards": ["average", "median", "season_high", "season_low", "hit_rate"],
+      "mobile_rule": "Horizontal scroll or responsive wrapping is allowed only when needed; card hierarchy and tap/readability must remain intact."
+    },
+    {
+      "id": "analysis_settings",
+      "order": 4,
+      "reference_bounds_px": {"x": 18, "y": 506, "w": 1044, "h": 204},
+      "required_composition": "Single bordered control deck with header row, Manual Line Lab action at upper-right, then two equal control cards beneath.",
+      "left_control_card": "History Window",
+      "right_control_card": "Prop Category",
+      "history_options": ["H2H", "L5", "L10", "L20", "2026", "2025"],
+      "prop_options": ["PASS YDS", "PASS TD", "INT", "COMP", "ATT", "RUSH"],
+      "selected_state": "bright glacier-blue glow with strong filled/outlined state",
+      "interaction_rule": "Existing Streamlit controls remain real, tappable controls; do not replace with static HTML."
+    },
+    {
+      "id": "line_lab",
+      "order": 5,
+      "reference_bounds_px": {"x": 18, "y": 725, "w": 1044, "h": 198},
+      "required_composition": "One Line Lab card with title/subtitle left, manual-line disclaimer right, large centered current line value, and a full-width interactive slider beneath.",
+      "interaction_rule": "Existing analysis-line slider semantics, min/max, selected value, callbacks, and recalculation behavior must remain unchanged."
+    },
+    {
+      "id": "live_recalculation",
+      "order": 6,
+      "reference_bounds_px": {"x": 18, "y": 934, "w": 1044, "h": 176},
+      "required_composition": "One live historical recalculation panel with four equal summary cards.",
+      "required_cards": ["analysis_line", "over_percent", "under_percent", "average_stat"],
+      "truth_rule": "Values come only from frozen verified history calculations."
+    },
+    {
+      "id": "game_chart",
+      "order": 7,
+      "reference_bounds_px": {"x": 18, "y": 1115, "w": 1044, "h": 265},
+      "required_composition": "Full-width game-by-game results card with title left, compact legend right, vertical bars, opponent/date labels, and a dashed analysis-line reference.",
+      "truth_rule": "Chart values and over/under/push classification remain frozen product truth."
+    }
+  ],
+  "exactness_rules": [
+    "The implementation must materially change composition, not only colors, borders, shadows, or typography.",
+    "At reference/tablet width, Hero, Quick Stat Ribbon, Analysis Settings, Line Lab, Live Recalculation, and Game Chart must appear in this exact vertical order.",
+    "At reference/tablet width, the quick-stat ribbon must read as five distinct equal cards.",
+    "At reference/tablet width, Analysis Settings must read as one parent deck containing two side-by-side control cards.",
+    "At reference/tablet width, Line Lab must read as one cohesive module with the large current-line value visually centered above the slider.",
+    "The lower analytics area must visually separate live recalculation from the game chart while retaining a single cohesive system.",
+    "Do not hide data from the approved mockup to achieve visual parity.",
+    "Do not introduce sportsbook projections, probabilities, recommendations, stake sizing, or wager actions."
+  ],
+  "functional_freeze": {
+    "protect_page3_steps_1_to_8": true,
+    "protect_fun_polish_steps_1_to_5": true,
+    "protect_redesign_steps_1_to_6": true,
+    "protect_passing_yards_frozen_work": true,
+    "query_navigation_semantics_changed": false,
+    "widget_keys_changed": false,
+    "data_ownership_changed": false,
+    "projection_weight": 0.0
+  },
+  "future_step_map": [
+    {"step": 2, "scope": "Hero composition rebuild"},
+    {"step": 3, "scope": "Quick-stat ribbon rebuild"},
+    {"step": 4, "scope": "Analysis Settings composition rebuild"},
+    {"step": 5, "scope": "Line Lab + lower analytics/chart composition rebuild"},
+    {"step": 6, "scope": "Full integration, accessibility, responsive and public certification"}
+  ],
+  "freeze_rule": "Once Step 1 is GREEN + FROZEN, this contract file is immutable unless the user explicitly changes the approved visual target."
+}
