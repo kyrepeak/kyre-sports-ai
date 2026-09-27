@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-polish-step4-data-panels-v1",
+  "title": "NFL Prop Analytics Page 3 Fun Polish Step 4 — Data Panels Upgrade",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "fun-polish-4",
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "afb5db9fdf74a30620498ff5a1fa4643d2df5e15",
+  "scope": "Presentation-only premium styling for historical stats, game chart, supporting stats, and market/insight surfaces after frozen Page 3 Steps 1-8 and Fun Polish Steps 1-3.",
+  "acceptance": [
+    "Frozen Page 3 Steps 1-8 remain unchanged.",
+    "Fun Polish Steps 1-3 remain unchanged.",
+    "Historical stats, game chart, supporting stats, and market/insight surfaces gain one coherent premium black + glacier-blue treatment.",
+    "Existing chart values, manual analysis line, supporting statistics, market availability, insights, and notes remain behaviorally unchanged.",
+    "No new data owner and no projections, probabilities, recommendations, staking, or wager actions.",
+    "Sportsbook projection influence remains 0.0 percent.",
+    "390/768/1440 proof passes without horizontal document overflow.",
+    "Branch proof passes before merge.",
+    "Public deployed proof passes before GREEN + FROZEN.",
+    "Terminal tokens: PROP_ANALYTICS_PAGE3_POLISH_STEP4_GREEN, PROP_ANALYTICS_PAGE3_POLISH_STEP4_PUBLIC_GREEN, PROP_ANALYTICS_PAGE3_POLISH_STEP4_FROZEN."
+  ],
+  "action_log": {"head_chain_hash":"0000000000000000000000000000000000000000000000000000000000000000","events":[],"consumed_receipts":[]}
+}
