@@ -1,0 +1,18 @@
+{
+  "version":1,
+  "task_id":"nfl-prop-page3-redesign-step6-full-certification-v1",
+  "title":"NFL Prop Analytics Page 3 Redesign Step 6 — Full-Page Certification",
+  "project":"NFL Prop Analytics","page":3,"step":"redesign-6","status":"DONE",
+  "certification_state":"FREEZE_ON_PUBLIC_PROOF","source_main":"6d3396682761f1272df1f984f6d0280697185b2d",
+  "scope":"Verification-only closeout of the six-step Page 3 redesign with one invisible certification marker.",
+  "acceptance":[
+    "Redesign Steps 1-5 remain unchanged and present in order.",
+    "History Window and Prop Category taps remain functional.",
+    "Line Lab slider remains functional and downstream chart state updates.",
+    "Hero, quick stats, Analysis Settings, Line Lab, game chart, supporting stats, and market/insight surfaces render in one exact flow.",
+    "390/768/1440 pass with no horizontal document overflow.",
+    "No new data owner, projection, probability, recommendation, staking, or wager action.",
+    "Public deployed proof passes before GREEN + FROZEN."
+  ],
+  "action_log":{"head_chain_hash":"0000000000000000000000000000000000000000000000000000000000000000","events":[],"consumed_receipts":[]}
+}
