@@ -6,8 +6,10 @@ on:
     paths:
       - ".github/workflows/nfl-prop-analytics-page3-polish-step1-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-polish-step2-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-polish-step3-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-step8-v1.yml"
       - "devsystem/task_ledgers/nfl-prop-analytics-page3-polish-step2-hero-v1.json"
+      - "nfl_prop_analytics_page3_controls_polish_v1.py"
       - "nfl_prop_analytics_page3_final_polish_v1.py"
       - "nfl_prop_analytics_page3_hero_polish_v1.py"
       - "tests/test_nfl_prop_analytics_page3_polish_step2_hero_v1.py"
@@ -16,8 +18,10 @@ on:
     paths:
       - ".github/workflows/nfl-prop-analytics-page3-polish-step1-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-polish-step2-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-polish-step3-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-step8-v1.yml"
       - "devsystem/task_ledgers/nfl-prop-analytics-page3-polish-step2-hero-v1.json"
+      - "nfl_prop_analytics_page3_controls_polish_v1.py"
       - "nfl_prop_analytics_page3_final_polish_v1.py"
       - "nfl_prop_analytics_page3_hero_polish_v1.py"
       - "tests/test_nfl_prop_analytics_page3_polish_step2_hero_v1.py"
@@ -60,7 +64,16 @@ jobs:
             'nfl_prop_analytics_page3_final_polish_v1.py' \
             'nfl_prop_analytics_page3_hero_polish_v1.py' \
             'tests/test_nfl_prop_analytics_page3_polish_step2_hero_v1.py' | sort)"
-          test "$actual" = "$expected" || {
+          page3_polish_step3_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-polish-step3-controls-v1.json' \
+            'nfl_prop_analytics_page3_controls_polish_v1.py' \
+            'nfl_prop_analytics_page3_final_polish_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_polish_step3_controls_v1.py' | sort)"
+          test "$actual" = "$expected"  || test "$actual" = "$page3_polish_step3_expected" || {
             echo PROP_ANALYTICS_PAGE3_POLISH_STEP2_SCOPE_VIOLATION
             printf '%s\n' "$actual"
             exit 1
