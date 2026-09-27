@@ -198,13 +198,18 @@ jobs:
               raise RuntimeError(f"PAGE3_STEP8_ROLE_NOT_READY:{kind}:{name}")
 
           def segmented_heights(page):
+              labels={"PASS YDS","PASS TD","INT","COMP","ATT","RUSH","CARRIES","REC","REC YDS","LONG REC","TD","H2H","L5","L10","L20","2026","2025","OVER","UNDER","STATISTICS","SUPPORTING STATS","INSIGHTS","KEY NOTES"}
               heights=[]
               for candidate in page.frames:
                   try:
-                      vals=candidate.locator('div[data-testid="stSegmentedControl"] button').evaluate_all(
-                          "els=>els.filter(e=>{const r=e.getBoundingClientRect();const s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'}).slice(0,20).map(e=>e.getBoundingClientRect().height)"
-                      )
-                      heights.extend(vals or [])
+                      buttons=candidate.locator("button")
+                      for i in range(buttons.count()):
+                          item=buttons.nth(i)
+                          label=(item.inner_text() or "").strip()
+                          if label not in labels: continue
+                          box=item.bounding_box()
+                          if box and box.get("width",0)>0 and box.get("height",0)>0:
+                              heights.append(float(box["height"]))
                   except Exception: pass
               return heights
 
@@ -393,13 +398,18 @@ jobs:
               raise RuntimeError(f"PAGE3_STEP8_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
 
           def segmented_heights(page):
+              labels={"PASS YDS","PASS TD","INT","COMP","ATT","RUSH","CARRIES","REC","REC YDS","LONG REC","TD","H2H","L5","L10","L20","2026","2025","OVER","UNDER","STATISTICS","SUPPORTING STATS","INSIGHTS","KEY NOTES"}
               heights=[]
               for candidate in page.frames:
                   try:
-                      vals=candidate.locator('div[data-testid="stSegmentedControl"] button').evaluate_all(
-                          "els=>els.filter(e=>{const r=e.getBoundingClientRect();const s=getComputedStyle(e);return r.width>0&&r.height>0&&s.visibility!=='hidden'&&s.display!=='none'}).slice(0,20).map(e=>e.getBoundingClientRect().height)"
-                      )
-                      heights.extend(vals or [])
+                      buttons=candidate.locator("button")
+                      for i in range(buttons.count()):
+                          item=buttons.nth(i)
+                          label=(item.inner_text() or "").strip()
+                          if label not in labels: continue
+                          box=item.bounding_box()
+                          if box and box.get("width",0)>0 and box.get("height",0)>0:
+                              heights.append(float(box["height"]))
                   except Exception: pass
               return heights
 
