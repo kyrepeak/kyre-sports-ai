@@ -23,7 +23,7 @@ def test_step3_visual_tokens():
         'data-prop-page3-fun-polish-step3="',
         '[data-testid="stSegmentedControl"] button',
         'button[aria-pressed="true"]',
-        '[data-testid="stSlider"] [role="slider"]',
+        '[data-testid="stSlider"] [data-rac]:has(> div > input[type="range"])',
         'min-height:44px',
         ':focus-visible',
         '@media(prefers-reduced-motion:reduce)',
