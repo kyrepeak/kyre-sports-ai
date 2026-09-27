@@ -80,17 +80,17 @@ def render_final_polish(
 /* Final Page 3 polish is additive and presentation-only. */
 .ks-pa3-final-marker{{display:none!important}}
 
-div[data-testid="stSegmentedControl"] button,
-div[data-testid="stButton"] button,
-div[data-testid="stBaseButton-secondary"],
-div[data-testid="stBaseButton-primary"]{{
+[data-testid="stSegmentedControl"] button,
+[data-testid="stButton"] button,
+button[data-testid="stBaseButton-secondary"],
+button[data-testid="stBaseButton-primary"]{{
   min-height:44px!important;
   transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease,transform .12s ease;
 }}
 
-div[data-testid="stSegmentedControl"] button:focus-visible,
-div[data-testid="stButton"] button:focus-visible,
-div[data-testid="stSlider"] [role="slider"]:focus-visible{{
+[data-testid="stSegmentedControl"] button:focus-visible,
+[data-testid="stButton"] button:focus-visible,
+[data-testid="stSlider"] [role="slider"]:focus-visible{{
   outline:2px solid rgba(125,211,252,.95)!important;
   outline-offset:2px!important;
   box-shadow:0 0 0 4px rgba(56,189,248,.16)!important;
