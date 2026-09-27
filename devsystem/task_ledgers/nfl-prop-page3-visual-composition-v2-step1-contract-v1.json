@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-visual-composition-v2-step1-contract-v1",
+  "title": "NFL Prop Analytics Page 3 Visual Composition V2 Step 1 — Reference Contract Lock",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": 1,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_MAIN_AND_PUBLIC_BASELINE_PROOF",
+  "source_main": "d090ff62d1d1f1dfc7297512eb4dbff1489f4d6e",
+  "scope": "Lock the user-approved 1080x1440 Page 3 mockup as the exact composition target before any V2 implementation work.",
+  "product_change": false,
+  "visible_ui_change": false,
+  "acceptance": [
+    "Reference composition is encoded in a machine-readable immutable contract.",
+    "Contract requires a true composition rebuild, not a CSS skin over the old structure.",
+    "Hero, five-card quick-stat ribbon, two-card Analysis Settings deck, centered-value Line Lab, four-card live recalculation, and full-width game chart are explicitly locked.",
+    "Existing Page 3 Steps 1-8, Fun Polish Steps 1-5, Redesign Steps 1-6, and Passing Yards frozen work remain untouched.",
+    "Touch targets remain at least 44px; focus-visible and reduced-motion support remain required.",
+    "390/768/1440 remain the certified viewports.",
+    "Current public Page 3 frozen baseline remains reachable and interactive before V2 Step 2 begins."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
