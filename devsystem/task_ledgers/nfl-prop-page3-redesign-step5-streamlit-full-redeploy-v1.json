@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-redesign-step5-streamlit-full-redeploy-v1",
+  "title": "NFL Prop Analytics Page 3 Redesign Step 5 — Streamlit Full Redeploy Repair",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "redesign-5-control-plane-repair",
+  "status": "DONE",
+  "source_main": "999b5ba3ed5156a978d5a0645bd9165b7c91a729",
+  "scope": "Control-plane-only Streamlit full redeploy trigger after Redesign Step 5 branch proof and all required pre-merge checks cleared but the public Step-5 marker was absent.",
+  "repair": {
+    "failed_public_run": 36355315895,
+    "failed_public_job": 108721860359,
+    "failure_token": "PAGE3_REDESIGN_STEP5_PUBLIC_SELECTOR_NOT_READY:[data-prop-page3-redesign-step5=\"v1\"]",
+    "production_identity_source_branch": "mlb-step17b-shared-host-cert",
+    "owner": "PUBLIC_RUNTIME_CONTROL_PLANE",
+    "trigger": "requirements.txt comment-only full-redeploy marker",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "page3_steps_1_to_8_changed": false,
+    "fun_polish_steps_1_to_5_changed": false,
+    "redesign_steps_1_to_4_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
