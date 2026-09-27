@@ -156,7 +156,7 @@ jobs:
               _,nav=find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-market="attempts"]',180)
               print("PROP_ANALYTICS_PAGE3_POLISH_STEP3_BRANCH_PROP_GREEN")
               lf,line=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180); old=line.get_attribute("data-prop-page3-step4-line"); mx=line.get_attribute("data-prop-page3-step4-max")
-              slider=lf.get_by_role("slider").first; box=slider.bounding_box(); print("STEP3_SLIDER_DOM",slider.evaluate("e=>({tag:e.tagName,cls:e.className,role:e.getAttribute(\'role\'),style:e.getAttribute(\'style\'),testid:e.closest(\'[data-testid]\')?.getAttribute(\'data-testid\'),parent:e.parentElement?.outerHTML.slice(0,1600),root:e.closest('[data-testid="stSlider"]')?.outerHTML.slice(0,7000)})")); assert box and box["width"]>=43.5 and box["height"]>=43.5,box; slider.press("End")
+              slider=lf.get_by_role("slider").first; box=slider.bounding_box(); print("STEP3_SLIDER_DOM",slider.evaluate("e=>({tag:e.tagName,cls:e.className,role:e.getAttribute(\'role\'),style:e.getAttribute(\'style\'),testid:e.closest(\'[data-testid]\')?.getAttribute(\'data-testid\'),parent:e.parentElement?.outerHTML.slice(0,1600),root:e.closest('[data-testid=stSlider]')?.outerHTML.slice(0,7000)})")); assert box and box["width"]>=43.5 and box["height"]>=43.5,box; slider.press("End")
               find(page,f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{float(mx):.1f}"]',180)
               assert old!=f"{float(mx):.1f}"
               print("PROP_ANALYTICS_PAGE3_POLISH_STEP3_BRANCH_SLIDER_GREEN")
