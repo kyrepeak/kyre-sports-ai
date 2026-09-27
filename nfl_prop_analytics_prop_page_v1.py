@@ -47,6 +47,11 @@ from nfl_prop_analytics_page3_supporting_stats_v1 import (
     PAGE3_SUPPORT_VERSION,
     render_supporting_stats,
 )
+from nfl_prop_analytics_page3_market_insights_v1 import (
+    PAGE3_MARKET_INSIGHTS_STEP,
+    PAGE3_MARKET_INSIGHTS_VERSION,
+    render_market_insights,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -581,6 +586,12 @@ def render_prop_page_shell() -> dict[str, Any]:
         "reason": "verified Step 5 chart is required",
         "metrics": [],
     }
+    market_insights: dict[str, Any] = {
+        "ready": False,
+        "state": "unavailable",
+        "reason": "verified Step 5 chart + Step 6 context are required",
+        "projection_weight": 0.0,
+    }
 
     if history_ready:
         line_control = render_analysis_line_control(
@@ -660,6 +671,20 @@ def render_prop_page_shell() -> dict[str, Any]:
                 history_key=chosen_history_key,
                 history_label=history_labels[chosen_history_key],
             )
+            market_insights = render_market_insights(
+                games=history_payload.get("games") or [],
+                line=line_control.get("line"),
+                history_summary=history_summary,
+                supporting_stats=supporting_stats,
+                official_event_id=handoff["event_id"],
+                official_athlete_id=handoff["player_id"],
+                market_key=chosen_key,
+                market_label=chosen_label,
+                history_key=chosen_history_key,
+                history_label=history_labels[chosen_history_key],
+                gate_open=gate_open,
+                availability_state=handoff["availability_state"],
+            )
 
     else:
         st.markdown(
@@ -724,16 +749,16 @@ def render_prop_page_shell() -> dict[str, Any]:
       <span>{analytics_state}</span>
     </div>
     <p>
-      {"Verified historical analytics and the manual Line Lab are active above. Sportsbook market data remains intentionally out of scope."
+      {"Verified historical analytics, the manual Line Lab, and Step 7 market context are active above when exact-ID data is available."
        if gate_open
-       else "Verified historical analytics and the manual Line Lab are available above while game-day availability remains pending."}
+       else "Verified historical analytics and the manual Line Lab are available above while Step 7 live market + insight analysis remains locked pending game-day availability."}
     </p>
     <div class="ks-pa8-zero-data"
          data-prop-step8-sportsbook-lines="0"
          data-prop-step8-odds="0"
          data-prop-step8-projections="0"
          data-prop-step8-recommendations="0">
-      No sportsbook lines • No odds • No projections • No recommendations
+      Legacy shell: no sportsbook inputs to projection • No projections • No recommendations
     </div>
   </div>
 </section>
@@ -882,6 +907,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "line_control": line_control,
         "game_chart": game_chart,
         "supporting_stats": supporting_stats,
+        "market_insights": market_insights,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
@@ -912,6 +938,8 @@ __all__ = [
     "PAGE3_CHART_VERSION",
     "PAGE3_SUPPORT_STEP",
     "PAGE3_SUPPORT_VERSION",
+    "PAGE3_MARKET_INSIGHTS_STEP",
+    "PAGE3_MARKET_INSIGHTS_VERSION",
     "PLAYER_PROP_LOGIC",
     "PROJECTION_LOGIC",
     "SHELL_NAVIGATION_ONLY",

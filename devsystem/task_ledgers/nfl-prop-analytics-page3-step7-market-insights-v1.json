@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-step7-market-insights-v1",
+  "title": "NFL Prop Analytics Page 3 Step 7 — Market + Insights",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 7,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "6cd33e0258194ae373d334db6d10fe0b36027bf3",
+  "scope": "Add the agreed Page 3 market + insights surface after frozen Step 6. Provide Over/Under side selection, alternate analysis thresholds, fresh exact-ID verified FanDuel odds when an already-certified Kyre Sports API client exists, and compact Statistics / Supporting Stats / Insights / Key Notes views. PENDING availability must keep the Step 7 live-analysis gate locked and must make no sportsbook request. Alternate thresholds are never represented as sportsbook alternate prices. Missing, stale, unsupported, or identity-mismatched market data fails closed. No projection, probability, recommendation, stake sizing, wager actions, Page 1/Page 2 truth changes, router changes, or Passing Yards behavior changes.",
+  "acceptance": [
+    "Page 3 Steps 1-6 remain present and protected.",
+    "Step 7 renders only from the frozen Page 3 exact matchup + player + history chain.",
+    "PENDING or otherwise closed prop-analysis availability renders Step 7 LOCKED and performs no market request.",
+    "AVAILABLE status may open Step 7 live market + insight context.",
+    "Over and Under selection recalculates descriptive historical threshold frequency only.",
+    "Alternate lines are deterministic analysis thresholds and never receive synthetic sportsbook prices.",
+    "Fresh exact-ID FanDuel odds may appear only through an already-certified market client for Passing Yards, Rushing Yards, or Receiving Yards.",
+    "Unsupported, missing, stale, malformed, or ambiguous sportsbook context fails closed without fabricated odds.",
+    "Statistics / Supporting Stats / Insights / Key Notes sections are present.",
+    "Sportsbook projection influence remains exactly 0.0 percent.",
+    "No projections, probabilities, recommendations, staking, wager actions, or guarantee language are introduced.",
+    "390/768/1440 real-flow proof passes without document overflow.",
+    "Page 1/Page 2/router/Passing Yards stack remains untouched.",
+    "Branch proof passes before merge.",
+    "Public proof passes before Step 7 is declared GREEN + FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
