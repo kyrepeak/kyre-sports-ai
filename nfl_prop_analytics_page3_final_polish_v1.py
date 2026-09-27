@@ -84,7 +84,7 @@ div[data-testid="stSegmentedControl"] button,
 div[data-testid="stButton"] button,
 div[data-testid="stBaseButton-secondary"],
 div[data-testid="stBaseButton-primary"]{{
-  min-height:{MIN_TOUCH_TARGET_PX}px!important;
+  min-height:44px!important;
   transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease,transform .12s ease;
 }}
 
