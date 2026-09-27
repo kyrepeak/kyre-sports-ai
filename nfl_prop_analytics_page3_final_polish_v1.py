@@ -30,6 +30,7 @@ from nfl_prop_analytics_page3_redesign_step1_shell_v1 import render_redesign_ste
 from nfl_prop_analytics_page3_redesign_step2_hero_ribbon_v1 import render_redesign_step2_hero_ribbon
 from nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1 import render_redesign_step3_analysis_settings
 from nfl_prop_analytics_page3_redesign_step4_line_lab_v1 import render_redesign_step4_line_lab
+from nfl_prop_analytics_page3_redesign_step5_results_chart_v1 import render_redesign_step5_results_chart
 
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 3 STEP 8 • FINAL PROFESSIONAL POLISH V1"
 PAGE3_FINAL_POLISH_STEP = 8
@@ -194,6 +195,7 @@ button[data-testid="stBaseButton-primary"]{{
     redesign_step2_hero_ribbon = render_redesign_step2_hero_ribbon()
     redesign_step3_analysis_settings = render_redesign_step3_analysis_settings()
     redesign_step4_line_lab = render_redesign_step4_line_lab()
+    redesign_step5_results_chart = render_redesign_step5_results_chart()
 
     return {
         "ready": True,
@@ -221,6 +223,7 @@ button[data-testid="stBaseButton-primary"]{{
         "redesign_step2_hero_ribbon": redesign_step2_hero_ribbon,
         "redesign_step3_analysis_settings": redesign_step3_analysis_settings,
         "redesign_step4_line_lab": redesign_step4_line_lab,
+        "redesign_step5_results_chart": redesign_step5_results_chart,
     }
 
 
