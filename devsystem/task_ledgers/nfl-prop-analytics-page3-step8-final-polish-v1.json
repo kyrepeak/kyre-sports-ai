@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-step8-final-polish-v1",
+  "title": "NFL Prop Analytics Page 3 Step 8 — Final Professional Polish + Production Freeze",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": 8,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "54509724d765ddaea2f5e65e6583d7484f7d079c",
+  "scope": "Finish Page 3 with additive presentation-only polish and end-to-end production certification. Tighten spacing, improve touch targets and focus states, add reduced-motion support, preserve the black + glacier-blue universal theme with existing real team colors/logos, and prove the complete Page 2 player -> Page 3 flow including prop/history navigation and movable analysis line at 390/768/1440. No frozen Steps 1-7 data semantics, router, Page 1/Page 2 truth, Passing Yards behavior, projection, probability, recommendation, stake sizing, or wager actions may change.",
+  "acceptance": [
+    "Page 3 Steps 1-7 remain present, behaviorally unchanged, and protected.",
+    "Step 8 is presentation-only and introduces no new data owner or market semantics.",
+    "Universal black + glacier-blue styling remains intact while existing real team colors/logos remain untouched.",
+    "Interactive Page 3 controls have at least 44px touch targets.",
+    "Keyboard focus-visible states are explicit and accessible.",
+    "Reduced-motion users receive no animation or transition dependency.",
+    "The full Page 2 player -> Page 3 flow succeeds through the real app entrypoint.",
+    "Prop category navigation changes the active market and preserves exact player identity.",
+    "History navigation remains functional and preserves exact player identity.",
+    "The Step 4 manual analysis line can be moved and the downstream chart/supporting state stays coherent.",
+    "Step 7 remains either correctly LOCKED when availability gate is CLOSED or READY when gate is OPEN.",
+    "No sportsbook input modifies projection; projection influence remains exactly 0.0 percent.",
+    "No projections, probabilities, recommendations, staking, wager actions, or guarantee language are introduced.",
+    "390/768/1440 end-to-end viewport proof passes with no horizontal document overflow.",
+    "Page 1/Page 2/router/Passing Yards stack remains untouched.",
+    "Branch proof passes before merge.",
+    "Public deployed end-to-end proof passes before Step 8 is declared GREEN + FROZEN.",
+    "Terminal proof must emit PROP_ANALYTICS_PAGE3_STEP8_GREEN, PROP_ANALYTICS_PAGE3_STEP8_PUBLIC_GREEN, and PROP_ANALYTICS_PAGE3_STEP8_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
