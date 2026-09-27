@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-polish-step1-cleanup-v1",
+  "title": "NFL Prop Analytics Page 3 Fun Polish Step 1 — Cleanup + Visual Bugs",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "fun-polish-1",
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "f2381225630ab34fe35d51c53456fb86c81203cd",
+  "scope": "Presentation-only cleanup after frozen Page 3 Steps 1-8. Remove visible leaked raw chart markup, restore premium styling to the Step 7 locked state, preserve all player identity/history/line/chart/supporting-stat/market/availability semantics, and certify responsive output at 390/768/1440.",
+  "acceptance": [
+    "Page 3 Steps 1-8 remain behaviorally unchanged and protected.",
+    "No visible literal </div> markup appears in the rendered Page 3 chart flow.",
+    "The Step 5 chart remains ready with the same verified sample, selected line, and counts.",
+    "When Step 7 is LOCKED, the locked surface renders as a bordered premium card rather than unstyled inline text.",
+    "Step 7 gate semantics remain unchanged: CLOSED remains locked and OPEN remains ready.",
+    "Cleanup is presentation-only with sportsbook projection influence exactly 0.0 percent.",
+    "No projection, probability, recommendation, stake sizing, wager action, or new data owner is introduced.",
+    "390/768/1440 browser proof passes with no horizontal document overflow.",
+    "Branch proof passes before merge.",
+    "Public deployed proof passes before this polish step is declared GREEN + FROZEN.",
+    "Terminal proof must emit PROP_ANALYTICS_PAGE3_POLISH_STEP1_GREEN, PROP_ANALYTICS_PAGE3_POLISH_STEP1_PUBLIC_GREEN, and PROP_ANALYTICS_PAGE3_POLISH_STEP1_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
