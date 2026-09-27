@@ -173,7 +173,7 @@ jobs:
               _,heading=find(page,".ks-pa3-nav-marker",120)
               hs=heading.evaluate("e=>({d:getComputedStyle(e).display,r:getComputedStyle(e).borderTopLeftRadius})")
               assert hs["d"]!="none" and hs["r"]!="0px",hs
-              segs=f.locator('[data-testid="stSegmentedControl"]'); assert segs.count()>=2,segs.count()
+              segs=sum(frame.locator('[data-testid="stSegmentedControl"]').count() for frame in page.frames); assert segs>=2,segs
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_BRANCH_SETTINGS_GREEN")
               _,l5=seg(page,"L5"); l5.click(); find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-history="L5"]',180)
               _,att=seg(page,"ATT"); att.click(); find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-market="attempts"]',180)
