@@ -12,20 +12,20 @@ on:
       - ".github/workflows/nfl-prop-analytics-page3-redesign-step1-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-redesign-step2-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-redesign-step3-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-page3-redesign-step4-v1.yml"
       - ".github/workflows/nfl-prop-analytics-page3-step8-v1.yml"
-      - "devsystem/task_ledgers/nfl-prop-page3-redesign-step3-analysis-settings-v1.json"
+      - "devsystem/task_ledgers/nfl-prop-page3-redesign-step4-line-lab-v1.json"
       - "nfl_prop_analytics_page3_final_polish_v1.py"
-      - "nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py"
-      - "tests/test_nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py"
+      - "nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py"
   push:
     branches: [main]
     paths:
-      - ".github/workflows/nfl-prop-analytics-page3-redesign-step3-v1.yml"
-      - "devsystem/task_ledgers/nfl-prop-page3-redesign-step3-analysis-settings-v1.json"
+      - ".github/workflows/nfl-prop-analytics-page3-redesign-step4-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-redesign-step4-line-lab-v1.json"
       - "nfl_prop_analytics_page3_final_polish_v1.py"
-      - "nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py"
-      - "tests/test_nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py"
-
+      - "nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py"
 permissions:
   contents: read
 
@@ -62,28 +62,14 @@ jobs:
             '.github/workflows/nfl-prop-analytics-page3-redesign-step1-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-redesign-step2-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-redesign-step3-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
-            'devsystem/task_ledgers/nfl-prop-page3-redesign-step3-analysis-settings-v1.json' \
-            'nfl_prop_analytics_page3_final_polish_v1.py' \
-            'nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py' \
-            'tests/test_nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py' | sort)"
-          page3_redesign_step4_expected="$(printf '%s\n' \
-            '.github/workflows/nfl-prop-analytics-page3-polish-step1-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-polish-step2-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-polish-step3-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-polish-step4-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-polish-step5-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-redesign-step1-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-redesign-step2-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-page3-redesign-step3-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-redesign-step4-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
             'devsystem/task_ledgers/nfl-prop-page3-redesign-step4-line-lab-v1.json' \
             'nfl_prop_analytics_page3_final_polish_v1.py' \
             'nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py' \
             'tests/test_nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py' | sort)"
-          test "$actual" = "$expected" || test "$actual" = "$page3_redesign_step4_expected" || { echo PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_SCOPE_VIOLATION; printf '%s\n' "$actual"; exit 1; }
-          check_blob(){ got="$(git hash-object "$1")"; test "$got" = "$2" || { echo "PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_FROZEN_BLOB_CHANGED:$1:$got:$2"; exit 1; }; }
+          test "$actual" = "$expected" || { echo PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_SCOPE_VIOLATION; printf '%s\n' "$actual"; exit 1; }
+          check_blob(){ got="$(git hash-object "$1")"; test "$got" = "$2" || { echo "PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_FROZEN_BLOB_CHANGED:$1:$got:$2"; exit 1; }; }
           check_blob app.py 2a3922af385cd0fc43bfd540783be15d582aefad
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob nfl_prop_analytics_prop_page_v1.py d5588fe6dc99b223427599d6d245a494f8e7cfc4
@@ -94,12 +80,13 @@ jobs:
           check_blob nfl_prop_analytics_page3_final_coherence_polish_v1.py 6bd123b450c2db22183141704d3e89a4b60ec99b
           check_blob nfl_prop_analytics_page3_redesign_step1_shell_v1.py d4e080fda2cb8f761bb66900e901022b9dbabf56
           check_blob nfl_prop_analytics_page3_redesign_step2_hero_ribbon_v1.py 38ec671931ec99241faf48f1b78389b8ef13c44c
+          check_blob nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py f518f22ad78d9d05b78c80fc44d26bce6489303b
           check_blob nfl_prop_analytics_page3_line_control_v1.py fbeabc240196b30fc966f1a69779c543410e9e3c
           check_blob nfl_prop_analytics_page3_game_chart_v1.py b21876dfe88bed91009e9edf65cb89f472745c8e
           check_blob nfl_prop_analytics_page3_supporting_stats_v1.py 5c0107606bd7a82056176a575629b049067fdd1e
           check_blob nfl_prop_analytics_page3_market_insights_v1.py dd848e1d52e021e44da4ed8530c5de441359bc19
-          echo PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_SCOPE_GREEN
-          echo PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_FROZEN_STACK_GREEN
+          echo PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_SCOPE_GREEN
+          echo PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_FROZEN_STACK_GREEN
       - name: Static tests
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
@@ -132,8 +119,8 @@ jobs:
       - run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
           python -m playwright install --with-deps chromium
-          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/redesign-step3.log 2>&1 &
-      - name: Prove Analysis Settings and frozen interactions
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/redesign-step4.log 2>&1 &
+      - name: Prove Premium Line Lab and frozen interactions
         run: |
           python - <<'PY'
           import re,time,requests
@@ -153,7 +140,7 @@ jobs:
                           if l.count(): return f,l.first
                       except Exception: pass
                   page.wait_for_timeout(250)
-              raise RuntimeError("REDESIGN_STEP3_SELECTOR_NOT_READY:"+sel)
+              raise RuntimeError("REDESIGN_STEP4_SELECTOR_NOT_READY:"+sel)
           def role(page,kind,name,timeout=180):
               end=time.monotonic()+timeout
               while time.monotonic()<end:
@@ -163,7 +150,7 @@ jobs:
                           if l.count(): return f,l.first
                       except Exception: pass
                   page.wait_for_timeout(250)
-              raise RuntimeError(f"REDESIGN_STEP3_ROLE_NOT_READY:{kind}:{name}")
+              raise RuntimeError(f"REDESIGN_STEP4_ROLE_NOT_READY:{kind}:{name}")
           def choose(page,name,value):
               _,l=role(page,"combobox",name); l.click(); page.keyboard.type(value,delay=10); _,o=role(page,"option",value,30); o.click()
           def seg(page,name):
@@ -174,7 +161,7 @@ jobs:
                       for i in range(l.count()):
                           if l.nth(i).inner_text().strip()==name: return f,l.nth(i)
                   page.wait_for_timeout(250)
-              raise RuntimeError("REDESIGN_STEP3_SEGMENT_NOT_READY:"+name)
+              raise RuntimeError("REDESIGN_STEP4_SEGMENT_NOT_READY:"+name)
           with sync_playwright() as p:
               b=p.chromium.launch(headless=True,args=["--no-sandbox"]); ctx=b.new_context(viewport={"width":768,"height":1100}); page=ctx.new_page()
               page.goto(base,wait_until="domcontentloaded",timeout=120000)
@@ -182,26 +169,25 @@ jobs:
               _,o=role(page,"button","Open matchup"); o.click()
               f2,_=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180); f2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first.click()
               _,o=role(page,"button","Open prop page",90); o.click()
-              f,m=find(page,'[data-prop-page3-redesign-step3="v1"]',240)
+              f,m=find(page,'[data-prop-page3-redesign-step4="v1"]',240)
               assert m.get_attribute("data-prop-page3-redesign-step3-presentation-only")=="true"
               assert m.get_attribute("data-prop-page3-redesign-step3-interaction-change")=="false"
               find(page,'[data-prop-page3-redesign-step2="v1"]',120)
+              find(page,'[data-prop-page3-redesign-step3="v1"]',120)
               find(page,'[data-prop-page3-redesign-step4="v1"]',120)
               _,heading=find(page,".ks-pa3-nav-marker",120)
               hs=heading.evaluate("e=>({d:getComputedStyle(e).display,r:getComputedStyle(e).borderTopLeftRadius})")
               assert hs["d"]!="none" and hs["r"]!="0px",hs
               _,l10=seg(page,"L10"); cs=l10.evaluate("e=>({h:e.getBoundingClientRect().height,r:getComputedStyle(e).borderTopLeftRadius})"); assert cs["h"]>=43.5 and cs["r"]!="0px",cs; seg(page,"ATT")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_BRANCH_SETTINGS_GREEN")
+              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_BRANCH_LINE_LAB_GREEN")
               _,l5=seg(page,"L5"); l5.click(); find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-history="L5"]',180)
               _,att=seg(page,"ATT"); att.click(); find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-market="attempts"]',180)
               lf,line=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180); mx=line.get_attribute("data-prop-page3-step4-max"); slider=lf.get_by_role("slider").first; slider.press("End"); find(page,f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{float(mx):.1f}"]',180)
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_BRANCH_INTERACTIONS_GREEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_BRANCH_LINE_LAB_GREEN")
+              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_BRANCH_INTERACTIONS_GREEN")
               for w in (390,768,1440):
                   page.set_viewport_size({"width":w,"height":1100}); page.wait_for_timeout(400)
                   q=f.evaluate("() => ({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})"); assert max(q["d"],q["b"])<=q["i"]+2,(w,q)
-                  print(f"PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_BRANCH_{w}_GREEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_BRANCH_GREEN")
+                  print(f"PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_BRANCH_{w}_GREEN")
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_BRANCH_GREEN"); ctx.close(); b.close()
           PY
 
@@ -218,7 +204,7 @@ jobs:
       - run: |
           python -m pip install --disable-pip-version-check -q playwright
           python -m playwright install --with-deps chromium
-      - name: Prove public Analysis Settings and freeze
+      - name: Prove public Premium Line Lab and freeze
         run: |
           python - <<'PY'
           import re,time
@@ -233,7 +219,7 @@ jobs:
                           if l.count(): return f,l.first
                       except Exception: pass
                   page.wait_for_timeout(300)
-              raise RuntimeError("PAGE3_REDESIGN_STEP3_PUBLIC_SELECTOR_NOT_READY:"+sel)
+              raise RuntimeError("PAGE3_REDESIGN_STEP4_PUBLIC_SELECTOR_NOT_READY:"+sel)
           def role(page,kind,name,timeout=180):
               end=time.monotonic()+timeout
               while time.monotonic()<end:
@@ -243,7 +229,7 @@ jobs:
                           if l.count(): return f,l.first
                       except Exception: pass
                   page.wait_for_timeout(250)
-              raise RuntimeError(f"PAGE3_REDESIGN_STEP3_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
+              raise RuntimeError(f"PAGE3_REDESIGN_STEP4_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
           def choose(page,name,value):
               _,l=role(page,"combobox",name); l.click(); page.keyboard.type(value,delay=10); _,o=role(page,"option",value,30); o.click()
           def seg(page,name):
@@ -254,7 +240,7 @@ jobs:
                       for i in range(l.count()):
                           if l.nth(i).inner_text().strip()==name: return f,l.nth(i)
                   page.wait_for_timeout(250)
-              raise RuntimeError("PAGE3_REDESIGN_STEP3_PUBLIC_SEGMENT_NOT_READY:"+name)
+              raise RuntimeError("PAGE3_REDESIGN_STEP4_PUBLIC_SEGMENT_NOT_READY:"+name)
           with sync_playwright() as p:
               b=p.chromium.launch(headless=True,args=["--no-sandbox","--disable-gpu"]); ctx=b.new_context(viewport={"width":768,"height":1100}); page=ctx.new_page()
               page.goto(base,wait_until="domcontentloaded",timeout=120000)
@@ -262,28 +248,20 @@ jobs:
               _,o=role(page,"button","Open matchup"); o.click()
               f2,_=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180); f2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first.click()
               _,o=role(page,"button","Open prop page",90); o.click()
-              f,m=find(page,'[data-prop-page3-redesign-step3="v1"]',300)
+              f,m=find(page,'[data-prop-page3-redesign-step4="v1"]',300)
               assert m.get_attribute("data-prop-page3-redesign-step3-presentation-only")=="true"
               assert m.get_attribute("data-prop-page3-redesign-step3-interaction-change")=="false"
               find(page,'[data-prop-page3-redesign-step2="v1"]',120)
               _,heading=find(page,".ks-pa3-nav-marker",120); hs=heading.evaluate("e=>({d:getComputedStyle(e).display,r:getComputedStyle(e).borderTopLeftRadius})"); assert hs["d"]!="none" and hs["r"]!="0px",hs
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_PUBLIC_SETTINGS_GREEN")
+              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_LINE_LAB_GREEN")
               _,l5=seg(page,"L5"); l5.click(); find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-history="L5"]',180)
               _,att=seg(page,"ATT"); att.click(); find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-market="attempts"]',180)
               lf,line=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180); mx=line.get_attribute("data-prop-page3-step4-max"); slider=lf.get_by_role("slider").first; slider.press("End"); find(page,f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{float(mx):.1f}"]',180)
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_PUBLIC_INTERACTIONS_GREEN")
-              find(page,'[data-prop-page3-redesign-step4="v1"]',120)
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_LINE_LAB_GREEN")
+              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_INTERACTIONS_GREEN")
               for w in (390,768,1440):
                   page.set_viewport_size({"width":w,"height":1100}); page.wait_for_timeout(400)
                   q=f.evaluate("() => ({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})"); assert max(q["d"],q["b"])<=q["i"]+2,(w,q)
-                  print(f"PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_PUBLIC_{w}_GREEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_GREEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_PUBLIC_GREEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP3_FROZEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_390_GREEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_768_GREEN")
-              print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_1440_GREEN")
+                  print(f"PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_{w}_GREEN")
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_GREEN")
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_PUBLIC_GREEN")
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP4_FROZEN")
