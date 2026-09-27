@@ -75,7 +75,22 @@ jobs:
             'nfl_prop_analytics_page3_market_insights_v1.py' \
             'nfl_prop_analytics_prop_page_v1.py' \
             'tests/test_nfl_prop_analytics_page3_step7_market_insights_v1.py' | sort)"
-          test "$actual" = "$expected" || {
+          page3_step8_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page2-polish-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step6-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step7-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-step8-final-polish-v1.json' \
+            'nfl_prop_analytics_page3_final_polish_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_step8_final_polish_v1.py' | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$page3_step8_expected" || {
             echo PROP_ANALYTICS_PAGE3_STEP7_SCOPE_VIOLATION
             printf '%s\n' "$actual"
             exit 1
