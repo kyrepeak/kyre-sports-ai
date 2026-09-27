@@ -17,3 +17,4 @@ posthog~=7.48
 # NFL Prop Analytics Page 3 Redesign Step 3 control-plane full-redeploy trigger 2026-09-27 R1
 # NFL Prop Analytics Page 3 Redesign Step 4 control-plane full-redeploy trigger 2026-09-27 R1
 # NFL Prop Analytics Page 3 Redesign Step 5 control-plane full-redeploy trigger 2026-09-27 R1
+# NFL Prop Analytics Page 3 Redesign Step 6 control-plane full-redeploy trigger 2026-09-27 R1

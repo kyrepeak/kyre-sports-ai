@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-redesign-step6-streamlit-full-redeploy-v1",
+  "title": "NFL Prop Analytics Page 3 Redesign Step 6 — Streamlit Full Redeploy Repair",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "redesign-6-control-plane-repair",
+  "status": "DONE",
+  "source_main": "744490e79d0d9cbf97b0603a0e3cafe1197e3f65",
+  "scope": "Control-plane-only Streamlit full redeploy trigger after Redesign Step 6 static and branch UI proof passed but the public Step-6 marker was absent.",
+  "repair": {
+    "failed_public_run": 36356842394,
+    "failed_public_job": 108726229091,
+    "failure_token": "PAGE3_REDESIGN_STEP6_PUBLIC_SELECTOR_NOT_READY:[data-prop-page3-redesign-step6=\"v1\"]",
+    "production_identity_source_branch": "mlb-step17b-shared-host-cert",
+    "render_deploy_branch": "mlb-step17b-shared-host-cert",
+    "owner": "PUBLIC_RUNTIME_CONTROL_PLANE",
+    "trigger": "requirements.txt comment-only full-redeploy marker",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "redesign_steps_1_to_6_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
