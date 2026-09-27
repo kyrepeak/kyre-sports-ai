@@ -25,6 +25,7 @@ from nfl_prop_analytics_page3_cleanup_polish_v1 import render_cleanup_polish
 from nfl_prop_analytics_page3_hero_polish_v1 import render_hero_polish
 from nfl_prop_analytics_page3_controls_polish_v1 import render_controls_polish
 from nfl_prop_analytics_page3_data_panels_polish_v1 import render_data_panels_polish
+from nfl_prop_analytics_page3_final_coherence_polish_v1 import render_final_coherence_polish
 
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 3 STEP 8 • FINAL PROFESSIONAL POLISH V1"
 PAGE3_FINAL_POLISH_STEP = 8
@@ -184,6 +185,7 @@ button[data-testid="stBaseButton-primary"]{{
     hero_polish = render_hero_polish()
     controls_polish = render_controls_polish()
     data_panels_polish = render_data_panels_polish()
+    final_coherence_polish = render_final_coherence_polish()
 
     return {
         "ready": True,
@@ -206,6 +208,7 @@ button[data-testid="stBaseButton-primary"]{{
         "hero_polish": hero_polish,
         "controls_polish": controls_polish,
         "data_panels_polish": data_panels_polish,
+        "final_coherence_polish": final_coherence_polish,
     }
 
 
