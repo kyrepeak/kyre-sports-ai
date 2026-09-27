@@ -159,7 +159,21 @@ jobs:
             'nfl_prop_analytics_page3_final_polish_v1.py' \
             'nfl_prop_analytics_page3_redesign_step2_hero_ribbon_v1.py' \
             'tests/test_nfl_prop_analytics_page3_redesign_step2_hero_ribbon_v1.py' | sort)"
-          test "$actual" = "$expected" || test "$actual" = "$page3_polish_step1_expected" || test "$actual" = "$page3_polish_step2_expected"  || test "$actual" = "$page3_polish_step3_expected" || test "$actual" = "$page3_polish_step4_expected" || test "$actual" = "$page3_polish_step5_expected" || test "$actual" = "$page3_redesign_step1_expected" || test "$actual" = "$page3_redesign_step2_expected" || {
+          page3_redesign_step3_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-page3-redesign-step3-analysis-settings-v1.json' \
+            'nfl_prop_analytics_page3_final_polish_v1.py' \
+            'nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_redesign_step3_analysis_settings_v1.py' | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$page3_polish_step1_expected" || test "$actual" = "$page3_polish_step2_expected"  || test "$actual" = "$page3_polish_step3_expected" || test "$actual" = "$page3_polish_step4_expected" || test "$actual" = "$page3_polish_step5_expected" || test "$actual" = "$page3_redesign_step1_expected" || test "$actual" = "$page3_redesign_step2_expected" || test "$actual" = "$page3_redesign_step3_expected" || {
             echo PROP_ANALYTICS_PAGE3_STEP8_SCOPE_VIOLATION
             printf '%s\n' "$actual"
             exit 1
