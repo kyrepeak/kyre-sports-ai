@@ -52,6 +52,11 @@ from nfl_prop_analytics_page3_market_insights_v1 import (
     PAGE3_MARKET_INSIGHTS_VERSION,
     render_market_insights,
 )
+from nfl_prop_analytics_page3_final_polish_v1 import (
+    PAGE3_FINAL_POLISH_STEP,
+    PAGE3_FINAL_POLISH_VERSION,
+    render_final_polish,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -896,6 +901,15 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
 """,
         unsafe_allow_html=True,
     )
+    final_polish = render_final_polish(
+        player_id=handoff["player_id"],
+        market_key=chosen_key,
+        history_key=chosen_history_key,
+        gate_open=gate_open,
+        history_state=history_state,
+        step7_state=market_insights.get("state"),
+    )
+
     return {
         **context,
         "market_key": chosen_key,
@@ -908,6 +922,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "game_chart": game_chart,
         "supporting_stats": supporting_stats,
         "market_insights": market_insights,
+        "final_polish": final_polish,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
@@ -940,6 +955,8 @@ __all__ = [
     "PAGE3_SUPPORT_VERSION",
     "PAGE3_MARKET_INSIGHTS_STEP",
     "PAGE3_MARKET_INSIGHTS_VERSION",
+    "PAGE3_FINAL_POLISH_STEP",
+    "PAGE3_FINAL_POLISH_VERSION",
     "PLAYER_PROP_LOGIC",
     "PROJECTION_LOGIC",
     "SHELL_NAVIGATION_ONLY",
