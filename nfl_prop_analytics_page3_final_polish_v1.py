@@ -23,6 +23,7 @@ import streamlit as st
 
 from nfl_prop_analytics_page3_cleanup_polish_v1 import render_cleanup_polish
 from nfl_prop_analytics_page3_hero_polish_v1 import render_hero_polish
+from nfl_prop_analytics_page3_controls_polish_v1 import render_controls_polish
 
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 3 STEP 8 • FINAL PROFESSIONAL POLISH V1"
 PAGE3_FINAL_POLISH_STEP = 8
@@ -180,6 +181,7 @@ button[data-testid="stBaseButton-primary"]{{
 
     cleanup_polish = render_cleanup_polish()
     hero_polish = render_hero_polish()
+    controls_polish = render_controls_polish()
 
     return {
         "ready": True,
@@ -200,6 +202,7 @@ button[data-testid="stBaseButton-primary"]{{
         "wager_actions": False,
         "cleanup_polish": cleanup_polish,
         "hero_polish": hero_polish,
+        "controls_polish": controls_polish,
     }
 
 
