@@ -56,7 +56,8 @@ def render_controls_polish() -> dict[str, Any]:
     inset 0 1px 0 rgba(255,255,255,.025),
     0 8px 24px rgba(0,0,0,.08)!important;
 }}
-[data-testid="stSegmentedControl"] button{{
+[data-testid="stSegmentedControl"] button,
+button[aria-pressed]{{
   min-height:44px!important;
   border:1px solid transparent!important;
   border-radius:10px!important;
@@ -73,7 +74,8 @@ def render_controls_polish() -> dict[str, Any]:
 }}
 [data-testid="stSegmentedControl"] button[aria-pressed="true"],
 [data-testid="stSegmentedControl"] button[aria-selected="true"],
-[data-testid="stSegmentedControl"] button[data-active="true"]{{
+[data-testid="stSegmentedControl"] button[data-active="true"],
+button[aria-pressed="true"]{{
   color:#e9f9ff!important;
   border-color:rgba(125,211,252,.36)!important;
   background:
@@ -83,7 +85,8 @@ def render_controls_polish() -> dict[str, Any]:
     0 0 18px rgba(56,189,248,.12),
     inset 0 1px 0 rgba(255,255,255,.05)!important;
 }}
-[data-testid="stSegmentedControl"] button:focus-visible{{
+[data-testid="stSegmentedControl"] button:focus-visible,
+button[aria-pressed]:focus-visible{{
   outline:2px solid rgba(125,211,252,.95)!important;
   outline-offset:2px!important;
   border-color:rgba(125,211,252,.48)!important;
