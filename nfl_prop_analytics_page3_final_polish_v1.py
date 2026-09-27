@@ -80,6 +80,18 @@ def render_final_polish(
 /* Final Page 3 polish is additive and presentation-only. */
 .ks-pa3-final-marker{{display:none!important}}
 
+/* Streamlit's current segmented controls expose 32px live <button> elements
+   without a stable wrapper tag. Step 8 owns presentation only, so apply the
+   accessibility floor directly to buttons while Page 3 is rendered. */
+button{{
+  min-height:44px!important;
+}}
+button:focus-visible{{
+  outline:2px solid rgba(125,211,252,.95)!important;
+  outline-offset:2px!important;
+  box-shadow:0 0 0 4px rgba(56,189,248,.16)!important;
+}}
+
 [data-testid="stSegmentedControl"] button,
 [data-testid="stButton"] button,
 button[data-testid="stBaseButton-secondary"],
