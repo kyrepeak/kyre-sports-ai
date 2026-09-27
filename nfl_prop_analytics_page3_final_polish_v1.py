@@ -21,6 +21,8 @@ from typing import Any
 
 import streamlit as st
 
+from nfl_prop_analytics_page3_cleanup_polish_v1 import render_cleanup_polish
+
 MODEL_VERSION = "NFL PROP ANALYTICS PAGE 3 STEP 8 • FINAL PROFESSIONAL POLISH V1"
 PAGE3_FINAL_POLISH_STEP = 8
 PAGE3_FINAL_POLISH_VERSION = "v1"
@@ -175,6 +177,8 @@ button[data-testid="stBaseButton-primary"]{{
         unsafe_allow_html=True,
     )
 
+    cleanup_polish = render_cleanup_polish()
+
     return {
         "ready": True,
         "state": "ready",
@@ -192,6 +196,7 @@ button[data-testid="stBaseButton-primary"]{{
         "projection_weight": 0.0,
         "recommendations": False,
         "wager_actions": False,
+        "cleanup_polish": cleanup_polish,
     }
 
 
