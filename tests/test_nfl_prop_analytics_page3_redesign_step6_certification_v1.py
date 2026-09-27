@@ -14,7 +14,7 @@ def test_contract():
 
 def test_marker_only():
     assert 'data-prop-page3-redesign-step6="' in SRC
-    assert '.ks-pa3-redesign-step6-marker{display:none!important}' in SRC
+    assert '.ks-pa3-redesign-step6-marker{{display:none!important}}' in SRC
     for t in (".ks-pa3-hero{",".ks-pa4-line{",".ks-pa5-chart{",".ks-pa6-support{",".ks-pa7mi{","st.slider(","st.segmented_control(","st.button(","query_params","session_state"):
         assert t not in SRC,t
 
