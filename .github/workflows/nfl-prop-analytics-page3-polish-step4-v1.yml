@@ -124,7 +124,23 @@ jobs:
             'nfl_prop_analytics_page3_final_polish_v1.py' \
             'nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py' \
             'tests/test_nfl_prop_analytics_page3_redesign_step4_line_lab_v1.py' | sort)"
-          test "$actual" = "$expected" || test "$actual" = "$page3_polish_step5_expected" || test "$actual" = "$page3_redesign_step1_expected" || test "$actual" = "$page3_redesign_step2_expected" || test "$actual" = "$page3_redesign_step3_expected" || test "$actual" = "$page3_redesign_step4_expected" || { echo PROP_ANALYTICS_PAGE3_POLISH_STEP4_SCOPE_VIOLATION; printf '%s\n' "$actual"; exit 1; }
+          page3_redesign_step5_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-page3-redesign-step5-results-chart-v1.json' \
+            'nfl_prop_analytics_page3_final_polish_v1.py' \
+            'nfl_prop_analytics_page3_redesign_step5_results_chart_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_redesign_step5_results_chart_v1.py' | sort)"
+          test "$actual" = "$expected" || test "$actual" = "$page3_polish_step5_expected" || test "$actual" = "$page3_redesign_step1_expected" || test "$actual" = "$page3_redesign_step2_expected" || test "$actual" = "$page3_redesign_step3_expected" || test "$actual" = "$page3_redesign_step4_expected" || test "$actual" = "$page3_redesign_step5_expected" || { echo PROP_ANALYTICS_PAGE3_POLISH_STEP4_SCOPE_VIOLATION; printf '%s\n' "$actual"; exit 1; }
           check_blob(){ got="$(git hash-object "$1")"; test "$got" = "$2" || { echo "PROP_ANALYTICS_PAGE3_POLISH_STEP4_FROZEN_BLOB_CHANGED:$1:$got:$2"; exit 1; }; }
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob nfl_prop_analytics_prop_page_v1.py d5588fe6dc99b223427599d6d245a494f8e7cfc4
