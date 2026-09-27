@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-redesign-step3-streamlit-full-redeploy-v1",
+  "title": "NFL Prop Analytics Page 3 Redesign Step 3 — Streamlit Full Redeploy Repair",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "redesign-3-control-plane-repair",
+  "status": "DONE",
+  "source_main": "7cad5ae4e1d07befd94837d6495f24cb9b0a8eba",
+  "scope": "Control-plane-only Streamlit full redeploy trigger after Redesign Step 3 product/static/branch/frozen-verifier lanes cleared and public activation remained on the known stale control plane.",
+  "repair": {
+    "trigger": "requirements.txt comment-only full-redeploy marker",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "page3_steps_1_to_8_changed": false,
+    "fun_polish_steps_1_to_5_changed": false,
+    "redesign_steps_1_to_2_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false
+  },
+  "action_log": {"head_chain_hash":"0000000000000000000000000000000000000000000000000000000000000000","events":[],"consumed_receipts":[]}
+}
