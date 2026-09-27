@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-redesign-step2-hero-ribbon-v1",
+  "title": "NFL Prop Analytics Page 3 Redesign Step 2 — Premium Hero + Quick-Stat Ribbon",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "redesign-2",
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "fd0cc0c7080d3e63b9e7ccc651df528027fe20be",
+  "scope": "Presentation-only premium hero and verified quick-stat ribbon layered after frozen Redesign Step 1.",
+  "acceptance": [
+    "Frozen Page 3 Steps 1-8 remain unchanged.",
+    "Frozen Fun Polish Steps 1-5 remain unchanged.",
+    "Frozen Redesign Step 1 remains unchanged.",
+    "Existing player identity, team/opponent logos, verified historical values, matchup metadata, controls, navigation, market, chart, and line behavior remain unchanged.",
+    "Hero receives stronger team-accented visual hierarchy and the historical summary becomes a compact quick-stat ribbon using the same frozen values.",
+    "No new data owner and no projections, probabilities, recommendations, staking, or wager actions.",
+    "Sportsbook projection influence remains 0.0 percent.",
+    "390/768/1440 exact flow passes without horizontal document overflow.",
+    "Branch proof passes before merge.",
+    "Public deployed proof passes before GREEN + FROZEN.",
+    "Terminal tokens: PROP_ANALYTICS_PAGE3_REDESIGN_STEP2_GREEN, PROP_ANALYTICS_PAGE3_REDESIGN_STEP2_PUBLIC_GREEN, PROP_ANALYTICS_PAGE3_REDESIGN_STEP2_FROZEN."
+  ],
+  "action_log": {"head_chain_hash":"0000000000000000000000000000000000000000000000000000000000000000","events":[],"consumed_receipts":[]}
+}
