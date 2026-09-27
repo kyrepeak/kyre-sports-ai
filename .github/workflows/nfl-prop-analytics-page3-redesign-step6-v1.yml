@@ -166,8 +166,10 @@ jobs:
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP6_BRANCH_FULL_PAGE_GREEN")
               _,l5=seg(page,"L5");l5.click();find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-history="L5"]',180)
               _,att=seg(page,"ATT");att.click();find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-market="attempts"]',180)
-              lf,line=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180);before=line.get_attribute("data-prop-page3-step4-line");lf.get_by_role("slider").first.press("End")
-              _,line2=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180);assert line2.get_attribute("data-prop-page3-step4-line")!=before
+              lf,line=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180);mn=line.get_attribute("data-prop-page3-step4-min");mx=line.get_attribute("data-prop-page3-step4-max");slider=lf.get_by_role("slider").first
+              slider.press("Home");find(page,f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{float(mn):.1f}"]',180)
+              slider.press("End");find(page,f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{float(mx):.1f}"]',180)
+              assert float(mx)!=float(mn)
               find(page,'[data-prop-page3-step5-chart="v1"][data-prop-page3-step5-market="attempts"]',180)
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP6_BRANCH_INTERACTIONS_GREEN")
               for w in (390,768,1440):
@@ -239,8 +241,10 @@ jobs:
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP6_PUBLIC_FULL_PAGE_GREEN")
               _,l5=seg(page,"L5");l5.click();find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-history="L5"]',180)
               _,att=seg(page,"ATT");att.click();find(page,'[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-market="attempts"]',180)
-              lf,line=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180);before=line.get_attribute("data-prop-page3-step4-line");lf.get_by_role("slider").first.press("End")
-              _,line2=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180);assert line2.get_attribute("data-prop-page3-step4-line")!=before
+              lf,line=find(page,'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',180);mn=line.get_attribute("data-prop-page3-step4-min");mx=line.get_attribute("data-prop-page3-step4-max");slider=lf.get_by_role("slider").first
+              slider.press("Home");find(page,f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{float(mn):.1f}"]',180)
+              slider.press("End");find(page,f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{float(mx):.1f}"]',180)
+              assert float(mx)!=float(mn)
               find(page,'[data-prop-page3-step5-chart="v1"][data-prop-page3-step5-market="attempts"]',180)
               print("PROP_ANALYTICS_PAGE3_REDESIGN_STEP6_PUBLIC_INTERACTIONS_GREEN")
               for w in (390,768,1440):
