@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-redesign-step1-shell-v1",
+  "title": "NFL Prop Analytics Page 3 Redesign Step 1 — Protected Layout Shell",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "redesign-1",
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "53aae04c0d5a3377c99b10406fc36481d6644441",
+  "scope": "Presentation-only redesign foundation: page-width shell, responsive gutters, section rhythm, shared premium framing, and touch-target protection. Page 3 Steps 1-8 and Fun Polish Steps 1-5 remain frozen.",
+  "acceptance": [
+    "Frozen Page 3 Steps 1-8 remain unchanged.",
+    "Frozen Fun Polish Steps 1-5 remain unchanged.",
+    "No interaction, navigation, slider, data ownership, market, projection, probability, recommendation, staking, or wager behavior changes.",
+    "Page 3 gains one coherent responsive layout shell and shared premium section framing.",
+    "Minimum touch target remains 44px.",
+    "390/768/1440 exact flow passes with no horizontal document overflow.",
+    "Branch proof passes before merge.",
+    "Public deployed proof passes before GREEN + FROZEN.",
+    "Terminal tokens: PROP_ANALYTICS_PAGE3_REDESIGN_STEP1_GREEN, PROP_ANALYTICS_PAGE3_REDESIGN_STEP1_PUBLIC_GREEN, PROP_ANALYTICS_PAGE3_REDESIGN_STEP1_FROZEN."
+  ],
+  "action_log": {"head_chain_hash":"0000000000000000000000000000000000000000000000000000000000000000","events":[],"consumed_receipts":[]}
+}
