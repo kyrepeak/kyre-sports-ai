@@ -115,18 +115,20 @@ button[aria-checked]:focus-visible{{
   letter-spacing:.075em!important;
   text-transform:uppercase!important;
 }}
-[data-testid="stSlider"] [role="slider"],
-[role="slider"]{{
+[data-testid="stSlider"] [data-rac]:has(> div > input[type="range"]){{
+  width:44px!important;
+  height:44px!important;
   min-width:44px!important;
   min-height:44px!important;
-  height:44px!important;
+  box-sizing:border-box!important;
   border-radius:999px!important;
-  accent-color:#38bdf8!important;
-  filter:drop-shadow(0 0 7px rgba(56,189,248,.26))!important;
+  background:
+    radial-gradient(circle at center,#38bdf8 0 9px,#d9f6ff 10px 11px,rgba(56,189,248,.14) 12px,transparent 13px)!important;
+  box-shadow:inset 0 0 0 1px rgba(125,211,252,.08)!important;
+  filter:drop-shadow(0 0 8px rgba(56,189,248,.32))!important;
   transition:filter .16s ease,transform .12s ease!important;
 }}
-[data-testid="stSlider"] [role="slider"]:focus-visible,
-[role="slider"]:focus-visible{{
+[data-testid="stSlider"] [data-rac]:has(> div > input[type="range"]):focus-within{{
   outline:2px solid rgba(186,230,253,.95)!important;
   outline-offset:4px!important;
   box-shadow:inset 0 0 0 2px rgba(125,211,252,.18)!important;
@@ -150,8 +152,7 @@ button[aria-checked]:focus-visible{{
     background:rgba(14,165,233,.065)!important;
     transform:translateY(-1px);
   }}
-  [data-testid="stSlider"] [role="slider"]:hover,
-  [role="slider"]:hover{{
+  [data-testid="stSlider"] [data-rac]:has(> div > input[type="range"]):hover{{
     transform:scale(1.07);
     box-shadow:inset 0 0 0 2px rgba(125,211,252,.12)!important;
     filter:drop-shadow(0 0 10px rgba(56,189,248,.40))!important;
@@ -174,7 +175,7 @@ button[aria-checked]:focus-visible{{
 
 @media(prefers-reduced-motion:reduce){{
   [data-testid="stSegmentedControl"] button,
-  [data-testid="stSlider"] [role="slider"]{{
+  [data-testid="stSlider"] [data-rac]:has(> div > input[type="range"]){{
     transition:none!important;
     transform:none!important;
   }}
