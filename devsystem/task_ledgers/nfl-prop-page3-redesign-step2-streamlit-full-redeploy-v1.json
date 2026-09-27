@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-redesign-step2-streamlit-full-redeploy-v1",
+  "title": "NFL Prop Analytics Page 3 Redesign Step 2 — Streamlit Full Redeploy Repair",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "redesign-2-control-plane-repair",
+  "status": "DONE",
+  "source_main": "1469ae251d6257d73e5abdfb143a228f92f20b15",
+  "scope": "Control-plane-only Streamlit full redeploy trigger after Redesign Step 2 static, branch UI, frozen verifier lanes, and targeted CI cleared but the public Step-2 marker remained absent.",
+  "repair": {
+    "failed_public_run": 36350273142,
+    "failed_public_job": 108707589660,
+    "failure_token": "PAGE3_REDESIGN_STEP2_PUBLIC_SELECTOR_NOT_READY:[data-prop-page3-redesign-step2=\"v1\"]",
+    "trigger": "requirements.txt comment-only full-redeploy marker",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "page3_steps_1_to_8_changed": false,
+    "fun_polish_steps_1_to_5_changed": false,
+    "redesign_step1_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
