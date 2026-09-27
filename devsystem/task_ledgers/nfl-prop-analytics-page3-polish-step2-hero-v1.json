@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-page3-polish-step2-hero-v1",
+  "title": "NFL Prop Analytics Page 3 Fun Polish Step 2 — Hero Upgrade",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "step": "fun-polish-2",
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "fa9a15953b16f3eb70a39744addbbc902e1cf892",
+  "scope": "Presentation-only premium hero upgrade after frozen Page 3 Steps 1-8 and Fun Polish Step 1. Strengthen player spotlight, team/opponent accent energy, headshot halo, team-logo surfaces, player/meta chips, and matchup strip without changing any data, navigation, history, line, chart, market, or availability semantics.",
+  "acceptance": [
+    "Page 3 Steps 1-8 remain behaviorally unchanged and protected.",
+    "Fun Polish Step 1 cleanup remains unchanged and protected.",
+    "The player hero keeps the universal black + glacier-blue base while adding team and opponent accent variables for all 32 NFL teams.",
+    "Player headshot halo is visibly stronger without obscuring the photo or team logo.",
+    "Team logos render on premium bordered surfaces and retain the real team images.",
+    "Player position, selected-market copy, role/ID/gate chips, and matchup strip remain readable and become visually richer.",
+    "No player/history/line/chart/supporting-stat/market/availability owner changes.",
+    "Sportsbook projection influence remains exactly 0.0 percent with no projection, probability, recommendation, stake sizing, or wager action.",
+    "390/768/1440 browser proof passes with no horizontal document overflow.",
+    "Branch proof passes before merge.",
+    "Public deployed proof passes before Fun Polish Step 2 is declared GREEN + FROZEN.",
+    "Terminal proof emits PROP_ANALYTICS_PAGE3_POLISH_STEP2_GREEN, PROP_ANALYTICS_PAGE3_POLISH_STEP2_PUBLIC_GREEN, and PROP_ANALYTICS_PAGE3_POLISH_STEP2_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
