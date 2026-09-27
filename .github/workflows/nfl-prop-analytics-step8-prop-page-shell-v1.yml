@@ -160,6 +160,21 @@ jobs:
             'nfl_prop_analytics_page3_market_insights_v1.py' \
             'nfl_prop_analytics_prop_page_v1.py' \
             'tests/test_nfl_prop_analytics_page3_step7_market_insights_v1.py' | sort)"
+          page3_step8_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page2-polish-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step6-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step7-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-page3-step8-final-polish-v1.json' \
+            'nfl_prop_analytics_page3_final_polish_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_step8_final_polish_v1.py' | sort)"
           if [ "$actual" != "$expected" ] && \
              [ "$actual" != "$visual_polish_step3_expected" ] && \
              [ "$actual" != "$page2_polish_step1_expected" ] && \
@@ -167,7 +182,8 @@ jobs:
              [ "$actual" != "$page3_step4_expected" ] && \
              [ "$actual" != "$page3_step5_expected" ] && \
              [ "$actual" != "$page3_step6_expected" ] && \
-             [ "$actual" != "$page3_step7_expected" ]; then
+             [ "$actual" != "$page3_step7_expected" ] && \
+             [ "$actual" != "$page3_step8_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP8_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -285,7 +301,7 @@ jobs:
       - name: Prove Page 2 to Page 3, market navigation, safety, responsive layout, back nav
         run: |
           python - <<'PY'
-          import time, requests
+          import re,time,requests
           from urllib.parse import urlencode
           from playwright.sync_api import sync_playwright
 
@@ -324,9 +340,14 @@ jobs:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
               page=browser.new_page(viewport={"width":1440,"height":1000})
               page.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics","ks_pa_game":"CAR-CLE","ks_pa_page":"matchup"}),wait_until="domcontentloaded",timeout=120000)
-              _,s7=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]')
-              player=s7.get_attribute("data-prop-step7-player-id")
-              availability=s7.get_attribute("data-prop-step7-availability")
+              frame2,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]')
+              assert board.get_attribute("data-prop-page2-unified-state")=="live"
+              qb=frame2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first
+              assert qb.count()==1; qb.click(timeout=10000)
+              _,tap=find(page,'[data-prop-page2-tap-handoff="v1"]',60)
+              player=tap.get_attribute("data-prop-page2-tap-handoff-player-id")
+              availability=tap.get_attribute("data-prop-page2-tap-handoff-availability")
+              assert player and player.isdigit()
               button(page,"Open prop page").click(timeout=10000)
               _,s8=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]')
               assert s8.get_attribute("data-prop-step8-state")=="ready"
@@ -354,9 +375,9 @@ jobs:
                   dims=changed.evaluate("e=>({scroll:e.scrollWidth,client:e.clientWidth})")
                   if dims["scroll"]>dims["client"]+4: raise RuntimeError(f"PROP_ANALYTICS_STEP8_OVERFLOW:{width}:{dims}")
                   print(f"NFL_PROP_ANALYTICS_STEP8_BRANCH_{width}_GREEN")
-              button(page,"← Back to player selection").click(timeout=10000)
-              _,back=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]')
-              assert back.get_attribute("data-prop-step7-player-id")==player
+              button(page,"Matchup ›").click(timeout=10000)
+              _,back=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]')
+              assert back.get_attribute("data-prop-page2-unified-state")=="live"
               print("NFL_PROP_ANALYTICS_STEP8_BRANCH_BACK_NAV_GREEN",player)
               passing=browser.new_page(viewport={"width":390,"height":844})
               passing.goto(base+"/?ks_jump_sport=NFL&ks_jump_market=Passing+Yards",wait_until="domcontentloaded",timeout=120000)
@@ -394,7 +415,7 @@ jobs:
       - name: Prove public Step 8 Page 3 and freeze
         run: |
           python - <<'PY'
-          import time
+          import re,time
           from urllib.parse import urlencode
           from playwright.sync_api import sync_playwright
           base="https://kyre-sports-ai.streamlit.app"
@@ -427,8 +448,14 @@ jobs:
                   context=browser.new_context(viewport={"width":390,"height":844}); page=context.new_page()
                   try:
                       page.goto(base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics","ks_pa_game":"CAR-CLE","ks_pa_page":"matchup"}),wait_until="domcontentloaded",timeout=120000)
-                      _,s7=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]',150)
-                      player=s7.get_attribute("data-prop-step7-player-id")
+                      frame2,board=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',150)
+                      if board.get_attribute("data-prop-page2-unified-state")!="live": last="PAGE2_NOT_LIVE"
+                      qb=frame2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first
+                      if qb.count()!=1: raise RuntimeError("PROP_ANALYTICS_STEP8_PUBLIC_QB_NOT_READY")
+                      qb.click(timeout=10000)
+                      _,tap=find(page,'[data-prop-page2-tap-handoff="v1"]',60)
+                      player=tap.get_attribute("data-prop-page2-tap-handoff-player-id")
+                      if not player or not player.isdigit(): raise RuntimeError("PROP_ANALYTICS_STEP8_PUBLIC_PLAYER_ID_NOT_READY")
                       button(page,"Open prop page",150).click(timeout=10000)
                       _,s8=find(page,'[data-nfl-prop-analytics-step8-prop-page="v1"]',180)
                       if s8.get_attribute("data-prop-step8-state")!="ready": last="STEP8_NOT_READY"
@@ -465,9 +492,9 @@ jobs:
                   dims=changed.evaluate("e=>({scroll:e.scrollWidth,client:e.clientWidth})")
                   if dims["scroll"]>dims["client"]+4: raise RuntimeError(f"PROP_ANALYTICS_STEP8_PUBLIC_OVERFLOW:{width}:{dims}")
                   print(f"NFL_PROP_ANALYTICS_STEP8_PUBLIC_{width}_GREEN")
-              button(page,"← Back to player selection").click(timeout=10000)
-              _,back=find(page,'[data-nfl-prop-analytics-step7-player-selection="v1"]',180)
-              assert back.get_attribute("data-prop-step7-player-id")==player
+              button(page,"Matchup ›").click(timeout=10000)
+              _,back=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180)
+              assert back.get_attribute("data-prop-page2-unified-state")=="live"
               print("NFL_PROP_ANALYTICS_STEP8_PUBLIC_BACK_NAV_GREEN",player)
               passing=context.new_page()
               passing.goto(base+"/?ks_jump_sport=NFL&ks_jump_market=Passing+Yards",wait_until="domcontentloaded",timeout=120000)
