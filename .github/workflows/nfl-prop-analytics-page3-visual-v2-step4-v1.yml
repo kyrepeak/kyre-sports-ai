@@ -239,7 +239,7 @@ jobs:
 
               deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
               assert deck.count()==1
-              cols=deck.locator('[data-testid="stColumn"]')
+              cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
               controls=deck.locator('[data-testid="stSegmentedControl"]')
               assert cols.count()==2,cols.count()
               assert controls.count()==2,controls.count()
@@ -277,7 +277,7 @@ jobs:
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
                   deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-                  cols=deck.locator('[data-testid="stColumn"]')
+                  cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
                   c0=cols.nth(0).bounding_box()
                   c1=cols.nth(1).bounding_box()
                   if width==390:
@@ -406,7 +406,7 @@ jobs:
 
               deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
               assert deck.count()==1
-              cols=deck.locator('[data-testid="stColumn"]')
+              cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
               controls=deck.locator('[data-testid="stSegmentedControl"]')
               assert cols.count()==2,cols.count()
               assert controls.count()==2,controls.count()
@@ -462,7 +462,7 @@ jobs:
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
                   deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-                  cols=deck.locator('[data-testid="stColumn"]')
+                  cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
                   c0=cols.nth(0).bounding_box()
                   c1=cols.nth(1).bounding_box()
                   if width==390:
