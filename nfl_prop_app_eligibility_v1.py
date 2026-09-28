@@ -186,11 +186,22 @@ def guard_context_payload(
 
     snapshot = (snapshot_loader or _load_event_snapshot)(event_id)
     state = _text(snapshot.get("state"), "UNVERIFIED").upper()
-    if snapshot.get("ready") is not True or snapshot.get("prop_gate_open") is not True:
+    if snapshot.get("ready") is not True:
         return _fail_context(
             payload,
             event_id,
             _text(snapshot.get("reason"), "exact game-day identity is not verified"),
+            state=state,
+        )
+    # Final inactive publication is an availability contract, not an identity
+    # contract. Before kickoff, PENDING is a truthful state: keep exact event +
+    # current-roster player identity visible while downstream frozen market
+    # gates continue to decide whether any market output is eligible.
+    if state not in {"PENDING", "CONFIRMED"}:
+        return _fail_context(
+            payload,
+            event_id,
+            _text(snapshot.get("reason"), "pregame player identity is not available"),
             state=state,
         )
 
@@ -271,6 +282,7 @@ def guard_context_payload(
     out["teams"] = verified_teams
     out["step7_app_identity_verified"] = True
     out["step7_app_identity_state"] = state
+    out["step7_app_final_inactives_verified"] = snapshot.get("prop_gate_open") is True
     out["step7_app_identity_version"] = MODEL_VERSION
     return out
 
