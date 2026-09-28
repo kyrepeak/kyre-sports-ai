@@ -1,0 +1,232 @@
+name: NFL Prop Analytics Page 3 Visual V2 Step 2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step2-v1.yml"
+      - "nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step2-hero-v1.json"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step2-v1.yml"
+      - "nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step2-hero-v1.json"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-page3-visual-v2-step2-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Enforce Step 2 exact scope and frozen contract
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-polish-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-redesign-step6-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step6-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step7-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-visual-v2-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-page3-visual-v2-step2-hero-v1.json' \
+            'nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py' | sort)"
+          test "$actual" = "$expected" || { echo VISUAL_V2_STEP2_SCOPE_VIOLATION; printf '%s\n' "$actual"; exit 1; }
+          check_blob(){ got="$(git hash-object "$1")"; test "$got" = "$2" || { echo "VISUAL_V2_STEP2_FROZEN_BLOB_CHANGED:$1:$got:$2"; exit 1; }; }
+          check_blob devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json 9819289fd34d53008df8656d9244319e025b27c4
+          check_blob nfl_prop_analytics_page3_redesign_step6_certification_v1.py 9b5e87ff0eec1b0dcb42ee2b256dc8ed55e3aa03
+          check_blob nfl_prop_analytics_page3_final_polish_v1.py a4b69169d6a30eda5af59ea2e8cbd375eab963d5
+          echo VISUAL_V2_STEP2_SCOPE_GREEN
+          echo VISUAL_V2_STEP2_CONTRACT_FROZEN_GREEN
+      - name: Static contract
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
+          PYTHONPATH=. python -m py_compile nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py nfl_prop_analytics_prop_page_v1.py
+          PYTHONPATH=. python -m pytest -q tests/test_nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py
+          echo VISUAL_V2_STEP2_STATIC_GREEN
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+          cat > .v2_step2_harness.py <<'PY'
+          import streamlit as st
+          from nfl_prop_analytics_page3_visual_v2_step2_hero_v1 import render_visual_v2_hero
+          st.set_page_config(layout="wide")
+          render_visual_v2_hero(
+              player_team="LAR",
+              player_team_name="Rams",
+              player_logo="https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
+              opponent="DEN",
+              opponent_name="Broncos",
+              opponent_logo="https://a.espncdn.com/i/teamlogos/nfl/500/den.png",
+              player_name="Matthew Stafford",
+              position="QB",
+              market_label="Passing Yards",
+              headshot="https://a.espncdn.com/i/headshots/nfl/players/full/12483.png",
+              depth_role="QB1 • STARTER",
+              player_id="12483",
+              gate_state="OPEN",
+              display_date="Sun • Sep 27",
+              kickoff="8:20 PM ET",
+              network="NBC",
+              venue="Empower Field at Mile High",
+          )
+          st.markdown('<section class="ks-pa3-hero" data-prop-page3-step1-hero="v1">Frozen V1 hero</section>', unsafe_allow_html=True)
+          PY
+          nohup python -m streamlit run .v2_step2_harness.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/v2-step2.log 2>&1 &
+      - name: Prove true hero composition
+        run: |
+          python - <<'PY'
+          import re,time,requests
+          from playwright.sync_api import sync_playwright
+          base="http://127.0.0.1:8501"
+          for _ in range(240):
+              try:
+                  if requests.get(base,timeout=2).status_code<500: break
+              except Exception: pass
+              time.sleep(.5)
+          def find(page,sel,timeout=240):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for fr in page.frames:
+                      try:
+                          l=fr.locator(sel)
+                          if l.count(): return fr,l.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("V2_STEP2_SELECTOR_NOT_READY:"+sel)
+          with sync_playwright() as p:
+              b=p.chromium.launch(headless=True,args=["--no-sandbox"]);ctx=b.new_context(viewport={"width":1080,"height":1440});page=ctx.new_page()
+              page.goto(base,wait_until="domcontentloaded",timeout=120000)
+              fr,hero=find(page,'[data-page3-visual-v2-step2="v1"][data-page3-visual-v2-step2-real-composition="true"]',240)
+              old=find(page,'[data-prop-page3-step1-hero="v1"]',120)[1]
+              assert old.evaluate("e=>getComputedStyle(e).display")=="none"
+              home=hero.locator(".ks-v2-hero-team-home");player=hero.locator(".ks-v2-hero-player");away=hero.locator(".ks-v2-hero-team-away");meta=hero.locator(".ks-v2-game-meta")
+              assert home.count()==1 and player.count()==1 and away.count()==1 and meta.count()==1
+              hb=home.bounding_box();pb=player.bounding_box();ab=away.bounding_box();mb=meta.bounding_box();root=hero.bounding_box()
+              assert hb["x"] < pb["x"] < ab["x"],(hb,pb,ab)
+              assert mb["y"] > pb["y"],(mb,pb)
+              assert root["height"]>=190,root
+              assert hero.locator(".ks-v2-headshot").count()==1
+              assert hero.locator(".ks-v2-player-pills span").count()>=3
+              print("VISUAL_V2_STEP2_BRANCH_COMPOSITION_GREEN")
+              for w in (390,768,1440):
+                  page.set_viewport_size({"width":w,"height":1100});page.wait_for_timeout(350)
+                  q=fr.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})");assert max(q["d"],q["b"])<=q["i"]+2,(w,q)
+                  print(f"VISUAL_V2_STEP2_BRANCH_{w}_GREEN")
+              print("VISUAL_V2_STEP2_BRANCH_GREEN")
+              ctx.close();b.close()
+          PY
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove public hero and freeze
+        run: |
+          python - <<'PY'
+          import re,time
+          from playwright.sync_api import sync_playwright
+          base="https://kyre-sports-ai.streamlit.app"
+          def find(page,sel,timeout=300):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for fr in page.frames:
+                      try:
+                          l=fr.locator(sel)
+                          if l.count(): return fr,l.first
+                      except Exception: pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("V2_STEP2_PUBLIC_SELECTOR_NOT_READY:"+sel)
+          def role(page,kind,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for fr in page.frames:
+                      try:
+                          l=fr.get_by_role(kind,name=name,exact=True)
+                          if l.count(): return fr,l.first
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"V2_STEP2_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
+          def choose(page,name,value):
+              _,l=role(page,"combobox",name);l.click();page.keyboard.type(value,delay=10);_,o=role(page,"option",value,30);o.click()
+          with sync_playwright() as p:
+              b=p.chromium.launch(headless=True,args=["--no-sandbox","--disable-gpu"]);ctx=b.new_context(viewport={"width":1080,"height":1440});page=ctx.new_page()
+              page.goto(base,wait_until="domcontentloaded",timeout=120000)
+              choose(page,"🏟️ Sport","NFL");choose(page,"🎯 NFL Market","Prop Analytics");_,o=role(page,"button","Open matchup");o.click()
+              f2,_=find(page,'[data-nfl-prop-analytics-page2-unified-roster="v1"]',180);f2.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first.click()
+              _,o=role(page,"button","Open prop page",90);o.click()
+              fr,hero=find(page,'[data-page3-visual-v2-step2="v1"][data-page3-visual-v2-step2-real-composition="true"]',300)
+              old=find(page,'[data-prop-page3-step1-hero="v1"]',120)[1];assert old.evaluate("e=>getComputedStyle(e).display")=="none"
+              assert hero.locator(".ks-v2-hero-team-home").count()==1 and hero.locator(".ks-v2-hero-player").count()==1 and hero.locator(".ks-v2-hero-team-away").count()==1
+              print("VISUAL_V2_STEP2_PUBLIC_COMPOSITION_GREEN")
+              for w in (390,768,1440):
+                  page.set_viewport_size({"width":w,"height":1100});page.wait_for_timeout(350)
+                  q=fr.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})");assert max(q["d"],q["b"])<=q["i"]+2,(w,q)
+                  print(f"VISUAL_V2_STEP2_PUBLIC_{w}_GREEN")
+              print("VISUAL_V2_STEP2_PUBLIC_GREEN")
+              print("VISUAL_V2_STEP2_GREEN")
+              print("VISUAL_V2_STEP2_FROZEN")
+              ctx.close();b.close()
+          PY
