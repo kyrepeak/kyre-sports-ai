@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "task_id": "github-speed-step3-cheap-preflight-first-v1",
+  "title": "GitHub Speed Step 3 — move cheap production checks before browser setup",
+  "project": "Monster GitHub speed upgrade",
+  "status": "DONE",
+  "source_main": "340e3a03615230863f0bf530da8d861ae1852031",
+  "scope": {
+    "workflow": ".github/workflows/devsystem-production-verification-v5.yml",
+    "regression_test": "tests/test_devsystem_browser_cache_v1.py"
+  },
+  "acceptance": {
+    "dependency_free_preflight_before_browser_restore": true,
+    "verifier_sources_compile_before_cache_download": true,
+    "frozen_v5_contract_checked_before_cache_download": true,
+    "step2_cache_contract_preserved": true,
+    "verifier_logic_changed": false,
+    "product_code_changed": false,
+    "acceptance_weakened": false
+  },
+  "protected": {
+    "speed_step1_frozen": true,
+    "speed_step2_frozen": true,
+    "product_code": true,
+    "verifier_runtime_logic": true,
+    "browser_cache_key": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
