@@ -237,13 +237,17 @@ jobs:
               _,line=find(page,'[data-prop-page3-step4-line-control="v1"]')
               _,old=find(page,'.ks-pa3-nav-marker')
 
-              controls=frame.locator('[data-testid="stSegmentedControl"]')
-              assert controls.count()==2,controls.count()
+              history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+              market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+              assert history_card.count()==1,history_card.count()
+              assert market_card.count()==1,market_card.count()
               assert old.evaluate("e=>getComputedStyle(e).display")=="none"
               deck_meta=marker.evaluate("""e => {
                 let n=e.parentElement;
                 while(n){
-                  const count=n.querySelectorAll('[data-testid="stSegmentedControl"]').length;
+                  const history=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_history_nav_v1').length;
+                  const market=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_market_nav_v1').length;
+                  const count=history+market;
                   const cs=getComputedStyle(n);
                   const border=parseFloat(cs.borderTopWidth||'0');
                   if(count===2 && border>0){
@@ -263,13 +267,13 @@ jobs:
               assert rb["y"]+rb["height"] <= deck_meta["y"]+8,(rb,deck_meta)
               assert deck_meta["y"]+deck_meta["height"] <= lb["y"]+8,(deck_meta,lb)
 
-              c0=controls.nth(0).bounding_box()
-              c1=controls.nth(1).bounding_box()
+              c0=history_card.bounding_box()
+              c1=market_card.bounding_box()
               assert c0["x"] < c1["x"],(c0,c1)
               assert abs(c0["width"]-c1["width"])<=3,(c0,c1)
 
-              l5=deck.get_by_role("button",name="L5",exact=True)
-              att=deck.get_by_role("button",name="ATT",exact=True)
+              l5=history_card.get_by_role("button",name="L5",exact=True)
+              att=market_card.get_by_role("button",name="ATT",exact=True)
               assert l5.count()==1 and att.count()==1
               assert l5.bounding_box()["height"]>=43.5
               assert att.bounding_box()["height"]>=43.5
@@ -286,10 +290,12 @@ jobs:
                   page.wait_for_timeout(350)
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
-                  controls=frame.locator('[data-testid="stSegmentedControl"]')
-                  assert controls.count()==2,controls.count()
-                  c0=controls.nth(0).bounding_box()
-                  c1=controls.nth(1).bounding_box()
+                  history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+                  market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+                  assert history_card.count()==1,history_card.count()
+                  assert market_card.count()==1,market_card.count()
+                  c0=history_card.bounding_box()
+                  c1=market_card.bounding_box()
                   if width>=768:
                       assert c0["x"] < c1["x"],(width,c0,c1)
                       assert abs(c0["width"]-c1["width"])<=4,(width,c0,c1)
@@ -413,13 +419,17 @@ jobs:
               )
               _,old=find(page,'.ks-pa3-nav-marker',180)
 
-              controls=frame.locator('[data-testid="stSegmentedControl"]')
-              assert controls.count()==2,controls.count()
+              history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+              market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+              assert history_card.count()==1,history_card.count()
+              assert market_card.count()==1,market_card.count()
               assert old.evaluate("e=>getComputedStyle(e).display")=="none"
               deck_meta=marker.evaluate("""e => {
                 let n=e.parentElement;
                 while(n){
-                  const count=n.querySelectorAll('[data-testid="stSegmentedControl"]').length;
+                  const history=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_history_nav_v1').length;
+                  const market=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_market_nav_v1').length;
+                  const count=history+market;
                   const cs=getComputedStyle(n);
                   const border=parseFloat(cs.borderTopWidth||'0');
                   if(count===2 && border>0){
@@ -480,10 +490,12 @@ jobs:
                   frame,marker=find(page,'[data-page3-visual-v2-step4="v1"]',120)
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
-                  controls=frame.locator('[data-testid="stSegmentedControl"]')
-                  assert controls.count()==2,controls.count()
-                  c0=controls.nth(0).bounding_box()
-                  c1=controls.nth(1).bounding_box()
+                  history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+                  market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+                  assert history_card.count()==1,history_card.count()
+                  assert market_card.count()==1,market_card.count()
+                  c0=history_card.bounding_box()
+                  c1=market_card.bounding_box()
                   if width>=768:
                       assert c0["x"] < c1["x"],(width,c0,c1)
                       assert abs(c0["width"]-c1["width"])<=4,(width,c0,c1)
