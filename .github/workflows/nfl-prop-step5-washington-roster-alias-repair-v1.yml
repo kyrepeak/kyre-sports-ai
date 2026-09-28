@@ -1,0 +1,481 @@
+name: NFL Prop Analytics Step 5 Washington Roster Alias Repair
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-step5-washington-roster-alias-repair-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-step5-washington-espn-roster-alias-v1.json"
+      - "nfl_prop_analytics_roster_truth_v1.py"
+      - "tests/test_nfl_prop_analytics_step5_roster_truth_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-step5-washington-roster-alias-repair-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-step5-washington-espn-roster-alias-v1.json"
+      - "nfl_prop_analytics_roster_truth_v1.py"
+      - "tests/test_nfl_prop_analytics_step5_roster_truth_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-step5-washington-roster-alias-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-truth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact owner scope and protected blobs
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-step5-washington-roster-alias-repair-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-step5-washington-espn-roster-alias-v1.json' \
+            'nfl_prop_analytics_roster_truth_v1.py' \
+            'tests/test_nfl_prop_analytics_step5_roster_truth_v1.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo "STEP5_WASHINGTON_ALIAS_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          }
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "STEP5_WASHINGTON_ALIAS_PROTECTED_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+
+          check_blob nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py 907ab1094d6e4441a569c055f753fc9539d40b79
+          check_blob nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1.py 85e3808273e4fba3faaef23072e16643c62003bd
+          check_blob nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py 6636dcff5c729b15268a956dcd8dcfde35700e12
+          check_blob nfl_prop_analytics_schedule_v1.py 0d289122a87c3b8100f38e537eeeeb55a0dc9b5e
+          check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
+
+          echo "STEP5_WASHINGTON_ALIAS_SCOPE_GREEN"
+          echo "VISUAL_V2_STEPS_2_4_PROTECTED_GREEN"
+          echo "SCHEDULE_PROTECTED_GREEN"
+          echo "PASSING_YARDS_PROTECTED_GREEN"
+
+      - name: Compile and test Step 5 owner patch
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
+          PYTHONPATH=. python -m py_compile nfl_prop_analytics_roster_truth_v1.py
+          PYTHONPATH=. python -m pytest -q tests/test_nfl_prop_analytics_step5_roster_truth_v1.py
+          echo "STEP5_WASHINGTON_ALIAS_STATIC_GREEN"
+
+      - name: Prove IND-WAS roster and availability truth gates
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from nfl_prop_analytics_schedule_v1 import load_schedule_truth
+          from nfl_prop_analytics_game_select_v1 import _eligible_games, build_matchup_handoff
+          from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
+          from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth
+
+          truth=load_schedule_truth()
+          games=_eligible_games(truth)
+          match=next(
+              g for g in games
+              if f"{g.get('away')}-{g.get('home')}".upper()=="IND-WAS"
+          )
+          target_date=str(truth.get("target_date") or "")
+          handoff=build_matchup_handoff(match,target_date)
+
+          assert handoff["state"]=="ready",handoff
+          assert handoff["selection_key"]=="IND-WAS",handoff
+          assert handoff["target_date"]=="2026-10-04",handoff
+
+          roster=load_verified_roster_truth(handoff)
+          if roster.get("state")!="live":
+              raise RuntimeError(
+                  "STEP5_WASHINGTON_ALIAS_ROSTER_NOT_LIVE:"
+                  + str({
+                      "reason":roster.get("reason"),
+                      "sources":roster.get("sources_available"),
+                      "nflverse":roster.get("nflverse_diag"),
+                      "espn":roster.get("espn_diag"),
+                      "teams": {
+                          k:{
+                              "verified":v.get("verified_count"),
+                              "disagreements":v.get("disagreement_count"),
+                              "positions": {
+                                  p:len((v.get("by_position") or {}).get(p) or [])
+                                  for p in ("QB","RB","WR","TE")
+                              },
+                          }
+                          for k,v in (roster.get("teams") or {}).items()
+                      },
+                  })
+              )
+          assert roster.get("source_count")==2,roster
+          assert roster.get("verified_count",0)>=8,roster
+          print("STEP5_WASHINGTON_ALIAS_ROSTER_LIVE_GREEN",roster["verified_count"])
+
+          availability=load_availability_depth_truth(handoff,roster)
+          if availability.get("state")!="live":
+              raise RuntimeError(
+                  "STEP5_WASHINGTON_ALIAS_AVAILABILITY_NOT_LIVE:"
+                  + str({
+                      "reason":availability.get("reason"),
+                      "event":availability.get("event"),
+                      "snapshot":availability.get("snapshot"),
+                      "teams":{
+                          k:(v.get("depth_diag") if isinstance(v,dict) else v)
+                          for k,v in (availability.get("teams") or {}).items()
+                      },
+                  })
+              )
+          assert str(availability.get("event_id") or "").isdigit(),availability
+          assert availability.get("depth_verified_count",0)>=8,availability
+          print("STEP5_WASHINGTON_ALIAS_AVAILABILITY_LIVE_GREEN",availability["event_id"],availability["availability_state"])
+          print("STEP5_WASHINGTON_ALIAS_TRUTH_CHAIN_GREEN")
+          PY
+
+  branch-full-chain:
+    if: github.event_name == 'pull_request'
+    needs: static-truth
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser stack and start branch Streamlit
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 >/tmp/step5-was-alias.log 2>&1 &
+          echo $! >/tmp/step5-was-alias.pid
+
+      - name: Prove full frozen product chain
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("STEP5_WASHINGTON_ALIAS_LOCAL_NOT_READY")
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("STEP5_WASHINGTON_ALIAS_SELECTOR_NOT_READY:"+selector)
+
+          def role(page,kind,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"STEP5_WASHINGTON_ALIAS_ROLE_NOT_READY:{kind}:{name}")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--no-sandbox","--disable-dev-shm-usage"])
+              context=browser.new_context(viewport={"width":1080,"height":1300})
+              page=context.new_page()
+              page.goto(
+                  base+"/?ks_jump_sport=NFL&ks_jump_market=Prop+Analytics&ks_pa_page=matchup&ks_pa_game=IND-WAS",
+                  wait_until="domcontentloaded",
+                  timeout=120000,
+              )
+
+              _,page2=find(
+                  page,
+                  '[data-nfl-prop-analytics-step4-page2="v1"]'
+                  '[data-prop-page2-handoff="ready"]'
+                  '[data-prop-page2-selected-game="IND-WAS"]'
+                  '[data-prop-page2-date="2026-10-04"]',
+                  180,
+              )
+              print("STEP5_WASHINGTON_ALIAS_PAGE2_HANDOFF_GREEN")
+
+              roster_frame,roster=find(
+                  page,
+                  '[data-nfl-prop-analytics-page2-unified-roster="v1"]'
+                  '[data-prop-page2-unified-state="live"]',
+                  240,
+              )
+              assert int(roster.get_attribute("data-prop-page2-unified-verified-count") or 0)>=8
+              assert int(roster.get_attribute("data-prop-page2-unified-depth-verified-count") or 0)>=8
+              print("STEP5_WASHINGTON_ALIAS_UNIFIED_ROSTER_GREEN")
+
+              qb=roster_frame.get_by_role(
+                  "button",
+                  name=re.compile(r"^[A-Z]{2,3} • QB • "),
+              ).first
+              assert qb.count()==1
+              qb.click(timeout=10000)
+              _,open_prop=role(page,"button","Open prop page",120)
+              print("STEP5_WASHINGTON_ALIAS_QB_SELECTABLE_GREEN")
+              open_prop.click(timeout=10000)
+
+              frame,_=find(page,'[data-page3-visual-v2-step2="v1"]',240)
+              find(page,'[data-page3-visual-v2-step3="v1"]',240)
+              find(
+                  page,
+                  '[data-page3-visual-v2-step4="v1"]'
+                  '[data-page3-visual-v2-step4-real-composition="true"]',
+                  240,
+              )
+              line_frame,line=find(
+                  page,
+                  '[data-prop-page3-step4-line-control="v1"]'
+                  '[data-prop-page3-step4-state="ready"]',
+                  240,
+              )
+              print("STEP5_WASHINGTON_ALIAS_VISUAL_V2_CHAIN_GREEN")
+
+              maximum=float(line.get_attribute("data-prop-page3-step4-max"))
+              slider=line_frame.get_by_role("slider").first
+              assert slider.count()==1
+              slider.press("End")
+              find(
+                  page,
+                  f'[data-prop-page3-step4-line-control="v1"]'
+                  f'[data-prop-page3-step4-line="{maximum:.1f}"]',
+                  120,
+              )
+              print("STEP5_WASHINGTON_ALIAS_LINE_LAB_GREEN")
+
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(350)
+                  frame,_=find(page,'[data-page3-visual-v2-step4="v1"]',120)
+                  dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
+                  assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
+                  print(f"STEP5_WASHINGTON_ALIAS_BRANCH_{width}_GREEN")
+
+              print("STEP5_WASHINGTON_ALIAS_BRANCH_FULL_CHAIN_GREEN")
+              context.close()
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 1800 /tmp/step5-was-alias.log || true
+
+      - name: Stop branch Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/step5-was-alias.pid ]; then
+            kill "$(cat /tmp/step5-was-alias.pid)" 2>/dev/null || true
+          fi
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-truth
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public frozen chain once
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=300):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("STEP5_WASHINGTON_ALIAS_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def role(page,kind,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"STEP5_WASHINGTON_ALIAS_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--no-sandbox","--disable-gpu","--disable-dev-shm-usage"],
+              )
+              context=browser.new_context(viewport={"width":1080,"height":1300})
+              page=context.new_page()
+              page.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL",
+                      "ks_jump_market":"Prop Analytics",
+                  }),
+                  wait_until="domcontentloaded",
+                  timeout=120000,
+              )
+
+              _,selection=find(
+                  page,
+                  '[data-nfl-prop-analytics-step3-selection="v1"]'
+                  '[data-prop-selection-state="selected"]'
+                  '[data-prop-handoff-state="ready"]',
+                  240,
+              )
+              selected_game=(selection.get_attribute("data-prop-selected-game") or "").strip()
+              selected_date=(selection.get_attribute("data-prop-selected-date") or "").strip()
+              assert selected_game and selected_date,(selected_game,selected_date)
+
+              page.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL",
+                      "ks_jump_market":"Prop Analytics",
+                      "ks_pa_page":"matchup",
+                      "ks_pa_game":selected_game,
+                  }),
+                  wait_until="domcontentloaded",
+                  timeout=120000,
+              )
+
+              _,page2=find(
+                  page,
+                  '[data-nfl-prop-analytics-step4-page2="v1"]'
+                  '[data-prop-page2-handoff="ready"]',
+                  240,
+              )
+              assert page2.get_attribute("data-prop-page2-selected-game")==selected_game
+              assert page2.get_attribute("data-prop-page2-date")==selected_date
+              print("VISUAL_V2_STEP4_PUBLIC_MATCHUP_DEEPLINK_GREEN")
+
+              roster_frame,roster=find(
+                  page,
+                  '[data-nfl-prop-analytics-page2-unified-roster="v1"]'
+                  '[data-prop-page2-unified-state="live"]',
+                  300,
+              )
+              assert int(roster.get_attribute("data-prop-page2-unified-verified-count") or 0)>=8
+              assert int(roster.get_attribute("data-prop-page2-unified-depth-verified-count") or 0)>=8
+
+              qb=roster_frame.get_by_role(
+                  "button",
+                  name=re.compile(r"^[A-Z]{2,3} • QB • "),
+              ).first
+              assert qb.count()==1
+              qb.click(timeout=10000)
+              _,open_prop=role(page,"button","Open prop page",180)
+              open_prop.click(timeout=10000)
+
+              frame,_=find(page,'[data-page3-visual-v2-step2="v1"]',300)
+              find(page,'[data-page3-visual-v2-step3="v1"]',300)
+              find(
+                  page,
+                  '[data-page3-visual-v2-step4="v1"]'
+                  '[data-page3-visual-v2-step4-real-composition="true"]',
+                  300,
+              )
+              line_frame,line=find(
+                  page,
+                  '[data-prop-page3-step4-line-control="v1"]'
+                  '[data-prop-page3-step4-state="ready"]',
+                  240,
+              )
+              print("VISUAL_V2_STEP4_PUBLIC_COMPOSITION_GREEN")
+              print("VISUAL_V2_STEP2_PUBLIC_FROZEN_GREEN")
+              print("VISUAL_V2_STEP3_PUBLIC_FROZEN_GREEN")
+
+              maximum=float(line.get_attribute("data-prop-page3-step4-max"))
+              slider=line_frame.get_by_role("slider").first
+              assert slider.count()==1
+              slider.press("End")
+              find(
+                  page,
+                  f'[data-prop-page3-step4-line-control="v1"]'
+                  f'[data-prop-page3-step4-line="{maximum:.1f}"]',
+                  180,
+              )
+              print("VISUAL_V2_STEP4_PUBLIC_INTERACTIONS_GREEN")
+              print("VISUAL_V2_STEP4_LINE_LAB_FROZEN_GREEN")
+
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(400)
+                  frame,_=find(page,'[data-page3-visual-v2-step4="v1"]',120)
+                  dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
+                  assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
+                  print(f"VISUAL_V2_STEP4_PUBLIC_{width}_GREEN")
+
+              print("VISUAL_V2_STEP4_PUBLIC_GREEN")
+              print("VISUAL_V2_STEP4_GREEN")
+              print("VISUAL_V2_STEP4_FROZEN")
+              context.close()
+              browser.close()
+          PY

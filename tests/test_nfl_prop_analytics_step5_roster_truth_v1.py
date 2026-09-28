@@ -111,6 +111,35 @@ def test_nflverse_week_filter_uses_exact_season_week_team_and_position():
     assert rows[0]["position"] == "QB"
 
 
+def test_espn_roster_boundary_maps_canonical_was_to_provider_wsh(monkeypatch):
+    calls = []
+
+    def fake_loader(team):
+        calls.append(team)
+        return (
+            [
+                {
+                    "athlete_id": "1",
+                    "name": "Washington QB",
+                    "position": "QB",
+                    "roster_status": "Active",
+                    "group_label": "QB",
+                    "prop_eligible": True,
+                }
+            ],
+            {"ok": True, "http": 200},
+        )
+
+    monkeypatch.setattr(step5.game_day, "load_current_team_roster", fake_loader)
+    rows, diag = step5._espn_team_rows("WAS")
+
+    assert calls == ["WSH"]
+    assert diag["ok"] is True
+    assert rows[0]["espn_id"] == "1"
+    assert rows[0]["position"] == "QB"
+    assert step5._canon_team("WSH") == "WAS"
+
+
 def test_load_truth_requires_all_four_positions_on_both_teams(monkeypatch):
     frame = pd.DataFrame([
         {"season": 2026, "week": 3, "team": team, "position": pos, "status": "ACT", "full_name": f"{team} {pos}", "espn_id": idx, "jersey_number": idx, "gsis_id": f"00-{idx}", "headshot_url": ""}
