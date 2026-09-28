@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-step2-schedule-provider-repair-v1",
+  "title": "NFL Prop Analytics Step 2 — Independent Schedule Provider Repair",
+  "project": "NFL Prop Analytics",
+  "page": 1,
+  "step": 2,
+  "status": "DONE",
+  "source_main": "ece8b7cb3c1c4c8175248085850fef31ce586a92",
+  "failed_layer": "DATA / SCHEDULE VERIFICATION",
+  "first_broken_arrow": "14 games -> 0 verified games",
+  "diagnostic": {
+    "run": 36370978274,
+    "target_date": "2026-09-27",
+    "week": 3,
+    "nflverse_game_count": 14,
+    "espn_game_count": 0,
+    "nfl_official_game_count": 0,
+    "espn_error": "HTTP 403 Forbidden",
+    "nfl_error": "",
+    "owner": "ESPN provider transport + NFL official parser",
+    "closed_theories": [
+      "Visual V2 product",
+      "Open matchup UI",
+      "selectors",
+      "timeouts",
+      "deployment delay",
+      "redeploy",
+      "route identity"
+    ]
+  },
+  "patch": {
+    "new_independent_source": "CBS Sports schedule",
+    "source_loyalty": false,
+    "verification_threshold_lowered": false,
+    "minimum_independent_sources": 2,
+    "minimum_kickoff_votes": 2,
+    "kickoff_consensus_seconds": 600,
+    "sportsbook_projection_influence": 0.0,
+    "visual_v2_product_changed": false,
+    "passing_yards_changed": false
+  },
+  "acceptance": [
+    "2026-09-27 slate contains 14 Sunday games.",
+    "At least two independent sources are available.",
+    "At least one game is verified; target is the full 14-game slate.",
+    "A verified game requires at least two independent kickoff votes within 10 minutes.",
+    "Step 3 handoff becomes ready and Open matchup is available on branch proof.",
+    "One public proof is allowed after merge."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
