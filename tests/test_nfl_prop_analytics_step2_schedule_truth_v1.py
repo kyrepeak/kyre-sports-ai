@@ -18,6 +18,8 @@ def test_step2_contract_and_sources_are_independent():
         'ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"',
         'NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"',
         'CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"',
+        'ROLLING_SNAPSHOT_VERSION = 2',
+        'data-prop-schedule-rolling-snapshot-version="{ROLLING_SNAPSHOT_VERSION}"',
         'data-nfl-prop-analytics-step2-schedule="v1"',
         'data-prop-schedule-state="fail-closed"',
         "No unverified or fabricated games are being displayed.",
@@ -212,6 +214,48 @@ def test_verification_requires_two_independent_kickoff_votes():
     assert truth[0]["kickoff_consensus"] is True
     assert truth[0]["verified"] is True
 
+
+
+def test_rolling_snapshot_covers_next_sunday_with_full_verification():
+    truth = schedule._load_rolling_snapshot(date(2026, 10, 4))
+    assert truth is not None
+    assert truth["rolling_snapshot_fallback_active"] is True
+    assert truth["rolling_snapshot_version"] == 2
+    assert truth["game_count"] > 0
+    assert truth["verified_count"] == truth["game_count"]
+    assert len(truth["sources_available"]) >= 2
+    assert len({(g["away"], g["home"]) for g in truth["games"]}) == truth["game_count"]
+    assert all(g["verified"] is True for g in truth["games"])
+    assert all(g["kickoff_consensus"] is True for g in truth["games"])
+    assert all(g["source_count"] >= 2 for g in truth["games"])
+
+
+def test_rolling_snapshot_refuses_date_outside_certified_window():
+    assert schedule._load_rolling_snapshot(date(2026, 12, 27)) is None
+
+
+def test_zero_live_transport_uses_exact_date_rolling_snapshot(monkeypatch):
+    target = date(2026, 10, 4)
+    monkeypatch.setattr(schedule, "_from_nflverse", lambda _target: [])
+    monkeypatch.setattr(
+        schedule,
+        "_from_espn",
+        lambda _target, candidate_games=None: [],
+    )
+    monkeypatch.setattr(schedule, "_from_cbs", lambda _target, week=None: [])
+    monkeypatch.setattr(
+        schedule,
+        "_from_nfl_official",
+        lambda _target, season, week=None: [],
+    )
+
+    truth = schedule._load_schedule_truth_uncached(target)
+    assert truth["rolling_snapshot_fallback_active"] is True
+    assert truth["game_count"] > 0
+    assert truth["verified_count"] == truth["game_count"]
+    assert len(truth["sources_available"]) >= 2
+    assert truth["live_game_count"] == 0
+    assert truth["live_verified_count"] == 0
 
 def test_step1_route_owner_remains_intact_and_step2_is_additive():
     hub = Path("nfl_prop_analytics_hub_v1.py").read_text()

@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-schedule-snapshot-v1.yml"
+      - "data/nfl_prop_analytics_schedule_snapshot_v1.json"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step2-rolling-sunday-snapshot-v1.json"
+      - "scripts/build_nfl_prop_analytics_schedule_snapshot_v1.py"
       - "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json"
       - "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-provider-repair-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
@@ -14,6 +18,10 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml"
+      - ".github/workflows/nfl-prop-analytics-schedule-snapshot-v1.yml"
+      - "data/nfl_prop_analytics_schedule_snapshot_v1.json"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step2-rolling-sunday-snapshot-v1.json"
+      - "scripts/build_nfl_prop_analytics_schedule_snapshot_v1.py"
       - "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
       - "nfl_prop_analytics_schedule_v1.py"
@@ -144,6 +152,14 @@ jobs:
             'devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-provider-repair-v1.json' \
             'nfl_prop_analytics_schedule_v1.py' \
             'tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py' | sort)"
+          rolling_snapshot_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-schedule-snapshot-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            'data/nfl_prop_analytics_schedule_snapshot_v1.json' \
+            'devsystem/task_ledgers/nfl-prop-analytics-step2-rolling-sunday-snapshot-v1.json' \
+            'nfl_prop_analytics_schedule_v1.py' \
+            'scripts/build_nfl_prop_analytics_schedule_snapshot_v1.py' \
+            'tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py' | sort)"
           if [ "$actual" != "$expected" ] && \
              [ "$actual" != "$step3_additive_expected" ] && \
              [ "$actual" != "$step4_additive_expected" ] && \
@@ -153,7 +169,8 @@ jobs:
              [ "$actual" != "$step8_additive_expected" ] && \
              [ "$actual" != "$visual_polish_step3_expected" ] && \
              [ "$actual" != "$page2_polish_step2_expected" ] && \
-             [ "$actual" != "$provider_repair_expected" ]; then
+             [ "$actual" != "$provider_repair_expected" ] && \
+             [ "$actual" != "$rolling_snapshot_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP2_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -198,36 +215,32 @@ jobs:
             tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py
           echo "NFL_PROP_ANALYTICS_STEP2_STATIC_GREEN"
 
-      - name: Prove live 2026 Week 3 Sunday schedule truth
+      - name: Prove current Sunday schedule truth
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
           from datetime import date
           from nfl_prop_analytics_schedule_v1 import (
-              _from_cbs,
               _load_schedule_truth_uncached,
+              _target_sunday,
           )
 
-          truth=_load_schedule_truth_uncached(date(2026,9,27))
-          cbs_games=[]
-          cbs_error=""
-          try:
-              cbs_games=_from_cbs(date(2026,9,27),week=3)
-          except Exception as exc:
-              cbs_error=f"{type(exc).__name__}:{exc}"
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_COUNT",len(cbs_games))
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_ERROR",cbs_error)
+          target=_target_sunday()
+          truth=_load_schedule_truth_uncached(target)
+          print("NFL_PROP_ANALYTICS_STEP2_CURRENT_TARGET",target.isoformat())
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_SOURCES",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_ERRORS",truth["source_errors"])
           games=truth["games"]
-          pairs={(g["away"],g["home"]) for g in games}
 
-          if len(games) != 14:
-              raise RuntimeError(f"PROP_ANALYTICS_STEP2_LIVE_SLATE_INCOMPLETE:{len(games)}")
-          if truth["verified_count"] != 14:
+          if len(games) <= 0:
               raise RuntimeError(
-                  f"PROP_ANALYTICS_STEP2_LIVE_VERIFICATION_INCOMPLETE:{truth['verified_count']}"
+                  f"PROP_ANALYTICS_STEP2_CURRENT_SLATE_EMPTY:{target.isoformat()}"
+              )
+          if truth["verified_count"] != len(games):
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_CURRENT_VERIFICATION_INCOMPLETE:"
+                  f"{truth['verified_count']}/{len(games)}"
               )
           if len(truth["sources_available"]) < 2:
               raise RuntimeError(
@@ -235,14 +248,44 @@ jobs:
                   + ",".join(truth["sources_available"])
               )
 
-          for pair in (("BAL","DAL"),("KC","MIA"),("LAR","DEN")):
-              if pair not in pairs:
-                  raise RuntimeError(f"PROP_ANALYTICS_STEP2_EXPECTED_GAME_MISSING:{pair}")
-
           print("NFL_PROP_ANALYTICS_STEP2_LIVE_SCHEDULE_GREEN",len(games))
           print("NFL_PROP_ANALYTICS_STEP2_SOURCE_ROUTER_GREEN",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_VERIFIED_GAMES_GREEN",truth["verified_count"])
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_LIVE_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP2_CURRENT_SUNDAY_GREEN",target.isoformat())
+          PY
+
+
+      - name: Prove rolling next-Sunday snapshot
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from datetime import timedelta
+          from nfl_prop_analytics_schedule_v1 import (
+              _load_rolling_snapshot,
+              _target_sunday,
+          )
+
+          target=_target_sunday()+timedelta(days=7)
+          truth=_load_rolling_snapshot(target)
+          if truth is None:
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_NEXT_WEEK_SNAPSHOT_MISSING:{target.isoformat()}"
+              )
+          count=int(truth["game_count"])
+          verified=int(truth["verified_count"])
+          if count <= 0 or verified != count:
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_NEXT_WEEK_SNAPSHOT_INCOMPLETE:"
+                  f"{target.isoformat()}:{verified}/{count}"
+              )
+          if len(truth["sources_available"]) < 2:
+              raise RuntimeError(
+                  "PROP_ANALYTICS_STEP2_NEXT_WEEK_SNAPSHOT_SOURCES_INCOMPLETE:"
+                  + ",".join(truth["sources_available"])
+              )
+          print("NFL_PROP_ANALYTICS_STEP2_NEXT_WEEK_SNAPSHOT_GREEN",target.isoformat(),count)
+          print("NFL_PROP_ANALYTICS_STEP2_NEXT_WEEK_SOURCES_GREEN",truth["sources_available"])
           PY
 
   branch-ui-proof:
@@ -324,6 +367,21 @@ jobs:
                   page.wait_for_timeout(250)
               raise RuntimeError("PROP_ANALYTICS_STEP2_COMBO_NOT_READY:"+name)
 
+          def find_role(page,kind,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_ROLE_NOT_READY:{kind}:{name}"
+              )
+
           def choose(page,name,value):
               _,combo=find_combo(page,name)
               combo.click(timeout=10000)
@@ -347,25 +405,31 @@ jobs:
                   args=["--disable-dev-shm-usage","--no-sandbox"],
               )
               page=browser.new_page(viewport={"width":1440,"height":1000})
-              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
-              choose(page,"🏟️ Sport","NFL")
-              choose(page,"🎯 NFL Market","Prop Analytics")
+              page.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL",
+                      "ks_jump_market":"Prop Analytics",
+                  }),
+                  wait_until="domcontentloaded",
+                  timeout=120000,
+              )
 
               _,owner=find(page,'[data-nfl-prop-analytics-route="v1"]')
               assert owner.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
               assert owner.get_attribute("data-prop-analytics-step")=="1"
 
-              frame,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]')
+              frame,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"][data-prop-schedule-rolling-snapshot-version="2"]')
               state=board.get_attribute("data-prop-schedule-state")
               count=int(board.get_attribute("data-prop-schedule-count") or 0)
               verified=int(board.get_attribute("data-prop-schedule-verified-count") or 0)
               source_text=board.get_attribute("data-prop-schedule-sources") or ""
+              fallback_mode=board.get_attribute("data-prop-schedule-rolling-fallback-active") or ""
               target=date.fromisoformat(board.get_attribute("data-prop-schedule-date"))
 
               assert state=="live",state
               assert target.weekday()==6,target
-              assert count==14,count
-              assert verified==14,verified
+              assert count>0,count
+              assert verified==count,(verified,count)
               assert len([s for s in source_text.split(",") if s])>=2,source_text
               selection_frame,selection=find(
                   page,
@@ -374,15 +438,12 @@ jobs:
               )
               assert selection.get_attribute("data-prop-selection-state")=="selected"
               assert selection.get_attribute("data-prop-handoff-state")=="ready"
-              open_matchup=selection_frame.get_by_role(
-                  "button",
-                  name="Open matchup",
-                  exact=True,
-              )
-              assert open_matchup.count()==1
+              _,open_matchup=find_role(page,"button","Open matchup",60)
+              assert open_matchup.count()>=1
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SCHEDULE_GREEN",count)
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_VERIFIED_GREEN",verified)
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SOURCE_ROUTER_GREEN",source_text)
+              print("NFL_PROP_ANALYTICS_STEP2_BRANCH_ROLLING_FALLBACK_MODE",fallback_mode)
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_OPEN_MATCHUP_GREEN")
 
               for width,height in ((390,844),(768,1024),(1440,1000)):
@@ -484,6 +545,21 @@ jobs:
                   page.wait_for_timeout(250)
               raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_COMBO_NOT_READY:"+name)
 
+          def find_role(page,kind,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_PUBLIC_ROLE_NOT_READY:{kind}:{name}"
+              )
+
           def choose(page,name,value,timeout=30):
               _,combo=find_combo(page,name)
               combo.click(timeout=10000)
@@ -508,13 +584,17 @@ jobs:
               )
               context=browser.new_context(viewport={"width":390,"height":844})
               page=context.new_page()
-              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
-              choose(page,"🏟️ Sport","NFL")
-              if not choose(page,"🎯 NFL Market","Prop Analytics"):
-                  raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_OPTION_NOT_READY")
+              page.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL",
+                      "ks_jump_market":"Prop Analytics",
+                  }),
+                  wait_until="domcontentloaded",
+                  timeout=120000,
+              )
 
               _,owner=find(page,'[data-nfl-prop-analytics-route="v1"]',90)
-              frame,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]',120)
+              frame,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"][data-prop-schedule-rolling-snapshot-version="2"]',300)
 
               assert owner.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
               assert owner.get_attribute("data-prop-analytics-step")=="1"
@@ -523,10 +603,11 @@ jobs:
               count=int(board.get_attribute("data-prop-schedule-count"))
               verified=int(board.get_attribute("data-prop-schedule-verified-count"))
               source_text=board.get_attribute("data-prop-schedule-sources") or ""
+              fallback_mode=board.get_attribute("data-prop-schedule-rolling-fallback-active") or ""
 
               assert target.weekday()==6,target
-              assert count==14,count
-              assert verified==14,verified
+              assert count>0,count
+              assert verified==count,(verified,count)
               assert len([s for s in source_text.split(",") if s])>=2,source_text
 
               selection_frame,selection=find(
@@ -536,12 +617,8 @@ jobs:
               )
               assert selection.get_attribute("data-prop-selection-state")=="selected"
               assert selection.get_attribute("data-prop-handoff-state")=="ready"
-              open_matchup=selection_frame.get_by_role(
-                  "button",
-                  name="Open matchup",
-                  exact=True,
-              )
-              assert open_matchup.count()==1
+              _,open_matchup=find_role(page,"button","Open matchup",120)
+              assert open_matchup.count()>=1
               open_matchup.click(timeout=10000)
 
               roster_frame,_=find(
@@ -575,6 +652,7 @@ jobs:
 
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_SCHEDULE_GREEN",count)
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_SOURCE_ROUTER_GREEN",source_text)
+              print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_ROLLING_FALLBACK_MODE",fallback_mode)
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_VERIFIED_GREEN",verified)
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_OPEN_MATCHUP_GREEN")
               print("VISUAL_V2_STEP2_PUBLIC_COMPOSITION_GREEN")

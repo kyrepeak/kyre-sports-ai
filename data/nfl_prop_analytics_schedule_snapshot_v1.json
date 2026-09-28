@@ -1,0 +1,3240 @@
+{
+  "version": 2,
+  "generated_at": "2026-09-28T04:56:55.407740+00:00",
+  "purpose": "Rolling independently verified NFL Sunday schedule transport fallback for NFL Prop Analytics Step 2.",
+  "window": {
+    "start": "2026-09-27",
+    "end": "2026-12-20",
+    "requested_weeks": 15,
+    "verified_sundays": 13,
+    "stopped_at": "2026-12-27",
+    "stop_reason": "SNAPSHOT_VERIFICATION_INCOMPLETE:2026-12-27:7/11"
+  },
+  "certification": {
+    "minimum_independent_sources": 2,
+    "minimum_kickoff_votes": 2,
+    "kickoff_consensus_seconds": 600,
+    "verification_rule": "verified_count == game_count for every stored Sunday",
+    "total_games": 160
+  },
+  "slates": [
+    {
+      "target_date": "2026-09-27",
+      "season": 2026,
+      "week": 3,
+      "game_count": 14,
+      "verified_count": 14,
+      "sources_available": [
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "CAR",
+          "home": "CLE",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "FOX",
+          "status": "Final",
+          "venue": "Huntington Bank Field",
+          "game_id": "2026_03_CAR_CLE",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CIN",
+          "home": "PIT",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "CBS",
+          "status": "Final",
+          "venue": "Acrisure Stadium",
+          "game_id": "2026_03_CIN_PIT",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "HOU",
+          "home": "IND",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "CBS",
+          "status": "Final",
+          "venue": "Lucas Oil Stadium",
+          "game_id": "2026_03_HOU_IND",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "KC",
+          "home": "MIA",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "CBS",
+          "status": "Final",
+          "venue": "Hard Rock Stadium",
+          "game_id": "2026_03_KC_MIA",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAC",
+          "home": "BUF",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "FOX",
+          "status": "Final",
+          "venue": "Highmark Stadium",
+          "game_id": "2026_03_LAC_BUF",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NE",
+          "home": "JAX",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "CBS",
+          "status": "Final",
+          "venue": "EverBank Stadium",
+          "game_id": "2026_03_NE_JAX",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYJ",
+          "home": "DET",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "FOX",
+          "status": "Final",
+          "venue": "Ford Field",
+          "game_id": "2026_03_NYJ_DET",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "SEA",
+          "home": "WAS",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "FOX",
+          "status": "Final",
+          "venue": "Northwest Stadium",
+          "game_id": "2026_03_SEA_WAS",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TEN",
+          "home": "NYG",
+          "kickoff_utc": "2026-09-27T17:00:00+00:00",
+          "week": 3,
+          "network": "CBS",
+          "status": "Final",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_03_TEN_NYG",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "ARI",
+          "home": "SF",
+          "kickoff_utc": "2026-09-27T20:05:00+00:00",
+          "week": 3,
+          "network": "FOX",
+          "status": "Final",
+          "venue": "Levi's Stadium",
+          "game_id": "2026_03_ARI_SF",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIN",
+          "home": "TB",
+          "kickoff_utc": "2026-09-27T20:05:00+00:00",
+          "week": 3,
+          "network": "FOX",
+          "status": "Final",
+          "venue": "Raymond James Stadium",
+          "game_id": "2026_03_MIN_TB",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BAL",
+          "home": "DAL",
+          "kickoff_utc": "2026-09-27T20:25:00+00:00",
+          "week": 3,
+          "network": "CBS",
+          "status": "Final",
+          "venue": "Maracana Stadium",
+          "game_id": "2026_03_BAL_DAL",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LV",
+          "home": "NO",
+          "kickoff_utc": "2026-09-27T20:25:00+00:00",
+          "week": 3,
+          "network": "CBS",
+          "status": "Final",
+          "venue": "Caesars Superdome",
+          "game_id": "2026_03_LV_NO",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAR",
+          "home": "DEN",
+          "kickoff_utc": "2026-09-28T00:20:00+00:00",
+          "week": 3,
+          "network": "NBC",
+          "status": "Final",
+          "venue": "Empower Field at Mile High",
+          "game_id": "2026_03_LA_DEN",
+          "sources": [
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 2,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-10-04",
+      "season": 2026,
+      "week": 4,
+      "game_count": 14,
+      "verified_count": 14,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "IND",
+          "home": "WAS",
+          "kickoff_utc": "2026-10-04T13:30:00+00:00",
+          "week": 4,
+          "network": "NFLN",
+          "status": "Scheduled",
+          "venue": "Tottenham Hotspur Stadium",
+          "game_id": "2026_04_IND_WAS",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "ARI",
+          "home": "NYG",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_04_ARI_NYG",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DAL",
+          "home": "HOU",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Reliant Stadium",
+          "game_id": "2026_04_DAL_HOU",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "GB",
+          "home": "TB",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Raymond James Stadium",
+          "game_id": "2026_04_GB_TB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "JAX",
+          "home": "CIN",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Paycor Stadium",
+          "game_id": "2026_04_JAX_CIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAR",
+          "home": "PHI",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lincoln Financial Field",
+          "game_id": "2026_04_LA_PHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NE",
+          "home": "BUF",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "New Highmark Stadium",
+          "game_id": "2026_04_NE_BUF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYJ",
+          "home": "CHI",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Soldier Field",
+          "game_id": "2026_04_NYJ_CHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TEN",
+          "home": "BAL",
+          "kickoff_utc": "2026-10-04T17:00:00+00:00",
+          "week": 4,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "M&T Bank Stadium",
+          "game_id": "2026_04_TEN_BAL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIA",
+          "home": "MIN",
+          "kickoff_utc": "2026-10-04T20:05:00+00:00",
+          "week": 4,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "U.S. Bank Stadium",
+          "game_id": "2026_04_MIA_MIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DEN",
+          "home": "SF",
+          "kickoff_utc": "2026-10-04T20:25:00+00:00",
+          "week": 4,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Levi's Stadium",
+          "game_id": "2026_04_DEN_SF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "KC",
+          "home": "LV",
+          "kickoff_utc": "2026-10-04T20:25:00+00:00",
+          "week": 4,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Allegiant Stadium",
+          "game_id": "2026_04_KC_LV",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAC",
+          "home": "SEA",
+          "kickoff_utc": "2026-10-04T20:25:00+00:00",
+          "week": 4,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Lumen Field",
+          "game_id": "2026_04_LAC_SEA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DET",
+          "home": "CAR",
+          "kickoff_utc": "2026-10-05T00:20:00+00:00",
+          "week": 4,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Bank of America Stadium",
+          "game_id": "2026_04_DET_CAR",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-10-11",
+      "season": 2026,
+      "week": 5,
+      "game_count": 13,
+      "verified_count": 13,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "PHI",
+          "home": "JAX",
+          "kickoff_utc": "2026-10-11T13:30:00+00:00",
+          "week": 5,
+          "network": "NFLN",
+          "status": "Scheduled",
+          "venue": "Tottenham Hotspur Stadium",
+          "game_id": "2026_05_PHI_JAX",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CIN",
+          "home": "MIA",
+          "kickoff_utc": "2026-10-11T17:00:00+00:00",
+          "week": 5,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Hard Rock Stadium",
+          "game_id": "2026_05_CIN_MIA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CLE",
+          "home": "NYJ",
+          "kickoff_utc": "2026-10-11T17:00:00+00:00",
+          "week": 5,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_05_CLE_NYJ",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "HOU",
+          "home": "TEN",
+          "kickoff_utc": "2026-10-11T17:00:00+00:00",
+          "week": 5,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Nissan Stadium",
+          "game_id": "2026_05_HOU_TEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "IND",
+          "home": "PIT",
+          "kickoff_utc": "2026-10-11T17:00:00+00:00",
+          "week": 5,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Acrisure Stadium",
+          "game_id": "2026_05_IND_PIT",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LV",
+          "home": "NE",
+          "kickoff_utc": "2026-10-11T17:00:00+00:00",
+          "week": 5,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Gillette Stadium",
+          "game_id": "2026_05_LV_NE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIN",
+          "home": "NO",
+          "kickoff_utc": "2026-10-11T17:00:00+00:00",
+          "week": 5,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Caesars Superdome",
+          "game_id": "2026_05_MIN_NO",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYG",
+          "home": "WAS",
+          "kickoff_utc": "2026-10-11T17:00:00+00:00",
+          "week": 5,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Northwest Stadium",
+          "game_id": "2026_05_NYG_WAS",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DEN",
+          "home": "LAC",
+          "kickoff_utc": "2026-10-11T20:05:00+00:00",
+          "week": 5,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "SoFi Stadium",
+          "game_id": "2026_05_DEN_LAC",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CHI",
+          "home": "GB",
+          "kickoff_utc": "2026-10-11T20:25:00+00:00",
+          "week": 5,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lambeau Field",
+          "game_id": "2026_05_CHI_GB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DET",
+          "home": "ARI",
+          "kickoff_utc": "2026-10-11T20:25:00+00:00",
+          "week": 5,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "State Farm Stadium",
+          "game_id": "2026_05_DET_ARI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "SF",
+          "home": "SEA",
+          "kickoff_utc": "2026-10-11T20:25:00+00:00",
+          "week": 5,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lumen Field",
+          "game_id": "2026_05_SF_SEA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BAL",
+          "home": "ATL",
+          "kickoff_utc": "2026-10-12T00:20:00+00:00",
+          "week": 5,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Mercedes-Benz Stadium",
+          "game_id": "2026_05_BAL_ATL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-10-18",
+      "season": 2026,
+      "week": 6,
+      "game_count": 12,
+      "verified_count": 12,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "HOU",
+          "home": "JAX",
+          "kickoff_utc": "2026-10-18T13:30:00+00:00",
+          "week": 6,
+          "network": "NFLN",
+          "status": "Scheduled",
+          "venue": "Wembley Stadium",
+          "game_id": "2026_06_HOU_JAX",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BAL",
+          "home": "CLE",
+          "kickoff_utc": "2026-10-18T17:00:00+00:00",
+          "week": 6,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Huntington Bank Field",
+          "game_id": "2026_06_BAL_CLE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CAR",
+          "home": "PHI",
+          "kickoff_utc": "2026-10-18T17:00:00+00:00",
+          "week": 6,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Lincoln Financial Field",
+          "game_id": "2026_06_CAR_PHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CHI",
+          "home": "ATL",
+          "kickoff_utc": "2026-10-18T17:00:00+00:00",
+          "week": 6,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Mercedes-Benz Stadium",
+          "game_id": "2026_06_CHI_ATL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NO",
+          "home": "NYG",
+          "kickoff_utc": "2026-10-18T17:00:00+00:00",
+          "week": 6,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_06_NO_NYG",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYJ",
+          "home": "NE",
+          "kickoff_utc": "2026-10-18T17:00:00+00:00",
+          "week": 6,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Gillette Stadium",
+          "game_id": "2026_06_NYJ_NE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "PIT",
+          "home": "TB",
+          "kickoff_utc": "2026-10-18T17:00:00+00:00",
+          "week": 6,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Raymond James Stadium",
+          "game_id": "2026_06_PIT_TB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TEN",
+          "home": "IND",
+          "kickoff_utc": "2026-10-18T17:00:00+00:00",
+          "week": 6,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lucas Oil Stadium",
+          "game_id": "2026_06_TEN_IND",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "ARI",
+          "home": "LAR",
+          "kickoff_utc": "2026-10-18T20:05:00+00:00",
+          "week": 6,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "SoFi Stadium",
+          "game_id": "2026_06_ARI_LA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BUF",
+          "home": "LV",
+          "kickoff_utc": "2026-10-18T20:25:00+00:00",
+          "week": 6,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Allegiant Stadium",
+          "game_id": "2026_06_BUF_LV",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAC",
+          "home": "KC",
+          "kickoff_utc": "2026-10-18T20:25:00+00:00",
+          "week": 6,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "GEHA Field at Arrowhead Stadium",
+          "game_id": "2026_06_LAC_KC",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DAL",
+          "home": "GB",
+          "kickoff_utc": "2026-10-19T00:20:00+00:00",
+          "week": 6,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Lambeau Field",
+          "game_id": "2026_06_DAL_GB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-10-25",
+      "season": 2026,
+      "week": 7,
+      "game_count": 12,
+      "verified_count": 12,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "PIT",
+          "home": "NO",
+          "kickoff_utc": "2026-10-25T13:30:00+00:00",
+          "week": 7,
+          "network": "NFLN",
+          "status": "Scheduled",
+          "venue": "Stade de France",
+          "game_id": "2026_07_PIT_NO",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CIN",
+          "home": "BAL",
+          "kickoff_utc": "2026-10-25T17:00:00+00:00",
+          "week": 7,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "M&T Bank Stadium",
+          "game_id": "2026_07_CIN_BAL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CLE",
+          "home": "TEN",
+          "kickoff_utc": "2026-10-25T17:00:00+00:00",
+          "week": 7,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Nissan Stadium",
+          "game_id": "2026_07_CLE_TEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "IND",
+          "home": "MIN",
+          "kickoff_utc": "2026-10-25T17:00:00+00:00",
+          "week": 7,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "U.S. Bank Stadium",
+          "game_id": "2026_07_IND_MIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIA",
+          "home": "NYJ",
+          "kickoff_utc": "2026-10-25T17:00:00+00:00",
+          "week": 7,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_07_MIA_NYJ",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYG",
+          "home": "HOU",
+          "kickoff_utc": "2026-10-25T17:00:00+00:00",
+          "week": 7,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Reliant Stadium",
+          "game_id": "2026_07_NYG_HOU",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "SF",
+          "home": "ATL",
+          "kickoff_utc": "2026-10-25T17:00:00+00:00",
+          "week": 7,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Mercedes-Benz Stadium",
+          "game_id": "2026_07_SF_ATL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TB",
+          "home": "CAR",
+          "kickoff_utc": "2026-10-25T17:00:00+00:00",
+          "week": 7,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Bank of America Stadium",
+          "game_id": "2026_07_TB_CAR",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DEN",
+          "home": "ARI",
+          "kickoff_utc": "2026-10-25T20:05:00+00:00",
+          "week": 7,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "State Farm Stadium",
+          "game_id": "2026_07_DEN_ARI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "GB",
+          "home": "DET",
+          "kickoff_utc": "2026-10-25T20:25:00+00:00",
+          "week": 7,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Ford Field",
+          "game_id": "2026_07_GB_DET",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAR",
+          "home": "LV",
+          "kickoff_utc": "2026-10-25T20:25:00+00:00",
+          "week": 7,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Allegiant Stadium",
+          "game_id": "2026_07_LA_LV",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "KC",
+          "home": "SEA",
+          "kickoff_utc": "2026-10-26T00:20:00+00:00",
+          "week": 7,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Lumen Field",
+          "game_id": "2026_07_KC_SEA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-11-01",
+      "season": 2026,
+      "week": 8,
+      "game_count": 12,
+      "verified_count": 12,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "ARI",
+          "home": "DAL",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "AT&T Stadium",
+          "game_id": "2026_08_ARI_DAL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "ATL",
+          "home": "TB",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Raymond James Stadium",
+          "game_id": "2026_08_ATL_TB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BAL",
+          "home": "BUF",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "New Highmark Stadium",
+          "game_id": "2026_08_BAL_BUF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CLE",
+          "home": "PIT",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Acrisure Stadium",
+          "game_id": "2026_08_CLE_PIT",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "IND",
+          "home": "JAX",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "EverBank Stadium",
+          "game_id": "2026_08_IND_JAX",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LV",
+          "home": "NYJ",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_08_LV_NYJ",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIN",
+          "home": "DET",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Ford Field",
+          "game_id": "2026_08_MIN_DET",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TEN",
+          "home": "CIN",
+          "kickoff_utc": "2026-11-01T18:00:00+00:00",
+          "week": 8,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Paycor Stadium",
+          "game_id": "2026_08_TEN_CIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAC",
+          "home": "LAR",
+          "kickoff_utc": "2026-11-01T21:05:00+00:00",
+          "week": 8,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "SoFi Stadium",
+          "game_id": "2026_08_LAC_LA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "KC",
+          "home": "DEN",
+          "kickoff_utc": "2026-11-01T21:25:00+00:00",
+          "week": 8,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Empower Field at Mile High",
+          "game_id": "2026_08_KC_DEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NE",
+          "home": "MIA",
+          "kickoff_utc": "2026-11-01T21:25:00+00:00",
+          "week": 8,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Hard Rock Stadium",
+          "game_id": "2026_08_NE_MIA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "PHI",
+          "home": "WAS",
+          "kickoff_utc": "2026-11-02T01:20:00+00:00",
+          "week": 8,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Northwest Stadium",
+          "game_id": "2026_08_PHI_WAS",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-11-08",
+      "season": 2026,
+      "week": 9,
+      "game_count": 13,
+      "verified_count": 13,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "CIN",
+          "home": "ATL",
+          "kickoff_utc": "2026-11-08T14:30:00+00:00",
+          "week": 9,
+          "network": "NFLN",
+          "status": "Scheduled",
+          "venue": "Santiago Bernab\u00e9u",
+          "game_id": "2026_09_CIN_ATL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CLE",
+          "home": "NO",
+          "kickoff_utc": "2026-11-08T18:00:00+00:00",
+          "week": 9,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Caesars Superdome",
+          "game_id": "2026_09_CLE_NO",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DAL",
+          "home": "IND",
+          "kickoff_utc": "2026-11-08T18:00:00+00:00",
+          "week": 9,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lucas Oil Stadium",
+          "game_id": "2026_09_DAL_IND",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DEN",
+          "home": "CAR",
+          "kickoff_utc": "2026-11-08T18:00:00+00:00",
+          "week": 9,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Bank of America Stadium",
+          "game_id": "2026_09_DEN_CAR",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DET",
+          "home": "MIA",
+          "kickoff_utc": "2026-11-08T18:00:00+00:00",
+          "week": 9,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Hard Rock Stadium",
+          "game_id": "2026_09_DET_MIA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAR",
+          "home": "WAS",
+          "kickoff_utc": "2026-11-08T18:00:00+00:00",
+          "week": 9,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Northwest Stadium",
+          "game_id": "2026_09_LA_WAS",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYG",
+          "home": "PHI",
+          "kickoff_utc": "2026-11-08T18:00:00+00:00",
+          "week": 9,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lincoln Financial Field",
+          "game_id": "2026_09_NYG_PHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYJ",
+          "home": "KC",
+          "kickoff_utc": "2026-11-08T18:00:00+00:00",
+          "week": 9,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "GEHA Field at Arrowhead Stadium",
+          "game_id": "2026_09_NYJ_KC",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "HOU",
+          "home": "LAC",
+          "kickoff_utc": "2026-11-08T21:05:00+00:00",
+          "week": 9,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "SoFi Stadium",
+          "game_id": "2026_09_HOU_LAC",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LV",
+          "home": "SF",
+          "kickoff_utc": "2026-11-08T21:05:00+00:00",
+          "week": 9,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Levi's Stadium",
+          "game_id": "2026_09_LV_SF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "ARI",
+          "home": "SEA",
+          "kickoff_utc": "2026-11-08T21:25:00+00:00",
+          "week": 9,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lumen Field",
+          "game_id": "2026_09_ARI_SEA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "GB",
+          "home": "NE",
+          "kickoff_utc": "2026-11-08T21:25:00+00:00",
+          "week": 9,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Gillette Stadium",
+          "game_id": "2026_09_GB_NE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TB",
+          "home": "CHI",
+          "kickoff_utc": "2026-11-09T01:20:00+00:00",
+          "week": 9,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Soldier Field",
+          "game_id": "2026_09_TB_CHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-11-15",
+      "season": 2026,
+      "week": 10,
+      "game_count": 12,
+      "verified_count": 12,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "NE",
+          "home": "DET",
+          "kickoff_utc": "2026-11-15T14:30:00+00:00",
+          "week": 10,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Allianz Arena",
+          "game_id": "2026_10_NE_DET",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BUF",
+          "home": "NYJ",
+          "kickoff_utc": "2026-11-15T18:00:00+00:00",
+          "week": 10,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_10_BUF_NYJ",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CAR",
+          "home": "NO",
+          "kickoff_utc": "2026-11-15T18:00:00+00:00",
+          "week": 10,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Caesars Superdome",
+          "game_id": "2026_10_CAR_NO",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "HOU",
+          "home": "CLE",
+          "kickoff_utc": "2026-11-15T18:00:00+00:00",
+          "week": 10,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Huntington Bank Field",
+          "game_id": "2026_10_HOU_CLE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "JAX",
+          "home": "TEN",
+          "kickoff_utc": "2026-11-15T18:00:00+00:00",
+          "week": 10,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Nissan Stadium",
+          "game_id": "2026_10_JAX_TEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "KC",
+          "home": "ATL",
+          "kickoff_utc": "2026-11-15T18:00:00+00:00",
+          "week": 10,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Mercedes-Benz Stadium",
+          "game_id": "2026_10_KC_ATL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIA",
+          "home": "IND",
+          "kickoff_utc": "2026-11-15T18:00:00+00:00",
+          "week": 10,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Lucas Oil Stadium",
+          "game_id": "2026_10_MIA_IND",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIN",
+          "home": "GB",
+          "kickoff_utc": "2026-11-15T18:00:00+00:00",
+          "week": 10,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lambeau Field",
+          "game_id": "2026_10_MIN_GB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAR",
+          "home": "ARI",
+          "kickoff_utc": "2026-11-15T21:05:00+00:00",
+          "week": 10,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "State Farm Stadium",
+          "game_id": "2026_10_LA_ARI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "SEA",
+          "home": "LV",
+          "kickoff_utc": "2026-11-15T21:05:00+00:00",
+          "week": 10,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Allegiant Stadium",
+          "game_id": "2026_10_SEA_LV",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "SF",
+          "home": "DAL",
+          "kickoff_utc": "2026-11-15T21:25:00+00:00",
+          "week": 10,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "AT&T Stadium",
+          "game_id": "2026_10_SF_DAL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "PIT",
+          "home": "CIN",
+          "kickoff_utc": "2026-11-16T01:20:00+00:00",
+          "week": 10,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Paycor Stadium",
+          "game_id": "2026_10_PIT_CIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-11-22",
+      "season": 2026,
+      "week": 11,
+      "game_count": 11,
+      "verified_count": 11,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "ARI",
+          "home": "KC",
+          "kickoff_utc": "2026-11-22T18:00:00+00:00",
+          "week": 11,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "GEHA Field at Arrowhead Stadium",
+          "game_id": "2026_11_ARI_KC",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BAL",
+          "home": "CAR",
+          "kickoff_utc": "2026-11-22T18:00:00+00:00",
+          "week": 11,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Bank of America Stadium",
+          "game_id": "2026_11_BAL_CAR",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "JAX",
+          "home": "NYG",
+          "kickoff_utc": "2026-11-22T18:00:00+00:00",
+          "week": 11,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_11_JAX_NYG",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIA",
+          "home": "BUF",
+          "kickoff_utc": "2026-11-22T18:00:00+00:00",
+          "week": 11,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "New Highmark Stadium",
+          "game_id": "2026_11_MIA_BUF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NO",
+          "home": "CHI",
+          "kickoff_utc": "2026-11-22T18:00:00+00:00",
+          "week": 11,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Soldier Field",
+          "game_id": "2026_11_NO_CHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TB",
+          "home": "DET",
+          "kickoff_utc": "2026-11-22T18:00:00+00:00",
+          "week": 11,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Ford Field",
+          "game_id": "2026_11_TB_DET",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TEN",
+          "home": "DAL",
+          "kickoff_utc": "2026-11-22T18:00:00+00:00",
+          "week": 11,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "AT&T Stadium",
+          "game_id": "2026_11_TEN_DAL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYJ",
+          "home": "LAC",
+          "kickoff_utc": "2026-11-22T21:05:00+00:00",
+          "week": 11,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "SoFi Stadium",
+          "game_id": "2026_11_NYJ_LAC",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LV",
+          "home": "DEN",
+          "kickoff_utc": "2026-11-22T21:25:00+00:00",
+          "week": 11,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Empower Field at Mile High",
+          "game_id": "2026_11_LV_DEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "PIT",
+          "home": "PHI",
+          "kickoff_utc": "2026-11-22T21:25:00+00:00",
+          "week": 11,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Lincoln Financial Field",
+          "game_id": "2026_11_PIT_PHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIN",
+          "home": "SF",
+          "kickoff_utc": "2026-11-23T01:20:00+00:00",
+          "week": 11,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Estadio Banorte",
+          "game_id": "2026_11_MIN_SF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-11-29",
+      "season": 2026,
+      "week": 12,
+      "game_count": 10,
+      "verified_count": 10,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "ATL",
+          "home": "MIN",
+          "kickoff_utc": "2026-11-29T18:00:00+00:00",
+          "week": 12,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "U.S. Bank Stadium",
+          "game_id": "2026_12_ATL_MIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BAL",
+          "home": "HOU",
+          "kickoff_utc": "2026-11-29T18:00:00+00:00",
+          "week": 12,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Reliant Stadium",
+          "game_id": "2026_12_BAL_HOU",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LV",
+          "home": "CLE",
+          "kickoff_utc": "2026-11-29T18:00:00+00:00",
+          "week": 12,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Huntington Bank Field",
+          "game_id": "2026_12_LV_CLE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NO",
+          "home": "CIN",
+          "kickoff_utc": "2026-11-29T18:00:00+00:00",
+          "week": 12,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Paycor Stadium",
+          "game_id": "2026_12_NO_CIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYG",
+          "home": "IND",
+          "kickoff_utc": "2026-11-29T18:00:00+00:00",
+          "week": 12,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lucas Oil Stadium",
+          "game_id": "2026_12_NYG_IND",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYJ",
+          "home": "MIA",
+          "kickoff_utc": "2026-11-29T18:00:00+00:00",
+          "week": 12,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Hard Rock Stadium",
+          "game_id": "2026_12_NYJ_MIA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TEN",
+          "home": "JAX",
+          "kickoff_utc": "2026-11-29T21:05:00+00:00",
+          "week": 12,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "EverBank Stadium",
+          "game_id": "2026_12_TEN_JAX",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "SEA",
+          "home": "SF",
+          "kickoff_utc": "2026-11-29T21:25:00+00:00",
+          "week": 12,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Levi's Stadium",
+          "game_id": "2026_12_SEA_SF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "WAS",
+          "home": "ARI",
+          "kickoff_utc": "2026-11-29T21:25:00+00:00",
+          "week": 12,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "State Farm Stadium",
+          "game_id": "2026_12_WAS_ARI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NE",
+          "home": "LAC",
+          "kickoff_utc": "2026-11-30T01:20:00+00:00",
+          "week": 12,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "SoFi Stadium",
+          "game_id": "2026_12_NE_LAC",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-12-06",
+      "season": 2026,
+      "week": 13,
+      "game_count": 12,
+      "verified_count": 12,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "CIN",
+          "home": "CLE",
+          "kickoff_utc": "2026-12-06T18:00:00+00:00",
+          "week": 13,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Huntington Bank Field",
+          "game_id": "2026_13_CIN_CLE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DET",
+          "home": "ATL",
+          "kickoff_utc": "2026-12-06T18:00:00+00:00",
+          "week": 13,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Mercedes-Benz Stadium",
+          "game_id": "2026_13_DET_ATL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "GB",
+          "home": "NO",
+          "kickoff_utc": "2026-12-06T18:00:00+00:00",
+          "week": 13,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Caesars Superdome",
+          "game_id": "2026_13_GB_NO",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "JAX",
+          "home": "CHI",
+          "kickoff_utc": "2026-12-06T18:00:00+00:00",
+          "week": 13,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Soldier Field",
+          "game_id": "2026_13_JAX_CHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAC",
+          "home": "TB",
+          "kickoff_utc": "2026-12-06T18:00:00+00:00",
+          "week": 13,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Raymond James Stadium",
+          "game_id": "2026_13_LAC_TB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "SF",
+          "home": "NYG",
+          "kickoff_utc": "2026-12-06T18:00:00+00:00",
+          "week": 13,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_13_SF_NYG",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "WAS",
+          "home": "TEN",
+          "kickoff_utc": "2026-12-06T18:00:00+00:00",
+          "week": 13,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Nissan Stadium",
+          "game_id": "2026_13_WAS_TEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIA",
+          "home": "DEN",
+          "kickoff_utc": "2026-12-06T21:05:00+00:00",
+          "week": 13,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Empower Field at Mile High",
+          "game_id": "2026_13_MIA_DEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "PHI",
+          "home": "ARI",
+          "kickoff_utc": "2026-12-06T21:05:00+00:00",
+          "week": 13,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "State Farm Stadium",
+          "game_id": "2026_13_PHI_ARI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BUF",
+          "home": "NE",
+          "kickoff_utc": "2026-12-06T21:25:00+00:00",
+          "week": 13,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Gillette Stadium",
+          "game_id": "2026_13_BUF_NE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CAR",
+          "home": "MIN",
+          "kickoff_utc": "2026-12-06T21:25:00+00:00",
+          "week": 13,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "U.S. Bank Stadium",
+          "game_id": "2026_13_CAR_MIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "HOU",
+          "home": "PIT",
+          "kickoff_utc": "2026-12-07T01:20:00+00:00",
+          "week": 13,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Acrisure Stadium",
+          "game_id": "2026_13_HOU_PIT",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-12-13",
+      "season": 2026,
+      "week": 14,
+      "game_count": 13,
+      "verified_count": 13,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "ATL",
+          "home": "CLE",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Huntington Bank Field",
+          "game_id": "2026_14_ATL_CLE",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CHI",
+          "home": "MIA",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Hard Rock Stadium",
+          "game_id": "2026_14_CHI_MIA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DEN",
+          "home": "NYJ",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_14_DEN_NYJ",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "HOU",
+          "home": "WAS",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Northwest Stadium",
+          "game_id": "2026_14_HOU_WAS",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "IND",
+          "home": "PHI",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lincoln Financial Field",
+          "game_id": "2026_14_IND_PHI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NO",
+          "home": "CAR",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Bank of America Stadium",
+          "game_id": "2026_14_NO_CAR",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TB",
+          "home": "BAL",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "M&T Bank Stadium",
+          "game_id": "2026_14_TB_BAL",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "TEN",
+          "home": "DET",
+          "kickoff_utc": "2026-12-13T18:00:00+00:00",
+          "week": 14,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Ford Field",
+          "game_id": "2026_14_TEN_DET",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAC",
+          "home": "LV",
+          "kickoff_utc": "2026-12-13T21:05:00+00:00",
+          "week": 14,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Allegiant Stadium",
+          "game_id": "2026_14_LAC_LV",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "KC",
+          "home": "CIN",
+          "kickoff_utc": "2026-12-13T21:25:00+00:00",
+          "week": 14,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Paycor Stadium",
+          "game_id": "2026_14_KC_CIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "LAR",
+          "home": "SF",
+          "kickoff_utc": "2026-12-13T21:25:00+00:00",
+          "week": 14,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Levi's Stadium",
+          "game_id": "2026_14_LA_SF",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYG",
+          "home": "SEA",
+          "kickoff_utc": "2026-12-13T21:25:00+00:00",
+          "week": 14,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lumen Field",
+          "game_id": "2026_14_NYG_SEA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BUF",
+          "home": "GB",
+          "kickoff_utc": "2026-12-14T01:20:00+00:00",
+          "week": 14,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "Lambeau Field",
+          "game_id": "2026_14_BUF_GB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    },
+    {
+      "target_date": "2026-12-20",
+      "season": 2026,
+      "week": 15,
+      "game_count": 12,
+      "verified_count": 12,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ],
+      "source_errors": {},
+      "games": [
+        {
+          "away": "ATL",
+          "home": "WAS",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Northwest Stadium",
+          "game_id": "2026_15_ATL_WAS",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "BAL",
+          "home": "PIT",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Acrisure Stadium",
+          "game_id": "2026_15_BAL_PIT",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CIN",
+          "home": "CAR",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Bank of America Stadium",
+          "game_id": "2026_15_CIN_CAR",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "CLE",
+          "home": "NYG",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "MetLife Stadium",
+          "game_id": "2026_15_CLE_NYG",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "IND",
+          "home": "TEN",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Nissan Stadium",
+          "game_id": "2026_15_IND_TEN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "JAX",
+          "home": "HOU",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Reliant Stadium",
+          "game_id": "2026_15_JAX_HOU",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "MIA",
+          "home": "GB",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Lambeau Field",
+          "game_id": "2026_15_MIA_GB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NO",
+          "home": "TB",
+          "kickoff_utc": "2026-12-20T18:00:00+00:00",
+          "week": 15,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "Raymond James Stadium",
+          "game_id": "2026_15_NO_TB",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "NYJ",
+          "home": "ARI",
+          "kickoff_utc": "2026-12-20T21:05:00+00:00",
+          "week": 15,
+          "network": "FOX",
+          "status": "Scheduled",
+          "venue": "State Farm Stadium",
+          "game_id": "2026_15_NYJ_ARI",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DAL",
+          "home": "LAR",
+          "kickoff_utc": "2026-12-20T21:25:00+00:00",
+          "week": 15,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "SoFi Stadium",
+          "game_id": "2026_15_DAL_LA",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DEN",
+          "home": "LV",
+          "kickoff_utc": "2026-12-20T21:25:00+00:00",
+          "week": 15,
+          "network": "CBS",
+          "status": "Scheduled",
+          "venue": "Allegiant Stadium",
+          "game_id": "2026_15_DEN_LV",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        },
+        {
+          "away": "DET",
+          "home": "MIN",
+          "kickoff_utc": "2026-12-21T01:20:00+00:00",
+          "week": 15,
+          "network": "NBC",
+          "status": "Scheduled",
+          "venue": "U.S. Bank Stadium",
+          "game_id": "2026_15_DET_MIN",
+          "sources": [
+            "NFL",
+            "CBS",
+            "NFLVERSE",
+            "ESPN"
+          ],
+          "source_count": 4,
+          "verified": true,
+          "kickoff_consensus": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "task_id": "nfl-prop-analytics-step2-rolling-sunday-snapshot-v1",
+  "title": "NFL Prop Analytics Step 2 — Rolling Sunday Schedule Transport",
+  "project": "NFL Prop Analytics",
+  "page": 1,
+  "step": 2,
+  "status": "DONE",
+  "source_main": "93c6bc4c72c8c6a689ecfe0ce1db4a793d0c2ebc",
+  "scope": "Make Step 2 schedule truth resilient across future NFL Sundays by generating a GitHub-certified rolling schedule snapshot and using it only when public Streamlit live transport cannot produce a complete independently verified slate.",
+  "root_cause": {
+    "public_streamlit_live_transport": "Returned zero usable schedule games while GitHub Actions verified the same slate.",
+    "stale_fixed_date_acceptance": "Step 2 verifier was hardcoded to Sept. 27 and 14 games, which would fail future Sundays with a different game count."
+  },
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "passing_yards_frozen_and_untouched": true,
+    "visual_v2_product_changed": false,
+    "verification_threshold_lowered": false,
+    "minimum_independent_sources": 2,
+    "minimum_kickoff_votes": 2,
+    "kickoff_consensus_seconds": 600,
+    "source_loyalty": false,
+    "sportsbook_projection_influence": 0
+  },
+  "rolling_snapshot": {
+    "version": 2,
+    "generation_owner": "GitHub Actions",
+    "live_provider_routing": [
+      "NFL",
+      "CBS",
+      "NFLVERSE",
+      "ESPN"
+    ],
+    "publication_rule": "Only contiguous Sundays where verified_count equals game_count are stored.",
+    "current_verified_window": {
+      "start": "2026-09-27",
+      "end": "2026-12-20",
+      "verified_sundays": 13,
+      "total_games": 160
+    },
+    "next_sunday_proof": {
+      "target_date": "2026-10-04",
+      "game_count": 14,
+      "verified_count": 14,
+      "sources_available": [
+        "NFL",
+        "CBS",
+        "NFLVERSE",
+        "ESPN"
+      ]
+    },
+    "fallback_rule": "Use the exact-date local rolling snapshot only when live public runtime transport is incomplete. Never mix snapshot rows into a partially live slate."
+  },
+  "acceptance": [
+    "Current Sunday has at least one game and verified_count equals game_count.",
+    "Next Sunday exists in the rolling snapshot, has at least one game, and verified_count equals game_count.",
+    "Every stored game has at least two independent sources and kickoff consensus.",
+    "Branch UI shows the Step 2 rolling-snapshot v2 marker and Open matchup is reachable.",
+    "Public UI shows the rolling-snapshot v2 deployment marker before certification proceeds.",
+    "390/768/1440 schedule board remains overflow-free.",
+    "Step 1 and Passing Yards remain frozen.",
+    "Step 2 is declared GREEN + FROZEN only after the public proof succeeds."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
