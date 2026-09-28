@@ -87,7 +87,7 @@ jobs:
 
       - name: Publish generated snapshot to repair branch
         run: |
-          if git diff --quiet -- data/nfl_prop_analytics_schedule_snapshot_v1.json; then
+          if [ -z "$(git status --porcelain -- data/nfl_prop_analytics_schedule_snapshot_v1.json)" ]; then
             echo "NFL_PROP_ANALYTICS_SNAPSHOT_NO_CHANGE"
             exit 0
           fi
