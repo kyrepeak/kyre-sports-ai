@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-visual-v2-step2-streamlit-full-redeploy-v1",
+  "title": "NFL Prop Analytics Page 3 Visual V2 Step 2 — Streamlit Full Redeploy Repair",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": "2-control-plane-repair",
+  "status": "DONE",
+  "source_main": "602b50a3f5ccb1f665d15cd18772e0b8f581b95c",
+  "scope": "Control-plane-only Streamlit full redeploy trigger after Visual V2 Step 2 static, branch UI, and DevSystem checks passed but the public flow could not find Open matchup on the stale hosted runtime.",
+  "repair": {
+    "failed_public_run": 36364918818,
+    "failed_public_job": 108749408500,
+    "failure_token": "V2_STEP2_PUBLIC_ROLE_NOT_READY:button:Open matchup",
+    "production_identity_source_branch": "mlb-step17b-shared-host-cert",
+    "production_identity_render_deploy_branch": "mlb-step17b-shared-host-cert",
+    "expected_commit": "602b50a3f5ccb1f665d15cd18772e0b8f581b95c",
+    "observed_build_marker": "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE",
+    "owner": "PUBLIC_RUNTIME_CONTROL_PLANE",
+    "trigger": "requirements.txt comment-only full-redeploy marker",
+    "dependency_versions_changed": false,
+    "visual_v2_step2_product_changed": false,
+    "frozen_page3_behavior_changed": false,
+    "visual_contract_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
