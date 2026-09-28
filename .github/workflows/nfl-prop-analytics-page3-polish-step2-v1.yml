@@ -193,8 +193,16 @@ jobs:
             '.github/workflows/nfl-prop-analytics-page3-redesign-step4-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-redesign-step5-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-redesign-step6-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step1-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step3-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step4-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step5-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step6-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-page3-step7-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-step8-v1.yml' \
             '.github/workflows/nfl-prop-analytics-page3-visual-v2-step2-v1.yml' \
+            '.github/workflows/nfl-prop-analytics-step8-prop-page-shell-v1.yml' \
             'devsystem/task_ledgers/nfl-prop-page3-visual-v2-step2-hero-v1.json' \
             'nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py' \
             'nfl_prop_analytics_prop_page_v1.py' \
