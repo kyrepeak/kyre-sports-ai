@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "task_id": "devsystem-v5-cert-date-v1",
+  "title": "DevSystem V5 certified selector date repair",
+  "project": "DevSystem production verification",
+  "status": "DONE",
+  "scope": "Verifier-only repair for the single terminal failure in production V5 run 36486378747. The verifier used 2026-09-18, which exposed the current V165 surface but no selected official game identity. The already-proven browser certification uses 2026-09-19, a verified multi-game Saturday, so V5 now uses that same certified date.",
+  "acceptance": [
+    "Only devsystem/production_verify_v5.py, its focused test, and this ledger change.",
+    "No product, router, Render, selector, timeout, dependency, Rushing, Receiving, Passing, roster, availability, projection, probability, sportsbook, or wager changes.",
+    "V5 CERT_DATE is 2026-09-19.",
+    "The verifier still requires a real selected official ESPN event, a second exact game to switch to, matched app-frame event persistence, and exact deep-link reload persistence.",
+    "Missing or mismatched event identity still fails closed."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
