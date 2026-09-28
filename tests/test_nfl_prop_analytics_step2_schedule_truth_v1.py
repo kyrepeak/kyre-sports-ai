@@ -129,6 +129,53 @@ def test_cbs_schedule_parser_extracts_target_day_and_kickoff():
     assert games[0]["network"] == "FOX"
 
 
+def test_cbs_component_markup_fallback_extracts_target_day():
+    html = """
+    <html><body>
+      <h2>Thursday, September 24, 2026</h2>
+      <div class="TableBase-body">
+        <div class="TableBase-bodyTr">
+          <span class="TeamName">Atlanta</span>
+          <span class="TeamName">Green Bay</span>
+          <div class="CellGame">8:15 pm AMZN</div>
+        </div>
+      </div>
+      <h2>Sunday, September 27, 2026</h2>
+      <div class="TableBase-body">
+        <div class="TableBase-bodyTr">
+          <span class="TeamName">Carolina</span>
+          <span class="TeamName">Cleveland</span>
+          <div class="CellGame">1:00 pm FOX</div>
+        </div>
+        <div class="TableBase-bodyTr">
+          <span class="TeamName">L.A. Rams</span>
+          <span class="TeamName">Denver</span>
+          <div class="CellGame">8:20 pm NBC</div>
+        </div>
+      </div>
+      <h2>Monday, September 28, 2026</h2>
+      <div class="TableBase-bodyTr">
+        <span class="TeamName">Philadelphia</span>
+        <span class="TeamName">Chicago</span>
+        <div class="CellGame">8:15 pm ABC</div>
+      </div>
+    </body></html>
+    """
+    games = schedule._parse_cbs_schedule_html(
+        html,
+        target=date(2026, 9, 27),
+        week=3,
+    )
+    assert [(g["away"], g["home"]) for g in games] == [
+        ("CAR", "CLE"),
+        ("LAR", "DEN"),
+    ]
+    assert [g["kickoff_utc"] for g in games] == [
+        datetime(2026, 9, 27, 17, 0, tzinfo=timezone.utc),
+        datetime(2026, 9, 28, 0, 20, tzinfo=timezone.utc),
+    ]
+
+
 def test_verification_requires_two_independent_kickoff_votes():
     target = date(2026, 9, 27)
     kickoff = datetime(2026, 9, 27, 17, 0, tzinfo=timezone.utc)
