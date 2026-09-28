@@ -206,23 +206,36 @@ jobs:
           from datetime import date
           from nfl_prop_analytics_schedule_v1 import (
               _from_cbs,
+              _from_espn_team_schedules,
+              _from_nfl_official,
               _load_schedule_truth_uncached,
+              _reconcile_schedule,
           )
 
-          truth=_load_schedule_truth_uncached(date(2026,9,27))
-          cbs_games=[]
-          cbs_error=""
-          try:
-              cbs_games=_from_cbs(date(2026,9,27),week=3)
-          except Exception as exc:
-              cbs_error=f"{type(exc).__name__}:{exc}"
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_COUNT",len(cbs_games))
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_ERROR",cbs_error)
+          target=date(2026,9,27)
+          truth=_load_schedule_truth_uncached(target)
+
+          def call(loader):
+              try:
+                  return loader(), ""
+              except Exception as exc:
+                  return [], f"{type(exc).__name__}:{exc}"
+
+          cbs_games,cbs_error=call(lambda:_from_cbs(target,week=3))
+          espn_games,espn_error=call(lambda:_from_espn_team_schedules(target,[]))
+          nfl_games,nfl_error=call(lambda:_from_nfl_official(target,season=2026,week=3))
+
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_CBS_COUNT",len(cbs_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_CBS_ERROR",cbs_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_ESPN_COUNT",len(espn_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_ESPN_ERROR",espn_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_NFL_COUNT",len(nfl_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_NFL_ERROR",nfl_error)
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_SOURCES",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_ERRORS",truth["source_errors"])
+
           games=truth["games"]
           pairs={(g["away"],g["home"]) for g in games}
-
           if len(games) != 14:
               raise RuntimeError(f"PROP_ANALYTICS_STEP2_LIVE_SLATE_INCOMPLETE:{len(games)}")
           if truth["verified_count"] != 14:
@@ -234,14 +247,38 @@ jobs:
                   "PROP_ANALYTICS_STEP2_SOURCE_ROUTER_INCOMPLETE:"
                   + ",".join(truth["sources_available"])
               )
-
           for pair in (("BAL","DAL"),("KC","MIA"),("LAR","DEN")):
               if pair not in pairs:
                   raise RuntimeError(f"PROP_ANALYTICS_STEP2_EXPECTED_GAME_MISSING:{pair}")
 
+          # Reproduce the public failure mode: NFLVERSE contributes nothing.
+          no_nflverse=_reconcile_schedule(
+              {
+                  "NFL": nfl_games,
+                  "CBS": cbs_games,
+                  "NFLVERSE": [],
+                  "ESPN": espn_games,
+              },
+              target,
+          )
+          no_nflverse_verified=sum(1 for game in no_nflverse if game["verified"])
+          print("NFL_PROP_ANALYTICS_STEP2_NO_NFLVERSE_GAMES",len(no_nflverse))
+          print("NFL_PROP_ANALYTICS_STEP2_NO_NFLVERSE_VERIFIED",no_nflverse_verified)
+          if len(espn_games) != 14:
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_ESPN_INDEPENDENT_DISCOVERY_INCOMPLETE:{len(espn_games)}"
+              )
+          if len(no_nflverse) != 14 or no_nflverse_verified != 14:
+              raise RuntimeError(
+                  "PROP_ANALYTICS_STEP2_PUBLIC_FAILOVER_INCOMPLETE:"
+                  f"{len(no_nflverse)}:{no_nflverse_verified}:"
+                  f"NFL={len(nfl_games)}:CBS={len(cbs_games)}:ESPN={len(espn_games)}"
+              )
+
           print("NFL_PROP_ANALYTICS_STEP2_LIVE_SCHEDULE_GREEN",len(games))
           print("NFL_PROP_ANALYTICS_STEP2_SOURCE_ROUTER_GREEN",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_VERIFIED_GAMES_GREEN",truth["verified_count"])
+          print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_FAILOVER_GREEN")
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_LIVE_GREEN")
           PY
 
