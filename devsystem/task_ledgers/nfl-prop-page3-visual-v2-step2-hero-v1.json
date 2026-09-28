@@ -1,0 +1,24 @@
+{
+  "version":1,
+  "task_id":"nfl-prop-page3-visual-v2-step2-hero-v1",
+  "title":"NFL Prop Analytics Page 3 Visual Composition V2 Step 2 — Hero Rebuild",
+  "project":"NFL Prop Analytics",
+  "page":3,
+  "series":"Visual Composition V2",
+  "step":2,
+  "status":"DONE",
+  "certification_state":"FREEZE_ON_PUBLIC_PROOF",
+  "source_main":"b3d27f59962944e4d856a89a9d5b5e0ee3d15d41",
+  "source_contract":"devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json",
+  "scope":"Add a true new hero DOM composition matching the locked reference while retaining the frozen V1 hero in DOM for backward proof compatibility.",
+  "acceptance":[
+    "Visible hero is a new unified three-zone composition: home team, player identity/headshot, opponent.",
+    "Game date/time/network/venue form a distinct bottom metadata row.",
+    "Authentic team color accents are localized to the two team sides.",
+    "Frozen V1 hero remains in DOM but is visually retired.",
+    "No history, market, slider, query, data ownership, projection, probability, recommendation, staking, or wager semantics change.",
+    "390/768/1440 pass without horizontal document overflow.",
+    "Public deployed proof passes before GREEN + FROZEN."
+  ],
+  "action_log":{"head_chain_hash":"0000000000000000000000000000000000000000000000000000000000000000","events":[],"consumed_receipts":[]}
+}
