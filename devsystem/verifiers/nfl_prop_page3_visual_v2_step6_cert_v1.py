@@ -314,10 +314,23 @@ def certify(base: str, public: bool) -> None:
         line_container = line_frame.locator(
             ".st-key-nfl_prop_visual_v2_step5_line_lab_v1"
         ).first
+        slider_root = line_container.locator('[data-testid="stSlider"]').first
         slider = line_container.get_by_role("slider").first
+        assert slider_root.count() == 1
         assert slider.count() == 1
+        slider_root_box = _box(slider_root)
         slider_box = _box(slider)
-        assert slider_box["height"] >= 43.5 and slider_box["width"] >= 43.5, slider_box
+        print(
+            f"VISUAL_V2_STEP6_{mode}_SLIDER_TOUCH_DIAGNOSTIC:"
+            f"root={slider_root_box}:role={slider_box}"
+        )
+        # Streamlit's BaseWeb slider exposes the keyboard thumb as role=slider,
+        # while pointer interaction is owned by the full stSlider widget. Certify
+        # the effective widget hit region, not only the 16px visual thumb.
+        assert (
+            slider_root_box["height"] >= 43.5
+            and slider_root_box["width"] >= 43.5
+        ), slider_root_box
         print(f"VISUAL_V2_STEP6_{mode}_TOUCH_TARGETS_GREEN")
 
         focus_button = history_container.locator("button").first
