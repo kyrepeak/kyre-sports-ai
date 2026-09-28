@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+# exact-head CI proof trigger for strict pregame roster-week fallback
 
 import nfl_prop_analytics_roster_truth_v1 as step5
 
