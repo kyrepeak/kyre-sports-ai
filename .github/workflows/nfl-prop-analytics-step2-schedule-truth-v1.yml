@@ -241,11 +241,20 @@ jobs:
                   print(f"NFL_PROP_ANALYTICS_STEP2_{label}_HTTP",response.status_code)
                   print(f"NFL_PROP_ANALYTICS_STEP2_{label}_BYTES",len(response.text))
                   flattened=re.sub(r"\s+"," ",response.text)
-                  for token in ("Kansas City","Chiefs","Miami","Dolphins","09/27","Sep 27","September 27","CAR","CLE"):
+                  diagnostic_tokens = (
+                      ("CBS", ("Sep 27, 2026","Kansas City @ Miami","1:00 PM","5:00 PM")),
+                      ("PFN", ("Sunday, September 27, 2026","Sun, Sep 27","1:00 PM ET","Highmark Stadium","Los Angeles Chargers")),
+                  )
+                  wanted=dict(diagnostic_tokens).get(label,())
+                  printed=0
+                  for token in wanted:
                       pos=flattened.lower().find(token.lower())
                       if pos>=0:
-                          lo=max(0,pos-260);hi=min(len(flattened),pos+620)
-                          print(f"NFL_PROP_ANALYTICS_STEP2_{label}_SNIP_{token.replace(' ','_')}",flattened[lo:hi])
+                          lo=max(0,pos-420);hi=min(len(flattened),pos+1200)
+                          safe_token=re.sub(r"[^A-Za-z0-9]+","_",token).strip("_")
+                          print(f"NFL_PROP_ANALYTICS_STEP2_{label}_SNIP_{safe_token}",flattened[lo:hi])
+                          printed+=1
+                      if printed>=3:
                           break
               except Exception as exc:
                   print(f"NFL_PROP_ANALYTICS_STEP2_{label}_RAW_ERROR",type(exc).__name__,str(exc)[:180])
