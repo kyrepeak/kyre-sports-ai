@@ -22,7 +22,7 @@ def test_step2_is_real_replacement_composition():
         'ks-v2-hero-player',
         'ks-v2-hero-team-away',
         'ks-v2-game-meta',
-        '.ks-pa3-hero{display:none!important}',
+        '.ks-pa3-hero{{display:none!important}}',
         'grid-template-areas:"home player away" "meta meta meta"',
     ):
         assert token in SRC, token
@@ -37,7 +37,7 @@ def test_step2_does_not_own_interactions_or_data():
         assert token not in SRC, token
 
 def test_step2_is_wired_additively_before_frozen_hero():
-    assert "from nfl_prop_analytics_page3_visual_v2_step2_hero_v1 import render_visual_v2_hero" in PAGE
+    assert "from nfl_prop_analytics_page3_visual_v2_step2_hero_v1 import (" in PAGE\n    assert "render_visual_v2_hero" in PAGE
     assert "visual_v2_step2_hero = render_visual_v2_hero(" in PAGE
     assert PAGE.index("visual_v2_step2_hero = render_visual_v2_hero(") < PAGE.index('<section class="ks-pa3-hero"')
     assert '"visual_v2_step2_hero": visual_v2_step2_hero' in PAGE
