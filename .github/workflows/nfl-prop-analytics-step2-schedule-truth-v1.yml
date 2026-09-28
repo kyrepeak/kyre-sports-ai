@@ -243,7 +243,7 @@ jobs:
                   flattened=re.sub(r"\s+"," ",response.text)
                   diagnostic_tokens = (
                       ("CBS", ("Sep 27, 2026","Kansas City @ Miami","1:00 PM","5:00 PM")),
-                      ("PFN", ("Sunday, September 27, 2026","Sun, Sep 27","1:00 PM ET","Highmark Stadium","Los Angeles Chargers")),
+                      ("PFN", ("game-401872953","datetime=","2026-09-27T","Sun, Sep 27","Highmark Stadium")),
                   )
                   wanted=dict(diagnostic_tokens).get(label,())
                   printed=0
