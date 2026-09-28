@@ -208,12 +208,31 @@ def test_load_truth_fails_closed_when_one_position_missing(monkeypatch):
     assert truth["state"] == "fail-closed"
 
 
-def test_hub_renders_step5_only_after_step4_handoff_ready():
+def test_hub_runs_roster_then_availability_before_unified_roster():
     hub = Path("nfl_prop_analytics_hub_v1.py").read_text()
-    assert "handoff = render_matchup_shell()" in hub
-    assert "if handoff:" in hub
-    assert "render_verified_roster_truth(handoff)" in hub
-    assert hub.index("render_matchup_shell()") < hub.index("render_verified_roster_truth(handoff)")
+    current_contract = """handoff = render_matchup_shell()
+        if handoff:
+            render_page2_responsive_polish()
+            roster_truth = load_verified_roster_truth(handoff)
+            if roster_truth and roster_truth.get("state") == "live":
+                availability_truth = load_availability_depth_truth(handoff, roster_truth)
+                if availability_truth and availability_truth.get("state") == "live":
+                    render_unified_roster_availability(handoff, roster_truth, availability_truth)
+"""
+    assert current_contract in hub
+    assert "render_verified_roster_truth(handoff)" not in hub
+
+    handoff_index = hub.index("handoff = render_matchup_shell()")
+    roster_index = hub.index("roster_truth = load_verified_roster_truth(handoff)", handoff_index)
+    availability_index = hub.index(
+        "availability_truth = load_availability_depth_truth(handoff, roster_truth)",
+        roster_index,
+    )
+    unified_index = hub.index(
+        "render_unified_roster_availability(handoff, roster_truth, availability_truth)",
+        availability_index,
+    )
+    assert handoff_index < roster_index < availability_index < unified_index
 
 
 def test_step5_does_not_add_prop_odds_projection_or_passing_yards_logic():
