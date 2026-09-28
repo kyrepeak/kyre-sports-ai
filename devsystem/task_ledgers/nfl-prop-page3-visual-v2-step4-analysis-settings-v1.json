@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-visual-v2-step4-analysis-settings-v1",
+  "title": "NFL Prop Analytics Page 3 Visual Composition V2 Step 4 — Analysis Settings",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": 4,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "6504d8c9a2330465c34d84c5d871886fb315fa23",
+  "source_contract": "devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json",
+  "scope": "Recompose the existing frozen History Window and Prop Category Streamlit segmented controls into the approved single bordered Analysis Settings deck. Preserve exact widget keys, query writes, options, selected values, downstream recalculation, and all data ownership.",
+  "acceptance": [
+    "Visual V2 Step 2 hero remains byte-for-byte unchanged.",
+    "Visual V2 Step 3 stat ribbon remains byte-for-byte unchanged.",
+    "Locked Visual V2 contract remains byte-for-byte unchanged.",
+    "Analysis Settings renders as one bordered parent deck with a compact header and Manual Line Lab cue.",
+    "History Window and Prop Category render as two equal side-by-side cards at reference/tablet width.",
+    "Existing Streamlit segmented controls remain real and tappable.",
+    "Widget keys remain nfl_prop_analytics_page3_step2_history_nav_v1 and nfl_prop_analytics_page3_step2_market_nav_v1.",
+    "History and market query semantics remain unchanged.",
+    "Selected control styling uses glacier-blue emphasis without changing behavior.",
+    "Existing manual Line Lab slider semantics remain unchanged.",
+    "No new provider, data owner, projection, probability, recommendation, stake sizing, or wager action is introduced.",
+    "390/768/1440 pass without horizontal document overflow.",
+    "Branch real-control composition proof passes before merge.",
+    "Public deployed real-flow proof passes before Step 4 is GREEN + FROZEN.",
+    "Terminal tokens: VISUAL_V2_STEP4_PUBLIC_GREEN, VISUAL_V2_STEP4_GREEN, VISUAL_V2_STEP4_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
