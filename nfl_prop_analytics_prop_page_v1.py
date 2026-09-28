@@ -545,7 +545,7 @@ def render_prop_page_shell() -> dict[str, Any]:
 
         with history_control_col:
             chosen_history_label = st.segmented_control(
-                "History window",
+        "History window",
                 options=[history_labels[key] for key in history_keys],
                 default=selected_history_label,
                 selection_mode="single",
