@@ -45,6 +45,53 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Run dependency-free production preflight
+        shell: bash
+        run: |
+          python -m py_compile \
+            devsystem/production_verify_v1.py \
+            devsystem/production_verify_v2.py \
+            devsystem/production_verify_v3.py \
+            devsystem/production_verify_v4.py \
+            devsystem/production_verify_v5.py \
+            devsystem/production_identity_verify_v1.py
+          python - <<'PY'
+          from pathlib import Path
+
+          required_paths = [
+              Path("devsystem/production_verify_v1.py"),
+              Path("devsystem/production_verify_v2.py"),
+              Path("devsystem/production_verify_v3.py"),
+              Path("devsystem/production_verify_v4.py"),
+              Path("devsystem/production_verify_v5.py"),
+              Path("devsystem/production_identity_verify_v1.py"),
+              Path("devsystem/production_targets_v1.json"),
+              Path("tests/test_devsystem_production_verify_v5.py"),
+          ]
+          missing = [str(path) for path in required_paths if not path.is_file()]
+          if missing:
+              raise SystemExit("missing production verification files: " + ", ".join(missing))
+
+          v5 = Path("devsystem/production_verify_v5.py").read_text(encoding="utf-8")
+          required_contract = [
+              'SUPERSEDES_VERIFIER = "devsystem.production_verify_v4"',
+              'FROZEN_PRODUCTION_BASE = "devsystem.production_verify_v2"',
+              'EVENT_QUERY_KEY = v4.EVENT_QUERY_KEY',
+              'DATE_QUERY_KEY = v4.DATE_QUERY_KEY',
+          ]
+          absent = [token for token in required_contract if token not in v5]
+          if absent:
+              raise SystemExit("production V5 static contract missing: " + ", ".join(absent))
+
+          workflow = Path(".github/workflows/devsystem-production-verification-v5.yml").read_text(encoding="utf-8")
+          preflight_at = workflow.index("- name: Run dependency-free production preflight")
+          browser_restore_at = workflow.index("- name: Restore shared Browser QA stack")
+          if preflight_at >= browser_restore_at:
+              raise SystemExit("cheap preflight must run before browser cache restore")
+
+          print("DEVSYSTEM_PRODUCTION_V5_CHEAP_PREFLIGHT_GREEN")
+          PY
+
       - name: Restore shared Browser QA stack
         id: browser-stack-cache
         uses: actions/cache@v4
