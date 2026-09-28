@@ -1,0 +1,32 @@
+{
+  "task": "github-speed-step1-single-production-verifier-v1",
+  "task_id": "github-speed-step1-single-production-verifier-v1",
+  "title": "GitHub Speed Step 1 — single automatic production verifier",
+  "version": 1,
+  "status": "DONE",
+  "source_main": "fd4e29eabfc7a3a197ce4dead6bd6097b0a86846",
+  "scope": {
+    "legacy_workflow": ".github/workflows/devsystem-production-verification.yml",
+    "authoritative_workflow": ".github/workflows/devsystem-production-verification-v5.yml",
+    "permanent_contract": "devsystem/permanent_gate_v1.py",
+    "regression_test": "tests/test_devsystem_permanent_gate_v1.py"
+  },
+  "acceptance": {
+    "legacy_v4_manual_only": true,
+    "v5_automatic_main": true,
+    "duplicate_main_production_verifier_removed": true,
+    "product_code_changed": false,
+    "proof": "DevSystem targeted CI"
+  },
+  "protected": {
+    "product_code": true,
+    "provider_logic": true,
+    "router_logic": true,
+    "public_runtime_behavior": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
