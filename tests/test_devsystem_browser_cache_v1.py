@@ -104,8 +104,8 @@ def test_production_v5_cache_key_matches_seeded_browser_qa_cache():
 def test_production_v5_runs_cheap_preflight_before_browser_restore():
     text = PRODUCTION_V5.read_text(encoding='utf-8')
 
-    preflight = '\\n      - name: Run dependency-free production preflight'
-    restore = '\\n      - name: Restore shared Browser QA stack'
+    preflight = '\n      - name: Run dependency-free production preflight'
+    restore = '\n      - name: Restore shared Browser QA stack'
     assert preflight in text
     assert restore in text
     assert text.index(preflight) < text.index(restore)
