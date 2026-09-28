@@ -6,9 +6,9 @@
   "page": 1,
   "step": 2,
   "status": "DONE",
-  "source_main": "ece8b7cb3c1c4c8175248085850fef31ce586a92",
-  "failed_layer": "DATA / SCHEDULE VERIFICATION",
-  "first_broken_arrow": "14 games -> 0 verified games",
+  "source_main": "93c6bc4c72c8c6a689ecfe0ce1db4a793d0c2ebc",
+  "failed_layer": "PUBLIC RUNTIME / SCHEDULE SOURCE RESILIENCE",
+  "first_broken_arrow": "public Streamlit -> schedule truth -> 0 games after deployed retry",
   "diagnostic": {
     "run": 36370978274,
     "target_date": "2026-09-27",
@@ -27,7 +27,11 @@
       "deployment delay",
       "redeploy",
       "route identity"
-    ]
+    ],
+    "public_main_run": 36376824312,
+    "public_retry_job": 108785401148,
+    "public_retry_result": "count=0",
+    "conclusion": "deployment lag disproved; public runtime requires independent source discovery when NFLVERSE is unavailable"
   },
   "patch": {
     "new_independent_source": "CBS Sports schedule",
@@ -36,17 +40,21 @@
     "minimum_independent_sources": 2,
     "minimum_kickoff_votes": 2,
     "kickoff_consensus_seconds": 600,
-    "sportsbook_projection_influence": 0.0,
+    "sportsbook_projection_influence": 0,
     "visual_v2_product_changed": false,
-    "passing_yards_changed": false
+    "passing_yards_changed": false,
+    "espn_independent_team_schedule_discovery": true,
+    "nfl_official_url": "https://www.nfl.com/schedules/{season}/by-week/reg-{week}",
+    "cbs_stripped_text_fallback": true,
+    "no_nflverse_failover_required": true
   },
   "acceptance": [
-    "2026-09-27 slate contains 14 Sunday games.",
-    "At least two independent sources are available.",
-    "At least one game is verified; target is the full 14-game slate.",
-    "A verified game requires at least two independent kickoff votes within 10 minutes.",
-    "Step 3 handoff becomes ready and Open matchup is available on branch proof.",
-    "One public proof is allowed after merge."
+    "Normal 2026-09-27 schedule truth returns 14 games and 14 verified.",
+    "ESPN can independently discover all 14 Sunday games without NFLVERSE candidates.",
+    "With NFLVERSE removed, at least two independent providers still reconcile 14/14 VERIFIED games.",
+    "Branch UI exposes Open matchup and preserves 390/768/1440 no-overflow.",
+    "Passing Yards and Step 1 remain frozen.",
+    "Exactly one public proof after merge must emit Step 2 GREEN + FROZEN tokens."
   ],
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
