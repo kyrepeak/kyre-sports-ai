@@ -207,6 +207,7 @@ jobs:
           from nfl_prop_analytics_schedule_v1 import (
               _from_cbs,
               _from_espn_team_schedules,
+              _from_footballdb,
               _from_nfl_official,
               _load_schedule_truth_uncached,
               _reconcile_schedule,
@@ -223,12 +224,15 @@ jobs:
 
           cbs_games,cbs_error=call(lambda:_from_cbs(target,week=3))
           espn_games,espn_error=call(lambda:_from_espn_team_schedules(target,[]))
+          footballdb_games,footballdb_error=call(lambda:_from_footballdb(target))
           nfl_games,nfl_error=call(lambda:_from_nfl_official(target,season=2026,week=3))
 
           print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_CBS_COUNT",len(cbs_games))
           print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_CBS_ERROR",cbs_error)
           print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_ESPN_COUNT",len(espn_games))
           print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_ESPN_ERROR",espn_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_FOOTBALLDB_COUNT",len(footballdb_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_FOOTBALLDB_ERROR",footballdb_error)
           print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_NFL_COUNT",len(nfl_games))
           print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_NFL_ERROR",nfl_error)
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_SOURCES",truth["sources_available"])
@@ -256,6 +260,7 @@ jobs:
               {
                   "NFL": nfl_games,
                   "CBS": cbs_games,
+                  "FOOTBALLDB": footballdb_games,
                   "NFLVERSE": [],
                   "ESPN": espn_games,
               },
@@ -272,7 +277,7 @@ jobs:
               raise RuntimeError(
                   "PROP_ANALYTICS_STEP2_PUBLIC_FAILOVER_INCOMPLETE:"
                   f"{len(no_nflverse)}:{no_nflverse_verified}:"
-                  f"NFL={len(nfl_games)}:CBS={len(cbs_games)}:ESPN={len(espn_games)}"
+                  f"NFL={len(nfl_games)}:CBS={len(cbs_games)}:FOOTBALLDB={len(footballdb_games)}:ESPN={len(espn_games)}"
               )
 
           print("NFL_PROP_ANALYTICS_STEP2_LIVE_SCHEDULE_GREEN",len(games))
