@@ -52,9 +52,17 @@ def _assert_v163_surface(body: str) -> None:
         )
 
 
-def _query_event_id(page) -> str:
-    parsed = parse_qs(urlparse(page.url).query)
-    return str((parsed.get(EVENT_QUERY_KEY) or [""])[-1] or "").strip()
+def _query_event_id(*sources) -> str:
+    """Read persisted event identity from the app frame first, shell second."""
+    for source in sources:
+        url = str(getattr(source, "url", "") or "").strip()
+        if not url:
+            continue
+        parsed = parse_qs(urlparse(url).query)
+        event_id = str((parsed.get(EVENT_QUERY_KEY) or [""])[-1] or "").strip()
+        if event_id:
+            return event_id
+    return ""
 
 
 def _build_v163_evidence(*, expected_commit: str, event_id: str) -> dict[str, Any]:
@@ -119,7 +127,9 @@ def _browser_verify_v163_selector(
                         final_body = body
                         matched_frame = frame
                         break
-                selected_event = _query_event_id(page)
+                # Hosted Streamlit owns st.query_params inside the app frame.
+                # The outer Community Cloud shell URL can remain unchanged.
+                selected_event = _query_event_id(matched_frame, page)
                 if matched_frame is not None and selected_event:
                     break
                 page.wait_for_timeout(1000)
