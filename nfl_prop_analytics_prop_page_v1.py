@@ -537,6 +537,7 @@ def render_prop_page_shell() -> dict[str, Any]:
     )
 
     analysis_settings_container = st.container(
+        border=True,
         key=VISUAL_V2_STEP4_CONTAINER_KEY,
     )
     with analysis_settings_container:
