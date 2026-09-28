@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+# exact-head CI proof trigger for strict pregame roster-week fallback
 
 import nfl_prop_analytics_roster_truth_v1 as step5
 
@@ -111,6 +112,107 @@ def test_nflverse_week_filter_uses_exact_season_week_team_and_position():
     assert rows[0]["position"] == "QB"
 
 
+def _weekly_frame_for_roster_weeks(weeks):
+    rows = []
+    for week in weeks:
+        for team, base in (("IND", 100), ("WAS", 200)):
+            for offset, pos in enumerate(("QB", "RB", "WR", "TE"), start=1):
+                rows.append({
+                    "season": 2026,
+                    "week": week,
+                    "team": team,
+                    "position": pos,
+                    "status": "ACT",
+                    "full_name": f"{team} {pos}",
+                    "espn_id": base + offset,
+                    "jersey_number": offset,
+                    "gsis_id": f"00-{base + offset}",
+                    "headshot_url": "",
+                })
+    return pd.DataFrame(rows)
+
+
+def test_nflverse_roster_week_prefers_exact_requested_week():
+    frame = _weekly_frame_for_roster_weeks((3, 4))
+    week, diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=True,
+    )
+    assert week == 4
+    assert diag["ok"] is True
+    assert diag["lag"] == 0
+
+
+def test_nflverse_roster_week_allows_only_immediate_prior_week_pregame():
+    frame = _weekly_frame_for_roster_weeks((1, 2, 3))
+    week, diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=True,
+    )
+    assert week == 3
+    assert diag["ok"] is True
+    assert diag["lag"] == 1
+
+
+def test_nflverse_roster_week_rejects_stale_or_nonpregame_fallback():
+    frame = _weekly_frame_for_roster_weeks((1, 2))
+    stale_week, stale_diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=True,
+    )
+    assert stale_week is None
+    assert stale_diag["ok"] is False
+
+    frame = _weekly_frame_for_roster_weeks((1, 2, 3))
+    closed_week, closed_diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=False,
+    )
+    assert closed_week is None
+    assert closed_diag["ok"] is False
+
+
+def test_espn_roster_boundary_maps_canonical_was_to_provider_wsh(monkeypatch):
+    calls = []
+
+    def fake_loader(team):
+        calls.append(team)
+        return (
+            [
+                {
+                    "athlete_id": "1",
+                    "name": "Washington QB",
+                    "position": "QB",
+                    "roster_status": "Active",
+                    "group_label": "QB",
+                    "prop_eligible": True,
+                }
+            ],
+            {"ok": True, "http": 200},
+        )
+
+    monkeypatch.setattr(step5.game_day, "load_current_team_roster", fake_loader)
+    rows, diag = step5._espn_team_rows("WAS")
+
+    assert calls == ["WSH"]
+    assert diag["ok"] is True
+    assert rows[0]["espn_id"] == "1"
+    assert rows[0]["position"] == "QB"
+    assert step5._canon_team("WSH") == "WAS"
+
+
 def test_load_truth_requires_all_four_positions_on_both_teams(monkeypatch):
     frame = pd.DataFrame([
         {"season": 2026, "week": 3, "team": team, "position": pos, "status": "ACT", "full_name": f"{team} {pos}", "espn_id": idx, "jersey_number": idx, "gsis_id": f"00-{idx}", "headshot_url": ""}
@@ -179,12 +281,31 @@ def test_load_truth_fails_closed_when_one_position_missing(monkeypatch):
     assert truth["state"] == "fail-closed"
 
 
-def test_hub_renders_step5_only_after_step4_handoff_ready():
+def test_hub_runs_roster_then_availability_before_unified_roster():
     hub = Path("nfl_prop_analytics_hub_v1.py").read_text()
-    assert "handoff = render_matchup_shell()" in hub
-    assert "if handoff:" in hub
-    assert "render_verified_roster_truth(handoff)" in hub
-    assert hub.index("render_matchup_shell()") < hub.index("render_verified_roster_truth(handoff)")
+    current_contract = """handoff = render_matchup_shell()
+        if handoff:
+            render_page2_responsive_polish()
+            roster_truth = load_verified_roster_truth(handoff)
+            if roster_truth and roster_truth.get("state") == "live":
+                availability_truth = load_availability_depth_truth(handoff, roster_truth)
+                if availability_truth and availability_truth.get("state") == "live":
+                    render_unified_roster_availability(handoff, roster_truth, availability_truth)
+"""
+    assert current_contract in hub
+    assert "render_verified_roster_truth(handoff)" not in hub
+
+    handoff_index = hub.index("handoff = render_matchup_shell()")
+    roster_index = hub.index("roster_truth = load_verified_roster_truth(handoff)", handoff_index)
+    availability_index = hub.index(
+        "availability_truth = load_availability_depth_truth(handoff, roster_truth)",
+        roster_index,
+    )
+    unified_index = hub.index(
+        "render_unified_roster_availability(handoff, roster_truth, availability_truth)",
+        availability_index,
+    )
+    assert handoff_index < roster_index < availability_index < unified_index
 
 
 def test_step5_does_not_add_prop_odds_projection_or_passing_yards_logic():

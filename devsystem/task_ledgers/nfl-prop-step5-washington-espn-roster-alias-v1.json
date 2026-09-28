@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-step5-washington-espn-roster-alias-v1",
+  "title": "NFL Prop Analytics Step 5 — Washington ESPN roster alias repair",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 5,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "3d0b707a83f358fee29044308b1a0bea3e492b93",
+  "root_cause": {
+    "diagnostic_run": 36446543103,
+    "diagnostic_job": 109010217628,
+    "selected_game": "IND-WAS",
+    "selected_date": "2026-10-04",
+    "page2_handoff": "ready",
+    "owner": "STEP5_VERIFIED_ROSTER_TRUTH",
+    "failure_field": "ESPN_ROSTER_SOURCE",
+    "failure_detail": {
+      "team": "WAS",
+      "reason": "unknown team",
+      "http": null
+    },
+    "explanation": "Step 5 canonicalizes Washington to WAS for cross-source reconciliation, while the frozen ESPN TEAM_IDS map uses WSH. Passing WAS directly to the ESPN roster loader makes a valid verified matchup fail closed before roster reconciliation.",
+    "nflverse_week_diagnostic": {
+      "requested_week": 4,
+      "published_common_weeks": [
+        1,
+        2,
+        3
+      ],
+      "target_week_rows": {
+        "IND": 0,
+        "WAS": 0
+      },
+      "target_week_id_overlap": {
+        "IND": 0,
+        "WAS": 0
+      },
+      "finding": "nflverse Week 4 roster rows are not published yet for the upcoming 2026-10-04 slate"
+    }
+  },
+  "patch": {
+    "owner_file": "nfl_prop_analytics_roster_truth_v1.py",
+    "canonical_team": "WAS",
+    "provider_team": "WSH",
+    "verification_contract_lowered": false,
+    "nflverse_logic_changed": false,
+    "availability_logic_changed": false,
+    "schedule_logic_changed": false,
+    "visual_v2_changed": false,
+    "passing_yards_changed": false,
+    "nflverse_latest_published_week_fallback": {
+      "enabled": true,
+      "exact_week_preferred": true,
+      "max_lag_weeks": 1,
+      "pregame_only": true,
+      "both_teams_common_week_required": true,
+      "source_count_requirement": 2,
+      "fail_closed_when_older": true
+    }
+  },
+  "acceptance": [
+    "Canonical WAS maps to ESPN provider code WSH only at the ESPN roster boundary.",
+    "Independent ESPN + NFLVERSE exact ESPN-ID / position / active-status agreement remains required.",
+    "If the requested future nflverse roster week is unpublished, only the immediately prior common published week may corroborate current ESPN roster truth.",
+    "One-week nflverse fallback is pregame-only; exact requested-week truth is required once the target date is not in the future.",
+    "Verified IND-WAS Page-2 handoff remains ready for 2026-10-04.",
+    "Step-5 roster truth is live with source_count=2 and required positions for both teams.",
+    "Step-6 availability/depth truth is live.",
+    "Unified roster is visible and live.",
+    "A QB is selectable and Open prop page reaches real Page 3.",
+    "Visual V2 Step 2 hero, Step 3 ribbon, Step 4 Analysis Settings, Line Lab, and 390/768/1440 all pass.",
+    "One public freeze proof after merge must print the required Visual V2 Step-4 final tokens."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
