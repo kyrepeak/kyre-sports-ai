@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-visual-v2-step5-lower-analytics-v1",
+  "title": "NFL Prop Analytics Page 3 Visual Composition V2 Step 5 — Line Lab + Lower Analytics",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": 5,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "1c81feb5c91a7251bbe2019d5241aeb33598eb5c",
+  "source_contract": "devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json",
+  "scope": "Recompose the frozen Line Lab, live historical recalculation, and game-by-game chart into the approved Visual V2 lower-analytics composition without changing slider behavior, history math, chart truth, widget keys, query semantics, or data ownership.",
+  "acceptance": [
+    "Visual V2 Steps 2, 3, and 4 remain byte-for-byte unchanged.",
+    "Frozen Line Lab owner remains byte-for-byte unchanged.",
+    "Frozen Game Chart owner remains byte-for-byte unchanged.",
+    "Line Lab renders as one cohesive card with title/subtitle, manual-line disclaimer, centered current value, and the real frozen Streamlit slider beneath.",
+    "Live historical recalculation renders as four equal cards: analysis line, over percent, under percent, average stat.",
+    "Game chart remains the frozen game-by-game chart truth and renders in a full-width V2 chart container.",
+    "Existing slider min/max/value/key/recalculation behavior remains unchanged.",
+    "Chart values and over/under/push classification remain unchanged.",
+    "No sportsbook projections, probabilities, recommendations, stake sizing, or wager actions are introduced.",
+    "390/768/1440 pass without horizontal document overflow.",
+    "Branch real-flow proof passes before merge.",
+    "Public deployed real-flow proof passes before Step 5 is GREEN + FROZEN.",
+    "Terminal tokens: VISUAL_V2_STEP5_PUBLIC_GREEN, VISUAL_V2_STEP5_GREEN, VISUAL_V2_STEP5_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
