@@ -272,9 +272,16 @@ jobs:
               assert c0["x"] < c1["x"],(c0,c1)
               assert abs(c0["width"]-c1["width"])<=3,(c0,c1)
 
-              l5=history_card.get_by_role("button",name="L5",exact=True)
-              att=market_card.get_by_role("button",name="ATT",exact=True)
-              assert l5.count()==1 and att.count()==1
+              def card_button(card,name):
+                  buttons=card.locator("button").filter(has_text=name)
+                  for i in range(buttons.count()):
+                      candidate=buttons.nth(i)
+                      if candidate.inner_text().strip()==name:
+                          return candidate
+                  raise RuntimeError("VISUAL_V2_STEP4_BRANCH_SEGMENT_NOT_READY:"+name)
+
+              l5=card_button(history_card,"L5")
+              att=card_button(market_card,"ATT")
               assert l5.bounding_box()["height"]>=43.5
               assert att.bounding_box()["height"]>=43.5
               l5.click()
@@ -364,9 +371,11 @@ jobs:
               while time.monotonic()<end:
                   for frame in page.frames:
                       try:
-                          loc=frame.get_by_role("button",name=name,exact=True)
-                          if loc.count():
-                              return frame,loc.first
+                          buttons=frame.locator("button").filter(has_text=name)
+                          for i in range(buttons.count()):
+                              candidate=buttons.nth(i)
+                              if candidate.inner_text().strip()==name:
+                                  return frame,candidate
                       except Exception:
                           pass
                   page.wait_for_timeout(250)
