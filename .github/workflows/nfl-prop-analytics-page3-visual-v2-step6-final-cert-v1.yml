@@ -1,0 +1,151 @@
+name: NFL Prop Analytics Page 3 Visual V2 Step 6 Final Certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step6-final-cert-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step6-final-cert-v1.json"
+      - "devsystem/verifiers/nfl_prop_page3_visual_v2_step6_cert_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step6_final_cert_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step6-final-cert-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step6-final-cert-v1.json"
+      - "devsystem/verifiers/nfl_prop_page3_visual_v2_step6_cert_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step6_final_cert_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-page3-visual-v2-step6-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce Step 6 certification-only scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-visual-v2-step6-final-cert-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-page3-visual-v2-step6-final-cert-v1.json' \
+            'devsystem/verifiers/nfl_prop_page3_visual_v2_step6_cert_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_visual_v2_step6_final_cert_v1.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo "VISUAL_V2_STEP6_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          }
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "VISUAL_V2_STEP6_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+          check_blob devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json 9819289fd34d53008df8656d9244319e025b27c4
+          check_blob nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py 907ab1094d6e4441a569c055f753fc9539d40b79
+          check_blob nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1.py 85e3808273e4fba3faaef23072e16643c62003bd
+          check_blob nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py 6636dcff5c729b15268a956dcd8dcfde35700e12
+          check_blob nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py 2ea645864b61f0b5426aadcfb8d84896d64d3e3c
+          check_blob nfl_prop_analytics_prop_page_v1.py aab06d6703bc4c1b4d2128c504607590722448bb
+          check_blob nfl_prop_analytics_page3_line_control_v1.py fbeabc240196b30fc966f1a69779c543410e9e3c
+          check_blob nfl_prop_analytics_page3_game_chart_v1.py b21876dfe88bed91009e9edf65cb89f472745c8e
+
+          echo "VISUAL_V2_STEP6_SCOPE_GREEN"
+          echo "VISUAL_V2_STEPS_2_5_FROZEN_PROTECTION_GREEN"
+          echo "VISUAL_V2_STEP6_WIDGET_QUERY_DATA_OWNER_PROTECTION_GREEN"
+
+      - name: Static final contract
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m py_compile devsystem/verifiers/nfl_prop_page3_visual_v2_step6_cert_v1.py
+          PYTHONPATH=. python -m pytest -q tests/test_nfl_prop_analytics_page3_visual_v2_step6_final_cert_v1.py
+          echo "VISUAL_V2_STEP6_STATIC_GREEN"
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser stack and start frozen product
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 >/tmp/v2-step6.log 2>&1 &
+          echo $! >/tmp/v2-step6.pid
+
+      - name: Certify full interactive frozen page
+        run: |
+          python devsystem/verifiers/nfl_prop_page3_visual_v2_step6_cert_v1.py \
+            --base-url http://127.0.0.1:8501
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 2200 /tmp/v2-step6.log || true
+
+      - name: Stop branch Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/v2-step6.pid ]; then
+            kill "$(cat /tmp/v2-step6.pid)" 2>/dev/null || true
+          fi
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Certify deployed public Visual V2 and freeze
+        run: |
+          python devsystem/verifiers/nfl_prop_page3_visual_v2_step6_cert_v1.py \
+            --base-url https://kyre-sports-ai.streamlit.app \
+            --public
+          echo "VISUAL_V2_STEP6_PUBLIC_CERTIFICATION_GREEN"
+          echo "VISUAL_V2_STEP6_GREEN"
+          echo "VISUAL_V2_STEP6_FROZEN"

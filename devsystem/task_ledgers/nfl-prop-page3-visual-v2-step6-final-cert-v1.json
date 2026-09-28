@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "task_id": "nfl-prop-page3-visual-v2-step6-final-cert-v1",
+  "title": "NFL Prop Analytics Page 3 Visual Composition V2 Step 6 — Final Certification",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": 6,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "015b2c6abf44f94df2e942d8402b09945246f57d",
+  "source_contract": "devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json",
+  "scope": "Verification-only final closeout. Certify the already-frozen Visual V2 Steps 2-5 for full integration, accessibility, responsive behavior, real control behavior, downstream Line Lab recalculation, and deployed public parity without changing product ownership or behavior.",
+  "acceptance": [
+    "Visual V2 Steps 2, 3, 4, and 5 remain byte-for-byte unchanged.",
+    "Required visual order remains Hero, Quick Stat Ribbon, Analysis Settings, Line Lab, Live Recalculation, Game Chart.",
+    "History Window and Prop Category remain real tappable controls with unchanged keys and query semantics.",
+    "The real frozen Line Lab slider remains functional and updates downstream live recalculation and chart state.",
+    "Minimum 44px control target contract, visible keyboard focus, and reduced-motion support are certified.",
+    "390/768/1440 pass without horizontal document overflow.",
+    "Five Quick Stat cards remain equal; Analysis Settings remains a single parent deck with two side-by-side controls at tablet/reference widths.",
+    "Current Line remains centered above the real slider; Live Recalculation remains distinct from and cohesive with Game Chart.",
+    "No data is hidden to fake parity and no sportsbook projections, probabilities, recommendations, stake sizing, or wager actions are introduced.",
+    "Page 3 Steps 1-8, Fun Polish 1-5, prior redesign work, Passing Yards, and Visual V2 Steps 2-5 stay protected.",
+    "Branch full-interaction proof passes before merge.",
+    "One deployed public proof passes before Step 6 is GREEN + FROZEN.",
+    "Terminal tokens: VISUAL_V2_STEP6_PUBLIC_GREEN, VISUAL_V2_STEP6_GREEN, VISUAL_V2_STEP6_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "trigger": "User approved Visual V2 Step 6 final certification after Steps 2-5 became GREEN + FROZEN.",
+  "transition_history": [],
+  "override_events": []
+}
