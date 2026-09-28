@@ -60,6 +60,9 @@ from nfl_prop_analytics_page3_final_polish_v1 import (
 from nfl_prop_analytics_page3_visual_v2_step2_hero_v1 import (
     render_visual_v2_hero,
 )
+from nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1 import (
+    render_visual_v2_stat_ribbon,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -432,6 +435,15 @@ def render_prop_page_shell() -> dict[str, Any]:
         venue=venue,
     )
 
+    # Visual V2 Step 3 owns presentation only. Mount its slot directly under
+    # the V2 hero, then populate it after the frozen history/line truth resolves.
+    visual_v2_step3_ribbon_slot = st.empty()
+    visual_v2_step3_stat_ribbon: dict[str, Any] = {
+        "ready": False,
+        "state": "pending",
+        "version": "v1",
+    }
+
     st.markdown(
         f"""
 <section class="ks-pa3-hero"
@@ -645,6 +657,14 @@ def render_prop_page_shell() -> dict[str, Any]:
             if history_summary.get("hit_count") is not None
             else PAGE3_STEP3_PRE_LINE_SENTINEL
         )
+        visual_v2_step3_stat_ribbon = render_visual_v2_stat_ribbon(
+            summary=history_summary,
+            market_label=chosen_label,
+            history_label=history_labels[chosen_history_key],
+            source_note=source_note,
+            available=True,
+            target=visual_v2_step3_ribbon_slot,
+        )
         st.markdown(
             f"""
 <section class="ks-pa3-stats"
@@ -715,6 +735,14 @@ def render_prop_page_shell() -> dict[str, Any]:
             )
 
     else:
+        visual_v2_step3_stat_ribbon = render_visual_v2_stat_ribbon(
+            summary=history_summary,
+            market_label=chosen_label,
+            history_label=history_labels[chosen_history_key],
+            source_note=source_note,
+            available=False,
+            target=visual_v2_step3_ribbon_slot,
+        )
         st.markdown(
             f"""
 <section class="ks-pa3-stats ks-pa3-stats-unavailable"
@@ -947,6 +975,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "market_insights": market_insights,
         "final_polish": final_polish,
         "visual_v2_step2_hero": visual_v2_step2_hero,
+        "visual_v2_step3_stat_ribbon": visual_v2_step3_stat_ribbon,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }

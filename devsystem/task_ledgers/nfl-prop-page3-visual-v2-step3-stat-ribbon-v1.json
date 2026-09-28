@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-visual-v2-step3-stat-ribbon-v1",
+  "title": "NFL Prop Analytics Page 3 Visual Composition V2 Step 3 — Quick Stat Ribbon",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": 3,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "fe369e5c72d5d73642ba2fdab80a1e0b37864edd",
+  "source_contract": "devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json",
+  "scope": "Rebuild the approved five-card Quick Stat Ribbon directly beneath the frozen Visual V2 Step-2 hero. Reuse frozen exact-ID history and line-control summary values only. Keep the old V1 statistics block in DOM for backward proof compatibility while visually retiring it.",
+  "acceptance": [
+    "Frozen Visual V2 Step 2 hero remains byte-for-byte unchanged.",
+    "Visual V2 contract remains byte-for-byte unchanged.",
+    "Five equal stat cards render: Average, Median, Season High, Season Low, Hit Rate.",
+    "Ribbon occupies the approved region directly below the V2 hero.",
+    "Values are supplied only by frozen Page 3 history/line summary truth.",
+    "No new requests, data source, calculation owner, query semantics, widget keys, projections, probabilities, recommendations, staking, or wager actions.",
+    "Frozen V1 statistics section remains in DOM but is visually retired.",
+    "390/768/1440 pass without horizontal document overflow; internal mobile ribbon scrolling is allowed.",
+    "Branch composition proof passes before merge.",
+    "Public deployed real-flow proof passes before Step 3 is GREEN + FROZEN.",
+    "Terminal tokens: VISUAL_V2_STEP3_PUBLIC_GREEN, VISUAL_V2_STEP3_GREEN, VISUAL_V2_STEP3_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
