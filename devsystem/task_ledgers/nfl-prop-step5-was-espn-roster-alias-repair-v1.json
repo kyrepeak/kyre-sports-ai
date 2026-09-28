@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-step5-was-espn-roster-alias-repair-v1",
+  "title": "NFL Prop Analytics Step 5 — Washington ESPN Roster Alias Repair",
+  "project": "NFL Prop Analytics",
+  "page": 2,
+  "step": 5,
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "3d0b707a83f358fee29044308b1a0bea3e492b93",
+  "diagnostic": {
+    "run": 36446543103,
+    "job": 109010217628,
+    "selected_game": "IND-WAS",
+    "selected_date": "2026-10-04",
+    "page2_handoff": "ready",
+    "roster_state": "fail-closed",
+    "roster_source_count": 1,
+    "failure_field": "ESPN_ROSTER_SOURCE",
+    "failure_detail": "team WAS -> unknown team"
+  },
+  "root_cause": "Step 5 canonicalizes Washington to WAS for cross-source reconciliation, while the shared ESPN TEAM_IDS map uses WSH. _espn_team_rows passed canonical WAS directly to the ESPN roster loader, causing the ESPN source to fail before reconciliation.",
+  "patch": "Translate only the Step-5 ESPN lookup key WAS -> WSH. Preserve canonical Step-5 roster identity as WAS and preserve the two-independent-source verification contract.",
+  "protected": [
+    "Visual V2 Step 2",
+    "Visual V2 Step 3",
+    "Visual V2 Step 4 composition",
+    "Analysis Settings",
+    "Line Lab",
+    "schedule verification",
+    "rolling future-Sunday snapshot",
+    "Passing Yards"
+  ],
+  "acceptance": [
+    "WAS resolves through WSH only at the ESPN current-roster lookup boundary.",
+    "Non-Washington teams pass through unchanged.",
+    "Canonical Step-5 output remains WAS.",
+    "IND-WAS verified roster truth is LIVE with ESPN + NFLVERSE.",
+    "Availability/depth truth is LIVE for the same verified handoff.",
+    "Unified roster is visible and a QB is selectable.",
+    "Open prop page reaches Visual V2 Steps 2-4 and Line Lab.",
+    "390/768/1440 pass without horizontal document overflow.",
+    "One public freeze proof passes after merge."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
