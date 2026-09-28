@@ -93,7 +93,14 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
-          from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
+          from collections import Counter
+          from nfl_prop_analytics_roster_truth_v1 import (
+              _espn_team_rows,
+              _load_nflverse_weekly,
+              _nflverse_team_week,
+              _reconcile_team_roster,
+              load_verified_roster_truth,
+          )
 
           handoff={
               "state":"ready",
@@ -107,12 +114,27 @@ jobs:
           }
           truth=load_verified_roster_truth(handoff)
           if truth.get("state")!="live":
+              frame,diag=_load_nflverse_weekly(2026)
+              print("STEP5_RECON_NFLVERSE_ROWS",len(frame),diag.get("ok"),diag.get("http"))
+              for team in ("IND","WAS"):
+                  espn_rows,espn_diag=_espn_team_rows(team)
+                  nv_rows=_nflverse_team_week(frame,team=team,season=2026,week=4)
+                  recon=_reconcile_team_roster(team=team,espn_rows=espn_rows,nflverse_rows=nv_rows)
+                  print("STEP5_RECON_TEAM",team)
+                  print("STEP5_RECON_ESPN_COUNT",len(espn_rows))
+                  print("STEP5_RECON_NFLVERSE_COUNT",len(nv_rows))
+                  print("STEP5_RECON_ESPN_POSITIONS",dict(Counter(r.get("position") for r in espn_rows)))
+                  print("STEP5_RECON_NFLVERSE_POSITIONS",dict(Counter(r.get("position") for r in nv_rows)))
+                  print("STEP5_RECON_ESPN_ACTIVE",dict(Counter(bool(r.get("active")) for r in espn_rows)))
+                  print("STEP5_RECON_NFLVERSE_ACTIVE",dict(Counter(bool(r.get("active")) for r in nv_rows)))
+                  print("STEP5_RECON_VERIFIED_COUNT",recon.get("verified_count"))
+                  print("STEP5_RECON_DISAGREEMENT_REASONS",dict(Counter(r.get("reason") for r in recon.get("disagreements") or [])))
+                  print("STEP5_RECON_ESPN_IDS",",".join(sorted(r.get("espn_id","") for r in espn_rows if r.get("espn_id"))[:12]))
+                  print("STEP5_RECON_NFLVERSE_IDS",",".join(sorted(r.get("espn_id","") for r in nv_rows if r.get("espn_id"))[:12]))
               raise RuntimeError("STEP5_WAS_ALIAS_ROSTER_NOT_LIVE:"+str({
                   "reason":truth.get("reason"),
                   "sources_available":truth.get("sources_available"),
                   "source_count":truth.get("source_count"),
-                  "nflverse_diag":truth.get("nflverse_diag"),
-                  "espn_diag":truth.get("espn_diag"),
                   "verified_count":truth.get("verified_count"),
               }))
           assert truth.get("source_count")==2,truth.get("source_count")
