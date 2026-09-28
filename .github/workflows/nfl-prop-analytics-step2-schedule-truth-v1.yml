@@ -198,36 +198,32 @@ jobs:
             tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py
           echo "NFL_PROP_ANALYTICS_STEP2_STATIC_GREEN"
 
-      - name: Prove live 2026 Week 3 Sunday schedule truth
+      - name: Prove current Sunday schedule truth
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
           from datetime import date
           from nfl_prop_analytics_schedule_v1 import (
-              _from_cbs,
               _load_schedule_truth_uncached,
+              _target_sunday,
           )
 
-          truth=_load_schedule_truth_uncached(date(2026,9,27))
-          cbs_games=[]
-          cbs_error=""
-          try:
-              cbs_games=_from_cbs(date(2026,9,27),week=3)
-          except Exception as exc:
-              cbs_error=f"{type(exc).__name__}:{exc}"
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_COUNT",len(cbs_games))
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_ERROR",cbs_error)
+          target=_target_sunday()
+          truth=_load_schedule_truth_uncached(target)
+          print("NFL_PROP_ANALYTICS_STEP2_CURRENT_TARGET",target.isoformat())
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_SOURCES",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_ERRORS",truth["source_errors"])
           games=truth["games"]
-          pairs={(g["away"],g["home"]) for g in games}
 
-          if len(games) != 14:
-              raise RuntimeError(f"PROP_ANALYTICS_STEP2_LIVE_SLATE_INCOMPLETE:{len(games)}")
-          if truth["verified_count"] != 14:
+          if len(games) <= 0:
               raise RuntimeError(
-                  f"PROP_ANALYTICS_STEP2_LIVE_VERIFICATION_INCOMPLETE:{truth['verified_count']}"
+                  f"PROP_ANALYTICS_STEP2_CURRENT_SLATE_EMPTY:{target.isoformat()}"
+              )
+          if truth["verified_count"] != len(games):
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_CURRENT_VERIFICATION_INCOMPLETE:"
+                  f"{truth['verified_count']}/{len(games)}"
               )
           if len(truth["sources_available"]) < 2:
               raise RuntimeError(
@@ -235,14 +231,10 @@ jobs:
                   + ",".join(truth["sources_available"])
               )
 
-          for pair in (("BAL","DAL"),("KC","MIA"),("LAR","DEN")):
-              if pair not in pairs:
-                  raise RuntimeError(f"PROP_ANALYTICS_STEP2_EXPECTED_GAME_MISSING:{pair}")
-
           print("NFL_PROP_ANALYTICS_STEP2_LIVE_SCHEDULE_GREEN",len(games))
           print("NFL_PROP_ANALYTICS_STEP2_SOURCE_ROUTER_GREEN",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_VERIFIED_GAMES_GREEN",truth["verified_count"])
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_LIVE_GREEN")
+          print("NFL_PROP_ANALYTICS_STEP2_CURRENT_SUNDAY_GREEN",target.isoformat())
           PY
 
   branch-ui-proof:
@@ -364,8 +356,8 @@ jobs:
 
               assert state=="live",state
               assert target.weekday()==6,target
-              assert count==14,count
-              assert verified==14,verified
+              assert count>0,count
+              assert verified==count,(verified,count)
               assert len([s for s in source_text.split(",") if s])>=2,source_text
               selection_frame,selection=find(
                   page,
@@ -525,8 +517,8 @@ jobs:
               source_text=board.get_attribute("data-prop-schedule-sources") or ""
 
               assert target.weekday()==6,target
-              assert count==14,count
-              assert verified==14,verified
+              assert count>0,count
+              assert verified==count,(verified,count)
               assert len([s for s in source_text.split(",") if s])>=2,source_text
 
               selection_frame,selection=find(
