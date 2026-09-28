@@ -57,6 +57,9 @@ from nfl_prop_analytics_page3_final_polish_v1 import (
     PAGE3_FINAL_POLISH_VERSION,
     render_final_polish,
 )
+from nfl_prop_analytics_page3_visual_v2_step2_hero_v1 import (
+    render_visual_v2_hero,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -408,6 +411,26 @@ def render_prop_page_shell() -> dict[str, Any]:
     gate_open = bool(handoff.get("prop_analysis_gate_open"))
     gate_state = "OPEN" if gate_open else "CLOSED"
     analytics_state = "READY" if gate_open else "LOCKED"
+
+    visual_v2_step2_hero = render_visual_v2_hero(
+        player_team=player_team,
+        player_team_name=player_team_name,
+        player_logo=player_logo,
+        opponent=opponent,
+        opponent_name=opponent_name,
+        opponent_logo=opponent_logo,
+        player_name=handoff["player_name"],
+        position=handoff["position"],
+        market_label=initial_label,
+        headshot=headshot,
+        depth_role=handoff["depth_role"],
+        player_id=handoff["player_id"],
+        gate_state=gate_state,
+        display_date=display_date,
+        kickoff=kickoff,
+        network=network,
+        venue=venue,
+    )
 
     st.markdown(
         f"""
@@ -923,6 +946,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "supporting_stats": supporting_stats,
         "market_insights": market_insights,
         "final_polish": final_polish,
+        "visual_v2_step2_hero": visual_v2_step2_hero,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
