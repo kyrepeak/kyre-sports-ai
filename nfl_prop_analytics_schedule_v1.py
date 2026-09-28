@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 import html as html_lib
 from io import StringIO
+from html.parser import HTMLParser
 import re
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -31,6 +32,7 @@ MAY_MODIFY_EXISTING_NFL_MARKETS = False
 NFLVERSE_GAMES_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
 ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"
+CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"
 
 AZ = ZoneInfo("America/Phoenix")
 ET = ZoneInfo("America/New_York")
@@ -81,6 +83,20 @@ TEAM_NAMES = {
     "SF": "49ers", "TB": "Buccaneers", "TEN": "Titans", "WAS": "Commanders",
 }
 
+CBS_TEAM_ALIASES = {
+    "ARIZONA": "ARI", "ATLANTA": "ATL", "BALTIMORE": "BAL", "BUFFALO": "BUF",
+    "CAROLINA": "CAR", "CHICAGO": "CHI", "CINCINNATI": "CIN", "CLEVELAND": "CLE",
+    "DALLAS": "DAL", "DENVER": "DEN", "DETROIT": "DET", "GREEN BAY": "GB",
+    "HOUSTON": "HOU", "INDIANAPOLIS": "IND", "JACKSONVILLE": "JAX", "KANSAS CITY": "KC",
+    "L.A. CHARGERS": "LAC", "LA CHARGERS": "LAC", "L.A. RAMS": "LAR", "LA RAMS": "LAR",
+    "LAS VEGAS": "LV", "MIAMI": "MIA", "MINNESOTA": "MIN", "NEW ENGLAND": "NE",
+    "NEW ORLEANS": "NO", "N.Y. GIANTS": "NYG", "NY GIANTS": "NYG",
+    "N.Y. JETS": "NYJ", "NY JETS": "NYJ", "PHILADELPHIA": "PHI",
+    "PITTSBURGH": "PIT", "SAN FRANCISCO": "SF", "SEATTLE": "SEA",
+    "TAMPA BAY": "TB", "TENNESSEE": "TEN", "WASHINGTON": "WAS",
+}
+
+
 ESPN_LOGO_CODES = {
     "WAS": "wsh",
 }
@@ -93,7 +109,7 @@ def team_logo_url(team: Any) -> str:
     return f"https://a.espncdn.com/i/teamlogos/nfl/500/{code}.png"
 
 
-SOURCE_PRIORITY = ("NFL", "NFLVERSE", "ESPN")
+SOURCE_PRIORITY = ("NFL", "CBS", "NFLVERSE", "ESPN")
 REQUEST_HEADERS = {
     "User-Agent": "KyreSportsAI/1.0 schedule-truth-layer (+https://kyre-sports-ai.streamlit.app)"
 }
@@ -192,6 +208,150 @@ def _from_nflverse(target: date) -> list[dict[str, Any]]:
         if item:
             games.append(item)
     return games
+
+
+class _CBSScheduleHTMLParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.current_date: date | None = None
+        self.rows: list[tuple[date | None, list[str]]] = []
+        self._heading_tag: str | None = None
+        self._heading_parts: list[str] = []
+        self._row: list[str] | None = None
+        self._cell_parts: list[str] | None = None
+
+    @staticmethod
+    def _clean(parts: list[str]) -> str:
+        return re.sub(r"\s+", " ", " ".join(parts)).strip()
+
+    @staticmethod
+    def _heading_date(text: str) -> date | None:
+        match = re.search(
+            r"(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s+"
+            r"([A-Za-z]+)\s+(\d{1,2}),\s+(\d{4})",
+            text,
+            re.IGNORECASE,
+        )
+        if not match:
+            return None
+        month, day_text, year_text = match.groups()
+        try:
+            return datetime.strptime(
+                f"{month} {int(day_text)} {int(year_text)}", "%B %d %Y"
+            ).date()
+        except ValueError:
+            return None
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        lowered = tag.lower()
+        if lowered in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            self._heading_tag = lowered
+            self._heading_parts = []
+        elif lowered == "tr":
+            self._row = []
+        elif lowered in {"td", "th"} and self._row is not None:
+            self._cell_parts = []
+
+    def handle_data(self, data: str) -> None:
+        if self._heading_tag is not None:
+            self._heading_parts.append(data)
+        if self._cell_parts is not None:
+            self._cell_parts.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        lowered = tag.lower()
+        if lowered == self._heading_tag:
+            heading = self._clean(self._heading_parts)
+            parsed = self._heading_date(heading)
+            if parsed is not None:
+                self.current_date = parsed
+            self._heading_tag = None
+            self._heading_parts = []
+        elif lowered in {"td", "th"} and self._cell_parts is not None:
+            if self._row is not None:
+                self._row.append(self._clean(self._cell_parts))
+            self._cell_parts = None
+        elif lowered == "tr" and self._row is not None:
+            self.rows.append((self.current_date, self._row))
+            self._row = None
+            self._cell_parts = None
+
+
+def _canon_cbs_team(value: Any) -> str:
+    token = re.sub(r"\s+", " ", str(value or "")).strip().upper()
+    if token in CBS_TEAM_ALIASES:
+        return CBS_TEAM_ALIASES[token]
+    return _canon_team(token)
+
+
+def _parse_cbs_schedule_html(
+    body: str,
+    *,
+    target: date,
+    week: int,
+) -> list[dict[str, Any]]:
+    parser = _CBSScheduleHTMLParser()
+    parser.feed(body)
+
+    games: list[dict[str, Any]] = []
+    for row_date, cells in parser.rows:
+        if row_date != target or len(cells) < 3:
+            continue
+        away = _canon_cbs_team(cells[0])
+        home = _canon_cbs_team(cells[1])
+        if away not in TEAM_NAMES or home not in TEAM_NAMES:
+            continue
+
+        time_cell = next(
+            (
+                cell
+                for cell in cells[2:]
+                if re.search(r"\b\d{1,2}:\d{2}\s*(?:am|pm)\b", cell, re.IGNORECASE)
+            ),
+            "",
+        )
+        time_match = re.search(
+            r"\b(\d{1,2}:\d{2})\s*(am|pm)\b",
+            time_cell,
+            re.IGNORECASE,
+        )
+        if not time_match:
+            continue
+        clock = f"{time_match.group(1)} {time_match.group(2).upper()}"
+        network = time_cell[time_match.end():].strip(" -|")
+        venue = cells[4].strip() if len(cells) >= 5 else ""
+        item = _game(
+            away=away,
+            home=home,
+            kickoff_utc=_kickoff_et(target, clock),
+            source="CBS",
+            season=target.year,
+            week=week,
+            network=network,
+            status="scheduled",
+            venue=venue,
+        )
+        if item:
+            games.append(item)
+    return games
+
+
+def _from_cbs(target: date, week: int | None) -> list[dict[str, Any]]:
+    if not week:
+        return []
+    response = requests.get(
+        CBS_SCHEDULE_URL.format(season=target.year, week=week),
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0 Safari/537.36"
+            )
+        },
+        timeout=6,
+    )
+    response.raise_for_status()
+    return _parse_cbs_schedule_html(response.text, target=target, week=int(week))
 
 
 def _from_espn(target: date) -> list[dict[str, Any]]:
@@ -327,21 +487,21 @@ def _reconcile_schedule(
     for (away, home), bundle in bundles.items():
         sources = tuple(source for source in SOURCE_PRIORITY if source in bundle)
         kickoff = _field_from_sources(
-            bundle, "kickoff_utc", ("NFL", "ESPN", "NFLVERSE"), None
+            bundle, "kickoff_utc", ("NFL", "CBS", "ESPN", "NFLVERSE"), None
         )
-        week = _field_from_sources(bundle, "week", ("NFL", "NFLVERSE", "ESPN"), None)
-        network = _field_from_sources(bundle, "network", ("NFL", "ESPN", "NFLVERSE"), "")
-        status = _field_from_sources(bundle, "status", ("ESPN", "NFL", "NFLVERSE"), "scheduled")
-        venue = _field_from_sources(bundle, "venue", ("NFLVERSE", "ESPN", "NFL"), "")
-        game_id = _field_from_sources(bundle, "game_id", ("NFLVERSE", "ESPN", "NFL"), "")
+        week = _field_from_sources(bundle, "week", ("NFL", "CBS", "NFLVERSE", "ESPN"), None)
+        network = _field_from_sources(bundle, "network", ("NFL", "CBS", "ESPN", "NFLVERSE"), "")
+        status = _field_from_sources(bundle, "status", ("ESPN", "NFL", "CBS", "NFLVERSE"), "scheduled")
+        venue = _field_from_sources(bundle, "venue", ("CBS", "NFLVERSE", "ESPN", "NFL"), "")
+        game_id = _field_from_sources(bundle, "game_id", ("NFLVERSE", "ESPN", "NFL", "CBS"), "")
 
         kickoff_votes = [
             game.get("kickoff_utc")
             for game in bundle.values()
             if game.get("kickoff_utc") is not None
         ]
-        kickoff_consensus = True
-        if len(kickoff_votes) >= 2:
+        kickoff_consensus = len(kickoff_votes) >= 2
+        if kickoff_consensus:
             anchor = kickoff_votes[0]
             kickoff_consensus = all(
                 abs((vote - anchor).total_seconds()) <= 600
@@ -362,7 +522,11 @@ def _reconcile_schedule(
                 "game_id": game_id,
                 "sources": sources,
                 "source_count": len(sources),
-                "verified": len(sources) >= 2 and kickoff_consensus,
+                "verified": (
+                    len(sources) >= 2
+                    and len(kickoff_votes) >= 2
+                    and kickoff_consensus
+                ),
                 "kickoff_consensus": kickoff_consensus,
             }
         )
@@ -393,13 +557,23 @@ def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
 
     week = _week_hint(nflverse_games, espn_games)
     season = target.year
-    official_games = safe(
-        "NFL",
-        lambda: _from_nfl_official(target, season=season, week=week),
-    )
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        official_future = pool.submit(
+            safe,
+            "NFL",
+            lambda: _from_nfl_official(target, season=season, week=week),
+        )
+        cbs_future = pool.submit(
+            safe,
+            "CBS",
+            lambda: _from_cbs(target, week=week),
+        )
+        official_games = official_future.result()
+        cbs_games = cbs_future.result()
 
     source_games = {
         "NFL": official_games,
+        "CBS": cbs_games,
         "NFLVERSE": nflverse_games,
         "ESPN": espn_games,
     }
