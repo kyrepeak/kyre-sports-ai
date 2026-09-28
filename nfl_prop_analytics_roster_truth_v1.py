@@ -48,6 +48,10 @@ NFLVERSE_TEAM_ALIASES = {
     "WSH": "WAS",
 }
 
+ESPN_TEAM_ALIASES = {
+    "WAS": "WSH",
+}
+
 
 def _text(value: Any) -> str:
     return str(value if value is not None else "").strip()
@@ -160,8 +164,84 @@ def _nflverse_team_week(
     return list(dedup.values())
 
 
+
+def _nflverse_available_weeks(
+    frame: pd.DataFrame,
+    *,
+    team: str,
+    season: int,
+) -> list[int]:
+    if frame.empty:
+        return []
+
+    work = frame.copy()
+    work["season_num"] = pd.to_numeric(work["season"], errors="coerce")
+    work["week_num"] = pd.to_numeric(work["week"], errors="coerce")
+    work["team_canon"] = work["team"].map(_canon_team)
+    selected = work[
+        (work["season_num"] == int(season))
+        & (work["team_canon"] == _canon_team(team))
+    ]
+    weeks = {
+        int(value)
+        for value in selected["week_num"].dropna().tolist()
+        if int(value) >= 1
+    }
+    return sorted(weeks)
+
+
+def _resolve_nflverse_week(
+    frame: pd.DataFrame,
+    *,
+    away: str,
+    home: str,
+    season: int,
+    requested_week: int,
+    target_date: str,
+) -> tuple[int | None, bool]:
+    requested = int(requested_week)
+    exact_away = _nflverse_team_week(
+        frame,
+        team=away,
+        season=season,
+        week=requested,
+    )
+    exact_home = _nflverse_team_week(
+        frame,
+        team=home,
+        season=season,
+        week=requested,
+    )
+    if exact_away and exact_home:
+        return requested, False
+
+    try:
+        target = date.fromisoformat(_text(target_date))
+    except ValueError:
+        return None, False
+
+    if target < date.today():
+        return None, False
+
+    away_weeks = set(_nflverse_available_weeks(frame, team=away, season=season))
+    home_weeks = set(_nflverse_available_weeks(frame, team=home, season=season))
+    prior_common = sorted(
+        week
+        for week in (away_weeks & home_weeks)
+        if week < requested
+    )
+    if not prior_common:
+        return None, False
+
+    latest = prior_common[-1]
+    if requested - latest != 1:
+        return None, False
+    return latest, True
+
 def _espn_team_rows(team: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    rows, diag = game_day.load_current_team_roster(team)
+    canonical_team = _canon_team(team)
+    espn_team = ESPN_TEAM_ALIASES.get(canonical_team, canonical_team)
+    rows, diag = game_day.load_current_team_roster(espn_team)
     selected = []
     for row in rows:
         position = _canon_position(row.get("position"))
@@ -307,18 +387,30 @@ def load_verified_roster_truth(
     if nflverse_diag.get("ok"):
         sources_available.append("NFLVERSE")
 
-    away_nv = _nflverse_team_week(
+    nflverse_week_used, nflverse_fallback_used = _resolve_nflverse_week(
         nflverse_frame,
-        team=away,
+        away=away,
+        home=home,
         season=season,
-        week=week,
+        requested_week=week,
+        target_date=_text(handoff.get("target_date")),
     )
-    home_nv = _nflverse_team_week(
-        nflverse_frame,
-        team=home,
-        season=season,
-        week=week,
-    )
+    if nflverse_week_used is None:
+        away_nv = []
+        home_nv = []
+    else:
+        away_nv = _nflverse_team_week(
+            nflverse_frame,
+            team=away,
+            season=season,
+            week=nflverse_week_used,
+        )
+        home_nv = _nflverse_team_week(
+            nflverse_frame,
+            team=home,
+            season=season,
+            week=nflverse_week_used,
+        )
 
     away_truth = _reconcile_team_roster(
         team=away,
@@ -353,6 +445,9 @@ def load_verified_roster_truth(
         "sources_available": tuple(sources_available),
         "source_count": len(sources_available),
         "nflverse_diag": nflverse_diag,
+        "nflverse_week_requested": week,
+        "nflverse_week_used": nflverse_week_used,
+        "nflverse_fallback_used": bool(nflverse_fallback_used),
         "espn_diag": {
             away: away_diag,
             home: home_diag,
