@@ -32,3 +32,10 @@ def test_production_workflow_runs_v4_and_self_tests_it():
     assert 'devsystem/production_verify_v4.py' in source
     assert 'tests/test_devsystem_production_verify_v4.py' in source
     assert 'python devsystem/production_verify_v4.py' in source
+
+
+def test_v4_reads_persisted_event_from_streamlit_app_frame_before_shell():
+    source = _read(VERIFIER)
+    assert "def _query_event_id(*sources)" in source
+    assert 'getattr(source, "url", "")' in source
+    assert "selected_event = _query_event_id(matched_frame, page)" in source
