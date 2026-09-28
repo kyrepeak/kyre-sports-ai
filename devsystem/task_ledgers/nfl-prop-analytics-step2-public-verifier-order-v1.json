@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-analytics-step2-public-verifier-order-v1",
+  "title": "NFL Prop Analytics Step 2 — Public Freeze Verifier Ordering Repair",
+  "project": "NFL Prop Analytics",
+  "page": 1,
+  "step": "2-public-freeze-verifier",
+  "status": "DONE",
+  "source_main": "5569347c9b6f7bf89675f2edfcfe0812cd9ab14a",
+  "scope": "Verifier-only repair after public Step 2 product flow passed through schedule, verification, Open matchup, and Visual V2 composition, then the proof reused the stale Page-1 schedule-board locator after navigation.",
+  "root_cause": {
+    "failed_run": 36380539519,
+    "failed_retry_job": 108797436387,
+    "failure": "Locator.evaluate timed out on the Page-1 schedule-board locator after the browser had already navigated to Page 3.",
+    "product_failure": false,
+    "provider_failure": false,
+    "visual_v2_failure": false
+  },
+  "patch": {
+    "workflow_only": true,
+    "responsive_proof_moved_before_navigation": true,
+    "schedule_provider_changed": false,
+    "rolling_snapshot_changed": false,
+    "open_matchup_changed": false,
+    "visual_v2_changed": false,
+    "passing_yards_changed": false,
+    "step1_changed": false
+  },
+  "acceptance": [
+    "Step-2 static contract passes.",
+    "Branch UI proof passes.",
+    "Required devsystem-final-gate passes.",
+    "Public schedule proof reports game_count > 0 and verified_count == game_count.",
+    "Public Open matchup and Visual V2 Step-2 composition pass.",
+    "Responsive 390/768/1440 checks run while the Page-1 board still exists.",
+    "Final Step-2 GREEN / PUBLIC / FROZEN tokens print."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

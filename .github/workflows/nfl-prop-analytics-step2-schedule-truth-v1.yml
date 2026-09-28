@@ -160,6 +160,9 @@ jobs:
             'nfl_prop_analytics_schedule_v1.py' \
             'scripts/build_nfl_prop_analytics_schedule_snapshot_v1.py' \
             'tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py' | sort)"
+          verifier_only_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-step2-public-verifier-order-v1.json' | sort)"
           if [ "$actual" != "$expected" ] && \
              [ "$actual" != "$step3_additive_expected" ] && \
              [ "$actual" != "$step4_additive_expected" ] && \
@@ -170,7 +173,8 @@ jobs:
              [ "$actual" != "$visual_polish_step3_expected" ] && \
              [ "$actual" != "$page2_polish_step2_expected" ] && \
              [ "$actual" != "$provider_repair_expected" ] && \
-             [ "$actual" != "$rolling_snapshot_expected" ]; then
+             [ "$actual" != "$rolling_snapshot_expected" ] && \
+             [ "$actual" != "$verifier_only_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP2_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -431,6 +435,22 @@ jobs:
               assert count>0,count
               assert verified==count,(verified,count)
               assert len([s for s in source_text.split(",") if s])>=2,source_text
+
+
+              # The schedule board exists only on Page 1. Prove responsive
+              # behavior before Open matchup navigates away from this DOM.
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(200)
+                  dims=board.evaluate("""e => ({
+                    scroll:e.scrollWidth,
+                    client:e.clientWidth
+                  })""")
+                  if dims["scroll"] > dims["client"] + 4:
+                      raise RuntimeError(
+                          f"PROP_ANALYTICS_STEP2_PUBLIC_OVERFLOW:{width}:{dims}"
+                      )
+                  print(f"NFL_PROP_ANALYTICS_STEP2_PUBLIC_{width}_GREEN")
               selection_frame,selection=find(
                   page,
                   '[data-nfl-prop-analytics-step3-selection="v1"]',
@@ -656,19 +676,6 @@ jobs:
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_VERIFIED_GREEN",verified)
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_OPEN_MATCHUP_GREEN")
               print("VISUAL_V2_STEP2_PUBLIC_COMPOSITION_GREEN")
-
-              for width,height in ((390,844),(768,1024),(1440,1000)):
-                  page.set_viewport_size({"width":width,"height":height})
-                  page.wait_for_timeout(200)
-                  dims=board.evaluate("""e => ({
-                    scroll:e.scrollWidth,
-                    client:e.clientWidth
-                  })""")
-                  if dims["scroll"] > dims["client"] + 4:
-                      raise RuntimeError(
-                          f"PROP_ANALYTICS_STEP2_PUBLIC_OVERFLOW:{width}:{dims}"
-                      )
-                  print(f"NFL_PROP_ANALYTICS_STEP2_PUBLIC_{width}_GREEN")
 
               passing=context.new_page()
               passing.goto(
