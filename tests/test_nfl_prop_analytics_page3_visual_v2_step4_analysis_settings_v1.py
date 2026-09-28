@@ -43,7 +43,7 @@ def test_step4_matches_locked_analysis_settings_contract():
         "MANUAL LINE LAB",
         "BELOW ↓",
         ".st-key-{CONTAINER_KEY}",
-        '[data-testid="stColumn"]',
+        '[data-testid="stHorizontalBlock"] > div',
         "min-height:{MIN_TOUCH_TARGET_PX}px",
         '.ks-pa3-nav-marker{{',
         "display:none!important",
