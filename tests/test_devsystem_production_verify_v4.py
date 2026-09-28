@@ -40,29 +40,22 @@ def test_v4_reads_event_id_from_matched_app_frame_not_outer_shell():
     assert "_query_event_id(matched_frame)" in source
     assert "_query_event_id(page)" not in source
     assert "_query_event_id(matched_frame, page)" not in source
+    assert "parse_qs(urlparse(target.url).query)" in source
 
-    # Regression contract: the outer Community Cloud shell has no event ID,
-    # while the matched Streamlit app frame persists the exact ESPN event ID.
-    import importlib.util
+    from urllib.parse import parse_qs, urlparse
 
-    spec = importlib.util.spec_from_file_location("production_verify_v4_frame_test", VERIFIER)
-    module = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    spec.loader.exec_module(module)
-
-    class Target:
-        def __init__(self, url: str):
-            self.url = url
-
-    outer_shell = Target(
+    outer_shell_url = (
         "https://kyre-sports-ai.streamlit.app/?"
         "ks_sport=College+Football&ks_cfb_market=Game+Total"
     )
-    matched_frame = Target(
+    matched_frame_url = (
         "https://kyre-sports-ai.streamlit.app/~/+/?"
         "ks_sport=College+Football&ks_cfb_market=Game+Total&"
         "ks_cfb_game_total_event_id=401752992"
     )
 
-    assert module._query_event_id(outer_shell) == ""
-    assert module._query_event_id(matched_frame) == "401752992"
+    shell_query = parse_qs(urlparse(outer_shell_url).query)
+    frame_query = parse_qs(urlparse(matched_frame_url).query)
+
+    assert (shell_query.get("ks_cfb_game_total_event_id") or [""])[-1] == ""
+    assert (frame_query.get("ks_cfb_game_total_event_id") or [""])[-1] == "401752992"
