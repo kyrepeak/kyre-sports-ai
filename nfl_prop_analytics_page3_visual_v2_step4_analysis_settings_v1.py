@@ -128,7 +128,7 @@ def render_visual_v2_analysis_settings_header(
   gap:10px!important;
   align-items:stretch!important;
 }}
-.st-key-{CONTAINER_KEY} [data-testid="stColumn"]{{
+.st-key-{CONTAINER_KEY} [data-testid="stHorizontalBlock"] > div{{
   min-width:0!important;
   padding:10px 11px 11px!important;
   border:1px solid rgba(125,211,252,.18)!important;
@@ -206,7 +206,7 @@ def render_visual_v2_analysis_settings_header(
     flex-direction:column!important;
     gap:8px!important;
   }}
-  .st-key-{CONTAINER_KEY} [data-testid="stColumn"]{{
+  .st-key-{CONTAINER_KEY} [data-testid="stHorizontalBlock"] > div{{
     width:100%!important;flex:1 1 auto!important;
   }}
   .st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] [role="radiogroup"]{{
