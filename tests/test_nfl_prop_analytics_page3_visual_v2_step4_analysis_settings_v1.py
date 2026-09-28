@@ -42,7 +42,7 @@ def test_step4_matches_locked_analysis_settings_contract():
         'data-page3-visual-v2-step4-real-composition="true"',
         "MANUAL LINE LAB",
         "BELOW ↓",
-        f".st-key-{v2.CONTAINER_KEY}",
+        ".st-key-{CONTAINER_KEY}",
         '[data-testid="stColumn"]',
         "min-height:{MIN_TOUCH_TARGET_PX}px",
         '.ks-pa3-nav-marker{{',
