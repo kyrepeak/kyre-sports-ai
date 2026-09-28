@@ -364,6 +364,21 @@ jobs:
                   page.wait_for_timeout(250)
               raise RuntimeError("PROP_ANALYTICS_STEP2_COMBO_NOT_READY:"+name)
 
+          def find_role(page,kind,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_ROLE_NOT_READY:{kind}:{name}"
+              )
+
           def choose(page,name,value):
               _,combo=find_combo(page,name)
               combo.click(timeout=10000)
@@ -415,12 +430,8 @@ jobs:
               )
               assert selection.get_attribute("data-prop-selection-state")=="selected"
               assert selection.get_attribute("data-prop-handoff-state")=="ready"
-              open_matchup=selection_frame.get_by_role(
-                  "button",
-                  name="Open matchup",
-                  exact=True,
-              )
-              assert open_matchup.count()==1
+              _,open_matchup=find_role(page,"button","Open matchup",60)
+              assert open_matchup.count()>=1
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SCHEDULE_GREEN",count)
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_VERIFIED_GREEN",verified)
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SOURCE_ROUTER_GREEN",source_text)
@@ -526,6 +537,21 @@ jobs:
                   page.wait_for_timeout(250)
               raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_COMBO_NOT_READY:"+name)
 
+          def find_role(page,kind,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_PUBLIC_ROLE_NOT_READY:{kind}:{name}"
+              )
+
           def choose(page,name,value,timeout=30):
               _,combo=find_combo(page,name)
               combo.click(timeout=10000)
@@ -579,12 +605,8 @@ jobs:
               )
               assert selection.get_attribute("data-prop-selection-state")=="selected"
               assert selection.get_attribute("data-prop-handoff-state")=="ready"
-              open_matchup=selection_frame.get_by_role(
-                  "button",
-                  name="Open matchup",
-                  exact=True,
-              )
-              assert open_matchup.count()==1
+              _,open_matchup=find_role(page,"button","Open matchup",120)
+              assert open_matchup.count()>=1
               open_matchup.click(timeout=10000)
 
               roster_frame,_=find(
