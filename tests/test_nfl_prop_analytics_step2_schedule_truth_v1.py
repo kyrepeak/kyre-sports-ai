@@ -16,7 +16,7 @@ def test_step2_contract_and_sources_are_independent():
         "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0",
         'NFLVERSE_GAMES_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"',
         'ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"',
-        'NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"',
+        'NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/reg-{week}"',
         'CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"',
         'data-nfl-prop-analytics-step2-schedule="v1"',
         'data-prop-schedule-state="fail-closed"',
