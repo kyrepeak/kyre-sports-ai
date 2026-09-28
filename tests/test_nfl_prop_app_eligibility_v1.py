@@ -55,12 +55,28 @@ def _context():
     }
 
 
-def test_context_fails_closed_when_game_day_gate_is_not_open():
+def test_context_keeps_exact_identity_visible_while_final_inactives_are_pending():
     result = guard.guard_context_payload(
         _context(),
         "401000001",
         allowed_positions={"RB", "WR"},
         snapshot_loader=lambda _event: _snapshot(False, "PENDING"),
+        roster_loader=_roster_loader,
+    )
+    assert result["ready"] is True
+    assert result["step7_app_identity_verified"] is True
+    assert result["step7_app_identity_state"] == "PENDING"
+    assert result["step7_app_final_inactives_verified"] is False
+    assert result["teams"][0]["players"][0]["official_athlete_id"] == "101"
+    assert result["teams"][1]["players"][0]["official_athlete_id"] == "201"
+
+
+def test_context_still_fails_closed_when_event_identity_is_unverified():
+    result = guard.guard_context_payload(
+        _context(),
+        "401000001",
+        allowed_positions={"RB", "WR"},
+        snapshot_loader=lambda _event: _snapshot(False, "UNVERIFIED"),
         roster_loader=_roster_loader,
     )
     assert result["ready"] is False
@@ -93,6 +109,7 @@ def test_context_preserves_only_exact_id_verified_payload():
     )
     assert result["ready"] is True
     assert result["step7_app_identity_verified"] is True
+    assert result["step7_app_final_inactives_verified"] is True
     assert result["teams"][0]["players"][0]["step7_app_identity_verified"] is True
     assert result["teams"][1]["players"][0]["step7_app_identity_verified"] is True
 
