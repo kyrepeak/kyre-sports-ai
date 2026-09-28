@@ -4,12 +4,23 @@ on:
   push:
     branches: [main]
     paths:
+      # Streamlit production entry + currently active shared runtime owners.
       - "app.py"
-      - "streamlit_*.py"
+      - "streamlit_memory_lazy_router_v240.py"
+      - "kyre_universal_shell_runtime_v1.py"
+      - "sports_api/monster_performance_profiler_v1.py"
+      - "sports_api/observability_v1.py"
+      - "sports_api/posthog_error_radar_v1.py"
+
+      # CFB surfaces actually certified by V5.
       - "cfb_*.py"
-      - "sports_api/**"
-      - "data/**"
+      - "sports_api/api/cfb_*.py"
+      - "sports_api/api/cfb*.py"
+      - "sports_api/collectors/cfb_*.py"
+      - "data/cfb_*.json"
       - "requirements*.txt"
+
+      # Verifier ownership / contract changes must still self-trigger.
       - "devsystem/production_verify_v1.py"
       - "devsystem/production_verify_v2.py"
       - "devsystem/production_verify_v3.py"
