@@ -121,7 +121,10 @@ def render_visual_v2_analysis_settings_header(
 
 /* The existing controls remain real; only their composition changes. */
 :is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1){{
+  width:100%!important;
+  max-width:100%!important;
   min-width:0!important;
+  box-sizing:border-box!important;
   margin:0!important;
   padding:10px 11px 11px!important;
   border:1px solid rgba(125,211,252,.18)!important;
