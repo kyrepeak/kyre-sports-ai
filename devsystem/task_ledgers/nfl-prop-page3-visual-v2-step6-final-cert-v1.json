@@ -1,0 +1,50 @@
+{
+  "task_id": "nfl-prop-page3-visual-v2-step6-final-cert-v1",
+  "series": "NFL_PROP_ANALYTICS_PAGE3_VISUAL_COMPOSITION_V2",
+  "step": 6,
+  "title": "Final integration, accessibility, responsive and public certification",
+  "scope": "verification-only closeout",
+  "product_changes": false,
+  "frozen_steps": [2, 3, 4, 5],
+  "required_order": [
+    "hero",
+    "quick_stat_ribbon",
+    "analysis_settings",
+    "line_lab",
+    "live_recalculation",
+    "game_chart"
+  ],
+  "acceptance": {
+    "real_history_window_control_tappable": true,
+    "real_prop_category_control_tappable": true,
+    "real_line_slider_updates_downstream": true,
+    "minimum_touch_target_px": 44,
+    "keyboard_focus_visible": true,
+    "reduced_motion": true,
+    "viewports": [390, 768, 1440],
+    "horizontal_document_overflow": 0,
+    "five_quick_stat_cards_equal_at_tablet_and_reference": true,
+    "analysis_settings_two_cards_side_by_side_at_tablet_and_reference": true,
+    "line_value_centered_above_real_slider": true,
+    "live_recalculation_distinct_and_cohesive_with_chart": true,
+    "branch_full_interactive_proof_required": true,
+    "deployed_public_proof_required": true
+  },
+  "protected": {
+    "widget_keys": true,
+    "query_navigation": true,
+    "data_owners": true,
+    "sportsbook_projection_influence": 0.0,
+    "probabilities": false,
+    "recommendations": false,
+    "stake_sizing": false,
+    "wager_actions": false,
+    "passing_yards": true
+  },
+  "green_tokens": [
+    "VISUAL_V2_STEP6_BRANCH_GREEN",
+    "VISUAL_V2_STEP6_PUBLIC_GREEN",
+    "VISUAL_V2_STEP6_GREEN",
+    "VISUAL_V2_STEP6_FROZEN"
+  ]
+}
