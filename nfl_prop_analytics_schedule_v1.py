@@ -35,6 +35,7 @@ ESPN_WEB_SCOREBOARD_URL = "https://site.web.api.espn.com/apis/site/v2/sports/foo
 ESPN_TEAM_SCHEDULE_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
 ESPN_WEB_TEAM_SCHEDULE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
 NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/reg-{week}"
+NFL_SCHEDULE_RELEASE_URL = "https://www.nfl.com/nfl-schedule-release/"
 CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"
 FOOTBALLDB_SCHEDULE_URL = "https://www.footballdb.com/scores/schedule{season}.html"
 
@@ -738,6 +739,110 @@ _OFFICIAL_GAME_RE = re.compile(
 )
 
 
+NFL_RELEASE_TEAM_NAMES = {
+    "Arizona Cardinals": "ARI",
+    "Atlanta Falcons": "ATL",
+    "Baltimore Ravens": "BAL",
+    "Buffalo Bills": "BUF",
+    "Carolina Panthers": "CAR",
+    "Chicago Bears": "CHI",
+    "Cincinnati Bengals": "CIN",
+    "Cleveland Browns": "CLE",
+    "Dallas Cowboys": "DAL",
+    "Denver Broncos": "DEN",
+    "Detroit Lions": "DET",
+    "Green Bay Packers": "GB",
+    "Houston Texans": "HOU",
+    "Indianapolis Colts": "IND",
+    "Jacksonville Jaguars": "JAX",
+    "Kansas City Chiefs": "KC",
+    "Las Vegas Raiders": "LV",
+    "Los Angeles Chargers": "LAC",
+    "Los Angeles Rams": "LAR",
+    "Miami Dolphins": "MIA",
+    "Minnesota Vikings": "MIN",
+    "New England Patriots": "NE",
+    "New Orleans Saints": "NO",
+    "New York Giants": "NYG",
+    "New York Jets": "NYJ",
+    "Philadelphia Eagles": "PHI",
+    "Pittsburgh Steelers": "PIT",
+    "San Francisco 49ers": "SF",
+    "Seattle Seahawks": "SEA",
+    "Tampa Bay Buccaneers": "TB",
+    "Tennessee Titans": "TEN",
+    "Washington Commanders": "WAS",
+}
+_NFL_RELEASE_TEAM_PATTERN = "|".join(
+    re.escape(name)
+    for name in sorted(NFL_RELEASE_TEAM_NAMES, key=len, reverse=True)
+)
+_NFL_RELEASE_GAME_RE = re.compile(
+    rf"\b(?:THU|FRI|SAT|SUN|MON)\s+(\d{{2}}/\d{{2}})\s+"
+    rf"({_NFL_RELEASE_TEAM_PATTERN})\s+"
+    r"(\d{1,2}:\d{2})\s+(AM|PM)\s+(?:ET|EST|EDT)\s+@\s+"
+    rf"({_NFL_RELEASE_TEAM_PATTERN})\b",
+    re.IGNORECASE,
+)
+
+
+def _parse_nfl_schedule_release(
+    body: str,
+    *,
+    target: date,
+    season: int,
+    week: int | None,
+) -> list[dict[str, Any]]:
+    clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
+    clean = re.sub(r"\s+", " ", clean)
+    target_token = target.strftime("%m/%d")
+    name_map = {name.upper(): team for name, team in NFL_RELEASE_TEAM_NAMES.items()}
+    games: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for match in _NFL_RELEASE_GAME_RE.finditer(clean):
+        day_token, away_name, clock, meridiem, home_name = match.groups()
+        if day_token != target_token:
+            continue
+        away = name_map.get(away_name.upper())
+        home = name_map.get(home_name.upper())
+        item = _game(
+            away=away,
+            home=home,
+            kickoff_utc=_kickoff_et(target, f"{clock} {meridiem.upper()}"),
+            source="NFL",
+            season=season,
+            week=week,
+            status="scheduled",
+        )
+        if item and (item["away"], item["home"]) not in seen:
+            seen.add((item["away"], item["home"]))
+            games.append(item)
+    return games
+
+
+def _from_nfl_schedule_release(
+    target: date,
+    *,
+    season: int,
+    week: int | None,
+) -> list[dict[str, Any]]:
+    response = requests.get(
+        NFL_SCHEDULE_RELEASE_URL,
+        headers={
+            "User-Agent": REQUEST_HEADERS["User-Agent"],
+            "Accept": "text/html,application/xhtml+xml,*/*",
+        },
+        timeout=8,
+    )
+    response.raise_for_status()
+    return _parse_nfl_schedule_release(
+        response.text,
+        target=target,
+        season=season,
+        week=week,
+    )
+
+
 def _from_nfl_official(target: date, season: int, week: int | None) -> list[dict[str, Any]]:
     if not week:
         return []
@@ -771,7 +876,13 @@ def _from_nfl_official(target: date, season: int, week: int | None) -> list[dict
         )
         if item:
             games.append(item)
-    return games
+    if games:
+        return games
+    return _from_nfl_schedule_release(
+        target,
+        season=season,
+        week=week,
+    )
 
 
 def _week_hint(*collections: list[dict[str, Any]]) -> int | None:
