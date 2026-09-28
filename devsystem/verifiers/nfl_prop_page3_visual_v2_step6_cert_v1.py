@@ -64,6 +64,31 @@ def _wait_attr_change(page, selector: str, attr: str, before: str, timeout: floa
     raise RuntimeError(f"VISUAL_V2_STEP6_ATTR_DID_NOT_CHANGE:{attr}:{before}")
 
 
+def _wait_attr_value(page, selector: str, attr: str, expected: str, timeout: float = 180) -> str:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            _, loc = _find(page, selector, timeout=2)
+            now = (loc.get_attribute(attr) or "").strip()
+            if now == expected:
+                return now
+        except Exception:
+            pass
+        page.wait_for_timeout(250)
+    raise RuntimeError(f"VISUAL_V2_STEP6_ATTR_VALUE_NOT_READY:{attr}:{expected}")
+
+
+def _click_segment_text(page, container_selector: str, text: str):
+    frame, container = _find(page, container_selector, 120)
+    buttons = container.locator("button")
+    for i in range(buttons.count()):
+        candidate = buttons.nth(i)
+        if candidate.inner_text().strip() == text:
+            candidate.click(timeout=10000)
+            return
+    raise RuntimeError(f"VISUAL_V2_STEP6_SEGMENT_NOT_READY:{text}")
+
+
 def _choose_other_segment(page, container_selector: str, state_selector: str, state_attr: str) -> tuple[str, str]:
     _, state = _find(page, state_selector, 120)
     before = (state.get_attribute(state_attr) or "").strip()
@@ -185,17 +210,48 @@ def certify(base: str, public: bool) -> None:
         )
 
         state_selector = '[data-prop-page3-step2-nav-state="ready"]'
-        _choose_other_segment(
+
+        # Prove History Window is truly interactive, then restore the known-good
+        # frozen history selection before certifying the downstream composition.
+        original_history_label = (
+            settings.get_attribute("data-page3-visual-v2-step4-history") or ""
+        ).strip()
+        assert original_history_label
+        history_before, _ = _choose_other_segment(
             page,
             ".st-key-nfl_prop_analytics_page3_step2_history_nav_v1",
             state_selector,
             "data-prop-page3-step2-active-history",
         )
-        _choose_other_segment(
+        _click_segment_text(
+            page,
+            ".st-key-nfl_prop_analytics_page3_step2_history_nav_v1",
+            original_history_label,
+        )
+        _wait_attr_value(
+            page,
+            state_selector,
+            "data-prop-page3-step2-active-history",
+            history_before,
+            180,
+        )
+
+        # Use the same known-good QB ATT path already certified by frozen Step 5.
+        _, nav_state = _find(page, state_selector, 120)
+        market_before = (
+            nav_state.get_attribute("data-prop-page3-step2-active-market") or ""
+        ).strip()
+        _click_segment_text(
             page,
             ".st-key-nfl_prop_analytics_page3_step2_market_nav_v1",
+            "ATT",
+        )
+        _wait_attr_change(
+            page,
             state_selector,
             "data-prop-page3-step2-active-market",
+            market_before,
+            180,
         )
         print(f"VISUAL_V2_STEP6_{mode}_CONTROLS_GREEN")
 
