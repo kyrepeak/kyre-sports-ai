@@ -204,9 +204,22 @@ jobs:
         run: |
           python - <<'PY'
           from datetime import date
-          from nfl_prop_analytics_schedule_v1 import _load_schedule_truth_uncached
+          from nfl_prop_analytics_schedule_v1 import (
+              _from_cbs,
+              _load_schedule_truth_uncached,
+          )
 
           truth=_load_schedule_truth_uncached(date(2026,9,27))
+          cbs_games=[]
+          cbs_error=""
+          try:
+              cbs_games=_from_cbs(date(2026,9,27),week=3)
+          except Exception as exc:
+              cbs_error=f"{type(exc).__name__}:{exc}"
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_COUNT",len(cbs_games))
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_ERROR",cbs_error)
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_SOURCES",truth["sources_available"])
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_ERRORS",truth["source_errors"])
           games=truth["games"]
           pairs={(g["away"],g["home"]) for g in games}
 
