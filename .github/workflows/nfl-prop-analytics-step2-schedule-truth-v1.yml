@@ -170,7 +170,7 @@ jobs:
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
-          check_blob app.py d584693ab55e365bc7e76f9cbacd58a15f6d62d1
+          check_blob app.py 2a3922af385cd0fc43bfd540783be15d582aefad
           check_blob .github/workflows/passing-yards-step10-current-final-freeze-v1.yml 7b23f9d9ed9967a74cee9f1328c9817c2f71d956
           check_blob devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5
 
