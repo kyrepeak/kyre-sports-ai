@@ -157,7 +157,7 @@ jobs:
               unsafe_allow_html=True,
           )
 
-          deck = st.container(key=CONTAINER_KEY)
+          deck = st.container(border=True, key=CONTAINER_KEY)
           with deck:
               header_slot = st.empty()
               history_col, market_col = st.columns(2, gap="small")
@@ -237,19 +237,31 @@ jobs:
               _,line=find(page,'[data-prop-page3-step4-line-control="v1"]')
               _,old=find(page,'.ks-pa3-nav-marker')
 
-              deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-              assert deck.count()==1
-              controls=deck.locator('[data-testid="stSegmentedControl"]')
+              controls=frame.locator('[data-testid="stSegmentedControl"]')
               assert controls.count()==2,controls.count()
               assert old.evaluate("e=>getComputedStyle(e).display")=="none"
+              deck_meta=marker.evaluate("""e => {
+                let n=e.parentElement;
+                while(n){
+                  const count=n.querySelectorAll('[data-testid="stSegmentedControl"]').length;
+                  const cs=getComputedStyle(n);
+                  const border=parseFloat(cs.borderTopWidth||'0');
+                  if(count===2 && border>0){
+                    const r=n.getBoundingClientRect();
+                    return {x:r.x,y:r.y,width:r.width,height:r.height,border:border,radius:cs.borderTopLeftRadius};
+                  }
+                  n=n.parentElement;
+                }
+                return null;
+              }""")
+              assert deck_meta is not None,deck_meta
 
               hb=hero.bounding_box()
               rb=ribbon.bounding_box()
-              db=deck.bounding_box()
               lb=line.bounding_box()
               assert hb["y"]+hb["height"] <= rb["y"]+8,(hb,rb)
-              assert rb["y"]+rb["height"] <= db["y"]+8,(rb,db)
-              assert db["y"]+db["height"] <= lb["y"]+8,(db,lb)
+              assert rb["y"]+rb["height"] <= deck_meta["y"]+8,(rb,deck_meta)
+              assert deck_meta["y"]+deck_meta["height"] <= lb["y"]+8,(deck_meta,lb)
 
               c0=controls.nth(0).bounding_box()
               c1=controls.nth(1).bounding_box()
@@ -274,8 +286,7 @@ jobs:
                   page.wait_for_timeout(350)
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
-                  deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-                  controls=deck.locator('[data-testid="stSegmentedControl"]')
+                  controls=frame.locator('[data-testid="stSegmentedControl"]')
                   assert controls.count()==2,controls.count()
                   c0=controls.nth(0).bounding_box()
                   c1=controls.nth(1).bounding_box()
@@ -402,19 +413,31 @@ jobs:
               )
               _,old=find(page,'.ks-pa3-nav-marker',180)
 
-              deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-              assert deck.count()==1
-              controls=deck.locator('[data-testid="stSegmentedControl"]')
+              controls=frame.locator('[data-testid="stSegmentedControl"]')
               assert controls.count()==2,controls.count()
               assert old.evaluate("e=>getComputedStyle(e).display")=="none"
+              deck_meta=marker.evaluate("""e => {
+                let n=e.parentElement;
+                while(n){
+                  const count=n.querySelectorAll('[data-testid="stSegmentedControl"]').length;
+                  const cs=getComputedStyle(n);
+                  const border=parseFloat(cs.borderTopWidth||'0');
+                  if(count===2 && border>0){
+                    const r=n.getBoundingClientRect();
+                    return {x:r.x,y:r.y,width:r.width,height:r.height,border:border,radius:cs.borderTopLeftRadius};
+                  }
+                  n=n.parentElement;
+                }
+                return null;
+              }""")
+              assert deck_meta is not None,deck_meta
 
               hb=hero.bounding_box()
               rb=ribbon.bounding_box()
-              db=deck.bounding_box()
               lb=line.bounding_box()
               assert hb["y"]+hb["height"] <= rb["y"]+8,(hb,rb)
-              assert rb["y"]+rb["height"] <= db["y"]+8,(rb,db)
-              assert db["y"]+db["height"] <= lb["y"]+8,(db,lb)
+              assert rb["y"]+rb["height"] <= deck_meta["y"]+8,(rb,deck_meta)
+              assert deck_meta["y"]+deck_meta["height"] <= lb["y"]+8,(deck_meta,lb)
               print("VISUAL_V2_STEP4_PUBLIC_COMPOSITION_GREEN")
               print("VISUAL_V2_STEP2_PUBLIC_FROZEN_GREEN")
               print("VISUAL_V2_STEP3_PUBLIC_FROZEN_GREEN")
@@ -457,8 +480,7 @@ jobs:
                   frame,marker=find(page,'[data-page3-visual-v2-step4="v1"]',120)
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
-                  deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-                  controls=deck.locator('[data-testid="stSegmentedControl"]')
+                  controls=frame.locator('[data-testid="stSegmentedControl"]')
                   assert controls.count()==2,controls.count()
                   c0=controls.nth(0).bounding_box()
                   c1=controls.nth(1).bounding_box()
