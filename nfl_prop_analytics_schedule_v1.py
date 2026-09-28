@@ -10,9 +10,11 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 import html as html_lib
+import json
 from io import StringIO
 from html.parser import HTMLParser
 import re
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -36,6 +38,8 @@ ESPN_TEAM_SCHEDULE_URL = "https://site.api.espn.com/apis/site/v2/sports/football
 ESPN_WEB_TEAM_SCHEDULE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
 NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"
 CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"
+ROLLING_SNAPSHOT_PATH = Path(__file__).resolve().parent / "data" / "nfl_prop_analytics_schedule_snapshot_v1.json"
+ROLLING_SNAPSHOT_VERSION = 2
 
 AZ = ZoneInfo("America/Phoenix")
 ET = ZoneInfo("America/New_York")
@@ -752,6 +756,129 @@ def _reconcile_schedule(
     return sorted(reconciled, key=sort_key)
 
 
+
+def _load_rolling_snapshot(target: date) -> dict[str, Any] | None:
+    """Return one exact-date slate from the certified rolling local snapshot."""
+    try:
+        payload = json.loads(ROLLING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+    if int(payload.get("version") or 0) != ROLLING_SNAPSHOT_VERSION:
+        return None
+
+    slates = payload.get("slates")
+    if not isinstance(slates, list):
+        return None
+
+    matches = [
+        row for row in slates
+        if isinstance(row, dict)
+        and str(row.get("target_date") or "") == target.isoformat()
+    ]
+    if len(matches) != 1:
+        return None
+
+    slate = matches[0]
+    game_count = int(slate.get("game_count") or 0)
+    verified_count = int(slate.get("verified_count") or 0)
+    available = tuple(
+        dict.fromkeys(
+            str(source or "").strip()
+            for source in (slate.get("sources_available") or [])
+            if str(source or "").strip()
+        )
+    )
+    rows = slate.get("games")
+
+    if (
+        game_count <= 0
+        or verified_count != game_count
+        or len(available) < 2
+        or not isinstance(rows, list)
+        or len(rows) != game_count
+    ):
+        return None
+
+    games: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            return None
+
+        away = _canon_team(row.get("away"))
+        home = _canon_team(row.get("home"))
+        kickoff = _safe_iso(row.get("kickoff_utc"))
+        sources = tuple(
+            dict.fromkeys(
+                str(source or "").strip()
+                for source in (row.get("sources") or [])
+                if str(source or "").strip()
+            )
+        )
+        key = (away, home)
+        source_count = int(row.get("source_count") or 0)
+
+        if (
+            away not in TEAM_NAMES
+            or home not in TEAM_NAMES
+            or away == home
+            or key in seen
+            or kickoff is None
+            or kickoff.astimezone(ET).date() != target
+            or len(sources) < 2
+            or source_count != len(sources)
+            or row.get("verified") is not True
+            or row.get("kickoff_consensus") is not True
+        ):
+            return None
+
+        seen.add(key)
+        games.append(
+            {
+                "away": away,
+                "home": home,
+                "away_name": TEAM_NAMES[away],
+                "home_name": TEAM_NAMES[home],
+                "kickoff_utc": kickoff,
+                "week": int(row.get("week") or 0) or None,
+                "network": str(row.get("network") or "").strip(),
+                "status": str(row.get("status") or "scheduled").strip(),
+                "venue": str(row.get("venue") or "").strip(),
+                "game_id": str(row.get("game_id") or "").strip(),
+                "sources": sources,
+                "source_count": source_count,
+                "verified": True,
+                "kickoff_consensus": True,
+                "rolling_snapshot": True,
+            }
+        )
+
+    games.sort(
+        key=lambda game: (
+            int(game["kickoff_utc"].timestamp()),
+            game["away"],
+            game["home"],
+        )
+    )
+    return {
+        "target_date": target.isoformat(),
+        "season": int(slate.get("season") or target.year),
+        "week": int(slate.get("week") or 0) or None,
+        "games": games,
+        "game_count": len(games),
+        "verified_count": len(games),
+        "sources_available": available,
+        "source_errors": dict(slate.get("source_errors") or {}),
+        "fail_closed": False,
+        "rolling_snapshot_fallback_active": True,
+        "rolling_snapshot_version": ROLLING_SNAPSHOT_VERSION,
+        "rolling_snapshot_generated_at": str(payload.get("generated_at") or ""),
+        "rolling_snapshot_window": dict(payload.get("window") or {}),
+    }
+
 def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
     errors: dict[str, str] = {}
 
@@ -800,6 +927,23 @@ def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
         source for source in SOURCE_PRIORITY if source_games.get(source)
     )
     verified_count = sum(1 for game in games if game["verified"])
+    live_complete = (
+        bool(games)
+        and verified_count == len(games)
+        and len(available) >= 2
+    )
+
+    # Public Streamlit can have stricter outbound transport than GitHub Actions.
+    # Use the locally shipped, independently certified exact-date slate only
+    # when the live runtime cannot produce a complete verified Sunday.
+    if not live_complete:
+        snapshot = _load_rolling_snapshot(target)
+        if snapshot is not None:
+            snapshot["live_sources_available"] = available
+            snapshot["live_game_count"] = len(games)
+            snapshot["live_verified_count"] = verified_count
+            snapshot["live_source_errors"] = errors
+            return snapshot
 
     return {
         "target_date": target.isoformat(),
@@ -811,6 +955,8 @@ def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
         "sources_available": available,
         "source_errors": errors,
         "fail_closed": not bool(games),
+        "rolling_snapshot_fallback_active": False,
+        "rolling_snapshot_version": ROLLING_SNAPSHOT_VERSION,
     }
 
 
@@ -838,11 +984,14 @@ def render_schedule_truth_layer() -> None:
     date_label = target.strftime("%A • %B %-d, %Y")
     source_label = " + ".join(truth["sources_available"]) or "No source"
     verified_count = int(truth["verified_count"])
+    rolling_fallback = bool(truth.get("rolling_snapshot_fallback_active"))
 
     if truth["fail_closed"]:
         st.markdown(
             f"""
 <section data-nfl-prop-analytics-step2-schedule="v1"
+         data-prop-schedule-rolling-snapshot-version="{ROLLING_SNAPSHOT_VERSION}"
+         data-prop-schedule-rolling-fallback-active="false"
          data-prop-schedule-state="fail-closed"
          data-prop-schedule-date="{html_lib.escape(truth['target_date'])}"
          data-prop-schedule-count="0"
@@ -910,6 +1059,8 @@ def render_schedule_truth_layer() -> None:
         f"""
 <section class="ks-pa2-board"
          data-nfl-prop-analytics-step2-schedule="v1"
+         data-prop-schedule-rolling-snapshot-version="{ROLLING_SNAPSHOT_VERSION}"
+         data-prop-schedule-rolling-fallback-active="{'true' if rolling_fallback else 'false'}"
          data-prop-schedule-state="live"
          data-prop-schedule-date="{html_lib.escape(truth['target_date'])}"
          data-prop-schedule-count="{len(games)}"
@@ -975,6 +1126,9 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "MAY_MODIFY_PASSING_YARDS",
     "MAY_MODIFY_EXISTING_NFL_MARKETS",
+    "ROLLING_SNAPSHOT_PATH",
+    "ROLLING_SNAPSHOT_VERSION",
+    "_load_rolling_snapshot",
     "team_logo_url",
     "load_schedule_truth",
     "render_schedule_truth_layer",
