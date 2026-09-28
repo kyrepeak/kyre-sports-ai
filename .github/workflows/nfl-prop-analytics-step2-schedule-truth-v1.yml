@@ -204,6 +204,8 @@ jobs:
         run: |
           python - <<'PY'
           from datetime import date
+          import re
+          import requests
           from nfl_prop_analytics_schedule_v1 import (
               _from_cbs,
               _from_espn_team_schedules,
@@ -212,11 +214,41 @@ jobs:
               _from_pfr,
               _from_nfl_official,
               _load_schedule_truth_uncached,
+              CBS_SCHEDULE_URL,
+              PFN_SCHEDULE_URL,
+              REQUEST_HEADERS,
               _reconcile_schedule,
           )
 
           target=date(2026,9,27)
           truth=_load_schedule_truth_uncached(target)
+
+          # Diagnostic-only: inspect reachable provider payload shape so parser
+          # repairs follow the actual runner response rather than assumptions.
+          for label,url in (
+              ("CBS",CBS_SCHEDULE_URL.format(season=2026,week=3)),
+              ("PFN",PFN_SCHEDULE_URL.format(target=target.isoformat())),
+          ):
+              try:
+                  response=requests.get(
+                      url,
+                      headers={
+                          "User-Agent":REQUEST_HEADERS["User-Agent"],
+                          "Accept":"text/html,application/xhtml+xml,*/*",
+                      },
+                      timeout=10,
+                  )
+                  print(f"NFL_PROP_ANALYTICS_STEP2_{label}_HTTP",response.status_code)
+                  print(f"NFL_PROP_ANALYTICS_STEP2_{label}_BYTES",len(response.text))
+                  flattened=re.sub(r"\s+"," ",response.text)
+                  for token in ("Kansas City","Chiefs","Miami","Dolphins","09/27","Sep 27","September 27","CAR","CLE"):
+                      pos=flattened.lower().find(token.lower())
+                      if pos>=0:
+                          lo=max(0,pos-260);hi=min(len(flattened),pos+620)
+                          print(f"NFL_PROP_ANALYTICS_STEP2_{label}_SNIP_{token.replace(' ','_')}",flattened[lo:hi])
+                          break
+              except Exception as exc:
+                  print(f"NFL_PROP_ANALYTICS_STEP2_{label}_RAW_ERROR",type(exc).__name__,str(exc)[:180])
 
           def call(loader):
               try:
