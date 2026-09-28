@@ -5,6 +5,7 @@ WORKFLOW = Path('.github/workflows/devsystem-targeted-ci.yml')
 EPOCH = Path('devsystem/browser_cache_epoch_v1.txt')
 TOOLING = Path('devsystem/browser_tooling_v1.txt')
 BROWSER_QA = Path('devsystem/browser_qa_v1.py')
+PRODUCTION_V5 = Path('.github/workflows/devsystem-production-verification-v5.yml')
 
 
 def _browser_lane(text: str) -> str:
@@ -76,3 +77,25 @@ def test_browser_cache_epoch_is_explicit_and_versioned():
 
     assert 'DEVSYSTEM_BROWSER_CACHE_EPOCH=1' in text
     assert 'Bump the epoch' in text
+
+
+def test_production_v5_reuses_seeded_browser_stack_instead_of_reinstalling():
+    text = PRODUCTION_V5.read_text(encoding='utf-8')
+
+    assert 'Restore shared Browser QA stack' in text
+    assert 'id: browser-stack-cache' in text
+    assert '.venv-browser-qa' in text
+    assert '~/.cache/ms-playwright' in text
+    assert "steps.browser-stack-cache.outputs.cache-hit != 'true'" in text
+    assert 'Build shared Browser QA stack on cache miss' in text
+    assert '-r devsystem/browser_tooling_v1.txt' in text
+    assert 'python -m playwright install chromium' in text
+    assert 'Activate shared Browser QA virtualenv' in text
+    assert 'playwright install --with-deps chromium' not in text
+    assert 'Install production verification dependencies' not in text
+
+
+def test_production_v5_cache_key_matches_seeded_browser_qa_cache():
+    text = PRODUCTION_V5.read_text(encoding='utf-8')
+    expected = "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}"
+    assert expected in text
