@@ -715,11 +715,50 @@ def _from_footballdb(target: date) -> list[dict[str, Any]]:
     return _parse_footballdb_schedule(response.text, target=target)
 
 
+PFR_TEAM_NAMES = {
+    "Arizona Cardinals": "ARI",
+    "Atlanta Falcons": "ATL",
+    "Baltimore Ravens": "BAL",
+    "Buffalo Bills": "BUF",
+    "Carolina Panthers": "CAR",
+    "Chicago Bears": "CHI",
+    "Cincinnati Bengals": "CIN",
+    "Cleveland Browns": "CLE",
+    "Dallas Cowboys": "DAL",
+    "Denver Broncos": "DEN",
+    "Detroit Lions": "DET",
+    "Green Bay Packers": "GB",
+    "Houston Texans": "HOU",
+    "Indianapolis Colts": "IND",
+    "Jacksonville Jaguars": "JAX",
+    "Kansas City Chiefs": "KC",
+    "Las Vegas Raiders": "LV",
+    "Los Angeles Chargers": "LAC",
+    "Los Angeles Rams": "LAR",
+    "Miami Dolphins": "MIA",
+    "Minnesota Vikings": "MIN",
+    "New England Patriots": "NE",
+    "New Orleans Saints": "NO",
+    "New York Giants": "NYG",
+    "New York Jets": "NYJ",
+    "Philadelphia Eagles": "PHI",
+    "Pittsburgh Steelers": "PIT",
+    "San Francisco 49ers": "SF",
+    "Seattle Seahawks": "SEA",
+    "Tampa Bay Buccaneers": "TB",
+    "Tennessee Titans": "TEN",
+    "Washington Commanders": "WAS",
+}
+_PFR_TEAM_PATTERN = "|".join(
+    re.escape(name)
+    for name in sorted(PFR_TEAM_NAMES, key=len, reverse=True)
+)
+
 _PFR_GAME_RE = re.compile(
     rf"\b(\d{{4}}-\d{{2}}-\d{{2}})\s+"
     r"(\d{1,2}:\d{2}(?:AM|PM))\s+"
-    rf"({_NFL_RELEASE_TEAM_PATTERN})\s+@\s+"
-    rf"({_NFL_RELEASE_TEAM_PATTERN})\b",
+    rf"({_PFR_TEAM_PATTERN})\s+@\s+"
+    rf"({_PFR_TEAM_PATTERN})\b",
     re.IGNORECASE,
 )
 
@@ -731,7 +770,7 @@ def _parse_pfr_schedule(
 ) -> list[dict[str, Any]]:
     clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
     clean = re.sub(r"\s+", " ", clean)
-    name_map = {name.upper(): team for name, team in NFL_RELEASE_TEAM_NAMES.items()}
+    name_map = {name.upper(): team for name, team in PFR_TEAM_NAMES.items()}
     games: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
     for match in _PFR_GAME_RE.finditer(clean):
@@ -794,7 +833,7 @@ def _parse_pfn_schedule(
     if next_heading:
         section = section[:next_heading.start()]
 
-    team_re = re.compile(_NFL_RELEASE_TEAM_PATTERN, re.IGNORECASE)
+    team_re = re.compile(_PFR_TEAM_PATTERN, re.IGNORECASE)
     time_re = re.compile(r"\b(\d{1,2}:\d{2}\s+[AP]M)\s+ET\b", re.IGNORECASE)
     events: list[tuple[int, str, str]] = []
     for match in team_re.finditer(section):
@@ -803,7 +842,7 @@ def _parse_pfn_schedule(
         events.append((match.start(), "time", match.group(1)))
     events.sort(key=lambda item: item[0])
 
-    name_map = {name.upper(): team for name, team in NFL_RELEASE_TEAM_NAMES.items()}
+    name_map = {name.upper(): team for name, team in PFR_TEAM_NAMES.items()}
     pending_time: str | None = None
     pending_teams: list[str] = []
     games: list[dict[str, Any]] = []
