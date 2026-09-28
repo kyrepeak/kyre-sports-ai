@@ -99,3 +99,32 @@ def test_production_v5_cache_key_matches_seeded_browser_qa_cache():
     text = PRODUCTION_V5.read_text(encoding='utf-8')
     expected = "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}"
     assert expected in text
+
+
+def test_production_v5_runs_cheap_preflight_before_browser_restore():
+    text = PRODUCTION_V5.read_text(encoding='utf-8')
+
+    preflight = '- name: Run dependency-free production preflight'
+    restore = '- name: Restore shared Browser QA stack'
+    assert preflight in text
+    assert restore in text
+    assert text.index(preflight) < text.index(restore)
+
+    lane = text[text.index(preflight):text.index(restore)]
+    assert 'python -m py_compile' in lane
+    assert 'devsystem/production_verify_v5.py' in lane
+    assert 'devsystem/production_identity_verify_v1.py' in lane
+    assert 'DEVSYSTEM_PRODUCTION_V5_CHEAP_PREFLIGHT_GREEN' in lane
+    assert 'pip install' not in lane
+    assert 'playwright install' not in lane
+
+
+def test_production_v5_step3_preserves_step2_cache_contract():
+    text = PRODUCTION_V5.read_text(encoding='utf-8')
+
+    assert 'Run dependency-free production preflight' in text
+    assert 'Restore shared Browser QA stack' in text
+    assert "steps.browser-stack-cache.outputs.cache-hit != 'true'" in text
+    assert '.venv-browser-qa' in text
+    assert '~/.cache/ms-playwright' in text
+    assert 'playwright install --with-deps chromium' not in text
