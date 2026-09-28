@@ -128,3 +128,41 @@ def test_production_v5_step3_preserves_step2_cache_contract():
     assert '.venv-browser-qa' in text
     assert '~/.cache/ms-playwright' in text
     assert 'playwright install --with-deps chromium' not in text
+
+
+def test_production_v5_push_scope_is_narrow_and_cfb_owned():
+    text = PRODUCTION_V5.read_text(encoding='utf-8')
+    push_block = text.split('  push:', 1)[1].split('  workflow_dispatch:', 1)[0]
+
+    # Step 4 removes repo-wide fanout that made unrelated NFL/WNBA/MLB work
+    # launch the expensive public CFB production verifier.
+    assert '- "streamlit_*.py"' not in push_block
+    assert '- "sports_api/**"' not in push_block
+    assert '- "data/**"' not in push_block
+
+    # Keep the real V5 production ownership surface automatic.
+    required = (
+        '- "app.py"',
+        '- "streamlit_memory_lazy_router_v240.py"',
+        '- "kyre_universal_shell_runtime_v1.py"',
+        '- "cfb_*.py"',
+        '- "sports_api/api/cfb*.py"',
+        '- "sports_api/collectors/cfb_*.py"',
+        '- "data/cfb_*.json"',
+        '- "requirements*.txt"',
+        '- "devsystem/production_verify_v5.py"',
+        '- ".github/workflows/devsystem-production-verification-v5.yml"',
+    )
+    for token in required:
+        assert token in push_block
+
+
+def test_production_v5_step4_preserves_steps_2_and_3_speed_contracts():
+    text = PRODUCTION_V5.read_text(encoding='utf-8')
+
+    assert 'Run dependency-free production preflight' in text
+    assert text.index('Run dependency-free production preflight') < text.index('Restore shared Browser QA stack')
+    assert "steps.browser-stack-cache.outputs.cache-hit != 'true'" in text
+    assert '.venv-browser-qa' in text
+    assert '~/.cache/ms-playwright' in text
+    assert 'playwright install --with-deps chromium' not in text
