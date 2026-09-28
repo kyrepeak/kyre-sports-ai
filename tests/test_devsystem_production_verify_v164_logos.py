@@ -51,7 +51,7 @@ def test_v164_production_verifier_waits_for_exact_step1_profile_patch():
         "def _assert_step1_identity", 1
     )[0]
     assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" not in wait_block
-    assert "if REQUIRED_STEP1_PROFILE_MARKER not in body:" in source
+    assert "if REQUIRED_STEP1_PROFILE_MARKER not in verification_text:" in source
     assert "missing Step 1 exact-profile marker" in source
 
 
@@ -99,7 +99,7 @@ def test_v164_production_verifier_requires_step2_performance_profile_surface():
     assert "REQUIRED_STEP2_MARKER in dom_text" not in source.split(
         "def _wait_for_v164_patch_deployment", 1
     )[1].split("def _assert_step1_identity", 1)[0]
-    assert "if REQUIRED_STEP2_MARKER not in body:" in source
+    assert "if REQUIRED_STEP2_MARKER not in verification_text:" in source
     assert "_assert_step2_performance_profile" in source
     assert 'details[data-testid="gt157-step-2"]' in source
     assert 'data-testid="gt167-step2-away"' in source
@@ -161,9 +161,9 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     assert "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text" not in wait_block
     assert "REQUIRED_STEP4_VISUAL_MARKER in dom_text" not in wait_block
     assert "REQUIRED_STEP4_GRADE_MARKER in dom_text" not in wait_block
-    assert "if REQUIRED_STEP4_MARKER not in body:" in source
-    assert "if REQUIRED_STEP4_VISUAL_MARKER not in body:" in source
-    assert "if REQUIRED_STEP4_GRADE_MARKER not in body:" in source
+    assert "if REQUIRED_STEP4_MARKER not in verification_text:" in source
+    assert "if REQUIRED_STEP4_VISUAL_MARKER not in verification_text:" in source
+    assert "if REQUIRED_STEP4_GRADE_MARKER not in verification_text:" in source
     assert "_assert_step4_matchup" in source
     assert 'details[data-testid="gt157-step-4"]' in source
     assert 'data-testid="gt165-step4-away-off-home-def"' in source
@@ -312,12 +312,12 @@ def test_v164_waits_for_step5_dom_then_runs_strict_surface_assertions():
     assert "last_marker == REQUIRED_STEP5_MARKER" in wait_block
 
     live_block = source.split("def verify_live_v164", 1)[1]
-    assert "if REQUIRED_HEARTBEAT not in body:" in live_block
-    assert "if REQUIRED_PATCH_MARKER not in body:" in live_block
-    assert "if REQUIRED_STEP1_MARKER not in body:" in live_block
-    assert "if REQUIRED_STEP2_MARKER not in body:" in live_block
+    assert "if REQUIRED_HEARTBEAT not in verification_text:" in live_block
+    assert "if REQUIRED_PATCH_MARKER not in verification_text:" in live_block
+    assert "if REQUIRED_STEP1_MARKER not in verification_text:" in live_block
+    assert "if REQUIRED_STEP2_MARKER not in verification_text:" in live_block
     assert "if REQUIRED_STEP3_MARKER not in body:" in live_block
-    assert "if REQUIRED_STEP4_MARKER not in body:" in live_block
+    assert "if REQUIRED_STEP4_MARKER not in verification_text:" in live_block
     assert "if REQUIRED_STEP5_MARKER not in body:" not in live_block
 
     step5 = source.split("def _assert_step5_pace", 1)[1].split(

@@ -32,3 +32,30 @@ def test_production_workflow_runs_v4_and_self_tests_it():
     assert 'devsystem/production_verify_v4.py' in source
     assert 'tests/test_devsystem_production_verify_v4.py' in source
     assert 'python devsystem/production_verify_v4.py' in source
+
+
+def test_v4_reads_event_id_from_matched_app_frame_not_outer_shell():
+    source = _read(VERIFIER)
+    assert "def _query_event_id(target)" in source
+    assert "_query_event_id(matched_frame)" in source
+    assert "_query_event_id(page)" not in source
+    assert "_query_event_id(matched_frame, page)" not in source
+    assert "parse_qs(urlparse(target.url).query)" in source
+
+    from urllib.parse import parse_qs, urlparse
+
+    outer_shell_url = (
+        "https://kyre-sports-ai.streamlit.app/?"
+        "ks_sport=College+Football&ks_cfb_market=Game+Total"
+    )
+    matched_frame_url = (
+        "https://kyre-sports-ai.streamlit.app/~/+/?"
+        "ks_sport=College+Football&ks_cfb_market=Game+Total&"
+        "ks_cfb_game_total_event_id=401752992"
+    )
+
+    shell_query = parse_qs(urlparse(outer_shell_url).query)
+    frame_query = parse_qs(urlparse(matched_frame_url).query)
+
+    assert (shell_query.get("ks_cfb_game_total_event_id") or [""])[-1] == ""
+    assert (frame_query.get("ks_cfb_game_total_event_id") or [""])[-1] == "401752992"
