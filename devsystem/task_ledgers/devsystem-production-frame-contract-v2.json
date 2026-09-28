@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "task_id": "devsystem-production-frame-contract-v2",
+  "title": "DevSystem production frame-aware verifier contract repair",
+  "project": "DevSystem production verification",
+  "status": "DONE",
+  "scope": "Verifier-only repair after production runs on main proved Streamlit Community Cloud outer-shell URLs are not authoritative for CFB Game Total event identity. V4 now supersedes stale V3 Game Total freshness while preserving the frozen V2 production base, and V5 proves exact ESPN event identity on the matched app frame through selected-card identity, frame-query switching, and exact deep-link reload.",
+  "acceptance": [
+    "No NFL Rushing, Receiving, Passing, roster, availability, projection, market, probability, sportsbook, wager, CFB Game Total product, router, Render, app.py, selector, timeout, or dependency changes.",
+    "V4 preserves production_verify_v2 and requires the current V165 heartbeat plus visible GAMES ON THIS DAY surface.",
+    "V4 accepts exact event identity only from the matched frame query or the uniquely selected official game card; the outer shell is not an identity source.",
+    "V5 preserves production_verify_v2 and supersedes stale V3/V4 Game Total URL assumptions.",
+    "V5 requires the clicked selected card and matched app-frame query to equal the same official ESPN event_id.",
+    "V5 performs an exact full-page deep-link reload carrying the selected event_id and re-verifies the same frame identity.",
+    "All verifier gates remain fail closed when event identity is absent or mismatched."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

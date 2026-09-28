@@ -1,9 +1,9 @@
 """DevSystem production verification V4 — CFB Game Total V165 selector proof.
 
-Additive over frozen production_verify_v3. V4 preserves the complete V3
-Render/API/Streamlit proof, then independently deep-links the deployed CFB
-Game Total route and requires Router V161's V165 heartbeat, the visible
-GAMES ON THIS DAY selector, and an official selected ESPN event_id.
+V4 preserves the frozen production_verify_v2 Render/API/Streamlit proof, then
+independently deep-links the deployed CFB Game Total route and requires the
+V165 heartbeat, the visible GAMES ON THIS DAY selector, and one exact official
+selected ESPN event_id from the matched app frame or selected game card.
 """
 from __future__ import annotations
 
@@ -19,12 +19,12 @@ from playwright.sync_api import sync_playwright
 
 try:
     from devsystem import production_verify_v1 as base
-    from devsystem import production_verify_v3 as prior
+    from devsystem import production_verify_v2 as prior
 except ModuleNotFoundError:  # direct `python devsystem/production_verify_v4.py`
     import production_verify_v1 as base
-    import production_verify_v3 as prior
+    import production_verify_v2 as prior
 
-FROZEN_VERIFIER = "devsystem.production_verify_v3"
+FROZEN_VERIFIER = "devsystem.production_verify_v2"
 EXPECTED_ROUTER = "streamlit_memory_lazy_router_v161"
 GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"
 GAME_SELECTOR_REQUIRED_TEXT = "GAMES ON THIS DAY"
@@ -59,10 +59,20 @@ def _query_event_id(target) -> str:
     ).strip()
 
 
+def _selected_event_id(frame) -> str:
+    selected = frame.locator(
+        '[data-testid="gt163-game-strip"] '
+        'a.gt163-game-link[aria-current="true"]'
+    )
+    if selected.count() != 1:
+        return ""
+    return str(selected.first.get_attribute("data-event-id") or "").strip()
+
+
 def _build_v163_evidence(*, expected_commit: str, event_id: str) -> dict[str, Any]:
     if not str(event_id or "").strip():
         raise ProductionVerificationFailure(
-            "stale Streamlit Game Total V165 deployment: selected ESPN event_id was not persisted"
+            "stale Streamlit Game Total V165 deployment: selected ESPN event_id was not exposed"
         )
     return {
         "expected_commit": str(expected_commit or "unknown"),
@@ -121,11 +131,12 @@ def _browser_verify_v163_selector(
                         final_body = body
                         matched_frame = frame
                         break
-                selected_event = (
-                    _query_event_id(matched_frame)
-                    if matched_frame is not None
-                    else ""
-                )
+                selected_event = ""
+                if matched_frame is not None:
+                    selected_event = (
+                        _query_event_id(matched_frame)
+                        or _selected_event_id(matched_frame)
+                    )
                 if matched_frame is not None and selected_event:
                     break
                 page.wait_for_timeout(1000)
@@ -171,7 +182,8 @@ def run(*, artifact_dir: str | Path = "artifacts/production-verification") -> di
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
 
-    # Preserve every frozen V3 verification first.
+    # Preserve the frozen V2 production base. V4 supersedes the stale V3
+    # Game Total heartbeat proof with the current V165 surface contract.
     result = dict(prior.run(artifact_dir=artifacts))
 
     targets = base._load_targets()

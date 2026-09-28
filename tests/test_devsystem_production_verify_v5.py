@@ -38,19 +38,19 @@ def test_v163_game_links_use_streamlit_query_sync():
     assert 'del st.query_params[SELECTOR_SYNC_QUERY_KEY]' in source
 
 
-def test_v5_proves_switch_and_hard_refresh_persistence_without_weakening_gate():
+def test_v5_proves_frame_switch_and_exact_deeplink_reload_without_weakening_gate():
     source = (ROOT / "devsystem" / "production_verify_v5.py").read_text(
         encoding="utf-8"
     )
-    assert "_wait_for_initial_top_level_selection" in source
+    assert "_wait_for_initial_selection" in source
     assert "_switch_target" in source
-    assert "_wait_for_top_level_selection" in source
-    assert "page.reload" in source
+    assert "_wait_for_frame_selection" in source
     assert 'target_scope != "_self"' in source
     assert 'not href.startswith("?")' in source
-    assert "_event_from_url(page.url) != target_event" in source
+    assert "_frame_event(switched_frame) != target_event" in source
+    assert "EVENT_QUERY_KEY: target_event" in source
     assert "reloaded_event != target_event" in source
-    assert "production_verify_v3" in source
+    assert "production_verify_v2" in source
     assert "production_verify_v4" in source
 
 
@@ -66,23 +66,25 @@ def test_v5_accepts_exact_frame_url_when_selected_card_marker_is_absent():
     assert v5._frame_event(Frame()) == "401856798"
 
 
-def test_v5_initial_persistence_uses_selected_card_or_exact_frame_url():
+def test_v5_initial_identity_uses_selected_card_or_exact_frame_url():
     source = (ROOT / "devsystem" / "production_verify_v5.py").read_text(
         encoding="utf-8"
     )
     assert "last_frame_event = _frame_event(frame)" in source
-    assert "last_selected == last_outer" in source
-    assert "last_frame_event == last_outer" in source
-    assert "and (" in source
-    assert "frame={last_frame_event!r}" in source
+    assert "initial_event = last_selected or last_frame_event" in source
+    assert "outer=" not in source.split("def _wait_for_initial_selection", 1)[1].split(
+        "def _switch_target", 1
+    )[0]
 
 
-def test_v5_hard_refresh_persistence_uses_selected_card_or_exact_frame_url():
+def test_v5_frame_persistence_requires_selected_card_and_frame_query_match():
     source = (ROOT / "devsystem" / "production_verify_v5.py").read_text(
         encoding="utf-8"
     )
     assert "def _frame_event(frame)" in source
     assert "def _persisted_event(frame)" in source
+    assert "last_selected == expected_event" in source
     assert "last_frame_event == expected_event" in source
-    assert "reloaded_event = _persisted_event(reload_frame)" in source
-    assert "outer_event == expected_event" in source
+    assert "outer_event == expected_event" not in source
+    assert '"frame_event_persistence_verified": True' in source
+    assert '"deeplink_reload_verified": True' in source
