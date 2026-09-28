@@ -19,8 +19,8 @@
     "failure_field": "ESPN_ROSTER_SOURCE",
     "failure_detail": "team WAS -> unknown team"
   },
-  "root_cause": "Step 5 canonicalizes Washington to WAS for cross-source reconciliation, while the shared ESPN TEAM_IDS map uses WSH. _espn_team_rows passed canonical WAS directly to the ESPN roster loader, causing the ESPN source to fail before reconciliation.",
-  "patch": "Translate only the Step-5 ESPN lookup key WAS -> WSH. Preserve canonical Step-5 roster identity as WAS and preserve the two-independent-source verification contract.",
+  "root_cause": "Two Step-5 source-boundary defects blocked IND-WAS: canonical WAS was passed directly to the ESPN roster loader even though ESPN TEAM_IDS uses WSH; after that alias was repaired, the healthy NFLverse 2026 dataset had no Week-4 rows yet because the future week had not been published, leaving both teams with zero nflverse target-week rows.",
+  "patch": "Translate only WAS -> WSH at the ESPN lookup boundary, and when an exact NFLverse target week is unpublished for a current/future game, allow only the latest common prior week when it is exactly one week behind. Preserve exact ESPN athlete-ID, position, active-status agreement across ESPN + NFLverse and fail closed for older or asymmetric snapshots.",
   "protected": [
     "Visual V2 Step 2",
     "Visual V2 Step 3",
@@ -35,7 +35,10 @@
     "WAS resolves through WSH only at the ESPN current-roster lookup boundary.",
     "Non-Washington teams pass through unchanged.",
     "Canonical Step-5 output remains WAS.",
-    "IND-WAS verified roster truth is LIVE with ESPN + NFLVERSE.",
+    "Exact target NFLverse week remains preferred whenever published.",
+    "Current/future games may use only the latest common prior NFLverse week when it is exactly one week behind.",
+    "Fallback fails closed when more than one week stale or not common to both teams.",
+    "IND-WAS verified roster truth is LIVE with ESPN + NFLVERSE and reports requested week 4 / used week 3.",
     "Availability/depth truth is LIVE for the same verified handoff.",
     "Unified roster is visible and a QB is selectable.",
     "Open prop page reaches Visual V2 Steps 2-4 and Line Lab.",
