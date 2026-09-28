@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "project": "Monster GitHub speed upgrade",
+  "step": "5/5",
+  "status": "GREEN",
+  "purpose": "Benchmark pre-upgrade versus optimized DevSystem production verification startup and freeze the speed contract.",
+  "primary_metric": {
+    "name": "run creation -> production_verify_v5.py start",
+    "rationale": "Comparable workflow startup/setup interval before the live production verifier begins; excludes later live-site variability.",
+    "baseline": {
+      "run_id": 36486378747,
+      "head_sha": "fd4e29eabfc7a3a197ce4dead6bd6097b0a86846",
+      "run_created_at": "2026-09-28T21:28:57Z",
+      "live_verify_started_at": "2026-09-28T21:30:04.2636518Z",
+      "seconds": 67.263651,
+      "workflow_state": "pre-speed-upgrade"
+    },
+    "optimized": {
+      "run_id": 36493579149,
+      "head_sha": "54eb5165d1024750969df09ecfdd296c2bb14f30",
+      "run_created_at": "2026-09-28T22:38:24Z",
+      "live_verify_started_at": "2026-09-28T22:38:41.2937967Z",
+      "seconds": 17.293796,
+      "workflow_state": "steps-1-through-4-optimized"
+    },
+    "reduction_percent": 74.289537,
+    "speedup_multiple": 3.889467,
+    "acceptance": {
+      "maximum_optimized_seconds": 25,
+      "minimum_reduction_percent": 60,
+      "passed": true
+    }
+  },
+  "observed_terminal_duration": {
+    "note": "Secondary observation only; live verifier failure points differed, so this is not the primary apples-to-apples metric.",
+    "baseline_seconds": 246,
+    "optimized_seconds": 37,
+    "observed_reduction_percent": 84.95935
+  },
+  "frozen_speed_contracts": {
+    "step1_single_automatic_production_verifier": true,
+    "step2_seeded_browser_stack_cache": true,
+    "step2_unconditional_with_deps_install_removed": true,
+    "step3_dependency_free_preflight_before_browser_restore": true,
+    "step4_repo_wide_streamlit_glob_removed": true,
+    "step4_repo_wide_sports_api_glob_removed": true,
+    "step4_repo_wide_data_glob_removed": true
+  },
+  "interpretation": {
+    "startup_saved_seconds": 49.969855,
+    "primary_result": "GREEN",
+    "live_product_gate_status": "not part of speed benchmark acceptance"
+  }
+}
