@@ -8,7 +8,7 @@
   "acceptance": [
     "No NFL Rushing Yards, Receiving Yards, Passing Yards, roster, availability, projection, market, probability, or Visual V2 product code changes.",
     "Production V4 still requires the V165 heartbeat and visible GAMES ON THIS DAY selector.",
-    "Persisted ESPN event_id is accepted only from the matched Streamlit app-frame URL or shell URL.",
+    "Persisted ESPN event_id is accepted only from the matched Streamlit app-frame URL; the outer shell URL is not an event-identity source.",
     "Missing event_id still fails closed with the existing terminal error.",
     "Frozen production verifier V3 remains delegated unchanged."
   ],
