@@ -372,7 +372,7 @@ jobs:
                   '[data-nfl-prop-analytics-step3-selection="v1"]',
                   120,
               )
-              assert selection.get_attribute("data-prop-selection-state")=="ready"
+              assert selection.get_attribute("data-prop-selection-state")=="selected"
               assert selection.get_attribute("data-prop-handoff-state")=="ready"
               open_matchup=selection_frame.get_by_role(
                   "button",
@@ -534,7 +534,7 @@ jobs:
                   '[data-nfl-prop-analytics-step3-selection="v1"]',
                   120,
               )
-              assert selection.get_attribute("data-prop-selection-state")=="ready"
+              assert selection.get_attribute("data-prop-selection-state")=="selected"
               assert selection.get_attribute("data-prop-handoff-state")=="ready"
               open_matchup=selection_frame.get_by_role(
                   "button",
