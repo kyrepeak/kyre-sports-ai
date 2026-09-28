@@ -1,0 +1,31 @@
+{
+  "task": "github-speed-step2-reuse-browser-cache-v1",
+  "task_id": "github-speed-step2-reuse-browser-cache-v1",
+  "title": "GitHub Speed Step 2 — reuse seeded browser cache in production V5",
+  "version": 1,
+  "status": "DONE",
+  "source_main": "aa68e9db4045515aa123a83a53b6d5c52f0e4bc7",
+  "scope": {
+    "workflow": ".github/workflows/devsystem-production-verification-v5.yml",
+    "regression_test": "tests/test_devsystem_browser_cache_v1.py"
+  },
+  "acceptance": {
+    "shared_virtualenv": ".venv-browser-qa",
+    "shared_playwright_cache": "~/.cache/ms-playwright",
+    "shared_cache_key": true,
+    "cache_miss_build_only": true,
+    "with_deps_reinstall_removed": true,
+    "product_code_changed": false
+  },
+  "protected": {
+    "speed_step1_frozen": true,
+    "product_code": true,
+    "verifier_logic": true,
+    "public_runtime_behavior": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
