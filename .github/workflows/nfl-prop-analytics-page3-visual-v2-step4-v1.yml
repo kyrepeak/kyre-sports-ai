@@ -239,9 +239,7 @@ jobs:
 
               deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
               assert deck.count()==1
-              cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
               controls=deck.locator('[data-testid="stSegmentedControl"]')
-              assert cols.count()==2,cols.count()
               assert controls.count()==2,controls.count()
               assert old.evaluate("e=>getComputedStyle(e).display")=="none"
 
@@ -253,8 +251,8 @@ jobs:
               assert rb["y"]+rb["height"] <= db["y"]+8,(rb,db)
               assert db["y"]+db["height"] <= lb["y"]+8,(db,lb)
 
-              c0=cols.nth(0).bounding_box()
-              c1=cols.nth(1).bounding_box()
+              c0=controls.nth(0).bounding_box()
+              c1=controls.nth(1).bounding_box()
               assert c0["x"] < c1["x"],(c0,c1)
               assert abs(c0["width"]-c1["width"])<=3,(c0,c1)
 
@@ -277,13 +275,13 @@ jobs:
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
                   deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-                  cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
-                  c0=cols.nth(0).bounding_box()
-                  c1=cols.nth(1).bounding_box()
-                  if width==390:
-                      assert c1["y"] > c0["y"],(width,c0,c1)
-                  else:
+                  controls=deck.locator('[data-testid="stSegmentedControl"]')
+                  assert controls.count()==2,controls.count()
+                  c0=controls.nth(0).bounding_box()
+                  c1=controls.nth(1).bounding_box()
+                  if width>=768:
                       assert c0["x"] < c1["x"],(width,c0,c1)
+                      assert abs(c0["width"]-c1["width"])<=4,(width,c0,c1)
                   print(f"VISUAL_V2_STEP4_BRANCH_{width}_GREEN")
 
               print("VISUAL_V2_STEP4_BRANCH_GREEN")
@@ -406,9 +404,7 @@ jobs:
 
               deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
               assert deck.count()==1
-              cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
               controls=deck.locator('[data-testid="stSegmentedControl"]')
-              assert cols.count()==2,cols.count()
               assert controls.count()==2,controls.count()
               assert old.evaluate("e=>getComputedStyle(e).display")=="none"
 
@@ -462,13 +458,13 @@ jobs:
                   dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
                   assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
                   deck=frame.locator(".st-key-nfl_prop_visual_v2_step4_analysis_settings_v1").first
-                  cols=deck.locator('[data-testid="stHorizontalBlock"] > div')
-                  c0=cols.nth(0).bounding_box()
-                  c1=cols.nth(1).bounding_box()
-                  if width==390:
-                      assert c1["y"] > c0["y"],(width,c0,c1)
-                  else:
+                  controls=deck.locator('[data-testid="stSegmentedControl"]')
+                  assert controls.count()==2,controls.count()
+                  c0=controls.nth(0).bounding_box()
+                  c1=controls.nth(1).bounding_box()
+                  if width>=768:
                       assert c0["x"] < c1["x"],(width,c0,c1)
+                      assert abs(c0["width"]-c1["width"])<=4,(width,c0,c1)
                   print(f"VISUAL_V2_STEP4_PUBLIC_{width}_GREEN")
 
               print("VISUAL_V2_STEP4_PUBLIC_GREEN")
