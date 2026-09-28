@@ -215,10 +215,12 @@ class _CBSScheduleHTMLParser(HTMLParser):
         super().__init__()
         self.current_date: date | None = None
         self.rows: list[tuple[date | None, list[str]]] = []
+        self.text_nodes: list[str] = []
         self._heading_tag: str | None = None
         self._heading_parts: list[str] = []
         self._row: list[str] | None = None
         self._cell_parts: list[str] | None = None
+        self._ignored_depth = 0
 
     @staticmethod
     def _clean(parts: list[str]) -> str:
@@ -244,6 +246,11 @@ class _CBSScheduleHTMLParser(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs) -> None:
         lowered = tag.lower()
+        if lowered in {"script", "style", "noscript"}:
+            self._ignored_depth += 1
+            return
+        if self._ignored_depth:
+            return
         if lowered in {"h1", "h2", "h3", "h4", "h5", "h6"}:
             self._heading_tag = lowered
             self._heading_parts = []
@@ -253,6 +260,11 @@ class _CBSScheduleHTMLParser(HTMLParser):
             self._cell_parts = []
 
     def handle_data(self, data: str) -> None:
+        if self._ignored_depth:
+            return
+        cleaned = re.sub(r"\s+", " ", data).strip()
+        if cleaned:
+            self.text_nodes.append(cleaned)
         if self._heading_tag is not None:
             self._heading_parts.append(data)
         if self._cell_parts is not None:
@@ -260,6 +272,12 @@ class _CBSScheduleHTMLParser(HTMLParser):
 
     def handle_endtag(self, tag: str) -> None:
         lowered = tag.lower()
+        if lowered in {"script", "style", "noscript"}:
+            if self._ignored_depth:
+                self._ignored_depth -= 1
+            return
+        if self._ignored_depth:
+            return
         if lowered == self._heading_tag:
             heading = self._clean(self._heading_parts)
             parsed = self._heading_date(heading)
@@ -281,7 +299,106 @@ def _canon_cbs_team(value: Any) -> str:
     token = re.sub(r"\s+", " ", str(value or "")).strip().upper()
     if token in CBS_TEAM_ALIASES:
         return CBS_TEAM_ALIASES[token]
-    return _canon_team(token)
+    canonical = _canon_team(token)
+    if canonical in TEAM_NAMES:
+        return canonical
+    for label, team in sorted(
+        CBS_TEAM_ALIASES.items(),
+        key=lambda item: len(item[0]),
+        reverse=True,
+    ):
+        if token.startswith(label + " "):
+            nickname = TEAM_NAMES[team].upper()
+            if nickname in token[len(label):]:
+                return team
+    return canonical
+
+
+_CBS_TEAM_TOKEN_RE = re.compile(
+    "|".join(
+        rf"(?<![A-Z0-9]){re.escape(label)}(?![A-Z0-9])"
+        for label in sorted(CBS_TEAM_ALIASES, key=len, reverse=True)
+    ),
+    re.IGNORECASE,
+)
+_CBS_TIME_TOKEN_RE = re.compile(
+    r"\b(\d{1,2}:\d{2})\s*(am|pm)\b",
+    re.IGNORECASE,
+)
+
+
+def _cbs_day_text_nodes(
+    parser: _CBSScheduleHTMLParser,
+    target: date,
+) -> list[str]:
+    selected: list[str] = []
+    active = False
+    for node in parser.text_nodes:
+        parsed = parser._heading_date(node)
+        if parsed is not None:
+            if active and parsed != target:
+                break
+            active = parsed == target
+            continue
+        if active:
+            selected.append(node)
+    return selected
+
+
+def _parse_cbs_schedule_text_nodes(
+    nodes: list[str],
+    *,
+    target: date,
+    week: int,
+) -> list[dict[str, Any]]:
+    events: list[tuple[int, str, str]] = []
+    offset = 0
+    joined_parts: list[str] = []
+    for node in nodes:
+        joined_parts.append(node)
+    text = " ".join(joined_parts)
+    upper = text.upper()
+
+    for match in _CBS_TEAM_TOKEN_RE.finditer(upper):
+        events.append((match.start(), "team", match.group(0)))
+    for match in _CBS_TIME_TOKEN_RE.finditer(text):
+        events.append((match.start(), "time", match.group(0)))
+    events.sort(key=lambda item: item[0])
+
+    pending_teams: list[str] = []
+    games: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for _, kind, value in events:
+        if kind == "team":
+            team = _canon_cbs_team(value)
+            if team in TEAM_NAMES:
+                if not pending_teams or pending_teams[-1] != team:
+                    pending_teams.append(team)
+                    pending_teams = pending_teams[-2:]
+            continue
+
+        time_match = _CBS_TIME_TOKEN_RE.search(value)
+        if not time_match or len(pending_teams) != 2:
+            continue
+        away, home = pending_teams
+        pending_teams = []
+        if away == home or (away, home) in seen:
+            continue
+        clock = f"{time_match.group(1)} {time_match.group(2).upper()}"
+        item = _game(
+            away=away,
+            home=home,
+            kickoff_utc=_kickoff_et(target, clock),
+            source="CBS",
+            season=target.year,
+            week=week,
+            network="",
+            status="scheduled",
+        )
+        if item:
+            games.append(item)
+            seen.add((away, home))
+    return games
 
 
 def _parse_cbs_schedule_html(
@@ -333,7 +450,18 @@ def _parse_cbs_schedule_html(
         )
         if item:
             games.append(item)
-    return games
+    if games:
+        return games
+
+    # CBS's production schedule markup is component/div based rather than a
+    # semantic table in some responses. Fall back to ordered visible text for
+    # the exact target-day section while preserving the same independent
+    # away/home/kickoff evidence contract.
+    return _parse_cbs_schedule_text_nodes(
+        _cbs_day_text_nodes(parser, target),
+        target=target,
+        week=week,
+    )
 
 
 def _from_cbs(target: date, week: int | None) -> list[dict[str, Any]]:
