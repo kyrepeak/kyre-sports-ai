@@ -46,8 +46,8 @@ def test_step5_matches_locked_composition_contract():
         'data-v2-live-card="over-percent"',
         'data-v2-live-card="under-percent"',
         'data-v2-live-card="average-stat"',
-        f".st-key-{v2.LINE_CONTAINER_KEY}",
-        f".st-key-{v2.CHART_CONTAINER_KEY}",
+        ".st-key-{LINE_CONTAINER_KEY}",
+        ".st-key-{CHART_CONTAINER_KEY}",
     ):
         assert token in SRC, token
 
