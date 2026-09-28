@@ -281,6 +281,9 @@ def render_visual_v2_line_lab(
  data-page3-visual-v2-step5="{VISUAL_VERSION}"
  data-page3-visual-v2-step5-region="line-lab"
  data-page3-visual-v2-step5-state="{state}"
+ data-page3-visual-v2-step5-line="{_fmt(line)}"
+ data-page3-visual-v2-step5-min="{_fmt(minimum)}"
+ data-page3-visual-v2-step5-max="{_fmt(maximum)}"
  data-page3-visual-v2-step5-real-composition="true"
  data-page3-visual-v2-step5-presentation-only="true"
  data-page3-visual-v2-step5-interaction-change="false"
@@ -335,7 +338,10 @@ def render_visual_v2_live_recalculation(
  data-page3-visual-v2-step5="{VISUAL_VERSION}"
  data-page3-visual-v2-step5-region="live-recalculation"
  data-page3-visual-v2-step5-live-state="{state}"
- data-page3-visual-v2-step5-live-card-count="4">
+ data-page3-visual-v2-step5-live-card-count="4"
+ data-page3-visual-v2-step5-live-line="{_fmt(line)}"
+ data-page3-visual-v2-step5-live-over="{_fmt(over_pct, percent=True)}"
+ data-page3-visual-v2-step5-live-under="{_fmt(under_pct, percent=True)}">
   <div class="ks-v2-step5-live-head">
     <div>
       <span>LIVE HISTORICAL RECALCULATION</span>
