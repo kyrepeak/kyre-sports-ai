@@ -1,0 +1,117 @@
+name: NFL Prop Analytics Visual V2 Step 2 Public Runtime Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-visual-v2-step2-public-runtime-diagnostic-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step2-public-runtime-diagnostic-v1.json"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-public-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Diagnose exact public boundary
+        run: |
+          python - <<'PY'
+          import json,time
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def role(page,kind,name,timeout=90):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for fr in page.frames:
+                      try:
+                          loc=fr.get_by_role(kind,name=name,exact=True)
+                          if loc.count():
+                              return fr,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              return None,None
+
+          def choose(page,name,value):
+              fr,loc=role(page,"combobox",name,90)
+              if not loc:
+                  raise RuntimeError(f"PUBLIC_RUNTIME_DIAG_COMBOBOX_NOT_READY:{name}")
+              loc.click()
+              page.keyboard.type(value,delay=10)
+              ofr,opt=role(page,"option",value,30)
+              if not opt:
+                  raise RuntimeError(f"PUBLIC_RUNTIME_DIAG_OPTION_NOT_READY:{value}")
+              opt.click()
+
+          def marker_snapshot(page, selector):
+              for fr in page.frames:
+                  try:
+                      loc=fr.locator(selector)
+                      if loc.count():
+                          el=loc.first
+                          return {
+                              "found": True,
+                              "frame_url": fr.url,
+                              "attrs": el.evaluate("""e=>Object.fromEntries([...e.attributes].map(a=>[a.name,a.value]))"""),
+                              "text": el.inner_text()[:1200],
+                          }
+                  except Exception:
+                      pass
+              return {"found": False}
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--no-sandbox","--disable-gpu"])
+              ctx=browser.new_context(viewport={"width":768,"height":1100})
+              page=ctx.new_page()
+              page.goto(base,wait_until="domcontentloaded",timeout=120000)
+              choose(page,"🏟️ Sport","NFL")
+              choose(page,"🎯 NFL Market","Prop Analytics")
+              page.wait_for_timeout(8000)
+
+              open_frame,open_btn=role(page,"button","Open matchup",8)
+              schedule=marker_snapshot(page,'[data-nfl-prop-analytics-step2-schedule="v1"]')
+              selection=marker_snapshot(page,'[data-nfl-prop-analytics-step3-selection="v1"]')
+
+              frames=[]
+              for idx,fr in enumerate(page.frames):
+                  try:
+                      body=fr.locator("body").inner_text(timeout=3000)[:2200]
+                  except Exception:
+                      body=""
+                  frames.append({"index":idx,"url":fr.url,"body_start":body})
+
+              evidence={
+                  "open_matchup_found": bool(open_btn),
+                  "open_matchup_frame_url": open_frame.url if open_frame else "",
+                  "schedule": schedule,
+                  "selection": selection,
+                  "frames": frames,
+                  "outer_url": page.url,
+              }
+              print("VISUAL_V2_STEP2_PUBLIC_RUNTIME_EVIDENCE="+json.dumps(evidence,sort_keys=True))
+
+              if open_btn:
+                  print("VISUAL_V2_STEP2_PUBLIC_RUNTIME_BOUNDARY=OPEN_MATCHUP_AVAILABLE")
+              elif schedule.get("found") and schedule.get("attrs",{}).get("data-prop-schedule-state")=="fail-closed":
+                  print("VISUAL_V2_STEP2_PUBLIC_RUNTIME_BOUNDARY=SCHEDULE_TRUTH_FAIL_CLOSED")
+              elif selection.get("found") and selection.get("attrs",{}).get("data-prop-handoff-state")=="not-ready":
+                  print("VISUAL_V2_STEP2_PUBLIC_RUNTIME_BOUNDARY=GAME_SELECTION_HANDOFF_NOT_READY")
+              else:
+                  print("VISUAL_V2_STEP2_PUBLIC_RUNTIME_BOUNDARY=ROUTE_OR_RUNTIME_IDENTITY")
+
+              print("VISUAL_V2_STEP2_PUBLIC_RUNTIME_DIAGNOSTIC_GREEN")
+              ctx.close()
+              browser.close()
+          PY
