@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "task_id": "devsystem-production-v4-frame-event-query-v1",
+  "title": "DevSystem production V4 app-frame event query repair",
+  "project": "DevSystem production verification",
+  "status": "DONE",
+  "scope": "Verifier-only repair for the single terminal failure in run 36467023207. Read the persisted CFB Game Total ESPN event_id from the hosted Streamlit app frame before falling back to the outer shell URL.",
+  "acceptance": [
+    "No NFL Rushing Yards, Receiving Yards, Passing Yards, roster, availability, projection, market, probability, or Visual V2 product code changes.",
+    "Production V4 still requires the V165 heartbeat and visible GAMES ON THIS DAY selector.",
+    "Persisted ESPN event_id is accepted only from the matched Streamlit app-frame URL or shell URL.",
+    "Missing event_id still fails closed with the existing terminal error.",
+    "Frozen production verifier V3 remains delegated unchanged."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
