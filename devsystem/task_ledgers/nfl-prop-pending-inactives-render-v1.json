@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-pending-inactives-render-v1",
+  "title": "NFL player props — render exact identities while final inactives are pending",
+  "project": "NFL player props",
+  "status": "DONE",
+  "scope": "One-owner identity-gate repair. Preserve fail-closed exact event/current-roster verification, but stop treating truthful pregame PENDING final-inactive publication as an identity failure.",
+  "acceptance": [
+    "Rushing/Receiving exact player identity may render when event snapshot is PENDING and current roster IDs are verified.",
+    "UNVERIFIED and post-kickoff CLOSED identity states still fail closed.",
+    "Final-inactives verification remains explicitly false while pending.",
+    "No projection math, probability, market pricing, sportsbook influence, stake sizing, or wager action behavior changes.",
+    "Passing Yards separate identity-vs-availability behavior remains untouched.",
+    "Visual V2 Steps 2-6 remain untouched."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
