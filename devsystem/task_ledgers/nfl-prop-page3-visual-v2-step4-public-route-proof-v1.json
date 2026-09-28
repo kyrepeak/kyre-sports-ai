@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-visual-v2-step4-public-route-proof-v1",
+  "title": "NFL Prop Analytics Page 3 Visual V2 Step 4 — Public Route Verifier Repair",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": "4-public-verifier",
+  "status": "DONE",
+  "certification_state": "FREEZE_ON_PUBLIC_PROOF",
+  "source_main": "75c3b8a63dd3004a61ebca07d395b088709fe6b1",
+  "scope": "Verifier-only repair after Step 4 product/static/branch/DevSystem gates were green but public proof twice timed out after clicking Open matchup before the frozen Page-2 unified roster marker appeared.",
+  "root_cause": {
+    "failed_run": 36426452580,
+    "failed_jobs": [
+      108941692725,
+      108944448884
+    ],
+    "failure": "VISUAL_V2_STEP4_PUBLIC_SELECTOR_NOT_READY:[data-nfl-prop-analytics-page2-unified-roster=\"v1\"]",
+    "step4_product_failure": false,
+    "schedule_provider_failure": false,
+    "page2_product_change": false
+  },
+  "patch": {
+    "workflow_only": true,
+    "read_verified_page1_selection_key": true,
+    "use_supported_matchup_deeplink": true,
+    "require_real_page2_roster_after_deeplink": true,
+    "product_code_changed": false,
+    "step2_changed": false,
+    "step3_changed": false,
+    "widget_keys_changed": false,
+    "query_contract_changed": false
+  },
+  "acceptance": [
+    "Step-4 static contract remains green.",
+    "Step-4 branch UI remains green.",
+    "DevSystem final gate remains green.",
+    "Public verifier reads data-prop-selected-game from the real verified Page-1 selection.",
+    "Public verifier enters Page 2 through supported ks_pa_page=matchup and ks_pa_game query semantics.",
+    "Real frozen Page-2 unified roster must render before player selection continues.",
+    "Real Page-3 Visual V2 Steps 2-4, interactions, Line Lab, and 390/768/1440 proof must pass.",
+    "Terminal tokens: VISUAL_V2_STEP4_PUBLIC_GREEN, VISUAL_V2_STEP4_GREEN, VISUAL_V2_STEP4_FROZEN."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
