@@ -90,7 +90,13 @@ jobs:
           python - <<'PY'
           from nfl_prop_analytics_schedule_v1 import load_schedule_truth
           from nfl_prop_analytics_game_select_v1 import _eligible_games, build_matchup_handoff
-          from nfl_prop_analytics_roster_truth_v1 import load_verified_roster_truth
+          from nfl_prop_analytics_roster_truth_v1 import (
+              load_verified_roster_truth,
+              _load_nflverse_weekly,
+              _nflverse_team_week,
+              _espn_team_rows,
+              _canon_team,
+          )
           from nfl_prop_analytics_availability_depth_v1 import load_availability_depth_truth
 
           truth=load_schedule_truth()
@@ -105,6 +111,30 @@ jobs:
           assert handoff["state"]=="ready",handoff
           assert handoff["selection_key"]=="IND-WAS",handoff
           assert handoff["target_date"]=="2026-10-04",handoff
+
+          frame,nv_diag=_load_nflverse_weekly(2026)
+          for team in ("IND","WAS"):
+              espn_rows,espn_diag=_espn_team_rows(team)
+              nv_rows=_nflverse_team_week(frame,team=team,season=2026,week=4)
+              espn_ids={r.get("espn_id") for r in espn_rows if r.get("espn_id")}
+              nv_ids={r.get("espn_id") for r in nv_rows if r.get("espn_id")}
+              team_series=frame["team"].map(_canon_team) if not frame.empty else []
+              weeks=sorted({
+                  int(w)
+                  for w in frame.loc[
+                      (team_series==_canon_team(team))
+                      & (frame["season"]==2026),
+                      "week"
+                  ].dropna().tolist()
+              }) if not frame.empty else []
+              print(
+                  "STEP5_RECON_DIAG",
+                  team,
+                  "ESPN_ROWS",len(espn_rows),
+                  "NFLVERSE_WEEK4_ROWS",len(nv_rows),
+                  "ID_OVERLAP",len(espn_ids & nv_ids),
+                  "NFLVERSE_AVAILABLE_WEEKS",",".join(map(str,weeks)),
+              )
 
           roster=load_verified_roster_truth(handoff)
           if roster.get("state")!="live":
