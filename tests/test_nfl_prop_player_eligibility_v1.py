@@ -86,7 +86,7 @@ def _depth():
     }
 
 
-def test_pending_availability_blocks_entire_prop_pool():
+def test_pending_availability_opens_provisional_pregame_pool_and_filters_known_inactive():
     pool, diag = elig.build_current_prop_pool(
         team_id="1",
         roster_payload=_roster(),
@@ -94,9 +94,13 @@ def test_pending_availability_blocks_entire_prop_pool():
         event_summary=_summary(both_inactive=False),
         allowed_positions={"QB", "RB"},
     )
-    assert pool == {}
     assert diag["state"] == "PENDING"
-    assert diag["prop_gate_open"] is False
+    assert diag["prop_gate_open"] is True
+    assert diag["final_inactives_confirmed"] is False
+    assert diag["provisional_pregame_pool"] is True
+    assert "10" not in pool
+    assert "12" not in pool
+    assert pool["11"]["player_name"] == "Playable QB"
 
 
 def test_inactive_and_reserve_players_are_removed_but_depth_backup_survives():
@@ -138,6 +142,14 @@ def test_live_game_closes_pregame_prop_pool():
     state = elig.event_availability_state(summary)
     assert state["state"] == "CLOSED"
     assert state["prop_gate_open"] is False
+
+
+def test_unknown_event_state_still_fails_closed():
+    summary = _summary(state="", both_inactive=False)
+    state = elig.event_availability_state(summary)
+    assert state["state"] == "UNVERIFIED"
+    assert state["prop_gate_open"] is False
+    assert state["provisional_pregame_pool"] is False
 
 
 def test_core_depth_shape_extracts_exact_athlete_id_from_ref():
