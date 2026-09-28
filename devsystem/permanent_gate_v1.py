@@ -33,6 +33,7 @@ REQUIRED_DEVSYSTEM_FILES = (
     ".github/workflows/devsystem-targeted-ci.yml",
     ".github/workflows/devsystem-failure-packet-v1.yml",
     ".github/workflows/devsystem-production-verification.yml",
+    ".github/workflows/devsystem-production-verification-v5.yml",
     ".github/workflows/devsystem-api-observability-v1.yml",
     "devsystem/forward_motion_policy_v2.json",
     "devsystem/action_ledger_v2.py",
@@ -234,9 +235,17 @@ def validate() -> dict:
     if history_missing:
         raise PermanentGateFailure("failure recurrence history drift: " + " | ".join(history_missing))
 
-    prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(encoding="utf-8")
-    if "branches: [main]" not in prod:
-        raise PermanentGateFailure("production verification must remain main-only")
+    legacy_prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(encoding="utf-8")
+    if "workflow_dispatch:" not in legacy_prod:
+        raise PermanentGateFailure("legacy production verification must remain manually dispatchable")
+    if "\n  push:" in legacy_prod or "branches: [main]" in legacy_prod:
+        raise PermanentGateFailure("legacy production verification must remain manual-only")
+
+    prod_v5 = (ROOT / ".github/workflows/devsystem-production-verification-v5.yml").read_text(encoding="utf-8")
+    if "workflow_dispatch:" not in prod_v5:
+        raise PermanentGateFailure("production verification V5 must remain manually dispatchable")
+    if "\n  push:" not in prod_v5 or "branches: [main]" not in prod_v5:
+        raise PermanentGateFailure("production verification V5 must remain the automatic main verifier")
 
     api_observability = (ROOT / ".github/workflows/devsystem-api-observability-v1.yml").read_text(encoding="utf-8")
     api_required_markers = (
