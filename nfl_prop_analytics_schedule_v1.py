@@ -31,6 +31,9 @@ MAY_MODIFY_EXISTING_NFL_MARKETS = False
 
 NFLVERSE_GAMES_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
 ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+ESPN_WEB_SCOREBOARD_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+ESPN_TEAM_SCHEDULE_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
+ESPN_WEB_TEAM_SCHEDULE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
 NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"
 CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"
 
@@ -111,7 +114,21 @@ def team_logo_url(team: Any) -> str:
 
 SOURCE_PRIORITY = ("NFL", "CBS", "NFLVERSE", "ESPN")
 REQUEST_HEADERS = {
-    "User-Agent": "KyreSportsAI/1.0 schedule-truth-layer (+https://kyre-sports-ai.streamlit.app)"
+    "User-Agent": (
+        "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) "
+        "AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
+    ),
+    "Accept": "application/json,text/plain,*/*",
+}
+
+ESPN_TEAM_IDS = {
+    "ATL": "1", "BUF": "2", "CHI": "3", "CIN": "4", "CLE": "5",
+    "DAL": "6", "DEN": "7", "DET": "8", "GB": "9", "TEN": "10",
+    "IND": "11", "KC": "12", "LV": "13", "LAR": "14", "MIA": "15",
+    "MIN": "16", "NE": "17", "NO": "18", "NYG": "19", "NYJ": "20",
+    "PHI": "21", "ARI": "22", "PIT": "23", "LAC": "24", "SF": "25",
+    "SEA": "26", "TB": "27", "WAS": "28", "CAR": "29", "JAX": "30",
+    "BAL": "33", "HOU": "34",
 }
 
 
@@ -482,25 +499,17 @@ def _from_cbs(target: date, week: int | None) -> list[dict[str, Any]]:
     return _parse_cbs_schedule_html(response.text, target=target, week=int(week))
 
 
-def _from_espn(target: date) -> list[dict[str, Any]]:
-    response = requests.get(
-        ESPN_SCOREBOARD_URL,
-        params={"dates": target.strftime("%Y%m%d"), "limit": 100},
-        headers=REQUEST_HEADERS,
-        timeout=6,
-    )
-    response.raise_for_status()
-    payload = response.json()
+def _espn_events_to_games(payload: dict[str, Any], target: date) -> list[dict[str, Any]]:
     games: list[dict[str, Any]] = []
-    for event in payload.get("events", []):
+    for event in payload.get("events", []) or []:
         competition = (event.get("competitions") or [{}])[0]
         sides = {}
-        for competitor in competition.get("competitors", []):
+        for competitor in competition.get("competitors", []) or []:
             sides[competitor.get("homeAway")] = (
                 competitor.get("team", {}).get("abbreviation")
             )
         broadcasts = []
-        for broadcast in competition.get("broadcasts", []):
+        for broadcast in competition.get("broadcasts", []) or []:
             broadcasts.extend(broadcast.get("names") or [])
         week = (
             event.get("week", {}).get("number")
@@ -511,13 +520,17 @@ def _from_espn(target: date) -> list[dict[str, Any]]:
         status = (
             event.get("status", {}).get("type", {}).get("description")
             or event.get("status", {}).get("type", {}).get("name")
+            or competition.get("status", {}).get("type", {}).get("description")
             or "scheduled"
         )
         venue = competition.get("venue", {}).get("fullName", "")
+        kickoff = _safe_iso(event.get("date") or competition.get("date"))
+        if kickoff is not None and kickoff.astimezone(ET).date() != target:
+            continue
         item = _game(
             away=sides.get("away"),
             home=sides.get("home"),
-            kickoff_utc=_safe_iso(event.get("date")),
+            kickoff_utc=kickoff,
             source="ESPN",
             season=int(season),
             week=week,
@@ -529,6 +542,78 @@ def _from_espn(target: date) -> list[dict[str, Any]]:
         if item:
             games.append(item)
     return games
+
+
+def _espn_json(url: str, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    response = requests.get(
+        url,
+        params=params or {},
+        headers=REQUEST_HEADERS,
+        timeout=8,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    return payload if isinstance(payload, dict) else {}
+
+
+def _from_espn_team_schedules(
+    target: date,
+    candidate_games: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    # Query one team schedule per candidate matchup. The candidate list chooses
+    # which independent ESPN pages to inspect; ESPN remains a single source.
+    team_ids: list[str] = []
+    for game in candidate_games:
+        team_id = ESPN_TEAM_IDS.get(str(game.get("away") or "").upper())
+        if team_id and team_id not in team_ids:
+            team_ids.append(team_id)
+
+    if not team_ids:
+        return []
+
+    def load_one(team_id: str) -> list[dict[str, Any]]:
+        params = {"season": target.year, "seasontype": 2}
+        last_error: Exception | None = None
+        for template in (ESPN_TEAM_SCHEDULE_URL, ESPN_WEB_TEAM_SCHEDULE_URL):
+            try:
+                payload = _espn_json(template.format(team_id=team_id), params=params)
+                games = _espn_events_to_games(payload, target)
+                if games:
+                    return games
+            except Exception as exc:
+                last_error = exc
+        if last_error is not None:
+            return []
+        return []
+
+    collected: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=min(8, len(team_ids))) as pool:
+        futures = [pool.submit(load_one, team_id) for team_id in team_ids]
+        for future in futures:
+            collected.extend(future.result())
+
+    deduped: dict[tuple[str, str], dict[str, Any]] = {}
+    for game in collected:
+        deduped[(game["away"], game["home"])] = game
+    return list(deduped.values())
+
+
+def _from_espn(
+    target: date,
+    candidate_games: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    params = {"dates": target.strftime("%Y%m%d"), "limit": 100}
+    for url in (ESPN_SCOREBOARD_URL, ESPN_WEB_SCOREBOARD_URL):
+        try:
+            games = _espn_events_to_games(_espn_json(url, params=params), target)
+            if games:
+                return games
+        except Exception:
+            pass
+
+    # GitHub-runner history proves ESPN team schedule endpoints can remain
+    # reachable even when the scoreboard endpoint is blocked with HTTP 403.
+    return _from_espn_team_schedules(target, list(candidate_games or []))
 
 
 _OFFICIAL_GAME_RE = re.compile(
@@ -677,27 +762,32 @@ def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
             errors[label] = f"{type(exc).__name__}:{exc}"
             return []
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        nflverse_future = pool.submit(safe, "NFLVERSE", lambda: _from_nflverse(target))
-        espn_future = pool.submit(safe, "ESPN", lambda: _from_espn(target))
-        nflverse_games = nflverse_future.result()
-        espn_games = espn_future.result()
-
-    week = _week_hint(nflverse_games, espn_games)
+    # NFLVERSE is a fast slate-discovery source. Once its candidate matchups
+    # are known, independent providers verify those fields. No provider is
+    # mandatory and no single source can produce VERIFIED status.
+    nflverse_games = safe("NFLVERSE", lambda: _from_nflverse(target))
+    week = _week_hint(nflverse_games)
     season = target.year
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        official_future = pool.submit(
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        espn_future = pool.submit(
             safe,
-            "NFL",
-            lambda: _from_nfl_official(target, season=season, week=week),
+            "ESPN",
+            lambda: _from_espn(target, candidate_games=nflverse_games),
         )
         cbs_future = pool.submit(
             safe,
             "CBS",
             lambda: _from_cbs(target, week=week),
         )
-        official_games = official_future.result()
+        nfl_future = pool.submit(
+            safe,
+            "NFL",
+            lambda: _from_nfl_official(target, season=season, week=week),
+        )
+        espn_games = espn_future.result()
         cbs_games = cbs_future.result()
+        official_games = nfl_future.result()
 
     source_games = {
         "NFL": official_games,
