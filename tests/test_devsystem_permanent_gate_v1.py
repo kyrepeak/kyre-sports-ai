@@ -235,3 +235,16 @@ def test_production_contract_and_observability_share_branch_truth():
 
     assert obs.CANONICAL_SOURCE_BRANCH == contract.CANONICAL_SOURCE_BRANCH
     assert obs.DEFAULT_RENDER_RUNTIME_BRANCH == contract.RENDER_RELEASE_BRANCH
+
+
+def test_production_verification_v5_is_the_only_automatic_main_verifier():
+    legacy = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(encoding="utf-8")
+    v5 = (ROOT / ".github/workflows/devsystem-production-verification-v5.yml").read_text(encoding="utf-8")
+
+    assert "workflow_dispatch:" in legacy
+    assert "\n  push:" not in legacy
+    assert "branches: [main]" not in legacy
+
+    assert "workflow_dispatch:" in v5
+    assert "\n  push:" in v5
+    assert "branches: [main]" in v5
