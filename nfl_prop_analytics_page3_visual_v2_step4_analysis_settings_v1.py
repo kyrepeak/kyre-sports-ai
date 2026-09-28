@@ -72,13 +72,10 @@ def render_visual_v2_analysis_settings_header(
   display:none!important;
 }}
 
-/* One parent deck containing the two real Streamlit control cards. */
-.st-key-{CONTAINER_KEY}{{
-  position:relative;
-  width:100%;max-width:100%;min-width:0;
-  margin:0 0 14px!important;
-  padding:14px!important;
-  border:1px solid rgba(125,211,252,.42)!important;
+/* The parent deck is a real st.container(border=True). Enhance the native
+   bordered ancestor when Streamlit exposes its stable border wrapper. */
+[data-testid="stVerticalBlockBorderWrapper"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]){{
+  border-color:rgba(125,211,252,.42)!important;
   border-radius:14px!important;
   background:
     radial-gradient(circle at 93% 0%,rgba(14,165,233,.14),transparent 18rem),
@@ -87,7 +84,6 @@ def render_visual_v2_analysis_settings_header(
     0 16px 40px rgba(0,0,0,.24),
     inset 0 1px 0 rgba(255,255,255,.035),
     0 0 0 1px rgba(56,189,248,.04)!important;
-  overflow:visible!important;
 }}
 
 .ks-v2-analysis-settings-head{{
@@ -124,11 +120,11 @@ def render_visual_v2_analysis_settings_header(
 }}
 
 /* The existing controls remain real; only their composition changes. */
-.st-key-{CONTAINER_KEY} [data-testid="stHorizontalBlock"]{{
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stHorizontalBlock"]{{
   gap:10px!important;
   align-items:stretch!important;
 }}
-.st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"]{{
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"]{{
   min-width:0!important;
   margin:0!important;
   padding:10px 11px 11px!important;
@@ -138,19 +134,19 @@ def render_visual_v2_analysis_settings_header(
     linear-gradient(180deg,rgba(8,24,40,.92),rgba(4,14,25,.97))!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
 }}
-.st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] label{{
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] label{{
   color:#d8edf9!important;
   font-size:.61rem!important;
   font-weight:900!important;
   letter-spacing:.055em!important;
   text-transform:uppercase!important;
 }}
-.st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] [role="radiogroup"]{{
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] [role="radiogroup"]{{
   display:flex!important;
   width:100%!important;
   gap:5px!important;
 }}
-.st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] button{{
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button{{
   min-height:{MIN_TOUCH_TARGET_PX}px!important;
   flex:1 1 0!important;
   min-width:0!important;
@@ -169,8 +165,8 @@ def render_visual_v2_analysis_settings_header(
     color .15s ease,
     transform .12s ease!important;
 }}
-.st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] button[aria-pressed="true"],
-.st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] button[aria-selected="true"]{{
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button[aria-pressed="true"],
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button[aria-selected="true"]{{
   color:#e8fbff!important;
   border-color:rgba(125,211,252,.9)!important;
   background:
@@ -179,14 +175,14 @@ def render_visual_v2_analysis_settings_header(
     inset 0 0 0 1px rgba(186,230,253,.18),
     0 0 16px rgba(14,165,233,.24)!important;
 }}
-.st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] button:focus-visible{{
+[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button:focus-visible{{
   outline:2px solid rgba(125,211,252,.95)!important;
   outline-offset:2px!important;
   box-shadow:0 0 0 4px rgba(56,189,248,.15)!important;
 }}
 
 @media(hover:hover){{
-  .st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] button:hover{{
+  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button:hover{{
     color:#d8f4ff!important;
     border-color:rgba(125,211,252,.5)!important;
     transform:translateY(-1px);
@@ -200,16 +196,16 @@ def render_visual_v2_analysis_settings_header(
   .ks-v2-analysis-line-cue{{
     min-height:32px;padding:6px 8px;
   }}
-  .st-key-{CONTAINER_KEY} [data-testid="stHorizontalBlock"]{{
+  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stHorizontalBlock"]{{
     flex-direction:column!important;
     gap:8px!important;
   }}
-  .st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] [role="radiogroup"]{{
+  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] [role="radiogroup"]{{
     overflow-x:auto!important;
     justify-content:flex-start!important;
     scrollbar-width:thin;
   }}
-  .st-key-{CONTAINER_KEY} [data-testid="stSegmentedControl"] button{{
+  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button{{
     flex:0 0 auto!important;
     min-width:58px!important;
     min-height:46px!important;
@@ -217,7 +213,7 @@ def render_visual_v2_analysis_settings_header(
 }}
 
 @media(max-width:430px){{
-  .st-key-{CONTAINER_KEY}{{padding:11px!important}}
+  [data-testid="stVerticalBlockBorderWrapper"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]){{padding:11px!important}}
   .ks-v2-analysis-settings-head{{
     flex-direction:column;
   }}
@@ -227,7 +223,7 @@ def render_visual_v2_analysis_settings_header(
 }}
 
 @media(prefers-reduced-motion:reduce){{
-  .st-key-{CONTAINER_KEY} *{{
+  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) *{{
     transition:none!important;
     animation:none!important;
   }}
