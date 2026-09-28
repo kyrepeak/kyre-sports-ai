@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "task_id": "nfl-prop-analytics-step2-rolling-snapshot-streamlit-redeploy-v1",
+  "title": "NFL Prop Analytics Step 2 — Streamlit Full Redeploy Control Plane",
+  "project": "NFL Prop Analytics",
+  "page": 1,
+  "step": "2-control-plane-repair",
+  "status": "DONE",
+  "source_main": "7eb3e94ff95a8e8a4d5d658ac19b19974c0833d7",
+  "scope": "Control-plane-only Streamlit full redeploy after rolling Step 2 product/static/branch proofs passed but the public runtime never exposed the new rolling-snapshot v2 deployment marker within the 300-second handshake.",
+  "repair": {
+    "failed_public_run": 36380539519,
+    "failed_public_job": 108795334017,
+    "failure_token": "PROP_ANALYTICS_STEP2_PUBLIC_SELECTOR_NOT_READY:[data-nfl-prop-analytics-step2-schedule=\"v1\"][data-prop-schedule-rolling-snapshot-version=\"2\"]",
+    "owner": "PUBLIC_RUNTIME_CONTROL_PLANE",
+    "trigger": "requirements.txt comment-only full-redeploy marker",
+    "dependency_versions_changed": false,
+    "step2_product_changed": false,
+    "rolling_snapshot_data_changed": false,
+    "passing_yards_changed": false,
+    "step1_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false,
+    "post_redeploy_retry_budget": 1
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
