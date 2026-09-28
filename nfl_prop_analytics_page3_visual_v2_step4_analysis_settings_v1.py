@@ -120,11 +120,7 @@ def render_visual_v2_analysis_settings_header(
 }}
 
 /* The existing controls remain real; only their composition changes. */
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stHorizontalBlock"]{{
-  gap:10px!important;
-  align-items:stretch!important;
-}}
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"]{{
+:is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1){{
   min-width:0!important;
   margin:0!important;
   padding:10px 11px 11px!important;
@@ -134,19 +130,19 @@ def render_visual_v2_analysis_settings_header(
     linear-gradient(180deg,rgba(8,24,40,.92),rgba(4,14,25,.97))!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
 }}
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] label{{
+:is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) label{{
   color:#d8edf9!important;
   font-size:.61rem!important;
   font-weight:900!important;
   letter-spacing:.055em!important;
   text-transform:uppercase!important;
 }}
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] [role="radiogroup"]{{
+:is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) [role="radiogroup"]{{
   display:flex!important;
   width:100%!important;
   gap:5px!important;
 }}
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button{{
+:is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) button{{
   min-height:{MIN_TOUCH_TARGET_PX}px!important;
   flex:1 1 0!important;
   min-width:0!important;
@@ -165,8 +161,8 @@ def render_visual_v2_analysis_settings_header(
     color .15s ease,
     transform .12s ease!important;
 }}
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button[aria-pressed="true"],
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button[aria-selected="true"]{{
+:is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) button[aria-pressed="true"],
+:is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) button[aria-selected="true"]{{
   color:#e8fbff!important;
   border-color:rgba(125,211,252,.9)!important;
   background:
@@ -175,14 +171,14 @@ def render_visual_v2_analysis_settings_header(
     inset 0 0 0 1px rgba(186,230,253,.18),
     0 0 16px rgba(14,165,233,.24)!important;
 }}
-[data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button:focus-visible{{
+:is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) button:focus-visible{{
   outline:2px solid rgba(125,211,252,.95)!important;
   outline-offset:2px!important;
   box-shadow:0 0 0 4px rgba(56,189,248,.15)!important;
 }}
 
 @media(hover:hover){{
-  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button:hover{{
+  :is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) button:hover{{
     color:#d8f4ff!important;
     border-color:rgba(125,211,252,.5)!important;
     transform:translateY(-1px);
@@ -196,16 +192,12 @@ def render_visual_v2_analysis_settings_header(
   .ks-v2-analysis-line-cue{{
     min-height:32px;padding:6px 8px;
   }}
-  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stHorizontalBlock"]{{
-    flex-direction:column!important;
-    gap:8px!important;
-  }}
-  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] [role="radiogroup"]{{
+  :is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) [role="radiogroup"]{{
     overflow-x:auto!important;
     justify-content:flex-start!important;
     scrollbar-width:thin;
   }}
-  [data-testid="stMainBlockContainer"]:has([data-page3-visual-v2-step4="{VISUAL_VERSION}"]) [data-testid="stSegmentedControl"] button{{
+  :is(.st-key-nfl_prop_analytics_page3_step2_history_nav_v1,.st-key-nfl_prop_analytics_page3_step2_market_nav_v1) button{{
     flex:0 0 auto!important;
     min-width:58px!important;
     min-height:46px!important;
