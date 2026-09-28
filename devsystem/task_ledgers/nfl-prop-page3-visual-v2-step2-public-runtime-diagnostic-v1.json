@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "task_id": "nfl-prop-page3-visual-v2-step2-public-runtime-diagnostic-v1",
+  "title": "NFL Prop Analytics Page 3 Visual V2 Step 2 — Public Runtime Diagnostic",
+  "project": "NFL Prop Analytics",
+  "page": 3,
+  "series": "Visual Composition V2",
+  "step": "2-control-plane-diagnostic",
+  "status": "ACTIVE",
+  "source_main": "ece8b7cb3c1c4c8175248085850fef31ce586a92",
+  "scope": "Read-only public-runtime diagnosis after the exact post-redeploy retry repeated V2_STEP2_PUBLIC_ROLE_NOT_READY:button:Open matchup. No product, selector, timeout, or deployment mutation.",
+  "closed_theories": [
+    "Step 2 product/branch failure",
+    "simple deployment-time delay after PR #1100"
+  ],
+  "owner": "PUBLIC_RUNTIME_CONTROL_PLANE",
+  "diagnostic_goal": "Identify whether the live NFL Prop Analytics route is fail-closed at schedule truth, game-selection handoff, or route/runtime identity before any further control-plane action.",
+  "mutation_policy": {
+    "product_code_changed": false,
+    "selectors_changed": false,
+    "timeouts_changed": false,
+    "redeploy_triggered": false,
+    "step3_started": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
