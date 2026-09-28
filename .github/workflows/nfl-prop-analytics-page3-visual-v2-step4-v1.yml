@@ -1,0 +1,518 @@
+name: NFL Prop Analytics Page 3 Visual V2 Step 4
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step4-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step4-analysis-settings-v1.json"
+      - "nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step4-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step4-analysis-settings-v1.json"
+      - "nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-page3-visual-v2-step4-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce Visual V2 Step 4 scope and frozen Steps 2-3
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-visual-v2-step4-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-page3-visual-v2-step4-analysis-settings-v1.json' \
+            'nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo "VISUAL_V2_STEP4_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          }
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "VISUAL_V2_STEP4_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+
+          check_blob devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json 9819289fd34d53008df8656d9244319e025b27c4
+          check_blob nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py 907ab1094d6e4441a569c055f753fc9539d40b79
+          check_blob nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1.py 85e3808273e4fba3faaef23072e16643c62003bd
+
+          echo "VISUAL_V2_STEP4_SCOPE_GREEN"
+          echo "VISUAL_V2_STEP2_FROZEN_PROTECTION_GREEN"
+          echo "VISUAL_V2_STEP3_FROZEN_PROTECTION_GREEN"
+
+      - name: Static contract
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
+          PYTHONPATH=. python -m py_compile \
+            nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py \
+            nfl_prop_analytics_prop_page_v1.py
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py \
+            tests/test_nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1.py \
+            tests/test_nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py
+          echo "VISUAL_V2_STEP4_STATIC_GREEN"
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser stack and start native-control harness
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+          cat > .v2_step4_harness.py <<'PY'
+          import streamlit as st
+          from nfl_prop_analytics_page3_visual_v2_step2_hero_v1 import render_visual_v2_hero
+          from nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1 import render_visual_v2_stat_ribbon
+          from nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1 import (
+              CONTAINER_KEY,
+              render_visual_v2_analysis_settings_header,
+          )
+
+          st.set_page_config(layout="wide")
+          render_visual_v2_hero(
+              player_team="LAR",
+              player_team_name="Rams",
+              player_logo="https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
+              opponent="DEN",
+              opponent_name="Broncos",
+              opponent_logo="https://a.espncdn.com/i/teamlogos/nfl/500/den.png",
+              player_name="Matthew Stafford",
+              position="QB",
+              market_label="Passing Yards",
+              headshot="https://a.espncdn.com/i/headshots/nfl/players/full/12483.png",
+              depth_role="QB1 • STARTER",
+              player_id="12483",
+              gate_state="OPEN",
+              display_date="SUN • SEP 27",
+              kickoff="8:20 PM ET",
+              network="NBC",
+              venue="Empower Field at Mile High",
+          )
+          render_visual_v2_stat_ribbon(
+              summary={
+                  "ready": True,
+                  "sample_size": 10,
+                  "average": 267.4,
+                  "median": 271.0,
+                  "high": 389,
+                  "low": 181,
+                  "hit_rate_pct": 70.0,
+                  "hit_count": 7,
+                  "hit_rate_state": "ready",
+              },
+              market_label="Passing Yards",
+              history_label="L10",
+              source_note="ESPN exact-ID completed game books",
+              available=True,
+          )
+          st.markdown(
+              '<div class="ks-pa3-nav-marker" data-prop-page3-step2-navigation="v1">Old Analysis Settings</div>',
+              unsafe_allow_html=True,
+          )
+
+          deck = st.container(border=True, key=CONTAINER_KEY)
+          with deck:
+              header_slot = st.empty()
+              history_col, market_col = st.columns(2, gap="small")
+              with history_col:
+                  history = st.segmented_control(
+                      "History window",
+                      options=["H2H","L5","L10","L20","2026","2025"],
+                      default="L10",
+                      selection_mode="single",
+                      key="nfl_prop_analytics_page3_step2_history_nav_v1",
+                  )
+              with market_col:
+                  market = st.segmented_control(
+                      "Prop category",
+                      options=["PASS YDS","PASS TD","INT","COMP","ATT","RUSH"],
+                      default="PASS YDS",
+                      selection_mode="single",
+                      key="nfl_prop_analytics_page3_step2_market_nav_v1",
+                  )
+              render_visual_v2_analysis_settings_header(
+                  history_label=history or "L10",
+                  market_label=market or "PASS YDS",
+                  target=header_slot,
+              )
+
+          st.markdown(
+              '<section data-prop-page3-step4-line-control="v1" data-prop-page3-step4-state="ready" style="height:120px">Line Lab placeholder</section>',
+              unsafe_allow_html=True,
+          )
+          PY
+          nohup python -m streamlit run .v2_step4_harness.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 >/tmp/v2-step4.log 2>&1 &
+
+      - name: Prove two-card Analysis Settings composition
+        run: |
+          python - <<'PY'
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("VISUAL_V2_STEP4_LOCAL_NOT_READY")
+
+          def find(page,selector,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("VISUAL_V2_STEP4_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--no-sandbox"])
+              context=browser.new_context(viewport={"width":1080,"height":1440})
+              page=context.new_page()
+              page.goto(base,wait_until="domcontentloaded",timeout=120000)
+
+              frame,hero=find(page,'[data-page3-visual-v2-step2="v1"]')
+              _,ribbon=find(page,'[data-page3-visual-v2-step3="v1"]')
+              _,marker=find(page,'[data-page3-visual-v2-step4="v1"][data-page3-visual-v2-step4-real-composition="true"]')
+              _,line=find(page,'[data-prop-page3-step4-line-control="v1"]')
+              _,old=find(page,'.ks-pa3-nav-marker')
+
+              history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+              market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+              assert history_card.count()==1,history_card.count()
+              assert market_card.count()==1,market_card.count()
+              assert old.evaluate("e=>getComputedStyle(e).display")=="none"
+              deck_meta=marker.evaluate("""e => {
+                let n=e.parentElement;
+                while(n){
+                  const history=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_history_nav_v1').length;
+                  const market=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_market_nav_v1').length;
+                  const count=history+market;
+                  const cs=getComputedStyle(n);
+                  const border=parseFloat(cs.borderTopWidth||'0');
+                  if(count===2 && border>0){
+                    const r=n.getBoundingClientRect();
+                    return {x:r.x,y:r.y,width:r.width,height:r.height,border:border,radius:cs.borderTopLeftRadius};
+                  }
+                  n=n.parentElement;
+                }
+                return null;
+              }""")
+              assert deck_meta is not None,deck_meta
+
+              hb=hero.bounding_box()
+              rb=ribbon.bounding_box()
+              lb=line.bounding_box()
+              assert hb["y"]+hb["height"] <= rb["y"]+8,(hb,rb)
+              assert rb["y"]+rb["height"] <= deck_meta["y"]+8,(rb,deck_meta)
+              assert deck_meta["y"]+deck_meta["height"] <= lb["y"]+8,(deck_meta,lb)
+
+              c0=history_card.bounding_box()
+              c1=market_card.bounding_box()
+              assert c0["x"] < c1["x"],(c0,c1)
+              assert abs(c0["width"]-c1["width"])<=3,(c0,c1)
+
+              def card_button(card,name):
+                  buttons=card.locator("button").filter(has_text=name)
+                  for i in range(buttons.count()):
+                      candidate=buttons.nth(i)
+                      if candidate.inner_text().strip()==name:
+                          return candidate
+                  raise RuntimeError("VISUAL_V2_STEP4_BRANCH_SEGMENT_NOT_READY:"+name)
+
+              l5=card_button(history_card,"L5")
+              att=card_button(market_card,"ATT")
+              assert l5.bounding_box()["height"]>=43.5
+              assert att.bounding_box()["height"]>=43.5
+              l5.click()
+              att.click()
+              page.wait_for_timeout(300)
+              print("VISUAL_V2_STEP4_BRANCH_INTERACTIONS_GREEN")
+              print("VISUAL_V2_STEP4_BRANCH_COMPOSITION_GREEN")
+              print("VISUAL_V2_STEP2_BRANCH_FROZEN_GREEN")
+              print("VISUAL_V2_STEP3_BRANCH_FROZEN_GREEN")
+
+              for width in (390,768,1440):
+                  page.set_viewport_size({"width":width,"height":1100})
+                  page.wait_for_timeout(350)
+                  dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
+                  assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
+                  history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+                  market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+                  assert history_card.count()==1,history_card.count()
+                  assert market_card.count()==1,market_card.count()
+                  c0=history_card.bounding_box()
+                  c1=market_card.bounding_box()
+                  if width>=768:
+                      assert c0["x"] < c1["x"],(width,c0,c1)
+                      assert abs(c0["width"]-c1["width"])<=4,(width,c0,c1)
+                  print(f"VISUAL_V2_STEP4_BRANCH_{width}_GREEN")
+
+              print("VISUAL_V2_STEP4_BRANCH_GREEN")
+              context.close()
+              browser.close()
+          PY
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Analysis Settings and freeze
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=300):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("VISUAL_V2_STEP4_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def role(page,kind,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"VISUAL_V2_STEP4_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
+
+          def segment(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          buttons=frame.locator("button").filter(has_text=name)
+                          for i in range(buttons.count()):
+                              candidate=buttons.nth(i)
+                              if candidate.inner_text().strip()==name:
+                                  return frame,candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("VISUAL_V2_STEP4_PUBLIC_SEGMENT_NOT_READY:"+name)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,
+                  args=["--no-sandbox","--disable-gpu","--disable-dev-shm-usage"],
+              )
+              context=browser.new_context(viewport={"width":1080,"height":1440})
+              page=context.new_page()
+              page.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL",
+                      "ks_jump_market":"Prop Analytics",
+                  }),
+                  wait_until="domcontentloaded",
+                  timeout=120000,
+              )
+
+              _,open_matchup=role(page,"button","Open matchup",240)
+              open_matchup.click(timeout=10000)
+              roster_frame,_=find(
+                  page,
+                  '[data-nfl-prop-analytics-page2-unified-roster="v1"]',
+                  240,
+              )
+              qb=roster_frame.get_by_role(
+                  "button",
+                  name=re.compile(r"^[A-Z]{2,3} • QB • "),
+              ).first
+              assert qb.count()==1
+              qb.click(timeout=10000)
+
+              _,open_prop=role(page,"button","Open prop page",120)
+              open_prop.click(timeout=10000)
+
+              frame,hero=find(page,'[data-page3-visual-v2-step2="v1"]',300)
+              _,ribbon=find(page,'[data-page3-visual-v2-step3="v1"]',300)
+              _,marker=find(
+                  page,
+                  '[data-page3-visual-v2-step4="v1"][data-page3-visual-v2-step4-real-composition="true"]',
+                  300,
+              )
+              _,line=find(
+                  page,
+                  '[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',
+                  240,
+              )
+              _,old=find(page,'.ks-pa3-nav-marker',180)
+
+              history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+              market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+              assert history_card.count()==1,history_card.count()
+              assert market_card.count()==1,market_card.count()
+              assert old.evaluate("e=>getComputedStyle(e).display")=="none"
+              deck_meta=marker.evaluate("""e => {
+                let n=e.parentElement;
+                while(n){
+                  const history=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_history_nav_v1').length;
+                  const market=n.querySelectorAll('.st-key-nfl_prop_analytics_page3_step2_market_nav_v1').length;
+                  const count=history+market;
+                  const cs=getComputedStyle(n);
+                  const border=parseFloat(cs.borderTopWidth||'0');
+                  if(count===2 && border>0){
+                    const r=n.getBoundingClientRect();
+                    return {x:r.x,y:r.y,width:r.width,height:r.height,border:border,radius:cs.borderTopLeftRadius};
+                  }
+                  n=n.parentElement;
+                }
+                return null;
+              }""")
+              assert deck_meta is not None,deck_meta
+
+              hb=hero.bounding_box()
+              rb=ribbon.bounding_box()
+              lb=line.bounding_box()
+              assert hb["y"]+hb["height"] <= rb["y"]+8,(hb,rb)
+              assert rb["y"]+rb["height"] <= deck_meta["y"]+8,(rb,deck_meta)
+              assert deck_meta["y"]+deck_meta["height"] <= lb["y"]+8,(deck_meta,lb)
+              print("VISUAL_V2_STEP4_PUBLIC_COMPOSITION_GREEN")
+              print("VISUAL_V2_STEP2_PUBLIC_FROZEN_GREEN")
+              print("VISUAL_V2_STEP3_PUBLIC_FROZEN_GREEN")
+
+              _,l5=segment(page,"L5",120)
+              l5.click(timeout=10000)
+              find(
+                  page,
+                  '[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-history="L5"]',
+                  180,
+              )
+              _,att=segment(page,"ATT",120)
+              att.click(timeout=10000)
+              find(
+                  page,
+                  '[data-prop-page3-step2-nav-state="ready"][data-prop-page3-step2-active-market="attempts"]',
+                  180,
+              )
+
+              line_frame,line=find(
+                  page,
+                  '[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-state="ready"]',
+                  180,
+              )
+              maximum=float(line.get_attribute("data-prop-page3-step4-max"))
+              slider=line_frame.get_by_role("slider").first
+              assert slider.count()==1
+              slider.press("End")
+              find(
+                  page,
+                  f'[data-prop-page3-step4-line-control="v1"][data-prop-page3-step4-line="{maximum:.1f}"]',
+                  180,
+              )
+              print("VISUAL_V2_STEP4_PUBLIC_INTERACTIONS_GREEN")
+              print("VISUAL_V2_STEP4_LINE_LAB_FROZEN_GREEN")
+
+              for width in (390,768,1440):
+                  page.set_viewport_size({"width":width,"height":1100})
+                  page.wait_for_timeout(400)
+                  frame,marker=find(page,'[data-page3-visual-v2-step4="v1"]',120)
+                  dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
+                  assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
+                  history_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_history_nav_v1").first
+                  market_card=frame.locator(".st-key-nfl_prop_analytics_page3_step2_market_nav_v1").first
+                  assert history_card.count()==1,history_card.count()
+                  assert market_card.count()==1,market_card.count()
+                  c0=history_card.bounding_box()
+                  c1=market_card.bounding_box()
+                  if width>=768:
+                      assert c0["x"] < c1["x"],(width,c0,c1)
+                      assert abs(c0["width"]-c1["width"])<=4,(width,c0,c1)
+                  print(f"VISUAL_V2_STEP4_PUBLIC_{width}_GREEN")
+
+              print("VISUAL_V2_STEP4_PUBLIC_GREEN")
+              print("VISUAL_V2_STEP4_GREEN")
+              print("VISUAL_V2_STEP4_FROZEN")
+              context.close()
+              browser.close()
+          PY

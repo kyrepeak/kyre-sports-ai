@@ -63,6 +63,10 @@ from nfl_prop_analytics_page3_visual_v2_step2_hero_v1 import (
 from nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1 import (
     render_visual_v2_stat_ribbon,
 )
+from nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1 import (
+    CONTAINER_KEY as VISUAL_V2_STEP4_CONTAINER_KEY,
+    render_visual_v2_analysis_settings_header,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -532,50 +536,68 @@ def render_prop_page_shell() -> dict[str, Any]:
         unsafe_allow_html=True,
     )
 
-    chosen_history_label = st.segmented_control(
-        "History window",
-        options=[history_labels[key] for key in history_keys],
-        default=selected_history_label,
-        selection_mode="single",
-        key="nfl_prop_analytics_page3_step2_history_nav_v1",
+    analysis_settings_container = st.container(
+        border=True,
+        key=VISUAL_V2_STEP4_CONTAINER_KEY,
     )
-    chosen_history_label = (
-        chosen_history_label
-        if chosen_history_label in history_labels.values()
-        else selected_history_label
-    )
-    chosen_history_key = next(
-        key for key, label in history_options if label == chosen_history_label
-    )
-    try:
-        st.query_params[HISTORY_QUERY_KEY] = chosen_history_key
-    except Exception:
-        pass
+    with analysis_settings_container:
+        visual_v2_step4_header_slot = st.empty()
+        history_control_col, market_control_col = st.columns(2, gap="small")
 
-    market_nav_labels = {
-        key: _market_nav_label(key, labels[key])
-        for key in keys
-    }
-    chosen_market_nav_label = st.segmented_control(
-        "Prop category",
-        options=[market_nav_labels[key] for key in keys],
-        default=market_nav_labels[selected_key],
-        selection_mode="single",
-        key="nfl_prop_analytics_page3_step2_market_nav_v1",
-    )
-    chosen_market_nav_label = (
-        chosen_market_nav_label
-        if chosen_market_nav_label in market_nav_labels.values()
-        else market_nav_labels[selected_key]
-    )
-    chosen_key = next(
-        key for key in keys if market_nav_labels[key] == chosen_market_nav_label
-    )
-    chosen_label = labels[chosen_key]
-    try:
-        st.query_params[MARKET_QUERY_KEY] = chosen_key
-    except Exception:
-        pass
+        with history_control_col:
+            chosen_history_label = st.segmented_control(
+        "History window",
+                options=[history_labels[key] for key in history_keys],
+                default=selected_history_label,
+                selection_mode="single",
+                key="nfl_prop_analytics_page3_step2_history_nav_v1",
+            )
+        chosen_history_label = (
+            chosen_history_label
+            if chosen_history_label in history_labels.values()
+            else selected_history_label
+        )
+        chosen_history_key = next(
+            key for key, label in history_options if label == chosen_history_label
+        )
+        try:
+            st.query_params[HISTORY_QUERY_KEY] = chosen_history_key
+        except Exception:
+            pass
+
+        market_nav_labels = {
+            key: _market_nav_label(key, labels[key])
+            for key in keys
+        }
+        with market_control_col:
+            chosen_market_nav_label = st.segmented_control(
+                "Prop category",
+                options=[market_nav_labels[key] for key in keys],
+                default=market_nav_labels[selected_key],
+                selection_mode="single",
+                key="nfl_prop_analytics_page3_step2_market_nav_v1",
+            )
+        chosen_market_nav_label = (
+            chosen_market_nav_label
+            if chosen_market_nav_label in market_nav_labels.values()
+            else market_nav_labels[selected_key]
+        )
+        chosen_key = next(
+            key for key in keys if market_nav_labels[key] == chosen_market_nav_label
+        )
+        chosen_label = labels[chosen_key]
+        try:
+            st.query_params[MARKET_QUERY_KEY] = chosen_key
+        except Exception:
+            pass
+
+        visual_v2_step4_analysis_settings = (
+            render_visual_v2_analysis_settings_header(
+                history_label=history_labels[chosen_history_key],
+                market_label=chosen_label,
+                target=visual_v2_step4_header_slot,
+            )
+        )
 
     st.markdown(
         f"""
@@ -976,6 +998,7 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "final_polish": final_polish,
         "visual_v2_step2_hero": visual_v2_step2_hero,
         "visual_v2_step3_stat_ribbon": visual_v2_step3_stat_ribbon,
+        "visual_v2_step4_analysis_settings": visual_v2_step4_analysis_settings,
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
