@@ -48,6 +48,10 @@ NFLVERSE_TEAM_ALIASES = {
     "WSH": "WAS",
 }
 
+ESPN_TEAM_ALIASES = {
+    "WAS": "WSH",
+}
+
 
 def _text(value: Any) -> str:
     return str(value if value is not None else "").strip()
@@ -161,7 +165,9 @@ def _nflverse_team_week(
 
 
 def _espn_team_rows(team: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    rows, diag = game_day.load_current_team_roster(team)
+    canonical_team = _canon_team(team)
+    espn_team = ESPN_TEAM_ALIASES.get(canonical_team, canonical_team)
+    rows, diag = game_day.load_current_team_roster(espn_team)
     selected = []
     for row in rows:
         position = _canon_position(row.get("position"))
