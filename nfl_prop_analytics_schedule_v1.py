@@ -34,7 +34,7 @@ ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nf
 ESPN_WEB_SCOREBOARD_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 ESPN_TEAM_SCHEDULE_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
 ESPN_WEB_TEAM_SCHEDULE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
-NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"
+NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/reg-{week}"
 CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"
 
 AZ = ZoneInfo("America/Phoenix")
@@ -474,8 +474,68 @@ def _parse_cbs_schedule_html(
     # semantic table in some responses. Fall back to ordered visible text for
     # the exact target-day section while preserving the same independent
     # away/home/kickoff evidence contract.
-    return _parse_cbs_schedule_text_nodes(
+    from_nodes = _parse_cbs_schedule_text_nodes(
         _cbs_day_text_nodes(parser, target),
+        target=target,
+        week=week,
+    )
+    if from_nodes:
+        return from_nodes
+    return _parse_cbs_schedule_stripped_text(
+        body,
+        target=target,
+        week=week,
+    )
+
+
+def _parse_cbs_schedule_stripped_text(
+    body: str,
+    *,
+    target: date,
+    week: int,
+) -> list[dict[str, Any]]:
+    """Parse the exact target-day CBS section from stripped visible HTML text."""
+    clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
+    clean = re.sub(r"\s+", " ", clean).strip()
+    if not clean:
+        return []
+
+    month = target.strftime("%B")
+    weekday = target.strftime("%A")
+    anchors = (
+        f"{weekday}, {month} {target.day}, {target.year}",
+        f"{weekday}, {month} {target.day}",
+    )
+    lower = clean.lower()
+    start = -1
+    anchor_used = ""
+    for anchor in anchors:
+        pos = lower.find(anchor.lower())
+        if pos >= 0:
+            start = pos + len(anchor)
+            anchor_used = anchor
+            break
+    if start < 0:
+        return []
+
+    # Stop at the next dated weekday heading when present.
+    section = clean[start:]
+    next_positions: list[int] = []
+    for name in ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"):
+        if name.lower() == weekday.lower():
+            continue
+        m = re.search(
+            rf"\b{name},\s+[A-Za-z]+\s+\d{{1,2}}(?:,\s+\d{{4}})?\b",
+            section,
+            re.IGNORECASE,
+        )
+        if m:
+            next_positions.append(m.start())
+    if next_positions:
+        section = section[: min(next_positions)]
+
+    return _parse_cbs_schedule_text_nodes(
+        [section],
         target=target,
         week=week,
     )
@@ -568,8 +628,12 @@ def _from_espn_team_schedules(
         if team_id and team_id not in team_ids:
             team_ids.append(team_id)
 
+    # If the slate-discovery source is unavailable in public Streamlit, ESPN
+    # must still be able to discover the target date independently. Query all
+    # team schedules and dedupe the resulting events. This is slower only on
+    # the failover path and remains cached by the Step 2 truth layer.
     if not team_ids:
-        return []
+        team_ids = list(dict.fromkeys(ESPN_TEAM_IDS.values()))
 
     def load_one(team_id: str) -> list[dict[str, Any]]:
         params = {"season": target.year, "seasontype": 2}
