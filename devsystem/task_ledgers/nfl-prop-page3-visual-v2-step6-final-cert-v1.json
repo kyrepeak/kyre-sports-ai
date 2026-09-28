@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "task_id": "nfl-prop-page3-visual-v2-step6-final-cert-v1",
   "title": "NFL Prop Analytics Page 3 Visual Composition V2 Step 6 — Final Certification",
   "project": "NFL Prop Analytics",
@@ -30,5 +30,8 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
-  }
+  },
+  "trigger": "User approved Visual V2 Step 6 final certification after Steps 2-5 became GREEN + FROZEN.",
+  "transition_history": [],
+  "override_events": []
 }
