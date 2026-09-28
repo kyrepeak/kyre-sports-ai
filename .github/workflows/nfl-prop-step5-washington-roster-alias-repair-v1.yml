@@ -263,6 +263,21 @@ jobs:
                   page.wait_for_timeout(250)
               raise RuntimeError(f"STEP5_WASHINGTON_ALIAS_ROLE_NOT_READY:{kind}:{name}")
 
+          def segment(page,name,timeout=120):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          buttons=frame.locator("button").filter(has_text=name)
+                          for i in range(buttons.count()):
+                              candidate=buttons.nth(i)
+                              if candidate.inner_text().strip()==name:
+                                  return frame,candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("STEP5_WASHINGTON_ALIAS_SEGMENT_NOT_READY:"+name)
+
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--no-sandbox","--disable-dev-shm-usage"])
               context=browser.new_context(viewport={"width":1080,"height":1300})
@@ -319,6 +334,21 @@ jobs:
               )
               print("STEP5_WASHINGTON_ALIAS_VISUAL_V2_CHAIN_GREEN")
 
+              _,att=segment(page,"ATT",120)
+              att.click(timeout=10000)
+              find(
+                  page,
+                  '[data-prop-page3-step2-nav-state="ready"]'
+                  '[data-prop-page3-step2-active-market="attempts"]',
+                  120,
+              )
+              line_frame,line=find(
+                  page,
+                  '[data-prop-page3-step4-line-control="v1"]'
+                  '[data-prop-page3-step4-state="ready"]'
+                  '[data-prop-page3-step4-market="attempts"]',
+                  120,
+              )
               maximum=float(line.get_attribute("data-prop-page3-step4-max"))
               slider=line_frame.get_by_role("slider").first
               assert slider.count()==1
@@ -408,6 +438,21 @@ jobs:
                   page.wait_for_timeout(250)
               raise RuntimeError(f"STEP5_WASHINGTON_ALIAS_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
 
+          def segment(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          buttons=frame.locator("button").filter(has_text=name)
+                          for i in range(buttons.count()):
+                              candidate=buttons.nth(i)
+                              if candidate.inner_text().strip()==name:
+                                  return frame,candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("STEP5_WASHINGTON_ALIAS_PUBLIC_SEGMENT_NOT_READY:"+name)
+
           with sync_playwright() as p:
               browser=p.chromium.launch(
                   headless=True,
@@ -492,6 +537,21 @@ jobs:
               print("VISUAL_V2_STEP2_PUBLIC_FROZEN_GREEN")
               print("VISUAL_V2_STEP3_PUBLIC_FROZEN_GREEN")
 
+              _,att=segment(page,"ATT",180)
+              att.click(timeout=10000)
+              find(
+                  page,
+                  '[data-prop-page3-step2-nav-state="ready"]'
+                  '[data-prop-page3-step2-active-market="attempts"]',
+                  180,
+              )
+              line_frame,line=find(
+                  page,
+                  '[data-prop-page3-step4-line-control="v1"]'
+                  '[data-prop-page3-step4-state="ready"]'
+                  '[data-prop-page3-step4-market="attempts"]',
+                  180,
+              )
               maximum=float(line.get_attribute("data-prop-page3-step4-max"))
               slider=line_frame.get_by_role("slider").first
               assert slider.count()==1
