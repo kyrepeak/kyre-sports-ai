@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml"
       - "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-truth-v1.json"
+      - "devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-provider-repair-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
       - "nfl_prop_analytics_schedule_v1.py"
       - "tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py"
@@ -138,6 +139,11 @@ jobs:
             'nfl_prop_analytics_hub_v1.py' \
             'nfl_prop_analytics_page2_unified_roster_v1.py' \
             'tests/test_nfl_prop_analytics_page2_polish_step2_v1.py' | sort)"
+          provider_repair_expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-analytics-step2-schedule-provider-repair-v1.json' \
+            'nfl_prop_analytics_schedule_v1.py' \
+            'tests/test_nfl_prop_analytics_step2_schedule_truth_v1.py' | sort)"
           if [ "$actual" != "$expected" ] && \
              [ "$actual" != "$step3_additive_expected" ] && \
              [ "$actual" != "$step4_additive_expected" ] && \
@@ -146,7 +152,8 @@ jobs:
              [ "$actual" != "$step7_additive_expected" ] && \
              [ "$actual" != "$step8_additive_expected" ] && \
              [ "$actual" != "$visual_polish_step3_expected" ] && \
-             [ "$actual" != "$page2_polish_step2_expected" ]; then
+             [ "$actual" != "$page2_polish_step2_expected" ] && \
+             [ "$actual" != "$provider_repair_expected" ]; then
             echo "NFL_PROP_ANALYTICS_STEP2_SCOPE_VIOLATION"
             printf '%s\n' "$actual"
             exit 1
@@ -163,7 +170,7 @@ jobs:
           check_blob streamlit_memory_lazy_router_v240.py 43a6ef5a541e945b0795f947e32f61fbbaeb5257
           check_blob streamlit_memory_lazy_router_v239.py 1b7b98567b90919f546d025b927beb0b2acf8468
           check_blob nfl_passing_yards_hub_v85.py ec33cd092e249a701d510cac2b95a8ffd780b4db
-          check_blob app.py d584693ab55e365bc7e76f9cbacd58a15f6d62d1
+          check_blob app.py 2a3922af385cd0fc43bfd540783be15d582aefad
           check_blob .github/workflows/passing-yards-step10-current-final-freeze-v1.yml 7b23f9d9ed9967a74cee9f1328c9817c2f71d956
           check_blob devsystem/task_ledgers/passing-yards-step10-current-final-freeze-v1.json b2f2110a5cfe3f77519f6eee6aef3bfe6969a1f5
 
@@ -197,15 +204,28 @@ jobs:
         run: |
           python - <<'PY'
           from datetime import date
-          from nfl_prop_analytics_schedule_v1 import _load_schedule_truth_uncached
+          from nfl_prop_analytics_schedule_v1 import (
+              _from_cbs,
+              _load_schedule_truth_uncached,
+          )
 
           truth=_load_schedule_truth_uncached(date(2026,9,27))
+          cbs_games=[]
+          cbs_error=""
+          try:
+              cbs_games=_from_cbs(date(2026,9,27),week=3)
+          except Exception as exc:
+              cbs_error=f"{type(exc).__name__}:{exc}"
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_COUNT",len(cbs_games))
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_ERROR",cbs_error)
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_SOURCES",truth["sources_available"])
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_ERRORS",truth["source_errors"])
           games=truth["games"]
           pairs={(g["away"],g["home"]) for g in games}
 
-          if len(games) < 12:
+          if len(games) != 14:
               raise RuntimeError(f"PROP_ANALYTICS_STEP2_LIVE_SLATE_INCOMPLETE:{len(games)}")
-          if truth["verified_count"] < 10:
+          if truth["verified_count"] != 14:
               raise RuntimeError(
                   f"PROP_ANALYTICS_STEP2_LIVE_VERIFICATION_INCOMPLETE:{truth['verified_count']}"
               )
@@ -222,6 +242,7 @@ jobs:
           print("NFL_PROP_ANALYTICS_STEP2_LIVE_SCHEDULE_GREEN",len(games))
           print("NFL_PROP_ANALYTICS_STEP2_SOURCE_ROUTER_GREEN",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_VERIFIED_GAMES_GREEN",truth["verified_count"])
+          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_LIVE_GREEN")
           PY
 
   branch-ui-proof:
@@ -334,7 +355,7 @@ jobs:
               assert owner.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
               assert owner.get_attribute("data-prop-analytics-step")=="1"
 
-              _,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]')
+              frame,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]')
               state=board.get_attribute("data-prop-schedule-state")
               count=int(board.get_attribute("data-prop-schedule-count") or 0)
               verified=int(board.get_attribute("data-prop-schedule-verified-count") or 0)
@@ -343,11 +364,26 @@ jobs:
 
               assert state=="live",state
               assert target.weekday()==6,target
-              assert count>=1,count
-              assert verified>=1,verified
+              assert count==14,count
+              assert verified==14,verified
               assert len([s for s in source_text.split(",") if s])>=2,source_text
+              selection_frame,selection=find(
+                  page,
+                  '[data-nfl-prop-analytics-step3-selection="v1"]',
+                  120,
+              )
+              assert selection.get_attribute("data-prop-selection-state")=="selected"
+              assert selection.get_attribute("data-prop-handoff-state")=="ready"
+              open_matchup=selection_frame.get_by_role(
+                  "button",
+                  name="Open matchup",
+                  exact=True,
+              )
+              assert open_matchup.count()==1
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SCHEDULE_GREEN",count)
+              print("NFL_PROP_ANALYTICS_STEP2_BRANCH_VERIFIED_GREEN",verified)
               print("NFL_PROP_ANALYTICS_STEP2_BRANCH_SOURCE_ROUTER_GREEN",source_text)
+              print("NFL_PROP_ANALYTICS_STEP2_BRANCH_OPEN_MATCHUP_GREEN")
 
               for width,height in ((390,844),(768,1024),(1440,1000)):
                   page.set_viewport_size({"width":width,"height":height})
@@ -413,6 +449,7 @@ jobs:
       - name: Prove public Step 2 schedule truth and freeze
         run: |
           python - <<'PY'
+          import re
           import time
           from datetime import date
           from urllib.parse import urlencode
@@ -464,54 +501,20 @@ jobs:
                   page.wait_for_timeout(175)
               return False
 
-          def open_step2(browser):
-              deadline=time.monotonic()+1200
-              last=""
-              while time.monotonic()<deadline:
-                  context=browser.new_context(viewport={"width":390,"height":844})
-                  page=context.new_page()
-                  try:
-                      page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
-                      choose(page,"🏟️ Sport","NFL")
-                      if not choose(page,"🎯 NFL Market","Prop Analytics"):
-                          last="PROP_ANALYTICS_STEP2_OPTION_NOT_PUBLISHED"
-                          context.close()
-                          time.sleep(8)
-                          continue
-
-                      _,owner=find(page,'[data-nfl-prop-analytics-route="v1"]',90)
-                      _,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]',120)
-                      state=board.get_attribute("data-prop-schedule-state")
-                      count=int(board.get_attribute("data-prop-schedule-count") or 0)
-                      verified=int(board.get_attribute("data-prop-schedule-verified-count") or 0)
-                      source_text=board.get_attribute("data-prop-schedule-sources") or ""
-                      if state!="live" or count<1 or verified<1:
-                          last=f"STEP2_NOT_LIVE:{state}:{count}:{verified}"
-                          context.close()
-                          time.sleep(8)
-                          continue
-                      if len([s for s in source_text.split(",") if s])<2:
-                          last="STEP2_SOURCE_ROUTER_NOT_READY:"+source_text
-                          context.close()
-                          time.sleep(8)
-                          continue
-                      return context,page,owner,board
-                  except Exception as exc:
-                      last=f"{type(exc).__name__}:{exc}"
-                      print("PROP_ANALYTICS_STEP2_PUBLIC_DEPLOY_WAIT",last)
-                      try:
-                          context.close()
-                      except Exception:
-                          pass
-                      time.sleep(8)
-              raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_DEPLOYMENT_NOT_ACTIVE:"+last)
-
           with sync_playwright() as p:
               browser=p.chromium.launch(
                   headless=True,
                   args=["--disable-dev-shm-usage","--no-sandbox","--disable-gpu"],
               )
-              context,page,owner,board=open_step2(browser)
+              context=browser.new_context(viewport={"width":390,"height":844})
+              page=context.new_page()
+              page.goto(base+"/",wait_until="domcontentloaded",timeout=120000)
+              choose(page,"🏟️ Sport","NFL")
+              if not choose(page,"🎯 NFL Market","Prop Analytics"):
+                  raise RuntimeError("PROP_ANALYTICS_STEP2_PUBLIC_OPTION_NOT_READY")
+
+              _,owner=find(page,'[data-nfl-prop-analytics-route="v1"]',90)
+              frame,board=find(page,'[data-nfl-prop-analytics-step2-schedule="v1"]',120)
 
               assert owner.get_attribute("data-prop-analytics-owner")=="nfl_prop_analytics_hub_v1"
               assert owner.get_attribute("data-prop-analytics-step")=="1"
@@ -522,11 +525,59 @@ jobs:
               source_text=board.get_attribute("data-prop-schedule-sources") or ""
 
               assert target.weekday()==6,target
-              assert count>=1,count
-              assert verified>=1,verified
+              assert count==14,count
+              assert verified==14,verified
+              assert len([s for s in source_text.split(",") if s])>=2,source_text
+
+              selection_frame,selection=find(
+                  page,
+                  '[data-nfl-prop-analytics-step3-selection="v1"]',
+                  120,
+              )
+              assert selection.get_attribute("data-prop-selection-state")=="selected"
+              assert selection.get_attribute("data-prop-handoff-state")=="ready"
+              open_matchup=selection_frame.get_by_role(
+                  "button",
+                  name="Open matchup",
+                  exact=True,
+              )
+              assert open_matchup.count()==1
+              open_matchup.click(timeout=10000)
+
+              roster_frame,_=find(
+                  page,
+                  '[data-nfl-prop-analytics-page2-unified-roster="v1"]',
+                  180,
+              )
+              qb=roster_frame.get_by_role(
+                  "button",
+                  name=re.compile(r"^[A-Z]{2,3} • QB • "),
+              ).first
+              assert qb.count()==1
+              qb.click(timeout=10000)
+
+              prop_frame,open_prop=find(
+                  page,
+                  'button:has-text("Open prop page")',
+                  90,
+              )
+              open_prop.click(timeout=10000)
+              hero_frame,hero=find(
+                  page,
+                  '[data-page3-visual-v2-step2="v1"][data-page3-visual-v2-step2-real-composition="true"]',
+                  240,
+              )
+              old=find(page,'[data-prop-page3-step1-hero="v1"]',120)[1]
+              assert old.evaluate("e=>getComputedStyle(e).display")=="none"
+              assert hero.locator(".ks-v2-hero-team-home").count()==1
+              assert hero.locator(".ks-v2-hero-player").count()==1
+              assert hero.locator(".ks-v2-hero-team-away").count()==1
+
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_SCHEDULE_GREEN",count)
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_SOURCE_ROUTER_GREEN",source_text)
               print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_VERIFIED_GREEN",verified)
+              print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_OPEN_MATCHUP_GREEN")
+              print("VISUAL_V2_STEP2_PUBLIC_COMPOSITION_GREEN")
 
               for width,height in ((390,844),(768,1024),(1440,1000)):
                   page.set_viewport_size({"width":width,"height":height})
@@ -562,10 +613,7 @@ jobs:
           print("NFL_PROP_ANALYTICS_STEP2_GREEN")
           print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_GREEN")
           print("NFL_PROP_ANALYTICS_STEP2_FROZEN")
-          PY          page2_polish_step2_expected="$(printf '%s\n' \
-            '.github/workflows/nfl-prop-analytics-page2-polish-step2-v1.yml' \
-            '.github/workflows/nfl-prop-analytics-step2-schedule-truth-v1.yml' \
-            'nfl_prop_analytics_hub_v1.py' \
-            'nfl_prop_analytics_page2_unified_roster_v1.py' \
-            'tests/test_nfl_prop_analytics_page2_polish_step2_v1.py' | sort)"
-
+          print("VISUAL_V2_STEP2_PUBLIC_GREEN")
+          print("VISUAL_V2_STEP2_GREEN")
+          print("VISUAL_V2_STEP2_FROZEN")
+          PY
