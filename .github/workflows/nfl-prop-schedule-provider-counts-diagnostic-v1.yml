@@ -1,0 +1,72 @@
+name: NFL Prop Schedule Provider Counts Diagnostic V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-schedule-provider-counts-diagnostic-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-providers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused diagnostic dependencies
+        run: python -m pip install --disable-pip-version-check -q requests pandas streamlit
+
+      - name: Print provider counts and source errors for exact public target
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from datetime import date
+          import nfl_prop_analytics_schedule_v1 as s
+
+          target=date.fromisoformat("2026-09-27")
+          errors={}
+
+          def safe(label, fn):
+              try:
+                  return fn()
+              except Exception as exc:
+                  errors[label]=f"{type(exc).__name__}:{exc}"
+                  return []
+
+          nflverse=safe("NFLVERSE", lambda: s._from_nflverse(target))
+          espn=safe("ESPN", lambda: s._from_espn(target))
+          week=s._week_hint(nflverse, espn)
+          nfl=safe("NFL", lambda: s._from_nfl_official(target, season=target.year, week=week))
+
+          known=("CAR","CLE")
+          def kickoff(games):
+              for g in games:
+                  if (g.get("away"),g.get("home"))==known:
+                      v=g.get("kickoff_utc")
+                      return v.isoformat() if v is not None else "NONE"
+              return "MISSING"
+
+          print(f"target_date={target.isoformat()}")
+          print(f"week={week}")
+          print(f"NFLVERSE_game_count={len(nflverse)}")
+          print(f"ESPN_game_count={len(espn)}")
+          print(f"NFL_official_game_count={len(nfl)}")
+          print(f'source_errors["NFLVERSE"]={errors.get("NFLVERSE","")}')
+          print(f'source_errors["ESPN"]={errors.get("ESPN","")}')
+          print(f'source_errors["NFL"]={errors.get("NFL","")}')
+          print(f"known_matchup_away={known[0]}")
+          print(f"known_matchup_home={known[1]}")
+          print(f"known_matchup_kickoff_NFLVERSE={kickoff(nflverse)}")
+          print(f"known_matchup_kickoff_ESPN={kickoff(espn)}")
+          print(f"known_matchup_kickoff_NFL={kickoff(nfl)}")
+          PY
