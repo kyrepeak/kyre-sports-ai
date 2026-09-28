@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "task_id": "github-speed-step4-narrow-v5-push-scope-v1",
+  "title": "GitHub Speed Step 4 — narrow automatic V5 push fanout",
+  "project": "Monster GitHub speed upgrade",
+  "status": "DONE",
+  "source_main": "00f773a4bc10b09f2484ec08d55ecf29e662b2ab",
+  "scope": {
+    "workflow": ".github/workflows/devsystem-production-verification-v5.yml",
+    "regression_test": "tests/test_devsystem_browser_cache_v1.py"
+  },
+  "acceptance": {
+    "broad_streamlit_glob_removed": true,
+    "broad_sports_api_glob_removed": true,
+    "broad_data_glob_removed": true,
+    "cfb_owned_surface_kept_automatic": true,
+    "active_streamlit_runtime_kept_automatic": true,
+    "verifier_self_trigger_kept": true,
+    "step2_cache_contract_preserved": true,
+    "step3_preflight_contract_preserved": true,
+    "product_code_changed": false,
+    "verifier_logic_changed": false,
+    "acceptance_weakened": false
+  },
+  "protected": {
+    "speed_step1_frozen": true,
+    "speed_step2_frozen": true,
+    "speed_step3_frozen": true,
+    "product_code": true,
+    "verifier_runtime_logic": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
