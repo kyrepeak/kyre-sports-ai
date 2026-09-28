@@ -1,0 +1,491 @@
+name: NFL Prop Analytics Page 3 Visual V2 Step 5
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step5-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step5-lower-analytics-v1.json"
+      - "nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-prop-analytics-page3-visual-v2-step5-v1.yml"
+      - "devsystem/task_ledgers/nfl-prop-page3-visual-v2-step5-lower-analytics-v1.json"
+      - "nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py"
+      - "nfl_prop_analytics_prop_page_v1.py"
+      - "tests/test_nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-prop-page3-visual-v2-step5-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce Step 5 scope and frozen owners
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/nfl-prop-analytics-page3-visual-v2-step5-v1.yml' \
+            'devsystem/task_ledgers/nfl-prop-page3-visual-v2-step5-lower-analytics-v1.json' \
+            'nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py' \
+            'nfl_prop_analytics_prop_page_v1.py' \
+            'tests/test_nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo "VISUAL_V2_STEP5_SCOPE_VIOLATION"
+            printf '%s\n' "$actual"
+            exit 1
+          }
+
+          check_blob () {
+            got="$(git hash-object "$1")"
+            test "$got" = "$2" || {
+              echo "VISUAL_V2_STEP5_FROZEN_BLOB_CHANGED:$1:$got:$2"
+              exit 1
+            }
+          }
+          check_blob devsystem/contracts/nfl-prop-page3-visual-composition-v2-contract-v1.json 9819289fd34d53008df8656d9244319e025b27c4
+          check_blob nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py 907ab1094d6e4441a569c055f753fc9539d40b79
+          check_blob nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1.py 85e3808273e4fba3faaef23072e16643c62003bd
+          check_blob nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py 6636dcff5c729b15268a956dcd8dcfde35700e12
+          check_blob nfl_prop_analytics_page3_line_control_v1.py fbeabc240196b30fc966f1a69779c543410e9e3c
+          check_blob nfl_prop_analytics_page3_game_chart_v1.py b21876dfe88bed91009e9edf65cb89f472745c8e
+
+          echo "VISUAL_V2_STEP5_SCOPE_GREEN"
+          echo "VISUAL_V2_STEPS_2_4_FROZEN_PROTECTION_GREEN"
+          echo "VISUAL_V2_STEP5_LINE_OWNER_FROZEN_GREEN"
+          echo "VISUAL_V2_STEP5_CHART_OWNER_FROZEN_GREEN"
+
+      - name: Static contract
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
+          PYTHONPATH=. python -m py_compile \
+            nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py \
+            nfl_prop_analytics_prop_page_v1.py
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_nfl_prop_analytics_page3_visual_v2_step2_hero_v1.py \
+            tests/test_nfl_prop_analytics_page3_visual_v2_step3_stat_ribbon_v1.py \
+            tests/test_nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1.py \
+            tests/test_nfl_prop_analytics_page3_step4_line_control_v1.py \
+            tests/test_nfl_prop_analytics_page3_step5_game_chart_v1.py \
+            tests/test_nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1.py
+          echo "VISUAL_V2_STEP5_STATIC_GREEN"
+
+  branch-ui-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install branch browser stack and start Streamlit
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 >/tmp/v2-step5.log 2>&1 &
+          echo $! >/tmp/v2-step5.pid
+
+      - name: Prove real Step 5 lower analytics composition
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          import requests
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code<500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("VISUAL_V2_STEP5_LOCAL_NOT_READY")
+
+          def find(page,selector,timeout=240):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("VISUAL_V2_STEP5_SELECTOR_NOT_READY:"+selector)
+
+          def role(page,kind,name,timeout=160):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"VISUAL_V2_STEP5_ROLE_NOT_READY:{kind}:{name}")
+
+          def segment(page,name,timeout=160):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          buttons=frame.locator("button").filter(has_text=name)
+                          for i in range(buttons.count()):
+                              candidate=buttons.nth(i)
+                              if candidate.inner_text().strip()==name:
+                                  return frame,candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("VISUAL_V2_STEP5_SEGMENT_NOT_READY:"+name)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--no-sandbox","--disable-dev-shm-usage"])
+              context=browser.new_context(viewport={"width":1080,"height":1400})
+              page=context.new_page()
+              page.goto(
+                  base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics"}),
+                  wait_until="domcontentloaded",timeout=120000,
+              )
+              _,selection=find(
+                  page,
+                  '[data-nfl-prop-analytics-step3-selection="v1"]'
+                  '[data-prop-selection-state="selected"]'
+                  '[data-prop-handoff-state="ready"]',
+                  180,
+              )
+              selected_game=(selection.get_attribute("data-prop-selected-game") or "").strip()
+              assert selected_game
+
+              page.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics",
+                      "ks_pa_page":"matchup","ks_pa_game":selected_game,
+                  }),
+                  wait_until="domcontentloaded",timeout=120000,
+              )
+              roster_frame,_=find(
+                  page,
+                  '[data-nfl-prop-analytics-page2-unified-roster="v1"]'
+                  '[data-prop-page2-unified-state="live"]',
+                  240,
+              )
+              qb=roster_frame.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first
+              assert qb.count()==1
+              qb.click(timeout=10000)
+              _,open_prop=role(page,"button","Open prop page",160)
+              open_prop.click(timeout=10000)
+
+              find(page,'[data-page3-visual-v2-step2="v1"]',240)
+              find(page,'[data-page3-visual-v2-step3="v1"]',240)
+              settings_frame,settings=find(page,'[data-page3-visual-v2-step4="v1"]',240)
+
+              _,att=segment(page,"ATT",160)
+              att.click(timeout=10000)
+              find(
+                  page,
+                  '[data-prop-page3-step2-nav-state="ready"]'
+                  '[data-prop-page3-step2-active-market="attempts"]',
+                  160,
+              )
+
+              frame,line=find(
+                  page,
+                  '[data-page3-visual-v2-step5="v1"]'
+                  '[data-page3-visual-v2-step5-region="line-lab"]'
+                  '[data-page3-visual-v2-step5-state="ready"]',
+                  240,
+              )
+              _,live=find(
+                  page,
+                  '[data-page3-visual-v2-step5="v1"]'
+                  '[data-page3-visual-v2-step5-region="live-recalculation"]'
+                  '[data-page3-visual-v2-step5-live-state="ready"]',
+                  240,
+              )
+              _,chart_marker=find(
+                  page,
+                  '[data-page3-visual-v2-step5="v1"]'
+                  '[data-page3-visual-v2-step5-region="game-chart"]',
+                  240,
+              )
+
+              line_container=frame.locator(".st-key-nfl_prop_visual_v2_step5_line_lab_v1").first
+              chart_container=frame.locator(".st-key-nfl_prop_visual_v2_step5_game_chart_v1").first
+              assert line_container.count()==1
+              assert chart_container.count()==1
+              assert live.locator('[data-v2-live-card]').count()==4
+              assert chart_container.locator('.ks-pa5-chart').count()==1
+              assert line_container.locator('[data-testid="stSlider"]').count()==1
+              assert line_container.locator('.ks-pa4-line-intro').first.evaluate("e=>getComputedStyle(e).display")=="none"
+              assert line_container.locator('.ks-pa4-line').first.evaluate("e=>getComputedStyle(e).display")=="none"
+
+              sb=settings.bounding_box()
+              lb=line_container.bounding_box()
+              rb=live.bounding_box()
+              cb=chart_container.bounding_box()
+              assert sb["y"] < lb["y"] < rb["y"] < cb["y"],(sb,lb,rb,cb)
+              print("VISUAL_V2_STEP5_BRANCH_COMPOSITION_GREEN")
+
+              maximum=float(line.get_attribute("data-page3-visual-v2-step5-max"))
+              slider=line_container.get_by_role("slider").first
+              assert slider.count()==1
+              slider.press("End")
+              find(
+                  page,
+                  f'[data-page3-visual-v2-step5="v1"]'
+                  f'[data-page3-visual-v2-step5-region="line-lab"]'
+                  f'[data-page3-visual-v2-step5-line="{maximum:g}"]',
+                  160,
+              )
+              print("VISUAL_V2_STEP5_BRANCH_INTERACTION_GREEN")
+              print("VISUAL_V2_STEPS_2_4_BRANCH_FROZEN_GREEN")
+
+              for width,height in ((390,900),(768,1050),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(400)
+                  frame,_=find(page,'[data-page3-visual-v2-step5="v1"][data-page3-visual-v2-step5-region="line-lab"]',120)
+                  dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
+                  assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
+                  _,live=find(page,'[data-page3-visual-v2-step5-region="live-recalculation"]',120)
+                  assert live.locator('[data-v2-live-card]').count()==4
+                  print(f"VISUAL_V2_STEP5_BRANCH_{width}_GREEN")
+
+              print("VISUAL_V2_STEP5_BRANCH_GREEN")
+              context.close()
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 1800 /tmp/v2-step5.log || true
+
+      - name: Stop branch Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/v2-step5.pid ]; then
+            kill "$(cat /tmp/v2-step5.pid)" 2>/dev/null || true
+          fi
+
+  public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Step 5 and freeze
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+
+          def find(page,selector,timeout=300):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("VISUAL_V2_STEP5_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          def role(page,kind,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role(kind,name=name,exact=True)
+                          if loc.count():
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError(f"VISUAL_V2_STEP5_PUBLIC_ROLE_NOT_READY:{kind}:{name}")
+
+          def segment(page,name,timeout=180):
+              end=time.monotonic()+timeout
+              while time.monotonic()<end:
+                  for frame in page.frames:
+                      try:
+                          buttons=frame.locator("button").filter(has_text=name)
+                          for i in range(buttons.count()):
+                              candidate=buttons.nth(i)
+                              if candidate.inner_text().strip()==name:
+                                  return frame,candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("VISUAL_V2_STEP5_PUBLIC_SEGMENT_NOT_READY:"+name)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(
+                  headless=True,args=["--no-sandbox","--disable-gpu","--disable-dev-shm-usage"]
+              )
+              context=browser.new_context(viewport={"width":1080,"height":1400})
+              page=context.new_page()
+              page.goto(
+                  base+"/?"+urlencode({"ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics"}),
+                  wait_until="domcontentloaded",timeout=120000,
+              )
+              _,selection=find(
+                  page,
+                  '[data-nfl-prop-analytics-step3-selection="v1"]'
+                  '[data-prop-selection-state="selected"]'
+                  '[data-prop-handoff-state="ready"]',
+                  240,
+              )
+              selected_game=(selection.get_attribute("data-prop-selected-game") or "").strip()
+              assert selected_game
+
+              page.goto(
+                  base+"/?"+urlencode({
+                      "ks_jump_sport":"NFL","ks_jump_market":"Prop Analytics",
+                      "ks_pa_page":"matchup","ks_pa_game":selected_game,
+                  }),
+                  wait_until="domcontentloaded",timeout=120000,
+              )
+              roster_frame,_=find(
+                  page,
+                  '[data-nfl-prop-analytics-page2-unified-roster="v1"]'
+                  '[data-prop-page2-unified-state="live"]',
+                  300,
+              )
+              qb=roster_frame.get_by_role("button",name=re.compile(r"^[A-Z]{2,3} • QB • ")).first
+              assert qb.count()==1
+              qb.click(timeout=10000)
+              _,open_prop=role(page,"button","Open prop page",180)
+              open_prop.click(timeout=10000)
+
+              find(page,'[data-page3-visual-v2-step2="v1"]',300)
+              find(page,'[data-page3-visual-v2-step3="v1"]',300)
+              find(page,'[data-page3-visual-v2-step4="v1"]',300)
+              _,att=segment(page,"ATT",180)
+              att.click(timeout=10000)
+              find(
+                  page,
+                  '[data-prop-page3-step2-nav-state="ready"]'
+                  '[data-prop-page3-step2-active-market="attempts"]',
+                  180,
+              )
+
+              frame,line=find(
+                  page,
+                  '[data-page3-visual-v2-step5="v1"]'
+                  '[data-page3-visual-v2-step5-region="line-lab"]'
+                  '[data-page3-visual-v2-step5-state="ready"]',
+                  300,
+              )
+              _,live=find(
+                  page,
+                  '[data-page3-visual-v2-step5="v1"]'
+                  '[data-page3-visual-v2-step5-region="live-recalculation"]'
+                  '[data-page3-visual-v2-step5-live-state="ready"]',
+                  300,
+              )
+              find(
+                  page,
+                  '[data-page3-visual-v2-step5="v1"]'
+                  '[data-page3-visual-v2-step5-region="game-chart"]',
+                  300,
+              )
+              line_container=frame.locator(".st-key-nfl_prop_visual_v2_step5_line_lab_v1").first
+              chart_container=frame.locator(".st-key-nfl_prop_visual_v2_step5_game_chart_v1").first
+              assert line_container.count()==1
+              assert chart_container.count()==1
+              assert live.locator('[data-v2-live-card]').count()==4
+              assert chart_container.locator('.ks-pa5-chart').count()==1
+              print("VISUAL_V2_STEP5_PUBLIC_COMPOSITION_GREEN")
+              print("VISUAL_V2_STEP4_PUBLIC_FROZEN_GREEN")
+              print("VISUAL_V2_STEP3_PUBLIC_FROZEN_GREEN")
+              print("VISUAL_V2_STEP2_PUBLIC_FROZEN_GREEN")
+
+              maximum=float(line.get_attribute("data-page3-visual-v2-step5-max"))
+              slider=line_container.get_by_role("slider").first
+              assert slider.count()==1
+              slider.press("End")
+              find(
+                  page,
+                  f'[data-page3-visual-v2-step5="v1"]'
+                  f'[data-page3-visual-v2-step5-region="line-lab"]'
+                  f'[data-page3-visual-v2-step5-line="{maximum:g}"]',
+                  180,
+              )
+              print("VISUAL_V2_STEP5_PUBLIC_INTERACTIONS_GREEN")
+              print("VISUAL_V2_STEP5_LINE_LAB_FROZEN_GREEN")
+              print("VISUAL_V2_STEP5_GAME_CHART_FROZEN_GREEN")
+
+              for width,height in ((390,900),(768,1050),(1440,1000)):
+                  page.set_viewport_size({"width":width,"height":height})
+                  page.wait_for_timeout(400)
+                  frame,_=find(page,'[data-page3-visual-v2-step5="v1"][data-page3-visual-v2-step5-region="line-lab"]',120)
+                  dims=frame.evaluate("()=>({i:innerWidth,d:document.documentElement.scrollWidth,b:document.body.scrollWidth})")
+                  assert max(dims["d"],dims["b"])<=dims["i"]+2,(width,dims)
+                  _,live=find(page,'[data-page3-visual-v2-step5-region="live-recalculation"]',120)
+                  assert live.locator('[data-v2-live-card]').count()==4
+                  print(f"VISUAL_V2_STEP5_PUBLIC_{width}_GREEN")
+
+              print("VISUAL_V2_STEP5_PUBLIC_GREEN")
+              print("VISUAL_V2_STEP5_GREEN")
+              print("VISUAL_V2_STEP5_FROZEN")
+              context.close()
+              browser.close()
+          PY

@@ -67,6 +67,13 @@ from nfl_prop_analytics_page3_visual_v2_step4_analysis_settings_v1 import (
     CONTAINER_KEY as VISUAL_V2_STEP4_CONTAINER_KEY,
     render_visual_v2_analysis_settings_header,
 )
+from nfl_prop_analytics_page3_visual_v2_step5_lower_analytics_v1 import (
+    CHART_CONTAINER_KEY as VISUAL_V2_STEP5_CHART_CONTAINER_KEY,
+    LINE_CONTAINER_KEY as VISUAL_V2_STEP5_LINE_CONTAINER_KEY,
+    render_visual_v2_game_chart_marker,
+    render_visual_v2_line_lab,
+    render_visual_v2_live_recalculation,
+)
 
 MODEL_VERSION = "NFL PROP ANALYTICS V1 • STEP 8 PROP PAGE SHELL + MARKET NAVIGATION"
 STEP = 8
@@ -655,18 +662,51 @@ def render_prop_page_shell() -> dict[str, Any]:
         "projection_weight": 0.0,
     }
 
+    visual_v2_step5_line_lab: dict[str, Any] = {
+        "ready": False,
+        "state": "unavailable",
+    }
+    visual_v2_step5_live_recalculation: dict[str, Any] = {
+        "ready": False,
+        "state": "unavailable",
+        "card_count": 4,
+    }
+    visual_v2_step5_game_chart: dict[str, Any] = {
+        "ready": False,
+        "state": "unavailable",
+    }
+
     if history_ready:
-        line_control = render_analysis_line_control(
-            games=history_payload.get("games") or [],
-            player_id=handoff["player_id"],
-            market_key=chosen_key,
-            market_label=chosen_label,
-            history_key=chosen_history_key,
-            history_label=history_labels[chosen_history_key],
+        visual_v2_step5_line_container = st.container(
+            key=VISUAL_V2_STEP5_LINE_CONTAINER_KEY,
         )
+        with visual_v2_step5_line_container:
+            visual_v2_step5_line_header_slot = st.empty()
+            line_control = render_analysis_line_control(
+                games=history_payload.get("games") or [],
+                player_id=handoff["player_id"],
+                market_key=chosen_key,
+                market_label=chosen_label,
+                history_key=chosen_history_key,
+                history_label=history_labels[chosen_history_key],
+            )
+            visual_v2_step5_line_lab = render_visual_v2_line_lab(
+                line_control=line_control,
+                market_label=chosen_label,
+                history_label=history_labels[chosen_history_key],
+                target=visual_v2_step5_line_header_slot,
+            )
         if line_control.get("ready") is True:
             history_summary = dict(line_control.get("summary") or history_summary)
             sample_size = int(history_summary.get("sample_size") or sample_size)
+            visual_v2_step5_live_recalculation = (
+                render_visual_v2_live_recalculation(
+                    line_control=line_control,
+                    history_summary=history_summary,
+                    market_label=chosen_label,
+                    history_label=history_labels[chosen_history_key],
+                )
+            )
 
         hit_state = _text(history_summary.get("hit_rate_state")) or "awaiting-line"
         hit_value = (
@@ -724,14 +764,22 @@ def render_prop_page_shell() -> dict[str, Any]:
             unsafe_allow_html=True,
         )
         if line_control.get("ready") is True:
-            game_chart = render_game_chart(
-                games=history_payload.get("games") or [],
-                line=line_control.get("line"),
-                market_key=chosen_key,
-                market_label=chosen_label,
-                history_key=chosen_history_key,
-                history_label=history_labels[chosen_history_key],
+            visual_v2_step5_chart_container = st.container(
+                key=VISUAL_V2_STEP5_CHART_CONTAINER_KEY,
             )
+            with visual_v2_step5_chart_container:
+                visual_v2_step5_game_chart = render_visual_v2_game_chart_marker(
+                    market_label=chosen_label,
+                    history_label=history_labels[chosen_history_key],
+                )
+                game_chart = render_game_chart(
+                    games=history_payload.get("games") or [],
+                    line=line_control.get("line"),
+                    market_key=chosen_key,
+                    market_label=chosen_label,
+                    history_key=chosen_history_key,
+                    history_label=history_labels[chosen_history_key],
+                )
         if game_chart.get("ready") is True:
             supporting_stats = render_supporting_stats(
                 games=history_payload.get("games") or [],
@@ -999,6 +1047,11 @@ div[data-testid="stSegmentedControl"] label{{color:#7990aa!important;font-size:.
         "visual_v2_step2_hero": visual_v2_step2_hero,
         "visual_v2_step3_stat_ribbon": visual_v2_step3_stat_ribbon,
         "visual_v2_step4_analysis_settings": visual_v2_step4_analysis_settings,
+        "visual_v2_step5_lower_analytics": {
+            "line_lab": visual_v2_step5_line_lab,
+            "live_recalculation": visual_v2_step5_live_recalculation,
+            "game_chart": visual_v2_step5_game_chart,
+        },
         "prop_analysis_gate_open": gate_open,
         "analytics_state": analytics_state,
     }
