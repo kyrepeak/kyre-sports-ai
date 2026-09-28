@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "task_id": "github-speed-step5-benchmark-freeze-v1",
+  "title": "GitHub Speed Step 5 — benchmark and freeze final speed upgrade",
+  "project": "Monster GitHub speed upgrade",
+  "status": "DONE",
+  "source_main": "54eb5165d1024750969df09ecfdd296c2bb14f30",
+  "scope": {
+    "benchmark": "devsystem/github_speed_benchmark_v1.json",
+    "regression_test": "tests/test_github_speed_benchmark_v1.py"
+  },
+  "acceptance": {
+    "baseline_run_id": 36486378747,
+    "optimized_run_id": 36493579149,
+    "baseline_setup_to_live_verify_seconds": 67.263651,
+    "optimized_setup_to_live_verify_seconds": 17.293796,
+    "reduction_percent": 74.289537,
+    "minimum_required_reduction_percent": 60,
+    "maximum_allowed_optimized_seconds": 25,
+    "passed": true,
+    "product_code_changed": false,
+    "verifier_runtime_logic_changed": false,
+    "workflow_trigger_changed": false
+  },
+  "protected": {
+    "speed_step1_frozen": true,
+    "speed_step2_frozen": true,
+    "speed_step3_frozen": true,
+    "speed_step4_frozen": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
