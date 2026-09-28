@@ -50,6 +50,7 @@ NFLVERSE_TEAM_ALIASES = {
 ESPN_TEAM_ALIASES = {
     "WAS": "WSH",
 }
+MAX_NFLVERSE_ROSTER_WEEK_LAG = 1
 
 
 def _text(value: Any) -> str:
@@ -112,6 +113,94 @@ def _load_nflverse_weekly(season: int) -> tuple[pd.DataFrame, dict[str, Any]]:
         "http": response.status_code,
         "rows": int(len(frame)),
         "url": url,
+    }
+
+
+def _resolve_nflverse_roster_week(
+    frame: pd.DataFrame,
+    *,
+    teams: tuple[str, ...],
+    season: int,
+    requested_week: int,
+    allow_previous_week: bool,
+) -> tuple[int | None, dict[str, Any]]:
+    """Resolve one common published nflverse roster week for all matchup teams.
+
+    Exact requested-week truth is always preferred. Before a future matchup only,
+    the immediately previous common published week may be used as corroboration
+    when nflverse has not published the requested week yet. Older data fails closed.
+    """
+    if frame.empty:
+        return None, {
+            "ok": False,
+            "requested_week": int(requested_week),
+            "resolved_week": None,
+            "lag": None,
+            "reason": "nflverse roster frame empty",
+        }
+
+    work = frame.copy()
+    work["season_num"] = pd.to_numeric(work["season"], errors="coerce")
+    work["week_num"] = pd.to_numeric(work["week"], errors="coerce")
+    work["team_canon"] = work["team"].map(_canon_team)
+    work["position_canon"] = work["position"].map(_canon_position)
+    work["espn_id_canon"] = work["espn_id"].map(_id_text)
+
+    weeks_by_team: dict[str, set[int]] = {}
+    for team in teams:
+        canon = _canon_team(team)
+        rows = work[
+            (work["season_num"] == int(season))
+            & (work["team_canon"] == canon)
+            & (work["position_canon"].isin(POSITIONS))
+            & (work["espn_id_canon"] != "")
+        ]
+        weeks_by_team[canon] = {
+            int(value)
+            for value in rows["week_num"].dropna().tolist()
+            if int(value) >= 1
+        }
+
+    common_weeks = set.intersection(
+        *(weeks for weeks in weeks_by_team.values())
+    ) if weeks_by_team and all(weeks_by_team.values()) else set()
+
+    requested_week = int(requested_week)
+    if requested_week in common_weeks:
+        resolved_week = requested_week
+    else:
+        prior = [week for week in common_weeks if week < requested_week]
+        candidate = max(prior) if prior else None
+        if (
+            allow_previous_week
+            and candidate is not None
+            and requested_week - candidate == MAX_NFLVERSE_ROSTER_WEEK_LAG
+        ):
+            resolved_week = candidate
+        else:
+            resolved_week = None
+
+    lag = (
+        requested_week - resolved_week
+        if resolved_week is not None
+        else None
+    )
+    return resolved_week, {
+        "ok": resolved_week is not None,
+        "requested_week": requested_week,
+        "resolved_week": resolved_week,
+        "lag": lag,
+        "allow_previous_week": bool(allow_previous_week),
+        "common_weeks": tuple(sorted(common_weeks)),
+        "weeks_by_team": {
+            team: tuple(sorted(weeks))
+            for team, weeks in weeks_by_team.items()
+        },
+        "reason": (
+            ""
+            if resolved_week is not None
+            else "requested nflverse roster week unpublished and no fresh one-week fallback"
+        ),
     }
 
 
@@ -295,6 +384,19 @@ def load_verified_roster_truth(
 
     nflverse_frame, nflverse_diag = _load_nflverse_weekly(season)
 
+    target_date = _text(handoff.get("target_date"))
+    allow_previous_week = bool(
+        len(target_date) >= 10
+        and target_date[:10] > date.today().isoformat()
+    )
+    nflverse_week, nflverse_week_diag = _resolve_nflverse_roster_week(
+        nflverse_frame,
+        teams=(away, home),
+        season=season,
+        requested_week=week,
+        allow_previous_week=allow_previous_week,
+    )
+
     with ThreadPoolExecutor(max_workers=2) as pool:
         away_future = pool.submit(_espn_team_rows, away)
         home_future = pool.submit(_espn_team_rows, home)
@@ -303,26 +405,27 @@ def load_verified_roster_truth(
 
     source_ok = bool(
         nflverse_diag.get("ok")
+        and nflverse_week_diag.get("ok")
         and away_diag.get("ok")
         and home_diag.get("ok")
     )
     sources_available = []
     if away_diag.get("ok") and home_diag.get("ok"):
         sources_available.append("ESPN")
-    if nflverse_diag.get("ok"):
+    if nflverse_diag.get("ok") and nflverse_week_diag.get("ok"):
         sources_available.append("NFLVERSE")
 
     away_nv = _nflverse_team_week(
         nflverse_frame,
         team=away,
         season=season,
-        week=week,
+        week=nflverse_week if nflverse_week is not None else week,
     )
     home_nv = _nflverse_team_week(
         nflverse_frame,
         team=home,
         season=season,
-        week=week,
+        week=nflverse_week if nflverse_week is not None else week,
     )
 
     away_truth = _reconcile_team_roster(
@@ -342,12 +445,22 @@ def load_verified_roster_truth(
         for pos in POSITIONS
     )
     state = "live" if source_ok and required_positions_ready else "fail-closed"
+    if state == "live":
+        reason = ""
+    elif not nflverse_week_diag.get("ok"):
+        reason = _text(nflverse_week_diag.get("reason")) or "nflverse roster week unavailable"
+    else:
+        reason = "independent roster verification incomplete"
 
     return {
         "state": state,
-        "reason": "" if state == "live" else "independent roster verification incomplete",
+        "reason": reason,
         "season": season,
         "week": week,
+        "requested_week": week,
+        "nflverse_week": nflverse_week,
+        "nflverse_week_lag": nflverse_week_diag.get("lag"),
+        "nflverse_week_diag": nflverse_week_diag,
         "selection_key": _text(handoff.get("selection_key")),
         "away": away,
         "home": home,

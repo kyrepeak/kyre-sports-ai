@@ -160,7 +160,16 @@ jobs:
               )
           assert roster.get("source_count")==2,roster
           assert roster.get("verified_count",0)>=8,roster
-          print("STEP5_WASHINGTON_ALIAS_ROSTER_LIVE_GREEN",roster["verified_count"])
+          assert roster.get("nflverse_week") in (3,4),roster
+          assert int(roster.get("nflverse_week_lag") or 0) <= 1,roster
+          print(
+              "STEP5_WASHINGTON_ALIAS_ROSTER_LIVE_GREEN",
+              roster["verified_count"],
+              "NFLVERSE_WEEK",
+              roster.get("nflverse_week"),
+              "LAG",
+              roster.get("nflverse_week_lag"),
+          )
 
           availability=load_availability_depth_truth(handoff,roster)
           if availability.get("state")!="live":

@@ -111,6 +111,78 @@ def test_nflverse_week_filter_uses_exact_season_week_team_and_position():
     assert rows[0]["position"] == "QB"
 
 
+def _weekly_frame_for_roster_weeks(weeks):
+    rows = []
+    for week in weeks:
+        for team, base in (("IND", 100), ("WAS", 200)):
+            for offset, pos in enumerate(("QB", "RB", "WR", "TE"), start=1):
+                rows.append({
+                    "season": 2026,
+                    "week": week,
+                    "team": team,
+                    "position": pos,
+                    "status": "ACT",
+                    "full_name": f"{team} {pos}",
+                    "espn_id": base + offset,
+                    "jersey_number": offset,
+                    "gsis_id": f"00-{base + offset}",
+                    "headshot_url": "",
+                })
+    return pd.DataFrame(rows)
+
+
+def test_nflverse_roster_week_prefers_exact_requested_week():
+    frame = _weekly_frame_for_roster_weeks((3, 4))
+    week, diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=True,
+    )
+    assert week == 4
+    assert diag["ok"] is True
+    assert diag["lag"] == 0
+
+
+def test_nflverse_roster_week_allows_only_immediate_prior_week_pregame():
+    frame = _weekly_frame_for_roster_weeks((1, 2, 3))
+    week, diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=True,
+    )
+    assert week == 3
+    assert diag["ok"] is True
+    assert diag["lag"] == 1
+
+
+def test_nflverse_roster_week_rejects_stale_or_nonpregame_fallback():
+    frame = _weekly_frame_for_roster_weeks((1, 2))
+    stale_week, stale_diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=True,
+    )
+    assert stale_week is None
+    assert stale_diag["ok"] is False
+
+    frame = _weekly_frame_for_roster_weeks((1, 2, 3))
+    closed_week, closed_diag = step5._resolve_nflverse_roster_week(
+        frame,
+        teams=("IND", "WAS"),
+        season=2026,
+        requested_week=4,
+        allow_previous_week=False,
+    )
+    assert closed_week is None
+    assert closed_diag["ok"] is False
+
+
 def test_espn_roster_boundary_maps_canonical_was_to_provider_wsh(monkeypatch):
     calls = []
 
