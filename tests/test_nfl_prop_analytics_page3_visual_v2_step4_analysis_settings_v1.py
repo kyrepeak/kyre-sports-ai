@@ -42,7 +42,7 @@ def test_step4_matches_locked_analysis_settings_contract():
         'data-page3-visual-v2-step4-real-composition="true"',
         "MANUAL LINE LAB",
         "BELOW ↓",
-        ".st-key-{CONTAINER_KEY}",
+        'stVerticalBlockBorderWrapper',
         '[data-testid="stSegmentedControl"]',
         "min-height:{MIN_TOUCH_TARGET_PX}px",
         '.ks-pa3-nav-marker{{',
@@ -78,6 +78,7 @@ def test_step4_wires_frozen_native_controls_without_key_or_query_changes():
     assert "st.query_params[MARKET_QUERY_KEY] = chosen_key" in PAGE
 
     assert "analysis_settings_container = st.container(" in PAGE
+    assert "border=True" in PAGE
     assert "key=VISUAL_V2_STEP4_CONTAINER_KEY" in PAGE
     assert 'history_control_col, market_control_col = st.columns(2, gap="small")' in PAGE
     assert "with history_control_col:" in PAGE
