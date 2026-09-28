@@ -141,8 +141,12 @@ jobs:
           assert int(truth.get("verified_count") or 0)>=8,truth.get("verified_count")
           assert truth["teams"]["IND"]["verified_count"]>=4
           assert truth["teams"]["WAS"]["verified_count"]>=4
+          assert truth.get("nflverse_week_requested")==4,truth.get("nflverse_week_requested")
+          assert truth.get("nflverse_week_used")==3,truth.get("nflverse_week_used")
+          assert truth.get("nflverse_fallback_used") is True,truth.get("nflverse_fallback_used")
           print("STEP5_WAS_ALIAS_LIVE_ROSTER_GREEN",truth["verified_count"])
           print("STEP5_WAS_ALIAS_TWO_SOURCE_GREEN",truth["source_count"])
+          print("STEP5_WAS_ALIAS_NFLVERSE_WEEK_FALLBACK_GREEN",truth["nflverse_week_used"])
           PY
 
   branch-full-chain:
