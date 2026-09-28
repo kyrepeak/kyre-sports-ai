@@ -25,6 +25,7 @@ from nfl_prop_analytics_schedule_v1 import (
 )
 
 DEFAULT_WEEKS = 15
+MIN_VERIFIED_SUNDAYS = 8
 
 
 def _iso(value: Any) -> str:
@@ -117,11 +118,28 @@ def build_snapshot(*, start: date | None = None, weeks: int = DEFAULT_WEEKS) -> 
 
     first = _target_sunday(start or datetime.now(AZ).date())
     slates: list[dict[str, Any]] = []
+    stopped_at = ""
+    stop_reason = ""
     for offset in range(weeks):
         target = first + timedelta(days=7 * offset)
-        slate = _build_date(target)
-        if slate is not None:
-            slates.append(slate)
+        try:
+            slate = _build_date(target)
+        except RuntimeError as exc:
+            if len(slates) < MIN_VERIFIED_SUNDAYS:
+                raise
+            stopped_at = target.isoformat()
+            stop_reason = str(exc)
+            break
+
+        if slate is None:
+            if len(slates) < MIN_VERIFIED_SUNDAYS:
+                raise RuntimeError(
+                    f"SNAPSHOT_EMPTY_REQUIRED_SUNDAY:{target.isoformat()}"
+                )
+            stopped_at = target.isoformat()
+            stop_reason = "NO_SCHEDULED_GAMES"
+            break
+        slates.append(slate)
 
     if not slates:
         raise RuntimeError("SNAPSHOT_NO_VERIFIED_SLATES")
@@ -145,6 +163,8 @@ def build_snapshot(*, start: date | None = None, weeks: int = DEFAULT_WEEKS) -> 
             "end": slates[-1]["target_date"],
             "requested_weeks": weeks,
             "verified_sundays": len(slates),
+            "stopped_at": stopped_at,
+            "stop_reason": stop_reason,
         },
         "certification": {
             "minimum_independent_sources": 2,
@@ -178,6 +198,7 @@ def main() -> None:
         f"sundays={payload['window']['verified_sundays']}",
         f"games={payload['certification']['total_games']}",
         f"window={payload['window']['start']}..{payload['window']['end']}",
+        f"stopped_at={payload['window'].get('stopped_at') or 'none'}",
     )
 
 
