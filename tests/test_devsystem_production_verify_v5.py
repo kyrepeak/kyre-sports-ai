@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_v5_uses_stable_certified_game_total_selector_date():
-    assert v5.CERT_DATE == "2026-09-18"
+    assert v5.CERT_DATE == "2026-09-19"
 
 
 def test_v5_reads_official_event_from_browser_url():
