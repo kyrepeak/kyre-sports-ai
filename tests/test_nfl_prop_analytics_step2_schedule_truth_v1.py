@@ -16,7 +16,7 @@ def test_step2_contract_and_sources_are_independent():
         "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0",
         'NFLVERSE_GAMES_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"',
         'ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"',
-        'NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"',
+        'NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/reg-{week}"',
         'CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"',
         'data-nfl-prop-analytics-step2-schedule="v1"',
         'data-prop-schedule-state="fail-closed"',
@@ -240,3 +240,28 @@ def test_step2_does_not_add_prop_projection_or_passing_yards_logic():
     )
     for token in forbidden:
         assert token not in source, token
+
+
+def test_public_resilience_uses_current_nfl_url_and_independent_espn_discovery():
+    assert schedule.NFL_SCHEDULE_URL == "https://www.nfl.com/schedules/{season}/by-week/reg-{week}"
+    assert "site.web.api.espn.com" in schedule.ESPN_WEB_SCOREBOARD_URL
+    assert len(schedule.ESPN_TEAM_IDS) == 32
+
+
+def test_cbs_stripped_text_fallback_recovers_target_day_games():
+    body = """
+    <div>Sunday, September 27, 2026</div>
+    <div>Carolina Panthers</div><div>Cleveland Browns</div><div>1:00 pm FOX</div>
+    <div>Kansas City Chiefs</div><div>Miami Dolphins</div><div>1:00 pm CBS</div>
+    <div>Monday, September 28, 2026</div>
+    """
+    games = schedule._parse_cbs_schedule_stripped_text(
+        body,
+        target=date(2026, 9, 27),
+        week=3,
+    )
+    assert [(game["away"], game["home"]) for game in games] == [
+        ("CAR", "CLE"),
+        ("KC", "MIA"),
+    ]
+    assert all(game["source"] == "CBS" for game in games)

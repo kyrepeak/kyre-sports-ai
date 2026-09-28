@@ -204,25 +204,91 @@ jobs:
         run: |
           python - <<'PY'
           from datetime import date
+          import re
+          import requests
           from nfl_prop_analytics_schedule_v1 import (
               _from_cbs,
+              _from_espn_team_schedules,
+              _from_footballdb,
+              _from_pfn,
+              _from_pfr,
+              _from_nfl_official,
               _load_schedule_truth_uncached,
+              CBS_SCHEDULE_URL,
+              PFN_SCHEDULE_URL,
+              REQUEST_HEADERS,
+              _reconcile_schedule,
           )
 
-          truth=_load_schedule_truth_uncached(date(2026,9,27))
-          cbs_games=[]
-          cbs_error=""
-          try:
-              cbs_games=_from_cbs(date(2026,9,27),week=3)
-          except Exception as exc:
-              cbs_error=f"{type(exc).__name__}:{exc}"
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_COUNT",len(cbs_games))
-          print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_CBS_ERROR",cbs_error)
+          target=date(2026,9,27)
+          truth=_load_schedule_truth_uncached(target)
+
+          # Diagnostic-only: inspect reachable provider payload shape so parser
+          # repairs follow the actual runner response rather than assumptions.
+          for label,url in (
+              ("CBS",CBS_SCHEDULE_URL.format(season=2026,week=3)),
+              ("PFN",PFN_SCHEDULE_URL.format(target=target.isoformat())),
+          ):
+              try:
+                  response=requests.get(
+                      url,
+                      headers={
+                          "User-Agent":REQUEST_HEADERS["User-Agent"],
+                          "Accept":"text/html,application/xhtml+xml,*/*",
+                      },
+                      timeout=10,
+                  )
+                  print(f"NFL_PROP_ANALYTICS_STEP2_{label}_HTTP",response.status_code)
+                  print(f"NFL_PROP_ANALYTICS_STEP2_{label}_BYTES",len(response.text))
+                  flattened=re.sub(r"\s+"," ",response.text)
+                  diagnostic_tokens = (
+                      ("CBS", ("Sep 27, 2026","Kansas City @ Miami","1:00 PM","5:00 PM")),
+                      ("PFN", ("game-401872953","datetime=","2026-09-27T","Sun, Sep 27","Highmark Stadium")),
+                  )
+                  wanted=dict(diagnostic_tokens).get(label,())
+                  printed=0
+                  for token in wanted:
+                      pos=flattened.lower().find(token.lower())
+                      if pos>=0:
+                          lo=max(0,pos-420);hi=min(len(flattened),pos+1200)
+                          safe_token=re.sub(r"[^A-Za-z0-9]+","_",token).strip("_")
+                          print(f"NFL_PROP_ANALYTICS_STEP2_{label}_SNIP_{safe_token}",flattened[lo:hi])
+                          printed+=1
+                      if printed>=3:
+                          break
+              except Exception as exc:
+                  print(f"NFL_PROP_ANALYTICS_STEP2_{label}_RAW_ERROR",type(exc).__name__,str(exc)[:180])
+
+          def call(loader):
+              try:
+                  return loader(), ""
+              except Exception as exc:
+                  return [], f"{type(exc).__name__}:{exc}"
+
+          cbs_games,cbs_error=call(lambda:_from_cbs(target,week=3))
+          espn_games,espn_error=call(lambda:_from_espn_team_schedules(target,[]))
+          footballdb_games,footballdb_error=call(lambda:_from_footballdb(target))
+          pfr_games,pfr_error=call(lambda:_from_pfr(target))
+          pfn_games,pfn_error=call(lambda:_from_pfn(target))
+          nfl_games,nfl_error=call(lambda:_from_nfl_official(target,season=2026,week=3))
+
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_CBS_COUNT",len(cbs_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_CBS_ERROR",cbs_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_ESPN_COUNT",len(espn_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_ESPN_ERROR",espn_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_FOOTBALLDB_COUNT",len(footballdb_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_FOOTBALLDB_ERROR",footballdb_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_PFR_COUNT",len(pfr_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_PFR_ERROR",pfr_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_PFN_COUNT",len(pfn_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_PFN_ERROR",pfn_error)
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_NFL_COUNT",len(nfl_games))
+          print("NFL_PROP_ANALYTICS_STEP2_RESILIENCE_NFL_ERROR",nfl_error)
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_SOURCES",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_ERRORS",truth["source_errors"])
+
           games=truth["games"]
           pairs={(g["away"],g["home"]) for g in games}
-
           if len(games) != 14:
               raise RuntimeError(f"PROP_ANALYTICS_STEP2_LIVE_SLATE_INCOMPLETE:{len(games)}")
           if truth["verified_count"] != 14:
@@ -234,14 +300,41 @@ jobs:
                   "PROP_ANALYTICS_STEP2_SOURCE_ROUTER_INCOMPLETE:"
                   + ",".join(truth["sources_available"])
               )
-
           for pair in (("BAL","DAL"),("KC","MIA"),("LAR","DEN")):
               if pair not in pairs:
                   raise RuntimeError(f"PROP_ANALYTICS_STEP2_EXPECTED_GAME_MISSING:{pair}")
 
+          # Reproduce the public failure mode: NFLVERSE contributes nothing.
+          no_nflverse=_reconcile_schedule(
+              {
+                  "NFL": nfl_games,
+                  "CBS": cbs_games,
+                  "PFR": pfr_games,
+                  "PFN": pfn_games,
+                  "FOOTBALLDB": footballdb_games,
+                  "NFLVERSE": [],
+                  "ESPN": espn_games,
+              },
+              target,
+          )
+          no_nflverse_verified=sum(1 for game in no_nflverse if game["verified"])
+          print("NFL_PROP_ANALYTICS_STEP2_NO_NFLVERSE_GAMES",len(no_nflverse))
+          print("NFL_PROP_ANALYTICS_STEP2_NO_NFLVERSE_VERIFIED",no_nflverse_verified)
+          if len(espn_games) != 14:
+              raise RuntimeError(
+                  f"PROP_ANALYTICS_STEP2_ESPN_INDEPENDENT_DISCOVERY_INCOMPLETE:{len(espn_games)}"
+              )
+          if len(no_nflverse) != 14 or no_nflverse_verified != 14:
+              raise RuntimeError(
+                  "PROP_ANALYTICS_STEP2_PUBLIC_FAILOVER_INCOMPLETE:"
+                  f"{len(no_nflverse)}:{no_nflverse_verified}:"
+                  f"NFL={len(nfl_games)}:CBS={len(cbs_games)}:PFR={len(pfr_games)}:PFN={len(pfn_games)}:FOOTBALLDB={len(footballdb_games)}:ESPN={len(espn_games)}"
+              )
+
           print("NFL_PROP_ANALYTICS_STEP2_LIVE_SCHEDULE_GREEN",len(games))
           print("NFL_PROP_ANALYTICS_STEP2_SOURCE_ROUTER_GREEN",truth["sources_available"])
           print("NFL_PROP_ANALYTICS_STEP2_VERIFIED_GAMES_GREEN",truth["verified_count"])
+          print("NFL_PROP_ANALYTICS_STEP2_PUBLIC_FAILOVER_GREEN")
           print("NFL_PROP_ANALYTICS_STEP2_PROVIDER_REPAIR_LIVE_GREEN")
           PY
 

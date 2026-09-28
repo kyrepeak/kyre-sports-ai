@@ -34,8 +34,12 @@ ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nf
 ESPN_WEB_SCOREBOARD_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 ESPN_TEAM_SCHEDULE_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
 ESPN_WEB_TEAM_SCHEDULE_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team_id}/schedule"
-NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/week-{week}"
+NFL_SCHEDULE_URL = "https://www.nfl.com/schedules/{season}/by-week/reg-{week}"
+NFL_SCHEDULE_RELEASE_URL = "https://www.nfl.com/nfl-schedule-release/"
 CBS_SCHEDULE_URL = "https://www.cbssports.com/nfl/schedule/{season}/regular/{week}/"
+FOOTBALLDB_SCHEDULE_URL = "https://www.footballdb.com/scores/schedule{season}.html"
+PFR_SCHEDULE_URL = "https://www.pro-football-reference.com/years/{season}/games.htm"
+PFN_SCHEDULE_URL = "https://www.profootballnetwork.com/nfl-hq/schedule?date={target}"
 
 AZ = ZoneInfo("America/Phoenix")
 ET = ZoneInfo("America/New_York")
@@ -112,7 +116,7 @@ def team_logo_url(team: Any) -> str:
     return f"https://a.espncdn.com/i/teamlogos/nfl/500/{code}.png"
 
 
-SOURCE_PRIORITY = ("NFL", "CBS", "NFLVERSE", "ESPN")
+SOURCE_PRIORITY = ("NFL", "CBS", "PFR", "PFN", "FOOTBALLDB", "NFLVERSE", "ESPN")
 REQUEST_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) "
@@ -474,8 +478,68 @@ def _parse_cbs_schedule_html(
     # semantic table in some responses. Fall back to ordered visible text for
     # the exact target-day section while preserving the same independent
     # away/home/kickoff evidence contract.
-    return _parse_cbs_schedule_text_nodes(
+    from_nodes = _parse_cbs_schedule_text_nodes(
         _cbs_day_text_nodes(parser, target),
+        target=target,
+        week=week,
+    )
+    if from_nodes:
+        return from_nodes
+    return _parse_cbs_schedule_stripped_text(
+        body,
+        target=target,
+        week=week,
+    )
+
+
+def _parse_cbs_schedule_stripped_text(
+    body: str,
+    *,
+    target: date,
+    week: int,
+) -> list[dict[str, Any]]:
+    """Parse the exact target-day CBS section from stripped visible HTML text."""
+    clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
+    clean = re.sub(r"\s+", " ", clean).strip()
+    if not clean:
+        return []
+
+    month = target.strftime("%B")
+    weekday = target.strftime("%A")
+    anchors = (
+        f"{weekday}, {month} {target.day}, {target.year}",
+        f"{weekday}, {month} {target.day}",
+    )
+    lower = clean.lower()
+    start = -1
+    anchor_used = ""
+    for anchor in anchors:
+        pos = lower.find(anchor.lower())
+        if pos >= 0:
+            start = pos + len(anchor)
+            anchor_used = anchor
+            break
+    if start < 0:
+        return []
+
+    # Stop at the next dated weekday heading when present.
+    section = clean[start:]
+    next_positions: list[int] = []
+    for name in ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"):
+        if name.lower() == weekday.lower():
+            continue
+        m = re.search(
+            rf"\b{name},\s+[A-Za-z]+\s+\d{{1,2}}(?:,\s+\d{{4}})?\b",
+            section,
+            re.IGNORECASE,
+        )
+        if m:
+            next_positions.append(m.start())
+    if next_positions:
+        section = section[: min(next_positions)]
+
+    return _parse_cbs_schedule_text_nodes(
+        [section],
         target=target,
         week=week,
     )
@@ -568,8 +632,12 @@ def _from_espn_team_schedules(
         if team_id and team_id not in team_ids:
             team_ids.append(team_id)
 
+    # If the slate-discovery source is unavailable in public Streamlit, ESPN
+    # must still be able to discover the target date independently. Query all
+    # team schedules and dedupe the resulting events. This is slower only on
+    # the failover path and remains cached by the Step 2 truth layer.
     if not team_ids:
-        return []
+        team_ids = list(dict.fromkeys(ESPN_TEAM_IDS.values()))
 
     def load_one(team_id: str) -> list[dict[str, Any]]:
         params = {"season": target.year, "seasontype": 2}
@@ -598,6 +666,240 @@ def _from_espn_team_schedules(
     return list(deduped.values())
 
 
+_FOOTBALLDB_GAME_RE = re.compile(
+    r"\b(\d{2}/\d{2})(?:\s+\([A-Za-z]{3}\))?\s+"
+    r"([A-Za-z]{2,3})\s+@\s+([A-Za-z]{2,3})\s+"
+    r"(\d{1,2}:\d{2}\s+[AP]M)\b",
+    re.IGNORECASE,
+)
+
+
+def _parse_footballdb_schedule(
+    body: str,
+    *,
+    target: date,
+) -> list[dict[str, Any]]:
+    clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
+    clean = re.sub(r"\s+", " ", clean)
+    target_token = target.strftime("%m/%d")
+    games: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for match in _FOOTBALLDB_GAME_RE.finditer(clean):
+        day_token, away, home, clock = match.groups()
+        if day_token != target_token:
+            continue
+        item = _game(
+            away=away,
+            home=home,
+            kickoff_utc=_kickoff_et(target, clock.upper()),
+            source="FOOTBALLDB",
+            season=target.year,
+            status="scheduled",
+        )
+        if item and (item["away"], item["home"]) not in seen:
+            seen.add((item["away"], item["home"]))
+            games.append(item)
+    return games
+
+
+def _from_footballdb(target: date) -> list[dict[str, Any]]:
+    response = requests.get(
+        FOOTBALLDB_SCHEDULE_URL.format(season=target.year),
+        headers={
+            "User-Agent": REQUEST_HEADERS["User-Agent"],
+            "Accept": "text/html,application/xhtml+xml,*/*",
+        },
+        timeout=8,
+    )
+    response.raise_for_status()
+    return _parse_footballdb_schedule(response.text, target=target)
+
+
+PFR_TEAM_NAMES = {
+    "Arizona Cardinals": "ARI",
+    "Atlanta Falcons": "ATL",
+    "Baltimore Ravens": "BAL",
+    "Buffalo Bills": "BUF",
+    "Carolina Panthers": "CAR",
+    "Chicago Bears": "CHI",
+    "Cincinnati Bengals": "CIN",
+    "Cleveland Browns": "CLE",
+    "Dallas Cowboys": "DAL",
+    "Denver Broncos": "DEN",
+    "Detroit Lions": "DET",
+    "Green Bay Packers": "GB",
+    "Houston Texans": "HOU",
+    "Indianapolis Colts": "IND",
+    "Jacksonville Jaguars": "JAX",
+    "Kansas City Chiefs": "KC",
+    "Las Vegas Raiders": "LV",
+    "Los Angeles Chargers": "LAC",
+    "Los Angeles Rams": "LAR",
+    "Miami Dolphins": "MIA",
+    "Minnesota Vikings": "MIN",
+    "New England Patriots": "NE",
+    "New Orleans Saints": "NO",
+    "New York Giants": "NYG",
+    "New York Jets": "NYJ",
+    "Philadelphia Eagles": "PHI",
+    "Pittsburgh Steelers": "PIT",
+    "San Francisco 49ers": "SF",
+    "Seattle Seahawks": "SEA",
+    "Tampa Bay Buccaneers": "TB",
+    "Tennessee Titans": "TEN",
+    "Washington Commanders": "WAS",
+}
+_PFR_TEAM_PATTERN = "|".join(
+    re.escape(name)
+    for name in sorted(PFR_TEAM_NAMES, key=len, reverse=True)
+)
+
+_PFR_GAME_RE = re.compile(
+    rf"\b(\d{{4}}-\d{{2}}-\d{{2}})\s+"
+    r"(\d{1,2}:\d{2}(?:AM|PM))\s+"
+    rf"({_PFR_TEAM_PATTERN})\s+@\s+"
+    rf"({_PFR_TEAM_PATTERN})\b",
+    re.IGNORECASE,
+)
+
+
+def _parse_pfr_schedule(
+    body: str,
+    *,
+    target: date,
+) -> list[dict[str, Any]]:
+    clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
+    clean = re.sub(r"\s+", " ", clean)
+    name_map = {name.upper(): team for name, team in PFR_TEAM_NAMES.items()}
+    games: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for match in _PFR_GAME_RE.finditer(clean):
+        day_token, clock, away_name, home_name = match.groups()
+        if day_token != target.isoformat():
+            continue
+        away = name_map.get(away_name.upper())
+        home = name_map.get(home_name.upper())
+        item = _game(
+            away=away,
+            home=home,
+            kickoff_utc=_kickoff_et(target, clock.upper()),
+            source="PFR",
+            season=target.year,
+            status="scheduled",
+        )
+        if item and (item["away"], item["home"]) not in seen:
+            seen.add((item["away"], item["home"]))
+            games.append(item)
+    return games
+
+
+def _from_pfr(target: date) -> list[dict[str, Any]]:
+    response = requests.get(
+        PFR_SCHEDULE_URL.format(season=target.year),
+        headers={
+            "User-Agent": REQUEST_HEADERS["User-Agent"],
+            "Accept": "text/html,application/xhtml+xml,*/*",
+        },
+        timeout=8,
+    )
+    response.raise_for_status()
+    return _parse_pfr_schedule(response.text, target=target)
+
+
+def _parse_pfn_schedule(
+    body: str,
+    *,
+    target: date,
+) -> list[dict[str, Any]]:
+    clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
+    clean = re.sub(r"\s+", " ", clean)
+
+    heading = target.strftime("%A, %B %-d, %Y")
+    start = clean.lower().find(heading.lower())
+    if start < 0:
+        # Some renders omit the year from day headings.
+        heading = target.strftime("%A, %B %-d")
+        start = clean.lower().find(heading.lower())
+    if start < 0:
+        return []
+
+    section = clean[start + len(heading):]
+    next_heading = re.search(
+        r"\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s+"
+        r"[A-Za-z]+\s+\d{1,2}(?:,\s+\d{4})?\b",
+        section,
+        re.IGNORECASE,
+    )
+    if next_heading:
+        section = section[:next_heading.start()]
+
+    team_re = re.compile(_PFR_TEAM_PATTERN, re.IGNORECASE)
+    time_re = re.compile(r"\b(\d{1,2}:\d{2}\s+[AP]M)\s+ET\b", re.IGNORECASE)
+    events: list[tuple[int, str, str]] = []
+    for match in team_re.finditer(section):
+        events.append((match.start(), "team", match.group(0)))
+    for match in time_re.finditer(section):
+        events.append((match.start(), "time", match.group(1)))
+    events.sort(key=lambda item: item[0])
+
+    name_map = {name.upper(): team for name, team in PFR_TEAM_NAMES.items()}
+    pending_time: str | None = None
+    pending_teams: list[str] = []
+    games: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+
+    for _, kind, value in events:
+        if kind == "time":
+            pending_time = value.upper()
+            pending_teams = []
+            continue
+
+        team = name_map.get(value.upper())
+        if not team or pending_time is None:
+            continue
+        if not pending_teams or pending_teams[-1] != team:
+            pending_teams.append(team)
+        # PFN cards can repeat team names in image/link text. Deduplicate until
+        # two distinct teams are observed after one kickoff timestamp.
+        unique: list[str] = []
+        for candidate in pending_teams:
+            if candidate not in unique:
+                unique.append(candidate)
+        if len(unique) < 2:
+            continue
+
+        away, home = unique[0], unique[1]
+        if away != home and (away, home) not in seen:
+            item = _game(
+                away=away,
+                home=home,
+                kickoff_utc=_kickoff_et(target, pending_time),
+                source="PFN",
+                season=target.year,
+                status="scheduled",
+            )
+            if item:
+                seen.add((away, home))
+                games.append(item)
+        pending_time = None
+        pending_teams = []
+
+    return games
+
+
+def _from_pfn(target: date) -> list[dict[str, Any]]:
+    response = requests.get(
+        PFN_SCHEDULE_URL.format(target=target.isoformat()),
+        headers={
+            "User-Agent": REQUEST_HEADERS["User-Agent"],
+            "Accept": "text/html,application/xhtml+xml,*/*",
+        },
+        timeout=8,
+    )
+    response.raise_for_status()
+    return _parse_pfn_schedule(response.text, target=target)
+
+
 def _from_espn(
     target: date,
     candidate_games: list[dict[str, Any]] | None = None,
@@ -622,6 +924,110 @@ _OFFICIAL_GAME_RE = re.compile(
     r"(\d{1,2}:\d{2}\s+[AP]M)(?:,\s+([A-Z][A-Z0-9+/.]*))?",
     re.IGNORECASE,
 )
+
+
+NFL_RELEASE_TEAM_NAMES = {
+    "Arizona Cardinals": "ARI",
+    "Atlanta Falcons": "ATL",
+    "Baltimore Ravens": "BAL",
+    "Buffalo Bills": "BUF",
+    "Carolina Panthers": "CAR",
+    "Chicago Bears": "CHI",
+    "Cincinnati Bengals": "CIN",
+    "Cleveland Browns": "CLE",
+    "Dallas Cowboys": "DAL",
+    "Denver Broncos": "DEN",
+    "Detroit Lions": "DET",
+    "Green Bay Packers": "GB",
+    "Houston Texans": "HOU",
+    "Indianapolis Colts": "IND",
+    "Jacksonville Jaguars": "JAX",
+    "Kansas City Chiefs": "KC",
+    "Las Vegas Raiders": "LV",
+    "Los Angeles Chargers": "LAC",
+    "Los Angeles Rams": "LAR",
+    "Miami Dolphins": "MIA",
+    "Minnesota Vikings": "MIN",
+    "New England Patriots": "NE",
+    "New Orleans Saints": "NO",
+    "New York Giants": "NYG",
+    "New York Jets": "NYJ",
+    "Philadelphia Eagles": "PHI",
+    "Pittsburgh Steelers": "PIT",
+    "San Francisco 49ers": "SF",
+    "Seattle Seahawks": "SEA",
+    "Tampa Bay Buccaneers": "TB",
+    "Tennessee Titans": "TEN",
+    "Washington Commanders": "WAS",
+}
+_NFL_RELEASE_TEAM_PATTERN = "|".join(
+    re.escape(name)
+    for name in sorted(NFL_RELEASE_TEAM_NAMES, key=len, reverse=True)
+)
+_NFL_RELEASE_GAME_RE = re.compile(
+    rf"\b(?:THU|FRI|SAT|SUN|MON)\s+(\d{{2}}/\d{{2}})\s+"
+    rf"({_NFL_RELEASE_TEAM_PATTERN})\s+"
+    r"(\d{1,2}:\d{2})\s+(AM|PM)\s+(?:ET|EST|EDT)\s+@\s+"
+    rf"({_NFL_RELEASE_TEAM_PATTERN})\b",
+    re.IGNORECASE,
+)
+
+
+def _parse_nfl_schedule_release(
+    body: str,
+    *,
+    target: date,
+    season: int,
+    week: int | None,
+) -> list[dict[str, Any]]:
+    clean = html_lib.unescape(re.sub(r"<[^>]+>", " ", body))
+    clean = re.sub(r"\s+", " ", clean)
+    target_token = target.strftime("%m/%d")
+    name_map = {name.upper(): team for name, team in NFL_RELEASE_TEAM_NAMES.items()}
+    games: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for match in _NFL_RELEASE_GAME_RE.finditer(clean):
+        day_token, away_name, clock, meridiem, home_name = match.groups()
+        if day_token != target_token:
+            continue
+        away = name_map.get(away_name.upper())
+        home = name_map.get(home_name.upper())
+        item = _game(
+            away=away,
+            home=home,
+            kickoff_utc=_kickoff_et(target, f"{clock} {meridiem.upper()}"),
+            source="NFL",
+            season=season,
+            week=week,
+            status="scheduled",
+        )
+        if item and (item["away"], item["home"]) not in seen:
+            seen.add((item["away"], item["home"]))
+            games.append(item)
+    return games
+
+
+def _from_nfl_schedule_release(
+    target: date,
+    *,
+    season: int,
+    week: int | None,
+) -> list[dict[str, Any]]:
+    response = requests.get(
+        NFL_SCHEDULE_RELEASE_URL,
+        headers={
+            "User-Agent": REQUEST_HEADERS["User-Agent"],
+            "Accept": "text/html,application/xhtml+xml,*/*",
+        },
+        timeout=8,
+    )
+    response.raise_for_status()
+    return _parse_nfl_schedule_release(
+        response.text,
+        target=target,
+        season=season,
+        week=week,
+    )
 
 
 def _from_nfl_official(target: date, season: int, week: int | None) -> list[dict[str, Any]]:
@@ -657,7 +1063,13 @@ def _from_nfl_official(target: date, season: int, week: int | None) -> list[dict
         )
         if item:
             games.append(item)
-    return games
+    if games:
+        return games
+    return _from_nfl_schedule_release(
+        target,
+        season=season,
+        week=week,
+    )
 
 
 def _week_hint(*collections: list[dict[str, Any]]) -> int | None:
@@ -769,7 +1181,7 @@ def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
     week = _week_hint(nflverse_games)
     season = target.year
 
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    with ThreadPoolExecutor(max_workers=6) as pool:
         espn_future = pool.submit(
             safe,
             "ESPN",
@@ -780,6 +1192,21 @@ def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
             "CBS",
             lambda: _from_cbs(target, week=week),
         )
+        pfr_future = pool.submit(
+            safe,
+            "PFR",
+            lambda: _from_pfr(target),
+        )
+        pfn_future = pool.submit(
+            safe,
+            "PFN",
+            lambda: _from_pfn(target),
+        )
+        footballdb_future = pool.submit(
+            safe,
+            "FOOTBALLDB",
+            lambda: _from_footballdb(target),
+        )
         nfl_future = pool.submit(
             safe,
             "NFL",
@@ -787,11 +1214,17 @@ def _load_schedule_truth_uncached(target: date) -> dict[str, Any]:
         )
         espn_games = espn_future.result()
         cbs_games = cbs_future.result()
+        pfr_games = pfr_future.result()
+        pfn_games = pfn_future.result()
+        footballdb_games = footballdb_future.result()
         official_games = nfl_future.result()
 
     source_games = {
         "NFL": official_games,
         "CBS": cbs_games,
+        "PFR": pfr_games,
+        "PFN": pfn_games,
+        "FOOTBALLDB": footballdb_games,
         "NFLVERSE": nflverse_games,
         "ESPN": espn_games,
     }
