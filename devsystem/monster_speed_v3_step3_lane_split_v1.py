@@ -31,13 +31,13 @@ def check_repository() -> dict[str, object]:
         failures.append("targeted CI does not run on merged main")
 
     fast = _job_block(text, "pr-fast")
-    if "github.event_name == 'pull_request'" not in fast:
+    if "always() && github.event_name == 'pull_request'" not in fast:
         failures.append("fast PR lane is not PR-only")
     if "MONSTER_SPEED_V3_STEP3_FAST_PR_GREEN" not in fast:
         failures.append("fast PR token missing")
 
     full = _job_block(text, "full-merge-certification")
-    if "github.event_name == 'push'" not in full or "refs/heads/main" not in full:
+    if "always() && github.event_name == 'push'" not in full or "refs/heads/main" not in full:
         failures.append("full merge lane is not main-push-only")
     if "MONSTER_SPEED_V3_STEP3_FULL_MERGE_GREEN" not in full:
         failures.append("full merge token missing")
@@ -54,7 +54,7 @@ def check_repository() -> dict[str, object]:
             failures.append(f"{name} lost high-risk model PR escape hatch")
 
     final = _job_block(text, "devsystem-final-gate")
-    for required in ("- pr-fast", "- full-merge-certification", "PR_FAST_RESULT", "FULL_MERGE_RESULT"):
+    for required in ("- pr-fast", "- full-merge-certification", "PR_FAST_RESULT", "FULL_MERGE_RESULT", "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED", "MONSTER_SPEED_V3_STEP3_FULL_MERGE_REQUIRED"):
         if required not in final:
             failures.append(f"final gate missing {required}")
 
