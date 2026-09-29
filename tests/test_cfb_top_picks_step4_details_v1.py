@@ -77,7 +77,19 @@ def _series():
 
 def test_step4_detail_requires_exact_verified_event_and_team_ids(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
-    monkeypatch.setattr(details.history_recovery, "_fetch_winsipedia_games", lambda away, home: _series())
+    monkeypatch.setattr(details.history_router, "resolve_matchup_history", lambda row, game: {
+        **_series(),
+        "status": details.history_router.VERIFIED_HISTORY,
+        "history_ready": True,
+        "source_count_attempted": 2,
+        "source_count_verified": 2,
+        "sources_attempted": [{"source": "ESPN"}, {"source": "Winsipedia"}],
+        "sources_verified": ["ESPN", "Winsipedia"],
+        "no_history_claim_allowed": False,
+        "observed_at": "2026-09-29T00:00:00+00:00",
+        "series_record": {"away_wins": 3, "home_wins": 1, "ties": 0},
+        "line_hit_context": {},
+    })
     out = details.build_pick_detail(_row(), "2026-10-03")
     assert out["ready"] is True
     assert out["event_id"] == "401234567"
@@ -96,9 +108,13 @@ def test_step4_fails_closed_when_exact_event_identity_is_ambiguous(monkeypatch):
 
     def _history(*args, **kwargs):
         called["history"] = True
-        return _series()
+        return {
+            **_series(),
+            "status": details.history_router.VERIFIED_HISTORY,
+            "history_ready": True,
+        }
 
-    monkeypatch.setattr(details.history_recovery, "_fetch_winsipedia_games", _history)
+    monkeypatch.setattr(details.history_router, "resolve_matchup_history", _history)
     out = details.build_pick_detail(_row(), "2026-10-03")
     assert out["ready"] is False
     assert out["history_ready"] is False
@@ -108,7 +124,19 @@ def test_step4_fails_closed_when_exact_event_identity_is_ambiguous(monkeypatch):
 
 def test_step4_over_under_benefit_is_descriptive_only(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
-    monkeypatch.setattr(details.history_recovery, "_fetch_winsipedia_games", lambda away, home: _series())
+    monkeypatch.setattr(details.history_router, "resolve_matchup_history", lambda row, game: {
+        **_series(),
+        "status": details.history_router.VERIFIED_HISTORY,
+        "history_ready": True,
+        "source_count_attempted": 2,
+        "source_count_verified": 2,
+        "sources_attempted": [{"source": "ESPN"}, {"source": "Winsipedia"}],
+        "sources_verified": ["ESPN", "Winsipedia"],
+        "no_history_claim_allowed": False,
+        "observed_at": "2026-09-29T00:00:00+00:00",
+        "series_record": {"away_wins": 3, "home_wins": 1, "ties": 0},
+        "line_hit_context": {},
+    })
     out = details.build_pick_detail(
         _row(market="OVER/UNDER", pick="Over 54.5", probability=63),
         "2026-10-03",
