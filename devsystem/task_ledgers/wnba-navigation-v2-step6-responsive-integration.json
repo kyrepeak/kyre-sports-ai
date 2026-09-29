@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "task_id": "wnba-navigation-v2-step6-responsive-integration",
+  "title": "WNBA Navigation V2 Step 6 — 3-page UX + Responsive Integration",
+  "project": "WNBA Navigation V2",
+  "step": "6/7",
+  "status": "DONE",
+  "source_main": "6a743c10ed707fc1fc16390578587cacef0764ae",
+  "scope": "Presentation/integration only over frozen Steps 1-5",
+  "contract": {
+    "viewports": [
+      390,
+      768,
+      1440
+    ],
+    "fresh_browser_session_per_viewport": true,
+    "zero_horizontal_overflow": true,
+    "min_touch_target_px": 44,
+    "back_navigation_preserved": true,
+    "query_and_session_state_preserved": true,
+    "single_rerun_transport_preserved": true
+  },
+  "protected": {
+    "steps1_5_green_frozen": true,
+    "frozen_steps1_5_files_unchanged": true,
+    "wnba_model_math_unchanged": true,
+    "market_math_unchanged": true,
+    "other_sports_unchanged": true,
+    "sportsbook_projection_influence": 0
+  },
+  "acceptance": [
+    "shared responsive shell across Slate Game Player",
+    "Back behavior preserved",
+    "query/session navigation persistence preserved",
+    "44px touch target",
+    "keyboard focus visible",
+    "reduced-motion rule",
+    "390 fresh-session zero overflow",
+    "768 fresh-session zero overflow",
+    "1440 fresh-session zero overflow",
+    "fast exact-head cert",
+    "required merge gate",
+    "merged-main certification"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

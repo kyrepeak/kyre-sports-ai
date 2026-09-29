@@ -1,0 +1,52 @@
+name: WNBA Navigation V2 Step 6 Responsive Cert
+on:
+  push:
+    branches: [feature/wnba-navigation-v2-step6-responsive-integration]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: wnba-nav-step6-responsive-cert-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  responsive-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore Monster Speed hot browser stack
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
+      - name: Build exact-lock browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          .venv-browser-qa/bin/python -m playwright install chromium
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+      - name: Start Step 6 responsive harness
+        shell: bash
+        run: |
+          streamlit run devsystem/wnba_nav_step6_responsive_harness.py --server.headless true --server.port 8501 > /tmp/wnba-step6.log 2>&1 &
+          echo $! > /tmp/wnba-step6.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/wnba-step6.log
+          exit 1
+      - name: Prove fresh-session 390 768 1440 integration
+        run: python devsystem/wnba_nav_step6_responsive_cert.py --base-url http://127.0.0.1:8501
