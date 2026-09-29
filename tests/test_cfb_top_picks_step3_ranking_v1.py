@@ -182,10 +182,11 @@ def test_step3_page_uses_live_engine_not_step2_sample_rows():
 
 
 def test_v243_reaches_top_picks_helpers_through_frozen_v242_parent():
-    assert "prior.prior._install_top_picks_market_option()" in ROUTER
-    assert "prior.prior._active_top_picks_route()" in ROUTER
-    assert "prior.prior._cold_top_picks_query_requested()" in ROUTER
-    assert "prior.prior.cfb_route_base._selectbox_v77" in ROUTER
+    assert "import streamlit_memory_lazy_router_v241 as top_picks_base" in ROUTER
+    assert "top_picks_base._install_top_picks_market_option()" in ROUTER
+    assert "top_picks_base._active_top_picks_route()" in ROUTER
+    assert "top_picks_base._cold_top_picks_query_requested()" in ROUTER
+    assert "top_picks_base.cfb_route_base._selectbox_v77" in ROUTER
 
 
 def test_v243_is_additive_over_frozen_v242():
