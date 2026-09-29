@@ -81,7 +81,7 @@ def _wait_page(page, page_name: str, *, timeout_seconds: float) -> tuple[object,
 
             elif page_name == "player":
                 back = frame.get_by_role("button", name="← Back to Game Center", exact=True)
-                if "WNBA PRA Intelligence" in body and back.count() > 0:
+                if "WNBA PRA INTELLIGENCE" in body.upper() and back.count() > 0:
                     print("WNBA_NAV_STEP7_PLAYER_VISIBLE_CONTRACT_GREEN")
                     return frame, time.monotonic() - started
 
@@ -309,14 +309,15 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict:
             print(f"WNBA_NAV_STEP7_PUBLIC_PLAYER_READY_SECONDS={player_seconds:.3f}")
 
             player_body = _body(frame)
+            player_body_upper = player_body.upper()
             required_player = (
-                "Final Decision",
-                "Recent Form",
-                "Matchup + Pace",
-                "Minutes, Role, Usage + Availability",
-                "Same-Opponent H2H Context",
+                "FINAL DECISION",
+                "RECENT FORM",
+                "MATCHUP + PACE",
+                "MINUTES, ROLE, USAGE + AVAILABILITY",
+                "SAME-OPPONENT H2H CONTEXT",
             )
-            missing = [x for x in required_player if x not in player_body]
+            missing = [x for x in required_player if x not in player_body_upper]
             if missing:
                 raise BrowserQAFailure(f"Player Intelligence missing final frozen surfaces: {missing}")
             print("WNBA_NAV_STEP7_PLAYER_INTELLIGENCE_GREEN")
