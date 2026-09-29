@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -19,9 +20,31 @@ def run(*, base_url: str = DEFAULT_BASE_URL, artifact_dir: str | Path = "artifac
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
-        page = browser.new_page(viewport={"width": 390, "height": 844})
+        page = None
         try:
-            nav._attempt_normal_flow(page, base_url, 390, 844)
+            # HTTP-ready is not the same as Streamlit navigation-ready. On a
+            # fresh merged-main boot the CFB market selector can briefly expose
+            # only its default Moneyline option. Retry the initial real user
+            # navigation on a fresh page until Top Picks is actually available.
+            deadline = time.monotonic() + 120.0
+            last_error = ""
+            while time.monotonic() < deadline:
+                if page is not None:
+                    page.close()
+                page = browser.new_page(viewport={"width": 390, "height": 844})
+                try:
+                    nav._attempt_normal_flow(page, base_url, 390, 844)
+                    break
+                except Exception as exc:
+                    last_error = repr(exc)
+                    page.close()
+                    page = None
+                    time.sleep(3)
+            else:
+                raise AssertionError(
+                    "CFB_TOP_PICKS_RESEARCH_V2_STEP2_NAV_NOT_READY:" + last_error
+                )
+
             frame, root = nav._find_v5(page)
 
             cards = frame.locator('article[data-testid^="cfb-top-picks-card-"]')
@@ -96,6 +119,8 @@ def run(*, base_url: str = DEFAULT_BASE_URL, artifact_dir: str | Path = "artifac
             print(json.dumps(payload, indent=2, sort_keys=True))
             return payload
         finally:
+            if page is not None:
+                page.close()
             browser.close()
 
 
