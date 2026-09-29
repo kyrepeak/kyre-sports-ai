@@ -26,12 +26,6 @@ def validate_repository_settings(payload: dict[str, Any]) -> dict[str, Any]:
         failures.append("allow_auto_merge is not true")
     if payload.get("allow_update_branch") is not True:
         failures.append("allow_update_branch is not true")
-    if not any(
-        payload.get(key) is True
-        for key in ("allow_squash_merge", "allow_merge_commit", "allow_rebase_merge")
-    ):
-        failures.append("no merge method is enabled")
-
     if failures:
         raise Step5SettingsFailure(" | ".join(failures))
 
@@ -41,7 +35,6 @@ def validate_repository_settings(payload: dict[str, Any]) -> dict[str, Any]:
         "default_branch": payload.get("default_branch"),
         "allow_auto_merge": True,
         "allow_update_branch": True,
-        "merge_method_available": True,
     }
 
 
