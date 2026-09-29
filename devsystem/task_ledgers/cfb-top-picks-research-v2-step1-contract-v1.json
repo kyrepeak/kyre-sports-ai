@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step1-contract-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 1 full-page audit + data contract",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "1/9",
+  "status": "DONE",
+  "source_main": "791ee191657bd292fc0013ae6e1f8f21012d55d7",
+  "problem": "The existing Top Picks page has a polished V5 presentation but no completeness contract covering real logos, multi-source history, market-aware football reasoning, benefits/risks, provenance, or 10/10 ranked-pick coverage.",
+  "root_cause": "The current detail layer was designed around model probability plus a single Winsipedia historical context fallback. Benefits are derived from history only, team logos are abbreviation placeholders, and no field-level evidence contract exists for offense/defense/pace/recent form or research-source exhaustion.",
+  "patch": "Freeze a field-level 10-pick completeness contract before product repairs. Require real logos, market-aware reasoning, multi-source history exhaustion, benefits and risks, source/freshness provenance, and DATA_FIELD routing while explicitly protecting API 2.",
+  "baseline_findings": {
+    "logos": "ABBREVIATION_PLACEHOLDERS",
+    "history": "SINGLE_DIRECT_WINSIPEDIA_PATH",
+    "benefits": "HISTORY_ONLY",
+    "why": "MODEL_PROBABILITY_AND_RELIABILITY_ONLY",
+    "research_reasoning": "MISSING",
+    "risks": "MISSING",
+    "completeness_gate": "MISSING"
+  },
+  "acceptance": {
+    "audit_complete": true,
+    "ten_ranked_picks_in_scope": true,
+    "real_logo_fields_required": true,
+    "multi_source_history_required": true,
+    "over_under_research_required": true,
+    "spread_research_required": true,
+    "moneyline_research_required": true,
+    "benefits_and_risks_required": true,
+    "provenance_and_freshness_required": true,
+    "api2_separate_and_protected": true,
+    "product_behavior_changed": false
+  },
+  "protected": {
+    "api2": true,
+    "existing_top_picks_probability_why": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
