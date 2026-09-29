@@ -2,23 +2,6 @@
 name: CFB Top Picks Step 5 final
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'cfb_top_picks_page_v5.py'
-      - 'streamlit_memory_lazy_router_v244.py'
-      - 'tests/test_cfb_top_picks_step5_final_v1.py'
-      - 'devsystem/cfb_top_picks_step5_visual_cert_v1.py'
-      - 'devsystem/task_ledgers/cfb-top-picks-step5-final-v1.json'
-      - '.github/workflows/cfb-top-picks-step5-final-v1.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'cfb_top_picks_page_v5.py'
-      - 'tests/test_cfb_top_picks_step5_final_v1.py'
-      - 'devsystem/cfb_top_picks_step5_visual_cert_v1.py'
-      - 'devsystem/task_ledgers/cfb-top-picks-step5-final-v1.json'
-      - '.github/workflows/cfb-top-picks-step5-final-v1.yml'
   workflow_dispatch:
 
 permissions:
