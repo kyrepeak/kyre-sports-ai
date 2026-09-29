@@ -521,8 +521,6 @@ jobs:
           WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
           NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
-          PR_FAST_RESULT: ${{ needs.pr-fast.result }}
-          FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
         run: |
           set -euo pipefail
           allowed="success skipped"
@@ -564,6 +562,8 @@ jobs:
           WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
           NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
+          PR_FAST_RESULT: ${{ needs.pr-fast.result }}
+          FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
         run: |
           set -euo pipefail
           allowed="success skipped"
