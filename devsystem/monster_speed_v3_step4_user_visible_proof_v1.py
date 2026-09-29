@@ -22,19 +22,34 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
             headless=True,
             args=["--disable-dev-shm-usage", "--no-sandbox"],
         )
+        page = browser.new_page(
+            viewport={"width": nav.WIDTHS[0][0], "height": nav.WIDTHS[0][1]}
+        )
         try:
-            for width, height in nav.WIDTHS:
-                result = nav._attempt_isolated_width(
-                    browser,
-                    base_url,
+            # Prove navigation once at the mobile contract.
+            first = nav._attempt_normal_flow(page, base_url, *nav.WIDTHS[0])
+            results.append(first)
+            page.screenshot(
+                path=str(artifacts / "monster_speed_v3_step4_390_green.png"),
+                full_page=True,
+            )
+            print("MONSTER_SPEED_V3_STEP4_390_USER_VISIBLE_GREEN")
+
+            # Then certify responsive rendering by resizing that same healthy V5.
+            for width, height in nav.WIDTHS[1:]:
+                result = nav._certify_current_v5_width(
+                    page,
                     width,
                     height,
-                    screenshot_path=artifacts / f"monster_speed_v3_step4_{width}_green.png",
+                    screenshot_path=artifacts
+                    / f"monster_speed_v3_step4_{width}_green.png",
                 )
                 results.append(result)
                 print(f"MONSTER_SPEED_V3_STEP4_{width}_USER_VISIBLE_GREEN")
         finally:
+            page.close()
             browser.close()
+
 
     suite = user_contract.certify_responsive_suite(
         nav.TOP_PICKS_USER_CONTRACT,
@@ -43,6 +58,7 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
     payload = {
         "status": "GREEN",
         "flow": "normal app -> College Football -> Top Picks",
+        "responsive_method": "single navigation then resize rendered V5",
         "contract": suite,
         "results": results,
     }

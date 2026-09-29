@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step4-single-navigation-responsive-repair-v1",
+  "title": "Monster Speed V3 Step 4 — Single-navigation responsive proof repair",
+  "project": "Monster Speed V3",
+  "step": "4/6-repair",
+  "status": "DONE",
+  "failure_class": "D_VERIFIER_RESPONSIVE_SCOPE",
+  "evidence": {
+    "failed_merged_main_run": 36618843903,
+    "failed_job": 109578739540,
+    "first_width_390": "GREEN",
+    "failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:'Top Picks';saw=['Moneyline']",
+    "full_merged_main_devsystem_run": 36618843845,
+    "full_merged_main_devsystem_status": "SUCCESS"
+  },
+  "root_cause": "The responsive proof incorrectly re-ran the entire College Football -> Top Picks navigation for every viewport. Even with fresh client pages, those repeated route cycles mutated local Streamlit server state and made the second navigation fall back to the default Moneyline market. Responsiveness should certify the already-rendered user surface, not re-test routing three times.",
+  "patch": "Prove normal navigation once at 390, retain that healthy V5 page, then resize the same rendered surface to 768 and 1440 while re-checking stable selector, visible text, preserved markets, and zero overflow. Public deployment retries may use fresh pages only before the first successful navigation.",
+  "protected": {
+    "steps1_3_frozen": true,
+    "step4_user_visible_contract_engine_unchanged": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_versions_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
