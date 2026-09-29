@@ -14,13 +14,13 @@ import streamlit as st
 import mlb_schedule_v32 as schedule
 import slate_hub_v2091 as base
 
-MODEL_VERSION = "MLB Slate Recovery V3.2"
+MODEL_VERSION = "MLB Slate Recovery V3.3 • POSTSEASON NEXT-SLATE"
 
 CSS = r"""
 <style>
 .mlb32-box{border:1px solid #265476;background:linear-gradient(145deg,#09192b,#08111f);border-radius:18px;padding:14px 15px;margin:8px 0 14px}
 .mlb32-title{font-size:1.05rem;font-weight:950;color:#f8fafc}.mlb32-sub{color:#91a8c2;font-size:.73rem;margin-top:3px}
-.mlb32-ok{color:#68e8b1;font-weight:900}.mlb32-bad{color:#ff8c98;font-weight:900}
+.mlb32-ok{color:#68e8b1;font-weight:900}.mlb32-bad{color:#ff8c98;font-weight:900}.mlb32-next{color:#7dd3fc;font-weight:900}
 .mlb32-row{border-top:1px solid rgba(120,150,180,.17);padding:8px 0;font-size:.72rem;color:#a9bdd2;line-height:1.5}.mlb32-row b{color:#eaf6ff}
 </style>
 """
@@ -60,17 +60,36 @@ def render_slate_hub(games_df, section_header, status_info, team_logo, h):
     if fresh is not None and not fresh.empty:
         source = escape(str((diag or {}).get("source") or "MLB schedule"))
         st.markdown(
-            f'<div class="mlb32-box"><div class="mlb32-title">⚾ MLB Schedule V3.2 • <span class="mlb32-ok">{len(fresh)} games loaded</span></div>'
+            f'<div class="mlb32-box"><div class="mlb32-title">⚾ MLB Schedule V3.3 • <span class="mlb32-ok">{len(fresh)} games loaded</span></div>'
             f'<div class="mlb32-sub">{escape(day)} • Source: {source} • MLB-only recovery path active</div></div>',
             unsafe_allow_html=True,
         )
         return base.render_slate_hub(fresh, section_header, status_info, team_logo, h)
 
+    # A valid MLB off-day is not a provider failure. Discover the next real
+    # official slate so the postseason page does not look broken between rounds.
+    try:
+        next_fresh, next_diag = schedule.next_games_after(day, max_days=7)
+    except Exception:
+        next_fresh, next_diag = pd.DataFrame(), {}
+
+    if next_fresh is not None and not next_fresh.empty:
+        next_day = str((next_diag or {}).get("date") or next_fresh.iloc[0].get("game_date") or "")[:10]
+        source = escape(str((next_diag or {}).get("source") or "MLB schedule"))
+        st.markdown(
+            f'<div class="mlb32-box"><div class="mlb32-title">🏆 MLB Postseason • <span class="mlb32-next">NEXT SLATE</span> • '
+            f'<span class="mlb32-ok">{len(next_fresh)} games loaded</span></div>'
+            f'<div class="mlb32-sub">No MLB games are scheduled for {escape(day)}. '
+            f'Showing the next official game day: <b>{escape(next_day)}</b> • Source: {source}</div></div>',
+            unsafe_allow_html=True,
+        )
+        return base.render_slate_hub(next_fresh, section_header, status_info, team_logo, h)
+
     st.markdown(
-        f'<div class="mlb32-box"><div class="mlb32-title">⚾ MLB Schedule V3.2 • <span class="mlb32-bad">provider diagnostics</span></div>'
+        f'<div class="mlb32-box"><div class="mlb32-title">⚾ MLB Schedule V3.3 • <span class="mlb32-bad">provider diagnostics</span></div>'
         f'<div class="mlb32-sub">No games reached the slate for {escape(day)}. These are the actual transport/parser results:</div>{_diag_html(diag)}</div>',
         unsafe_allow_html=True,
     )
-    if st.button("🔄 RETRY MLB SCHEDULE V3.2", use_container_width=True, key=f"mlb32_retry_{day}"):
+    if st.button("🔄 RETRY MLB SCHEDULE V3.3", use_container_width=True, key=f"mlb32_retry_{day}"):
         schedule.clear_schedule_cache()
         st.rerun()

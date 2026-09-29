@@ -361,7 +361,8 @@ jobs:
             tests/test_mlb_step20a_end_to_end_certification_v1.py \
             tests/test_mlb_step20b_production_release_certification_v1.py \
             tests/test_mlb_step9g_postfreeze_handoff_v1.py \
-            tests/test_mlb_step8d_player_hits_integration_v1.py
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_postseason_next_slate_v1.py
 
   wnba-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]

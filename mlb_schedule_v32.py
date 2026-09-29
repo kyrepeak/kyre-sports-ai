@@ -7,7 +7,7 @@ transport path so a requests-specific failure does not collapse the slate.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import json
 from urllib.parse import urlencode
@@ -234,6 +234,46 @@ def games_for_date(target_date):
 def schedule_diagnostics(target_date):
     _, diag = load_with_diagnostics(target_date)
     return diag
+
+
+def next_games_after(target_date, max_days=7):
+    """Return the next non-empty verified MLB slate after an empty selected day.
+
+    This is an MLB-only off-day recovery path. It never fabricates games: every
+    candidate day is resolved through the same V3.2 official-first loader and
+    only a real non-empty schedule is returned.
+    """
+    start = pd.to_datetime(_day(target_date)).date()
+    bounded_days = max(1, min(int(max_days or 7), MAX_FUTURE_DAYS))
+    scanned = []
+    for offset in range(1, bounded_days + 1):
+        candidate = (start + timedelta(days=offset)).isoformat()
+        frame, diag = load_with_diagnostics(candidate)
+        scanned.append({
+            "date": candidate,
+            "games": int(len(frame)) if frame is not None else 0,
+            "source": str((diag or {}).get("source") or "none"),
+        })
+        if frame is not None and not frame.empty:
+            merged = dict(diag or {})
+            merged.update({
+                "requested_date": _day(target_date),
+                "date": candidate,
+                "auto_advanced": True,
+                "scan_days": offset,
+                "scan": scanned,
+            })
+            return frame.reset_index(drop=True), merged
+    return _empty(), {
+        "version": "V3.3",
+        "requested_date": _day(target_date),
+        "date": _day(target_date),
+        "source": "none",
+        "games": 0,
+        "auto_advanced": False,
+        "scan_days": bounded_days,
+        "scan": scanned,
+    }
 
 
 def clear_schedule_cache():
