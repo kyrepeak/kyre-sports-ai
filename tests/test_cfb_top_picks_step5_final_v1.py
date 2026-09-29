@@ -61,7 +61,7 @@ def test_step5_css_has_phone_tablet_desktop_responsive_guards():
     assert "@media(max-width:640px)" in PAGE
     assert "overflow-x:clip" in PAGE
     assert "grid-template-columns:38px minmax(0,1fr) 62px 22px" in PAGE
-    assert "#119dff" in PAGE
+    assert "#119dff" in page.CSS
 
 
 def test_v245_routes_only_top_picks_and_delegates_everything_else():
