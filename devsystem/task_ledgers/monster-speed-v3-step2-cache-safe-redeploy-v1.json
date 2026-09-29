@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step2-cache-safe-redeploy-v1",
+  "title": "Monster Speed V3 Step 2 — Cache-Safe Redeploy",
+  "project": "Monster Speed V3",
+  "step": "2/6",
+  "status": "DONE",
+  "baseline_main": "2798abd9bb795ae8a5cb975488e3f4f2671714c0",
+  "root_cause": "Deployment-only Streamlit refreshes repeatedly used comment-only requirements.txt edits. Because GitHub browser/venv cache keys hash requirements.txt, those harmless redeploy markers changed the dependency-file hash and needlessly invalidated dependency and Playwright caches.",
+  "patch": "Create one canonical deployment-only marker at deploy/streamlit-redeploy.txt, add a permanent diff guard that rejects comment-only requirements.txt edits, prove the marker is excluded from dependency/browser cache keys, and wire an exact Step-2 PR/main proof.",
+  "repository_precedent": {
+    "marker_only_streamlit_refresh_pr": 573,
+    "historical_marker_path": "devsystem/deployment_markers/cfb-game-total-v161-streamlit-redeploy-trigger.txt"
+  },
+  "proof_contract": {
+    "requirements_txt_changed_by_step2": false,
+    "dependency_versions_changed": false,
+    "canonical_redeploy_marker": "deploy/streamlit-redeploy.txt",
+    "comment_only_requirements_changes_rejected": true,
+    "marker_excluded_from_cache_keys": true,
+    "existing_requirements_cache_keys_preserved": true
+  },
+  "protected": {
+    "step1_green_frozen": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "sportsbook_behavior_unchanged": true,
+    "streamlit_ui_unchanged": true
+  },
+  "guardrails": {
+    "requirements_comment_cleanup_deferred": true,
+    "reason": "Do not mutate requirements.txt during Step 2; preserving its exact blob avoids one more cache invalidation. Historical comments may remain inert. Future comment-only edits are blocked by diff proof.",
+    "product_code_changed": false,
+    "dependency_file_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

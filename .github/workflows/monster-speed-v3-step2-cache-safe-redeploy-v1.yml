@@ -1,0 +1,66 @@
+name: Monster Speed V3 Step 2 Cache-Safe Redeploy
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "requirements.txt"
+      - "deploy/streamlit-redeploy.txt"
+      - "devsystem/monster_speed_v3_step2_redeploy_guard_v1.py"
+      - "devsystem/task_ledgers/monster-speed-v3-step2-cache-safe-redeploy-v1.json"
+      - "tests/test_monster_speed_v3_step2_redeploy_guard_v1.py"
+      - "devsystem/permanent_gate_v1.py"
+      - ".github/workflows/monster-speed-v3-step2-cache-safe-redeploy-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "requirements.txt"
+      - "deploy/streamlit-redeploy.txt"
+      - "devsystem/monster_speed_v3_step2_redeploy_guard_v1.py"
+      - "devsystem/task_ledgers/monster-speed-v3-step2-cache-safe-redeploy-v1.json"
+      - "tests/test_monster_speed_v3_step2_redeploy_guard_v1.py"
+      - "devsystem/permanent_gate_v1.py"
+      - ".github/workflows/monster-speed-v3-step2-cache-safe-redeploy-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-speed-v3-step2-cache-safe-redeploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cache-safe-redeploy-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Step 2 guard
+        run: python -m py_compile devsystem/monster_speed_v3_step2_redeploy_guard_v1.py
+      - name: Prove cache-safe redeploy contract
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            python devsystem/monster_speed_v3_step2_redeploy_guard_v1.py --base "$PR_BASE" --head "$PR_HEAD"
+          elif [ "$EVENT_NAME" = "push" ] && [ -n "$PUSH_BEFORE" ] && ! printf '%s' "$PUSH_BEFORE" | grep -Eq '^0+$'; then
+            python devsystem/monster_speed_v3_step2_redeploy_guard_v1.py --base "$PUSH_BEFORE" --head "$CURRENT_SHA"
+          else
+            python devsystem/monster_speed_v3_step2_redeploy_guard_v1.py
+          fi
+      - name: Run Step 2 regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_monster_speed_v3_step2_redeploy_guard_v1.py

@@ -49,6 +49,10 @@ REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/workflow_quarantine_v2.py",
     "tests/test_workflow_quarantine_v2.py",
     ".github/workflows/monster-speed-v3-step1-workflow-quarantine-v2.yml",
+    "devsystem/monster_speed_v3_step2_redeploy_guard_v1.py",
+    "tests/test_monster_speed_v3_step2_redeploy_guard_v1.py",
+    ".github/workflows/monster-speed-v3-step2-cache-safe-redeploy-v1.yml",
+    "deploy/streamlit-redeploy.txt",
 )
 
 
@@ -320,6 +324,7 @@ def validate() -> dict:
         "failure_history_coverage_permanent": True,
         "forward_motion_v2_permanent": True,
         "forward_motion_v2_pr_enforcement": True,
+        "monster_speed_v3_step2_cache_safe_redeploy_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))

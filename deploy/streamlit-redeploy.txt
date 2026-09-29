@@ -1,0 +1,14 @@
+STREAMLIT_CACHE_SAFE_REDEPLOY_V1
+generation=1
+owner=MONSTER_SPEED_V3_STEP2
+
+Purpose:
+Use this file for deployment-only Streamlit refresh commits when dependency specifications do not need to change.
+
+Rule:
+- For a harmless redeploy, change only the generation value (or add a short reason line here).
+- Do NOT touch requirements.txt unless an actual dependency specification changes.
+- This file must never be added to dependency/browser cache keys.
+
+Repository precedent:
+PR #573 proved a deployment-marker-only protected-main push can be used as the Streamlit refresh trigger without changing app.py, router, model, or dependency specifications.
