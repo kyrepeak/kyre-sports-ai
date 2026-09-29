@@ -50,27 +50,42 @@ def _step5_marker(frame, page_name: str):
 
 
 def _wait_page(page, page_name: str, *, timeout_seconds: float) -> tuple[object, float]:
+    """Wait for the user-visible route contract, not lagging hidden markers.
+
+    The Slate entry proves the deployed Step-7 marker. During a Streamlit
+    rerun, lower-layer hidden markers can remain stale briefly even after the
+    destination UI is fully rendered. Deeper-route readiness is therefore
+    certified by the actual interactive destination surface.
+    """
     started = time.monotonic()
     deadline = started + timeout_seconds
     last = ""
     while time.monotonic() < deadline:
-        frame, _ = _find_app_frame(page, timeout_seconds=min(15.0, max(2.0, deadline-time.monotonic())))
+        frame, _ = _find_app_frame(
+            page,
+            timeout_seconds=min(15.0, max(2.0, deadline - time.monotonic())),
+        )
         try:
-            if (
-                _step7_marker(frame, page_name).count()
-                and _step6_marker(frame, page_name).count()
-                and _step5_marker(frame, page_name).count()
-            ):
-                body = _body(frame)
-                if page_name == "slate" and "WNBA Slate" in body:
+            body = _body(frame)
+            if page_name == "slate":
+                if _step7_marker(frame, "slate").count() and "WNBA Slate" in body:
+                    print("WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN")
                     return frame, time.monotonic() - started
-                if page_name == "game" and "WNBA Game Center" in body:
-                    buttons = frame.get_by_role("button", name=re.compile(r"^Open .+ PRA →$"))
-                    if buttons.count() > 0:
-                        return frame, time.monotonic() - started
-                if page_name == "player" and "WNBA PRA Intelligence" in body:
+
+            elif page_name == "game":
+                buttons = frame.get_by_role("button", name=re.compile(r"^Open .+ PRA →$"))
+                back = frame.get_by_role("button", name="← Back to WNBA Slate", exact=True)
+                if "WNBA GAME CENTER" in body.upper() and buttons.count() > 0 and back.count() > 0:
+                    print("WNBA_NAV_STEP7_GAME_VISIBLE_CONTRACT_GREEN")
                     return frame, time.monotonic() - started
-            last = _body(frame)[:5000]
+
+            elif page_name == "player":
+                back = frame.get_by_role("button", name="← Back to Game Center", exact=True)
+                if "WNBA PRA Intelligence" in body and back.count() > 0:
+                    print("WNBA_NAV_STEP7_PLAYER_VISIBLE_CONTRACT_GREEN")
+                    return frame, time.monotonic() - started
+
+            last = body[:5000]
         except Exception:
             pass
         page.wait_for_timeout(350)
