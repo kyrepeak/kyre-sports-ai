@@ -280,10 +280,13 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict:
             _assert_no_overflow(frame, "slate")
 
             body = _body(frame)
-            if "No player/model prefetch" not in body or "Detailed PRA edges stay asleep on this page" not in body:
-                raise BrowserQAFailure("Slate lazy-load contract is not visible.")
+            if _game_button(frame).count() < 1:
+                raise BrowserQAFailure("Slate game drill-down controls are not visible.")
             if frame.locator(".wn3-player").count() or frame.locator(".wn4-hero").count():
                 raise BrowserQAFailure("Slate woke Game/Player heavy surfaces before selection.")
+            if "WNBA GAME CENTER" in body.upper() or "WNBA PRA Intelligence" in body:
+                raise BrowserQAFailure("Slate exposed a deeper WNBA route before explicit selection.")
+            print("WNBA_NAV_STEP7_SLATE_SEMANTIC_LAZY_PROOF_GREEN")
             print("WNBA_NAV_STEP7_SLATE_LAZY_LOADING_GREEN")
 
             game_button = _game_button(frame).first
