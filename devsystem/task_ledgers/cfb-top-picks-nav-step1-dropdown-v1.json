@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-nav-step1-dropdown-v1",
+  "title": "CFB Top Picks Navigation Step 1 — visible CFB dropdown ownership",
+  "project": "Monster Top Picks",
+  "step": "navigation-1/3",
+  "status": "DONE",
+  "trigger": "User screenshot on 2026-09-29 shows normal College Football market dropdown exposes Moneyline, Over/Under, and Game Total but not Top Picks.",
+  "root_cause": "The certified V244 Top Picks route owns direct/cold Top Picks activation, but normal non-Top-Picks rendering delegates through frozen router layers whose visible CFB selector options remain the pre-Top-Picks three-market set. V241 mutates an older CFB_MARKETS owner, which is not a reliable top-level presentation hook for the current normal navigation chain.",
+  "patch": "Add V245 over frozen V244 and wrap only the rendered 🎯 CFB Market selectbox, appending Top Picks once while preserving the supplied existing options. Activate V245 in app.py.",
+  "acceptance": {
+    "normal_cfb_dropdown_has_moneyline": true,
+    "normal_cfb_dropdown_has_over_under": true,
+    "normal_cfb_dropdown_has_game_total": true,
+    "normal_cfb_dropdown_has_top_picks": true,
+    "top_picks_exactly_once": true,
+    "mobile_390_browser_proof": true,
+    "step2_route_selection_not_in_scope": true
+  },
+  "protected": {
+    "cfb_top_picks_v5": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "guardrails": {
+    "product_logic_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "history_logic_changed": false,
+    "sportsbook_logic_changed": false,
+    "existing_cfb_market_removed": false,
+    "non_cfb_selector_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
