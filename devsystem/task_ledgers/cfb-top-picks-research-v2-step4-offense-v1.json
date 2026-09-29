@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step4-offense-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 4 offensive scoring research",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "4/9",
+  "status": "DONE",
+  "problem": "Top Picks could explain model probability and matchup history but could not show the actual offensive football evidence behind scoring expectations.",
+  "root_cause": "The detail layer had no field-level offense research router. Existing certified CFB sources already exposed exact-team current-season scoring, passing, rushing, yards/play, red-zone finishing, explosive-efficiency proxies, and completed-game scoring history, but Top Picks never assembled them.",
+  "patch": "Add a descriptive field router that pulls core offense metrics from ESPN exact-team current-season statistics, recent scoring from completed ESPN team schedules, red-zone TD rate from certified NCAA tables, and an explicitly labeled explosive-efficiency proxy from certified NCAA passing/rushing efficiency tables. Render this only after a user taps a Top Pick.",
+  "acceptance": {
+    "ten_ranked_picks_certified": true,
+    "twenty_team_profiles_certified": true,
+    "every_team_core_offense_fields_complete": true,
+    "every_material_value_has_source": true,
+    "every_material_value_has_observed_at": true,
+    "red_zone_or_explosive_ncaa_support_required": true,
+    "recent_scoring_excludes_target_and_future_games": true,
+    "explosive_rate_not_misrepresented": true,
+    "offense_research_projection_weight": 0,
+    "probability_unchanged": true,
+    "ranking_unchanged": true,
+    "sportsbook_projection_weight": 0,
+    "api2_separate_and_protected": true
+  },
+  "protected": {
+    "step1_contract": true,
+    "step2_real_logos": true,
+    "step3_multi_source_history": true,
+    "lazy_detail_load_on_tap": true,
+    "ranking_probability_reliability": true,
+    "api2": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "repair": {
+    "failure_class": "C_STALE_ACCEPTANCE_FIXTURE",
+    "failed_run": 36640012044,
+    "failed_job": 109649801946,
+    "exact_failure": "test_tapped_matchup_renders_open_three_part_dropdown omitted offense_research from its manually constructed detail payload",
+    "patch": "Forward-port the old unit-test detail fixture to include the existing Step-4 offense stub. Product/source/history/UI logic unchanged.",
+    "product_logic_changed": false,
+    "provider_logic_changed": false,
+    "api2_changed": false
+  },
+  "live_ncaa_alias_repair": {
+    "failure_class": "B_LIVE_DATA_ALIAS_COVERAGE",
+    "failed_run": 36640111384,
+    "failed_job": 109650127297,
+    "exact_failure": "CFB_TOP_PICKS_RESEARCH_V2_STEP4_NO_NCAA_SUPPORT:South Florida",
+    "root_cause": "NCAA stat-table identity abbreviates South Florida as South Fla.; the shared safe matcher intentionally refuses that large string-length gap.",
+    "patch": "Add deterministic Step-4-only NCAA alias South Florida/USF -> south-fla. Shared fuzzy matching remains strict; all other team identities are unchanged.",
+    "product_math_changed": false,
+    "source_policy_changed": false,
+    "api2_changed": false
+  }
+}

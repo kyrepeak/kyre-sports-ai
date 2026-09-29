@@ -50,6 +50,38 @@ def _game():
     }
 
 
+def _offense_research():
+    return {
+        "status": "READY",
+        "projection_weight": 0.0,
+        "reasoning": ["Away State scores 31.0 PPG and Home Tech scores 29.0 PPG."],
+        "away": {
+            "team": "Away State",
+            "metrics": {
+                "points_per_game": {"value": 31.0},
+                "recent_scoring_avg": {"value": 33.0},
+                "yards_per_play": {"value": 6.1},
+                "pass_yards_per_game": {"value": 245.0},
+                "rush_yards_per_game": {"value": 165.0},
+                "red_zone_td_rate": {"value": 0.7},
+                "explosive_efficiency_proxy": {"value": 0.1, "label": "ABOVE AVERAGE"},
+            },
+        },
+        "home": {
+            "team": "Home Tech",
+            "metrics": {
+                "points_per_game": {"value": 29.0},
+                "recent_scoring_avg": {"value": 30.0},
+                "yards_per_play": {"value": 5.9},
+                "pass_yards_per_game": {"value": 230.0},
+                "rush_yards_per_game": {"value": 155.0},
+                "red_zone_td_rate": {"value": 0.66},
+                "explosive_efficiency_proxy": {"value": 0.05, "label": "BALANCED"},
+            },
+        },
+    }
+
+
 def _series():
     return {
         "ready": True,
@@ -77,6 +109,7 @@ def _series():
 
 def test_step4_detail_requires_exact_verified_event_and_team_ids(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
+    monkeypatch.setattr(details.offense_research, "build_offense_research", lambda row, game, slate_day: _offense_research())
     monkeypatch.setattr(details.history_router, "resolve_matchup_history", lambda row, game: {
         **_series(),
         "status": details.history_router.VERIFIED_HISTORY,
@@ -124,6 +157,7 @@ def test_step4_fails_closed_when_exact_event_identity_is_ambiguous(monkeypatch):
 
 def test_step4_over_under_benefit_is_descriptive_only(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
+    monkeypatch.setattr(details.offense_research, "build_offense_research", lambda row, game, slate_day: _offense_research())
     monkeypatch.setattr(details.history_router, "resolve_matchup_history", lambda row, game: {
         **_series(),
         "status": details.history_router.VERIFIED_HISTORY,
@@ -165,6 +199,8 @@ def test_tapped_matchup_renders_open_three_part_dropdown():
         "event_id": "401234567",
         "meetings": 0,
         "history_rows": [],
+        "offense_research": _offense_research(),
+        "offense_reasoning": _offense_research()["reasoning"],
     }
     html = page._cards_html([row], "401234567", detail)
     assert "<details" in html
@@ -173,6 +209,8 @@ def test_tapped_matchup_renders_open_three_part_dropdown():
     assert "Why This Pick" in html
     assert "Actual Matchup History" in html
     assert "Benefits" in html
+    assert "Offensive Scoring Research" in html
+    assert "cfb-top-picks-offense-research-1" in html
     assert "history projection weight <strong>0.0%</strong>" in html
 
 
@@ -196,7 +234,7 @@ def test_render_contract_fetches_history_only_for_selected_row():
 def test_step4_preserves_frozen_step3_ranked_engine_and_zero_weights():
     assert "engine.build_top_picks(limit=10)" in PAGE
     assert "CFB_TOP_PICKS_STEP3_LIVE_RANKING_ACTIVE" in PAGE
-    assert "Tap a matchup for Why • History • Benefits" in PAGE
+    assert "Tap a matchup for Why • Research • History • Benefits" in PAGE
     assert "SAMPLE_LAYOUT_ROWS" not in PAGE
     assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert page.HISTORY_PROJECTION_INFLUENCE == 0.0
