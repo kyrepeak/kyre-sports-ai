@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "task_id": "wnba-navigation-v2-step7-final-freeze",
+  "title": "WNBA Navigation V2 Step 7 — Production Speed Proof + Final Freeze",
+  "project": "WNBA Navigation V2",
+  "step": "7/7",
+  "status": "DONE",
+  "source_main": "89a1becf90a46710a63ed39861cd1c03cebbd08f",
+  "scope": "Proof-only public production certification over frozen Steps 1-6. No runtime product/router/model changes.",
+  "public_host": "https://pickvault.streamlit.app",
+  "speed_required": true,
+  "acceptance": {
+    "real_pickvault_deployment": true,
+    "slate_to_game_to_player_path": true,
+    "slate_ready_budget_seconds": 12,
+    "game_ready_budget_seconds": 24,
+    "player_ready_budget_seconds": 24,
+    "back_transition_budget_seconds": 12,
+    "page1_heavy_page2_page3_prefetch_forbidden": true,
+    "three_pages_public_green": true,
+    "zero_horizontal_overflow": true,
+    "frozen_wnba_math_protected_by_exact_blob": true,
+    "steps1_6_frozen": true
+  },
+  "protected": {
+    "navigation_step1": true,
+    "slate_step2": true,
+    "game_center_step3": true,
+    "player_intelligence_step4": true,
+    "performance_step5": true,
+    "responsive_step6": true,
+    "app_activation": true,
+    "wnba_model_math": true,
+    "market_math": true,
+    "projection_math": true,
+    "sportsbook_projection_influence": 0
+  },
+  "guardrails": {
+    "runtime_code_changed": false,
+    "router_logic_changed": false,
+    "product_logic_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "sportsbook_logic_changed": false,
+    "speculative_prefetch_added": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
