@@ -40,7 +40,7 @@ def test_browser_stack_cache_is_bound_to_python_requirements_and_tooling():
 
     assert 'id: browser-python' in lane
     assert 'steps.browser-python.outputs.python-version' in lane
-    assert "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}" in lane
+    assert "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}" in lane
 
 
 def test_browser_tooling_pins_playwright_identity():
@@ -97,7 +97,7 @@ def test_production_v5_reuses_seeded_browser_stack_instead_of_reinstalling():
 
 def test_production_v5_cache_key_matches_seeded_browser_qa_cache():
     text = PRODUCTION_V5.read_text(encoding='utf-8')
-    expected = "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}"
+    expected = "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}"
     assert expected in text
 
 
