@@ -62,7 +62,7 @@ def test_spread_candidate_uses_model_margin_distribution_and_market_only_as_thre
         "final": {
             "ready": True,
             "projected_margin_home": 10.0,
-            "margin_uncertainty": {"sigma": 14.0},
+            "margin_uncertainty": {"sigma_points": 14.0},
             "reliability": 0.82,
         },
     }
@@ -80,6 +80,34 @@ def test_spread_candidate_uses_model_margin_distribution_and_market_only_as_thre
     assert 0.50 < pick["probability_value"] < 1.0
     assert pick["sportsbook_projection_weight"] == 0.0
 
+
+
+def test_resolve_slate_skips_started_games_and_advances_to_next_pregame_day(monkeypatch):
+    live = {
+        "game_id": "live-1",
+        "identity_verified": True,
+        "date_matches_query": True,
+        "status": "In Progress",
+    }
+    upcoming = {
+        "game_id": "pre-1",
+        "identity_verified": True,
+        "date_matches_query": True,
+        "status": "Scheduled",
+    }
+
+    def fake_load(day):
+        if day == "2026-09-29":
+            return [live], {"day": day}
+        if day == "2026-09-30":
+            return [upcoming], {"day": day}
+        return [], {"day": day}
+
+    monkeypatch.setattr(engine.schedule, "load_with_diagnostics", fake_load)
+    day, games, diag = engine.resolve_slate("2026-09-29", max_days=2)
+    assert day == "2026-09-30"
+    assert [row["game_id"] for row in games] == ["pre-1"]
+    assert diag["auto_advanced_days"] == 1
 
 def test_over_under_candidate_uses_existing_ou_model_and_final(monkeypatch):
     game = {
