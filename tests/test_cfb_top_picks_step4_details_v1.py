@@ -78,9 +78,7 @@ def _series():
 def test_step4_detail_requires_exact_verified_event_and_team_ids(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
     monkeypatch.setattr(details.history_recovery, "_fetch_winsipedia_games", lambda away, home: _series())
-
     out = details.build_pick_detail(_row(), "2026-10-03")
-
     assert out["ready"] is True
     assert out["event_id"] == "401234567"
     assert out["away_espn_team_id"] == "101"
@@ -94,7 +92,6 @@ def test_step4_detail_requires_exact_verified_event_and_team_ids(monkeypatch):
 def test_step4_fails_closed_when_exact_event_identity_is_ambiguous(monkeypatch):
     duplicate = dict(_game())
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game(), duplicate])
-
     called = {"history": False}
 
     def _history(*args, **kwargs):
@@ -103,7 +100,6 @@ def test_step4_fails_closed_when_exact_event_identity_is_ambiguous(monkeypatch):
 
     monkeypatch.setattr(details.history_recovery, "_fetch_winsipedia_games", _history)
     out = details.build_pick_detail(_row(), "2026-10-03")
-
     assert out["ready"] is False
     assert out["history_ready"] is False
     assert called["history"] is False
@@ -113,12 +109,10 @@ def test_step4_fails_closed_when_exact_event_identity_is_ambiguous(monkeypatch):
 def test_step4_over_under_benefit_is_descriptive_only(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
     monkeypatch.setattr(details.history_recovery, "_fetch_winsipedia_games", lambda away, home: _series())
-
     out = details.build_pick_detail(
         _row(market="OVER/UNDER", pick="Over 54.5", probability=63),
         "2026-10-03",
     )
-
     assert "57.5" in out["benefit"]
     assert "54.5" in out["benefit"]
     assert out["history_projection_weight"] == 0.0
@@ -127,46 +121,48 @@ def test_step4_over_under_benefit_is_descriptive_only(monkeypatch):
     assert out["sportsbook_projection_weight"] == 0.0
 
 
-def test_step4_page_is_collapsed_by_default_and_contains_three_detail_sections():
-    html = page._detail_card(
-        _row(),
-        {
-            "why": "Why text",
-            "benefit": "Benefit text",
-            "event_id": "401234567",
-            "meetings": 0,
-            "history_rows": [],
-        },
-    )
+def test_initial_board_is_immediate_and_contains_no_expanded_detail():
+    html = page._cards_html([_row()], "", None)
+    assert "cfb-top-picks-open-1" in html
+    assert "top_pick_detail=401234567" in html
+    assert "Actual Matchup History" not in html
+    assert "<details" not in html
+
+
+def test_tapped_matchup_renders_open_three_part_dropdown():
+    row = _row()
+    detail = {
+        "why": "Why text",
+        "benefit": "Benefit text",
+        "event_id": "401234567",
+        "meetings": 0,
+        "history_rows": [],
+    }
+    html = page._cards_html([row], "401234567", detail)
     assert "<details" in html
-    assert 'data-expanded="false"' in html
+    assert " open " in html
+    assert 'data-expanded="true"' in html
     assert "Why This Pick" in html
     assert "Actual Matchup History" in html
     assert "Benefits" in html
     assert "history projection weight <strong>0.0%</strong>" in html
 
 
+def test_detail_href_preserves_top_picks_route_and_exact_event():
+    href = page._detail_href("401234567")
+    assert "ks_sport=College+Football" in href
+    assert "ks_cfb_market=Top+Picks" in href
+    assert "top_pick_detail=401234567" in href
+    collapse = page._detail_href()
+    assert "top_pick_detail" not in collapse
 
 
-def test_step4_detail_batch_is_concurrent_bounded_and_preserves_rank_order(monkeypatch):
-    seen = []
-
-    def fake_detail(row, slate_day):
-        seen.append((row["rank"], slate_day))
-        return {"event_id": row["event_id"], "why": f"rank-{row['rank']}"}
-
-    monkeypatch.setattr(page.details, "build_pick_detail", fake_detail)
-    picks = [
-        _row(rank=1, event_id="401"),
-        _row(rank=2, event_id="402"),
-        _row(rank=3, event_id="403"),
-    ]
-    out = page._build_details_batch(picks, "2026-10-03")
-
-    assert page.MAX_DETAIL_WORKERS == 10
-    assert [item["event_id"] for item in out] == ["401", "402", "403"]
-    assert {rank for rank, _ in seen} == {1, 2, 3}
-    assert all(day == "2026-10-03" for _, day in seen)
+def test_render_contract_fetches_history_only_for_selected_row():
+    assert "selected_event = _query_value(TOP_PICK_DETAIL_QUERY)" in PAGE
+    assert "if selected_row is not None:" in PAGE
+    assert "selected_detail = details.build_pick_detail(selected_row, slate_day)" in PAGE
+    assert "_build_details_batch" not in PAGE
+    assert "ThreadPoolExecutor" not in PAGE
 
 
 def test_step4_preserves_frozen_step3_ranked_engine_and_zero_weights():
