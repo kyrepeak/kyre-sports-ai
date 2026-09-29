@@ -133,5 +133,23 @@
     "verifier_patch": "Slate readiness now requires both frozen lazy-load messages before returning ready.",
     "product_code_changed_by_closeout": false,
     "frozen_steps_1_6_changed_by_closeout": false
+  },
+  "player_surface_race_closeout": {
+    "failed_public_run": 36646970469,
+    "failed_public_job": 109672118793,
+    "product_evidence": [
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_SLATE_VISIBLE_LAZY_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=1.490",
+      "WNBA_NAV_STEP7_GAME_VISIBLE_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_GAME_READY_SECONDS=11.436",
+      "WNBA_NAV_STEP7_PLAYER_VISIBLE_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_PLAYER_READY_SECONDS=5.526",
+      "Slate/Game/Player zero-overflow GREEN"
+    ],
+    "verifier_root_cause": "Player route readiness returned on the PRA heading plus Back control before the final Step-4 decision and intelligence panels had finished streaming, so the immediate final-surface assertion raced the Streamlit delta stream.",
+    "verifier_patch": "Player readiness now waits for the decision card plus all four final intelligence panels and accepts either valid decision label: Final Decision or Final Qualified Decision.",
+    "product_code_changed": false,
+    "frozen_steps_1_6_changed": false
   }
 }
