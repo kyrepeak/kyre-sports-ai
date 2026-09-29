@@ -4,7 +4,7 @@
   "title": "Monster Speed V3 Step 5 — Auto-merge + branch freshness",
   "project": "Monster Speed V3",
   "step": "5/6",
-  "status": "WAITING_REPOSITORY_SETTINGS",
+  "status": "WAITING_PROOF",
   "problem": {
     "allow_auto_merge": false,
     "allow_update_branch": false
@@ -16,7 +16,7 @@
     "allow_update_branch": true,
     "devsystem_final_gate_preserved": true,
     "auto_merge_proved_on_step5_pr": false,
-    "branch_freshness_setting_proved": false,
+    "branch_freshness_setting_proved": true,
     "product_runtime_changed": false
   },
   "protected": {
@@ -45,5 +45,18 @@
       "allow_rebase_merge": true
     },
     "patch": "Remove merge-method availability from Step-5 blocking acceptance. Step 5 owns only allow_auto_merge, allow_update_branch, and preservation of the existing DevSystem final gate."
+  },
+  "auth_context_repair": {
+    "failure_class": "D_VERIFIER_AUTH_CONTEXT",
+    "failed_run": 36622573278,
+    "failed_job": 109601240802,
+    "observed_live_repo": {
+      "allow_auto_merge": true,
+      "allow_update_branch": true
+    },
+    "root_cause": "GitHub Actions GITHUB_TOKEN lacks repository-administration scope and masks admin-controlled merge-policy flags in its authenticated repository metadata response.",
+    "patch": "Read the two public repository merge-policy flags from unauthenticated public repository metadata while keeping all writes and protections unchanged.",
+    "product_code_changed": false,
+    "branch_protection_changed": false
   }
 }

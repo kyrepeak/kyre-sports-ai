@@ -87,9 +87,13 @@ def check(*, live: bool = False) -> dict[str, Any]:
         "live_checked": bool(live),
     }
     if live:
-        token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or ""
-        live_result = validate_repository_settings(fetch_repository_settings(token))
+        # This public repository exposes these merge-policy flags in its public
+        # repository metadata. Do not authenticate this read with GITHUB_TOKEN:
+        # the Actions installation token lacks repository-administration scope
+        # and GitHub masks the admin-controlled flags in that token context.
+        live_result = validate_repository_settings(fetch_repository_settings(""))
         result["live_repository_settings"] = live_result
+        result["live_repository_settings_source"] = "PUBLIC_REPOSITORY_METADATA"
     return result
 
 
