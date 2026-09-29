@@ -63,12 +63,17 @@ def test_step5_css_has_phone_tablet_desktop_responsive_guards():
     assert "#119dff" in page.CSS
 
 
-def test_v244_routes_v5_top_picks_and_delegates_everything_else():
-    assert "import streamlit_memory_lazy_router_v243 as prior" in ROUTER
-    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v243"' in ROUTER
+def test_v245_routes_only_top_picks_and_delegates_everything_else():
+    assert "import streamlit_memory_lazy_router_v244 as prior" in ROUTER
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v244"' in ROUTER
     assert 'TOP_PICKS_PAGE = "cfb_top_picks_page_v5"' in ROUTER
     assert "return prior.render_app()" in ROUTER
     assert "MAY_MODIFY_EXISTING_CFB_PRODUCTS = False" in ROUTER
+    assert "MAY_MODIFY_RANKING = False" in ROUTER
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in ROUTER
     assert "HISTORY_PROJECTION_INFLUENCE = 0.0" in ROUTER
 
+
+def test_app_activates_v245_and_retains_frozen_v244():
+    assert "from streamlit_memory_lazy_router_v245 import record_bootstrap_import_ms, render_app" in APP
+    assert "Frozen V244 compatibility" in APP
