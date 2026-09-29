@@ -96,22 +96,31 @@ def _click_option(page, frame, value: str) -> None:
     combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
     combo.wait_for(state="visible", timeout=45000)
     combo.click()
-    options = _visible_options(page, frame)
-    labels = [v.strip() for v in options.all_inner_texts()]
-    if value not in labels:
-        raise AssertionError(
-            f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:{value!r};saw={labels!r}"
-        )
-    for scope in (frame, page):
+    # Streamlit's portal can briefly expose only the selected option while a
+    # rerun hydrates the rest of the market list. Treat that as readiness, not
+    # as a terminal missing-option verdict.
+    deadline = time.monotonic() + 20.0
+    labels: list[str] = []
+    last_error = ""
+    while time.monotonic() < deadline:
         try:
-            target = scope.get_by_role("option", name=value, exact=True)
-            if target.count() > 0 and target.first.is_visible():
-                target.first.click(timeout=10000)
-                return
-        except Exception:
-            pass
+            options = _visible_options(page, frame, timeout_seconds=2.0)
+            labels = [v.strip() for v in options.all_inner_texts()]
+            if value in labels:
+                for scope in (frame, page):
+                    try:
+                        target = scope.get_by_role("option", name=value, exact=True)
+                        if target.count() > 0 and target.first.is_visible():
+                            target.first.click(timeout=10000)
+                            return
+                    except Exception as exc:
+                        last_error = repr(exc)
+        except Exception as exc:
+            last_error = repr(exc)
+        page.wait_for_timeout(250)
     raise AssertionError(
-        f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_NOT_CLICKABLE:{value!r}"
+        f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:{value!r};"
+        f"saw={labels!r};last={last_error}"
     )
 
 

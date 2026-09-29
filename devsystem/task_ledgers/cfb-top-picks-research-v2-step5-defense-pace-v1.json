@@ -36,5 +36,17 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "control_plane_repair": {
+    "failure_class": "C_ASYNC_VERIFIER_READINESS",
+    "original_run": 36645566219,
+    "original_failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:'Top Picks';saw=['Moneyline']",
+    "retry_job": 109668910180,
+    "retry_terminal": "cancelled externally during browser proof; pure contract 10/10 green",
+    "root_cause": "Streamlit option portal may transiently expose only the selected market while rerun hydration is still completing.",
+    "patch": "Wait up to 20 seconds for the requested existing option to appear before issuing a terminal missing-option assertion.",
+    "step5_product_logic_changed": false,
+    "steps1_4_product_logic_changed": false,
+    "api2_changed": false
+  }
 }

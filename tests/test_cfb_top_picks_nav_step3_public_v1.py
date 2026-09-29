@@ -32,6 +32,8 @@ def test_step3_resolves_public_option_portal_in_frame_or_page():
     assert "def _visible_options(page, frame" in CERT
     assert "for scope in (frame, page):" in CERT
     assert "def _click_option(page, frame, value: str)" in CERT
+    assert "deadline = time.monotonic() + 20.0" in CERT
+    assert "page.wait_for_timeout(250)" in CERT
 
 
 def test_step3_waits_for_streamlit_query_sync():
