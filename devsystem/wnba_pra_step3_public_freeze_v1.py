@@ -51,6 +51,28 @@ def _body(frame) -> str:
     return frame.locator("body").inner_text(timeout=5000)
 
 
+def _wnba_surface(body: str) -> str:
+    """Return only the rendered WNBA PRA surface from the shared app frame.
+
+    PickVault can retain text from another sport below the active WNBA route in
+    the same Streamlit frame.  Step-3 certification must not attribute an MLB
+    sportsbook warning to WNBA.  Scope all WNBA acceptance/forbidden markers to
+    the WNBA section itself.
+    """
+    anchor = "KYRE SPORTS AI • WNBA"
+    start = body.find(anchor)
+    if start < 0:
+        return body
+
+    # The shared shell repeats the sport selector before a following route.
+    # Everything before that next shell boundary belongs to the active WNBA
+    # presentation surface.
+    boundary = body.find("\n🏟️ Sport", start + len(anchor))
+    if boundary < 0:
+        return body[start:]
+    return body[start:boundary]
+
+
 def _route_to_wnba_pra(page):
     frame, scans = _find_app_frame(page, timeout_seconds=75.0)
     _choose(page, frame, 0, "WNBA")
@@ -83,8 +105,9 @@ def _certify_viewport(browser, production_url: str, artifact_dir: Path, name: st
         state_marker = ""
         while time.monotonic() < deadline:
             body = _body(frame)
-            required_ok = all(marker in body for marker in REQUIRED_MARKERS)
-            state_marker = next((marker for marker in VALID_STATE_MARKERS if marker in body), "")
+            surface = _wnba_surface(body)
+            required_ok = all(marker in surface for marker in REQUIRED_MARKERS)
+            state_marker = next((marker for marker in VALID_STATE_MARKERS if marker in surface), "")
             if required_ok and state_marker:
                 break
             page.wait_for_timeout(2500)
@@ -96,11 +119,12 @@ def _certify_viewport(browser, production_url: str, artifact_dir: Path, name: st
                 f"Required={REQUIRED_MARKERS!r} states={VALID_STATE_MARKERS!r} body={body[:6000]!r}"
             )
 
-        forbidden = [marker for marker in FORBIDDEN_RENDERED_MARKERS if marker in body]
+        surface = _wnba_surface(body)
+        forbidden = [marker for marker in FORBIDDEN_RENDERED_MARKERS if marker in surface]
         if forbidden:
             raise BrowserQAFailure(
                 f"Public WNBA PRA still exposes legacy/provider diagnostics: {forbidden!r}. "
-                f"body={body[:6000]!r}"
+                f"wnba_surface={surface[:6000]!r}"
             )
 
         screenshot = artifact_dir / f"wnba_pra_step3_{name}_green.png"
@@ -115,6 +139,7 @@ def _certify_viewport(browser, production_url: str, artifact_dir: Path, name: st
             "app_frame_url": frame.url,
             "frame_scan_count": len(scans),
             "body_excerpt": body[:6000],
+            "wnba_surface_excerpt": surface[:6000],
             "screenshot": str(screenshot),
         }
     finally:
