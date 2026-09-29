@@ -98,7 +98,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python devsystem/cfb_top_picks_step5_visual_cert_v1.py \
-            --base-url https://kyre-sports-ai.streamlit.app \
+            --base-url https://pickvault.streamlit.app \
             --mode public \
             --artifact-dir artifacts/cfb-top-picks-step5-public
       - uses: actions/upload-artifact@v4

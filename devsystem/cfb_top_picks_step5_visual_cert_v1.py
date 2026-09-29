@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 
 from browser_qa_v1 import _find_app_frame
 
-PUBLIC_URL = "https://kyre-sports-ai.streamlit.app"
+PUBLIC_URL = "https://pickvault.streamlit.app"
 ROOT = '[data-testid="cfb-top-picks-step5-root"][data-cfb-top-picks-visual="v5"]'
 CARD = 'article[data-testid^="cfb-top-picks-card-"]'
 OPEN_LINK = 'a[data-testid^="cfb-top-picks-open-"]'
