@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "task_id": "monster-speed-v3-step5-auto-merge-branch-freshness-v1",
+  "source": "connected-github-account-and-user-settings-confirmation",
+  "observed_at": "2026-09-29T20:18:30Z",
+  "repository": {
+    "full_name": "kyrepeak/kyre-sports-ai",
+    "default_branch": "main",
+    "allow_auto_merge": true,
+    "allow_update_branch": true,
+    "allow_squash_merge": true,
+    "allow_merge_commit": true,
+    "allow_rebase_merge": true
+  },
+  "proof": {
+    "user_settings_ui_confirmed": true,
+    "connected_github_get_repo_confirmed": true,
+    "github_actions_admin_fields_masked": true,
+    "functional_auto_merge_proof_pending": true
+  }
+}

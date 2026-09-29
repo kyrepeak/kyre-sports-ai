@@ -140,6 +140,8 @@ jobs:
         run: python devsystem/monster_speed_v3_step3_lane_split_v1.py
       - name: Validate Monster Speed V3 Step 4 user-visible contract
         run: python devsystem/monster_speed_v3_step4_contract_guard_v1.py
+      - name: Validate Monster Speed V3 Step 5 repository automation
+        run: python devsystem/monster_speed_v3_step5_repo_settings_v1.py
       - name: Validate Monster Anti-Loop V2 hard gate
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -165,6 +167,7 @@ jobs:
             tests/test_monster_speed_v3_step3_lane_split_v1.py \
             tests/test_user_visible_contract_v1.py \
             tests/test_monster_speed_v3_step4_contract_guard_v1.py \
+            tests/test_monster_speed_v3_step5_repo_settings_v1.py \
             tests/test_devsystem_workflow_parallelism_v1.py \
             tests/test_github_speed_benchmark_v1.py
 
