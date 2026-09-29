@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-step3-ranking-v1",
+  "title": "CFB Top Picks Step 3 — daily ranking, probability, toughness",
+  "project": "Monster Top Picks",
+  "status": "DONE",
+  "source_main": "d18cfd1be9bc22ebac1695385d41a64af6a36bc2",
+  "acceptance": {
+    "real_daily_engine": true,
+    "max_picks": 10,
+    "markets": [
+      "MONEYLINE",
+      "SPREAD",
+      "OVER/UNDER"
+    ],
+    "one_pick_per_game": true,
+    "probability_from_existing_model_outputs": true,
+    "toughness_from_probability": true,
+    "market_threshold_projection_weight": 0,
+    "no_sample_layout_rows_in_active_page": true,
+    "off_day_next_slate_lookahead_days": 7
+  },
+  "ownership": {
+    "moneyline_model": "cfb_moneyline_slate_v1 + cfb_moneyline_final_v1",
+    "over_under_model": "cfb_over_under_model_v1 + cfb_over_under_final_v1",
+    "spread_probability": "moneyline projected margin + frozen margin uncertainty distribution",
+    "spread_line": "official ESPN event odds context",
+    "total_line": "identity-verified FanDuel total with ESPN fallback",
+    "schedule": "cfb_schedule_v7_future_slate"
+  },
+  "protected": {
+    "step1_shell": true,
+    "step2_cards": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "control_plane_refresh": {
+    "reason": "required devsystem-final-gate was expected by branch protection but no DevSystem targeted CI run registered on prior exact head",
+    "product_code_changed": false,
+    "retry_policy": "single replacement head only",
+    "post_fix_head": "a1337c2f15cac2fc30da29f0f0d3308eb3a09074",
+    "post_fix_reason": "real Step-3 bugs repaired; required DevSystem workflow did not register on corrected head, so emit one final synchronize event",
+    "product_code_changed_by_refresh": false
+  }
+}
