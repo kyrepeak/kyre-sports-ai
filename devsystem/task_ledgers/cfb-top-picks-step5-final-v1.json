@@ -50,5 +50,24 @@
     "ranking_changed": false,
     "history_logic_changed": false,
     "retry_policy": "single deployment refresh, then exact public-production-freeze proof only"
+  },
+  "full_redeploy_repair": {
+    "prior_main": "70586297eca65b6209638d46eb772dddfd00378f",
+    "failed_public_run": 36592928195,
+    "failed_public_job": 109490390066,
+    "failure_token": "CFB_TOP_PICKS_STEP5_PUBLIC_DEPLOY_NOT_ACTIVE",
+    "observed_public_marker": "CFB_TOP_PICKS_STEP4_DETAILS_ACTIVE",
+    "required_public_marker": "CFB_TOP_PICKS_STEP5_FINAL_VISUAL_ACTIVE",
+    "root_cause": "The app.py-only deployment heartbeat merged and the exact public verifier waited the full deployment window, but pickvault.streamlit.app continued to serve the frozen Step-4 process. Repository precedent proves a comment-only requirements.txt touch is the next bounded control-plane escalation when an app-only refresh does not replace the Streamlit Community Cloud process.",
+    "patch": "Touch requirements.txt with a comment-only full-redeploy marker and record this exact evidence in the Step-5 ledger. No dependency versions, product code, router, model, ranking, history, selectors, or timeout behavior changes.",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "router_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "history_logic_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false,
+    "retry_policy": "single full-redeploy escalation, then exact public-production-freeze proof"
   }
 }
