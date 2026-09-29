@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "1/9",
+  "status": "FROZEN_CONTRACT",
+  "scope": {
+    "route": "College Football -> Top Picks",
+    "ranked_pick_count": 10,
+    "applies_to_every_ranked_pick": true,
+    "api2_separate_and_protected": true,
+    "may_modify_api2": false,
+    "probability_why_preserved": true,
+    "sportsbook_projection_weight": 0,
+    "history_projection_weight": 0
+  },
+  "current_baseline_audit": {
+    "page_owner": "cfb_top_picks_page_v5.py",
+    "ranking_owner": "cfb_top_picks_engine_v1.py",
+    "detail_owner": "cfb_top_picks_details_v1.py",
+    "logo_state": "ABBREVIATION_PLACEHOLDERS",
+    "history_state": "SINGLE_DIRECT_WINSIPEDIA_PATH",
+    "benefits_state": "HISTORY_ONLY",
+    "why_state": "MODEL_PROBABILITY_AND_RELIABILITY_ONLY",
+    "reasoning_research_state": "MISSING",
+    "risks_state": "MISSING",
+    "ten_of_ten_completeness_gate": "MISSING"
+  },
+  "required_pick_card_fields": [
+    "rank",
+    "event_id",
+    "slate_date",
+    "away_team",
+    "home_team",
+    "away_team_id",
+    "home_team_id",
+    "away_logo_url",
+    "home_logo_url",
+    "kickoff",
+    "network",
+    "market",
+    "pick",
+    "line_or_price",
+    "sportsbook",
+    "probability",
+    "reliability",
+    "toughness"
+  ],
+  "required_detail_sections": [
+    "why_this_pick",
+    "reasoning_research",
+    "scoring_profile",
+    "pace_and_style",
+    "defensive_matchup",
+    "recent_form",
+    "actual_matchup_history",
+    "benefits",
+    "risks",
+    "sources_and_freshness"
+  ],
+  "common_research_fields": [
+    "away_points_per_game",
+    "home_points_per_game",
+    "away_points_allowed_per_game",
+    "home_points_allowed_per_game",
+    "away_yards_per_play",
+    "home_yards_per_play",
+    "away_yards_per_play_allowed",
+    "home_yards_per_play_allowed",
+    "away_plays_per_game",
+    "home_plays_per_game",
+    "away_red_zone_td_rate",
+    "home_red_zone_td_rate",
+    "away_red_zone_td_rate_allowed",
+    "home_red_zone_td_rate_allowed",
+    "away_recent_scoring_avg",
+    "home_recent_scoring_avg"
+  ],
+  "market_reasoning_contract": {
+    "OVER/UNDER": {
+      "required": [
+        "combined_scoring_environment",
+        "pace_signal",
+        "offensive_efficiency_signal",
+        "defensive_vulnerability_signal",
+        "recent_total_trend",
+        "history_total_context",
+        "line_clearance_context"
+      ]
+    },
+    "SPREAD": {
+      "required": [
+        "projected_margin_context",
+        "scoring_margin_form",
+        "offense_vs_defense_edge",
+        "home_away_context",
+        "recent_margin_form",
+        "history_margin_context"
+      ]
+    },
+    "MONEYLINE": {
+      "required": [
+        "win_strength_context",
+        "offense_vs_defense_edge",
+        "turnover_or_possession_context",
+        "home_away_context",
+        "recent_form",
+        "history_winner_context"
+      ]
+    }
+  },
+  "history_contract": {
+    "no_history_claim_requires_source_exhaustion": true,
+    "minimum_independent_history_sources_attempted": 2,
+    "canonical_team_identity_required": true,
+    "alias_resolution_required": true,
+    "fields": [
+      "status",
+      "meetings",
+      "series_record",
+      "recent_meetings",
+      "avg_combined_total",
+      "line_hit_context",
+      "sources_attempted",
+      "sources_verified"
+    ],
+    "allowed_terminal_statuses": [
+      "VERIFIED_HISTORY",
+      "VERIFIED_NO_HISTORY_AFTER_SOURCE_EXHAUSTION",
+      "SOURCE_CONFLICT_REVIEW"
+    ]
+  },
+  "provenance_contract": {
+    "unit_of_work": "DATA_FIELD",
+    "no_source_loyalty": true,
+    "every_material_fact_requires_source": true,
+    "every_material_fact_requires_observed_at": true,
+    "source_conflicts_must_be_recorded": true,
+    "unsupported_values_must_not_be_invented": true,
+    "fallback_to_other_sources_before_unavailable": true
+  },
+  "completeness_gate": {
+    "required_ranked_picks": 10,
+    "every_pick_must_pass_card_contract": true,
+    "every_expanded_pick_must_pass_detail_contract": true,
+    "real_team_logos_required": true,
+    "benefits_must_have_verified_evidence": true,
+    "risks_must_have_verified_evidence": true,
+    "history_status_must_be_terminal": true,
+    "zero_placeholder_logo_text": true,
+    "zero_unexplained_missing_required_fields": true
+  }
+}
