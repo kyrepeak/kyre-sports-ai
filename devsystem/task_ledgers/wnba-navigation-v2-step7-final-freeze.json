@@ -119,5 +119,19 @@
     "verifier_patch": "Use case-insensitive semantic checks for Player Intelligence readiness and required final surfaces.",
     "product_code_changed_by_closeout": false,
     "frozen_steps_1_6_changed_by_closeout": false
+  },
+  "semantic_lazy_closeout": {
+    "failed_main_run": 36646778458,
+    "failed_public_job": 109671513292,
+    "evidence": [
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=0.428",
+      "WNBA_NAV_STEP7_DEFAULT_SLATE_HAS_GAME_GREEN",
+      "WNBA_NAV_STEP7_SLATE_ZERO_OVERFLOW_GREEN"
+    ],
+    "verifier_root_cause": "The cert required two exact user-facing lazy-loading strings even though the frozen Slate semantics were already provable from route controls and absence of deeper heavy surfaces.",
+    "verifier_patch": "Require a Slate game drill-down control, require Game/Player heavy DOM surfaces to remain absent before selection, and fail if deeper-route headings appear before explicit selection.",
+    "product_code_changed": false,
+    "frozen_steps_1_6_changed": false
   }
 }
