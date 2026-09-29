@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-step3-live-ranking-v1",
+  "title": "CFB Top Picks Step 3 — live daily ranking, probability and toughness",
+  "project": "Monster Top Picks",
+  "status": "DONE",
+  "source_main": "d18cfd1be9bc22ebac1695385d41a64af6a36bc2",
+  "scope": {
+    "engine": "cfb_top_picks_engine_v1.py",
+    "page": "cfb_top_picks_page_v3.py",
+    "router": "streamlit_memory_lazy_router_v243.py",
+    "test": "tests/test_cfb_top_picks_step3_live_ranking_v1.py",
+    "browser_qa": "devsystem/cfb_top_picks_step3_browser_qa_v1.py"
+  },
+  "acceptance": {
+    "max_daily_picks": 10,
+    "markets": [
+      "MONEYLINE",
+      "SPREAD",
+      "OVER/UNDER"
+    ],
+    "minimum_pick_probability": 0.55,
+    "probability_is_model_based": true,
+    "toughness_is_model_strength_based": true,
+    "sportsbook_probability_used": false,
+    "sportsbook_price_ranking_weight": 0,
+    "market_projection_weight": 0,
+    "fail_closed": true,
+    "auto_next_slate_within_days": 7,
+    "step4_detail_panels": false
+  },
+  "protected": {
+    "step1_shell": true,
+    "step2_cards": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
