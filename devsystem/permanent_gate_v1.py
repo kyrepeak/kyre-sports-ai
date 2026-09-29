@@ -45,6 +45,10 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_checkpoint_ledger_v2.py",
     "tests/test_devsystem_forward_motion_v2.py",
     "tests/test_devsystem_anti_loop_replay_v2.py",
+    "devsystem/workflow_quarantine_v2.json",
+    "devsystem/workflow_quarantine_v2.py",
+    "tests/test_workflow_quarantine_v2.py",
+    ".github/workflows/monster-speed-v3-step1-workflow-quarantine-v2.yml",
 )
 
 
@@ -235,7 +239,44 @@ def validate() -> dict:
     if history_missing:
         raise PermanentGateFailure("failure recurrence history drift: " + " | ".join(history_missing))
 
-    legacy_prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(encoding="utf-8")
+    quarantine_registry_path = ROOT / "devsystem/workflow_quarantine_v2.json"
+    quarantine_registry = json.loads(quarantine_registry_path.read_text(encoding="utf-8"))
+    if quarantine_registry.get("version") != 2 or quarantine_registry.get("status") != "FROZEN":
+        raise PermanentGateFailure("workflow quarantine V2 registry drift")
+    quarantined = quarantine_registry.get("workflows")
+    if not isinstance(quarantined, list) or len(quarantined) != 16:
+        raise PermanentGateFailure("workflow quarantine V2 count drift")
+    for item in quarantined:
+        rel = item.get("path") if isinstance(item, dict) else None
+        if not isinstance(rel, str) or not rel.startswith(".github/workflows/"):
+            raise PermanentGateFailure(f"invalid workflow quarantine V2 entry: {item!r}")
+        workflow_path = ROOT / rel
+        if not workflow_path.is_file():
+            raise PermanentGateFailure(f"quarantined workflow missing: {rel}")
+        source = workflow_path.read_text(encoding="utf-8")
+        lines = source.splitlines()
+        try:
+            start = next(i for i, line in enumerate(lines) if line.strip() == "on:" and not line.startswith(" "))
+        except StopIteration as exc:
+            raise PermanentGateFailure(f"quarantined workflow missing on block: {rel}") from exc
+        end = len(lines)
+        for i in range(start + 1, len(lines)):
+            line = lines[i]
+            if line.strip() and not line.startswith((" ", "#")):
+                end = i
+                break
+        on_block = "\n".join(lines[start:end])
+        if "workflow_dispatch:" not in on_block:
+            raise PermanentGateFailure(f"quarantined workflow lost manual dispatch: {rel}")
+        forbidden = [token for token in ("pull_request:", "push:", "schedule:") if token in on_block]
+        if forbidden:
+            raise PermanentGateFailure(
+                f"quarantined workflow regained automatic trigger: {rel}: {forbidden}"
+            )
+        if "jobs:" not in source:
+            raise PermanentGateFailure(f"quarantined workflow jobs missing: {rel}")
+
+        legacy_prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(encoding="utf-8")
     if "workflow_dispatch:" not in legacy_prod:
         raise PermanentGateFailure("legacy production verification must remain manually dispatchable")
     if "\n  push:" in legacy_prod or "branches: [main]" in legacy_prod:

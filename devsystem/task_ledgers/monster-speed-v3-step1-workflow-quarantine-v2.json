@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step1-workflow-quarantine-v2",
+  "title": "Monster Speed V3 Step 1 — Workflow Quarantine V2",
+  "project": "Monster Speed V3",
+  "step": "1/6",
+  "status": "DONE",
+  "root_cause": "Completed certification workflows remained subscribed to pull_request and/or main push events. Shared entrypoint changes such as app.py could therefore wake frozen historical stacks and consume hosted runners even though their product work was already certified.",
+  "patch": "Quarantine 16 completed Top Picks and Passing Yards Speed workflows to workflow_dispatch-only without deleting any workflow or job. Add a permanent registry, validator, tests, exact Step-1 workflow, and required DevSystem permanent-gate enforcement.",
+  "proof_contract": {
+    "quarantined_workflows": 16,
+    "baseline_pull_request_automatic": 16,
+    "baseline_push_automatic": 12,
+    "automatic_after": 0,
+    "manual_dispatch_preserved": 16,
+    "jobs_preserved": true,
+    "devsystem_final_gate_enforces_registry": true
+  },
+  "protected": {
+    "cfb_top_picks_product_steps_1_5": true,
+    "cfb_top_picks_navigation_steps_1_3": true,
+    "passing_yards_speed_steps_1_8": true,
+    "product_runtime_unchanged": true,
+    "model_math_unchanged": true,
+    "router_unchanged": true,
+    "production_verifier_v5_unchanged": true,
+    "devsystem_targeted_ci_unchanged": true
+  },
+  "guardrails": {
+    "workflow_deleted": false,
+    "workflow_job_deleted": false,
+    "product_code_changed": false,
+    "dependency_versions_changed": false,
+    "branch_protection_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

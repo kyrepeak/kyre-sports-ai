@@ -1,16 +1,7 @@
 name: NFL Passing Yards Speed Step 1 Bottleneck
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/passing-yards-speed-step1-bottleneck-v1.yml"
-      - "devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/passing-yards-speed-step1-bottleneck-v1.yml"
-      - "devsystem/task_ledgers/passing-yards-speed-step1-bottleneck-v1.json"
+  workflow_dispatch:
 
 permissions:
   contents: read

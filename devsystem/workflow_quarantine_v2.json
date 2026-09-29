@@ -1,0 +1,103 @@
+{
+  "version": 2,
+  "status": "FROZEN",
+  "title": "Monster Speed V3 Step 1 — frozen workflow quarantine",
+  "purpose": "Prevent completed certification stacks from consuming runners on unrelated PRs or main pushes while keeping every historical workflow manually dispatchable.",
+  "baseline": {
+    "workflow_count": 16,
+    "pull_request_automatic": 16,
+    "push_automatic": 12,
+    "manual_only_after": 16
+  },
+  "guardrails": {
+    "delete_workflows": false,
+    "delete_jobs": false,
+    "change_product_code": false,
+    "change_model_math": false,
+    "change_runtime_router": false,
+    "manual_replay_preserved": true,
+    "required_devsystem_final_gate_preserved": true
+  },
+  "workflows": [
+    {
+      "path": ".github/workflows/cfb-top-picks-step1-shell-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/cfb-top-picks-step2-cards-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/cfb-top-picks-step3-ranking-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/cfb-top-picks-step4-details-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/cfb-top-picks-step5-final-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/cfb-top-picks-nav-step1-dropdown-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/cfb-top-picks-nav-step2-selection-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/cfb-top-picks-nav-step3-public-freeze-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step1-bottleneck-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step2-first-paint-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step4-cache-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step6-full-latency-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step7-same-session-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    },
+    {
+      "path": ".github/workflows/passing-yards-speed-step8-final-freeze-v1.yml",
+      "state": "FROZEN_COMPLETE",
+      "trigger_policy": "workflow_dispatch_only"
+    }
+  ]
+}
