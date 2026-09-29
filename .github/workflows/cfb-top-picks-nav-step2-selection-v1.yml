@@ -1,0 +1,70 @@
+name: CFB Top Picks Nav Step 2 Selection
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/test_cfb_top_picks_nav_step2_selection_v1.py'
+      - 'devsystem/cfb_top_picks_nav_step2_selection_cert_v1.py'
+      - 'devsystem/task_ledgers/cfb-top-picks-nav-step2-selection-v1.json'
+      - '.github/workflows/cfb-top-picks-nav-step2-selection-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/test_cfb_top_picks_nav_step2_selection_v1.py'
+      - 'devsystem/cfb_top_picks_nav_step2_selection_cert_v1.py'
+      - 'devsystem/task_ledgers/cfb-top-picks-nav-step2-selection-v1.json'
+      - '.github/workflows/cfb-top-picks-nav-step2-selection-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-top-picks-nav-step2-selection-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selection-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Static Step 2 contract
+        run: |
+          python -m py_compile devsystem/cfb_top_picks_nav_step2_selection_cert_v1.py
+          python -m pytest -q tests/test_cfb_top_picks_nav_step2_selection_v1.py
+      - name: Start local Streamlit
+        run: |
+          mkdir -p artifacts/cfb-top-picks-nav-step2-selection
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/cfb-top-picks-nav-step2-selection/streamlit.log 2>&1 &
+          echo $! > /tmp/cfb_top_picks_nav_step2_pid
+      - name: Prove normal dropdown selects frozen V5
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/cfb_top_picks_nav_step2_selection_cert_v1.py \
+            --base-url http://127.0.0.1:8501 \
+            --artifact-dir artifacts/cfb-top-picks-nav-step2-selection
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-top-picks-nav-step2-selection-${{ github.run_id }}
+          path: artifacts/cfb-top-picks-nav-step2-selection
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Stop local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/cfb_top_picks_nav_step2_pid ]; then
+            kill "$(cat /tmp/cfb_top_picks_nav_step2_pid)" 2>/dev/null || true
+          fi

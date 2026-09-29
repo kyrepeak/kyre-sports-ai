@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-nav-step2-selection-v1",
+  "title": "CFB Top Picks Navigation Step 2 — normal dropdown selection to frozen V5",
+  "project": "Monster Top Picks",
+  "step": "navigation-2/3",
+  "status": "DONE",
+  "source_main": "219693da52605fdb19d838da51f48551ae3d3c7c",
+  "prerequisite": {
+    "step1_task": "cfb-top-picks-nav-step1-dropdown-v1",
+    "step1_frozen": true
+  },
+  "scope": "Proof-only. No runtime product/router/model changes. Certify the exact normal-navigation user flow from College Football dropdown selection into the already-frozen Top Picks V5 page.",
+  "acceptance": {
+    "normal_navigation_selects_top_picks": true,
+    "top_picks_v5_root_renders": true,
+    "top_picks_v5_marker_renders": true,
+    "top_picks_query_persists": true,
+    "moneyline_option_preserved": true,
+    "over_under_option_preserved": true,
+    "game_total_option_preserved": true,
+    "top_picks_option_preserved_exactly_once": true,
+    "mobile_390_browser_proof": true
+  },
+  "protected": {
+    "cfb_top_picks_nav_step1": true,
+    "cfb_top_picks_v5": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "guardrails": {
+    "runtime_code_changed": false,
+    "product_logic_changed": false,
+    "router_logic_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "history_logic_changed": false,
+    "sportsbook_logic_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
