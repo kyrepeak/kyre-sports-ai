@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "task_id": "wnba-navigation-v2-step2-slate",
+  "title": "WNBA Navigation V2 Step 2 — lightweight Slate",
+  "project": "WNBA Navigation V2",
+  "step": "2/7",
+  "status": "DONE",
+  "source_main": "c9256818932fbf58be03f6e88735f7bf946419d7",
+  "scope": "Page 1 schedule-only Slate presentation",
+  "contract": {
+    "endpoint": "Kyre Sports API /api/v1/wnba/games",
+    "timeout_seconds": 5,
+    "attempts": 1,
+    "cache_ttl_seconds": 60,
+    "payloads_per_uncached_render": 1,
+    "page2_prefetch": false,
+    "page3_prefetch": false
+  },
+  "protected": {
+    "step1_green_frozen": true,
+    "wnba_api_ownership": true,
+    "projection_math_unchanged": true,
+    "market_math_unchanged": true,
+    "ranking_unchanged": true,
+    "qualification_unchanged": true,
+    "monte_carlo_unchanged": true,
+    "other_sports_unchanged": true
+  },
+  "acceptance": [
+    "date control",
+    "matchup cards",
+    "WNBA logos",
+    "time/status",
+    "data-health indicator",
+    "game drill-down writes frozen Step-1 state",
+    "zero player/model/market prefetch",
+    "fast exact-head proof",
+    "required merge gate",
+    "merged-main certification"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "closeout": {
+    "failure_classification": "VERIFIER_LEDGER_CONTRACT",
+    "product_code_changed_for_repair": false,
+    "fast_cert_green_run": 36631696408,
+    "note": "Step-2 product fast cert was green before ledger closeout; this repair only satisfies Monster Anti-Loop V2 terminal-ledger policy."
+  }
+}
