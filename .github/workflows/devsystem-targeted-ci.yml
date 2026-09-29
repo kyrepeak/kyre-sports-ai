@@ -425,7 +425,8 @@ jobs:
             tests/test_wnba_step20b_monte_carlo_acceleration.py \
             tests/test_wnba_step20b_step2_exact_reuse_timing.py \
             tests/test_wnba_pra_api_market_bridge_v1.py \
-            tests/test_wnba_pra_page_cleanup_v1.py
+            tests/test_wnba_pra_page_cleanup_v1.py \
+            tests/test_wnba_pra_navigation_v2_step1.py
 
   nfl-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]

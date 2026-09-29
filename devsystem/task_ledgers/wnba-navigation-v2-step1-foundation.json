@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "task_id": "wnba-navigation-v2-step1-foundation",
+  "title": "WNBA Navigation V2 Step 1 — navigation foundation",
+  "project": "WNBA Navigation V2",
+  "step": "1/7",
+  "status": "DONE",
+  "source_main": "dade39c5a02864f6f390c72f7949b3879c417000",
+  "scope": {
+    "navigation_module": "wnba_pra_navigation_v2_step1.py",
+    "router": "streamlit_memory_lazy_router_wnba_nav_v2_step1.py",
+    "active_entrypoint": "app.py",
+    "owned_route": "WNBA -> PRA"
+  },
+  "acceptance": {
+    "three_page_state_machine": true,
+    "slate_default": true,
+    "game_identity_state": true,
+    "player_identity_state": true,
+    "back_navigation_contract": true,
+    "query_refresh_persistence": true,
+    "zero_future_page_prefetch": true,
+    "legacy_visible_surface_preserved_until_step2": true,
+    "dispatch_timing_baseline_recorded": true
+  },
+  "protected": {
+    "wnba_api_ownership": true,
+    "wnba_page_cleanup": true,
+    "wnba_projection_math": true,
+    "wnba_market_math": true,
+    "wnba_ranking": true,
+    "wnba_qualification": true,
+    "wnba_monte_carlo": true,
+    "nfl_product": true,
+    "mlb_product": true,
+    "cfb_product": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
