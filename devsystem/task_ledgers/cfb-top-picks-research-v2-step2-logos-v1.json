@@ -82,5 +82,19 @@
     "product_code_changed": false,
     "logo_url_changed": false,
     "api2_changed": false
+  },
+  "main_readiness_repair": {
+    "failure_class": "D_VERIFIER_STARTUP_READINESS",
+    "failed_run": 36635708182,
+    "failed_job": 109635693299,
+    "exact_failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:'Top Picks';saw=['Moneyline']",
+    "evidence": "Static Step-2 logo contract GREEN; 25 tests passed; failure occurred before any logo assertion.",
+    "root_cause": "The Step-2 browser verifier treated HTTP readiness as navigation readiness and attempted the Top Picks selector exactly once during fresh merged-main Streamlit startup.",
+    "patch": "Retry only the initial real-user navigation on a fresh browser page for up to 120 seconds; once Top Picks renders, preserve the same strict 10-card / 20-loaded-logo / zero-placeholder acceptance.",
+    "product_code_changed": false,
+    "logo_resolver_changed": false,
+    "ranking_changed": false,
+    "probability_changed": false,
+    "api2_changed": false
   }
 }
