@@ -46,6 +46,10 @@ _NCAA_TEAM_SLUG_ALIASES = {
     # remains fail-closed for ambiguous Florida-school names.
     "florida atlantic": "fla-atlantic",
     "florida atlantic owls": "fla-atlantic",
+    # West Florida is an FCS transition program in 2026; NCAA surfaces use
+    # the shortened Florida token in several first-party football contexts.
+    "west florida": "west-fla",
+    "west florida argonauts": "west-fla",
 }
 
 CORE_FIELDS = (
