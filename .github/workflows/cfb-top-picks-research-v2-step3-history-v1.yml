@@ -74,7 +74,7 @@ jobs:
             tests/test_cfb_top_picks_research_v2_step3_history_v1.py \
             tests/test_cfb_top_picks_step4_details_v1.py
       - name: Certify multi-source history for all 10 ranked picks
-        run: python devsystem/cfb_top_picks_research_v2_step3_history_cert_v1.py
+        run: python -m devsystem.cfb_top_picks_research_v2_step3_history_cert_v1
       - name: Upload Step 3 history evidence
         if: always()
         uses: actions/upload-artifact@v4
