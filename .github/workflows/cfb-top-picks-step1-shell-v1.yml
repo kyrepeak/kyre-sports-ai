@@ -1,16 +1,6 @@
 name: CFB Top Picks Step 1 shell
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'app.py'
-      - 'cfb_top_picks_page_v1.py'
-      - 'streamlit_memory_lazy_router_v241.py'
-      - 'tests/test_cfb_top_picks_step1_shell_v1.py'
-      - 'devsystem/cfb_top_picks_step1_browser_qa_v1.py'
-      - 'devsystem/task_ledgers/cfb-top-picks-step1-shell-v1.json'
-      - '.github/workflows/cfb-top-picks-step1-shell-v1.yml'
   workflow_dispatch:
 
 permissions:
