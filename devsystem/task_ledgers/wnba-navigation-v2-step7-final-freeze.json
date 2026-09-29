@@ -79,5 +79,24 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "verifier_closeout": {
+    "failed_public_run": 36645969861,
+    "controlled_retry_attempt": 2,
+    "failed_public_job": 109669598676,
+    "product_evidence": [
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=0.438",
+      "WNBA_NAV_STEP7_DEFAULT_SLATE_HAS_GAME_GREEN",
+      "WNBA_NAV_STEP7_SLATE_ZERO_OVERFLOW_GREEN",
+      "WNBA_NAV_STEP7_SLATE_LAZY_LOADING_GREEN",
+      "public body rendered WNBA GAME CENTER",
+      "public body rendered GAME CENTER READY",
+      "public body rendered 28 players",
+      "public body rendered player PRA buttons"
+    ],
+    "verifier_root_cause": "The public verifier required Step-5/6/7 hidden page markers to agree before accepting Game/Player readiness. Streamlit can complete the user-visible destination surface while lower-layer hidden markers lag during the rerun, creating a false timeout after the product is already ready.",
+    "verifier_patch": "Keep the Step-7 deployment marker required on Slate entry. Certify deeper route readiness from the actual interactive user-visible contract: Game Center heading + Back button + PRA buttons, and Player Intelligence heading + Back button.",
+    "product_code_changed_by_closeout": false,
+    "frozen_steps_1_6_changed_by_closeout": false
   }
 }
