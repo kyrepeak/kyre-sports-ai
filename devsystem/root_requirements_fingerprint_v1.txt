@@ -1,0 +1,10 @@
+# Monster Speed V3 Step 2 — normalized root dependency identity.
+# Keep only install-bearing lines here. Comments in requirements.txt must not invalidate CI/browser caches.
+streamlit
+requests
+pandas
+numpy
+streamlit-autorefresh
+streamlit-local-storage==0.0.25
+tzdata>=2025.2
+posthog~=7.48

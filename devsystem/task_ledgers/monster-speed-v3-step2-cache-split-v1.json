@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step2-cache-split-v1",
+  "title": "Monster Speed V3 Step 2 — Deployment / cache separation",
+  "project": "Monster Speed V3",
+  "step": "2/6",
+  "status": "DONE",
+  "root_cause": "Comment-only requirements.txt redeploy markers were treated as dependency changes by GitHub Actions cache keys, invalidating otherwise reusable Python and Playwright caches.",
+  "patch": "Key active shared CI caches from a normalized install-bearing root dependency fingerprint instead of raw requirements.txt, add a dedicated lightweight deployment marker, and permanently guard the split.",
+  "protected": {
+    "monster_speed_v3_step1_frozen": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_versions_unchanged": true
+  },
+  "proof_contract": {
+    "comment_only_requirements_change_busts_active_cache": false,
+    "real_dependency_change_busts_active_cache": true,
+    "shared_workflows_guarded": 3
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
