@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-api-ownership-step1-v1",
+  "title": "WNBA PRA Step 1 — Kyre Sports API market ownership",
+  "project": "WNBA PRA cleanup",
+  "step": "1/3",
+  "status": "DONE",
+  "source_main": "1f9fe91d6cd5516b2e556083b958066dda6a10c3",
+  "scope": {
+    "active_owner": "wnba_pra_hub_v3613.py",
+    "new_bridge": "wnba_pra_api_market_bridge_v1.py",
+    "api_origin": "https://kyre-sports-api.onrender.com",
+    "market_snapshot_endpoint": "/api/v1/wnba/markets/player-props/collection-store/snapshots"
+  },
+  "acceptance": {
+    "streamlit_reads_market_truth_from_kyre_api": true,
+    "streamlit_sportsbook_secret_required": false,
+    "direct_sportsbook_provider_call_from_new_bridge": false,
+    "official_schedule_game_identity_required": true,
+    "missing_or_unmatched_market_truth_fails_closed": true,
+    "existing_pra_market_snapshot_contract_preserved": true,
+    "projection_math_changed": false,
+    "ranking_changed": false,
+    "qualification_changed": false,
+    "monte_carlo_changed": false
+  },
+  "protected": {
+    "nfl": true,
+    "mlb": true,
+    "pra_projection_math": true,
+    "pra_probability_math": true,
+    "pra_monte_carlo": true,
+    "pra_ranking": true,
+    "pra_qualification": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
