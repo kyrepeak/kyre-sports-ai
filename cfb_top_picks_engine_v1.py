@@ -342,9 +342,17 @@ def _rank_balanced(
 def resolve_slate(
     start_day: str,
     max_days: int = MAX_LOOKAHEAD_DAYS,
+    minimum_games: int = DEFAULT_LIMIT,
 ) -> tuple[str, list[dict[str, Any]], dict[str, Any]]:
+    """Choose a slate capable of supporting the requested Top-N board."""
     start = date.fromisoformat(str(start_day))
     attempts: list[dict[str, Any]] = []
+    best_day = str(start_day)
+    best_games: list[dict[str, Any]] = []
+    best_diag: dict[str, Any] = {}
+    best_offset = 0
+    target = max(1, int(minimum_games))
+
     for offset in range(0, max(0, int(max_days)) + 1):
         day = (start + timedelta(days=offset)).isoformat()
         games, diag = schedule.load_with_diagnostics(day)
@@ -357,7 +365,14 @@ def resolve_slate(
             )
         ]
         attempts.append({"date": day, "games": len(verified)})
-        if verified:
+
+        if len(verified) > len(best_games):
+            best_day = day
+            best_games = verified
+            best_diag = dict(diag or {})
+            best_offset = offset
+
+        if len(verified) >= target:
             return day, verified, {
                 "status": "GREEN",
                 "requested_date": str(start_day),
@@ -365,15 +380,31 @@ def resolve_slate(
                 "auto_advanced_days": offset,
                 "attempts": attempts,
                 "schedule": diag,
+                "selection_reason": "earliest_slate_meeting_minimum_games",
+                "minimum_games": target,
             }
+
+    if best_games:
+        return best_day, best_games, {
+            "status": "GREEN",
+            "requested_date": str(start_day),
+            "slate_date": best_day,
+            "auto_advanced_days": best_offset,
+            "attempts": attempts,
+            "schedule": best_diag,
+            "selection_reason": "largest_verified_slate_in_window",
+            "minimum_games": target,
+        }
+
     return str(start_day), [], {
         "status": "EMPTY",
         "requested_date": str(start_day),
         "slate_date": str(start_day),
         "auto_advanced_days": 0,
         "attempts": attempts,
+        "selection_reason": "no_verified_pregame_slate",
+        "minimum_games": target,
     }
-
 
 @st.cache_data(ttl=600, show_spinner=False)
 def build_top_picks(
@@ -381,7 +412,10 @@ def build_top_picks(
     limit: int = DEFAULT_LIMIT,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     requested = start_day or datetime.now(PHOENIX).date().isoformat()
-    slate_day, games, slate_diag = resolve_slate(requested)
+    slate_day, games, slate_diag = resolve_slate(
+        requested,
+        minimum_games=max(1, int(limit)),
+    )
     if not games:
         return [], {
             "status": "EMPTY",
