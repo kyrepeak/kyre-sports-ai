@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib
 
 import streamlit_memory_lazy_router_v1 as root
+import streamlit_memory_lazy_router_v241 as top_picks_base
 import streamlit_memory_lazy_router_v242 as prior
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V243 • CFB TOP PICKS STEP 3"
@@ -22,12 +23,12 @@ def record_bootstrap_import_ms(value: float) -> None:
 
 
 def _render_cfb_top_picks_v243(market: str) -> None:
-    sport = str(root.st.session_state.get(prior.SPORT_KEY) or "").strip()
+    sport = str(root.st.session_state.get(top_picks_base.SPORT_KEY) or "").strip()
     normalized = str(market or "").strip()
-    if sport != prior.CFB_SPORT_LABEL or normalized != prior.TOP_PICKS_MARKET:
+    if sport != top_picks_base.CFB_SPORT_LABEL or normalized != top_picks_base.TOP_PICKS_MARKET:
         raise RuntimeError("Router V243 owns only College Football -> Top Picks.")
 
-    prior._persist_top_picks_query()
+    top_picks_base._persist_top_picks_query()
     module = importlib.import_module(TOP_PICKS_PAGE)
     return module.render_cfb_hub(
         normalized,
@@ -43,8 +44,8 @@ def _render_direct_top_picks_v243() -> None:
     original_render_nfl = root._render_nfl
     original_prefixes = root._ROUTE_MODULE_PREFIXES
 
-    prior._install_top_picks_market_option()
-    root.st.selectbox = prior.cfb_route_base._selectbox_v77
+    top_picks_base._install_top_picks_market_option()
+    root.st.selectbox = top_picks_base.cfb_route_base._selectbox_v77
     root._render_nfl = _render_cfb_top_picks_v243
     if "cfb_" not in root._ROUTE_MODULE_PREFIXES:
         root._ROUTE_MODULE_PREFIXES = root._ROUTE_MODULE_PREFIXES + ("cfb_",)
@@ -58,11 +59,11 @@ def _render_direct_top_picks_v243() -> None:
 
 
 def render_app() -> None:
-    prior._install_top_picks_market_option()
-    if not prior._active_top_picks_route() and prior._cold_top_picks_query_requested():
-        prior._prime_top_picks_state_from_query()
+    top_picks_base._install_top_picks_market_option()
+    if not top_picks_base._active_top_picks_route() and top_picks_base._cold_top_picks_query_requested():
+        top_picks_base._prime_top_picks_state_from_query()
 
-    if prior._active_top_picks_route():
+    if top_picks_base._active_top_picks_route():
         return _render_direct_top_picks_v243()
 
     return prior.render_app()
