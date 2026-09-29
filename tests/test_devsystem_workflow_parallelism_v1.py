@@ -44,9 +44,9 @@ def test_expensive_lanes_still_wait_for_both_safety_gates() -> None:
 def test_step3_fast_pr_and_full_merge_jobs_exist() -> None:
     fast = _job_block("pr-fast")
     full = _job_block("full-merge-certification")
-    assert "if: github.event_name == 'pull_request'" in fast
+    assert "if: always() && github.event_name == 'pull_request'" in fast
     assert "MONSTER_SPEED_V3_STEP3_FAST_PR_GREEN" in fast
-    assert "github.event_name == 'push'" in full
+    assert "always() && github.event_name == 'push'" in full
     assert "refs/heads/main" in full
     assert "MONSTER_SPEED_V3_STEP3_FULL_MERGE_GREEN" in full
 
@@ -64,6 +64,8 @@ def test_final_gate_still_aggregates_both_safety_gates() -> None:
     assert "- regression-shield" in final_gate
     assert "- pr-fast" in final_gate
     assert "- full-merge-certification" in final_gate
+    assert "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED" in final_gate
+    assert "MONSTER_SPEED_V3_STEP3_FULL_MERGE_REQUIRED" in final_gate
 
 
 def test_final_gate_is_lightweight_and_fail_closed() -> None:
