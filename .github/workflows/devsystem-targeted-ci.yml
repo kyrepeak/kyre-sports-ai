@@ -1,5 +1,7 @@
 name: DevSystem targeted CI
 
+# Browser dependency intent remains frozen in devsystem/browser_tooling_v1.txt; Step 6 exact locks own cache/install identity.
+
 on:
   pull_request:
     branches: [main]
