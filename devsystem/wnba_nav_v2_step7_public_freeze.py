@@ -68,8 +68,13 @@ def _wait_page(page, page_name: str, *, timeout_seconds: float) -> tuple[object,
         try:
             body = _body(frame)
             if page_name == "slate":
-                if _step7_marker(frame, "slate").count() and "WNBA Slate" in body:
+                slate_lazy_ready = (
+                    "No player/model prefetch" in body
+                    and "Detailed PRA edges stay asleep on this page" in body
+                )
+                if _step7_marker(frame, "slate").count() and "WNBA Slate" in body and slate_lazy_ready:
                     print("WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN")
+                    print("WNBA_NAV_STEP7_SLATE_VISIBLE_LAZY_CONTRACT_GREEN")
                     return frame, time.monotonic() - started
 
             elif page_name == "game":
