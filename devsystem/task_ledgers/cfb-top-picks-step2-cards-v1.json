@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-step2-cards-v1",
+  "title": "CFB Top Picks Step 2 — compact 10-card board",
+  "project": "Monster Top Picks",
+  "status": "DONE",
+  "source_main": "94b021db5439dafb2059eb81a077ed3c4cb9c675",
+  "scope": {
+    "page": "cfb_top_picks_page_v2.py",
+    "router": "streamlit_memory_lazy_router_v242.py",
+    "test": "tests/test_cfb_top_picks_step2_cards_v1.py",
+    "browser_qa": "devsystem/cfb_top_picks_step2_browser_qa_v1.py"
+  },
+  "acceptance": {
+    "exact_card_count": 10,
+    "compact_rows": true,
+    "moneyline_spread_over_under_badges": true,
+    "probability_ring_visual": true,
+    "toughness_meter_visual": true,
+    "collapsed_rows": true,
+    "live_pick_logic": false,
+    "ranking_logic": false,
+    "step4_detail_panels": false,
+    "existing_cfb_products_unchanged": true
+  },
+  "protected": {
+    "step1_shell": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
