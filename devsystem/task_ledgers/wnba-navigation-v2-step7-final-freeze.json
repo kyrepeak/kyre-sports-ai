@@ -98,5 +98,26 @@
     "verifier_patch": "Keep the Step-7 deployment marker required on Slate entry. Certify deeper route readiness from the actual interactive user-visible contract: Game Center heading + Back button + PRA buttons, and Player Intelligence heading + Back button.",
     "product_code_changed_by_closeout": false,
     "frozen_steps_1_6_changed_by_closeout": false
+  },
+  "player_verifier_closeout": {
+    "failed_public_run": 36646515806,
+    "failed_public_job": 109670679619,
+    "product_evidence": [
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=0.120",
+      "WNBA_NAV_STEP7_GAME_VISIBLE_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_GAME_ZERO_OVERFLOW_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_GAME_READY_SECONDS=1.542",
+      "public body rendered WNBA PRA INTELLIGENCE",
+      "public body rendered FINAL DECISION",
+      "public body rendered Recent Form",
+      "public body rendered Matchup + Pace",
+      "public body rendered Minutes, Role, Usage + Availability",
+      "public body rendered Same-Opponent H2H Context"
+    ],
+    "verifier_root_cause": "Player readiness and final-surface assertions were case-sensitive while the live visual contract renders key headings in uppercase.",
+    "verifier_patch": "Use case-insensitive semantic checks for Player Intelligence readiness and required final surfaces.",
+    "product_code_changed_by_closeout": false,
+    "frozen_steps_1_6_changed_by_closeout": false
   }
 }
