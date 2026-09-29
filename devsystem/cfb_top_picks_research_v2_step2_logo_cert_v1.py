@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -19,9 +20,32 @@ def run(*, base_url: str = DEFAULT_BASE_URL, artifact_dir: str | Path = "artifac
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
-        page = browser.new_page(viewport={"width": 390, "height": 844})
+        page = None
         try:
-            nav._attempt_normal_flow(page, base_url, 390, 844)
+            # Step 2 owns team identity/logo completeness, not Streamlit menu
+            # activation timing. Reuse the frozen navigation proof as a bounded
+            # precondition and retry it on a fresh page until the V5 route is
+            # actually ready; the logo assertions below remain fail-closed.
+            deadline = time.monotonic() + 120.0
+            last_route_error = ""
+            while time.monotonic() < deadline:
+                if page is not None:
+                    page.close()
+                page = browser.new_page(viewport={"width": 390, "height": 844})
+                try:
+                    nav._attempt_normal_flow(page, base_url, 390, 844)
+                    break
+                except Exception as exc:
+                    last_route_error = repr(exc)
+                    page.close()
+                    page = None
+                    time.sleep(2.0)
+            else:
+                raise AssertionError(
+                    "CFB_TOP_PICKS_RESEARCH_V2_STEP2_ROUTE_PRECONDITION_NOT_READY:"
+                    + last_route_error
+                )
+
             frame, root = nav._find_v5(page)
 
             cards = frame.locator('article[data-testid^="cfb-top-picks-card-"]')
@@ -96,6 +120,8 @@ def run(*, base_url: str = DEFAULT_BASE_URL, artifact_dir: str | Path = "artifac
             print(json.dumps(payload, indent=2, sort_keys=True))
             return payload
         finally:
+            if page is not None:
+                page.close()
             browser.close()
 
 
