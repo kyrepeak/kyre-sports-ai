@@ -1,0 +1,18 @@
+name: WNBA Navigation V2 Step 6 Fast Cert
+on:
+  push:
+    branches: [feature/wnba-navigation-v2-step6-responsive-integration]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: wnba-nav-step6-fast-cert-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  fast-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 devsystem/wnba_nav_step6_fast_cert.py
