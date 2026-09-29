@@ -465,7 +465,7 @@ jobs:
         run: python -m py_compile app.py
 
   pr-fast:
-    if: github.event_name == 'pull_request'
+    if: always() && github.event_name == 'pull_request'
     needs:
       - classify
       - workflow-hygiene
@@ -494,7 +494,7 @@ jobs:
           echo "MONSTER_SPEED_V3_STEP3_FAST_PR_GREEN"
 
   full-merge-certification:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - classify
       - workflow-hygiene
@@ -564,6 +564,7 @@ jobs:
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
           PR_FAST_RESULT: ${{ needs.pr-fast.result }}
           FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           allowed="success skipped"
@@ -588,6 +589,14 @@ jobs:
               failed=1
             fi
           done
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_FAST_RESULT" != "success" ]; then
+            echo "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED"
+            failed=1
+          fi
+          if [ "$EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ] && [ "$FULL_MERGE_RESULT" != "success" ]; then
+            echo "MONSTER_SPEED_V3_STEP3_FULL_MERGE_REQUIRED"
+            failed=1
+          fi
           if [ "$failed" -ne 0 ]; then
             echo "DEVSYSTEM_FINAL_GATE_BLOCKED"
             exit 1
