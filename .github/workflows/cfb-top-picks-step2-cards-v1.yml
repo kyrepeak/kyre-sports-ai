@@ -1,16 +1,6 @@
 name: CFB Top Picks Step 2 compact cards
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'app.py'
-      - 'cfb_top_picks_page_v2.py'
-      - 'streamlit_memory_lazy_router_v242.py'
-      - 'tests/test_cfb_top_picks_step2_cards_v1.py'
-      - 'devsystem/cfb_top_picks_step2_browser_qa_v1.py'
-      - 'devsystem/task_ledgers/cfb-top-picks-step2-cards-v1.json'
-      - '.github/workflows/cfb-top-picks-step2-cards-v1.yml'
   workflow_dispatch:
 
 permissions:
