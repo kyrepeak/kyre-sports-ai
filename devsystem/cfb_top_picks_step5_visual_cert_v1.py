@@ -9,7 +9,7 @@ from urllib.parse import urlencode, urljoin
 import requests
 from playwright.sync_api import sync_playwright
 
-from devsystem.browser_qa_v1 import _find_app_frame
+from browser_qa_v1 import _find_app_frame
 
 PUBLIC_URL = "https://kyre-sports-ai.streamlit.app"
 ROOT = '[data-testid="cfb-top-picks-step5-root"][data-cfb-top-picks-visual="v5"]'
