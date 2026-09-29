@@ -21,3 +21,4 @@ posthog~=7.48
 # NFL Prop Analytics Page 3 Visual V2 Step 2 control-plane full-redeploy trigger 2026-09-28 R1
 # NFL Prop Analytics Step 2 rolling-snapshot control-plane full-redeploy trigger 2026-09-28 R1
 # CFB Top Picks Step 5 control-plane full-redeploy trigger 2026-09-29 R1
+# CFB Top Picks Navigation Step 3 full Streamlit redeploy 2026-09-29 R1
