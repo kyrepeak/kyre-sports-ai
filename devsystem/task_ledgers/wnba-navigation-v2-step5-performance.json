@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "task_id": "wnba-navigation-v2-step5-performance",
+  "title": "WNBA Navigation V2 Step 5 — Performance + Lazy Loading",
+  "project": "WNBA Navigation V2",
+  "step": "5/7",
+  "status": "DONE",
+  "source_main": "4b9d57803a3c990369c42fd55522070d9cf0ca48",
+  "scope": "Transport/cache performance only; frozen Steps 1-4 preserved",
+  "contract": {
+    "native_on_click_single_rerun": true,
+    "explicit_rerun_added": false,
+    "same_session_response_reuse": true,
+    "session_ttl_seconds": 60,
+    "speculative_prefetch": false,
+    "background_prefetch": false,
+    "prefetch_only_after_explicit_selection": true,
+    "prefetch_targets_per_click_max": 1,
+    "projection_runs_added": 0,
+    "sportsbook_calls_added": 0,
+    "monte_carlo_runs_added": 0
+  },
+  "protected": {
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "step3_green_frozen": true,
+    "step4_green_frozen": true,
+    "wnba_model_math_unchanged": true,
+    "market_math_unchanged": true,
+    "other_sports_unchanged": true,
+    "frozen_router_v245": true
+  },
+  "acceptance": [
+    "single-rerun Slate to Game transition",
+    "single-rerun Game to Player transition",
+    "single-rerun Back transitions",
+    "exact selected next-page prefetch only",
+    "no speculative/background prefetch",
+    "same-session consumer snapshot reuse across players",
+    "same-player history reuse",
+    "zero added projection/sportsbook/Monte Carlo work",
+    "fast exact-head proof",
+    "required merge gate",
+    "merged-main certification"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
