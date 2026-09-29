@@ -164,8 +164,14 @@ jobs:
           set -euo pipefail
           python devsystem/forward_motion_contract_v2.py
           if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags origin main
+            ledger_base="$PR_BASE"
+            if git merge-base --is-ancestor "$PR_BASE" origin/main; then
+              ledger_base="$(git merge-base origin/main "$PR_HEAD")"
+            fi
+            echo "DEVSYSTEM_ACTION_LEDGER_BASE=$ledger_base"
             python devsystem/action_ledger_v2.py verify-pr \
-              --base "$PR_BASE" \
+              --base "$ledger_base" \
               --head "$PR_HEAD"
           fi
       - name: Self-test classifier and final gate

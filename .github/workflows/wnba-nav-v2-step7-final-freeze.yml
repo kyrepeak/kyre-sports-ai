@@ -1,0 +1,148 @@
+name: WNBA Navigation V2 Step 7 Final Freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/wnba-nav-v2-step7-final-freeze.yml"
+      - "app.py"
+      - "wnba_pra_final_v2_step7.py"
+      - "streamlit_memory_lazy_router_wnba_nav_v2_step7.py"
+      - "tests/test_wnba_pra_navigation_v2_step7.py"
+      - "devsystem/wnba_nav_v2_step7_public_freeze.py"
+      - "devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/wnba-nav-v2-step7-final-freeze.yml"
+      - "app.py"
+      - "wnba_pra_final_v2_step7.py"
+      - "streamlit_memory_lazy_router_wnba_nav_v2_step7.py"
+      - "tests/test_wnba_pra_navigation_v2_step7.py"
+      - "devsystem/wnba_nav_v2_step7_public_freeze.py"
+      - "devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-nav-v2-step7-final-freeze-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frozen-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Protect exact frozen Steps 1-6 and certify Step 7 transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "WNBA_NAV_STEP7_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob wnba_pra_navigation_v2_step1.py 2ff0c0c7f4b5973755f4a53b9ef110a3eafd7cb9
+          check_blob wnba_pra_slate_v2_step2.py 4636cb4314489e3458b70cb3c17c6a6af4c5ea3d
+          check_blob wnba_pra_game_center_v2_step3.py a181c8949991bb139521f7d379046f34147e5306
+          check_blob wnba_pra_player_intelligence_v2_step4.py 393c29711962bf1d42b8fc58322938c92e23000a
+          check_blob wnba_pra_performance_v2_step5.py 48f0ee6352c56de4a7d224aa05a6c5f584456086
+          check_blob wnba_pra_responsive_v2_step6.py fa42253c48c4df793b4ee0d307e3b843c410cf03
+          check_blob streamlit_memory_lazy_router_wnba_nav_v2_step6.py 86856dd23f0c17fab4ab7803abf60f3c72e12205
+          check_blob devsystem/task_ledgers/wnba-navigation-v2-step6-responsive-integration.json 6caf6bb1382890d481b540f9d1c17a993526787a
+
+          grep -F '"status": "DONE"' devsystem/task_ledgers/wnba-navigation-v2-step6-responsive-integration.json
+          grep -F 'from streamlit_memory_lazy_router_wnba_nav_v2_step7 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'FROZEN_RESPONSIVE = "wnba_pra_responsive_v2_step6"' streamlit_memory_lazy_router_wnba_nav_v2_step7.py
+          grep -F 'data-wnba-nav-v2-step7="final-transport"' wnba_pra_final_v2_step7.py
+          grep -F 'prefetch_status="deferred_until_destination"' wnba_pra_final_v2_step7.py
+
+          python -m py_compile             app.py             wnba_pra_final_v2_step7.py             streamlit_memory_lazy_router_wnba_nav_v2_step7.py             devsystem/wnba_nav_v2_step7_public_freeze.py
+
+          python - <<'PY'
+          from pathlib import Path
+          step7 = Path("wnba_pra_final_v2_step7.py").read_text(encoding="utf-8")
+          game = step7.split("def _open_game_immediate",1)[1].split("def _open_player_immediate",1)[0]
+          player = step7.split("def _open_player_immediate",1)[1].split("def _step7_button_callback",1)[0]
+          assert "navigation.go_to_game(game_id)" in game
+          assert "navigation.go_to_player(str(game_id), str(player_id))" in player
+          assert "_prefetch_game(" not in game
+          assert "_prefetch_player(" not in player
+          assert '"frozen_steps_1_through_6_modified": False' in step7
+          print("WNBA_NAV_STEP7_IMMEDIATE_HANDOFF_CONTRACT_GREEN")
+          PY
+
+          echo WNBA_NAV_STEP7_STEPS1_6_EXACT_BLOBS_GREEN
+          echo WNBA_NAV_STEP7_FROZEN_MATH_GREEN
+
+      - name: Enforce Step 7 product scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin main --no-tags
+          BASE_SHA="$(git merge-base origin/main "$HEAD_SHA")"
+          git fetch --no-tags origin main
+          merge_base="$(git merge-base origin/main "$HEAD_SHA")"
+          actual="$(git diff --name-only "$merge_base" "$HEAD_SHA" | sort)"
+          expected="$(printf '%s\n'             '.github/workflows/devsystem-targeted-ci.yml'             '.github/workflows/wnba-nav-v2-step7-final-freeze.yml'             'app.py'             'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json'             'devsystem/wnba_nav_v2_step7_public_freeze.py'             'streamlit_memory_lazy_router_wnba_nav_v2_step7.py'             'tests/test_wnba_pra_navigation_v2_step7.py'             'wnba_pra_final_v2_step7.py' | sort)"
+          test "$actual" = "$expected" || {
+            echo "WNBA_NAV_STEP7_SCOPE_RED"
+            echo "$actual"
+            exit 1
+          }
+          echo WNBA_NAV_STEP7_PRODUCT_SCOPE_GREEN
+
+  public-final-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: frozen-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore Monster Speed hot browser stack
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
+
+      - name: Build exact-lock browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Prove real PickVault speed and freeze
+        run: |
+          PYTHONPATH="$GITHUB_WORKSPACE" python devsystem/wnba_nav_v2_step7_public_freeze.py             --production-url https://pickvault.streamlit.app             --artifact-dir artifacts/wnba-nav-v2-step7-final-freeze
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wnba-nav-v2-step7-final-freeze-${{ github.run_id }}
+          path: artifacts/wnba-nav-v2-step7-final-freeze
+          if-no-files-found: ignore
