@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import re
 from pathlib import Path
 import time
 
@@ -21,12 +22,12 @@ from devsystem.browser_qa_v1 import BrowserQAFailure, _choose, _find_app_frame
 REQUIRED_MARKERS = (
     "WNBA PRA",
     "Kyre Sports API owned",
-    "Advanced diagnostics",
 )
 
-VALID_STATE_MARKERS = (
-    "No WNBA games on this date",
-    "Slate & data status",
+OFF_DAY_MARKER = "No WNBA games on this date"
+VALID_LIVE_STATE_PATTERN = re.compile(
+    r"Slate & data status\s+SLATE\s+(VERIFIED|CONNECTED|READY)\b",
+    re.IGNORECASE,
 )
 
 FORBIDDEN_RENDERED_MARKERS = (
@@ -49,6 +50,21 @@ VIEWPORTS = (
 
 def _body(frame) -> str:
     return frame.locator("body").inner_text(timeout=5000)
+
+
+def _diagnostics_expander(frame):
+    """Locate the actual Streamlit diagnostics expander, not hero copy."""
+    return frame.locator("details").filter(has_text="Advanced diagnostics")
+
+
+def _acceptable_state(surface: str) -> str:
+    """Return a concrete accepted slate state or an empty string."""
+    if OFF_DAY_MARKER in surface:
+        return OFF_DAY_MARKER
+    match = VALID_LIVE_STATE_PATTERN.search(surface)
+    if match:
+        return match.group(1).upper()
+    return ""
 
 
 def _wnba_surface(body: str) -> str:
@@ -103,23 +119,55 @@ def _certify_viewport(browser, production_url: str, artifact_dir: Path, name: st
         deadline = time.monotonic() + 60.0
         body = ""
         state_marker = ""
+        stable_surface = ""
+        stable_cycles = 0
+
         while time.monotonic() < deadline:
             body = _body(frame)
             surface = _wnba_surface(body)
             required_ok = all(marker in surface for marker in REQUIRED_MARKERS)
-            state_marker = next((marker for marker in VALID_STATE_MARKERS if marker in surface), "")
-            if required_ok and state_marker:
-                break
-            page.wait_for_timeout(2500)
+            state_marker = _acceptable_state(surface)
+            diagnostics = _diagnostics_expander(frame)
+            diagnostics_ok = diagnostics.count() > 0
+
+            if required_ok and state_marker and diagnostics_ok:
+                if surface == stable_surface:
+                    stable_cycles += 1
+                else:
+                    stable_surface = surface
+                    stable_cycles = 1
+
+                # Require a settled render before absence checks so downstream
+                # sections cannot appear after the verifier already declared GREEN.
+                if stable_cycles >= 3:
+                    break
+            else:
+                stable_surface = ""
+                stable_cycles = 0
+
+            page.wait_for_timeout(1500)
             frame, more = _find_app_frame(page, timeout_seconds=20.0)
             scans.extend(more)
         else:
             raise BrowserQAFailure(
-                "Public WNBA PRA markers not ready. "
-                f"Required={REQUIRED_MARKERS!r} states={VALID_STATE_MARKERS!r} body={body[:6000]!r}"
+                "Public WNBA PRA did not reach a stable accepted state. "
+                f"Required={REQUIRED_MARKERS!r} off_day={OFF_DAY_MARKER!r} "
+                f"live_state_pattern={VALID_LIVE_STATE_PATTERN.pattern!r} "
+                f"diagnostics_expander_required=True body={body[:6000]!r}"
             )
 
+        # Re-read only after the render has stabilized, then re-prove every
+        # positive condition before scanning for forbidden legacy/provider copy.
+        body = _body(frame)
         surface = _wnba_surface(body)
+        state_marker = _acceptable_state(surface)
+        if not all(marker in surface for marker in REQUIRED_MARKERS) or not state_marker:
+            raise BrowserQAFailure(
+                f"Accepted WNBA PRA state disappeared after stabilization. surface={surface[:6000]!r}"
+            )
+        if _diagnostics_expander(frame).count() < 1:
+            raise BrowserQAFailure("Advanced diagnostics expander missing after stabilization.")
+
         forbidden = [marker for marker in FORBIDDEN_RENDERED_MARKERS if marker in surface]
         if forbidden:
             raise BrowserQAFailure(
@@ -135,6 +183,8 @@ def _certify_viewport(browser, production_url: str, artifact_dir: Path, name: st
             "viewport": {"name": name, "width": width, "height": height},
             "state_marker": state_marker,
             "required_markers": list(REQUIRED_MARKERS),
+            "diagnostics_expander_present": True,
+            "stable_render_cycles": stable_cycles,
             "forbidden_markers_absent": True,
             "app_frame_url": frame.url,
             "frame_scan_count": len(scans),
@@ -166,7 +216,7 @@ def _certify_once(browser, production_url: str, artifact_dir: Path) -> dict:
         "production_url": production_url,
         "route": "WNBA -> PRA",
         "api_ownership_marker": "Kyre Sports API owned",
-        "clean_presentation_marker": "Advanced diagnostics",
+        "clean_presentation_marker": "Advanced diagnostics expander",
         "valid_state_markers_observed": states,
         "legacy_provider_markers_absent": True,
         "responsive_viewports": [item["viewport"] for item in viewports],
