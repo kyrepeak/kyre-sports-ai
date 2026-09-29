@@ -33,6 +33,12 @@ def run(base_url: str, artifact_dir: str | Path) -> dict:
             page = browser.new_page(viewport={"width": 1440, "height": 1050})
             page.goto(url, wait_until="domcontentloaded", timeout=90000)
             frame, scans = _find_app_frame(page, timeout_seconds=90.0)
+            # The live Step-3 ranking engine may still be building after the
+            # Streamlit frame itself is ready. Wait for the frozen Step-1
+            # shell marker instead of sampling the spinner body too early.
+            frame.get_by_text("10 Best Daily College Football Picks", exact=False).wait_for(
+                state="visible", timeout=120000
+            )
             body = frame.locator("body").inner_text(timeout=5000)
             missing = [value for value in REQUIRED if value not in body]
             if missing:
