@@ -47,3 +47,9 @@ def test_step3_public_query_is_telemetry_not_route_gate():
     assert "URL query persistence is telemetry only" in CERT
     flow = CERT.split("def _attempt_normal_flow", 1)[1]
     assert "query = _assert_query(page)" not in flow
+
+
+def test_step3_retries_full_market_list_after_responsive_resize():
+    assert "deadline = time.monotonic() + 30.0" in CERT
+    assert "all(option in values for option in EXPECTED_CFB_MARKETS)" in CERT
+    assert "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_MARKET_OPTIONS_NOT_READY" in CERT

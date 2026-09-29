@@ -48,5 +48,16 @@
     "step5_product_logic_changed": false,
     "steps1_4_product_logic_changed": false,
     "api2_changed": false
+  },
+  "responsive_market_portal_repair": {
+    "failure_class": "D_VERIFIER_RESPONSIVE_PORTAL_READINESS",
+    "failed_run": 36646738099,
+    "exact_failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTIONS_NOT_VISIBLE during final responsive width after 390 and 768 were already green",
+    "evidence": "Rendered body still contained Top Picks V5 marker, Step-5 marker, all 10 ranked cards, and correct CFB content.",
+    "root_cause": "After viewport resize, Streamlit rerendered the visible combobox before its option portal finished hydrating.",
+    "patch": "Retry the market open/read cycle for up to 30 seconds and require the full frozen four-market set before certifying.",
+    "product_layout_changed": false,
+    "step5_product_logic_changed": false,
+    "api2_changed": false
   }
 }

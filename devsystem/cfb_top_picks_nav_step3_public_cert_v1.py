@@ -83,13 +83,34 @@ def _visible_options(page, frame, timeout_seconds: float = 15.0):
 
 
 def _market_options(page, frame) -> list[str]:
-    combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
-    combo.wait_for(state="visible", timeout=45000)
-    combo.click()
-    options_locator = _visible_options(page, frame)
-    values = [v.strip() for v in options_locator.all_inner_texts() if v.strip()]
-    page.keyboard.press("Escape")
-    return values
+    # Responsive resize can trigger a Streamlit rerun where the combobox is
+    # already visible but its portal has not finished hydrating. Retry the
+    # open/read cycle until the complete frozen market set is actually present.
+    deadline = time.monotonic() + 30.0
+    last_values: list[str] = []
+    last_error = ""
+    while time.monotonic() < deadline:
+        try:
+            combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
+            combo.wait_for(state="visible", timeout=5000)
+            combo.click(timeout=5000)
+            options_locator = _visible_options(page, frame, timeout_seconds=3.0)
+            values = [v.strip() for v in options_locator.all_inner_texts() if v.strip()]
+            last_values = values
+            if all(option in values for option in EXPECTED_CFB_MARKETS):
+                page.keyboard.press("Escape")
+                return values
+        except Exception as exc:
+            last_error = repr(exc)
+        try:
+            page.keyboard.press("Escape")
+        except Exception:
+            pass
+        page.wait_for_timeout(250)
+    raise AssertionError(
+        "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_MARKET_OPTIONS_NOT_READY:"
+        f"saw={last_values!r};last={last_error}"
+    )
 
 
 def _click_option(page, frame, value: str) -> None:
