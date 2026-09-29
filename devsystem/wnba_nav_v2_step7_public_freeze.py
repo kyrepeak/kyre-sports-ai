@@ -138,8 +138,14 @@ def _set_date_with_game(page, frame, target: str) -> object:
     if date_input.count() < 1:
         raise BrowserQAFailure("WNBA Slate date input missing.")
 
+    input_type = str(date_input.get_attribute("type") or "").strip().lower()
     day = datetime.fromisoformat(target).date()
-    attempts = [target, day.strftime("%m/%d/%Y"), day.strftime("%Y/%m/%d"), day.strftime("%m-%d-%Y")]
+    attempts = [target] if input_type == "date" else [
+        target,
+        day.strftime("%m/%d/%Y"),
+        day.strftime("%Y/%m/%d"),
+        day.strftime("%m-%d-%Y"),
+    ]
     errors = []
     for value in attempts:
         try:
@@ -149,15 +155,46 @@ def _set_date_with_game(page, frame, target: str) -> object:
             current.fill(value)
             current.press("Enter")
             page.keyboard.press("Tab")
+
             deadline = time.monotonic() + 12.0
+            last_body = ""
             while time.monotonic() < deadline:
                 frame, _ = _find_app_frame(page, timeout_seconds=8.0)
                 if _game_button(frame).count() > 0:
                     print(f"WNBA_NAV_STEP7_SLATE_DATE_GREEN={target}")
                     return frame
+                last_body = _body(frame)
+                if "WNBA schedule is temporarily unavailable" in last_body:
+                    retry = frame.get_by_role("button", name="Retry schedule", exact=True)
+                    if retry.count() > 0:
+                        print(f"WNBA_NAV_STEP7_SCHEDULE_RETRY={target}")
+                        retry.click()
+                        retry_deadline = time.monotonic() + 15.0
+                        while time.monotonic() < retry_deadline:
+                            frame, _ = _find_app_frame(page, timeout_seconds=8.0)
+                            if _game_button(frame).count() > 0:
+                                print(f"WNBA_NAV_STEP7_SLATE_DATE_GREEN_AFTER_RETRY={target}")
+                                return frame
+                            page.wait_for_timeout(350)
+                        last_body = _body(frame)
+                    break
+                if "No WNBA games are scheduled for this date." in last_body:
+                    break
                 page.wait_for_timeout(350)
+
+            state = "API_ERROR" if "temporarily unavailable" in last_body else (
+                "OFF_DAY" if "No WNBA games are scheduled for this date." in last_body else "NO_GAME_BUTTON"
+            )
+            observed = ""
+            try:
+                refreshed = frame.locator('[data-testid="stDateInput"] input').first
+                if refreshed.count() > 0:
+                    observed = str(refreshed.input_value() or "")
+            except Exception:
+                pass
+            errors.append(f"{value}:state={state}:observed={observed}:body={last_body[:500]!r}")
         except Exception as exc:
-            errors.append(f"{value}:{type(exc).__name__}")
+            errors.append(f"{value}:{type(exc).__name__}:{str(exc)[:240]}")
     raise BrowserQAFailure(f"Could not activate WNBA game date {target}; {errors}")
 
 
