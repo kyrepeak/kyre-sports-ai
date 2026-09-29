@@ -3,7 +3,6 @@ name: Passing Yards Universal Step 2 Tokens
 on:
   pull_request:
     paths:
-      - 'app.py'
       - 'kyre_universal_semantic_tokens_v2.py'
       - 'nfl_passing_yards_hub_v52.py'
       - 'streamlit_memory_lazy_router_v203.py'
@@ -13,7 +12,6 @@ on:
     branches:
       - main
     paths:
-      - 'app.py'
       - 'kyre_universal_semantic_tokens_v2.py'
       - 'nfl_passing_yards_hub_v52.py'
       - 'streamlit_memory_lazy_router_v203.py'

@@ -7,7 +7,6 @@ on:
       - "cfb_game_total_step6_visual_v2.py"
       - "cfb_game_total_clean_page_v19.py"
       - "streamlit_memory_lazy_router_v164.py"
-      - "app.py"
       - "tests/test_cfb_game_total_v185_step6_visual_parity.py"
       - "tests/test_cfb_game_total_v184_step6_scoring.py"
       - "tests/test_cfb_game_total_v168_step5_pace.py"
@@ -18,7 +17,6 @@ on:
       - "cfb_game_total_step6_visual_v2.py"
       - "cfb_game_total_clean_page_v19.py"
       - "streamlit_memory_lazy_router_v164.py"
-      - "app.py"
       - "tests/test_cfb_game_total_v185_step6_visual_parity.py"
       - ".github/workflows/cfb-game-total-v185-step6-visual-parity.yml"
   workflow_dispatch:

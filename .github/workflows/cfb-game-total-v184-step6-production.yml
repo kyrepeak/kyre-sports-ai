@@ -9,7 +9,6 @@ on:
       - "cfb_game_total_step6_scoring_v1.py"
       - "cfb_game_total_clean_page_v18.py"
       - "streamlit_memory_lazy_router_v163.py"
-      - "app.py"
       - "devsystem/task_ledgers/cfb-game-total-evidence-step6-final.json"
       - ".github/workflows/cfb-game-total-v184-step6-production.yml"
   push:
@@ -20,7 +19,6 @@ on:
       - "cfb_game_total_step6_scoring_v1.py"
       - "cfb_game_total_clean_page_v18.py"
       - "streamlit_memory_lazy_router_v163.py"
-      - "app.py"
       - "devsystem/task_ledgers/cfb-game-total-evidence-step6-final.json"
       - ".github/workflows/cfb-game-total-v184-step6-production.yml"
   workflow_dispatch:

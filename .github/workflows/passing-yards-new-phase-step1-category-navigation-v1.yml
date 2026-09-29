@@ -7,7 +7,6 @@ on:
       - "devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json"
       - "nfl_passing_yards_hub_v62.py"
       - "streamlit_memory_lazy_router_v213.py"
-      - "app.py"
   push:
     branches: [main]
     paths:
@@ -15,7 +14,6 @@ on:
       - "devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json"
       - "nfl_passing_yards_hub_v62.py"
       - "streamlit_memory_lazy_router_v213.py"
-      - "app.py"
 
 permissions:
   contents: read

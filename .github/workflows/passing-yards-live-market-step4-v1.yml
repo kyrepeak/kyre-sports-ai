@@ -9,7 +9,6 @@ on:
       - "nfl_passing_yards_hub_v73.py"
       - "nfl_passing_yards_market_api_v2.py"
       - "streamlit_memory_lazy_router_v224.py"
-      - "app.py"
       - "tests/test_passing_yards_live_market_step4_v1.py"
       - "devsystem/task_ledgers/passing-yards-live-market-step4-v1.json"
   push:
@@ -19,7 +18,6 @@ on:
       - ".github/workflows/nfl-passing-yards-v35-production-cleanup-v1.yml"
       - "nfl_passing_yards_hub_v73.py"
       - "streamlit_memory_lazy_router_v224.py"
-      - "app.py"
       - "tests/test_passing_yards_live_market_step4_v1.py"
       - "devsystem/task_ledgers/passing-yards-live-market-step4-v1.json"
 
