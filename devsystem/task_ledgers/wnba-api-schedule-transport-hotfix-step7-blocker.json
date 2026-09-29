@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "task_id": "wnba-api-schedule-transport-hotfix-step7-blocker",
+  "title": "WNBA API schedule transport blocker repair for Navigation V2 Step 7",
+  "project": "WNBA Navigation V2",
+  "step": "Step 7 blocker repair",
+  "status": "DONE",
+  "source_main": "89a1becf90a46710a63ed39861cd1c03cebbd08f",
+  "scope": "Restore the previously certified official WNBA public schedule transport only. No Streamlit product, model, market, ranking, probability, projection, sportsbook, or Monte Carlo changes.",
+  "root_cause": "Hosted Kyre Sports API remained healthy at /health but /api/v1/wnba/games repeatedly spent about 20 seconds on the retired/blocked WNBA schedule transport and returned HTTP 502.",
+  "patch": {
+    "certified_revision": "9a45b11704bb95ec5ace275b5dd941e27e32f745",
+    "public_schedule_api_first": true,
+    "current_cdn_fallback": true,
+    "retired_stats_transport_active": false,
+    "normalization_math_changed": false
+  },
+  "protected": {
+    "wnba_navigation_v2_steps1_6": true,
+    "wnba_projection_math": true,
+    "wnba_market_math": true,
+    "wnba_ranking": true,
+    "wnba_monte_carlo": true,
+    "sportsbook_logic": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
