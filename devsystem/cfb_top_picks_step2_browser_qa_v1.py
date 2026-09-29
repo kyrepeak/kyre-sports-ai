@@ -28,7 +28,7 @@ def run(base_url: str, artifact_dir: str | Path) -> dict:
                 if marker.casefold() not in body_fold:
                     raise AssertionError(f"missing marker {marker!r}; body={body[:4000]!r}")
 
-            cards = frame.locator('[data-testid^="cfb-top-picks-card-"]')
+            cards = frame.locator('article[data-testid^="cfb-top-picks-card-"]')
             count = cards.count()
             if count != 10:
                 raise AssertionError(f"expected 10 compact cards, found {count}")
