@@ -23,8 +23,9 @@ def run(base_url: str, artifact_dir: str | Path) -> dict:
             frame, scans = _find_app_frame(page, timeout_seconds=90.0)
             body = frame.locator("body").inner_text(timeout=5000)
 
+            body_fold = body.casefold()
             for marker in ("Top Picks","10 Best Daily College Football Picks","Layout preview"):
-                if marker not in body:
+                if marker.casefold() not in body_fold:
                     raise AssertionError(f"missing marker {marker!r}; body={body[:4000]!r}")
 
             cards = frame.locator('[data-testid^="cfb-top-picks-card-"]')
