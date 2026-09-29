@@ -59,6 +59,8 @@ jobs:
           nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/cfb-top-picks-step5/streamlit.log 2>&1 &
           echo $! > /tmp/cfb_top_picks_step5_pid
       - name: Prove 390 768 1440 and detail
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           python devsystem/cfb_top_picks_step5_visual_cert_v1.py \
             --base-url http://127.0.0.1:8501 \
@@ -94,6 +96,8 @@ jobs:
           python -m pip install --disable-pip-version-check -q requests playwright
           python -m playwright install --with-deps chromium
       - name: Certify deployed public Top Picks and freeze
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           python devsystem/cfb_top_picks_step5_visual_cert_v1.py \
             --base-url https://kyre-sports-ai.streamlit.app \
