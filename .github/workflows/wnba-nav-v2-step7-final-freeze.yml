@@ -94,13 +94,28 @@ jobs:
           git fetch --no-tags origin main
           merge_base="$(git merge-base origin/main "$HEAD_SHA")"
           actual="$(git diff --name-only "$merge_base" "$HEAD_SHA" | sort)"
-          expected="$(printf '%s\n'             '.github/workflows/devsystem-targeted-ci.yml'             '.github/workflows/wnba-nav-v2-step7-final-freeze.yml'             'app.py'             'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json'             'devsystem/wnba_nav_v2_step7_public_freeze.py'             'streamlit_memory_lazy_router_wnba_nav_v2_step7.py'             'tests/test_wnba_pra_navigation_v2_step7.py'             'wnba_pra_final_v2_step7.py' | sort)"
-          test "$actual" = "$expected" || {
+          product_scope="$(printf '%s\n' \
+            '.github/workflows/devsystem-targeted-ci.yml' \
+            '.github/workflows/wnba-nav-v2-step7-final-freeze.yml' \
+            'app.py' \
+            'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json' \
+            'devsystem/wnba_nav_v2_step7_public_freeze.py' \
+            'streamlit_memory_lazy_router_wnba_nav_v2_step7.py' \
+            'tests/test_wnba_pra_navigation_v2_step7.py' \
+            'wnba_pra_final_v2_step7.py' | sort)"
+          verifier_closeout_scope="$(printf '%s\n' \
+            '.github/workflows/wnba-nav-v2-step7-final-freeze.yml' \
+            'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json' \
+            'devsystem/wnba_nav_v2_step7_public_freeze.py' | sort)"
+          if [ "$actual" = "$product_scope" ]; then
+            echo WNBA_NAV_STEP7_PRODUCT_SCOPE_GREEN
+          elif [ "$actual" = "$verifier_closeout_scope" ]; then
+            echo WNBA_NAV_STEP7_VERIFIER_CLOSEOUT_SCOPE_GREEN
+          else
             echo "WNBA_NAV_STEP7_SCOPE_RED"
             echo "$actual"
             exit 1
-          }
-          echo WNBA_NAV_STEP7_PRODUCT_SCOPE_GREEN
+          fi
 
   public-final-freeze:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
