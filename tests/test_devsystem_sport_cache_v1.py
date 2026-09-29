@@ -34,7 +34,7 @@ def test_cache_keys_follow_each_lane_requirement_surface():
 
     assert "devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
     assert "devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
-    assert "devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
+    assert "devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
 
 
 def test_cache_misses_rebuild_and_frozen_test_commands_remain_present():
@@ -43,6 +43,7 @@ def test_cache_misses_rebuild_and_frozen_test_commands_remain_present():
     assert '.venv-cfb-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt' in text
     assert '.venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt' in text
     assert '.venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt' in text
+    assert '.venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt' in text
     assert '.venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt' in text
 
     assert 'tests/test_cfb_over_under_upgrade_step12_certification.py' in text
