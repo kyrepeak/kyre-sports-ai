@@ -4,7 +4,7 @@
   "title": "WNBA Navigation V2 Step 3 — selected-game Game Center",
   "project": "WNBA Navigation V2",
   "step": "3/7",
-  "status": "ACTIVE",
+  "status": "DONE",
   "source_main": "f4876fc1c39342c94cdb944be8614c4b499d2fa6",
   "scope": "Selected-game player cards only; Page 3 remains deferred",
   "contract": {
@@ -36,5 +36,16 @@
     "fast exact-head proof",
     "required merge gate",
     "merged-main certification"
-  ]
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "closeout": {
+    "failure_classification": "VERIFIER_LEDGER_CONTRACT",
+    "product_code_changed_for_repair": false,
+    "fast_cert_green_run": 36633277038,
+    "note": "Step-3 product fast cert was green before ledger closeout; this repair only satisfies Monster Anti-Loop V2 terminal-ledger policy."
+  }
 }
