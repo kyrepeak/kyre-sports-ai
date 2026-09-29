@@ -69,5 +69,22 @@
     "selector_changed": false,
     "timeout_changed": false,
     "retry_policy": "single full-redeploy escalation, then exact public-production-freeze proof"
+  },
+  "public_market_tabs_verifier_repair": {
+    "prior_main": "11d9b148199d510e6ec8f8aea46793b0ac252e41",
+    "failed_public_run": 36595521005,
+    "failed_public_job": 109499286657,
+    "failure": "AssertionError: (390, 'SPREAD')",
+    "new_evidence": "The full Streamlit redeploy succeeded: the public verifier found the Step-5 V5 root. The failure occurred only because the dynamic current Top 10 contained no SPREAD card, while the stable market-tab UI still exposes Moneyline, Spread, and Over/Under.",
+    "classification": "PUBLIC_VERIFIER_FALSE_NEGATIVE",
+    "patch": "Verifier-only: assert the stable cfb-top-picks-market-tabs control contains Moneyline, Spread, and Over/Under; keep exactly-10-card, V5-root, responsive, detail, overflow, and public-freeze checks unchanged.",
+    "product_code_changed": false,
+    "router_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "history_logic_changed": false,
+    "selector_scope_changed": "market-type evidence only",
+    "timeout_changed": false,
+    "deployment_active_proven": true
   }
 }
