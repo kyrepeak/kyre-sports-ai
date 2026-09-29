@@ -66,6 +66,8 @@ jobs:
 
           python -m py_compile             app.py             wnba_pra_final_v2_step7.py             streamlit_memory_lazy_router_wnba_nav_v2_step7.py             devsystem/wnba_nav_v2_step7_public_freeze.py
 
+          grep -F 'WNBA_NAV_STEP7_SLATE_SEMANTIC_LAZY_PROOF_GREEN' devsystem/wnba_nav_v2_step7_public_freeze.py
+
           python - <<'PY'
           from pathlib import Path
           step7 = Path("wnba_pra_final_v2_step7.py").read_text(encoding="utf-8")
