@@ -1,0 +1,39 @@
+name: Monster Speed V3 Step 6 Lock Resolver
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/monster-speed-v3-step6-hot-cache-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-speed-v3-step6-lock-resolver-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve-locks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Resolve exact root and browser package versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/monster-speed-v3-step6-lock
+          /tmp/monster-speed-v3-step6-lock/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          echo "MONSTER_SPEED_V3_STEP6_ROOT_LOCK_BEGIN"
+          /tmp/monster-speed-v3-step6-lock/bin/python -m pip freeze --local | LC_ALL=C sort
+          echo "MONSTER_SPEED_V3_STEP6_ROOT_LOCK_END"
+          /tmp/monster-speed-v3-step6-lock/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          echo "MONSTER_SPEED_V3_STEP6_BROWSER_LOCK_BEGIN"
+          /tmp/monster-speed-v3-step6-lock/bin/python -m pip freeze --local | LC_ALL=C sort
+          echo "MONSTER_SPEED_V3_STEP6_BROWSER_LOCK_END"
+          /tmp/monster-speed-v3-step6-lock/bin/python -m playwright --version
+          echo "MONSTER_SPEED_V3_STEP6_LOCK_RESOLVER_GREEN"
