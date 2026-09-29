@@ -78,8 +78,13 @@ def test_main_cache_seed_is_trusted_scoped_and_key_aligned():
     assert 'devsystem-browser-venv-' not in seed
     assert 'devsystem-playwright-' not in targeted
     assert 'devsystem-playwright-' not in seed
-    assert 'devsystem/browser_tooling_v1.txt' in targeted
-    assert 'devsystem/browser_tooling_v1.txt' in seed
+    # Monster Speed V3 Step 6 supersedes the loose browser tooling
+    # identity with exact resolved dependency locks while preserving the
+    # shared browser-cache namespace and Playwright binary cache.
+    assert 'requirements.lock' in targeted
+    assert 'requirements.lock' in seed
+    assert 'devsystem/browser_requirements.lock' in targeted
+    assert 'devsystem/browser_requirements.lock' in seed
     assert '~/.cache/ms-playwright' in targeted
     assert '~/.cache/ms-playwright' in seed
     assert 'devsystem/sport_cache_epoch_v1.txt' in seed
