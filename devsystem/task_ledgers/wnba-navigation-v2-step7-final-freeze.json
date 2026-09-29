@@ -119,5 +119,19 @@
     "verifier_patch": "Use case-insensitive semantic checks for Player Intelligence readiness and required final surfaces.",
     "product_code_changed_by_closeout": false,
     "frozen_steps_1_6_changed_by_closeout": false
+  },
+  "slate_verifier_closeout": {
+    "failed_public_run": 36646778458,
+    "failed_public_job": 109671513292,
+    "product_evidence": [
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=0.428",
+      "WNBA_NAV_STEP7_DEFAULT_SLATE_HAS_GAME_GREEN",
+      "WNBA_NAV_STEP7_SLATE_ZERO_OVERFLOW_GREEN"
+    ],
+    "verifier_root_cause": "Slate readiness returned on the Step-7 marker plus heading before the frozen lazy-load chips had finished rendering, so the immediate post-ready assertion raced the Streamlit delta stream.",
+    "verifier_patch": "Slate readiness now requires both frozen lazy-load messages before returning ready.",
+    "product_code_changed_by_closeout": false,
+    "frozen_steps_1_6_changed_by_closeout": false
   }
 }
