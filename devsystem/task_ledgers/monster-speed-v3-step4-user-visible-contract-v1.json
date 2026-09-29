@@ -12,7 +12,11 @@
     "stable_selectors_required": true,
     "rendered_page_required": true,
     "preserved_markets_required": true,
-    "responsive_widths": [390, 768, 1440],
+    "responsive_widths": [
+      390,
+      768,
+      1440
+    ],
     "zero_horizontal_overflow_required": true,
     "incidental_url_state_default": "TELEMETRY_NON_BLOCKING",
     "feature_dependent_url_state_can_be_required": true
@@ -30,5 +34,18 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair": {
+    "failure_class": "D_VERIFIER_ENTRYPOINT",
+    "failed_run": 36617415478,
+    "failed_job": 109573886498,
+    "failure": "ModuleNotFoundError: No module named 'devsystem'",
+    "root_cause": "The focused workflow executed the package-owned proof by file path, making devsystem the script directory instead of an importable top-level package.",
+    "patch": "Invoke the exact same proof as python -m devsystem.monster_speed_v3_step4_user_visible_proof_v1 so repository root remains the package import base.",
+    "product_code_changed": false,
+    "router_changed": false,
+    "model_math_changed": false,
+    "dependency_versions_changed": false,
+    "retry_policy": "This watched workflow edit is the single targeted patch and automatically creates one fresh proof on the new PR head."
+  }
 }
