@@ -1,0 +1,104 @@
+name: Monster Speed V3 Step 4 User Visible Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/user_visible_contract_v1.py"
+      - "devsystem/monster_speed_v3_step4_contract_guard_v1.py"
+      - "devsystem/monster_speed_v3_step4_user_visible_proof_v1.py"
+      - "devsystem/cfb_top_picks_nav_step3_public_cert_v1.py"
+      - "tests/test_user_visible_contract_v1.py"
+      - "tests/test_monster_speed_v3_step4_contract_guard_v1.py"
+      - "devsystem/task_ledgers/monster-speed-v3-step4-user-visible-contract-v1.json"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/monster-speed-v3-step4-user-visible-contract-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "devsystem/user_visible_contract_v1.py"
+      - "devsystem/monster_speed_v3_step4_contract_guard_v1.py"
+      - "devsystem/monster_speed_v3_step4_user_visible_proof_v1.py"
+      - "devsystem/cfb_top_picks_nav_step3_public_cert_v1.py"
+      - "tests/test_user_visible_contract_v1.py"
+      - "tests/test_monster_speed_v3_step4_contract_guard_v1.py"
+      - "devsystem/task_ledgers/monster-speed-v3-step4-user-visible-contract-v1.json"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/monster-speed-v3-step4-user-visible-contract-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-speed-v3-step4-user-visible-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore shared Browser QA stack
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+      - name: Prove pure contract and permanent guard
+        run: |
+          python devsystem/monster_speed_v3_step4_contract_guard_v1.py
+          python -m pytest -q tests/test_user_visible_contract_v1.py tests/test_monster_speed_v3_step4_contract_guard_v1.py
+      - name: Start branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/monster-speed-v3-step4
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            > artifacts/monster-speed-v3-step4/streamlit.log 2>&1 &
+          echo $! > /tmp/monster_speed_v3_step4_streamlit_pid
+      - name: Prove real user-visible contract at 390 768 1440
+        run: |
+          python devsystem/monster_speed_v3_step4_user_visible_proof_v1.py \
+            --base-url http://127.0.0.1:8501 \
+            --artifact-dir artifacts/monster-speed-v3-step4
+      - name: Upload Step 4 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-speed-v3-step4-${{ github.run_id }}
+          path: artifacts/monster-speed-v3-step4
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Stop branch-local Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/monster_speed_v3_step4_streamlit_pid ]; then
+            kill "$(cat /tmp/monster_speed_v3_step4_streamlit_pid)" 2>/dev/null || true
+          fi
+      - name: Freeze tokens
+        run: |
+          echo "MONSTER_SPEED_V3_STEP4_GREEN"
+          echo "MONSTER_SPEED_V3_STEP4_FROZEN_GREEN"
