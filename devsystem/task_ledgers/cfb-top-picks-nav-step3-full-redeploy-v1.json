@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-nav-step3-full-redeploy-v1",
+  "title": "CFB Top Picks Navigation Step 3 — full Streamlit redeploy repair",
+  "project": "Monster Top Picks",
+  "status": "DONE",
+  "source_main": "e63d8ac565a457c6cf0e8f9243e20ac4626d0fbc",
+  "trigger": {
+    "step3_pr": 1147,
+    "failed_public_run": 36603312529,
+    "failed_public_job": 109525893104,
+    "exact_failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_MENU_STALE:['Top Picks'];saw=['Moneyline', 'Over/Under', 'Game Total']",
+    "observed_for": "full 600-second public deployment wait"
+  },
+  "root_cause": "GitHub main already contains frozen V245 normal-dropdown ownership and Step 1/2 local merged-main proofs are green, but the public Streamlit process remained on the pre-V245 three-market CFB dropdown for the entire authoritative Step-3 production wait. The prior app.py activation therefore did not replace the hosted process.",
+  "precedent": "Repository-established stale Streamlit escalation: after an app-only activation/refresh fails to replace hosted runtime, touch requirements.txt by comment only with dependency versions unchanged to force a full Community Cloud rebuild.",
+  "patch": "Append one comment-only requirements.txt full-redeploy marker. Do not change any dependency version or runtime product/router/model code.",
+  "retry_policy": "After this repair merges and Community Cloud receives the material full-redeploy input, update/retry the existing Step-3 public certification exactly once using that new deployment state.",
+  "protected": {
+    "cfb_top_picks_nav_step1": true,
+    "cfb_top_picks_nav_step2": true,
+    "cfb_top_picks_v5": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "guardrails": {
+    "dependency_versions_changed": false,
+    "runtime_code_changed": false,
+    "router_logic_changed": false,
+    "product_logic_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "history_logic_changed": false,
+    "sportsbook_logic_changed": false,
+    "selector_changed": false,
+    "timeout_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
