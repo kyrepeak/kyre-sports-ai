@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step3-history-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 3 multi-source matchup history",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "3/9",
+  "status": "DONE",
+  "problem": "The Top Picks detail layer made one direct Winsipedia call and displayed a generic no-history message whenever that single path returned no rows, even when prior meetings existed elsewhere.",
+  "root_cause": "The detail contract had no field-level history router. Exact ESPN team-ID schedule history already existed elsewhere in the certified CFB stack, but Top Picks bypassed it and treated one external provider miss as history unavailable.",
+  "patch": "Route history per matchup through two independent certified sources: ESPN exact-team-ID schedules plus Winsipedia all-time game-by-game. Reconcile available rows, record aliases/provenance/source attempts, and emit only VERIFIED_HISTORY, VERIFIED_NO_HISTORY_AFTER_SOURCE_EXHAUSTION, or SOURCE_CONFLICT_REVIEW. Provider failure can never authorize a no-history claim.",
+  "acceptance": {
+    "minimum_independent_sources_attempted": 2,
+    "canonical_espn_team_ids_required": true,
+    "winsipedia_alias_resolution_recorded": true,
+    "verified_history_survives_single_provider_miss": true,
+    "no_history_requires_source_exhaustion": true,
+    "source_failure_never_means_no_history": true,
+    "ten_ranked_picks_receive_terminal_history_status_in_certification": true,
+    "history_projection_weight": 0,
+    "history_selection_weight": 0,
+    "history_ranking_weight": 0,
+    "sportsbook_projection_weight": 0,
+    "api2_separate_and_protected": true
+  },
+  "protected": {
+    "step1_contract": true,
+    "step2_real_logos": true,
+    "ranking_probability_and_reliability": true,
+    "lazy_history_load_on_tap": true,
+    "api2": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "repair": {
+    "failure_class": "C_STALE_ACCEPTANCE_TEST",
+    "failed_run": 36638314971,
+    "failed_job": 109644297596,
+    "exact_failure": "expected TOP_PICKS_PAGE = \"cfb_top_picks_page_v4\"",
+    "live_truth": "streamlit_memory_lazy_router_v244.py sets TOP_PICKS_PAGE = \"cfb_top_picks_page_v5\"",
+    "patch": "Forward-port the old Step-4 detail test to the already-frozen V5 page owner. No history, router, model, ranking, probability, or API 2 behavior changed.",
+    "history_logic_changed": false,
+    "api2_changed": false
+  },
+  "live_cert_invocation_repair": {
+    "failure_class": "D_CI_MODULE_PATH",
+    "failed_run": 36638423361,
+    "failed_job": 109644659394,
+    "exact_failure": "ModuleNotFoundError: No module named 'cfb_schedule_v7_future_slate'",
+    "root_cause": "The cert was executed as a file under devsystem/, making devsystem the Python import root before any live history source call occurred.",
+    "patch": "Invoke the cert with python -m devsystem.cfb_top_picks_research_v2_step3_history_cert_v1 so repository-root CFB modules resolve normally.",
+    "history_logic_changed": false,
+    "provider_logic_changed": false,
+    "api2_changed": false
+  }
+}

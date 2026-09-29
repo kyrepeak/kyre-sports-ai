@@ -85,9 +85,18 @@ def _history_html(row: dict, detail: dict) -> str:
     source = escape(str(detail.get("history_source") or "Verified history unavailable"))
     meetings = int(detail.get("meetings") or 0)
     if not history_rows:
+        status = str(detail.get("history_status") or "").strip()
+        attempted = int(detail.get("source_count_attempted") or 0)
+        if status == "VERIFIED_NO_HISTORY_AFTER_SOURCE_EXHAUSTION":
+            return (
+                '<div class="tp4-nohist" data-history-status="VERIFIED_NO_HISTORY_AFTER_SOURCE_EXHAUSTION">'
+                f'No prior meeting was found after {attempted} independent history sources were checked. '
+                'Nothing is being invented.</div>'
+            )
         return (
-            '<div class="tp4-nohist">No verified head-to-head game history is available '
-            'for this matchup, so no historical result is being invented.</div>'
+            '<div class="tp4-nohist" data-history-status="SOURCE_CONFLICT_REVIEW">'
+            'Matchup-history verification is incomplete or the sources could not verify a series. '
+            '<strong>No “these teams never played” claim is being made.</strong></div>'
         )
     rendered = []
     away = escape(str(row.get("away") or "Away"))
@@ -100,8 +109,11 @@ def _history_html(row: dict, detail: dict) -> str:
             f'<div class="tp4-history-row"><span>{date} • {away} vs {home}</span>'
             f'<span>{away_points}-{home_points}</span></div>'
         )
+    verified_sources = int(detail.get("source_count_verified") or 0)
+    attempted_sources = int(detail.get("source_count_attempted") or 0)
     return (
-        f'<div class="tp4-history-head"><span>{source}</span><span>{meetings} verified meetings</span></div>'
+        f'<div class="tp4-history-head" data-history-status="VERIFIED_HISTORY">'
+        f'<span>{source}</span><span>{meetings} verified meetings • {verified_sources}/{attempted_sources} sources verified</span></div>'
         f'<div class="tp4-history-list">{"".join(rendered)}</div>'
     )
 

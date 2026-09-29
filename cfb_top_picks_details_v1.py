@@ -17,8 +17,9 @@ from typing import Any, Mapping
 
 import cfb_over_under_data_recovery_v1 as history_recovery
 import cfb_schedule_v7_future_slate as schedule
+import cfb_top_picks_history_router_v1 as history_router
 
-MODEL_VERSION = "CFB TOP PICKS DETAILS V1 • STEP 4 WHY HISTORY BENEFITS"
+MODEL_VERSION = "CFB TOP PICKS DETAILS V1 • RESEARCH V2 STEP 3 MULTI-SOURCE HISTORY"
 HISTORY_PROJECTION_WEIGHT = 0.0
 HISTORY_SELECTION_WEIGHT = 0.0
 HISTORY_RANKING_WEIGHT = 0.0
@@ -184,7 +185,13 @@ def build_pick_detail(row: Mapping[str, Any], slate_day: str) -> dict[str, Any]:
             "ready": False,
             "why": why,
             "history_ready": False,
+            "history_status": history_router.SOURCE_CONFLICT_REVIEW,
             "history_source": "",
+            "sources_attempted": [],
+            "sources_verified": [],
+            "source_count_attempted": 0,
+            "source_count_verified": 0,
+            "no_history_claim_allowed": False,
             "meetings": 0,
             "history_rows": [],
             "benefit": "Verified matchup identity was unavailable, so no historical claim is shown.",
@@ -197,8 +204,9 @@ def build_pick_detail(row: Mapping[str, Any], slate_day: str) -> dict[str, Any]:
 
     away = _clean(game.get("away_team") or row.get("away"))
     home = _clean(game.get("home_team") or row.get("home"))
-    series = history_recovery._fetch_winsipedia_games(away, home)
-    history_ready = bool(series.get("ready"))
+    series = history_router.resolve_matchup_history(row, game)
+    history_status = _clean(series.get("status"))
+    history_ready = bool(series.get("history_ready"))
     rows = _history_rows(series) if history_ready else []
 
     return {
@@ -209,8 +217,17 @@ def build_pick_detail(row: Mapping[str, Any], slate_day: str) -> dict[str, Any]:
         "home_espn_team_id": _clean(game.get("home_espn_team_id")),
         "why": why,
         "history_ready": history_ready,
+        "history_status": history_status,
         "history_source": _clean(series.get("source")) if history_ready else "",
         "history_source_url": _clean(series.get("source_url")) if history_ready else "",
+        "sources_attempted": list(series.get("sources_attempted") or []),
+        "sources_verified": list(series.get("sources_verified") or []),
+        "source_count_attempted": int(_f(series.get("source_count_attempted"), 0.0)),
+        "source_count_verified": int(_f(series.get("source_count_verified"), 0.0)),
+        "no_history_claim_allowed": bool(series.get("no_history_claim_allowed")),
+        "history_observed_at": _clean(series.get("observed_at")),
+        "series_record": dict(series.get("series_record") or {}),
+        "line_hit_context": dict(series.get("line_hit_context") or {}),
         "meetings": int(_f(series.get("meetings"), 0.0)) if history_ready else 0,
         "away_wins": int(_f(series.get("away_wins"), 0.0)) if history_ready else 0,
         "home_wins": int(_f(series.get("home_wins"), 0.0)) if history_ready else 0,
@@ -218,9 +235,17 @@ def build_pick_detail(row: Mapping[str, Any], slate_day: str) -> dict[str, Any]:
         "avg_combined_total": _f(series.get("avg_combined_total"), 0.0) if history_ready else 0.0,
         "history_rows": rows,
         "benefit": _benefit(row, series) if history_ready else (
-            "No verified head-to-head series was available, so no historical benefit is claimed."
+            "No historical benefit is claimed because the multi-source history router did not verify a series."
         ),
-        "reason": "" if history_ready else "verified all-time matchup history unavailable",
+        "reason": (
+            ""
+            if history_ready
+            else (
+                "verified no prior meetings after source exhaustion"
+                if history_status == history_router.VERIFIED_NO_HISTORY
+                else "history sources could not verify a series; no no-history claim is made"
+            )
+        ),
         "history_projection_weight": HISTORY_PROJECTION_WEIGHT,
         "history_selection_weight": HISTORY_SELECTION_WEIGHT,
         "history_ranking_weight": HISTORY_RANKING_WEIGHT,
