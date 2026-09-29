@@ -1,22 +1,7 @@
 name: NFL Passing Yards Speed Step 4 Cache
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/passing-yards-speed-step4-cache-v1.yml"
-      - "devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json"
-      - "nfl_passing_yards_hub_v80.py"
-      - "streamlit_memory_lazy_router_v231.py"
-      - "tests/test_passing_yards_speed_step4_cache_v1.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/passing-yards-speed-step4-cache-v1.yml"
-      - "devsystem/task_ledgers/passing-yards-speed-step4-cache-v1.json"
-      - "nfl_passing_yards_hub_v80.py"
-      - "streamlit_memory_lazy_router_v231.py"
-      - "tests/test_passing_yards_speed_step4_cache_v1.py"
+  workflow_dispatch:
 
 permissions:
   contents: read
