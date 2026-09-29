@@ -21,10 +21,16 @@ def run(base_url: str, artifact_dir: str | Path) -> dict:
             page = browser.new_page(viewport={"width":1440,"height":1100})
             page.goto(url, wait_until="domcontentloaded", timeout=90000)
             frame, scans = _find_app_frame(page, timeout_seconds=90.0)
+            # Step 2 is a frozen compact-card contract, not an ownership claim
+            # over Step-3/4 status copy. Wait for the live board shell, then
+            # prove the 10 frozen cards and market badges below.
+            frame.get_by_text("10 Best Daily College Football Picks", exact=False).wait_for(
+                state="visible", timeout=120000
+            )
             body = frame.locator("body").inner_text(timeout=5000)
 
             body_fold = body.casefold()
-            for marker in ("Top Picks","10 Best Daily College Football Picks","Layout preview"):
+            for marker in ("Top Picks","10 Best Daily College Football Picks"):
                 if marker.casefold() not in body_fold:
                     raise AssertionError(f"missing marker {marker!r}; body={body[:4000]!r}")
 

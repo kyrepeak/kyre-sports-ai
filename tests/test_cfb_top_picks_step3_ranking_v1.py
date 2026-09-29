@@ -82,32 +82,76 @@ def test_spread_candidate_uses_model_margin_distribution_and_market_only_as_thre
 
 
 
-def test_resolve_slate_skips_started_games_and_advances_to_next_pregame_day(monkeypatch):
+def test_resolve_slate_skips_tiny_weekday_and_uses_first_slate_large_enough(monkeypatch):
     live = {
         "game_id": "live-1",
         "identity_verified": True,
         "date_matches_query": True,
         "status": "In Progress",
     }
-    upcoming = {
-        "game_id": "pre-1",
-        "identity_verified": True,
-        "date_matches_query": True,
-        "status": "Scheduled",
-    }
+    tiny = [
+        {
+            "game_id": f"tiny-{i}",
+            "identity_verified": True,
+            "date_matches_query": True,
+            "status": "Scheduled",
+        }
+        for i in range(2)
+    ]
+    full = [
+        {
+            "game_id": f"full-{i}",
+            "identity_verified": True,
+            "date_matches_query": True,
+            "status": "Scheduled",
+        }
+        for i in range(12)
+    ]
 
     def fake_load(day):
         if day == "2026-09-29":
             return [live], {"day": day}
         if day == "2026-09-30":
-            return [upcoming], {"day": day}
+            return tiny, {"day": day}
+        if day == "2026-10-01":
+            return full, {"day": day}
         return [], {"day": day}
 
     monkeypatch.setattr(engine.schedule, "load_with_diagnostics", fake_load)
-    day, games, diag = engine.resolve_slate("2026-09-29", max_days=2)
+    day, games, diag = engine.resolve_slate(
+        "2026-09-29",
+        max_days=3,
+        minimum_games=10,
+    )
+    assert day == "2026-10-01"
+    assert len(games) == 12
+    assert diag["auto_advanced_days"] == 2
+    assert diag["selection_reason"] == "earliest_slate_meeting_minimum_games"
+
+
+def test_resolve_slate_falls_back_to_largest_verified_slate(monkeypatch):
+    def game(day, idx):
+        return {
+            "game_id": f"{day}-{idx}",
+            "identity_verified": True,
+            "date_matches_query": True,
+            "status": "Scheduled",
+        }
+
+    counts = {"2026-09-29": 2, "2026-09-30": 5, "2026-10-01": 3}
+
+    def fake_load(day):
+        return [game(day, i) for i in range(counts.get(day, 0))], {"day": day}
+
+    monkeypatch.setattr(engine.schedule, "load_with_diagnostics", fake_load)
+    day, games, diag = engine.resolve_slate(
+        "2026-09-29",
+        max_days=2,
+        minimum_games=10,
+    )
     assert day == "2026-09-30"
-    assert [row["game_id"] for row in games] == ["pre-1"]
-    assert diag["auto_advanced_days"] == 1
+    assert len(games) == 5
+    assert diag["selection_reason"] == "largest_verified_slate_in_window"
 
 def test_over_under_candidate_uses_existing_ou_model_and_final(monkeypatch):
     game = {
