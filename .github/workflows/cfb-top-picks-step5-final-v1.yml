@@ -1,3 +1,4 @@
+# Scheduler sync: app.py remains frozen on main.
 name: CFB Top Picks Step 5 final
 
 on:
