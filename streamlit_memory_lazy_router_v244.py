@@ -1,7 +1,7 @@
 """Streamlit Router V244 — CFB Top Picks Step 4 detail dropdowns.
 
 Additive over frozen V243. Only College Football -> Top Picks advances to the
-Step-5 V5 visual page. Every other route delegates unchanged to frozen V243.
+Step-4 V4 page. Every other route delegates unchanged to frozen V243.
 """
 from __future__ import annotations
 
@@ -11,9 +11,9 @@ import streamlit_memory_lazy_router_v1 as root
 import streamlit_memory_lazy_router_v241 as top_picks_base
 import streamlit_memory_lazy_router_v243 as prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V244 • CFB TOP PICKS STEP 5 VISUAL ACTIVATION"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V244 • CFB TOP PICKS STEP 4"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v243"
-TOP_PICKS_PAGE = "cfb_top_picks_page_v5"
+TOP_PICKS_PAGE = "cfb_top_picks_page_v4"
 MAY_MODIFY_EXISTING_CFB_PRODUCTS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 HISTORY_PROJECTION_INFLUENCE = 0.0
