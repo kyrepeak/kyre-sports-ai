@@ -146,6 +146,29 @@ def test_step4_page_is_collapsed_by_default_and_contains_three_detail_sections()
     assert "history projection weight <strong>0.0%</strong>" in html
 
 
+
+
+def test_step4_detail_batch_is_concurrent_bounded_and_preserves_rank_order(monkeypatch):
+    seen = []
+
+    def fake_detail(row, slate_day):
+        seen.append((row["rank"], slate_day))
+        return {"event_id": row["event_id"], "why": f"rank-{row['rank']}"}
+
+    monkeypatch.setattr(page.details, "build_pick_detail", fake_detail)
+    picks = [
+        _row(rank=1, event_id="401"),
+        _row(rank=2, event_id="402"),
+        _row(rank=3, event_id="403"),
+    ]
+    out = page._build_details_batch(picks, "2026-10-03")
+
+    assert page.MAX_DETAIL_WORKERS == 10
+    assert [item["event_id"] for item in out] == ["401", "402", "403"]
+    assert {rank for rank, _ in seen} == {1, 2, 3}
+    assert all(day == "2026-10-03" for _, day in seen)
+
+
 def test_step4_preserves_frozen_step3_ranked_engine_and_zero_weights():
     assert "engine.build_top_picks(limit=10)" in PAGE
     assert "CFB_TOP_PICKS_STEP3_LIVE_RANKING_ACTIVE" in PAGE
