@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step4-user-visible-contract-v1",
+  "title": "Monster Speed V3 Step 4 — User-visible-contract-first proof engine",
+  "project": "Monster Speed V3",
+  "step": "4/6",
+  "status": "DONE",
+  "root_cause": "Browser verifiers could independently promote incidental URL/query telemetry or hidden implementation details into blocking acceptance gates, causing false failures after the actual user-visible behavior was already healthy.",
+  "patch": "Add one reusable user-visible acceptance engine that fails closed on stable visible selectors, visible text, preserved markets, required responsive widths, and horizontal overflow while treating query/URL state as telemetry unless a feature explicitly declares it required. Migrate the frozen CFB Top Picks public verifier to the engine and add a real local Playwright proof across 390/768/1440.",
+  "proof_contract": {
+    "blocking_truth": "USER_VISIBLE_BEHAVIOR",
+    "stable_selectors_required": true,
+    "rendered_page_required": true,
+    "preserved_markets_required": true,
+    "responsive_widths": [390, 768, 1440],
+    "zero_horizontal_overflow_required": true,
+    "incidental_url_state_default": "TELEMETRY_NON_BLOCKING",
+    "feature_dependent_url_state_can_be_required": true
+  },
+  "protected": {
+    "steps1_3_frozen": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_versions_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
