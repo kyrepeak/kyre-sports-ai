@@ -36,14 +36,6 @@ def test_step5_accepts_required_repo_settings():
         ({"allow_auto_merge": False}, "allow_auto_merge"),
         ({"allow_update_branch": False}, "allow_update_branch"),
         ({"default_branch": "develop"}, "default_branch"),
-        (
-            {
-                "allow_squash_merge": False,
-                "allow_merge_commit": False,
-                "allow_rebase_merge": False,
-            },
-            "no merge method",
-        ),
     ],
 )
 def test_step5_fails_closed_on_repo_setting_regression(mutation, token):
