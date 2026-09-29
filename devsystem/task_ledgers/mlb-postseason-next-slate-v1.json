@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "task_id": "mlb-postseason-next-slate-v1",
+  "title": "MLB postseason next-slate off-day recovery",
+  "project": "Monster MLB Slate",
+  "status": "DONE",
+  "source_main": "ffc00ec84e8e99b6199e76240b1d83a4a7f323a6",
+  "scope": {
+    "schedule": "mlb_schedule_v32.py",
+    "slate": "mlb_slate_hub_v32.py",
+    "regression_test": "tests/test_mlb_postseason_next_slate_v1.py"
+  },
+  "acceptance": {
+    "valid_empty_selected_day_not_presented_as_provider_failure": true,
+    "next_verified_mlb_slate_discovered_within_bounded_window": true,
+    "postseason_game_types_not_filtered_out": true,
+    "no_fabricated_games": true,
+    "official_first_loader_reused": true,
+    "wnba_files_changed": false,
+    "projection_math_changed": false
+  },
+  "protected": {
+    "wnba_workstream": true,
+    "nfl_product": true,
+    "cfb_product": true,
+    "mlb_model_math": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
