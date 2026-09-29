@@ -185,7 +185,7 @@ def _spread_candidate(
         return None
 
     mu = _f(final.get("projected_margin_home"))
-    sigma = _f((final.get("margin_uncertainty") or {}).get("sigma"), 0.0)
+    sigma = _f((final.get("margin_uncertainty") or {}).get("sigma_points"), 0.0)
     if sigma <= 0:
         return None
 
@@ -350,7 +350,11 @@ def resolve_slate(
         games, diag = schedule.load_with_diagnostics(day)
         verified = [
             dict(game) for game in games
-            if game.get("identity_verified") and game.get("date_matches_query")
+            if (
+                game.get("identity_verified")
+                and game.get("date_matches_query")
+                and ou_model._pregame_status_ready(game)
+            )
         ]
         attempts.append({"date": day, "games": len(verified)})
         if verified:
