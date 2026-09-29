@@ -36,5 +36,19 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "deployment_refresh": {
+    "reason": "public pickvault runtime remained on frozen Step-4 process after Step-5 code and production-host repair merged",
+    "evidence_run": 36588716658,
+    "stale_public_marker": "CFB_TOP_PICKS_STEP4_DETAILS_ACTIVE",
+    "required_public_marker": "CFB_TOP_PICKS_STEP5_FINAL_VISUAL_ACTIVE",
+    "patch_scope": [
+      "app.py deployment heartbeat only"
+    ],
+    "product_code_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "history_logic_changed": false,
+    "retry_policy": "single deployment refresh, then exact public-production-freeze proof only"
   }
 }
