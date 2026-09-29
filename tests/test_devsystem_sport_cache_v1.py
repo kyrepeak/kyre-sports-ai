@@ -34,7 +34,7 @@ def test_cache_keys_follow_each_lane_requirement_surface():
 
     assert "devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
     assert "devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
-    assert "devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
+    assert "devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}-rootdeps-v2" in text
 
 
 def test_cache_misses_rebuild_and_frozen_test_commands_remain_present():
@@ -45,6 +45,11 @@ def test_cache_misses_rebuild_and_frozen_test_commands_remain_present():
     assert '.venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt' in text
     assert '.venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt' in text
     assert '.venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt' in text
+
+    seed = _seed_text()
+    assert '.venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt' in seed
+    assert '.venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt' in seed
+    assert '-rootdeps-v2' in seed
 
     assert 'tests/test_cfb_over_under_upgrade_step12_certification.py' in text
     assert 'tests/test_mlb_step20b_production_release_certification_v1.py' in text
