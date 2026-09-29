@@ -146,22 +146,54 @@ def _certify_board(page, base_url: str, width: int, height: int, artifacts: Path
 def _certify_detail(page, detail_url: str, artifacts: Path) -> None:
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(detail_url, wait_until="domcontentloaded", timeout=120000)
-    frame, panel = _find(page, DETAIL, timeout=180.0)
+    frame, _ = _find(page, DETAIL, timeout=180.0)
+
+    markers = ("Why This Pick", "Actual Matchup History", "Benefits")
+    deadline = time.monotonic() + 180.0
+    panel = None
+    body = ""
+
+    while time.monotonic() < deadline:
+        root = frame.locator(ROOT)
+        panels = frame.locator(DETAIL)
+        if root.count() == 1 and root.locator(CARD).count() == 10 and panels.count() >= 1:
+            for index in range(panels.count()):
+                candidate = panels.nth(index)
+                try:
+                    candidate_body = candidate.inner_text(timeout=2500)
+                except Exception:
+                    continue
+                candidate_fold = candidate_body.casefold()
+                if all(marker.casefold() in candidate_fold for marker in markers):
+                    panel = candidate
+                    body = candidate_body
+                    break
+        if panel is not None:
+            break
+
+        full_body = _body(page)
+        if "Traceback" in full_body or "TypeError" in full_body or "SyntaxError" in full_body:
+            raise AssertionError(
+                "CFB_TOP_PICKS_STEP5_DETAIL_RUNTIME_ERROR:" + full_body[:5000]
+            )
+        page.wait_for_timeout(500)
+
+    if panel is None:
+        raise AssertionError(
+            "CFB_TOP_PICKS_STEP5_DETAIL_TEXT_NOT_READY:"
+            + repr({"required": markers, "last_body": body[:2000]})
+        )
+
     root = frame.locator(ROOT)
     assert root.count() == 1
     assert root.locator(CARD).count() == 10
     assert frame.locator('details.tp4-details[data-expanded="true"]').count() == 1
-    body = panel.inner_text(timeout=5000)
-    body_fold = body.casefold()
-    for marker in ("Why This Pick", "Actual Matchup History", "Benefits"):
-        assert marker.casefold() in body_fold, (marker, body[:2000])
     _assert_no_overflow(frame)
     page.screenshot(
         path=str(artifacts / "cfb_top_picks_step5_390_detail_green.png"),
         full_page=True,
     )
     print("CFB_TOP_PICKS_STEP5_DETAIL_GREEN")
-
 
 def run(*, base_url: str, mode: str, artifact_dir: str | Path) -> None:
     public = mode == "public"
