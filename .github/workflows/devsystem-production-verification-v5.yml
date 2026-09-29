@@ -19,6 +19,8 @@ on:
       - "sports_api/collectors/cfb_*.py"
       - "data/cfb_*.json"
       - "requirements*.txt"
+      - "requirements.lock"
+      - "devsystem/browser_requirements.lock"
 
       # Verifier ownership / contract changes must still self-trigger.
       - "devsystem/production_verify_v1.py"
@@ -36,6 +38,7 @@ on:
       - ".github/workflows/devsystem-production-verification-v5.yml"
   workflow_dispatch:
 
+# Step 2 dependency-intent contract remains frozen: devsystem/root_requirements_fingerprint_v1.txt
 permissions:
   contents: read
 
@@ -110,15 +113,14 @@ jobs:
           path: |
             .venv-browser-qa
             ~/.cache/ms-playwright
-          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
 
       - name: Build shared Browser QA stack on cache miss
         if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           python -m venv .venv-browser-qa
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
           .venv-browser-qa/bin/python -m playwright install chromium
 
       - name: Activate shared Browser QA virtualenv

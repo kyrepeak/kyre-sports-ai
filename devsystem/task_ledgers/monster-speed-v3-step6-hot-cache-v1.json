@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step6-hot-cache-v1",
+  "title": "Monster Speed V3 Step 6 — Permanent hot dependency + browser cache",
+  "project": "Monster Speed V3",
+  "step": "6/6",
+  "status": "DONE",
+  "root_cause": "The shared browser cache was prebuilt, but its identity still came from unpinned dependency intent plus a manual cache epoch. A cache miss could therefore resolve a different Python environment than the key represented, and non-dependency cache controls could invalidate an otherwise reusable stack.",
+  "resolver": {
+    "run_id": 36627037746,
+    "runner": "ubuntu-24.04",
+    "python": "3.12",
+    "status": "SUCCESS",
+    "root_packages": 0,
+    "browser_packages": 0,
+    "playwright": "1.62.0"
+  },
+  "patch": "Commit exact root and browser locks, key the active shared browser cache only from OS/Python plus those exact locks, install the exact browser lock on misses, keep a main cache seed, and require a second-job real cache hit with cached Chromium launch before freezing.",
+  "protected": {
+    "steps1_5_frozen": true,
+    "step2_dependency_intent_fingerprint_preserved": true,
+    "devsystem_final_gate_preserved": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_intent_unchanged": true
+  },
+  "acceptance": {
+    "exact_root_lock": true,
+    "exact_browser_lock": true,
+    "active_cache_keys_lock_owned": true,
+    "cache_miss_exact_lock_install": true,
+    "hot_cache_hit_required": true,
+    "cached_chromium_launch_required": true,
+    "merged_main_full_gate_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

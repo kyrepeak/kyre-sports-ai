@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - requirements.txt
+      - requirements.lock
       - devsystem/root_requirements_fingerprint_v1.txt
+      - devsystem/browser_requirements.lock
       - sports_api/requirements.txt
       - devsystem/browser_tooling_v1.txt
       - devsystem/browser_cache_epoch_v1.txt
@@ -35,14 +37,13 @@ jobs:
           path: |
             .venv-browser-qa
             ~/.cache/ms-playwright
-          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
       - name: Build Browser QA stack on cache miss
         if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           python -m venv .venv-browser-qa
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
           .venv-browser-qa/bin/python -m playwright install chromium
 
   cfb-cache-seed:
