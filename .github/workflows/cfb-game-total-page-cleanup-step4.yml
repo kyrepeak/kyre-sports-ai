@@ -6,7 +6,6 @@ on:
     paths:
       - "cfb_game_total_clean_page_v23.py"
       - "streamlit_memory_lazy_router_v168.py"
-      - "app.py"
       - "tests/test_cfb_game_total_page_cleanup_step4.py"
       - "devsystem/task_ledgers/cfb-game-total-page-cleanup-step4-team-evidence-ui.json"
       - ".github/workflows/cfb-game-total-page-cleanup-step4.yml"
@@ -15,7 +14,6 @@ on:
     paths:
       - "cfb_game_total_clean_page_v23.py"
       - "streamlit_memory_lazy_router_v168.py"
-      - "app.py"
       - "tests/test_cfb_game_total_page_cleanup_step4.py"
       - "devsystem/task_ledgers/cfb-game-total-page-cleanup-step4-team-evidence-ui.json"
       - ".github/workflows/cfb-game-total-page-cleanup-step4.yml"

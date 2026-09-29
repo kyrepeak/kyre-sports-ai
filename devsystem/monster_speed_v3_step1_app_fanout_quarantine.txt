@@ -1,0 +1,55 @@
+# MONSTER SPEED V3 STEP 1 — app.py fanout quarantine
+# Evidence: main SHA 219693da52605fdb19d838da51f48551ae3d3c7c produced 56 workflow runs.
+# These 51 unrelated product workflows fired because their automatic trigger paths included app.py.
+# Preserve each workflow and its product-specific triggers; app.py must stay quarantined from automatic PR/push paths.
+.github/workflows/cfb-game-total-v184-step6-browser.yml
+.github/workflows/cfb-game-total-v185-step6-visual-parity.yml
+.github/workflows/passing-yards-qb-drilldown-step4-v1.yml
+.github/workflows/nfl-moneyline-visual-step2-v1.yml
+.github/workflows/nfl-moneyline-visual-step3-v1.yml
+.github/workflows/passing-yards-universal-step4-cards-v1.yml
+.github/workflows/passing-yards-performance-step8-v2.yml
+.github/workflows/passing-yards-universal-step3-shell-v1.yml
+.github/workflows/nfl-moneyline-visual-step5-v1.yml
+.github/workflows/passing-yards-speed-step3-lazy-detail-v1.yml
+.github/workflows/passing-yards-qb-drilldown-step3-v1.yml
+.github/workflows/nfl-moneyline-visual-step4-v1.yml
+.github/workflows/passing-yards-universal-step1-owner-v1.yml
+.github/workflows/passing-yards-speed-step7-same-session-v1.yml
+.github/workflows/passing-yards-qb-drilldown-step2-v1.yml
+.github/workflows/passing-yards-speed-step6-full-latency-v1.yml
+.github/workflows/passing-yards-mobile-cleanup-steps2-3-v70.yml
+.github/workflows/nfl-moneyline-visual-step1-v1.yml
+.github/workflows/passing-yards-speed-step4-cache-v1.yml
+.github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml
+.github/workflows/passing-yards-visible-cleanup-v1.yml
+.github/workflows/passing-yards-matchup-intelligence-step3-v1.yml
+.github/workflows/passing-yards-qb-drilldown-step1-v1.yml
+.github/workflows/cfb-game-total-page-cleanup-step3.yml
+.github/workflows/passing-yards-projection-explainability-step2-v1.yml
+.github/workflows/passing-yards-speed-step2-first-paint-v1.yml
+.github/workflows/passing-yards-speed-step8-final-freeze-v1.yml
+.github/workflows/cfb-game-total-v184-step6.yml
+.github/workflows/cfb-game-total-page-cleanup-step5.yml
+.github/workflows/cfb-game-total-page-cleanup-step4.yml
+.github/workflows/cfb-game-total-page-cleanup-step1.yml
+.github/workflows/cfb-game-total-page-cleanup-step2.yml
+.github/workflows/passing-yards-new-phase-step4-context-detail-v1.yml
+.github/workflows/passing-yards-new-phase-step5-distribution-detail-v1.yml
+.github/workflows/passing-yards-new-phase-step6-deep-evidence-v1.yml
+.github/workflows/passing-yards-ux-presentation-step7-v1.yml
+.github/workflows/passing-yards-new-phase-step3-projection-detail-v1.yml
+.github/workflows/passing-yards-new-phase-step7-navigation-mobile-v1.yml
+.github/workflows/cfb-game-total-v184-step6-production.yml
+.github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+.github/workflows/passing-yards-selected-qb-detail-cleanup-v69.yml
+.github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml
+.github/workflows/passing-yards-availability-game-day-step5-v1.yml
+.github/workflows/passing-yards-failure-proofing-step6-v1.yml
+.github/workflows/passing-yards-live-market-step4-v1.yml
+.github/workflows/cfb-game-total-v164-production-logos.yml
+.github/workflows/passing-yards-universal-step2-tokens-v1.yml
+.github/workflows/passing-yards-universal-step5-analysis-v1.yml
+.github/workflows/passing-yards-new-phase-step2-market-detail-v1.yml
+.github/workflows/passing-yards-universal-step6-controls-v1.yml
+.github/workflows/passing-yards-universal-step7-responsive-v1.yml

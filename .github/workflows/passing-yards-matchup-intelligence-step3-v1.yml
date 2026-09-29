@@ -7,7 +7,6 @@ on:
       - ".github/workflows/passing-yards-matchup-intelligence-step3-v1.yml"
       - "nfl_passing_yards_hub_v72.py"
       - "streamlit_memory_lazy_router_v223.py"
-      - "app.py"
       - "tests/test_passing_yards_matchup_intelligence_step3_v1.py"
       - "devsystem/task_ledgers/passing-yards-matchup-intelligence-step3-v1.json"
   push:
@@ -16,7 +15,6 @@ on:
       - ".github/workflows/passing-yards-matchup-intelligence-step3-v1.yml"
       - "nfl_passing_yards_hub_v72.py"
       - "streamlit_memory_lazy_router_v223.py"
-      - "app.py"
       - "tests/test_passing_yards_matchup_intelligence_step3_v1.py"
       - "devsystem/task_ledgers/passing-yards-matchup-intelligence-step3-v1.json"
 

@@ -1,7 +1,24 @@
 name: NFL Passing Yards Speed Step 5 Payload Dedupe
 
 on:
-  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json"
+      - "nfl_passing_yards_hub_v81.py"
+      - "requirements.txt"
+      - "streamlit_memory_lazy_router_v232.py"
+      - "tests/test_passing_yards_speed_step5_payload_dedupe_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-speed-step5-payload-dedupe-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-speed-step5-payload-dedupe-v1.json"
+      - "nfl_passing_yards_hub_v81.py"
+      - "requirements.txt"
+      - "streamlit_memory_lazy_router_v232.py"
+      - "tests/test_passing_yards_speed_step5_payload_dedupe_v1.py"
 
 permissions:
   contents: read

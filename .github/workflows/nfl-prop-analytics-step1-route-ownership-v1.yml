@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
-      - "app.py"
       - "devsystem/task_ledgers/nfl-prop-analytics-step1-route-ownership-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
       - "streamlit_memory_lazy_router_v240.py"
@@ -14,7 +13,6 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/nfl-prop-analytics-step1-route-ownership-v1.yml"
-      - "app.py"
       - "devsystem/task_ledgers/nfl-prop-analytics-step1-route-ownership-v1.json"
       - "nfl_prop_analytics_hub_v1.py"
       - "streamlit_memory_lazy_router_v240.py"

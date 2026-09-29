@@ -3,7 +3,6 @@ name: Passing Yards QB Drill-Down Step 1
 on:
   pull_request:
     paths:
-      - 'app.py'
       - 'nfl_passing_yards_hub_v58.py'
       - 'streamlit_memory_lazy_router_v209.py'
       - 'tests/test_passing_yards_qb_drilldown_step1_v1.py'
@@ -13,7 +12,6 @@ on:
     branches:
       - main
     paths:
-      - 'app.py'
       - 'nfl_passing_yards_hub_v58.py'
       - 'streamlit_memory_lazy_router_v209.py'
       - 'tests/test_passing_yards_qb_drilldown_step1_v1.py'

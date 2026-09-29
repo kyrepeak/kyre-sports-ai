@@ -3,7 +3,6 @@ name: NFL Moneyline Visual Step 3
 on:
   pull_request:
     paths:
-      - 'app.py'
       - 'nfl_moneyline_hub_v16.py'
       - 'streamlit_memory_lazy_router_v199.py'
       - 'devsystem/task_ledgers/nfl-moneyline-visual-step3-v1.json'
@@ -12,7 +11,6 @@ on:
     branches:
       - main
     paths:
-      - 'app.py'
       - 'nfl_moneyline_hub_v16.py'
       - 'streamlit_memory_lazy_router_v199.py'
       - 'devsystem/task_ledgers/nfl-moneyline-visual-step3-v1.json'

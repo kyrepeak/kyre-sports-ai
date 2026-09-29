@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "app.py"
       - "streamlit_memory_lazy_router_v160.py"
       - "streamlit_memory_lazy_router_v161.py"
       - "streamlit_memory_lazy_router_v162.py"

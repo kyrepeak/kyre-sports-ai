@@ -3,7 +3,6 @@ name: Passing Yards Universal Step 7 Responsive
 on:
   pull_request:
     paths:
-      - 'app.py'
       - 'nfl_passing_yards_hub_v57.py'
       - 'streamlit_memory_lazy_router_v208.py'
       - 'tests/test_passing_yards_universal_step7_responsive_v1.py'
@@ -13,7 +12,6 @@ on:
     branches:
       - main
     paths:
-      - 'app.py'
       - 'nfl_passing_yards_hub_v57.py'
       - 'streamlit_memory_lazy_router_v208.py'
       - 'tests/test_passing_yards_universal_step7_responsive_v1.py'

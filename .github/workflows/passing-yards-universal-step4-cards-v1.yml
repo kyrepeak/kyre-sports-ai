@@ -3,7 +3,6 @@ name: Passing Yards Universal Step 4 Cards
 on:
   pull_request:
     paths:
-      - 'app.py'
       - 'nfl_passing_yards_hub_v54.py'
       - 'streamlit_memory_lazy_router_v205.py'
       - 'devsystem/task_ledgers/passing-yards-universal-step4-cards-v1.json'
@@ -12,7 +11,6 @@ on:
     branches:
       - main
     paths:
-      - 'app.py'
       - 'nfl_passing_yards_hub_v54.py'
       - 'streamlit_memory_lazy_router_v205.py'
       - 'devsystem/task_ledgers/passing-yards-universal-step4-cards-v1.json'

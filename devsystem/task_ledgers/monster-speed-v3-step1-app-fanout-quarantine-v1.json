@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step1-app-fanout-quarantine-v1",
+  "title": "Monster Speed V3 Step 1 — quarantine legacy app.py workflow fanout",
+  "project": "Monster Speed V3",
+  "step": "1/6",
+  "status": "DONE",
+  "evidence": {
+    "source_main": "219693da52605fdb19d838da51f48551ae3d3c7c",
+    "observed_run_count": 56,
+    "desired_active_runs": [
+      "CFB Top Picks Nav Step 1 Dropdown",
+      "DevSystem production verification V5",
+      "Monster Error Radar V1",
+      "Monster Performance Profiler V1",
+      "DevSystem failure packet"
+    ],
+    "unrelated_product_runs": 51
+  },
+  "root_cause": "Frozen product workflows retained app.py in pull_request/push path filters. Any additive app entrypoint/router activation therefore woke dozens of unrelated historical CFB/NFL/Passing-Yards lanes, many of which were stale and failed while consuming runners.",
+  "patch": "Remove app.py only from the automatic trigger blocks of the 51 workflows proven to have fanned out on the reference main commit. Preserve every workflow file, manual/product-specific trigger, job body, frozen contract and historical evidence. Add a permanent 51-workflow guard.",
+  "acceptance": {
+    "quarantined_workflows": 51,
+    "app_py_absent_from_quarantined_automatic_triggers": true,
+    "product_specific_triggers_preserved": true,
+    "workflow_bodies_preserved": true,
+    "permanent_guard_green": true,
+    "no_product_runtime_change": true
+  },
+  "expected_effect": {
+    "reference_shape_total_runs_before": 56,
+    "unrelated_runs_removed": 51,
+    "same_shape_expected_max_runs_after": 5,
+    "reduction_percent": 91.1
+  },
+  "protected": {
+    "top_picks_navigation_steps1_3": true,
+    "passing_yards_products": true,
+    "nfl_moneyline_products": true,
+    "cfb_game_total_products": true,
+    "nfl_prop_analytics": true,
+    "devsystem": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

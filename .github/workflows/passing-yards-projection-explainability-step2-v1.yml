@@ -7,7 +7,6 @@ on:
       - ".github/workflows/passing-yards-projection-explainability-step2-v1.yml"
       - "nfl_passing_yards_hub_v71.py"
       - "streamlit_memory_lazy_router_v222.py"
-      - "app.py"
       - "tests/test_passing_yards_projection_explainability_step2_v1.py"
       - "devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json"
   push:
@@ -16,7 +15,6 @@ on:
       - ".github/workflows/passing-yards-projection-explainability-step2-v1.yml"
       - "nfl_passing_yards_hub_v71.py"
       - "streamlit_memory_lazy_router_v222.py"
-      - "app.py"
       - "tests/test_passing_yards_projection_explainability_step2_v1.py"
       - "devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json"
 
