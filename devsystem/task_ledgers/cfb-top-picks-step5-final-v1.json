@@ -16,10 +16,12 @@
     "tap_to_open_detail_preserved": true,
     "why_history_benefits_preserved": true,
     "public_production_proof_required": true,
-    "sportsbook_projection_weight": 0.0,
-    "history_projection_weight": 0.0,
+    "sportsbook_projection_weight": 0,
+    "history_projection_weight": 0,
     "ranking_modification": false,
-    "history_logic_modification": false
+    "history_logic_modification": false,
+    "public_url": "https://pickvault.streamlit.app",
+    "public_host_contract": "current public Streamlit host proven by WNBA public-freeze run 36524821781"
   },
   "protected": {
     "cfb_top_picks_steps_1_4": true,
