@@ -35,5 +35,15 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair": {
+    "failure_class": "C_STALE_ACCEPTANCE_TEST",
+    "failed_run": 36638314971,
+    "failed_job": 109644297596,
+    "exact_failure": "expected TOP_PICKS_PAGE = \"cfb_top_picks_page_v4\"",
+    "live_truth": "streamlit_memory_lazy_router_v244.py sets TOP_PICKS_PAGE = \"cfb_top_picks_page_v5\"",
+    "patch": "Forward-port the old Step-4 detail test to the already-frozen V5 page owner. No history, router, model, ranking, probability, or API 2 behavior changed.",
+    "history_logic_changed": false,
+    "api2_changed": false
+  }
 }
