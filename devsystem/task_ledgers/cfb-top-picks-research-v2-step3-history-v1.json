@@ -45,5 +45,16 @@
     "patch": "Forward-port the old Step-4 detail test to the already-frozen V5 page owner. No history, router, model, ranking, probability, or API 2 behavior changed.",
     "history_logic_changed": false,
     "api2_changed": false
+  },
+  "live_cert_invocation_repair": {
+    "failure_class": "D_CI_MODULE_PATH",
+    "failed_run": 36638423361,
+    "failed_job": 109644659394,
+    "exact_failure": "ModuleNotFoundError: No module named 'cfb_schedule_v7_future_slate'",
+    "root_cause": "The cert was executed as a file under devsystem/, making devsystem the Python import root before any live history source call occurred.",
+    "patch": "Invoke the cert with python -m devsystem.cfb_top_picks_research_v2_step3_history_cert_v1 so repository-root CFB modules resolve normally.",
+    "history_logic_changed": false,
+    "provider_logic_changed": false,
+    "api2_changed": false
   }
 }
