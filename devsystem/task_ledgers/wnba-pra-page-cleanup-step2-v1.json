@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-page-cleanup-step2-v1",
+  "title": "WNBA PRA Step 2 — clean user-facing page",
+  "project": "WNBA PRA cleanup",
+  "step": "2/3",
+  "status": "DONE",
+  "source_main": "0d2065e580253280a005182fe57c816a4570faa8",
+  "scope": {
+    "active_route": "wnba_pra_hub_v3612.py",
+    "new_wrapper": "wnba_pra_hub_v3614.py",
+    "presentation_patch": "wnba_pra_page_cleanup_v1.py"
+  },
+  "acceptance": {
+    "clean_hero": true,
+    "off_day_zero_wall_removed": true,
+    "raw_diagnostics_collapsed": true,
+    "direct_provider_secret_message_hidden": true,
+    "market_and_matchup_labels_user_facing": true,
+    "api_ownership_preserved": true,
+    "fail_closed_preserved": true,
+    "projection_math_preserved": true,
+    "market_math_preserved": true,
+    "ranking_preserved": true,
+    "qualification_preserved": true,
+    "monte_carlo_preserved": true,
+    "nfl_preserved": true,
+    "mlb_preserved": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
