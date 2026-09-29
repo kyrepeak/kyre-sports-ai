@@ -46,6 +46,9 @@
   "control_plane_refresh": {
     "reason": "required devsystem-final-gate was expected by branch protection but no DevSystem targeted CI run registered on prior exact head",
     "product_code_changed": false,
-    "retry_policy": "single replacement head only"
+    "retry_policy": "single replacement head only",
+    "post_fix_head": "a1337c2f15cac2fc30da29f0f0d3308eb3a09074",
+    "post_fix_reason": "real Step-3 bugs repaired; required DevSystem workflow did not register on corrected head, so emit one final synchronize event",
+    "product_code_changed_by_refresh": false
   }
 }
