@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "task_id": "wnba-navigation-v2-step3-game-center",
+  "title": "WNBA Navigation V2 Step 3 — selected-game Game Center",
+  "project": "WNBA Navigation V2",
+  "step": "3/7",
+  "status": "ACTIVE",
+  "source_main": "f4876fc1c39342c94cdb944be8614c4b499d2fa6",
+  "scope": "Selected-game player cards only; Page 3 remains deferred",
+  "contract": {
+    "selected_game_batch_calls_per_uncached_render": 1,
+    "cache_ttl_seconds": 180,
+    "date_safe_player_pool": true,
+    "heavy_imports_lazy": true,
+    "page3_prefetch": false,
+    "sportsbook_market_requests": 0,
+    "h2h_requests": 0,
+    "monte_carlo_requests": 0
+  },
+  "protected": {
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "wnba_model_math_unchanged": true,
+    "market_math_unchanged": true,
+    "other_sports_unchanged": true,
+    "frozen_router_v245": true
+  },
+  "acceptance": [
+    "selected matchup header",
+    "players grouped by away/home team",
+    "player headshots and team logos",
+    "status and confirmed starter state",
+    "projected MIN PTS REB AST PRA",
+    "tap player writes frozen Step-1 player navigation state",
+    "zero Page-3 sportsbook/H2H/Monte Carlo prefetch",
+    "fast exact-head proof",
+    "required merge gate",
+    "merged-main certification"
+  ]
+}
