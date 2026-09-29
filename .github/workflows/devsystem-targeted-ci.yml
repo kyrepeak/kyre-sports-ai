@@ -154,6 +154,8 @@ jobs:
         run: python devsystem/cfb_top_picks_research_v2_step3_history_v1.py
       - name: Validate CFB Top Picks Research V2 Step 4 offense-research contract
         run: python devsystem/cfb_top_picks_research_v2_step4_offense_v1.py
+      - name: Validate CFB Top Picks Research V2 Step 5 defense-pace contract
+        run: python devsystem/cfb_top_picks_research_v2_step5_defense_pace_v1.py
       - name: Validate Monster Anti-Loop V2 hard gate
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -191,6 +193,7 @@ jobs:
             tests/test_cfb_top_picks_research_v2_step2_contract_v1.py \
             tests/test_cfb_top_picks_research_v2_step3_contract_v1.py \
             tests/test_cfb_top_picks_research_v2_step4_contract_v1.py \
+            tests/test_cfb_top_picks_research_v2_step5_contract_v1.py \
             tests/test_devsystem_workflow_parallelism_v1.py \
             tests/test_github_speed_benchmark_v1.py
 

@@ -82,6 +82,44 @@ def _offense_research():
     }
 
 
+def _defense_pace_research():
+    return {
+        "status": "READY",
+        "projection_weight": 0.0,
+        "reasoning": ["Defense and pace research"],
+        "away": {
+            "team": "Away State",
+            "metrics": {
+                "points_allowed_per_game": {"value": 18.0},
+                "recent_points_allowed_avg": {"value": 17.0},
+                "yards_per_play_allowed": {"value": 4.9},
+                "pass_yards_allowed_per_game": {"value": 205.0},
+                "rush_yards_allowed_per_game": {"value": 120.0},
+                "red_zone_td_rate_allowed": {"value": 0.50},
+                "plays_per_game": {"value": 72.0},
+                "seconds_per_play": {"value": 25.0},
+                "pace_index": {"value": 1.08, "label": "FAST"},
+                "explosive_susceptibility_proxy": {"value": -0.1, "label": "ABOVE-AVG SUPPRESSION"},
+            },
+        },
+        "home": {
+            "team": "Home Tech",
+            "metrics": {
+                "points_allowed_per_game": {"value": 22.0},
+                "recent_points_allowed_avg": {"value": 24.0},
+                "yards_per_play_allowed": {"value": 5.5},
+                "pass_yards_allowed_per_game": {"value": 230.0},
+                "rush_yards_allowed_per_game": {"value": 145.0},
+                "red_zone_td_rate_allowed": {"value": 0.65},
+                "plays_per_game": {"value": 68.0},
+                "seconds_per_play": {"value": 28.0},
+                "pace_index": {"value": 0.99, "label": "BALANCED"},
+                "explosive_susceptibility_proxy": {"value": 0.12, "label": "ABOVE-AVG VULNERABILITY"},
+            },
+        },
+    }
+
+
 def _series():
     return {
         "ready": True,
@@ -110,6 +148,7 @@ def _series():
 def test_step4_detail_requires_exact_verified_event_and_team_ids(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
     monkeypatch.setattr(details.offense_research, "build_offense_research", lambda row, game, slate_day: _offense_research())
+    monkeypatch.setattr(details.defense_pace_research, "build_defense_pace_research", lambda row, game, slate_day: _defense_pace_research())
     monkeypatch.setattr(details.history_router, "resolve_matchup_history", lambda row, game: {
         **_series(),
         "status": details.history_router.VERIFIED_HISTORY,
@@ -158,6 +197,7 @@ def test_step4_fails_closed_when_exact_event_identity_is_ambiguous(monkeypatch):
 def test_step4_over_under_benefit_is_descriptive_only(monkeypatch):
     monkeypatch.setattr(details.schedule, "games_for_date", lambda day: [_game()])
     monkeypatch.setattr(details.offense_research, "build_offense_research", lambda row, game, slate_day: _offense_research())
+    monkeypatch.setattr(details.defense_pace_research, "build_defense_pace_research", lambda row, game, slate_day: _defense_pace_research())
     monkeypatch.setattr(details.history_router, "resolve_matchup_history", lambda row, game: {
         **_series(),
         "status": details.history_router.VERIFIED_HISTORY,

@@ -32,6 +32,8 @@ def test_step3_resolves_public_option_portal_in_frame_or_page():
     assert "def _visible_options(page, frame" in CERT
     assert "for scope in (frame, page):" in CERT
     assert "def _click_option(page, frame, value: str)" in CERT
+    assert "deadline = time.monotonic() + 20.0" in CERT
+    assert "page.wait_for_timeout(250)" in CERT
 
 
 def test_step3_waits_for_streamlit_query_sync():
@@ -45,3 +47,9 @@ def test_step3_public_query_is_telemetry_not_route_gate():
     assert "URL query persistence is telemetry only" in CERT
     flow = CERT.split("def _attempt_normal_flow", 1)[1]
     assert "query = _assert_query(page)" not in flow
+
+
+def test_step3_retries_full_market_list_after_responsive_resize():
+    assert "deadline = time.monotonic() + 30.0" in CERT
+    assert "all(option in values for option in EXPECTED_CFB_MARKETS)" in CERT
+    assert "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_MARKET_OPTIONS_NOT_READY" in CERT

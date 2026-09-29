@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step5-defense-pace-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 5 defense + pace research",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "5/9",
+  "status": "DONE",
+  "problem": "Top Picks had verified offensive scoring research but still lacked opponent defensive allowance and tempo/pace evidence behind the matchup.",
+  "root_cause": "The selected-game detail payload did not route existing certified ESPN/NCAA defense and pace fields into a read-only Top Picks research layer.",
+  "patch": "Add a descriptive field router for points allowed, recent allowance, yards/play allowed, pass/rush allowance, red-zone defense, explosive-efficiency susceptibility, plays/game, seconds/play and same-division pace index. Render it only after a matchup is tapped.",
+  "acceptance": {
+    "ten_ranked_picks_certified": true,
+    "twenty_team_profiles_certified": true,
+    "four_core_fields_per_team_required": true,
+    "every_material_value_has_source": true,
+    "every_material_value_has_observed_at": true,
+    "minimum_two_supporting_fields_per_team": true,
+    "defense_pace_research_projection_weight": 0,
+    "probability_unchanged": true,
+    "ranking_unchanged": true,
+    "sportsbook_projection_weight": 0,
+    "api2_separate_and_protected": true
+  },
+  "protected": {
+    "step1_contract": true,
+    "step2_real_logos": true,
+    "step3_multi_source_history": true,
+    "step4_offense_research": true,
+    "lazy_detail_load_on_tap": true,
+    "ranking_probability_reliability": true,
+    "api2": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "control_plane_repair": {
+    "failure_class": "C_ASYNC_VERIFIER_READINESS",
+    "original_run": 36645566219,
+    "original_failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:'Top Picks';saw=['Moneyline']",
+    "retry_job": 109668910180,
+    "retry_terminal": "cancelled externally during browser proof; pure contract 10/10 green",
+    "root_cause": "Streamlit option portal may transiently expose only the selected market while rerun hydration is still completing.",
+    "patch": "Wait up to 20 seconds for the requested existing option to appear before issuing a terminal missing-option assertion.",
+    "step5_product_logic_changed": false,
+    "steps1_4_product_logic_changed": false,
+    "api2_changed": false
+  },
+  "responsive_market_portal_repair": {
+    "failure_class": "D_VERIFIER_RESPONSIVE_PORTAL_READINESS",
+    "failed_run": 36646738099,
+    "exact_failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTIONS_NOT_VISIBLE during final responsive width after 390 and 768 were already green",
+    "evidence": "Rendered body still contained Top Picks V5 marker, Step-5 marker, all 10 ranked cards, and correct CFB content.",
+    "root_cause": "After viewport resize, Streamlit rerendered the visible combobox before its option portal finished hydrating.",
+    "patch": "Retry the market open/read cycle for up to 30 seconds and require the full frozen four-market set before certifying.",
+    "product_layout_changed": false,
+    "step5_product_logic_changed": false,
+    "api2_changed": false
+  }
+}

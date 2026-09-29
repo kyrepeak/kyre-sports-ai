@@ -83,35 +83,65 @@ def _visible_options(page, frame, timeout_seconds: float = 15.0):
 
 
 def _market_options(page, frame) -> list[str]:
-    combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
-    combo.wait_for(state="visible", timeout=45000)
-    combo.click()
-    options_locator = _visible_options(page, frame)
-    values = [v.strip() for v in options_locator.all_inner_texts() if v.strip()]
-    page.keyboard.press("Escape")
-    return values
+    # Responsive resize can trigger a Streamlit rerun where the combobox is
+    # already visible but its portal has not finished hydrating. Retry the
+    # open/read cycle until the complete frozen market set is actually present.
+    deadline = time.monotonic() + 30.0
+    last_values: list[str] = []
+    last_error = ""
+    while time.monotonic() < deadline:
+        try:
+            combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
+            combo.wait_for(state="visible", timeout=5000)
+            combo.click(timeout=5000)
+            options_locator = _visible_options(page, frame, timeout_seconds=3.0)
+            values = [v.strip() for v in options_locator.all_inner_texts() if v.strip()]
+            last_values = values
+            if all(option in values for option in EXPECTED_CFB_MARKETS):
+                page.keyboard.press("Escape")
+                return values
+        except Exception as exc:
+            last_error = repr(exc)
+        try:
+            page.keyboard.press("Escape")
+        except Exception:
+            pass
+        page.wait_for_timeout(250)
+    raise AssertionError(
+        "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_MARKET_OPTIONS_NOT_READY:"
+        f"saw={last_values!r};last={last_error}"
+    )
 
 
 def _click_option(page, frame, value: str) -> None:
     combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
     combo.wait_for(state="visible", timeout=45000)
     combo.click()
-    options = _visible_options(page, frame)
-    labels = [v.strip() for v in options.all_inner_texts()]
-    if value not in labels:
-        raise AssertionError(
-            f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:{value!r};saw={labels!r}"
-        )
-    for scope in (frame, page):
+    # Streamlit's portal can briefly expose only the selected option while a
+    # rerun hydrates the rest of the market list. Treat that as readiness, not
+    # as a terminal missing-option verdict.
+    deadline = time.monotonic() + 20.0
+    labels: list[str] = []
+    last_error = ""
+    while time.monotonic() < deadline:
         try:
-            target = scope.get_by_role("option", name=value, exact=True)
-            if target.count() > 0 and target.first.is_visible():
-                target.first.click(timeout=10000)
-                return
-        except Exception:
-            pass
+            options = _visible_options(page, frame, timeout_seconds=2.0)
+            labels = [v.strip() for v in options.all_inner_texts()]
+            if value in labels:
+                for scope in (frame, page):
+                    try:
+                        target = scope.get_by_role("option", name=value, exact=True)
+                        if target.count() > 0 and target.first.is_visible():
+                            target.first.click(timeout=10000)
+                            return
+                    except Exception as exc:
+                        last_error = repr(exc)
+        except Exception as exc:
+            last_error = repr(exc)
+        page.wait_for_timeout(250)
     raise AssertionError(
-        f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_NOT_CLICKABLE:{value!r}"
+        f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:{value!r};"
+        f"saw={labels!r};last={last_error}"
     )
 
 

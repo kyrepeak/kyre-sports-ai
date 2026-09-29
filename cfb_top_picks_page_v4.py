@@ -28,6 +28,7 @@ ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
 CFB_SPORT_LABEL = "College Football"
 TOP_PICKS_MARKET = "Top Picks"
+RESEARCH_STEP5_MARKER = "CFB_TOP_PICKS_RESEARCH_V2_STEP5_DEFENSE_PACE_ACTIVE"
 
 CSS = prior.CSS + r"""
 <style>
@@ -68,6 +69,16 @@ CSS = prior.CSS + r"""
 .tp4-reason{padding:6px 8px;border-left:3px solid #39d7ff;border-radius:6px;background:rgba(18,83,115,.16);color:#bed5e5;font-size:.7rem;line-height:1.35}
 @media(max-width:900px){.tp4-offense-grid{grid-template-columns:1fr}.tp4-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.tp4-grid{grid-template-columns:1fr}.tp4-panel{margin-left:4px;margin-right:4px}}
+.tp5-defense{margin-top:10px;border:1px solid rgba(129,108,255,.25);border-radius:11px;background:linear-gradient(145deg,#111126,#09131e);padding:11px}
+.tp5-defense-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}
+.tp5-defense-head h4{margin:0;color:#a9a2ff;font-size:.74rem;letter-spacing:.04em;text-transform:uppercase}
+.tp5-defense-head span{color:#76899c;font-size:.61rem}
+.tp5-defense-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tp5-team{border:1px solid rgba(142,129,255,.14);border-radius:9px;background:#0d1723;padding:9px}
+.tp5-team h5{margin:0 0 7px;color:#fff;font-size:.78rem}
+.tp5-pace-chip{display:inline-block;margin-top:6px;padding:3px 7px;border-radius:999px;background:#151d31;border:1px solid rgba(160,151,255,.22);color:#b9b4ff;font-size:.55rem;font-weight:900;letter-spacing:.03em}
+.tp5-reason{padding:6px 8px;border-left:3px solid #8f85ff;border-radius:6px;background:rgba(73,63,140,.16);color:#c9d1e0;font-size:.7rem;line-height:1.35}
+@media(max-width:900px){.tp5-defense-grid{grid-template-columns:1fr}}
 </style>
 """
 
@@ -208,6 +219,79 @@ def _offense_html(row: dict, detail: dict) -> str:
     """
 
 
+def _defense_pace_team_html(profile: dict, rank: int, side: str) -> str:
+    team = escape(str(profile.get("team") or side.title()))
+    pa = _fmt_metric(_metric_number(profile, "points_allowed_per_game"))
+    recent_pa = _fmt_metric(_metric_number(profile, "recent_points_allowed_avg"))
+    yppa = _fmt_metric(_metric_number(profile, "yards_per_play_allowed"), digits=2)
+    pass_allowed = _fmt_metric(_metric_number(profile, "pass_yards_allowed_per_game"))
+    rush_allowed = _fmt_metric(_metric_number(profile, "rush_yards_allowed_per_game"))
+    rz_allowed = _fmt_metric(_metric_number(profile, "red_zone_td_rate_allowed"), pct=True)
+    plays = _fmt_metric(_metric_number(profile, "plays_per_game"))
+    spp = _fmt_metric(_metric_number(profile, "seconds_per_play"), digits=2)
+    metrics = profile.get("metrics") or {}
+    pace = metrics.get("pace_index") or {}
+    pace_label = escape(str(pace.get("label") or "DATA LIMITED"))
+    explosive = metrics.get("explosive_susceptibility_proxy") or {}
+    explosive_label = escape(str(explosive.get("label") or "UNAVAILABLE"))
+    return f"""
+    <div class="tp5-team" data-testid="cfb-top-picks-defense-pace-{side}-{rank}">
+      <h5>{team}</h5>
+      <div class="tp4-metric-grid">
+        <div class="tp4-metric"><b>{pa}</b><span>Allowed / Game</span></div>
+        <div class="tp4-metric"><b>{recent_pa}</b><span>Recent Allowed</span></div>
+        <div class="tp4-metric"><b>{yppa}</b><span>YPP Allowed</span></div>
+        <div class="tp4-metric"><b>{pass_allowed}</b><span>Pass YPG Allowed</span></div>
+        <div class="tp4-metric"><b>{rush_allowed}</b><span>Rush YPG Allowed</span></div>
+        <div class="tp4-metric"><b>{rz_allowed}</b><span>RZ TD Allowed</span></div>
+        <div class="tp4-metric"><b>{plays}</b><span>Plays / Game</span></div>
+        <div class="tp4-metric"><b>{spp}</b><span>Seconds / Play</span></div>
+        <div class="tp4-metric"><b>{explosive_label}</b><span>Explosive Suscept.</span></div>
+      </div>
+      <span class="tp5-pace-chip">{pace_label} PACE</span>
+    </div>
+    """
+
+
+def _defense_pace_html(row: dict, detail: dict) -> str:
+    research = detail.get("defense_pace_research") or {}
+    rank = int(row.get("rank") or 0)
+    if detail.get("loading") is True:
+        return (
+            '<div class="tp5-defense" data-testid="cfb-top-picks-defense-pace-loading">'
+            '<div class="tp5-defense-head"><h4>Defense + Pace Research</h4>'
+            '<span>Loading verified selected-game research…</span></div></div>'
+        )
+    if not research or research.get("status") == "IDENTITY_UNAVAILABLE":
+        return (
+            '<div class="tp5-defense" data-testid="cfb-top-picks-defense-pace-unavailable">'
+            '<div class="tp5-defense-head"><h4>Defense + Pace Research</h4>'
+            '<span>Verified defense/pace data unavailable</span></div></div>'
+        )
+    away = research.get("away") or {}
+    home = research.get("home") or {}
+    reasoning = list(research.get("reasoning") or detail.get("defense_pace_reasoning") or [])
+    reason_html = "".join(
+        f'<div class="tp5-reason">{escape(str(item))}</div>'
+        for item in reasoning
+        if str(item or "").strip()
+    )
+    status = escape(str(research.get("status") or "PARTIAL"))
+    return f"""
+    <div class="tp5-defense" data-testid="cfb-top-picks-defense-pace-research-{rank}" data-defense-pace-status="{status}">
+      <div class="tp5-defense-head">
+        <h4>Defense + Pace Research</h4>
+        <span>ESPN exact-ID + NCAA field router • projection weight 0.0%</span>
+      </div>
+      <div class="tp5-defense-grid">
+        {_defense_pace_team_html(away, rank, "away")}
+        {_defense_pace_team_html(home, rank, "home")}
+      </div>
+      <div class="tp4-reasoning">{reason_html}</div>
+    </div>
+    """
+
+
 def _loading_detail(row: dict) -> dict:
     return {
         "loading": True,
@@ -226,6 +310,7 @@ def _detail_card(row: dict, detail: dict) -> str:
     benefit = escape(str(detail.get("benefit") or "No verified historical benefit is claimed."))
     history = _history_html(row, detail)
     offense = _offense_html(row, detail)
+    defense_pace = _defense_pace_html(row, detail)
     event_id = escape(str(detail.get("event_id") or row.get("event_id") or ""))
     collapse_href = escape(_detail_href(), quote=True)
     return f"""
@@ -249,6 +334,7 @@ def _detail_card(row: dict, detail: dict) -> str:
           </div>
         </div>
         {offense}
+        {defense_pace}
         <div class="tp4-audit">
           ESPN event <strong>{event_id or "unavailable"}</strong> • history projection weight <strong>0.0%</strong> •
           sportsbook projection weight <strong>0.0%</strong> • history cannot create, remove, or rerank a pick.
@@ -296,6 +382,7 @@ def _page_html(
       <div class="tp2-step-marker" data-testid="cfb-top-picks-step2-marker">CFB_TOP_PICKS_STEP2_COMPACT_CARDS_ACTIVE</div>
       <div class="tp2-step-marker" data-testid="cfb-top-picks-step3-marker">CFB_TOP_PICKS_STEP3_LIVE_RANKING_ACTIVE</div>
       <div class="tp2-step-marker" data-testid="cfb-top-picks-step4-marker">{PAGE_MARKER}</div>
+      <div class="tp2-step-marker" data-testid="cfb-top-picks-research-v2-step5-marker">{RESEARCH_STEP5_MARKER}</div>
       <div class="tp1-hero">
         <div>
           <h1 class="tp1-title">Top <span>Picks</span></h1>
@@ -371,6 +458,7 @@ __all__ = [
     "MODEL_VERSION",
     "PAGE_MARKER",
     "ROUTE_QUERY_MARKET",
+    "RESEARCH_STEP5_MARKER",
     "ROUTE_QUERY_SPORT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "TOP_PICK_DETAIL_QUERY",
@@ -379,6 +467,8 @@ __all__ = [
     "_collapsed_card",
     "_detail_card",
     "_detail_href",
+    "_defense_pace_html",
+    "_defense_pace_team_html",
     "_history_html",
     "_loading_detail",
     "_page_html",
