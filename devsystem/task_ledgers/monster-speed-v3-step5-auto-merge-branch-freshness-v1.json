@@ -33,5 +33,17 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair": {
+    "failure_class": "D_VERIFIER_CONTRACT_OVERREACH",
+    "failed_run": 36622438752,
+    "failed_job": 109590942512,
+    "false_gate": "no merge method is enabled",
+    "observed_repo_merge_methods": {
+      "allow_squash_merge": true,
+      "allow_merge_commit": true,
+      "allow_rebase_merge": true
+    },
+    "patch": "Remove merge-method availability from Step-5 blocking acceptance. Step 5 owns only allow_auto_merge, allow_update_branch, and preservation of the existing DevSystem final gate."
+  }
 }
