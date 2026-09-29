@@ -31,6 +31,12 @@ def _body(frame) -> str:
     return frame.locator("body").inner_text(timeout=5000)
 
 
+def _step7_marker(frame, page_name: str):
+    return frame.locator(
+        f'[data-wnba-nav-v2-step7="final-transport"][data-wnba-nav-page="{page_name}"]'
+    )
+
+
 def _step6_marker(frame, page_name: str):
     return frame.locator(
         f'[data-wnba-nav-v2-step6="responsive-integration"][data-wnba-nav-page="{page_name}"]'
@@ -50,7 +56,11 @@ def _wait_page(page, page_name: str, *, timeout_seconds: float) -> tuple[object,
     while time.monotonic() < deadline:
         frame, _ = _find_app_frame(page, timeout_seconds=min(15.0, max(2.0, deadline-time.monotonic())))
         try:
-            if _step6_marker(frame, page_name).count() and _step5_marker(frame, page_name).count():
+            if (
+                _step7_marker(frame, page_name).count()
+                and _step6_marker(frame, page_name).count()
+                and _step5_marker(frame, page_name).count()
+            ):
                 body = _body(frame)
                 if page_name == "slate" and "WNBA Slate" in body:
                     return frame, time.monotonic() - started
