@@ -11,6 +11,7 @@ import requests
 from playwright.sync_api import sync_playwright
 
 from devsystem import browser_qa_v1 as base
+from devsystem import user_visible_contract_v1 as user_contract
 
 PUBLIC_URL = "https://pickvault.streamlit.app"
 CFB_SPORT = "College Football"
@@ -19,7 +20,16 @@ TOP_PICKS = "Top Picks"
 EXPECTED_CFB_MARKETS = ("Moneyline", "Over/Under", "Game Total", "Top Picks")
 V5_ROOT = '[data-testid="cfb-top-picks-step5-root"][data-cfb-top-picks-visual="v5"]'
 V5_MARKER = "CFB_TOP_PICKS_STEP5_FINAL_VISUAL_ACTIVE"
-WIDTHS = ((390, 844), (768, 1024), (1440, 1000))
+WIDTHS = user_contract.RESPONSIVE_VIEWPORTS
+TOP_PICKS_USER_CONTRACT = user_contract.UserVisibleContract(
+    name="cfb-top-picks-v5",
+    required_selectors=(V5_ROOT,),
+    required_text=(V5_MARKER, "Top Picks", "10 Best Daily College Football Picks"),
+    required_markets=EXPECTED_CFB_MARKETS,
+    required_viewports=WIDTHS,
+    query_policy=user_contract.QUERY_POLICY_TELEMETRY,
+    required_query=(("ks_sport", CFB_SPORT), ("ks_cfb_market", TOP_PICKS)),
+)
 
 
 def _wait_http(base_url: str, timeout_seconds: float = 180.0) -> None:
@@ -175,41 +185,20 @@ def _attempt_normal_flow(page, base_url: str, width: int, height: int) -> dict:
     _click_option(page, frame, TOP_PICKS)
 
     v5_frame, root = _find_v5(page)
-    body = v5_frame.locator("body").inner_text(timeout=5000)
-    if V5_MARKER not in body:
-        raise AssertionError("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_MARKER_MISSING")
-    for marker in ("Top Picks", "10 Best Daily College Football Picks"):
-        if marker not in body:
-            raise AssertionError(
-                f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_VISIBLE_MARKER_MISSING:{marker}"
-            )
 
-    # URL query persistence is telemetry only in public certification. The
-    # user-visible contract is the selected dropdown route rendering frozen V5.
-    # Public Streamlit can preserve session-state routing while canonicalizing
-    # the browser URL back to root, so URL state must not false-fail this gate.
+    # Step 4 contract-first acceptance: rendered user behavior blocks;
+    # URL/query state is retained as telemetry unless a feature explicitly
+    # declares it REQUIRED.
     query = _query(page)
     after = _market_options(page, v5_frame)
-    missing_after = [x for x in EXPECTED_CFB_MARKETS if x not in after]
-    if missing_after:
-        raise AssertionError(
-            f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_POSTSELECT_MENU_STALE:{missing_after!r}"
-        )
-    if after.count(TOP_PICKS) != 1:
-        raise AssertionError(
-            "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_POSTSELECT_TOP_PICKS_COUNT:"
-            + str(after.count(TOP_PICKS))
-        )
-
-    dims = v5_frame.locator("body").evaluate(
-        """e => ({
-          bodyScroll:e.scrollWidth,
-          docScroll:document.documentElement.scrollWidth,
-          viewport:window.innerWidth
-        })"""
+    contract_evidence = user_contract.certify_playwright_surface(
+        page=page,
+        frame=v5_frame,
+        contract=TOP_PICKS_USER_CONTRACT,
+        observed_markets=after,
+        query=query,
     )
-    if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
-        raise AssertionError(f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OVERFLOW:{dims!r}")
+    dims = contract_evidence["dimensions"]
 
     return {
         "width": width,
@@ -219,6 +208,8 @@ def _attempt_normal_flow(page, base_url: str, width: int, height: int) -> dict:
         "query": query,
         "v5_root_count": root.count(),
         "dims": dims,
+        "status": contract_evidence["status"],
+        "user_visible_contract": contract_evidence,
         "initial_scan": initial_scan,
         "cfb_scan": cfb_scan,
     }
@@ -273,11 +264,16 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
                 )
                 print(f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_{width}_GREEN")
 
+            responsive_contract = user_contract.certify_responsive_suite(
+                TOP_PICKS_USER_CONTRACT,
+                [item["user_visible_contract"] for item in results],
+            )
             payload = {
                 "status": "GREEN",
                 "host": base_url,
                 "flow": "normal app -> College Football -> Top Picks",
                 "expected_markets": list(EXPECTED_CFB_MARKETS),
+                "user_visible_contract": responsive_contract,
                 "results": results,
             }
             (artifacts / "cfb_top_picks_nav_step3_public_evidence.json").write_text(
