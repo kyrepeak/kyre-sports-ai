@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step5-auto-merge-branch-freshness-v1",
+  "title": "Monster Speed V3 Step 5 — Auto-merge + branch freshness",
+  "project": "Monster Speed V3",
+  "step": "5/6",
+  "status": "WAITING_REPOSITORY_SETTINGS",
+  "problem": {
+    "allow_auto_merge": false,
+    "allow_update_branch": false
+  },
+  "root_cause": "Repository-level Auto-Merge and Update Branch are disabled. The connected GitHub App can manage PR content and enable auto-merge on an eligible PR, but it does not expose repository-administration writes for these two flags.",
+  "patch": "Add a permanent fail-closed repository-settings guard to DevSystem so allow_auto_merge and allow_update_branch must stay enabled while preserving devsystem-final-gate, FAST PR certification, and FULL merged-main certification.",
+  "acceptance": {
+    "allow_auto_merge": true,
+    "allow_update_branch": true,
+    "devsystem_final_gate_preserved": true,
+    "auto_merge_proved_on_step5_pr": false,
+    "branch_freshness_setting_proved": false,
+    "product_runtime_changed": false
+  },
+  "protected": {
+    "steps1_4_frozen": true,
+    "branch_protection_not_modified_by_step5": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_versions_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
