@@ -6,7 +6,8 @@ import cfb_top_picks_page_v5 as page
 
 
 PAGE = Path("cfb_top_picks_page_v5.py").read_text(encoding="utf-8")
-ROUTER = Path("streamlit_memory_lazy_router_v244.py").read_text(encoding="utf-8")
+ROUTER = Path("streamlit_memory_lazy_router_v245.py").read_text(encoding="utf-8")
+APP = Path("app.py").read_text(encoding="utf-8")
 
 
 def _row(rank: int = 1) -> dict:
