@@ -42,7 +42,7 @@ def _game(identity="g1", event_id="401"):
     }
 
 
-def _ml_row(identity="g1", event_id="401", winner="away", probability=.69, margin=-5.0):
+def _ml_row(identity="g1", event_id="401", winner="away", probability=.69, margin=-8.0):
     game=_game(identity,event_id)
     return {
         "game":game,
