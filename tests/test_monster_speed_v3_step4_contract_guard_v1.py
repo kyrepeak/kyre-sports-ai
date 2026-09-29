@@ -9,4 +9,5 @@ def test_monster_speed_v3_step4_contract_guard():
     assert result["stable_selectors_required"] is True
     assert result["preserved_markets_required"] is True
     assert result["zero_horizontal_overflow_required"] is True
+    assert result["fresh_viewport_sessions_required"] is True
     assert result["product_runtime_changed"] is False
