@@ -92,20 +92,24 @@ def check_repository() -> dict[str, object]:
         if complete.get(key) is not True:
             failures.append(f"completeness gate missing {key}")
 
-    # Baseline audit proof: these are intentionally documented gaps, not product
-    # failures for Step 1. Later steps must close them without mutating API 2.
-    details = DETAILS.read_text(encoding="utf-8")
-    cards = CARDS.read_text(encoding="utf-8")
-    engine = ENGINE.read_text(encoding="utf-8")
+    # Baseline audit proof: these are historical findings frozen at Step 1.
+    # Later steps are expected to close the gaps, so the permanent guard checks
+    # the immutable audit record rather than requiring production to stay broken.
     baseline = dict(contract.get("current_baseline_audit") or {})
-    if "_fetch_winsipedia_games(away, home)" not in details:
-        failures.append("baseline history audit no longer matches live owner")
-    if 'row["away_abbr"]' not in cards or 'row["home_abbr"]' not in cards:
-        failures.append("baseline logo-placeholder audit no longer matches live owner")
-    if '"away_logo_url"' in engine or '"home_logo_url"' in engine:
-        failures.append("baseline logo audit stale: engine already emits real logo fields")
-    if baseline.get("ten_of_ten_completeness_gate") != "MISSING":
-        failures.append("baseline completeness audit must record missing 10/10 gate")
+    expected_baseline = {
+        "logo_state": "ABBREVIATION_PLACEHOLDERS",
+        "history_state": "SINGLE_DIRECT_WINSIPEDIA_PATH",
+        "benefits_state": "HISTORY_ONLY",
+        "why_state": "MODEL_PROBABILITY_AND_RELIABILITY_ONLY",
+        "reasoning_research_state": "MISSING",
+        "risks_state": "MISSING",
+        "ten_of_ten_completeness_gate": "MISSING",
+    }
+    for key, expected in expected_baseline.items():
+        if baseline.get(key) != expected:
+            failures.append(
+                f"frozen Step-1 baseline record changed: {key}={baseline.get(key)!r}"
+            )
 
     if failures:
         raise TopPicksResearchContractFailure(" | ".join(failures))

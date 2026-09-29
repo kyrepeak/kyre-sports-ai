@@ -20,6 +20,7 @@ import cfb_over_under_market_adapter_v3 as total_market
 import cfb_over_under_model_v1 as ou_model
 import cfb_schedule_v7_future_slate as schedule
 import cfb_top_picks_market_context_v1 as market_context
+import cfb_top_picks_team_identity_v1 as team_identity
 
 MODEL_VERSION = "CFB TOP PICKS ENGINE V1 • STEP 3"
 PHOENIX = ZoneInfo("America/Phoenix")
@@ -450,6 +451,17 @@ def build_top_picks(
             per_market[candidate["market"]] += 1
 
     picks = _rank_balanced(candidates, limit=limit)
+
+    # Research + Completeness V2 Step 2: enrich only the final ranked board.
+    # This happens strictly after ranking so identity/logo work cannot affect
+    # probability, selection, quota balancing, or ordering.
+    games_by_event = {
+        _identity(game): dict(game)
+        for game in games_with_totals
+        if _identity(game)
+    }
+    picks = team_identity.enrich_ranked_picks(picks, games_by_event)
+
     selected_counts = {market: 0 for market in MARKET_QUOTAS}
     for pick in picks:
         selected_counts[pick["market"]] = selected_counts.get(pick["market"], 0) + 1
@@ -465,6 +477,10 @@ def build_top_picks(
         "candidate_count": len(candidates),
         "candidate_counts": per_market,
         "pick_count": len(picks),
+        "logo_ready_count": sum(bool(pick.get("logo_identity_ready")) for pick in picks),
+        "logo_required_count": len(picks),
+        "logo_identity_complete": bool(picks) and all(bool(pick.get("logo_identity_ready")) for pick in picks),
+        "logo_resolution_model": team_identity.MODEL_VERSION,
         "selected_counts": selected_counts,
         "market_context": spread_diag,
         "total_market": total_diag,
