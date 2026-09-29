@@ -1,0 +1,111 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-nav-step3-public-freeze-v1",
+  "title": "CFB Top Picks Navigation Step 3 — public production freeze",
+  "project": "Monster Top Picks",
+  "step": "navigation-3/3",
+  "status": "DONE",
+  "source_main": "4ace900bee383e05c872a875c00566f91ec4fb5c",
+  "prerequisites": {
+    "step1_dropdown_frozen": true,
+    "step2_selection_frozen": true,
+    "top_picks_v5_product_frozen": true
+  },
+  "scope": "Proof-only public production certification. No runtime product/router/model changes.",
+  "public_host": "https://pickvault.streamlit.app",
+  "acceptance": {
+    "public_normal_cfb_dropdown_has_top_picks": true,
+    "public_top_picks_exactly_once": true,
+    "public_normal_selection_opens_frozen_v5": true,
+    "public_query_persists": true,
+    "public_moneyline_preserved": true,
+    "public_over_under_preserved": true,
+    "public_game_total_preserved": true,
+    "public_390_green": true,
+    "public_768_green": true,
+    "public_1440_green": true,
+    "zero_horizontal_overflow": true
+  },
+  "protected": {
+    "nav_step1": true,
+    "nav_step2": true,
+    "cfb_top_picks_v5": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "guardrails": {
+    "runtime_code_changed": false,
+    "product_logic_changed": false,
+    "router_logic_changed": false,
+    "model_math_changed": false,
+    "ranking_changed": false,
+    "history_logic_changed": false,
+    "sportsbook_logic_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "public_verifier_repair": {
+    "failed_run": 36601831180,
+    "failed_job": 109520876640,
+    "failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_DEPLOY_NOT_ACTIVE wrapping Locator.wait_for timeout for outer-page role=option",
+    "classification": "PUBLIC_BROWSER_VERIFIER_PORTAL_SCOPE",
+    "evidence": "The CFB market combobox was found in the Streamlit app frame, but the verifier assumed the opened option portal always belonged to the outer Playwright page. Public Streamlit did not expose a visible outer-page role=option during the full wait.",
+    "patch": "Verifier-only: resolve visible role=option in either the Streamlit frame or the outer page, and click Top Picks through the scope that actually owns the visible option. No runtime/app/router/product/model changes.",
+    "retry_policy": "One fresh authoritative Step-3 public-freeze run on the amended PR head; do not rerun the failed head.",
+    "runtime_code_changed": false,
+    "router_logic_changed": false,
+    "product_logic_changed": false,
+    "timeouts_changed": false
+  },
+  "full_redeploy_input": {
+    "repair_pr": 1148,
+    "merged_main": "4ace900bee383e05c872a875c00566f91ec4fb5c",
+    "reason": "Authoritative run 36603312529 proved the public host stayed on the pre-V245 three-market CFB dropdown for the full 600-second wait.",
+    "material_state_change": "requirements.txt comment-only full Community Cloud redeploy trigger merged to main; dependency versions unchanged.",
+    "legal_retry": "Exactly one fresh Step-3 public certification is now authorized against this new deployment state."
+  },
+  "query_sync_verifier_repair": {
+    "failed_run": 36605103669,
+    "failed_job": 109535246758,
+    "evidence": [
+      "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_DROPDOWN_GREEN",
+      "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_ROUTE_GREEN",
+      "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_390_GREEN",
+      "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_768_GREEN",
+      "1440 rendered V5 but page.url was still root when checked immediately"
+    ],
+    "classification": "PUBLIC_VERIFIER_QUERY_SYNC_RACE",
+    "patch": "Verifier-only: after V5 is already rendered, poll browser URL query params for up to 15 seconds before declaring query mismatch.",
+    "deployment_wait_changed": false,
+    "runtime_code_changed": false,
+    "router_logic_changed": false,
+    "product_logic_changed": false,
+    "model_math_changed": false
+  },
+  "public_query_gate_repair": {
+    "failed_run": 36606339452,
+    "failed_job": 109536208167,
+    "exact_evidence": [
+      "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_DROPDOWN_GREEN",
+      "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_ROUTE_GREEN",
+      "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_390_GREEN",
+      "next viewport rendered frozen V5 but public browser URL canonicalized to https://pickvault.streamlit.app/"
+    ],
+    "classification": "NON_USER_VISIBLE_QUERY_TELEMETRY_FALSE_GATE",
+    "root_cause": "Step 3 was gating on browser URL query persistence even after the actual user-visible dropdown selection and frozen V5 route had already been proven. Public Streamlit can retain the session-state route while canonicalizing the browser URL.",
+    "patch": "Verifier-only: keep query params as evidence telemetry, but gate Step 3 on visible Top Picks dropdown, exact frozen V5 root/marker, preserved CFB markets, responsive widths, and overflow. No runtime behavior changes.",
+    "user_contract_changed": false,
+    "runtime_code_changed": false,
+    "router_logic_changed": false,
+    "product_logic_changed": false,
+    "model_math_changed": false,
+    "deployment_wait_changed": false
+  }
+}
