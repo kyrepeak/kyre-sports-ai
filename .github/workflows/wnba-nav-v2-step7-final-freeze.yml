@@ -5,12 +5,20 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/wnba-nav-v2-step7-final-freeze.yml"
+      - "app.py"
+      - "wnba_pra_final_v2_step7.py"
+      - "streamlit_memory_lazy_router_wnba_nav_v2_step7.py"
+      - "tests/test_wnba_pra_navigation_v2_step7.py"
       - "devsystem/wnba_nav_v2_step7_public_freeze.py"
       - "devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json"
   push:
     branches: [main]
     paths:
       - ".github/workflows/wnba-nav-v2-step7-final-freeze.yml"
+      - "app.py"
+      - "wnba_pra_final_v2_step7.py"
+      - "streamlit_memory_lazy_router_wnba_nav_v2_step7.py"
+      - "tests/test_wnba_pra_navigation_v2_step7.py"
       - "devsystem/wnba_nav_v2_step7_public_freeze.py"
       - "devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json"
   workflow_dispatch:
@@ -31,7 +39,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Protect exact frozen Steps 1-6
+      - name: Protect exact frozen Steps 1-6 and certify Step 7 transport
         shell: bash
         run: |
           set -euo pipefail
@@ -39,7 +47,6 @@ jobs:
             actual="$(git hash-object "$1")"
             test "$actual" = "$2" || { echo "WNBA_NAV_STEP7_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
           }
-          check_blob app.py 12056d2701413d5034eb5d04a16b52dbcba415d5
           check_blob wnba_pra_navigation_v2_step1.py 2ff0c0c7f4b5973755f4a53b9ef110a3eafd7cb9
           check_blob wnba_pra_slate_v2_step2.py 4636cb4314489e3458b70cb3c17c6a6af4c5ea3d
           check_blob wnba_pra_game_center_v2_step3.py a181c8949991bb139521f7d379046f34147e5306
@@ -48,13 +55,32 @@ jobs:
           check_blob wnba_pra_responsive_v2_step6.py fa42253c48c4df793b4ee0d307e3b843c410cf03
           check_blob streamlit_memory_lazy_router_wnba_nav_v2_step6.py 86856dd23f0c17fab4ab7803abf60f3c72e12205
           check_blob devsystem/task_ledgers/wnba-navigation-v2-step6-responsive-integration.json 6caf6bb1382890d481b540f9d1c17a993526787a
+
           grep -F '"status": "DONE"' devsystem/task_ledgers/wnba-navigation-v2-step6-responsive-integration.json
-          grep -F 'from streamlit_memory_lazy_router_wnba_nav_v2_step6 import record_bootstrap_import_ms, render_app' app.py
-          python -m py_compile devsystem/wnba_nav_v2_step7_public_freeze.py
+          grep -F 'from streamlit_memory_lazy_router_wnba_nav_v2_step7 import record_bootstrap_import_ms, render_app' app.py
+          grep -F 'FROZEN_RESPONSIVE = "wnba_pra_responsive_v2_step6"' streamlit_memory_lazy_router_wnba_nav_v2_step7.py
+          grep -F 'data-wnba-nav-v2-step7="final-transport"' wnba_pra_final_v2_step7.py
+          grep -F 'prefetch_status="deferred_until_destination"' wnba_pra_final_v2_step7.py
+
+          python -m py_compile             app.py             wnba_pra_final_v2_step7.py             streamlit_memory_lazy_router_wnba_nav_v2_step7.py             devsystem/wnba_nav_v2_step7_public_freeze.py
+
+          python - <<'PY'
+          from pathlib import Path
+          step7 = Path("wnba_pra_final_v2_step7.py").read_text(encoding="utf-8")
+          game = step7.split("def _open_game_immediate",1)[1].split("def _open_player_immediate",1)[0]
+          player = step7.split("def _open_player_immediate",1)[1].split("def _step7_button_callback",1)[0]
+          assert "navigation.go_to_game(game_id)" in game
+          assert "navigation.go_to_player(str(game_id), str(player_id))" in player
+          assert "_prefetch_game(" not in game
+          assert "_prefetch_player(" not in player
+          assert '"frozen_steps_1_through_6_modified": False' in step7
+          print("WNBA_NAV_STEP7_IMMEDIATE_HANDOFF_CONTRACT_GREEN")
+          PY
+
           echo WNBA_NAV_STEP7_STEPS1_6_EXACT_BLOBS_GREEN
           echo WNBA_NAV_STEP7_FROZEN_MATH_GREEN
 
-      - name: Enforce proof-only PR scope
+      - name: Enforce Step 7 product scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -63,15 +89,16 @@ jobs:
         run: |
           set -euo pipefail
           actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
-          expected="$(printf '%s\n'             '.github/workflows/wnba-nav-v2-step7-final-freeze.yml'             'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json'             'devsystem/wnba_nav_v2_step7_public_freeze.py' | sort)"
+          expected="$(printf '%s\n'             '.github/workflows/wnba-nav-v2-step7-final-freeze.yml'             'app.py'             'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json'             'devsystem/wnba_nav_v2_step7_public_freeze.py'             'streamlit_memory_lazy_router_wnba_nav_v2_step7.py'             'tests/test_wnba_pra_navigation_v2_step7.py'             'wnba_pra_final_v2_step7.py' | sort)"
           test "$actual" = "$expected" || {
             echo "WNBA_NAV_STEP7_SCOPE_RED"
             echo "$actual"
             exit 1
           }
-          echo WNBA_NAV_STEP7_PROOF_ONLY_SCOPE_GREEN
+          echo WNBA_NAV_STEP7_PRODUCT_SCOPE_GREEN
 
   public-final-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: frozen-contract
     runs-on: ubuntu-24.04
     timeout-minutes: 15
