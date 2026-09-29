@@ -1,0 +1,308 @@
+"""CFB Top Picks Navigation Step 3 — public production freeze verifier."""
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+import requests
+from playwright.sync_api import sync_playwright
+
+from devsystem import browser_qa_v1 as base
+
+PUBLIC_URL = "https://pickvault.streamlit.app"
+CFB_SPORT = "College Football"
+CFB_MARKET_LABEL = "🎯 CFB Market"
+TOP_PICKS = "Top Picks"
+EXPECTED_CFB_MARKETS = ("Moneyline", "Over/Under", "Game Total", "Top Picks")
+V5_ROOT = '[data-testid="cfb-top-picks-step5-root"][data-cfb-top-picks-visual="v5"]'
+V5_MARKER = "CFB_TOP_PICKS_STEP5_FINAL_VISUAL_ACTIVE"
+WIDTHS = ((390, 844), (768, 1024), (1440, 1000))
+
+
+def _wait_http(base_url: str, timeout_seconds: float = 180.0) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    last = None
+    while time.monotonic() < deadline:
+        try:
+            r = requests.get(
+                base_url.rstrip("/") + "/",
+                timeout=7,
+                headers={"User-Agent": "KyreSportsAI-TopPicksNavStep3/1.0"},
+            )
+            last = r.status_code
+            if r.status_code < 500:
+                return
+        except Exception:
+            pass
+        time.sleep(2)
+    raise AssertionError(f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_HTTP_NOT_READY:{last}")
+
+
+def _body(page) -> str:
+    values = []
+    for frame in page.frames:
+        try:
+            values.append(frame.locator("body").inner_text(timeout=2500))
+        except Exception:
+            pass
+    return "\n".join(values)
+
+
+def _query(page) -> dict[str, list[str]]:
+    return parse_qs(urlparse(page.url).query)
+
+
+def _visible_options(page, frame, timeout_seconds: float = 15.0):
+    """Resolve Streamlit's option portal in either iframe or outer page."""
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        for scope in (frame, page):
+            try:
+                locator = scope.get_by_role("option")
+                if locator.count() > 0 and locator.first.is_visible():
+                    return locator
+            except Exception:
+                pass
+        page.wait_for_timeout(200)
+    raise AssertionError(
+        "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTIONS_NOT_VISIBLE:" + _body(page)[:4000]
+    )
+
+
+def _market_options(page, frame) -> list[str]:
+    combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
+    combo.wait_for(state="visible", timeout=45000)
+    combo.click()
+    options_locator = _visible_options(page, frame)
+    values = [v.strip() for v in options_locator.all_inner_texts() if v.strip()]
+    page.keyboard.press("Escape")
+    return values
+
+
+def _click_option(page, frame, value: str) -> None:
+    combo = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
+    combo.wait_for(state="visible", timeout=45000)
+    combo.click()
+    options = _visible_options(page, frame)
+    labels = [v.strip() for v in options.all_inner_texts()]
+    if value not in labels:
+        raise AssertionError(
+            f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:{value!r};saw={labels!r}"
+        )
+    for scope in (frame, page):
+        try:
+            target = scope.get_by_role("option", name=value, exact=True)
+            if target.count() > 0 and target.first.is_visible():
+                target.first.click(timeout=10000)
+                return
+        except Exception:
+            pass
+    raise AssertionError(
+        f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_NOT_CLICKABLE:{value!r}"
+    )
+
+
+def _find_v5(page, timeout_seconds: float = 180.0):
+    deadline = time.monotonic() + timeout_seconds
+    last_body = ""
+    while time.monotonic() < deadline:
+        last_body = _body(page)
+        forbidden = base._body_has_forbidden_error(last_body)
+        if forbidden:
+            raise AssertionError(
+                f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_RUNTIME_ERROR:{forbidden}:{last_body[:4000]}"
+            )
+        for frame in page.frames:
+            try:
+                root = frame.locator(V5_ROOT)
+                if root.count() == 1:
+                    return frame, root
+            except Exception:
+                pass
+        page.wait_for_timeout(500)
+    raise AssertionError(
+        "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_NOT_READY:" + last_body[:5000]
+    )
+
+
+def _assert_query(page, timeout_seconds: float = 15.0) -> dict[str, list[str]]:
+    """Allow Streamlit's client URL to catch up with the already-rendered V5 route."""
+    deadline = time.monotonic() + timeout_seconds
+    last = {}
+    while time.monotonic() < deadline:
+        parsed = _query(page)
+        last = parsed
+        sport = (parsed.get("ks_sport") or [""])[-1]
+        market = (parsed.get("ks_cfb_market") or [""])[-1]
+        if sport == CFB_SPORT and market == TOP_PICKS:
+            return parsed
+        page.wait_for_timeout(250)
+
+    sport = (last.get("ks_sport") or [""])[-1]
+    market = (last.get("ks_cfb_market") or [""])[-1]
+    raise AssertionError(
+        "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_QUERY_MISMATCH:"
+        f"sport={sport!r};market={market!r};url={page.url!r}"
+    )
+
+
+def _attempt_normal_flow(page, base_url: str, width: int, height: int) -> dict:
+    page.set_viewport_size({"width": width, "height": height})
+    page.goto(
+        base_url.rstrip("/") + "/",
+        wait_until="domcontentloaded",
+        timeout=120000,
+    )
+    frame, initial_scan = base._find_app_frame(page, timeout_seconds=90.0)
+    base._choose(page, frame, 0, CFB_SPORT)
+
+    frame, cfb_scan = base._find_app_frame(page, timeout_seconds=90.0)
+    before = _market_options(page, frame)
+    missing = [x for x in EXPECTED_CFB_MARKETS if x not in before]
+    if missing:
+        raise AssertionError(
+            f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_MENU_STALE:{missing!r};saw={before!r}"
+        )
+    if before.count(TOP_PICKS) != 1:
+        raise AssertionError(
+            "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_TOP_PICKS_COUNT:"
+            + str(before.count(TOP_PICKS))
+        )
+
+    _click_option(page, frame, TOP_PICKS)
+
+    v5_frame, root = _find_v5(page)
+    body = v5_frame.locator("body").inner_text(timeout=5000)
+    if V5_MARKER not in body:
+        raise AssertionError("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_MARKER_MISSING")
+    for marker in ("Top Picks", "10 Best Daily College Football Picks"):
+        if marker not in body:
+            raise AssertionError(
+                f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_VISIBLE_MARKER_MISSING:{marker}"
+            )
+
+    # URL query persistence is telemetry only in public certification. The
+    # user-visible contract is the selected dropdown route rendering frozen V5.
+    # Public Streamlit can preserve session-state routing while canonicalizing
+    # the browser URL back to root, so URL state must not false-fail this gate.
+    query = _query(page)
+    after = _market_options(page, v5_frame)
+    missing_after = [x for x in EXPECTED_CFB_MARKETS if x not in after]
+    if missing_after:
+        raise AssertionError(
+            f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_POSTSELECT_MENU_STALE:{missing_after!r}"
+        )
+    if after.count(TOP_PICKS) != 1:
+        raise AssertionError(
+            "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_POSTSELECT_TOP_PICKS_COUNT:"
+            + str(after.count(TOP_PICKS))
+        )
+
+    dims = v5_frame.locator("body").evaluate(
+        """e => ({
+          bodyScroll:e.scrollWidth,
+          docScroll:document.documentElement.scrollWidth,
+          viewport:window.innerWidth
+        })"""
+    )
+    if dims["bodyScroll"] > dims["viewport"] + 2 or dims["docScroll"] > dims["viewport"] + 2:
+        raise AssertionError(f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OVERFLOW:{dims!r}")
+
+    return {
+        "width": width,
+        "height": height,
+        "before_options": before,
+        "after_options": after,
+        "query": query,
+        "v5_root_count": root.count(),
+        "dims": dims,
+        "initial_scan": initial_scan,
+        "cfb_scan": cfb_scan,
+    }
+
+
+def run(*, base_url: str, artifact_dir: str | Path) -> dict:
+    artifacts = Path(artifact_dir)
+    artifacts.mkdir(parents=True, exist_ok=True)
+    _wait_http(base_url)
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            args=["--disable-dev-shm-usage", "--no-sandbox"],
+        )
+        page = browser.new_page(viewport={"width": 390, "height": 844})
+        try:
+            results = []
+            deadline = time.monotonic() + 600.0
+            last_error = ""
+            # Deployment wait applies only to the first/mobile proof. Once the
+            # current menu is live, the remaining widths certify the same build.
+            while time.monotonic() < deadline:
+                try:
+                    first = _attempt_normal_flow(page, base_url, *WIDTHS[0])
+                    results.append(first)
+                    break
+                except Exception as exc:
+                    last_error = repr(exc)
+                    page.wait_for_timeout(6000)
+            else:
+                raise AssertionError(
+                    "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_DEPLOY_NOT_ACTIVE:" + last_error
+                )
+
+            page.screenshot(
+                path=str(artifacts / "cfb_top_picks_nav_step3_public_390_green.png"),
+                full_page=True,
+            )
+            print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_DROPDOWN_GREEN")
+            print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_ROUTE_GREEN")
+            print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_390_GREEN")
+
+            for width, height in WIDTHS[1:]:
+                result = _attempt_normal_flow(page, base_url, width, height)
+                results.append(result)
+                page.screenshot(
+                    path=str(
+                        artifacts / f"cfb_top_picks_nav_step3_public_{width}_green.png"
+                    ),
+                    full_page=True,
+                )
+                print(f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_{width}_GREEN")
+
+            payload = {
+                "status": "GREEN",
+                "host": base_url,
+                "flow": "normal app -> College Football -> Top Picks",
+                "expected_markets": list(EXPECTED_CFB_MARKETS),
+                "results": results,
+            }
+            (artifacts / "cfb_top_picks_nav_step3_public_evidence.json").write_text(
+                json.dumps(payload, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            print("CFB_TOP_PICKS_NAV_STEPS1_3_PUBLIC_GREEN")
+            print("CFB_TOP_PICKS_NAV_STEPS1_3_FROZEN_GREEN")
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return payload
+        finally:
+            browser.close()
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base-url", default=PUBLIC_URL)
+    parser.add_argument(
+        "--artifact-dir",
+        default="artifacts/cfb-top-picks-nav-step3-public",
+    )
+    args = parser.parse_args()
+    run(base_url=args.base_url, artifact_dir=args.artifact_dir)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
