@@ -84,10 +84,11 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
+          git fetch origin main --no-tags
+          BASE_SHA="$(git merge-base origin/main "$HEAD_SHA")"
           actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort)"
           expected="$(printf '%s\n'             '.github/workflows/wnba-nav-v2-step7-final-freeze.yml'             'app.py'             'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json'             'devsystem/wnba_nav_v2_step7_public_freeze.py'             'streamlit_memory_lazy_router_wnba_nav_v2_step7.py'             'tests/test_wnba_pra_navigation_v2_step7.py'             'wnba_pra_final_v2_step7.py' | sort)"
           test "$actual" = "$expected" || {
