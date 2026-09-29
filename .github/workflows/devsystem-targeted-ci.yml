@@ -133,6 +133,8 @@ jobs:
           fi
       - name: Validate permanent DevSystem contract
         run: python devsystem/permanent_gate_v1.py
+      - name: Validate Monster Speed V3 Step 2 cache split
+        run: python devsystem/monster_speed_v3_step2_cache_split_v1.py
       - name: Validate Monster Anti-Loop V2 hard gate
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -154,6 +156,7 @@ jobs:
             tests/test_devsystem_change_classifier_v1.py \
             tests/test_devsystem_permanent_gate_v1.py \
             tests/test_devsystem_sport_cache_v1.py \
+            tests/test_monster_speed_v3_step2_cache_split_v1.py \
             tests/test_devsystem_workflow_parallelism_v1.py \
             tests/test_github_speed_benchmark_v1.py
 
@@ -196,7 +199,7 @@ jobs:
           path: |
             .venv-browser-qa
             ~/.cache/ms-playwright
-          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
       - name: Build Browser QA stack on cache miss
         if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -266,7 +269,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-cfb-critical
-          key: devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+          key: devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
       - name: Build CFB critical virtualenv on cache miss
         if: steps.cfb-venv-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -343,7 +346,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-mlb-critical
-          key: devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+          key: devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
       - name: Build MLB critical virtualenv on cache miss
         if: steps.mlb-venv-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -381,7 +384,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-wnba-critical
-          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
       - name: Build WNBA critical virtualenv on cache miss
         if: steps.wnba-venv-cache.outputs.cache-hit != 'true'
         shell: bash
@@ -419,7 +422,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-nfl-critical
-          key: devsystem-nfl-venv-${{ runner.os }}-py${{ steps.nfl-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+          key: devsystem-nfl-venv-${{ runner.os }}-py${{ steps.nfl-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
       - name: Build NFL critical virtualenv on cache miss
         if: steps.nfl-venv-cache.outputs.cache-hit != 'true'
         shell: bash
