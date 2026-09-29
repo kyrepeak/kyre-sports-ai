@@ -1,0 +1,8 @@
+MONSTER_SPEED_V3_STREAMLIT_REDEPLOY_EPOCH=1
+
+Purpose:
+- Use this file for harmless deployment/restart intent.
+- Do not edit requirements.txt just to create deployment churn.
+- Actual dependency changes still belong in requirements.txt and must update devsystem/root_requirements_fingerprint_v1.txt.
+
+This marker changes no product, router, model, projection, probability, API, or presentation behavior.
