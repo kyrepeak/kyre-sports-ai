@@ -40,19 +40,20 @@ def check_repository() -> dict[str, object]:
         "query_policy=user_contract.QUERY_POLICY_TELEMETRY",
         "user_contract.certify_playwright_surface(",
         "user_contract.certify_responsive_suite(",
-        "def _attempt_isolated_width(",
-        'browser.new_page(viewport={"width": width, "height": height})',
-        "page.close()",
+        "def _certify_current_v5_width(",
+        'page.set_viewport_size({"width": width, "height": height})',
     ):
         if token not in cert:
             failures.append(f"Top Picks verifier missing {token}")
 
-    attempt = cert.split("def _attempt_normal_flow", 1)[1].split("def _attempt_isolated_width", 1)[0]
+    attempt = cert.split("def _attempt_normal_flow", 1)[1].split("def _certify_current_v5_width", 1)[0]
     if "_assert_query(page" in attempt:
         failures.append("incidental URL query is still a blocking gate")
 
-    if "nav._attempt_isolated_width(" not in focused:
-        failures.append("focused Step-4 proof does not isolate responsive viewport sessions")
+    if focused.count("nav._attempt_normal_flow(") != 1:
+        failures.append("focused Step-4 proof must navigate exactly once")
+    if "nav._certify_current_v5_width(" not in focused:
+        failures.append("focused Step-4 proof does not resize the rendered V5 surface")
 
     try:
         ast.parse(engine)
@@ -72,7 +73,7 @@ def check_repository() -> dict[str, object]:
         "stable_selectors_required": True,
         "preserved_markets_required": True,
         "zero_horizontal_overflow_required": True,
-        "fresh_viewport_sessions_required": True,
+        "single_navigation_responsive_resize_required": True,
         "product_runtime_changed": False,
     }
 
