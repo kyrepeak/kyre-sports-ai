@@ -6,6 +6,7 @@ explanation context inside collapsed-by-default matchup dropdowns.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from html import escape
 
 import streamlit as st
@@ -20,6 +21,7 @@ PAGE_MARKER = "CFB_TOP_PICKS_STEP4_DETAILS_ACTIVE"
 LAYOUT_PREVIEW = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 HISTORY_PROJECTION_INFLUENCE = 0.0
+MAX_DETAIL_WORKERS = 10
 
 CSS = prior.CSS + r"""
 <style>
@@ -109,16 +111,45 @@ def _detail_card(row: dict, detail: dict) -> str:
     """
 
 
+def _build_details_batch(picks: list[dict], slate_day: str) -> list[dict]:
+    """Load independent context rows concurrently so collapsed cards never serialize network waits."""
+    if not picks:
+        return []
+    workers = max(1, min(MAX_DETAIL_WORKERS, len(picks)))
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="top-picks-detail") as pool:
+        futures = [
+            pool.submit(details.build_pick_detail, row, slate_day)
+            for row in picks
+        ]
+        out: list[dict] = []
+        for row, future in zip(picks, futures):
+            try:
+                out.append(dict(future.result()))
+            except Exception as exc:
+                out.append({
+                    "ready": False,
+                    "event_id": str(row.get("event_id") or ""),
+                    "why": "The ranked pick remains valid from the frozen Step-3 model.",
+                    "history_ready": False,
+                    "history_rows": [],
+                    "meetings": 0,
+                    "benefit": "Historical context is temporarily unavailable, so no historical benefit is claimed.",
+                    "reason": f"{type(exc).__name__}: {exc}"[:240],
+                })
+        return out
+
+
 def render_top_picks_page() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
     with st.spinner("Building the verified College Football Top 10..."):
         picks, diag = engine.build_top_picks(limit=10)
 
     slate_day = str(diag.get("slate_date") or "Today")
-    rendered = []
-    for row in picks:
-        detail = details.build_pick_detail(row, slate_day)
-        rendered.append(_detail_card(row, detail))
+    detail_rows = _build_details_batch(picks, slate_day)
+    rendered = [
+        _detail_card(row, detail)
+        for row, detail in zip(picks, detail_rows)
+    ]
 
     st.markdown(
         f"""
@@ -170,6 +201,8 @@ __all__ = [
     "CSS",
     "HISTORY_PROJECTION_INFLUENCE",
     "LAYOUT_PREVIEW",
+    "MAX_DETAIL_WORKERS",
+    "_build_details_batch",
     "MODEL_VERSION",
     "PAGE_MARKER",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
