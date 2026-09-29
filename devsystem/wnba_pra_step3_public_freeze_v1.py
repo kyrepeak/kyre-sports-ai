@@ -26,7 +26,7 @@ REQUIRED_MARKERS = (
 
 OFF_DAY_MARKER = "No WNBA games on this date"
 VALID_LIVE_STATE_PATTERN = re.compile(
-    r"Slate & data status\\s+SLATE\\s+(VERIFIED|CONNECTED|READY)\\b",
+    r"Slate & data status\s+SLATE\s+(VERIFIED|CONNECTED|READY)\b",
     re.IGNORECASE,
 )
 
