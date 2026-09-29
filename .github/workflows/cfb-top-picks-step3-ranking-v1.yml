@@ -1,17 +1,6 @@
 name: CFB Top Picks Step 3 ranking
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'app.py'
-      - 'cfb_top_picks_engine_v1.py'
-      - 'cfb_top_picks_market_context_v1.py'
-      - 'cfb_top_picks_page_v3.py'
-      - 'streamlit_memory_lazy_router_v243.py'
-      - 'tests/test_cfb_top_picks_step3_ranking_v1.py'
-      - 'devsystem/task_ledgers/cfb-top-picks-step3-ranking-v1.json'
-      - '.github/workflows/cfb-top-picks-step3-ranking-v1.yml'
   workflow_dispatch:
 
 permissions:
