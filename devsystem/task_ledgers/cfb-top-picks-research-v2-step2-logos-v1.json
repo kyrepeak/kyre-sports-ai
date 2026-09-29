@@ -82,5 +82,18 @@
     "product_code_changed": false,
     "logo_url_changed": false,
     "api2_changed": false
+  },
+  "merged_main_verifier_repair": {
+    "failure_class": "D_VERIFIER_NAVIGATION_PRECONDITION_READINESS",
+    "failed_merged_main_run": 36635708182,
+    "exact_failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:'Top Picks';saw=['Moneyline']",
+    "full_merged_main_devsystem_run": 36635708087,
+    "full_merged_main_devsystem_status": "SUCCESS",
+    "root_cause": "The Step-2 logo verifier performed the frozen CFB navigation precondition exactly once. On merged main, Streamlit briefly exposed only the default Moneyline market before the full CFB menu was ready, so the verifier failed before any logo assertion executed.",
+    "patch": "Retry only the frozen navigation precondition on fresh browser pages for up to 120 seconds, then run the unchanged strict 10-card/20-loaded-logo/zero-placeholder assertions.",
+    "product_code_changed": false,
+    "logo_resolver_changed": false,
+    "ranking_or_probability_changed": false,
+    "api2_changed": false
   }
 }
