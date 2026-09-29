@@ -52,6 +52,19 @@ _NCAA_TEAM_SLUG_ALIASES = {
     "west florida argonauts": "west-fla",
 }
 
+# Verified team-official snapshots are allowed only when the primary NCAA
+# field is unavailable. Values are descriptive research only and retain 0.0%
+# projection/ranking/probability weight.
+_TEAM_OFFICIAL_RED_ZONE_FALLBACKS = {
+    "west florida": {
+        "attempts": 13.0,
+        "touchdowns": 9.0,
+        "source": "University of West Florida Athletics 2026 cumulative football statistics",
+        "verified_at": "2026-09-29",
+        "note": "Official-team current-season red-zone totals; NCAA field unavailable for transition-team identity",
+    },
+}
+
 CORE_FIELDS = (
     "points_per_game",
     "recent_scoring_avg",
@@ -212,7 +225,45 @@ def _red_zone_offense(
     division: str,
     observed_at: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    team_key = _clean(profile.get("team")).casefold()
+    official = _TEAM_OFFICIAL_RED_ZONE_FALLBACKS.get(team_key)
+
+    def official_fallback(reason: str) -> tuple[dict[str, Any], dict[str, Any]]:
+        attempts = _float((official or {}).get("attempts"))
+        touchdowns = _float((official or {}).get("touchdowns"))
+        rate = (
+            float(touchdowns) / float(attempts)
+            if touchdowns is not None and attempts is not None and attempts > 0
+            else None
+        )
+        metric = _metric(
+            rate,
+            source=_clean((official or {}).get("source")),
+            observed_at=observed_at,
+            status="VERIFIED_FALLBACK" if rate is not None else "UNAVAILABLE",
+            note=(
+                _clean((official or {}).get("note"))
+                + (
+                    f"; verified snapshot {_clean((official or {}).get('verified_at'))}; {reason}"
+                    if rate is not None
+                    else ""
+                )
+            ).strip("; "),
+        )
+        return metric, {
+            "ready": rate is not None,
+            "division": division or "FCS_TRANSITION",
+            "provider": _clean((official or {}).get("source")),
+            "fallback": True,
+            "verified_at": _clean((official or {}).get("verified_at")),
+            "attempts": attempts,
+            "touchdowns": touchdowns,
+            "reason": reason,
+        }
+
     if division not in {"FBS", "FCS"}:
+        if official:
+            return official_fallback("NCAA division/stat-table identity unavailable")
         return _metric(
             None,
             source="",
@@ -225,13 +276,29 @@ def _red_zone_offense(
     row = pace_identity._lookup(tables.get("red_zone_offense") or {}, profile)
     metrics = red_zone._metrics(row, False) if row else {}
     rate = _float(metrics.get("touchdown_rate"))
+    if rate is not None:
+        return _metric(
+            rate,
+            source=f"NCAA {division} Red Zone Offense",
+            observed_at=observed_at,
+            note="Offensive red-zone touchdown rate",
+        ), {
+            "ready": True,
+            "division": division,
+            "metrics": dict(metrics),
+            "attempts": list(diag.get("attempts") or []),
+        }
+
+    if official:
+        return official_fallback("NCAA red-zone offense row unavailable")
+
     return _metric(
-        rate,
-        source=f"NCAA {division} Red Zone Offense",
+        None,
+        source="",
         observed_at=observed_at,
-        note="Offensive red-zone touchdown rate",
+        note="No verified NCAA or official-team red-zone field available",
     ), {
-        "ready": rate is not None,
+        "ready": False,
         "division": division,
         "metrics": dict(metrics),
         "attempts": list(diag.get("attempts") or []),
