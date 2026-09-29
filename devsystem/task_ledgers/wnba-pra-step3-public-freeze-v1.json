@@ -39,8 +39,49 @@
     "cfb_product": true
   },
   "action_log": {
-    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-    "events": [],
-    "consumed_receipts": []
+    "head_chain_hash": "54be15d6a86ca0c526f95d3451d89c60b024b30534e76656379b067ef589231c",
+    "events": [
+      {
+        "event_id": "ACT-E07D0035B3B489B8",
+        "receipt": {
+          "payload": {
+            "policy_version": 2,
+            "task_id": "wnba-pra-step3-public-freeze-v1",
+            "checkpoint_id": "STEP3-FINAL-FREEZE-VERIFIER-HARDENING",
+            "action_fingerprint": "681565796ba47cccc131a08537bf5332e0f689087a513208ae7757562db4b6f4",
+            "root_cause_fingerprint": "8a1a5c806ef108de8119960a7d15eba5b9e092398fcd64fd3e864516170ad3d5",
+            "evidence_fingerprint": "fff0af31a1b0774e81441f0c32fa225a032bd7374117f396d0fbdf9354f43b96",
+            "relevant_input_fingerprint": "e65535a027277b8936f66c9582559d365c897f2d23b3e487adec47f3a240083e",
+            "decision": "AUTHORIZED_NEW_HYPOTHESIS",
+            "previous_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "event_nonce": "PR1135-STEP3-VERIFIER-HARDENING-7567A941",
+            "override_event_id": ""
+          },
+          "receipt_hash": "7888dee10ff6519277e606dc12f3aa5479d64883fc74ab99cab817657e19952f"
+        },
+        "outcome": "Recorded verifier-hardening action and required Step-3 task-ledger receipt without changing product code.",
+        "progress_class": "root_cause_narrowed",
+        "evidence": {
+          "pr": 1135,
+          "head_before_ledger": "7567a94111996ff813fced478d4fee730c0425ec",
+          "scope": "read-only Step 3 public-freeze verifier only",
+          "product_code_changed": false,
+          "protected": [
+            "Step 1 API ownership",
+            "Step 2 page cleanup",
+            "WNBA projection/market/ranking/qualification/Monte Carlo",
+            "NFL",
+            "MLB",
+            "CFB"
+          ],
+          "devsystem_run": 36524358315,
+          "anti_loop_failure": "non-documentation PR requires exactly one changed task ledger"
+        },
+        "event_chain_hash": "54be15d6a86ca0c526f95d3451d89c60b024b30534e76656379b067ef589231c"
+      }
+    ],
+    "consumed_receipts": [
+      "7888dee10ff6519277e606dc12f3aa5479d64883fc74ab99cab817657e19952f"
+    ]
   }
 }
