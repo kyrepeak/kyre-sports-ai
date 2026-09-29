@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-step4-details-v1",
+  "title": "CFB Top Picks Step 4 — Why, Actual Matchup History, Benefits",
+  "project": "Monster Top Picks",
+  "step": "4/5",
+  "status": "DONE",
+  "source_main": "b8e02f49be733abac52d6eea842bb28d82cd1960",
+  "acceptance": {
+    "frozen_step1_shell_preserved": true,
+    "frozen_step2_cards_preserved": true,
+    "frozen_step3_ranking_probability_toughness_preserved": true,
+    "tap_to_expand_each_ranked_matchup": true,
+    "why_this_pick_section": true,
+    "actual_matchup_history_section": true,
+    "benefits_section": true,
+    "exact_espn_event_identity_required": true,
+    "exact_espn_team_ids_required": true,
+    "history_projection_weight": 0.0,
+    "history_selection_weight": 0.0,
+    "history_ranking_weight": 0.0,
+    "sportsbook_projection_weight": 0.0,
+    "no_history_fabrication": true
+  },
+  "protected": {
+    "cfb_top_picks_steps_1_3": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
