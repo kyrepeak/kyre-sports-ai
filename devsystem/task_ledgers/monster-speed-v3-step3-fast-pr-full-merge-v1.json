@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step3-fast-pr-full-merge-v1",
+  "title": "Monster Speed V3 Step 3 — Fast PR lane + full merge lane",
+  "project": "Monster Speed V3",
+  "step": "3/6",
+  "status": "DONE",
+  "root_cause": "The required PR gate waited on browser QA and sport-critical suites even for routine presentation/control-plane edits, so branches spent merge-blocking time proving expensive contracts that can be re-certified immediately on the merged main revision.",
+  "patch": "Create an explicit lightweight PR certification lane, move browser and routine sport-critical suites to merged-main/full mode, retain full sport proof for high-risk model PRs, run targeted CI on main, and make the final gate aggregate the active mode.",
+  "protected": {
+    "step1_frozen": true,
+    "step2_frozen": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_versions_unchanged": true,
+    "high_risk_model_pr_full_sport_proof_preserved": true
+  },
+  "proof_contract": {
+    "routine_pr_mode": "FAST",
+    "merged_main_mode": "FULL",
+    "browser_qa_on_routine_pr": false,
+    "sport_critical_on_routine_pr": false,
+    "sport_critical_on_high_risk_model_pr": true,
+    "merged_main_full_lane_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches:
+      - main
       - devsystem-step2-targeted-ci
       - devsystem-step3-regression-shield
       - devsystem-step4-browser-qa
@@ -135,6 +136,8 @@ jobs:
         run: python devsystem/permanent_gate_v1.py
       - name: Validate Monster Speed V3 Step 2 cache split
         run: python devsystem/monster_speed_v3_step2_cache_split_v1.py
+      - name: Validate Monster Speed V3 Step 3 fast/full lane split
+        run: python devsystem/monster_speed_v3_step3_lane_split_v1.py
       - name: Validate Monster Anti-Loop V2 hard gate
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -157,6 +160,7 @@ jobs:
             tests/test_devsystem_permanent_gate_v1.py \
             tests/test_devsystem_sport_cache_v1.py \
             tests/test_monster_speed_v3_step2_cache_split_v1.py \
+            tests/test_monster_speed_v3_step3_lane_split_v1.py \
             tests/test_devsystem_workflow_parallelism_v1.py \
             tests/test_github_speed_benchmark_v1.py
 
@@ -179,10 +183,11 @@ jobs:
   browser-qa:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
-      needs.classify.outputs.ui == 'true' ||
+      github.event_name != 'pull_request' &&
+      (needs.classify.outputs.ui == 'true' ||
       needs.classify.outputs.cfb == 'true' ||
       needs.classify.outputs.nfl == 'true' ||
-      needs.classify.outputs.core == 'true'
+      needs.classify.outputs.core == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
@@ -254,7 +259,9 @@ jobs:
 
   cfb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
-    if: needs.classify.outputs.cfb == 'true' || needs.classify.outputs.core == 'true'
+    if: >-
+      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
+      (needs.classify.outputs.cfb == 'true' || needs.classify.outputs.core == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -331,7 +338,9 @@ jobs:
 
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
-    if: needs.classify.outputs.mlb == 'true' || needs.classify.outputs.core == 'true'
+    if: >-
+      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
+      (needs.classify.outputs.mlb == 'true' || needs.classify.outputs.core == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -369,7 +378,9 @@ jobs:
 
   wnba-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
-    if: needs.classify.outputs.wnba == 'true' || needs.classify.outputs.core == 'true'
+    if: >-
+      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
+      (needs.classify.outputs.wnba == 'true' || needs.classify.outputs.core == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -407,7 +418,9 @@ jobs:
 
   nfl-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
-    if: needs.classify.outputs.nfl == 'true' || needs.classify.outputs.core == 'true'
+    if: >-
+      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
+      (needs.classify.outputs.nfl == 'true' || needs.classify.outputs.core == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -451,8 +464,37 @@ jobs:
       - name: Compile shared entry points
         run: python -m py_compile app.py
 
-  devsystem-final-gate:
-    if: always()
+  pr-fast:
+    if: always() && github.event_name == 'pull_request'
+    needs:
+      - classify
+      - workflow-hygiene
+      - permanent-contract
+      - regression-shield
+      - core-smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Certify fast PR safety lane
+        shell: bash
+        env:
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          WORKFLOW_HYGIENE_RESULT: ${{ needs.workflow-hygiene.result }}
+          PERMANENT_CONTRACT_RESULT: ${{ needs.permanent-contract.result }}
+          REGRESSION_SHIELD_RESULT: ${{ needs.regression-shield.result }}
+          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
+        run: |
+          set -euo pipefail
+          allowed="success skipped"
+          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT CORE_SMOKE_RESULT
+          do
+            result="${!name:-}"
+            printf '%s=%s\n' "$name" "${result:-unknown}"
+            grep -qw -- "$result" <<< "$allowed" || exit 1
+          done
+          echo "MONSTER_SPEED_V3_STEP3_FAST_PR_GREEN"
+
+  full-merge-certification:
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - classify
       - workflow-hygiene
@@ -466,7 +508,7 @@ jobs:
       - core-smoke
     runs-on: ubuntu-24.04
     steps:
-      - name: Aggregate every required DevSystem lane
+      - name: Certify merged-main full lane
         shell: bash
         env:
           CLASSIFY_RESULT: ${{ needs.classify.result }}
@@ -482,6 +524,50 @@ jobs:
         run: |
           set -euo pipefail
           allowed="success skipped"
+          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT BROWSER_QA_RESULT CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT CORE_SMOKE_RESULT
+          do
+            result="${!name:-}"
+            printf '%s=%s\n' "$name" "${result:-unknown}"
+            grep -qw -- "$result" <<< "$allowed" || exit 1
+          done
+          echo "MONSTER_SPEED_V3_STEP3_FULL_MERGE_GREEN"
+
+  devsystem-final-gate:
+    if: always()
+    needs:
+      - classify
+      - workflow-hygiene
+      - permanent-contract
+      - regression-shield
+      - browser-qa
+      - cfb-critical
+      - mlb-critical
+      - wnba-critical
+      - nfl-critical
+      - core-smoke
+      - pr-fast
+      - full-merge-certification
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Aggregate every required DevSystem lane
+        shell: bash
+        env:
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          WORKFLOW_HYGIENE_RESULT: ${{ needs.workflow-hygiene.result }}
+          PERMANENT_CONTRACT_RESULT: ${{ needs.permanent-contract.result }}
+          REGRESSION_SHIELD_RESULT: ${{ needs.regression-shield.result }}
+          BROWSER_QA_RESULT: ${{ needs.browser-qa.result }}
+          CFB_CRITICAL_RESULT: ${{ needs.cfb-critical.result }}
+          MLB_CRITICAL_RESULT: ${{ needs.mlb-critical.result }}
+          WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
+          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
+          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
+          PR_FAST_RESULT: ${{ needs.pr-fast.result }}
+          FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          allowed="success skipped"
           failed=0
           for name in \
             CLASSIFY_RESULT \
@@ -493,7 +579,9 @@ jobs:
             MLB_CRITICAL_RESULT \
             WNBA_CRITICAL_RESULT \
             NFL_CRITICAL_RESULT \
-            CORE_SMOKE_RESULT
+            CORE_SMOKE_RESULT \
+            PR_FAST_RESULT \
+            FULL_MERGE_RESULT
           do
             result="${!name:-}"
             printf '%s=%s\n' "$name" "${result:-unknown}"
@@ -501,6 +589,14 @@ jobs:
               failed=1
             fi
           done
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_FAST_RESULT" != "success" ]; then
+            echo "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED"
+            failed=1
+          fi
+          if [ "$EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ] && [ "$FULL_MERGE_RESULT" != "success" ]; then
+            echo "MONSTER_SPEED_V3_STEP3_FULL_MERGE_REQUIRED"
+            failed=1
+          fi
           if [ "$failed" -ne 0 ]; then
             echo "DEVSYSTEM_FINAL_GATE_BLOCKED"
             exit 1

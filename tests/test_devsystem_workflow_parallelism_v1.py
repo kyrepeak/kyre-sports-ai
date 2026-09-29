@@ -41,10 +41,31 @@ def test_expensive_lanes_still_wait_for_both_safety_gates() -> None:
         assert expected in _job_block(job), job
 
 
+def test_step3_fast_pr_and_full_merge_jobs_exist() -> None:
+    fast = _job_block("pr-fast")
+    full = _job_block("full-merge-certification")
+    assert "if: always() && github.event_name == 'pull_request'" in fast
+    assert "MONSTER_SPEED_V3_STEP3_FAST_PR_GREEN" in fast
+    assert "always() && github.event_name == 'push'" in full
+    assert "refs/heads/main" in full
+    assert "MONSTER_SPEED_V3_STEP3_FULL_MERGE_GREEN" in full
+
+def test_expensive_pr_lanes_are_deferred_except_high_risk_models() -> None:
+    browser = _job_block("browser-qa")
+    assert "github.event_name != 'pull_request'" in browser
+    for job in ("cfb-critical", "mlb-critical", "wnba-critical", "nfl-critical"):
+        block = _job_block(job)
+        assert "github.event_name != 'pull_request'" in block
+        assert "needs.classify.outputs.model == 'true'" in block
+
 def test_final_gate_still_aggregates_both_safety_gates() -> None:
     final_gate = _job_block("devsystem-final-gate")
     assert "- permanent-contract" in final_gate
     assert "- regression-shield" in final_gate
+    assert "- pr-fast" in final_gate
+    assert "- full-merge-certification" in final_gate
+    assert "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED" in final_gate
+    assert "MONSTER_SPEED_V3_STEP3_FULL_MERGE_REQUIRED" in final_gate
 
 
 def test_final_gate_is_lightweight_and_fail_closed() -> None:
@@ -67,5 +88,7 @@ def test_final_gate_is_lightweight_and_fail_closed() -> None:
         "WNBA_CRITICAL_RESULT",
         "NFL_CRITICAL_RESULT",
         "CORE_SMOKE_RESULT",
+        "PR_FAST_RESULT",
+        "FULL_MERGE_RESULT",
     ):
         assert job in final_gate
