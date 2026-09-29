@@ -37,5 +37,18 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "concurrency_repair": {
+    "failure_class": "CI_CONTROL_PLANE_CONCURRENCY_COLLISION",
+    "evidence": {
+      "cancelled_workflow": "Monster Speed V3 Step 1 Workflow Quarantine V2",
+      "conflicting_workflow": "Monster Speed V3 Step 1 Quarantine",
+      "prior_shared_group": "monster-speed-v3-step1-quarantine-${{ github.ref }}"
+    },
+    "patch": "Give the 51-workflow app-fanout guard its own monster-speed-v3-step1-app-fanout concurrency group; retain V2 as the authoritative frozen-workflow quarantine group.",
+    "product_code_changed": false,
+    "model_math_changed": false,
+    "router_changed": false,
+    "retry_policy": "This ledger update is the one watched-file trigger for a fresh V2 proof on the final branch head."
   }
 }
