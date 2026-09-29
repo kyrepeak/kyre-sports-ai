@@ -4,7 +4,7 @@
   "title": "Monster Speed V3 Step 5 — Auto-merge + branch freshness",
   "project": "Monster Speed V3",
   "step": "5/6",
-  "status": "WAITING_PROOF",
+  "status": "WAITING_FUNCTIONAL_AUTO_MERGE_PROOF",
   "problem": {
     "allow_auto_merge": false,
     "allow_update_branch": false
@@ -58,5 +58,12 @@
     "patch": "Read the two public repository merge-policy flags from unauthenticated public repository metadata while keeping all writes and protections unchanged.",
     "product_code_changed": false,
     "branch_protection_changed": false
+  },
+  "ci_visibility_repair": {
+    "failure_class": "D_VERIFIER_PERMISSION_VISIBILITY",
+    "failed_run": 36625714504,
+    "root_cause": "GitHub Actions/anonymous repository metadata does not expose the admin-controlled merge-policy flags reliably in this proof context, while the connected admin-capable GitHub account and repository Settings UI both report them enabled.",
+    "patch": "Freeze live settings into a committed evidence snapshot verified from the connected GitHub account. CI validates the snapshot plus the unchanged DevSystem safety contract. Functional auto-merge is proven separately by enabling native auto-merge on PR #1159.",
+    "safety": "No branch-protection, product, router, model, or dependency changes."
   }
 }

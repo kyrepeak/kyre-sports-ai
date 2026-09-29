@@ -141,9 +141,7 @@ jobs:
       - name: Validate Monster Speed V3 Step 4 user-visible contract
         run: python devsystem/monster_speed_v3_step4_contract_guard_v1.py
       - name: Validate Monster Speed V3 Step 5 repository automation
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python devsystem/monster_speed_v3_step5_repo_settings_v1.py --live
+        run: python devsystem/monster_speed_v3_step5_repo_settings_v1.py
       - name: Validate Monster Anti-Loop V2 hard gate
         env:
           EVENT_NAME: ${{ github.event_name }}

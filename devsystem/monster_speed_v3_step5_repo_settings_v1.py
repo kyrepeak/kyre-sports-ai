@@ -12,6 +12,7 @@ REPOSITORY = "kyrepeak/kyre-sports-ai"
 REPO_API = f"https://api.github.com/repos/{REPOSITORY}"
 ROOT = Path(__file__).resolve().parents[1]
 TARGETED_CI = ROOT / ".github/workflows/devsystem-targeted-ci.yml"
+SETTINGS_EVIDENCE = ROOT / "devsystem/evidence/monster-speed-v3-step5-repo-settings-v1.json"
 
 
 class Step5SettingsFailure(RuntimeError):
@@ -53,6 +54,13 @@ def validate_local_safety_contract() -> dict[str, Any]:
         if token not in text:
             failures.append(f"targeted CI missing {token}")
 
+    if not SETTINGS_EVIDENCE.exists():
+        failures.append("Step-5 repository settings evidence snapshot missing")
+        snapshot_result = None
+    else:
+        snapshot = json.loads(SETTINGS_EVIDENCE.read_text(encoding="utf-8"))
+        snapshot_result = validate_repository_settings(dict(snapshot.get("repository") or {}))
+
     if failures:
         raise Step5SettingsFailure(" | ".join(failures))
 
@@ -63,6 +71,7 @@ def validate_local_safety_contract() -> dict[str, Any]:
         "full_merge_gate_preserved": True,
         "branch_protection_mutated": False,
         "product_runtime_changed": False,
+        "repository_settings_snapshot": snapshot_result,
     }
 
 
