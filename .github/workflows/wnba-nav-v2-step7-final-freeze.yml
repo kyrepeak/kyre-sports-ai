@@ -65,6 +65,7 @@ jobs:
           grep -F 'prefetch_status="deferred_until_destination"' wnba_pra_final_v2_step7.py
 
           python -m py_compile             app.py             wnba_pra_final_v2_step7.py             streamlit_memory_lazy_router_wnba_nav_v2_step7.py             devsystem/wnba_nav_v2_step7_public_freeze.py
+          grep -F 'WNBA_NAV_STEP7_PLAYER_FINAL_SURFACES_READY_GREEN' devsystem/wnba_nav_v2_step7_public_freeze.py
 
           python - <<'PY'
           from pathlib import Path
@@ -107,10 +108,15 @@ jobs:
             '.github/workflows/wnba-nav-v2-step7-final-freeze.yml' \
             'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json' \
             'devsystem/wnba_nav_v2_step7_public_freeze.py' | sort)"
+          verifier_only_scope="$(printf '%s\n' \
+            'devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json' \
+            'devsystem/wnba_nav_v2_step7_public_freeze.py' | sort)"
           if [ "$actual" = "$product_scope" ]; then
             echo WNBA_NAV_STEP7_PRODUCT_SCOPE_GREEN
           elif [ "$actual" = "$verifier_closeout_scope" ]; then
             echo WNBA_NAV_STEP7_VERIFIER_CLOSEOUT_SCOPE_GREEN
+          elif [ "$actual" = "$verifier_only_scope" ]; then
+            echo WNBA_NAV_STEP7_VERIFIER_ONLY_SCOPE_GREEN
           else
             echo "WNBA_NAV_STEP7_SCOPE_RED"
             echo "$actual"

@@ -98,5 +98,58 @@
     "verifier_patch": "Keep the Step-7 deployment marker required on Slate entry. Certify deeper route readiness from the actual interactive user-visible contract: Game Center heading + Back button + PRA buttons, and Player Intelligence heading + Back button.",
     "product_code_changed_by_closeout": false,
     "frozen_steps_1_6_changed_by_closeout": false
+  },
+  "player_verifier_closeout": {
+    "failed_public_run": 36646515806,
+    "failed_public_job": 109670679619,
+    "product_evidence": [
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=0.120",
+      "WNBA_NAV_STEP7_GAME_VISIBLE_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_GAME_ZERO_OVERFLOW_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_GAME_READY_SECONDS=1.542",
+      "public body rendered WNBA PRA INTELLIGENCE",
+      "public body rendered FINAL DECISION",
+      "public body rendered Recent Form",
+      "public body rendered Matchup + Pace",
+      "public body rendered Minutes, Role, Usage + Availability",
+      "public body rendered Same-Opponent H2H Context"
+    ],
+    "verifier_root_cause": "Player readiness and final-surface assertions were case-sensitive while the live visual contract renders key headings in uppercase.",
+    "verifier_patch": "Use case-insensitive semantic checks for Player Intelligence readiness and required final surfaces.",
+    "product_code_changed_by_closeout": false,
+    "frozen_steps_1_6_changed_by_closeout": false
+  },
+  "slate_verifier_closeout": {
+    "failed_public_run": 36646778458,
+    "failed_public_job": 109671513292,
+    "product_evidence": [
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=0.428",
+      "WNBA_NAV_STEP7_DEFAULT_SLATE_HAS_GAME_GREEN",
+      "WNBA_NAV_STEP7_SLATE_ZERO_OVERFLOW_GREEN"
+    ],
+    "verifier_root_cause": "Slate readiness returned on the Step-7 marker plus heading before the frozen lazy-load chips had finished rendering, so the immediate post-ready assertion raced the Streamlit delta stream.",
+    "verifier_patch": "Slate readiness now requires both frozen lazy-load messages before returning ready.",
+    "product_code_changed_by_closeout": false,
+    "frozen_steps_1_6_changed_by_closeout": false
+  },
+  "player_surface_race_closeout": {
+    "failed_public_run": 36646970469,
+    "failed_public_job": 109672118793,
+    "product_evidence": [
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_SLATE_VISIBLE_LAZY_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=1.490",
+      "WNBA_NAV_STEP7_GAME_VISIBLE_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_GAME_READY_SECONDS=11.436",
+      "WNBA_NAV_STEP7_PLAYER_VISIBLE_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_PLAYER_READY_SECONDS=5.526",
+      "Slate/Game/Player zero-overflow GREEN"
+    ],
+    "verifier_root_cause": "Player route readiness returned on the PRA heading plus Back control before the final Step-4 decision and intelligence panels had finished streaming, so the immediate final-surface assertion raced the Streamlit delta stream.",
+    "verifier_patch": "Player readiness now waits for the decision card plus all four final intelligence panels and accepts either valid decision label: Final Decision or Final Qualified Decision.",
+    "product_code_changed": false,
+    "frozen_steps_1_6_changed": false
   }
 }

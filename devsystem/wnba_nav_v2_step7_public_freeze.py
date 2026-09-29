@@ -49,6 +49,23 @@ def _step5_marker(frame, page_name: str):
     )
 
 
+def _player_final_surfaces_ready(frame) -> tuple[bool, list[str]]:
+    body_upper = _body(frame).upper()
+    decision_ready = (
+        "FINAL DECISION" in body_upper
+        or "FINAL QUALIFIED DECISION" in body_upper
+    )
+    required = {
+        "RECENT FORM": "RECENT FORM" in body_upper,
+        "MATCHUP + PACE": "MATCHUP + PACE" in body_upper,
+        "MINUTES, ROLE, USAGE + AVAILABILITY": "MINUTES, ROLE, USAGE + AVAILABILITY" in body_upper,
+        "SAME-OPPONENT H2H CONTEXT": "SAME-OPPONENT H2H CONTEXT" in body_upper,
+    }
+    dom_ready = frame.locator(".wn4-decision").count() > 0 and frame.locator(".wn4-panel").count() >= 4
+    missing = ([] if decision_ready else ["FINAL DECISION"]) + [name for name, ok in required.items() if not ok]
+    return bool(dom_ready and not missing), missing
+
+
 def _wait_page(page, page_name: str, *, timeout_seconds: float) -> tuple[object, float]:
     """Wait for the user-visible route contract, not lagging hidden markers.
 
@@ -68,8 +85,13 @@ def _wait_page(page, page_name: str, *, timeout_seconds: float) -> tuple[object,
         try:
             body = _body(frame)
             if page_name == "slate":
-                if _step7_marker(frame, "slate").count() and "WNBA Slate" in body:
+                slate_lazy_ready = (
+                    "No player/model prefetch" in body
+                    and "Detailed PRA edges stay asleep on this page" in body
+                )
+                if _step7_marker(frame, "slate").count() and "WNBA Slate" in body and slate_lazy_ready:
                     print("WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN")
+                    print("WNBA_NAV_STEP7_SLATE_VISIBLE_LAZY_CONTRACT_GREEN")
                     return frame, time.monotonic() - started
 
             elif page_name == "game":
@@ -81,8 +103,10 @@ def _wait_page(page, page_name: str, *, timeout_seconds: float) -> tuple[object,
 
             elif page_name == "player":
                 back = frame.get_by_role("button", name="← Back to Game Center", exact=True)
-                if "WNBA PRA Intelligence" in body and back.count() > 0:
+                final_ready, _ = _player_final_surfaces_ready(frame)
+                if "WNBA PRA INTELLIGENCE" in body.upper() and back.count() > 0 and final_ready:
                     print("WNBA_NAV_STEP7_PLAYER_VISIBLE_CONTRACT_GREEN")
+                    print("WNBA_NAV_STEP7_PLAYER_FINAL_SURFACES_READY_GREEN")
                     return frame, time.monotonic() - started
 
             last = body[:5000]
@@ -308,16 +332,8 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict:
             _assert_no_overflow(frame, "player")
             print(f"WNBA_NAV_STEP7_PUBLIC_PLAYER_READY_SECONDS={player_seconds:.3f}")
 
-            player_body = _body(frame)
-            required_player = (
-                "Final Decision",
-                "Recent Form",
-                "Matchup + Pace",
-                "Minutes, Role, Usage + Availability",
-                "Same-Opponent H2H Context",
-            )
-            missing = [x for x in required_player if x not in player_body]
-            if missing:
+            final_ready, missing = _player_final_surfaces_ready(frame)
+            if not final_ready:
                 raise BrowserQAFailure(f"Player Intelligence missing final frozen surfaces: {missing}")
             print("WNBA_NAV_STEP7_PLAYER_INTELLIGENCE_GREEN")
 
