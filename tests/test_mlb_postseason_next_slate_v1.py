@@ -135,8 +135,10 @@ def test_official_postseason_payload_is_accepted_without_regular_season_filter()
 
 def test_slate_wrapper_promotes_next_slate_before_provider_diagnostics():
     text = SLATE_SOURCE.read_text(encoding="utf-8")
+    render_body = text.split("def render_slate_hub", 1)[1]
 
-    assert "schedule.next_games_after(day, max_days=7)" in text
-    assert "MLB Postseason" in text
-    assert "NEXT SLATE" in text
-    assert text.index("schedule.next_games_after(day, max_days=7)") < text.index("provider diagnostics")
+    assert "schedule.next_games_after(day, max_days=7)" in render_body
+    assert "MLB Postseason" in render_body
+    assert "NEXT SLATE" in render_body
+    diagnostic_marker = '<span class="mlb32-bad">provider diagnostics</span>'
+    assert render_body.index("schedule.next_games_after(day, max_days=7)") < render_body.index(diagnostic_marker)
