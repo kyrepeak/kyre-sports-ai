@@ -24,6 +24,7 @@ SLATE_READY_BUDGET_SECONDS = 12.0
 GAME_READY_BUDGET_SECONDS = 24.0
 PLAYER_READY_BUDGET_SECONDS = 24.0
 BACK_READY_BUDGET_SECONDS = 12.0
+CERTIFIED_GAME_DATES = ("2026-09-18", "2026-09-23", "2026-09-27", "2026-09-29")
 
 
 def _body(frame) -> str:
@@ -164,12 +165,30 @@ def _ensure_game_on_slate(page, frame) -> object:
     deadline = time.monotonic() + 10.0
     while time.monotonic() < deadline:
         if _game_button(frame).count() > 0:
+            print("WNBA_NAV_STEP7_DEFAULT_SLATE_HAS_GAME_GREEN")
             return frame
         if "No WNBA games are scheduled for this date." in _body(frame):
             break
         page.wait_for_timeout(350)
         frame, _ = _find_app_frame(page, timeout_seconds=8.0)
-    return _set_date_with_game(page, frame, _find_game_date())
+
+    failures = []
+    for target in CERTIFIED_GAME_DATES:
+        try:
+            candidate = _set_date_with_game(page, frame, target)
+            if _game_button(candidate).count() > 0:
+                print(f"WNBA_NAV_STEP7_CERTIFIED_GAME_DATE_GREEN={target}")
+                return candidate
+        except Exception as exc:
+            failures.append(f"{target}:{type(exc).__name__}")
+            try:
+                frame, _ = _find_app_frame(page, timeout_seconds=8.0)
+            except Exception:
+                pass
+
+    raise BrowserQAFailure(
+        "No certified WNBA game date rendered a public Slate game; " + ",".join(failures)
+    )
 
 
 def run(*, production_url: str, artifact_dir: str | Path) -> dict:
