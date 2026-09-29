@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-step3-public-freeze-v1",
+  "title": "WNBA PRA Step 3 — production proof and final freeze",
+  "project": "WNBA PRA cleanup",
+  "step": "3/3",
+  "status": "DONE",
+  "source_main": "cac7ee26a76ea8188bbc6f824befa942a1d8b607",
+  "scope": {
+    "verifier": "devsystem/wnba_pra_step3_public_freeze_v1.py",
+    "workflow": ".github/workflows/wnba-pra-step3-public-freeze-v1.yml",
+    "production_url": "https://pickvault.streamlit.app",
+    "route": "WNBA -> PRA"
+  },
+  "acceptance": {
+    "step1_api_ownership_frozen": true,
+    "step2_page_cleanup_frozen": true,
+    "public_wnba_pra_route_required": true,
+    "kyre_sports_api_ownership_marker_required": true,
+    "advanced_diagnostics_marker_required": true,
+    "clean_off_day_or_slate_status_required": true,
+    "legacy_step_diagnostics_forbidden": true,
+    "provider_secret_message_forbidden": true,
+    "desktop_viewport_required": true,
+    "tablet_viewport_required": true,
+    "mobile_viewport_required": true,
+    "read_only_public_verifier": true,
+    "product_code_changed": false
+  },
+  "protected": {
+    "wnba_api_ownership_step1": true,
+    "wnba_page_cleanup_step2": true,
+    "wnba_projection_math": true,
+    "wnba_market_math": true,
+    "wnba_ranking_and_qualification": true,
+    "wnba_monte_carlo": true,
+    "nfl_product": true,
+    "mlb_product": true,
+    "cfb_product": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
