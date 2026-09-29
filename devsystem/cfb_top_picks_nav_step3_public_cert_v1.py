@@ -215,23 +215,38 @@ def _attempt_normal_flow(page, base_url: str, width: int, height: int) -> dict:
     }
 
 
-def _attempt_isolated_width(
-    browser,
-    base_url: str,
+def _certify_current_v5_width(
+    page,
     width: int,
     height: int,
     *,
     screenshot_path: str | Path | None = None,
 ) -> dict:
-    """Certify one responsive width in a fresh Streamlit browser page/session."""
-    page = browser.new_page(viewport={"width": width, "height": height})
-    try:
-        result = _attempt_normal_flow(page, base_url, width, height)
-        if screenshot_path is not None:
-            page.screenshot(path=str(screenshot_path), full_page=True)
-        return result
-    finally:
-        page.close()
+    """Resize the already-rendered V5 surface without re-running navigation."""
+    page.set_viewport_size({"width": width, "height": height})
+    v5_frame, root = _find_v5(page)
+    query = _query(page)
+    after = _market_options(page, v5_frame)
+    contract_evidence = user_contract.certify_playwright_surface(
+        page=page,
+        frame=v5_frame,
+        contract=TOP_PICKS_USER_CONTRACT,
+        observed_markets=after,
+        query=query,
+    )
+    if screenshot_path is not None:
+        page.screenshot(path=str(screenshot_path), full_page=True)
+    return {
+        "width": width,
+        "height": height,
+        "after_options": after,
+        "query": query,
+        "v5_root_count": root.count(),
+        "dims": contract_evidence["dimensions"],
+        "status": contract_evidence["status"],
+        "user_visible_contract": contract_evidence,
+        "responsive_only": True,
+    }
 
 
 def run(*, base_url: str, artifact_dir: str | Path) -> dict:
@@ -244,25 +259,34 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
             headless=True,
             args=["--disable-dev-shm-usage", "--no-sandbox"],
         )
+        page = None
         try:
             results = []
             deadline = time.monotonic() + 600.0
             last_error = ""
-            # Each deployment attempt and each responsive width gets a fresh
-            # Streamlit page/session so state from one proof cannot contaminate
-            # the next viewport.
+
+            # Prove the real navigation exactly once. A fresh page is used only
+            # when retrying deployment readiness before that first success.
             while time.monotonic() < deadline:
+                if page is not None:
+                    page.close()
+                page = browser.new_page(
+                    viewport={"width": WIDTHS[0][0], "height": WIDTHS[0][1]}
+                )
                 try:
-                    first = _attempt_isolated_width(
-                        browser,
-                        base_url,
-                        *WIDTHS[0],
-                        screenshot_path=artifacts / "cfb_top_picks_nav_step3_public_390_green.png",
+                    first = _attempt_normal_flow(page, base_url, *WIDTHS[0])
+                    page.screenshot(
+                        path=str(
+                            artifacts / "cfb_top_picks_nav_step3_public_390_green.png"
+                        ),
+                        full_page=True,
                     )
                     results.append(first)
                     break
                 except Exception as exc:
                     last_error = repr(exc)
+                    page.close()
+                    page = None
                     time.sleep(6)
             else:
                 raise AssertionError(
@@ -273,13 +297,15 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
             print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_ROUTE_GREEN")
             print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_390_GREEN")
 
+            # Responsive certification resizes the already-rendered V5 surface.
+            # Do not restart the route state machine for each viewport.
             for width, height in WIDTHS[1:]:
-                result = _attempt_isolated_width(
-                    browser,
-                    base_url,
+                result = _certify_current_v5_width(
+                    page,
                     width,
                     height,
-                    screenshot_path=artifacts / f"cfb_top_picks_nav_step3_public_{width}_green.png",
+                    screenshot_path=artifacts
+                    / f"cfb_top_picks_nav_step3_public_{width}_green.png",
                 )
                 results.append(result)
                 print(f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_{width}_GREEN")
@@ -292,6 +318,7 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
                 "status": "GREEN",
                 "host": base_url,
                 "flow": "normal app -> College Football -> Top Picks",
+                "responsive_method": "single navigation then resize rendered V5",
                 "expected_markets": list(EXPECTED_CFB_MARKETS),
                 "user_visible_contract": responsive_contract,
                 "results": results,
@@ -305,6 +332,8 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
             print(json.dumps(payload, indent=2, sort_keys=True))
             return payload
         finally:
+            if page is not None:
+                page.close()
             browser.close()
 
 
