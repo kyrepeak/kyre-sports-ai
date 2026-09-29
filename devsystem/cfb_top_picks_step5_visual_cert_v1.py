@@ -119,12 +119,15 @@ def _certify_board(page, base_url: str, width: int, height: int, artifacts: Path
     for marker in (
         "Top Picks",
         "10 Best Daily College Football Picks",
-        "MONEYLINE",
-        "SPREAD",
-        "OVER/UNDER",
         "Tap a matchup for Why • History • Benefits",
     ):
         assert marker in body, (width, marker)
+
+    market_tabs = root.locator('[data-testid="cfb-top-picks-market-tabs"]')
+    assert market_tabs.count() == 1, (width, market_tabs.count())
+    market_tab_text = market_tabs.inner_text(timeout=5000)
+    for marker in ("Moneyline", "Spread", "Over/Under"):
+        assert marker in market_tab_text, (width, marker, market_tab_text)
 
     assert root.locator(CARD).count() == 10
     links = root.locator(OPEN_LINK)
