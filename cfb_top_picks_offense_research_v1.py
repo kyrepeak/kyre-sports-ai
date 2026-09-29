@@ -41,6 +41,11 @@ _NCAA_TEAM_SLUG_ALIASES = {
     "south florida": "south-fla",
     "south florida bulls": "south-fla",
     "usf": "south-fla",
+    # NCAA current FBS tables abbreviate Florida Atlantic as "Fla. Atlantic".
+    # Keep this exact identity alias local to Step 4 so the shared matcher
+    # remains fail-closed for ambiguous Florida-school names.
+    "florida atlantic": "fla-atlantic",
+    "florida atlantic owls": "fla-atlantic",
 }
 
 CORE_FIELDS = (
