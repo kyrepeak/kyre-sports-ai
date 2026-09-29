@@ -24,7 +24,8 @@ def test_browser_cache_contract_is_present_and_fail_safe():
     assert '~/.cache/ms-playwright' in lane
     assert "steps.browser-stack-cache.outputs.cache-hit != 'true'" in lane
     assert 'Build Browser QA stack on cache miss' in lane
-    assert '-r devsystem/browser_tooling_v1.txt' in lane
+    assert '-r devsystem/browser_requirements.lock' in lane
+    assert '-r requirements.txt' not in lane
     assert 'python -m playwright install chromium' in lane
     assert 'Resolve Playwright cache identity' not in lane
     assert 'Restore Playwright browser binaries' not in lane
@@ -40,7 +41,7 @@ def test_browser_stack_cache_is_bound_to_python_requirements_and_tooling():
 
     assert 'id: browser-python' in lane
     assert 'steps.browser-python.outputs.python-version' in lane
-    assert "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}" in lane
+    assert "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}" in lane
 
 
 def test_browser_tooling_pins_playwright_identity():
@@ -88,7 +89,8 @@ def test_production_v5_reuses_seeded_browser_stack_instead_of_reinstalling():
     assert '~/.cache/ms-playwright' in text
     assert "steps.browser-stack-cache.outputs.cache-hit != 'true'" in text
     assert 'Build shared Browser QA stack on cache miss' in text
-    assert '-r devsystem/browser_tooling_v1.txt' in text
+    assert '-r devsystem/browser_requirements.lock' in text
+    assert '-r requirements.txt' not in text
     assert 'python -m playwright install chromium' in text
     assert 'Activate shared Browser QA virtualenv' in text
     assert 'playwright install --with-deps chromium' not in text
@@ -97,7 +99,7 @@ def test_production_v5_reuses_seeded_browser_stack_instead_of_reinstalling():
 
 def test_production_v5_cache_key_matches_seeded_browser_qa_cache():
     text = PRODUCTION_V5.read_text(encoding='utf-8')
-    expected = "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}"
+    expected = "devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}"
     assert expected in text
 
 

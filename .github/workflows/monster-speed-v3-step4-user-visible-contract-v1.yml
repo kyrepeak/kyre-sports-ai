@@ -4,6 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "requirements.lock"
+      - "devsystem/browser_requirements.lock"
       - "devsystem/user_visible_contract_v1.py"
       - "devsystem/monster_speed_v3_step4_contract_guard_v1.py"
       - "devsystem/monster_speed_v3_step4_user_visible_proof_v1.py"
@@ -52,14 +54,13 @@ jobs:
           path: |
             .venv-browser-qa
             ~/.cache/ms-playwright
-          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
       - name: Build browser stack on cache miss
         if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           python -m venv .venv-browser-qa
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
           .venv-browser-qa/bin/python -m playwright install chromium
       - name: Activate browser stack
         run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
