@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-step1-shell-v1",
+  "title": "CFB Top Picks Step 1 — shell and route ownership",
+  "project": "Monster Top Picks",
+  "status": "DONE",
+  "source_main": "cac7ee26a76ea8188bbc6f824befa942a1d8b607",
+  "scope": {
+    "page": "cfb_top_picks_page_v1.py",
+    "router": "streamlit_memory_lazy_router_v241.py",
+    "app_bootstrap": "app.py",
+    "test": "tests/test_cfb_top_picks_step1_shell_v1.py",
+    "browser_qa": "devsystem/cfb_top_picks_step1_browser_qa_v1.py"
+  },
+  "acceptance": {
+    "cfb_top_picks_route_exists": true,
+    "top_picks_title_shell": true,
+    "subtitle_exact": true,
+    "market_tabs_shell": true,
+    "today_control_shell": true,
+    "existing_cfb_products_unchanged": true,
+    "pick_logic_added": false,
+    "probability_logic_added": false,
+    "sportsbook_projection_influence": 0
+  },
+  "protected": {
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
