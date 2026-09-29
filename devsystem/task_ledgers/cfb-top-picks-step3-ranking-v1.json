@@ -42,5 +42,10 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "control_plane_refresh": {
+    "reason": "required devsystem-final-gate was expected by branch protection but no DevSystem targeted CI run registered on prior exact head",
+    "product_code_changed": false,
+    "retry_policy": "single replacement head only"
   }
 }
