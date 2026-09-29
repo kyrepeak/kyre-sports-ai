@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step3-wnba-cache-repair-v1",
+  "title": "Monster Speed V3 Step 3 — WNBA cache completeness repair",
+  "project": "Monster Speed V3",
+  "step": "3/6-repair",
+  "status": "DONE",
+  "failure_class": "D_INFRA_CACHE",
+  "evidence": {
+    "failed_full_merge_run": 36615481607,
+    "failed_job": 109567477413,
+    "failure": "ModuleNotFoundError: No module named pandas",
+    "cache_hit": true
+  },
+  "root_cause": "The Step-2 WNBA seed cache used the same key as the targeted WNBA lane but installed only sports_api/requirements.txt plus pytest. It did not install root requirements.txt, so the shared key could restore an incomplete virtualenv without pandas.",
+  "patch": "Make the WNBA seed install root requirements exactly like the consumer lane and bump only the WNBA cache identity with rootdeps-v2 so the incomplete cache cannot be restored again.",
+  "protected": {
+    "steps1_2_frozen": true,
+    "step3_lane_split_unchanged": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_versions_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

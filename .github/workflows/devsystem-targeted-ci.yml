@@ -395,7 +395,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-wnba-critical
-          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}-rootdeps-v2
       - name: Build WNBA critical virtualenv on cache miss
         if: steps.wnba-venv-cache.outputs.cache-hit != 'true'
         shell: bash
