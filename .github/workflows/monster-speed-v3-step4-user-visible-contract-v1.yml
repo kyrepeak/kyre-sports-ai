@@ -80,7 +80,7 @@ jobs:
           echo $! > /tmp/monster_speed_v3_step4_streamlit_pid
       - name: Prove real user-visible contract at 390 768 1440
         run: |
-          python devsystem/monster_speed_v3_step4_user_visible_proof_v1.py \
+          python -m devsystem.monster_speed_v3_step4_user_visible_proof_v1 \
             --base-url http://127.0.0.1:8501 \
             --artifact-dir artifacts/monster-speed-v3-step4
       - name: Upload Step 4 evidence
