@@ -206,7 +206,8 @@ def test_step4_preserves_frozen_step3_ranked_engine_and_zero_weights():
 def test_router_v244_is_additive_over_frozen_v243():
     assert "import streamlit_memory_lazy_router_v243 as prior" in ROUTER
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v243"' in ROUTER
-    assert 'TOP_PICKS_PAGE = "cfb_top_picks_page_v4"' in ROUTER
+    # The Step-4 detail contract is now presented through the frozen V5 page.
+    assert 'TOP_PICKS_PAGE = "cfb_top_picks_page_v5"' in ROUTER
     assert "return prior.render_app()" in ROUTER
     assert "MAY_MODIFY_EXISTING_CFB_PRODUCTS = False" in ROUTER
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in ROUTER
