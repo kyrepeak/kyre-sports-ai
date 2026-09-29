@@ -22,12 +22,12 @@ def record_bootstrap_import_ms(value: float) -> None:
 
 
 def _render_cfb_top_picks_v243(market: str) -> None:
-    sport = str(root.st.session_state.get(prior.prior.SPORT_KEY) or "").strip()
+    sport = str(root.st.session_state.get(prior.SPORT_KEY) or "").strip()
     normalized = str(market or "").strip()
-    if sport != prior.prior.CFB_SPORT_LABEL or normalized != prior.prior.TOP_PICKS_MARKET:
+    if sport != prior.CFB_SPORT_LABEL or normalized != prior.TOP_PICKS_MARKET:
         raise RuntimeError("Router V243 owns only College Football -> Top Picks.")
 
-    prior.prior._persist_top_picks_query()
+    prior._persist_top_picks_query()
     module = importlib.import_module(TOP_PICKS_PAGE)
     return module.render_cfb_hub(
         normalized,
@@ -43,8 +43,8 @@ def _render_direct_top_picks_v243() -> None:
     original_render_nfl = root._render_nfl
     original_prefixes = root._ROUTE_MODULE_PREFIXES
 
-    prior.prior._install_top_picks_market_option()
-    root.st.selectbox = prior.prior.cfb_route_base._selectbox_v77
+    prior._install_top_picks_market_option()
+    root.st.selectbox = prior.cfb_route_base._selectbox_v77
     root._render_nfl = _render_cfb_top_picks_v243
     if "cfb_" not in root._ROUTE_MODULE_PREFIXES:
         root._ROUTE_MODULE_PREFIXES = root._ROUTE_MODULE_PREFIXES + ("cfb_",)
@@ -58,11 +58,11 @@ def _render_direct_top_picks_v243() -> None:
 
 
 def render_app() -> None:
-    prior.prior._install_top_picks_market_option()
-    if not prior.prior._active_top_picks_route() and prior.prior._cold_top_picks_query_requested():
-        prior.prior._prime_top_picks_state_from_query()
+    prior._install_top_picks_market_option()
+    if not prior._active_top_picks_route() and prior._cold_top_picks_query_requested():
+        prior._prime_top_picks_state_from_query()
 
-    if prior.prior._active_top_picks_route():
+    if prior._active_top_picks_route():
         return _render_direct_top_picks_v243()
 
     return prior.render_app()
