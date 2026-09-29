@@ -1,16 +1,6 @@
 name: CFB Top Picks Step 4 details
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'app.py'
-      - 'cfb_top_picks_details_v1.py'
-      - 'cfb_top_picks_page_v4.py'
-      - 'streamlit_memory_lazy_router_v244.py'
-      - 'tests/test_cfb_top_picks_step4_details_v1.py'
-      - 'devsystem/task_ledgers/cfb-top-picks-step4-details-v1.json'
-      - '.github/workflows/cfb-top-picks-step4-details-v1.yml'
   workflow_dispatch:
 
 permissions:
