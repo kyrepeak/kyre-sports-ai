@@ -1,0 +1,52 @@
+name: Monster Speed V3 Step 5 Repository Automation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/monster-speed-v3-step5-repo-settings-v1.yml"
+      - "devsystem/monster_speed_v3_step5_repo_settings_v1.py"
+      - "tests/test_monster_speed_v3_step5_repo_settings_v1.py"
+      - "devsystem/task_ledgers/monster-speed-v3-step5-auto-merge-branch-freshness-v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/monster-speed-v3-step5-repo-settings-v1.yml"
+      - "devsystem/monster_speed_v3_step5_repo_settings_v1.py"
+      - "tests/test_monster_speed_v3_step5_repo_settings_v1.py"
+      - "devsystem/task_ledgers/monster-speed-v3-step5-auto-merge-branch-freshness-v1.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-speed-v3-step5-repo-automation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prove static Step 5 contract
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python devsystem/monster_speed_v3_step5_repo_settings_v1.py
+          python -m pytest -q tests/test_monster_speed_v3_step5_repo_settings_v1.py
+      - name: Prove live GitHub repository automation settings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python devsystem/monster_speed_v3_step5_repo_settings_v1.py --live
+      - name: Freeze tokens
+        run: |
+          echo "MONSTER_SPEED_V3_STEP5_AUTO_MERGE_GREEN"
+          echo "MONSTER_SPEED_V3_STEP5_UPDATE_BRANCH_GREEN"
+          echo "MONSTER_SPEED_V3_STEP5_GREEN"
+          echo "MONSTER_SPEED_V3_STEP5_FROZEN_GREEN"
