@@ -215,6 +215,25 @@ def _attempt_normal_flow(page, base_url: str, width: int, height: int) -> dict:
     }
 
 
+def _attempt_isolated_width(
+    browser,
+    base_url: str,
+    width: int,
+    height: int,
+    *,
+    screenshot_path: str | Path | None = None,
+) -> dict:
+    """Certify one responsive width in a fresh Streamlit browser page/session."""
+    page = browser.new_page(viewport={"width": width, "height": height})
+    try:
+        result = _attempt_normal_flow(page, base_url, width, height)
+        if screenshot_path is not None:
+            page.screenshot(path=str(screenshot_path), full_page=True)
+        return result
+    finally:
+        page.close()
+
+
 def run(*, base_url: str, artifact_dir: str | Path) -> dict:
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -225,43 +244,44 @@ def run(*, base_url: str, artifact_dir: str | Path) -> dict:
             headless=True,
             args=["--disable-dev-shm-usage", "--no-sandbox"],
         )
-        page = browser.new_page(viewport={"width": 390, "height": 844})
         try:
             results = []
             deadline = time.monotonic() + 600.0
             last_error = ""
-            # Deployment wait applies only to the first/mobile proof. Once the
-            # current menu is live, the remaining widths certify the same build.
+            # Each deployment attempt and each responsive width gets a fresh
+            # Streamlit page/session so state from one proof cannot contaminate
+            # the next viewport.
             while time.monotonic() < deadline:
                 try:
-                    first = _attempt_normal_flow(page, base_url, *WIDTHS[0])
+                    first = _attempt_isolated_width(
+                        browser,
+                        base_url,
+                        *WIDTHS[0],
+                        screenshot_path=artifacts / "cfb_top_picks_nav_step3_public_390_green.png",
+                    )
                     results.append(first)
                     break
                 except Exception as exc:
                     last_error = repr(exc)
-                    page.wait_for_timeout(6000)
+                    time.sleep(6)
             else:
                 raise AssertionError(
                     "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_DEPLOY_NOT_ACTIVE:" + last_error
                 )
 
-            page.screenshot(
-                path=str(artifacts / "cfb_top_picks_nav_step3_public_390_green.png"),
-                full_page=True,
-            )
             print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_DROPDOWN_GREEN")
             print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_V5_ROUTE_GREEN")
             print("CFB_TOP_PICKS_NAV_STEP3_PUBLIC_390_GREEN")
 
             for width, height in WIDTHS[1:]:
-                result = _attempt_normal_flow(page, base_url, width, height)
-                results.append(result)
-                page.screenshot(
-                    path=str(
-                        artifacts / f"cfb_top_picks_nav_step3_public_{width}_green.png"
-                    ),
-                    full_page=True,
+                result = _attempt_isolated_width(
+                    browser,
+                    base_url,
+                    width,
+                    height,
+                    screenshot_path=artifacts / f"cfb_top_picks_nav_step3_public_{width}_green.png",
                 )
+                results.append(result)
                 print(f"CFB_TOP_PICKS_NAV_STEP3_PUBLIC_{width}_GREEN")
 
             responsive_contract = user_contract.certify_responsive_suite(
