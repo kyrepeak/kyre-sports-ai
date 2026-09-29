@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "task_id": "monster-speed-v3-step4-fresh-viewport-session-repair-v1",
+  "title": "Monster Speed V3 Step 4 — Fresh responsive viewport session repair",
+  "project": "Monster Speed V3",
+  "step": "4/6-repair",
+  "status": "DONE",
+  "failure_class": "D_VERIFIER_SESSION_STATE",
+  "evidence": {
+    "failed_merged_main_run": 36617901028,
+    "failed_job": 109575533927,
+    "first_width_390": "GREEN",
+    "failure": "CFB_TOP_PICKS_NAV_STEP3_PUBLIC_OPTION_MISSING:'Top Picks';saw=['Moneyline']",
+    "full_merged_main_devsystem_run": 36617901572,
+    "full_merged_main_devsystem_status": "SUCCESS"
+  },
+  "root_cause": "The responsive proof reused one Streamlit browser page/session across 390, 768, and 1440. The 390 contract passed, then session/rerun state from the prior viewport contaminated the 768 navigation and temporarily exposed only the default Moneyline market.",
+  "patch": "Create a fresh Playwright page/Streamlit session for every responsive viewport and for every first-width deployment retry. Apply the same isolation rule to the frozen public Top Picks verifier and permanently guard it.",
+  "protected": {
+    "steps1_3_frozen": true,
+    "step4_user_visible_contract_engine_unchanged": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "model_math_unchanged": true,
+    "dependency_versions_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
