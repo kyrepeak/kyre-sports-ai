@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-step5-final-v1",
+  "title": "CFB Top Picks Step 5 — final visual parity and public production freeze",
+  "project": "Monster Top Picks",
+  "step": "5/5",
+  "status": "DONE",
+  "source_main": "2ff082f4b5c659a6ecd39325109edbd8d65ec8eb",
+  "acceptance": {
+    "frozen_steps_1_4_preserved": true,
+    "responsive_390": true,
+    "responsive_768": true,
+    "responsive_1440": true,
+    "zero_horizontal_overflow": true,
+    "exactly_10_ranked_cards": true,
+    "tap_to_open_detail_preserved": true,
+    "why_history_benefits_preserved": true,
+    "public_production_proof_required": true,
+    "sportsbook_projection_weight": 0.0,
+    "history_projection_weight": 0.0,
+    "ranking_modification": false,
+    "history_logic_modification": false
+  },
+  "protected": {
+    "cfb_top_picks_steps_1_4": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
