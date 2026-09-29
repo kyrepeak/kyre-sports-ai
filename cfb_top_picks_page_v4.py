@@ -53,6 +53,20 @@ CSS = prior.CSS + r"""
 .tp4-audit strong{color:#7bcfff}
 .tp4-nohist{padding:8px;border-radius:8px;background:#111923;color:#a9bac9;font-size:.72rem;line-height:1.45}
 .tp4-loading{padding:9px;border-radius:8px;background:#0d1823;color:#8fb0c8;font-size:.72rem;line-height:1.45}
+.tp4-offense{margin-top:10px;border:1px solid rgba(76,211,255,.22);border-radius:11px;background:linear-gradient(145deg,#071827,#07121d);padding:11px}
+.tp4-offense-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}
+.tp4-offense-head h4{margin:0;color:#72ddff;font-size:.74rem;letter-spacing:.04em;text-transform:uppercase}
+.tp4-offense-head span{color:#6e879c;font-size:.61rem}
+.tp4-offense-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tp4-team-offense{border:1px solid rgba(109,198,255,.12);border-radius:9px;background:#0a1723;padding:9px}
+.tp4-team-offense h5{margin:0 0 7px;color:#fff;font-size:.78rem}
+.tp4-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.tp4-metric{min-width:0;padding:6px 4px;border:1px solid rgba(83,166,216,.18);border-radius:7px;background:#0d1e2c;text-align:center}
+.tp4-metric b{display:block;color:#f5fbff;font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp4-metric span{display:block;margin-top:3px;color:#7894aa;font-size:.54rem;text-transform:uppercase}
+.tp4-reasoning{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.tp4-reason{padding:6px 8px;border-left:3px solid #39d7ff;border-radius:6px;background:rgba(18,83,115,.16);color:#bed5e5;font-size:.7rem;line-height:1.35}
+@media(max-width:900px){.tp4-offense-grid{grid-template-columns:1fr}.tp4-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.tp4-grid{grid-template-columns:1fr}.tp4-panel{margin-left:4px;margin-right:4px}}
 </style>
 """
@@ -118,6 +132,82 @@ def _history_html(row: dict, detail: dict) -> str:
     )
 
 
+def _metric_number(profile: dict, key: str):
+    metrics = profile.get("metrics") or {}
+    item = metrics.get(key) or {}
+    return item.get("value") if isinstance(item, dict) else None
+
+
+def _fmt_metric(value, *, pct: bool = False, digits: int = 1) -> str:
+    try:
+        number = float(value)
+    except Exception:
+        return "—"
+    if pct:
+        return f"{number * 100:.{digits}f}%"
+    return f"{number:.{digits}f}"
+
+
+def _offense_team_html(profile: dict, rank: int, side: str) -> str:
+    team = escape(str(profile.get("team") or side.title()))
+    ppg = _fmt_metric(_metric_number(profile, "points_per_game"))
+    recent = _fmt_metric(_metric_number(profile, "recent_scoring_avg"))
+    ypp = _fmt_metric(_metric_number(profile, "yards_per_play"), digits=2)
+    pass_ypg = _fmt_metric(_metric_number(profile, "pass_yards_per_game"))
+    rush_ypg = _fmt_metric(_metric_number(profile, "rush_yards_per_game"))
+    rz = _fmt_metric(_metric_number(profile, "red_zone_td_rate"), pct=True)
+    metrics = profile.get("metrics") or {}
+    explosive = metrics.get("explosive_efficiency_proxy") or {}
+    explosive_label = escape(str(explosive.get("label") or "UNAVAILABLE"))
+    return f"""
+    <div class="tp4-team-offense" data-testid="cfb-top-picks-offense-{side}-{rank}">
+      <h5>{team}</h5>
+      <div class="tp4-metric-grid">
+        <div class="tp4-metric"><b>{ppg}</b><span>PPG</span></div>
+        <div class="tp4-metric"><b>{recent}</b><span>Recent PPG</span></div>
+        <div class="tp4-metric"><b>{ypp}</b><span>Yards / Play</span></div>
+        <div class="tp4-metric"><b>{pass_ypg}</b><span>Pass YPG</span></div>
+        <div class="tp4-metric"><b>{rush_ypg}</b><span>Rush YPG</span></div>
+        <div class="tp4-metric"><b>{rz}</b><span>RZ TD Rate</span></div>
+        <div class="tp4-metric"><b>{explosive_label}</b><span>Explosive-Eff Proxy</span></div>
+      </div>
+    </div>
+    """
+
+
+def _offense_html(row: dict, detail: dict) -> str:
+    research = detail.get("offense_research") or {}
+    rank = int(row.get("rank") or 0)
+    if not research or research.get("status") == "IDENTITY_UNAVAILABLE":
+        return (
+            '<div class="tp4-offense" data-testid="cfb-top-picks-offense-research-unavailable">'
+            '<div class="tp4-offense-head"><h4>Offensive Scoring Research</h4>'
+            '<span>Verified offense data unavailable</span></div></div>'
+        )
+    away = research.get("away") or {}
+    home = research.get("home") or {}
+    reasoning = list(research.get("reasoning") or detail.get("offense_reasoning") or [])
+    reason_html = "".join(
+        f'<div class="tp4-reason">{escape(str(item))}</div>'
+        for item in reasoning
+        if str(item or "").strip()
+    )
+    status = escape(str(research.get("status") or "PARTIAL"))
+    return f"""
+    <div class="tp4-offense" data-testid="cfb-top-picks-offense-research-{rank}" data-offense-status="{status}">
+      <div class="tp4-offense-head">
+        <h4>Offensive Scoring Research</h4>
+        <span>ESPN exact-ID + NCAA field router • projection weight 0.0%</span>
+      </div>
+      <div class="tp4-offense-grid">
+        {_offense_team_html(away, rank, "away")}
+        {_offense_team_html(home, rank, "home")}
+      </div>
+      <div class="tp4-reasoning">{reason_html}</div>
+    </div>
+    """
+
+
 def _loading_detail(row: dict) -> dict:
     return {
         "loading": True,
@@ -135,6 +225,7 @@ def _detail_card(row: dict, detail: dict) -> str:
     why = escape(str(detail.get("why") or "Model explanation unavailable."))
     benefit = escape(str(detail.get("benefit") or "No verified historical benefit is claimed."))
     history = _history_html(row, detail)
+    offense = _offense_html(row, detail)
     event_id = escape(str(detail.get("event_id") or row.get("event_id") or ""))
     collapse_href = escape(_detail_href(), quote=True)
     return f"""
@@ -157,6 +248,7 @@ def _detail_card(row: dict, detail: dict) -> str:
             <p>{benefit}</p>
           </div>
         </div>
+        {offense}
         <div class="tp4-audit">
           ESPN event <strong>{event_id or "unavailable"}</strong> • history projection weight <strong>0.0%</strong> •
           sportsbook projection weight <strong>0.0%</strong> • history cannot create, remove, or rerank a pick.
@@ -222,7 +314,7 @@ def _page_html(
       </div>
       <div class="tp3-live" data-testid="cfb-top-picks-live-status">
         <span><strong>LIVE MODEL BOARD</strong> • {int(diag.get("games_analyzed") or 0)} games analyzed • {len(picks)} picks ranked</span>
-        <span>Tap a matchup for Why • History • Benefits</span>
+        <span>Tap a matchup for Why • Research • History • Benefits</span>
       </div>
       <div class="tp2-board" data-testid="cfb-top-picks-card-board">{rendered}</div>
     </section>

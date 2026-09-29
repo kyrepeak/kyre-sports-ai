@@ -18,8 +18,9 @@ from typing import Any, Mapping
 import cfb_over_under_data_recovery_v1 as history_recovery
 import cfb_schedule_v7_future_slate as schedule
 import cfb_top_picks_history_router_v1 as history_router
+import cfb_top_picks_offense_research_v1 as offense_research
 
-MODEL_VERSION = "CFB TOP PICKS DETAILS V1 • RESEARCH V2 STEP 3 MULTI-SOURCE HISTORY"
+MODEL_VERSION = "CFB TOP PICKS DETAILS V1 • RESEARCH V2 STEP 4 OFFENSIVE SCORING"
 HISTORY_PROJECTION_WEIGHT = 0.0
 HISTORY_SELECTION_WEIGHT = 0.0
 HISTORY_RANKING_WEIGHT = 0.0
@@ -184,6 +185,9 @@ def build_pick_detail(row: Mapping[str, Any], slate_day: str) -> dict[str, Any]:
             "version": MODEL_VERSION,
             "ready": False,
             "why": why,
+            "offense_research": {"status": "IDENTITY_UNAVAILABLE", "away": {}, "home": {}, "reasoning": []},
+            "offense_reasoning": [],
+            "offense_research_projection_weight": 0.0,
             "history_ready": False,
             "history_status": history_router.SOURCE_CONFLICT_REVIEW,
             "history_source": "",
@@ -205,6 +209,7 @@ def build_pick_detail(row: Mapping[str, Any], slate_day: str) -> dict[str, Any]:
     away = _clean(game.get("away_team") or row.get("away"))
     home = _clean(game.get("home_team") or row.get("home"))
     series = history_router.resolve_matchup_history(row, game)
+    offense = offense_research.build_offense_research(row, game, slate_day)
     history_status = _clean(series.get("status"))
     history_ready = bool(series.get("history_ready"))
     rows = _history_rows(series) if history_ready else []
@@ -216,6 +221,9 @@ def build_pick_detail(row: Mapping[str, Any], slate_day: str) -> dict[str, Any]:
         "away_espn_team_id": _clean(game.get("away_espn_team_id")),
         "home_espn_team_id": _clean(game.get("home_espn_team_id")),
         "why": why,
+        "offense_research": offense,
+        "offense_reasoning": list(offense.get("reasoning") or []),
+        "offense_research_projection_weight": float(offense.get("projection_weight") or 0.0),
         "history_ready": history_ready,
         "history_status": history_status,
         "history_source": _clean(series.get("source")) if history_ready else "",
