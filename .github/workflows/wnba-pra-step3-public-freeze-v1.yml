@@ -1,0 +1,74 @@
+name: WNBA PRA Step 3 public freeze
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'devsystem/wnba_pra_step3_public_freeze_v1.py'
+      - 'devsystem/task_ledgers/wnba-pra-step3-public-freeze-v1.json'
+      - '.github/workflows/wnba-pra-step3-public-freeze-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-pra-step3-public-freeze-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up public browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore shared Browser QA stack
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build shared Browser QA stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser QA virtualenv
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Compile public freeze verifier
+        run: python -m py_compile devsystem/wnba_pra_step3_public_freeze_v1.py
+
+      - name: Drive deployed WNBA PRA page
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/wnba_pra_step3_public_freeze_v1.py \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/wnba-pra-step3-public-freeze \
+            --max-rollout-seconds 420 \
+            --poll-seconds 20
+
+      - name: Upload public freeze evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-pra-step3-public-freeze-${{ github.run_id }}
+          path: artifacts/wnba-pra-step3-public-freeze
+          if-no-files-found: warn
+          retention-days: 14
