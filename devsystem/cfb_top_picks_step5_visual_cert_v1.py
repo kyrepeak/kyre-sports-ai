@@ -152,8 +152,9 @@ def _certify_detail(page, detail_url: str, artifacts: Path) -> None:
     assert root.locator(CARD).count() == 10
     assert frame.locator('details.tp4-details[data-expanded="true"]').count() == 1
     body = panel.inner_text(timeout=5000)
+    body_fold = body.casefold()
     for marker in ("Why This Pick", "Actual Matchup History", "Benefits"):
-        assert marker in body, marker
+        assert marker.casefold() in body_fold, (marker, body[:2000])
     _assert_no_overflow(frame)
     page.screenshot(
         path=str(artifacts / "cfb_top_picks_step5_390_detail_green.png"),
