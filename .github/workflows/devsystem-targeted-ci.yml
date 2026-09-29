@@ -472,8 +472,6 @@ jobs:
       - permanent-contract
       - regression-shield
       - core-smoke
-      - pr-fast
-      - full-merge-certification
     runs-on: ubuntu-24.04
     steps:
       - name: Certify fast PR safety lane
@@ -484,8 +482,6 @@ jobs:
           PERMANENT_CONTRACT_RESULT: ${{ needs.permanent-contract.result }}
           REGRESSION_SHIELD_RESULT: ${{ needs.regression-shield.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
-          PR_FAST_RESULT: ${{ needs.pr-fast.result }}
-          FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
         run: |
           set -euo pipefail
           allowed="success skipped"
@@ -525,6 +521,8 @@ jobs:
           WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
           NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
+          PR_FAST_RESULT: ${{ needs.pr-fast.result }}
+          FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
         run: |
           set -euo pipefail
           allowed="success skipped"
@@ -549,6 +547,8 @@ jobs:
       - wnba-critical
       - nfl-critical
       - core-smoke
+      - pr-fast
+      - full-merge-certification
     runs-on: ubuntu-24.04
     steps:
       - name: Aggregate every required DevSystem lane
