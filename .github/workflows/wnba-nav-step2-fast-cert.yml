@@ -1,0 +1,36 @@
+name: WNBA Navigation V2 Step 2 Fast Cert
+
+on:
+  push:
+    branches:
+      - feature/wnba-navigation-v2-step2-slate
+    paths:
+      - "wnba_pra_slate_v2_step2.py"
+      - "streamlit_memory_lazy_router_wnba_nav_v2_step2.py"
+      - "devsystem/wnba_nav_step2_fast_cert.py"
+      - ".github/workflows/wnba-nav-step2-fast-cert.yml"
+      - "app.py"
+  pull_request:
+    branches: [main]
+    paths:
+      - "wnba_pra_slate_v2_step2.py"
+      - "streamlit_memory_lazy_router_wnba_nav_v2_step2.py"
+      - "devsystem/wnba_nav_step2_fast_cert.py"
+      - ".github/workflows/wnba-nav-step2-fast-cert.yml"
+      - "app.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-nav-step2-fast-cert-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Certify WNBA Navigation Step 2
+        run: python3 devsystem/wnba_nav_step2_fast_cert.py
