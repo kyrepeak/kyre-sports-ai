@@ -19,9 +19,12 @@ import httpx
 from sports_api.wnba_league import get_wnba_teams
 
 WNBA_LEAGUE_ID = "10"
+WNBA_PUBLIC_SCHEDULE_API_URL = "https://www.wnba.com/api/schedule"
 WNBA_CDN_SCHEDULE_URL = (
-    "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2_10.json"
+    "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json"
 )
+# Historical compatibility constant only. The retired stats transport is
+# intentionally excluded from the active production request sequence.
 WNBA_STATS_SCHEDULE_URL = "https://stats.wnba.com/stats/scheduleleaguev2"
 WNBA_SCHEDULE_SOURCE = "WNBA Official Schedule"
 
@@ -141,7 +144,11 @@ def _schedule_root(payload: dict[str, Any]) -> dict[str, Any]:
 def _fetch_schedule_payload(
     season: int,
 ) -> tuple[dict[str, Any], str, str, str, bool]:
-    """Fetch official schedule data, preferring the WNBA CDN with stats fallback."""
+    """Fetch official schedule data from WNBA.com with current-CDN fallback.
+
+    The legacy stats.wnba.com scheduleLeagueV2 transport is deliberately
+    excluded so cloud deployments do not block on the retired endpoint.
+    """
 
     now = monotonic()
     with _CACHE_LOCK:
@@ -161,14 +168,14 @@ def _fetch_schedule_payload(
 
     requests_to_try = (
         (
+            "wnba_public_schedule_api",
+            WNBA_PUBLIC_SCHEDULE_API_URL,
+            [("season", str(season)), ("regionId", "1")],
+        ),
+        (
             "wnba_cdn_schedule",
             WNBA_CDN_SCHEDULE_URL,
             None,
-        ),
-        (
-            "wnba_stats_scheduleleaguev2",
-            WNBA_STATS_SCHEDULE_URL,
-            [("LeagueID", WNBA_LEAGUE_ID), ("Season", str(season))],
         ),
     )
 
