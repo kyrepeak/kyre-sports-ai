@@ -380,12 +380,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-wnba-critical
-          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
       - name: Build WNBA critical virtualenv on cache miss
         if: steps.wnba-venv-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           python -m venv .venv-wnba-critical
+          if [ -f requirements.txt ]; then .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt; fi
           if [ -f sports_api/requirements.txt ]; then .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
           .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q pytest
       - name: Activate WNBA critical virtualenv
