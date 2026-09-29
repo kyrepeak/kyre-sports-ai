@@ -106,7 +106,7 @@ jobs:
 
       - name: Prove real PickVault speed and freeze
         run: |
-          python devsystem/wnba_nav_v2_step7_public_freeze.py             --production-url https://pickvault.streamlit.app             --artifact-dir artifacts/wnba-nav-v2-step7-final-freeze
+          PYTHONPATH="$GITHUB_WORKSPACE" python devsystem/wnba_nav_v2_step7_public_freeze.py             --production-url https://pickvault.streamlit.app             --artifact-dir artifacts/wnba-nav-v2-step7-final-freeze
 
       - uses: actions/upload-artifact@v4
         if: always()
