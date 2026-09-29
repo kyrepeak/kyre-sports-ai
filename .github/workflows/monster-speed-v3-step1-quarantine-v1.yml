@@ -25,7 +25,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: monster-speed-v3-step1-quarantine-${{ github.ref }}
+  group: monster-speed-v3-step1-app-fanout-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
