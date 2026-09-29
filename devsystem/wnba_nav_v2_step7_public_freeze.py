@@ -24,7 +24,7 @@ SLATE_READY_BUDGET_SECONDS = 12.0
 GAME_READY_BUDGET_SECONDS = 24.0
 PLAYER_READY_BUDGET_SECONDS = 24.0
 BACK_READY_BUDGET_SECONDS = 12.0
-CERTIFIED_GAME_DATES = ("2026-09-18", "2026-09-23", "2026-09-27", "2026-09-29")
+CERTIFIED_GAME_DATES = ("2026-08-27", "2026-08-23", "2026-09-18", "2026-09-27", "2026-09-29")
 
 
 def _body(frame) -> str:
@@ -180,7 +180,7 @@ def _ensure_game_on_slate(page, frame) -> object:
                 print(f"WNBA_NAV_STEP7_CERTIFIED_GAME_DATE_GREEN={target}")
                 return candidate
         except Exception as exc:
-            failures.append(f"{target}:{type(exc).__name__}")
+            failures.append(f"{target}:{type(exc).__name__}:{str(exc)[:240]}")
             try:
                 frame, _ = _find_app_frame(page, timeout_seconds=8.0)
             except Exception:
