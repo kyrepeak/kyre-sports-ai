@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "task_id": "mlb-postseason-step4-public-freeze-v1",
+  "title": "MLB postseason Step 4 — public Streamlit freeze",
+  "project": "Monster MLB postseason slate",
+  "status": "DONE",
+  "source_main": "bdd439703da73c78ba91746066b0601d776c889b",
+  "scope": {
+    "verifier": "devsystem/mlb_postseason_public_freeze_v1.py",
+    "workflow": ".github/workflows/mlb-postseason-step4-public-freeze-v1.yml"
+  },
+  "acceptance": {
+    "public_url": "https://pickvault.streamlit.app",
+    "route": "MLB -> Slate",
+    "requested_off_day": "2026-09-28",
+    "expected_next_slate": "2026-09-29",
+    "expected_games": 4,
+    "postseason_banner_required": true,
+    "provider_diagnostics_forbidden": true,
+    "read_only_public_verifier": true,
+    "product_code_changed": false,
+    "wnba_files_changed": false
+  },
+  "protected": {
+    "mlb_postseason_steps_1_3_frozen": true,
+    "mlb_model_math": true,
+    "wnba_workstream": true,
+    "nfl_product": true,
+    "cfb_product": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
