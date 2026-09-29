@@ -32,9 +32,9 @@ def test_each_sport_critical_lane_has_isolated_exact_python_cache():
 def test_cache_keys_follow_each_lane_requirement_surface():
     text = _workflow_text()
 
-    assert "devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
-    assert "devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
-    assert "devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
+    assert "devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
+    assert "devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
+    assert "devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('devsystem/root_requirements_fingerprint_v1.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}" in text
 
 
 def test_cache_misses_rebuild_and_frozen_test_commands_remain_present():
@@ -78,6 +78,7 @@ def test_main_cache_seed_is_trusted_scoped_and_key_aligned():
     assert '~/.cache/ms-playwright' in targeted
     assert '~/.cache/ms-playwright' in seed
     assert 'devsystem/sport_cache_epoch_v1.txt' in seed
+    assert 'devsystem/root_requirements_fingerprint_v1.txt' in seed
     assert 'devsystem/browser_cache_epoch_v1.txt' in seed
     assert '.github/workflows/devsystem-cache-seed-v1.yml' in seed
 
