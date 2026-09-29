@@ -380,12 +380,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-wnba-critical
-          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
       - name: Build WNBA critical virtualenv on cache miss
         if: steps.wnba-venv-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           python -m venv .venv-wnba-critical
+          if [ -f requirements.txt ]; then .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt; fi
           if [ -f sports_api/requirements.txt ]; then .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
           .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q pytest
       - name: Activate WNBA critical virtualenv
@@ -396,7 +397,8 @@ jobs:
           python -m pytest -q \
             tests/test_wnba_step20b_runtime_acceleration.py \
             tests/test_wnba_step20b_monte_carlo_acceleration.py \
-            tests/test_wnba_step20b_step2_exact_reuse_timing.py
+            tests/test_wnba_step20b_step2_exact_reuse_timing.py \
+            tests/test_wnba_pra_api_market_bridge_v1.py
 
   nfl-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]

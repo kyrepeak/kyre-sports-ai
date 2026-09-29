@@ -10,6 +10,7 @@ import streamlit as st
 
 import wnba_pra_hub_v3611 as frozen
 import wnba_pra_opportunity_v3613 as opportunity
+import wnba_pra_api_market_bridge_v1 as api_market
 
 
 MODEL_VERSION = "PRA V3.6.13 • PRECISION STEP 1 • CARD-INTEGRATED OPPORTUNITY"
@@ -44,6 +45,7 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
     # it each render. Let it restore first. Then patch only the renderer's stable
     # Projection-Path subcomponent so Step 1 lives inside every card and cannot
     # alter the selection/ranking/identity/defense/H2H renderer chain.
+    api_market.install()
     frozen.step5_failsafe.begin_render()
     opportunity.begin_render()
 
