@@ -1,0 +1,108 @@
+name: CFB Top Picks Step 5 final
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'cfb_top_picks_page_v5.py'
+      - 'streamlit_memory_lazy_router_v245.py'
+      - 'tests/test_cfb_top_picks_step5_final_v1.py'
+      - 'devsystem/cfb_top_picks_step5_visual_cert_v1.py'
+      - 'devsystem/task_ledgers/cfb-top-picks-step5-final-v1.json'
+      - '.github/workflows/cfb-top-picks-step5-final-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'cfb_top_picks_page_v5.py'
+      - 'streamlit_memory_lazy_router_v245.py'
+      - 'tests/test_cfb_top_picks_step5_final_v1.py'
+      - 'devsystem/cfb_top_picks_step5_visual_cert_v1.py'
+      - 'devsystem/task_ledgers/cfb-top-picks-step5-final-v1.json'
+      - '.github/workflows/cfb-top-picks-step5-final-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-top-picks-step5-final-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  branch-visual-proof:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Step 5 proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Static Step 5 contract
+        run: |
+          python -m py_compile cfb_top_picks_page_v5.py
+          python -m py_compile streamlit_memory_lazy_router_v245.py
+          python -m py_compile devsystem/cfb_top_picks_step5_visual_cert_v1.py
+          python -m pytest -q tests/test_cfb_top_picks_step5_final_v1.py
+      - name: Start branch Streamlit
+        shell: bash
+        run: |
+          mkdir -p artifacts/cfb-top-picks-step5
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/cfb-top-picks-step5/streamlit.log 2>&1 &
+          echo $! > /tmp/cfb_top_picks_step5_pid
+      - name: Prove 390 768 1440 and detail
+        run: |
+          python devsystem/cfb_top_picks_step5_visual_cert_v1.py \
+            --base-url http://127.0.0.1:8501 \
+            --mode branch \
+            --artifact-dir artifacts/cfb-top-picks-step5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-top-picks-step5-${{ github.run_id }}
+          path: artifacts/cfb-top-picks-step5
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Stop branch Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/cfb_top_picks_step5_pid ]; then
+            kill "$(cat /tmp/cfb_top_picks_step5_pid)" 2>/dev/null || true
+          fi
+
+  public-production-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install public proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Certify deployed public Top Picks and freeze
+        run: |
+          python devsystem/cfb_top_picks_step5_visual_cert_v1.py \
+            --base-url https://kyre-sports-ai.streamlit.app \
+            --mode public \
+            --artifact-dir artifacts/cfb-top-picks-step5-public
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-top-picks-step5-public-${{ github.run_id }}
+          path: artifacts/cfb-top-picks-step5-public
+          if-no-files-found: warn
+          retention-days: 14
