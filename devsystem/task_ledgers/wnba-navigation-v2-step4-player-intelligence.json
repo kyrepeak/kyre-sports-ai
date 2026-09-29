@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "task_id": "wnba-navigation-v2-step4-player-intelligence",
+  "title": "WNBA Navigation V2 Step 4 — Player PRA Intelligence",
+  "project": "WNBA Navigation V2",
+  "step": "4/7",
+  "status": "DONE",
+  "source_main": "482bf1167e7a3b163fd3eadccd319c16d8193361",
+  "scope": "Selected-player Page 3 intelligence; read-only consumer + official history",
+  "contract": {
+    "network_reads_per_uncached_render_max": 2,
+    "network_reads_parallel": true,
+    "timeout_seconds": 5,
+    "attempts": 1,
+    "cache_ttl_seconds": 60,
+    "streamlit_projection_runs": 0,
+    "streamlit_sportsbook_calls": 0,
+    "streamlit_qualification_runs": 0,
+    "streamlit_ranking_runs": 0,
+    "streamlit_monte_carlo_runs": 0,
+    "missing_context_policy": "N/A"
+  },
+  "protected": {
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "step3_green_frozen": true,
+    "wnba_model_math_unchanged": true,
+    "market_math_unchanged": true,
+    "other_sports_unchanged": true,
+    "frozen_router_v245": true
+  },
+  "acceptance": [
+    "player identity and frozen projection",
+    "qualified PRA line/pick when exact consumer card exists",
+    "sportsbook odds and fair odds",
+    "model probability and no-vig probability",
+    "edge and EV",
+    "certified Monte Carlo count display without rerunning Monte Carlo",
+    "recent form",
+    "same-opponent H2H",
+    "minutes role starter injury context",
+    "matchup and fail-closed pace/usage context",
+    "final decision and model confidence",
+    "expandable diagnostics",
+    "fast exact-head proof",
+    "required merge gate",
+    "merged-main certification"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
