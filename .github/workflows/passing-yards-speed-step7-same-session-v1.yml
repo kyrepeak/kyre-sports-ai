@@ -1,30 +1,7 @@
 name: NFL Passing Yards Speed Step 7 Same Session
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/passing-yards-speed-step7-same-session-v1.yml"
-      - "app.py"
-      - "devsystem/task_ledgers/passing-yards-speed-step7-same-session-v1.json"
-      - "nfl_passing_yards_hub_v83.py"
-      - "streamlit_memory_lazy_router_v234.py"
-      - "tests/test_passing_yards_speed_step7_same_session_v1.py"
-      - "nfl_passing_yards_hub_v84.py"
-      - "streamlit_memory_lazy_router_v235.py"
-      - "tests/test_passing_yards_speed_step7_single_rerun_v2.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/passing-yards-speed-step7-same-session-v1.yml"
-      - "app.py"
-      - "devsystem/task_ledgers/passing-yards-speed-step7-same-session-v1.json"
-      - "nfl_passing_yards_hub_v83.py"
-      - "streamlit_memory_lazy_router_v234.py"
-      - "tests/test_passing_yards_speed_step7_same_session_v1.py"
-      - "nfl_passing_yards_hub_v84.py"
-      - "streamlit_memory_lazy_router_v235.py"
-      - "tests/test_passing_yards_speed_step7_single_rerun_v2.py"
+  workflow_dispatch:
 
 permissions:
   contents: read
