@@ -45,6 +45,7 @@ CSS = prior.CSS + r"""
 .tp2-logos{position:relative;width:40px;height:44px}
 .tp2-logo{position:absolute;left:0;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#0b1d2d;border:1px solid rgba(120,211,255,.32);color:#dff5ff;font-size:.58rem;font-weight:950;box-shadow:0 3px 10px rgba(0,0,0,.24)}
 .tp2-logo.a{top:0}.tp2-logo.h{bottom:0;left:9px;background:#0d1723}
+.tp2-logo-img{object-fit:contain;padding:2px;background:#071522}
 .tp2-teams{display:flex;flex-direction:column;gap:3px;font-weight:800;line-height:1.07}
 .tp2-teamline{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .tp2-vs{color:#71879d;font-size:.74rem;font-weight:700}
@@ -99,6 +100,29 @@ def _meter(level: int) -> str:
     return "".join('<i class="on"></i>' if i < safe else "<i></i>" for i in range(5))
 
 
+def _logo_markup(row: dict, side: str, rank: int) -> str:
+    url = str(row.get(f"{side}_logo_url") or "").strip()
+    team = str(row.get(side) or "").strip()
+    abbr = str(row.get(f"{side}_abbr") or "").strip()
+    team_id = str(row.get(f"{side}_team_id") or "").strip()
+    provider = str(row.get(f"{side}_logo_provider") or "").strip()
+    pos = "a" if side == "away" else "h"
+    if url.startswith(("https://", "http://")):
+        return (
+            f'<img class="tp2-logo tp2-logo-img {pos}" '
+            f'data-testid="cfb-top-picks-logo-{side}-{rank}" '
+            f'data-top-picks-real-logo="true" '
+            f'data-team-id="{escape(team_id, quote=True)}" '
+            f'data-logo-provider="{escape(provider, quote=True)}" '
+            f'src="{escape(url, quote=True)}" '
+            f'alt="{escape(team, quote=True)} logo" loading="eager">'
+        )
+    return (
+        f'<div class="tp2-logo {pos}" data-testid="cfb-top-picks-logo-{side}-{rank}" '
+        f'data-logo-placeholder="true">{escape(abbr)}</div>'
+    )
+
+
 def _card(row: dict) -> str:
     rank = int(row["rank"])
     return f"""
@@ -106,8 +130,8 @@ def _card(row: dict) -> str:
       <div class="tp2-rank">{rank}</div>
       <div class="tp2-cell tp2-matchup">
         <div class="tp2-logos">
-          <div class="tp2-logo a">{escape(str(row["away_abbr"]))}</div>
-          <div class="tp2-logo h">{escape(str(row["home_abbr"]))}</div>
+          {_logo_markup(row, "away", rank)}
+          {_logo_markup(row, "home", rank)}
         </div>
         <div class="tp2-teams">
           <div class="tp2-teamline">{escape(str(row["away"]))}</div>

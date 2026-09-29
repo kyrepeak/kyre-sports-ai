@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step2-logos-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 2 team identity + real logos",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "2/9",
+  "status": "DONE",
+  "source_main": "f4876fc1c39342c94cdb944be8614c4b499d2fa6",
+  "problem": "The live Top Picks card owner renders away/home abbreviations inside styled boxes instead of real team logos, and ranked rows do not carry canonical logo provenance fields.",
+  "root_cause": "The frozen Top Picks ranking engine emits team names/abbreviations only. Existing certified CFB exact-ID and multi-source logo resolvers were never connected to the ranked Top-10 handoff.",
+  "patch": "After frozen ranking completes, enrich only the final Top-10 rows with exact ESPN team IDs and real logo URLs. Use the certified exact-ID resolver first and the independent existing multi-source logo resolver only as fallback. Render real img elements in the shared compact-card owner inherited by V3/V4/V5.",
+  "acceptance": {
+    "exactly_ten_ranked_cards": true,
+    "exactly_twenty_real_logo_images": true,
+    "zero_live_abbreviation_placeholders": true,
+    "away_and_home_team_ids_required": true,
+    "exact_espn_identity_primary": true,
+    "multi_source_logo_fallback": true,
+    "browser_natural_dimensions_required": true,
+    "enrichment_occurs_after_ranking": true,
+    "ranking_math_unchanged": true,
+    "probability_math_unchanged": true,
+    "api2_separate_and_protected": true
+  },
+  "protected": {
+    "step1_contract": true,
+    "api2": true,
+    "cfb_moneyline": true,
+    "cfb_over_under": true,
+    "cfb_game_total": true,
+    "nfl": true,
+    "mlb": true,
+    "wnba": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "repair": {
+    "failure_class": "C_STALE_ACCEPTANCE_CONTRACT",
+    "failed_run": 36633448718,
+    "failed_job": 109628222360,
+    "exact_failure": "baseline logo-placeholder audit no longer matches live owner",
+    "root_cause": "Step-1 permanent guard incorrectly required the audited baseline defects to remain present in live product code. Step 2 is explicitly responsible for closing the logo-placeholder defect.",
+    "patch": "Make Step 1 verify the immutable baseline findings stored in its frozen contract instead of requiring later product owners to remain broken.",
+    "step1_scope_changed": false,
+    "step2_logo_behavior_changed": false,
+    "api2_changed": false
+  },
+  "browser_selector_repair": {
+    "failure_class": "D_VERIFIER_SELECTOR_SCOPE",
+    "diagnostic_run": 36633448805,
+    "diagnostic_job": 109628106401,
+    "exact_failure": "CFB_TOP_PICKS_RESEARCH_V2_STEP2_CARD_COUNT:11",
+    "root_cause": "The prefix selector also matched the board container data-testid=cfb-top-picks-card-board, so the verifier counted 10 articles plus 1 container.",
+    "patch": "Scope the count to article[data-testid^='cfb-top-picks-card-'] so only actual ranked pick cards are counted.",
+    "product_code_changed": false,
+    "logo_resolver_changed": false,
+    "api2_changed": false
+  },
+  "ci_isolation_repair": {
+    "failure_class": "D_CI_TEST_ISOLATION",
+    "failed_run": 36633843427,
+    "failed_job": 109629713043,
+    "exact_failure": "ModuleNotFoundError: No module named 'streamlit' during permanent-contract pytest collection",
+    "root_cause": "The lightweight permanent-contract lane installs pytest only, but the Step-2 runtime test imported Streamlit product modules at collection time.",
+    "patch": "Use a lightweight static Step-2 guard test in permanent CI. Keep full product/runtime/card tests in the dedicated Step-2 browser workflow that restores the complete hot browser environment.",
+    "product_code_changed": false,
+    "logo_resolver_changed": false,
+    "api2_changed": false
+  },
+  "browser_image_timing_repair": {
+    "failure_class": "D_VERIFIER_IMAGE_LOAD_TIMING",
+    "failed_run": 36634080867,
+    "exact_failure": "CFB_TOP_PICKS_RESEARCH_V2_STEP2_IMAGE_NOT_LOADED:84:https://a.espncdn.com/i/teamlogos/ncaa/500/84.png",
+    "independent_probe": "ESPN team-logo asset confirmed reachable and valid",
+    "root_cause": "The Playwright verifier measured naturalWidth/naturalHeight immediately after DOM render without waiting for cross-origin image decode/load completion.",
+    "patch": "Wait up to 10 seconds per logo for positive natural dimensions before failing closed.",
+    "product_code_changed": false,
+    "logo_url_changed": false,
+    "api2_changed": false
+  }
+}
