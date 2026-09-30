@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+from pathlib import Path
+
 from devsystem.automatic_loop_kill_v1 import (
     ACTION_MUTATIONS,
     LoopKillFailure,
@@ -171,3 +175,17 @@ def test_malformed_action_fails_closed():
         assert "missing required fields" in str(exc)
     else:
         raise AssertionError("malformed action must fail closed")
+
+
+def test_direct_script_execution_is_green():
+    root = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [sys.executable, str(root / "devsystem" / "automatic_loop_kill_v1.py")],
+        cwd=root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "MONSTER_AUTOMATIC_LOOP_KILL_V1_GREEN" in completed.stdout
