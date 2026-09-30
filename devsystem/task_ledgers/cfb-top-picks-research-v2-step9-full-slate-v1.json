@@ -85,6 +85,18 @@
     "api2_changed": false,
     "probability_changed": false,
     "ranking_changed": false,
-    "selection_changed": false
+    "selection_changed": false,
+    "alias_assertion_repair": {
+      "prior_alias": "prior",
+      "prior_step8_alias": "step8_router",
+      "current_parent_alias": "current_parent",
+      "current_step8_alias": "cfb_step8_parent",
+      "required_nested_override": "cfb_step8_parent.TOP_PICKS_PAGE = TOP_PICKS_PAGE",
+      "failure_prevented": "post-syntax collection assertion mismatch",
+      "product_logic_changed": false,
+      "steps1_8_changed": false,
+      "api2_changed": false
+    },
+    "base_sync_main": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc"
   }
 }
