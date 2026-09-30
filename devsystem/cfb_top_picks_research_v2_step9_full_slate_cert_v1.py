@@ -50,6 +50,9 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
+FAIR_PRICE_NO_SPORTSBOOK = "Unavailable — fair model price"
+
+
 def _sportsbook(row: Mapping[str, Any]) -> str:
     source = _clean(row.get("source"))
     for marker in (" market", " threshold"):
@@ -59,7 +62,9 @@ def _sportsbook(row: Mapping[str, Any]) -> str:
             if provider and not provider.casefold().startswith("kyre"):
                 return provider
     odds = _clean(row.get("odds"))
-    if odds and odds not in {"—", "Market line"} and not re.fullmatch(r"[+-]?\d+", odds) and not odds.startswith("Fair "):
+    if odds.startswith("Fair ") and "fair price" in source.casefold():
+        return FAIR_PRICE_NO_SPORTSBOOK
+    if odds and odds not in {"—", "Market line"} and not re.fullmatch(r"[+-]?\d+", odds):
         return odds
     return ""
 
