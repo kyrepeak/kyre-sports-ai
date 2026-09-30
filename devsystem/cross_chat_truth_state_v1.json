@@ -17,11 +17,11 @@
   "active_run": 36775979955,
   "active_head_sha": "f6a54a643eaf729c54478fec2935fc38f0e6a4f3",
   "blocker": null,
-  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_RUN_36775979955_TERMINAL_THEN_ALLOW_AUTO_MERGE",
+  "next_legal_action": "WAIT_FOR_AUTO_UPDATED_AUTHORITATIVE_RUN_36775979955_TERMINAL_RECEIPT_AND_AUTO_MERGE",
   "lease": {
     "revision": 29,
     "generation": 8,
-    "state_hash": "6def5477816acc2ca5c9245b4920bbfd034c478b79cb64a9fa0111e93aedd6c7",
+    "state_hash": "e0ee9866892cc10967233e626689828dba77f6aa2ca8cdea5f6d1504fd6c4a9a",
     "holder_owner_id": "chatgpt:monster-v4-step5",
     "holder_lease_id": "LEASE-E932AF98655CC39A75492EBE"
   },
@@ -51,5 +51,5 @@
     "MONSTER_V4_STEP3",
     "MONSTER_V4_STEP4"
   ],
-  "state_hash": "ad1f1cfa671bfeda1f2c80a8b71cd5559a2492903940c94762102b5442018b9b"
+  "state_hash": "68a81bca50d8ea961e5b01b3e875c2dd21ef1059590b690730a1ebef7219407a"
 }
