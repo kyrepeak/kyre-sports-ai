@@ -89,6 +89,7 @@ jobs:
 
           cat > /tmp/stats_host_repair.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json
           sports_api/api/wnba_pra_detail_bundle.py
           sports_api/wnba_game_history.py
           tests/test_wnba_pra_speed_v3_step3.py
