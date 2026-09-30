@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "PRODUCTION_FOREGROUND_HEADROOM_PATCH",
+  "phase": "IN_PROCESS_MEMORY_HANDOFF_PATCH",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -26,7 +26,10 @@
     "reuses_frozen_step4_finished_bundle": true,
     "reuses_frozen_step6_history_cache": true,
     "new_model_calculation": false,
-    "new_sportsbook_fetch": false
+    "new_sportsbook_fetch": false,
+    "in_process_precomputed_handoff": true,
+    "player_hosted_reads_on_memory_hit": 0,
+    "memory_handoff_ttl_seconds": 45
   },
   "protected": {
     "navigation_v2_steps_1_7": true,
@@ -59,26 +62,21 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_FOREGROUND_HEADROOM_PROOF",
+    "status": "PENDING_MEMORY_HANDOFF_PROOF",
     "failed_run": 36775063740,
     "failed_job": 110090785694,
-    "failure_class": "BACKGROUND_PRECOMPUTE_CONTENTION_SLOWS_FOREGROUND_PLAYER_RENDER",
-    "target_players": 28,
-    "bundle_cache_hit_green": true,
-    "first_attempt_player_seconds": 1.563,
-    "allowed_retry_player_seconds": 1.901,
-    "target_player_seconds_max": 1.5,
+    "failure_class": "REDUNDANT_PLAYER_HOSTED_READ_AFTER_SUCCESSFUL_PRECOMPUTE",
     "evidence": [
-      "Both attempts consumed a precomputed Step-4 bundle cache hit.",
-      "Both attempts rendered final Player surfaces with zero overflow.",
-      "Both attempts missed the 1.500s Player ceiling while 28-player background precompute was active."
+      "Precomputed bundle hit was observed before both timing failures",
+      "First Player attempt measured 1.563s > 1.500s",
+      "Allowed fresh timing retry measured 1.901s > 1.500s",
+      "Background transport reliability patch was already active",
+      "Remaining Player path still reread the already-precomputed Step-4 bundle over hosted HTTP"
     ],
-    "root_cause": "Four concurrent Step-7 background warmers compete with the foreground Player rerun even after the selected bundle is cached.",
-    "patch": "Reduce Step-7 background precompute fanout from four workers to two, preserving display-order scheduling and two transport attempts per player so foreground Player rendering retains headroom.",
-    "max_workers_before": 4,
-    "max_workers_after": 2,
-    "per_player_transport_attempts": 2,
+    "root_cause": "Step 7 warmed the server cache but discarded the fetched response, forcing the first Player open to perform another hosted read for identical frozen bundle data.",
+    "patch": "Retain the exact verified Step-4 response for 45 seconds in Step-7 process memory and let the frozen Step-5 cold-pair loader consume that same response with zero hosted reads. Fall back to frozen Step 4 on any missing/stale/invalid handoff.",
     "threshold_changed": false,
+    "product_scope": "Step-7 transport reuse only",
     "model_or_data_changed": false,
     "frozen_steps_1_6_changed": false
   },
