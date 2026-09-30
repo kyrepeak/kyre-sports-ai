@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install focused dependencies
-        run: pip install pytest requests fastapi streamlit httpx pandas
+        run: pip install pytest requests fastapi streamlit httpx pandas pypdf
       - name: Run Step 3 detail-bundle contract
         env:
           PYTHONPATH: ${{ github.workspace }}
