@@ -68,3 +68,15 @@ def test_app_activates_speed_v3_step1_and_keeps_step7_compatibility():
     source = APP_PATH.read_text(encoding="utf-8")
     assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step1 import record_bootstrap_import_ms, render_app" in source
     assert "Frozen WNBA Navigation V2 Step 7 compatibility" in source
+
+
+def test_step1_router_emits_activation_marker_before_frozen_render():
+    source = ROUTER_PATH.read_text(encoding="utf-8")
+    assert 'data-wnba-pra-speed-v3-step1-router="active"' in source
+    assert "_render_router_marker()" in source
+
+
+def test_step1_profiler_emits_entry_marker_with_observed_page():
+    source = PROFILER_PATH.read_text(encoding="utf-8")
+    assert 'data-wnba-pra-speed-v3-step1-entry=' in source
+    assert "_render_entry_marker(state.page)" in source
