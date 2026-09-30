@@ -40,6 +40,8 @@ def test_step7_contract_is_nonblocking_precompute_only():
     assert contract["foreground_headroom_reserved"] is True
     assert contract["precompute_order"] == "game_center_display_order"
     assert contract["per_player_transport_attempts"] == 2
+    assert contract["invalid_bundle_retry_max"] == 1
+    assert contract["invalid_bundle_retry_delay_seconds"] == 0.15
     assert contract["frozen_speed_v3_steps_1_6_modified"] is False
     assert contract["projection_math_changed"] is False
     assert contract["market_math_changed"] is False
@@ -128,6 +130,91 @@ def test_step7_warmer_uses_frozen_step4_cached_detail_endpoint(monkeypatch):
     assert observed["path"].endswith("/101/pra-detail-cached")
     assert observed["params"] == {"season": module.SUPPORTED_SEASON}
     assert result["status"] == "green"
+
+
+def test_step7_retries_one_http200_invalid_bundle(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
+    calls = {"count": 0}
+
+    valid = {
+        "data_type": module.EXPECTED_DATA_TYPE,
+        "schema_version": module.EXPECTED_SCHEMA_VERSION,
+        "player_id": 101,
+        "season": int(module.SUPPORTED_SEASON),
+        "bundle": {
+            "player_id": 101,
+            "season": int(module.SUPPORTED_SEASON),
+            "consumer": {"rows": []},
+            "history": {
+                "player_id": 101,
+                "season": int(module.SUPPORTED_SEASON),
+                "games": [],
+            },
+            "consumer_error": "",
+            "history_error": "",
+        },
+        "cache": {"hit": True},
+    }
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            assert kwargs["attempts"] == 2
+
+        def get_json(self, path, params=None):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                broken = dict(valid)
+                broken["bundle"] = dict(valid["bundle"])
+                broken["bundle"]["history_error"] = "TransientHistory"
+                return broken
+            return valid
+
+    monkeypatch.setattr(module, "KyreWNBAAPIClient", FakeClient)
+    monkeypatch.setattr(module, "sleep", lambda _: None)
+
+    result = module._warm_one(101)
+
+    assert calls["count"] == 2
+    assert result["status"] == "green"
+    assert result["invalid_bundle_retries"] == 1
+    assert result["error"] == ""
+
+
+def test_step7_does_not_loop_after_second_invalid_bundle(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
+    calls = {"count": 0}
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        def get_json(self, path, params=None):
+            calls["count"] += 1
+            return {
+                "data_type": module.EXPECTED_DATA_TYPE,
+                "schema_version": module.EXPECTED_SCHEMA_VERSION,
+                "player_id": 101,
+                "season": int(module.SUPPORTED_SEASON),
+                "bundle": {
+                    "player_id": 101,
+                    "season": int(module.SUPPORTED_SEASON),
+                    "consumer": {},
+                    "history": {},
+                    "consumer_error": "",
+                    "history_error": "StillIncomplete",
+                },
+                "cache": {"hit": False},
+            }
+
+    monkeypatch.setattr(module, "KyreWNBAAPIClient", FakeClient)
+    monkeypatch.setattr(module, "sleep", lambda _: None)
+
+    result = module._warm_one(101)
+
+    assert calls["count"] == 2
+    assert result["status"] == "error"
+    assert result["invalid_bundle_retries"] == 1
+    assert result["error"] == "ValueError"
 
 
 def test_step7_router_wraps_frozen_step6_only():
