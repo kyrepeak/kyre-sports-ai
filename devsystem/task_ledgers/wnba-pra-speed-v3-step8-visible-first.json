@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_SHELL_LIFETIME_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_FRAME_RESILIENT_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -63,20 +63,20 @@
     ]
   },
   "regression_debt": {
-    "failure_id": "wnba-pra-speed-v3-step8-shell-lifetime-36789317841",
-    "owner": "PRODUCT",
+    "failure_id": "wnba-pra-speed-v3-step8-frame-lifecycle-36790268195",
+    "owner": "VERIFIER",
     "state": "CLEARED",
     "permanent_guards": [
       {
         "kind": "TEST",
         "path": "tests/test_wnba_pra_speed_v3_step8.py",
-        "test": "test_step8_shell_lifetime_handoff_is_permanent",
+        "test": "test_step8_public_profile_reacquires_frames_across_reruns_permanently",
         "permanent": true
       },
       {
         "kind": "CONTRACT",
         "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
-        "rule": "exact shell-lifetime product-repair scope is permanently accepted and isolated",
+        "rule": "frame-resilient verifier repair stays within exact verifier-only scope",
         "permanent": true
       }
     ],
@@ -90,12 +90,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_SHELL_LIFETIME_REPAIR_PROOF",
-    "authoritative_failed_run": 36789317841,
-    "authoritative_failed_job": 110138186225,
-    "failure_owner": "PRODUCT",
-    "failure_class": "SAME_RUN_PLACEHOLDER_CLEAR_COLLAPSES_VISIBLE_SHELL",
-    "patch_count": 6
+    "next_legal_action": "ONE_EXACT_HEAD_FRAME_RESILIENT_VERIFIER_PROOF",
+    "authoritative_failed_run": 36790268195,
+    "authoritative_failed_job": 110141263720,
+    "failure_owner": "VERIFIER",
+    "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
+    "patch_count": 7
   },
   "branch_failure": {
     "run": 36786282671,
@@ -213,6 +213,26 @@
         }
       ],
       "open_debt_count": 0
+    },
+    {
+      "failure_id": "wnba-pra-speed-v3-step8-shell-lifetime-36789317841",
+      "owner": "PRODUCT",
+      "state": "CLEARED",
+      "permanent_guards": [
+        {
+          "kind": "TEST",
+          "path": "tests/test_wnba_pra_speed_v3_step8.py",
+          "test": "test_step8_shell_lifetime_handoff_is_permanent",
+          "permanent": true
+        },
+        {
+          "kind": "CONTRACT",
+          "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
+          "rule": "exact shell-lifetime product-repair scope is permanently accepted and isolated",
+          "permanent": true
+        }
+      ],
+      "open_debt_count": 0
     }
   ],
   "action_log": {
@@ -223,22 +243,20 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36789317841,
-    "job": 110138186225,
-    "owner": "PRODUCT",
-    "failure_class": "SAME_RUN_PLACEHOLDER_CLEAR_COLLAPSES_VISIBLE_SHELL",
+    "run": 36790268195,
+    "job": 110141263720,
+    "owner": "VERIFIER",
+    "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
     "evidence": [
-      "The early-shell product repair was live on main f40db190c15e2809cc22d412560abf32a8c7581d.",
-      "The frozen Step-7 native on_click callback commits selected Player/session/query state before the destination rerun.",
-      "A MutationObserver armed before Player click still observed no Step-8 shell DOM insertion within the preserved 0.750-second target.",
-      "The Step-8 runtime renders the shell into st.empty().markdown(...) and then calls shell_slot.empty() later in the same server execution."
+      "The shell-lifetime product repair was live on main 46a2569fd5d884ebde694977cc45f4bde15ed2ac.",
+      "Production exposed WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYED_GREEN after 6.109 seconds and reached the two-player Game Center proof target.",
+      "The public profile still failed specifically inside _wait_shell_mutation on the pre-click frame after the Player click.",
+      "Merged-main DevSystem run 36790268049 completed SUCCESS through all critical lanes, full-merge certification, final gate, and terminal receipt.",
+      "Repository navigation proof helpers explicitly reacquire the current Streamlit app frame after navigation because no-frame/loading states are transient across reruns."
     ],
-    "root_cause": "The temporary Streamlit placeholder is created and cleared within one server execution, allowing its shell delta to be coalesced/replaced before the browser can paint or observe it.",
-    "patch": "Retain the shell DOM through the server run, remove same-run shell_slot.empty(), and use CSS keyed to the final Step-8 result marker to hide the shell only after final Player content exists.",
-    "product_code_changed": true,
-    "projection_math_changed": false,
-    "market_math_changed": false,
-    "data_meaning_changed": false,
+    "root_cause": "The production verifier keeps observing the pre-click Streamlit frame across a Player-click rerun, while the rendered app frame can be replaced or transiently unavailable.",
+    "patch": "After click, repeatedly scan current page.frames without blocking and accept the first visible Step-8 shell or final Player hero within the unchanged 0.750-second target; preserve shell-lifetime result-marker proof and final Player <=1.50s.",
+    "product_code_changed": false,
     "threshold_changed": false
   },
   "production_failure_history": [
@@ -271,6 +289,25 @@
       ],
       "root_cause": "The visible shell is emitted inside the Player loader wrapper, after earlier frozen routing/render work has already consumed part or all of the 0.750-second visible-first budget.",
       "patch": "Emit the shell at Step-8 router entry before calling the frozen Step-7 parent renderer, pass the already-created shell slot into the loader wrapper, and clear it before the frozen final Player renderer resumes.",
+      "product_code_changed": true,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36789317841,
+      "job": 110138186225,
+      "owner": "PRODUCT",
+      "failure_class": "SAME_RUN_PLACEHOLDER_CLEAR_COLLAPSES_VISIBLE_SHELL",
+      "evidence": [
+        "The early-shell product repair was live on main f40db190c15e2809cc22d412560abf32a8c7581d.",
+        "The frozen Step-7 native on_click callback commits selected Player/session/query state before the destination rerun.",
+        "A MutationObserver armed before Player click still observed no Step-8 shell DOM insertion within the preserved 0.750-second target.",
+        "The Step-8 runtime renders the shell into st.empty().markdown(...) and then calls shell_slot.empty() later in the same server execution."
+      ],
+      "root_cause": "The temporary Streamlit placeholder is created and cleared within one server execution, allowing its shell delta to be coalesced/replaced before the browser can paint or observe it.",
+      "patch": "Retain the shell DOM through the server run, remove same-run shell_slot.empty(), and use CSS keyed to the final Step-8 result marker to hide the shell only after final Player content exists.",
       "product_code_changed": true,
       "projection_math_changed": false,
       "market_math_changed": false,
