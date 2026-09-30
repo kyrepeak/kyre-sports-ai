@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "task_id": "monster-v4-step2-semantic-action-normalizer-v1",
+  "title": "MONSTER V4 Step 2 — Semantic Action Normalizer",
+  "project": "MONSTER V4",
+  "step": 2,
+  "total_steps": 6,
+  "status": "DONE",
+  "scope": "Canonicalize semantically equivalent action types, GitHub targets, and identity fields before the distributed lease + 2A chain fingerprints them. Require a tamper-evident semantic-normalization proof at the final Step-2 authority boundary.",
+  "protected": {
+    "monster_v4_step1_distributed_execution_lease": true,
+    "monster_2a_enforcement_steps_1_5": true,
+    "monster_v3_steps_1_8_inherited": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "pr_url_and_local_aliases_collapse": true,
+    "run_job_aliases_collapse": true,
+    "action_type_aliases_collapse": true,
+    "identity_payloads_type_stable": true,
+    "different_actions_remain_distinct": true,
+    "alias_replay_becomes_loop_skipped_continue": true,
+    "raw_step1_authority_insufficient": true,
+    "normalization_proof_tamper_evident": true,
+    "distributed_lease_preserved": true,
+    "two_a_chain_preserved": true,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, exact merged-main full certification + devsystem-final-gate GREEN, and distributed lease release."
+}

@@ -47,6 +47,7 @@ def test_permanent_contract_is_green():
     assert result["mandatory_2a_global_enforcement_v1_permanent"] is True
     assert result["mandatory_2a_adversarial_certification_v1_permanent"] is True
     assert result["distributed_execution_lease_v1_permanent"] is True
+    assert result["semantic_action_normalizer_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -217,6 +218,29 @@ def test_distributed_execution_lease_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/distributed_execution_lease_v1.py" in workflow
     assert "tests/test_devsystem_distributed_execution_lease_v1.py" in workflow
+
+
+def test_semantic_action_normalizer_is_permanently_enforced():
+    semantic = _load(
+        "semantic_action_normalizer_v1",
+        "devsystem/semantic_action_normalizer_v1.py",
+    )
+    result = semantic.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["alias_targets_equal"] is True
+    assert result["alias_action_types_equal"] is True
+    assert result["semantic_fingerprints_equal"] is True
+    assert result["different_action_stays_distinct"] is True
+    assert result["second_alias_replay_skipped"] is True
+    assert result["raw_step1_authority_rejected"] is True
+    assert result["tampered_normalization_proof_rejected"] is True
+    assert result["distributed_lease_preserved"] is True
+    assert result["two_a_chain_preserved"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/semantic_action_normalizer_v1.py" in workflow
+    assert "tests/test_devsystem_semantic_action_normalizer_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
