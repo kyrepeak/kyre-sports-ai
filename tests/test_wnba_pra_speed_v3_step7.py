@@ -237,6 +237,20 @@ def test_step7_activation_is_wired():
     assert "Frozen WNBA PRA Speed V3 Step 6 compatibility" in source
 
 
+def test_step7_deployment_refresh_heartbeat_is_permanent():
+    source = APP.read_text(encoding="utf-8")
+    assert (
+        'WNBA_PRA_SPEED_V3_STEP7_PUBLIC_DEPLOY_REFRESH = '
+        '"WNBA_PRA_SPEED_V3_STEP7_PUBLIC_DEPLOY_REFRESH_2026_09_30_R1"'
+        in source
+    )
+    assert (
+        "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step7 "
+        "import record_bootstrap_import_ms, render_app"
+        in source
+    )
+
+
 def test_step7_freezes_step6_owner_blobs():
     for path, expected in FROZEN_STEP6.items():
         assert _blob(ROOT / path) == expected, path

@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "PRODUCTION_INCOMPLETE_BUNDLE_RETRY_PATCH",
+  "phase": "PRODUCTION_DEPLOYMENT_REFRESH_BRANCH_PROOF",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -62,33 +62,28 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_INCOMPLETE_BUNDLE_RETRY_PROOF",
-    "failed_run": 36776404692,
-    "failed_job": 110095302442,
-    "failure_class": "PRA_ELIGIBLE_HTTP200_INCOMPLETE_BUNDLE",
-    "player_seconds_first": 1.547,
-    "player_seconds_retry": 0.419,
-    "target_player_seconds_max": 1.5,
-    "remaining_precompute_errors": 1,
+    "status": "PENDING_DEPLOYMENT_REFRESH_PROOF",
+    "failed_run": 36776979632,
+    "failed_job": 110097243720,
+    "failure_owner": "DEPLOYMENT",
+    "failure_class": "STREAMLIT_STALE_IMPORTED_STEP7_MODULE",
     "evidence": [
-      "Active-PRA scope repair reduced background errors from 3 to 1.",
-      "Allowed fresh-session Player proof measured 0.419s <= 1.500s.",
-      "The remaining failing target is inside the existing PRA-eligible subset.",
-      "KyreWNBAAPIClient attempts=2 retries request/API failures, while Step-7 completeness validation runs after get_json returns."
+      "Current main contains the Step-7 invalid-bundle retry marker and active Step-7 router import.",
+      "PR #1264 changed the Step-7 imported runtime/verifier/test/ledger/workflow but did not touch app.py or requirements.txt.",
+      "No relevant Step-7 runtime/app/requirements files changed after PR #1264 before classification.",
+      "Merged-main public proof waited 600 seconds and repeatedly reached the public WNBA slate while the Step-7 invalid-bundle-retry marker remained absent."
     ],
-    "root_cause": "A successful HTTP 200 can still carry a temporarily incomplete Step-4 bundle; that application-level validation miss is outside the transport retry loop.",
-    "patch": "Retry the full cached-detail read exactly once only when the first HTTP-success response fails Step-7 completeness/identity validation.",
-    "max_workers": 2,
-    "per_player_transport_attempts": 2,
-    "invalid_bundle_retry_max": 1,
+    "root_cause": "Streamlit Community Cloud kept the older imported Step-7 module loaded because the repair was imported-module-only and did not change the app entrypoint.",
+    "patch": "Add one inert app.py deployment heartbeat constant to force Streamlit process replacement. Do not change routing, model, data, market, ranking, qualification, Monte Carlo, sportsbook, or Step-1-through-Step-6 behavior.",
+    "deployment_refresh_marker": "WNBA_PRA_SPEED_V3_STEP7_PUBLIC_DEPLOY_REFRESH_2026_09_30_R1",
+    "product_semantics_changed": false,
     "threshold_changed": false,
-    "model_or_data_changed": false,
-    "eligibility_gate_changed": false,
-    "frozen_steps_1_6_changed": false
+    "frozen_steps_1_6_changed": false,
+    "authoritative_failed_run_rerun_forbidden": true
   },
   "two_a": {
-    "distributed_lease_owner": "chatgpt:wnba-pra-speed-v3-step7",
-    "lease_generation": 1,
+    "distributed_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step7",
+    "lease_generation": 10,
     "one_active_problem": true,
     "one_active_pr": true,
     "no_duplicate_async_runs": true,
@@ -101,7 +96,10 @@
     "reliability_patch_count": 1,
     "foreground_headroom_patch_count": 1,
     "active_pra_scope_patch_count": 1,
-    "invalid_bundle_retry_max": 1
+    "invalid_bundle_retry_max": 1,
+    "authoritative_failed_run": 36776979632,
+    "failure_owner": "DEPLOYMENT",
+    "next_legal_action": "ONE_EXACT_HEAD_DEPLOYMENT_REFRESH_PROOF"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -109,5 +107,19 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "regression_debt": {
+    "failure_id": "wnba-pra-speed-v3-step7-deployment-stale-import-36776979632",
+    "owner": "DEPLOYMENT",
+    "state": "CLEARED",
+    "permanent_guards": [
+      {
+        "kind": "TEST",
+        "path": "tests/test_wnba_pra_speed_v3_step7.py",
+        "test": "test_step7_deployment_refresh_heartbeat_is_permanent",
+        "permanent": true
+      }
+    ],
+    "open_debt_count": 0
+  }
 }
