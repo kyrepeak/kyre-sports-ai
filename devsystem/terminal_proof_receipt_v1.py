@@ -119,7 +119,8 @@ def build_receipt(
         "freeze_tokens": _normalize_unique(freeze_tokens, "freeze_tokens"),
     }
     body["receipt_hash"] = _hash(body)
-    return validate_receipt(body)
+    validate_receipt(body)
+    return body
 
 
 def validate_receipt(payload: Mapping[str, Any]) -> dict[str, Any]:
