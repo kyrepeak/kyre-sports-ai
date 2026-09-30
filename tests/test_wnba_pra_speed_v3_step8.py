@@ -44,6 +44,9 @@ def test_step8_contract_is_visible_first_only():
     assert contract["shell_render_phase"] == "router_entry_before_frozen_parent"
     assert contract["loader_wrapper_renders_shell"] is False
     assert contract["shell_is_temporary"] is True
+    assert contract["shell_lifetime"] == "until_final_result_marker"
+    assert contract["server_side_clear"] is False
+    assert contract["final_marker_css_handoff"] is True
     assert contract["final_renderer_unchanged"] is True
     assert contract["frozen_speed_v3_steps_1_7_modified"] is False
     assert contract["network_calls_added"] == 0
@@ -61,7 +64,7 @@ def test_step8_contract_is_visible_first_only():
     assert contract["true_cold_target_seconds_max"] == 2.50
 
 
-def test_step8_shell_is_emitted_before_frozen_parent_and_removed_after_loader(monkeypatch):
+def test_step8_shell_is_emitted_before_frozen_parent_and_retained_through_final(monkeypatch):
     module = importlib.import_module("wnba_pra_speed_v3_step8_visible_first")
     events = []
 
@@ -91,7 +94,7 @@ def test_step8_shell_is_emitted_before_frozen_parent_and_removed_after_loader(mo
             events.append("shell")
 
         def empty(self):
-            events.append("clear")
+            raise AssertionError("Step-8 shell must not be cleared in the same server run")
 
     monkeypatch.setattr(module.player_intelligence, "_selected_player", lambda: player)
     monkeypatch.setattr(module.player_intelligence, "_selected_game", lambda: game)
@@ -120,11 +123,13 @@ def test_step8_shell_is_emitted_before_frozen_parent_and_removed_after_loader(mo
     )
 
     assert result == {"state": "frozen"}
-    assert events.index("shell") < events.index("parent-entry") < events.index("loader") < events.index("clear")
+    assert events.index("shell") < events.index("parent-entry") < events.index("loader")
+    assert "clear" not in events
     records = [row[1] for row in events if isinstance(row, tuple) and row[0] == "record"]
     assert any(row.get("shell_before_loader") is True for row in records)
     assert any(row.get("shell_render_phase") == "router_entry_before_frozen_parent" for row in records)
-    assert any(row.get("shell_removed_before_final_renderer") is True for row in records)
+    assert any(row.get("shell_removed_before_final_renderer") is False for row in records)
+    assert any(row.get("shell_retained_through_final") is True for row in records)
 
 def test_step8_context_mismatch_does_not_invent_visible_shell(monkeypatch):
     module = importlib.import_module("wnba_pra_speed_v3_step8_visible_first")
@@ -238,3 +243,18 @@ def test_step8_router_emits_shell_before_frozen_parent_permanently():
     assert '"shell_render_phase": "router_entry_before_frozen_parent"' in runtime
     assert '"loader_wrapper_renders_shell": False' in runtime
     assert "WNBA_PRA_SPEED_V3_STEP8_PRODUCT_REPAIR_SCOPE_GREEN" in workflow
+
+
+def test_step8_shell_lifetime_handoff_is_permanent():
+    runtime = STEP8.read_text(encoding="utf-8")
+    profile = PROFILE.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "shell_slot.empty()" not in runtime
+    assert '"shell_lifetime": "until_final_result_marker"' in runtime
+    assert '"server_side_clear": False' in runtime
+    assert '"final_marker_css_handoff": True' in runtime
+    assert 'body:has([data-wnba-pra-speed-v3-step8-result="true"])' in runtime
+    assert 'data-shell-retained-through-final' in runtime
+    assert 'data-shell-retained-through-final' in profile
+    assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_GREEN" in profile
+    assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_REPAIR_SCOPE_GREEN" in workflow
