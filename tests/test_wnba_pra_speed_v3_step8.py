@@ -47,6 +47,10 @@ def test_step8_contract_is_visible_first_only():
     assert contract["shell_lifetime"] == "until_final_result_marker"
     assert contract["server_side_clear"] is False
     assert contract["final_marker_css_handoff"] is True
+    assert contract["client_first_paint"] is True
+    assert contract["client_preview_source"] == "game_center_player_snapshot"
+    assert contract["client_preview_network_calls"] == 0
+    assert contract["client_preview_trigger"] == "native_button_focus_or_active"
     assert contract["final_renderer_unchanged"] is True
     assert contract["frozen_speed_v3_steps_1_7_modified"] is False
     assert contract["network_calls_added"] == 0
@@ -261,3 +265,57 @@ def test_step8_shell_lifetime_handoff_is_permanent():
     assert 'data-shell-retained-through-final' in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_GREEN" in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_REPAIR_SCOPE_GREEN" in workflow
+
+
+def test_step8_client_first_paint_is_pre_rendered_and_focus_revealed_permanently():
+    runtime = STEP8.read_text(encoding="utf-8")
+    router = ROUTER.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "def render_player_click_preview" in runtime
+    assert 'data-shell-kind="client-preview"' in runtime
+    assert 'data-wnba-pra-speed-v3-step8-client-preview="true"' in runtime
+    assert 'data-visible-before-rerun="true"' in runtime
+    assert '[class*="st-key-ks_step8_preview_"]:has(button:focus)' in runtime
+    assert '[class*="st-key-ks_step8_preview_"]:has(button:active)' in runtime
+    assert "def _preview_button(" in router
+    assert 'prefix = "wnba_nav_v2_step3_player_"' in router
+    assert "performance._game_player(game_id, player_id)" in router
+    assert "with st.container(key=preview_key):" in router
+    assert "step8.render_player_click_preview(game_id, player)" in router
+    assert "st.button = partial(_preview_button, original_button)" in router
+    assert router.index("st.button = partial(_preview_button, original_button)") < router.index(
+        "frozen_parent.render_app"
+    )
+    assert "WNBA_PRA_SPEED_V3_STEP8_CLIENT_FIRST_PAINT_SCOPE_GREEN" in workflow
+    assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in runtime
+
+
+def test_step8_client_preview_markup_uses_existing_game_center_snapshot(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step8_visible_first")
+    captured = []
+    player = {
+        "player_id": 101,
+        "player_name": "Preview Player",
+        "team_abbreviation": "TST",
+        "role_label": "ACTIVE",
+        "designation": "NO DESIGNATION",
+        "starter_confirmed": True,
+        "projected_minutes": 30.0,
+        "projected_pts": 17.0,
+        "projected_reb": 7.0,
+        "projected_ast": 5.0,
+        "projected_pra": 29.0,
+    }
+    game = {"game_id": "game-1", "away_team": "Away", "home_team": "Home"}
+    monkeypatch.setattr(module.player_intelligence, "_selected_game", lambda: game)
+    monkeypatch.setattr(
+        module.st,
+        "markdown",
+        lambda value, **kwargs: captured.append(value),
+    )
+    assert module.render_player_click_preview("game-1", player) is True
+    assert captured
+    assert 'data-wnba-pra-speed-v3-step8-client-preview="true"' in captured[0]
+    assert 'data-wnba-pra-speed-v3-step8-shell="visible"' in captured[0]
+    assert "Preview Player" in captured[0]
+    assert "29" in captured[0]
