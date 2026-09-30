@@ -6,17 +6,17 @@
   "lease_state_path": "devsystem/distributed_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_name": "monster-global-execution",
-  "revision": 37,
+  "revision": 38,
   "generation": 10,
   "holder": {
     "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step7",
     "lease_id": "LEASE-F0755AB0A0EDE66782A316A7",
     "generation": 10,
     "acquired_at_utc": "2026-09-30T21:42:05Z",
-    "heartbeat_at_utc": "2026-09-30T22:04:10Z",
-    "expires_at_utc": "2026-09-30T22:19:10Z",
-    "main_sha": "5abef0cc9d92332017ad4debdf86a0ecf162c9ee",
-    "head_sha": "5abef0cc9d92332017ad4debdf86a0ecf162c9ee"
+    "heartbeat_at_utc": "2026-09-30T22:08:30Z",
+    "expires_at_utc": "2026-09-30T22:23:30Z",
+    "main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
+    "head_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390"
   },
-  "state_hash": "2347b7713bb14e3f3db44935ca2dee8c6efb56c066ec239b5e5150aa05245762"
+  "state_hash": "744da35a98a6ef7a868850281edeab722593d95dbeaa018175e28229f6b746c8"
 }
