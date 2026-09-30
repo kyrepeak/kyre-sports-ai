@@ -173,5 +173,29 @@
     "render_api_redeploy_required": false,
     "frozen_navigation_steps_1_7_changed": false,
     "frozen_speed_v3_steps_1_2_changed": false
+  },
+  "stats_host_repair_closeout": {
+    "status": "BRANCH_GREEN_RENDER_LIVE_PENDING_MERGED_MAIN_PUBLIC_PROOF",
+    "owner": "BACKEND_HISTORY_TRANSPORT",
+    "root_cause": "Step-3 official full-season playergamelog used the legacy stats.wnba.com host, which blocked for about 20 seconds on Render while the current WNBA frontend Stats host is stats.nba.com.",
+    "repair_contract": "Preserve the official Stats API playergamelog endpoint, parameters, normalizer, and full-season payload; add an opt-in base-host override used only by the Step-3 PRA detail bundle. Keep the frozen legacy default unchanged for all other callers.",
+    "branch_pr": 1224,
+    "branch_head": "f64e57abb44b4a0bf9c61bf1b833b04c1141e3cc",
+    "branch_step3_run": 36671824997,
+    "branch_step3_result": "SUCCESS",
+    "render_service_id": "srv-da84q6ifngtc73bdbm6g",
+    "render_deploy_id": "dep-dau9g4navr4c73892qr0",
+    "render_commit": "b46fc10739f04297e90aa2edf73780a246e8a209",
+    "render_status": "live",
+    "render_revision_guard_preserved": true,
+    "render_expected_revision_updated": true,
+    "legacy_default_host_preserved": true,
+    "step3_current_host": "https://stats.nba.com/stats",
+    "timeout_inflated": false,
+    "verifier_weakened": false,
+    "first_party_recent_history_substituted": false,
+    "frozen_navigation_steps_1_7_changed": false,
+    "frozen_speed_v3_steps_1_2_changed": false,
+    "next_authority": "merged-main Step-3 public-profile production proof"
   }
 }
