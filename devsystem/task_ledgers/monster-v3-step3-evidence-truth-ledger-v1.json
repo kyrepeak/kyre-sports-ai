@@ -43,5 +43,13 @@
     "classification": "F_STALE_EVIDENCE",
     "policy": "Do not reuse prior-head proof. Advance with one real control-plane metadata change and require exact-head DevSystem certification.",
     "product_runtime_changed": false
+  },
+  "freshness_hardening": {
+    "trigger": "fresh self-review after PR #1194 certification",
+    "finding": "validator trusted stored freshness labels after fingerprint verification",
+    "severity": "IMPORTANT",
+    "tdd": "RED test must prove a re-fingerprinted stale record cannot masquerade as CURRENT",
+    "protected": "Steps 1-2 and all sports runtime remain unchanged",
+    "status": "RED_PENDING"
   }
 }
