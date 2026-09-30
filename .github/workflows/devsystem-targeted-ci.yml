@@ -182,6 +182,12 @@ jobs:
         run: python devsystem/cfb_top_picks_research_v2_step4_offense_v1.py
       - name: Validate CFB Top Picks Research V2 Step 5 defense-pace contract
         run: python devsystem/cfb_top_picks_research_v2_step5_defense_pace_v1.py
+      - name: Validate CFB Top Picks Research V2 Step 6 market-reasoning contract
+        run: python devsystem/cfb_top_picks_research_v2_step6_market_reasoning_v1.py
+      - name: Certify CFB Top Picks Research V2 Step 6 all-market reasoning
+        run: python devsystem/cfb_top_picks_research_v2_step6_market_reasoning_cert_v1.py
+      - name: Test CFB Top Picks Research V2 Step 6 reasoning
+        run: python -m pytest -q tests/test_cfb_top_picks_research_v2_step6_reasoning_v1.py
       - name: Validate Monster Anti-Loop V2 hard gate
         env:
           EVENT_NAME: ${{ github.event_name }}
