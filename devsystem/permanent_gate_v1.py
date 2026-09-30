@@ -57,6 +57,8 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_evidence_truth_ledger_v1.py",
     "devsystem/failure_ownership_engine_v1.py",
     "tests/test_devsystem_failure_ownership_engine_v1.py",
+    "devsystem/deployment_truth_control_plane_v1.py",
+    "tests/test_devsystem_deployment_truth_control_plane_v1.py",
 )
 
 
