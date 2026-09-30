@@ -144,6 +144,8 @@ jobs:
         run: python devsystem/evidence_truth_ledger_v1.py
       - name: Validate MONSTER Failure Ownership Engine V1
         run: python devsystem/failure_ownership_engine_v1.py
+      - name: Validate MONSTER Deployment Truth Control Plane V1
+        run: python devsystem/deployment_truth_control_plane_v1.py
       - name: Validate Monster Speed V3 Step 2 cache split
         run: python devsystem/monster_speed_v3_step2_cache_split_v1.py
       - name: Validate Monster Speed V3 Step 3 fast/full lane split
@@ -194,6 +196,7 @@ jobs:
             tests/test_devsystem_automatic_loop_kill_v1.py \
             tests/test_devsystem_evidence_truth_ledger_v1.py \
             tests/test_devsystem_failure_ownership_engine_v1.py \
+            tests/test_devsystem_deployment_truth_control_plane_v1.py \
             tests/test_devsystem_sport_cache_v1.py \
             tests/test_monster_speed_v3_step2_cache_split_v1.py \
             tests/test_monster_speed_v3_step3_lane_split_v1.py \
