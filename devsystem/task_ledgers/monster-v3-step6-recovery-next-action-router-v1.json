@@ -26,7 +26,8 @@
     "external_patch_blocked": true,
     "deployment_recovery_routed": true,
     "product_patch_requires_product_owner": true,
-    "permanent_contract_pending": true
+    "permanent_contract_pending": false,
+    "permanent_contract_updated": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -35,6 +36,7 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "IMPLEMENTED_AWAITING_PERMANENT_WIRING_AND_PROOF",
-  "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Technical acceptance remains tracked independently."
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Technical acceptance remains tracked independently.",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main DevSystem targeted CI + devsystem-final-gate GREEN."
 }
