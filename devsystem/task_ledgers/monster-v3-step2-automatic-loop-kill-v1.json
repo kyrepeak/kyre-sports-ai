@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step2-automatic-loop-kill-v1",
+  "title": "MONSTER V3 Step 2 — Automatic Loop Kill System",
+  "project": "MONSTER V3",
+  "step": "2/8",
+  "status": "DONE",
+  "scope": "Control-plane-only loop prevention layered on Persistent Execution Brain and Anti-Loop V2. Block unchanged same-run polling, block mutations while authoritative async work is live, allow terminal state transitions as new evidence, reject stale competing runs, and permanently enforce the guard. No sports/runtime/router/model/provider changes.",
+  "protected": {
+    "step1_persistent_brain_frozen": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "projection_math_unchanged": true,
+    "sportsbook_logic_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "production_configuration_unchanged": true
+  },
+  "acceptance": {
+    "same_state_poll_killed": true,
+    "volatile_poll_time_ignored": true,
+    "async_mutation_lock": true,
+    "terminal_transition_unlock": true,
+    "stale_run_blocked": true,
+    "permanent_gate_wiring": true,
+    "focused_replay_tests": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
