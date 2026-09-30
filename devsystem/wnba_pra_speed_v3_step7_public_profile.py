@@ -49,16 +49,19 @@ def _wait_step7_streamlit(page):
     while time.monotonic() < deadline:
         try:
             frame, slate_seconds = _route_to_wnba_pra(page)
-            marker = frame.locator(STEP7_SELECTOR)
+            marker = frame.locator(
+                STEP7_SELECTOR + '[data-memory-handoff="true"]'
+            )
             if marker.count() > 0:
                 elapsed = time.monotonic() - started
                 print("WNBA_PRA_SPEED_V3_STEP7_STREAMLIT_DEPLOYED_GREEN")
+                print("WNBA_PRA_SPEED_V3_STEP7_MEMORY_HANDOFF_DEPLOYED_GREEN")
                 print(
                     "WNBA_PRA_SPEED_V3_STEP7_STREAMLIT_DEPLOYMENT_WAIT_SECONDS="
                     f"{elapsed:.3f}"
                 )
                 return frame, slate_seconds, elapsed
-            last = "Step-7 marker absent"
+            last = "Step-7 memory-handoff marker absent"
         except Exception as exc:
             last = f"{type(exc).__name__}:{str(exc)[:300]}"
         page.wait_for_timeout(5000)
@@ -138,16 +141,28 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             player_seconds = time.monotonic() - started
             step5_profile._assert_player_ready(frame)
 
-            cache_marker = _step4_marker(frame)
-            cache_hit = _bool_attr(cache_marker, "data-server-cache-hit")
-            cached_read_ms = float(
-                cache_marker.get_attribute("data-cached-bundle-read-ms") or "0"
+            _step4_marker(frame)
+            player_marker = _marker(frame)
+            memory_hit = _bool_attr(
+                player_marker,
+                "data-precomputed-memory-hit",
             )
-            if not cache_hit:
+            hosted_reads = _int_attr(
+                player_marker,
+                "data-player-hosted-reads",
+            )
+            memory_player_id = _int_attr(
+                player_marker,
+                "data-precomputed-memory-player-id",
+            )
+            if not memory_hit or hosted_reads != 0 or memory_player_id <= 0:
                 raise BrowserQAFailure(
-                    "Step-7 selected player did not consume a precomputed Step-4 "
-                    "finished-bundle cache hit."
+                    "Step-7 Player did not consume the in-process precomputed "
+                    "bundle with zero hosted reads: "
+                    f"memory_hit={memory_hit} hosted_reads={hosted_reads} "
+                    f"player_id={memory_player_id}"
                 )
+            print("WNBA_PRA_SPEED_V3_STEP7_MEMORY_HANDOFF_OBSERVED_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_OBSERVED_GREEN")
             print(
                 "WNBA_PRA_SPEED_V3_STEP7_OBSERVED_PLAYER_SECONDS="
@@ -159,7 +174,6 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                     f"{player_seconds:.3f}s > {MAX_PRECOMPUTED_PLAYER_SECONDS:.3f}s"
                 )
 
-            player_marker = _marker(frame)
             completed = _int_attr(player_marker, "data-completed")
             errors = _int_attr(player_marker, "data-errors")
             if completed < 1:
@@ -173,16 +187,14 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                     f"errors={errors}"
                 )
 
+            print("WNBA_PRA_SPEED_V3_STEP7_MEMORY_HANDOFF_GREEN")
+            print("WNBA_PRA_SPEED_V3_STEP7_ZERO_PLAYER_HOSTED_READ_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_PLAYER_READY_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_FROZEN_STEPS1_6_GREEN")
             print(
                 "WNBA_PRA_SPEED_V3_STEP7_PRECOMPUTED_PLAYER_SECONDS="
                 f"{player_seconds:.3f}"
-            )
-            print(
-                "WNBA_PRA_SPEED_V3_STEP7_CACHED_BUNDLE_READ_MS="
-                f"{cached_read_ms:.3f}"
             )
             print("WNBA_PRA_SPEED_V3_STEP7_PROFILE_GREEN")
 
@@ -196,9 +208,9 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 "target_players": target_players,
                 "completed_precomputes": completed,
                 "precompute_errors": errors,
-                "bundle_cache_hit": cache_hit,
+                "precomputed_memory_hit": memory_hit,
+                "player_hosted_reads": hosted_reads,
                 "precomputed_player_seconds": round(player_seconds, 3),
-                "cached_bundle_read_ms": round(cached_read_ms, 3),
             }
             (artifacts / "wnba_pra_speed_v3_step7_profile.json").write_text(
                 json.dumps(result, indent=2, sort_keys=True) + "\n",
