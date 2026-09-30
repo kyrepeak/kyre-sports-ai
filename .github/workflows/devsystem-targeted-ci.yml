@@ -188,6 +188,7 @@ jobs:
             tests/test_devsystem_permanent_gate_v1.py \
             tests/test_devsystem_persistent_execution_brain_v1.py \
             tests/test_devsystem_automatic_loop_kill_v1.py \
+            tests/test_devsystem_evidence_truth_ledger_v1.py \
             tests/test_devsystem_sport_cache_v1.py \
             tests/test_monster_speed_v3_step2_cache_split_v1.py \
             tests/test_monster_speed_v3_step3_lane_split_v1.py \
