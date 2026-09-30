@@ -407,6 +407,10 @@ def validate_truth_ledger(ledger: Mapping[str, Any]) -> dict[str, Any]:
     current = 0
     stale = 0
     incomplete = 0
+    expected_truth_id = _fingerprint(value)
+    if supplied_truth_id != expected_truth_id:
+        raise EvidenceTruthFailure("truth ledger fingerprint mismatch")
+
     for record in records:
         freshness = str(record.get("freshness") or "")
         if freshness == "CURRENT":
