@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/wnba_pra_speed_v3_step3_fast_history.py"
       - "sports_api/main.py"
       - "wnba_pra_speed_v3_step3_bundle.py"
       - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py"
@@ -17,6 +18,7 @@ on:
     branches: [main]
     paths:
       - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/wnba_pra_speed_v3_step3_fast_history.py"
       - "sports_api/main.py"
       - "wnba_pra_speed_v3_step3_bundle.py"
       - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py"
@@ -87,12 +89,23 @@ jobs:
           EOF
           sort -o /tmp/full_redeploy.txt /tmp/full_redeploy.txt
 
+          cat > /tmp/history_transport_repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json
+          sports_api/api/wnba_pra_detail_bundle.py
+          sports_api/wnba_pra_speed_v3_step3_fast_history.py
+          tests/test_wnba_pra_speed_v3_step3.py
+          EOF
+          sort -o /tmp/history_transport_repair.txt /tmp/history_transport_repair.txt
+
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP3_SCOPE_GREEN"
           elif diff -q /tmp/cert_closeout.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP3_CERT_CLOSEOUT_SCOPE_GREEN"
           elif diff -q /tmp/full_redeploy.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP3_FULL_REDEPLOY_SCOPE_GREEN"
+          elif diff -q /tmp/history_transport_repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP3_HISTORY_TRANSPORT_REPAIR_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP3_SCOPE_RED"
             diff -u /tmp/cert_closeout.txt /tmp/actual.txt || true
@@ -126,6 +139,7 @@ jobs:
         run: |
           python -m py_compile \
             sports_api/api/wnba_pra_detail_bundle.py \
+            sports_api/wnba_pra_speed_v3_step3_fast_history.py \
             sports_api/main.py \
             wnba_pra_speed_v3_step3_bundle.py \
             streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py \
