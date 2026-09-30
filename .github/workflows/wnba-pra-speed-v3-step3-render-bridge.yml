@@ -1,0 +1,61 @@
+name: WNBA PRA Speed V3 Step 3 Render Bridge
+
+on:
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/main.py"
+      - "tests/test_wnba_pra_speed_v3_step3_render_bridge.py"
+      - ".github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  render-bridge-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused test dependency
+        run: pip install pytest
+
+      - name: Run Render bridge contract
+        run: pytest -q tests/test_wnba_pra_speed_v3_step3_render_bridge.py
+
+      - name: Enforce exact bridge scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml
+          sports_api/api/wnba_pra_detail_bundle.py
+          sports_api/main.py
+          tests/test_wnba_pra_speed_v3_step3_render_bridge.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_SCOPE_GREEN"
+
+      - name: Prove route parity and host registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object sports_api/api/wnba_pra_detail_bundle.py)" = "2f2365f026a59ab016a893fea27e029418018f87"
+          grep -F 'from sports_api.api.wnba_pra_detail_bundle import router as wnba_pra_detail_bundle_router' sports_api/main.py
+          grep -F 'app.include_router(wnba_pra_detail_bundle_router)' sports_api/main.py
+          python -m py_compile sports_api/api/wnba_pra_detail_bundle.py sports_api/main.py
+          echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_GREEN"
