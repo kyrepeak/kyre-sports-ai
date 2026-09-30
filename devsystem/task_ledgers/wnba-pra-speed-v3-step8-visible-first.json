@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_EARLY_SHELL_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_FRAME_RESILIENT_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -63,20 +63,20 @@
     ]
   },
   "regression_debt": {
-    "failure_id": "wnba-pra-speed-v3-step8-late-shell-36788247064",
-    "owner": "PRODUCT",
+    "failure_id": "wnba-pra-speed-v3-step8-frame-lifecycle-36789317841",
+    "owner": "VERIFIER",
     "state": "CLEARED",
     "permanent_guards": [
       {
         "kind": "TEST",
         "path": "tests/test_wnba_pra_speed_v3_step8.py",
-        "test": "test_step8_router_emits_shell_before_frozen_parent_permanently",
+        "test": "test_step8_public_profile_reacquires_frames_across_reruns_permanently",
         "permanent": true
       },
       {
         "kind": "CONTRACT",
         "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
-        "rule": "exact early-shell product-repair scope is permanently accepted and isolated",
+        "rule": "frame-resilient verifier repair stays within exact verifier-only scope",
         "permanent": true
       }
     ],
@@ -90,12 +90,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_PRODUCT_REPAIR_PROOF",
-    "authoritative_failed_run": 36788247064,
-    "authoritative_failed_job": 110134717006,
-    "failure_owner": "PRODUCT",
-    "failure_class": "SHELL_EMISSION_TOO_LATE_IN_RERUN",
-    "patch_count": 5
+    "next_legal_action": "ONE_EXACT_HEAD_FRAME_RESILIENT_VERIFIER_PROOF",
+    "authoritative_failed_run": 36789317841,
+    "authoritative_failed_job": 110138186225,
+    "failure_owner": "VERIFIER",
+    "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
+    "patch_count": 6
   },
   "branch_failure": {
     "run": 36786282671,
@@ -193,6 +193,26 @@
         }
       ],
       "open_debt_count": 0
+    },
+    {
+      "failure_id": "wnba-pra-speed-v3-step8-late-shell-36788247064",
+      "owner": "PRODUCT",
+      "state": "CLEARED",
+      "permanent_guards": [
+        {
+          "kind": "TEST",
+          "path": "tests/test_wnba_pra_speed_v3_step8.py",
+          "test": "test_step8_router_emits_shell_before_frozen_parent_permanently",
+          "permanent": true
+        },
+        {
+          "kind": "CONTRACT",
+          "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
+          "rule": "exact early-shell product-repair scope is permanently accepted and isolated",
+          "permanent": true
+        }
+      ],
+      "open_debt_count": 0
     }
   ],
   "action_log": {
@@ -203,22 +223,20 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36788247064,
-    "job": 110134717006,
-    "owner": "PRODUCT",
-    "failure_class": "SHELL_EMISSION_TOO_LATE_IN_RERUN",
+    "run": 36789317841,
+    "job": 110138186225,
+    "owner": "VERIFIER",
+    "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
     "evidence": [
-      "Production exposed the Step-8 deployment marker after 4.197 seconds.",
-      "A MutationObserver was armed before the Player click and still observed no Step-8 shell DOM insertion within the preserved 0.750-second budget.",
-      "Merged-main DevSystem run 36788247109 completed SUCCESS across permanent contract, regression shield, WNBA/NFL/MLB/CFB critical, browser QA, core-smoke, full-merge certification, final gate, and terminal receipt.",
-      "Current Step-8 shell emission occurs only inside load_player_intelligence_visible_first after the frozen parent render path reaches the loader seam."
+      "Production exposed WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYED_GREEN after 6.166 seconds on main f40db190c15e2809cc22d412560abf32a8c7581d.",
+      "Merged-main DevSystem run 36789317493 completed SUCCESS through CFB/WNBA/NFL/MLB critical, browser QA, full-merge certification, final gate, and terminal receipt.",
+      "The public profile armed its MutationObserver on the pre-click Streamlit frame and waited on that same frame after the Player click.",
+      "Repository production helpers treat Streamlit no-frame/loading states as transient after navigation and explicitly reacquire the current app frame before asserting Player readiness.",
+      "The early-shell product patch was already on main during this failure, so absence on the stale pre-click frame is not evidence that the new-rerun frame lacked visible content."
     ],
-    "root_cause": "The visible shell is emitted inside the Player loader wrapper, after earlier frozen routing/render work has already consumed part or all of the 0.750-second visible-first budget.",
-    "patch": "Emit the shell at Step-8 router entry before calling the frozen Step-7 parent renderer, pass the already-created shell slot into the loader wrapper, and clear it before the frozen final Player renderer resumes.",
-    "product_code_changed": true,
-    "projection_math_changed": false,
-    "market_math_changed": false,
-    "data_meaning_changed": false,
+    "root_cause": "The verifier bound its observer to the pre-click Streamlit frame even though the Player click triggers a rerun where the app frame can be replaced or transiently unavailable.",
+    "patch": "After the Player click, repeatedly scan the current page.frames without blocking and accept the first visible Step-8 shell or final Player hero within the unchanged 0.750-second target; retain final result-marker ordering proof and the 1.50-second final Player target.",
+    "product_code_changed": false,
     "threshold_changed": false
   },
   "production_failure_history": [
@@ -236,6 +254,25 @@
       "root_cause": "The production verifier used element-state polling for an intentionally ephemeral shell. A correct shell insertion/removal can occur between polling observations.",
       "patch": "Arm a browser MutationObserver before the Player click and timestamp matching addedNodes, preserving the exact 0.750-second target while reliably observing short-lived DOM insertion.",
       "product_code_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36788247064,
+      "job": 110134717006,
+      "owner": "PRODUCT",
+      "failure_class": "SHELL_EMISSION_TOO_LATE_IN_RERUN",
+      "evidence": [
+        "Production exposed the Step-8 deployment marker after 4.197 seconds.",
+        "A MutationObserver was armed before the Player click and still observed no Step-8 shell DOM insertion within the preserved 0.750-second budget.",
+        "Merged-main DevSystem run 36788247109 completed SUCCESS across permanent contract, regression shield, WNBA/NFL/MLB/CFB critical, browser QA, core-smoke, full-merge certification, final gate, and terminal receipt.",
+        "Current Step-8 shell emission occurs only inside load_player_intelligence_visible_first after the frozen parent render path reaches the loader seam."
+      ],
+      "root_cause": "The visible shell is emitted inside the Player loader wrapper, after earlier frozen routing/render work has already consumed part or all of the 0.750-second visible-first budget.",
+      "patch": "Emit the shell at Step-8 router entry before calling the frozen Step-7 parent renderer, pass the already-created shell slot into the loader wrapper, and clear it before the frozen final Player renderer resumes.",
+      "product_code_changed": true,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
       "threshold_changed": false
     }
   ]
