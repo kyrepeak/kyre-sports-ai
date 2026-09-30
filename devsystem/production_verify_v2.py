@@ -22,6 +22,7 @@ except ModuleNotFoundError:  # direct `python devsystem/production_verify_v2.py`
     import production_verify_v1 as frozen
 
 FROZEN_VERIFIER = "devsystem.production_verify_v1"
+CFB_ROUTE_HEARTBEAT = "CFB_OVER_UNDER_V39_PRODUCTION_ACTIVE"
 CFB_REQUIRED_MARKERS = (
     "CFB O/U • CLEAN PAGE V39 ACTIVE",
     "COMPACT EVIDENCE RENDERER",
@@ -80,7 +81,7 @@ def _browser_verify_v39(
 
             # Fail fast on route identity before waiting for route-specific
             # lower-card content on the shared Streamlit host.
-            route_identity = CFB_REQUIRED_MARKERS[0]
+            route_identity = CFB_ROUTE_HEARTBEAT
             if route_identity not in initial_body:
                 raise frozen.ProductionVerificationFailure(
                     "ROUTE_TARGET_MISMATCH: expected "

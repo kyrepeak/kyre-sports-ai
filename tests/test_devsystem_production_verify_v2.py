@@ -18,6 +18,7 @@ def test_v2_uses_full_certified_cfb_v39_marker_contract():
     module = _load_module()
 
     assert module.FROZEN_VERIFIER == "devsystem.production_verify_v1"
+    assert module.CFB_ROUTE_HEARTBEAT == "CFB_OVER_UNDER_V39_PRODUCTION_ACTIVE"
     assert module.CFB_REQUIRED_MARKERS == (
         "CFB O/U • CLEAN PAGE V39 ACTIVE",
         "COMPACT EVIDENCE RENDERER",
@@ -45,6 +46,7 @@ def test_v2_production_browser_uses_exact_fast_route_and_waits_for_full_v39():
     assert "certified_browser._find_app_frame" in source
     assert "certified_browser.CFB_MARKET_LABEL" in source
     assert "ROUTE_TARGET_MISMATCH" in source
+    assert "route_identity = CFB_ROUTE_HEARTBEAT" in source
     assert "certified_browser._wait_for_either_text(" in source
     assert "certified_browser.CFB_NO_GAMES_MARKER" in source
     assert "CFB_REQUIRED_MARKERS[-1]" in source

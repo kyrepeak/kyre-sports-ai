@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "task_id": "monster-phase2-step2-v39-route-heartbeat-repair-v1",
+  "title": "Monster Phase 2 Step 2 — V39 route heartbeat verifier repair",
+  "project": "Monster Final Form Phase 2",
+  "step": "Execution Step 2 — Integration / CI verification",
+  "status": "DONE",
+  "failure_class": "D_VERIFIER_ROUTE_IDENTITY_RACE",
+  "evidence": {
+    "failed_run": 36655735197,
+    "failed_job": 109699567586,
+    "verifier_tests": "40/40 passed",
+    "render_identity_green": true,
+    "production_host": "https://pickvault.streamlit.app",
+    "observed_route_heartbeat": "CFB_OVER_UNDER_V39_PRODUCTION_ACTIVE",
+    "stale_early_identity_requirement": "CFB O/U • CLEAN PAGE V39 ACTIVE",
+    "route_loaded": "College Football -> Over/Under"
+  },
+  "root_cause": "The production verifier performed its fail-fast route identity check immediately after the V154 router heartbeat rendered, but before the V39 page caption and lower presentation content completed the Streamlit delta stream. The live route was correct, yet the early check required a page-level presentation marker instead of the frozen router production heartbeat.",
+  "patch": "Use the frozen V154 CFB_OVER_UNDER_V39_PRODUCTION_ACTIVE heartbeat only for the early route-identity check. Preserve the complete CFB_REQUIRED_MARKERS tuple and all later V39 presentation, safety, no-games, browser, Render, and projection checks unchanged.",
+  "protected": {
+    "projection_weight": 0.0,
+    "model_math_unchanged": true,
+    "monte_carlo_unchanged": true,
+    "sportsbook_logic_unchanged": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "page_unchanged": true,
+    "render_config_changed": false,
+    "browser_acceptance_weakened": false,
+    "full_v39_presentation_markers_preserved": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
