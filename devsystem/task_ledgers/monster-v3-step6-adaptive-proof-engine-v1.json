@@ -19,14 +19,14 @@
     "providers_unchanged": true
   },
   "acceptance": {
-    "css_targeted_browser": false,
-    "router_fresh_session": false,
-    "provider_provenance": false,
-    "release_full_certification": false,
-    "mixed_union_no_duplicates": false,
-    "stale_head_blocked": false,
-    "unknown_fail_safe": false,
-    "permanent_contract_updated": false
+    "css_targeted_browser": true,
+    "router_fresh_session": true,
+    "provider_provenance": true,
+    "release_full_certification": true,
+    "mixed_union_no_duplicates": true,
+    "stale_head_blocked": true,
+    "unknown_fail_safe": true,
+    "permanent_contract_updated": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -35,6 +35,7 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "RED_CONTRACT_INSTALLED",
-  "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Step-6 technical acceptance is tracked independently until exact-head and merged-main proof complete."
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Step-6 technical acceptance is tracked independently until exact-head and merged-main proof complete.",
+  "proof_policy": "Exact PR-head and merged-main proof identity is owned by live GitHub evidence and the Step-3 Truth Ledger."
 }
