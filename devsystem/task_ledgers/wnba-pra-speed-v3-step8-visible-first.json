@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "task": "wnba-pra-speed-v3-step8-visible-first",
+  "task_id": "wnba-pra-speed-v3-step8-visible-first",
+  "id": "wnba-pra-speed-v3-step8-visible-first",
+  "title": "WNBA PRA Speed V3 Step 8 — Visible PRA content first",
+  "project": "WNBA PRA Speed V3",
+  "step": 8,
+  "total_steps": 9,
+  "status": "PENDING_PROOF",
+  "phase": "BRANCH_IMPLEMENTATION",
+  "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
+  "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
+  "speed_targets": {
+    "visible_shell_seconds_max": 0.75,
+    "warm_same_session_seconds_max": 0.75,
+    "cached_cold_seconds_max": 1.5,
+    "true_cold_seconds_max": 2.5
+  },
+  "contract": {
+    "source": "already-selected Game Center snapshot",
+    "shell_before_loader": true,
+    "shell_temporary": true,
+    "final_renderer_unchanged": true,
+    "new_network_calls": 0,
+    "new_model_calculations": 0,
+    "new_sportsbook_fetches": 0,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "protected": {
+    "speed_v3_steps_1_7": true,
+    "step7_registry_checkpoint": "WNBA_PRA_SPEED_V3_STEP7",
+    "step7_registry_revision": 7,
+    "step7_source_main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
+    "frozen_step7_blobs": {
+      "wnba_pra_speed_v3_step7_precompute.py": "8416b49b9fdf5b75656ea03248a0d6edf17a68a5",
+      "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py": "013aedd14a669c57aa09368ba7ecd9d5ef699f7f",
+      "devsystem/wnba_pra_speed_v3_step7_public_profile.py": "ff1b597be14b1a370b6da2b0528065041061367e",
+      "tests/test_wnba_pra_speed_v3_step7.py": "451a7a6833dd0e7223c56144f26c03aa9c02a1f6",
+      ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml": "56ff291abf9d92a18e2978ae4213381efbcd78fb",
+      "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json": "d954bb7f1e81c8eb52b8f0697bdc7b6ec85b0309"
+    }
+  },
+  "freeze_exit": {
+    "focused_branch_contract_required": true,
+    "devsystem_final_gate_required": true,
+    "exact_head_terminal_receipt_required": true,
+    "merged_main_public_profile_required": true,
+    "merged_main_terminal_receipt_required": true,
+    "regression_debt_zero_required": true,
+    "frozen_registry_required": true,
+    "required_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_SHELL_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_SHELL_BEFORE_LOADER_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_FINAL_PLAYER_READY_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEPS1_7_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_FROZEN"
+    ]
+  },
+  "regression_debt": {
+    "open_debt_count": 0,
+    "state": "NONE"
+  },
+  "two_a": {
+    "distributed_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step8",
+    "lease_generation": 11,
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "protect_frozen_steps_1_7": true,
+    "next_legal_action": "ONE_EXACT_HEAD_BRANCH_PROOF"
+  }
+}
