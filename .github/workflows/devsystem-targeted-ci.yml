@@ -203,6 +203,16 @@ jobs:
           python -m py_compile cfb_top_picks_details_v2.py
           python -m py_compile cfb_top_picks_page_v6.py
           python -m py_compile streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6.py
+      - name: Validate CFB Top Picks Research V2 Step 7 benefits-risks contract
+        run: python devsystem/cfb_top_picks_research_v2_step7_benefits_risks_v1.py
+      - name: Certify CFB Top Picks Research V2 Step 7 verified benefits-risks
+        run: python -m devsystem.cfb_top_picks_research_v2_step7_benefits_risks_cert_v1
+      - name: Compile CFB Top Picks Research V2 Step 7 owners
+        run: |
+          python -m py_compile cfb_top_picks_benefits_risks_v1.py
+          python -m py_compile cfb_top_picks_details_v3.py
+          python -m py_compile cfb_top_picks_page_v7.py
+          python -m py_compile streamlit_memory_lazy_router_cfb_top_picks_research_v2_step7.py
       - name: Validate Monster Anti-Loop V2 hard gate
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -429,7 +439,8 @@ jobs:
             tests/test_nfl_passing_yards_entry_slate_reset_v182.py \
             tests/test_nfl_passing_yards_keyerror_safe_entry_v183.py \
             tests/test_nfl_passing_yards_stuck_slate_v184.py \
-            tests/test_nfl_all_markets_no_rerun_v185.py
+            tests/test_nfl_all_markets_no_rerun_v185.py \
+            tests/test_cfb_top_picks_research_v2_step7_benefits_risks_v1.py
 
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
