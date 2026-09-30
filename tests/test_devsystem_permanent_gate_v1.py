@@ -477,6 +477,7 @@ def test_regression_debt_zero_gate_is_permanently_enforced():
 
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/regression_debt_zero_gate_v1.py" in workflow
+    assert "MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN" in workflow
     assert "tests/test_devsystem_regression_debt_zero_gate_v1.py" in workflow
 
 

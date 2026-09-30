@@ -29,7 +29,8 @@
     "tamper_evident_debt": true,
     "mixed_batch_open_debt_blocks": true,
     "zero_debt_passes": true,
-    "permanent_ci_enforcement": true
+    "permanent_ci_enforcement": true,
+    "discovered_step6_failure_left_permanent_regression_guard": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -38,6 +39,28 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
-  "proof_policy": "Freeze only after the exact PR head passes the regression-debt-zero self-test through permanent-contract and devsystem-final-gate, the exact head merges, merged-main proof confirms the same gate, and Step 6 artifacts are content-addressed in the frozen registry."
+  "phase": "REGRESSION_DEBT_CLEARED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after the exact PR head passes the regression-debt-zero self-test through permanent-contract and devsystem-final-gate, the exact head merges, merged-main proof confirms the same gate, and Step 6 artifacts are content-addressed in the frozen registry.",
+  "regression_debt_closeout": {
+    "failure_id": "MONSTER_V4_STEP6_PERMANENT_MARKER_36778252550",
+    "owner": "VERIFIER",
+    "source_run": 36778252550,
+    "source_job": "permanent-contract",
+    "root_cause": "The Step-6 workflow invoked regression_debt_zero_gate_v1.py but omitted the literal MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN marker required by the permanent DevSystem contract.",
+    "repair_sha": "1a22f50c5244f7087a8ec74ef77040750b049550",
+    "state": "CLEARED",
+    "permanent_regression_guards": [
+      {
+        "kind": "CONTRACT",
+        "path": "devsystem/permanent_gate_v1.py",
+        "permanent": true
+      },
+      {
+        "kind": "TEST",
+        "path": "tests/test_devsystem_permanent_gate_v1.py",
+        "permanent": true
+      }
+    ],
+    "proof_rule": "The permanent contract and its dedicated test both fail if the Step-6 GREEN workflow marker disappears again."
+  }
 }
