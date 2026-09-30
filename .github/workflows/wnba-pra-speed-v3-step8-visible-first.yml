@@ -73,10 +73,19 @@ jobs:
           tests/test_wnba_pra_speed_v3_step8.py
           wnba_pra_speed_v3_step8_visible_first.py
           EOF
+          cat > /tmp/expected-client-preview-repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step8-visible-first.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json
+          devsystem/wnba_pra_speed_v3_step8_public_profile.py
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py
+          tests/test_wnba_pra_speed_v3_step8.py
+          wnba_pra_speed_v3_step8_visible_first.py
+          EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
           sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
           sort -o /tmp/expected-product-repair.txt /tmp/expected-product-repair.txt
           sort -o /tmp/expected-shell-lifetime-repair.txt /tmp/expected-shell-lifetime-repair.txt
+          sort -o /tmp/expected-client-preview-repair.txt /tmp/expected-client-preview-repair.txt
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP8_INITIAL_SCOPE_GREEN"
           elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
@@ -86,12 +95,15 @@ jobs:
             echo "WNBA_PRA_SPEED_V3_STEP8_PRODUCT_REPAIR_SCOPE_GREEN"
           elif diff -q /tmp/expected-shell-lifetime-repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/expected-client-preview-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_REPAIR_SCOPE_GREEN"
           else
             echo "Step-8 scope mismatch"
             diff -u /tmp/expected.txt /tmp/actual.txt || true
             diff -u /tmp/expected-verifier-repair.txt /tmp/actual.txt || true
             diff -u /tmp/expected-product-repair.txt /tmp/actual.txt || true
             diff -u /tmp/expected-shell-lifetime-repair.txt /tmp/actual.txt || true
+            diff -u /tmp/expected-client-preview-repair.txt /tmp/actual.txt || true
             exit 1
           fi
       - name: Run Step-8 focused contract
