@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step5-consumer-reuse",
   "title": "WNBA PRA Speed V3 Step 5 — Cross-player consumer snapshot reuse",
   "project": "WNBA PRA Speed V3",
-  "phase": "PLAYER_ROUTER_RECURSION_REPAIR_PENDING_PROOF",
+  "phase": "PROOF_MARKER_SYNC_REPAIR_PENDING_PROOF",
   "step": 5,
   "total_steps": 9,
   "status": "DONE",
@@ -140,7 +140,7 @@
     "frozen_speed_v3_steps_1_4_changed": false
   },
   "player_router_recursion_repair": {
-    "status": "PATCHED_PENDING_BRANCH_PROOF",
+    "status": "GREEN_PRODUCT_PATH_PROOF_SYNC_FOUND",
     "failed_public_run": 36689172193,
     "failed_public_job": 109802203603,
     "evidence": [
@@ -165,6 +165,37 @@
     "sportsbook_logic_changed": false,
     "frozen_speed_v3_steps_1_4_changed": false,
     "non_pra_routes_changed": false,
-    "two_a": "One router repair, one branch proof, then one merged-main public proof. No duplicate repair branch or recursion-limit workaround."
+    "two_a": "One router repair, one branch proof, then one merged-main public proof. No duplicate repair branch or recursion-limit workaround.",
+    "post_merge_proof": {
+      "run": 36739528337,
+      "job": 109970186001,
+      "recursion_error": false,
+      "player_page_visible": true,
+      "final_surfaces_ready": true,
+      "zero_overflow": true
+    }
+  },
+  "proof_marker_sync_repair": {
+    "status": "PATCHED_PENDING_ONE_FRESH_PROOF",
+    "failed_public_run": 36739528337,
+    "failed_public_job": 109970186001,
+    "failure_class": "PUBLIC_PROOF_MARKER_RACE",
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYMENT_WAIT_SECONDS=12.778",
+      "WNBA_NAV_STEP7_PLAYER_VISIBLE_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PLAYER_FINAL_SURFACES_READY_GREEN",
+      "WNBA_NAV_STEP7_PLAYER_ZERO_OVERFLOW_GREEN",
+      "Render logged Player A GET /pra-detail-cached for player 4398674",
+      "Render logged Player B GET /pra-history-fast for player 3058901",
+      "Verifier failed ~0.37s after Player B fast-history request because it read consumer_hit=false/history_hit=false before the hidden marker updated"
+    ],
+    "root_cause": "The product executed the correct cross-player path, but the browser proof judged the Step-5 hidden marker immediately after Player surfaces became visible. Streamlit had not yet replaced the previous render's marker attributes.",
+    "patch": "Wait for the exact expected Step-5 marker attributes for cross-player and warm renders before reading/asserting marker values. Keep user-visible page latency timers unchanged.",
+    "product_runtime_changed": false,
+    "speed_v3_steps_1_4_changed": false,
+    "render_api_redeploy_required": false,
+    "step5_data_contract_changed": false,
+    "two_a": "Verifier-only repair. One exact-head branch proof, one merge, one merged-main public freeze proof."
   }
 }
