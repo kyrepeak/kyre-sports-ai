@@ -138,6 +138,10 @@ def validate() -> dict:
         "python devsystem/failure_ownership_engine_v1.py",
         "python devsystem/deployment_truth_control_plane_v1.py",
         "python devsystem/adaptive_proof_engine_v1.py",
+        "proof_targeted_browser: ${{ steps.adaptive.outputs.proof_targeted_browser }}",
+        "Run adaptive CSS static contract",
+        "Run adaptive route contract",
+        "Run adaptive provider field/provenance proof",
         "fetch-depth: 0",
     )
     workflow_missing = [m for m in required_workflow_markers if m not in workflow]
@@ -305,6 +309,16 @@ def validate() -> dict:
         raise PermanentGateFailure("production verification V5 must remain manually dispatchable")
     if "\n  push:" not in prod_v5 or "branches: [main]" not in prod_v5:
         raise PermanentGateFailure("production verification V5 must remain the automatic main verifier")
+    if "\n    paths:" in prod_v5:
+        raise PermanentGateFailure("production verification V5 must let Adaptive Proof inspect every main push")
+    adaptive_prod_markers = (
+        "adaptive-production-plan:",
+        "python devsystem/adaptive_proof_engine_v1.py",
+        "proof_production_certification",
+    )
+    adaptive_prod_missing = [marker for marker in adaptive_prod_markers if marker not in prod_v5]
+    if adaptive_prod_missing:
+        raise PermanentGateFailure("adaptive production proof integration drift: " + " | ".join(adaptive_prod_missing))
 
     api_observability = (ROOT / ".github/workflows/devsystem-api-observability-v1.yml").read_text(encoding="utf-8")
     api_required_markers = (

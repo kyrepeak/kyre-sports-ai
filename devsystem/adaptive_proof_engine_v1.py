@@ -9,8 +9,11 @@ state.
 """
 from __future__ import annotations
 
+import argparse
 import json
+from pathlib import Path
 import re
+import subprocess
 from typing import Any, Iterable
 
 VERSION = "MONSTER_ADAPTIVE_PROOF_ENGINE_V1"
@@ -70,6 +73,24 @@ def classify_change_type(path: str) -> str:
     if not value:
         return "UNKNOWN"
 
+    if value in {"render.yaml", "render.yml", "procfile"}:
+        return "RELEASE_DEPLOYMENT"
+
+    if value.startswith(".github/workflows/") and any(
+        token in value
+        for token in (
+            "deploy",
+            "production",
+            "release",
+            "public-freeze",
+            "public_freeze",
+        )
+    ):
+        return "RELEASE_DEPLOYMENT"
+
+    if value.startswith(("devsystem/production_", "devsystem/deployment_")):
+        return "RELEASE_DEPLOYMENT"
+
     if (
         value.endswith(".css")
         or value.startswith(".streamlit/")
@@ -105,24 +126,6 @@ def classify_change_type(path: str) -> str:
         )
     ):
         return "PROVIDER_DATA"
-
-    if value in {"render.yaml", "render.yml", "procfile"}:
-        return "RELEASE_DEPLOYMENT"
-
-    if value.startswith(".github/workflows/") and any(
-        token in value
-        for token in (
-            "deploy",
-            "production",
-            "release",
-            "public-freeze",
-            "public_freeze",
-        )
-    ):
-        return "RELEASE_DEPLOYMENT"
-
-    if value.startswith(("devsystem/production_", "devsystem/deployment_")):
-        return "RELEASE_DEPLOYMENT"
 
     return "UNKNOWN"
 
@@ -199,6 +202,56 @@ def plan_proof(
             "product_runtime_mutation": MAY_MODIFY_PRODUCT_RUNTIME,
         },
     }
+
+
+def _git_changed_paths(base: str, head: str) -> list[str]:
+    result = subprocess.run(
+        ["git", "diff", "--name-only", base, head],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise AdaptiveProofFailure(
+            f"git diff failed base={base} head={head}: {result.stderr.strip()}"
+        )
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+def _git_head_sha() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    value = result.stdout.strip().lower()
+    if result.returncode != 0 or not _valid_sha(value):
+        raise AdaptiveProofFailure("unable to resolve exact checked-out HEAD")
+    return value
+
+
+def _write_github_output(path: str | Path, plan: dict[str, Any]) -> None:
+    proofs = set(plan.get("proofs") or ())
+    values = {
+        "proof_state": str(plan.get("state") or ""),
+        "proof_static_contract": "true" if "STATIC_CONTRACT" in proofs else "false",
+        "proof_targeted_browser": "true" if "TARGETED_BROWSER" in proofs else "false",
+        "proof_field_contract": "true" if "FIELD_CONTRACT" in proofs else "false",
+        "proof_provenance": "true" if "PROVENANCE_PROOF" in proofs else "false",
+        "proof_route_contract": "true" if "ROUTE_CONTRACT" in proofs else "false",
+        "proof_fresh_session_navigation": "true" if "FRESH_SESSION_NAVIGATION" in proofs else "false",
+        "proof_full_merged_main": "true" if "FULL_MERGED_MAIN" in proofs else "false",
+        "proof_production_certification": "true" if "PRODUCTION_CERTIFICATION" in proofs else "false",
+        "full_release_required": "true" if plan.get("full_release_required") else "false",
+        "proof_certifiable": "true" if plan.get("certifiable") else "false",
+        "proof_change_types": ",".join(plan.get("change_types") or ()),
+        "proof_obligations": ",".join(plan.get("proofs") or ()),
+    }
+    output = Path(path)
+    with output.open("a", encoding="utf-8") as fh:
+        for key, value in values.items():
+            fh.write(f"{key}={value}\n")
 
 
 def contract_self_test() -> dict[str, Any]:
@@ -304,10 +357,67 @@ def contract_self_test() -> dict[str, Any]:
     return result
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base")
+    parser.add_argument("--head")
+    parser.add_argument("--paths-file")
+    parser.add_argument("--expected-head")
+    parser.add_argument("--observed-head")
+    parser.add_argument("--github-output")
+    parser.add_argument("--manual", action="store_true")
+    return parser.parse_args()
+
+
 def main() -> int:
-    print("MONSTER_ADAPTIVE_PROOF_ENGINE_V1_GREEN")
-    print(json.dumps(contract_self_test(), indent=2, sort_keys=True))
-    return 0
+    args = _parse_args()
+    has_cli_plan = any(
+        (
+            args.base,
+            args.head,
+            args.paths_file,
+            args.expected_head,
+            args.observed_head,
+            args.github_output,
+            args.manual,
+        )
+    )
+
+    if not has_cli_plan:
+        print("MONSTER_ADAPTIVE_PROOF_ENGINE_V1_GREEN")
+        print(json.dumps(contract_self_test(), indent=2, sort_keys=True))
+        return 0
+
+    if args.manual:
+        observed = _git_head_sha()
+        plan = plan_proof(
+            ["manual/full-release"],
+            expected_head_sha=observed,
+            observed_head_sha=observed,
+        )
+    elif args.paths_file:
+        paths = Path(args.paths_file).read_text(encoding="utf-8").splitlines()
+        plan = plan_proof(
+            paths,
+            expected_head_sha=str(args.expected_head or ""),
+            observed_head_sha=str(args.observed_head or ""),
+        )
+    else:
+        if not args.base or not args.head:
+            raise SystemExit("--base and --head are required unless --manual/--paths-file is used")
+        observed = _git_head_sha()
+        plan = plan_proof(
+            _git_changed_paths(args.base, args.head),
+            expected_head_sha=args.head,
+            observed_head_sha=observed,
+        )
+
+    if args.github_output:
+        _write_github_output(args.github_output, plan)
+
+    print("MONSTER_ADAPTIVE_PROOF_PLAN")
+    print(json.dumps(plan, indent=2, sort_keys=True))
+    return 1 if plan.get("state") == "STALE_HEAD" else 0
 
 
 if __name__ == "__main__":

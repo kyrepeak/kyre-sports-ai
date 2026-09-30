@@ -3,40 +3,15 @@ name: DevSystem production verification V5
 on:
   push:
     branches: [main]
-    paths:
-      # Streamlit production entry + currently active shared runtime owners.
-      - "app.py"
-      - "streamlit_memory_lazy_router_v240.py"
-      - "kyre_universal_shell_runtime_v1.py"
-      - "sports_api/monster_performance_profiler_v1.py"
-      - "sports_api/observability_v1.py"
-      - "sports_api/posthog_error_radar_v1.py"
-
-      # CFB surfaces actually certified by V5.
-      - "cfb_*.py"
-      - "sports_api/api/cfb_*.py"
-      - "sports_api/api/cfb*.py"
-      - "sports_api/collectors/cfb_*.py"
-      - "data/cfb_*.json"
-      - "requirements*.txt"
-      - "requirements.lock"
-      - "devsystem/browser_requirements.lock"
-
-      # Verifier ownership / contract changes must still self-trigger.
-      - "devsystem/production_verify_v1.py"
-      - "devsystem/production_verify_v2.py"
-      - "devsystem/production_verify_v3.py"
-      - "devsystem/production_verify_v4.py"
-      - "devsystem/production_verify_v5.py"
-      - "devsystem/production_identity_verify_v1.py"
-      - "devsystem/production_targets_v1.json"
-      - "tests/test_devsystem_production_verify_v1.py"
-      - "tests/test_devsystem_production_verify_v2.py"
-      - "tests/test_devsystem_production_verify_v3.py"
-      - "tests/test_devsystem_production_verify_v4.py"
-      - "tests/test_devsystem_production_verify_v5.py"
-      - ".github/workflows/devsystem-production-verification-v5.yml"
   workflow_dispatch:
+
+# MONSTER V3 Step 6 adaptive release/deployment surfaces:
+# "render.yaml"
+# ".github/workflows/*deploy*.yml"
+# ".github/workflows/*production*.yml"
+# ".github/workflows/*release*.yml"
+# "devsystem/deployment_*.py"
+# "devsystem/production_*.py"
 
 # Step 2 dependency-intent contract remains frozen: devsystem/root_requirements_fingerprint_v1.txt
 permissions:
@@ -47,7 +22,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  adaptive-production-plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      proof_production_certification: ${{ steps.adaptive.outputs.proof_production_certification }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: adaptive
+        name: Decide whether production certification is required
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            python devsystem/adaptive_proof_engine_v1.py \
+              --manual \
+              --github-output "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base="$PUSH_BEFORE"
+          head="$CURRENT_SHA"
+          if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
+            base="$(git rev-parse HEAD^ 2>/dev/null || git rev-parse HEAD)"
+          fi
+          python devsystem/adaptive_proof_engine_v1.py \
+            --base "$base" \
+            --head "$head" \
+            --github-output "$GITHUB_OUTPUT"
+
   production-verification-v5:
+    needs: [adaptive-production-plan]
+    if: needs.adaptive-production-plan.outputs.proof_production_certification == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
