@@ -13,12 +13,28 @@ from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 import requests
+from requests.adapters import HTTPAdapter
 
 BASE_URL = "https://kyre-sports-api.onrender.com"
 EXPECTED_API_NAME = "Kyre Sports API"
 SUPPORTED_SEASON = 2026
 DEFAULT_TIMEOUT_SECONDS = 30.0
 DEFAULT_ATTEMPTS = 3
+HTTP_POOL_CONNECTIONS = 8
+HTTP_POOL_MAXSIZE = 16
+
+# Process-lifetime read-only HTTPS transport. The adapter owns urllib3's
+# thread-safe connection pool; no auth/cookie/session mutation is performed.
+_HTTP_SESSION = requests.Session()
+_HTTP_SESSION.mount(
+    "https://",
+    HTTPAdapter(
+        pool_connections=HTTP_POOL_CONNECTIONS,
+        pool_maxsize=HTTP_POOL_MAXSIZE,
+        max_retries=0,
+        pool_block=False,
+    ),
+)
 
 
 class KyreWNBAAPIError(RuntimeError):
@@ -75,7 +91,7 @@ class KyreWNBAAPIClient:
         last_error: Exception | None = None
         for attempt in range(1, int(self.attempts) + 1):
             try:
-                response = requests.get(
+                response = _HTTP_SESSION.get(
                     self.base_url + safe_path,
                     params=dict(params or {}),
                     headers={
@@ -172,6 +188,8 @@ __all__ = [
     "BASE_URL",
     "EXPECTED_API_NAME",
     "SUPPORTED_SEASON",
+    "HTTP_POOL_CONNECTIONS",
+    "HTTP_POOL_MAXSIZE",
     "KyreWNBAAPIError",
     "KyreWNBAAPIClient",
 ]
