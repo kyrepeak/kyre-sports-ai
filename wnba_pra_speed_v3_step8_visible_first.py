@@ -240,7 +240,7 @@ def load_player_intelligence_visible_first(
 def _render_deployment_marker(state: navigation.NavigationState) -> None:
     st.markdown(
         '<style>'
-        'body:has([data-wnba-pra-speed-v3-step8-result="true"][data-page="player"]) '
+        'body:has([data-wnba-pra-speed-v3-step8-result="true"]) '
         '[data-wnba-pra-speed-v3-step8-shell="visible"][data-shell-kind="server"]'
         '{display:none!important;}'
         '[data-wnba-pra-speed-v3-step8-client-preview="true"]'
