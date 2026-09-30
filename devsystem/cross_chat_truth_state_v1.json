@@ -4,24 +4,24 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 26,
+  "truth_epoch": 27,
   "program_id": "WNBA_PRA_SPEED_V3",
   "program_title": "WNBA PRA Speed V3",
   "current_step": 7,
   "total_steps": 9,
   "step_title": "Active-player bundle precompute",
   "step_status": "ACTIVE",
-  "active_checkpoint": "STEP7_FULL_REDEPLOY_BRANCH_PROOF",
-  "main_sha": "5abef0cc9d92332017ad4debdf86a0ecf162c9ee",
+  "active_checkpoint": "STEP7_FULL_REDEPLOY_MERGED_MAIN_PROOF",
+  "main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
   "active_pr": 1267,
-  "active_run": 36783606214,
-  "active_head_sha": "5fb522e9b76a0b2b8b157524a765457dc69bee5d",
-  "blocker": "FULL_REDEPLOY_BRANCH_PROOF_PENDING",
-  "next_legal_action": "WAIT_AUTHORITATIVE_BRANCH_PROOFS_TERMINAL",
+  "active_run": 36783794063,
+  "active_head_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
+  "blocker": "FULL_REDEPLOY_PRODUCTION_PROOF_RUNNING",
+  "next_legal_action": "WAIT_MERGED_MAIN_PROOFS_TERMINAL",
   "lease": {
-    "revision": 37,
+    "revision": 38,
     "generation": 10,
-    "state_hash": "2347b7713bb14e3f3db44935ca2dee8c6efb56c066ec239b5e5150aa05245762",
+    "state_hash": "744da35a98a6ef7a868850281edeab722593d95dbeaa018175e28229f6b746c8",
     "holder_owner_id": "chatgpt:api2:wnba-pra-speed-v3-step7",
     "holder_lease_id": "LEASE-F0755AB0A0EDE66782A316A7"
   },
@@ -53,5 +53,5 @@
     "MONSTER_V4_STEP5",
     "MONSTER_V4_STEP6"
   ],
-  "state_hash": "ac5de1366e84955414edad811951f1e391c19dd97f58a366ceb7242e3d2a00aa"
+  "state_hash": "877ee998eae7718e9a649486f2b391428796ddf605d4f4809845825c9b66b4cd"
 }
