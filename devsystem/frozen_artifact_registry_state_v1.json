@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 0,
+  "revision": 1,
   "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -166,8 +166,18 @@
         "tests/test_devsystem_semantic_action_normalizer_v1.py": "88957f99432783d517884e7f9b291156cfdb2878",
         "devsystem/task_ledgers/monster-v4-step2-semantic-action-normalizer-v1.json": "c15e15a648745ccf676e9314867a46608c689a42"
       }
+    },
+    "MONSTER_V4_STEP3": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V4_STEP3",
+      "source_main_sha": "2015c1064f586d9e2f4d9069ea8b41c3a5950a54",
+      "artifacts": {
+        "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+        "tests/test_devsystem_frozen_artifact_registry_v1.py": "6bf01ac80202abaad8be7ee427ec561eecb6e22d",
+        "devsystem/task_ledgers/monster-v4-step3-frozen-artifact-registry-v1.json": "f04f86cb6e8d46f8e8544d839af09fc89cf6548c"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "4ad4a356088689f27c4097d0b6a37e92c6db1d6306fb2407103ca4b20aa9bcaf"
+  "state_hash": "3d1b8bde29e1dd642fb41a7d6ca5da1f6beab37e6f1630249fb9d0489a60e985"
 }
