@@ -11,13 +11,13 @@
   "total_steps": 9,
   "step_title": "Visible PRA content first",
   "step_status": "ACTIVE",
-  "active_checkpoint": "STEP8_FRAME_RESILIENT_VERIFIER_CERTIFIED",
+  "active_checkpoint": "STEP8_FRAME_RESILIENT_EXACT_HEAD_CERTIFIED",
   "main_sha": "46a2569fd5d884ebde694977cc45f4bde15ed2ac",
   "active_pr": 1274,
-  "active_run": 36790767680,
+  "active_run": 36790767824,
   "active_head_sha": "8b9469cab334cd9e6623c80e7e55e9205fa3f9ca",
   "blocker": null,
-  "next_legal_action": "MERGE_EXACT_CERTIFIED_HEAD",
+  "next_legal_action": "MERGE_CERTIFIED_EXACT_HEAD",
   "lease": {
     "revision": 54,
     "generation": 11,
@@ -54,5 +54,5 @@
     "MONSTER_V4_STEP6",
     "WNBA_PRA_SPEED_V3_STEP7"
   ],
-  "state_hash": "c11b82c3286f1b22b997063bfd14604031668003f8dff1c2e9ef715b31eec0cf"
+  "state_hash": "00a8b41fb2f5760be275d1f97473161ce1a796be286c35e6306cb68ddf512d44"
 }
