@@ -146,6 +146,7 @@ def _render_marker(state: navigation.NavigationState) -> None:
     st.markdown(
         '<span data-wnba-pra-speed-v3-step4="server-bundle-cache" '
         f'data-page="{escape(state.page, quote=True)}" '
+        f'data-player-id="{int(perf.get("player_id") or 0)}" '
         f'data-cache-used="{str(bool(perf.get("cached_bundle_used"))).lower()}" '
         f'data-server-cache-hit="{str(bool(perf.get("server_cache_hit"))).lower()}" '
         f'data-streamlit-network-reads="{int(perf.get("streamlit_network_reads") or 0)}" '
