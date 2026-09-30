@@ -67,5 +67,18 @@
     "steps1_5_changed": false,
     "api2_changed": false,
     "rerun_of_failed_sha": false
+  },
+  "post_green_quality_repair": {
+    "evidence_run": 36671440640,
+    "evidence_state": "PR_GREEN",
+    "defect": "Market reasoning summary joined all verified signal text and then applied [:3] to the final string, truncating the visible summary to three characters.",
+    "root_cause": "Slice was applied after string join instead of to the reasoning-signal list.",
+    "patch": "Build summary_parts first, take summary_parts[:3], then join. Add a deterministic minimum-length certification so this cannot silently regress.",
+    "probability_changed": false,
+    "ranking_changed": false,
+    "selection_changed": false,
+    "projection_weight_changed": false,
+    "steps1_5_changed": false,
+    "api2_changed": false
   }
 }
