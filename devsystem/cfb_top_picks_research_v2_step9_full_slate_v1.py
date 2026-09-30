@@ -48,6 +48,8 @@ def check_repository() -> dict[str, object]:
         failures.append("Step-9 page must wrap frozen Step 8")
     if "_AUDIT_BLOCK" not in page or "raw audit markup leak detected" not in page:
         failures.append("Step-9 page does not permanently remove obsolete raw audit footer")
+    if 'FAIR_PRICE_NO_SPORTSBOOK = "Unavailable — fair model price"' not in cert:
+        failures.append("Step-9 cert must explain missing sportsbook for verified fair-price cards without inventing a provider")
     if 'TOP_PICKS_PAGE = "cfb_top_picks_page_v9"' not in router:
         failures.append("Step-9 route is not active")
     if "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 as current_parent" not in router:

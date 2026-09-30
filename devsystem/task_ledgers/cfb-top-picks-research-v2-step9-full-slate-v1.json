@@ -98,5 +98,21 @@
       "api2_changed": false
     },
     "base_sync_main": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc"
+  },
+  "sportsbook_truth_repair": {
+    "failed_merge_sha": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc",
+    "failed_run": 36684014437,
+    "failed_job": 109785797910,
+    "failure_class": "B_LIVE_COMPLETENESS_TRUTH_GAP",
+    "exact_failure": "STEP9_CARD_MISSING:rank=6:sportsbook",
+    "root_cause": "The frozen Moneyline engine permits a verified model fair-price fallback when no sportsbook price is available. The final card cert treated that honest fair-price state as an unexplained blank sportsbook.",
+    "patch": "Certify the sportsbook field as 'Unavailable — fair model price' only when odds begin with Fair and the frozen source explicitly says fair price. Never invent or infer a sportsbook provider.",
+    "ranking_changed": false,
+    "probability_changed": false,
+    "selection_changed": false,
+    "engine_changed": false,
+    "steps1_8_changed": false,
+    "api2_changed": false,
+    "base_sync_main": "7f2e41ea9042472659c493ff6b3e07b6db6847e5"
   }
 }
