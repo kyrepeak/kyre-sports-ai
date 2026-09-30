@@ -73,6 +73,7 @@ jobs:
             echo "WNBA_PRA_SPEED_V3_STEP8_INITIAL_SCOPE_GREEN"
           elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP8_VERIFIER_REPAIR_SCOPE_GREEN"
+            echo "WNBA_PRA_SPEED_V3_STEP8_FRAME_RESILIENT_VERIFIER_SCOPE_GREEN"
           elif diff -q /tmp/expected-product-repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP8_PRODUCT_REPAIR_SCOPE_GREEN"
           else
