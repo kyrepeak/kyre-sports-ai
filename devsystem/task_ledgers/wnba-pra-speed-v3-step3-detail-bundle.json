@@ -56,7 +56,7 @@
     "green_run": 36662379475,
     "green_job": 109719731420,
     "green_head": "44036e46c2fd3049c41f31ccd95eecb1c31f3057",
-    "green_result": "Step-3 tests, exact scope, frozen Steps 1-2, compile, and one-request contract GREEN"
+    "green_result": "6 passed; exact Step-3 scope GREEN; frozen Navigation V2 + Speed V3 Steps 1-2 GREEN; one-request contract GREEN; branch GREEN"
   },
   "freeze_exit": {
     "branch_contract_required": true,
@@ -93,7 +93,16 @@
     "refreshed_head": "44036e46c2fd3049c41f31ccd95eecb1c31f3057",
     "refreshed_base": "ba4b7da77f7cecd686a8712b8c3e62b262209db9",
     "focused_run": 36662379475,
-    "focused_job": 109719731420
+    "focused_job": 109719731420,
+    "certified_head": "44036e46c2fd3049c41f31ccd95eecb1c31f3057",
+    "certified_run": 36662379475,
+    "certified_job": 109719731420,
+    "tokens": [
+      "WNBA_PRA_SPEED_V3_STEP3_SCOPE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_FROZEN_STEPS1_2_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_ONE_REQUEST_CONTRACT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_BRANCH_GREEN"
+    ]
   },
   "branch_proof": {
     "step3_tests_green": true,
@@ -108,5 +117,12 @@
       "WNBA_PRA_SPEED_V3_STEP3_ONE_REQUEST_CONTRACT_GREEN",
       "WNBA_PRA_SPEED_V3_STEP3_BRANCH_GREEN"
     ]
+  },
+  "closeout": {
+    "implementation_complete": true,
+    "branch_contract_green": true,
+    "protected_surfaces_green": true,
+    "production_freeze_evidence": "emitted only by merged-main public-profile workflow",
+    "product_behavior_change": "cold-pair transport only; no basketball math/model/market/ranking/sportsbook change"
   }
 }
