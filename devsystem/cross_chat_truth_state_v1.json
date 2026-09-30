@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 36,
+  "truth_epoch": 37,
   "program_id": "WNBA_PRA_SPEED_V3",
   "program_title": "WNBA PRA Speed V3",
   "current_step": 8,
@@ -21,7 +21,7 @@
   "lease": {
     "revision": 46,
     "generation": 11,
-    "state_hash": "27388e0c67e0da4b2b18b3e34a953ae689f073b60a67c66b50a13fb86be63587",
+    "state_hash": "1630769a23b73cdc29f1b793ff5b35ab58dbe9afeb4a41e265b0121df02dc83d",
     "holder_owner_id": "chatgpt:api2:wnba-pra-speed-v3-step8",
     "holder_lease_id": "LEASE-WNBA-PRA-SPEED-V3-STEP8-G11"
   },
@@ -54,5 +54,5 @@
     "MONSTER_V4_STEP6",
     "WNBA_PRA_SPEED_V3_STEP7"
   ],
-  "state_hash": "e2e66496c989ce79e53d7cfd8fa3c3cbdfe21ac0ec4af444be3fa6fe30a3dab6"
+  "state_hash": "ea123a48031ac98668871673af9556831526871ccd0682ac988c0deff6a6ca0f"
 }
