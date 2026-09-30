@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "task_id": "monster-2a-step2-single-use-receipts-v1",
+  "title": "MONSTER 2A Enforcement Step 2 — Fail-Closed Single-Use Authorization Receipts",
+  "project": "MONSTER 2A Enforcement",
+  "step": 2,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Require every Step-1 allowed action to carry a tamper-evident execution receipt bound to the exact persistent brain state and exact action fingerprint, and make that receipt consumable exactly once.",
+  "protected": {
+    "step1_mandatory_action_gate": true,
+    "monster_v3_steps_1_8_inherited": true,
+    "step_2a_autonomous_skip_preserved": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "every_allowed_action_gets_receipt": true,
+    "denied_action_gets_no_receipt": true,
+    "receipt_exact_action_bound": true,
+    "receipt_brain_state_bound": true,
+    "receipt_tamper_evident": true,
+    "receipt_single_use": true,
+    "replay_fails_closed": true,
+    "missing_receipt_fails_closed": true,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main full certification + devsystem-final-gate GREEN."
+}

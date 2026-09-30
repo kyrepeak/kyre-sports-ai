@@ -42,6 +42,7 @@ def test_permanent_contract_is_green():
     assert result["persistent_execution_brain_v1_permanent"] is True
     assert result["automatic_loop_kill_v1_permanent"] is True
     assert result["mandatory_2a_action_gate_v1_permanent"] is True
+    assert result["mandatory_2a_receipt_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -100,6 +101,28 @@ def test_mandatory_2a_action_gate_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/mandatory_2a_action_gate_v1.py" in workflow
     assert "tests/test_devsystem_mandatory_2a_action_gate_v1.py" in workflow
+
+
+def test_mandatory_2a_single_use_receipt_is_permanently_enforced():
+    receipt = _load(
+        "mandatory_2a_receipt_v1",
+        "devsystem/mandatory_2a_receipt_v1.py",
+    )
+    result = receipt.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["every_allowed_action_gets_receipt"] is True
+    assert result["single_use_enforced"] is True
+    assert result["exact_action_binding"] is True
+    assert result["brain_state_binding"] is True
+    assert result["tamper_evident"] is True
+    assert result["denied_action_gets_no_receipt"] is True
+    assert result["missing_receipt_fails_closed"] is True
+    assert result["step1_gate_preserved"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/mandatory_2a_receipt_v1.py" in workflow
+    assert "tests/test_devsystem_mandatory_2a_receipt_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
