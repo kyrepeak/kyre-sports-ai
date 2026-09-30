@@ -66,6 +66,8 @@ def test_automatic_loop_kill_is_permanently_enforced():
     assert result["same_state_poll_kill"] is True
     assert result["async_mutation_lock"] is True
     assert result["terminal_transition_unlock"] is True
+    assert result["autonomous_skip_continue"] is True
+    assert result["user_intervention_required_for_loop"] is False
     assert result["product_runtime_mutation"] is False
 
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
