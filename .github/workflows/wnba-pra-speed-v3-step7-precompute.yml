@@ -78,10 +78,17 @@ jobs:
           tests/test_wnba_pra_speed_v3_step7.py
           wnba_pra_speed_v3_step7_precompute.py
           EOF
+          cat > /tmp/expected-deployment-refresh.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step7-precompute.yml
+          app.py
+          devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
+          tests/test_wnba_pra_speed_v3_step7.py
+          EOF
           sort -o /tmp/expected-initial.txt /tmp/expected-initial.txt
           sort -o /tmp/expected-timing-repair.txt /tmp/expected-timing-repair.txt
           sort -o /tmp/expected-reliability-repair.txt /tmp/expected-reliability-repair.txt
           sort -o /tmp/expected-incomplete-bundle-retry.txt /tmp/expected-incomplete-bundle-retry.txt
+          sort -o /tmp/expected-deployment-refresh.txt /tmp/expected-deployment-refresh.txt
           if diff -q /tmp/expected-initial.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP7_INITIAL_SCOPE_GREEN"
           elif diff -q /tmp/expected-timing-repair.txt /tmp/actual.txt >/dev/null; then
@@ -90,6 +97,8 @@ jobs:
             echo "WNBA_PRA_SPEED_V3_STEP7_ACTIVE_PRA_SCOPE_REPAIR_GREEN"
           elif diff -q /tmp/expected-incomplete-bundle-retry.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP7_INCOMPLETE_BUNDLE_RETRY_SCOPE_GREEN"
+          elif diff -q /tmp/expected-deployment-refresh.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP7_DEPLOYMENT_REFRESH_SCOPE_GREEN"
           else
             echo "Unexpected Step-7 scope:"
             cat /tmp/actual.txt
