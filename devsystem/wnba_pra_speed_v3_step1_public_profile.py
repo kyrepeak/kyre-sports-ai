@@ -13,8 +13,6 @@ from playwright.sync_api import sync_playwright
 from devsystem.browser_qa_v1 import BrowserQAFailure, _find_app_frame
 from devsystem.wnba_nav_v2_step7_public_freeze import (
     BACK_READY_BUDGET_SECONDS,
-    GAME_READY_BUDGET_SECONDS,
-    PLAYER_READY_BUDGET_SECONDS,
     PUBLIC_HOST,
     VIEWPORT,
     _assert_no_overflow,
@@ -28,6 +26,8 @@ from devsystem.wnba_nav_v2_step7_public_freeze import (
 PROFILE_SELECTOR = '[data-wnba-pra-speed-v3-step1="profiler"]'
 PROFILE_DEPLOYMENT_SELECTOR = '[data-wnba-pra-speed-v3-step1-deployed="true"]'
 DEPLOYMENT_READY_BUDGET_SECONDS = 180.0
+PROFILE_GAME_SETUP_TIMEOUT_SECONDS = 120.0
+PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS = 120.0
 
 
 def _float_attr(marker, name: str) -> float:
@@ -142,7 +142,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             game_started = time.monotonic()
             _game_button(frame).first.click()
-            frame, _ = _wait_page(page, "game", timeout_seconds=GAME_READY_BUDGET_SECONDS)
+            frame, _ = _wait_page(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
             game_seconds = time.monotonic() - game_started
 
             player_buttons = frame.get_by_role("button", name=re.compile(r"^Open .+ PRA →$"))
@@ -151,7 +151,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             player_started = time.monotonic()
             player_buttons.first.click()
-            frame, _ = _wait_page(page, "player", timeout_seconds=PLAYER_READY_BUDGET_SECONDS)
+            frame, _ = _wait_page(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
             player_seconds = time.monotonic() - player_started
             _assert_no_overflow(frame, "player")
 

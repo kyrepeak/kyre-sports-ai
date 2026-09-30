@@ -122,5 +122,21 @@
     "frozen_navigation_steps_1_7_changed": false,
     "retry_policy": "After this control-plane trigger merges, use the single merged-main Step-1 public-profile workflow run as the authoritative freeze proof.",
     "status": "PENDING_MERGED_MAIN_PUBLIC_PROFILE"
+  },
+  "observation_window_closeout": {
+    "failed_merged_main_run": 36651286755,
+    "failed_public_job": 109685895634,
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP1_DEPLOYMENT_READY_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP1_DEPLOYMENT_WAIT_SECONDS=6.288",
+      "frozen Game Center visible while roster verification remained in progress",
+      "failure occurred before Player/PRA profiling began"
+    ],
+    "root_cause": "The Step-1 profiler reused the frozen Step-7 24-second Game/Player readiness budgets. Those are release pass/fail gates, not diagnostic observation windows, so transient Game Center setup time could prevent PRA measurement.",
+    "repair_contract": "Use 120-second diagnostic ceilings for Game setup and Player observation while recording real elapsed seconds; do not change or weaken frozen Step-7 product contracts.",
+    "product_behavior_change": false,
+    "frozen_navigation_steps_1_7_changed": false,
+    "speed_optimization_added": false,
+    "status": "PENDING_BRANCH_GREEN"
   }
 }
