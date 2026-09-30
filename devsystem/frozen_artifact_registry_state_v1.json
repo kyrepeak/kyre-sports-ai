@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 5,
-  "source_main_sha": "733d3305a1915ef5ba5454be8f72754009a7abe5",
+  "revision": 6,
+  "source_main_sha": "28ba9ccd0f3d4e3a3cb25ca7d57b0e6c2408b734",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -196,8 +196,18 @@
         "tests/test_devsystem_terminal_proof_receipt_v1.py": "12bed4fe7a2ee434ee666dc2e9792df8d8a2a559",
         "devsystem/task_ledgers/monster-v4-step5-terminal-proof-receipt-v1.json": "d93197104774684ca89f39b9ebcf4238c5482a2b"
       }
+    },
+    "MONSTER_V4_STEP6": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V4_STEP6",
+      "source_main_sha": "28ba9ccd0f3d4e3a3cb25ca7d57b0e6c2408b734",
+      "artifacts": {
+        "devsystem/regression_debt_zero_gate_v1.py": "765c6477948781e2ad534d7e1cd990360a2ae190",
+        "tests/test_devsystem_regression_debt_zero_gate_v1.py": "6d5589dc7afecbc66a17f48f97eaeb9538751d6d",
+        "devsystem/task_ledgers/monster-v4-step6-regression-debt-zero-gate-v1.json": "bf61833bb6b2f78bdea0cca5a5b78465321912d4"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "09578aaf21a3d2cbc252f4882ec7abc2d150d66d97df61e3ca5c19096a7d717d"
+  "state_hash": "a86eec5234b0465d6b89cfce2f0533d655eae24215bca7d9766d3f86ad44e2f7"
 }
