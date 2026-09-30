@@ -65,6 +65,13 @@ jobs:
           devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
           devsystem/wnba_pra_speed_v3_step7_public_profile.py
           EOF
+          cat > /tmp/expected-invalid-bundle-retry.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step7-precompute.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
+          devsystem/wnba_pra_speed_v3_step7_public_profile.py
+          tests/test_wnba_pra_speed_v3_step7.py
+          wnba_pra_speed_v3_step7_precompute.py
+          EOF
           cat > /tmp/expected-reliability-repair.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step7-precompute.yml
           devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
