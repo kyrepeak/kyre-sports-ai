@@ -84,10 +84,20 @@ jobs:
           EOF
           sort -o /tmp/deploy_closeout.txt /tmp/deploy_closeout.txt
 
+          cat > /tmp/post_trigger_closeout.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step2-pooled-http.json
+          devsystem/wnba_pra_speed_v3_step2_public_profile.py
+          tests/test_wnba_pra_speed_v3_step2.py
+          EOF
+          sort -o /tmp/post_trigger_closeout.txt /tmp/post_trigger_closeout.txt
+
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP2_SCOPE_GREEN"
           elif diff -q /tmp/deploy_closeout.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP2_FULL_REDEPLOY_SCOPE_GREEN"
+          elif diff -q /tmp/post_trigger_closeout.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP2_POST_TRIGGER_CLOSEOUT_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP2_SCOPE_RED"
             diff -u /tmp/deploy_closeout.txt /tmp/actual.txt || true
