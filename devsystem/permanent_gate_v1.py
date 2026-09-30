@@ -85,6 +85,8 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_project_blast_radius_map_v1.py",
     "devsystem/monster_self_benchmark_v1.py",
     "tests/test_devsystem_monster_self_benchmark_v1.py",
+    "devsystem/regression_debt_zero_gate_v1.py",
+    "tests/test_devsystem_regression_debt_zero_gate_v1.py",
 )
 
 
@@ -179,6 +181,8 @@ def validate() -> dict:
         "python devsystem/adaptive_proof_engine_v1.py",
         "python devsystem/project_blast_radius_map_v1.py",
         "python devsystem/monster_self_benchmark_v1.py",
+        "python devsystem/regression_debt_zero_gate_v1.py",
+        "MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN",
         "fetch-depth: 0",
     )
     workflow_missing = [m for m in required_workflow_markers if m not in workflow]
@@ -397,6 +401,7 @@ def validate() -> dict:
         "adaptive_proof_engine_v1_permanent": True,
         "project_blast_radius_map_v1_permanent": True,
         "monster_self_benchmark_v1_permanent": True,
+        "regression_debt_zero_gate_v1_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
