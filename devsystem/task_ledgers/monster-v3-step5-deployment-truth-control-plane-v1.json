@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step5-deployment-truth-control-plane-v1",
+  "title": "MONSTER V3 Step 5 — Deployment Truth Control Plane",
+  "project": "MONSTER V3",
+  "step": 5,
+  "status": "DONE",
+  "scope": "Control-plane-only deployment identity handshake from current GitHub main SHA through build ID, deploy ID, health/readiness identity, and public UI proof. Exact parity is required for certification; stale deployment is owned by DEPLOYMENT and may not trigger product-code mutation.",
+  "protected": {
+    "step1_persistent_brain_frozen": true,
+    "step2_loop_kill_frozen": true,
+    "step2a_autonomous_skip_frozen": true,
+    "step3_truth_ledger_frozen": true,
+    "step4_failure_ownership_merged": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "acceptance": {
+    "exact_main_sha_parity": false,
+    "stale_deployment_state": false,
+    "build_id_required": false,
+    "deploy_id_required": false,
+    "health_ready_ui_identity_chain": false,
+    "deployment_owner_only": false,
+    "product_patch_blocked": false,
+    "permanent_contract_updated": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "RED_CONTRACT_PENDING",
+  "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Technical acceptance remains tracked independently."
+}
