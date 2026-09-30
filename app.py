@@ -324,7 +324,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_wnba_pra_speed_v3_step5 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_wnba_pra_speed_v3_step6 import record_bootstrap_import_ms, render_app
+    # Frozen WNBA PRA Speed V3 Step 5 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step5 import record_bootstrap_import_ms, render_app
     # Current-parent compatibility: from streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 import record_bootstrap_import_ms, render_app
     # Current-parent compatibility: Step 9 delegates through WNBA PRA Speed V3 Step 4 and frozen CFB Step 8.
     # Frozen WNBA PRA Speed V3 Step 4 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 import record_bootstrap_import_ms, render_app
