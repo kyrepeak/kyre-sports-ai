@@ -140,6 +140,8 @@ jobs:
         run: python devsystem/persistent_execution_brain_v1.py self-test
       - name: Validate MONSTER Automatic Loop Kill V1
         run: python devsystem/automatic_loop_kill_v1.py
+      - name: Validate MONSTER 2A Mandatory Action Gate V1
+        run: python devsystem/mandatory_2a_action_gate_v1.py
       - name: Validate MONSTER Evidence Truth Ledger V1
         run: python devsystem/evidence_truth_ledger_v1.py
       - name: Validate MONSTER Failure Ownership Engine V1
@@ -200,6 +202,7 @@ jobs:
             tests/test_devsystem_permanent_gate_v1.py \
             tests/test_devsystem_persistent_execution_brain_v1.py \
             tests/test_devsystem_automatic_loop_kill_v1.py \
+            tests/test_devsystem_mandatory_2a_action_gate_v1.py \
             tests/test_devsystem_evidence_truth_ledger_v1.py \
             tests/test_devsystem_failure_ownership_engine_v1.py \
             tests/test_devsystem_deployment_truth_control_plane_v1.py \
