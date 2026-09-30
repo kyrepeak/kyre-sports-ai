@@ -12,6 +12,7 @@ semantics are changed.
 from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
+from copy import deepcopy
 from html import escape
 from threading import Lock
 from time import monotonic, perf_counter
@@ -22,6 +23,7 @@ import streamlit as st
 import wnba_pra_navigation_v2_step1 as navigation
 import wnba_pra_performance_v2_step5 as performance
 from wnba_api_client_v1 import KyreWNBAAPIClient, SUPPORTED_SEASON
+from wnba_streamlit_consumer_v2 import normalize_consumer_payload
 
 MODEL_VERSION = "WNBA PRA SPEED V3 • STEP 7 ACTIVE PLAYER BUNDLE PRECOMPUTE"
 EXPECTED_DATA_TYPE = "wnba_pra_speed_v3_step4_cached_detail_bundle"
@@ -29,6 +31,7 @@ EXPECTED_SCHEMA_VERSION = "wnba_pra_speed_v3_step4_cached_detail_bundle_v1"
 
 MAX_WORKERS = 2
 SCHEDULE_DEDUPE_SECONDS = 45.0
+MEMORY_HANDOFF_TTL_SECONDS = 45.0
 API_TIMEOUT_SECONDS = 5.0
 API_ATTEMPTS = 2
 SESSION_PERF = "ks_wnba_pra_speed_v3_step7_perf"
@@ -45,6 +48,9 @@ PRECOMPUTE_CONTRACT = {
     "foreground_headroom_reserved": True,
     "precompute_order": "game_center_display_order",
     "per_player_transport_attempts": API_ATTEMPTS,
+    "in_process_precomputed_handoff": True,
+    "player_hosted_reads_on_memory_hit": 0,
+    "memory_handoff_ttl_seconds": MEMORY_HANDOFF_TTL_SECONDS,
     "schedule_dedupe_seconds": SCHEDULE_DEDUPE_SECONDS,
     "warm_same_session_target_seconds_max": 0.75,
     "precomputed_cold_player_target_seconds_max": 1.5,
@@ -63,6 +69,7 @@ _STATE_LOCK = Lock()
 _LAST_SCHEDULED: dict[tuple[int, int], float] = {}
 _FUTURES: dict[tuple[int, int], Future] = {}
 _RESULTS: dict[tuple[int, int], dict[str, Any]] = {}
+_READY_BUNDLES: dict[tuple[int, int], dict[str, Any]] = {}
 
 
 def _valid_player_id(value: Any) -> int | None:
@@ -140,6 +147,12 @@ def _warm_one(player_id: int) -> dict[str, Any]:
         cache = body.get("cache")
         cache = dict(cache) if isinstance(cache, Mapping) else {}
         cache_hit = bool(cache.get("hit"))
+        key = (pid, int(SUPPORTED_SEASON))
+        with _STATE_LOCK:
+            _READY_BUNDLES[key] = {
+                "outer": deepcopy(dict(body)),
+                "prepared_at": monotonic(),
+            }
         status = "green"
     except Exception as exc:
         error = type(exc).__name__
@@ -157,6 +170,95 @@ def _warm_one(player_id: int) -> dict[str, Any]:
         _RESULTS[key] = dict(result)
         _FUTURES.pop(key, None)
     return result
+
+
+def load_precomputed_bundle_pair(
+    game_id: str,
+    player_id: int,
+    frozen_loader,
+) -> dict[str, Any]:
+    """Use the exact Step-7 precomputed Step-4 response without another hosted read."""
+    pid = int(player_id)
+    key = (pid, int(SUPPORTED_SEASON))
+    now = monotonic()
+
+    with _STATE_LOCK:
+        item = _READY_BUNDLES.get(key)
+        if item is not None:
+            prepared_at = float(item.get("prepared_at") or 0.0)
+            if prepared_at <= 0.0 or (now - prepared_at) > MEMORY_HANDOFF_TTL_SECONDS:
+                _READY_BUNDLES.pop(key, None)
+                item = None
+        outer = deepcopy(item.get("outer")) if isinstance(item, Mapping) else None
+        prepared_at = (
+            float(item.get("prepared_at") or now)
+            if isinstance(item, Mapping)
+            else now
+        )
+
+    if isinstance(outer, Mapping):
+        body = outer.get("bundle")
+        body = body if isinstance(body, Mapping) else {}
+        raw_consumer = body.get("consumer")
+        raw_history = body.get("history")
+        consumer_error = str(body.get("consumer_error") or "")
+        history_error = str(body.get("history_error") or "")
+
+        if (
+            not consumer_error
+            and not history_error
+            and isinstance(raw_consumer, Mapping)
+            and isinstance(raw_history, Mapping)
+        ):
+            try:
+                consumer = normalize_consumer_payload(dict(raw_consumer))
+                history = dict(raw_history)
+            except Exception:
+                consumer = None
+                history = None
+
+            if isinstance(consumer, Mapping) and isinstance(history, Mapping):
+                age_ms = max(0.0, (now - prepared_at) * 1000.0)
+                _record_session(
+                    precomputed_memory_hit=True,
+                    precomputed_memory_player_id=pid,
+                    precomputed_memory_age_ms=round(age_ms, 3),
+                    player_hosted_reads_this_call=0,
+                )
+                return {
+                    "game_id": str(game_id),
+                    "player_id": pid,
+                    "consumer": dict(consumer),
+                    "history": dict(history),
+                    "consumer_error": "",
+                    "history_error": "",
+                    "network_reads": 0,
+                    "projection_runs": 0,
+                    "sportsbook_calls": 0,
+                    "qualification_runs": 0,
+                    "ranking_runs": 0,
+                    "monte_carlo_runs": 0,
+                    "step4_server_cache_hit": bool(
+                        (outer.get("cache") or {}).get("hit")
+                        if isinstance(outer.get("cache"), Mapping)
+                        else False
+                    ),
+                    "step7_precomputed_memory_hit": True,
+                }
+
+    fallback = frozen_loader(str(game_id), pid)
+    reads = (
+        int(fallback.get("network_reads") or 0)
+        if isinstance(fallback, Mapping)
+        else 0
+    )
+    _record_session(
+        precomputed_memory_hit=False,
+        precomputed_memory_player_id=pid,
+        precomputed_memory_age_ms=0.0,
+        player_hosted_reads_this_call=reads,
+    )
+    return fallback
 
 
 def schedule_precompute(payload: Any) -> dict[str, Any]:
@@ -252,7 +354,12 @@ def _render_marker(state: navigation.NavigationState) -> None:
         f'data-green="{int(perf.get("green") or 0)}" '
         f'data-errors="{int(perf.get("errors") or 0)}" '
         f'data-running="{int(perf.get("running") or 0)}" '
+        f'data-precomputed-memory-hit="{str(bool(perf.get("precomputed_memory_hit"))).lower()}" '
+        f'data-precomputed-memory-player-id="{int(perf.get("precomputed_memory_player_id") or 0)}" '
+        f'data-precomputed-memory-age-ms="{float(perf.get("precomputed_memory_age_ms") or 0.0):.3f}" '
+        f'data-player-hosted-reads="{int(perf.get("player_hosted_reads_this_call") or 0)}" '
         'data-background="true" '
+        'data-memory-handoff="true" '
         f'data-max-workers="{MAX_WORKERS}" '
         'style="display:none" aria-hidden="true"></span>',
         unsafe_allow_html=True,
@@ -271,12 +378,14 @@ def render_step7_route(frozen_renderer) -> Any:
 
 __all__ = [
     "MAX_WORKERS",
+    "MEMORY_HANDOFF_TTL_SECONDS",
     "MODEL_VERSION",
     "PRECOMPUTE_CONTRACT",
     "SCHEDULE_DEDUPE_SECONDS",
     "SESSION_PERF",
     "active_player_ids",
     "precompute_snapshot",
+    "load_precomputed_bundle_pair",
     "render_step7_route",
     "schedule_precompute",
     "schedule_from_current_game",
