@@ -22,3 +22,4 @@ posthog~=7.48
 # NFL Prop Analytics Step 2 rolling-snapshot control-plane full-redeploy trigger 2026-09-28 R1
 # CFB Top Picks Step 5 control-plane full-redeploy trigger 2026-09-29 R1
 # CFB Top Picks Navigation Step 3 full Streamlit redeploy 2026-09-29 R1
+# WNBA PRA Speed V3 Step 1 control-plane full-redeploy trigger 2026-09-30 R1

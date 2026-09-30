@@ -108,5 +108,19 @@
     "measurement_only_green": true,
     "profiler_deployment_marker_added": true,
     "condition_based_deployment_wait_added": true
+  },
+  "full_redeploy_closeout": {
+    "failed_merged_main_run": 36650607958,
+    "failed_public_job": 109683751305,
+    "failure": "PickVault did not expose the Step-1 profiler deployment within 180s; Step-7 deployment marker remained visible",
+    "root_cause": "GitHub main contains the Step-1 profiler and deployment-readiness gate, but Streamlit Community Cloud continued serving the frozen Step-7 process through the full condition-based deployment window.",
+    "precedent": "Repository-established stale Streamlit escalation: after merged app/router activation does not replace the hosted process, touch requirements.txt by comment only with dependency versions unchanged to force a full Community Cloud rebuild.",
+    "trigger": "# WNBA PRA Speed V3 Step 1 control-plane full-redeploy trigger 2026-09-30 R1",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "router_changed": false,
+    "frozen_navigation_steps_1_7_changed": false,
+    "retry_policy": "After this control-plane trigger merges, use the single merged-main Step-1 public-profile workflow run as the authoritative freeze proof.",
+    "status": "PENDING_MERGED_MAIN_PUBLIC_PROFILE"
   }
 }
