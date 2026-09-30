@@ -85,3 +85,13 @@ def test_speed_v3_step1_public_proof_waits_for_deployment_before_timing():
     assert "_wait_for_profiled_deployment(page)" in run
     assert run.index("_wait_for_profiled_deployment(page)") < run.index("game_started = time.monotonic()")
 
+
+
+def test_step1_public_profiler_observes_navigation_without_reusing_step7_speed_gates():
+    verifier = (ROOT / "devsystem" / "wnba_pra_speed_v3_step1_public_profile.py").read_text(encoding="utf-8")
+    assert "PROFILE_GAME_SETUP_TIMEOUT_SECONDS = 120.0" in verifier
+    assert "PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS = 120.0" in verifier
+    assert 'frame, _ = _wait_page(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)' in verifier
+    assert 'frame, _ = _wait_page(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)' in verifier
+    assert "GAME_READY_BUDGET_SECONDS" not in verifier
+    assert "PLAYER_READY_BUDGET_SECONDS" not in verifier
