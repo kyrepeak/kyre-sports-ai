@@ -44,6 +44,8 @@ jobs:
         run: pip install pytest streamlit requests
 
       - name: Run Step 2 pooled-transport contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: pytest -q tests/test_wnba_pra_speed_v3_step2.py
 
       - name: Enforce Step 2 final scope
