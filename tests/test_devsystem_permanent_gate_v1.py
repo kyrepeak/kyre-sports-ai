@@ -44,6 +44,7 @@ def test_permanent_contract_is_green():
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
+    assert result["recovery_next_action_router_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -131,6 +132,26 @@ def test_deployment_truth_control_plane_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/deployment_truth_control_plane_v1.py" in workflow
     assert "tests/test_devsystem_deployment_truth_control_plane_v1.py" in workflow
+
+
+def test_recovery_next_action_router_is_permanently_enforced():
+    recovery = _load(
+        "recovery_next_action_router_v1",
+        "devsystem/recovery_next_action_router_v1.py",
+    )
+    result = recovery.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["one_action_only"] is True
+    assert result["live_async_waits"] is True
+    assert result["verifier_scope_patch"] is True
+    assert result["external_no_patch"] is True
+    assert result["stale_refresh_only"] is True
+    assert result["deployment_stale_redeploy"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/recovery_next_action_router_v1.py" in workflow
+    assert "tests/test_devsystem_recovery_next_action_router_v1.py" in workflow
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
