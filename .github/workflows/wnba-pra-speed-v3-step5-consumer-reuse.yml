@@ -13,6 +13,7 @@ on:
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json"
       - ".github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml"
       - ".github/workflows/devsystem-targeted-ci.yml"
+      - "requirements.txt"
   push:
     branches: [main]
     paths:
@@ -26,6 +27,7 @@ on:
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json"
       - ".github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml"
       - ".github/workflows/devsystem-targeted-ci.yml"
+      - "requirements.txt"
   workflow_dispatch:
 
 permissions:
@@ -72,8 +74,23 @@ jobs:
           wnba_pra_speed_v3_step5_consumer_reuse.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_GREEN"
+
+          cat > /tmp/full_redeploy.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json
+          requirements.txt
+          EOF
+          sort -o /tmp/full_redeploy.txt /tmp/full_redeploy.txt
+
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_GREEN"
+          elif diff -q /tmp/full_redeploy.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP5_FULL_REDEPLOY_SCOPE_GREEN"
+          else
+            echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_RED"
+            diff -u /tmp/full_redeploy.txt /tmp/actual.txt || true
+            exit 1
+          fi
       - name: Protect frozen Speed V3 Steps 1-4
         shell: bash
         run: |
