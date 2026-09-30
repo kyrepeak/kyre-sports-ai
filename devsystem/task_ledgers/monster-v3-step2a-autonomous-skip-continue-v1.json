@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step2a-autonomous-skip-continue-v1",
+  "title": "MONSTER V3 Step 2A — Autonomous Skip & Continue",
+  "project": "MONSTER V3",
+  "step": "2A",
+  "status": "DONE",
+  "scope": "Control-plane-only enhancement to frozen Step 2. Preserve every existing loop-kill protection while automatically skipping repeated loop actions and continuing with safe non-conflicting work without requiring the user to say skip and continue.",
+  "protected": {
+    "step1_persistent_brain_frozen": true,
+    "step2_existing_guards_preserved": true,
+    "step3_truth_ledger_frozen": true,
+    "async_mutation_lock_preserved": true,
+    "stale_run_guard_preserved": true,
+    "terminal_transition_unlock_preserved": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "acceptance": {
+    "duplicate_poll_auto_skipped": true,
+    "no_user_intervention_required": true,
+    "safe_continue_directive": true,
+    "async_mutation_lock_not_bypassed": true,
+    "terminal_duplicate_advances_to_classification": true,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
