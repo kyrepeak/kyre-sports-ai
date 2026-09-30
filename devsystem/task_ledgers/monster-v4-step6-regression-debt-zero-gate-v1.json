@@ -1,0 +1,67 @@
+{
+  "version": 2,
+  "task_id": "monster-v4-step6-regression-debt-zero-gate-v1",
+  "title": "MONSTER V4 Step 6 — Regression-Debt-Zero Gate",
+  "project": "MONSTER V4",
+  "step": 6,
+  "total_steps": 6,
+  "status": "DONE",
+  "scope": "Fail closed on freeze whenever a real resolved PRODUCT, VERIFIER, CI, or DEPLOYMENT failure lacks at least one permanent regression TEST or CONTRACT. STALE and EXTERNAL evidence is exempt because those classes do not authorize repository repair. This is control-plane only and may not mutate sports/runtime/model/provider behavior.",
+  "protected": {
+    "monster_v4_steps_1_5": true,
+    "monster_2a_enforcement_steps_1_5": true,
+    "monster_v3_steps_1_8": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "real_failure_creates_regression_debt": true,
+    "open_debt_blocks_freeze": true,
+    "permanent_test_clears_debt": true,
+    "permanent_contract_clears_debt": true,
+    "stale_failure_exempt": true,
+    "external_failure_exempt": true,
+    "invalid_guard_fails_closed": true,
+    "nonpermanent_guard_fails_closed": true,
+    "tamper_evident_debt": true,
+    "mixed_batch_open_debt_blocks": true,
+    "zero_debt_passes": true,
+    "permanent_ci_enforcement": true,
+    "discovered_step6_failure_left_permanent_regression_guard": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "READY_FOR_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after the exact PR head passes the regression-debt-zero self-test through permanent-contract and devsystem-final-gate, the exact head merges, merged-main proof confirms the same gate, and Step 6 artifacts are content-addressed in the frozen registry.",
+  "regression_debt_closeout": {
+    "failure_id": "MONSTER_V4_STEP6_PERMANENT_MARKER_36778252550",
+    "owner": "VERIFIER",
+    "source_run": 36778252550,
+    "source_job": "permanent-contract",
+    "root_cause": "The Step-6 workflow invoked regression_debt_zero_gate_v1.py but omitted the literal MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN marker required by the permanent DevSystem contract.",
+    "repair_sha": "1a22f50c5244f7087a8ec74ef77040750b049550",
+    "state": "CLEARED",
+    "permanent_regression_guards": [
+      {
+        "kind": "CONTRACT",
+        "path": "devsystem/permanent_gate_v1.py",
+        "permanent": true
+      },
+      {
+        "kind": "TEST",
+        "path": "tests/test_devsystem_permanent_gate_v1.py",
+        "permanent": true
+      }
+    ],
+    "proof_rule": "The permanent contract and its dedicated test both fail if the Step-6 GREEN workflow marker disappears again."
+  },
+  "proof_trigger": "Single contents-API commit after atomic regression-debt closeout; no prior CI run existed for the atomic Git-data head."
+}

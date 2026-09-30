@@ -57,6 +57,7 @@ def test_permanent_contract_is_green():
     assert result["adaptive_proof_engine_v1_permanent"] is True
     assert result["project_blast_radius_map_v1_permanent"] is True
     assert result["monster_self_benchmark_v1_permanent"] is True
+    assert result["regression_debt_zero_gate_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -451,6 +452,33 @@ def test_monster_self_benchmark_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/monster_self_benchmark_v1.py" in workflow
     assert "tests/test_devsystem_monster_self_benchmark_v1.py" in workflow
+
+
+
+def test_regression_debt_zero_gate_is_permanently_enforced():
+    gate = _load(
+        "regression_debt_zero_gate_v1",
+        "devsystem/regression_debt_zero_gate_v1.py",
+    )
+    result = gate.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["real_failure_creates_debt"] is True
+    assert result["open_debt_blocks_freeze"] is True
+    assert result["permanent_test_clears_debt"] is True
+    assert result["permanent_contract_clears_debt"] is True
+    assert result["stale_failure_exempt"] is True
+    assert result["external_failure_exempt"] is True
+    assert result["invalid_test_guard_rejected"] is True
+    assert result["nonpermanent_guard_rejected"] is True
+    assert result["tamper_rejected"] is True
+    assert result["mixed_open_debt_blocks"] is True
+    assert result["zero_debt_green"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/regression_debt_zero_gate_v1.py" in workflow
+    assert "MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN" in workflow
+    assert "tests/test_devsystem_regression_debt_zero_gate_v1.py" in workflow
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
