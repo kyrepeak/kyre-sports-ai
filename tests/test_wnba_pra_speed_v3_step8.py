@@ -261,3 +261,16 @@ def test_step8_shell_lifetime_handoff_is_permanent():
     assert 'data-shell-retained-through-final' in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_GREEN" in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_REPAIR_SCOPE_GREEN" in workflow
+
+
+def test_step8_final_deployment_refresh_is_permanent():
+    app = APP.read_text(encoding="utf-8")
+    runtime = STEP8.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert (
+        'WNBA_PRA_SPEED_V3_STEP8_FINAL_PUBLIC_DEPLOY_REFRESH = '
+        '"WNBA_PRA_SPEED_V3_STEP8_FINAL_PUBLIC_DEPLOY_REFRESH_2026_09_30_R1"'
+        in app
+    )
+    assert 'data-shell-retained-through-final' in runtime
+    assert "WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_REFRESH_SCOPE_GREEN" in workflow
