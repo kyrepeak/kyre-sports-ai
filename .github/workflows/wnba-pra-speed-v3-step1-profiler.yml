@@ -1,0 +1,39 @@
+name: WNBA PRA Speed V3 Step 1 Profiler
+
+on:
+  pull_request:
+    paths:
+      - "tests/test_wnba_pra_speed_v3_step1.py"
+      - "wnba_pra_speed_v3_step1_profiler.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py"
+      - "devsystem/wnba_pra_speed_v3_step1_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json"
+      - ".github/workflows/wnba-pra-speed-v3-step1-profiler.yml"
+      - "app.py"
+  push:
+    branches: [main]
+    paths:
+      - "wnba_pra_speed_v3_step1_profiler.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py"
+      - "devsystem/wnba_pra_speed_v3_step1_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json"
+      - ".github/workflows/wnba-pra-speed-v3-step1-profiler.yml"
+      - "app.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependencies
+        run: pip install pytest streamlit
+      - name: Run Step 1 profiler contract
+        run: pytest -q tests/test_wnba_pra_speed_v3_step1.py
