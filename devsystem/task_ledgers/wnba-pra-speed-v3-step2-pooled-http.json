@@ -47,8 +47,10 @@
   ],
   "frozen_speed_step1": true,
   "red_green": {
-    "red_commit": null,
-    "red_run": null,
+    "red_commit": "1abbb4c5eb768f5bdfd95daa93f8107e41140d9c",
+    "red_run": 36655980473,
+    "red_job": 109700304707,
+    "red_result": "6 failed: persistent pool, Step-2 surfaces, and app activation correctly absent",
     "green_run": null
   },
   "freeze_exit": {
