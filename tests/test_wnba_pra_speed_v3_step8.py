@@ -11,6 +11,7 @@ ROUTER = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py"
 APP = ROOT / "app.py"
 WORKFLOW = ROOT / ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml"
 LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json"
+PROFILE = ROOT / "devsystem/wnba_pra_speed_v3_step8_public_profile.py"
 
 FROZEN_STEP7 = {
     "wnba_pra_speed_v3_step7_precompute.py": "8416b49b9fdf5b75656ea03248a0d6edf17a68a5",
@@ -192,3 +193,14 @@ def test_step8_task_ledger_has_valid_genesis_action_log():
     debt = payload["regression_debt"]
     assert debt["state"] == "CLEARED"
     assert debt["open_debt_count"] == 0
+
+
+def test_step8_public_profile_observes_ephemeral_shell_mutations_permanently():
+    source = PROFILE.read_text(encoding="utf-8")
+    assert "MutationObserver" in source
+    assert "record.addedNodes" in source
+    assert "__ksStep8ShellObservedAt" in source
+    assert "_arm_shell_mutation_observer(frame)" in source
+    assert "_wait_shell_mutation(frame, observer_armed_at_ms)" in source
+    assert "frame.locator(SHELL_SELECTOR).wait_for" not in source
+    assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in source
