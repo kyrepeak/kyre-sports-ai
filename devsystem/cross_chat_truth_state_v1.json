@@ -4,19 +4,19 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 4,
+  "truth_epoch": 5,
   "program_id": "MONSTER_V4",
   "program_title": "MONSTER V4",
   "current_step": 4,
   "total_steps": 6,
   "step_title": "Cross-Chat Truth Handshake",
-  "step_status": "ACTIVE",
+  "step_status": "BLOCKED",
   "active_checkpoint": "MONSTER_V4_STEP4",
   "main_sha": "2015c1064f586d9e2f4d9069ea8b41c3a5950a54",
   "active_pr": 1231,
   "active_run": 36676817856,
   "active_head_sha": "ff27ccafb091d319b5129a1dceb6dd0e06e996d2",
-  "blocker": null,
+  "blocker": "GITHUB_ACTIONS_SCHEDULER_SATURATED",
   "next_legal_action": "WAIT_FOR_AUTHORITATIVE_PR_FINAL_GATE",
   "lease": {
     "revision": 16,
@@ -50,5 +50,5 @@
     "MONSTER_V4_STEP2",
     "MONSTER_V4_STEP3"
   ],
-  "state_hash": "618a3b5f0beffd43614562c060b51a5e5ad61a1a0a2bceb92757b2b54b7688dc"
+  "state_hash": "474f8b731f870f6616146ecee27612f3740d9fee58a5df2ec1dd6f32e7c9e02e"
 }
