@@ -44,6 +44,7 @@ def test_permanent_contract_is_green():
     assert result["mandatory_2a_action_gate_v1_permanent"] is True
     assert result["mandatory_2a_receipt_v1_permanent"] is True
     assert result["mandatory_2a_replay_lock_v1_permanent"] is True
+    assert result["mandatory_2a_global_enforcement_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -146,6 +147,31 @@ def test_mandatory_2a_replay_loop_lock_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/mandatory_2a_replay_lock_v1.py" in workflow
     assert "tests/test_devsystem_mandatory_2a_replay_lock_v1.py" in workflow
+
+
+def test_mandatory_2a_global_enforcement_tripwire_is_permanently_enforced():
+    global_gate = _load(
+        "mandatory_2a_global_enforcement_v1",
+        "devsystem/mandatory_2a_global_enforcement_v1.py",
+    )
+    result = global_gate.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["canonical_entrypoint_authorizes"] is True
+    assert result["global_proof_valid"] is True
+    assert result["missing_prerequisite_tripwire_blocks"] is True
+    assert result["replay_stays_loop_skipped"] is True
+    assert result["raw_step_outputs_cannot_bypass"] is True
+    assert result["global_proof_tamper_blocked"] is True
+    assert result["live_async_mutation_tripwire_blocks"] is True
+    assert result["safe_continue_no_user"] is True
+    assert result["step1_preserved"] is True
+    assert result["step2_preserved"] is True
+    assert result["step3_preserved"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/mandatory_2a_global_enforcement_v1.py" in workflow
+    assert "tests/test_devsystem_mandatory_2a_global_enforcement_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
