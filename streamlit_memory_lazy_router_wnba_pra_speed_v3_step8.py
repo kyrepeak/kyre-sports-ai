@@ -19,7 +19,9 @@ def record_bootstrap_import_ms(value: float) -> None:
 
 
 def render_app() -> Any:
-    """Wrap only the frozen same-session Player loader with visible-first UI."""
+    """Emit visible Player PRA before entering the frozen Step-7 render path."""
+    state = step8.navigation.current_state()
+    shell_slot = step8.render_visible_shell_early(state)
     original_loader = performance.load_player_intelligence_same_session
 
     def visible_first_loader(game_id: str, player_id: int):
@@ -27,6 +29,7 @@ def render_app() -> Any:
             original_loader,
             game_id,
             player_id,
+            shell_slot=shell_slot,
         )
 
     performance.load_player_intelligence_same_session = visible_first_loader
