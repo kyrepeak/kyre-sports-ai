@@ -156,3 +156,26 @@ def test_step5_contract_preserves_speed_budget_and_history_cache_ownership():
     assert contract["history_reads_on_cross_player_open_max"] == 1
     assert contract["new_history_cache_added"] is False
     assert contract["frozen_speed_v3_steps_1_4_modified"] is False
+
+
+def test_step5_player_router_uses_shallow_trampoline_not_recursionlimit():
+    source = ROUTER.read_text(encoding="utf-8")
+    assert "streamlit_memory_lazy_router_wnba_nav_v2_step7 as nav_step7_router" in source
+    assert "PLAYER_ROUTER_STACK_TRAMPOLINE = True" in source
+    assert "class _DirectWNBAPRARoute" in source
+    assert "nav_step7_router._render_wnba_step7 = trampoline_dispatch" in source
+    assert "except _DirectWNBAPRARoute:" in source
+    assert "performance._FROZEN_PLAYER_LOADER = step4_cache.load_cached_bundle_pair" in source
+    assert "profiler.render_profiled_step1_route" in source
+    assert "transport.render_step2_route" in source
+    assert "bundle.render_step3_route" in source
+    assert "step4_cache.render_step4_route" in source
+    assert "step5.render_step5_route" in source
+    assert "setrecursionlimit" not in source
+
+
+def test_step5_router_keeps_non_pra_parent_delegate():
+    source = ROUTER.read_text(encoding="utf-8")
+    assert "return frozen_renderer(market)" in source
+    assert "return step5.render_step5_route(current_parent.render_app)" in source
+    assert "nav_step7_router._render_wnba_step7 = original_step7_dispatch" in source

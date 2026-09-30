@@ -82,10 +82,20 @@ jobs:
           EOF
           sort -o /tmp/full_redeploy.txt /tmp/full_redeploy.txt
 
+          cat > /tmp/player_recursion_repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          tests/test_wnba_pra_speed_v3_step5.py
+          EOF
+          sort -o /tmp/player_recursion_repair.txt /tmp/player_recursion_repair.txt
+
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_GREEN"
           elif diff -q /tmp/full_redeploy.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP5_FULL_REDEPLOY_SCOPE_GREEN"
+          elif diff -q /tmp/player_recursion_repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP5_PLAYER_RECURSION_REPAIR_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_RED"
             diff -u /tmp/full_redeploy.txt /tmp/actual.txt || true
@@ -126,6 +136,14 @@ jobs:
           grep -F '"new_history_cache_added": False' wnba_pra_speed_v3_step5_consumer_reuse.py
           grep -F 'streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 as current_parent' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
           grep -F 'FROZEN_SPEED_STEP4_PARENT = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4"' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          grep -F 'PLAYER_ROUTER_STACK_TRAMPOLINE = True' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          grep -F 'performance._FROZEN_PLAYER_LOADER = step4_cache.load_cached_bundle_pair' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          grep -F 'nav_step7_router._render_wnba_step7 = trampoline_dispatch' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          if grep -F 'setrecursionlimit' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py; then
+            echo "WNBA_PRA_SPEED_V3_STEP5_RECURSIONLIMIT_HACK_RED"
+            exit 1
+          fi
+          echo "WNBA_PRA_SPEED_V3_STEP5_PLAYER_ROUTER_TRAMPOLINE_GREEN"
           grep -F 'from streamlit_memory_lazy_router_wnba_pra_speed_v3_step5 import record_bootstrap_import_ms, render_app' app.py
           echo "WNBA_PRA_SPEED_V3_STEP5_CONSUMER_REUSE_CONTRACT_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP5_BRANCH_GREEN"
