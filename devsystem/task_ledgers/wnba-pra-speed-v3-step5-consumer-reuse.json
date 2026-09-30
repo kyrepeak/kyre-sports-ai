@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step5-consumer-reuse",
   "title": "WNBA PRA Speed V3 Step 5 — Cross-player consumer snapshot reuse",
   "project": "WNBA PRA Speed V3",
-  "phase": "PROOF_MARKER_SYNC_REPAIR_PENDING_PROOF",
+  "phase": "STREAMLIT_TRANSITION_WAIT_REPAIR_PENDING_PROOF",
   "step": 5,
   "total_steps": 9,
   "status": "DONE",
@@ -197,5 +197,27 @@
     "render_api_redeploy_required": false,
     "step5_data_contract_changed": false,
     "two_a": "Verifier-only repair. One exact-head branch proof, one merge, one merged-main public freeze proof."
+  },
+  "streamlit_transition_wait_repair": {
+    "status": "PATCHED_PENDING_ONE_FRESH_PROOF",
+    "failed_public_run": 36741410443,
+    "failed_public_job": 109976716557,
+    "failure_class": "STREAMLIT_CLOUD_TRANSITION_INTERSTITIAL",
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP5_FAST_HISTORY_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_API_DEPLOYMENT_WAIT_SECONDS=0.322",
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYMENT_WAIT_SECONDS=6.623",
+      "WNBA_NAV_STEP7_DEFAULT_SLATE_HAS_GAME_GREEN",
+      "Game transition temporarily showed Streamlit 'taking longer than normal' interstitial",
+      "_wait_page aborted because _find_app_frame raised before the helper could spend its 120-second route timeout"
+    ],
+    "root_cause": "The shared route waiter intends to poll until its timeout, but its _find_app_frame call sits outside the inner retry try/except. A temporary Streamlit Cloud no-frame interstitial therefore escapes immediately instead of consuming the existing page-transition budget.",
+    "patch": "Add a Step-5-local resilient wrapper that retries only temporary no-frame/loading-interstitial BrowserQAFailure results within the existing Game/Player timeout. Do not reload the page, preserving selected-game/player session state.",
+    "shared_navigation_helper_changed": false,
+    "product_runtime_changed": false,
+    "render_api_redeploy_required": false,
+    "speed_v3_steps_1_4_changed": false,
+    "two_a": "Proof-only transient repair. One branch proof, one merge, one merged-main freeze proof."
   }
 }
