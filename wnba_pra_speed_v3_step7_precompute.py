@@ -14,7 +14,7 @@ from __future__ import annotations
 from concurrent.futures import Future, ThreadPoolExecutor
 from html import escape
 from threading import Lock
-from time import monotonic, perf_counter
+from time import monotonic, perf_counter, sleep
 from typing import Any, Mapping
 
 import streamlit as st
@@ -31,6 +31,8 @@ MAX_WORKERS = 2
 SCHEDULE_DEDUPE_SECONDS = 45.0
 API_TIMEOUT_SECONDS = 5.0
 API_ATTEMPTS = 2
+INVALID_BUNDLE_RETRY_MAX = 1
+INVALID_BUNDLE_RETRY_DELAY_SECONDS = 0.15
 SESSION_PERF = "ks_wnba_pra_speed_v3_step7_perf"
 
 PRECOMPUTE_CONTRACT = {
@@ -45,6 +47,8 @@ PRECOMPUTE_CONTRACT = {
     "foreground_headroom_reserved": True,
     "precompute_order": "game_center_display_order",
     "per_player_transport_attempts": API_ATTEMPTS,
+    "invalid_bundle_retry_max": INVALID_BUNDLE_RETRY_MAX,
+    "invalid_bundle_retry_delay_seconds": INVALID_BUNDLE_RETRY_DELAY_SECONDS,
     "schedule_dedupe_seconds": SCHEDULE_DEDUPE_SECONDS,
     "warm_same_session_target_seconds_max": 0.75,
     "precomputed_cold_player_target_seconds_max": 1.5,
@@ -126,17 +130,29 @@ def _warm_one(player_id: int) -> dict[str, Any]:
     status = "error"
     cache_hit = False
     error = ""
+    invalid_bundle_retries = 0
+
+    client = KyreWNBAAPIClient(
+        timeout_seconds=API_TIMEOUT_SECONDS,
+        attempts=API_ATTEMPTS,
+    )
     try:
-        client = KyreWNBAAPIClient(
-            timeout_seconds=API_TIMEOUT_SECONDS,
-            attempts=API_ATTEMPTS,
-        )
         body = client.get_json(
             f"/api/v1/wnba/players/{pid}/pra-detail-cached",
             params={"season": SUPPORTED_SEASON},
         )
         if not _validate_warmed_payload(body, player_id=pid):
-            raise ValueError("Step-7 precompute received an invalid Step-4 bundle.")
+            invalid_bundle_retries = 1
+            sleep(INVALID_BUNDLE_RETRY_DELAY_SECONDS)
+            body = client.get_json(
+                f"/api/v1/wnba/players/{pid}/pra-detail-cached",
+                params={"season": SUPPORTED_SEASON},
+            )
+        if not _validate_warmed_payload(body, player_id=pid):
+            raise ValueError(
+                "Step-7 precompute received an invalid Step-4 bundle after "
+                "the one allowed validation retry."
+            )
         cache = body.get("cache")
         cache = dict(cache) if isinstance(cache, Mapping) else {}
         cache_hit = bool(cache.get("hit"))
@@ -148,6 +164,7 @@ def _warm_one(player_id: int) -> dict[str, Any]:
         "player_id": pid,
         "status": status,
         "cache_hit": cache_hit,
+        "invalid_bundle_retries": invalid_bundle_retries,
         "elapsed_ms": round(elapsed_ms, 3),
         "error": error,
         "finished_at": monotonic(),
@@ -204,11 +221,16 @@ def precompute_snapshot(player_ids: list[int] | None = None) -> dict[str, Any]:
         )
     green = sum(1 for row in results if row.get("status") == "green")
     errors = sum(1 for row in results if row.get("status") != "green")
+    validation_retries = sum(
+        int(row.get("invalid_bundle_retries") or 0)
+        for row in results
+    )
     return {
         "targets": len(ids),
         "completed": len(results),
         "green": green,
         "errors": errors,
+        "validation_retries": validation_retries,
         "running": running,
     }
 
@@ -251,9 +273,11 @@ def _render_marker(state: navigation.NavigationState) -> None:
         f'data-completed="{int(perf.get("completed") or 0)}" '
         f'data-green="{int(perf.get("green") or 0)}" '
         f'data-errors="{int(perf.get("errors") or 0)}" '
+        f'data-validation-retries="{int(perf.get("validation_retries") or 0)}" '
         f'data-running="{int(perf.get("running") or 0)}" '
         'data-background="true" '
         f'data-max-workers="{MAX_WORKERS}" '
+        f'data-invalid-bundle-retry-max="{INVALID_BUNDLE_RETRY_MAX}" '
         'style="display:none" aria-hidden="true"></span>',
         unsafe_allow_html=True,
     )
@@ -270,6 +294,8 @@ def render_step7_route(frozen_renderer) -> Any:
 
 
 __all__ = [
+    "INVALID_BUNDLE_RETRY_DELAY_SECONDS",
+    "INVALID_BUNDLE_RETRY_MAX",
     "MAX_WORKERS",
     "MODEL_VERSION",
     "PRECOMPUTE_CONTRACT",
