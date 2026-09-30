@@ -59,6 +59,8 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_failure_ownership_engine_v1.py",
     "devsystem/deployment_truth_control_plane_v1.py",
     "tests/test_devsystem_deployment_truth_control_plane_v1.py",
+    "devsystem/recovery_next_action_router_v1.py",
+    "tests/test_devsystem_recovery_next_action_router_v1.py",
 )
 
 
@@ -135,6 +137,7 @@ def validate() -> dict:
         "python devsystem/evidence_truth_ledger_v1.py",
         "python devsystem/failure_ownership_engine_v1.py",
         "python devsystem/deployment_truth_control_plane_v1.py",
+        "python devsystem/recovery_next_action_router_v1.py",
         "fetch-depth: 0",
     )
     workflow_missing = [m for m in required_workflow_markers if m not in workflow]
@@ -340,6 +343,7 @@ def validate() -> dict:
         "evidence_truth_ledger_v1_permanent": True,
         "failure_ownership_engine_v1_permanent": True,
         "deployment_truth_control_plane_v1_permanent": True,
+        "recovery_next_action_router_v1_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
