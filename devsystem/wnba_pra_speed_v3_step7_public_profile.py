@@ -49,16 +49,19 @@ def _wait_step7_streamlit(page):
     while time.monotonic() < deadline:
         try:
             frame, slate_seconds = _route_to_wnba_pra(page)
-            marker = frame.locator(STEP7_SELECTOR)
+            marker = frame.locator(
+                STEP7_SELECTOR + '[data-warm-attempts="2"]'
+            )
             if marker.count() > 0:
                 elapsed = time.monotonic() - started
                 print("WNBA_PRA_SPEED_V3_STEP7_STREAMLIT_DEPLOYED_GREEN")
+                print("WNBA_PRA_SPEED_V3_STEP7_WARM_RETRY_POLICY_DEPLOYED_GREEN")
                 print(
                     "WNBA_PRA_SPEED_V3_STEP7_STREAMLIT_DEPLOYMENT_WAIT_SECONDS="
                     f"{elapsed:.3f}"
                 )
                 return frame, slate_seconds, elapsed
-            last = "Step-7 marker absent"
+            last = "Step-7 retry-policy marker absent"
         except Exception as exc:
             last = f"{type(exc).__name__}:{str(exc)[:300]}"
         page.wait_for_timeout(5000)
@@ -162,6 +165,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             player_marker = _marker(frame)
             completed = _int_attr(player_marker, "data-completed")
             errors = _int_attr(player_marker, "data-errors")
+            retried = _int_attr(player_marker, "data-retried")
             if completed < 1:
                 raise BrowserQAFailure(
                     f"Step-7 background results were not visible after Player rerun: "
@@ -173,6 +177,8 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                     f"errors={errors}"
                 )
 
+            print(f"WNBA_PRA_SPEED_V3_STEP7_RETRIED_PRECOMPUTES={retried}")
+            print("WNBA_PRA_SPEED_V3_STEP7_BACKGROUND_RETRY_POLICY_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_PLAYER_READY_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_FROZEN_STEPS1_6_GREEN")
@@ -196,6 +202,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 "target_players": target_players,
                 "completed_precomputes": completed,
                 "precompute_errors": errors,
+                "retried_precomputes": retried,
                 "bundle_cache_hit": cache_hit,
                 "precomputed_player_seconds": round(player_seconds, 3),
                 "cached_bundle_read_ms": round(cached_read_ms, 3),
