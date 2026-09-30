@@ -49,6 +49,7 @@ def test_permanent_contract_is_green():
     assert result["distributed_execution_lease_v1_permanent"] is True
     assert result["semantic_action_normalizer_v1_permanent"] is True
     assert result["frozen_artifact_registry_v1_permanent"] is True
+    assert result["cross_chat_truth_handshake_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -266,6 +267,33 @@ def test_frozen_artifact_registry_is_permanently_enforced():
     assert "python devsystem/frozen_artifact_registry_v1.py verify-head" in workflow
     assert "monster-frozen-artifact-registry" in workflow
     assert "tests/test_devsystem_frozen_artifact_registry_v1.py" in workflow
+
+
+def test_cross_chat_truth_handshake_is_permanently_enforced():
+    handshake = _load(
+        "cross_chat_truth_handshake_v1",
+        "devsystem/cross_chat_truth_handshake_v1.py",
+    )
+    result = handshake.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["valid_handshake_authorized"] is True
+    assert result["missing_packet_blocked"] is True
+    assert result["stale_main_blocked"] is True
+    assert result["stale_lease_blocked"] is True
+    assert result["stale_registry_blocked"] is True
+    assert result["tampered_packet_blocked"] is True
+    assert result["raw_semantic_authority_rejected"] is True
+    assert result["tampered_handshake_proof_rejected"] is True
+    assert result["semantic_chain_preserved"] is True
+    assert result["lease_chain_preserved"] is True
+    assert result["two_a_chain_preserved"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/cross_chat_truth_handshake_v1.py" in workflow
+    assert "python devsystem/cross_chat_truth_handshake_v1.py verify-packet" in workflow
+    assert "monster-cross-chat-truth" in workflow
+    assert "tests/test_devsystem_cross_chat_truth_handshake_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
