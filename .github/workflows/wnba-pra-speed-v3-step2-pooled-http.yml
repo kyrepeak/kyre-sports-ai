@@ -12,6 +12,7 @@ on:
       - "tests/test_wnba_step7f_streamlit_api.py"
       - ".github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml"
       - "app.py"
+      - "requirements.txt"
   push:
     branches: [main]
     paths:
@@ -23,6 +24,7 @@ on:
       - "tests/test_wnba_pra_speed_v3_step2.py"
       - ".github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml"
       - "app.py"
+      - "requirements.txt"
   workflow_dispatch:
 
 permissions:
@@ -72,8 +74,23 @@ jobs:
           wnba_pra_speed_v3_step2_transport.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "WNBA_PRA_SPEED_V3_STEP2_SCOPE_GREEN"
+
+          cat > /tmp/full_redeploy.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step2-pooled-http.json
+          requirements.txt
+          EOF
+          sort -o /tmp/full_redeploy.txt /tmp/full_redeploy.txt
+
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP2_SCOPE_GREEN"
+          elif diff -q /tmp/full_redeploy.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP2_FULL_REDEPLOY_SCOPE_GREEN"
+          else
+            echo "WNBA_PRA_SPEED_V3_STEP2_SCOPE_RED"
+            diff -u /tmp/full_redeploy.txt /tmp/actual.txt || true
+            exit 1
+          fi
 
       - name: Protect frozen WNBA Navigation V2 Steps 1-7 and Speed V3 Step 1
         shell: bash

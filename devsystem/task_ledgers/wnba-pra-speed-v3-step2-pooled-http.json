@@ -88,5 +88,28 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "full_redeploy_closeout": {
+    "failed_merged_main_run": 36657288055,
+    "failed_public_job": 109704355872,
+    "failed_public_rerun_job": 109707673408,
+    "evidence": [
+      "merged-main focused-contract SUCCESS",
+      "merged-main DevSystem targeted CI SUCCESS",
+      "Step-2 deployment marker absent for full 180-second original public proof",
+      "one legal retry after material main/deployment changes still showed Step-2 marker absent for full 180-second window",
+      "current main contains Step-2 app activation, deployment marker, and pooled session"
+    ],
+    "root_cause": "GitHub main contains the Step-2 pooled transport, but Streamlit Community Cloud continues serving an older process that exposes the frozen Step-7 marker without the Step-2 deployment marker.",
+    "precedent": "Use the repository-established comment-only requirements.txt touch to force a full Streamlit Community Cloud rebuild without changing dependency versions.",
+    "trigger": "# WNBA PRA Speed V3 Step 2 control-plane full-redeploy trigger 2026-09-30 R1",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "pooled_transport_changed": false,
+    "router_changed": false,
+    "frozen_navigation_steps_1_7_changed": false,
+    "frozen_speed_v3_step1_changed": false,
+    "retry_policy": "After this control-plane trigger merges, use the automatically triggered merged-main Step-2 public-profile workflow as the sole authoritative freeze proof.",
+    "status": "PENDING_MERGED_MAIN_PUBLIC_PROFILE"
   }
 }
