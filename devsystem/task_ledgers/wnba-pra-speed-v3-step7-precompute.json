@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "PRODUCTION_TIMING_RETRY_PATCH",
+  "phase": "PRODUCTION_PRECOMPUTE_RELIABILITY_PATCH",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -59,23 +59,22 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_ONE_TIMING_ONLY_RETRY_PROOF",
-    "failed_run": 36773763188,
-    "failed_job": 110086409855,
-    "failure_class": "TRANSIENT_PRECOMPUTED_PLAYER_RENDER_TIMING_SPIKE",
-    "observed_player_seconds": 1.547,
+    "status": "PENDING_RELIABILITY_REPAIR_PROOF",
+    "failed_run": 36774461216,
+    "failed_job": 110088767012,
+    "failure_class": "ONE_OF_28_BACKGROUND_PRECOMPUTES_TRANSIENT_READ_ERROR",
+    "first_attempt_player_seconds": 1.53,
+    "allowed_timing_retry_player_seconds": 0.91,
     "target_player_seconds_max": 1.5,
-    "overshoot_seconds": 0.047,
-    "evidence": [
-      "Step-7 Streamlit deployment marker GREEN",
-      "28 current Game Center players scheduled for background precompute",
-      "Player final surfaces ready GREEN",
-      "Player zero overflow GREEN",
-      "Verifier reached the post-cache-hit timing assertion"
-    ],
-    "patch": "Expose cache-hit evidence before the strict timing gate and permit exactly one fresh proof attempt only when the first attempt has a verified precomputed bundle hit and fails solely on the unchanged 1.5s Player timing ceiling.",
+    "target_player_speed_green": true,
+    "bundle_cache_hit_green": true,
+    "target_players": 28,
+    "precompute_errors": 1,
+    "root_cause": "Step-7 background warmer used one transport attempt per player; a transient read error was retained as an error result.",
+    "patch": "Allow exactly two client transport attempts per background player warm using the already-certified pooled GET client. Keep max workers, route, speed targets, navigation behavior, and basketball semantics unchanged.",
+    "per_player_transport_attempts_before": 1,
+    "per_player_transport_attempts_after": 2,
     "threshold_changed": false,
-    "product_runtime_changed": false,
     "model_or_data_changed": false,
     "frozen_steps_1_6_changed": false
   },
@@ -89,8 +88,9 @@
     "stale_fingerprints_rejected": true,
     "protect_frozen_steps_1_6": true,
     "one_timing_only_retry_max": 1,
-    "failed_run": 36773763188,
-    "failed_job": 110086409855
+    "failed_run": 36774461216,
+    "failed_job": 110088767012,
+    "reliability_patch_count": 1
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
