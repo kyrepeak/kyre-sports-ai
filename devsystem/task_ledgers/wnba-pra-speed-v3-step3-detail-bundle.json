@@ -49,7 +49,10 @@
     "monte_carlo_runs_added": 0
   },
   "red_green": {
-    "red_run": null,
+    "red_commit": "02243feca2da0c3daecd016370f64529bbbafd8a",
+    "red_run": 36661539032,
+    "red_job": 109717189861,
+    "red_result": "6 failed cleanly: backend bundle, Streamlit loader/router, public proof, and activation absent",
     "green_run": null
   },
   "freeze_exit": {
