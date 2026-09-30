@@ -473,14 +473,14 @@ def contract_self_test() -> dict[str, Any]:
 
     raw_a = {
         "task_id": " Test-Task ",
-        "checkpoint_id": "01",
+        "checkpoint_id": "02",
         "action_type": "merge pull request",
         "target": "PR #42",
         "inputs": {"head_sha": ("A" * 40), "pr_number": "42"},
     }
     raw_b = {
         "task_id": "test-task",
-        "checkpoint_id": 1,
+        "checkpoint_id": 2,
         "action_type": "merge_pr",
         "target": "https://github.com/owner/repo/pull/42",
         "inputs": {"head_sha": ("a" * 40), "pr_number": 42},
