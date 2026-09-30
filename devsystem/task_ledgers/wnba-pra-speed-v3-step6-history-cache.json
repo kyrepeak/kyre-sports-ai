@@ -1,0 +1,104 @@
+{
+  "version": 2,
+  "task": "wnba-pra-speed-v3-step6-history-cache",
+  "task_id": "wnba-pra-speed-v3-step6-history-cache",
+  "id": "wnba-pra-speed-v3-step6-history-cache",
+  "title": "WNBA PRA Speed V3 Step 6 — Smarter/longer player-history cache",
+  "project": "WNBA PRA Speed V3",
+  "phase": "IMPLEMENTATION_DONE_PENDING_PRODUCTION_FREEZE",
+  "step": 6,
+  "total_steps": 9,
+  "status": "DONE",
+  "scope": "Wrap the frozen Step-5 fast-history transport in a longer, season-aware server cache keyed by player_id + season, while preserving frozen Steps 1-5 and all basketball/model semantics.",
+  "source_main": "2aa30da2c79c92a0e348f47157de03e6e0431fc0",
+  "speed_targets": {
+    "warm_same_session_seconds_max": 0.75,
+    "cross_player_seconds_max": 1.5,
+    "true_cold_pra_seconds_max": 2.5,
+    "cached_history_api_seconds_max": 1.5
+  },
+  "history_cache_contract": {
+    "cache_key": [
+      "player_id",
+      "season"
+    ],
+    "active_season_ttl_seconds": 600,
+    "historical_season_ttl_seconds": 21600,
+    "frozen_step3_transport_ttl_seconds": 120,
+    "max_entries": 512,
+    "eviction": "bounded_lru",
+    "single_flight_per_key": true,
+    "cache_only_complete_identity_valid_history": true,
+    "deep_copy_hits": true,
+    "stale_on_error": false,
+    "frozen_step5_transport_reused": true,
+    "step7_precompute_ownership_preserved": true
+  },
+  "protected": {
+    "navigation_v2_steps_1_7": true,
+    "speed_v3_steps_1_5": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "qualification_runs_added": 0,
+    "ranking_runs_added": 0,
+    "monte_carlo_runs_added": 0,
+    "visual_contract_changed": false
+  },
+  "frozen_blobs": {
+    "wnba_pra_speed_v3_step1_profiler.py": "df406e7f3753f5707274d5287c87ee49832515bf",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py": "649b9af7e33be34b6cc931f9a3699d0e002f22d3",
+    "wnba_pra_speed_v3_step2_transport.py": "9a682f1ef27e663f1254d16895ed955f7dc0987e",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step2.py": "3e14bb8b9607cce6f026ba3ae479f7536b0ac9eb",
+    "wnba_pra_speed_v3_step3_bundle.py": "972292086f23531875be6fb697ee494580c988a8",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py": "887af7f2ccf655218a945cf2d48cac1b79ad92eb",
+    "sports_api/api/wnba_pra_detail_bundle.py": "b5591cfcd09f9ed7910b795bb568efc9f4633a97",
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "fa4f7a99a6c73984e90e938efc506711a9f614c6",
+    "wnba_api_client_v1.py": "a371d30e59fc44c441cf08a411bc8210a111913d",
+    "sports_api/api/wnba_pra_cached_detail_bundle.py": "957c9a889533e8b9052130299fb490d0818a673c",
+    "wnba_pra_speed_v3_step4_cache.py": "f99f6c4f9dcf5e76c09544224e005be20a09f0ac",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4.py": "c4b977f116c88d1a52263b3d93165ff9d7a3b541",
+    "devsystem/wnba_pra_speed_v3_step4_public_profile.py": "21bfdf8fac850e0325c307c3c6bfff07602e6502",
+    "sports_api/api/wnba_pra_speed_v3_step5_fast_history.py": "9818a6a7806b133367a3225ab37928daae61e6c1",
+    "wnba_pra_speed_v3_step5_consumer_reuse.py": "6c28247ef6e46eb23a405198831e4f132ee55a57",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py": "8500f5dd4c1540bcee78855a117fa480afcbd251",
+    "devsystem/wnba_pra_speed_v3_step5_public_profile.py": "9d9c3d21d1afa7a6386969798e4086cd02ba0445"
+  },
+  "freeze_exit": {
+    "branch_contract_required": true,
+    "devsystem_final_gate_required": true,
+    "render_history_cache_route_live_required": true,
+    "merged_main_public_profile_required": true,
+    "required_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP6_HISTORY_CACHE_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_STREAMLIT_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_FROZEN_STEP5_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_HISTORY_CACHE_HIT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_ACTIVE_TTL_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_FROZEN"
+    ]
+  },
+  "production_freeze": {
+    "status": "PENDING",
+    "reason": "Requires exact merged-main public profile after the Step-6 backend route is LIVE on Render."
+  },
+  "two_a": {
+    "distributed_lease_owner": "chatgpt:wnba-pra-speed-v3-step6",
+    "lease_generation": 1,
+    "one_active_problem": true,
+    "one_active_pr": true,
+    "no_duplicate_async_runs": true,
+    "terminal_failure_before_patch": true,
+    "stale_fingerprints_rejected": true,
+    "protect_frozen_steps_1_5": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
