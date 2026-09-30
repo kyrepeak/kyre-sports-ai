@@ -52,4 +52,7 @@ def test_step9_history_attempt_alias_closes_nonhistory_provenance_gap():
 def test_step9_wraps_frozen_step8():
     assert "import cfb_top_picks_details_v4 as prior" in Path("cfb_top_picks_details_v5.py").read_text(encoding="utf-8")
     assert "import cfb_top_picks_page_v8 as prior" in Path("cfb_top_picks_page_v9.py").read_text(encoding="utf-8")
-    router_text = Path("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py").read_text(encoding="utf-8")\n    assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 as prior" in router_text\n    assert "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as step8_router" in router_text
+    router_text = Path("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py").read_text(encoding="utf-8")
+    assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 as current_parent" in router_text
+    assert "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as cfb_step8_parent" in router_text
+    assert "cfb_step8_parent.TOP_PICKS_PAGE = TOP_PICKS_PAGE" in router_text
