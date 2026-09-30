@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "task_id": "monster-2a-step4-global-enforcement-tripwire-v1",
+  "title": "MONSTER 2A Enforcement Step 4 — Global Enforcement + Tripwire",
+  "project": "MONSTER 2A Enforcement",
+  "step": 4,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Create the canonical execution entrypoint that composes Steps 1-3 and emits the only global execution proof. Any bypass, missing prerequisite, malformed chain, replay, stale authorization, or lower-step raw output fails closed and routes to safe continuation.",
+  "protected": {
+    "step1_mandatory_action_gate": true,
+    "step2_single_use_receipts": true,
+    "step3_replay_loop_lock": true,
+    "monster_v3_steps_1_8_inherited": true,
+    "original_2a_autonomous_skip_preserved": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "canonical_entrypoint_only": true,
+    "global_execution_proof_required": true,
+    "raw_step_outputs_cannot_bypass": true,
+    "missing_prerequisite_tripwire_blocks": true,
+    "replay_preserved_as_loop_skipped_continue": true,
+    "tampered_global_proof_blocks": true,
+    "live_async_mutation_globally_blocks": true,
+    "safe_continue_without_user": true,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main full certification + devsystem-final-gate GREEN."
+}
