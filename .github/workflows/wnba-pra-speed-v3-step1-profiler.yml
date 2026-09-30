@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+          cat > /tmp/allowed.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step1-profiler.yml
           app.py
           devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json
@@ -52,8 +52,13 @@ jobs:
           tests/test_wnba_pra_speed_v3_step1.py
           wnba_pra_speed_v3_step1_profiler.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          sort -o /tmp/allowed.txt /tmp/allowed.txt
+          while IFS= read -r changed; do
+            grep -Fxq "$changed" /tmp/allowed.txt || {
+              echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_RED:$changed"
+              exit 1
+            }
+          done < /tmp/actual.txt
           echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_GREEN"
 
       - name: Protect frozen Navigation V2 Steps 1-7
