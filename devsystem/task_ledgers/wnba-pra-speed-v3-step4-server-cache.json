@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "task": "wnba-pra-speed-v3-step4-server-cache",
+  "task_id": "wnba-pra-speed-v3-step4-server-cache",
+  "id": "wnba-pra-speed-v3-step4-server-cache",
+  "title": "WNBA PRA Speed V3 Step 4 — Server-side finished-bundle cache",
+  "project": "WNBA PRA Speed V3",
+  "phase": "pra-speed-v3",
+  "step": 4,
+  "total_steps": 9,
+  "status": "PATCHED_PENDING_BRANCH_PROOF",
+  "scope": "Cache the finished frozen Step-3 PRA detail bundle on the server by player+season, expose it through a new read-only endpoint, and route only the Player cold-pair loader through that cached endpoint.",
+  "source_main": "2015c1064f586d9e2f4d9069ea8b41c3a5950a54",
+  "speed_targets": {
+    "warm_same_session_seconds_max": 0.75,
+    "cached_cold_player_seconds_max": 1.5,
+    "true_cold_pra_seconds_max": 2.5
+  },
+  "cache_contract": {
+    "ttl_seconds": 60,
+    "max_entries": 256,
+    "cache_key": [
+      "player_id",
+      "season"
+    ],
+    "caches_only_complete_step3_bundles": true,
+    "deep_copy_on_hit": true,
+    "identical_miss_single_flight": true,
+    "streamlit_hosted_reads_per_cold_open": 1
+  },
+  "protected": {
+    "navigation_v2_steps_1_7": true,
+    "speed_v3_steps_1_3": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "qualification_runs_added": 0,
+    "ranking_runs_added": 0,
+    "monte_carlo_runs_added": 0
+  },
+  "frozen_blobs": {
+    "wnba_pra_speed_v3_step1_profiler.py": "df406e7f3753f5707274d5287c87ee49832515bf",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py": "649b9af7e33be34b6cc931f9a3699d0e002f22d3",
+    "wnba_pra_speed_v3_step2_transport.py": "9a682f1ef27e663f1254d16895ed955f7dc0987e",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step2.py": "3e14bb8b9607cce6f026ba3ae479f7536b0ac9eb",
+    "wnba_pra_speed_v3_step3_bundle.py": "972292086f23531875be6fb697ee494580c988a8",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py": "887af7f2ccf655218a945cf2d48cac1b79ad92eb",
+    "sports_api/api/wnba_pra_detail_bundle.py": "b5591cfcd09f9ed7910b795bb568efc9f4633a97",
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "fa4f7a99a6c73984e90e938efc506711a9f614c6",
+    "wnba_api_client_v1.py": "a371d30e59fc44c441cf08a411bc8210a111913d"
+  },
+  "freeze_exit": {
+    "branch_contract_required": true,
+    "render_cached_api_live_required": true,
+    "merged_main_public_profile_required": true,
+    "required_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP4_TRUE_COLD_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP4_SERVER_CACHE_HIT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP4_WARM_ZERO_READ_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP4_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP4_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP4_FROZEN"
+    ]
+  },
+  "two_a": "One Step-4 authority at a time. Do not reopen Steps 1-3, duplicate async runs, or create a competing cache implementation without terminal failure evidence."
+}
