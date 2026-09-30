@@ -30,6 +30,8 @@ VISIBLE_FIRST_CONTRACT = {
     "scope": "render_visible_player_pra_content_before_frozen_loader",
     "source": "already_selected_game_center_snapshot",
     "visible_before_loader": True,
+    "shell_render_phase": "router_entry_before_frozen_parent",
+    "loader_wrapper_renders_shell": False,
     "shell_is_temporary": True,
     "final_renderer_unchanged": True,
     "frozen_speed_v3_steps_1_7_modified": False,
@@ -112,39 +114,71 @@ def _visible_shell_markup(game_id: str, player_id: int) -> str:
     )
 
 
-def load_player_intelligence_visible_first(
-    original_loader: Callable[[str, int], dict[str, Any]],
-    game_id: str,
-    player_id: int,
-) -> dict[str, Any]:
-    """Emit the temporary visible shell before invoking the frozen loader."""
+def render_visible_shell_early(state: navigation.NavigationState) -> Any:
+    """Render Player identity/PRA immediately at Step-8 router entry."""
     started = perf_counter()
-    markup = _visible_shell_markup(str(game_id), int(player_id))
-    slot = None
-    shell_emit_ms = 0.0
-
-    if markup:
-        slot = st.empty()
-        slot.markdown(markup, unsafe_allow_html=True)
-        shell_emit_ms = (perf_counter() - started) * 1000.0
+    if state.page != navigation.PAGE_PLAYER or not state.game_id or not state.player_id:
         _record(
-            page=navigation.PAGE_PLAYER,
-            player_id=int(player_id),
-            shell_emitted=True,
-            shell_before_loader=True,
-            shell_emit_ms=shell_emit_ms,
-            loader_started_after_shell=True,
-        )
-    else:
-        _record(
-            page=navigation.PAGE_PLAYER,
-            player_id=int(player_id),
+            page=state.page,
             shell_emitted=False,
             shell_before_loader=False,
             shell_emit_ms=0.0,
             loader_started_after_shell=False,
         )
+        return None
 
+    try:
+        player_id = int(state.player_id)
+    except (TypeError, ValueError):
+        _record(
+            page=state.page,
+            shell_emitted=False,
+            shell_before_loader=False,
+            shell_emit_ms=0.0,
+            loader_started_after_shell=False,
+        )
+        return None
+
+    markup = _visible_shell_markup(str(state.game_id), player_id)
+    if not markup:
+        _record(
+            page=state.page,
+            player_id=player_id,
+            shell_emitted=False,
+            shell_before_loader=False,
+            shell_emit_ms=0.0,
+            loader_started_after_shell=False,
+        )
+        return None
+
+    slot = st.empty()
+    slot.markdown(markup, unsafe_allow_html=True)
+    shell_emit_ms = (perf_counter() - started) * 1000.0
+    _record(
+        page=navigation.PAGE_PLAYER,
+        player_id=player_id,
+        shell_emitted=True,
+        shell_before_loader=True,
+        shell_emit_ms=shell_emit_ms,
+        loader_started_after_shell=False,
+        shell_render_phase="router_entry_before_frozen_parent",
+    )
+    return slot
+
+
+def load_player_intelligence_visible_first(
+    original_loader: Callable[[str, int], dict[str, Any]],
+    game_id: str,
+    player_id: int,
+    *,
+    shell_slot: Any = None,
+) -> dict[str, Any]:
+    """Run the frozen loader after the router has already emitted the shell."""
+    _record(
+        page=navigation.PAGE_PLAYER,
+        player_id=int(player_id),
+        loader_started_after_shell=shell_slot is not None,
+    )
     loader_started = perf_counter()
     try:
         payload = original_loader(str(game_id), int(player_id))
@@ -155,16 +189,15 @@ def load_player_intelligence_visible_first(
         )
         raise
     finally:
-        if slot is not None:
-            slot.empty()
+        if shell_slot is not None:
+            shell_slot.empty()
 
     _record(
         loader_ms=(perf_counter() - loader_started) * 1000.0,
         loader_error="",
-        shell_removed_before_final_renderer=True,
+        shell_removed_before_final_renderer=shell_slot is not None,
     )
     return payload
-
 
 def _render_deployment_marker(state: navigation.NavigationState) -> None:
     st.markdown(
@@ -209,5 +242,6 @@ __all__ = [
     "SESSION_PERF",
     "VISIBLE_FIRST_CONTRACT",
     "load_player_intelligence_visible_first",
+    "render_visible_shell_early",
     "render_step8_route",
 ]
