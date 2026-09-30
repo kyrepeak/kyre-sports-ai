@@ -840,3 +840,100 @@ jobs:
             exit 1
           fi
           echo "DEVSYSTEM_FINAL_GATE_GREEN"
+
+  terminal-proof-receipt:
+    if: always() && needs.devsystem-final-gate.result == 'success'
+    needs:
+      - workflow-hygiene
+      - permanent-contract
+      - regression-shield
+      - devsystem-final-gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install terminal receipt proof dependency
+        run: pip install -q pytest
+      - name: Mint exact terminal proof receipt
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          WORKFLOW_HYGIENE_RESULT: ${{ needs.workflow-hygiene.result }}
+          PERMANENT_CONTRACT_RESULT: ${{ needs.permanent-contract.result }}
+          REGRESSION_SHIELD_RESULT: ${{ needs.regression-shield.result }}
+          FINAL_GATE_RESULT: ${{ needs.devsystem-final-gate.result }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            BASE_SHA="$PR_BASE_SHA"
+            HEAD_SHA="$PR_HEAD_SHA"
+            STAGE="branch"
+          else
+            BASE_SHA="$PUSH_BEFORE_SHA"
+            HEAD_SHA="$PUSH_HEAD_SHA"
+            STAGE="main"
+          fi
+          export BASE_SHA HEAD_SHA STAGE
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/monster-v4-step5-scope.txt
+          TEST_COUNT=$(python -m pytest --collect-only -q tests/test_devsystem_terminal_proof_receipt_v1.py tests/test_devsystem_permanent_gate_v1.py | grep -c '::')
+          export TEST_COUNT
+          mkdir -p artifacts/monster-v4-step5
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from devsystem.terminal_proof_receipt_v1 import build_receipt, validate_receipt
+
+          lanes = {
+              "workflow-hygiene": os.environ["WORKFLOW_HYGIENE_RESULT"],
+              "permanent-contract": os.environ["PERMANENT_CONTRACT_RESULT"],
+              "regression-shield": os.environ["REGRESSION_SHIELD_RESULT"],
+              "devsystem-final-gate": os.environ["FINAL_GATE_RESULT"],
+          }
+          scope = [
+              line.strip()
+              for line in Path("/tmp/monster-v4-step5-scope.txt").read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          ]
+          stage = os.environ["STAGE"]
+          tokens = (
+              ["MONSTER_V4_STEP5_GREEN", "MONSTER_V4_STEP5_FROZEN"]
+              if stage == "main"
+              else ["MONSTER_V4_STEP5_BRANCH_GREEN", "MONSTER_V4_STEP5_READY_TO_MERGE"]
+          )
+          receipt = build_receipt(
+              repository=os.environ["GITHUB_REPOSITORY"],
+              checkpoint_id="MONSTER_V4_STEP5",
+              head_sha=os.environ["HEAD_SHA"],
+              authoritative_run=int(os.environ["RUN_ID"]),
+              authoritative_workflow=os.environ["WORKFLOW_NAME"],
+              test_count=int(os.environ["TEST_COUNT"]),
+              required_lanes=lanes,
+              scope_diff=scope,
+              freeze_tokens=tokens,
+          )
+          validate_receipt(receipt)
+          output = Path("artifacts/monster-v4-step5/terminal-proof-receipt.json")
+          output.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print("MONSTER_V4_STEP5_TERMINAL_RECEIPT_GREEN")
+          print(f"MONSTER_V4_STEP5_TERMINAL_RECEIPT_HASH={receipt['receipt_hash']}")
+          for token in tokens:
+              print(token)
+          PY
+      - name: Upload terminal proof receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-v4-step5-terminal-proof-${{ github.run_id }}
+          path: artifacts/monster-v4-step5/terminal-proof-receipt.json
+          if-no-files-found: error
+          retention-days: 30
