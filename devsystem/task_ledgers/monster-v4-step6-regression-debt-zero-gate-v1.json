@@ -39,7 +39,7 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "REGRESSION_DEBT_CLEARED_AWAITING_EXACT_HEAD_PROOF",
+  "phase": "READY_FOR_EXACT_HEAD_PROOF",
   "proof_policy": "Freeze only after the exact PR head passes the regression-debt-zero self-test through permanent-contract and devsystem-final-gate, the exact head merges, merged-main proof confirms the same gate, and Step 6 artifacts are content-addressed in the frozen registry.",
   "regression_debt_closeout": {
     "failure_id": "MONSTER_V4_STEP6_PERMANENT_MARKER_36778252550",
@@ -62,5 +62,6 @@
       }
     ],
     "proof_rule": "The permanent contract and its dedicated test both fail if the Step-6 GREEN workflow marker disappears again."
-  }
+  },
+  "proof_trigger": "Single contents-API commit after atomic regression-debt closeout; no prior CI run existed for the atomic Git-data head."
 }
