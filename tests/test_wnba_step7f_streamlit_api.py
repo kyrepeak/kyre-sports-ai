@@ -91,7 +91,7 @@ class Step7FClientTests(unittest.TestCase):
             with self.assertRaises(KyreWNBAAPIError, msg=bad):
                 _safe_path(bad)
 
-    @patch("wnba_api_client_v1.requests.get")
+    @patch("wnba_api_client_v1._HTTP_SESSION.get")
     def test_health_is_get_only_and_identity_checked(self, get):
         response = Mock(status_code=200)
         response.json.return_value = {"status": "ok"}
@@ -103,7 +103,7 @@ class Step7FClientTests(unittest.TestCase):
         self.assertEqual(args[0], BASE_URL + "/health")
         self.assertNotIn("authorization", {str(k).lower() for k in kwargs.get("headers", {})})
 
-    @patch("wnba_api_client_v1.requests.get")
+    @patch("wnba_api_client_v1._HTTP_SESSION.get")
     def test_games_for_date_passes_only_query_params(self, get):
         response = Mock(status_code=200)
         response.json.return_value = {"season": 2026, "games": []}
@@ -113,7 +113,7 @@ class Step7FClientTests(unittest.TestCase):
         self.assertEqual(args[0], BASE_URL + "/api/v1/wnba/games")
         self.assertEqual(kwargs["params"], {"date": "2026-08-27", "season": 2026})
 
-    @patch("wnba_api_client_v1.requests.get")
+    @patch("wnba_api_client_v1._HTTP_SESSION.get")
     def test_non_200_fails_closed(self, get):
         response = Mock(status_code=502)
         response.json.return_value = {"detail": "upstream failed"}

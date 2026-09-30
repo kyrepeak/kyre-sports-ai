@@ -1,0 +1,92 @@
+{
+  "task": "wnba-pra-speed-v3-step2-pooled-http",
+  "task_id": "wnba-pra-speed-v3-step2-pooled-http",
+  "id": "wnba-pra-speed-v3-step2-pooled-http",
+  "title": "WNBA PRA Speed V3 Step 2 Pooled HTTP Transport",
+  "version": 1,
+  "phase": "pra-speed-v3",
+  "step": 2,
+  "total_steps": 9,
+  "status": "DONE",
+  "step2_status": "DONE",
+  "scope": "Transport-only persistent HTTPS connection pooling for WNBA API reads. Preserve exact URLs, params, headers, timeout semantics, payload parsing, basketball math, market math, navigation, and sportsbook influence.",
+  "source_main": "538d5411e66221882df2c95e0b01085043bf66d4",
+  "step1_frozen": {
+    "merge_sha": "27fd2ccbcb1352c3488307fa48efa46da0d1f019",
+    "proof_run": 36652404547,
+    "player_ready_seconds": 5.629,
+    "total_render_ms": 5141.804,
+    "player_loader_ms": 5136.639,
+    "history_read_ms": 5135.015,
+    "consumer_read_ms": 162.308,
+    "network_reads": 2
+  },
+  "contract": {
+    "persistent_https_session": true,
+    "pool_connections": 8,
+    "pool_maxsize": 16,
+    "adapter_hidden_retries": 0,
+    "urls_changed": false,
+    "params_changed": false,
+    "headers_changed": false,
+    "timeout_semantics_changed": false,
+    "payload_contract_changed": false,
+    "network_reads_added": 0,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "frozen_navigation_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "frozen_speed_step1": true,
+  "red_green": {
+    "red_commit": "1abbb4c5eb768f5bdfd95daa93f8107e41140d9c",
+    "red_run": 36655980473,
+    "red_job": 109700304707,
+    "red_result": "6 failed: persistent pool, Step-2 surfaces, and app activation correctly absent",
+    "green_run": 36656543195,
+    "green_head": "69ef23b75de923a6c49982625ff76313934a12e0",
+    "green_job": 109702005422,
+    "green_result": "6 Step-2 tests passed; 8 frozen Step-7F client tests passed; scope/freeze/compile/transport contract GREEN"
+  },
+  "freeze_exit": {
+    "focused_contract_required": true,
+    "devsystem_required": true,
+    "merged_main_public_profile_required": true,
+    "public_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP2_POOL_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_FROZEN"
+    ],
+    "branch_contract_green": true
+  },
+  "branch_proof": {
+    "step2_tests_green": true,
+    "frozen_client_tests_green": true,
+    "scope_green": true,
+    "frozen_navigation_steps_1_7_green": true,
+    "frozen_speed_step1_green": true,
+    "compile_green": true,
+    "pooled_transport_green": true,
+    "tokens": [
+      "WNBA_PRA_SPEED_V3_STEP2_SCOPE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_NAV_STEPS1_7_FROZEN_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_STEP1_FROZEN_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_POOLED_TRANSPORT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_BRANCH_GREEN"
+    ]
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
