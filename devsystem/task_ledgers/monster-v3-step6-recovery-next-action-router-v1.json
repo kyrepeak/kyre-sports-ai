@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step6-recovery-next-action-router-v1",
+  "title": "MONSTER V3 Step 6 — Recovery / Next-Action Router",
+  "project": "MONSTER V3",
+  "step": 6,
+  "status": "DONE",
+  "scope": "Control-plane-only deterministic router from Steps 2-5 truth into exactly one legal next action. Live async work blocks mutation; stale evidence refreshes; external failures observe/retry; deployment truth routes to deployment reconciliation; repository patches require Step-4 owner-scope authorization.",
+  "protected": {
+    "step1_persistent_brain_frozen": true,
+    "step2_loop_kill_frozen": true,
+    "step2a_autonomous_skip_frozen": true,
+    "step3_truth_ledger_frozen": true,
+    "step4_failure_ownership_frozen": true,
+    "step5_deployment_truth_frozen": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "acceptance": {
+    "exactly_one_action": true,
+    "async_mutation_lock": true,
+    "stale_evidence_refresh_only": true,
+    "owner_scope_enforced": true,
+    "external_patch_blocked": true,
+    "deployment_recovery_routed": true,
+    "product_patch_requires_product_owner": true,
+    "permanent_contract_pending": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_PERMANENT_WIRING_AND_PROOF",
+  "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Technical acceptance remains tracked independently."
+}
