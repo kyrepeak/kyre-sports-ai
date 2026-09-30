@@ -30,7 +30,7 @@ EXPECTED_SCHEMA_VERSION = "wnba_pra_speed_v3_step4_cached_detail_bundle_v1"
 MAX_WORKERS = 4
 SCHEDULE_DEDUPE_SECONDS = 45.0
 API_TIMEOUT_SECONDS = 5.0
-API_ATTEMPTS = 1
+API_ATTEMPTS = 2
 SESSION_PERF = "ks_wnba_pra_speed_v3_step7_perf"
 
 PRECOMPUTE_CONTRACT = {
@@ -42,6 +42,7 @@ PRECOMPUTE_CONTRACT = {
     "background": True,
     "navigation_callback_blocking": False,
     "max_workers": MAX_WORKERS,
+    "per_player_transport_attempts": API_ATTEMPTS,
     "schedule_dedupe_seconds": SCHEDULE_DEDUPE_SECONDS,
     "warm_same_session_target_seconds_max": 0.75,
     "precomputed_cold_player_target_seconds_max": 1.5,

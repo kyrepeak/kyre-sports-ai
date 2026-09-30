@@ -37,6 +37,7 @@ def test_step7_contract_is_nonblocking_precompute_only():
     assert contract["navigation_callback_blocking"] is False
     assert contract["target_endpoint"].endswith("/pra-detail-cached")
     assert contract["max_workers"] == 4
+    assert contract["per_player_transport_attempts"] == 2
     assert contract["frozen_speed_v3_steps_1_6_modified"] is False
     assert contract["projection_math_changed"] is False
     assert contract["market_math_changed"] is False
@@ -120,6 +121,8 @@ def test_step7_warmer_uses_frozen_step4_cached_detail_endpoint(monkeypatch):
     monkeypatch.setattr(module, "KyreWNBAAPIClient", FakeClient)
     result = module._warm_one(101)
 
+    assert observed["kwargs"]["attempts"] == 2
+    assert observed["kwargs"]["timeout_seconds"] == module.API_TIMEOUT_SECONDS
     assert observed["path"].endswith("/101/pra-detail-cached")
     assert observed["params"] == {"season": module.SUPPORTED_SEASON}
     assert result["status"] == "green"
