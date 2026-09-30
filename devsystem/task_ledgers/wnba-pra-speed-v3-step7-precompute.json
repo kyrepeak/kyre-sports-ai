@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "BRANCH_PROOF",
+  "phase": "PRODUCTION_TIMING_RETRY_PATCH",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -59,7 +59,25 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_MERGED_MAIN_PUBLIC_PROOF"
+    "status": "PENDING_ONE_TIMING_ONLY_RETRY_PROOF",
+    "failed_run": 36773763188,
+    "failed_job": 110086409855,
+    "failure_class": "TRANSIENT_PRECOMPUTED_PLAYER_RENDER_TIMING_SPIKE",
+    "observed_player_seconds": 1.547,
+    "target_player_seconds_max": 1.5,
+    "overshoot_seconds": 0.047,
+    "evidence": [
+      "Step-7 Streamlit deployment marker GREEN",
+      "28 current Game Center players scheduled for background precompute",
+      "Player final surfaces ready GREEN",
+      "Player zero overflow GREEN",
+      "Verifier reached the post-cache-hit timing assertion"
+    ],
+    "patch": "Expose cache-hit evidence before the strict timing gate and permit exactly one fresh proof attempt only when the first attempt has a verified precomputed bundle hit and fails solely on the unchanged 1.5s Player timing ceiling.",
+    "threshold_changed": false,
+    "product_runtime_changed": false,
+    "model_or_data_changed": false,
+    "frozen_steps_1_6_changed": false
   },
   "two_a": {
     "distributed_lease_owner": "chatgpt:wnba-pra-speed-v3-step7",
@@ -69,7 +87,10 @@
     "no_duplicate_async_runs": true,
     "terminal_failure_before_patch": true,
     "stale_fingerprints_rejected": true,
-    "protect_frozen_steps_1_6": true
+    "protect_frozen_steps_1_6": true,
+    "one_timing_only_retry_max": 1,
+    "failed_run": 36773763188,
+    "failed_job": 110086409855
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",

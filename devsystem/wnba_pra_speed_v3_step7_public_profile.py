@@ -148,6 +148,11 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                     "Step-7 selected player did not consume a precomputed Step-4 "
                     "finished-bundle cache hit."
                 )
+            print("WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_OBSERVED_GREEN")
+            print(
+                "WNBA_PRA_SPEED_V3_STEP7_OBSERVED_PLAYER_SECONDS="
+                f"{player_seconds:.3f}"
+            )
             if player_seconds > MAX_PRECOMPUTED_PLAYER_SECONDS:
                 raise BrowserQAFailure(
                     "Step-7 precomputed Player open exceeded target: "
