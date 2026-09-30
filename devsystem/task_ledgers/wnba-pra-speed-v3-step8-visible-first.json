@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "BRANCH_ACTION_LEDGER_REPAIR_PENDING_REPROOF",
+  "phase": "BRANCH_ACTION_LOG_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -63,14 +63,20 @@
     ]
   },
   "regression_debt": {
-    "failure_id": "wnba-pra-speed-v3-step8-action-ledger-36785821100",
+    "failure_id": "wnba-pra-speed-v3-step8-action-log-36786282671",
     "owner": "CI",
     "state": "CLEARED",
     "permanent_guards": [
       {
+        "kind": "TEST",
+        "path": "tests/test_wnba_pra_speed_v3_step8.py",
+        "test": "test_step8_task_ledger_has_valid_genesis_action_log",
+        "permanent": true
+      },
+      {
         "kind": "CONTRACT",
         "path": "devsystem/action_ledger_v2.py",
-        "rule": "future task ledger must finish in DONE state",
+        "rule": "task ledger requires action_log",
         "permanent": true
       }
     ],
@@ -85,24 +91,24 @@
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
     "next_legal_action": "WAIT_ONE_FRESH_EXACT_HEAD_REPROOF",
-    "authoritative_failed_run": 36785821100,
-    "authoritative_failed_job": 110127645511,
+    "authoritative_failed_run": 36786282671,
+    "authoritative_failed_job": 110129108564,
     "failure_owner": "CI",
-    "failure_class": "FUTURE_TASK_LEDGER_NOT_DONE",
-    "patch_count": 2
+    "failure_class": "TASK_LEDGER_ACTION_LOG_MISSING",
+    "patch_count": 3
   },
   "branch_failure": {
-    "run": 36785821100,
-    "job": 110127645511,
+    "run": 36786282671,
+    "job": 110129108564,
     "owner": "CI",
-    "failure_class": "FUTURE_TASK_LEDGER_NOT_DONE",
+    "failure_class": "TASK_LEDGER_ACTION_LOG_MISSING",
     "evidence": [
-      "All WNBA PRA Speed V3 Step-4/5/6/7/8 focused contracts passed.",
-      "DevSystem permanent-contract failed inside action_ledger_v2.py verify-pr.",
-      "The exact failure was: future task ledger must finish in DONE state."
+      "Step-8 focused workflow passed on exact head c0c0f8a6d9b7785907f595cbac06d143270e20d7.",
+      "All WNBA PRA Speed V3 Step-4/5/6/7/8 focused DevSystem contracts passed.",
+      "Permanent-contract failed in action_ledger_v2.validate_action_ledger with: task ledger requires action_log."
     ],
-    "root_cause": "The Step-8 task ledger used an execution-phase status instead of the permanent Action Ledger terminal status required for PR task ledgers.",
-    "patch": "Set ledger status to DONE while preserving proof progress in the separate phase field.",
+    "root_cause": "The new Step-8 task ledger reached DONE state but did not include the permanent V2 action_log structure required for future task ledgers.",
+    "patch": "Add a valid empty genesis action_log and a permanent Step-8 regression test guarding the ledger action-log contract.",
     "product_code_changed": false
   },
   "regression_debt_history": [
@@ -119,6 +125,25 @@
         }
       ],
       "open_debt_count": 0
+    },
+    {
+      "failure_id": "wnba-pra-speed-v3-step8-action-ledger-36785821100",
+      "owner": "CI",
+      "state": "CLEARED",
+      "permanent_guards": [
+        {
+          "kind": "CONTRACT",
+          "path": "devsystem/action_ledger_v2.py",
+          "rule": "future task ledger must finish in DONE state",
+          "permanent": true
+        }
+      ],
+      "open_debt_count": 0
     }
-  ]
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
 }
