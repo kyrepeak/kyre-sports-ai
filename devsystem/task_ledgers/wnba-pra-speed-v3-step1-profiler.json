@@ -7,8 +7,8 @@
   "phase": "pra-speed-v3",
   "step": 1,
   "total_steps": 9,
-  "status": "IN_PROGRESS",
-  "step1_status": "IN_PROGRESS",
+  "status": "DONE",
+  "step1_status": "DONE",
   "scope": "Measurement-only profiler for the existing WNBA PRA Player Intelligence route. No speed optimization, projection/model/market/ranking/qualification/Monte Carlo/sportsbook behavior change.",
   "source_main": "03d63732faf5675c2fc585779f73abce4df14150",
   "baseline_public_evidence": {
@@ -83,7 +83,9 @@
       "WNBA_PRA_SPEED_V3_STEP1_PROFILE_GREEN",
       "WNBA_PRA_SPEED_V3_STEP1_GREEN",
       "WNBA_PRA_SPEED_V3_STEP1_FROZEN"
-    ]
+    ],
+    "branch_closeout_green": true,
+    "devsystem_closeout_required": true
   },
   "deployment_readiness_closeout": {
     "failed_public_run": 36649568847,
@@ -96,6 +98,15 @@
     ],
     "root_cause": "Public proof began while PickVault was still serving the previous Step-7 deployment; the profiler had no route-level deployment identity before timing began.",
     "repair_contract": "Expose a hidden Step-1 deployment marker before the page gate and condition-wait for that marker on Slate before one timed Game-to-Player traversal.",
-    "product_behavior_change": false
+    "product_behavior_change": false,
+    "red_run": 36650045666,
+    "red_result": "2 failed, 5 passed; missing Step-1 deployment marker/readiness wait",
+    "green_run": 36650135155,
+    "green_result": "7 passed in 0.30s",
+    "closeout_scope_green": true,
+    "frozen_navigation_steps_1_7_green": true,
+    "measurement_only_green": true,
+    "profiler_deployment_marker_added": true,
+    "condition_based_deployment_wait_added": true
   }
 }
