@@ -1,0 +1,48 @@
+name: WNBA PRA Speed V3 Step 3 Detail Bundle
+
+on:
+  pull_request:
+    paths:
+      - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/main.py"
+      - "wnba_pra_speed_v3_step3_bundle.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py"
+      - "devsystem/wnba_pra_speed_v3_step3_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json"
+      - "tests/test_wnba_pra_speed_v3_step3.py"
+      - ".github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml"
+      - "app.py"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/main.py"
+      - "wnba_pra_speed_v3_step3_bundle.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py"
+      - "devsystem/wnba_pra_speed_v3_step3_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json"
+      - "tests/test_wnba_pra_speed_v3_step3.py"
+      - ".github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml"
+      - "app.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused dependencies
+        run: pip install pytest requests fastapi streamlit httpx pandas
+      - name: Run Step 3 detail-bundle contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest -q tests/test_wnba_pra_speed_v3_step3.py
