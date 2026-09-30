@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "task_id": "monster-2a-step3-replay-loop-lock-v1",
+  "title": "MONSTER 2A Enforcement Step 3 — Replay + Loop Lock",
+  "project": "MONSTER 2A Enforcement",
+  "step": 3,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Reserve execution slots before action by stable action fingerprint, Step-2 receipt hash, and Step-1 source/control-cycle fingerprint. Any previously claimed key becomes LOOP_SKIPPED_CONTINUE and cannot execute again.",
+  "protected": {
+    "step1_mandatory_action_gate": true,
+    "step2_single_use_receipts": true,
+    "monster_v3_steps_1_8_inherited": true,
+    "original_2a_autonomous_skip_preserved": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "execution_slot_claimed_before_action": true,
+    "exact_receipt_replay_skipped": true,
+    "new_receipt_same_action_skipped": true,
+    "async_cycle_replay_skipped": true,
+    "duplicate_becomes_loop_skipped_continue": true,
+    "autonomous_skip_no_user": true,
+    "genuinely_new_actions_still_allowed": true,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main full certification + devsystem-final-gate GREEN."
+}
