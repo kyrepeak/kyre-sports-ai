@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "PRODUCTION_ACTIVE_PRA_SCOPE_PATCH",
+  "phase": "PRODUCTION_INCOMPLETE_BUNDLE_RETRY_PATCH",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -20,13 +20,16 @@
     "target_endpoint": "/api/v1/wnba/players/{player_id}/pra-detail-cached",
     "background": true,
     "navigation_callback_blocking": false,
-    "max_workers": 4,
+    "max_workers": 2,
     "schedule_dedupe_seconds": 45,
     "server_cache_ttl_seconds": 60,
     "reuses_frozen_step4_finished_bundle": true,
     "reuses_frozen_step6_history_cache": true,
     "new_model_calculation": false,
-    "new_sportsbook_fetch": false
+    "new_sportsbook_fetch": false,
+    "per_player_transport_attempts": 2,
+    "invalid_bundle_retry_max": 1,
+    "invalid_bundle_retry_delay_seconds": 0.15
   },
   "protected": {
     "navigation_v2_steps_1_7": true,
@@ -59,27 +62,28 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_ACTIVE_PRA_SCOPE_PROOF",
-    "failed_run": 36775644342,
-    "failed_job": 110092739457,
-    "failure_class": "PRECOMPUTE_TARGET_SET_BROADER_THAN_EXISTING_PRA_ELIGIBILITY",
-    "player_seconds": 0.903,
+    "status": "PENDING_INCOMPLETE_BUNDLE_RETRY_PROOF",
+    "failed_run": 36776404692,
+    "failed_job": 110095302442,
+    "failure_class": "PRA_ELIGIBLE_HTTP200_INCOMPLETE_BUNDLE",
+    "player_seconds_first": 1.547,
+    "player_seconds_retry": 0.419,
     "target_player_seconds_max": 1.5,
-    "speed_green": true,
-    "bundle_cache_hit_green": true,
-    "game_center_roster_rows": 28,
-    "reported_precompute_errors": 3,
+    "remaining_precompute_errors": 1,
     "evidence": [
-      "2-worker headroom patch reduced selected cached Player open to 0.903s.",
-      "Step-7 still targeted every Game Center roster row rather than the established PRA-eligible subset.",
-      "Repository PRA surfaces already exclude OUT/INACTIVE/DOUBTFUL and projected minutes below 15."
+      "Active-PRA scope repair reduced background errors from 3 to 1.",
+      "Allowed fresh-session Player proof measured 0.419s <= 1.500s.",
+      "The remaining failing target is inside the existing PRA-eligible subset.",
+      "KyreWNBAAPIClient attempts=2 retries request/API failures, while Step-7 completeness validation runs after get_json returns."
     ],
-    "patch": "Use the existing V2.8 PRA eligibility gate for Step-7 precompute targets: skip OUT/INACTIVE/DOUBTFUL and projected minutes below 15 while preserving Game Center display order.",
+    "root_cause": "A successful HTTP 200 can still carry a temporarily incomplete Step-4 bundle; that application-level validation miss is outside the transport retry loop.",
+    "patch": "Retry the full cached-detail read exactly once only when the first HTTP-success response fails Step-7 completeness/identity validation.",
     "max_workers": 2,
     "per_player_transport_attempts": 2,
+    "invalid_bundle_retry_max": 1,
     "threshold_changed": false,
     "model_or_data_changed": false,
-    "game_center_ui_changed": false,
+    "eligibility_gate_changed": false,
     "frozen_steps_1_6_changed": false
   },
   "two_a": {
@@ -92,11 +96,12 @@
     "stale_fingerprints_rejected": true,
     "protect_frozen_steps_1_6": true,
     "one_timing_only_retry_max": 1,
-    "failed_run": 36775644342,
-    "failed_job": 110092739457,
+    "failed_run": 36776404692,
+    "failed_job": 110095302442,
     "reliability_patch_count": 1,
     "foreground_headroom_patch_count": 1,
-    "active_pra_scope_patch_count": 1
+    "active_pra_scope_patch_count": 1,
+    "invalid_bundle_retry_max": 1
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
