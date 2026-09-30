@@ -41,6 +41,8 @@ def test_step8_contract_is_visible_first_only():
     contract = module.VISIBLE_FIRST_CONTRACT
     assert contract["step"] == "8/9"
     assert contract["visible_before_loader"] is True
+    assert contract["shell_render_phase"] == "router_entry_before_frozen_parent"
+    assert contract["loader_wrapper_renders_shell"] is False
     assert contract["shell_is_temporary"] is True
     assert contract["final_renderer_unchanged"] is True
     assert contract["frozen_speed_v3_steps_1_7_modified"] is False
@@ -59,7 +61,7 @@ def test_step8_contract_is_visible_first_only():
     assert contract["true_cold_target_seconds_max"] == 2.50
 
 
-def test_step8_shell_is_emitted_before_frozen_loader_and_removed_after(monkeypatch):
+def test_step8_shell_is_emitted_before_frozen_parent_and_removed_after_loader(monkeypatch):
     module = importlib.import_module("wnba_pra_speed_v3_step8_visible_first")
     events = []
 
@@ -96,6 +98,14 @@ def test_step8_shell_is_emitted_before_frozen_loader_and_removed_after(monkeypat
     monkeypatch.setattr(module.st, "empty", lambda: FakeSlot())
     monkeypatch.setattr(module, "_record", lambda **kwargs: events.append(("record", kwargs)))
 
+    state = module.navigation.NavigationState(
+        page=module.navigation.PAGE_PLAYER,
+        game_id="game-1",
+        player_id="101",
+    )
+    shell_slot = module.render_visible_shell_early(state)
+    events.append("parent-entry")
+
     def frozen_loader(game_id, player_id):
         events.append("loader")
         assert game_id == "game-1"
@@ -106,14 +116,15 @@ def test_step8_shell_is_emitted_before_frozen_loader_and_removed_after(monkeypat
         frozen_loader,
         "game-1",
         101,
+        shell_slot=shell_slot,
     )
 
     assert result == {"state": "frozen"}
-    assert events.index("shell") < events.index("loader") < events.index("clear")
+    assert events.index("shell") < events.index("parent-entry") < events.index("loader") < events.index("clear")
     records = [row[1] for row in events if isinstance(row, tuple) and row[0] == "record"]
     assert any(row.get("shell_before_loader") is True for row in records)
+    assert any(row.get("shell_render_phase") == "router_entry_before_frozen_parent" for row in records)
     assert any(row.get("shell_removed_before_final_renderer") is True for row in records)
-
 
 def test_step8_context_mismatch_does_not_invent_visible_shell(monkeypatch):
     module = importlib.import_module("wnba_pra_speed_v3_step8_visible_first")
@@ -137,20 +148,30 @@ def test_step8_context_mismatch_does_not_invent_visible_shell(monkeypatch):
             raise AssertionError("mismatched context must not allocate a shell")
 
     monkeypatch.setattr(module.st, "empty", lambda: ForbiddenSlot())
+    state = module.navigation.NavigationState(
+        page=module.navigation.PAGE_PLAYER,
+        game_id="game-1",
+        player_id="101",
+    )
+    shell_slot = module.render_visible_shell_early(state)
+    assert shell_slot is None
     result = module.load_player_intelligence_visible_first(
         lambda game_id, player_id: {"ok": True},
         "game-1",
         101,
+        shell_slot=shell_slot,
     )
     assert result == {"ok": True}
     assert any(row.get("shell_emitted") is False for row in events)
-
 
 def test_step8_router_wraps_frozen_step7_only():
     source = ROUTER.read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7 as frozen_parent" in source
     assert "performance.load_player_intelligence_same_session" in source
+    assert "shell_slot = step8.render_visible_shell_early(state)" in source
+    assert "shell_slot=shell_slot" in source
     assert "step8.render_step8_route(frozen_parent.render_app)" in source
+    assert source.index("render_visible_shell_early") < source.index("frozen_parent.render_app")
     assert 'FROZEN_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7"' in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
@@ -204,3 +225,16 @@ def test_step8_public_profile_observes_ephemeral_shell_mutations_permanently():
     assert "_wait_shell_mutation(frame, observer_armed_at_ms)" in source
     assert "frame.locator(SHELL_SELECTOR).wait_for" not in source
     assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in source
+
+
+def test_step8_router_emits_shell_before_frozen_parent_permanently():
+    router = ROUTER.read_text(encoding="utf-8")
+    runtime = STEP8.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "state = step8.navigation.current_state()" in router
+    assert "shell_slot = step8.render_visible_shell_early(state)" in router
+    assert router.index("render_visible_shell_early") < router.index("frozen_parent.render_app")
+    assert "shell_slot=shell_slot" in router
+    assert '"shell_render_phase": "router_entry_before_frozen_parent"' in runtime
+    assert '"loader_wrapper_renders_shell": False' in runtime
+    assert "WNBA_PRA_SPEED_V3_STEP8_PRODUCT_REPAIR_SCOPE_GREEN" in workflow
