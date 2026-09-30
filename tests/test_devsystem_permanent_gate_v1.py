@@ -46,6 +46,7 @@ def test_permanent_contract_is_green():
     assert result["mandatory_2a_replay_lock_v1_permanent"] is True
     assert result["mandatory_2a_global_enforcement_v1_permanent"] is True
     assert result["mandatory_2a_adversarial_certification_v1_permanent"] is True
+    assert result["distributed_execution_lease_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -193,6 +194,29 @@ def test_mandatory_2a_adversarial_certification_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/mandatory_2a_adversarial_certification_v1.py" in workflow
     assert "tests/test_devsystem_mandatory_2a_adversarial_certification_v1.py" in workflow
+
+
+def test_distributed_execution_lease_is_permanently_enforced():
+    lease = _load(
+        "distributed_execution_lease_v1",
+        "devsystem/distributed_execution_lease_v1.py",
+    )
+    result = lease.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["persistence_surface"] == "git_ref_fast_forward_cas"
+    assert result["fast_forward_cas_required"] is True
+    assert result["single_live_owner"] is True
+    assert result["stale_revision_blocked"] is True
+    assert result["expired_lease_takeover"] is True
+    assert result["owner_a_executes"] is True
+    assert result["owner_b_cannot_execute"] is True
+    assert result["repository_drift_blocked"] is True
+    assert result["two_a_chain_preserved"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/distributed_execution_lease_v1.py" in workflow
+    assert "tests/test_devsystem_distributed_execution_lease_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
