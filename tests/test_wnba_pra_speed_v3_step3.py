@@ -38,11 +38,21 @@ def test_step3_backend_bundle_preserves_component_payloads(monkeypatch):
     raw_history = {"data_type": "official_player_game_log", "player_id": 123, "games": [{"game_id": "1"}]}
 
     monkeypatch.setattr(module, "build_step18a_consumer_latest", lambda: raw_consumer)
-    monkeypatch.setattr(
-        module,
-        "get_player_game_log_dataset",
-        lambda player_id, season, season_type="Regular Season": raw_history,
-    )
+    observed = {}
+
+    def fake_history(
+        player_id,
+        season,
+        season_type="Regular Season",
+        stats_base_url=None,
+    ):
+        observed["player_id"] = player_id
+        observed["season"] = season
+        observed["season_type"] = season_type
+        observed["stats_base_url"] = stats_base_url
+        return raw_history
+
+    monkeypatch.setattr(module, "get_player_game_log_dataset", fake_history)
 
     result = module.build_pra_detail_bundle(123, 2026)
     assert result["consumer"] == raw_consumer
@@ -52,6 +62,44 @@ def test_step3_backend_bundle_preserves_component_payloads(monkeypatch):
     assert result["player_id"] == 123
     assert result["season"] == 2026
     assert result["semantics"]["streamlit_hosted_reads_required"] == 1
+    assert observed["stats_base_url"] == module.WNBA_CURRENT_STATS_BASE_URL
+
+
+def test_step3_current_stats_host_override_is_isolated(monkeypatch):
+    history = importlib.import_module("sports_api.wnba_game_history")
+    observed = {}
+
+    class Response:
+        status_code = 200
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "resultSets": [
+                    {
+                        "name": "PlayerGameLog",
+                        "headers": [],
+                        "rowSet": [],
+                    }
+                ]
+            }
+
+    def fake_get(url, **kwargs):
+        observed["url"] = url
+        return Response()
+
+    monkeypatch.setattr(history.httpx, "get", fake_get)
+    history._CACHE.clear()
+    history._request_stats_json(
+        history.PLAYER_GAME_LOG_ENDPOINT,
+        [("PlayerID", "123")],
+        base_url=history.WNBA_CURRENT_STATS_BASE_URL,
+    )
+
+    assert observed["url"] == "https://stats.nba.com/stats/playergamelog"
+    assert history.WNBA_STATS_BASE_URL == "https://stats.wnba.com/stats"
 
 
 def test_step3_streamlit_bundle_normalizes_consumer_and_reports_one_read(monkeypatch):
