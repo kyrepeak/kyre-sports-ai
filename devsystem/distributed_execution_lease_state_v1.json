@@ -6,17 +6,17 @@
   "lease_state_path": "devsystem/distributed_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_name": "monster-global-execution",
-  "revision": 54,
+  "revision": 55,
   "generation": 11,
   "holder": {
     "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step8",
     "lease_id": "LEASE-WNBA-PRA-SPEED-V3-STEP8-G11",
     "generation": 11,
     "acquired_at_utc": "2026-09-30T22:15:49Z",
-    "heartbeat_at_utc": "2026-09-30T23:24:00Z",
-    "expires_at_utc": "2026-09-30T23:39:00Z",
+    "heartbeat_at_utc": "2026-09-30T23:24:40Z",
+    "expires_at_utc": "2026-09-30T23:39:40Z",
     "main_sha": "46a2569fd5d884ebde694977cc45f4bde15ed2ac",
-    "head_sha": "8b9469cab334cd9e6623c80e7e55e9205fa3f9ca"
+    "head_sha": "23aa1fa65d166f4f765094d9a59210198842c806"
   },
-  "state_hash": "6b028396792a1084a0581e491f41c20865d32a78a9390deee469c210c48fa2ef"
+  "state_hash": "30671e755d7bae389c49657615b81ca8687ef7bb37921e48f63eda12a99f6c88"
 }
