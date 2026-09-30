@@ -4,26 +4,26 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 17,
+  "truth_epoch": 18,
   "program_id": "MONSTER_V4",
   "program_title": "MONSTER V4",
-  "current_step": 5,
+  "current_step": 6,
   "total_steps": 6,
-  "step_title": "Terminal Proof Receipt",
-  "step_status": "FROZEN",
-  "active_checkpoint": "MONSTER_V4_STEP5",
+  "step_title": "Regression-Debt-Zero Gate",
+  "step_status": "ACTIVE",
+  "active_checkpoint": "MONSTER_V4_STEP6",
   "main_sha": "3cec1d840bfd123a13df0250eb716758e2f610e4",
   "active_pr": null,
   "active_run": null,
   "active_head_sha": "3cec1d840bfd123a13df0250eb716758e2f610e4",
   "blocker": null,
-  "next_legal_action": "START_MONSTER_V4_STEP6",
+  "next_legal_action": "CREATE_MONSTER_V4_STEP6_BRANCH_AND_IMPLEMENT_REGRESSION_DEBT_ZERO_GATE",
   "lease": {
-    "revision": 30,
-    "generation": 8,
-    "state_hash": "7210df5cc431cad73a9588cc87178ecaaf741e7488fd9deb199675de21df63f4",
-    "holder_owner_id": null,
-    "holder_lease_id": null
+    "revision": 31,
+    "generation": 9,
+    "state_hash": "84fd39cb928a5b026270c0cabd2c0b30c8c9c2dfbd3908c0930aecc1559d3775",
+    "holder_owner_id": "chatgpt:monster-v4-step6",
+    "holder_lease_id": "LEASE-E1F7AEE60B81B8075AC7F88F"
   },
   "frozen_registry": {
     "revision": 5,
@@ -52,5 +52,5 @@
     "MONSTER_V4_STEP4",
     "MONSTER_V4_STEP5"
   ],
-  "state_hash": "8598fe4496d88a239a350c81dc2a04df28f51ae8b483e5c2228b9c6ed0d5787c"
+  "state_hash": "e40d762ee0e961a3a35bf41b3dcb866e82b6140138e91a3ac1d8bc65edb26593"
 }
