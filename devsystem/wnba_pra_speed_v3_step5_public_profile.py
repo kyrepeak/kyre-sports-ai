@@ -38,6 +38,7 @@ MAX_TRUE_COLD_SECONDS = 2.5
 MAX_CROSS_PLAYER_SECONDS = 1.5
 MAX_WARM_SAME_SESSION_SECONDS = 0.75
 MARKER_STATE_WAIT_SECONDS = 10.0
+TRANSITION_RETRY_SLEEP_MS = 1500
 
 
 def _wait_api_route() -> float:
@@ -158,6 +159,36 @@ def _wait_marker_state(
         ) from exc
 
 
+def _wait_page_resilient(page, page_name: str, *, timeout_seconds: float):
+    """Retry temporary Streamlit no-frame/loading states within the existing route budget."""
+    started = time.monotonic()
+    deadline = started + float(timeout_seconds)
+    last = ""
+    while time.monotonic() < deadline:
+        remaining = max(0.1, deadline - time.monotonic())
+        try:
+            return _wait_page(page, page_name, timeout_seconds=remaining)
+        except BrowserQAFailure as exc:
+            last = str(exc)
+            folded = last.casefold()
+            transient = (
+                "could not find rendered streamlit app frame" in folded
+                or "taking longer than normal" in folded
+            )
+            if not transient:
+                raise
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            page.wait_for_timeout(
+                min(TRANSITION_RETRY_SLEEP_MS, max(100, int(remaining * 1000)))
+            )
+    raise BrowserQAFailure(
+        f"Step-5 {page_name} transition stayed unavailable for "
+        f"{timeout_seconds:.1f}s; last={last}"
+    )
+
+
 def _assert_player_ready(frame):
     _assert_no_overflow(frame, "player")
     final_ready, missing = _player_final_surfaces_ready(frame)
@@ -182,7 +213,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             frame = _ensure_game_on_slate(page, frame)
             _game_button(frame).first.click()
-            frame, _ = _wait_page(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
+            frame, _ = _wait_page_resilient(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
 
             buttons = frame.get_by_role("button", name=re.compile(r"^Open .+ PRA →$"))
             if buttons.count() < 2:
@@ -192,7 +223,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             first_started = time.monotonic()
             buttons.nth(0).click()
-            frame, _ = _wait_page(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
+            frame, _ = _wait_page_resilient(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
             first_seconds = time.monotonic() - first_started
             _assert_player_ready(frame)
             if first_seconds > MAX_TRUE_COLD_SECONDS:
@@ -202,7 +233,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             back = frame.get_by_role("button", name="← Back to Game Center", exact=True)
             back.click()
-            frame, _ = _wait_page(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
+            frame, _ = _wait_page_resilient(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
 
             second = frame.get_by_role("button", name=second_name, exact=True)
             if second.count() < 1:
@@ -210,7 +241,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             cross_started = time.monotonic()
             second.click()
-            frame, _ = _wait_page(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
+            frame, _ = _wait_page_resilient(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
             cross_seconds = time.monotonic() - cross_started
             _assert_player_ready(frame)
 
@@ -258,7 +289,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             back = frame.get_by_role("button", name="← Back to Game Center", exact=True)
             back.click()
-            frame, _ = _wait_page(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
+            frame, _ = _wait_page_resilient(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
 
             warm = frame.get_by_role("button", name=second_name, exact=True)
             if warm.count() < 1:
@@ -266,7 +297,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             warm_started = time.monotonic()
             warm.click()
-            frame, _ = _wait_page(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
+            frame, _ = _wait_page_resilient(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
             warm_seconds = time.monotonic() - warm_started
             _assert_player_ready(frame)
 
