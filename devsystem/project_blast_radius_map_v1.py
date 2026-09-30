@@ -10,9 +10,13 @@ proof plan before any repository mutation occurs.
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Iterable
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.adaptive_proof_engine_v1 import plan_proof
 from sports_api.monster_dependency_map_v1 import build_dependency_map
