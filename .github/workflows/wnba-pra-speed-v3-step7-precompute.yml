@@ -65,6 +65,14 @@ jobs:
           devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
           devsystem/wnba_pra_speed_v3_step7_public_profile.py
           EOF
+          cat > /tmp/expected-memory-handoff.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step7-precompute.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
+          devsystem/wnba_pra_speed_v3_step7_public_profile.py
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py
+          tests/test_wnba_pra_speed_v3_step7.py
+          wnba_pra_speed_v3_step7_precompute.py
+          EOF
           cat > /tmp/expected-reliability-repair.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step7-precompute.yml
           devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
@@ -124,7 +132,7 @@ jobs:
             exit 0
           fi
 
-          if grep -q "WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_OBSERVED_GREEN" /tmp/step7-first.log \
+          if grep -q "WNBA_PRA_SPEED_V3_STEP7_MEMORY_HANDOFF_OBSERVED_GREEN" /tmp/step7-first.log \
             && grep -q "Step-7 precomputed Player open exceeded target:" /tmp/step7-first.log; then
             echo "WNBA_PRA_SPEED_V3_STEP7_TRANSIENT_PLAYER_TIMING_RETRY"
             sleep 1
