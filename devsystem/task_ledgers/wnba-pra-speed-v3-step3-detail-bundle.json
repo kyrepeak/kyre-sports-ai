@@ -1,0 +1,68 @@
+{
+  "task": "wnba-pra-speed-v3-step3-detail-bundle",
+  "task_id": "wnba-pra-speed-v3-step3-detail-bundle",
+  "id": "wnba-pra-speed-v3-step3-detail-bundle",
+  "title": "WNBA PRA Speed V3 Step 3 Single-Request Detail Bundle",
+  "version": 1,
+  "phase": "pra-speed-v3",
+  "step": 3,
+  "total_steps": 9,
+  "status": "IN_PROGRESS",
+  "step3_status": "IN_PROGRESS",
+  "scope": "Add one read-only PRA detail bundle endpoint that returns the same certified consumer snapshot and the same official player game log in one Streamlit-to-API request. Intercept only frozen Step-5 cold-pair loading.",
+  "source_main": "f3992b979888bf99ea36b333b81456f087882985",
+  "frozen_steps": {
+    "navigation_v2": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "speed_v3_step1": true,
+    "speed_v3_step2": true
+  },
+  "step2_baseline": {
+    "proof_run": 36659686281,
+    "player_ready_seconds": 5.676,
+    "history_read_ms": 5054.343,
+    "streamlit_network_reads": 2
+  },
+  "contract": {
+    "cold_pair_streamlit_api_reads": 1,
+    "bundle_components": [
+      "certified_consumer_snapshot",
+      "official_player_game_log"
+    ],
+    "consumer_normalization_unchanged": true,
+    "history_payload_unchanged": true,
+    "session_cache_behavior_unchanged": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "projection_runs_added": 0,
+    "sportsbook_calls_added": 0,
+    "ranking_runs_added": 0,
+    "qualification_runs_added": 0,
+    "monte_carlo_runs_added": 0
+  },
+  "red_green": {
+    "red_run": null,
+    "green_run": null
+  },
+  "freeze_exit": {
+    "branch_contract_required": true,
+    "devsystem_required": true,
+    "api_bundle_public_required": true,
+    "pickvault_public_profile_required": true,
+    "public_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP3_API_BUNDLE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_ONE_READ_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_FROZEN"
+    ]
+  }
+}
