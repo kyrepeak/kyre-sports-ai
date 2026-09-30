@@ -1,0 +1,88 @@
+name: WNBA PRA Speed V3 Step 8 Visible First
+
+on:
+  pull_request:
+    paths:
+      - "app.py"
+      - "wnba_pra_speed_v3_step8_visible_first.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py"
+      - "devsystem/wnba_pra_speed_v3_step8_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json"
+      - "tests/test_wnba_pra_speed_v3_step8.py"
+      - ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "wnba_pra_speed_v3_step8_visible_first.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py"
+      - "devsystem/wnba_pra_speed_v3_step8_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json"
+      - "tests/test_wnba_pra_speed_v3_step8.py"
+      - ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+
+jobs:
+  focused-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Step-8 focused dependencies
+        run: pip install -q pytest requests fastapi streamlit httpx pandas pypdf
+      - name: Enforce exact Step-8 initial scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/devsystem-targeted-ci.yml
+          .github/workflows/wnba-pra-speed-v3-step8-visible-first.yml
+          app.py
+          devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json
+          devsystem/wnba_pra_speed_v3_step8_public_profile.py
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py
+          tests/test_wnba_pra_speed_v3_step8.py
+          wnba_pra_speed_v3_step8_visible_first.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "WNBA_PRA_SPEED_V3_STEP8_INITIAL_SCOPE_GREEN"
+      - name: Run Step-8 focused contract
+        run: python -m pytest -q tests/test_wnba_pra_speed_v3_step8.py
+      - name: Certify Step-8 branch
+        run: |
+          echo "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_FIRST_CONTRACT_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEPS1_7_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP8_BRANCH_GREEN"
+
+  public-profile:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser proof dependencies
+        run: |
+          pip install playwright requests streamlit
+          python -m playwright install --with-deps chromium
+      - name: Prove Step 8 visible-first Player render
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/wnba_pra_speed_v3_step8_public_profile.py             --production-url https://pickvault.streamlit.app             --artifact-dir artifacts/wnba-pra-speed-v3-step8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wnba-pra-speed-v3-step8-profile
+          path: artifacts/wnba-pra-speed-v3-step8
+          if-no-files-found: ignore
