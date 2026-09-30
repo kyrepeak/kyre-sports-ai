@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step4-failure-ownership-engine-v1",
+  "title": "MONSTER V3 Step 4 — Failure Ownership Engine",
+  "project": "MONSTER V3",
+  "step": 4,
+  "status": "DONE",
+  "scope": "Control-plane-only failure ownership classifier. Every failure must be assigned to PRODUCT, VERIFIER, CI, DEPLOYMENT, EXTERNAL, or STALE before any patch. Repository mutations are fail-closed outside the classified owner's authorized scope.",
+  "protected": {
+    "step1_persistent_brain_frozen": true,
+    "step2_loop_kill_frozen": true,
+    "step2a_autonomous_skip_frozen": true,
+    "step3_truth_ledger_frozen": true,
+    "async_mutation_lock_preserved": true,
+    "stale_evidence_guard_preserved": true,
+    "product_runtime_unchanged_by_engine": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "acceptance": {
+    "six_owner_classes": true,
+    "classify_before_patch": true,
+    "owner_scope_enforced": true,
+    "verifier_cannot_patch_product": true,
+    "stale_cannot_patch": true,
+    "external_cannot_patch": true,
+    "permanent_contract_updated": true,
+    "red_contract_installed": true,
+    "red_contract_blocker_cleared": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "status_semantics": "Anti-Loop V2 requires each changed PR task ledger to be replay-closed as DONE; Step-4 technical acceptance remains independently tracked below until proof is complete.",
+  "proof_policy": "Exact PR-head and merged-main proof identity is owned by the Step-3 Truth Ledger and live GitHub evidence, not static task-ledger booleans."
+}
