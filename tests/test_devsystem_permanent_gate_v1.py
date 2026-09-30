@@ -44,6 +44,7 @@ def test_permanent_contract_is_green():
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
+    assert result["adaptive_proof_engine_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -131,6 +132,24 @@ def test_deployment_truth_control_plane_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/deployment_truth_control_plane_v1.py" in workflow
     assert "tests/test_devsystem_deployment_truth_control_plane_v1.py" in workflow
+
+
+def test_adaptive_proof_engine_is_permanently_enforced():
+    engine = _load("adaptive_proof_engine_v1", "devsystem/adaptive_proof_engine_v1.py")
+    result = engine.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["css_targeted_browser"] is True
+    assert result["router_fresh_session"] is True
+    assert result["provider_provenance"] is True
+    assert result["release_full_certification"] is True
+    assert result["mixed_union_no_duplicates"] is True
+    assert result["stale_head_blocked"] is True
+    assert result["unknown_fail_safe"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/adaptive_proof_engine_v1.py" in workflow
+    assert "tests/test_devsystem_adaptive_proof_engine_v1.py" in workflow
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():

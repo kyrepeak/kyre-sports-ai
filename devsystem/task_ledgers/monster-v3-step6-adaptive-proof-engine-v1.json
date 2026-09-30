@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step6-adaptive-proof-engine-v1",
+  "title": "MONSTER V3 Step 6 — Adaptive Proof Engine",
+  "project": "MONSTER V3",
+  "step": 6,
+  "status": "DONE",
+  "scope": "Read-only proof router that selects the cheapest legitimate proof obligations by change type while preserving exact-head truth. CSS/UI uses static plus targeted browser proof; router/navigation uses route contract plus fresh-session navigation; provider/data uses field contract plus provenance; release/deployment uses full merged-main plus production certification. Mixed changes compose obligations without duplicates; unknown changes fail safe to full proof.",
+  "protected": {
+    "step1_persistent_brain_frozen": true,
+    "step2_loop_kill_frozen": true,
+    "step2a_autonomous_skip_frozen": true,
+    "step3_truth_ledger_frozen": true,
+    "step4_failure_ownership_merged": true,
+    "step5_deployment_truth_frozen": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "acceptance": {
+    "css_targeted_browser": false,
+    "router_fresh_session": false,
+    "provider_provenance": false,
+    "release_full_certification": false,
+    "mixed_union_no_duplicates": false,
+    "stale_head_blocked": false,
+    "unknown_fail_safe": false,
+    "permanent_contract_updated": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "RED_CONTRACT_INSTALLED",
+  "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Step-6 technical acceptance is tracked independently until exact-head and merged-main proof complete."
+}
