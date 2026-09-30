@@ -173,5 +173,41 @@
     "render_api_redeploy_required": false,
     "frozen_navigation_steps_1_7_changed": false,
     "frozen_speed_v3_steps_1_2_changed": false
+  },
+  "history_transport_repair": {
+    "status": "PATCHED_PENDING_PROOF",
+    "evidence": {
+      "failed_merged_main_run": 36668946740,
+      "failed_public_job": 109740568166,
+      "render_path": "/api/v1/wnba/players/4398674/pra-detail",
+      "render_duration_ms": 20156.5,
+      "render_status_code": 200,
+      "streamlit_timeout_seconds": 5,
+      "root_cause": "Legacy WNBA Stats playergamelog transport exceeds the Step-3 public latency budget from Render."
+    },
+    "repair_contract": {
+      "scope": "Step-3 history transport only",
+      "provider": "ESPN WNBA athlete gamelog",
+      "endpoint": "site.web.api.espn.com common/v3 athlete gamelog",
+      "request_timeout_seconds": 3.5,
+      "preserves_player_intelligence_fields": [
+        "game_date",
+        "opponent",
+        "minutes",
+        "points",
+        "rebounds",
+        "assists",
+        "recent5",
+        "recent10",
+        "h2h"
+      ],
+      "streamlit_hosted_reads_required": 1,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "sportsbook_calls_added": 0,
+      "frozen_speed_v3_steps_1_2_changed": false,
+      "frozen_navigation_steps_1_7_changed": false
+    },
+    "two_a_decision": "One narrow source-router repair; old deployment and timeout failures are frozen evidence and must not be rerun unchanged."
   }
 }
