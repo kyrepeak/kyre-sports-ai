@@ -57,5 +57,19 @@
     "probability_changed": false,
     "ranking_changed": false,
     "selection_changed": false
+  },
+  "authoritative_failure_repair": {
+    "failed_run": 36682342045,
+    "failed_job": 109780935982,
+    "failure_class": "A_SOURCE_COMPATIBILITY_ASSERTION",
+    "exact_failure": "tests/test_wnba_pra_speed_v3_step4.py::test_step4_activation_is_wired required the frozen WNBA Step-4 import string to remain present in app.py source.",
+    "root_cause": "Step-9 correctly delegated through WNBA Step 4 at runtime, but app.py no longer contained the exact source-compatibility import string expected by the frozen WNBA contract.",
+    "patch": "Add the exact WNBA Step-4 import string as a frozen compatibility comment while leaving the active runtime import on Step 9.",
+    "runtime_parent_changed": false,
+    "product_logic_changed": false,
+    "steps1_8_changed": false,
+    "wnba_step4_changed": false,
+    "api2_changed": false,
+    "rerun_of_failed_sha": false
   }
 }
