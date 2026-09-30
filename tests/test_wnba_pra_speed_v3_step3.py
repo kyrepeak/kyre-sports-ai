@@ -9,6 +9,7 @@ API_ROUTE = ROOT / "sports_api" / "api" / "wnba_pra_detail_bundle.py"
 STEP3 = ROOT / "wnba_pra_speed_v3_step3_bundle.py"
 ROUTER = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py"
 PUBLIC = ROOT / "devsystem" / "wnba_pra_speed_v3_step3_public_profile.py"
+ESPN_HISTORY = ROOT / "sports_api" / "wnba_pra_speed_v3_step3_espn_history.py"
 MAIN = ROOT / "sports_api" / "main.py"
 APP = ROOT / "app.py"
 
@@ -18,6 +19,7 @@ def test_step3_surfaces_exist():
     assert STEP3.exists(), "Step-3 Streamlit bundle loader is missing"
     assert ROUTER.exists(), "Step-3 router is missing"
     assert PUBLIC.exists(), "Step-3 public proof is missing"
+    assert ESPN_HISTORY.exists(), "Step-3 ESPN history adapter is missing"
 
 
 def test_step3_backend_bundle_uses_same_certified_sources():
@@ -25,7 +27,7 @@ def test_step3_backend_bundle_uses_same_certified_sources():
     assert '@router.get("/players/{player_id}/pra-detail")' in source
     assert "ThreadPoolExecutor(max_workers=2)" in source
     assert "build_step18a_consumer_latest" in source
-    assert "get_player_game_log_dataset" in source
+    assert "get_step3_espn_player_game_log_dataset" in source
     assert '"streamlit_hosted_reads_required": 1' in source
     assert '"projection_run": False' in source
     assert '"sportsbook_network_called": False' in source
@@ -40,19 +42,16 @@ def test_step3_backend_bundle_preserves_component_payloads(monkeypatch):
     monkeypatch.setattr(module, "build_step18a_consumer_latest", lambda: raw_consumer)
     observed = {}
 
-    def fake_history(
-        player_id,
-        season,
-        season_type="Regular Season",
-        stats_base_url=None,
-    ):
+    def fake_history(player_id, season):
         observed["player_id"] = player_id
         observed["season"] = season
-        observed["season_type"] = season_type
-        observed["stats_base_url"] = stats_base_url
         return raw_history
 
-    monkeypatch.setattr(module, "get_player_game_log_dataset", fake_history)
+    monkeypatch.setattr(
+        module,
+        "get_step3_espn_player_game_log_dataset",
+        fake_history,
+    )
 
     result = module.build_pra_detail_bundle(123, 2026)
     assert result["consumer"] == raw_consumer
@@ -62,7 +61,8 @@ def test_step3_backend_bundle_preserves_component_payloads(monkeypatch):
     assert result["player_id"] == 123
     assert result["season"] == 2026
     assert result["semantics"]["streamlit_hosted_reads_required"] == 1
-    assert observed["stats_base_url"] == module.WNBA_CURRENT_STATS_BASE_URL
+    assert result["semantics"]["history_source"] == "espn_wnba_athlete_gamelog"
+    assert observed == {"player_id": 123, "season": 2026}
 
 
 def test_step3_current_stats_host_override_is_isolated(monkeypatch):
@@ -148,3 +148,85 @@ def test_step3_backend_router_and_streamlit_activation_are_wired():
     assert "app.include_router(wnba_pra_detail_bundle_router)" in main_source
     assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step3 import record_bootstrap_import_ms, render_app" in app_source
     assert "Frozen WNBA PRA Speed V3 Step 2 compatibility" in app_source
+
+
+def test_step3_espn_history_normalizes_current_common_v3_shape(monkeypatch):
+    module = importlib.import_module("sports_api.wnba_pra_speed_v3_step3_espn_history")
+    monkeypatch.setattr(
+        module,
+        "get_wnba_teams",
+        lambda season: [
+            {
+                "team_key": "atlanta-dream",
+                "slug": "dream",
+                "abbreviation": "ATL",
+                "nickname": "Dream",
+                "full_name": "Atlanta Dream",
+            },
+            {
+                "team_key": "new-york-liberty",
+                "slug": "liberty",
+                "abbreviation": "NYL",
+                "nickname": "Liberty",
+                "full_name": "New York Liberty",
+            },
+        ],
+    )
+    payload = {
+        "team": {"abbreviation": "ATL"},
+        "labels": [
+            "DATE", "OPP", "RESULT", "MIN", "FG", "3PT", "FT",
+            "REB", "AST", "STL", "BLK", "PTS",
+        ],
+        "names": [
+            "date", "opponent", "gameResult", "minutes", "fieldGoals",
+            "threePointFieldGoals", "freeThrows", "rebounds", "assists",
+            "steals", "blocks", "points",
+        ],
+        "events": [
+            {
+                "id": "401000001",
+                "date": "2026-09-27T00:00Z",
+                "opponent": {"abbreviation": "NYL"},
+                "gameResult": "W",
+                "atVs": "vs",
+                "stats": [
+                    "35", "7-14", "2-5", "4-4", "8", "6", "2", "1", "20",
+                ],
+            }
+        ],
+    }
+
+    result = module.normalize_espn_wnba_gamelog(
+        payload,
+        player_id=4398674,
+        season=2026,
+        retrieved_at_utc="2026-09-30T00:00:00+00:00",
+    )
+
+    assert result["data_type"] == "official_player_game_log"
+    assert result["source"] == module.ESPN_HISTORY_SOURCE
+    assert result["player_id"] == 4398674
+    assert result["game_count"] == 1
+    game = result["games"][0]
+    assert game["game_date"] == "2026-09-27"
+    assert game["minutes"] == 35.0
+    assert game["field_goals_made"] == 7
+    assert game["field_goals_attempted"] == 14
+    assert game["three_pointers_made"] == 2
+    assert game["three_pointers_attempted"] == 5
+    assert game["free_throws_made"] == 4
+    assert game["free_throws_attempted"] == 4
+    assert game["rebounds"] == 8
+    assert game["assists"] == 6
+    assert game["steals"] == 2
+    assert game["blocks"] == 1
+    assert game["points"] == 20
+    assert game["matchup"]["team_key"] == "atlanta-dream"
+    assert game["matchup"]["opponent_team_key"] == "new-york-liberty"
+
+
+def test_step3_espn_history_request_is_bounded():
+    module = importlib.import_module("sports_api.wnba_pra_speed_v3_step3_espn_history")
+    assert module.REQUEST_TIMEOUT_SECONDS < 5.0
+    assert module.CACHE_TTL_SECONDS >= 60
