@@ -160,11 +160,12 @@ def test_project_blast_radius_map_is_permanently_enforced():
     )
     result = blast.contract_self_test()
     assert result["status"] == "GREEN"
-    assert result["entrypoint_blast_radius_visible"] is True
-    assert result["protected_reach_visible"] is True
-    assert result["unknown_surface_fail_safe"] is True
-    assert result["stale_head_replan"] is True
-    assert result["pre_edit_only"] is True
+    assert result["direct_transitive_map"] is True
+    assert result["protected_reach_guard"] is True
+    assert result["blast_radius_risk"] is True
+    assert result["adaptive_proof_handoff"] is True
+    assert result["unknown_fail_safe"] is True
+    assert result["stale_head_blocked"] is True
     assert result["product_runtime_mutation"] is False
 
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
