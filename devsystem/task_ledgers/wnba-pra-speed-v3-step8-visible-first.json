@@ -7,8 +7,8 @@
   "project": "WNBA PRA Speed V3",
   "step": 8,
   "total_steps": 9,
-  "status": "PENDING_PROOF",
-  "phase": "BRANCH_IMPLEMENTATION",
+  "status": "PENDING_REPROOF",
+  "phase": "BRANCH_CI_SCOPE_FETCH_REPAIR",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -63,8 +63,18 @@
     ]
   },
   "regression_debt": {
-    "open_debt_count": 0,
-    "state": "NONE"
+    "failure_id": "wnba-pra-speed-v3-step8-scope-fetch-36785422818",
+    "owner": "CI",
+    "state": "CLEARED",
+    "permanent_guards": [
+      {
+        "kind": "TEST",
+        "path": "tests/test_wnba_pra_speed_v3_step8.py",
+        "test": "test_step8_exact_scope_guard_fetches_base_history_permanently",
+        "permanent": true
+      }
+    ],
+    "open_debt_count": 0
   },
   "two_a": {
     "distributed_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step8",
@@ -74,6 +84,25 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_BRANCH_PROOF"
+    "next_legal_action": "WAIT_ONE_FRESH_EXACT_HEAD_REPROOF",
+    "authoritative_failed_run": 36785422818,
+    "authoritative_failed_job": 110125557691,
+    "failure_owner": "CI",
+    "failure_class": "SHALLOW_CHECKOUT_MISSING_PR_BASE_SHA",
+    "patch_count": 1
+  },
+  "branch_failure": {
+    "run": 36785422818,
+    "job": 110125557691,
+    "owner": "CI",
+    "failure_class": "SHALLOW_CHECKOUT_MISSING_PR_BASE_SHA",
+    "evidence": [
+      "Focused Step-8 job checked out pull/1268/merge with fetch-depth 1.",
+      "Exact-scope step then ran git diff against base SHA cf40a3aa5d42063fd0a41bb70c61b654a9084390.",
+      "Git returned fatal: bad object for the base SHA before pytest executed."
+    ],
+    "root_cause": "The exact-scope verifier requires PR base history but the workflow used the default shallow checkout.",
+    "patch": "Set fetch-depth: 0 on the focused-contract checkout so the exact base/head diff is always available.",
+    "product_code_changed": false
   }
 }
