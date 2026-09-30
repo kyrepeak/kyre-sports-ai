@@ -7,8 +7,8 @@
   "phase": "pra-speed-v3",
   "step": 1,
   "total_steps": 9,
-  "status": "DONE",
-  "step1_status": "DONE",
+  "status": "IN_PROGRESS",
+  "step1_status": "IN_PROGRESS",
   "scope": "Measurement-only profiler for the existing WNBA PRA Player Intelligence route. No speed optimization, projection/model/market/ranking/qualification/Monte Carlo/sportsbook behavior change.",
   "source_main": "03d63732faf5675c2fc585779f73abce4df14150",
   "baseline_public_evidence": {
@@ -108,5 +108,22 @@
     "measurement_only_green": true,
     "profiler_deployment_marker_added": true,
     "condition_based_deployment_wait_added": true
+  },
+  "full_streamlit_redeploy_closeout": {
+    "failed_public_run": 36650607958,
+    "failed_public_job": 109683751305,
+    "observed_for_seconds": 180,
+    "evidence": [
+      "merged-main focused-contract SUCCESS",
+      "merged-main DevSystem final gate SUCCESS",
+      "Step-7 Slate repeatedly healthy on public host",
+      "Step-1 deployment marker absent for full 180-second condition window"
+    ],
+    "root_cause": "Community Cloud remained on the pre-Step-1 hosted process after the app.py activation had already merged; this is repository-established stale Streamlit activation behavior.",
+    "precedent": "cfb-top-picks-nav-step3-full-redeploy-v1",
+    "patch_contract": "Append one comment-only requirements.txt full-redeploy marker with dependency versions unchanged, expand only the deployment-readiness proof window to 600 seconds, and preserve all product/model/router behavior.",
+    "dependency_versions_changed": false,
+    "runtime_product_code_changed": false,
+    "frozen_navigation_steps_1_7_changed": false
   }
 }
