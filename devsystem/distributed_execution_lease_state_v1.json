@@ -13,10 +13,10 @@
     "lease_id": "LEASE-MONSTERV4STEP4GEN4",
     "generation": 4,
     "acquired_at_utc": "2026-09-30T06:00:30Z",
-    "heartbeat_at_utc": "2026-09-30T06:24:00Z",
-    "expires_at_utc": "2026-09-30T06:39:00Z",
+    "heartbeat_at_utc": "2026-09-30T06:25:00Z",
+    "expires_at_utc": "2026-09-30T06:40:00Z",
     "main_sha": "e557932165a747a06dfd59483c25bdd060aee3e7",
     "head_sha": "e557932165a747a06dfd59483c25bdd060aee3e7"
   },
-  "state_hash": "8f66f62de07395762632b9367b682e2c86de0b92e7af889f0d85e7be35436838"
+  "state_hash": "60ef8cb60dd25b692eef68a59238b3f9eac4b8d7400e97dcde793f71d2ea58cf"
 }
