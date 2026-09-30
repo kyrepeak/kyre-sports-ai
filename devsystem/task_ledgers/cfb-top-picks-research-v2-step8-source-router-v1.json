@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step8-source-router-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 8 source router + fallback discipline",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "8/9",
+  "status": "DONE",
+  "problem": "Verified research existed across Steps 3-7, but source/freshness truth and fallback usage were distributed across multiple owners instead of normalized per data field.",
+  "root_cause": "No additive DATA_FIELD provenance layer assembled selected source, observed_at, fallback state, route policy, and missing-field explanations into one auditable contract.",
+  "patch": "Add a read-only Step-8 source-router audit, detail wrapper, Sources + Freshness UI, and route wrapper. Fail closed on material facts missing source/freshness, track verified fallbacks, preserve terminal history truth, and keep all projection influence at 0.0%.",
+  "acceptance": {
+    "unit_of_work_data_field": true,
+    "no_source_loyalty": true,
+    "material_fact_source_required": true,
+    "material_fact_observed_at_required": true,
+    "fallback_usage_tracked": true,
+    "unavailable_fields_explained": true,
+    "history_terminal_enforced": true,
+    "probability_unchanged": true,
+    "ranking_unchanged": true,
+    "selection_unchanged": true,
+    "sportsbook_projection_weight": 0,
+    "source_router_projection_weight": 0,
+    "api2_separate_and_protected": true,
+    "step2a_enforced": true
+  },
+  "protected": {
+    "steps1_7_wrapped_not_modified": true,
+    "cfb_top_picks_engine_v1": true,
+    "cfb_top_picks_details_v3": true,
+    "cfb_top_picks_page_v7": true,
+    "api2": true
+  },
+  "action_log": {"head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000", "events": [], "consumed_receipts": []},
+  "transition_history": [],
+  "override_events": []
+}
