@@ -6,8 +6,8 @@
   "lease_state_path": "devsystem/distributed_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_name": "monster-global-execution",
-  "revision": 18,
+  "revision": 19,
   "generation": 4,
   "holder": null,
-  "state_hash": "0e8a94632256de9938f7f06038c38412f667da6b1c8669f879068a5f1f9414b6"
+  "state_hash": "002d8aa6f49719778c57c598217c11b85bffc383e6509661671458ab3be9430f"
 }
