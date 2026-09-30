@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "task_id": "monster-2a-step5-adversarial-certification-v1",
+  "title": "MONSTER 2A Enforcement Step 5 — Permanent Adversarial Certification",
+  "project": "MONSTER 2A Enforcement",
+  "step": 5,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Add the final preflight firewall and permanent adversarial matrix. Reject stale repo/head identity and frozen-state mutations before invoking the frozen Step-4 canonical entrypoint; permanently attack replay, duplicate polling/runs, missing authorization, unknown actions, tampered proofs, frozen checkpoints, and stale brain state.",
+  "protected": {
+    "step1_mandatory_action_gate": true,
+    "step2_single_use_receipts": true,
+    "step3_replay_loop_lock": true,
+    "step4_global_enforcement_tripwire": true,
+    "monster_v3_steps_1_8_inherited": true,
+    "original_2a_autonomous_skip_preserved": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "stale_repo_state_fails_closed": true,
+    "frozen_checkpoint_mutation_fails_closed": true,
+    "frozen_brain_mutation_fails_closed": true,
+    "replay_fails_closed": true,
+    "duplicate_poll_skips": true,
+    "competing_run_blocks": true,
+    "missing_authorization_blocks": true,
+    "unknown_action_blocks": true,
+    "tampered_proof_blocks": true,
+    "step5_final_certification_required": true,
+    "adversarial_matrix_permanent": true,
+    "permanent_contract_updated": true
+  },
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "completion_tokens": [
+    "MONSTER_2A_ENFORCEMENT_STEP5_GREEN",
+    "MONSTER_2A_ENFORCEMENT_STEP5_FROZEN",
+    "MONSTER_2A_ENFORCEMENT_COMPLETE"
+  ],
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main full certification + devsystem-final-gate GREEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

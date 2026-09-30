@@ -45,6 +45,7 @@ def test_permanent_contract_is_green():
     assert result["mandatory_2a_receipt_v1_permanent"] is True
     assert result["mandatory_2a_replay_lock_v1_permanent"] is True
     assert result["mandatory_2a_global_enforcement_v1_permanent"] is True
+    assert result["mandatory_2a_adversarial_certification_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -172,6 +173,26 @@ def test_mandatory_2a_global_enforcement_tripwire_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/mandatory_2a_global_enforcement_v1.py" in workflow
     assert "tests/test_devsystem_mandatory_2a_global_enforcement_v1.py" in workflow
+
+
+def test_mandatory_2a_adversarial_certification_is_permanently_enforced():
+    adversarial = _load(
+        "mandatory_2a_adversarial_certification_v1",
+        "devsystem/mandatory_2a_adversarial_certification_v1.py",
+    )
+    result = adversarial.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["attack_count"] >= 12
+    assert result["all_attacks_fail_closed"] is True
+    assert result["legal_global_proof_valid"] is True
+    assert result["step4_preserved"] is True
+    assert result["steps1_3_preserved"] is True
+    assert result["safe_continue_no_user"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/mandatory_2a_adversarial_certification_v1.py" in workflow
+    assert "tests/test_devsystem_mandatory_2a_adversarial_certification_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
