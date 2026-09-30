@@ -13,12 +13,14 @@ from playwright.sync_api import sync_playwright
 
 from devsystem.browser_qa_v1 import BrowserQAFailure
 from devsystem.wnba_nav_v2_step7_public_freeze import (
+    CERTIFIED_GAME_DATES,
     VIEWPORT,
     _assert_no_overflow,
     _ensure_game_on_slate,
     _game_button,
     _player_final_surfaces_ready,
     _route_to_wnba_pra,
+    _set_date_with_game,
     _wait_page,
 )
 from devsystem.wnba_pra_speed_v3_step1_public_profile import (
@@ -39,6 +41,7 @@ MAX_CROSS_PLAYER_SECONDS = 1.5
 MAX_WARM_SAME_SESSION_SECONDS = 0.75
 MARKER_STATE_WAIT_SECONDS = 10.0
 TRANSITION_RETRY_SLEEP_MS = 1500
+MAX_GAME_SCAN = 12
 
 
 def _wait_api_route() -> float:
@@ -196,6 +199,86 @@ def _assert_player_ready(frame):
         raise BrowserQAFailure(f"Frozen Player Intelligence surfaces missing: {missing}")
 
 
+def _player_buttons(frame):
+    return frame.get_by_role("button", name=re.compile(r"^Open .+ PRA →$"))
+
+
+def _scan_slate_for_two_player_game(page, frame, *, label: str):
+    observed: list[str] = []
+    game_count = min(int(_game_button(frame).count()), MAX_GAME_SCAN)
+    for index in range(game_count):
+        buttons = _game_button(frame)
+        if index >= buttons.count():
+            break
+        buttons.nth(index).click()
+        game_frame, _ = _wait_page_resilient(
+            page,
+            "game",
+            timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS,
+        )
+        players = _player_buttons(game_frame)
+        player_count = int(players.count())
+        observed.append(f"{label}:game{index}:players={player_count}")
+        if player_count >= 2:
+            first_name = players.nth(0).inner_text().strip()
+            second_name = players.nth(1).inner_text().strip()
+            print(
+                "WNBA_PRA_SPEED_V3_STEP5_TWO_PLAYER_GAME_GREEN="
+                f"{label}:game{index}:players={player_count}"
+            )
+            return game_frame, first_name, second_name, observed
+
+        back = game_frame.get_by_role("button", name="← Back to WNBA Slate", exact=True)
+        if back.count() < 1:
+            raise BrowserQAFailure(
+                f"Step-5 game selection could not return to Slate after {label} game {index}."
+            )
+        back.click()
+        frame, _ = _wait_page_resilient(
+            page,
+            "slate",
+            timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS,
+        )
+    return frame, "", "", observed
+
+
+def _select_game_with_two_players(page, frame):
+    frame = _ensure_game_on_slate(page, frame)
+    all_observed: list[str] = []
+
+    frame, first_name, second_name, observed = _scan_slate_for_two_player_game(
+        page,
+        frame,
+        label="default",
+    )
+    all_observed.extend(observed)
+    if first_name and second_name:
+        return frame, first_name, second_name
+
+    for target in CERTIFIED_GAME_DATES:
+        try:
+            frame = _set_date_with_game(page, frame, target)
+        except Exception as exc:
+            all_observed.append(
+                f"{target}:date_setup:{type(exc).__name__}:{str(exc)[:180]}"
+            )
+            continue
+
+        frame, first_name, second_name, observed = _scan_slate_for_two_player_game(
+            page,
+            frame,
+            label=target,
+        )
+        all_observed.extend(observed)
+        if first_name and second_name:
+            return frame, first_name, second_name
+
+    raise BrowserQAFailure(
+        "Step-5 production proof could not find a WNBA game with at least two "
+        f"Player PRA buttons. observed={all_observed}"
+    )
+
+
 def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -211,18 +294,14 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             if frame.locator(STEP4_SELECTOR).count() < 1:
                 raise BrowserQAFailure("Frozen Step-4 cache marker is missing.")
 
-            frame = _ensure_game_on_slate(page, frame)
-            _game_button(frame).first.click()
-            frame, _ = _wait_page_resilient(page, "game", timeout_seconds=PROFILE_GAME_SETUP_TIMEOUT_SECONDS)
-
-            buttons = frame.get_by_role("button", name=re.compile(r"^Open .+ PRA →$"))
-            if buttons.count() < 2:
-                raise BrowserQAFailure("Step-5 production proof requires at least two Player PRA buttons.")
-            first_name = buttons.nth(0).inner_text().strip()
-            second_name = buttons.nth(1).inner_text().strip()
+            frame, first_name, second_name = _select_game_with_two_players(page, frame)
+            buttons = _player_buttons(frame)
+            first = frame.get_by_role("button", name=first_name, exact=True)
+            if first.count() < 1:
+                first = buttons.nth(0)
 
             first_started = time.monotonic()
-            buttons.nth(0).click()
+            first.click()
             frame, _ = _wait_page_resilient(page, "player", timeout_seconds=PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS)
             first_seconds = time.monotonic() - first_started
             _assert_player_ready(frame)
