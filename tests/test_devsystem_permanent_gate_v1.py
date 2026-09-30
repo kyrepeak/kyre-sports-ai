@@ -42,6 +42,7 @@ def test_permanent_contract_is_green():
     assert result["persistent_execution_brain_v1_permanent"] is True
     assert result["automatic_loop_kill_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
+    assert result["failure_ownership_engine_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -94,6 +95,22 @@ def test_evidence_truth_ledger_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/evidence_truth_ledger_v1.py" in workflow
     assert "tests/test_devsystem_evidence_truth_ledger_v1.py" in workflow
+
+
+def test_failure_ownership_engine_is_permanently_enforced():
+    engine = _load("failure_ownership_engine_v1", "devsystem/failure_ownership_engine_v1.py")
+    result = engine.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["classify_before_patch"] is True
+    assert result["owner_scope_enforcement"] is True
+    assert result["verifier_product_mutation_blocked"] is True
+    assert result["stale_patch_blocked"] is True
+    assert result["external_patch_blocked"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/failure_ownership_engine_v1.py" in workflow
+    assert "tests/test_devsystem_failure_ownership_engine_v1.py" in workflow
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
