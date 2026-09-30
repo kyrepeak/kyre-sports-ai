@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 13,
+  "truth_epoch": 14,
   "program_id": "MONSTER_V4",
   "program_title": "MONSTER V4",
   "current_step": 5,
@@ -12,16 +12,16 @@
   "step_title": "Terminal Proof Receipt",
   "step_status": "ACTIVE",
   "active_checkpoint": "MONSTER_V4_STEP5",
-  "main_sha": "21b19354383ce8aea66308e9633e13b9afd4e84c",
+  "main_sha": "18b8acad2087a6265478455dd51f1792d1bf6d38",
   "active_pr": 1255,
   "active_run": 36774754297,
   "active_head_sha": "0c7c51452c1c160ce8b95f559d4185dec2a52732",
-  "blocker": null,
-  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_RUN_36774754297_TERMINAL_AND_RECEIPT",
+  "blocker": "BASE_ADVANCED_AFTER_GREEN_BRANCH_RECEIPT",
+  "next_legal_action": "MERGE_EXACT_PROVEN_HEAD_0C7C5145_AND_REQUIRE_MERGED_MAIN_TERMINAL_RECEIPT",
   "lease": {
-    "revision": 26,
+    "revision": 27,
     "generation": 8,
-    "state_hash": "f6bb81ea8bc50fc55844e61999b11e2e206e544957c76e2fc987aaa9c7b61dbb",
+    "state_hash": "0aaf3298148c160d987ee5065a0038b1d25a1ca69c2271d6641f007a1c7f658d",
     "holder_owner_id": "chatgpt:monster-v4-step5",
     "holder_lease_id": "LEASE-E932AF98655CC39A75492EBE"
   },
@@ -51,5 +51,5 @@
     "MONSTER_V4_STEP3",
     "MONSTER_V4_STEP4"
   ],
-  "state_hash": "39810ea8b87c5f97840bcfa44623a3e45c23c857316f50ebb1e56aa351000641"
+  "state_hash": "c10bee59c11bf0a62a7f0f71ebffec77cb662dc8b841a04b12a61b9475efc45a"
 }
