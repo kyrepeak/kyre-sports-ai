@@ -208,6 +208,18 @@
       "frozen_speed_v3_steps_1_2_changed": false,
       "frozen_navigation_steps_1_7_changed": false
     },
-    "two_a_decision": "One narrow source-router repair; old deployment and timeout failures are frozen evidence and must not be rerun unchanged."
+    "two_a_decision": "One narrow source-router repair; old deployment and timeout failures are frozen evidence and must not be rerun unchanged.",
+    "ci_scope_closeout": {
+      "status": "PROOF_TRIGGERED",
+      "prior_failed_run": 36671088736,
+      "prior_failure": "Scope whitelist rejected the otherwise-green 7/7 Step-3 focused tests.",
+      "ci_scope_patch_sha": "feaf666f8a11b26f2708db1a0abe2ed5bc75551a",
+      "trigger_reason": "GitHub registered no workflow run for the CI-scope-only commit, so one ledger-only PR synchronize trigger is authorized.",
+      "product_runtime_changed": false,
+      "provider_changed": false,
+      "timeout_changed": false,
+      "frozen_steps_1_2_changed": false,
+      "two_a": "This is the single legal proof-trigger commit. Do not create another trigger unless this exact resulting SHA reaches a terminal failure."
+    }
   }
 }
