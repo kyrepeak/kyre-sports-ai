@@ -1,0 +1,63 @@
+{
+  "task": "wnba-pra-speed-v3-step1-profiler",
+  "task_id": "wnba-pra-speed-v3-step1-profiler",
+  "id": "wnba-pra-speed-v3-step1-profiler",
+  "title": "WNBA PRA Speed V3 Step 1 Profiler",
+  "version": 1,
+  "phase": "pra-speed-v3",
+  "step": 1,
+  "total_steps": 9,
+  "status": "IN_PROGRESS",
+  "step1_status": "IN_PROGRESS",
+  "scope": "Measurement-only profiler for the existing WNBA PRA Player Intelligence route. No speed optimization, projection/model/market/ranking/qualification/Monte Carlo/sportsbook behavior change.",
+  "source_main": "03d63732faf5675c2fc585779f73abce4df14150",
+  "baseline_public_evidence": {
+    "source_run": 36647247012,
+    "slate_ready_seconds": 1.544,
+    "game_ready_seconds": 1.184,
+    "player_ready_seconds": 5.601,
+    "player_back_seconds": 0.442,
+    "game_back_seconds": 0.415
+  },
+  "profiler_contract": {
+    "phases": [
+      "total_render_ms",
+      "player_loader_ms",
+      "consumer_read_ms",
+      "history_read_ms",
+      "decision_card_ms",
+      "history_summary_ms"
+    ],
+    "cache_and_io_metadata": [
+      "consumer_session_hit",
+      "history_session_hit",
+      "cold_pair_loader_used",
+      "direct_network_reads_this_call"
+    ],
+    "network_reads_added": 0,
+    "reruns_added": 0,
+    "model_runs_added": 0,
+    "sportsbook_calls_added": 0,
+    "monte_carlo_runs_added": 0
+  },
+  "frozen_navigation_steps": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "product_behavior_changed": false,
+  "red_green": {
+    "red_commit": "a292de6631a04e687edc0b848bef2b8135b96c16",
+    "red_proof_run": null,
+    "green_proof_run": null
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
