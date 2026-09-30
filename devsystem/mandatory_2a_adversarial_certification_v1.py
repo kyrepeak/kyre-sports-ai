@@ -197,6 +197,12 @@ def enforce_certified_action(
 
     if result.get("allowed") is not True:
         propagated = deepcopy(dict(result))
+        if str(propagated.get("upstream_decision") or "") == "LOOP_SKIPPED_CONTINUE":
+            propagated["decision"] = "LOOP_SKIPPED_CONTINUE"
+            propagated["tripwire_triggered"] = False
+            propagated["autonomous_skip"] = True
+            propagated["continuation_policy"] = "CONTINUE_NON_CONFLICTING_WORK"
+            propagated["next_legal_action"] = "CONTINUE_NON_CONFLICTING_WORK"
         propagated["step5_version"] = VERSION
         propagated["certified"] = False
         return {
