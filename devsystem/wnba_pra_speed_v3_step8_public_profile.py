@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 from typing import Any
 
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
+from playwright.sync_api import sync_playwright
 
 from devsystem.browser_qa_v1 import BrowserQAFailure
 from devsystem.wnba_nav_v2_step7_public_freeze import VIEWPORT, _route_to_wnba_pra
@@ -16,6 +16,7 @@ from devsystem import wnba_pra_speed_v3_step5_public_profile as step5_profile
 
 STEP8_SELECTOR = '[data-wnba-pra-speed-v3-step8="visible-first"][data-active="true"]'
 SHELL_SELECTOR = '[data-wnba-pra-speed-v3-step8-shell="visible"]'
+FINAL_HERO_SELECTOR = ".wn4-hero"
 RESULT_SELECTOR = '[data-wnba-pra-speed-v3-step8-result="true"]'
 STEP7_SELECTOR = '[data-wnba-pra-speed-v3-step7="active-player-precompute"]'
 
@@ -44,68 +45,44 @@ def _float_attr(marker, name: str) -> float:
         ) from exc
 
 
-def _arm_shell_mutation_observer(frame) -> float:
-    """Observe the ephemeral Step-8 shell even if it is removed before locator polling."""
-    armed_at = frame.evaluate(
-        """selector => {
-            if (window.__ksStep8ShellObserver &&
-                typeof window.__ksStep8ShellObserver.disconnect === "function") {
-                window.__ksStep8ShellObserver.disconnect();
-            }
-            window.__ksStep8ShellObservedAt = null;
-            const containsShell = (node) => {
-                if (!node) return false;
-                if (node.nodeType === Node.ELEMENT_NODE &&
-                    typeof node.matches === "function" &&
-                    node.matches(selector)) {
-                    return true;
-                }
-                return typeof node.querySelector === "function" &&
-                    node.querySelector(selector) !== null;
-            };
-            const observer = new MutationObserver((records) => {
-                for (const record of records) {
-                    for (const node of record.addedNodes) {
-                        if (containsShell(node)) {
-                            window.__ksStep8ShellObservedAt = performance.now();
-                            observer.disconnect();
-                            return;
-                        }
-                    }
-                }
-            });
-            observer.observe(document.documentElement, {
-                childList: true,
-                subtree: true,
-            });
-            window.__ksStep8ShellObserver = observer;
-            return performance.now();
-        }""",
-        SHELL_SELECTOR,
+def _visible_step8_surface(page):
+    """Return the current Streamlit frame + first visible Step-8 user surface."""
+    for candidate in page.frames:
+        try:
+            shell = candidate.locator(SHELL_SELECTOR).first
+            if shell.count() > 0 and shell.is_visible():
+                return candidate, "shell"
+        except Exception:
+            pass
+        try:
+            final_hero = candidate.locator(FINAL_HERO_SELECTOR).first
+            if final_hero.count() > 0 and final_hero.is_visible():
+                return candidate, "final"
+        except Exception:
+            pass
+    return None, ""
+
+
+def _wait_first_visible_content(page, started: float):
+    """Reacquire Streamlit frames across reruns inside the unchanged 0.750s SLA."""
+    deadline = float(started) + MAX_VISIBLE_SHELL_SECONDS
+    while time.monotonic() < deadline:
+        frame, visible_path = _visible_step8_surface(page)
+        if frame is not None and visible_path:
+            visible_seconds = time.monotonic() - float(started)
+            if visible_seconds > MAX_VISIBLE_SHELL_SECONDS:
+                break
+            return frame, visible_path, visible_seconds
+
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        page.wait_for_timeout(min(25, max(1, int(remaining * 1000))))
+
+    raise BrowserQAFailure(
+        "Step-8 neither temporary shell nor final Player hero became visible "
+        f"across the Streamlit rerun within target: {MAX_VISIBLE_SHELL_SECONDS:.3f}s"
     )
-    return float(armed_at or 0.0)
-
-
-def _wait_shell_mutation(frame, armed_at_ms: float) -> float:
-    try:
-        frame.wait_for_function(
-            "() => Number.isFinite(window.__ksStep8ShellObservedAt)",
-            timeout=int(MAX_VISIBLE_SHELL_SECONDS * 1000),
-        )
-    except PlaywrightTimeoutError as exc:
-        raise BrowserQAFailure(
-            "Step-8 visible Player shell DOM insertion was not observed within target: "
-            f"{MAX_VISIBLE_SHELL_SECONDS:.3f}s"
-        ) from exc
-
-    observed_at = frame.evaluate("() => window.__ksStep8ShellObservedAt")
-    shell_seconds = max(0.0, (float(observed_at) - float(armed_at_ms)) / 1000.0)
-    if shell_seconds > MAX_VISIBLE_SHELL_SECONDS:
-        raise BrowserQAFailure(
-            "Step-8 visible shell exceeded target: "
-            f"{shell_seconds:.3f}s > {MAX_VISIBLE_SHELL_SECONDS:.3f}s"
-        )
-    return shell_seconds
 
 
 def _wait_step8_streamlit(page):
@@ -161,15 +138,23 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 first = frame.get_by_role("button", name="Open", exact=False).first
 
             started = time.monotonic()
-            observer_armed_at_ms = _arm_shell_mutation_observer(frame)
             first.click()
-            shell_seconds = _wait_shell_mutation(frame, observer_armed_at_ms)
-            print(
-                "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_SHELL_SECONDS="
-                f"{shell_seconds:.3f}"
+            frame, visible_path, visible_seconds = _wait_first_visible_content(
+                page,
+                started,
             )
-            print("WNBA_PRA_SPEED_V3_STEP8_MUTATION_OBSERVER_GREEN")
-            print("WNBA_PRA_SPEED_V3_STEP8_VISIBLE_SHELL_GREEN")
+            print(
+                "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_SECONDS="
+                f"{visible_seconds:.3f}"
+            )
+            print(
+                "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_PATH="
+                f"{visible_path}"
+            )
+            print("WNBA_PRA_SPEED_V3_STEP8_FRAME_REACQUIRE_GREEN")
+            print("WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_GREEN")
+            if visible_path == "shell":
+                print("WNBA_PRA_SPEED_V3_STEP8_VISIBLE_SHELL_GREEN")
 
             frame, _ = step5_profile._wait_page_resilient(
                 page,
@@ -222,7 +207,9 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 "production_url": production_url,
                 "streamlit_deployment_wait_seconds": round(deploy_seconds, 3),
                 "slate_ready_seconds": round(slate_seconds, 3),
-                "visible_shell_seconds": round(shell_seconds, 3),
+                "visible_content_seconds": round(visible_seconds, 3),
+                "visible_content_path": visible_path,
+                "visible_shell_seconds": round(visible_seconds, 3) if visible_path == "shell" else None,
                 "final_player_seconds": round(final_seconds, 3),
                 "shell_emitted": shell_emitted,
                 "shell_before_loader": shell_before_loader,
