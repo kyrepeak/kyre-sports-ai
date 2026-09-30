@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step7-benefits-risks-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 7 verified Benefits + Risks",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "7/9",
+  "status": "DONE",
+  "problem": "The frozen Top Picks detail view had a history-only Benefits sentence and no Risks section, even after Steps 3-6 added verified history, offense, defense, pace and market-specific reasoning.",
+  "root_cause": "No read-only synthesis layer classified verified football evidence into pick-supporting factors and pick-threatening counter-signals.",
+  "patch": "Add an additive Step-7 benefits/risks engine, detail wrapper, V7 presentation wrapper and route wrapper. Require source plus observed_at on every material item, fail closed when identity is unavailable, and preserve Steps 1-6.",
+  "acceptance": {
+    "three_markets_covered": true,
+    "benefits_require_verified_evidence": true,
+    "risks_require_verified_evidence": true,
+    "source_and_freshness_required": true,
+    "unsupported_claims_forbidden": true,
+    "probability_unchanged": true,
+    "ranking_unchanged": true,
+    "selection_unchanged": true,
+    "sportsbook_projection_weight": 0,
+    "benefits_risks_projection_weight": 0,
+    "api2_separate_and_protected": true,
+    "step2a_enforced": true
+  },
+  "protected": {
+    "steps1_6_wrapped_not_modified": true,
+    "cfb_top_picks_engine_v1": true,
+    "cfb_top_picks_details_v2": true,
+    "cfb_top_picks_page_v6": true,
+    "api2": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
