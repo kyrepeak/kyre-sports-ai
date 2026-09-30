@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "task_id": "monster-v4-step6-regression-debt-zero-gate-v1",
+  "title": "MONSTER V4 Step 6 — Regression-Debt-Zero Gate",
+  "project": "MONSTER V4",
+  "step": 6,
+  "total_steps": 6,
+  "status": "DONE",
+  "scope": "Fail closed on freeze whenever a real resolved PRODUCT, VERIFIER, CI, or DEPLOYMENT failure lacks at least one permanent regression TEST or CONTRACT. STALE and EXTERNAL evidence is exempt because those classes do not authorize repository repair. This is control-plane only and may not mutate sports/runtime/model/provider behavior.",
+  "protected": {
+    "monster_v4_steps_1_5": true,
+    "monster_2a_enforcement_steps_1_5": true,
+    "monster_v3_steps_1_8": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "real_failure_creates_regression_debt": true,
+    "open_debt_blocks_freeze": true,
+    "permanent_test_clears_debt": true,
+    "permanent_contract_clears_debt": true,
+    "stale_failure_exempt": true,
+    "external_failure_exempt": true,
+    "invalid_guard_fails_closed": true,
+    "nonpermanent_guard_fails_closed": true,
+    "tamper_evident_debt": true,
+    "mixed_batch_open_debt_blocks": true,
+    "zero_debt_passes": true,
+    "permanent_ci_enforcement": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after the exact PR head passes the regression-debt-zero self-test through permanent-contract and devsystem-final-gate, the exact head merges, merged-main proof confirms the same gate, and Step 6 artifacts are content-addressed in the frozen registry."
+}
