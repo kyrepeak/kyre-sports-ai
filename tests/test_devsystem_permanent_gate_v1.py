@@ -41,6 +41,7 @@ def test_permanent_contract_is_green():
     assert result["forward_motion_v2_pr_enforcement"] is True
     assert result["persistent_execution_brain_v1_permanent"] is True
     assert result["automatic_loop_kill_v1_permanent"] is True
+    assert result["mandatory_2a_action_gate_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -78,6 +79,27 @@ def test_automatic_loop_kill_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/automatic_loop_kill_v1.py" in workflow
     assert "tests/test_devsystem_automatic_loop_kill_v1.py" in workflow
+
+
+def test_mandatory_2a_action_gate_is_permanently_enforced():
+    gate = _load(
+        "mandatory_2a_action_gate_v1",
+        "devsystem/mandatory_2a_action_gate_v1.py",
+    )
+    result = gate.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["mandatory_gate"] is True
+    assert result["missing_authorization_fails_closed"] is True
+    assert result["matching_forward_receipt_authorizes"] is True
+    assert result["receipt_action_mismatch_blocked"] is True
+    assert result["live_async_mutation_blocked"] is True
+    assert result["duplicate_poll_autonomously_skipped"] is True
+    assert result["unknown_action_fails_closed"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/mandatory_2a_action_gate_v1.py" in workflow
+    assert "tests/test_devsystem_mandatory_2a_action_gate_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
