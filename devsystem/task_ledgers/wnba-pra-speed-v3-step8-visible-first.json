@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_FRAME_RESILIENT_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PR_ONLY_FIRST_VISIBLE_DIAGNOSTIC",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -90,11 +90,11 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_FRAME_RESILIENT_VERIFIER_PROOF",
-    "authoritative_failed_run": 36790268195,
-    "authoritative_failed_job": 110141263720,
-    "failure_owner": "VERIFIER",
-    "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
+    "next_legal_action": "ONE_PR_ONLY_FIRST_VISIBLE_DIAGNOSTIC",
+    "authoritative_failed_run": 36790949785,
+    "authoritative_failed_job": 110143457858,
+    "failure_owner": "PRODUCT",
+    "failure_class": "VISIBLE_CONTENT_NOT_OBSERVED_WITHIN_0_750",
     "patch_count": 7
   },
   "branch_failure": {
@@ -314,5 +314,17 @@
       "data_meaning_changed": false,
       "threshold_changed": false
     }
-  ]
+  ],
+  "diagnostic": {
+    "trigger_run": 36790949785,
+    "trigger_job": 110143457858,
+    "purpose": "Measure actual first-visible and final Player timing without changing product behavior or weakening the 0.750-second freeze gate.",
+    "production_observation": "Neither Step-8 shell nor final Player hero was visible in current page.frames within 0.750 seconds.",
+    "owner_for_freeze_blocker": "PRODUCT",
+    "diagnostic_max_seconds": 2.5,
+    "freeze_target_seconds": 0.75,
+    "can_emit_step8_green": false,
+    "can_emit_step8_frozen": false,
+    "product_code_changed": false
+  }
 }
