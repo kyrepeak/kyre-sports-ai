@@ -5,12 +5,12 @@
   "id": "wnba-pra-speed-v3-step5-consumer-reuse",
   "title": "WNBA PRA Speed V3 Step 5 — Cross-player consumer snapshot reuse",
   "project": "WNBA PRA Speed V3",
-  "phase": "PROOF_MARKER_SYNC_REPAIR_PENDING_PROOF",
+  "phase": "CONSUMER_SESSION_TTL_REPAIR_PENDING_PROOF",
   "step": 5,
   "total_steps": 9,
   "status": "DONE",
   "scope": "Reuse the existing same-session global consumer snapshot across player changes while loading only the newly selected player's frozen Step-3 fast history in one hosted read.",
-  "source_main": "47f84f32eaf1e898c8eedb6e65d126aa25ffbf89",
+  "source_main": "f44cfb5246fc80a82c166369cafe5eae9296741e",
   "speed_targets": {
     "warm_same_session_seconds_max": 0.75,
     "cross_player_seconds_max": 1.5,
@@ -65,8 +65,8 @@
   },
   "two_a": {
     "distributed_lease_owner": "chatgpt:wnba-pra-speed-v3-step5",
-    "lease_generation": 5,
-    "lease_revision_at_start": 20,
+    "lease_generation": 7,
+    "lease_revision_at_start": 22,
     "one_active_problem": true,
     "no_duplicate_async_runs": true,
     "terminal_failure_before_patch": true,
@@ -90,13 +90,15 @@
     "step5_contract_changed": false
   },
   "base_drift_guard": {
-    "status": "GREEN",
-    "latest_main": "7f2e41ea9042472659c493ff6b3e07b6db6847e5",
-    "branch_base": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc",
-    "main_advanced_commits": 4,
+    "status": "RECONCILED",
+    "latest_main": "f44cfb5246fc80a82c166369cafe5eae9296741e",
+    "branch_base": "5e20b1136c6976161c2fda345cb909640f7dcd0c",
+    "main_advanced_commits": 2,
     "overlapping_step5_files": 0,
     "scope_proof_uses_merge_base": true,
-    "reason": "Unrelated CFB Step-9 certification-only commits advanced main after the Step-5 forward rebase."
+    "reason": "PR #1247 advanced main with Step-5 public-proof marker synchronization while the TTL repair branch was proving.",
+    "overlap_with_step5_scope": true,
+    "preserved_pr1247_proof_marker_sync": true
   },
   "latest_base_drift_repair": {
     "failure_class": "BASE_DRIFT_STALE_MERGE_PROOF",
@@ -197,5 +199,27 @@
     "render_api_redeploy_required": false,
     "step5_data_contract_changed": false,
     "two_a": "Verifier-only repair. One exact-head branch proof, one merge, one merged-main public freeze proof."
+  },
+  "consumer_session_ttl_repair": {
+    "status": "PATCHED_PENDING_BRANCH_PROOF",
+    "failed_public_run": 36739528337,
+    "failed_public_job": 109970186001,
+    "failure": "Step-5 did not exercise consumer-hit/new-history path: consumer_hit=False history_hit=False",
+    "failure_owner": "STEP5_SESSION_CACHE_LIFETIME",
+    "root_cause": "Step 5 relied on the frozen Navigation V2 60-second consumer cache even though the production same-session observer permits up to 120 seconds for Game setup and 120 seconds for Player observation. A valid Player A -> Game -> Player B journey can therefore outlive the consumer cache while remaining in the same browser session.",
+    "patch": [
+      "Add a Step-5-owned same-session consumer snapshot cache with a bounded 300-second TTL.",
+      "Seed it on true-cold consumer success and refresh the frozen 60-second consumer cache from the Step-5 snapshot when reused.",
+      "Do not add or extend any history cache; Step 6 retains history-cache ownership."
+    ],
+    "consumer_snapshot_ttl_seconds": 300,
+    "frozen_navigation_consumer_ttl_seconds": 60,
+    "history_cache_changed": false,
+    "frozen_performance_module_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_logic_changed": false,
+    "frozen_speed_v3_steps_1_4_changed": false,
+    "two_a": "One Step-5 cache-lifetime patch, one branch proof, one merged-main public proof. No duplicate rerun."
   }
 }

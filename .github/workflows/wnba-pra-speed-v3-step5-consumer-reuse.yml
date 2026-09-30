@@ -97,6 +97,14 @@ jobs:
           EOF
           sort -o /tmp/proof_marker_sync_repair.txt /tmp/proof_marker_sync_repair.txt
 
+          cat > /tmp/consumer_ttl_repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json
+          tests/test_wnba_pra_speed_v3_step5.py
+          wnba_pra_speed_v3_step5_consumer_reuse.py
+          EOF
+          sort -o /tmp/consumer_ttl_repair.txt /tmp/consumer_ttl_repair.txt
+
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_GREEN"
           elif diff -q /tmp/full_redeploy.txt /tmp/actual.txt >/dev/null; then
@@ -105,6 +113,8 @@ jobs:
             echo "WNBA_PRA_SPEED_V3_STEP5_PLAYER_RECURSION_REPAIR_SCOPE_GREEN"
           elif diff -q /tmp/proof_marker_sync_repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP5_PROOF_MARKER_SYNC_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/consumer_ttl_repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP5_CONSUMER_TTL_REPAIR_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_RED"
             diff -u /tmp/proof_marker_sync_repair.txt /tmp/actual.txt || true
@@ -143,6 +153,9 @@ jobs:
           grep -F '"consumer_reads_on_cross_player_open_max": 0' wnba_pra_speed_v3_step5_consumer_reuse.py
           grep -F '"history_reads_on_cross_player_open_max": 1' wnba_pra_speed_v3_step5_consumer_reuse.py
           grep -F '"new_history_cache_added": False' wnba_pra_speed_v3_step5_consumer_reuse.py
+          grep -F 'CONSUMER_SNAPSHOT_TTL_SECONDS = 300' wnba_pra_speed_v3_step5_consumer_reuse.py
+          grep -F 'SESSION_CONSUMER_SNAPSHOT = "ks_wnba_pra_speed_v3_step5_consumer_snapshot"' wnba_pra_speed_v3_step5_consumer_reuse.py
+          echo "WNBA_PRA_SPEED_V3_STEP5_CONSUMER_SNAPSHOT_TTL_GREEN"
           grep -F 'streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 as current_parent' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
           grep -F 'FROZEN_SPEED_STEP4_PARENT = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4"' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
           grep -F 'PLAYER_ROUTER_STACK_TRAMPOLINE = True' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py

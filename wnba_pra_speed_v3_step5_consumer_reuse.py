@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from html import escape
-from time import perf_counter
+from copy import deepcopy
+from time import monotonic, perf_counter
 from typing import Any, Mapping
 
 import streamlit as st
@@ -18,6 +19,8 @@ EXPECTED_HISTORY_SCHEMA_VERSION = "wnba_pra_speed_v3_step5_fast_history_v1"
 API_TIMEOUT_SECONDS = 5.0
 API_ATTEMPTS = 1
 SESSION_PERF = "ks_wnba_pra_speed_v3_step5_perf"
+SESSION_CONSUMER_SNAPSHOT = "ks_wnba_pra_speed_v3_step5_consumer_snapshot"
+CONSUMER_SNAPSHOT_TTL_SECONDS = 300
 
 REUSE_CONTRACT = {
     "project": "WNBA PRA Speed V3",
@@ -30,10 +33,36 @@ REUSE_CONTRACT = {
     "history_reads_on_cross_player_open_max": 1,
     "frozen_speed_v3_steps_1_4_modified": False,
     "new_history_cache_added": False,
+    "consumer_snapshot_ttl_seconds": CONSUMER_SNAPSHOT_TTL_SECONDS,
+    "consumer_cache_identity": "same_session_global_board_snapshot",
     "projection_math_changed": False,
     "market_math_changed": False,
     "sportsbook_projection_influence": 0.0,
 }
+
+
+def _cached_step5_consumer() -> dict[str, Any] | None:
+    entry = st.session_state.get(SESSION_CONSUMER_SNAPSHOT)
+    if not isinstance(entry, Mapping):
+        return None
+    try:
+        age = monotonic() - float(entry.get("ts") or 0.0)
+    except (TypeError, ValueError):
+        return None
+    if age < 0 or age > CONSUMER_SNAPSHOT_TTL_SECONDS:
+        st.session_state.pop(SESSION_CONSUMER_SNAPSHOT, None)
+        return None
+    value = entry.get("value")
+    return deepcopy(dict(value)) if isinstance(value, Mapping) else None
+
+
+def _cache_step5_consumer(value: Any) -> None:
+    if not isinstance(value, Mapping):
+        return
+    st.session_state[SESSION_CONSUMER_SNAPSHOT] = {
+        "ts": monotonic(),
+        "value": deepcopy(dict(value)),
+    }
 
 
 def _record(**values: Any) -> None:
@@ -76,7 +105,15 @@ def load_player_intelligence_cross_player_reuse(
     pid = int(player_id)
     started = perf_counter()
 
-    consumer = performance._cached_consumer()
+    consumer = _cached_step5_consumer()
+    if consumer is None:
+        consumer = performance._cached_consumer()
+        if consumer is not None:
+            _cache_step5_consumer(consumer)
+    else:
+        # Keep the frozen Navigation V2 cache warm too, without changing its TTL.
+        performance._cache_consumer(consumer)
+
     history = performance._cached_history(pid)
     consumer_hit = consumer is not None
     history_hit = history is not None
@@ -105,6 +142,7 @@ def load_player_intelligence_cross_player_reuse(
         if isinstance(maybe_consumer, Mapping):
             consumer = dict(maybe_consumer)
             performance._cache_consumer(consumer)
+            _cache_step5_consumer(consumer)
         if isinstance(maybe_history, Mapping):
             history = dict(maybe_history)
             performance._cache_history(pid, history)
@@ -114,6 +152,7 @@ def load_player_intelligence_cross_player_reuse(
             try:
                 consumer = player_intelligence._read_consumer()
                 performance._cache_consumer(consumer)
+                _cache_step5_consumer(consumer)
             except Exception as exc:
                 consumer_error = type(exc).__name__
                 consumer = None
@@ -145,6 +184,7 @@ def load_player_intelligence_cross_player_reuse(
         history_present=isinstance(history, Mapping),
         consumer_error=consumer_error,
         history_error=history_error,
+        consumer_snapshot_ttl_seconds=CONSUMER_SNAPSHOT_TTL_SECONDS,
     )
 
     return {
@@ -171,6 +211,7 @@ def load_player_intelligence_cross_player_reuse(
             "fast_history_used": fast_history_used,
             "consumer_network_reads": consumer_reads,
             "history_network_reads": history_reads,
+            "consumer_snapshot_ttl_seconds": CONSUMER_SNAPSHOT_TTL_SECONDS,
         },
     }
 
@@ -191,6 +232,7 @@ def _render_marker(state: navigation.NavigationState) -> None:
         f'data-fast-history-used="{str(bool(perf.get("fast_history_used"))).lower()}" '
         f'data-duplicate-consumer-read-suppressed="{str(bool(perf.get("duplicate_consumer_read_suppressed"))).lower()}" '
         f'data-consumer-present="{str(bool(perf.get("consumer_present"))).lower()}" '
+        f'data-consumer-snapshot-ttl-seconds="{CONSUMER_SNAPSHOT_TTL_SECONDS}" '
         f'data-history-present="{str(bool(perf.get("history_present"))).lower()}" '
         f'data-cross-player-load-ms="{float(perf.get("cross_player_load_ms") or 0.0):.3f}" '
         'style="display:none" aria-hidden="true"></span>',
@@ -205,7 +247,9 @@ def render_step5_route(frozen_renderer) -> Any:
 
 
 __all__ = [
+    "CONSUMER_SNAPSHOT_TTL_SECONDS",
     "MODEL_VERSION",
+    "SESSION_CONSUMER_SNAPSHOT",
     "REUSE_CONTRACT",
     "SESSION_PERF",
     "load_player_intelligence_cross_player_reuse",

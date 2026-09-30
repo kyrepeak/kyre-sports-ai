@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import importlib
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 API = ROOT / "sports_api" / "api" / "wnba_pra_speed_v3_step5_fast_history.py"
@@ -10,6 +11,13 @@ ROUTER = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py"
 PUBLIC = ROOT / "devsystem" / "wnba_pra_speed_v3_step5_public_profile.py"
 API_MAIN = ROOT / "sports_api" / "main.py"
 APP = ROOT / "app.py"
+
+
+@pytest.fixture(autouse=True)
+def _isolate_step5_consumer_snapshot(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step5_consumer_reuse")
+    monkeypatch.setattr(module, "_cached_step5_consumer", lambda: None)
+    monkeypatch.setattr(module, "_cache_step5_consumer", lambda value: None)
 
 
 def _consumer():
@@ -155,6 +163,8 @@ def test_step5_contract_preserves_speed_budget_and_history_cache_ownership():
     assert contract["consumer_reads_on_cross_player_open_max"] == 0
     assert contract["history_reads_on_cross_player_open_max"] == 1
     assert contract["new_history_cache_added"] is False
+    assert contract["consumer_snapshot_ttl_seconds"] == 300
+    assert contract["consumer_snapshot_ttl_seconds"] > module.performance.SESSION_TTL_SECONDS
     assert contract["frozen_speed_v3_steps_1_4_modified"] is False
 
 
@@ -179,3 +189,14 @@ def test_step5_router_keeps_non_pra_parent_delegate():
     assert "return frozen_renderer(market)" in source
     assert "return step5.render_step5_route(current_parent.render_app)" in source
     assert "nav_step7_router._render_wnba_step7 = original_step7_dispatch" in source
+
+
+def test_step5_consumer_snapshot_cache_is_bounded_and_history_cache_unchanged():
+    source = STEP5.read_text(encoding="utf-8")
+    assert 'SESSION_CONSUMER_SNAPSHOT = "ks_wnba_pra_speed_v3_step5_consumer_snapshot"' in source
+    assert "CONSUMER_SNAPSHOT_TTL_SECONDS = 300" in source
+    assert "def _cached_step5_consumer()" in source
+    assert "def _cache_step5_consumer(value" in source
+    assert "performance._cache_consumer(consumer)" in source
+    assert '"new_history_cache_added": False' in source
+    assert "MAX_HISTORY_ENTRIES" not in source
