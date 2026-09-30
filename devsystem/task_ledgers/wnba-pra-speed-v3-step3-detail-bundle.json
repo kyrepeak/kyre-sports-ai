@@ -1,0 +1,133 @@
+{
+  "task": "wnba-pra-speed-v3-step3-detail-bundle",
+  "task_id": "wnba-pra-speed-v3-step3-detail-bundle",
+  "id": "wnba-pra-speed-v3-step3-detail-bundle",
+  "title": "WNBA PRA Speed V3 Step 3 Single-Request Detail Bundle",
+  "version": 1,
+  "phase": "pra-speed-v3",
+  "step": 3,
+  "total_steps": 9,
+  "status": "DONE",
+  "step3_status": "DONE",
+  "scope": "Add one read-only PRA detail bundle endpoint that returns the same certified consumer snapshot and the same official player game log in one Streamlit-to-API request. Intercept only frozen Step-5 cold-pair loading.",
+  "source_main": "f3992b979888bf99ea36b333b81456f087882985",
+  "frozen_steps": {
+    "navigation_v2": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "speed_v3_step1": true,
+    "speed_v3_step2": true
+  },
+  "step2_baseline": {
+    "proof_run": 36659686281,
+    "player_ready_seconds": 5.676,
+    "history_read_ms": 5054.343,
+    "streamlit_network_reads": 2
+  },
+  "contract": {
+    "cold_pair_streamlit_api_reads": 1,
+    "bundle_components": [
+      "certified_consumer_snapshot",
+      "official_player_game_log"
+    ],
+    "consumer_normalization_unchanged": true,
+    "history_payload_unchanged": true,
+    "session_cache_behavior_unchanged": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "projection_runs_added": 0,
+    "sportsbook_calls_added": 0,
+    "ranking_runs_added": 0,
+    "qualification_runs_added": 0,
+    "monte_carlo_runs_added": 0
+  },
+  "red_green": {
+    "red_commit": "02243feca2da0c3daecd016370f64529bbbafd8a",
+    "red_run": 36661539032,
+    "red_job": 109717189861,
+    "red_result": "6 failed cleanly: backend bundle, Streamlit loader/router, public proof, and activation absent",
+    "green_run": 36662379475,
+    "green_job": 109719731420,
+    "green_head": "44036e46c2fd3049c41f31ccd95eecb1c31f3057",
+    "green_result": "6 passed; exact Step-3 scope GREEN; frozen Navigation V2 + Speed V3 Steps 1-2 GREEN; one-request contract GREEN; branch GREEN"
+  },
+  "freeze_exit": {
+    "branch_contract_required": true,
+    "devsystem_required": true,
+    "api_bundle_public_required": true,
+    "pickvault_public_profile_required": true,
+    "public_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP3_API_BUNDLE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_ONE_READ_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_FROZEN"
+    ],
+    "branch_contract_green": true,
+    "merged_main_public_profile_required": true,
+    "final_freeze_claim_requires_public_tokens": true
+  },
+  "branch_candidate": {
+    "status": "GREEN",
+    "implementation_head": "57598436b30eff2d0ab69d0037e0b4fc4c98546b",
+    "changed_file_count": 9,
+    "exact_scope": [
+      ".github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml",
+      "app.py",
+      "devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json",
+      "devsystem/wnba_pra_speed_v3_step3_public_profile.py",
+      "sports_api/api/wnba_pra_detail_bundle.py",
+      "sports_api/main.py",
+      "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py",
+      "tests/test_wnba_pra_speed_v3_step3.py",
+      "wnba_pra_speed_v3_step3_bundle.py"
+    ],
+    "runtime_behavior_target": "cold pair only; one hosted API request; frozen same-session caches preserved",
+    "refreshed_head": "44036e46c2fd3049c41f31ccd95eecb1c31f3057",
+    "refreshed_base": "ba4b7da77f7cecd686a8712b8c3e62b262209db9",
+    "focused_run": 36662379475,
+    "focused_job": 109719731420,
+    "certified_head": "44036e46c2fd3049c41f31ccd95eecb1c31f3057",
+    "certified_run": 36662379475,
+    "certified_job": 109719731420,
+    "tokens": [
+      "WNBA_PRA_SPEED_V3_STEP3_SCOPE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_FROZEN_STEPS1_2_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_ONE_REQUEST_CONTRACT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_BRANCH_GREEN"
+    ]
+  },
+  "branch_proof": {
+    "step3_tests_green": true,
+    "exact_scope_green": true,
+    "frozen_navigation_steps_1_7_green": true,
+    "frozen_speed_v3_steps_1_2_green": true,
+    "compile_green": true,
+    "one_request_contract_green": true,
+    "tokens": [
+      "WNBA_PRA_SPEED_V3_STEP3_SCOPE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_FROZEN_STEPS1_2_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_ONE_REQUEST_CONTRACT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_BRANCH_GREEN"
+    ]
+  },
+  "closeout": {
+    "implementation_complete": true,
+    "branch_contract_green": true,
+    "protected_surfaces_green": true,
+    "production_freeze_evidence": "emitted only by merged-main public-profile workflow",
+    "product_behavior_change": "cold-pair transport only; no basketball math/model/market/ranking/sportsbook change"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
