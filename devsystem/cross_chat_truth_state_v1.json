@@ -13,15 +13,15 @@
   "step_status": "ACTIVE",
   "active_checkpoint": "MONSTER_V4_STEP4",
   "main_sha": "2015c1064f586d9e2f4d9069ea8b41c3a5950a54",
-  "active_pr": null,
-  "active_run": null,
+  "active_pr": 1231,
+  "active_run": 36676817856,
   "active_head_sha": "ff27ccafb091d319b5129a1dceb6dd0e06e996d2",
   "blocker": null,
-  "next_legal_action": "CREATE_STEP4_PR",
+  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_DEVSYSTEM_RUN_TERMINAL_RESULT",
   "lease": {
     "revision": 15,
     "generation": 4,
-    "state_hash": "ee5b5be16b61cc1ffd9a1f5d4e10aa83c3a0618f2dd287d65c425da2943dc160",
+    "state_hash": "89f85ff2fc1a61c55ad9a59c225d263b7f81f0d16beeea48a56acecd3e98a277",
     "holder_owner_id": "chat:monster-v4-step4-controlroom",
     "holder_lease_id": "LEASE-MONSTERV4STEP4GEN4"
   },
@@ -50,5 +50,5 @@
     "MONSTER_V4_STEP2",
     "MONSTER_V4_STEP3"
   ],
-  "state_hash": "d583094b8aec27294a971217ebfd1fa2de4a3188738dd5814fea424c8e73ffd8"
+  "state_hash": "597961168ba606b8723b7a8c60f3c7b434d09f2e6554272869b90fb786244b08"
 }
