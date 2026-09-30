@@ -101,3 +101,11 @@ def test_step2_full_redeploy_closeout_contract():
     assert "# WNBA PRA Speed V3 Step 2 control-plane full-redeploy trigger 2026-09-30 R1" in requirements
     assert "DEPLOYMENT_WAIT_SECONDS = 600.0" in verifier
     assert '- "requirements.txt"' in workflow
+
+
+def test_step2_public_profile_uses_step2_local_parser_for_nested_timing():
+    verifier = PUBLIC_PATH.read_text(encoding="utf-8")
+    assert "def _step2_profile(" in verifier
+    assert "profile = _step2_profile(marker)" in verifier
+    assert "    _profile,\n" not in verifier
+    assert "Profiler loader timing exceeds total render" not in verifier
