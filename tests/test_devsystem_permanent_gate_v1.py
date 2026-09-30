@@ -40,6 +40,7 @@ def test_permanent_contract_is_green():
     assert result["forward_motion_v2_permanent"] is True
     assert result["forward_motion_v2_pr_enforcement"] is True
     assert result["persistent_execution_brain_v1_permanent"] is True
+    assert result["automatic_loop_kill_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -55,6 +56,20 @@ def test_persistent_execution_brain_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/persistent_execution_brain_v1.py self-test" in workflow
     assert "tests/test_devsystem_persistent_execution_brain_v1.py" in workflow
+
+
+def test_automatic_loop_kill_is_permanently_enforced():
+    loop_kill = _load("automatic_loop_kill_v1", "devsystem/automatic_loop_kill_v1.py")
+    result = loop_kill.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["same_state_poll_kill"] is True
+    assert result["async_mutation_lock"] is True
+    assert result["terminal_transition_unlock"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/automatic_loop_kill_v1.py" in workflow
+    assert "tests/test_devsystem_automatic_loop_kill_v1.py" in workflow
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
