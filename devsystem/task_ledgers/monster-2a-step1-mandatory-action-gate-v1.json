@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "task_id": "monster-2a-step1-mandatory-action-gate-v1",
+  "title": "MONSTER 2A Enforcement Step 1 — Mandatory Action Gate",
+  "project": "MONSTER 2A Enforcement",
+  "step": 1,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Create a fail-closed mandatory front door so covered MONSTER control-plane actions cannot execute without Step 2A/Automatic Loop Kill authorization during live async work or an exact matching Forward Motion V2 authorization outside live async work.",
+  "protected": {
+    "monster_v3_steps_1_8_inherited": true,
+    "step_2a_autonomous_skip_preserved": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "mandatory_gate": true,
+    "missing_authorization_fails_closed": true,
+    "matching_forward_receipt_authorizes": true,
+    "receipt_action_mismatch_blocked": true,
+    "live_async_mutation_blocked": true,
+    "duplicate_poll_autonomously_skipped": true,
+    "unknown_action_fails_closed": true,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main full certification + devsystem-final-gate GREEN."
+}
