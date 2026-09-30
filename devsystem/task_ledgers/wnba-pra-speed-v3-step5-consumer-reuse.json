@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step5-consumer-reuse",
   "title": "WNBA PRA Speed V3 Step 5 — Cross-player consumer snapshot reuse",
   "project": "WNBA PRA Speed V3",
-  "phase": "FORWARD_REBASED_AWAITING_EXACT_HEAD_PROOF",
+  "phase": "STREAMLIT_FULL_REDEPLOY_PENDING_PROOF",
   "step": 5,
   "total_steps": 9,
   "status": "DONE",
@@ -113,5 +113,30 @@
     "step5_contract_changed": false,
     "frozen_steps1_4_changed": false,
     "legal_action": "forward-port exact 10-file Step-5 delta onto current main and require one fresh exact-head proof"
+  },
+  "streamlit_full_redeploy_closeout": {
+    "status": "PENDING_MERGED_MAIN_PUBLIC_PROOF",
+    "failed_public_run": 36687421554,
+    "failed_public_job": 109796675155,
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP5_FAST_HISTORY_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_API_DEPLOYMENT_WAIT_SECONDS=0.121",
+      "WNBA_NAV_STEP7_DEPLOYMENT_MARKER_GREEN",
+      "WNBA_NAV_STEP7_SLATE_VISIBLE_LAZY_CONTRACT_GREEN",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=1.888",
+      "PickVault did not expose Step-5 marker within 600s",
+      "Current main app.py imports streamlit_memory_lazy_router_wnba_pra_speed_v3_step5",
+      "Render Step-5 fast-history release 791a53a7e113ba33dbc360155560fe68199bd0d6 remains LIVE"
+    ],
+    "owner": "DEPLOYMENT",
+    "root_cause": "PickVault Streamlit is serving a stale process that does not expose the merged Step-5 marker, while current main already boots the Step-5 router and the live Render API exposes the Step-5 fast-history route.",
+    "repair_contract": "Force exactly one Streamlit full rebuild using the repository-established comment-only requirements.txt trigger; do not change dependency versions or any product/runtime/model/math/market/ranking/qualification/Monte Carlo/sportsbook code.",
+    "trigger": "# WNBA PRA Speed V3 Step 5 control-plane full-redeploy trigger 2026-09-30 R1",
+    "two_a_decision": "Do not rerun the failed public proof before deployment state changes. Apply one deployment-only trigger, then use exactly one merged-main public proof as freeze authority.",
+    "dependency_versions_changed": false,
+    "product_runtime_changed": false,
+    "render_api_redeploy_required": false,
+    "frozen_navigation_steps_1_7_changed": false,
+    "frozen_speed_v3_steps_1_4_changed": false
   }
 }
