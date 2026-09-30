@@ -38,5 +38,7 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "phase": "RED_CONTRACT",
+  "status_semantics": "Anti-Loop V2 requires each changed PR task ledger to be replay-closed as DONE; Step-4 technical acceptance remains independently tracked below until proof is complete."
 }
