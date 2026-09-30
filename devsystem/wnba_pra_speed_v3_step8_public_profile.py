@@ -191,14 +191,21 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             shell_emitted = _bool_attr(marker, "data-shell-emitted")
             shell_before_loader = _bool_attr(marker, "data-shell-before-loader")
             shell_removed = _bool_attr(marker, "data-shell-removed-before-final")
+            shell_retained = _bool_attr(marker, "data-shell-retained-through-final")
             shell_emit_ms = _float_attr(marker, "data-shell-emit-ms")
             loader_ms = _float_attr(marker, "data-loader-ms")
-            if not shell_emitted or not shell_before_loader or not shell_removed:
+            if (
+                not shell_emitted
+                or not shell_before_loader
+                or not shell_retained
+                or shell_removed
+            ):
                 raise BrowserQAFailure(
-                    "Step-8 visible-first ordering contract was not preserved."
+                    "Step-8 visible-first shell lifetime contract was not preserved."
                 )
 
             print("WNBA_PRA_SPEED_V3_STEP8_SHELL_BEFORE_LOADER_GREEN")
+            print("WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP8_FINAL_PLAYER_READY_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEPS1_7_GREEN")
             print(
@@ -227,6 +234,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 "shell_emitted": shell_emitted,
                 "shell_before_loader": shell_before_loader,
                 "shell_removed_before_final": shell_removed,
+                "shell_retained_through_final": shell_retained,
                 "shell_emit_ms": round(shell_emit_ms, 3),
                 "frozen_loader_ms": round(loader_ms, 3),
             }
