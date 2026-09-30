@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "task_id": "monster-v4-step1-distributed-execution-lease-v1",
+  "title": "MONSTER V4 Step 1 — Distributed Execution Lease",
+  "project": "MONSTER V4",
+  "step": 1,
+  "total_steps": 6,
+  "status": "DONE",
+  "scope": "Add a repository-backed single-owner execution lease using a dedicated Git ref and fast-forward-only compare-and-swap persistence. Mutations require the live holder; competing chats/agents fail closed and continue non-conflicting work.",
+  "protected": {
+    "monster_v3_steps_1_8_inherited": true,
+    "monster_2a_enforcement_steps_1_5": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "git_ref_fast_forward_cas": true,
+    "one_live_owner": true,
+    "stale_revision_fails_closed": true,
+    "competing_owner_fails_closed": true,
+    "expired_takeover_new_generation": true,
+    "repository_drift_fails_closed": true,
+    "two_a_chain_preserved": true,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, exact merged-main full certification + devsystem-final-gate GREEN, and initialization of the dedicated lease ledger ref."
+}
