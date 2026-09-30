@@ -49,5 +49,23 @@
     "steps1_5_changed": false,
     "api2_changed": false,
     "rerun_of_failed_sha": false
+  },
+  "dependency_light_lane_repair": {
+    "failure_class": "A_CI_LANE_DEPENDENCY_MISMATCH",
+    "failed_run": 36670931289,
+    "exact_failure": "/opt/hostedtoolcache/Python/3.12.14/x64/bin/python: No module named pytest",
+    "evidence": [
+      "Step-6 permanent contract GREEN",
+      "Step-6 three-market certification GREEN",
+      "Step-6 signal contract GREEN",
+      "Step-6 frozen certification GREEN",
+      "Steps 1-5 permanent contracts GREEN"
+    ],
+    "root_cause": "A pytest command was added to the intentionally dependency-light permanent-contract lane, which does not install pytest.",
+    "patch": "Remove pytest from the dependency-light lane and compile the four Step-6 Python owners there instead. Deterministic Step-6 behavior remains certified by the existing dependency-free three-market cert.",
+    "product_logic_changed": false,
+    "steps1_5_changed": false,
+    "api2_changed": false,
+    "rerun_of_failed_sha": false
   }
 }
