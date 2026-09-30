@@ -12,7 +12,10 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
-from sports_api.wnba_game_history import get_player_game_log_dataset
+from sports_api.wnba_game_history import (
+    WNBA_CURRENT_STATS_BASE_URL,
+    get_player_game_log_dataset,
+)
 from sports_api.wnba_step18a_streamlit_consumer import build_step18a_consumer_latest
 
 
@@ -46,6 +49,7 @@ def build_pra_detail_bundle(player_id: int, season: int = DEFAULT_SEASON) -> dic
             pid,
             year,
             season_type="Regular Season",
+            stats_base_url=WNBA_CURRENT_STATS_BASE_URL,
         )
         consumer, consumer_error = _result(consumer_future)
         history, history_error = _result(history_future)
