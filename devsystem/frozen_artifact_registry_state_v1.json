@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "registry_ref": "refs/heads/monster-frozen-artifact-registry",
+  "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
+  "revision": 0,
+  "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+  "entries": {
+    "MONSTER_V3_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP1",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/persistent_execution_brain_v1.py": "ef8da16b47e2624c06b2f87dbe7db244aa5ca312",
+        "tests/test_devsystem_persistent_execution_brain_v1.py": "301e67a5886108df79c9d75875ac0fd8b5efd428",
+        "devsystem/task_ledgers/monster-v3-step1-persistent-execution-brain-v1.json": "6a672a75d2da392100dbf84bab94bbe4645272d2"
+      }
+    },
+    "MONSTER_V3_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP2",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/automatic_loop_kill_v1.py": "2b38ea7a4c498001743704055ef47d681b8a4359",
+        "tests/test_devsystem_automatic_loop_kill_v1.py": "6095013f260c4c329b043e61dba50067d7e85681",
+        "devsystem/task_ledgers/monster-v3-step2-automatic-loop-kill-v1.json": "6f71d37157ef51abb1f611175fc6aa94097ebabf"
+      }
+    },
+    "MONSTER_V3_STEP2A": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP2A",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/automatic_loop_kill_v1.py": "2b38ea7a4c498001743704055ef47d681b8a4359",
+        "tests/test_devsystem_automatic_loop_kill_v1.py": "6095013f260c4c329b043e61dba50067d7e85681",
+        "devsystem/task_ledgers/monster-v3-step2a-autonomous-skip-continue-v1.json": "d0b089c0ea4f77bd1266aefebc817c29b1aa2857"
+      }
+    },
+    "MONSTER_V3_STEP3": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP3",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/evidence_truth_ledger_v1.py": "7412037838a4f1a73476116f17199144304454fb",
+        "tests/test_devsystem_evidence_truth_ledger_v1.py": "3a1c0038fc5cc374bb0d1ccb77884ed131ad7fd4",
+        "devsystem/task_ledgers/monster-v3-step3-evidence-truth-ledger-v1.json": "7321473f5c077f775dca9fdb0afeb96b67be8f36"
+      }
+    },
+    "MONSTER_V3_STEP4": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP4",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/failure_ownership_engine_v1.py": "3a7333c056766b88795e0afcb5560189ca69b586",
+        "tests/test_devsystem_failure_ownership_engine_v1.py": "3c69d3cf2b1aa60047a398d1674bfaf9c3ca6222",
+        "devsystem/task_ledgers/monster-v3-step4-failure-ownership-engine-v1.json": "272b0e31ddaa8b83cba2a830b12804d987352aa9"
+      }
+    },
+    "MONSTER_V3_STEP5": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP5",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/deployment_truth_control_plane_v1.py": "2c39e1fd1b6a7af219bf14f48f124d695a925d59",
+        "tests/test_devsystem_deployment_truth_control_plane_v1.py": "cae010e271dcbd1fa640b53bb8700270593d5f4e",
+        "devsystem/task_ledgers/monster-v3-step5-deployment-truth-control-plane-v1.json": "afa6574517fccdfdeb8e4f6b60593ebbe14c96de"
+      }
+    },
+    "MONSTER_V3_STEP6": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP6",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/adaptive_proof_engine_v1.py": "3ee9f2357a64856426b4391081deff42eb04fb15",
+        "tests/test_devsystem_adaptive_proof_engine_v1.py": "38a55ef2f697b7516b9a5472d07e062deb91a1e8",
+        "devsystem/task_ledgers/monster-v3-step6-adaptive-proof-engine-v1.json": "4967f2008647f0b099f456b10386e4710a5db3ea"
+      }
+    },
+    "MONSTER_V3_STEP7": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP7",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/project_blast_radius_map_v1.py": "24f1464122ec9814434a543835bb7a9f8b246118",
+        "tests/test_devsystem_project_blast_radius_map_v1.py": "90746b75b62986e87b7c445ca565ffae3a129a0c",
+        "devsystem/task_ledgers/monster-v3-step7-project-blast-radius-map-v1.json": "662b8eaf94d60c243aa82a6f180c6452c12d4049"
+      }
+    },
+    "MONSTER_V3_STEP8": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V3_STEP8",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/monster_self_benchmark_v1.py": "e1b3229efceb21de4643f22367ab449b960ecb86",
+        "tests/test_devsystem_monster_self_benchmark_v1.py": "8aaff56e0e6950e41d284af8085e4a02d26d1870",
+        "devsystem/task_ledgers/monster-v3-step8-self-benchmarking-v1.json": "55a1d30fce038bb033efdbe2d840a9b13a92bd52"
+      }
+    },
+    "MONSTER_2A_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_2A_STEP1",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/mandatory_2a_action_gate_v1.py": "0c9fdb70c3df3d9a7b506886c69e506d9e6b3641",
+        "tests/test_devsystem_mandatory_2a_action_gate_v1.py": "c6f50716c48fb94edcefc1fc96c0659198ea033e",
+        "devsystem/task_ledgers/monster-2a-step1-mandatory-action-gate-v1.json": "ac7a7d5369358935a3a3300ac9fcaabb445ef44b"
+      }
+    },
+    "MONSTER_2A_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_2A_STEP2",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/mandatory_2a_receipt_v1.py": "81b6560c3d721f9014fa3b5d07692a94eab1412a",
+        "tests/test_devsystem_mandatory_2a_receipt_v1.py": "bd8f255d454dbc25ddfb821ad5db56d4618b5a18",
+        "devsystem/task_ledgers/monster-2a-step2-single-use-receipts-v1.json": "b65e1d77eff057cf9005b5e8e7e5d124ccefac16"
+      }
+    },
+    "MONSTER_2A_STEP3": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_2A_STEP3",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/mandatory_2a_replay_lock_v1.py": "83a01f4ffe7a8dfe8403f681d8c5038004616ae2",
+        "tests/test_devsystem_mandatory_2a_replay_lock_v1.py": "c492e4d717787d1591e51fd7884afe28b374fc66",
+        "devsystem/task_ledgers/monster-2a-step3-replay-loop-lock-v1.json": "0df4bfe1ab7013b853c365ef7b53f96001bd8cf5"
+      }
+    },
+    "MONSTER_2A_STEP4": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_2A_STEP4",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/mandatory_2a_global_enforcement_v1.py": "aee98c94b50c5b18603c4d372c29ed4fab405e6f",
+        "tests/test_devsystem_mandatory_2a_global_enforcement_v1.py": "db1dbc186b1f5eaefd42f13795371f91a65d619a",
+        "devsystem/task_ledgers/monster-2a-step4-global-enforcement-tripwire-v1.json": "e38560ec29f3d36c1a29e9bc16db4b5baf4f004b"
+      }
+    },
+    "MONSTER_2A_STEP5": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_2A_STEP5",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/mandatory_2a_adversarial_certification_v1.py": "97cbde42f8b7b5222bc345879b4208b89dda4cee",
+        "tests/test_devsystem_mandatory_2a_adversarial_certification_v1.py": "4714f31dae729fec919b2a8d59b40e4a7f60f716",
+        "devsystem/task_ledgers/monster-2a-step5-adversarial-certification-v1.json": "7c80d3df160fd37dc1e105a3be818d8996fe09f2"
+      }
+    },
+    "MONSTER_V4_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V4_STEP1",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/distributed_execution_lease_v1.py": "adde7f9b607c150ad8f01ad8310f5e203bb38546",
+        "tests/test_devsystem_distributed_execution_lease_v1.py": "2439e1c32be4bd9c77265ca2f04317982b57d7cf",
+        "devsystem/task_ledgers/monster-v4-step1-distributed-execution-lease-v1.json": "c56671bceb79f8d8a143d531dc8b832bfe470d4e"
+      }
+    },
+    "MONSTER_V4_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V4_STEP2",
+      "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
+      "artifacts": {
+        "devsystem/semantic_action_normalizer_v1.py": "4d7a35c91a8828ed26401087abdc7da1d6d2a35f",
+        "tests/test_devsystem_semantic_action_normalizer_v1.py": "88957f99432783d517884e7f9b291156cfdb2878",
+        "devsystem/task_ledgers/monster-v4-step2-semantic-action-normalizer-v1.json": "c15e15a648745ccf676e9314867a46608c689a42"
+      }
+    }
+  },
+  "active_thaws": [],
+  "state_hash": "4ad4a356088689f27c4097d0b6a37e92c6db1d6306fb2407103ca4b20aa9bcaf"
+}
