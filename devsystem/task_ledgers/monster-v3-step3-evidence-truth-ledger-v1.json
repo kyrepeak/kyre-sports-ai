@@ -34,5 +34,14 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "evidence_epoch_recovery": {
+    "stale_certified_head": "05dc1fc884353896a5143a978b76a385568a824c",
+    "empty_head": "aebbd07844caa9c2e9f9d97b0e30be1201263125",
+    "empty_head_file_changes": 0,
+    "empty_head_checks": 0,
+    "classification": "F_STALE_EVIDENCE",
+    "policy": "Do not reuse prior-head proof. Advance with one real control-plane metadata change and require exact-head DevSystem certification.",
+    "product_runtime_changed": false
+  }
 }
