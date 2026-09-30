@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 1,
+  "truth_epoch": 2,
   "program_id": "MONSTER_V4",
   "program_title": "MONSTER V4",
   "current_step": 4,
@@ -15,13 +15,13 @@
   "main_sha": "2015c1064f586d9e2f4d9069ea8b41c3a5950a54",
   "active_pr": null,
   "active_run": null,
-  "active_head_sha": "2015c1064f586d9e2f4d9069ea8b41c3a5950a54",
+  "active_head_sha": "ff27ccafb091d319b5129a1dceb6dd0e06e996d2",
   "blocker": null,
-  "next_legal_action": "BUILD_STEP4_CANDIDATE_UNDER_LEASE",
+  "next_legal_action": "CREATE_STEP4_PR",
   "lease": {
-    "revision": 14,
+    "revision": 15,
     "generation": 4,
-    "state_hash": "9252c427a836fa3a83de215ba57bae2484069a55b162aca1672e4f5f4445c090",
+    "state_hash": "ee5b5be16b61cc1ffd9a1f5d4e10aa83c3a0618f2dd287d65c425da2943dc160",
     "holder_owner_id": "chat:monster-v4-step4-controlroom",
     "holder_lease_id": "LEASE-MONSTERV4STEP4GEN4"
   },
@@ -32,6 +32,11 @@
     "active_thaws": 0
   },
   "frozen_checkpoints": [
+    "MONSTER_2A_STEP1",
+    "MONSTER_2A_STEP2",
+    "MONSTER_2A_STEP3",
+    "MONSTER_2A_STEP4",
+    "MONSTER_2A_STEP5",
     "MONSTER_V3_STEP1",
     "MONSTER_V3_STEP2",
     "MONSTER_V3_STEP2A",
@@ -41,14 +46,9 @@
     "MONSTER_V3_STEP6",
     "MONSTER_V3_STEP7",
     "MONSTER_V3_STEP8",
-    "MONSTER_2A_STEP1",
-    "MONSTER_2A_STEP2",
-    "MONSTER_2A_STEP3",
-    "MONSTER_2A_STEP4",
-    "MONSTER_2A_STEP5",
     "MONSTER_V4_STEP1",
     "MONSTER_V4_STEP2",
     "MONSTER_V4_STEP3"
   ],
-  "state_hash": "01017e1a35ef6e87d0d6c8fc8cd2b0716fd40ae8eb87ce2c8dfb284d21bdd0f3"
+  "state_hash": "d583094b8aec27294a971217ebfd1fa2de4a3188738dd5814fea424c8e73ffd8"
 }
