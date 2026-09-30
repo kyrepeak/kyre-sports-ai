@@ -36,7 +36,9 @@ def test_step7_contract_is_nonblocking_precompute_only():
     assert contract["background"] is True
     assert contract["navigation_callback_blocking"] is False
     assert contract["target_endpoint"].endswith("/pra-detail-cached")
-    assert contract["max_workers"] == 4
+    assert contract["max_workers"] == 2
+    assert contract["foreground_headroom_reserved"] is True
+    assert contract["precompute_order"] == "game_center_display_order"
     assert contract["per_player_transport_attempts"] == 2
     assert contract["frozen_speed_v3_steps_1_6_modified"] is False
     assert contract["projection_math_changed"] is False
