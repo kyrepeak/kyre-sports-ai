@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "task": "wnba-pra-speed-v3-step7-precompute",
+  "task_id": "wnba-pra-speed-v3-step7-precompute",
+  "id": "wnba-pra-speed-v3-step7-precompute",
+  "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
+  "project": "WNBA PRA Speed V3",
+  "phase": "BRANCH_PROOF",
+  "step": 7,
+  "total_steps": 9,
+  "status": "DONE",
+  "scope": "Non-blockingly precompute the frozen Step-4 finished PRA detail bundle for every currently tappable verified player in the selected Game Center before any player tap.",
+  "speed_targets": {
+    "warm_same_session_seconds_max": 0.75,
+    "precomputed_cold_player_seconds_max": 1.5,
+    "true_cold_pra_seconds_max": 2.5
+  },
+  "precompute_contract": {
+    "source": "frozen selected-game Game Center player IDs",
+    "target_endpoint": "/api/v1/wnba/players/{player_id}/pra-detail-cached",
+    "background": true,
+    "navigation_callback_blocking": false,
+    "max_workers": 4,
+    "schedule_dedupe_seconds": 45,
+    "server_cache_ttl_seconds": 60,
+    "reuses_frozen_step4_finished_bundle": true,
+    "reuses_frozen_step6_history_cache": true,
+    "new_model_calculation": false,
+    "new_sportsbook_fetch": false
+  },
+  "protected": {
+    "navigation_v2_steps_1_7": true,
+    "speed_v3_steps_1_6": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "qualification_runs_added": 0,
+    "ranking_runs_added": 0,
+    "monte_carlo_runs_added": 0,
+    "visual_contract_changed": false
+  },
+  "frozen_step6_blobs": {
+    "wnba_pra_speed_v3_step6_history_cache.py": "ac5b541f1101bbafdec37ced59d0404ffc13ff89",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step6.py": "e5bd4bc9db75982d2cf0ce886e48053d1c84acc2",
+    "sports_api/api/wnba_pra_speed_v3_step6_history_cache.py": "4acfdf62dbcffc5f86c3f6ef8c2faa03b23458b2"
+  },
+  "freeze_exit": {
+    "branch_contract_required": true,
+    "devsystem_final_gate_required": true,
+    "merged_main_public_profile_required": true,
+    "required_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP7_PRECOMPUTE_SCHEDULED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP7_PLAYER_READY_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP7_FROZEN_STEPS1_6_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP7_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP7_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP7_FROZEN"
+    ]
+  },
+  "production_freeze": {
+    "status": "PENDING_MERGED_MAIN_PUBLIC_PROOF"
+  },
+  "two_a": {
+    "distributed_lease_owner": "chatgpt:wnba-pra-speed-v3-step7",
+    "lease_generation": 1,
+    "one_active_problem": true,
+    "one_active_pr": true,
+    "no_duplicate_async_runs": true,
+    "terminal_failure_before_patch": true,
+    "stale_fingerprints_rejected": true,
+    "protect_frozen_steps_1_6": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

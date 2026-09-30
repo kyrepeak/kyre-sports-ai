@@ -1,0 +1,99 @@
+name: WNBA PRA Speed V3 Step 7 Precompute
+
+on:
+  pull_request:
+    paths:
+      - "wnba_pra_speed_v3_step7_precompute.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py"
+      - "app.py"
+      - "tests/test_wnba_pra_speed_v3_step7.py"
+      - "devsystem/wnba_pra_speed_v3_step7_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json"
+      - ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "wnba_pra_speed_v3_step7_precompute.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py"
+      - "app.py"
+      - "tests/test_wnba_pra_speed_v3_step7.py"
+      - "devsystem/wnba_pra_speed_v3_step7_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json"
+      - ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-pra-speed-v3-step7-precompute-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused dependencies
+        run: pip install -q pytest requests fastapi streamlit httpx pandas pypdf
+      - name: Enforce exact Step-7 scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/devsystem-targeted-ci.yml
+          .github/workflows/wnba-pra-speed-v3-step7-precompute.yml
+          app.py
+          devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json
+          devsystem/wnba_pra_speed_v3_step7_public_profile.py
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py
+          tests/test_wnba_pra_speed_v3_step7.py
+          wnba_pra_speed_v3_step7_precompute.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+      - name: Run Step-7 focused contract
+        run: python -m pytest -q tests/test_wnba_pra_speed_v3_step7.py
+      - name: Certify branch
+        run: |
+          echo "WNBA_PRA_SPEED_V3_STEP7_SCOPE_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP7_BACKGROUND_PRECOMPUTE_CONTRACT_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP7_FROZEN_STEPS1_6_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP7_BRANCH_GREEN"
+
+  public-profile:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser proof dependencies
+        run: |
+          pip install playwright requests streamlit
+          python -m playwright install --with-deps chromium
+      - name: Prove Step 7 active-player precompute
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/wnba_pra_speed_v3_step7_public_profile.py \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/wnba-pra-speed-v3-step7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wnba-pra-speed-v3-step7-profile
+          path: artifacts/wnba-pra-speed-v3-step7
+          if-no-files-found: ignore
