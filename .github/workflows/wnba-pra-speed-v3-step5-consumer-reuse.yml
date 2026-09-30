@@ -1,0 +1,138 @@
+name: WNBA PRA Speed V3 Step 5 Consumer Reuse
+
+on:
+  pull_request:
+    paths:
+      - "sports_api/api/wnba_pra_speed_v3_step5_fast_history.py"
+      - "wnba_pra_speed_v3_step5_consumer_reuse.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py"
+      - "sports_api/main.py"
+      - "app.py"
+      - "tests/test_wnba_pra_speed_v3_step5.py"
+      - "devsystem/wnba_pra_speed_v3_step5_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json"
+      - ".github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/api/wnba_pra_speed_v3_step5_fast_history.py"
+      - "wnba_pra_speed_v3_step5_consumer_reuse.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py"
+      - "sports_api/main.py"
+      - "app.py"
+      - "tests/test_wnba_pra_speed_v3_step5.py"
+      - "devsystem/wnba_pra_speed_v3_step5_public_profile.py"
+      - "devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json"
+      - ".github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused dependencies
+        run: pip install pytest requests fastapi streamlit httpx pandas pypdf
+      - name: Run Step 5 consumer-reuse contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest -q tests/test_wnba_pra_speed_v3_step5.py
+      - name: Enforce exact Step 5 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/devsystem-targeted-ci.yml
+          .github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml
+          app.py
+          devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json
+          devsystem/wnba_pra_speed_v3_step5_public_profile.py
+          sports_api/api/wnba_pra_speed_v3_step5_fast_history.py
+          sports_api/main.py
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          tests/test_wnba_pra_speed_v3_step5.py
+          wnba_pra_speed_v3_step5_consumer_reuse.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_GREEN"
+      - name: Protect frozen Speed V3 Steps 1-4
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "STEP5_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob wnba_pra_speed_v3_step1_profiler.py df406e7f3753f5707274d5287c87ee49832515bf
+          check_blob streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py 649b9af7e33be34b6cc931f9a3699d0e002f22d3
+          check_blob wnba_pra_speed_v3_step2_transport.py 9a682f1ef27e663f1254d16895ed955f7dc0987e
+          check_blob streamlit_memory_lazy_router_wnba_pra_speed_v3_step2.py 3e14bb8b9607cce6f026ba3ae479f7536b0ac9eb
+          check_blob wnba_pra_speed_v3_step3_bundle.py 972292086f23531875be6fb697ee494580c988a8
+          check_blob streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py 887af7f2ccf655218a945cf2d48cac1b79ad92eb
+          check_blob sports_api/api/wnba_pra_detail_bundle.py b5591cfcd09f9ed7910b795bb568efc9f4633a97
+          check_blob sports_api/wnba_pra_speed_v3_step3_espn_history.py fa4f7a99a6c73984e90e938efc506711a9f614c6
+          check_blob wnba_api_client_v1.py a371d30e59fc44c441cf08a411bc8210a111913d
+          check_blob sports_api/api/wnba_pra_cached_detail_bundle.py 957c9a889533e8b9052130299fb490d0818a673c
+          check_blob wnba_pra_speed_v3_step4_cache.py f99f6c4f9dcf5e76c09544224e005be20a09f0ac
+          check_blob streamlit_memory_lazy_router_wnba_pra_speed_v3_step4.py c4b977f116c88d1a52263b3d93165ff9d7a3b541
+          check_blob devsystem/wnba_pra_speed_v3_step4_public_profile.py 21bfdf8fac850e0325c307c3c6bfff07602e6502
+          echo "WNBA_PRA_SPEED_V3_STEP5_FROZEN_STEPS1_4_GREEN"
+      - name: Compile Step 5 surfaces
+        run: |
+          python -m py_compile             sports_api/api/wnba_pra_speed_v3_step5_fast_history.py             wnba_pra_speed_v3_step5_consumer_reuse.py             streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py             sports_api/main.py             app.py             devsystem/wnba_pra_speed_v3_step5_public_profile.py
+      - name: Certify Step 5 contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'pra-history-fast' sports_api/api/wnba_pra_speed_v3_step5_fast_history.py
+          grep -F '"consumer_reads_on_cross_player_open_max": 0' wnba_pra_speed_v3_step5_consumer_reuse.py
+          grep -F '"history_reads_on_cross_player_open_max": 1' wnba_pra_speed_v3_step5_consumer_reuse.py
+          grep -F '"new_history_cache_added": False' wnba_pra_speed_v3_step5_consumer_reuse.py
+          grep -F 'streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 as current_parent' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          grep -F 'FROZEN_SPEED_STEP4_PARENT = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4"' streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py
+          grep -F 'from streamlit_memory_lazy_router_wnba_pra_speed_v3_step5 import record_bootstrap_import_ms, render_app' app.py
+          echo "WNBA_PRA_SPEED_V3_STEP5_CONSUMER_REUSE_CONTRACT_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP5_BRANCH_GREEN"
+
+  public-profile:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: focused-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser proof dependencies
+        run: |
+          pip install playwright requests streamlit
+          python -m playwright install --with-deps chromium
+      - name: Prove Step 5 cross-player consumer reuse
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/wnba_pra_speed_v3_step5_public_profile.py             --production-url https://pickvault.streamlit.app             --artifact-dir artifacts/wnba-pra-speed-v3-step5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wnba-pra-speed-v3-step5-profile
+          path: artifacts/wnba-pra-speed-v3-step5
+          if-no-files-found: ignore

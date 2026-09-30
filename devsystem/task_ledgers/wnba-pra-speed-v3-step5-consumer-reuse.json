@@ -1,0 +1,92 @@
+{
+  "version": 2,
+  "task": "wnba-pra-speed-v3-step5-consumer-reuse",
+  "task_id": "wnba-pra-speed-v3-step5-consumer-reuse",
+  "id": "wnba-pra-speed-v3-step5-consumer-reuse",
+  "title": "WNBA PRA Speed V3 Step 5 — Cross-player consumer snapshot reuse",
+  "project": "WNBA PRA Speed V3",
+  "phase": "FORWARD_REBASED_AWAITING_EXACT_HEAD_PROOF",
+  "step": 5,
+  "total_steps": 9,
+  "status": "DONE",
+  "scope": "Reuse the existing same-session global consumer snapshot across player changes while loading only the newly selected player's frozen Step-3 fast history in one hosted read.",
+  "source_main": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc",
+  "speed_targets": {
+    "warm_same_session_seconds_max": 0.75,
+    "cross_player_seconds_max": 1.5,
+    "true_cold_pra_seconds_max": 2.5
+  },
+  "reuse_contract": {
+    "consumer_reads_on_cross_player_open_max": 0,
+    "history_reads_on_cross_player_open_max": 1,
+    "true_cold_delegates_to_frozen_step4": true,
+    "warm_same_player_zero_reads": true,
+    "new_history_cache_added": false,
+    "step6_history_cache_ownership_preserved": true
+  },
+  "protected": {
+    "navigation_v2_steps_1_7": true,
+    "speed_v3_steps_1_4": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0,
+    "qualification_runs_added": 0,
+    "ranking_runs_added": 0,
+    "monte_carlo_runs_added": 0,
+    "visual_contract_changed": false
+  },
+  "frozen_blobs": {
+    "wnba_pra_speed_v3_step1_profiler.py": "df406e7f3753f5707274d5287c87ee49832515bf",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py": "649b9af7e33be34b6cc931f9a3699d0e002f22d3",
+    "wnba_pra_speed_v3_step2_transport.py": "9a682f1ef27e663f1254d16895ed955f7dc0987e",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step2.py": "3e14bb8b9607cce6f026ba3ae479f7536b0ac9eb",
+    "wnba_pra_speed_v3_step3_bundle.py": "972292086f23531875be6fb697ee494580c988a8",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py": "887af7f2ccf655218a945cf2d48cac1b79ad92eb",
+    "sports_api/api/wnba_pra_detail_bundle.py": "b5591cfcd09f9ed7910b795bb568efc9f4633a97",
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "fa4f7a99a6c73984e90e938efc506711a9f614c6",
+    "wnba_api_client_v1.py": "a371d30e59fc44c441cf08a411bc8210a111913d",
+    "sports_api/api/wnba_pra_cached_detail_bundle.py": "957c9a889533e8b9052130299fb490d0818a673c",
+    "wnba_pra_speed_v3_step4_cache.py": "f99f6c4f9dcf5e76c09544224e005be20a09f0ac",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4.py": "c4b977f116c88d1a52263b3d93165ff9d7a3b541",
+    "devsystem/wnba_pra_speed_v3_step4_public_profile.py": "21bfdf8fac850e0325c307c3c6bfff07602e6502"
+  },
+  "freeze_exit": {
+    "branch_contract_required": true,
+    "render_fast_history_route_live_required": true,
+    "merged_main_public_profile_required": true,
+    "required_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP5_CONSUMER_REUSE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_ZERO_DUPLICATE_CONSUMER_READ_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_FAST_HISTORY_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_FROZEN"
+    ]
+  },
+  "two_a": {
+    "distributed_lease_owner": "chatgpt:wnba-pra-speed-v3-step5",
+    "lease_generation": 5,
+    "lease_revision_at_start": 20,
+    "one_active_problem": true,
+    "no_duplicate_async_runs": true,
+    "terminal_failure_before_patch": true,
+    "stale_fingerprints_rejected": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "forward_rebase": {
+    "status": "RECONCILED",
+    "from_main": "aa0dc70d13c0a480a6fd19056a03bee45d79cf89",
+    "to_main": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc",
+    "current_parent": "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9",
+    "frozen_speed_step4_parent_preserved": true,
+    "newer_main_changes_preserved": true,
+    "speed_v3_steps_1_4_changed": false,
+    "step5_contract_changed": false
+  }
+}
