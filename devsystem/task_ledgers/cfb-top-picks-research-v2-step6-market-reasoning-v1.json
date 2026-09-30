@@ -35,5 +35,19 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "control_plane_repair": {
+    "failure_class": "A_DETERMINISTIC_INTEGRATION_WIRING",
+    "failed_run": 36670583859,
+    "exact_failures": [
+      "app.py contained a literal \\\\n between the active router import and compatibility comment, causing SyntaxError",
+      "Step-6 certification was invoked as a file under devsystem/, so repository-root module cfb_top_picks_market_reasoning_v1 was not importable"
+    ],
+    "root_cause": "Two wiring mistakes in the initial Step-6 activation/proof path; the Step-6 market reasoning contract itself was already GREEN.",
+    "patch": "Replace the literal newline escape with a real newline and invoke the cert with python -m devsystem.cfb_top_picks_research_v2_step6_market_reasoning_cert_v1.",
+    "product_reasoning_logic_changed": false,
+    "steps1_5_changed": false,
+    "api2_changed": false,
+    "rerun_of_failed_sha": false
+  }
 }
