@@ -51,6 +51,8 @@ REQUIRED_DEVSYSTEM_FILES = (
     ".github/workflows/monster-speed-v3-step1-workflow-quarantine-v2.yml",
     "devsystem/persistent_execution_brain_v1.py",
     "tests/test_devsystem_persistent_execution_brain_v1.py",
+    "devsystem/automatic_loop_kill_v1.py",
+    "tests/test_devsystem_automatic_loop_kill_v1.py",
 )
 
 
@@ -123,6 +125,7 @@ def validate() -> dict:
         "python devsystem/forward_motion_contract_v2.py",
         "python devsystem/action_ledger_v2.py verify-pr",
         "python devsystem/persistent_execution_brain_v1.py self-test",
+        "python devsystem/automatic_loop_kill_v1.py",
         "fetch-depth: 0",
     )
     workflow_missing = [m for m in required_workflow_markers if m not in workflow]
@@ -324,6 +327,7 @@ def validate() -> dict:
         "forward_motion_v2_permanent": True,
         "forward_motion_v2_pr_enforcement": True,
         "persistent_execution_brain_v1_permanent": True,
+        "automatic_loop_kill_v1_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
