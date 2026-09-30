@@ -10,14 +10,14 @@
   "current_step": 4,
   "total_steps": 6,
   "step_title": "Cross-Chat Truth Handshake",
-  "step_status": "READY",
+  "step_status": "ACTIVE",
   "active_checkpoint": "MONSTER_V4_STEP4",
   "main_sha": "2015c1064f586d9e2f4d9069ea8b41c3a5950a54",
   "active_pr": 1231,
   "active_run": 36676817856,
   "active_head_sha": "ff27ccafb091d319b5129a1dceb6dd0e06e996d2",
   "blocker": null,
-  "next_legal_action": "MERGE_PR_1231_UNDER_DISTRIBUTED_LEASE",
+  "next_legal_action": "MERGE_STEP4_PR",
   "lease": {
     "revision": 16,
     "generation": 4,
@@ -50,5 +50,5 @@
     "MONSTER_V4_STEP2",
     "MONSTER_V4_STEP3"
   ],
-  "state_hash": "c08943ee1ca73b73989cdf471da0c2d942edbfdd0f3c7a8cf88dd119033cedb4"
+  "state_hash": "79d86eaab7224e98dff29f1c8e3a74c1536d4026ffa2fa8436ee2c938dfb4a42"
 }
