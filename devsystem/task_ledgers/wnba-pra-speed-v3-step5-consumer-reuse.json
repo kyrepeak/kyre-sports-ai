@@ -10,7 +10,7 @@
   "total_steps": 9,
   "status": "DONE",
   "scope": "Reuse the existing same-session global consumer snapshot across player changes while loading only the newly selected player's frozen Step-3 fast history in one hosted read.",
-  "source_main": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc",
+  "source_main": "7f2e41ea9042472659c493ff6b3e07b6db6847e5",
   "speed_targets": {
     "warm_same_session_seconds_max": 0.75,
     "cross_player_seconds_max": 1.5,
@@ -88,5 +88,14 @@
     "newer_main_changes_preserved": true,
     "speed_v3_steps_1_4_changed": false,
     "step5_contract_changed": false
+  },
+  "base_drift_guard": {
+    "status": "GREEN",
+    "latest_main": "7f2e41ea9042472659c493ff6b3e07b6db6847e5",
+    "branch_base": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc",
+    "main_advanced_commits": 4,
+    "overlapping_step5_files": 0,
+    "scope_proof_uses_merge_base": true,
+    "reason": "Unrelated CFB Step-9 certification-only commits advanced main after the Step-5 forward rebase."
   }
 }
