@@ -321,6 +321,9 @@ def test_terminal_proof_receipt_is_permanently_enforced():
 
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/terminal_proof_receipt_v1.py" in workflow
+    assert "terminal-proof-receipt:" in workflow
+    assert "MONSTER_V4_STEP5_TERMINAL_RECEIPT_GREEN" in workflow
+    assert "from devsystem.terminal_proof_receipt_v1 import build_receipt, validate_receipt" in workflow
     assert "tests/test_devsystem_terminal_proof_receipt_v1.py" in workflow
 
 
