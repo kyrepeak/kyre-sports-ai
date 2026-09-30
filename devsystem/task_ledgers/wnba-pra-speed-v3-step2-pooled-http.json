@@ -7,8 +7,8 @@
   "phase": "pra-speed-v3",
   "step": 2,
   "total_steps": 9,
-  "status": "IN_PROGRESS",
-  "step2_status": "IN_PROGRESS",
+  "status": "DONE",
+  "step2_status": "DONE",
   "scope": "Transport-only persistent HTTPS connection pooling for WNBA API reads. Preserve exact URLs, params, headers, timeout semantics, payload parsing, basketball math, market math, navigation, and sportsbook influence.",
   "source_main": "538d5411e66221882df2c95e0b01085043bf66d4",
   "step1_frozen": {
@@ -51,7 +51,10 @@
     "red_run": 36655980473,
     "red_job": 109700304707,
     "red_result": "6 failed: persistent pool, Step-2 surfaces, and app activation correctly absent",
-    "green_run": null
+    "green_run": 36656543195,
+    "green_head": "69ef23b75de923a6c49982625ff76313934a12e0",
+    "green_job": 109702005422,
+    "green_result": "6 Step-2 tests passed; 8 frozen Step-7F client tests passed; scope/freeze/compile/transport contract GREEN"
   },
   "freeze_exit": {
     "focused_contract_required": true,
@@ -62,6 +65,23 @@
       "WNBA_PRA_SPEED_V3_STEP2_PROFILE_GREEN",
       "WNBA_PRA_SPEED_V3_STEP2_GREEN",
       "WNBA_PRA_SPEED_V3_STEP2_FROZEN"
+    ],
+    "branch_contract_green": true
+  },
+  "branch_proof": {
+    "step2_tests_green": true,
+    "frozen_client_tests_green": true,
+    "scope_green": true,
+    "frozen_navigation_steps_1_7_green": true,
+    "frozen_speed_step1_green": true,
+    "compile_green": true,
+    "pooled_transport_green": true,
+    "tokens": [
+      "WNBA_PRA_SPEED_V3_STEP2_SCOPE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_NAV_STEPS1_7_FROZEN_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_STEP1_FROZEN_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_POOLED_TRANSPORT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP2_BRANCH_GREEN"
     ]
   }
 }
