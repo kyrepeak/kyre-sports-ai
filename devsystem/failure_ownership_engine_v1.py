@@ -183,6 +183,9 @@ def validate_decision(payload: Mapping[str, Any]) -> dict[str, Any]:
     supplied = str(value.pop("decision_id", ""))
     if not supplied:
         raise OwnershipFailure("ownership decision requires decision_id")
+    expected = _fingerprint(value)
+    if supplied != expected:
+        raise OwnershipFailure("ownership decision fingerprint mismatch")
     if value.get("version") != VERSION:
         raise OwnershipFailure("unsupported ownership decision version")
 
@@ -217,9 +220,6 @@ def validate_decision(payload: Mapping[str, Any]) -> dict[str, Any]:
     if protections != expected_protections:
         raise OwnershipFailure("ownership protections drift")
 
-    expected = _fingerprint(value)
-    if supplied != expected:
-        raise OwnershipFailure("ownership decision fingerprint mismatch")
     value["decision_id"] = supplied
     return value
 
