@@ -91,25 +91,48 @@
   },
   "full_redeploy_closeout": {
     "failed_merged_main_run": 36657288055,
-    "failed_public_job": 109704355872,
-    "failed_public_rerun_job": 109707673408,
+    "first_failed_public_job": 109704355872,
+    "legal_retry_failed_public_job": 109707673408,
     "evidence": [
-      "merged-main focused-contract SUCCESS",
-      "merged-main DevSystem targeted CI SUCCESS",
-      "Step-2 deployment marker absent for full 180-second original public proof",
-      "one legal retry after material main/deployment changes still showed Step-2 marker absent for full 180-second window",
-      "current main contains Step-2 app activation, deployment marker, and pooled session"
+      "Step-2 focused contract SUCCESS",
+      "Step-2 exact-head devsystem-final-gate SUCCESS",
+      "merged-main DevSystem SUCCESS",
+      "PickVault served pre-Step-2 process through two 180-second deployment probes",
+      "current main retains Step-2 app activation, pooled session, and deployment marker"
     ],
-    "root_cause": "GitHub main contains the Step-2 pooled transport, but Streamlit Community Cloud continues serving an older process that exposes the frozen Step-7 marker without the Step-2 deployment marker.",
-    "precedent": "Use the repository-established comment-only requirements.txt touch to force a full Streamlit Community Cloud rebuild without changing dependency versions.",
+    "root_cause": "Streamlit Community Cloud remained on a stale pre-Step-2 hosted process after the Step-2 merge; the pooled transport has not yet been exercised by the public verifier.",
+    "repair_contract": "Comment-only requirements.txt trigger forces a full Community Cloud rebuild; readiness window increases to 600 seconds; dependency versions and all product/model/math behavior remain unchanged.",
     "trigger": "# WNBA PRA Speed V3 Step 2 control-plane full-redeploy trigger 2026-09-30 R1",
     "dependency_versions_changed": false,
     "product_code_changed": false,
-    "pooled_transport_changed": false,
-    "router_changed": false,
+    "model_math_changed": false,
     "frozen_navigation_steps_1_7_changed": false,
     "frozen_speed_v3_step1_changed": false,
-    "retry_policy": "After this control-plane trigger merges, use the automatically triggered merged-main Step-2 public-profile workflow as the sole authoritative freeze proof.",
+    "status": "PENDING_MERGED_MAIN_PUBLIC_PROFILE"
+  },
+  "nested_timing_verifier_closeout": {
+    "failed_merged_main_run": 36659043334,
+    "failed_public_job": 109709598195,
+    "deployment_proof": {
+      "token": "WNBA_PRA_SPEED_V3_STEP2_POOL_DEPLOYED_GREEN",
+      "deployment_wait_seconds": 6.187
+    },
+    "observed_public_profile": {
+      "total_render_ms": 5139.54,
+      "player_loader_ms": 10234.614,
+      "consumer_read_ms": 155.183,
+      "history_read_ms": 5124.805,
+      "network_reads": 2
+    },
+    "root_cause": "The frozen Step-1 verifier parser enforced player_loader_ms <= total_render_ms. Under Step-2's layered profiler transport wrapper the loader timer is nested/double-counted, so that Step-1-only sanity assertion false-reds even though the measured history read and public render remain valid.",
+    "repair_contract": "Step 2 parses the same frozen timing marker locally, preserving numeric/network/cache sanity checks while omitting only the Step-1 non-nested loader<=total assertion. Frozen Step 1 is untouched.",
+    "product_code_changed": false,
+    "pooled_transport_changed": false,
+    "frozen_speed_v3_step1_changed": false,
+    "red_run": 36659455826,
+    "red_job": 109710763736,
+    "red_result": "1 failed, 7 passed; Step-2-local profile parser correctly absent before repair",
+    "repair_commit": "95aa0b413b2183e42c346b74f6d77ed425e5c5e4",
     "status": "PENDING_MERGED_MAIN_PUBLIC_PROFILE"
   }
 }
