@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step5-consumer-reuse",
   "title": "WNBA PRA Speed V3 Step 5 — Cross-player consumer snapshot reuse",
   "project": "WNBA PRA Speed V3",
-  "phase": "STREAMLIT_FULL_REDEPLOY_PENDING_PROOF",
+  "phase": "PLAYER_ROUTER_RECURSION_REPAIR_PENDING_PROOF",
   "step": 5,
   "total_steps": 9,
   "status": "DONE",
@@ -115,7 +115,7 @@
     "legal_action": "forward-port exact 10-file Step-5 delta onto current main and require one fresh exact-head proof"
   },
   "streamlit_full_redeploy_closeout": {
-    "status": "PENDING_MERGED_MAIN_PUBLIC_PROOF",
+    "status": "DEPLOYMENT_GREEN_PLAYER_RECURSION_FOUND",
     "failed_public_run": 36687421554,
     "failed_public_job": 109796675155,
     "evidence": [
@@ -138,5 +138,33 @@
     "render_api_redeploy_required": false,
     "frozen_navigation_steps_1_7_changed": false,
     "frozen_speed_v3_steps_1_4_changed": false
+  },
+  "player_router_recursion_repair": {
+    "status": "PATCHED_PENDING_BRANCH_PROOF",
+    "failed_public_run": 36689172193,
+    "failed_public_job": 109802203603,
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP5_FAST_HISTORY_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_API_DEPLOYMENT_WAIT_SECONDS=0.440",
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYMENT_WAIT_SECONDS=6.093",
+      "WNBA_NAV_STEP7_PUBLIC_SLATE_READY_SECONDS=0.620",
+      "Player page failed with RecursionError after deployment became current"
+    ],
+    "failure_owner": "STREAMLIT_ROUTER_COMPOSITION",
+    "root_cause": "The current shell/router stack reaches WNBA PRA through the historical V1-to-V245 wrapper tower. Slate and Game remain below the Python call-depth ceiling, but Player Intelligence adds enough nested render frames to cross it after Step 5. This is stack-depth exhaustion, not a circular loader call.",
+    "patch": [
+      "Preserve the full current parent stack long enough to render the universal shell and selectors.",
+      "Intercept only WNBA -> PRA at the frozen Navigation V2 Step-7 dispatch and unwind the legacy wrapper stack with a private control-flow trampoline.",
+      "After unwind, directly compose frozen Speed V3 Step 1 profiler, Step 2 transport, Step 3 bundle, Step 4 server cache, Navigation V2 Step 7, and Step 5 consumer reuse.",
+      "Delegate every non-PRA route to the current CFB Step-9 parent unchanged."
+    ],
+    "python_recursion_limit_changed": false,
+    "product_math_changed": false,
+    "market_logic_changed": false,
+    "sportsbook_logic_changed": false,
+    "frozen_speed_v3_steps_1_4_changed": false,
+    "non_pra_routes_changed": false,
+    "two_a": "One router repair, one branch proof, then one merged-main public proof. No duplicate repair branch or recursion-limit workaround."
   }
 }
