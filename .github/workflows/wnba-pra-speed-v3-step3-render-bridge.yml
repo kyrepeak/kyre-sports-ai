@@ -1,0 +1,253 @@
+name: WNBA PRA Speed V3 Step 3 Render Bridge
+
+on:
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/main.py"
+      - "tests/test_wnba_pra_speed_v3_step3_render_bridge.py"
+      - ".github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml"
+  push:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/main.py"
+      - "tests/test_wnba_pra_speed_v3_step3_render_bridge.py"
+      - ".github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-pra-speed-v3-step3-render-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
+  RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+  ROLLBACK_SHA: c62c17b74704101bd5ddf05f32476d9fe4e14126
+
+jobs:
+  render-bridge-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused test dependency
+        run: pip install pytest
+
+      - name: Run Render bridge contract
+        run: pytest -q tests/test_wnba_pra_speed_v3_step3_render_bridge.py
+
+      - name: Enforce exact bridge scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml
+          sports_api/api/wnba_pra_detail_bundle.py
+          sports_api/main.py
+          tests/test_wnba_pra_speed_v3_step3_render_bridge.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_SCOPE_GREEN"
+
+      - name: Prove route parity and host registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object sports_api/api/wnba_pra_detail_bundle.py)" = "2f2365f026a59ab016a893fea27e029418018f87"
+          grep -F 'from sports_api.api.wnba_pra_detail_bundle import router as wnba_pra_detail_bundle_router' sports_api/main.py
+          grep -F 'app.include_router(wnba_pra_detail_bundle_router)' sports_api/main.py
+          python -m py_compile sports_api/api/wnba_pra_detail_bundle.py sports_api/main.py
+          echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_GREEN"
+
+  deploy-render:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact release pointer
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Prove exact Step-3 API surface before deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object sports_api/api/wnba_pra_detail_bundle.py)" = "2f2365f026a59ab016a893fea27e029418018f87"
+          grep -F 'app.include_router(wnba_pra_detail_bundle_router)' sports_api/main.py
+          python -m py_compile sports_api/api/wnba_pra_detail_bundle.py sports_api/main.py
+          echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_PREDEPLOY_GREEN"
+
+      - name: Deploy exact release-branch SHA to Render
+        id: deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          CANDIDATE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, time, urllib.request
+
+          base = "https://api.render.com/v1"
+          sid = os.environ["RENDER_SERVICE_ID"]
+          sha = os.environ["CANDIDATE_SHA"]
+          headers = {
+              "Authorization": f"Bearer {os.environ['RENDER_API_KEY']}",
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+              "User-Agent": "kyre-pra-speed-v3-step3/1",
+          }
+
+          def req(method, path, body=None):
+              data = None if body is None else json.dumps(body).encode()
+              request = urllib.request.Request(base + path, data=data, headers=headers, method=method)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  raw = response.read().decode()
+                  return json.loads(raw) if raw else None
+
+          identity = {
+              "WNBA_STEP17B_EXPECTED_REVISION": sha,
+              "WNBA_DEPLOYMENT_REVISION": sha,
+              "WNBA_RELEASE_ID": "wnba-pra-speed-v3-step3-detail-bundle",
+          }
+          for key, value in identity.items():
+              req("PUT", f"/services/{sid}/env-vars/{key}", {"value": value})
+
+          deployed = req(
+              "POST",
+              f"/services/{sid}/deploys",
+              {"commitId": sha, "clearCache": "do_not_clear"},
+          ) or {}
+          deploy_id = deployed.get("id")
+          if not deploy_id:
+              raise SystemExit("Step-3 Render deploy id missing")
+
+          for _ in range(180):
+              state = req("GET", f"/services/{sid}/deploys/{deploy_id}") or {}
+              status = str(state.get("status") or "").lower()
+              if status == "live":
+                  break
+              if status in {"build_failed", "update_failed", "canceled", "cancelled", "deactivated"}:
+                  raise SystemExit(f"Step-3 Render deploy failed: {status}")
+              time.sleep(5)
+          else:
+              raise SystemExit("Step-3 Render deploy timed out")
+
+          if sha.lower() not in json.dumps(state).lower():
+              raise SystemExit("Step-3 live deploy SHA mismatch")
+
+          print("WNBA_PRA_SPEED_V3_STEP3_RENDER_DEPLOY_LIVE", deploy_id, sha)
+          PY
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Verify live Step-3 API route and health
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, time, urllib.request
+
+          base = "https://kyre-sports-api.onrender.com"
+          last = None
+          for attempt in range(120):
+              try:
+                  with urllib.request.urlopen(base + "/health", timeout=30) as response:
+                      health = json.loads(response.read().decode())
+                  with urllib.request.urlopen(base + "/openapi.json", timeout=30) as response:
+                      spec = json.loads(response.read().decode())
+                  paths = spec.get("paths") or {}
+                  if health.get("status") == "ok" and "/api/v1/wnba/players/{player_id}/pra-detail" in paths:
+                      print("WNBA_PRA_SPEED_V3_STEP3_API_BUNDLE_GREEN")
+                      print("WNBA_PRA_SPEED_V3_STEP3_RENDER_DEPLOY_GREEN")
+                      raise SystemExit(0)
+                  last = {
+                      "health": health.get("status"),
+                      "route_present": "/api/v1/wnba/players/{player_id}/pra-detail" in paths,
+                  }
+              except Exception as exc:
+                  last = {"error": f"{type(exc).__name__}:{exc}"}
+              if attempt % 10 == 0:
+                  print("STEP3_API_WAIT", attempt, json.dumps(last, sort_keys=True), flush=True)
+              time.sleep(5)
+          raise SystemExit("Step-3 API route did not become healthy: " + repr(last))
+          PY
+
+      - name: Rollback exact prior certified Render SHA on failure
+        if: ${{ failure() && steps.deploy.outputs.deployed == 'true' }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+
+          base = "https://api.render.com/v1"
+          sid = os.environ["RENDER_SERVICE_ID"]
+          sha = os.environ["ROLLBACK_SHA"]
+          headers = {
+              "Authorization": f"Bearer {os.environ['RENDER_API_KEY']}",
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+              "User-Agent": "kyre-pra-speed-v3-step3-rollback/1",
+          }
+
+          def req(method, path, body=None):
+              request = urllib.request.Request(
+                  base + path,
+                  data=None if body is None else json.dumps(body).encode(),
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  raw = response.read().decode()
+                  return json.loads(raw) if raw else None
+
+          for key, value in {
+              "WNBA_STEP17B_EXPECTED_REVISION": sha,
+              "WNBA_DEPLOYMENT_REVISION": sha,
+              "WNBA_RELEASE_ID": "wnba-pra-speed-v3-step3-auto-rollback",
+          }.items():
+              req("PUT", f"/services/{sid}/env-vars/{key}", {"value": value})
+
+          deployed = req(
+              "POST",
+              f"/services/{sid}/deploys",
+              {"commitId": sha, "clearCache": "do_not_clear"},
+          ) or {}
+          deploy_id = deployed.get("id")
+          if not deploy_id:
+              raise SystemExit("Step-3 rollback deploy id missing")
+
+          for _ in range(180):
+              state = req("GET", f"/services/{sid}/deploys/{deploy_id}") or {}
+              status = str(state.get("status") or "").lower()
+              if status == "live":
+                  print("WNBA_PRA_SPEED_V3_STEP3_RENDER_ROLLBACK_GREEN", deploy_id, sha)
+                  raise SystemExit(0)
+              if status in {"build_failed", "update_failed", "canceled", "cancelled", "deactivated"}:
+                  raise SystemExit(f"Step-3 rollback failed: {status}")
+              time.sleep(5)
+          raise SystemExit("Step-3 rollback timed out")
+          PY
