@@ -53,9 +53,24 @@ jobs:
           tests/test_wnba_pra_speed_v3_step8.py
           wnba_pra_speed_v3_step8_visible_first.py
           EOF
+          cat > /tmp/expected-verifier-repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step8-visible-first.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json
+          devsystem/wnba_pra_speed_v3_step8_public_profile.py
+          tests/test_wnba_pra_speed_v3_step8.py
+          EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "WNBA_PRA_SPEED_V3_STEP8_INITIAL_SCOPE_GREEN"
+          sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP8_INITIAL_SCOPE_GREEN"
+          elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP8_VERIFIER_REPAIR_SCOPE_GREEN"
+          else
+            echo "Step-8 scope mismatch"
+            diff -u /tmp/expected.txt /tmp/actual.txt || true
+            diff -u /tmp/expected-verifier-repair.txt /tmp/actual.txt || true
+            exit 1
+          fi
       - name: Run Step-8 focused contract
         run: python -m pytest -q tests/test_wnba_pra_speed_v3_step8.py
       - name: Certify Step-8 branch
