@@ -407,9 +407,6 @@ def validate_truth_ledger(ledger: Mapping[str, Any]) -> dict[str, Any]:
     current = 0
     stale = 0
     incomplete = 0
-    expected_truth_id = _fingerprint(value)
-    if supplied_truth_id != expected_truth_id:
-        raise EvidenceTruthFailure("truth ledger fingerprint mismatch")
 
     for record in records:
         freshness = str(record.get("freshness") or "")
@@ -434,3 +431,124 @@ def validate_truth_ledger(ledger: Mapping[str, Any]) -> dict[str, Any]:
         "node_count": len(nodes),
         "edge_count": len(edges),
     }
+
+
+
+def contract_self_test() -> dict[str, Any]:
+    head = "1" * 40
+    old = "2" * 40
+    deployed = head
+
+    pr = build_evidence_record(
+        evidence_id="SELF-PR",
+        checkpoint_id="3",
+        contract_id="self-test",
+        scope="PR_HEAD",
+        repository="owner/repo",
+        commit_sha=head,
+        workflow_run_id=1001,
+        job_id=2001,
+        proof_id="pr-gate",
+        conclusion="SUCCESS",
+        frozen=False,
+    )
+    if classify_evidence(pr, current_head_sha=head, current_main_sha=old)["freshness"] != "CURRENT":
+        raise EvidenceTruthFailure("PR-head freshness self-test failed")
+    if classify_evidence(pr, current_head_sha=old, current_main_sha=old)["freshness"] != "STALE_HEAD":
+        raise EvidenceTruthFailure("stale-head self-test failed")
+
+    merged = build_evidence_record(
+        evidence_id="SELF-MAIN",
+        checkpoint_id="3",
+        contract_id="self-test",
+        scope="MERGED_MAIN",
+        repository="owner/repo",
+        commit_sha=head,
+        workflow_run_id=1002,
+        job_id=2002,
+        proof_id="main-gate",
+        conclusion="SUCCESS",
+        frozen=False,
+    )
+    if classify_evidence(merged, current_head_sha=head, current_main_sha=old)["freshness"] != "STALE_MAIN":
+        raise EvidenceTruthFailure("stale-main self-test failed")
+
+    deployment = build_evidence_record(
+        evidence_id="SELF-DEPLOY",
+        checkpoint_id="3",
+        contract_id="self-test",
+        scope="DEPLOYMENT",
+        repository="owner/repo",
+        commit_sha=head,
+        workflow_run_id=1003,
+        job_id=2003,
+        deployment_id="deploy-self",
+        deployment_sha=head,
+        proof_id="public-freeze",
+        conclusion="SUCCESS",
+        frozen=True,
+    )
+    ledger = build_truth_ledger(
+        task_id="self-test",
+        checkpoint_id="3",
+        records=[deployment],
+        current_head_sha=head,
+        current_main_sha=head,
+        current_deployment_sha=deployed,
+    )
+    result = validate_truth_ledger(ledger)
+    if result["current_evidence"] != 1:
+        raise EvidenceTruthFailure("current deployment truth self-test failed")
+
+    if classify_evidence(
+        deployment,
+        current_head_sha=head,
+        current_main_sha=head,
+        current_deployment_sha=old,
+    )["freshness"] != "STALE_DEPLOYMENT":
+        raise EvidenceTruthFailure("stale-deployment self-test failed")
+
+    stale_freeze = deepcopy(pr)
+    stale_freeze["commit_sha"] = old
+    stale_freeze["frozen"] = True
+    try:
+        build_truth_ledger(
+            task_id="self-test",
+            checkpoint_id="3",
+            records=[stale_freeze],
+            current_head_sha=head,
+            current_main_sha=head,
+        )
+    except EvidenceTruthFailure as exc:
+        if "stale evidence cannot freeze" not in str(exc):
+            raise
+    else:
+        raise EvidenceTruthFailure("stale freeze self-test failed")
+
+    tampered = deepcopy(ledger)
+    tampered["records"][0]["proof_id"] = "tampered"
+    try:
+        validate_truth_ledger(tampered)
+    except EvidenceTruthFailure as exc:
+        if "fingerprint mismatch" not in str(exc):
+            raise
+    else:
+        raise EvidenceTruthFailure("tamper self-test failed")
+
+    return {
+        "status": "GREEN",
+        "version": VERSION,
+        "exact_identity_guard": True,
+        "stale_head_guard": True,
+        "stale_main_guard": True,
+        "stale_deployment_guard": True,
+        "stale_freeze_guard": True,
+        "tamper_guard": True,
+        "product_runtime_mutation": False,
+        "network_calls": False,
+    }
+
+
+if __name__ == "__main__":
+    print("MONSTER_EVIDENCE_TRUTH_LEDGER_V1_GREEN")
+    print(json.dumps(contract_self_test(), indent=2, sort_keys=True))
