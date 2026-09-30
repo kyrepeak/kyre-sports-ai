@@ -23,6 +23,7 @@ STEP7_SELECTOR = '[data-wnba-pra-speed-v3-step7="active-player-precompute"]'
 DEPLOYMENT_WAIT_SECONDS = 600.0
 MAX_VISIBLE_SHELL_SECONDS = 0.75
 MAX_FINAL_PLAYER_SECONDS = 1.50
+DIAGNOSTIC_MAX_SECONDS = 2.50
 PRECOMPUTE_SETTLE_MS = 1250
 
 
@@ -63,21 +64,30 @@ def _visible_step8_surface(page):
     return None, ""
 
 
-def _wait_first_visible_content(page, started: float):
-    """Reacquire Streamlit frames across reruns inside the unchanged 0.750s SLA."""
-    deadline = float(started) + MAX_VISIBLE_SHELL_SECONDS
+def _measure_first_visible_content(page, started: float, max_seconds: float):
+    """Measure the first visible Step-8 user surface across Streamlit reruns."""
+    deadline = float(started) + float(max_seconds)
     while time.monotonic() < deadline:
         frame, visible_path = _visible_step8_surface(page)
         if frame is not None and visible_path:
-            visible_seconds = time.monotonic() - float(started)
-            if visible_seconds <= MAX_VISIBLE_SHELL_SECONDS:
-                return frame, visible_path, visible_seconds
-            break
+            return frame, visible_path, time.monotonic() - float(started)
 
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
         page.wait_for_timeout(min(25, max(1, int(remaining * 1000))))
+    return None, "", time.monotonic() - float(started)
+
+
+def _wait_first_visible_content(page, started: float):
+    """Freeze gate: first visible Player content must arrive within 0.750s."""
+    frame, visible_path, visible_seconds = _measure_first_visible_content(
+        page,
+        started,
+        MAX_VISIBLE_SHELL_SECONDS,
+    )
+    if frame is not None and visible_path and visible_seconds <= MAX_VISIBLE_SHELL_SECONDS:
+        return frame, visible_path, visible_seconds
 
     raise BrowserQAFailure(
         "Step-8 neither temporary shell nor final Player hero became visible "
@@ -113,7 +123,7 @@ def _wait_step8_streamlit(page):
     )
 
 
-def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
+def run(*, production_url: str, artifact_dir: str | Path, diagnostic_first_visible: bool = False) -> dict[str, Any]:
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
 
@@ -139,6 +149,65 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             started = time.monotonic()
             first.click()
+
+            if diagnostic_first_visible:
+                frame, visible_path, visible_seconds = _measure_first_visible_content(
+                    page,
+                    started,
+                    DIAGNOSTIC_MAX_SECONDS,
+                )
+                target_met = bool(
+                    frame is not None
+                    and visible_path
+                    and visible_seconds <= MAX_VISIBLE_SHELL_SECONDS
+                )
+                print("WNBA_PRA_SPEED_V3_STEP8_DIAGNOSTIC_ONLY")
+                print(
+                    "WNBA_PRA_SPEED_V3_STEP8_DIAGNOSTIC_FIRST_VISIBLE_SECONDS="
+                    f"{visible_seconds:.3f}"
+                )
+                print(
+                    "WNBA_PRA_SPEED_V3_STEP8_DIAGNOSTIC_FIRST_VISIBLE_PATH="
+                    f"{visible_path or 'none'}"
+                )
+                print(
+                    "WNBA_PRA_SPEED_V3_STEP8_DIAGNOSTIC_075_TARGET_MET="
+                    f"{str(target_met).lower()}"
+                )
+                final_frame, _ = step5_profile._wait_page_resilient(
+                    page,
+                    "player",
+                    timeout_seconds=step5_profile.PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS,
+                )
+                final_seconds = time.monotonic() - started
+                step5_profile._assert_player_ready(final_frame)
+                print(
+                    "WNBA_PRA_SPEED_V3_STEP8_DIAGNOSTIC_FINAL_PLAYER_SECONDS="
+                    f"{final_seconds:.3f}"
+                )
+                result = {
+                    "project": "WNBA PRA Speed V3",
+                    "step": "8/9",
+                    "status": "DIAGNOSTIC_ONLY",
+                    "production_url": production_url,
+                    "visible_target_seconds": MAX_VISIBLE_SHELL_SECONDS,
+                    "diagnostic_max_seconds": DIAGNOSTIC_MAX_SECONDS,
+                    "first_visible_seconds": round(visible_seconds, 3),
+                    "first_visible_path": visible_path or "none",
+                    "visible_target_met": target_met,
+                    "final_player_seconds": round(final_seconds, 3),
+                }
+                (artifacts / "wnba_pra_speed_v3_step8_diagnostic.json").write_text(
+                    json.dumps(result, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+                page.screenshot(
+                    path=str(artifacts / "wnba_pra_speed_v3_step8_diagnostic.png"),
+                    full_page=True,
+                )
+                print("WNBA_PRA_SPEED_V3_STEP8_DIAGNOSTIC_COMPLETE")
+                return result
+
             frame, visible_path, visible_seconds = _wait_first_visible_content(
                 page,
                 started,
@@ -247,8 +316,17 @@ def main() -> int:
         "--artifact-dir",
         default="artifacts/wnba-pra-speed-v3-step8",
     )
+    parser.add_argument(
+        "--diagnostic-first-visible",
+        action="store_true",
+        help="Measure first-visible timing up to 2.50s without certifying Step 8.",
+    )
     args = parser.parse_args()
-    run(production_url=args.production_url, artifact_dir=args.artifact_dir)
+    run(
+        production_url=args.production_url,
+        artifact_dir=args.artifact_dir,
+        diagnostic_first_visible=args.diagnostic_first_visible,
+    )
     return 0
 
 
