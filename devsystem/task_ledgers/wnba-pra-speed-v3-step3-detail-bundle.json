@@ -152,5 +152,26 @@
       "WNBA_PRA_SPEED_V3_STEP3_GREEN",
       "WNBA_PRA_SPEED_V3_STEP3_FROZEN"
     ]
+  },
+  "streamlit_full_redeploy_closeout": {
+    "status": "PENDING_MERGED_MAIN_PUBLIC_PROOF",
+    "failed_public_run": 36667749206,
+    "failed_public_job": 109736089685,
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP3_API_BUNDLE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_API_DEPLOYMENT_WAIT_SECONDS=0.376",
+      "PickVault did not expose Step-3 marker within 600s",
+      "Render API deploy dep-dau83uhsrm7s73b62lkg remains LIVE"
+    ],
+    "owner": "DEPLOYMENT",
+    "root_cause": "PickVault Streamlit is serving a stale process that does not expose the merged Step-3 marker, while the live Render API already exposes the Step-3 bundle route.",
+    "repair_contract": "Force exactly one Streamlit full rebuild using the repository-established comment-only requirements.txt trigger; do not change dependency versions or any product/runtime/model/math/market/ranking/sportsbook code.",
+    "trigger": "# WNBA PRA Speed V3 Step 3 control-plane full-redeploy trigger 2026-09-30 R1",
+    "two_a_decision": "Do not rerun the failed public proof before deployment state changes. Apply one deployment-only trigger, then use exactly one merged-main public proof as freeze authority.",
+    "dependency_versions_changed": false,
+    "product_runtime_changed": false,
+    "render_api_redeploy_required": false,
+    "frozen_navigation_steps_1_7_changed": false,
+    "frozen_speed_v3_steps_1_2_changed": false
   }
 }
