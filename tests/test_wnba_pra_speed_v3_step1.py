@@ -85,3 +85,9 @@ def test_speed_v3_step1_public_proof_waits_for_deployment_before_timing():
     assert "_wait_for_profiled_deployment(page)" in run
     assert run.index("_wait_for_profiled_deployment(page)") < run.index("game_started = time.monotonic()")
 
+def test_speed_v3_step1_full_streamlit_redeploy_contract():
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    verifier = (ROOT / "devsystem" / "wnba_pra_speed_v3_step1_public_profile.py").read_text(encoding="utf-8")
+    assert "# WNBA PRA Speed V3 Step 1 full Streamlit redeploy 2026-09-29 R1" in requirements
+    assert "DEPLOYMENT_READY_BUDGET_SECONDS = 600.0" in verifier
+
