@@ -475,11 +475,12 @@ def build_market_reasoning(
         1 for key in required
         if (signals.get(key) or {}).get("status") in {"VERIFIED", "PARTIAL", "VERIFIED_NO_HISTORY"}
     )
-    summary = " ".join(
+    summary_parts = [
         _clean((signals.get(key) or {}).get("text"))
         for key in required
         if (signals.get(key) or {}).get("status") in {"VERIFIED", "PARTIAL"}
-    )[:3]
+    ]
+    summary = " ".join(part for part in summary_parts[:3] if part)
     return {
         "version": MODEL_VERSION,
         "market": market,
