@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import copy
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -222,3 +225,17 @@ def test_exact_run_job_commit_identity_is_required():
         _record(commit_sha="abc")
     with pytest.raises(EvidenceTruthFailure, match="repository"):
         _record(repository="not-a-repo")
+
+
+def test_truth_ledger_runs_directly_as_permanent_self_test():
+    root = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [sys.executable, str(root / "devsystem" / "evidence_truth_ledger_v1.py")],
+        cwd=root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "MONSTER_EVIDENCE_TRUTH_LEDGER_V1_GREEN" in completed.stdout
