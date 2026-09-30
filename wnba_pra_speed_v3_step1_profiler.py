@@ -53,6 +53,15 @@ def _number(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def _render_deployment_marker(state: navigation.NavigationState) -> None:
+    st.markdown(
+        '<span data-wnba-pra-speed-v3-step1-deployed="true" '
+        f'data-wnba-nav-page="{escape(str(state.page), quote=True)}" '
+        'style="display:none" aria-hidden="true"></span>',
+        unsafe_allow_html=True,
+    )
+
+
 def _render_marker(profile: dict[str, Any]) -> None:
     attrs = {
         "data-wnba-pra-speed-v3-step1": "profiler",
@@ -78,6 +87,7 @@ def _render_marker(profile: dict[str, Any]) -> None:
 def render_profiled_step1_route(frozen_renderer: Callable[[], Any]) -> Any:
     """Profile only the Player Intelligence route while preserving frozen output."""
     state = navigation.current_state()
+    _render_deployment_marker(state)
     if state.page != navigation.PAGE_PLAYER:
         return frozen_renderer()
 

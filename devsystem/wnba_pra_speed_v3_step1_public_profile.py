@@ -26,6 +26,8 @@ from devsystem.wnba_nav_v2_step7_public_freeze import (
 )
 
 PROFILE_SELECTOR = '[data-wnba-pra-speed-v3-step1="profiler"]'
+PROFILE_DEPLOYMENT_SELECTOR = '[data-wnba-pra-speed-v3-step1-deployed="true"]'
+DEPLOYMENT_READY_BUDGET_SECONDS = 180.0
 
 
 def _float_attr(marker, name: str) -> float:
@@ -44,6 +46,28 @@ def _bool_attr(marker, name: str) -> bool:
     if raw not in {"true", "false"}:
         raise BrowserQAFailure(f"Profiler attribute {name} is not boolean: {raw!r}")
     return raw == "true"
+
+
+def _wait_for_profiled_deployment(page):
+    started = time.monotonic()
+    deadline = started + DEPLOYMENT_READY_BUDGET_SECONDS
+    last_error = ""
+    while time.monotonic() < deadline:
+        try:
+            frame, slate_seconds = _route_to_wnba_pra(page)
+            if frame.locator(PROFILE_DEPLOYMENT_SELECTOR).count() > 0:
+                print("WNBA_PRA_SPEED_V3_STEP1_DEPLOYMENT_READY_GREEN")
+                print(f"WNBA_PRA_SPEED_V3_STEP1_DEPLOYMENT_WAIT_SECONDS={time.monotonic() - started:.3f}")
+                return frame, slate_seconds
+            last_error = "Step-1 deployment marker absent"
+        except Exception as exc:
+            last_error = f"{type(exc).__name__}:{str(exc)[:400]}"
+        page.wait_for_timeout(5000)
+        page.reload(wait_until="domcontentloaded", timeout=120000)
+    raise BrowserQAFailure(
+        f"PickVault did not expose the Step-1 profiler deployment within "
+        f"{DEPLOYMENT_READY_BUDGET_SECONDS:.0f}s; last={last_error}"
+    )
 
 
 def _wait_profile_marker(page, timeout_seconds: float = 15.0):
@@ -113,7 +137,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
         page = context.new_page()
         try:
             page.goto(production_url, wait_until="domcontentloaded", timeout=120000)
-            frame, slate_seconds = _route_to_wnba_pra(page)
+            frame, slate_seconds = _wait_for_profiled_deployment(page)
             frame = _ensure_game_on_slate(page, frame)
 
             game_started = time.monotonic()

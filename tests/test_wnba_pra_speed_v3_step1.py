@@ -68,3 +68,20 @@ def test_app_activates_speed_v3_step1_and_keeps_step7_compatibility():
     source = APP_PATH.read_text(encoding="utf-8")
     assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step1 import record_bootstrap_import_ms, render_app" in source
     assert "Frozen WNBA Navigation V2 Step 7 compatibility" in source
+
+def test_speed_v3_step1_exposes_deployment_marker_before_page_gate():
+    source = PROFILER_PATH.read_text(encoding="utf-8")
+    assert 'data-wnba-pra-speed-v3-step1-deployed="true"' in source
+    fn = source.split("def render_profiled_step1_route", 1)[1]
+    assert "_render_deployment_marker(state)" in fn
+    assert fn.index("_render_deployment_marker(state)") < fn.index("if state.page != navigation.PAGE_PLAYER")
+
+
+def test_speed_v3_step1_public_proof_waits_for_deployment_before_timing():
+    verifier = (ROOT / "devsystem" / "wnba_pra_speed_v3_step1_public_profile.py").read_text(encoding="utf-8")
+    assert 'PROFILE_DEPLOYMENT_SELECTOR = \'[data-wnba-pra-speed-v3-step1-deployed="true"]\'' in verifier
+    assert "def _wait_for_profiled_deployment(" in verifier
+    run = verifier.split("def run(", 1)[1]
+    assert "_wait_for_profiled_deployment(page)" in run
+    assert run.index("_wait_for_profiled_deployment(page)") < run.index("game_started = time.monotonic()")
+

@@ -34,7 +34,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Enforce profiler-only PR scope
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused test dependencies
+        run: pip install pytest streamlit
+
+      - name: Run Step 1 profiler contract
+        run: pytest -q tests/test_wnba_pra_speed_v3_step1.py
+
+      - name: Enforce profiler PR scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -43,7 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/original.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step1-profiler.yml
           app.py
           devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json
@@ -52,9 +63,26 @@ jobs:
           tests/test_wnba_pra_speed_v3_step1.py
           wnba_pra_speed_v3_step1_profiler.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_GREEN"
+          sort -o /tmp/original.txt /tmp/original.txt
+
+          cat > /tmp/repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step1-profiler.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json
+          devsystem/wnba_pra_speed_v3_step1_public_profile.py
+          tests/test_wnba_pra_speed_v3_step1.py
+          wnba_pra_speed_v3_step1_profiler.py
+          EOF
+          sort -o /tmp/repair.txt /tmp/repair.txt
+
+          if diff -q /tmp/original.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_GREEN"
+          elif diff -q /tmp/repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP1_DEPLOYMENT_CLOSEOUT_SCOPE_GREEN"
+          else
+            echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_RED"
+            diff -u /tmp/repair.txt /tmp/actual.txt || true
+            exit 1
+          fi
 
       - name: Protect frozen Navigation V2 Steps 1-7
         shell: bash
@@ -74,22 +102,12 @@ jobs:
           check_blob streamlit_memory_lazy_router_wnba_nav_v2_step7.py 53bc4026f9e8bb5161762af6d9051bc3a105dfd6
           echo "WNBA_PRA_SPEED_V3_STEP1_NAV_STEPS1_7_FROZEN_GREEN"
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install focused test dependencies
-        run: pip install pytest streamlit
-
       - name: Compile profiler surfaces
         run: |
           python -m py_compile \
             wnba_pra_speed_v3_step1_profiler.py \
             streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py \
             devsystem/wnba_pra_speed_v3_step1_public_profile.py
-
-      - name: Run Step 1 profiler contract
-        run: pytest -q tests/test_wnba_pra_speed_v3_step1.py
 
       - name: Certify measurement-only contract
         shell: bash
@@ -125,17 +143,9 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          set -euo pipefail
-          for attempt in 1 2 3; do
-            echo "WNBA_PRA_SPEED_V3_STEP1_PUBLIC_ATTEMPT=$attempt"
-            if python devsystem/wnba_pra_speed_v3_step1_public_profile.py \
-              --production-url https://pickvault.streamlit.app \
-              --artifact-dir artifacts/wnba-pra-speed-v3-step1; then
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then sleep 20; fi
-          done
-          exit 1
+          python devsystem/wnba_pra_speed_v3_step1_public_profile.py \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/wnba-pra-speed-v3-step1
 
       - uses: actions/upload-artifact@v4
         if: always()
