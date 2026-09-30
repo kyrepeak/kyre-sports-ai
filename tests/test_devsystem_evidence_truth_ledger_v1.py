@@ -9,6 +9,7 @@ import pytest
 
 from devsystem.evidence_truth_ledger_v1 import (
     EvidenceTruthFailure,
+    _fingerprint,
     build_evidence_record,
     build_truth_ledger,
     classify_evidence,
@@ -226,6 +227,30 @@ def test_exact_run_job_commit_identity_is_required():
     with pytest.raises(EvidenceTruthFailure, match="repository"):
         _record(repository="not-a-repo")
 
+
+
+def test_validator_recomputes_freshness_instead_of_trusting_stored_label():
+    stale = _record(evidence_id="EV-FORGED", commit_sha=OLD, frozen=False)
+    ledger = build_truth_ledger(
+        task_id="monster-v3",
+        checkpoint_id="3",
+        records=[stale],
+        current_head_sha=HEAD,
+        current_main_sha=HEAD,
+    )
+    assert ledger["records"][0]["freshness"] == "STALE_HEAD"
+
+    forged = copy.deepcopy(ledger)
+    forged["records"][0]["freshness"] = "CURRENT"
+    forged["records"][0]["requires_reproof"] = False
+    forged["records"][0]["reason"] = "forged current label"
+    forged["records"][0]["frozen"] = True
+    unsigned = copy.deepcopy(forged)
+    unsigned.pop("truth_id")
+    forged["truth_id"] = _fingerprint(unsigned)
+
+    with pytest.raises(EvidenceTruthFailure, match="freshness does not match"):
+        validate_truth_ledger(forged)
 
 def test_truth_ledger_runs_directly_as_permanent_self_test():
     root = Path(__file__).resolve().parents[1]
