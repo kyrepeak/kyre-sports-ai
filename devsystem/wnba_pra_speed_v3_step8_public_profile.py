@@ -17,6 +17,7 @@ from devsystem import wnba_pra_speed_v3_step5_public_profile as step5_profile
 STEP8_SELECTOR = '[data-wnba-pra-speed-v3-step8="visible-first"][data-active="true"]'
 SHELL_SELECTOR = '[data-wnba-pra-speed-v3-step8-shell="visible"]'
 FINAL_HERO_SELECTOR = ".wn4-hero"
+CLIENT_PREVIEW_SELECTOR = '[data-wnba-pra-speed-v3-step8-click-preview="true"]'
 RESULT_SELECTOR = '[data-wnba-pra-speed-v3-step8-result="true"]'
 STEP7_SELECTOR = '[data-wnba-pra-speed-v3-step7="active-player-precompute"]'
 
@@ -45,9 +46,17 @@ def _float_attr(marker, name: str) -> float:
         ) from exc
 
 
-def _visible_step8_surface(page):
-    """Return the current Streamlit frame and first visible Step-8 surface."""
+def _visible_step8_surface(page, player_name: str):
+    """Return the first visible continuity, shell, or final Player surface."""
     for candidate in page.frames:
+        try:
+            preview = candidate.locator(CLIENT_PREVIEW_SELECTOR).filter(
+                has_text=player_name
+            ).first
+            if preview.count() > 0 and preview.is_visible():
+                return candidate, "client_preview"
+        except Exception:
+            pass
         try:
             shell = candidate.locator(SHELL_SELECTOR).first
             if shell.count() > 0 and shell.is_visible():
@@ -63,11 +72,11 @@ def _visible_step8_surface(page):
     return None, ""
 
 
-def _wait_first_visible_content(page, started: float):
+def _wait_first_visible_content(page, started: float, player_name: str):
     """Reacquire Streamlit frames across reruns inside the unchanged 0.750s SLA."""
     deadline = float(started) + MAX_VISIBLE_SHELL_SECONDS
     while time.monotonic() < deadline:
-        frame, visible_path = _visible_step8_surface(page)
+        frame, visible_path = _visible_step8_surface(page, player_name)
         if frame is not None and visible_path:
             visible_seconds = time.monotonic() - float(started)
             if visible_seconds <= MAX_VISIBLE_SHELL_SECONDS:
@@ -80,8 +89,8 @@ def _wait_first_visible_content(page, started: float):
         page.wait_for_timeout(min(25, max(1, int(remaining * 1000))))
 
     raise BrowserQAFailure(
-        "Step-8 neither temporary shell nor final Player hero became visible "
-        f"across the Streamlit rerun within target: {MAX_VISIBLE_SHELL_SECONDS:.3f}s"
+        "Step-8 neither client preview, temporary shell nor final Player hero "
+        f"became visible within target: {MAX_VISIBLE_SHELL_SECONDS:.3f}s"
     )
 
 
@@ -142,6 +151,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             frame, visible_path, visible_seconds = _wait_first_visible_content(
                 page,
                 started,
+                first_name,
             )
             print(
                 "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_SECONDS="
@@ -153,6 +163,8 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             )
             print("WNBA_PRA_SPEED_V3_STEP8_FRAME_REACQUIRE_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_GREEN")
+            if visible_path == "client_preview":
+                print("WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_GREEN")
 
             frame, _ = step5_profile._wait_page_resilient(
                 page,
