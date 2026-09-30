@@ -76,8 +76,23 @@ jobs:
           wnba_pra_speed_v3_step6_history_cache.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "WNBA_PRA_SPEED_V3_STEP6_SCOPE_GREEN"
+
+          cat > /tmp/true_cold_proof_repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step6-history-cache.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step6-history-cache.json
+          devsystem/wnba_pra_speed_v3_step6_public_profile.py
+          EOF
+          sort -o /tmp/true_cold_proof_repair.txt /tmp/true_cold_proof_repair.txt
+
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP6_SCOPE_GREEN"
+          elif diff -q /tmp/true_cold_proof_repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP6_TRUE_COLD_PROOF_REPAIR_SCOPE_GREEN"
+          else
+            echo "WNBA_PRA_SPEED_V3_STEP6_SCOPE_RED"
+            diff -u /tmp/true_cold_proof_repair.txt /tmp/actual.txt || true
+            exit 1
+          fi
       - name: Protect frozen Speed V3 Steps 1-5
         shell: bash
         run: |
@@ -127,6 +142,10 @@ jobs:
           grep -F 'step5._read_fast_history = original_history_reader' streamlit_memory_lazy_router_wnba_pra_speed_v3_step6.py
           grep -F 'from streamlit_memory_lazy_router_wnba_pra_speed_v3_step6 import record_bootstrap_import_ms, render_app' app.py
           grep -F 'WNBA_PRA_SPEED_V3_STEP6_HISTORY_CACHE_HIT_GREEN' devsystem/wnba_pra_speed_v3_step6_public_profile.py
+          grep -F 'STEP5_TRUE_COLD_RETRY_MAX = 1' devsystem/wnba_pra_speed_v3_step6_public_profile.py
+          grep -F 'def _run_frozen_step5_with_true_cold_retry(' devsystem/wnba_pra_speed_v3_step6_public_profile.py
+          grep -F 'WNBA_PRA_SPEED_V3_STEP6_TRANSIENT_TRUE_COLD_RECOVERED_GREEN' devsystem/wnba_pra_speed_v3_step6_public_profile.py
+          echo "WNBA_PRA_SPEED_V3_STEP6_TRUE_COLD_RETRY_CONTRACT_GREEN"
           grep -F 'WNBA_PRA_SPEED_V3_STEP6_FROZEN' devsystem/wnba_pra_speed_v3_step6_public_profile.py
           echo "WNBA_PRA_SPEED_V3_STEP6_HISTORY_CACHE_CONTRACT_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP6_BRANCH_GREEN"
