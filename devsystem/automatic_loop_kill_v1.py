@@ -9,8 +9,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Mapping, Sequence
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.persistent_execution_brain_v1 import validate_state
 
