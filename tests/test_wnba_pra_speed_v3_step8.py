@@ -261,3 +261,19 @@ def test_step8_shell_lifetime_handoff_is_permanent():
     assert 'data-shell-retained-through-final' in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_GREEN" in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_REPAIR_SCOPE_GREEN" in workflow
+
+
+def test_step8_pr_diagnostic_cannot_weaken_freeze_gate():
+    source = PROFILE.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "DIAGNOSTIC_MAX_SECONDS = 2.50" in source
+    assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in source
+    assert "--diagnostic-first-visible" in source
+    assert '"status": "DIAGNOSTIC_ONLY"' in source
+    assert "WNBA_PRA_SPEED_V3_STEP8_DIAGNOSTIC_COMPLETE" in source
+    assert "diagnostic-profile:" in workflow
+    diagnostic = workflow.split("diagnostic-profile:", 1)[1].split("public-profile:", 1)[0]
+    assert "github.event_name == 'pull_request'" in diagnostic
+    assert "--diagnostic-first-visible" in diagnostic
+    assert "WNBA_PRA_SPEED_V3_STEP8_GREEN" not in diagnostic
+    assert "WNBA_PRA_SPEED_V3_STEP8_FROZEN" not in diagnostic
