@@ -45,6 +45,8 @@ PRECOMPUTE_CONTRACT = {
     "foreground_headroom_reserved": True,
     "precompute_order": "game_center_display_order",
     "per_player_transport_attempts": API_ATTEMPTS,
+    "identity_valid_incomplete_bundle_is_error": False,
+    "identity_valid_incomplete_bundle_fallback": "frozen_true_cold_path",
     "schedule_dedupe_seconds": SCHEDULE_DEDUPE_SECONDS,
     "warm_same_session_target_seconds_max": 0.75,
     "precomputed_cold_player_target_seconds_max": 1.5,
@@ -96,7 +98,8 @@ def active_player_ids(payload: Any) -> list[int]:
     return result
 
 
-def _validate_warmed_payload(body: Any, *, player_id: int) -> bool:
+def _identity_valid_warmed_payload(body: Any, *, player_id: int) -> bool:
+    """Validate the immutable Step-4 envelope without requiring cache completeness."""
     if not isinstance(body, Mapping):
         return False
     try:
@@ -105,15 +108,30 @@ def _validate_warmed_payload(body: Any, *, player_id: int) -> bool:
     except (TypeError, ValueError):
         return False
     bundle = body.get("bundle")
+    if not isinstance(bundle, Mapping):
+        return False
+    try:
+        bundle_pid = int(bundle.get("player_id") or 0)
+        bundle_season = int(bundle.get("season") or 0)
+    except (TypeError, ValueError):
+        return False
     return (
         body.get("data_type") == EXPECTED_DATA_TYPE
         and body.get("schema_version") == EXPECTED_SCHEMA_VERSION
         and payload_pid == int(player_id)
         and season == int(SUPPORTED_SEASON)
-        and isinstance(bundle, Mapping)
-        and int(bundle.get("player_id") or 0) == int(player_id)
-        and int(bundle.get("season") or 0) == int(SUPPORTED_SEASON)
-        and isinstance(bundle.get("consumer"), Mapping)
+        and bundle_pid == int(player_id)
+        and bundle_season == int(SUPPORTED_SEASON)
+    )
+
+
+def _validate_warmed_payload(body: Any, *, player_id: int) -> bool:
+    """Return True only when frozen Step 4 considers the bundle cache-complete."""
+    if not _identity_valid_warmed_payload(body, player_id=player_id):
+        return False
+    bundle = body.get("bundle")
+    return (
+        isinstance(bundle.get("consumer"), Mapping)
         and isinstance(bundle.get("history"), Mapping)
         and not str(bundle.get("consumer_error") or "")
         and not str(bundle.get("history_error") or "")
@@ -135,12 +153,17 @@ def _warm_one(player_id: int) -> dict[str, Any]:
             f"/api/v1/wnba/players/{pid}/pra-detail-cached",
             params={"season": SUPPORTED_SEASON},
         )
-        if not _validate_warmed_payload(body, player_id=pid):
-            raise ValueError("Step-7 precompute received an invalid Step-4 bundle.")
+        if not _identity_valid_warmed_payload(body, player_id=pid):
+            raise ValueError("Step-7 precompute received an invalid Step-4 identity envelope.")
         cache = body.get("cache")
         cache = dict(cache) if isinstance(cache, Mapping) else {}
         cache_hit = bool(cache.get("hit"))
-        status = "green"
+        if _validate_warmed_payload(body, player_id=pid):
+            status = "green"
+        else:
+            # Frozen Step 4 intentionally does not cache incomplete bundles.
+            # This is a valid fallback state, not a transport/schema failure.
+            status = "incomplete"
     except Exception as exc:
         error = type(exc).__name__
     elapsed_ms = (perf_counter() - started) * 1000.0
@@ -203,11 +226,17 @@ def precompute_snapshot(player_ids: list[int] | None = None) -> dict[str, Any]:
             if k in _FUTURES and not _FUTURES[k].done()
         )
     green = sum(1 for row in results if row.get("status") == "green")
-    errors = sum(1 for row in results if row.get("status") != "green")
+    incomplete = sum(1 for row in results if row.get("status") == "incomplete")
+    errors = sum(
+        1
+        for row in results
+        if row.get("status") not in {"green", "incomplete"}
+    )
     return {
         "targets": len(ids),
         "completed": len(results),
         "green": green,
+        "incomplete": incomplete,
         "errors": errors,
         "running": running,
     }
@@ -250,6 +279,7 @@ def _render_marker(state: navigation.NavigationState) -> None:
         f'data-scheduled="{int(perf.get("scheduled") or 0)}" '
         f'data-completed="{int(perf.get("completed") or 0)}" '
         f'data-green="{int(perf.get("green") or 0)}" '
+        f'data-incomplete="{int(perf.get("incomplete") or 0)}" '
         f'data-errors="{int(perf.get("errors") or 0)}" '
         f'data-running="{int(perf.get("running") or 0)}" '
         'data-background="true" '
