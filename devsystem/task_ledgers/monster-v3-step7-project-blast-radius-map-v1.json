@@ -22,7 +22,8 @@
     "stale_head_replan": true,
     "adaptive_proof_bound": true,
     "pre_edit_only": true,
-    "permanent_contract_pending": true
+    "permanent_contract_pending": false,
+    "permanent_contract_updated": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -31,5 +32,6 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "IMPLEMENTED_AWAITING_PERMANENT_WIRING_AND_PROOF"
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main DevSystem targeted CI + devsystem-final-gate GREEN."
 }
