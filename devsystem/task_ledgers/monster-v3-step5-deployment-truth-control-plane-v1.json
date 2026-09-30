@@ -34,13 +34,19 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "phase": "PERMANENT_ENFORCEMENT_PATCHED_AWAITING_EXACT_HEAD_PROOF",
   "status_semantics": "Anti-Loop V2 requires changed PR task ledgers to be replay-closed as DONE. Technical acceptance remains tracked independently.",
   "proof_policy": "Exact PR-head and merged-main proof identity is owned by live GitHub evidence. Freeze only after DevSystem targeted CI and devsystem-final-gate are GREEN on the exact certified commit.",
   "tdd": {
     "red_contract_installed": true,
     "red_contract_head": "94db289cc1f140e6e06e6312ca8231e0e9ae38f4",
     "minimal_engine_added": true,
+    "product_runtime_changed": false
+  },
+  "freeze_closeout": {
+    "permanent_workflow_marker_required": true,
+    "permanent_result_flag_required": true,
+    "permanent_gate_test_required": true,
     "product_runtime_changed": false
   }
 }
