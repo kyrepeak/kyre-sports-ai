@@ -91,3 +91,21 @@ def test_app_activates_step2_and_keeps_step1_compatibility():
     source = APP_PATH.read_text(encoding="utf-8")
     assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step2 import record_bootstrap_import_ms, render_app" in source
     assert "Frozen WNBA PRA Speed V3 Step 1 compatibility" in source
+
+
+def test_step2_full_redeploy_closeout_contract():
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "wnba-pra-speed-v3-step2-pooled-http.yml").read_text(encoding="utf-8")
+    verifier = PUBLIC_PATH.read_text(encoding="utf-8")
+
+    assert "# WNBA PRA Speed V3 Step 2 control-plane full-redeploy trigger 2026-09-30 R1" in requirements
+    assert "DEPLOYMENT_WAIT_SECONDS = 600.0" in verifier
+    assert '- "requirements.txt"' in workflow
+
+
+def test_step2_public_profile_uses_step2_local_parser_for_nested_timing():
+    verifier = PUBLIC_PATH.read_text(encoding="utf-8")
+    assert "def _step2_profile(" in verifier
+    assert "profile = _step2_profile(marker)" in verifier
+    assert "    _profile,\n" not in verifier
+    assert "Profiler loader timing exceeds total render" not in verifier
