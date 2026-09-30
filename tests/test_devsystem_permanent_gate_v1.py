@@ -42,6 +42,7 @@ def test_permanent_contract_is_green():
     assert result["persistent_execution_brain_v1_permanent"] is True
     assert result["automatic_loop_kill_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
+    assert result["evidence_truth_ledger_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -81,6 +82,23 @@ def test_evidence_truth_ledger_is_permanently_enforced():
     assert result["stale_main_detection"] is True
     assert result["stale_deployment_detection"] is True
     assert result["stale_freeze_rejected"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/evidence_truth_ledger_v1.py" in workflow
+    assert "tests/test_devsystem_evidence_truth_ledger_v1.py" in workflow
+
+
+def test_evidence_truth_ledger_is_permanently_enforced():
+    truth = _load("evidence_truth_ledger_v1", "devsystem/evidence_truth_ledger_v1.py")
+    result = truth.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["exact_identity_guard"] is True
+    assert result["stale_head_guard"] is True
+    assert result["stale_main_guard"] is True
+    assert result["stale_deployment_guard"] is True
+    assert result["stale_freeze_guard"] is True
+    assert result["tamper_guard"] is True
     assert result["product_runtime_mutation"] is False
 
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
