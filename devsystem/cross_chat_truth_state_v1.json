@@ -4,31 +4,31 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 27,
+  "truth_epoch": 28,
   "program_id": "WNBA_PRA_SPEED_V3",
   "program_title": "WNBA PRA Speed V3",
   "current_step": 7,
   "total_steps": 9,
   "step_title": "Active-player bundle precompute",
-  "step_status": "ACTIVE",
-  "active_checkpoint": "STEP7_FULL_REDEPLOY_MERGED_MAIN_PROOF",
+  "step_status": "FROZEN",
+  "active_checkpoint": "WNBA_PRA_SPEED_V3_STEP7",
   "main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
-  "active_pr": 1267,
+  "active_pr": null,
   "active_run": 36783794063,
   "active_head_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
-  "blocker": "FULL_REDEPLOY_PRODUCTION_PROOF_RUNNING",
-  "next_legal_action": "WAIT_MERGED_MAIN_PROOFS_TERMINAL",
+  "blocker": null,
+  "next_legal_action": "STEP8_READY",
   "lease": {
-    "revision": 38,
+    "revision": 39,
     "generation": 10,
-    "state_hash": "744da35a98a6ef7a868850281edeab722593d95dbeaa018175e28229f6b746c8",
-    "holder_owner_id": "chatgpt:api2:wnba-pra-speed-v3-step7",
-    "holder_lease_id": "LEASE-F0755AB0A0EDE66782A316A7"
+    "state_hash": "7d29de5dfbb28be47496ed65b7f35f2cf58398acfdd197fa560aea99082e573b",
+    "holder_owner_id": null,
+    "holder_lease_id": null
   },
   "frozen_registry": {
-    "revision": 6,
-    "state_hash": "a86eec5234b0465d6b89cfce2f0533d655eae24215bca7d9766d3f86ad44e2f7",
-    "checkpoint_count": 20,
+    "revision": 7,
+    "state_hash": "20583e2aac4acc456ec7138676ae4131a37c163557df193487d69f8b2170aa0d",
+    "checkpoint_count": 21,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
@@ -51,7 +51,8 @@
     "MONSTER_V4_STEP3",
     "MONSTER_V4_STEP4",
     "MONSTER_V4_STEP5",
-    "MONSTER_V4_STEP6"
+    "MONSTER_V4_STEP6",
+    "WNBA_PRA_SPEED_V3_STEP7"
   ],
-  "state_hash": "877ee998eae7718e9a649486f2b391428796ddf605d4f4809845825c9b66b4cd"
+  "state_hash": "76c30961cf41b942c6b95143ebe217c44c8180748bce0b8420a5f2748886ec81"
 }
