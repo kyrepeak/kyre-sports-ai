@@ -50,8 +50,12 @@ def check_repository() -> dict[str, object]:
         failures.append("Step-9 page does not permanently remove obsolete raw audit footer")
     if 'TOP_PICKS_PAGE = "cfb_top_picks_page_v9"' not in router:
         failures.append("Step-9 route is not active")
-    if "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as prior" not in router:
-        failures.append("Step-9 router must delegate through frozen Step 8")
+    if "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 as current_parent" not in router:
+        failures.append("Step-9 router must preserve current WNBA Speed Step 4 parent")
+    if "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as cfb_step8_parent" not in router:
+        failures.append("Step-9 router must preserve frozen CFB Step 8 ownership")
+    if "cfb_step8_parent.TOP_PICKS_PAGE = TOP_PICKS_PAGE" not in router:
+        failures.append("Step-9 router must advance only the nested Step-8 Top Picks page")
     if "import cfb_top_picks_source_router_v1 as prior" not in source_router:
         failures.append("Step-9 provenance closeout must wrap frozen Step 8 source router")
     if 'normalized["source_attempts"] = list(normalized.get("sources_attempted") or [])' not in source_router:
