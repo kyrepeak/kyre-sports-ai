@@ -71,5 +71,22 @@
     "wnba_step4_changed": false,
     "api2_changed": false,
     "rerun_of_failed_sha": false
+  },
+  "post_merge_repair": {
+    "failed_merge_sha": "3afe0e1a0159bc296e4f9b0917c08c9f08cbb9f1",
+    "failed_run": 36683463225,
+    "failed_job": 109784069127,
+    "failure_class": "A_TEST_SOURCE_SYNTAX_CONTROL_PLANE",
+    "exact_failure": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py line 55 contained literal \\\\n sequences and failed pytest collection with SyntaxError.",
+    "root_cause": "A prior source-text replacement wrote escaped newline characters into the Step-9 wrapper test and also retained stale alias names.",
+    "patch": "Rewrite only test_step9_wraps_frozen_step8 with real line breaks and the certified current_parent/cfb_step8_parent router aliases.",
+    "product_code_changed": false,
+    "step9_runtime_changed": false,
+    "steps1_8_changed": false,
+    "wnba_changed": false,
+    "api2_changed": false,
+    "probability_changed": false,
+    "ranking_changed": false,
+    "selection_changed": false
   }
 }
