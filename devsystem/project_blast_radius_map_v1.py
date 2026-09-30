@@ -51,65 +51,151 @@ def plan_change(
     if not proposed:
         raise BlastRadiusFailure("at least one proposed path is required")
 
-    graph = build_dependency_map(root)
-    mapped: list[dict[str, Any]] = []
-    unmapped: list[str] = []
-    dependent_modules: set[str] = set()
-    entrypoints: set[str] = set()
-    protected: set[str] = set()
-    risks: list[str] = []
-
-    for path in proposed:
-        report = graph.impact_report(path)
-        if report.get("status") != "OK":
-            unmapped.append(path)
-            continue
-        mapped.append(report)
-        risks.append(str(report.get("risk") or "LOW").upper())
-        dependent_modules.update(report.get("transitive_dependents") or [])
-        entrypoints.update(report.get("impacted_entrypoints") or [])
-        protected.update(report.get("protected_reach") or [])
-
     proof_plan = plan_proof(
         proposed,
         expected_head_sha=expected_head_sha,
         observed_head_sha=observed_head_sha,
     )
 
+    if proof_plan["state"] == "STALE_HEAD":
+        return {
+            "version": VERSION,
+            "status": "BLOCKED",
+            "state": "STALE_HEAD",
+            "proposed_paths": proposed,
+            "mapped_paths": [],
+            "unknown_targets": [],
+            "risk": "UNKNOWN",
+            "blast_radius": 0,
+            "direct_dependencies": [],
+            "direct_dependents": [],
+            "transitive_dependencies": [],
+            "transitive_dependents": [],
+            "impacted_entrypoints": [],
+            "protected_reach": [],
+            "frozen_impact": False,
+            "reports": [],
+            "edit_allowed": False,
+            "requires_narrowing": False,
+            "requires_replan": True,
+            "certifiable": False,
+            "next_legal_action": "REFRESH_HEAD_AND_REPLAN",
+            "proof_plan": proof_plan,
+            "protections": {
+                "pre_edit_only": True,
+                "protected_reach_visible": True,
+                "protected_high_risk_blocks_edit": True,
+                "unknown_surface_fail_safe": True,
+                "stale_head_cannot_certify": True,
+                "network_calls": NETWORK_CALLS,
+                "auto_mutate": AUTO_MUTATE,
+                "may_modify_product_runtime": MAY_MODIFY_PRODUCT_RUNTIME,
+            },
+        }
+
+    graph = build_dependency_map(root)
+    mapped: list[dict[str, Any]] = []
+    unknown_targets: list[str] = []
+    direct_dependencies: set[str] = set()
+    direct_dependents: set[str] = set()
+    transitive_dependencies: set[str] = set()
+    transitive_dependents: set[str] = set()
+    entrypoints: set[str] = set()
+    protected: set[str] = set()
+    risks: list[str] = []
+
+    protected_path_markers = (
+        "frozen",
+        "freeze_manifest",
+        "projection_v14",
+        "over_under_projection_v14",
+        "devsystem/persistent_execution_brain_v1.py",
+        "devsystem/automatic_loop_kill_v1.py",
+        "devsystem/evidence_truth_ledger_v1.py",
+        "devsystem/failure_ownership_engine_v1.py",
+        "devsystem/deployment_truth_control_plane_v1.py",
+        "devsystem/adaptive_proof_engine_v1.py",
+        "devsystem/permanent_gate_v1.py",
+        "devsystem/final_gate_v1.py",
+    )
+
+    for path in proposed:
+        report = graph.impact_report(path)
+        if report.get("status") != "OK":
+            unknown_targets.append(path)
+            continue
+
+        mapped.append(report)
+        risks.append(str(report.get("risk") or "LOW").upper())
+        direct_dependencies.update(report.get("direct_dependencies") or [])
+        direct_dependents.update(report.get("direct_dependents") or [])
+        transitive_dependencies.update(report.get("transitive_dependencies") or [])
+        transitive_dependents.update(report.get("transitive_dependents") or [])
+        entrypoints.update(report.get("impacted_entrypoints") or [])
+        protected.update(report.get("protected_reach") or [])
+
+        related_modules = (
+            set(report.get("direct_dependencies") or [])
+            | set(report.get("direct_dependents") or [])
+            | set(report.get("transitive_dependencies") or [])
+            | set(report.get("transitive_dependents") or [])
+            | {str(report.get("module") or "")}
+        )
+        for module in related_modules:
+            related_path = graph.module_to_path.get(module, "")
+            lowered = related_path.lower()
+            if related_path and any(marker in lowered for marker in protected_path_markers):
+                protected.add(related_path)
+
     aggregate_risk = _max_risk(risks)
-    if protected and _RISK_ORDER[aggregate_risk] < _RISK_ORDER["HIGH"]:
+    if protected and _RISK_ORDER.get(aggregate_risk, 0) < _RISK_ORDER["HIGH"]:
         aggregate_risk = "HIGH"
-    if unmapped and _RISK_ORDER[aggregate_risk] < _RISK_ORDER["HIGH"]:
+    if unknown_targets and _RISK_ORDER.get(aggregate_risk, 0) < _RISK_ORDER["HIGH"]:
         aggregate_risk = "HIGH"
-    if entrypoints and len(dependent_modules) >= 20:
+    if entrypoints and len(transitive_dependents) >= 20:
         aggregate_risk = "CRITICAL"
 
-    if proof_plan["state"] == "STALE_HEAD":
-        decision = "REPLAN_REQUIRED"
-    elif protected:
-        decision = "REVIEW_PROTECTED_REACH"
-    elif unmapped:
-        decision = "FAIL_SAFE_FULL_PROOF"
+    protected_high_risk = bool(
+        protected and aggregate_risk in {"HIGH", "CRITICAL"}
+    )
+
+    if protected_high_risk:
+        state = "BLOCKED_PROTECTED_REACH"
+        next_action = "NARROW_EDIT_SCOPE"
+    elif unknown_targets:
+        state = "FAIL_SAFE"
+        next_action = "RESOLVE_UNKNOWN_TARGETS"
     else:
-        decision = "PROCEED_WITH_PLANNED_PROOF"
+        state = "READY"
+        next_action = "APPLY_SMALLEST_SAFE_CHANGE"
 
     return {
         "version": VERSION,
-        "status": "GREEN",
+        "status": "GREEN" if state == "READY" else "BLOCKED",
+        "state": state,
         "proposed_paths": proposed,
         "mapped_paths": [report["path"] for report in mapped],
-        "unmapped_paths": unmapped,
+        "unknown_targets": sorted(unknown_targets),
         "risk": aggregate_risk,
-        "blast_radius": len(dependent_modules),
-        "transitive_dependents": sorted(dependent_modules),
+        "blast_radius": len(transitive_dependents),
+        "direct_dependencies": sorted(direct_dependencies),
+        "direct_dependents": sorted(direct_dependents),
+        "transitive_dependencies": sorted(transitive_dependencies),
+        "transitive_dependents": sorted(transitive_dependents),
         "impacted_entrypoints": sorted(entrypoints),
         "protected_reach": sorted(protected),
         "frozen_impact": bool(protected),
-        "decision": decision,
+        "reports": mapped,
+        "edit_allowed": state == "READY",
+        "requires_narrowing": protected_high_risk,
+        "requires_replan": False,
+        "certifiable": bool(proof_plan.get("certifiable")),
+        "next_legal_action": next_action,
         "proof_plan": proof_plan,
         "protections": {
             "pre_edit_only": True,
             "protected_reach_visible": True,
+            "protected_high_risk_blocks_edit": True,
             "unknown_surface_fail_safe": True,
             "stale_head_cannot_certify": True,
             "network_calls": NETWORK_CALLS,
@@ -117,7 +203,6 @@ def plan_change(
             "may_modify_product_runtime": MAY_MODIFY_PRODUCT_RUNTIME,
         },
     }
-
 
 def contract_self_test() -> dict[str, Any]:
     head = "a" * 40
@@ -127,8 +212,8 @@ def contract_self_test() -> dict[str, Any]:
         (root / "leaf.py").write_text("VALUE = 1\n", encoding="utf-8")
         (root / "feature.py").write_text("import leaf\n", encoding="utf-8")
         (root / "app.py").write_text("import feature\n", encoding="utf-8")
-        (root / "frozen_projection.py").write_text("VALUE = 1\n", encoding="utf-8")
-        (root / "guarded.py").write_text("import frozen_projection\n", encoding="utf-8")
+        (root / "frozen_projection.py").write_text("import leaf\n", encoding="utf-8")
+        (root / "streamlit_router.py").write_text("VALUE = 1\n", encoding="utf-8")
 
         leaf = plan_change(
             ["leaf.py"],
@@ -136,8 +221,8 @@ def contract_self_test() -> dict[str, Any]:
             expected_head_sha=head,
             observed_head_sha=head,
         )
-        guarded = plan_change(
-            ["guarded.py"],
+        router = plan_change(
+            ["streamlit_router.py"],
             root=root,
             expected_head_sha=head,
             observed_head_sha=head,
@@ -158,30 +243,46 @@ def contract_self_test() -> dict[str, Any]:
     result = {
         "status": "GREEN",
         "version": VERSION,
-        "entrypoint_blast_radius_visible": (
-            leaf["blast_radius"] == 2 and leaf["impacted_entrypoints"] == ["app.py"]
+        "direct_transitive_map": (
+            leaf["direct_dependents"] == ["feature", "frozen_projection"]
+            and leaf["transitive_dependents"] == ["app", "feature", "frozen_projection"]
         ),
-        "protected_reach_visible": (
-            guarded["frozen_impact"] is True
-            and guarded["decision"] == "REVIEW_PROTECTED_REACH"
+        "protected_reach_guard": (
+            leaf["state"] == "BLOCKED_PROTECTED_REACH"
+            and leaf["edit_allowed"] is False
+            and leaf["requires_narrowing"] is True
+            and "frozen_projection.py" in leaf["protected_reach"]
         ),
-        "unknown_surface_fail_safe": (
-            unknown["decision"] == "FAIL_SAFE_FULL_PROOF"
+        "blast_radius_risk": (
+            leaf["blast_radius"] == 3 and leaf["risk"] in {"HIGH", "CRITICAL"}
+        ),
+        "adaptive_proof_handoff": router["proof_plan"]["proofs"] == [
+            "ROUTE_CONTRACT",
+            "FRESH_SESSION_NAVIGATION",
+        ],
+        "unknown_fail_safe": (
+            unknown["state"] == "FAIL_SAFE"
+            and unknown["edit_allowed"] is False
             and unknown["proof_plan"]["full_release_required"] is True
         ),
-        "stale_head_replan": stale["decision"] == "REPLAN_REQUIRED",
-        "pre_edit_only": True,
+        "stale_head_blocked": (
+            stale["state"] == "STALE_HEAD"
+            and stale["certifiable"] is False
+            and stale["requires_replan"] is True
+            and stale["reports"] == []
+        ),
         "product_runtime_mutation": MAY_MODIFY_PRODUCT_RUNTIME,
         "network_calls": NETWORK_CALLS,
     }
     if not all(
         result[key] is True
         for key in (
-            "entrypoint_blast_radius_visible",
-            "protected_reach_visible",
-            "unknown_surface_fail_safe",
-            "stale_head_replan",
-            "pre_edit_only",
+            "direct_transitive_map",
+            "protected_reach_guard",
+            "blast_radius_risk",
+            "adaptive_proof_handoff",
+            "unknown_fail_safe",
+            "stale_head_blocked",
         )
     ):
         raise BlastRadiusFailure("project blast-radius self-test failed")
