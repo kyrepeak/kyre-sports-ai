@@ -183,7 +183,9 @@ jobs:
       - name: Validate MONSTER Self-Benchmark V1
         run: python devsystem/monster_self_benchmark_v1.py
       - name: Validate MONSTER V4 Regression-Debt-Zero Gate V1
-        run: python devsystem/regression_debt_zero_gate_v1.py
+        run: |
+          python devsystem/regression_debt_zero_gate_v1.py
+          echo "MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN"
       - name: Validate Monster Speed V3 Step 2 cache split
         run: python devsystem/monster_speed_v3_step2_cache_split_v1.py
       - name: Validate Monster Speed V3 Step 3 fast/full lane split
