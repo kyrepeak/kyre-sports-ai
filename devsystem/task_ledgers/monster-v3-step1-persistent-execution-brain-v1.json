@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step1-persistent-execution-brain-v1",
+  "title": "MONSTER V3 Step 1 — Persistent Execution Brain",
+  "project": "MONSTER V3",
+  "step": "1/8",
+  "status": "DONE",
+  "scope": "Control-plane-only persistent execution state. Add fail-closed state fingerprints, exact repository identity, one-authoritative-async-run semantics, failure ownership, completed/frozen/remaining step accounting, repository drift detection, GitHub issue ledger round-trip persistence, permanent DevSystem enforcement, and focused tests. Do not change product/runtime/router/model/projection/source behavior.",
+  "protected": {
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "projection_math_unchanged": true,
+    "sportsbook_logic_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "production_configuration_unchanged": true,
+    "devsystem_final_gate_preserved": true,
+    "anti_loop_v2_preserved": true
+  },
+  "acceptance": {
+    "fingerprinted_state": true,
+    "exact_repo_identity": true,
+    "single_authoritative_async_run": true,
+    "failure_owner_and_class": true,
+    "monotonic_step_accounting": true,
+    "frozen_step_protection": true,
+    "repo_drift_revalidation": true,
+    "github_issue_persistence": true,
+    "permanent_gate_wiring": true,
+    "focused_tests": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
