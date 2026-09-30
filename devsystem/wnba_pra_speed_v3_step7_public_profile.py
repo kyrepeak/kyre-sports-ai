@@ -161,6 +161,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             player_marker = _marker(frame)
             completed = _int_attr(player_marker, "data-completed")
+            incomplete = _int_attr(player_marker, "data-incomplete")
             errors = _int_attr(player_marker, "data-errors")
             if completed < 1:
                 raise BrowserQAFailure(
@@ -173,6 +174,11 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                     f"errors={errors}"
                 )
 
+            print(
+                "WNBA_PRA_SPEED_V3_STEP7_IDENTITY_VALID_INCOMPLETE="
+                f"{incomplete}"
+            )
+            print("WNBA_PRA_SPEED_V3_STEP7_ZERO_REAL_PRECOMPUTE_ERRORS_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_PLAYER_READY_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_FROZEN_STEPS1_6_GREEN")
@@ -195,6 +201,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 "slate_ready_seconds": round(slate_seconds, 3),
                 "target_players": target_players,
                 "completed_precomputes": completed,
+                "identity_valid_incomplete_precomputes": incomplete,
                 "precompute_errors": errors,
                 "bundle_cache_hit": cache_hit,
                 "precomputed_player_seconds": round(player_seconds, 3),
