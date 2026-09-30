@@ -404,12 +404,30 @@ def validate_truth_ledger(ledger: Mapping[str, Any]) -> dict[str, Any]:
     if supplied_truth_id != expected_truth_id:
         raise EvidenceTruthFailure("truth ledger fingerprint mismatch")
 
+    anchors = value.get("anchors")
+    if not isinstance(anchors, Mapping):
+        raise EvidenceTruthFailure("truth ledger requires current evidence anchors")
+    current_head_sha = str(anchors.get("current_head_sha") or "")
+    current_main_sha = str(anchors.get("current_main_sha") or "")
+    current_deployment_sha = anchors.get("current_deployment_sha")
+
     current = 0
     stale = 0
     incomplete = 0
 
     for record in records:
+        recomputed = classify_evidence(
+            record,
+            current_head_sha=current_head_sha,
+            current_main_sha=current_main_sha,
+            current_deployment_sha=current_deployment_sha,
+        )
         freshness = str(record.get("freshness") or "")
+        if (
+            freshness != recomputed["freshness"]
+            or bool(record.get("requires_reproof")) != bool(recomputed["requires_reproof"])
+        ):
+            raise EvidenceTruthFailure("stored evidence freshness does not match current anchors")
         if freshness == "CURRENT":
             current += 1
         elif freshness == "INCOMPLETE":
