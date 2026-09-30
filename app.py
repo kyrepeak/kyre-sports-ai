@@ -325,7 +325,8 @@ try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
     from streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 import record_bootstrap_import_ms, render_app
-    # Frozen CFB Top Picks Research V2 Step 8 compatibility: from streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 import record_bootstrap_import_ms, render_app
+    # Frozen current parent compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 import record_bootstrap_import_ms, render_app
+    # Frozen active parent CFB Top Picks Research V2 Step 8 compatibility: from streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 import record_bootstrap_import_ms, render_app
     # Frozen CFB Top Picks Research V2 Step 7 compatibility: from streamlit_memory_lazy_router_cfb_top_picks_research_v2_step7 import record_bootstrap_import_ms, render_app
     # Frozen CFB Top Picks Research V2 Step 6 compatibility: from streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6 import record_bootstrap_import_ms, render_app
     # Frozen WNBA PRA Speed V3 Step 3 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step3 import record_bootstrap_import_ms, render_app
