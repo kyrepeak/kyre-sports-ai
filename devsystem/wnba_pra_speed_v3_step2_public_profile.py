@@ -24,8 +24,9 @@ from devsystem.wnba_pra_speed_v3_step1_public_profile import (
     PUBLIC_HOST,
     PROFILE_GAME_SETUP_TIMEOUT_SECONDS,
     PROFILE_PLAYER_OBSERVE_TIMEOUT_SECONDS,
+    _bool_attr,
     _dominant_phase,
-    _profile,
+    _float_attr,
     _wait_profile_marker,
 )
 
@@ -35,6 +36,36 @@ STEP1_HISTORY_BASELINE_MS = 5135.015
 STEP1_PLAYER_READY_BASELINE_SECONDS = 5.629
 MAX_HISTORY_READ_MS = 5500.0
 MAX_PLAYER_READY_SECONDS = 7.5
+
+
+def _step2_profile(marker) -> dict[str, Any]:
+    """Parse frozen Step-1 timing markers without Step-1's non-nested loader assertion."""
+    values = {
+        "total_render_ms": _float_attr(marker, "data-total-render-ms"),
+        "player_loader_ms": _float_attr(marker, "data-player-loader-ms"),
+        "consumer_read_ms": _float_attr(marker, "data-consumer-read-ms"),
+        "history_read_ms": _float_attr(marker, "data-history-read-ms"),
+        "decision_card_ms": _float_attr(marker, "data-decision-card-ms"),
+        "history_summary_ms": _float_attr(marker, "data-history-summary-ms"),
+        "post_loader_render_ms": _float_attr(marker, "data-post-loader-render-ms"),
+    }
+    network_raw = marker.get_attribute("data-network-reads")
+    try:
+        network_reads = int(network_raw or "")
+    except (TypeError, ValueError) as exc:
+        raise BrowserQAFailure(f"Profiler network read count is invalid: {network_raw!r}") from exc
+    if network_reads < 0 or network_reads > 2:
+        raise BrowserQAFailure(f"Profiler network read count escaped frozen contract: {network_reads}")
+
+    values.update({
+        "network_reads": network_reads,
+        "consumer_session_hit": _bool_attr(marker, "data-consumer-session-hit"),
+        "history_session_hit": _bool_attr(marker, "data-history-session-hit"),
+        "cold_pair_loader_used": _bool_attr(marker, "data-cold-pair-loader"),
+    })
+    if values["total_render_ms"] <= 0:
+        raise BrowserQAFailure("Profiler total render timing is empty.")
+    return values
 
 
 def _wait_step2_deployment(page):
@@ -109,7 +140,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 raise BrowserQAFailure(f"Frozen Player Intelligence surfaces missing: {missing}")
 
             frame, marker = _wait_profile_marker(page)
-            profile = _profile(marker)
+            profile = _step2_profile(marker)
             dominant, dominant_ms = _dominant_phase(profile)
 
             history_ms = float(profile["history_read_ms"])
