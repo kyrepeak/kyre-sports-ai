@@ -37,6 +37,22 @@ def test_permanent_contract_is_green():
     assert result["failure_history_coverage_permanent"] is True
     assert result["forward_motion_v2_permanent"] is True
     assert result["forward_motion_v2_pr_enforcement"] is True
+    assert result["persistent_execution_brain_v1_permanent"] is True
+
+
+def test_persistent_execution_brain_is_permanently_enforced():
+    brain = _load("persistent_execution_brain_v1", "devsystem/persistent_execution_brain_v1.py")
+    result = brain.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["persistence_surface"] == "github_issue_ledger"
+    assert result["fingerprint_guard"] is True
+    assert result["async_lock"] is True
+    assert result["repo_drift_guard"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/persistent_execution_brain_v1.py self-test" in workflow
+    assert "tests/test_devsystem_persistent_execution_brain_v1.py" in workflow
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
