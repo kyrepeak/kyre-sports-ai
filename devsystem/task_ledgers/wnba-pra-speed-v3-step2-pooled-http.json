@@ -7,8 +7,8 @@
   "phase": "pra-speed-v3",
   "step": 2,
   "total_steps": 9,
-  "status": "DONE",
-  "step2_status": "DONE",
+  "status": "IN_PROGRESS",
+  "step2_status": "IN_PROGRESS",
   "scope": "Transport-only persistent HTTPS connection pooling for WNBA API reads. Preserve exact URLs, params, headers, timeout semantics, payload parsing, basketball math, market math, navigation, and sportsbook influence.",
   "source_main": "538d5411e66221882df2c95e0b01085043bf66d4",
   "step1_frozen": {
@@ -88,5 +88,26 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "full_redeploy_closeout": {
+    "failed_merged_main_run": 36657288055,
+    "first_failed_public_job": 109704355872,
+    "legal_retry_failed_public_job": 109707673408,
+    "evidence": [
+      "Step-2 focused contract SUCCESS",
+      "Step-2 exact-head devsystem-final-gate SUCCESS",
+      "merged-main DevSystem SUCCESS",
+      "PickVault served pre-Step-2 process through two 180-second deployment probes",
+      "current main retains Step-2 app activation, pooled session, and deployment marker"
+    ],
+    "root_cause": "Streamlit Community Cloud remained on a stale pre-Step-2 hosted process after the Step-2 merge; the pooled transport has not yet been exercised by the public verifier.",
+    "repair_contract": "Comment-only requirements.txt trigger forces a full Community Cloud rebuild; readiness window increases to 600 seconds; dependency versions and all product/model/math behavior remain unchanged.",
+    "trigger": "# WNBA PRA Speed V3 Step 2 control-plane full-redeploy trigger 2026-09-30 R1",
+    "dependency_versions_changed": false,
+    "product_code_changed": false,
+    "model_math_changed": false,
+    "frozen_navigation_steps_1_7_changed": false,
+    "frozen_speed_v3_step1_changed": false,
+    "status": "PENDING_BRANCH_GREEN_AND_MERGED_MAIN_PUBLIC_PROFILE"
   }
 }
