@@ -40,6 +40,8 @@ def test_step7_contract_is_nonblocking_precompute_only():
     assert contract["foreground_headroom_reserved"] is True
     assert contract["precompute_order"] == "game_center_display_order"
     assert contract["per_player_transport_attempts"] == 2
+    assert contract["identity_valid_incomplete_bundle_is_error"] is False
+    assert contract["identity_valid_incomplete_bundle_fallback"] == "frozen_true_cold_path"
     assert contract["frozen_speed_v3_steps_1_6_modified"] is False
     assert contract["projection_math_changed"] is False
     assert contract["market_math_changed"] is False
@@ -147,3 +149,82 @@ def test_step7_activation_is_wired():
 def test_step7_freezes_step6_owner_blobs():
     for path, expected in FROZEN_STEP6.items():
         assert _blob(ROOT / path) == expected, path
+
+
+def test_step7_identity_valid_incomplete_bundle_is_not_a_real_error(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
+    module._RESULTS.clear()
+    module._FUTURES.clear()
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        def get_json(self, path, params=None):
+            return {
+                "data_type": module.EXPECTED_DATA_TYPE,
+                "schema_version": module.EXPECTED_SCHEMA_VERSION,
+                "player_id": 101,
+                "season": int(module.SUPPORTED_SEASON),
+                "bundle": {
+                    "player_id": 101,
+                    "season": int(module.SUPPORTED_SEASON),
+                    "consumer": {"rows": []},
+                    "history": {},
+                    "consumer_error": "",
+                    "history_error": "history unavailable",
+                },
+                "cache": {"hit": False},
+            }
+
+    monkeypatch.setattr(module, "KyreWNBAAPIClient", FakeClient)
+    result = module._warm_one(101)
+    snapshot = module.precompute_snapshot([101])
+
+    assert result["status"] == "incomplete"
+    assert result["error"] == ""
+    assert snapshot["green"] == 0
+    assert snapshot["incomplete"] == 1
+    assert snapshot["errors"] == 0
+
+
+def test_step7_wrong_identity_remains_a_real_error(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
+    module._RESULTS.clear()
+    module._FUTURES.clear()
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        def get_json(self, path, params=None):
+            return {
+                "data_type": module.EXPECTED_DATA_TYPE,
+                "schema_version": module.EXPECTED_SCHEMA_VERSION,
+                "player_id": 999,
+                "season": int(module.SUPPORTED_SEASON),
+                "bundle": {
+                    "player_id": 999,
+                    "season": int(module.SUPPORTED_SEASON),
+                    "consumer": {},
+                    "history": {},
+                    "consumer_error": "",
+                    "history_error": "",
+                },
+                "cache": {"hit": False},
+            }
+
+    monkeypatch.setattr(module, "KyreWNBAAPIClient", FakeClient)
+    result = module._warm_one(101)
+    snapshot = module.precompute_snapshot([101])
+
+    assert result["status"] == "error"
+    assert result["error"] == "ValueError"
+    assert snapshot["incomplete"] == 0
+    assert snapshot["errors"] == 1
+
+
+def test_step7_marker_exposes_incomplete_without_hiding_real_errors():
+    source = STEP7.read_text(encoding="utf-8")
+    assert 'data-incomplete="' in source
+    assert 'data-errors="' in source
