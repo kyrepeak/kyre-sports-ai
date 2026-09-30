@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "PRODUCTION_TIMING_RETRY_PATCH",
+  "phase": "BACKGROUND_PRECOMPUTE_RETRY_PATCH",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -26,7 +26,9 @@
     "reuses_frozen_step4_finished_bundle": true,
     "reuses_frozen_step6_history_cache": true,
     "new_model_calculation": false,
-    "new_sportsbook_fetch": false
+    "new_sportsbook_fetch": false,
+    "warm_attempts_max": 2,
+    "warm_retry_delay_seconds": 0.15
   },
   "protected": {
     "navigation_v2_steps_1_7": true,
@@ -59,23 +61,23 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_ONE_TIMING_ONLY_RETRY_PROOF",
-    "failed_run": 36773763188,
-    "failed_job": 110086409855,
-    "failure_class": "TRANSIENT_PRECOMPUTED_PLAYER_RENDER_TIMING_SPIKE",
-    "observed_player_seconds": 1.547,
-    "target_player_seconds_max": 1.5,
-    "overshoot_seconds": 0.047,
+    "status": "PENDING_BACKGROUND_RETRY_PROOF",
+    "prior_timing_failure_run": 36773763188,
+    "timing_repair_run": 36774461216,
+    "failed_job": 110088767012,
+    "failure_class": "TRANSIENT_SINGLE_BACKGROUND_PRECOMPUTE_FAILURE",
     "evidence": [
-      "Step-7 Streamlit deployment marker GREEN",
-      "28 current Game Center players scheduled for background precompute",
-      "Player final surfaces ready GREEN",
-      "Player zero overflow GREEN",
-      "Verifier reached the post-cache-hit timing assertion"
+      "Step-7 retry production proof deployed successfully",
+      "28 active Game Center players targeted",
+      "precomputed Step-4 bundle cache hit GREEN",
+      "fresh timing retry measured 0.910s <= unchanged 1.500s target",
+      "production proof then failed because data-errors=1"
     ],
-    "patch": "Expose cache-hit evidence before the strict timing gate and permit exactly one fresh proof attempt only when the first attempt has a verified precomputed bundle hit and fails solely on the unchanged 1.5s Player timing ceiling.",
+    "patch": "Retry each failed background Step-4 bundle warm exactly once inside the same non-blocking worker. Keep four workers, the same endpoint, the same 1.500s Player target, and frozen Steps 1-6 unchanged.",
+    "warm_attempts_max": 2,
+    "retry_delay_seconds": 0.15,
     "threshold_changed": false,
-    "product_runtime_changed": false,
+    "product_scope": "Step-7 precompute reliability only",
     "model_or_data_changed": false,
     "frozen_steps_1_6_changed": false
   },
@@ -89,8 +91,9 @@
     "stale_fingerprints_rejected": true,
     "protect_frozen_steps_1_6": true,
     "one_timing_only_retry_max": 1,
-    "failed_run": 36773763188,
-    "failed_job": 110086409855
+    "failed_run": 36774461216,
+    "failed_job": 110088767012,
+    "one_background_retry_per_player_max": 1
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
