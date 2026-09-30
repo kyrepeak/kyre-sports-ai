@@ -133,6 +133,34 @@ def _decision(decision: str, reason: str, *, brain: Mapping[str, Any], **extra: 
     return result
 
 
+def _autonomous_loop_skip(
+    *,
+    brain: Mapping[str, Any],
+    proposed: Mapping[str, Any],
+    reason: str,
+    control_cycle_fingerprint: str,
+    terminal_already_observed: bool = False,
+) -> dict[str, Any]:
+    next_action = (
+        "CLASSIFY_TERMINAL_RESULT"
+        if terminal_already_observed
+        else "CONTINUE_NON_CONFLICTING_WORK"
+    )
+    return _decision(
+        "LOOP_SKIPPED_CONTINUE",
+        reason,
+        brain=brain,
+        legacy_decision="LOOP_BLOCKED",
+        control_cycle_fingerprint=control_cycle_fingerprint,
+        skipped_action=str(proposed["action_type"]),
+        autonomous_skip=True,
+        requires_user_intervention=False,
+        continuation_policy="CONTINUE_NON_CONFLICTING_WORK",
+        next_legal_action=next_action,
+        recheck_policy="ONLY_AFTER_NEW_EVIDENCE_OR_INDEPENDENT_PROGRESS",
+    )
+
+
 def decide_control_action(
     brain_state: Mapping[str, Any],
     action: Mapping[str, Any],
@@ -190,12 +218,12 @@ def decide_control_action(
     }
 
     if cycle_fp in prior_fingerprints:
-        return _decision(
-            "LOOP_BLOCKED",
-            "same authoritative async state already observed; no new evidence",
+        return _autonomous_loop_skip(
             brain=brain,
+            proposed=proposed,
+            reason="same authoritative async state already observed; no new evidence",
             control_cycle_fingerprint=cycle_fp,
-            next_legal_action="WAIT",
+            terminal_already_observed=observed_state in _TERMINAL_STATES,
         )
 
     if observed_state in _TERMINAL_STATES and observed_state != brain_async_state:
@@ -219,12 +247,12 @@ def decide_control_action(
         )
 
     if observed_state in _TERMINAL_STATES:
-        return _decision(
-            "LOOP_BLOCKED",
-            "terminal state is already represented by the persistent brain; no new evidence",
+        return _autonomous_loop_skip(
             brain=brain,
+            proposed=proposed,
+            reason="terminal state is already represented by the persistent brain; no new evidence",
             control_cycle_fingerprint=cycle_fp,
-            next_legal_action="CLASSIFY_TERMINAL_RESULT",
+            terminal_already_observed=True,
         )
 
     raise LoopKillFailure(f"unsupported observed_async_state: {observed_state!r}")
@@ -277,8 +305,12 @@ def contract_self_test() -> dict[str, Any]:
 
     if first["decision"] != "AUTHORIZED_OBSERVE":
         raise LoopKillFailure("first observation self-test failed")
-    if duplicate["decision"] != "LOOP_BLOCKED":
+    if duplicate["decision"] != "LOOP_SKIPPED_CONTINUE":
         raise LoopKillFailure("duplicate observation self-test failed")
+    if duplicate["requires_user_intervention"] is not False:
+        raise LoopKillFailure("autonomous skip must not require user intervention")
+    if duplicate["next_legal_action"] != "CONTINUE_NON_CONFLICTING_WORK":
+        raise LoopKillFailure("autonomous skip continuation self-test failed")
     if unlocked["decision"] != "AUTHORIZED_TERMINAL_TRANSITION":
         raise LoopKillFailure("terminal transition self-test failed")
     if locked["decision"] != "ASYNC_LOCKED":
@@ -291,6 +323,8 @@ def contract_self_test() -> dict[str, Any]:
         "async_mutation_lock": True,
         "terminal_transition_unlock": True,
         "stale_run_guard": True,
+        "autonomous_skip_continue": True,
+        "user_intervention_required_for_loop": False,
         "product_runtime_mutation": False,
         "network_calls": False,
     }

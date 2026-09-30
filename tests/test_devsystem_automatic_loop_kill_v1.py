@@ -70,12 +70,18 @@ def test_first_same_run_observation_is_authorized_once():
     assert result["authoritative_run_id"] == 9001
 
 
-def test_second_identical_same_state_poll_is_loop_blocked():
+def test_second_identical_same_state_poll_is_skipped_and_continues_automatically():
     action = _observe()
     result = decide_control_action(_waiting_brain(), action, [_history(action)])
-    assert result["decision"] == "LOOP_BLOCKED"
+    assert result["decision"] == "LOOP_SKIPPED_CONTINUE"
+    assert result["legacy_decision"] == "LOOP_BLOCKED"
     assert result["reason"] == "same authoritative async state already observed; no new evidence"
-    assert result["next_legal_action"] == "WAIT"
+    assert result["skipped_action"] == "observe_async"
+    assert result["autonomous_skip"] is True
+    assert result["requires_user_intervention"] is False
+    assert result["continuation_policy"] == "CONTINUE_NON_CONFLICTING_WORK"
+    assert result["next_legal_action"] == "CONTINUE_NON_CONFLICTING_WORK"
+    assert result["recheck_policy"] == "ONLY_AFTER_NEW_EVIDENCE_OR_INDEPENDENT_PROGRESS"
 
 
 def test_same_state_poll_remains_blocked_even_if_timestamp_changes():
@@ -87,7 +93,8 @@ def test_same_state_poll_remains_blocked_even_if_timestamp_changes():
         "checked_at": "2026-09-30T00:56:00Z",
     })
     result = decide_control_action(_waiting_brain(), repeated, [_history(first)])
-    assert result["decision"] == "LOOP_BLOCKED"
+    assert result["decision"] == "LOOP_SKIPPED_CONTINUE"
+    assert result["requires_user_intervention"] is False
 
 
 def test_live_async_lock_denies_patch_rerun_and_competing_run():
@@ -189,3 +196,19 @@ def test_direct_script_execution_is_green():
     )
     assert completed.returncode == 0, completed.stderr
     assert "MONSTER_AUTOMATIC_LOOP_KILL_V1_GREEN" in completed.stdout
+
+
+def test_autonomous_skip_never_bypasses_live_async_mutation_lock():
+    action = _observe(action_type="patch", target="github:mutation")
+    result = decide_control_action(_waiting_brain(), action, [_history(_observe())])
+    assert result["decision"] == "ASYNC_LOCKED"
+    assert result["next_legal_action"] == "WAIT"
+
+
+def test_duplicate_terminal_read_skips_poll_and_continues_to_classification():
+    brain = _waiting_brain()
+    prior = _observe("SUCCESS")
+    result = decide_control_action(brain, prior, [_history(prior)])
+    assert result["decision"] == "LOOP_SKIPPED_CONTINUE"
+    assert result["requires_user_intervention"] is False
+    assert result["next_legal_action"] == "CLASSIFY_TERMINAL_RESULT"
