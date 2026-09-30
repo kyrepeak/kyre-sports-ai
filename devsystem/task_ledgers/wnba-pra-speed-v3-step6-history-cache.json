@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step6-history-cache",
   "title": "WNBA PRA Speed V3 Step 6 — Smarter/longer player-history cache",
   "project": "WNBA PRA Speed V3",
-  "phase": "IMPLEMENTATION_DONE_PENDING_PRODUCTION_FREEZE",
+  "phase": "TRUE_COLD_PROOF_RETRY_PENDING_PROOF",
   "step": 6,
   "total_steps": 9,
   "status": "DONE",
@@ -81,8 +81,8 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING",
-    "reason": "Requires exact merged-main public profile after the Step-6 backend route is LIVE on Render."
+    "status": "PENDING_RETRY_PROOF",
+    "reason": "Merged-main run 36748773827 deployed Step 6 correctly but the redundant frozen Step-5 true-cold guard produced one 3.510s outlier above the unchanged 2.5s threshold."
   },
   "two_a": {
     "distributed_lease_owner": "chatgpt:wnba-pra-speed-v3-step6",
@@ -100,5 +100,28 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "true_cold_proof_retry_repair": {
+    "status": "PATCHED_PENDING_ONE_FRESH_PROOF",
+    "failed_public_run": 36748773827,
+    "failed_public_job": 110002075928,
+    "failure_class": "TRANSIENT_FROZEN_STEP5_TRUE_COLD_TIMING_SPIKE",
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP6_HISTORY_CACHE_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_API_DEPLOYMENT_WAIT_SECONDS=0.171",
+      "WNBA_PRA_SPEED_V3_STEP6_STREAMLIT_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP6_STREAMLIT_DEPLOYMENT_WAIT_SECONDS=8.465",
+      "Frozen Step-5 final certification previously measured true cold at 0.834s",
+      "Failed Step-6 proof measured frozen Step-5 true cold at 3.510s",
+      "Step-6 history reader is not called on the frozen Step-5 true-cold branch",
+      "Render showed multiple pra-detail-cached requests during the failed transition whereas the frozen Step-5 certification window showed one"
+    ],
+    "patch": "Permit exactly one fresh frozen-Step-5 profile attempt only when the first attempt fails specifically on the unchanged true-cold 2.5s threshold. Any second failure or any different failure remains terminal RED.",
+    "true_cold_threshold_seconds": 2.5,
+    "threshold_changed": false,
+    "product_runtime_changed": false,
+    "render_api_redeploy_required": false,
+    "speed_v3_steps_1_5_changed": false,
+    "two_a": "One verifier-only patch, one exact-head proof, one merge, one merged-main freeze proof."
+  }
 }
