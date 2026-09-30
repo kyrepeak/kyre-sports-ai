@@ -11,7 +11,7 @@
   "total_steps": 9,
   "step_title": "Visible PRA content first",
   "step_status": "ACTIVE",
-  "active_checkpoint": "STEP8_FINAL_MERGED_MAIN_PRODUCTION_PROOF",
+  "active_checkpoint": "STEP8_FINAL_MERGED_MAIN_PROOF",
   "main_sha": "742afe3d1121595a43f77fe98926a79e42b12112",
   "active_pr": 1274,
   "active_run": 36790949785,
@@ -21,7 +21,7 @@
   "lease": {
     "revision": 56,
     "generation": 11,
-    "state_hash": "7c7477fdb1c2b73ad94e96faa3728b3dba054120e198c284fbe38d3b55e11b61",
+    "state_hash": "52967e3c582b77ed62f2ff3fcdd30e198a372b274beef366018268082cef12c3",
     "holder_owner_id": "chatgpt:api2:wnba-pra-speed-v3-step8",
     "holder_lease_id": "LEASE-WNBA-PRA-SPEED-V3-STEP8-G11"
   },
@@ -54,5 +54,5 @@
     "MONSTER_V4_STEP6",
     "WNBA_PRA_SPEED_V3_STEP7"
   ],
-  "state_hash": "742a3a0f1fdf67f813d97355084e15892e858c0912cd0e0e5324a5908cec05c8"
+  "state_hash": "bab89b4c07b2efb5bcd3484b23d82886fe9fe94736697438847c9ef022ede066"
 }
