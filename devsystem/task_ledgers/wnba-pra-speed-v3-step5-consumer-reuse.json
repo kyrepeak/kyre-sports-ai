@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step5-consumer-reuse",
   "title": "WNBA PRA Speed V3 Step 5 — Cross-player consumer snapshot reuse",
   "project": "WNBA PRA Speed V3",
-  "phase": "STREAMLIT_TRANSITION_WAIT_REPAIR_PENDING_PROOF",
+  "phase": "TWO_PLAYER_PROOF_SELECTION_REPAIR_PENDING_PROOF",
   "step": 5,
   "total_steps": 9,
   "status": "DONE",
@@ -219,5 +219,29 @@
     "render_api_redeploy_required": false,
     "speed_v3_steps_1_4_changed": false,
     "two_a": "Proof-only transient repair. One branch proof, one merge, one merged-main freeze proof."
+  },
+  "two_player_proof_selection_repair": {
+    "status": "PATCHED_PENDING_ONE_FRESH_PROOF",
+    "failed_public_run": 36743189089,
+    "failed_public_job": 109982827497,
+    "failure_class": "PUBLIC_PROOF_GAME_SELECTION_ASSUMPTION",
+    "evidence": [
+      "WNBA_PRA_SPEED_V3_STEP5_FAST_HISTORY_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_API_DEPLOYMENT_WAIT_SECONDS=0.197",
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYED_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP5_STREAMLIT_DEPLOYMENT_WAIT_SECONDS=23.888",
+      "WNBA_NAV_STEP7_DEFAULT_SLATE_HAS_GAME_GREEN",
+      "WNBA_NAV_STEP7_GAME_VISIBLE_CONTRACT_GREEN",
+      "Verifier failed because the first selected game exposed fewer than two Player PRA buttons"
+    ],
+    "root_cause": "The Step-5 public verifier assumed the first available WNBA game always exposes at least two eligible Player PRA buttons. Production disproved that assumption. Cross-player reuse requires two distinct players, so the proof must first choose a qualifying game.",
+    "patch": "Scan games on the active WNBA slate and, if needed, certified WNBA game dates. Select the first game exposing at least two Player PRA buttons before starting any Step-5 player timing measurement.",
+    "speed_timers_changed": false,
+    "shared_navigation_helper_changed": false,
+    "product_runtime_changed": false,
+    "render_api_redeploy_required": false,
+    "step5_data_contract_changed": false,
+    "speed_v3_steps_1_4_changed": false,
+    "two_a": "Proof-only game-selection repair. One exact-head branch proof, one merge, one merged-main public freeze proof."
   }
 }
