@@ -102,6 +102,35 @@ jobs:
           echo "WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEPS1_7_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP8_BRANCH_GREEN"
 
+  diagnostic-profile:
+    if: github.event_name == 'pull_request'
+    needs: [focused-contract]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install diagnostic browser dependencies
+        run: |
+          pip install playwright requests streamlit
+          python -m playwright install --with-deps chromium
+      - name: Measure Step 8 first-visible timing without certifying freeze
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/wnba_pra_speed_v3_step8_public_profile.py \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/wnba-pra-speed-v3-step8-diagnostic \
+            --diagnostic-first-visible
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wnba-pra-speed-v3-step8-diagnostic
+          path: artifacts/wnba-pra-speed-v3-step8-diagnostic
+          if-no-files-found: ignore
+
   public-profile:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
