@@ -544,6 +544,10 @@ def contract_self_test() -> dict[str, Any]:
         "stale_deployment_guard": True,
         "stale_freeze_guard": True,
         "tamper_guard": True,
+        "stale_head_detection": True,
+        "stale_main_detection": True,
+        "stale_deployment_detection": True,
+        "stale_freeze_rejected": True,
         "product_runtime_mutation": False,
         "network_calls": False,
     }
