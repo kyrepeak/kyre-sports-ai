@@ -2,7 +2,7 @@
   "version": 1,
   "streamlit": {
     "name": "Kyre Sports AI",
-    "url": "https://kyre-sports-ai.streamlit.app",
+    "url": "https://pickvault.streamlit.app",
     "health_path": "/_stcore/health"
   },
   "render_api": {
