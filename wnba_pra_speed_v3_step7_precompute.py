@@ -14,7 +14,7 @@ from __future__ import annotations
 from concurrent.futures import Future, ThreadPoolExecutor
 from html import escape
 from threading import Lock
-from time import monotonic, perf_counter
+from time import monotonic, perf_counter, sleep
 from typing import Any, Mapping
 
 import streamlit as st
@@ -31,6 +31,8 @@ MAX_WORKERS = 4
 SCHEDULE_DEDUPE_SECONDS = 45.0
 API_TIMEOUT_SECONDS = 5.0
 API_ATTEMPTS = 1
+WARM_ATTEMPTS = 2
+WARM_RETRY_DELAY_SECONDS = 0.15
 SESSION_PERF = "ks_wnba_pra_speed_v3_step7_perf"
 
 PRECOMPUTE_CONTRACT = {
@@ -42,6 +44,8 @@ PRECOMPUTE_CONTRACT = {
     "background": True,
     "navigation_callback_blocking": False,
     "max_workers": MAX_WORKERS,
+    "warm_attempts_max": WARM_ATTEMPTS,
+    "warm_retry_delay_seconds": WARM_RETRY_DELAY_SECONDS,
     "schedule_dedupe_seconds": SCHEDULE_DEDUPE_SECONDS,
     "warm_same_session_target_seconds_max": 0.75,
     "precomputed_cold_player_target_seconds_max": 1.5,
@@ -123,28 +127,38 @@ def _warm_one(player_id: int) -> dict[str, Any]:
     status = "error"
     cache_hit = False
     error = ""
-    try:
-        client = KyreWNBAAPIClient(
-            timeout_seconds=API_TIMEOUT_SECONDS,
-            attempts=API_ATTEMPTS,
-        )
-        body = client.get_json(
-            f"/api/v1/wnba/players/{pid}/pra-detail-cached",
-            params={"season": SUPPORTED_SEASON},
-        )
-        if not _validate_warmed_payload(body, player_id=pid):
-            raise ValueError("Step-7 precompute received an invalid Step-4 bundle.")
-        cache = body.get("cache")
-        cache = dict(cache) if isinstance(cache, Mapping) else {}
-        cache_hit = bool(cache.get("hit"))
-        status = "green"
-    except Exception as exc:
-        error = type(exc).__name__
+    attempts_used = 0
+
+    for attempt in range(1, WARM_ATTEMPTS + 1):
+        attempts_used = attempt
+        try:
+            client = KyreWNBAAPIClient(
+                timeout_seconds=API_TIMEOUT_SECONDS,
+                attempts=API_ATTEMPTS,
+            )
+            body = client.get_json(
+                f"/api/v1/wnba/players/{pid}/pra-detail-cached",
+                params={"season": SUPPORTED_SEASON},
+            )
+            if not _validate_warmed_payload(body, player_id=pid):
+                raise ValueError("Step-7 precompute received an invalid Step-4 bundle.")
+            cache = body.get("cache")
+            cache = dict(cache) if isinstance(cache, Mapping) else {}
+            cache_hit = bool(cache.get("hit"))
+            status = "green"
+            error = ""
+            break
+        except Exception as exc:
+            error = type(exc).__name__
+            if attempt < WARM_ATTEMPTS:
+                sleep(WARM_RETRY_DELAY_SECONDS)
+
     elapsed_ms = (perf_counter() - started) * 1000.0
     result = {
         "player_id": pid,
         "status": status,
         "cache_hit": cache_hit,
+        "attempts_used": attempts_used,
         "elapsed_ms": round(elapsed_ms, 3),
         "error": error,
         "finished_at": monotonic(),
@@ -201,11 +215,13 @@ def precompute_snapshot(player_ids: list[int] | None = None) -> dict[str, Any]:
         )
     green = sum(1 for row in results if row.get("status") == "green")
     errors = sum(1 for row in results if row.get("status") != "green")
+    retried = sum(1 for row in results if int(row.get("attempts_used") or 0) > 1)
     return {
         "targets": len(ids),
         "completed": len(results),
         "green": green,
         "errors": errors,
+        "retried": retried,
         "running": running,
     }
 
@@ -248,9 +264,11 @@ def _render_marker(state: navigation.NavigationState) -> None:
         f'data-completed="{int(perf.get("completed") or 0)}" '
         f'data-green="{int(perf.get("green") or 0)}" '
         f'data-errors="{int(perf.get("errors") or 0)}" '
+        f'data-retried="{int(perf.get("retried") or 0)}" '
         f'data-running="{int(perf.get("running") or 0)}" '
         'data-background="true" '
         f'data-max-workers="{MAX_WORKERS}" '
+        f'data-warm-attempts="{WARM_ATTEMPTS}" '
         'style="display:none" aria-hidden="true"></span>',
         unsafe_allow_html=True,
     )
@@ -268,6 +286,8 @@ def render_step7_route(frozen_renderer) -> Any:
 
 __all__ = [
     "MAX_WORKERS",
+    "WARM_ATTEMPTS",
+    "WARM_RETRY_DELAY_SECONDS",
     "MODEL_VERSION",
     "PRECOMPUTE_CONTRACT",
     "SCHEDULE_DEDUPE_SECONDS",
