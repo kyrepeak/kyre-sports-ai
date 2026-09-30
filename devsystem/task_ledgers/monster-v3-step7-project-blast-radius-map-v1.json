@@ -16,13 +16,12 @@
     "projection_weight": 0
   },
   "acceptance": {
-    "entrypoint_blast_radius_visible": true,
-    "protected_reach_visible": true,
-    "unknown_surface_fail_safe": true,
-    "stale_head_replan": true,
-    "adaptive_proof_bound": true,
-    "pre_edit_only": true,
-    "permanent_contract_pending": false,
+    "direct_transitive_map": true,
+    "protected_reach_guard": true,
+    "blast_radius_risk": true,
+    "adaptive_proof_handoff": true,
+    "unknown_fail_safe": true,
+    "stale_head_blocked": true,
     "permanent_contract_updated": true
   },
   "action_log": {
@@ -33,5 +32,5 @@
   "transition_history": [],
   "override_events": [],
   "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
-  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main DevSystem targeted CI + devsystem-final-gate GREEN."
+  "proof_policy": "Exact PR-head and merged-main proof identity is owned by live GitHub evidence and the Step-3 Truth Ledger."
 }
