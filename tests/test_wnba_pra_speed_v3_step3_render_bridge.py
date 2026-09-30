@@ -32,3 +32,10 @@ def test_render_bridge_workflow_has_guarded_manual_deploy_and_rollback():
     assert "WNBA_RELEASE_ID" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP3_RENDER_DEPLOY_GREEN" in workflow
     assert "rollback" in workflow.lower()
+
+
+def test_render_bridge_advances_and_rolls_back_shared_mlb_revision_identity():
+    workflow = (ROOT / ".github" / "workflows" / "wnba-pra-speed-v3-step3-render-bridge.yml").read_text(encoding="utf-8")
+    assert workflow.count('"MLB_STEP17B_EXPECTED_REVISION": sha') >= 2
+    assert '"WNBA_STEP17B_EXPECTED_REVISION": sha' in workflow
+    assert '"WNBA_DEPLOYMENT_REVISION": sha' in workflow
