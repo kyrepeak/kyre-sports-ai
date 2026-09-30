@@ -142,8 +142,6 @@ jobs:
         run: python devsystem/automatic_loop_kill_v1.py
       - name: Validate MONSTER Evidence Truth Ledger V1
         run: python devsystem/evidence_truth_ledger_v1.py
-      - name: Validate MONSTER Evidence Truth Ledger V1
-        run: python devsystem/evidence_truth_ledger_v1.py
       - name: Validate Monster Speed V3 Step 2 cache split
         run: python devsystem/monster_speed_v3_step2_cache_split_v1.py
       - name: Validate Monster Speed V3 Step 3 fast/full lane split
