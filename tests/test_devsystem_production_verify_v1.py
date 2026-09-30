@@ -167,7 +167,7 @@ def test_production_target_registry_is_explicit():
     module = _load_module()
     targets = module._load_targets()
 
-    assert targets["streamlit"]["url"] == "https://kyre-sports-ai.streamlit.app"
+    assert targets["streamlit"]["url"] == "https://pickvault.streamlit.app"
     assert targets["render_api"]["url"] == "https://kyre-sports-api.onrender.com"
     assert targets["render_api"]["service_id"] == "srv-da84q6ifngtc73bdbm6g"
     assert targets["render_api"]["source_branch"] == "mlb-step17b-shared-host-cert"
