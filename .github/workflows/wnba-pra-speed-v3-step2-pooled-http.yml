@@ -9,6 +9,7 @@ on:
       - "devsystem/wnba_pra_speed_v3_step2_public_profile.py"
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step2-pooled-http.json"
       - "tests/test_wnba_pra_speed_v3_step2.py"
+      - "tests/test_wnba_step7f_streamlit_api.py"
       - ".github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml"
       - "app.py"
   push:
@@ -46,7 +47,9 @@ jobs:
       - name: Run Step 2 pooled-transport contract
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest -q tests/test_wnba_pra_speed_v3_step2.py
+        run: |
+          pytest -q tests/test_wnba_pra_speed_v3_step2.py
+          pytest -q tests/test_wnba_step7f_streamlit_api.py
 
       - name: Enforce Step 2 final scope
         if: github.event_name == 'pull_request'
@@ -64,6 +67,7 @@ jobs:
           devsystem/wnba_pra_speed_v3_step2_public_profile.py
           streamlit_memory_lazy_router_wnba_pra_speed_v3_step2.py
           tests/test_wnba_pra_speed_v3_step2.py
+          tests/test_wnba_step7f_streamlit_api.py
           wnba_api_client_v1.py
           wnba_pra_speed_v3_step2_transport.py
           EOF
