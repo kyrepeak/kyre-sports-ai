@@ -49,16 +49,19 @@ def _wait_step7_streamlit(page):
     while time.monotonic() < deadline:
         try:
             frame, slate_seconds = _route_to_wnba_pra(page)
-            marker = frame.locator(STEP7_SELECTOR)
+            marker = frame.locator(
+                STEP7_SELECTOR + '[data-invalid-bundle-retry-max="1"]'
+            )
             if marker.count() > 0:
                 elapsed = time.monotonic() - started
                 print("WNBA_PRA_SPEED_V3_STEP7_STREAMLIT_DEPLOYED_GREEN")
+                print("WNBA_PRA_SPEED_V3_STEP7_INVALID_BUNDLE_RETRY_DEPLOYED_GREEN")
                 print(
                     "WNBA_PRA_SPEED_V3_STEP7_STREAMLIT_DEPLOYMENT_WAIT_SECONDS="
                     f"{elapsed:.3f}"
                 )
                 return frame, slate_seconds, elapsed
-            last = "Step-7 marker absent"
+            last = "Step-7 invalid-bundle-retry marker absent"
         except Exception as exc:
             last = f"{type(exc).__name__}:{str(exc)[:300]}"
         page.wait_for_timeout(5000)
@@ -162,6 +165,10 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             player_marker = _marker(frame)
             completed = _int_attr(player_marker, "data-completed")
             errors = _int_attr(player_marker, "data-errors")
+            validation_retries = _int_attr(
+                player_marker,
+                "data-validation-retries",
+            )
             if completed < 1:
                 raise BrowserQAFailure(
                     f"Step-7 background results were not visible after Player rerun: "
@@ -173,6 +180,11 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                     f"errors={errors}"
                 )
 
+            print(
+                "WNBA_PRA_SPEED_V3_STEP7_VALIDATION_RETRIES="
+                f"{validation_retries}"
+            )
+            print("WNBA_PRA_SPEED_V3_STEP7_INVALID_BUNDLE_RETRY_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_BUNDLE_CACHE_HIT_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_PLAYER_READY_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP7_FROZEN_STEPS1_6_GREEN")
@@ -196,6 +208,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 "target_players": target_players,
                 "completed_precomputes": completed,
                 "precompute_errors": errors,
+                "validation_retries": validation_retries,
                 "bundle_cache_hit": cache_hit,
                 "precomputed_player_seconds": round(player_seconds, 3),
                 "cached_bundle_read_ms": round(cached_read_ms, 3),
