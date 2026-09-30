@@ -42,7 +42,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install focused dependencies
-        run: pip install pytest requests
+        run: pip install pytest requests pandas
 
       - name: Run Step 2 pooled-transport contract
         env:
