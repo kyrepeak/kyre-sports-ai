@@ -168,6 +168,8 @@ jobs:
           git fetch origin monster-cross-chat-truth --depth=1
           git show FETCH_HEAD:devsystem/cross_chat_truth_state_v1.json > /tmp/monster-cross-chat-truth.json
           python devsystem/cross_chat_truth_handshake_v1.py verify-packet --truth-file /tmp/monster-cross-chat-truth.json
+      - name: Validate MONSTER V4 Terminal Proof Receipt V1
+        run: python devsystem/terminal_proof_receipt_v1.py
       - name: Validate MONSTER Evidence Truth Ledger V1
         run: python devsystem/evidence_truth_ledger_v1.py
       - name: Validate MONSTER Failure Ownership Engine V1
@@ -276,6 +278,7 @@ jobs:
             tests/test_devsystem_semantic_action_normalizer_v1.py \
             tests/test_devsystem_frozen_artifact_registry_v1.py \
             tests/test_devsystem_cross_chat_truth_handshake_v1.py \
+            tests/test_devsystem_terminal_proof_receipt_v1.py \
             tests/test_devsystem_evidence_truth_ledger_v1.py \
             tests/test_devsystem_failure_ownership_engine_v1.py \
             tests/test_devsystem_deployment_truth_control_plane_v1.py \
