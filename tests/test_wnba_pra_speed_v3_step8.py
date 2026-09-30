@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from pathlib import Path
 import subprocess
 
@@ -9,6 +10,7 @@ STEP8 = ROOT / "wnba_pra_speed_v3_step8_visible_first.py"
 ROUTER = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py"
 APP = ROOT / "app.py"
 WORKFLOW = ROOT / ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml"
+LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json"
 
 FROZEN_STEP7 = {
     "wnba_pra_speed_v3_step7_precompute.py": "8416b49b9fdf5b75656ea03248a0d6edf17a68a5",
@@ -178,3 +180,15 @@ def test_step8_exact_scope_guard_fetches_base_history_permanently():
     focused = source.split("focused-contract:", 1)[1].split("public-profile:", 1)[0]
     assert "fetch-depth: 0" in focused
     assert 'git diff --name-only "$BASE_SHA" "$HEAD_SHA"' in focused
+
+
+def test_step8_task_ledger_has_valid_genesis_action_log():
+    payload = json.loads(LEDGER.read_text(encoding="utf-8"))
+    assert payload["status"] == "DONE"
+    log = payload["action_log"]
+    assert log["head_chain_hash"] == "0" * 64
+    assert log["events"] == []
+    assert log["consumed_receipts"] == []
+    debt = payload["regression_debt"]
+    assert debt["state"] == "CLEARED"
+    assert debt["open_debt_count"] == 0
