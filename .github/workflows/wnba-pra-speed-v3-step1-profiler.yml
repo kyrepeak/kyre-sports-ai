@@ -10,6 +10,7 @@ on:
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json"
       - ".github/workflows/wnba-pra-speed-v3-step1-profiler.yml"
       - "app.py"
+      - "requirements.txt"
   push:
     branches: [main]
     paths:
@@ -20,6 +21,7 @@ on:
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json"
       - ".github/workflows/wnba-pra-speed-v3-step1-profiler.yml"
       - "app.py"
+      - "requirements.txt"
   workflow_dispatch:
 
 permissions:
@@ -74,10 +76,19 @@ jobs:
           EOF
           sort -o /tmp/repair.txt /tmp/repair.txt
 
+          cat > /tmp/full_redeploy.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step1-profiler.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json
+          requirements.txt
+          EOF
+          sort -o /tmp/full_redeploy.txt /tmp/full_redeploy.txt
+
           if diff -q /tmp/original.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_GREEN"
           elif diff -q /tmp/repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP1_DEPLOYMENT_CLOSEOUT_SCOPE_GREEN"
+          elif diff -q /tmp/full_redeploy.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP1_FULL_REDEPLOY_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_RED"
             diff -u /tmp/repair.txt /tmp/actual.txt || true
