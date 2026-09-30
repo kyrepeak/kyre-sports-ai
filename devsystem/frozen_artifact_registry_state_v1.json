@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 6,
-  "source_main_sha": "28ba9ccd0f3d4e3a3cb25ca7d57b0e6c2408b734",
+  "revision": 7,
+  "source_main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -206,8 +206,21 @@
         "tests/test_devsystem_regression_debt_zero_gate_v1.py": "6d5589dc7afecbc66a17f48f97eaeb9538751d6d",
         "devsystem/task_ledgers/monster-v4-step6-regression-debt-zero-gate-v1.json": "bf61833bb6b2f78bdea0cca5a5b78465321912d4"
       }
+    },
+    "WNBA_PRA_SPEED_V3_STEP7": {
+      "status": "FROZEN",
+      "checkpoint_id": "WNBA_PRA_SPEED_V3_STEP7",
+      "source_main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
+      "artifacts": {
+        "wnba_pra_speed_v3_step7_precompute.py": "8416b49b9fdf5b75656ea03248a0d6edf17a68a5",
+        "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py": "013aedd14a669c57aa09368ba7ecd9d5ef699f7f",
+        "tests/test_wnba_pra_speed_v3_step7.py": "451a7a6833dd0e7223c56144f26c03aa9c02a1f6",
+        "devsystem/wnba_pra_speed_v3_step7_public_profile.py": "ff1b597be14b1a370b6da2b0528065041061367e",
+        "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json": "d954bb7f1e81c8eb52b8f0697bdc7b6ec85b0309",
+        ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml": "56ff291abf9d92a18e2978ae4213381efbcd78fb"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "a86eec5234b0465d6b89cfce2f0533d655eae24215bca7d9766d3f86ad44e2f7"
+  "state_hash": "20583e2aac4acc456ec7138676ae4131a37c163557df193487d69f8b2170aa0d"
 }
