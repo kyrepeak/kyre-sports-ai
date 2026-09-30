@@ -224,8 +224,7 @@ def test_same_packet_failure_keeps_same_fingerprint_across_run_metadata():
 def test_failed_job_log_excerpt_reaches_predictive_triage():
     extractor = _load("failure_log_excerpt_permanent", "devsystem/failure_log_excerpt_v1.py")
     packet_module = _load("failure_packet_log_path", "devsystem/failure_packet_v1.py")
-    raw_log = "
-".join([
+    raw_log = "\n".join([
         "browser setup complete",
         "Playwright TimeoutError: waiting for locator combobox",
         "cleanup complete",
@@ -300,11 +299,9 @@ def test_production_verification_v5_is_the_only_automatic_main_verifier():
     v5 = (ROOT / ".github/workflows/devsystem-production-verification-v5.yml").read_text(encoding="utf-8")
 
     assert "workflow_dispatch:" in legacy
-    assert "
-  push:" not in legacy
+    assert "\n  push:" not in legacy
     assert "branches: [main]" not in legacy
 
     assert "workflow_dispatch:" in v5
-    assert "
-  push:" in v5
+    assert "\n  push:" in v5
     assert "branches: [main]" in v5
