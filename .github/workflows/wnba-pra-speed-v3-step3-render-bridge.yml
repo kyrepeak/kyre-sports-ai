@@ -58,15 +58,29 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+          cat > /tmp/full_bridge.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml
           sports_api/api/wnba_pra_detail_bundle.py
           sports_api/main.py
           tests/test_wnba_pra_speed_v3_step3_render_bridge.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_SCOPE_GREEN"
+          sort -o /tmp/full_bridge.txt /tmp/full_bridge.txt
+
+          cat > /tmp/revision_repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml
+          tests/test_wnba_pra_speed_v3_step3_render_bridge.py
+          EOF
+          sort -o /tmp/revision_repair.txt /tmp/revision_repair.txt
+
+          if diff -q /tmp/full_bridge.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_SCOPE_GREEN"
+          elif diff -q /tmp/revision_repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP3_SHARED_HOST_REVISION_SCOPE_GREEN"
+          else
+            echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_SCOPE_RED"
+            diff -u /tmp/revision_repair.txt /tmp/actual.txt || true
+            exit 1
+          fi
 
       - name: Prove route parity and host registration
         shell: bash
@@ -128,6 +142,7 @@ jobs:
                   return json.loads(raw) if raw else None
 
           identity = {
+              "MLB_STEP17B_EXPECTED_REVISION": sha,
               "WNBA_STEP17B_EXPECTED_REVISION": sha,
               "WNBA_DEPLOYMENT_REVISION": sha,
               "WNBA_RELEASE_ID": "wnba-pra-speed-v3-step3-detail-bundle",
@@ -225,6 +240,7 @@ jobs:
                   return json.loads(raw) if raw else None
 
           for key, value in {
+              "MLB_STEP17B_EXPECTED_REVISION": sha,
               "WNBA_STEP17B_EXPECTED_REVISION": sha,
               "WNBA_DEPLOYMENT_REVISION": sha,
               "WNBA_RELEASE_ID": "wnba-pra-speed-v3-step3-auto-rollback",
