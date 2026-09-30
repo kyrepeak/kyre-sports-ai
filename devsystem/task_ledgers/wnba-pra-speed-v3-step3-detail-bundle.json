@@ -67,5 +67,22 @@
       "WNBA_PRA_SPEED_V3_STEP3_GREEN",
       "WNBA_PRA_SPEED_V3_STEP3_FROZEN"
     ]
+  },
+  "branch_candidate": {
+    "status": "AWAITING_GREEN",
+    "implementation_head": "57598436b30eff2d0ab69d0037e0b4fc4c98546b",
+    "changed_file_count": 9,
+    "exact_scope": [
+      ".github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml",
+      "app.py",
+      "devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json",
+      "devsystem/wnba_pra_speed_v3_step3_public_profile.py",
+      "sports_api/api/wnba_pra_detail_bundle.py",
+      "sports_api/main.py",
+      "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py",
+      "tests/test_wnba_pra_speed_v3_step3.py",
+      "wnba_pra_speed_v3_step3_bundle.py"
+    ],
+    "runtime_behavior_target": "cold pair only; one hosted API request; frozen same-session caches preserved"
   }
 }
