@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/wnba_pra_speed_v3_step3_espn_history.py"
       - "sports_api/main.py"
       - "wnba_pra_speed_v3_step3_bundle.py"
       - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py"
@@ -17,6 +18,7 @@ on:
     branches: [main]
     paths:
       - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/wnba_pra_speed_v3_step3_espn_history.py"
       - "sports_api/main.py"
       - "wnba_pra_speed_v3_step3_bundle.py"
       - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py"
@@ -96,6 +98,15 @@ jobs:
           EOF
           sort -o /tmp/stats_host_repair.txt /tmp/stats_host_repair.txt
 
+          cat > /tmp/espn_history_repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json
+          sports_api/api/wnba_pra_detail_bundle.py
+          sports_api/wnba_pra_speed_v3_step3_espn_history.py
+          tests/test_wnba_pra_speed_v3_step3.py
+          EOF
+          sort -o /tmp/espn_history_repair.txt /tmp/espn_history_repair.txt
+
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP3_SCOPE_GREEN"
           elif diff -q /tmp/cert_closeout.txt /tmp/actual.txt >/dev/null; then
@@ -104,6 +115,8 @@ jobs:
             echo "WNBA_PRA_SPEED_V3_STEP3_FULL_REDEPLOY_SCOPE_GREEN"
           elif diff -q /tmp/stats_host_repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP3_STATS_HOST_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/espn_history_repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP3_ESPN_HISTORY_REPAIR_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP3_SCOPE_RED"
             diff -u /tmp/cert_closeout.txt /tmp/actual.txt || true
@@ -137,6 +150,7 @@ jobs:
         run: |
           python -m py_compile \
             sports_api/api/wnba_pra_detail_bundle.py \
+            sports_api/wnba_pra_speed_v3_step3_espn_history.py \
             sports_api/main.py \
             wnba_pra_speed_v3_step3_bundle.py \
             streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py \
@@ -147,11 +161,14 @@ jobs:
         run: |
           set -euo pipefail
           grep -F '"streamlit_hosted_reads_required": 1' sports_api/api/wnba_pra_detail_bundle.py
+          grep -F '"history_source": "espn_wnba_athlete_gamelog"' sports_api/api/wnba_pra_detail_bundle.py
+          grep -F 'get_step3_espn_player_game_log_dataset' sports_api/api/wnba_pra_detail_bundle.py
           grep -F '"cold_pair_streamlit_api_reads": 1' wnba_pra_speed_v3_step3_bundle.py
           grep -F '"projection_math_changed": False' wnba_pra_speed_v3_step3_bundle.py
           grep -F 'performance._FROZEN_PLAYER_LOADER = bundle.load_bundle_pair' streamlit_memory_lazy_router_wnba_pra_speed_v3_step3.py
           grep -F 'from streamlit_memory_lazy_router_wnba_pra_speed_v3_step3 import record_bootstrap_import_ms, render_app' app.py
           echo "WNBA_PRA_SPEED_V3_STEP3_ONE_REQUEST_CONTRACT_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP3_ESPN_HISTORY_CONTRACT_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP3_BRANCH_GREEN"
 
   public-profile:
