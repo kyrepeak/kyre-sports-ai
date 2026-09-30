@@ -130,10 +130,96 @@ def test_step7_warmer_uses_frozen_step4_cached_detail_endpoint(monkeypatch):
     assert result["status"] == "green"
 
 
+def test_step7_memory_handoff_skips_second_hosted_read(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
+    module._READY_BUNDLES.clear()
+    recorded = {}
+    frozen_calls = {"count": 0}
+
+    outer = {
+        "data_type": module.EXPECTED_DATA_TYPE,
+        "schema_version": module.EXPECTED_SCHEMA_VERSION,
+        "player_id": 101,
+        "season": int(module.SUPPORTED_SEASON),
+        "bundle": {
+            "player_id": 101,
+            "season": int(module.SUPPORTED_SEASON),
+            "consumer": {"raw": "consumer"},
+            "history": {
+                "player_id": 101,
+                "season": int(module.SUPPORTED_SEASON),
+                "games": [],
+            },
+            "consumer_error": "",
+            "history_error": "",
+        },
+        "cache": {"hit": False},
+    }
+    module._READY_BUNDLES[(101, int(module.SUPPORTED_SEASON))] = {
+        "outer": outer,
+        "prepared_at": module.monotonic(),
+    }
+
+    monkeypatch.setattr(
+        module,
+        "normalize_consumer_payload",
+        lambda payload: {"state": "ready", "payload": payload},
+    )
+    monkeypatch.setattr(
+        module,
+        "_record_session",
+        lambda **values: recorded.update(values),
+    )
+
+    def frozen_loader(game_id, player_id):
+        frozen_calls["count"] += 1
+        return {"game_id": game_id, "player_id": player_id, "network_reads": 1}
+
+    result = module.load_precomputed_bundle_pair("g1", 101, frozen_loader)
+
+    assert frozen_calls["count"] == 0
+    assert result["network_reads"] == 0
+    assert result["step7_precomputed_memory_hit"] is True
+    assert result["history"]["player_id"] == 101
+    assert recorded["precomputed_memory_hit"] is True
+    assert recorded["player_hosted_reads_this_call"] == 0
+
+
+def test_step7_memory_handoff_falls_back_after_ttl(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
+    module._READY_BUNDLES.clear()
+    recorded = {}
+    module._READY_BUNDLES[(101, int(module.SUPPORTED_SEASON))] = {
+        "outer": {"bundle": {}},
+        "prepared_at": module.monotonic() - module.MEMORY_HANDOFF_TTL_SECONDS - 1.0,
+    }
+    monkeypatch.setattr(
+        module,
+        "_record_session",
+        lambda **values: recorded.update(values),
+    )
+
+    result = module.load_precomputed_bundle_pair(
+        "g1",
+        101,
+        lambda game_id, player_id: {
+            "game_id": game_id,
+            "player_id": player_id,
+            "network_reads": 1,
+        },
+    )
+
+    assert result["network_reads"] == 1
+    assert recorded["precomputed_memory_hit"] is False
+    assert recorded["player_hosted_reads_this_call"] == 1
+
+
 def test_step7_router_wraps_frozen_step6_only():
     source = ROUTER.read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step6 as frozen_parent" in source
     assert "step7.render_step7_route(frozen_parent.render_app)" in source
+    assert "step4_cache.load_cached_bundle_pair = bundle_loader_with_memory" in source
+    assert "step4_cache.load_cached_bundle_pair = original_bundle_loader" in source
     assert 'FROZEN_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step6"' in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
 
