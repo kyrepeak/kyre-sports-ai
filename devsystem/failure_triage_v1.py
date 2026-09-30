@@ -8,9 +8,11 @@ CI outcomes and evidence text.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 
@@ -189,6 +191,28 @@ def diagnose_evidence(text: str | None) -> dict[str, str] | None:
     }
 
 
+
+def _attach_failure_owner(failure: dict[str, str]) -> dict[str, str]:
+    """Attach Step-4 ownership before any remediation can be selected."""
+    path = Path(__file__).with_name("failure_ownership_engine_v1.py")
+    spec = importlib.util.spec_from_file_location("failure_ownership_engine_v1_runtime", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("MONSTER Failure Ownership Engine unavailable")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    decision = module.classify_failure(failure)
+    enriched = dict(failure)
+    enriched.update({
+        "owner": decision["owner"],
+        "owner_failure_class": decision["failure_class"],
+        "owner_decision_id": decision["decision_id"],
+        "owner_patch_allowed": str(decision["patch_allowed"]).lower(),
+        "owner_next_legal_action": decision["next_legal_action"],
+        "owner_classification_basis": decision["classification_basis"],
+    })
+    return enriched
+
+
 def triage(needs: dict[str, Any]) -> dict[str, Any]:
     failures: list[dict[str, str]] = []
     for name, payload in sorted(needs.items()):
@@ -214,7 +238,7 @@ def triage(needs: dict[str, Any]) -> dict[str, Any]:
                 "retry_policy": "investigate-first",
                 "retry_reason": "lane-level failure alone is not enough evidence to safely recommend a retry",
             })
-        failures.append(failure)
+        failures.append(_attach_failure_owner(failure))
 
     primary = failures[0] if failures else None
     return {
@@ -233,6 +257,7 @@ def render_summary(report: dict[str, Any]) -> str:
         "DEVSYSTEM_FAILURE_TRIAGE "
         f"primary={primary.get('job')} "
         f"layer={primary.get('layer')} "
+        f"owner={primary.get('owner')} "
         f"signal={primary.get('evidence_signal')} "
         f"confidence={primary.get('confidence')} "
         f"remediation={primary.get('remediation_class')} "

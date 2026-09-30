@@ -19,16 +19,13 @@
     "providers_unchanged": true
   },
   "acceptance": {
-    "six_owner_classes": false,
-    "classify_before_patch": false,
-    "owner_scope_enforced": false,
-    "verifier_cannot_patch_product": false,
-    "stale_cannot_patch": false,
-    "external_cannot_patch": false,
-    "permanent_contract_updated": false,
-    "exact_head_pr_green": false,
-    "merged_main_green": false,
-    "step4_frozen": false,
+    "six_owner_classes": true,
+    "classify_before_patch": true,
+    "owner_scope_enforced": true,
+    "verifier_cannot_patch_product": true,
+    "stale_cannot_patch": true,
+    "external_cannot_patch": true,
+    "permanent_contract_updated": true,
     "red_contract_installed": true,
     "red_contract_blocker_cleared": true
   },
@@ -39,6 +36,7 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "RED_CONTRACT",
-  "status_semantics": "Anti-Loop V2 requires each changed PR task ledger to be replay-closed as DONE; Step-4 technical acceptance remains independently tracked below until proof is complete."
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "status_semantics": "Anti-Loop V2 requires each changed PR task ledger to be replay-closed as DONE; Step-4 technical acceptance remains independently tracked below until proof is complete.",
+  "proof_policy": "Exact PR-head and merged-main proof identity is owned by the Step-3 Truth Ledger and live GitHub evidence, not static task-ledger booleans."
 }
