@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_VERIFIER_OBSERVER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_EARLY_SHELL_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -63,20 +63,20 @@
     ]
   },
   "regression_debt": {
-    "failure_id": "wnba-pra-speed-v3-step8-shell-observer-36787241657",
-    "owner": "VERIFIER",
+    "failure_id": "wnba-pra-speed-v3-step8-late-shell-36788247064",
+    "owner": "PRODUCT",
     "state": "CLEARED",
     "permanent_guards": [
       {
         "kind": "TEST",
         "path": "tests/test_wnba_pra_speed_v3_step8.py",
-        "test": "test_step8_public_profile_observes_ephemeral_shell_mutations_permanently",
+        "test": "test_step8_router_emits_shell_before_frozen_parent_permanently",
         "permanent": true
       },
       {
         "kind": "CONTRACT",
         "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
-        "rule": "exact verifier-repair scope is permanently accepted and isolated",
+        "rule": "exact early-shell product-repair scope is permanently accepted and isolated",
         "permanent": true
       }
     ],
@@ -90,12 +90,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_VERIFIER_REPAIR_PROOF",
-    "authoritative_failed_run": 36787241657,
-    "authoritative_failed_job": 110131481793,
-    "failure_owner": "VERIFIER",
-    "failure_class": "EPHEMERAL_SHELL_LOCATOR_OBSERVER_RACE",
-    "patch_count": 4
+    "next_legal_action": "ONE_EXACT_HEAD_PRODUCT_REPAIR_PROOF",
+    "authoritative_failed_run": 36788247064,
+    "authoritative_failed_job": 110134717006,
+    "failure_owner": "PRODUCT",
+    "failure_class": "SHELL_EMISSION_TOO_LATE_IN_RERUN",
+    "patch_count": 5
   },
   "branch_failure": {
     "run": 36786282671,
@@ -173,6 +173,26 @@
         }
       ],
       "open_debt_count": 0
+    },
+    {
+      "failure_id": "wnba-pra-speed-v3-step8-shell-observer-36787241657",
+      "owner": "VERIFIER",
+      "state": "CLEARED",
+      "permanent_guards": [
+        {
+          "kind": "TEST",
+          "path": "tests/test_wnba_pra_speed_v3_step8.py",
+          "test": "test_step8_public_profile_observes_ephemeral_shell_mutations_permanently",
+          "permanent": true
+        },
+        {
+          "kind": "CONTRACT",
+          "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
+          "rule": "exact verifier-repair scope is permanently accepted and isolated",
+          "permanent": true
+        }
+      ],
+      "open_debt_count": 0
     }
   ],
   "action_log": {
@@ -183,19 +203,40 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36787241657,
-    "job": 110131481793,
-    "owner": "VERIFIER",
-    "failure_class": "EPHEMERAL_SHELL_LOCATOR_OBSERVER_RACE",
+    "run": 36788247064,
+    "job": 110134717006,
+    "owner": "PRODUCT",
+    "failure_class": "SHELL_EMISSION_TOO_LATE_IN_RERUN",
     "evidence": [
-      "Production exposed WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYED_GREEN after 6.203 seconds.",
-      "Merged-main WNBA critical, browser QA, MLB, NFL, CFB, core-smoke, full-merge certification, DevSystem final gate, and terminal receipt all passed.",
-      "The public profile failed only because locator.wait_for could not catch the temporary Step-8 shell within the 0.750-second observation window.",
-      "The Step-8 shell is intentionally removed as soon as the frozen final Player loader returns, so locator polling can miss a valid short-lived DOM insertion."
+      "Production exposed the Step-8 deployment marker after 4.197 seconds.",
+      "A MutationObserver was armed before the Player click and still observed no Step-8 shell DOM insertion within the preserved 0.750-second budget.",
+      "Merged-main DevSystem run 36788247109 completed SUCCESS across permanent contract, regression shield, WNBA/NFL/MLB/CFB critical, browser QA, core-smoke, full-merge certification, final gate, and terminal receipt.",
+      "Current Step-8 shell emission occurs only inside load_player_intelligence_visible_first after the frozen parent render path reaches the loader seam."
     ],
-    "root_cause": "The production verifier used element-state polling for an intentionally ephemeral shell. A correct shell insertion/removal can occur between polling observations.",
-    "patch": "Arm a browser MutationObserver before the Player click and timestamp matching addedNodes, preserving the exact 0.750-second target while reliably observing short-lived DOM insertion.",
-    "product_code_changed": false,
+    "root_cause": "The visible shell is emitted inside the Player loader wrapper, after earlier frozen routing/render work has already consumed part or all of the 0.750-second visible-first budget.",
+    "patch": "Emit the shell at Step-8 router entry before calling the frozen Step-7 parent renderer, pass the already-created shell slot into the loader wrapper, and clear it before the frozen final Player renderer resumes.",
+    "product_code_changed": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
     "threshold_changed": false
-  }
+  },
+  "production_failure_history": [
+    {
+      "run": 36787241657,
+      "job": 110131481793,
+      "owner": "VERIFIER",
+      "failure_class": "EPHEMERAL_SHELL_LOCATOR_OBSERVER_RACE",
+      "evidence": [
+        "Production exposed WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYED_GREEN after 6.203 seconds.",
+        "Merged-main WNBA critical, browser QA, MLB, NFL, CFB, core-smoke, full-merge certification, DevSystem final gate, and terminal receipt all passed.",
+        "The public profile failed only because locator.wait_for could not catch the temporary Step-8 shell within the 0.750-second observation window.",
+        "The Step-8 shell is intentionally removed as soon as the frozen final Player loader returns, so locator polling can miss a valid short-lived DOM insertion."
+      ],
+      "root_cause": "The production verifier used element-state polling for an intentionally ephemeral shell. A correct shell insertion/removal can occur between polling observations.",
+      "patch": "Arm a browser MutationObserver before the Player click and timestamp matching addedNodes, preserving the exact 0.750-second target while reliably observing short-lived DOM insertion.",
+      "product_code_changed": false,
+      "threshold_changed": false
+    }
+  ]
 }
