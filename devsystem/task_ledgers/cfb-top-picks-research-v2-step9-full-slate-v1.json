@@ -71,5 +71,20 @@
     "wnba_step4_changed": false,
     "api2_changed": false,
     "rerun_of_failed_sha": false
+  },
+  "syntax_repair_evidence": {
+    "failed_merged_main_run": 36683463225,
+    "failed_repair_pr_run": 36683830319,
+    "root_cause": "Step-9 test source contained two literal \\\\n sequences, causing pytest collection SyntaxError. The first repair fixed the syntax but the repair PR omitted a changed task ledger, so the V2 action-ledger gate correctly rejected it.",
+    "patch": "Keep the two real Python newline fixes and update exactly this one Step-9 task ledger so the non-documentation repair PR satisfies the V2 action-ledger contract.",
+    "changed_runtime_files": 0,
+    "changed_test_files": 1,
+    "changed_task_ledgers": 1,
+    "action_log_chain_modified": false,
+    "steps1_8_changed": false,
+    "api2_changed": false,
+    "probability_changed": false,
+    "ranking_changed": false,
+    "selection_changed": false
   }
 }
