@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "task_id": "monster-v4-step5-terminal-proof-receipt-v1",
+  "title": "MONSTER V4 Step 5 — Terminal Proof Receipt",
+  "project": "MONSTER V4",
+  "step": 5,
+  "total_steps": 6,
+  "status": "DONE",
+  "scope": "Create one tamper-evident terminal proof object cryptographically binding the exact candidate SHA, authoritative workflow run, test count, required-lane results, exact scope diff, and freeze tokens. The receipt is proof-only and may not mutate product runtime or bypass existing lease, truth, frozen-artifact, or final-gate controls.",
+  "protected": {
+    "monster_v4_steps_1_4": true,
+    "monster_2a_enforcement_steps_1_5": true,
+    "monster_v3_steps_1_8": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "single_terminal_receipt": true,
+    "exact_sha_bound": true,
+    "authoritative_run_bound": true,
+    "test_count_bound": true,
+    "required_lane_results_bound": true,
+    "scope_diff_bound": true,
+    "freeze_tokens_bound": true,
+    "tamper_evident_hash": true,
+    "stale_sha_rejected": true,
+    "stale_run_rejected": true,
+    "failed_lane_rejected": true,
+    "scope_drift_rejected": true,
+    "freeze_token_drift_rejected": true,
+    "permanent_ci_enforcement": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after the exact PR head passes Terminal Proof Receipt self-test, permanent contract, all required DevSystem lanes and devsystem-final-gate; merge that exact head; then record one terminal receipt for the merged-main proof, register Step 5 artifacts in the authoritative frozen registry, advance the cross-chat truth packet, and release the distributed execution lease."
+}
