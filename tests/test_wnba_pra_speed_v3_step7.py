@@ -37,6 +37,8 @@ def test_step7_contract_is_nonblocking_precompute_only():
     assert contract["navigation_callback_blocking"] is False
     assert contract["target_endpoint"].endswith("/pra-detail-cached")
     assert contract["max_workers"] == 4
+    assert contract["warm_attempts_max"] == 2
+    assert contract["warm_retry_delay_seconds"] == 0.15
     assert contract["frozen_speed_v3_steps_1_6_modified"] is False
     assert contract["projection_math_changed"] is False
     assert contract["market_math_changed"] is False
@@ -123,6 +125,48 @@ def test_step7_warmer_uses_frozen_step4_cached_detail_endpoint(monkeypatch):
     assert observed["path"].endswith("/101/pra-detail-cached")
     assert observed["params"] == {"season": module.SUPPORTED_SEASON}
     assert result["status"] == "green"
+
+
+def test_step7_warmer_retries_one_transient_failure(monkeypatch):
+    module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
+    calls = {"count": 0}
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        def get_json(self, path, params=None):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                raise RuntimeError("transient")
+            return {
+                "data_type": module.EXPECTED_DATA_TYPE,
+                "schema_version": module.EXPECTED_SCHEMA_VERSION,
+                "player_id": 101,
+                "season": int(module.SUPPORTED_SEASON),
+                "bundle": {
+                    "player_id": 101,
+                    "season": int(module.SUPPORTED_SEASON),
+                    "consumer": {"rows": []},
+                    "history": {
+                        "player_id": 101,
+                        "season": int(module.SUPPORTED_SEASON),
+                        "games": [],
+                    },
+                    "consumer_error": "",
+                    "history_error": "",
+                },
+                "cache": {"hit": True},
+            }
+
+    monkeypatch.setattr(module, "KyreWNBAAPIClient", FakeClient)
+    monkeypatch.setattr(module, "sleep", lambda _: None)
+    result = module._warm_one(101)
+
+    assert calls["count"] == 2
+    assert result["status"] == "green"
+    assert result["attempts_used"] == 2
+    assert result["error"] == ""
 
 
 def test_step7_router_wraps_frozen_step6_only():
