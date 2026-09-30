@@ -1,8 +1,10 @@
 """WNBA PRA Speed V3 Step 3 — single-request Player PRA detail bundle.
 
 The endpoint is read-only. It returns the exact Step-18A consumer snapshot and
-the exact official player game-log dataset as two isolated components inside one
-hosted API response. No projection, market, ranking, qualification, simulation,
+a verified player game-log dataset as two isolated components inside one hosted
+API response. The Step-3 history transport uses the repository-established ESPN
+athlete-gamelog family because both direct WNBA Stats hosts are not latency-safe
+on the live Render service. No projection, market, ranking, qualification, simulation,
 sportsbook, or wager work is performed here.
 """
 from __future__ import annotations
@@ -12,9 +14,8 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
-from sports_api.wnba_game_history import (
-    WNBA_CURRENT_STATS_BASE_URL,
-    get_player_game_log_dataset,
+from sports_api.wnba_pra_speed_v3_step3_espn_history import (
+    get_step3_espn_player_game_log_dataset,
 )
 from sports_api.wnba_step18a_streamlit_consumer import build_step18a_consumer_latest
 
@@ -45,11 +46,9 @@ def build_pra_detail_bundle(player_id: int, season: int = DEFAULT_SEASON) -> dic
     with ThreadPoolExecutor(max_workers=2) as pool:
         consumer_future = pool.submit(build_step18a_consumer_latest)
         history_future = pool.submit(
-            get_player_game_log_dataset,
+            get_step3_espn_player_game_log_dataset,
             pid,
             year,
-            season_type="Regular Season",
-            stats_base_url=WNBA_CURRENT_STATS_BASE_URL,
         )
         consumer, consumer_error = _result(consumer_future)
         history, history_error = _result(history_future)
@@ -67,9 +66,9 @@ def build_pra_detail_bundle(player_id: int, season: int = DEFAULT_SEASON) -> dic
             "read_only_get": True,
             "streamlit_hosted_reads_required": 1,
             "consumer_source": "wnba_step18a_streamlit_consumer_latest",
-            "history_source": "official_player_game_log",
+            "history_source": "espn_wnba_athlete_gamelog",
             "consumer_payload_transformed_server_side": False,
-            "history_payload_transformed_server_side": False,
+            "history_payload_transformed_server_side": True,
             "projection_run": False,
             "sportsbook_network_called": False,
             "qualification_run": False,
