@@ -7,8 +7,8 @@
   "phase": "pra-speed-v3",
   "step": 1,
   "total_steps": 9,
-  "status": "IN_PROGRESS",
-  "step1_status": "IN_PROGRESS",
+  "status": "DONE",
+  "step1_status": "DONE",
   "scope": "Measurement-only profiler for the existing WNBA PRA Player Intelligence route. No speed optimization, projection/model/market/ranking/qualification/Monte Carlo/sportsbook behavior change.",
   "source_main": "03d63732faf5675c2fc585779f73abce4df14150",
   "baseline_public_evidence": {
@@ -52,12 +52,37 @@
   "product_behavior_changed": false,
   "red_green": {
     "red_commit": "a292de6631a04e687edc0b848bef2b8135b96c16",
-    "red_proof_run": null,
-    "green_proof_run": null
+    "red_proof_run": 36648805001,
+    "red_result": "5 failed; profiler/router/app activation intentionally absent",
+    "green_head": "ab3a3aab4ba424c79a091f6bbd367a768707a746",
+    "green_proof_run": 36649100014,
+    "green_result": "5 passed in 0.19s"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "branch_proof": {
+    "scope_green": true,
+    "frozen_navigation_steps_1_7_green": true,
+    "compile_green": true,
+    "measurement_only_green": true,
+    "tokens": [
+      "WNBA_PRA_SPEED_V3_STEP1_SCOPE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP1_NAV_STEPS1_7_FROZEN_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP1_MEASUREMENT_ONLY_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP1_BRANCH_GREEN"
+    ]
+  },
+  "freeze_exit": {
+    "branch_contract_required": true,
+    "devsystem_required": true,
+    "merged_main_public_profile_required": true,
+    "public_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP1_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP1_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP1_FROZEN"
+    ]
   }
 }
