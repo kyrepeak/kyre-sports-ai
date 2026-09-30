@@ -39,6 +39,9 @@ def test_step7_contract_is_nonblocking_precompute_only():
     assert contract["max_workers"] == 2
     assert contract["foreground_headroom_reserved"] is True
     assert contract["precompute_order"] == "game_center_display_order"
+    assert contract["eligibility_gate"] == "existing_v2_8_pra_gate"
+    assert contract["ineligible_designations"] == ["DOUBTFUL", "INACTIVE", "OUT"]
+    assert contract["min_projected_minutes"] == 15.0
     assert contract["per_player_transport_attempts"] == 2
     assert contract["frozen_speed_v3_steps_1_6_modified"] is False
     assert contract["projection_math_changed"] is False
@@ -46,24 +49,27 @@ def test_step7_contract_is_nonblocking_precompute_only():
     assert contract["sportsbook_projection_influence"] == 0.0
 
 
-def test_step7_extracts_unique_verified_game_center_players():
+def test_step7_extracts_only_unique_pra_eligible_active_players():
     module = importlib.import_module("wnba_pra_speed_v3_step7_precompute")
     payload = {
         "teams": {
             "1": [
-                {"player_id": 101},
-                {"player_id": 102},
-                {"player_id": 101},
-                {"player_id": None},
+                {"player_id": 101, "projected_minutes": 32.0, "designation": "NO DESIGNATION", "role_label": "ACTIVE"},
+                {"player_id": 102, "projected_minutes": 18.0, "designation": "QUESTIONABLE", "role_label": "STATUS UNCERTAIN"},
+                {"player_id": 101, "projected_minutes": 32.0, "designation": "NO DESIGNATION", "role_label": "ACTIVE"},
+                {"player_id": 103, "projected_minutes": 0.0, "designation": "OUT", "role_label": "OUT"},
+                {"player_id": 104, "projected_minutes": 14.9, "designation": "NO DESIGNATION", "role_label": "ACTIVE"},
+                {"player_id": None, "projected_minutes": 25.0, "designation": "NO DESIGNATION", "role_label": "ACTIVE"},
             ],
             "2": [
-                {"player_id": "201"},
-                {"player_id": 0},
-                {"player_id": "bad"},
+                {"player_id": "201", "projected_minutes": 24.0, "designation": "PROBABLE", "role_label": "STATUS UNCERTAIN"},
+                {"player_id": 202, "projected_minutes": 22.0, "designation": "INACTIVE", "role_label": "OUT"},
+                {"player_id": "bad", "projected_minutes": 30.0, "designation": "NO DESIGNATION", "role_label": "ACTIVE"},
             ],
         }
     }
     assert module.active_player_ids(payload) == [101, 102, 201]
+
 
 
 def test_step7_scheduler_dedupes_without_waiting(monkeypatch):
@@ -82,7 +88,10 @@ def test_step7_scheduler_dedupes_without_waiting(monkeypatch):
             return FakeFuture()
 
     monkeypatch.setattr(module, "_EXECUTOR", FakeExecutor())
-    payload = {"teams": {"1": [{"player_id": 101}, {"player_id": 102}]}}
+    payload = {"teams": {"1": [
+        {"player_id": 101, "projected_minutes": 32.0, "designation": "NO DESIGNATION", "role_label": "ACTIVE"},
+        {"player_id": 102, "projected_minutes": 28.0, "designation": "NO DESIGNATION", "role_label": "ACTIVE"},
+    ]}}
     first = module.schedule_precompute(payload)
     second = module.schedule_precompute(payload)
 

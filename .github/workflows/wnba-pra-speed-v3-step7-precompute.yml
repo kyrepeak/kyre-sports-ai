@@ -79,7 +79,7 @@ jobs:
           elif diff -q /tmp/expected-timing-repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP7_TIMING_REPAIR_SCOPE_GREEN"
           elif diff -q /tmp/expected-reliability-repair.txt /tmp/actual.txt >/dev/null; then
-            echo "WNBA_PRA_SPEED_V3_STEP7_FOREGROUND_HEADROOM_REPAIR_SCOPE_GREEN"
+            echo "WNBA_PRA_SPEED_V3_STEP7_ACTIVE_PRA_SCOPE_REPAIR_GREEN"
           else
             echo "Unexpected Step-7 scope:"
             cat /tmp/actual.txt

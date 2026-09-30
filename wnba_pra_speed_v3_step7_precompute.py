@@ -31,6 +31,12 @@ MAX_WORKERS = 2
 SCHEDULE_DEDUPE_SECONDS = 45.0
 API_TIMEOUT_SECONDS = 5.0
 API_ATTEMPTS = 2
+
+# Match the repository-established PRA eligibility gate used by the frozen PRA
+# surfaces: OUT/INACTIVE/DOUBTFUL players and sub-15-minute projections are
+# not actionable PRA targets, so Step 7 must not spend cache-warm work on them.
+PRA_INELIGIBLE_DESIGNATIONS = frozenset({"OUT", "INACTIVE", "DOUBTFUL"})
+MIN_PRA_PROJECTED_MINUTES = 15.0
 SESSION_PERF = "ks_wnba_pra_speed_v3_step7_perf"
 
 PRECOMPUTE_CONTRACT = {
@@ -44,6 +50,9 @@ PRECOMPUTE_CONTRACT = {
     "max_workers": MAX_WORKERS,
     "foreground_headroom_reserved": True,
     "precompute_order": "game_center_display_order",
+    "eligibility_gate": "existing_v2_8_pra_gate",
+    "ineligible_designations": sorted(PRA_INELIGIBLE_DESIGNATIONS),
+    "min_projected_minutes": MIN_PRA_PROJECTED_MINUTES,
     "per_player_transport_attempts": API_ATTEMPTS,
     "schedule_dedupe_seconds": SCHEDULE_DEDUPE_SECONDS,
     "warm_same_session_target_seconds_max": 0.75,
@@ -73,8 +82,21 @@ def _valid_player_id(value: Any) -> int | None:
     return pid if pid > 0 else None
 
 
+def _pra_eligible(row: Mapping[str, Any]) -> bool:
+    """Apply the existing PRA eligibility contract without importing heavy role code."""
+    designation = str(row.get("designation") or "").strip().upper()
+    role_label = str(row.get("role_label") or "").strip().upper()
+    if designation in PRA_INELIGIBLE_DESIGNATIONS or role_label == "OUT":
+        return False
+    try:
+        minutes = float(row.get("projected_minutes"))
+    except (TypeError, ValueError):
+        return False
+    return minutes >= MIN_PRA_PROJECTED_MINUTES
+
+
 def active_player_ids(payload: Any) -> list[int]:
-    """Return unique verified player IDs in frozen Game Center display order."""
+    """Return unique PRA-eligible active player IDs in Game Center display order."""
     if not isinstance(payload, Mapping):
         return []
     teams = payload.get("teams")
@@ -87,6 +109,8 @@ def active_player_ids(payload: Any) -> list[int]:
             continue
         for row in rows:
             if not isinstance(row, Mapping):
+                continue
+            if not _pra_eligible(row):
                 continue
             pid = _valid_player_id(row.get("player_id"))
             if pid is None or pid in seen:

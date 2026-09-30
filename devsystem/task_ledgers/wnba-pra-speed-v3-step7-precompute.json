@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "PRODUCTION_FOREGROUND_HEADROOM_PATCH",
+  "phase": "PRODUCTION_ACTIVE_PRA_SCOPE_PATCH",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -59,27 +59,27 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_FOREGROUND_HEADROOM_PROOF",
-    "failed_run": 36775063740,
-    "failed_job": 110090785694,
-    "failure_class": "BACKGROUND_PRECOMPUTE_CONTENTION_SLOWS_FOREGROUND_PLAYER_RENDER",
-    "target_players": 28,
-    "bundle_cache_hit_green": true,
-    "first_attempt_player_seconds": 1.563,
-    "allowed_retry_player_seconds": 1.901,
+    "status": "PENDING_ACTIVE_PRA_SCOPE_PROOF",
+    "failed_run": 36775644342,
+    "failed_job": 110092739457,
+    "failure_class": "PRECOMPUTE_TARGET_SET_BROADER_THAN_EXISTING_PRA_ELIGIBILITY",
+    "player_seconds": 0.903,
     "target_player_seconds_max": 1.5,
+    "speed_green": true,
+    "bundle_cache_hit_green": true,
+    "game_center_roster_rows": 28,
+    "reported_precompute_errors": 3,
     "evidence": [
-      "Both attempts consumed a precomputed Step-4 bundle cache hit.",
-      "Both attempts rendered final Player surfaces with zero overflow.",
-      "Both attempts missed the 1.500s Player ceiling while 28-player background precompute was active."
+      "2-worker headroom patch reduced selected cached Player open to 0.903s.",
+      "Step-7 still targeted every Game Center roster row rather than the established PRA-eligible subset.",
+      "Repository PRA surfaces already exclude OUT/INACTIVE/DOUBTFUL and projected minutes below 15."
     ],
-    "root_cause": "Four concurrent Step-7 background warmers compete with the foreground Player rerun even after the selected bundle is cached.",
-    "patch": "Reduce Step-7 background precompute fanout from four workers to two, preserving display-order scheduling and two transport attempts per player so foreground Player rendering retains headroom.",
-    "max_workers_before": 4,
-    "max_workers_after": 2,
+    "patch": "Use the existing V2.8 PRA eligibility gate for Step-7 precompute targets: skip OUT/INACTIVE/DOUBTFUL and projected minutes below 15 while preserving Game Center display order.",
+    "max_workers": 2,
     "per_player_transport_attempts": 2,
     "threshold_changed": false,
     "model_or_data_changed": false,
+    "game_center_ui_changed": false,
     "frozen_steps_1_6_changed": false
   },
   "two_a": {
@@ -92,10 +92,11 @@
     "stale_fingerprints_rejected": true,
     "protect_frozen_steps_1_6": true,
     "one_timing_only_retry_max": 1,
-    "failed_run": 36775063740,
-    "failed_job": 110090785694,
+    "failed_run": 36775644342,
+    "failed_job": 110092739457,
     "reliability_patch_count": 1,
-    "foreground_headroom_patch_count": 1
+    "foreground_headroom_patch_count": 1,
+    "active_pra_scope_patch_count": 1
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
