@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "task_id": "monster-v4-step3-frozen-artifact-registry-v1",
+  "title": "MONSTER V4 Step 3 — Universal Frozen Artifact Registry",
+  "project": "MONSTER V4",
+  "step": 3,
+  "total_steps": 6,
+  "status": "DONE",
+  "scope": "Create a separate authoritative registry ref that pins frozen MONSTER artifacts by exact Git blob SHA. Enforce the registry in permanent DevSystem CI. A protected blob may change only with an exact-head, exact-from/to thaw grant written to the external registry ref.",
+  "protected": {
+    "monster_v4_step1_distributed_execution_lease": true,
+    "monster_v4_step2_semantic_action_normalizer": true,
+    "monster_2a_enforcement_steps_1_5": true,
+    "monster_v3_steps_1_8": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "external_registry_ref": true,
+    "content_addressed_blob_pins": true,
+    "all_monster_v3_registered": true,
+    "all_monster_2a_registered": true,
+    "v4_steps_1_2_registered": true,
+    "pr_cannot_self_thaw": true,
+    "changed_or_deleted_blob_fails_closed": true,
+    "exact_head_exact_blob_thaw_only": true,
+    "registry_hash_tamper_evident": true,
+    "permanent_ci_enforcement": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, exact merged-main full certification + devsystem-final-gate GREEN, add Step 3 artifacts to authoritative registry, verify registry state, and release distributed lease."
+}

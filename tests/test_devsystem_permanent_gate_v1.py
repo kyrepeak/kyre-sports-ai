@@ -48,6 +48,7 @@ def test_permanent_contract_is_green():
     assert result["mandatory_2a_adversarial_certification_v1_permanent"] is True
     assert result["distributed_execution_lease_v1_permanent"] is True
     assert result["semantic_action_normalizer_v1_permanent"] is True
+    assert result["frozen_artifact_registry_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -241,6 +242,30 @@ def test_semantic_action_normalizer_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/semantic_action_normalizer_v1.py" in workflow
     assert "tests/test_devsystem_semantic_action_normalizer_v1.py" in workflow
+
+
+def test_frozen_artifact_registry_is_permanently_enforced():
+    frozen = _load(
+        "frozen_artifact_registry_v1",
+        "devsystem/frozen_artifact_registry_v1.py",
+    )
+    result = frozen.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["intact_frozen_artifacts_pass"] is True
+    assert result["mismatch_without_thaw_blocked"] is True
+    assert result["deletion_without_thaw_blocked"] is True
+    assert result["exact_head_exact_blob_thaw_allowed"] is True
+    assert result["wrong_head_thaw_blocked"] is True
+    assert result["registry_tamper_blocked"] is True
+    assert result["pr_cannot_self_thaw"] is True
+    assert result["separate_authoritative_registry_ref"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/frozen_artifact_registry_v1.py" in workflow
+    assert "python devsystem/frozen_artifact_registry_v1.py verify-head" in workflow
+    assert "monster-frozen-artifact-registry" in workflow
+    assert "tests/test_devsystem_frozen_artifact_registry_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
