@@ -19,7 +19,11 @@
     "risks_verified_for_all": true,
     "provenance_zero_violations": true,
     "raw_ui_leaks_zero": true,
-    "responsive_targets": [390, 768, 1440],
+    "responsive_targets": [
+      390,
+      768,
+      1440
+    ],
     "probability_unchanged": true,
     "ranking_unchanged": true,
     "selection_unchanged": true,
@@ -40,5 +44,18 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "base_drift_compatibility_patch": {
+    "evidence_main": "aa0dc70d13c0a480a6fd19056a03bee45d79cf89",
+    "failure_class": "BASE_DRIFT_ROUTER_OWNERSHIP",
+    "new_active_parent": "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4",
+    "root_cause": "Main advanced after Step-9 branch creation and the active app router moved from the CFB Step-8 wrapper to WNBA PRA Speed V3 Step 4, which itself delegates through CFB Step 8.",
+    "patch": "Preserve WNBA Speed Step 4 as the current parent and temporarily substitute only cfb_step8_parent.TOP_PICKS_PAGE with cfb_top_picks_page_v9 during render.",
+    "wnba_speed_step4_changed": false,
+    "cfb_steps1_8_changed": false,
+    "api2_changed": false,
+    "probability_changed": false,
+    "ranking_changed": false,
+    "selection_changed": false
+  }
 }
