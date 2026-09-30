@@ -90,15 +90,24 @@ jobs:
           EOF
           sort -o /tmp/player_recursion_repair.txt /tmp/player_recursion_repair.txt
 
+          cat > /tmp/proof_marker_sync_repair.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json
+          devsystem/wnba_pra_speed_v3_step5_public_profile.py
+          EOF
+          sort -o /tmp/proof_marker_sync_repair.txt /tmp/proof_marker_sync_repair.txt
+
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_GREEN"
           elif diff -q /tmp/full_redeploy.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP5_FULL_REDEPLOY_SCOPE_GREEN"
           elif diff -q /tmp/player_recursion_repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP5_PLAYER_RECURSION_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/proof_marker_sync_repair.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP5_PROOF_MARKER_SYNC_REPAIR_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_RED"
-            diff -u /tmp/full_redeploy.txt /tmp/actual.txt || true
+            diff -u /tmp/proof_marker_sync_repair.txt /tmp/actual.txt || true
             exit 1
           fi
       - name: Protect frozen Speed V3 Steps 1-4
@@ -144,6 +153,9 @@ jobs:
             exit 1
           fi
           echo "WNBA_PRA_SPEED_V3_STEP5_PLAYER_ROUTER_TRAMPOLINE_GREEN"
+          grep -F 'def _wait_marker_state(' devsystem/wnba_pra_speed_v3_step5_public_profile.py
+          grep -F 'MARKER_STATE_WAIT_SECONDS = 10.0' devsystem/wnba_pra_speed_v3_step5_public_profile.py
+          echo "WNBA_PRA_SPEED_V3_STEP5_MARKER_SYNC_CONTRACT_GREEN"
           grep -F 'from streamlit_memory_lazy_router_wnba_pra_speed_v3_step5 import record_bootstrap_import_ms, render_app' app.py
           echo "WNBA_PRA_SPEED_V3_STEP5_CONSUMER_REUSE_CONTRACT_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP5_BRANCH_GREEN"
