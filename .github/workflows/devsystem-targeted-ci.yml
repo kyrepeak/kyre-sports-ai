@@ -146,6 +146,8 @@ jobs:
         run: python devsystem/mandatory_2a_receipt_v1.py
       - name: Validate MONSTER 2A Replay + Loop Lock V1
         run: python devsystem/mandatory_2a_replay_lock_v1.py
+      - name: Validate MONSTER 2A Global Enforcement + Tripwire V1
+        run: python devsystem/mandatory_2a_global_enforcement_v1.py
       - name: Validate MONSTER Evidence Truth Ledger V1
         run: python devsystem/evidence_truth_ledger_v1.py
       - name: Validate MONSTER Failure Ownership Engine V1
@@ -209,6 +211,7 @@ jobs:
             tests/test_devsystem_mandatory_2a_action_gate_v1.py \
             tests/test_devsystem_mandatory_2a_receipt_v1.py \
             tests/test_devsystem_mandatory_2a_replay_lock_v1.py \
+            tests/test_devsystem_mandatory_2a_global_enforcement_v1.py \
             tests/test_devsystem_evidence_truth_ledger_v1.py \
             tests/test_devsystem_failure_ownership_engine_v1.py \
             tests/test_devsystem_deployment_truth_control_plane_v1.py \
