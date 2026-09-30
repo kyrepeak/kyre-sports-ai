@@ -599,6 +599,28 @@ jobs:
           echo "WNBA_PRA_SPEED_V3_STEP5_DEVSYSTEM_FOCUSED_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP5_BRANCH_GREEN"
 
+
+  wnba-pra-speed-v3-step6-contract:
+    needs: [classify]
+    if: >-
+      github.event_name == 'pull_request' &&
+      (needs.classify.outputs.wnba == 'true' || needs.classify.outputs.core == 'true')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Step-6 focused dependencies
+        run: pip install -q pytest requests fastapi streamlit httpx pandas pypdf
+      - name: Run WNBA PRA Speed V3 Step-6 focused contract
+        run: python -m pytest -q tests/test_wnba_pra_speed_v3_step6.py
+      - name: Certify WNBA PRA Speed V3 Step-6 branch proof
+        run: |
+          echo "WNBA_PRA_SPEED_V3_STEP6_DEVSYSTEM_FOCUSED_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP6_BRANCH_GREEN"
+
   nfl-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
@@ -657,6 +679,7 @@ jobs:
       - core-smoke
       - wnba-pra-speed-v3-step4-contract
       - wnba-pra-speed-v3-step5-contract
+      - wnba-pra-speed-v3-step6-contract
     runs-on: ubuntu-24.04
     steps:
       - name: Certify fast PR safety lane
@@ -669,10 +692,11 @@ jobs:
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
           WNBA_PRA_STEP4_RESULT: ${{ needs.wnba-pra-speed-v3-step4-contract.result }}
           WNBA_PRA_STEP5_RESULT: ${{ needs.wnba-pra-speed-v3-step5-contract.result }}
+          WNBA_PRA_STEP6_RESULT: ${{ needs.wnba-pra-speed-v3-step6-contract.result }}
         run: |
           set -euo pipefail
           allowed="success skipped"
-          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT CORE_SMOKE_RESULT WNBA_PRA_STEP4_RESULT WNBA_PRA_STEP5_RESULT
+          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT CORE_SMOKE_RESULT WNBA_PRA_STEP4_RESULT WNBA_PRA_STEP5_RESULT WNBA_PRA_STEP6_RESULT
           do
             result="${!name:-}"
             printf '%s=%s\n' "$name" "${result:-unknown}"
