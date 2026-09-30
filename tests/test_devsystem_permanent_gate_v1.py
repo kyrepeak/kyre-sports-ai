@@ -50,6 +50,7 @@ def test_permanent_contract_is_green():
     assert result["semantic_action_normalizer_v1_permanent"] is True
     assert result["frozen_artifact_registry_v1_permanent"] is True
     assert result["cross_chat_truth_handshake_v1_permanent"] is True
+    assert result["terminal_proof_receipt_v1_permanent"] is True
     assert result["evidence_truth_ledger_v1_permanent"] is True
     assert result["failure_ownership_engine_v1_permanent"] is True
     assert result["deployment_truth_control_plane_v1_permanent"] is True
@@ -294,6 +295,33 @@ def test_cross_chat_truth_handshake_is_permanently_enforced():
     assert "python devsystem/cross_chat_truth_handshake_v1.py verify-packet" in workflow
     assert "monster-cross-chat-truth" in workflow
     assert "tests/test_devsystem_cross_chat_truth_handshake_v1.py" in workflow
+
+
+def test_terminal_proof_receipt_is_permanently_enforced():
+    receipt = _load(
+        "terminal_proof_receipt_v1",
+        "devsystem/terminal_proof_receipt_v1.py",
+    )
+    result = receipt.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["single_terminal_object"] is True
+    assert result["exact_sha_bound"] is True
+    assert result["authoritative_run_bound"] is True
+    assert result["test_count_bound"] is True
+    assert result["required_lanes_bound"] is True
+    assert result["scope_diff_bound"] is True
+    assert result["freeze_tokens_bound"] is True
+    assert result["receipt_hash_tamper_rejected"] is True
+    assert result["stale_sha_rejected"] is True
+    assert result["stale_run_rejected"] is True
+    assert result["failed_lane_rejected"] is True
+    assert result["scope_drift_rejected"] is True
+    assert result["freeze_token_drift_rejected"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/terminal_proof_receipt_v1.py" in workflow
+    assert "tests/test_devsystem_terminal_proof_receipt_v1.py" in workflow
 
 
 def test_evidence_truth_ledger_is_permanently_enforced():
