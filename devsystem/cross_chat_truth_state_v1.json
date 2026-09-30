@@ -4,31 +4,31 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 20,
+  "truth_epoch": 21,
   "program_id": "MONSTER_V4",
   "program_title": "MONSTER V4",
   "current_step": 6,
   "total_steps": 6,
   "step_title": "Regression-Debt-Zero Gate",
-  "step_status": "ACTIVE",
+  "step_status": "FROZEN",
   "active_checkpoint": "MONSTER_V4_STEP6",
-  "main_sha": "3cec1d840bfd123a13df0250eb716758e2f610e4",
-  "active_pr": 1265,
-  "active_run": 36778482775,
-  "active_head_sha": "d85e278cbf7632ad850329e02031b7beadb65fa7",
+  "main_sha": "28ba9ccd0f3d4e3a3cb25ca7d57b0e6c2408b734",
+  "active_pr": null,
+  "active_run": 36778776520,
+  "active_head_sha": "28ba9ccd0f3d4e3a3cb25ca7d57b0e6c2408b734",
   "blocker": null,
-  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_RUN_36778482775_TERMINAL_THEN_ALLOW_AUTO_MERGE",
+  "next_legal_action": "MONSTER_V4_COMPLETE",
   "lease": {
-    "revision": 32,
+    "revision": 33,
     "generation": 9,
-    "state_hash": "34375762eada5847ec1583b8e298cf2b0aeffe7a10878bb908304b48d7c0e493",
-    "holder_owner_id": "chatgpt:monster-v4-step6",
-    "holder_lease_id": "LEASE-E1F7AEE60B81B8075AC7F88F"
+    "state_hash": "ccd78977f706dec7a99ff21d1fd44457b01e9cf67ecf70ef6b5aee3b4e825932",
+    "holder_owner_id": null,
+    "holder_lease_id": null
   },
   "frozen_registry": {
-    "revision": 5,
-    "state_hash": "09578aaf21a3d2cbc252f4882ec7abc2d150d66d97df61e3ca5c19096a7d717d",
-    "checkpoint_count": 19,
+    "revision": 6,
+    "state_hash": "a86eec5234b0465d6b89cfce2f0533d655eae24215bca7d9766d3f86ad44e2f7",
+    "checkpoint_count": 20,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
@@ -50,7 +50,8 @@
     "MONSTER_V4_STEP2",
     "MONSTER_V4_STEP3",
     "MONSTER_V4_STEP4",
-    "MONSTER_V4_STEP5"
+    "MONSTER_V4_STEP5",
+    "MONSTER_V4_STEP6"
   ],
-  "state_hash": "055d678023d4eac41b6e1fbbaf89f5de890666bda33356d51098ca09503a0572"
+  "state_hash": "98038aeae8d5d7a6588ca983a7e0706eb16fa897c158a7f4547f6154856cef16"
 }
