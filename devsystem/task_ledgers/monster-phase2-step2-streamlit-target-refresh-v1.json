@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "task_id": "monster-phase2-step2-streamlit-target-refresh-v1",
+  "title": "Monster Phase 2 Step 2 — refresh Streamlit production target",
+  "project": "Monster Final Form Phase 2",
+  "step": "Execution Step 2 — Integration / CI verification",
+  "status": "DONE",
+  "failure_class": "C_STALE_PRODUCTION_HOST_TARGET",
+  "evidence": {
+    "failed_run": 36651287017,
+    "failed_job": 109685834968,
+    "verifier_tests": "40/40 passed",
+    "render_identity_green": true,
+    "stale_host": "https://kyre-sports-ai.streamlit.app",
+    "stale_root_http_status": 404,
+    "current_public_host": "https://pickvault.streamlit.app",
+    "pickvault_repo_contracts_found": true,
+    "recent_pickvault_public_freeze_run": 36647247012,
+    "recent_pickvault_public_freeze_result": "success"
+  },
+  "root_cause": "DevSystem production_targets_v1.json still pointed the production verifier at the retired kyre-sports-ai Streamlit subdomain while current public certification workflows and ledgers use https://pickvault.streamlit.app.",
+  "patch": "Change only the canonical Streamlit production target URL and its exact pinning assertion to PickVault. Preserve the Render identity target, verifier logic, browser acceptance, product runtime, model math, and projection safety contracts.",
+  "protected": {
+    "projection_weight": 0.0,
+    "model_math_unchanged": true,
+    "monte_carlo_unchanged": true,
+    "sportsbook_logic_unchanged": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "render_config_changed": false,
+    "render_deploy_triggered": false,
+    "verifier_logic_unchanged": true,
+    "browser_acceptance_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
