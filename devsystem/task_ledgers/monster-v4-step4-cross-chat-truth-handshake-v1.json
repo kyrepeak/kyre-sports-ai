@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "task_id": "monster-v4-step4-cross-chat-truth-handshake-v1",
+  "title": "MONSTER V4 Step 4 — Cross-Chat Truth Handshake",
+  "project": "MONSTER V4",
+  "step": 4,
+  "total_steps": 6,
+  "status": "DONE",
+  "scope": "Require a repository-backed, hash-valid cross-chat bootstrap packet matching current main, distributed lease, frozen registry, current program/step, blocker, active PR/run, and next legal action before the semantic/lease/2A execution chain can be reached.",
+  "protected": {
+    "monster_v4_step1_distributed_execution_lease": true,
+    "monster_v4_step2_semantic_action_normalizer": true,
+    "monster_v4_step3_frozen_artifact_registry": true,
+    "monster_2a_enforcement_steps_1_5": true,
+    "monster_v3_steps_1_8": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "external_truth_ref": true,
+    "hash_valid_bootstrap_packet": true,
+    "current_main_bound": true,
+    "lease_state_bound": true,
+    "frozen_registry_bound": true,
+    "current_step_and_checkpoint_bound": true,
+    "active_pr_run_visible": true,
+    "blocker_and_next_action_visible": true,
+    "missing_handshake_fails_closed": true,
+    "stale_handshake_fails_closed": true,
+    "raw_semantic_authority_insufficient": true,
+    "handshake_proof_tamper_evident": true,
+    "permanent_ci_packet_validation": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact PR-head DevSystem targeted CI + final gate GREEN, merge, merged-main full certification + final gate GREEN, register Step 4 artifacts in frozen registry, publish next-step truth packet, verify, and release the distributed lease."
+}
