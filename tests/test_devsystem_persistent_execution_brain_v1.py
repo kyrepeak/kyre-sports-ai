@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,7 @@ def _load():
     spec = importlib.util.spec_from_file_location("persistent_execution_brain_v1", target)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
+    sys.modules["persistent_execution_brain_v1"] = module
     spec.loader.exec_module(module)
     return module
 
