@@ -216,16 +216,20 @@ def test_step8_task_ledger_has_valid_genesis_action_log():
     assert debt["open_debt_count"] == 0
 
 
-def test_step8_public_profile_observes_ephemeral_shell_mutations_permanently():
+def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
     source = PROFILE.read_text(encoding="utf-8")
-    assert "MutationObserver" in source
-    assert "record.addedNodes" in source
-    assert "__ksStep8ShellObservedAt" in source
-    assert "_arm_shell_mutation_observer(frame)" in source
-    assert "_wait_shell_mutation(frame, observer_armed_at_ms)" in source
-    assert "frame.locator(SHELL_SELECTOR).wait_for" not in source
+    assert 'FINAL_HERO_SELECTOR = ".wn4-hero"' in source
+    assert "def _visible_step8_surface(page):" in source
+    assert "for candidate in page.frames:" in source
+    assert "def _wait_first_visible_content(page, started: float):" in source
+    assert "_wait_first_visible_content(" in source
+    assert "WNBA_PRA_SPEED_V3_STEP8_FRAME_REACQUIRE_GREEN" in source
+    assert "MutationObserver" not in source
+    assert "__ksStep8ShellObservedAt" not in source
     assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in source
-
+    assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in STEP8.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "WNBA_PRA_SPEED_V3_STEP8_FRAME_RESILIENT_VERIFIER_SCOPE_GREEN" in workflow
 
 def test_step8_router_emits_shell_before_frozen_parent_permanently():
     router = ROUTER.read_text(encoding="utf-8")
