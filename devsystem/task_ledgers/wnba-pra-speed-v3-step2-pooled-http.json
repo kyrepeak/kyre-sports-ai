@@ -83,5 +83,10 @@
       "WNBA_PRA_SPEED_V3_STEP2_POOLED_TRANSPORT_GREEN",
       "WNBA_PRA_SPEED_V3_STEP2_BRANCH_GREEN"
     ]
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
   }
 }
