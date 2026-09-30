@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STEP8 = ROOT / "wnba_pra_speed_v3_step8_visible_first.py"
 ROUTER = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py"
 APP = ROOT / "app.py"
+WORKFLOW = ROOT / ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml"
 
 FROZEN_STEP7 = {
     "wnba_pra_speed_v3_step7_precompute.py": "8416b49b9fdf5b75656ea03248a0d6edf17a68a5",
@@ -170,3 +171,10 @@ def test_step8_activation_is_wired_without_breaking_step7_compatibility():
 def test_step8_freezes_all_step7_artifact_blobs():
     for path, expected in FROZEN_STEP7.items():
         assert _blob(ROOT / path) == expected, path
+
+
+def test_step8_exact_scope_guard_fetches_base_history_permanently():
+    source = WORKFLOW.read_text(encoding="utf-8")
+    focused = source.split("focused-contract:", 1)[1].split("public-profile:", 1)[0]
+    assert "fetch-depth: 0" in focused
+    assert 'git diff --name-only "$BASE_SHA" "$HEAD_SHA"' in focused
