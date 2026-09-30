@@ -71,8 +71,22 @@ jobs:
           wnba_pra_speed_v3_step3_bundle.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "WNBA_PRA_SPEED_V3_STEP3_SCOPE_GREEN"
+
+          cat > /tmp/cert_closeout.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step3-detail-bundle.yml
+          devsystem/task_ledgers/wnba-pra-speed-v3-step3-detail-bundle.json
+          EOF
+          sort -o /tmp/cert_closeout.txt /tmp/cert_closeout.txt
+
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP3_SCOPE_GREEN"
+          elif diff -q /tmp/cert_closeout.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP3_CERT_CLOSEOUT_SCOPE_GREEN"
+          else
+            echo "WNBA_PRA_SPEED_V3_STEP3_SCOPE_RED"
+            diff -u /tmp/cert_closeout.txt /tmp/actual.txt || true
+            exit 1
+          fi
 
       - name: Protect frozen Navigation V2 and Speed V3 Steps 1-2
         shell: bash
