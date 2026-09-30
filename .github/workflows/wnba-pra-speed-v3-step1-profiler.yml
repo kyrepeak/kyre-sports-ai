@@ -13,6 +13,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "tests/test_wnba_pra_speed_v3_step1.py"
       - "wnba_pra_speed_v3_step1_profiler.py"
       - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py"
       - "devsystem/wnba_pra_speed_v3_step1_public_profile.py"
@@ -27,13 +28,118 @@ permissions:
 jobs:
   focused-contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce profiler-only PR scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step1-profiler.yml
+          app.py
+          devsystem/task_ledgers/wnba-pra-speed-v3-step1-profiler.json
+          devsystem/wnba_pra_speed_v3_step1_public_profile.py
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py
+          tests/test_wnba_pra_speed_v3_step1.py
+          wnba_pra_speed_v3_step1_profiler.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "WNBA_PRA_SPEED_V3_STEP1_SCOPE_GREEN"
+
+      - name: Protect frozen Navigation V2 Steps 1-7
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_blob () {
+            actual="$(git hash-object "$1")"
+            test "$actual" = "$2" || { echo "WNBA_PRA_SPEED_V3_STEP1_FROZEN_BLOB_CHANGED:$1:$actual:$2"; exit 1; }
+          }
+          check_blob wnba_pra_navigation_v2_step1.py 2ff0c0c7f4b5973755f4a53b9ef110a3eafd7cb9
+          check_blob wnba_pra_slate_v2_step2.py 4636cb4314489e3458b70cb3c17c6a6af4c5ea3d
+          check_blob wnba_pra_game_center_v2_step3.py a181c8949991bb139521f7d379046f34147e5306
+          check_blob wnba_pra_player_intelligence_v2_step4.py 393c29711962bf1d42b8fc58322938c92e23000a
+          check_blob wnba_pra_performance_v2_step5.py 48f0ee6352c56de4a7d224aa05a6c5f584456086
+          check_blob wnba_pra_responsive_v2_step6.py fa42253c48c4df793b4ee0d307e3b843c410cf03
+          check_blob wnba_pra_final_v2_step7.py f0e2e6135712cfe10c54b3a90070fd595607fd90
+          check_blob streamlit_memory_lazy_router_wnba_nav_v2_step7.py 53bc4026f9e8bb5161762af6d9051bc3a105dfd6
+          echo "WNBA_PRA_SPEED_V3_STEP1_NAV_STEPS1_7_FROZEN_GREEN"
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Install focused test dependencies
         run: pip install pytest streamlit
+
+      - name: Compile profiler surfaces
+        run: |
+          python -m py_compile \
+            wnba_pra_speed_v3_step1_profiler.py \
+            streamlit_memory_lazy_router_wnba_pra_speed_v3_step1.py \
+            devsystem/wnba_pra_speed_v3_step1_public_profile.py
+
       - name: Run Step 1 profiler contract
         run: pytest -q tests/test_wnba_pra_speed_v3_step1.py
+
+      - name: Certify measurement-only contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F '"network_reads_added": 0' wnba_pra_speed_v3_step1_profiler.py
+          grep -F '"reruns_added": 0' wnba_pra_speed_v3_step1_profiler.py
+          grep -F '"model_runs_added": 0' wnba_pra_speed_v3_step1_profiler.py
+          grep -F '"sportsbook_calls_added": 0' wnba_pra_speed_v3_step1_profiler.py
+          grep -F '"monte_carlo_runs_added": 0' wnba_pra_speed_v3_step1_profiler.py
+          grep -F 'from streamlit_memory_lazy_router_wnba_pra_speed_v3_step1 import record_bootstrap_import_ms, render_app' app.py
+          echo "WNBA_PRA_SPEED_V3_STEP1_MEASUREMENT_ONLY_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP1_BRANCH_GREEN"
+
+  public-profile:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: focused-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          pip install playwright requests streamlit
+          python -m playwright install --with-deps chromium
+
+      - name: Profile real PickVault PRA page
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "WNBA_PRA_SPEED_V3_STEP1_PUBLIC_ATTEMPT=$attempt"
+            if python devsystem/wnba_pra_speed_v3_step1_public_profile.py \
+              --production-url https://pickvault.streamlit.app \
+              --artifact-dir artifacts/wnba-pra-speed-v3-step1; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep 20; fi
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wnba-pra-speed-v3-step1-profile
+          path: artifacts/wnba-pra-speed-v3-step1
+          if-no-files-found: ignore
