@@ -362,3 +362,52 @@ def test_cfb_200_unsafe_market_contract_still_hard_fails():
 
     with pytest.raises(module.ProductionVerificationFailure, match="projection weight is not 0%"):
         _validate(module, responses)
+
+def test_streamlit_health_404_uses_root_browser_fallback_without_retry(monkeypatch):
+    module = _load_module()
+    url = "https://app.example/_stcore/health"
+    session = _FakeSession({url: _FakeResponse(404, {})})
+
+    def unexpected_wait(*args, **kwargs):
+        raise AssertionError("stable 404 must not burn the full health retry window")
+
+    monkeypatch.setattr(module, "_wait_http_200", unexpected_wait)
+
+    status, mode = module._probe_streamlit_health(session, url, timeout_seconds=420)
+
+    assert status == 404
+    assert mode == "root-browser-fallback"
+    assert [request[0] for request in session.requests] == [url]
+
+
+def test_streamlit_health_non_404_keeps_existing_fail_closed_wait(monkeypatch):
+    module = _load_module()
+    url = "https://app.example/_stcore/health"
+    session = _FakeSession({url: _FakeResponse(503, {})})
+    calls = []
+
+    def recovered_wait(got_session, got_url, *, timeout_seconds=420, expect_text=None):
+        calls.append((got_session, got_url, timeout_seconds, expect_text))
+        return 200
+
+    monkeypatch.setattr(module, "_wait_http_200", recovered_wait)
+
+    status, mode = module._probe_streamlit_health(session, url, timeout_seconds=420)
+
+    assert status == 200
+    assert mode == "health-endpoint-recovered"
+    assert calls == [(session, url, 420, None)]
+
+
+def test_streamlit_health_fallback_does_not_bypass_root_or_browser_contract():
+    module = _load_module()
+    source = Path(module.__file__).read_text(encoding="utf-8")
+
+    health_at = source.index(
+        "streamlit_health_http, streamlit_liveness_mode = _probe_streamlit_health"
+    )
+    root_at = source.index("streamlit_root_http = _wait_http_200", health_at)
+    browser_at = source.index("browser = _browser_verify", root_at)
+
+    assert health_at < root_at < browser_at
+

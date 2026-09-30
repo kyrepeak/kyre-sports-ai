@@ -178,6 +178,38 @@ def _wait_http_200(
     )
 
 
+def _probe_streamlit_health(
+    session: requests.Session,
+    url: str,
+    *,
+    timeout_seconds: float = 420.0,
+) -> tuple[int, str]:
+    """Probe the legacy Streamlit health endpoint without weakening browser proof.
+
+    Streamlit Community Cloud can return a stable 404 for '/_stcore/health'
+    while the public shell and embedded app remain reachable. A 404 therefore
+    records an explicit transport fallback; all other non-200 states still use
+    the existing fail-closed wait. The caller must still require the public
+    root and the real-browser certification before returning GREEN.
+    """
+    try:
+        response = session.get(url, timeout=30, allow_redirects=True)
+    except Exception:
+        return (
+            _wait_http_200(session, url, timeout_seconds=timeout_seconds),
+            "health-endpoint-recovered",
+        )
+
+    if response.status_code == 200:
+        return 200, "health-endpoint"
+    if response.status_code == 404:
+        return 404, "root-browser-fallback"
+    return (
+        _wait_http_200(session, url, timeout_seconds=timeout_seconds),
+        "health-endpoint-recovered",
+    )
+
+
 def _validate_api_contract(
     session: requests.Session,
     api_base: str,
@@ -518,7 +550,7 @@ def run(
         }
     )
 
-    streamlit_health_http = _wait_http_200(
+    streamlit_health_http, streamlit_liveness_mode = _probe_streamlit_health(
         session,
         streamlit_url + str(targets["streamlit"]["health_path"]),
         timeout_seconds=420,
@@ -548,6 +580,7 @@ def run(
         "streamlit_url": streamlit_url,
         "streamlit_root_http": streamlit_root_http,
         "streamlit_health_http": streamlit_health_http,
+        "streamlit_liveness_mode": streamlit_liveness_mode,
         "render_api_url": api_base,
         "render_api_health_http": api_health_http,
         "render_service_id": targets["render_api"]["service_id"],

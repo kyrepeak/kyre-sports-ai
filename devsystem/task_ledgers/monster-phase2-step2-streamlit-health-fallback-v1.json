@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "task_id": "monster-phase2-step2-streamlit-health-fallback-v1",
+  "title": "Monster Phase 2 Step 2 — Streamlit health fallback",
+  "project": "Monster Final Form Phase 2",
+  "step": "Execution Step 2 — Integration / CI verification",
+  "status": "DONE",
+  "failure_class": "D_VERIFIER_STREAMLIT_HEALTH_ENDPOINT",
+  "evidence": {
+    "failed_run": 36650128653,
+    "failed_job": 109682091118,
+    "render_identity_green": true,
+    "production_verifier_unit_tests": "37/37 passed",
+    "failed_url": "https://kyre-sports-ai.streamlit.app/_stcore/health",
+    "observed_http_status": 404,
+    "retry_window_seconds": 420
+  },
+  "root_cause": "The legacy Streamlit Community Cloud /_stcore/health liveness endpoint returned a stable HTTP 404 for the full verifier window, blocking the verifier before it could execute the already-required public root and real-browser production contract.",
+  "patch": "Treat only HTTP 404 from the legacy health endpoint as an explicit root-browser transport fallback. Preserve the root HTTP proof, real Playwright production proof, all API identity checks, all CFB safety checks, and fail-closed behavior for every other non-200 health state.",
+  "protected": {
+    "projection_weight": 0.0,
+    "model_math_unchanged": true,
+    "monte_carlo_unchanged": true,
+    "sportsbook_logic_unchanged": true,
+    "product_runtime_unchanged": true,
+    "router_unchanged": true,
+    "render_config_changed": false,
+    "render_deploy_triggered": false,
+    "browser_acceptance_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
