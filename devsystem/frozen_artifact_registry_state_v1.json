@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 1,
+  "revision": 2,
   "source_main_sha": "23a4c76ac7b2ad40ac2751c715e56bf2f7cc459f",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -176,8 +176,18 @@
         "tests/test_devsystem_frozen_artifact_registry_v1.py": "6bf01ac80202abaad8be7ee427ec561eecb6e22d",
         "devsystem/task_ledgers/monster-v4-step3-frozen-artifact-registry-v1.json": "f04f86cb6e8d46f8e8544d839af09fc89cf6548c"
       }
+    },
+    "MONSTER_V4_STEP4": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V4_STEP4",
+      "source_main_sha": "e557932165a747a06dfd59483c25bdd060aee3e7",
+      "artifacts": {
+        "devsystem/cross_chat_truth_handshake_v1.py": "da284c49a139f6fba955b2bd972d7313c20f640a",
+        "tests/test_devsystem_cross_chat_truth_handshake_v1.py": "95742325dda50e46f0158b8951f8fe1c7ded3bfc",
+        "devsystem/task_ledgers/monster-v4-step4-cross-chat-truth-handshake-v1.json": "c6057c0291e89d017a9cc86bece07997437d32ff"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "3d1b8bde29e1dd642fb41a7d6ca5da1f6beab37e6f1630249fb9d0489a60e985"
+  "state_hash": "c37e3f16778c739ae7d8784325608729e4bdedf36075cda477a86bf407e468d1"
 }
