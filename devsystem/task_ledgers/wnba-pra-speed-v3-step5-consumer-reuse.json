@@ -89,5 +89,18 @@
     "product_reuse_contract_changed": false,
     "stale_branch_proof_authoritative": false,
     "next_legal_action": "Use only the exact forward-rebased PR head for Step-5 branch proof."
+  },
+  "scope_failure_repair": {
+    "status": "PATCHED_PENDING_ONE_FRESH_PROOF",
+    "failed_run": 36684680947,
+    "failed_job": 109787698898,
+    "failure_class": "BASE_DRIFT_SCOPE_ASSERTION",
+    "tests_green": "8 passed in 1.25s",
+    "root_cause": "Exact-scope step compared moving PR base SHA directly to the Step-5 head, so two unrelated CFB Step-9 base-only files appeared in the diff.",
+    "patch": "Compute scope_base with git merge-base(BASE_SHA, HEAD_SHA) and compare only Step-5 changes from that common ancestor.",
+    "product_runtime_changed": false,
+    "speed_v3_steps_1_4_changed": false,
+    "step5_contract_changed": false,
+    "next_legal_action": "Allow exactly one fresh exact-head Step-5 workflow and DevSystem proof."
   }
 }
