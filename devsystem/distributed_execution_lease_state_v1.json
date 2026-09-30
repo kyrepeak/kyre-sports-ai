@@ -13,10 +13,10 @@
     "lease_id": "LEASE-E932AF98655CC39A75492EBE",
     "generation": 8,
     "acquired_at_utc": "2026-09-30T20:31:12Z",
-    "heartbeat_at_utc": "2026-09-30T20:58:00Z",
-    "expires_at_utc": "2026-09-30T21:58:00Z",
+    "heartbeat_at_utc": "2026-09-30T20:59:00Z",
+    "expires_at_utc": "2026-09-30T21:59:00Z",
     "main_sha": "26d19c09f57c3873fa7261642b77138e98e8165e",
     "head_sha": "f6a54a643eaf729c54478fec2935fc38f0e6a4f3"
   },
-  "state_hash": "6def5477816acc2ca5c9245b4920bbfd034c478b79cb64a9fa0111e93aedd6c7"
+  "state_hash": "e0ee9866892cc10967233e626689828dba77f6aa2ca8cdea5f6d1504fd6c4a9a"
 }
