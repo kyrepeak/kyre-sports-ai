@@ -6,6 +6,7 @@ on:
       - mlb-step17b-shared-host-cert
     paths:
       - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/wnba_pra_speed_v3_step3_espn_history.py"
       - "sports_api/main.py"
       - "tests/test_wnba_pra_speed_v3_step3_render_bridge.py"
       - ".github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml"
@@ -14,6 +15,7 @@ on:
       - mlb-step17b-shared-host-cert
     paths:
       - "sports_api/api/wnba_pra_detail_bundle.py"
+      - "sports_api/wnba_pra_speed_v3_step3_espn_history.py"
       - "sports_api/main.py"
       - "tests/test_wnba_pra_speed_v3_step3_render_bridge.py"
       - ".github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml"
@@ -28,7 +30,7 @@ concurrency:
 env:
   RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
   RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
-  ROLLBACK_SHA: c62c17b74704101bd5ddf05f32476d9fe4e14126
+  ROLLBACK_SHA: b46fc10739f04297e90aa2edf73780a246e8a209
 
 jobs:
   render-bridge-contract:
@@ -72,10 +74,20 @@ jobs:
           EOF
           sort -o /tmp/revision_repair.txt /tmp/revision_repair.txt
 
+          cat > /tmp/espn_history_bridge.txt <<'EOF'
+          .github/workflows/wnba-pra-speed-v3-step3-render-bridge.yml
+          sports_api/api/wnba_pra_detail_bundle.py
+          sports_api/wnba_pra_speed_v3_step3_espn_history.py
+          tests/test_wnba_pra_speed_v3_step3_render_bridge.py
+          EOF
+          sort -o /tmp/espn_history_bridge.txt /tmp/espn_history_bridge.txt
+
           if diff -q /tmp/full_bridge.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_SCOPE_GREEN"
           elif diff -q /tmp/revision_repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP3_SHARED_HOST_REVISION_SCOPE_GREEN"
+          elif diff -q /tmp/espn_history_bridge.txt /tmp/actual.txt >/dev/null; then
+            echo "WNBA_PRA_SPEED_V3_STEP3_ESPN_HISTORY_BRIDGE_SCOPE_GREEN"
           else
             echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_SCOPE_RED"
             diff -u /tmp/revision_repair.txt /tmp/actual.txt || true
@@ -86,10 +98,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object sports_api/api/wnba_pra_detail_bundle.py)" = "2f2365f026a59ab016a893fea27e029418018f87"
+          test "$(git hash-object sports_api/api/wnba_pra_detail_bundle.py)" = "b5591cfcd09f9ed7910b795bb568efc9f4633a97"
           grep -F 'from sports_api.api.wnba_pra_detail_bundle import router as wnba_pra_detail_bundle_router' sports_api/main.py
           grep -F 'app.include_router(wnba_pra_detail_bundle_router)' sports_api/main.py
-          python -m py_compile sports_api/api/wnba_pra_detail_bundle.py sports_api/main.py
+          python -m py_compile sports_api/api/wnba_pra_detail_bundle.py sports_api/wnba_pra_speed_v3_step3_espn_history.py sports_api/main.py
+          grep -F 'get_step3_espn_player_game_log_dataset' sports_api/api/wnba_pra_detail_bundle.py
+          echo "WNBA_PRA_SPEED_V3_STEP3_ESPN_HISTORY_BRIDGE_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_BRIDGE_GREEN"
 
   deploy-render:
@@ -108,9 +122,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object sports_api/api/wnba_pra_detail_bundle.py)" = "2f2365f026a59ab016a893fea27e029418018f87"
+          test "$(git hash-object sports_api/api/wnba_pra_detail_bundle.py)" = "b5591cfcd09f9ed7910b795bb568efc9f4633a97"
           grep -F 'app.include_router(wnba_pra_detail_bundle_router)' sports_api/main.py
           python -m py_compile sports_api/api/wnba_pra_detail_bundle.py sports_api/main.py
+          grep -F 'get_step3_espn_player_game_log_dataset' sports_api/api/wnba_pra_detail_bundle.py
+          echo "WNBA_PRA_SPEED_V3_STEP3_ESPN_HISTORY_PREDEPLOY_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP3_RENDER_PREDEPLOY_GREEN"
 
       - name: Deploy exact release-branch SHA to Render

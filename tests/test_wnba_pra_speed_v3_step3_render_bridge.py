@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ROUTE = ROOT / "sports_api" / "api" / "wnba_pra_detail_bundle.py"
 MAIN = ROOT / "sports_api" / "main.py"
+ESPN_HISTORY = ROOT / "sports_api" / "wnba_pra_speed_v3_step3_espn_history.py"
 
 
 def test_render_bridge_uses_exact_step3_route_contract():
@@ -10,9 +11,10 @@ def test_render_bridge_uses_exact_step3_route_contract():
     assert '@router.get("/players/{player_id}/pra-detail")' in source
     assert '"streamlit_hosted_reads_required": 1' in source
     assert "build_step18a_consumer_latest" in source
-    assert "get_player_game_log_dataset" in source
+    assert "get_step3_espn_player_game_log_dataset" in source
     assert '"projection_run": False' in source
     assert '"sportsbook_network_called": False' in source
+    assert ESPN_HISTORY.exists()
 
 
 def test_render_host_registers_only_step3_route_seam():
