@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step3-evidence-truth-ledger-v1",
+  "title": "MONSTER V3 Step 3 — Evidence Graph / Truth Ledger",
+  "project": "MONSTER V3",
+  "step": "3/8",
+  "status": "DONE",
+  "scope": "Control-plane-only evidence identity layer over the existing action ledger, checkpoint ledger, Persistent Execution Brain, and Automatic Loop Kill. Bind checkpoint/contract/workflow-run/job/commit/deployment/proof/freeze identities, classify stale evidence automatically, preserve historical proof without treating it as current, and fail closed when stale evidence attempts to freeze a checkpoint.",
+  "protected": {
+    "step1_persistent_brain_frozen": true,
+    "step2_loop_kill_frozen": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "projection_math_unchanged": true,
+    "sportsbook_logic_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "production_configuration_unchanged": true
+  },
+  "acceptance": {
+    "exact_run_job_commit_identity": true,
+    "machine_readable_graph": true,
+    "stale_head_detection": true,
+    "stale_main_detection": true,
+    "stale_deployment_detection": true,
+    "historical_evidence_preserved": true,
+    "stale_freeze_rejected": true,
+    "truth_fingerprint_tamper_guard": true,
+    "permanent_gate_wiring": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "evidence_epoch_recovery": {
+    "stale_certified_head": "05dc1fc884353896a5143a978b76a385568a824c",
+    "empty_head": "aebbd07844caa9c2e9f9d97b0e30be1201263125",
+    "empty_head_file_changes": 0,
+    "empty_head_checks": 0,
+    "classification": "F_STALE_EVIDENCE",
+    "policy": "Do not reuse prior-head proof. Advance with one real control-plane metadata change and require exact-head DevSystem certification.",
+    "product_runtime_changed": false
+  }
+}
