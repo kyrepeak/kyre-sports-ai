@@ -2,8 +2,9 @@
 
 This layer changes render order only. It emits a lightweight Player identity +
 projected PRA shell from the already-selected Game Center snapshot before the
-frozen Step-7 Player loader begins. Once the frozen loader returns, the shell is
-removed and the existing frozen Player page renders unchanged.
+frozen Step-7 Player loader begins. The shell stays alive through the server
+run and is hidden only when the final Step-8 result marker exists, preventing
+same-run Streamlit placeholder collapse while preserving the final Player UI.
 
 No model, projection, market, ranking, qualification, Monte Carlo, sportsbook,
 provider, or frozen Step-1-through-Step-7 behavior is modified.
@@ -33,6 +34,9 @@ VISIBLE_FIRST_CONTRACT = {
     "shell_render_phase": "router_entry_before_frozen_parent",
     "loader_wrapper_renders_shell": False,
     "shell_is_temporary": True,
+    "shell_lifetime": "until_final_result_marker",
+    "server_side_clear": False,
+    "final_marker_css_handoff": True,
     "final_renderer_unchanged": True,
     "frozen_speed_v3_steps_1_7_modified": False,
     "network_calls_added": 0,
@@ -186,21 +190,25 @@ def load_player_intelligence_visible_first(
         _record(
             loader_ms=(perf_counter() - loader_started) * 1000.0,
             loader_error=type(exc).__name__,
+            shell_retained_through_final=shell_slot is not None,
         )
         raise
-    finally:
-        if shell_slot is not None:
-            shell_slot.empty()
 
     _record(
         loader_ms=(perf_counter() - loader_started) * 1000.0,
         loader_error="",
-        shell_removed_before_final_renderer=shell_slot is not None,
+        shell_removed_before_final_renderer=False,
+        shell_retained_through_final=shell_slot is not None,
     )
     return payload
 
 def _render_deployment_marker(state: navigation.NavigationState) -> None:
     st.markdown(
+        '<style>'
+        'body:has([data-wnba-pra-speed-v3-step8-result="true"]) '
+        '[data-wnba-pra-speed-v3-step8-shell="visible"]'
+        '{display:none!important;}'
+        '</style>'
         '<span data-wnba-pra-speed-v3-step8="visible-first" '
         'data-active="true" '
         'data-loader-wrapper="true" '
@@ -219,6 +227,7 @@ def _render_result_marker(state: navigation.NavigationState) -> None:
         f'data-shell-emitted="{str(bool(perf.get("shell_emitted"))).lower()}" '
         f'data-shell-before-loader="{str(bool(perf.get("shell_before_loader"))).lower()}" '
         f'data-shell-removed-before-final="{str(bool(perf.get("shell_removed_before_final_renderer"))).lower()}" '
+        f'data-shell-retained-through-final="{str(bool(perf.get("shell_retained_through_final"))).lower()}" '
         f'data-shell-emit-ms="{float(perf.get("shell_emit_ms") or 0.0):.3f}" '
         f'data-loader-ms="{float(perf.get("loader_ms") or 0.0):.3f}" '
         'style="display:none" aria-hidden="true"></span>',
