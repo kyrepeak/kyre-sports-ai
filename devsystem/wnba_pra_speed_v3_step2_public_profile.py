@@ -30,7 +30,7 @@ from devsystem.wnba_pra_speed_v3_step1_public_profile import (
 )
 
 STEP2_SELECTOR = '[data-wnba-pra-speed-v3-step2="pooled-http"]'
-DEPLOYMENT_WAIT_SECONDS = 180.0
+DEPLOYMENT_WAIT_SECONDS = 600.0
 STEP1_HISTORY_BASELINE_MS = 5135.015
 STEP1_PLAYER_READY_BASELINE_SECONDS = 5.629
 MAX_HISTORY_READ_MS = 5500.0
