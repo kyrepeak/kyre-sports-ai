@@ -56,7 +56,9 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          scope_base="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          echo "WNBA_PRA_SPEED_V3_STEP5_SCOPE_BASE=$scope_base"
+          git diff --name-only "$scope_base" "$HEAD_SHA" | sort > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
           .github/workflows/devsystem-targeted-ci.yml
           .github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml
