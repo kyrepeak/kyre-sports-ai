@@ -27,6 +27,7 @@ from sports_api.wnba_league import get_wnba_teams
 
 WNBA_LEAGUE_ID = "10"
 WNBA_STATS_BASE_URL = "https://stats.wnba.com/stats"
+WNBA_CURRENT_STATS_BASE_URL = "https://stats.nba.com/stats"
 WNBA_HISTORY_SOURCE = "WNBA Stats API"
 WNBA_HISTORY_SOURCE_URL = "https://stats.wnba.com/"
 
@@ -174,8 +175,14 @@ def _normalize_season_type(season_type: str) -> str:
     return resolved
 
 
-def _cache_key(endpoint: str, params: Iterable[tuple[str, Any]]) -> tuple[Any, ...]:
+def _cache_key(
+    endpoint: str,
+    params: Iterable[tuple[str, Any]],
+    *,
+    base_url: str | None = None,
+) -> tuple[Any, ...]:
     return (
+        (base_url or WNBA_STATS_BASE_URL).rstrip("/"),
         endpoint,
         tuple((str(key), str(value)) for key, value in params),
     )
@@ -184,8 +191,11 @@ def _cache_key(endpoint: str, params: Iterable[tuple[str, Any]]) -> tuple[Any, .
 def _request_stats_json(
     endpoint: str,
     params: list[tuple[str, Any]],
+    *,
+    base_url: str | None = None,
 ) -> tuple[dict[str, Any], str, bool, int]:
-    key = _cache_key(endpoint, params)
+    resolved_base_url = (base_url or WNBA_STATS_BASE_URL).rstrip("/")
+    key = _cache_key(endpoint, params, base_url=resolved_base_url)
     ttl_seconds = _CACHE_TTL_BY_ENDPOINT.get(endpoint, 60)
     now = monotonic()
 
@@ -201,7 +211,7 @@ def _request_stats_json(
         if cached:
             _CACHE.pop(key, None)
 
-    url = f"{WNBA_STATS_BASE_URL}/{endpoint}"
+    url = f"{resolved_base_url}/{endpoint}"
 
     try:
         response = httpx.get(
@@ -660,6 +670,7 @@ def get_player_game_log_dataset(
     season: int,
     *,
     season_type: str = "Regular Season",
+    stats_base_url: str | None = None,
 ) -> dict[str, Any]:
     get_wnba_teams(season)
 
@@ -676,10 +687,17 @@ def get_player_game_log_dataset(
         ("DateFrom", ""),
         ("DateTo", ""),
     ]
-    payload, retrieved_at_utc, cache_hit, cache_ttl_seconds = _request_stats_json(
-        PLAYER_GAME_LOG_ENDPOINT,
-        params,
-    )
+    if stats_base_url is None:
+        payload, retrieved_at_utc, cache_hit, cache_ttl_seconds = _request_stats_json(
+            PLAYER_GAME_LOG_ENDPOINT,
+            params,
+        )
+    else:
+        payload, retrieved_at_utc, cache_hit, cache_ttl_seconds = _request_stats_json(
+            PLAYER_GAME_LOG_ENDPOINT,
+            params,
+            base_url=stats_base_url,
+        )
     rows = _result_rows(payload, "PlayerGameLog")
 
     games = [_normalize_game_log_row(row, season) for row in rows]
