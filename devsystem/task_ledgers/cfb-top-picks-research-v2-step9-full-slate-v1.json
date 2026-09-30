@@ -72,21 +72,31 @@
     "api2_changed": false,
     "rerun_of_failed_sha": false
   },
-  "post_merge_repair": {
-    "failed_merge_sha": "3afe0e1a0159bc296e4f9b0917c08c9f08cbb9f1",
-    "failed_run": 36683463225,
-    "failed_job": 109784069127,
-    "failure_class": "A_TEST_SOURCE_SYNTAX_CONTROL_PLANE",
-    "exact_failure": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py line 55 contained literal \\\\n sequences and failed pytest collection with SyntaxError.",
-    "root_cause": "A prior source-text replacement wrote escaped newline characters into the Step-9 wrapper test and also retained stale alias names.",
-    "patch": "Rewrite only test_step9_wraps_frozen_step8 with real line breaks and the certified current_parent/cfb_step8_parent router aliases.",
-    "product_code_changed": false,
-    "step9_runtime_changed": false,
+  "syntax_repair_evidence": {
+    "failed_merged_main_run": 36683463225,
+    "failed_repair_pr_run": 36683830319,
+    "root_cause": "Step-9 test source contained two literal \\\\n sequences, causing pytest collection SyntaxError. The first repair fixed the syntax but the repair PR omitted a changed task ledger, so the V2 action-ledger gate correctly rejected it.",
+    "patch": "Keep the two real Python newline fixes and update exactly this one Step-9 task ledger so the non-documentation repair PR satisfies the V2 action-ledger contract.",
+    "changed_runtime_files": 0,
+    "changed_test_files": 1,
+    "changed_task_ledgers": 1,
+    "action_log_chain_modified": false,
     "steps1_8_changed": false,
-    "wnba_changed": false,
     "api2_changed": false,
     "probability_changed": false,
     "ranking_changed": false,
-    "selection_changed": false
+    "selection_changed": false,
+    "alias_assertion_repair": {
+      "prior_alias": "prior",
+      "prior_step8_alias": "step8_router",
+      "current_parent_alias": "current_parent",
+      "current_step8_alias": "cfb_step8_parent",
+      "required_nested_override": "cfb_step8_parent.TOP_PICKS_PAGE = TOP_PICKS_PAGE",
+      "failure_prevented": "post-syntax collection assertion mismatch",
+      "product_logic_changed": false,
+      "steps1_8_changed": false,
+      "api2_changed": false
+    },
+    "base_sync_main": "931f6b4cc7e2c5470912ebd9e8aea310654e98fc"
   }
 }

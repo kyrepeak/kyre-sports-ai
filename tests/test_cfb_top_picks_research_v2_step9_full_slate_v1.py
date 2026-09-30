@@ -55,4 +55,5 @@ def test_step9_wraps_frozen_step8():
     router_text = Path("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py").read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 as current_parent" in router_text
     assert "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as cfb_step8_parent" in router_text
+
     assert "cfb_step8_parent.TOP_PICKS_PAGE = TOP_PICKS_PAGE" in router_text
