@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step7-project-blast-radius-map-v1",
+  "title": "MONSTER V3 Step 7 — Project Dependency / Blast-Radius Map",
+  "project": "MONSTER V3",
+  "step": 7,
+  "status": "DONE",
+  "scope": "Pre-edit, read-only blast-radius planner over the proven Monster Dependency Map plus Step-6 Adaptive Proof Engine. Aggregates transitive dependents, production entrypoints, protected/frozen reach, risk, stale-head truth, and fail-safe proof obligations before any mutation.",
+  "protected": {
+    "steps1_6_frozen": true,
+    "existing_dependency_map_reused": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "entrypoint_blast_radius_visible": true,
+    "protected_reach_visible": true,
+    "unknown_surface_fail_safe": true,
+    "stale_head_replan": true,
+    "adaptive_proof_bound": true,
+    "pre_edit_only": true,
+    "permanent_contract_pending": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_PERMANENT_WIRING_AND_PROOF"
+}
