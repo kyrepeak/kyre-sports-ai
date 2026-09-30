@@ -365,9 +365,6 @@ def validate_truth_ledger(ledger: Mapping[str, Any]) -> dict[str, Any]:
     supplied_truth_id = str(value.pop("truth_id", ""))
     if not supplied_truth_id:
         raise EvidenceTruthFailure("truth ledger requires truth_id")
-    expected_truth_id = _fingerprint(value)
-    if supplied_truth_id != expected_truth_id:
-        raise EvidenceTruthFailure("truth ledger fingerprint mismatch")
     if value.get("version") != VERSION:
         raise EvidenceTruthFailure("unsupported truth ledger version")
 
@@ -402,6 +399,10 @@ def validate_truth_ledger(ledger: Mapping[str, Any]) -> dict[str, Any]:
             raise EvidenceTruthFailure("dangling graph edge")
         if not str(edge.get("relation") or ""):
             raise EvidenceTruthFailure("graph edge requires relation")
+
+    expected_truth_id = _fingerprint(value)
+    if supplied_truth_id != expected_truth_id:
+        raise EvidenceTruthFailure("truth ledger fingerprint mismatch")
 
     current = 0
     stale = 0
