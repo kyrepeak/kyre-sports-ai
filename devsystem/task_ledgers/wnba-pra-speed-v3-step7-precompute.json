@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step7-precompute",
   "title": "WNBA PRA Speed V3 Step 7 — Active-player bundle precompute",
   "project": "WNBA PRA Speed V3",
-  "phase": "PRODUCTION_DEPLOYMENT_REFRESH_BRANCH_PROOF",
+  "phase": "PRODUCTION_FULL_REDEPLOY_BRANCH_PROOF",
   "step": 7,
   "total_steps": 9,
   "status": "DONE",
@@ -62,20 +62,21 @@
     ]
   },
   "production_freeze": {
-    "status": "PENDING_DEPLOYMENT_REFRESH_PROOF",
-    "failed_run": 36776979632,
-    "failed_job": 110097243720,
+    "status": "PENDING_FULL_REDEPLOY_PROOF",
+    "failed_run": 36782208112,
+    "failed_job": 110114963637,
     "failure_owner": "DEPLOYMENT",
-    "failure_class": "STREAMLIT_STALE_IMPORTED_STEP7_MODULE",
+    "failure_class": "STREAMLIT_APP_HEARTBEAT_DID_NOT_REPLACE_STEP7_PROCESS",
     "evidence": [
-      "Current main contains the Step-7 invalid-bundle retry marker and active Step-7 router import.",
-      "PR #1264 changed the Step-7 imported runtime/verifier/test/ledger/workflow but did not touch app.py or requirements.txt.",
-      "No relevant Step-7 runtime/app/requirements files changed after PR #1264 before classification.",
-      "Merged-main public proof waited 600 seconds and repeatedly reached the public WNBA slate while the Step-7 invalid-bundle-retry marker remained absent."
+      "PR #1266 merged an inert app.py Step-7 deployment heartbeat on main SHA 5abef0cc9d92332017ad4debdf86a0ecf162c9ee.",
+      "Merged-main DevSystem, browser QA, WNBA critical, full-merge certification, final gate, and terminal receipt all passed.",
+      "The public Step-7 verifier repeatedly reached the WNBA slate and the base WNBA navigation deployment marker.",
+      "After the full 600-second production window, the Step-7 invalid-bundle-retry marker was still absent."
     ],
-    "root_cause": "Streamlit Community Cloud kept the older imported Step-7 module loaded because the repair was imported-module-only and did not change the app entrypoint.",
-    "patch": "Add one inert app.py deployment heartbeat constant to force Streamlit process replacement. Do not change routing, model, data, market, ranking, qualification, Monte Carlo, sportsbook, or Step-1-through-Step-6 behavior.",
-    "deployment_refresh_marker": "WNBA_PRA_SPEED_V3_STEP7_PUBLIC_DEPLOY_REFRESH_2026_09_30_R1",
+    "root_cause": "The app.py heartbeat did not force Streamlit Community Cloud to rebuild/restart the environment strongly enough to replace the stale imported Step-7 process.",
+    "patch": "Append one comment-only Step-7 full-redeploy marker to requirements.txt, preserving every dependency version and all product/runtime behavior.",
+    "full_redeploy_marker": "# WNBA PRA Speed V3 Step 7 full Streamlit redeploy trigger 2026-09-30 R1",
+    "dependency_versions_changed": false,
     "product_semantics_changed": false,
     "threshold_changed": false,
     "frozen_steps_1_6_changed": false,
@@ -97,9 +98,11 @@
     "foreground_headroom_patch_count": 1,
     "active_pra_scope_patch_count": 1,
     "invalid_bundle_retry_max": 1,
-    "authoritative_failed_run": 36776979632,
+    "authoritative_failed_run": 36782208112,
     "failure_owner": "DEPLOYMENT",
-    "next_legal_action": "ONE_EXACT_HEAD_DEPLOYMENT_REFRESH_PROOF"
+    "next_legal_action": "ONE_EXACT_HEAD_FULL_REDEPLOY_PROOF",
+    "authoritative_failed_job": 110114963637,
+    "full_redeploy_patch_count": 1
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -109,17 +112,33 @@
   "transition_history": [],
   "override_events": [],
   "regression_debt": {
-    "failure_id": "wnba-pra-speed-v3-step7-deployment-stale-import-36776979632",
+    "failure_id": "wnba-pra-speed-v3-step7-full-redeploy-36782208112",
     "owner": "DEPLOYMENT",
     "state": "CLEARED",
     "permanent_guards": [
       {
         "kind": "TEST",
         "path": "tests/test_wnba_pra_speed_v3_step7.py",
-        "test": "test_step7_deployment_refresh_heartbeat_is_permanent",
+        "test": "test_step7_full_redeploy_heartbeat_is_permanent",
         "permanent": true
       }
     ],
     "open_debt_count": 0
-  }
+  },
+  "regression_debt_history": [
+    {
+      "failure_id": "wnba-pra-speed-v3-step7-deployment-stale-import-36776979632",
+      "owner": "DEPLOYMENT",
+      "state": "CLEARED",
+      "permanent_guards": [
+        {
+          "kind": "TEST",
+          "path": "tests/test_wnba_pra_speed_v3_step7.py",
+          "test": "test_step7_deployment_refresh_heartbeat_is_permanent",
+          "permanent": true
+        }
+      ],
+      "open_debt_count": 0
+    }
+  ]
 }
