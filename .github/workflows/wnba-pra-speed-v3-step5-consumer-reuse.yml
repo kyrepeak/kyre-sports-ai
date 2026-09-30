@@ -156,6 +156,10 @@ jobs:
           grep -F 'def _wait_marker_state(' devsystem/wnba_pra_speed_v3_step5_public_profile.py
           grep -F 'MARKER_STATE_WAIT_SECONDS = 10.0' devsystem/wnba_pra_speed_v3_step5_public_profile.py
           echo "WNBA_PRA_SPEED_V3_STEP5_MARKER_SYNC_CONTRACT_GREEN"
+          grep -F 'def _wait_page_resilient(' devsystem/wnba_pra_speed_v3_step5_public_profile.py
+          grep -F 'TRANSITION_RETRY_SLEEP_MS = 1500' devsystem/wnba_pra_speed_v3_step5_public_profile.py
+          grep -F 'could not find rendered streamlit app frame' devsystem/wnba_pra_speed_v3_step5_public_profile.py
+          echo "WNBA_PRA_SPEED_V3_STEP5_TRANSITION_WAIT_CONTRACT_GREEN"
           grep -F 'from streamlit_memory_lazy_router_wnba_pra_speed_v3_step5 import record_bootstrap_import_ms, render_app' app.py
           echo "WNBA_PRA_SPEED_V3_STEP5_CONSUMER_REUSE_CONTRACT_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP5_BRANCH_GREEN"
