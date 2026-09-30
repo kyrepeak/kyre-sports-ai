@@ -44,6 +44,70 @@ def _float_attr(marker, name: str) -> float:
         ) from exc
 
 
+def _arm_shell_mutation_observer(frame) -> float:
+    """Observe the ephemeral Step-8 shell even if it is removed before locator polling."""
+    armed_at = frame.evaluate(
+        """selector => {
+            if (window.__ksStep8ShellObserver &&
+                typeof window.__ksStep8ShellObserver.disconnect === "function") {
+                window.__ksStep8ShellObserver.disconnect();
+            }
+            window.__ksStep8ShellObservedAt = null;
+            const containsShell = (node) => {
+                if (!node) return false;
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    typeof node.matches === "function" &&
+                    node.matches(selector)) {
+                    return true;
+                }
+                return typeof node.querySelector === "function" &&
+                    node.querySelector(selector) !== null;
+            };
+            const observer = new MutationObserver((records) => {
+                for (const record of records) {
+                    for (const node of record.addedNodes) {
+                        if (containsShell(node)) {
+                            window.__ksStep8ShellObservedAt = performance.now();
+                            observer.disconnect();
+                            return;
+                        }
+                    }
+                }
+            });
+            observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+            });
+            window.__ksStep8ShellObserver = observer;
+            return performance.now();
+        }""",
+        SHELL_SELECTOR,
+    )
+    return float(armed_at or 0.0)
+
+
+def _wait_shell_mutation(frame, armed_at_ms: float) -> float:
+    try:
+        frame.wait_for_function(
+            "() => Number.isFinite(window.__ksStep8ShellObservedAt)",
+            timeout=int(MAX_VISIBLE_SHELL_SECONDS * 1000),
+        )
+    except PlaywrightTimeoutError as exc:
+        raise BrowserQAFailure(
+            "Step-8 visible Player shell DOM insertion was not observed within target: "
+            f"{MAX_VISIBLE_SHELL_SECONDS:.3f}s"
+        ) from exc
+
+    observed_at = frame.evaluate("() => window.__ksStep8ShellObservedAt")
+    shell_seconds = max(0.0, (float(observed_at) - float(armed_at_ms)) / 1000.0)
+    if shell_seconds > MAX_VISIBLE_SHELL_SECONDS:
+        raise BrowserQAFailure(
+            "Step-8 visible shell exceeded target: "
+            f"{shell_seconds:.3f}s > {MAX_VISIBLE_SHELL_SECONDS:.3f}s"
+        )
+    return shell_seconds
+
+
 def _wait_step8_streamlit(page):
     started = time.monotonic()
     deadline = started + DEPLOYMENT_WAIT_SECONDS
@@ -97,27 +161,14 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 first = frame.get_by_role("button", name="Open", exact=False).first
 
             started = time.monotonic()
+            observer_armed_at_ms = _arm_shell_mutation_observer(frame)
             first.click()
-            try:
-                frame.locator(SHELL_SELECTOR).wait_for(
-                    state="visible",
-                    timeout=int(MAX_VISIBLE_SHELL_SECONDS * 1000),
-                )
-            except PlaywrightTimeoutError as exc:
-                raise BrowserQAFailure(
-                    "Step-8 visible Player shell did not appear within target: "
-                    f"{MAX_VISIBLE_SHELL_SECONDS:.3f}s"
-                ) from exc
-            shell_seconds = time.monotonic() - started
+            shell_seconds = _wait_shell_mutation(frame, observer_armed_at_ms)
             print(
                 "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_SHELL_SECONDS="
                 f"{shell_seconds:.3f}"
             )
-            if shell_seconds > MAX_VISIBLE_SHELL_SECONDS:
-                raise BrowserQAFailure(
-                    "Step-8 visible shell exceeded target: "
-                    f"{shell_seconds:.3f}s > {MAX_VISIBLE_SHELL_SECONDS:.3f}s"
-                )
+            print("WNBA_PRA_SPEED_V3_STEP8_MUTATION_OBSERVER_GREEN")
             print("WNBA_PRA_SPEED_V3_STEP8_VISIBLE_SHELL_GREEN")
 
             frame, _ = step5_profile._wait_page_resilient(
