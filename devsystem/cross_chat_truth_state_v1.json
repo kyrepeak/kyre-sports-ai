@@ -4,31 +4,31 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 16,
+  "truth_epoch": 17,
   "program_id": "MONSTER_V4",
   "program_title": "MONSTER V4",
   "current_step": 5,
   "total_steps": 6,
   "step_title": "Terminal Proof Receipt",
-  "step_status": "ACTIVE",
+  "step_status": "FROZEN",
   "active_checkpoint": "MONSTER_V4_STEP5",
-  "main_sha": "26d19c09f57c3873fa7261642b77138e98e8165e",
-  "active_pr": 1255,
-  "active_run": 36775979955,
-  "active_head_sha": "f6a54a643eaf729c54478fec2935fc38f0e6a4f3",
+  "main_sha": "3cec1d840bfd123a13df0250eb716758e2f610e4",
+  "active_pr": null,
+  "active_run": null,
+  "active_head_sha": "3cec1d840bfd123a13df0250eb716758e2f610e4",
   "blocker": null,
-  "next_legal_action": "WAIT_FOR_AUTO_UPDATED_AUTHORITATIVE_RUN_36775979955_TERMINAL_RECEIPT_AND_AUTO_MERGE",
+  "next_legal_action": "START_MONSTER_V4_STEP6",
   "lease": {
-    "revision": 29,
+    "revision": 30,
     "generation": 8,
-    "state_hash": "e0ee9866892cc10967233e626689828dba77f6aa2ca8cdea5f6d1504fd6c4a9a",
-    "holder_owner_id": "chatgpt:monster-v4-step5",
-    "holder_lease_id": "LEASE-E932AF98655CC39A75492EBE"
+    "state_hash": "7210df5cc431cad73a9588cc87178ecaaf741e7488fd9deb199675de21df63f4",
+    "holder_owner_id": null,
+    "holder_lease_id": null
   },
   "frozen_registry": {
-    "revision": 3,
-    "state_hash": "7b3451af1942f18592701f721a10a8962596ec13c1628cb0965fb3605cdf771e",
-    "checkpoint_count": 18,
+    "revision": 5,
+    "state_hash": "09578aaf21a3d2cbc252f4882ec7abc2d150d66d97df61e3ca5c19096a7d717d",
+    "checkpoint_count": 19,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
@@ -49,7 +49,8 @@
     "MONSTER_V4_STEP1",
     "MONSTER_V4_STEP2",
     "MONSTER_V4_STEP3",
-    "MONSTER_V4_STEP4"
+    "MONSTER_V4_STEP4",
+    "MONSTER_V4_STEP5"
   ],
-  "state_hash": "68a81bca50d8ea961e5b01b3e875c2dd21ef1059590b690730a1ebef7219407a"
+  "state_hash": "8598fe4496d88a239a350c81dc2a04df28f51ae8b483e5c2228b9c6ed0d5787c"
 }
