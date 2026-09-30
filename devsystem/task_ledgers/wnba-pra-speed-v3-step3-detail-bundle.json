@@ -129,5 +129,28 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "production_freeze_closeout": {
+    "status": "PENDING_MERGED_MAIN_PUBLIC_PROOF",
+    "trigger_type": "certification_only",
+    "product_runtime_changed": false,
+    "verifier_changed": false,
+    "live_render_service": "kyre-sports-api",
+    "render_service_id": "srv-da84q6ifngtc73bdbm6g",
+    "render_auto_deploy": "off",
+    "live_render_deploy_id": "dep-dau83uhsrm7s73b62lkg",
+    "live_render_commit": "50e5110e35f417d315cd6e71bdd98c6a0c7cec80",
+    "live_render_status": "live",
+    "prior_failed_deploy_id": "dep-dau81umk1f9s73ao9brg",
+    "prior_failed_deploy_status": "update_failed",
+    "deployment_owner": "DEPLOYMENT",
+    "two_a_decision": "Do not redeploy or replay stale proof; material deployment state is already LIVE, so use one certification-only merged-main proof trigger.",
+    "required_final_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP3_API_BUNDLE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_ONE_READ_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP3_FROZEN"
+    ]
   }
 }
