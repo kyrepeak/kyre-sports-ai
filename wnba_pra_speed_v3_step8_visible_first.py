@@ -37,6 +37,10 @@ VISIBLE_FIRST_CONTRACT = {
     "shell_lifetime": "until_final_result_marker",
     "server_side_clear": False,
     "final_marker_css_handoff": True,
+    "client_first_paint": True,
+    "client_preview_source": "game_center_player_snapshot",
+    "client_preview_network_calls": 0,
+    "client_preview_trigger": "native_button_focus_or_active",
     "final_renderer_unchanged": True,
     "frozen_speed_v3_steps_1_7_modified": False,
     "network_calls_added": 0,
@@ -62,16 +66,13 @@ def _record(**values: Any) -> None:
     st.session_state[SESSION_PERF] = current
 
 
-def _visible_shell_markup(game_id: str, player_id: int) -> str:
-    player = player_intelligence._selected_player()
-    game = player_intelligence._selected_game()
-    if not player or not game:
-        return ""
-    if player_intelligence._int(player.get("player_id")) != int(player_id):
-        return ""
-    if player_intelligence._text(game.get("game_id")) != str(game_id):
-        return ""
-
+def _shell_markup(
+    player: Mapping[str, Any],
+    game: Mapping[str, Any],
+    player_id: int,
+    *,
+    client_preview: bool,
+) -> str:
     name = player_intelligence._text(player.get("player_name")) or f"Player {int(player_id)}"
     team_abbr = player_intelligence._text(player.get("team_abbreviation")) or "WNBA"
     role = player_intelligence._text(player.get("role_label")) or "ACTIVE"
@@ -108,14 +109,48 @@ def _visible_shell_markup(game_id: str, player_id: int) -> str:
         + player_intelligence._metric("PRA", player_intelligence._fmt(player.get("projected_pra")))
         + '</div>'
     )
+    preview_attrs = (
+        'data-shell-kind="client-preview" '
+        'data-wnba-pra-speed-v3-step8-client-preview="true" '
+        'data-visible-before-rerun="true" '
+        if client_preview
+        else 'data-shell-kind="server" data-wnba-pra-speed-v3-step8-client-preview="false" '
+    )
     return (
         '<div data-wnba-pra-speed-v3-step8-shell="visible" '
-        'data-visible-before-loader="true" '
-        f'data-player-id="{int(player_id)}">'
+        + preview_attrs
+        + 'data-visible-before-loader="true" '
+        + f'data-player-id="{int(player_id)}">'
         + hero
         + strip
         + '</div>'
     )
+
+
+def _visible_shell_markup(game_id: str, player_id: int) -> str:
+    player = player_intelligence._selected_player()
+    game = player_intelligence._selected_game()
+    if not player or not game:
+        return ""
+    if player_intelligence._int(player.get("player_id")) != int(player_id):
+        return ""
+    if player_intelligence._text(game.get("game_id")) != str(game_id):
+        return ""
+    return _shell_markup(player, game, int(player_id), client_preview=False)
+
+
+def render_player_click_preview(game_id: str, player: Mapping[str, Any]) -> bool:
+    """Pre-render one hidden Game Center preview for instant browser first paint."""
+    game = player_intelligence._selected_game()
+    player_id = player_intelligence._int(player.get("player_id"))
+    if not game or player_id is None:
+        return False
+    if player_intelligence._text(game.get("game_id")) != str(game_id):
+        return False
+
+    markup = _shell_markup(player, game, int(player_id), client_preview=True)
+    st.markdown(markup, unsafe_allow_html=True)
+    return True
 
 
 def render_visible_shell_early(state: navigation.NavigationState) -> Any:
@@ -205,9 +240,17 @@ def load_player_intelligence_visible_first(
 def _render_deployment_marker(state: navigation.NavigationState) -> None:
     st.markdown(
         '<style>'
-        'body:has([data-wnba-pra-speed-v3-step8-result="true"]) '
-        '[data-wnba-pra-speed-v3-step8-shell="visible"]'
+        'body:has([data-wnba-pra-speed-v3-step8-result="true"][data-page="player"]) '
+        '[data-wnba-pra-speed-v3-step8-shell="visible"][data-shell-kind="server"]'
         '{display:none!important;}'
+        '[data-wnba-pra-speed-v3-step8-client-preview="true"]'
+        '{display:none!important;margin:.35rem 0 .7rem;padding:.75rem;'
+        'border-radius:.85rem;}'
+        '[class*="st-key-ks_step8_preview_"]:has(button:focus) '
+        '[data-wnba-pra-speed-v3-step8-client-preview="true"],'
+        '[class*="st-key-ks_step8_preview_"]:has(button:active) '
+        '[data-wnba-pra-speed-v3-step8-client-preview="true"]'
+        '{display:block!important;}'
         '</style>'
         '<span data-wnba-pra-speed-v3-step8="visible-first" '
         'data-active="true" '
@@ -251,6 +294,7 @@ __all__ = [
     "SESSION_PERF",
     "VISIBLE_FIRST_CONTRACT",
     "load_player_intelligence_visible_first",
+    "render_player_click_preview",
     "render_visible_shell_early",
     "render_step8_route",
 ]
