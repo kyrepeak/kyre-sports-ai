@@ -13,10 +13,10 @@
     "lease_id": "LEASE-WNBA-PRA-SPEED-V3-STEP8-G11",
     "generation": 11,
     "acquired_at_utc": "2026-09-30T22:15:49Z",
-    "heartbeat_at_utc": "2026-09-30T22:39:00Z",
-    "expires_at_utc": "2026-09-30T22:54:00Z",
+    "heartbeat_at_utc": "2026-09-30T22:40:00Z",
+    "expires_at_utc": "2026-09-30T22:55:00Z",
     "main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
-    "head_sha": "7ffb6c45123e20fcd45bc26cd525bf9b8b78486d"
+    "head_sha": "6d069afade5c4671c0335814e4522be8b24ae681"
   },
-  "state_hash": "82f1512bee2a6e6d83a6f4064d1218b8acba7c7ef1c4bb1a93daf47883a8ed4a"
+  "state_hash": "affd1d43b855d1d39afd83e86b54b64fa9db0d20d81153328ead72d498d008de"
 }
