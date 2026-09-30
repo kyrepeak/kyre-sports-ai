@@ -72,6 +72,8 @@ def main() -> int:
             raise AssertionError(f"STEP6_WEIGHT:{row['market']}")
         if result["may_modify_probability"] is not False or result["may_modify_ranking"] is not False or result["may_modify_selection"] is not False:
             raise AssertionError(f"STEP6_MUTATION_FIREWALL:{row['market']}")
+        if len(str(result.get("summary") or "").strip()) < 20:
+            raise AssertionError(f"STEP6_SUMMARY_TRUNCATED:{row['market']}:{result.get('summary')!r}")
         for key in required:
             signal = result["signals"][key]
             if signal["status"] not in reasoning.ALLOWED_SIGNAL_STATUSES:
