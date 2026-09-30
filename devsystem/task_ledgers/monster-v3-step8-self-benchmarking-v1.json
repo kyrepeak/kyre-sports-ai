@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "task_id": "monster-v3-step8-self-benchmarking-v1",
+  "title": "MONSTER V3 Step 8 — Monster Self-Benchmarking",
+  "project": "MONSTER V3",
+  "step": 8,
+  "status": "DONE",
+  "scope": "Read-only execution-quality benchmark for MONSTER itself. Tracks time-to-root-cause, time-to-GREEN/repair time, CI time, runs required, actions per step, reruns, reruns avoided, stale runs, stale proofs rejected, false failures, loops, loops prevented, production mismatches, GREEN rate, first-pass GREEN rate, first-patch success rate, and deterministic trend deltas. No overall vanity score and zero product/model influence.",
+  "protected": {
+    "steps1_7_inherited": true,
+    "product_runtime_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true,
+    "projection_weight": 0
+  },
+  "acceptance": {
+    "root_cause_time_tracked": true,
+    "repair_time_tracked": true,
+    "time_to_green_tracked": true,
+    "ci_time_tracked": true,
+    "runs_required_tracked": true,
+    "actions_per_step_tracked": true,
+    "reruns_tracked": true,
+    "reruns_avoided_tracked": true,
+    "stale_runs_tracked": true,
+    "stale_proofs_rejected_tracked": true,
+    "false_failures_tracked": true,
+    "loops_tracked": true,
+    "loops_prevented_tracked": true,
+    "production_mismatches_tracked": true,
+    "green_rate_tracked": true,
+    "first_pass_green_rate_tracked": true,
+    "first_patch_success_rate_tracked": true,
+    "trend_deltas_available": true,
+    "no_overall_vanity_score": true,
+    "permanent_contract_pending": false,
+    "permanent_contract_updated": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Freeze only after exact Step-8 PR-head DevSystem targeted CI + devsystem-final-gate GREEN, merge, then exact merged-main DevSystem targeted CI + devsystem-final-gate GREEN."
+}

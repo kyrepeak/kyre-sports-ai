@@ -46,6 +46,7 @@ def test_permanent_contract_is_green():
     assert result["deployment_truth_control_plane_v1_permanent"] is True
     assert result["adaptive_proof_engine_v1_permanent"] is True
     assert result["project_blast_radius_map_v1_permanent"] is True
+    assert result["monster_self_benchmark_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -171,6 +172,38 @@ def test_project_blast_radius_map_is_permanently_enforced():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "python devsystem/project_blast_radius_map_v1.py" in workflow
     assert "tests/test_devsystem_project_blast_radius_map_v1.py" in workflow
+
+
+def test_monster_self_benchmark_is_permanently_enforced():
+    benchmark = _load(
+        "monster_self_benchmark_v1",
+        "devsystem/monster_self_benchmark_v1.py",
+    )
+    result = benchmark.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["root_cause_time_tracked"] is True
+    assert result["time_to_green_tracked"] is True
+    assert result["runs_required_tracked"] is True
+    assert result["actions_per_step_tracked"] is True
+    assert result["reruns_avoided_tracked"] is True
+    assert result["stale_proofs_rejected_tracked"] is True
+    assert result["loops_prevented_tracked"] is True
+    assert result["production_mismatches_tracked"] is True
+    assert result["first_patch_success_rate_tracked"] is True
+    assert result["repair_time_tracked"] is True
+    assert result["ci_time_tracked"] is True
+    assert result["reruns_tracked"] is True
+    assert result["stale_runs_tracked"] is True
+    assert result["false_failures_tracked"] is True
+    assert result["loops_tracked"] is True
+    assert result["first_pass_green_rate_tracked"] is True
+    assert result["trend_deltas_available"] is True
+    assert result["no_overall_vanity_score"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/monster_self_benchmark_v1.py" in workflow
+    assert "tests/test_devsystem_monster_self_benchmark_v1.py" in workflow
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
