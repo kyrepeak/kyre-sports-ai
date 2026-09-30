@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step6-market-reasoning-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 6 market-aware football reasoning",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "6/9",
+  "status": "DONE",
+  "problem": "The Top Picks detail view had verified offense, defense, pace, and history evidence, but the explanation layer did not interpret that evidence differently for Moneyline, Spread, and Over/Under.",
+  "root_cause": "The frozen detail layer exposed generic model probability/reliability language and raw research blocks without a market-specific read-only synthesis contract.",
+  "patch": "Add a new wrapper-only market reasoning engine, detail wrapper, V6 page, and active-route wrapper. Preserve frozen Steps 1-5 byte-for-byte and keep all reasoning at 0.0% projection weight.",
+  "acceptance": {
+    "three_market_contracts": true,
+    "all_required_reasoning_keys_present": true,
+    "unsupported_evidence_not_invented": true,
+    "field_sources_preserved": true,
+    "probability_unchanged": true,
+    "ranking_unchanged": true,
+    "selection_unchanged": true,
+    "sportsbook_projection_weight": 0,
+    "market_reasoning_projection_weight": 0,
+    "api2_separate_and_protected": true,
+    "step2a_enforced": true
+  },
+  "protected": {
+    "steps1_5_owner_files_wrapped_not_modified": true,
+    "cfb_top_picks_engine_v1": true,
+    "cfb_top_picks_details_v1": true,
+    "cfb_top_picks_page_v5": true,
+    "streamlit_memory_lazy_router_v244": true,
+    "api2": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
