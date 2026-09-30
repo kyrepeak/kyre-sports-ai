@@ -1,0 +1,84 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step6-market-reasoning-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 6 market-aware football reasoning",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "6/9",
+  "status": "DONE",
+  "problem": "The Top Picks detail view had verified offense, defense, pace, and history evidence, but the explanation layer did not interpret that evidence differently for Moneyline, Spread, and Over/Under.",
+  "root_cause": "The frozen detail layer exposed generic model probability/reliability language and raw research blocks without a market-specific read-only synthesis contract.",
+  "patch": "Add a new wrapper-only market reasoning engine, detail wrapper, V6 page, and active-route wrapper. Preserve frozen Steps 1-5 byte-for-byte and keep all reasoning at 0.0% projection weight.",
+  "acceptance": {
+    "three_market_contracts": true,
+    "all_required_reasoning_keys_present": true,
+    "unsupported_evidence_not_invented": true,
+    "field_sources_preserved": true,
+    "probability_unchanged": true,
+    "ranking_unchanged": true,
+    "selection_unchanged": true,
+    "sportsbook_projection_weight": 0,
+    "market_reasoning_projection_weight": 0,
+    "api2_separate_and_protected": true,
+    "step2a_enforced": true
+  },
+  "protected": {
+    "steps1_5_owner_files_wrapped_not_modified": true,
+    "cfb_top_picks_engine_v1": true,
+    "cfb_top_picks_details_v1": true,
+    "cfb_top_picks_page_v5": true,
+    "streamlit_memory_lazy_router_v244": true,
+    "api2": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "control_plane_repair": {
+    "failure_class": "A_DETERMINISTIC_INTEGRATION_WIRING",
+    "failed_run": 36670583859,
+    "exact_failures": [
+      "app.py contained a literal \\\\n between the active router import and compatibility comment, causing SyntaxError",
+      "Step-6 certification was invoked as a file under devsystem/, so repository-root module cfb_top_picks_market_reasoning_v1 was not importable"
+    ],
+    "root_cause": "Two wiring mistakes in the initial Step-6 activation/proof path; the Step-6 market reasoning contract itself was already GREEN.",
+    "patch": "Replace the literal newline escape with a real newline and invoke the cert with python -m devsystem.cfb_top_picks_research_v2_step6_market_reasoning_cert_v1.",
+    "product_reasoning_logic_changed": false,
+    "steps1_5_changed": false,
+    "api2_changed": false,
+    "rerun_of_failed_sha": false
+  },
+  "dependency_light_lane_repair": {
+    "failure_class": "A_CI_LANE_DEPENDENCY_MISMATCH",
+    "failed_run": 36670931289,
+    "exact_failure": "/opt/hostedtoolcache/Python/3.12.14/x64/bin/python: No module named pytest",
+    "evidence": [
+      "Step-6 permanent contract GREEN",
+      "Step-6 three-market certification GREEN",
+      "Step-6 signal contract GREEN",
+      "Step-6 frozen certification GREEN",
+      "Steps 1-5 permanent contracts GREEN"
+    ],
+    "root_cause": "A pytest command was added to the intentionally dependency-light permanent-contract lane, which does not install pytest.",
+    "patch": "Remove pytest from the dependency-light lane and compile the four Step-6 Python owners there instead. Deterministic Step-6 behavior remains certified by the existing dependency-free three-market cert.",
+    "product_logic_changed": false,
+    "steps1_5_changed": false,
+    "api2_changed": false,
+    "rerun_of_failed_sha": false
+  },
+  "post_green_quality_repair": {
+    "evidence_run": 36671440640,
+    "evidence_state": "PR_GREEN",
+    "defect": "Market reasoning summary joined all verified signal text and then applied [:3] to the final string, truncating the visible summary to three characters.",
+    "root_cause": "Slice was applied after string join instead of to the reasoning-signal list.",
+    "patch": "Build summary_parts first, take summary_parts[:3], then join. Add a deterministic minimum-length certification so this cannot silently regress.",
+    "probability_changed": false,
+    "ranking_changed": false,
+    "selection_changed": false,
+    "projection_weight_changed": false,
+    "steps1_5_changed": false,
+    "api2_changed": false
+  }
+}
