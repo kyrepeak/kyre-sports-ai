@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 48,
+  "truth_epoch": 49,
   "program_id": "WNBA_PRA_SPEED_V3",
   "program_title": "WNBA PRA Speed V3",
   "current_step": 8,
   "total_steps": 9,
   "step_title": "Visible PRA content first",
   "step_status": "ACTIVE",
-  "active_checkpoint": "STEP8_FINAL_MERGED_MAIN_PROOF",
+  "active_checkpoint": "STEP8_CLIENT_FIRST_PAINT_PRODUCT_REPAIR",
   "main_sha": "742afe3d1121595a43f77fe98926a79e42b12112",
-  "active_pr": 1274,
+  "active_pr": null,
   "active_run": 36790949785,
   "active_head_sha": "742afe3d1121595a43f77fe98926a79e42b12112",
-  "blocker": "FINAL_MERGED_MAIN_PROOFS_RUNNING",
-  "next_legal_action": "WAIT_FINAL_MERGED_MAIN_PROOFS_TERMINAL",
+  "blocker": "PRODUCT_SERVER_RERUN_ROUNDTRIP_EXCEEDS_750MS_VISIBLE_SLA",
+  "next_legal_action": "CREATE_ONE_CLIENT_FIRST_PAINT_PRODUCT_REPAIR",
   "lease": {
     "revision": 56,
     "generation": 11,
@@ -54,5 +54,5 @@
     "MONSTER_V4_STEP6",
     "WNBA_PRA_SPEED_V3_STEP7"
   ],
-  "state_hash": "bab89b4c07b2efb5bcd3484b23d82886fe9fe94736697438847c9ef022ede066"
+  "state_hash": "194a05b3ebc15242e99013110fa083eb86e004ef366be98b60e9c4a962769040"
 }
