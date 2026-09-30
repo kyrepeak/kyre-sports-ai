@@ -124,5 +124,10 @@
     "protected_surfaces_green": true,
     "production_freeze_evidence": "emitted only by merged-main public-profile workflow",
     "product_behavior_change": "cold-pair transport only; no basketball math/model/market/ranking/sportsbook change"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
   }
 }
