@@ -251,6 +251,15 @@ def test_step7_deployment_refresh_heartbeat_is_permanent():
     )
 
 
+def test_step7_full_redeploy_heartbeat_is_permanent():
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    assert (
+        "# WNBA PRA Speed V3 Step 7 full Streamlit redeploy trigger "
+        "2026-09-30 R1"
+        in requirements
+    )
+
+
 def test_step7_freezes_step6_owner_blobs():
     for path, expected in FROZEN_STEP6.items():
         assert _blob(ROOT / path) == expected, path
