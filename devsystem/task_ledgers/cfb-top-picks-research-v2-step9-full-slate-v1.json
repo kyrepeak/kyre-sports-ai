@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-research-v2-step9-full-slate-v1",
+  "title": "CFB Top Picks Research + Completeness V2 — Step 9 full-slate certification",
+  "project": "CFB Top Picks Research + Completeness V2",
+  "step": "9/9",
+  "status": "DONE",
+  "problem": "Steps 1-8 repaired individual contracts, but there was no final 10/10 gate proving every ranked card and every expanded detail together, and the obsolete audit footer could surface as raw markup in the customer UI.",
+  "root_cause": "The project lacked one end-to-end certifier spanning card identity/logos, research completeness, terminal history, benefits/risks, provenance/fallback truth, responsive presentation contracts, and raw-HTML cleanliness.",
+  "patch": "Add a Step-9 full-slate live certifier, final detail/page/router wrappers, history-attempt provenance closeout, and a customer-facing cleanup that removes the obsolete audit footer now superseded by Sources + Freshness.",
+  "acceptance": {
+    "ranked_picks_10_of_10": true,
+    "expanded_details_10_of_10": true,
+    "real_logos_20_of_20": true,
+    "common_research_fields_present_or_explained": true,
+    "market_reasoning_complete": true,
+    "history_terminal_for_all": true,
+    "benefits_verified_for_all": true,
+    "risks_verified_for_all": true,
+    "provenance_zero_violations": true,
+    "raw_ui_leaks_zero": true,
+    "responsive_targets": [
+      390,
+      768,
+      1440
+    ],
+    "probability_unchanged": true,
+    "ranking_unchanged": true,
+    "selection_unchanged": true,
+    "sportsbook_projection_weight": 0,
+    "api2_separate_and_protected": true,
+    "step2a_enforced": true
+  },
+  "protected": {
+    "steps1_8_wrapped_not_modified": true,
+    "cfb_top_picks_engine_v1": true,
+    "cfb_top_picks_details_v4": true,
+    "cfb_top_picks_page_v8": true,
+    "api2": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "base_drift_compatibility_patch": {
+    "evidence_main": "aa0dc70d13c0a480a6fd19056a03bee45d79cf89",
+    "failure_class": "BASE_DRIFT_ROUTER_OWNERSHIP",
+    "new_active_parent": "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4",
+    "root_cause": "Main advanced after Step-9 branch creation and the active app router moved from the CFB Step-8 wrapper to WNBA PRA Speed V3 Step 4, which itself delegates through CFB Step 8.",
+    "patch": "Preserve WNBA Speed Step 4 as the current parent and temporarily substitute only cfb_step8_parent.TOP_PICKS_PAGE with cfb_top_picks_page_v9 during render.",
+    "wnba_speed_step4_changed": false,
+    "cfb_steps1_8_changed": false,
+    "api2_changed": false,
+    "probability_changed": false,
+    "ranking_changed": false,
+    "selection_changed": false
+  },
+  "authoritative_failure_repair": {
+    "failed_run": 36682342045,
+    "failed_job": 109780935982,
+    "failure_class": "A_SOURCE_COMPATIBILITY_ASSERTION",
+    "exact_failure": "tests/test_wnba_pra_speed_v3_step4.py::test_step4_activation_is_wired required the frozen WNBA Step-4 import string to remain present in app.py source.",
+    "root_cause": "Step-9 correctly delegated through WNBA Step 4 at runtime, but app.py no longer contained the exact source-compatibility import string expected by the frozen WNBA contract.",
+    "patch": "Add the exact WNBA Step-4 import string as a frozen compatibility comment while leaving the active runtime import on Step 9.",
+    "runtime_parent_changed": false,
+    "product_logic_changed": false,
+    "steps1_8_changed": false,
+    "wnba_step4_changed": false,
+    "api2_changed": false,
+    "rerun_of_failed_sha": false
+  }
+}
