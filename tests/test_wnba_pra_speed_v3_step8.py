@@ -256,15 +256,18 @@ def test_step8_establishes_cached_cold_precondition_before_timing_permanently():
     assert "def _wait_step7_precompute_ready(page" in source
     assert 'data-target-players' in source
     assert 'data-completed' in source
+    assert 'data-green' in source
     assert 'data-running' in source
     assert 'data-errors' in source
-    assert "completed >= target and running == 0 and errors == 0" in source
+    assert "completed >= target and green >= target and errors == 0" in source
+    assert "completed >= target and running == 0" not in source
     assert "frame, _, precompute = _wait_step7_precompute_ready(page)" in source
     run_source = source.split("def run", 1)[1]
     assert run_source.index("frame, _, precompute = _wait_step7_precompute_ready(page)") < run_source.index("started = time.monotonic()")
     assert "WNBA_PRA_SPEED_V3_STEP8_PRECOMPUTE_READY_GREEN" in source
     assert "MAX_FINAL_PLAYER_SECONDS = 1.50" in source
     assert "WNBA_PRA_SPEED_V3_STEP8_PRECOMPUTE_PRECONDITION_VERIFIER_SCOPE_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP8_COMPLETED_GREEN_RESULTS_VERIFIER_SCOPE_GREEN" in workflow
 
 
 def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
