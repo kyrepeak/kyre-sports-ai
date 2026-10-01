@@ -4,8 +4,40 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 0,
-  "generation": 0,
-  "holders": [],
-  "state_hash": "56140bdb7be78e6dbabcdc1419c0b22cd00a3a0f2ea4b477b88701eddc0f852f"
+  "revision": 1,
+  "generation": 1,
+  "holders": [
+    {
+      "owner_id": "chatgpt:monster-v5-step2",
+      "lease_id": "SCOPE-LEASE-82C6518711F339F44411F489",
+      "generation": 1,
+      "acquired_at_utc": "2026-10-01T02:19:42Z",
+      "heartbeat_at_utc": "2026-10-01T02:19:42Z",
+      "expires_at_utc": "2026-10-01T03:19:42Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/devsystem-targeted-ci.yml",
+          "devsystem/detached_execution_continuation_v1.py",
+          "devsystem/permanent_gate_v1.py",
+          "devsystem/task_ledgers/monster-v5-step2-detached-execution-continuation-v1.json",
+          "tests/test_devsystem_detached_execution_continuation_v1.py",
+          "tests/test_devsystem_permanent_gate_v1.py"
+        ],
+        "dependency_tokens": [
+          "control:continuation",
+          "control:permanent-gate",
+          "domain:devsystem"
+        ],
+        "shared_resources": [
+          "control:devsystem-final-gate",
+          "workflow:devsystem-targeted-ci"
+        ],
+        "resource_identity": {
+          "main_sha": "ca974ed7b7a4ab5d97a44a690c298d27e50d5811"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "644dc6337c0faedc7560746aa294183cc343352bd79da55fe4c199370d3be532"
 }
