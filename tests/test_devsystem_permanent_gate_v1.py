@@ -64,6 +64,7 @@ def test_permanent_contract_is_green():
     assert result["execution_heartbeat_deadman_recovery_v1_permanent"] is True
     assert result["zero_context_resume_packet_v1_permanent"] is True
     assert result["content_addressed_proof_reuse_v1_permanent"] is True
+    assert result["content_addressed_proof_reuse_ci_v1_permanent"] is True
     assert result["main_push_proof_concurrency_isolated"] is True
 
 
@@ -808,3 +809,20 @@ def test_monster_v6_content_addressed_proof_reuse_contract_is_green():
     assert result["dependency_drift_requires_new_proof"] is True
     assert result["production_state_proof_not_reused"] is True
     assert result["step_2a_still_required_for_mutation"] is True
+
+
+def test_monster_v6_proof_reuse_ci_adapter_is_permanent():
+    adapter = _load("content_addressed_proof_reuse_ci_v1", "devsystem/content_addressed_proof_reuse_ci_v1.py")
+    result = adapter.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["control_plane_excluded"] is True
+    assert result["product_surface_protected"] is True
+    assert result["workflow_surface_protected"] is True
+    assert result["network_is_read_only"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "content-proof-reuse:" in workflow
+    assert "python devsystem/content_addressed_proof_reuse_ci_v1.py" in workflow
+    assert "reuse_sport_critical" in workflow
+    assert "REUSE_PARENT_SPORT_PROOF" in workflow
