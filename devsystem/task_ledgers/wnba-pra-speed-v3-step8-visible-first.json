@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_CLIENT_PREVIEW_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_FOCUS_ENGAGEMENT_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -93,12 +93,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_CLIENT_PREVIEW_PRODUCT_PROOF",
-    "authoritative_failed_run": 36790949785,
-    "authoritative_failed_job": 110143457858,
-    "failure_owner": "PRODUCT",
-    "failure_class": "SERVER_RERUN_CANNOT_MEET_VISIBLE_CONTENT_SLA",
-    "patch_count": 8
+    "next_legal_action": "ONE_EXACT_HEAD_FOCUS_ENGAGEMENT_VERIFIER_PROOF",
+    "authoritative_failed_run": 36804654463,
+    "authoritative_failed_job": 110186202224,
+    "failure_owner": "VERIFIER",
+    "failure_class": "PLAYWRIGHT_POST_CLICK_MISSES_PRE_RERUN_FOCUS_PREVIEW",
+    "patch_count": 9
   },
   "branch_failure": {
     "run": 36786282671,
