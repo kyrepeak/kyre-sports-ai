@@ -5,12 +5,12 @@
   "id": "wnba-pra-speed-v3-step9-final-cert",
   "title": "WNBA PRA Speed V3 Step 9 — Final strict production speed certification",
   "project": "WNBA PRA Speed V3",
-  "phase": "FINAL_PRODUCTION_CERTIFICATION_LABELED_ROUTE_REPAIR",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION_UPCOMING_GAME_REPAIR",
   "step": 9,
   "total_steps": 9,
   "status": "DONE",
   "scope": "Certification-only final gate. Compose the frozen Step-5 production true-cold/warm profile with the frozen Step-8 cached-cold/visible-first profile and fail closed unless every final speed budget passes. Step 9 adds no product/runtime/model/provider/router/math behavior.",
-  "source_main": "68666801387cb1a4a759a15d73a907411d1f1e05",
+  "source_main": "2a759481143b2f11887516a74283108a58fb2e4c",
   "speed_targets": {
     "warm_same_session_seconds_max": 0.75,
     "cached_cold_seconds_max": 1.5,
@@ -57,8 +57,8 @@
     "open_debt_count": 0
   },
   "two_a": {
-    "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9",
-    "scope_lease_id": "SCOPE-LEASE-F04FB35A96AEE083FCA91DE9",
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
+    "scope_lease_id": "SCOPE-LEASE-0AAADF237F26544D1975D67C",
     "one_active_problem": true,
     "one_active_branch": true,
     "one_active_pr_max": 1,
@@ -66,11 +66,11 @@
     "no_unchanged_failed_reruns": true,
     "protect_frozen_steps_1_8": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_EXACT_HEAD_LABELED_ROUTE_REPAIR_PROOF",
-    "authoritative_failed_run": 36815708141,
-    "authoritative_failed_job": 110220220604,
+    "next_legal_action": "ONE_EXACT_HEAD_UPCOMING_GAME_VERIFIER_PROOF",
+    "authoritative_failed_run": 36817421429,
+    "authoritative_failed_job": 110460851588,
     "failure_owner": "VERIFIER",
-    "failure_class": "QUERY_HANDOFF_IGNORED_STALE_MLB_ROUTE_EXACT_LABELED_CONTROL_REQUIRED"
+    "failure_class": "STALE_HISTORICAL_GAME_FALLBACK_MUST_USE_FUTURE_PREGAME"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -120,5 +120,24 @@
       "data_meaning_changed": false,
       "threshold_changed": false
     }
-  ]
+  ],
+  "upcoming_game_repair": {
+    "classification": "B_VERIFIER_STALE_HISTORICAL_GAME_FALLBACK",
+    "discovered_at_utc": "2026-10-01T20:57:00Z",
+    "evidence": [
+      "Frozen navigation helper CERTIFIED_GAME_DATES contains only 2026-08-27, 2026-08-23, 2026-09-18, 2026-09-27, and 2026-09-29.",
+      "Current date is 2026-10-01 and official WNBA postseason games remain scheduled on/after 2026-10-01.",
+      "Frozen Step-5 game selection imports and reuses the stale CERTIFIED_GAME_DATES fallback.",
+      "Step-8 delegates game selection to frozen Step-5, so the same stale fallback can affect final certification."
+    ],
+    "root_cause": "Step-9 composes frozen Step-5/Step-8 production verifiers whose fallback game-date list is historical. When the default slate cannot supply a usable two-player game, final certification can traverse already-completed WNBA games.",
+    "patch": "Step-9 verifier only: discover dates from the live Kyre/WNBA schedule from today forward; require status=scheduled, verification.playable_pregame=true, and for today's slate a future UTC start. Temporarily override the frozen date fallback only for the Step-9 certification process, then restore it.",
+    "past_games_allowed": false,
+    "final_games_allowed": false,
+    "live_games_allowed": false,
+    "scheduled_future_pregame_required": true,
+    "product_runtime_changed": false,
+    "frozen_steps_1_8_modified": false,
+    "speed_threshold_changed": false
+  }
 }
