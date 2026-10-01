@@ -9,7 +9,7 @@
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
   "root_cause": "The proof layer certified the presence of Market-Aware Football Reasoning, not live completeness. Synthetic fixtures covered happy-path READY behavior, while the live Top-10 verifier did not enforce the same readiness contract on every required market signal.",
   "failure_owner": "CI",
-  "patch": "Add an additive verifier-only Step-3 repair that certifies all 10 live ranked picks through the final V9 detail chain, requires READY reasoning with every required market signal usable and sourced/fresh, permanently regression-tests fail-closed behavior for unavailable/conflicted signals, and checks the merged-main public reasoning surface without modifying frozen product owners.",
+  "patch": "Add an additive verifier-only Step-3 repair that certifies all 10 live ranked picks through the final V9 detail chain, requires every non-history market signal to be usable/sourced/fresh, permits SOURCE_CONFLICT_REVIEW only on the dedicated history signal while requiring the block to remain transparently PARTIAL, permanently regression-tests unavailable/non-history conflict fail-closed behavior, and checks the merged-main public reasoning surface without modifying frozen product owners.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -52,5 +52,14 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "acceptance": {
+    "live_top10_reasoning_usable_10_of_10": true,
+    "non_history_required_signals_no_unavailable": true,
+    "source_conflict_only_dedicated_history_signal": true,
+    "history_conflict_requires_partial_status": true,
+    "final_v9_surface_required": true,
+    "source_and_freshness_required": true,
+    "projection_probability_ranking_selection_unchanged": true
+  }
 }
