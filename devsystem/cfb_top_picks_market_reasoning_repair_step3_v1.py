@@ -32,6 +32,11 @@ MAY_MODIFY_RANKING = False
 MAY_MODIFY_PROBABILITY = False
 MAY_MODIFY_SELECTION = False
 READY_SIGNAL_STATUSES = {"VERIFIED", "PARTIAL", "VERIFIED_NO_HISTORY"}
+HISTORY_SIGNAL_BY_MARKET = {
+    "OVER/UNDER": "history_total_context",
+    "SPREAD": "history_margin_context",
+    "MONEYLINE": "history_winner_context",
+}
 
 
 def _clean(value: Any) -> str:
@@ -45,9 +50,10 @@ def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> di
         raise AssertionError(f"STEP3_UNSUPPORTED_MARKET:{rank}:{market}")
 
     block = detail.get("market_reasoning") or {}
-    if _clean(block.get("status")).upper() != "READY":
+    block_status = _clean(block.get("status")).upper()
+    if block_status not in {"READY", "PARTIAL"}:
         raise AssertionError(
-            f"STEP3_REASONING_NOT_READY:{rank}:{market}:{block.get('status')}"
+            f"STEP3_REASONING_NOT_USABLE:{rank}:{market}:{block.get('status')}"
         )
     if _clean(block.get("market")).upper() != market:
         raise AssertionError(
@@ -62,10 +68,14 @@ def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> di
     if set(signals) != set(expected):
         raise AssertionError(f"STEP3_SIGNAL_SET_DRIFT:{rank}:{market}")
 
+    history_key = HISTORY_SIGNAL_BY_MARKET[market]
+    history_conflict = False
     for key in expected:
         item = signals.get(key) or {}
         status = _clean(item.get("status")).upper()
-        if status not in READY_SIGNAL_STATUSES:
+        if key == history_key and status == "SOURCE_CONFLICT_REVIEW":
+            history_conflict = True
+        elif status not in READY_SIGNAL_STATUSES:
             raise AssertionError(
                 f"STEP3_SIGNAL_NOT_READY:{rank}:{market}:{key}:{status}"
             )
@@ -76,6 +86,13 @@ def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> di
             raise AssertionError(f"STEP3_SIGNAL_FRESHNESS:{rank}:{market}:{key}")
         if not list(item.get("sources") or []):
             raise AssertionError(f"STEP3_SIGNAL_SOURCE:{rank}:{market}:{key}")
+
+    expected_block_status = "PARTIAL" if history_conflict else "READY"
+    if block_status != expected_block_status:
+        raise AssertionError(
+            f"STEP3_REASONING_STATUS_TRUTH:{rank}:{market}:"
+            f"{block_status}:{expected_block_status}"
+        )
 
     if float(block.get("projection_weight") or 0.0) != 0.0:
         raise AssertionError(f"STEP3_PROJECTION_WEIGHT:{rank}")
@@ -98,7 +115,7 @@ def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> di
     required_tokens = (
         "Market-Aware Football Reasoning",
         f'data-testid="cfb-top-picks-market-reasoning-{rank}"',
-        'data-reasoning-status="READY"',
+        f'data-reasoning-status="{expected_block_status}"',
         f'data-market="{market}"',
     )
     for token in required_tokens:
@@ -109,7 +126,8 @@ def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> di
         "rank": rank,
         "event_id": _clean(row.get("event_id")),
         "market": market,
-        "status": "READY",
+        "status": expected_block_status,
+        "history_source_conflict_disclosed": history_conflict,
         "required_signal_count": len(expected),
         "summary": summary,
     }
@@ -155,7 +173,8 @@ def run_live(
         "slate_day": slate_day,
         "ranked_picks_certified": 10,
         "markets_observed": markets,
-        "all_reasoning_ready": True,
+        "all_reasoning_usable": True,
+        "history_conflict_policy": "allowed only on dedicated history signal and must remain PARTIAL",
         "projection_changed": False,
         "probability_changed": False,
         "ranking_changed": False,
@@ -243,7 +262,7 @@ def run_public(
             status = _clean(found.get_attribute("data-reasoning-status")).upper()
             rendered_market = _clean(found.get_attribute("data-market")).upper()
             text = _clean(found.inner_text())
-            if status != "READY":
+            if status not in {"READY", "PARTIAL"}:
                 raise AssertionError(f"STEP3_PUBLIC_STATUS:{status}")
             if rendered_market != market:
                 raise AssertionError(
