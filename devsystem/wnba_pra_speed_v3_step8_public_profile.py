@@ -18,7 +18,7 @@ STEP8_SELECTOR = '[data-wnba-pra-speed-v3-step8="visible-first"][data-active="tr
 SHELL_SELECTOR = '[data-wnba-pra-speed-v3-step8-shell="visible"]'
 FINAL_HERO_SELECTOR = ".wn4-hero"
 CLIENT_PREVIEW_SELECTOR = '[data-wnba-pra-speed-v3-step8-click-preview="true"]'
-CONTINUITY_CARD_SELECTOR = '[class*="st-key-wnba_pra_speed_v3_step8_preview_"]'
+CONTINUITY_CARD_SELECTOR = ".wn3-player"
 RESULT_SELECTOR = '[data-wnba-pra-speed-v3-step8-result="true"]'
 STEP7_SELECTOR = '[data-wnba-pra-speed-v3-step7="active-player-precompute"]'
 
@@ -48,19 +48,25 @@ def _float_attr(marker, name: str) -> float:
 
 
 def _visible_step8_surface(page, player_name: str):
-    """Return the first visible continuity, shell, or final Player surface."""
+    """Return the first exact-player continuity, shell, or final Player surface."""
+    lookup_name = str(player_name or "").strip()
+    if lookup_name.startswith("Open ") and lookup_name.endswith(" PRA →"):
+        lookup_name = lookup_name[len("Open "):-len(" PRA →")].strip()
+
     for candidate in page.frames:
         try:
             continuity = candidate.locator(CONTINUITY_CARD_SELECTOR).filter(
-                has_text=player_name
+                has_text=lookup_name
             ).first
             if continuity.count() > 0 and continuity.is_visible():
-                return candidate, "game_card_continuity"
+                card_text = continuity.inner_text()
+                if all(label in card_text for label in ("MIN", "PTS", "REB", "AST", "PRA")):
+                    return candidate, "game_card_continuity"
         except Exception:
             pass
         try:
             preview = candidate.locator(CLIENT_PREVIEW_SELECTOR).filter(
-                has_text=player_name
+                has_text=lookup_name
             ).first
             if preview.count() > 0 and preview.is_visible():
                 return candidate, "client_preview"
