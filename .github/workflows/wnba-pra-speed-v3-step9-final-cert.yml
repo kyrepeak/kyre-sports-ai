@@ -76,7 +76,8 @@ jobs:
           python -m playwright install chromium
       - name: Run final production speed certification
         run: |
-          python devsystem/wnba_pra_speed_v3_step9_final_cert.py             --artifact-dir artifacts/wnba-pra-speed-v3-step9
+          echo "WNBA_PRA_SPEED_V3_STEP9_IMPORT_PATH_REPAIR_GREEN"
+          python -m devsystem.wnba_pra_speed_v3_step9_final_cert --artifact-dir artifacts/wnba-pra-speed-v3-step9
       - name: Upload Step-9 production evidence
         if: always()
         uses: actions/upload-artifact@v4

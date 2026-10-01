@@ -9,7 +9,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 from typing import Any
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.browser_qa_v1 import BrowserQAFailure
 from devsystem.wnba_pra_speed_v3_step2_public_profile import PUBLIC_HOST
