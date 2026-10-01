@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step9-final-cert",
   "title": "WNBA PRA Speed V3 Step 9 — Final strict production speed certification",
   "project": "WNBA PRA Speed V3",
-  "phase": "FINAL_PRODUCTION_CERTIFICATION",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION_IMPORT_PATH_REPAIR",
   "step": 9,
   "total_steps": 9,
   "status": "DONE",
@@ -66,7 +66,11 @@
     "no_unchanged_failed_reruns": true,
     "protect_frozen_steps_1_8": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_EXACT_HEAD_STEP9_PROOF"
+    "next_legal_action": "ONE_EXACT_HEAD_IMPORT_PATH_REPAIR_PROOF",
+    "authoritative_failed_run": 36813310089,
+    "authoritative_failed_job": 110212959950,
+    "failure_owner": "CI",
+    "failure_class": "DIRECT_SCRIPT_REPO_ROOT_NOT_ON_SYS_PATH"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -74,5 +78,25 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "production_failure": {
+    "run": 36813310089,
+    "job": 110212959950,
+    "owner": "CI",
+    "failure_class": "DIRECT_SCRIPT_REPO_ROOT_NOT_ON_SYS_PATH",
+    "evidence": [
+      "Step-9 contract job completed SUCCESS before production-profile began.",
+      "Production-profile failed immediately before any browser/app timing with ModuleNotFoundError: No module named 'devsystem'.",
+      "Merged-main DevSystem run 36813310060 completed SUCCESS.",
+      "No WNBA speed threshold or product path was exercised by the failed production job."
+    ],
+    "root_cause": "The workflow invoked devsystem/wnba_pra_speed_v3_step9_final_cert.py as a direct file, making devsystem/ the initial Python import path rather than the repository root required by absolute devsystem imports.",
+    "patch": "Bootstrap the repository root when executed as a direct script and invoke the production certifier with python -m devsystem.wnba_pra_speed_v3_step9_final_cert. Preserve all speed budgets and frozen product/runtime behavior.",
+    "product_code_changed": false,
+    "runtime_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
+    "threshold_changed": false
+  }
 }
