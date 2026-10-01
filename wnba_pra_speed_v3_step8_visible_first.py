@@ -11,6 +11,7 @@ provider, or frozen Step-1-through-Step-7 behavior is modified.
 """
 from __future__ import annotations
 
+from html import escape
 from time import perf_counter
 from typing import Any, Callable, Mapping
 
@@ -31,6 +32,9 @@ VISIBLE_FIRST_CONTRACT = {
     "scope": "render_visible_player_pra_content_before_frozen_loader",
     "source": "already_selected_game_center_snapshot",
     "visible_before_loader": True,
+    "client_preview_before_rerun": True,
+    "client_preview_source": "frozen_game_center_projection_card",
+    "client_preview_transport": "css_focus_within",
     "shell_render_phase": "router_entry_before_frozen_parent",
     "loader_wrapper_renders_shell": False,
     "shell_is_temporary": True,
@@ -116,6 +120,109 @@ def _visible_shell_markup(game_id: str, player_id: int) -> str:
         + strip
         + '</div>'
     )
+
+
+
+def _preview_value(value: Any) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    return f"{number:.1f}"
+
+
+def _client_preview_markup(player: Mapping[str, Any]) -> str:
+    try:
+        player_id = int(player.get("player_id"))
+    except (TypeError, ValueError):
+        return ""
+    name = escape(str(player.get("player_name") or f"Player {player_id}"))
+    team = escape(str(player.get("team_abbreviation") or "WNBA"))
+    metrics = [
+        ("MIN", player.get("projected_minutes")),
+        ("PTS", player.get("projected_pts")),
+        ("REB", player.get("projected_reb")),
+        ("AST", player.get("projected_ast")),
+        ("PRA", player.get("projected_pra")),
+    ]
+    metric_html = "".join(
+        '<div class="wn8-client-metric">'
+        f'<b>{escape(_preview_value(value))}</b>'
+        f'<span>{escape(label)}</span>'
+        '</div>'
+        for label, value in metrics
+    )
+    return (
+        '<div data-wnba-pra-speed-v3-step8-click-preview="true" '
+        f'data-player-id="{player_id}" '
+        'role="status" aria-live="polite">'
+        '<div class="wn8-client-kicker">Kyre Sports AI • Player PRA</div>'
+        f'<div class="wn8-client-name">{name}</div>'
+        f'<div class="wn8-client-team">{team} • opening PRA intelligence…</div>'
+        f'<div class="wn8-client-metrics">{metric_html}</div>'
+        '</div>'
+    )
+
+
+def render_client_preview_css() -> None:
+    st.markdown(
+        """
+<style>
+[class*="st-key-wnba_pra_speed_v3_step8_preview_"]
+[data-wnba-pra-speed-v3-step8-click-preview="true"] {
+  display:none;
+}
+[class*="st-key-wnba_pra_speed_v3_step8_preview_"]:focus-within
+[data-wnba-pra-speed-v3-step8-click-preview="true"],
+[class*="st-key-wnba_pra_speed_v3_step8_preview_"]:has(button:active)
+[data-wnba-pra-speed-v3-step8-click-preview="true"] {
+  display:block !important;
+  position:fixed;
+  left:12px;
+  right:12px;
+  top:12px;
+  z-index:2147483000;
+  padding:14px 16px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:16px;
+  background:rgba(8,14,24,.97);
+  box-shadow:0 18px 55px rgba(0,0,0,.45);
+  pointer-events:none;
+}
+.wn8-client-kicker {font-size:.76rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.72;}
+.wn8-client-name {font-size:1.28rem;font-weight:900;margin-top:3px;}
+.wn8-client-team {font-size:.84rem;opacity:.76;margin-top:2px;}
+.wn8-client-metrics {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:10px;}
+.wn8-client-metric {text-align:center;padding:8px 5px;border-radius:10px;background:rgba(255,255,255,.06);}
+.wn8-client-metric b {display:block;font-size:1rem;}
+.wn8-client-metric span {display:block;font-size:.68rem;opacity:.68;margin-top:2px;}
+</style>
+<span data-wnba-pra-speed-v3-step8-client-preview-contract="true"
+      data-client-before-rerun="true"
+      style="display:none" aria-hidden="true"></span>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_game_player_with_client_preview(
+    original_renderer: Callable[[Mapping[str, Any], str], Any],
+    player: Mapping[str, Any],
+    game_id: str,
+) -> Any:
+    """Wrap a frozen Game Center player/button with a browser-side click preview."""
+    try:
+        player_id = int(player.get("player_id"))
+    except (TypeError, ValueError):
+        return original_renderer(player, game_id)
+
+    key = f"wnba_pra_speed_v3_step8_preview_{player_id}"
+    with st.container(key=key):
+        result = original_renderer(player, game_id)
+        markup = _client_preview_markup(player)
+        if markup:
+            st.markdown(markup, unsafe_allow_html=True)
+        return result
 
 
 def render_visible_shell_early(state: navigation.NavigationState) -> Any:
@@ -251,6 +358,8 @@ __all__ = [
     "SESSION_PERF",
     "VISIBLE_FIRST_CONTRACT",
     "load_player_intelligence_visible_first",
+    "render_client_preview_css",
+    "render_game_player_with_client_preview",
     "render_visible_shell_early",
     "render_step8_route",
 ]

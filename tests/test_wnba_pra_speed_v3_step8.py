@@ -41,6 +41,9 @@ def test_step8_contract_is_visible_first_only():
     contract = module.VISIBLE_FIRST_CONTRACT
     assert contract["step"] == "8/9"
     assert contract["visible_before_loader"] is True
+    assert contract["client_preview_before_rerun"] is True
+    assert contract["client_preview_source"] == "frozen_game_center_projection_card"
+    assert contract["client_preview_transport"] == "css_focus_within"
     assert contract["shell_render_phase"] == "router_entry_before_frozen_parent"
     assert contract["loader_wrapper_renders_shell"] is False
     assert contract["shell_is_temporary"] is True
@@ -224,9 +227,9 @@ def test_step8_task_ledger_has_valid_genesis_action_log():
 def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
     source = PROFILE.read_text(encoding="utf-8")
     assert 'FINAL_HERO_SELECTOR = ".wn4-hero"' in source
-    assert "def _visible_step8_surface(page):" in source
+    assert "def _visible_step8_surface(page, player_name: str):" in source
     assert "for candidate in page.frames:" in source
-    assert "def _wait_first_visible_content(page, started: float):" in source
+    assert "def _wait_first_visible_content(page, started: float, player_name: str):" in source
     assert "_wait_first_visible_content(" in source
     assert "WNBA_PRA_SPEED_V3_STEP8_FRAME_REACQUIRE_GREEN" in source
     assert "MutationObserver" not in source
@@ -261,3 +264,22 @@ def test_step8_shell_lifetime_handoff_is_permanent():
     assert 'data-shell-retained-through-final' in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_GREEN" in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_REPAIR_SCOPE_GREEN" in workflow
+
+
+def test_step8_client_preview_is_browser_visible_before_rerun_permanently():
+    runtime = STEP8.read_text(encoding="utf-8")
+    router = ROUTER.read_text(encoding="utf-8")
+    profile = PROFILE.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert 'data-wnba-pra-speed-v3-step8-click-preview="true"' in runtime
+    assert ":focus-within" in runtime
+    assert ":has(button:active)" in runtime
+    assert "render_game_player_with_client_preview" in runtime
+    assert "st.container(key=key)" in runtime
+    assert "game_center._render_player_card = client_preview_player_card" in router
+    assert "game_center._render_player_card = original_player_card" in router
+    assert "CLIENT_PREVIEW_SELECTOR" in profile
+    assert '"client_preview"' in profile
+    assert "WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_GREEN" in profile
+    assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in profile
+    assert "WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_REPAIR_SCOPE_GREEN" in workflow

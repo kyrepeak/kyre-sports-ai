@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_FRAME_RESILIENT_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_CLIENT_PREVIEW_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -28,7 +28,10 @@
     "projection_math_changed": false,
     "market_math_changed": false,
     "data_meaning_changed": false,
-    "sportsbook_projection_influence": 0
+    "sportsbook_projection_influence": 0,
+    "client_preview_before_rerun": true,
+    "client_preview_source": "frozen Game Center projection card",
+    "client_preview_transport": "CSS focus-within / active"
   },
   "protected": {
     "speed_v3_steps_1_7": true,
@@ -63,20 +66,20 @@
     ]
   },
   "regression_debt": {
-    "failure_id": "wnba-pra-speed-v3-step8-frame-lifecycle-36790268195",
-    "owner": "VERIFIER",
+    "failure_id": "wnba-pra-speed-v3-step8-server-rerun-visible-sla-36790949785",
+    "owner": "PRODUCT",
     "state": "CLEARED",
     "permanent_guards": [
       {
         "kind": "TEST",
         "path": "tests/test_wnba_pra_speed_v3_step8.py",
-        "test": "test_step8_public_profile_reacquires_frames_across_reruns_permanently",
+        "test": "test_step8_client_preview_is_browser_visible_before_rerun_permanently",
         "permanent": true
       },
       {
         "kind": "CONTRACT",
         "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
-        "rule": "frame-resilient verifier repair stays within exact verifier-only scope",
+        "rule": "exact client-preview PRODUCT repair scope is permanently isolated",
         "permanent": true
       }
     ],
@@ -90,12 +93,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_FRAME_RESILIENT_VERIFIER_PROOF",
-    "authoritative_failed_run": 36790268195,
-    "authoritative_failed_job": 110141263720,
-    "failure_owner": "VERIFIER",
-    "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
-    "patch_count": 7
+    "next_legal_action": "ONE_EXACT_HEAD_CLIENT_PREVIEW_PRODUCT_PROOF",
+    "authoritative_failed_run": 36790949785,
+    "authoritative_failed_job": 110143457858,
+    "failure_owner": "PRODUCT",
+    "failure_class": "SERVER_RERUN_CANNOT_MEET_VISIBLE_CONTENT_SLA",
+    "patch_count": 8
   },
   "branch_failure": {
     "run": 36786282671,
@@ -233,6 +236,26 @@
         }
       ],
       "open_debt_count": 0
+    },
+    {
+      "failure_id": "wnba-pra-speed-v3-step8-frame-lifecycle-36790268195",
+      "owner": "VERIFIER",
+      "state": "CLEARED",
+      "permanent_guards": [
+        {
+          "kind": "TEST",
+          "path": "tests/test_wnba_pra_speed_v3_step8.py",
+          "test": "test_step8_public_profile_reacquires_frames_across_reruns_permanently",
+          "permanent": true
+        },
+        {
+          "kind": "CONTRACT",
+          "path": ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml",
+          "rule": "frame-resilient verifier repair stays within exact verifier-only scope",
+          "permanent": true
+        }
+      ],
+      "open_debt_count": 0
     }
   ],
   "action_log": {
@@ -243,20 +266,22 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36790268195,
-    "job": 110141263720,
-    "owner": "VERIFIER",
-    "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
+    "run": 36790949785,
+    "job": 110143457858,
+    "owner": "PRODUCT",
+    "failure_class": "SERVER_RERUN_CANNOT_MEET_VISIBLE_CONTENT_SLA",
     "evidence": [
-      "The shell-lifetime product repair was live on main 46a2569fd5d884ebde694977cc45f4bde15ed2ac.",
-      "Production exposed WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYED_GREEN after 6.109 seconds and reached the two-player Game Center proof target.",
-      "The public profile still failed specifically inside _wait_shell_mutation on the pre-click frame after the Player click.",
-      "Merged-main DevSystem run 36790268049 completed SUCCESS through all critical lanes, full-merge certification, final gate, and terminal receipt.",
-      "Repository navigation proof helpers explicitly reacquire the current Streamlit app frame after navigation because no-frame/loading states are transient across reruns."
+      "Frame-resilient production proof ran on main 742afe3d1121595a43f77fe98926a79e42b12112 and scanned current page.frames after the Player click.",
+      "Neither the Step-8 shell nor final Player hero became visible inside the preserved 0.750-second target.",
+      "Merged-main DevSystem run 36790949744 completed SUCCESS through all critical lanes, full-merge certification, final gate, and terminal receipt.",
+      "The frozen Game Center card already contains the selected player's MIN/PTS/REB/AST/PRA before navigation; server-rendered Step-8 output necessarily starts only after the click crosses the Streamlit rerun boundary."
     ],
-    "root_cause": "The production verifier keeps observing the pre-click Streamlit frame across a Player-click rerun, while the rendered app frame can be replaced or transiently unavailable.",
-    "patch": "After click, repeatedly scan current page.frames without blocking and accept the first visible Step-8 shell or final Player hero within the unchanged 0.750-second target; preserve shell-lifetime result-marker proof and final Player <=1.50s.",
-    "product_code_changed": false,
+    "root_cause": "A server-side Streamlit rerun is not a reliable mechanism for a sub-750ms first visible paint after Player selection.",
+    "patch": "Keep an exact-player PRA preview pre-rendered in the browser with the frozen Game Center metrics and reveal it client-side via CSS :focus-within/:active as soon as the Player button is engaged, while preserving the normal frozen Step-7 rerun and final Step-8 result checks.",
+    "product_code_changed": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
     "threshold_changed": false
   },
   "production_failure_history": [
@@ -312,6 +337,23 @@
       "projection_math_changed": false,
       "market_math_changed": false,
       "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36790268195,
+      "job": 110141263720,
+      "owner": "VERIFIER",
+      "failure_class": "PRE_CLICK_FRAME_INVALIDATED_BY_STREAMLIT_RERUN",
+      "evidence": [
+        "The shell-lifetime product repair was live on main 46a2569fd5d884ebde694977cc45f4bde15ed2ac.",
+        "Production exposed WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYED_GREEN after 6.109 seconds and reached the two-player Game Center proof target.",
+        "The public profile still failed specifically inside _wait_shell_mutation on the pre-click frame after the Player click.",
+        "Merged-main DevSystem run 36790268049 completed SUCCESS through all critical lanes, full-merge certification, final gate, and terminal receipt.",
+        "Repository navigation proof helpers explicitly reacquire the current Streamlit app frame after navigation because no-frame/loading states are transient across reruns."
+      ],
+      "root_cause": "The production verifier keeps observing the pre-click Streamlit frame across a Player-click rerun, while the rendered app frame can be replaced or transiently unavailable.",
+      "patch": "After click, repeatedly scan current page.frames without blocking and accept the first visible Step-8 shell or final Player hero within the unchanged 0.750-second target; preserve shell-lifetime result-marker proof and final Player <=1.50s.",
+      "product_code_changed": false,
       "threshold_changed": false
     }
   ]
