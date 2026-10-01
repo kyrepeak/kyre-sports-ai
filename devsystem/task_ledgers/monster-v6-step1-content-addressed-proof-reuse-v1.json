@@ -9,7 +9,7 @@
   "problem": "Unchanged frozen/static artifacts can repeatedly trigger expensive proof even when their exact blob identities and dependency identities are unchanged.",
   "root_cause": "The existing adaptive proof and blast-radius layers select proof obligations, but there is no fail-closed repository contract for reusing a prior successful terminal proof by exact content identity.",
   "failure_owner": "CONTROL_PLANE",
-  "patch": "Add the generic content-addressed proof-reuse engine plus a read-only CI adapter. The adapter binds the immediately previous successful merged-main DevSystem terminal receipt to exact protected repository blob identities and exact proof-policy dependencies. Sport-critical proof may be skipped only when those identities match; any drift, missing receipt, API failure, or policy change fails closed to fresh sport proof.",
+  "patch": "Add a read-only content-addressed proof reuse engine that requires exact artifact blobs, exact dependency blobs, proof-policy identity, sufficient proof scope, successful terminal receipt, and tamper-evident fingerprint. Production/live-state proofs are never reusable.",
   "protections": {
     "step_2a_required": true,
     "scope_lease_required_for_mutation": true,
@@ -26,38 +26,23 @@
     "successful_terminal_receipt_required": true,
     "tamper_evident_fingerprint_required": true,
     "production_live_proof_never_reused": true,
-    "unrelated_head_movement_may_reuse": true,
-    "actual_ci_consumes_reuse_decision": true,
-    "parent_merged_main_terminal_proof_required": true,
-    "protected_repository_surface_content_addressed": true,
-    "policy_change_forces_fresh_proof": true,
-    "api_failure_forces_fresh_proof": true
+    "unrelated_head_movement_may_reuse": true
   },
   "regression_debt": {
     "created": true,
     "owner_class": "CONTROL_PLANE",
     "permanent_test": "tests/test_devsystem_content_addressed_proof_reuse_v1.py",
     "permanent_contract": "devsystem/permanent_gate_v1.py",
-    "state": "PENDING_INTEGRATION_PROOF",
-    "permanent_tests": [
-      "tests/test_devsystem_content_addressed_proof_reuse_v1.py",
-      "tests/test_devsystem_content_addressed_proof_reuse_ci_v1.py"
-    ]
+    "state": "PENDING_PROOF"
   },
   "step2a": {
     "single_branch": "monster/monster-v6-step1-content-proof-reuse-v1",
-    "single_pr_required": false,
+    "single_pr_required": true,
     "duplicate_async_forbidden": true,
     "exact_head_required": true,
     "failed_run_id": 36926351509,
     "failure_class": "B_CONTROL_PLANE_LEDGER_CONTRACT",
-    "recovery_patch_limit": 1,
-    "initial_implementation_pr": 1309,
-    "initial_merged_main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
-    "initial_merged_main_run_id": 36926839599,
-    "initial_terminal_receipt_digest": "sha256:cc76c262af2e0aba9298d7674baa83b94f3a55258297827d73e98f5bc38386a7",
-    "followup_integration_required_by_new_evidence": true,
-    "integration_branch": "monster/monster-v6-step1-content-proof-reuse-integration-v1"
+    "recovery_patch_limit": 1
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -65,12 +50,5 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": [],
-  "integration": {
-    "status": "CODE_READY_WORKFLOW_LEASE_PENDING",
-    "reason": "API 2 currently owns workflow:devsystem-targeted-ci; preserve separate workstream lease and wait before workflow wiring.",
-    "ci_adapter": "devsystem/content_addressed_proof_reuse_ci_v1.py",
-    "workflow": ".github/workflows/devsystem-targeted-ci.yml",
-    "behavior": "reuse only from immediately previous successful merged-main terminal proof when protected blobs and policy dependencies are exact"
-  }
+  "override_events": []
 }
