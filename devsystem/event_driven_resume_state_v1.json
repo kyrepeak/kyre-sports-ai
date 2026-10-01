@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V5_EVENT_DRIVEN_RESUME_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "state_ref": "refs/heads/monster-event-driven-resume",
+  "state_path": "devsystem/event_driven_resume_state_v1.json",
+  "revision": 0,
+  "generation": 0,
+  "watches": {},
+  "consumed_events": {},
+  "ready": {},
+  "consumed_ready": {},
+  "state_hash": "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789"
+}
