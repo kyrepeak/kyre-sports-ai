@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_BROWSER_CONTINUITY_FINAL_CONTRACT_PENDING_REPROOF",
+  "phase": "PRODUCTION_STEP7_MARKER_OBSERVATION_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -99,12 +99,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_BROWSER_CONTINUITY_FINAL_PROOF",
-    "authoritative_failed_run": 36806972551,
-    "authoritative_failed_job": 110193373881,
+    "next_legal_action": "ONE_EXACT_HEAD_STEP7_MARKER_OBSERVATION_VERIFIER_PROOF",
+    "authoritative_failed_run": 36808190861,
+    "authoritative_failed_job": 110197135796,
     "failure_owner": "VERIFIER",
-    "failure_class": "OBSOLETE_SERVER_SHELL_GATE_BLOCKS_BROWSER_CONTINUITY_ARCHITECTURE",
-    "patch_count": 13
+    "failure_class": "STEP7_MARKER_OBSERVATION_RACE_AFTER_GAME_TRANSITION",
+    "patch_count": 14
   },
   "branch_failure": {
     "run": 36786282671,
@@ -272,18 +272,18 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36806972551,
-    "job": 110193373881,
+    "run": 36808190861,
+    "job": 110197135796,
     "owner": "VERIFIER",
-    "failure_class": "OBSOLETE_SERVER_SHELL_GATE_BLOCKS_BROWSER_CONTINUITY_ARCHITECTURE",
+    "failure_class": "STEP7_MARKER_OBSERVATION_RACE_AFTER_GAME_TRANSITION",
     "evidence": [
-      "Merged-main run 36806477160 proved exact-player Game Center continuity at 0.019 seconds, inside the unchanged 0.750-second target.",
-      "That run reached and validated the final Player surface without exceeding the unchanged 1.50-second final-player guard.",
-      "Run 36806972551 then waited the full deployment freshness budget only for the legacy shell-lifetime result attribute and failed although the browser-continuity architecture is already the authoritative first-visible path.",
-      "The final Step-8 verifier already rejects shell/final-only first-visible paths and accepts only game_card_continuity or client_preview before the rerun."
+      "The merged-main Step-8 browser proof reached the deployed Step-8 app and selected a valid two-player Game Center.",
+      "It failed immediately on a zero-wait count of the hidden Step-7 marker before the Step-8 speed timer started.",
+      "The frozen Step-7 runtime appends its marker after the frozen renderer completes, so visible Game Center readiness can precede marker attachment by a short interval.",
+      "The frozen Step-7 product code and artifacts remain unchanged."
     ],
-    "root_cause": "The freeze verifier retained a mandatory server-shell lifetime gate from an earlier Step-8 architecture after browser-resident exact-player continuity became the authoritative first-visible mechanism.",
-    "patch": "Keep the server shell runtime code as a protected fallback, but remove it from the production freeze exit. Freeze on exact-player browser continuity <=0.750s plus final Player readiness <=1.50s with Steps 1-7 preserved.",
+    "root_cause": "The Step-8 verifier treated the hidden Step-7 marker as synchronously available at the exact instant the visible Game transition completed, creating an observation race.",
+    "patch": "Before starting the Step-8 speed timer, scan current Streamlit frames for up to 10 seconds for the frozen Step-7 marker, then proceed with the unchanged 0.750s browser-continuity and 1.50s final-player proof.",
     "product_code_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
@@ -413,6 +413,25 @@
       ],
       "root_cause": "The freeze verifier retained a mandatory server-shell lifetime gate from an earlier Step-8 architecture after browser-resident exact-player continuity became the authoritative first-visible mechanism.",
       "patch": "Keep the server shell runtime code as a protected fallback, but remove it from the production freeze exit. Freeze on exact-player browser continuity <=0.750s plus final Player readiness <=1.50s with Steps 1-7 preserved.",
+      "product_code_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36808190861,
+      "job": 110197135796,
+      "owner": "VERIFIER",
+      "failure_class": "STEP7_MARKER_OBSERVATION_RACE_AFTER_GAME_TRANSITION",
+      "evidence": [
+        "The merged-main Step-8 browser proof reached the deployed Step-8 app and selected a valid two-player Game Center.",
+        "It failed immediately on a zero-wait count of the hidden Step-7 marker before the Step-8 speed timer started.",
+        "The frozen Step-7 runtime appends its marker after the frozen renderer completes, so visible Game Center readiness can precede marker attachment by a short interval.",
+        "The frozen Step-7 product code and artifacts remain unchanged."
+      ],
+      "root_cause": "The Step-8 verifier treated the hidden Step-7 marker as synchronously available at the exact instant the visible Game transition completed, creating an observation race.",
+      "patch": "Before starting the Step-8 speed timer, scan current Streamlit frames for up to 10 seconds for the frozen Step-7 marker, then proceed with the unchanged 0.750s browser-continuity and 1.50s final-player proof.",
       "product_code_changed": false,
       "projection_math_changed": false,
       "market_math_changed": false,
