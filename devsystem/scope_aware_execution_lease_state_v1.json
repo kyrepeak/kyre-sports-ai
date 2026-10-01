@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 86,
+  "revision": 87,
   "generation": 40,
   "holders": [
     {
@@ -36,43 +36,12 @@
       }
     },
     {
-      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
-      "lease_id": "SCOPE-LEASE-STEP9-DUPKEY-GUARD-R1",
-      "generation": 38,
-      "acquired_at_utc": "2026-10-01T22:24:00Z",
-      "heartbeat_at_utc": "2026-10-01T22:30:00Z",
-      "expires_at_utc": "2026-10-01T23:00:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
-          "app.py",
-          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
-          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
-          "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
-          "tests/test_wnba_pra_speed_v3_step9.py"
-        ],
-        "dependency_tokens": [
-          "domain:wnba",
-          "project:wnba-pra-speed-v3-step9"
-        ],
-        "shared_resources": [
-          "branch:fix/wnba-pra-speed-v3-step9-duplicate-key-guard-r10"
-        ],
-        "resource_identity": {
-          "main:base": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
-          "step9:failed-run": "36927758434",
-          "runtime-defect": "StreamlitDuplicateElementKey"
-        },
-        "exclusive": false
-      }
-    },
-    {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-public-verifier-r1",
       "lease_id": "SCOPE-LEASE-STEP3-PUBLIC-VERIFIER-R1",
       "generation": 40,
       "acquired_at_utc": "2026-10-01T22:45:18Z",
-      "heartbeat_at_utc": "2026-10-01T22:47:58Z",
-      "expires_at_utc": "2026-10-01T23:17:58Z",
+      "heartbeat_at_utc": "2026-10-01T23:11:30Z",
+      "expires_at_utc": "2026-10-01T23:41:30Z",
       "scope": {
         "write_paths": [
           ".github/workflows/cfb-top-picks-repair-step3-market-reasoning-v1.yml",
@@ -91,14 +60,14 @@
           "workflow:devsystem-targeted-ci"
         ],
         "resource_identity": {
-          "main:base": "37a7dde0d6a080136b0664c2da6d4ca54ee095b9",
-          "branch:head": "7536eb1d5386548e4fe961aa0a75e771b3b51a4a",
-          "step3:failed-public-run": "36934226273",
-          "failure-token": "STEP3_PUBLIC_HEADING_MISSING"
+          "main:base": "17e9ecf4653df71d0c19c98d4fa274ebdbe77bc2",
+          "branch:head": "26d30925e2d08d62a7efaeb613f90d268b2bd008",
+          "step3:failed-public-run": "36937949347",
+          "failure-token": "STEP3_PUBLIC_V9_MARKER_MISSING"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "75be33fbf3b14011b7e719c45a2ac5fce128c03b5d4b6da5549a9ec487d75ed3"
+  "state_hash": "7e213375d06473ce5a0f5dfdcd0d09830f4224de3135740a1d287aa95fd9de37"
 }
