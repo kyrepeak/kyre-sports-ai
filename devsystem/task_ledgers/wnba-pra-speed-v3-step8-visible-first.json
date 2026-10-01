@@ -105,20 +105,21 @@
     "authoritative_failed_job": 110198750702,
     "failure_owner": "VERIFIER",
     "failure_class": "CACHED_COLD_TIMER_STARTED_BEFORE_STEP7_PRECOMPUTE_READY",
-    "patch_count": 15
+    "patch_count": 16
   },
   "branch_failure": {
-    "run": 36786282671,
-    "job": 110129108564,
+    "run": 36809191844,
+    "job": 110200216560,
     "owner": "CI",
-    "failure_class": "TASK_LEDGER_REQUIRES_ACTION_LOG",
+    "failure_class": "PERMANENT_TEST_USED_GLOBAL_TIMER_ANCHOR",
     "evidence": [
-      "WNBA PRA Speed V3 Step-4/5/6/7/8 focused contracts all passed on exact head c0c0f8a6d9b7785907f595cbac06d143270e20d7.",
-      "DevSystem permanent-contract failed in action_ledger_v2.py validate_action_ledger before final gate.",
-      "Exact terminal error: ActionLedgerFailure: task ledger requires action_log."
+      "Step-8 exact verifier scope guard passed on PR #1292.",
+      "The focused contract failed only in test_step8_establishes_cached_cold_precondition_before_timing_permanently.",
+      "The assertion compared the precompute call against the first started = time.monotonic() anywhere in the module instead of the speed timer inside run().",
+      "No production/verifier behavior failed before this test assertion."
     ],
-    "root_cause": "The new Step-8 task ledger omitted the permanent action_log envelope required by the repository action-ledger contract.",
-    "patch": "Add the standard empty tamper-evident action_log envelope plus transition_history and override_events. Product/runtime files remain unchanged.",
+    "root_cause": "The permanent test used a module-global string index for the timer ordering assertion, so an earlier helper timer was mistaken for the Player speed timer.",
+    "patch": "Scope the ordering assertion to the source text inside def run and compare the precompute-ready call against that run-local speed timer.",
     "product_code_changed": false
   },
   "regression_debt_history": [
