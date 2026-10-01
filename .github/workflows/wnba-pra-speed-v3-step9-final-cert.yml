@@ -3,6 +3,8 @@ name: WNBA PRA Speed V3 Step 9 Final Certification
 on:
   pull_request:
     paths:
+      - "app.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py"
       - "devsystem/wnba_pra_speed_v3_step9_final_cert.py"
       - "tests/test_wnba_pra_speed_v3_step9.py"
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json"
@@ -10,6 +12,8 @@ on:
   push:
     branches: [main]
     paths:
+      - "app.py"
+      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py"
       - "devsystem/wnba_pra_speed_v3_step9_final_cert.py"
       - "tests/test_wnba_pra_speed_v3_step9.py"
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json"
@@ -40,8 +44,10 @@ jobs:
           git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
           cat >/tmp/allowed.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step9-final-cert.yml
+          app.py
           devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json
           devsystem/wnba_pra_speed_v3_step9_final_cert.py
+          streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py
           tests/test_wnba_pra_speed_v3_step9.py
           EOF
           sort -o /tmp/allowed.txt /tmp/allowed.txt
@@ -80,6 +86,7 @@ jobs:
           echo "WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_VERIFIER_SCOPE_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_VERIFIER_SCOPE_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_SCOPE_GREEN"
           python -m devsystem.wnba_pra_speed_v3_step9_final_cert --artifact-dir artifacts/wnba-pra-speed-v3-step9
       - name: Upload Step-9 production evidence
         if: always()
