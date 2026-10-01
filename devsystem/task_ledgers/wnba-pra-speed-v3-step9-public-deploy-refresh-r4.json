@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "task": "wnba-pra-speed-v3-step9-public-deploy-refresh-r4",
+  "task_id": "wnba-pra-speed-v3-step9-public-deploy-refresh-r4",
+  "id": "wnba-pra-speed-v3-step9-public-deploy-refresh-r4",
+  "title": "WNBA PRA Speed V3 Step 9 — Public deployment activation heartbeat",
+  "project": "WNBA PRA Speed V3",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION_DEPLOYMENT_ACTIVATION",
+  "step": 9,
+  "total_steps": 9,
+  "status": "DONE",
+  "scope": "Deployment-only activation. Add one inert app.py heartbeat so PickVault restarts from current frozen main before the final Step-9 production certification. No product/model/router/provider/math/data semantics or speed threshold changes.",
+  "source_main": "073f4cd0a9b80de9c6936dffc128c30fc99966b8",
+  "protected": {
+    "speed_v3_steps_1_8": true,
+    "product_runtime_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
+    "sportsbook_projection_influence_changed": false,
+    "speed_thresholds_changed": false
+  },
+  "deployment_failure": {
+    "authoritative_step9_run": 36817421429,
+    "failure_owner": "DEPLOYMENT",
+    "failure_class": "PICKVAULT_PUBLIC_DEPLOYMENT_DRIFT_STALE_MLB_ROUTE",
+    "evidence": [
+      "Frozen Step-8 production run 36809807153 passed on the same PickVault host with visible continuity 0.019s and final Player 0.839s.",
+      "Later Step-9 production run 36817421429 remained on MLB Live Odds / Run Line and never reached any latency measurement.",
+      "Current main still imports streamlit_memory_lazy_router_wnba_pra_speed_v3_step8, so no repository product regression was found."
+    ],
+    "patch": "Add one inert app.py deployment heartbeat to force Streamlit Cloud to restart from current frozen main.",
+    "product_code_changed": false,
+    "threshold_changed": false
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9-deploy",
+    "scope_lease_id": "SCOPE-LEASE-7747D526576D92937C53A9DD",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "protect_frozen_steps_1_8": true,
+    "next_legal_action": "ONE_EXACT_HEAD_DEPLOYMENT_ACTIVATION_PROOF"
+  },
+  "regression_debt": {
+    "state": "ZERO",
+    "open_debt_count": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
