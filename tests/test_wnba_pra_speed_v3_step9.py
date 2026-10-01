@@ -54,6 +54,20 @@ def test_step9_primes_exact_labeled_wnba_pra_route_before_frozen_profiles():
     assert "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_GREEN" in source
 
 
+def test_step9_rejects_completed_and_past_wnba_slates():
+    source = _source()
+    assert "def _future_pregame_dates() -> tuple[str, ...]:" in source
+    assert "for offset in range(0, UPCOMING_GAME_SEARCH_DAYS + 1)" in source
+    assert 'casefold() != "scheduled"' in source
+    assert 'verification.get("playable_pregame") is not True' in source
+    assert "if day == today:" in source
+    assert "if game_start <= now_utc:" in source
+    assert "nav_profile.CERTIFIED_GAME_DATES = upcoming_game_dates" in source
+    assert "step5_profile.CERTIFIED_GAME_DATES = upcoming_game_dates" in source
+    assert "WNBA_PRA_SPEED_V3_STEP9_NO_PAST_GAMES_GREEN" in source
+    assert "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN" in source
+
+
 def test_step9_requires_browser_resident_step8_continuity():
     source = _source()
     assert '"game_card_continuity"' in source
@@ -109,5 +123,6 @@ def test_step9_workflow_has_exact_scope_and_main_production_gate():
     assert "python -m devsystem.wnba_pra_speed_v3_step9_final_cert" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_IMPORT_PATH_REPAIR_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_VERIFIER_SCOPE_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN" in workflow
     assert "github.event_name == 'push'" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_BRANCH_GREEN" in workflow

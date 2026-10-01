@@ -79,6 +79,7 @@ jobs:
           echo "WNBA_PRA_SPEED_V3_STEP9_IMPORT_PATH_REPAIR_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_VERIFIER_SCOPE_GREEN"
           echo "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_VERIFIER_SCOPE_GREEN"
+          echo "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN"
           python -m devsystem.wnba_pra_speed_v3_step9_final_cert --artifact-dir artifacts/wnba-pra-speed-v3-step9
       - name: Upload Step-9 production evidence
         if: always()
