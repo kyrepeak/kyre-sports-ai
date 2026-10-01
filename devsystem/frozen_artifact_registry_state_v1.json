@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 15,
-  "source_main_sha": "ee626fead9000de556ec4e0c319608a46aa15dec",
+  "revision": 16,
+  "source_main_sha": "991039c36085843e6ce02373523a6b71e019ce23",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -331,8 +331,32 @@
         "tests/test_cfb_top_picks_history_router_repair_step1_v1.py": "2966e3dcfc60c67c0cbd1bf51065ad916661a0aa",
         "devsystem/task_ledgers/cfb-top-picks-repair-step1-history-router-v1.json": "e733f4f727c25ac2ea24da269690f1571a1d4c1c"
       }
+    },
+    "CFB_TOP_PICKS_REPAIR_STEP2_DEFENSE_PACE": {
+      "status": "FROZEN",
+      "checkpoint_id": "CFB_TOP_PICKS_REPAIR_STEP2_DEFENSE_PACE",
+      "source_main_sha": "991039c36085843e6ce02373523a6b71e019ce23",
+      "proven_merge_sha": "991039c36085843e6ce02373523a6b71e019ce23",
+      "proof_run_id": 36897126029,
+      "focused_defense_pace_proof_run_id": 36897125920,
+      "terminal_receipt_digest": "sha256:49e8c3098f8fcfc9c50ec1d9647c6fdf8c56a2b6433faa8d56c23a0cbf78a7e3",
+      "regression_debt_state": "CLEARED",
+      "required_teams": 20,
+      "supporting_fields_per_team": 6,
+      "full_supporting_completeness": true,
+      "regression_guard": {
+        "test": "tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py",
+        "contract": "devsystem/cfb_top_picks_defense_pace_repair_step2_v1.py"
+      },
+      "artifacts": {
+        "cfb_top_picks_defense_pace_research_v1.py": "38038d89a206cfd41f024213f893c8ab8da1aa22",
+        "devsystem/cfb_top_picks_research_v2_step5_defense_pace_cert_v1.py": "ca3eb2aebbad9bdbf8240494d0a81858b113fcaf",
+        "devsystem/cfb_top_picks_defense_pace_repair_step2_v1.py": "15a7bf921b26d1b2767b3517b720d32cc6f6dae5",
+        "tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py": "1862954c06d4b94094191fb0aba273bfc9aeb9ea",
+        "devsystem/task_ledgers/cfb-top-picks-repair-step2-defense-pace-v1.json": "2af3bd00fe5bce532e774b50e418a5bdc0a7eec0"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "14827580f538c78443cb3923ac6f454dde497900cabab313218e423138469361"
+  "state_hash": "92e2b55397419ba4b059663b5fa7dd56a26ebebf030705bb2cf37d37bff05223"
 }
