@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_STEP7_MARKER_OBSERVATION_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_PRECOMPUTE_PRECONDITION_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -36,7 +36,8 @@
     "game_card_continuity_verified_by_player_name": true,
     "game_card_continuity_before_rerun": true,
     "browser_continuity_is_authoritative": true,
-    "server_shell_is_runtime_fallback_not_freeze_gate": true
+    "server_shell_is_runtime_fallback_not_freeze_gate": true,
+    "cached_cold_requires_step7_precompute_ready": true
   },
   "protected": {
     "speed_v3_steps_1_7": true,
@@ -99,25 +100,26 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_STEP7_MARKER_OBSERVATION_VERIFIER_PROOF",
-    "authoritative_failed_run": 36808190861,
-    "authoritative_failed_job": 110197135796,
+    "next_legal_action": "ONE_EXACT_HEAD_PRECOMPUTE_PRECONDITION_VERIFIER_PROOF",
+    "authoritative_failed_run": 36808720882,
+    "authoritative_failed_job": 110198750702,
     "failure_owner": "VERIFIER",
-    "failure_class": "STEP7_MARKER_OBSERVATION_RACE_AFTER_GAME_TRANSITION",
-    "patch_count": 14
+    "failure_class": "CACHED_COLD_TIMER_STARTED_BEFORE_STEP7_PRECOMPUTE_READY",
+    "patch_count": 16
   },
   "branch_failure": {
-    "run": 36786282671,
-    "job": 110129108564,
+    "run": 36809191844,
+    "job": 110200216560,
     "owner": "CI",
-    "failure_class": "TASK_LEDGER_REQUIRES_ACTION_LOG",
+    "failure_class": "PERMANENT_TEST_USED_GLOBAL_TIMER_ANCHOR",
     "evidence": [
-      "WNBA PRA Speed V3 Step-4/5/6/7/8 focused contracts all passed on exact head c0c0f8a6d9b7785907f595cbac06d143270e20d7.",
-      "DevSystem permanent-contract failed in action_ledger_v2.py validate_action_ledger before final gate.",
-      "Exact terminal error: ActionLedgerFailure: task ledger requires action_log."
+      "Step-8 exact verifier scope guard passed on PR #1292.",
+      "The focused contract failed only in test_step8_establishes_cached_cold_precondition_before_timing_permanently.",
+      "The assertion compared the precompute call against the first started = time.monotonic() anywhere in the module instead of the speed timer inside run().",
+      "No production/verifier behavior failed before this test assertion."
     ],
-    "root_cause": "The new Step-8 task ledger omitted the permanent action_log envelope required by the repository action-ledger contract.",
-    "patch": "Add the standard empty tamper-evident action_log envelope plus transition_history and override_events. Product/runtime files remain unchanged.",
+    "root_cause": "The permanent test used a module-global string index for the timer ordering assertion, so an earlier helper timer was mistaken for the Player speed timer.",
+    "patch": "Scope the ordering assertion to the source text inside def run and compare the precompute-ready call against that run-local speed timer.",
     "product_code_changed": false
   },
   "regression_debt_history": [
@@ -272,18 +274,18 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36808190861,
-    "job": 110197135796,
+    "run": 36808720882,
+    "job": 110198750702,
     "owner": "VERIFIER",
-    "failure_class": "STEP7_MARKER_OBSERVATION_RACE_AFTER_GAME_TRANSITION",
+    "failure_class": "CACHED_COLD_TIMER_STARTED_BEFORE_STEP7_PRECOMPUTE_READY",
     "evidence": [
-      "The merged-main Step-8 browser proof reached the deployed Step-8 app and selected a valid two-player Game Center.",
-      "It failed immediately on a zero-wait count of the hidden Step-7 marker before the Step-8 speed timer started.",
-      "The frozen Step-7 runtime appends its marker after the frozen renderer completes, so visible Game Center readiness can precede marker attachment by a short interval.",
-      "The frozen Step-7 product code and artifacts remain unchanged."
+      "The merged-main proof observed the frozen Step-7 marker and exact-player Game Center continuity at 0.019 seconds, inside the unchanged 0.750-second target.",
+      "The final Player then took 2.748 seconds and tripped the unchanged 1.50-second cached-cold guard.",
+      "The verifier used only a fixed 1.25-second settle delay and never proved Step-7 background precompute completion before starting the cached-cold timer.",
+      "Step-7 exposes target/completed/running/errors on its frozen marker specifically to prove precompute readiness."
     ],
-    "root_cause": "The Step-8 verifier treated the hidden Step-7 marker as synchronously available at the exact instant the visible Game transition completed, creating an observation race.",
-    "patch": "Before starting the Step-8 speed timer, scan current Streamlit frames for up to 10 seconds for the frozen Step-7 marker, then proceed with the unchanged 0.750s browser-continuity and 1.50s final-player proof.",
+    "root_cause": "The verifier labeled the Player open cached-cold without establishing that the frozen Step-7 background precompute had completed.",
+    "patch": "Wait before the speed timer until the frozen Step-7 marker reports target>0, completed>=target, running=0, errors=0; then keep the exact 0.750s first-visible and 1.50s final-player thresholds unchanged.",
     "product_code_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
@@ -432,6 +434,25 @@
       ],
       "root_cause": "The Step-8 verifier treated the hidden Step-7 marker as synchronously available at the exact instant the visible Game transition completed, creating an observation race.",
       "patch": "Before starting the Step-8 speed timer, scan current Streamlit frames for up to 10 seconds for the frozen Step-7 marker, then proceed with the unchanged 0.750s browser-continuity and 1.50s final-player proof.",
+      "product_code_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36808720882,
+      "job": 110198750702,
+      "owner": "VERIFIER",
+      "failure_class": "CACHED_COLD_TIMER_STARTED_BEFORE_STEP7_PRECOMPUTE_READY",
+      "evidence": [
+        "The merged-main proof observed the frozen Step-7 marker and exact-player Game Center continuity at 0.019 seconds, inside the unchanged 0.750-second target.",
+        "The final Player then took 2.748 seconds and tripped the unchanged 1.50-second cached-cold guard.",
+        "The verifier used only a fixed 1.25-second settle delay and never proved Step-7 background precompute completion before starting the cached-cold timer.",
+        "Step-7 exposes target/completed/running/errors on its frozen marker specifically to prove precompute readiness."
+      ],
+      "root_cause": "The verifier labeled the Player open cached-cold without establishing that the frozen Step-7 background precompute had completed.",
+      "patch": "Wait before the speed timer until the frozen Step-7 marker reports target>0, completed>=target, running=0, errors=0; then keep the exact 0.750s first-visible and 1.50s final-player thresholds unchanged.",
       "product_code_changed": false,
       "projection_math_changed": false,
       "market_math_changed": false,
