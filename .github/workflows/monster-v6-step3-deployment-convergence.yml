@@ -1,0 +1,41 @@
+name: MONSTER V6 Step 3 Deployment Convergence
+
+on:
+  push:
+    branches:
+      - "monster/monster-v6-step3-deployment-convergence-controller-v1"
+    paths:
+      - "devsystem/deployment_convergence_controller_v1.py"
+      - "tests/test_devsystem_deployment_convergence_controller_v1.py"
+      - "devsystem/task_ledgers/monster-v6-step3-deployment-convergence-controller-v1.json"
+      - ".github/workflows/monster-v6-step3-deployment-convergence.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v6-step3-deployment-convergence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-proof:
+    name: deployment convergence focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run controller self-test
+        run: python devsystem/deployment_convergence_controller_v1.py
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_deployment_convergence_controller_v1.py
+
+      - name: Emit Step 3 GREEN marker
+        run: echo "MONSTER_V6_STEP3_DEPLOYMENT_CONVERGENCE_GREEN"
