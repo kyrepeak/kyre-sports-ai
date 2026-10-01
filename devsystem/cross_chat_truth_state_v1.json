@@ -4,24 +4,24 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 53,
+  "truth_epoch": 54,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 1,
   "total_steps": 5,
   "step_title": "Scope-Aware Parallel Execution Lease",
   "step_status": "ACTIVE",
-  "active_checkpoint": "MONSTER_V5_STEP1",
+  "active_checkpoint": "MONSTER_V5_STEP1_EXACT_HEAD_PROOF",
   "main_sha": "742afe3d1121595a43f77fe98926a79e42b12112",
-  "active_pr": null,
-  "active_run": null,
-  "active_head_sha": "742afe3d1121595a43f77fe98926a79e42b12112",
+  "active_pr": 1279,
+  "active_run": 36804008705,
+  "active_head_sha": "410bf21a5d825e6a8da1915385abeaab6feea8a2",
   "blocker": null,
-  "next_legal_action": "CREATE_MONSTER_V5_STEP1_BRANCH",
+  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_RUN_36804008705_TERMINAL_THEN_ALLOW_AUTO_MERGE",
   "lease": {
-    "revision": 60,
+    "revision": 61,
     "generation": 12,
-    "state_hash": "a898d9a57c8602a6e22c61424512808117c9ef743a5ec1d9c9a79b298cdff0f8",
+    "state_hash": "b540a70671567014d3825fd43e4c19054c4e01fed84df530e502f217c4ab92a7",
     "holder_owner_id": "chatgpt:monster-v5-step1",
     "holder_lease_id": "LEASE-57AEB0446DB8F15E2E18350A"
   },
@@ -54,5 +54,5 @@
     "MONSTER_V4_STEP6",
     "WNBA_PRA_SPEED_V3_STEP7"
   ],
-  "state_hash": "488ecb8137438f3cb9a5a3d91ed5dfe3eb2991b0363a08803ba2f0cefec03e33"
+  "state_hash": "28cfab2eeff0043a98e0edd43bf44b55e27a189b74bd990bdf97d4ede36b493e"
 }
