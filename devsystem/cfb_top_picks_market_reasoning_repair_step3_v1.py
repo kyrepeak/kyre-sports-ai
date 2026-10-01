@@ -58,6 +58,19 @@ def _validate_public_heading(reasoning_loc: Any) -> str:
     return text
 
 
+def _validate_public_v9_marker(reasoning_frame: Any) -> str:
+    markers = reasoning_frame.locator(
+        '[data-testid="cfb-top-picks-research-v2-step9-marker"]'
+    )
+    count = markers.count()
+    if count != 1:
+        raise AssertionError(f"STEP3_PUBLIC_V9_MARKER_COUNT:{count}")
+    marker = _clean(markers.first.text_content(timeout=5000))
+    if marker != page.PAGE_MARKER:
+        raise AssertionError(f"STEP3_PUBLIC_V9_MARKER_TEXT:{marker!r}")
+    return marker
+
+
 def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> dict[str, Any]:
     rank = int(row.get("rank") or 0)
     market = _clean(row.get("market")).upper()
@@ -285,11 +298,7 @@ def run_public(
                         raise AssertionError(f"STEP3_PUBLIC_MARKET:{market}")
                     heading = _validate_public_heading(reasoning_loc)
 
-                    body = _clean(
-                        reasoning_frame.locator("body").inner_text(timeout=5000)
-                    )
-                    if "CFB_TOP_PICKS_RESEARCH_V2_STEP9_FULL_SLATE_CERTIFIED" not in body:
-                        raise AssertionError("STEP3_PUBLIC_V9_MARKER_MISSING")
+                    v9_marker = _validate_public_v9_marker(reasoning_frame)
 
                     screenshot = artifacts / "public_reasoning_390_green.png"
                     p.screenshot(path=str(screenshot), full_page=True)
@@ -302,7 +311,7 @@ def run_public(
                         "reasoning_status": status,
                         "heading": heading,
                         "viewport": [390, 844],
-                        "v9_marker": True,
+                        "v9_marker": v9_marker,
                     }
                     (artifacts / "public_reasoning.json").write_text(
                         json.dumps(payload, indent=2, sort_keys=True) + "\n",
