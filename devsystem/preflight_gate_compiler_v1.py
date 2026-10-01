@@ -33,8 +33,10 @@ class PreflightGateFailure(RuntimeError):
 
 
 def _norm_path(value: Any) -> str:
-    text = str(value or "").strip().replace("\\", "/").lstrip("./")
-    if not text or text.startswith("../") or ".." in PurePosixPath(text).parts:
+    text = str(value or "").strip().replace("\\", "/")
+    while text.startswith("./"):
+        text = text[2:]
+    if not text or text.startswith("/") or text.startswith("../") or ".." in PurePosixPath(text).parts:
         raise PreflightGateFailure("invalid repository path")
     return text
 
