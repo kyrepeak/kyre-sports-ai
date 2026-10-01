@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_GAME_CARD_CONTINUITY_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_VISIBLE_PLAYER_CARD_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -32,7 +32,7 @@
     "client_preview_before_rerun": true,
     "client_preview_source": "frozen Game Center projection card",
     "client_preview_transport": "CSS focus-within / active",
-    "game_card_continuity_source": "already-visible frozen Game Center player card",
+    "game_card_continuity_source": "visible frozen Game Center .wn3-player card",
     "game_card_continuity_verified_by_player_name": true,
     "game_card_continuity_before_rerun": true
   },
@@ -96,12 +96,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_GAME_CARD_CONTINUITY_VERIFIER_PROOF",
-    "authoritative_failed_run": 36805171503,
-    "authoritative_failed_job": 110187786559,
+    "next_legal_action": "ONE_EXACT_HEAD_VISIBLE_PLAYER_CARD_VERIFIER_PROOF",
+    "authoritative_failed_run": 36805691379,
+    "authoritative_failed_job": 110189403173,
     "failure_owner": "VERIFIER",
-    "failure_class": "FOCUS_PREVIEW_NOT_VISIBLE_IN_LIVE_BROWSER",
-    "patch_count": 10
+    "failure_class": "KEYED_CONTAINER_NOT_RELIABLE_VISIBLE_SURFACE",
+    "patch_count": 11
   },
   "branch_failure": {
     "run": 36786282671,
@@ -269,18 +269,17 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36805171503,
-    "job": 110187786559,
+    "run": 36805691379,
+    "job": 110189403173,
     "owner": "VERIFIER",
-    "failure_class": "FOCUS_PREVIEW_NOT_VISIBLE_IN_LIVE_BROWSER",
+    "failure_class": "KEYED_CONTAINER_NOT_RELIABLE_VISIBLE_SURFACE",
     "evidence": [
-      "Merged PR #1280 changed only the verifier contract and reached the live Step-8 deployment marker.",
-      "The production browser still reported no client preview, shell, or final hero inside 0.750 seconds.",
-      "The frozen Game Center card is already visible before navigation and contains the exact player's MIN/PTS/REB/AST/PRA.",
-      "Step 8 already wraps each player card in a stable keyed container, allowing exact-player continuity to be verified without relying on CSS focus behavior."
+      "The card-continuity merged-main proof still failed before the click despite the frozen Game Center being visibly rendered.",
+      "The verifier targeted the keyed st.container wrapper rather than the visible player card element.",
+      "Frozen Game Center renders every player as a visible .wn3-player element containing MIN/PTS/REB/AST/PRA."
     ],
-    "root_cause": "The verifier relied on CSS focus engagement to reveal a hidden preview, but that focus state is not a reliable visible surface in the live Streamlit DOM.",
-    "patch": "Verify the exact player's already-visible frozen Game Center card as the browser-resident continuity surface before the rerun, preserving the 0.750s first-visible and 1.50s final-player thresholds and leaving product/model/router code unchanged.",
+    "root_cause": "The verifier asked Playwright visibility of a Streamlit container wrapper whose own box is not a reliable proxy for its visible child card.",
+    "patch": "Target the actual visible .wn3-player card filtered by exact player name as the continuity surface; keep all speed thresholds and product behavior unchanged.",
     "product_code_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
@@ -372,6 +371,24 @@
       ],
       "root_cause": "The verifier relied on CSS focus engagement to reveal a hidden preview, but that focus state is not a reliable visible surface in the live Streamlit DOM.",
       "patch": "Verify the exact player's already-visible frozen Game Center card as the browser-resident continuity surface before the rerun, preserving the 0.750s first-visible and 1.50s final-player thresholds and leaving product/model/router code unchanged.",
+      "product_code_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36805691379,
+      "job": 110189403173,
+      "owner": "VERIFIER",
+      "failure_class": "KEYED_CONTAINER_NOT_RELIABLE_VISIBLE_SURFACE",
+      "evidence": [
+        "The card-continuity merged-main proof still failed before the click despite the frozen Game Center being visibly rendered.",
+        "The verifier targeted the keyed st.container wrapper rather than the visible player card element.",
+        "Frozen Game Center renders every player as a visible .wn3-player element containing MIN/PTS/REB/AST/PRA."
+      ],
+      "root_cause": "The verifier asked Playwright visibility of a Streamlit container wrapper whose own box is not a reliable proxy for its visible child card.",
+      "patch": "Target the actual visible .wn3-player card filtered by exact player name as the continuity surface; keep all speed thresholds and product behavior unchanged.",
       "product_code_changed": false,
       "projection_math_changed": false,
       "market_math_changed": false,
