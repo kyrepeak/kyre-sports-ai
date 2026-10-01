@@ -4,9 +4,37 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 48,
-  "generation": 20,
+  "revision": 49,
+  "generation": 21,
   "holders": [
+    {
+      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-market-reasoning-v1",
+      "lease_id": "SCOPE-LEASE-4640204868E36FC99BCC991E",
+      "generation": 21,
+      "acquired_at_utc": "2026-10-01T19:22:00Z",
+      "heartbeat_at_utc": "2026-10-01T19:22:00Z",
+      "expires_at_utc": "2026-10-01T19:52:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/cfb-top-picks-repair-step3-market-reasoning-v1.yml",
+          "devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py",
+          "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
+          "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py"
+        ],
+        "dependency_tokens": [
+          "domain:cfb",
+          "project:cfb-top-picks-repair-step3-market-reasoning"
+        ],
+        "shared_resources": [
+          "branch:cfb-top-picks-repair-step3-market-reasoning-v1"
+        ],
+        "resource_identity": {
+          "main:base": "991039c36085843e6ce02373523a6b71e019ce23",
+          "repair:step": "3"
+        },
+        "exclusive": false
+      }
+    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
       "lease_id": "SCOPE-LEASE-6536A4779A57AC62952ACFB3",
@@ -37,5 +65,5 @@
       }
     }
   ],
-  "state_hash": "d34e5b8cbf93723b528022d9ef820b63bf1d5f97468df6dabb84e35fbc8e8835"
+  "state_hash": "b8a0265a40e9b5f5cddcbe0218e09395f35bde091dc13ea5e3139071da9d8597"
 }
