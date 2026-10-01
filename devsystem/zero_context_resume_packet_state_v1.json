@@ -4,25 +4,26 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "packet_ref": "refs/heads/monster-zero-context-resume",
   "packet_path": "devsystem/zero_context_resume_packet_state_v1.json",
-  "generation": 2,
-  "previous_packet_hash": "cd76dc90e10b3f942d09a3eef934eea02904d8310c1150c2675d195b214ca571",
+  "generation": 3,
+  "previous_packet_hash": "01e31da88319b5f14577c99f22789a98adec1088c9b596b00dad26afc31ee1c5",
   "program": {
     "id": "MONSTER_V6",
     "title": "MONSTER V6",
     "mission": "Complete the six-step speed and self-repair upgrade while preserving all previously GREEN + FROZEN protections and keeping Step 2A mandatory.",
-    "current_step": 1,
+    "current_step": 2,
     "total_steps": 6,
-    "step_title": "Content-Addressed Proof Reuse",
+    "step_title": "Preflight Gate Compiler",
     "step_status": "FROZEN",
-    "active_checkpoint": "MONSTER_V6_STEP1",
+    "active_checkpoint": "MONSTER_V6_STEP2",
     "completed_steps": [
-      1
+      1,
+      2
     ],
     "frozen_steps": [
-      1
+      1,
+      2
     ],
     "remaining_steps": [
-      2,
       3,
       4,
       5,
@@ -30,24 +31,24 @@
     ]
   },
   "repository_state": {
-    "main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
-    "head_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+    "main_sha": "0f46df917a5f18f02359de435b676cba88702d52",
+    "head_sha": "0f46df917a5f18f02359de435b676cba88702d52",
     "branch": "main",
     "pr_number": null
   },
   "authoritative_async": {
-    "run_id": 36926839599,
+    "run_id": 36929552958,
     "state": "SUCCESS"
   },
   "execution": {
-    "last_completed_action": "MONSTER_V6_STEP1_FROZEN",
-    "only_next_legal_action": "START_MONSTER_V6_STEP2",
+    "last_completed_action": "MONSTER_V6_STEP2_FROZEN",
+    "only_next_legal_action": "START_MONSTER_V6_STEP3",
     "blocker": null
   },
   "frozen_registry": {
-    "revision": 17,
-    "state_hash": "1900c699de535349fc2edb12d37366d17b3a573dd1e9437631771771add06848",
-    "checkpoint_count": 31,
+    "revision": 18,
+    "state_hash": "6a5e6ad7db7097c212799cc757ad2a5a78c2715264f6d3f892ec16d99b6cd828",
+    "checkpoint_count": 32,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
@@ -80,14 +81,15 @@
     "MONSTER_V5_STEP4",
     "MONSTER_V5_STEP5",
     "MONSTER_V6_STEP1",
+    "MONSTER_V6_STEP2",
     "WNBA_PRA_SPEED_V3_STEP7",
     "WNBA_PRA_SPEED_V3_STEP8"
   ],
   "scope_lease": {
-    "revision": 56,
-    "generation": 26,
-    "state_hash": "d47b9e621a48a26fee6d684cc0b9a7cfadac83d9c4474f6d80c9675947578bda",
-    "holder_count": 2,
+    "revision": 62,
+    "generation": 30,
+    "state_hash": "0e08da109aeab26ed4ed7682088528bca4159156ee698f95ed6e992c10ab60ee",
+    "holder_count": 3,
     "current_owner_id": null,
     "current_lease_id": null
   },
@@ -118,8 +120,8 @@
     }
   },
   "proof": {
-    "proof_run_id": 36926839599,
-    "terminal_receipt_digest": "sha256:cc76c262af2e0aba9298d7674baa83b94f3a55258297827d73e98f5bc38386a7"
+    "proof_run_id": 36929552958,
+    "terminal_receipt_digest": "sha256:13dded24a25dffa395b147d8993cb2eb00dfbc91468466075318f0330115559a"
   },
   "protections": {
     "step_2a_required": true,
@@ -132,5 +134,5 @@
     "auto_mutate": false,
     "may_modify_product_runtime": false
   },
-  "packet_hash": "01e31da88319b5f14577c99f22789a98adec1088c9b596b00dad26afc31ee1c5"
+  "packet_hash": "a27809506a2951d91303e0156dcf439be47f8a7b91774e52b795faba35142682"
 }
