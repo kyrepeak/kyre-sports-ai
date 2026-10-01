@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "task_id": "monster-v6-step4-proven-repair-memory-v1",
+  "title": "MONSTER V6 Step 4 — Proven Repair Memory",
+  "project": "MONSTER V6",
+  "step": 4,
+  "total_steps": 6,
+  "status": "DONE",
+  "problem": "Previously solved failure patterns still require repeated diagnosis because successful repairs are scattered across commits, ledgers, and proof runs.",
+  "root_cause": "The control plane has failure ownership and evidence truth, but no normalized tamper-evident repository-backed memory that maps an exact failure signature to a previously proven repair pattern.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "Add a read-only proven repair memory plus a seeded catalog of real V6 repairs. Exact compatible signatures may reuse diagnosis patterns, but mutation still requires fresh ownership, Step 2A, scope lease, preflight, and exact-head proof.",
+  "protections": {
+    "exact_signature_only": true,
+    "successful_proof_required": true,
+    "terminal_receipt_required": true,
+    "duplicate_signature_forbidden": true,
+    "advisory_only": true,
+    "fresh_failure_ownership_required": true,
+    "step_2a_required": true,
+    "scope_lease_required": true,
+    "preflight_required": true,
+    "mutation_authority_granted": false,
+    "product_runtime_modified": false
+  },
+  "acceptance": {
+    "real_proven_repairs_seeded": true,
+    "exact_match_returns_hit": true,
+    "nonexact_match_returns_miss": true,
+    "stale_evidence_blocks_reuse": true,
+    "catalog_tamper_fails_closed": true,
+    "duplicate_signature_fails_closed": true,
+    "unproven_repair_rejected": true,
+    "memory_hit_never_authorizes_mutation": true
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_proven_repair_memory_v1.py",
+    "permanent_contract": "devsystem/proven_repair_memory_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "proof_plan": {
+    "pre_pr_workflow": ".github/workflows/monster-v6-step4-proven-repair-memory.yml",
+    "focused_self_test": "python devsystem/proven_repair_memory_v1.py --catalog devsystem/proven_repair_memory_catalog_v1.json",
+    "focused_tests": "python -m pytest -q tests/test_devsystem_proven_repair_memory_v1.py",
+    "generic_v6_step2_preflight": true,
+    "expensive_pr_ci_after_preflight_green": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

@@ -1,0 +1,42 @@
+name: MONSTER V6 Step 4 Proven Repair Memory
+
+on:
+  push:
+    branches:
+      - "monster/monster-v6-step4-proven-repair-memory-v1"
+    paths:
+      - "devsystem/proven_repair_memory_v1.py"
+      - "devsystem/proven_repair_memory_catalog_v1.json"
+      - "tests/test_devsystem_proven_repair_memory_v1.py"
+      - "devsystem/task_ledgers/monster-v6-step4-proven-repair-memory-v1.json"
+      - ".github/workflows/monster-v6-step4-proven-repair-memory.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v6-step4-proven-repair-memory-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-proof:
+    name: proven repair memory focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate repair memory and real catalog
+        run: python devsystem/proven_repair_memory_v1.py --catalog devsystem/proven_repair_memory_catalog_v1.json
+
+      - name: Run focused repair-memory regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_proven_repair_memory_v1.py
+
+      - name: Emit Step 4 GREEN marker
+        run: echo "MONSTER_V6_STEP4_PROVEN_REPAIR_MEMORY_GREEN"
