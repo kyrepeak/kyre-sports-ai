@@ -60,6 +60,7 @@ def test_permanent_contract_is_green():
     assert result["regression_debt_zero_gate_v1_permanent"] is True
     assert result["scope_aware_execution_lease_v1_permanent"] is True
     assert result["detached_execution_continuation_v1_permanent"] is True
+    assert result["event_driven_resume_v1_permanent"] is True
     assert result["main_push_proof_concurrency_isolated"] is True
 
 
@@ -545,6 +546,36 @@ def test_detached_execution_continuation_is_permanently_enforced():
     assert "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_GREEN" in workflow
     assert "tests/test_devsystem_detached_execution_continuation_v1.py" in workflow
 
+
+
+def test_event_driven_resume_is_permanently_enforced():
+    event_resume = _load(
+        "event_driven_resume_v1",
+        "devsystem/event_driven_resume_v1.py",
+    )
+    result = event_resume.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["repository_backed_event_state"] is True
+    assert result["continuation_packet_bound"] is True
+    assert result["material_event_wakes_once"] is True
+    assert result["duplicate_event_blocked"] is True
+    assert result["resume_without_polling"] is True
+    assert result["continuation_drift_fails_closed"] is True
+    assert result["ready_receipt_one_shot"] is True
+    assert result["stale_cas_blocked"] is True
+    assert result["irrelevant_event_does_not_wake"] is True
+    assert result["trigger_matrix_complete"] is True
+    assert result["tamper_evident_state"] is True
+    assert result["step_2a_still_required"] is True
+    assert result["scope_lease_still_required"] is True
+    assert result["event_never_grants_mutation"] is True
+    assert result["polling_required"] is False
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/event_driven_resume_v1.py" in workflow
+    assert "MONSTER_V5_EVENT_DRIVEN_RESUME_GREEN" in workflow
+    assert "tests/test_devsystem_event_driven_resume_v1.py" in workflow
 
 def test_main_push_proof_concurrency_is_sha_isolated():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")

@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "task_id": "monster-v5-step3-event-driven-resume-v1",
+  "title": "MONSTER V5 Step 3 - Event-Driven Resume",
+  "project": "MONSTER V5",
+  "step": 3,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Add a repository-backed event-resume cursor that binds watches to exact detached-continuation packet hashes, converts only material state transitions into one-shot ready receipts, blocks duplicate event replay, and never grants mutation authority. Supported events cover workflow terminal state, lease release, PR merge, deployment terminal state, frozen-registry change, artifact appearance, blocker clear, and generic ready/equality transitions.",
+  "acceptance": {
+    "repository_backed_event_state": true,
+    "watch_bound_to_exact_continuation_hash": true,
+    "material_events_only": true,
+    "duplicate_event_replay_blocked": true,
+    "ready_receipt_one_shot": true,
+    "resume_without_polling": true,
+    "continuation_drift_fails_closed": true,
+    "stale_cas_fails_closed": true,
+    "workflow_terminal_supported": true,
+    "lease_free_supported": true,
+    "pr_merged_supported": true,
+    "deployment_terminal_supported": true,
+    "registry_change_supported": true,
+    "artifact_appearance_supported": true,
+    "blocker_clear_supported": true,
+    "generic_ready_supported": true,
+    "step_2a_remains_mandatory": true,
+    "scope_lease_remains_mandatory": true,
+    "event_layer_never_grants_mutation": true,
+    "product_runtime_unchanged": true,
+    "permanent_ci_enforcement": true
+  },
+  "protected": {
+    "monster_v5_step1": true,
+    "monster_v5_step2": true,
+    "monster_v5_step2_ci_repair": true,
+    "monster_v4_steps_1_6": true,
+    "monster_v3_steps_1_8": true,
+    "monster_2a_steps_1_5": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Exact PR head must pass permanent DevSystem contract and final gate, merge through the single Step-3 PR, merged-main DevSystem proof and terminal receipt must pass, the dedicated authoritative event-resume state ref must be initialized, MONSTER_V5_STEP3 must be content-addressed in the frozen registry, final truth must publish Step 3 FROZEN with START_MONSTER_V5_STEP4, and only the Step-3 scope lease may be released."
+}

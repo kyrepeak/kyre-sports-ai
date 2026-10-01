@@ -91,6 +91,8 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_scope_aware_execution_lease_v1.py",
     "devsystem/detached_execution_continuation_v1.py",
     "tests/test_devsystem_detached_execution_continuation_v1.py",
+    "devsystem/event_driven_resume_v1.py",
+    "tests/test_devsystem_event_driven_resume_v1.py",
 )
 
 
@@ -191,6 +193,8 @@ def validate() -> dict:
         "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_GREEN",
         "python devsystem/detached_execution_continuation_v1.py",
         "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_GREEN",
+        "python devsystem/event_driven_resume_v1.py",
+        "MONSTER_V5_EVENT_DRIVEN_RESUME_GREEN",
         "group: devsystem-targeted-ci-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.sha || github.ref }}",
         "fetch-depth: 0",
     )
@@ -413,6 +417,7 @@ def validate() -> dict:
         "regression_debt_zero_gate_v1_permanent": True,
         "scope_aware_execution_lease_v1_permanent": True,
         "detached_execution_continuation_v1_permanent": True,
+        "event_driven_resume_v1_permanent": True,
         "main_push_proof_concurrency_isolated": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
