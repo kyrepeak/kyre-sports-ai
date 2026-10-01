@@ -224,6 +224,17 @@ def test_step8_task_ledger_has_valid_genesis_action_log():
     assert debt["open_debt_count"] == 0
 
 
+def test_step8_public_profile_waits_for_shell_lifetime_deployment_freshness_permanently():
+    source = PROFILE.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    deploy = source.split("def _wait_step8_streamlit", 1)[1].split("def run", 1)[0]
+    assert "result_has_shell_lifetime_contract" in deploy
+    assert 'get_attribute("data-shell-retained-through-final") is not None' in deploy
+    assert "marker.count() > 0 and result_has_shell_lifetime_contract" in deploy
+    assert "WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_FRESHNESS_GREEN" in deploy
+    assert "WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_FRESHNESS_VERIFIER_SCOPE_GREEN" in workflow
+
+
 def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
     source = PROFILE.read_text(encoding="utf-8")
     assert 'FINAL_HERO_SELECTOR = ".wn4-hero"' in source

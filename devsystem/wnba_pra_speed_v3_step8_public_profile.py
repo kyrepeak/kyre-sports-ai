@@ -117,15 +117,21 @@ def _wait_step8_streamlit(page):
         try:
             frame, slate_seconds = _route_to_wnba_pra(page)
             marker = frame.locator(STEP8_SELECTOR)
-            if marker.count() > 0:
+            result_marker = frame.locator(RESULT_SELECTOR).first
+            result_has_shell_lifetime_contract = (
+                result_marker.count() > 0
+                and result_marker.get_attribute("data-shell-retained-through-final") is not None
+            )
+            if marker.count() > 0 and result_has_shell_lifetime_contract:
                 elapsed = time.monotonic() - started
+                print("WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_FRESHNESS_GREEN")
                 print("WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYED_GREEN")
                 print(
                     "WNBA_PRA_SPEED_V3_STEP8_STREAMLIT_DEPLOYMENT_WAIT_SECONDS="
                     f"{elapsed:.3f}"
                 )
                 return frame, slate_seconds, elapsed
-            last = "Step-8 visible-first deployment marker absent"
+            last = "Step-8 deployment marker present but shell-lifetime result contract not fresh"
         except Exception as exc:
             last = f"{type(exc).__name__}:{str(exc)[:300]}"
         page.wait_for_timeout(5000)

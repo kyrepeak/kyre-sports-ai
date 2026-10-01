@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_STABLE_GAME_CARD_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_DEPLOYMENT_FRESHNESS_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -96,12 +96,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_STABLE_GAME_CARD_VERIFIER_PROOF",
-    "authoritative_failed_run": 36805691379,
-    "authoritative_failed_job": 110189403173,
+    "next_legal_action": "ONE_EXACT_HEAD_DEPLOYMENT_FRESHNESS_VERIFIER_PROOF",
+    "authoritative_failed_run": 36806477160,
+    "authoritative_failed_job": 110191832607,
     "failure_owner": "VERIFIER",
-    "failure_class": "GENERATED_STREAMLIT_WRAPPER_NOT_RELIABLE_PRODUCTION_LOCATOR",
-    "patch_count": 11
+    "failure_class": "GENERIC_DEPLOYMENT_MARKER_ACCEPTED_STALE_SHELL_LIFETIME_BUILD",
+    "patch_count": 12
   },
   "branch_failure": {
     "run": 36786282671,
@@ -269,18 +269,18 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36805171503,
-    "job": 110187786559,
+    "run": 36806477160,
+    "job": 110191832607,
     "owner": "VERIFIER",
-    "failure_class": "FOCUS_PREVIEW_NOT_VISIBLE_IN_LIVE_BROWSER",
+    "failure_class": "GENERIC_DEPLOYMENT_MARKER_ACCEPTED_STALE_SHELL_LIFETIME_BUILD",
     "evidence": [
-      "Merged PR #1280 changed only the verifier contract and reached the live Step-8 deployment marker.",
-      "The production browser still reported no client preview, shell, or final hero inside 0.750 seconds.",
-      "The frozen Game Center card is already visible before navigation and contains the exact player's MIN/PTS/REB/AST/PRA.",
-      "Step 8 already wraps each player card in a stable keyed container, allowing exact-player continuity to be verified without relying on CSS focus behavior."
+      "The merged-main public proof measured exact-player visible continuity at 0.019 seconds, well inside the unchanged 0.750-second target.",
+      "The verifier then reached the final Player surface without tripping the preserved 1.50-second final-player guard.",
+      "Failure occurred only when reading data-shell-retained-through-final from the result marker; the attribute was absent.",
+      "The deployment wait accepted the generic Step-8 deployment marker, which predates the shell-lifetime instrumentation and therefore cannot prove deployment freshness."
     ],
-    "root_cause": "The verifier relied on CSS focus engagement to reveal a hidden preview, but that focus state is not a reliable visible surface in the live Streamlit DOM.",
-    "patch": "Verify the exact player's already-visible frozen Game Center card as the browser-resident continuity surface before the rerun, preserving the 0.750s first-visible and 1.50s final-player thresholds and leaving product/model/router code unchanged.",
+    "root_cause": "The production verifier declared Step 8 deployed from a generic marker that exists on older Step-8 builds, allowing proof to proceed before the shell-lifetime result-marker contract was live.",
+    "patch": "Require the Step-8 result marker to expose data-shell-retained-through-final before declaring production deployed, then run the existing unchanged speed and final-player proof.",
     "product_code_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
@@ -372,6 +372,25 @@
       ],
       "root_cause": "The verifier relied on CSS focus engagement to reveal a hidden preview, but that focus state is not a reliable visible surface in the live Streamlit DOM.",
       "patch": "Verify the exact player's already-visible frozen Game Center card as the browser-resident continuity surface before the rerun, preserving the 0.750s first-visible and 1.50s final-player thresholds and leaving product/model/router code unchanged.",
+      "product_code_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36806477160,
+      "job": 110191832607,
+      "owner": "VERIFIER",
+      "failure_class": "GENERIC_DEPLOYMENT_MARKER_ACCEPTED_STALE_SHELL_LIFETIME_BUILD",
+      "evidence": [
+        "The merged-main public proof measured exact-player visible continuity at 0.019 seconds, well inside the unchanged 0.750-second target.",
+        "The verifier then reached the final Player surface without tripping the preserved 1.50-second final-player guard.",
+        "Failure occurred only when reading data-shell-retained-through-final from the result marker; the attribute was absent.",
+        "The deployment wait accepted the generic Step-8 deployment marker, which predates the shell-lifetime instrumentation and therefore cannot prove deployment freshness."
+      ],
+      "root_cause": "The production verifier declared Step 8 deployed from a generic marker that exists on older Step-8 builds, allowing proof to proceed before the shell-lifetime result-marker contract was live.",
+      "patch": "Require the Step-8 result marker to expose data-shell-retained-through-final before declaring production deployed, then run the existing unchanged speed and final-player proof.",
       "product_code_changed": false,
       "projection_math_changed": false,
       "market_math_changed": false,
