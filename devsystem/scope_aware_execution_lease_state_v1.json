@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 85,
+  "revision": 86,
   "generation": 40,
   "holders": [
     {
@@ -92,7 +92,7 @@
         ],
         "resource_identity": {
           "main:base": "37a7dde0d6a080136b0664c2da6d4ca54ee095b9",
-          "branch:head": "2ddd19a92682718eb0a8cd4e45386976d9d02bc1",
+          "branch:head": "7536eb1d5386548e4fe961aa0a75e771b3b51a4a",
           "step3:failed-public-run": "36934226273",
           "failure-token": "STEP3_PUBLIC_HEADING_MISSING"
         },
@@ -100,5 +100,5 @@
       }
     }
   ],
-  "state_hash": "1012838719596cf4d050186bae63475709e29b5c51441cf915822a8042c15967"
+  "state_hash": "75be33fbf3b14011b7e719c45a2ac5fce128c03b5d4b6da5549a9ec487d75ed3"
 }
