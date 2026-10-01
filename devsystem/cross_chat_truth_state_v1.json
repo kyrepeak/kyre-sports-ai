@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 81,
+  "truth_epoch": 82,
   "program_id": "MONSTER_V6",
   "program_title": "MONSTER V6",
-  "current_step": 1,
+  "current_step": 2,
   "total_steps": 6,
-  "step_title": "Content-Addressed Proof Reuse",
+  "step_title": "Preflight Gate Compiler",
   "step_status": "FROZEN",
-  "active_checkpoint": "MONSTER_V6_STEP1",
-  "main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+  "active_checkpoint": "MONSTER_V6_STEP2",
+  "main_sha": "0f46df917a5f18f02359de435b676cba88702d52",
   "active_pr": null,
-  "active_run": 36926839599,
-  "active_head_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+  "active_run": 36929552958,
+  "active_head_sha": "0f46df917a5f18f02359de435b676cba88702d52",
   "blocker": null,
-  "next_legal_action": "START_MONSTER_V6_STEP2",
+  "next_legal_action": "START_MONSTER_V6_STEP3",
   "lease": {
     "revision": 64,
     "generation": 12,
@@ -26,9 +26,9 @@
     "holder_lease_id": null
   },
   "frozen_registry": {
-    "revision": 17,
-    "state_hash": "1900c699de535349fc2edb12d37366d17b3a573dd1e9437631771771add06848",
-    "checkpoint_count": 31,
+    "revision": 18,
+    "state_hash": "6a5e6ad7db7097c212799cc757ad2a5a78c2715264f6d3f892ec16d99b6cd828",
+    "checkpoint_count": 32,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
@@ -61,6 +61,7 @@
     "MONSTER_V5_STEP4",
     "MONSTER_V5_STEP5",
     "MONSTER_V6_STEP1",
+    "MONSTER_V6_STEP2",
     "WNBA_PRA_SPEED_V3_STEP7",
     "WNBA_PRA_SPEED_V3_STEP8"
   ],
@@ -69,14 +70,15 @@
     "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
     "ref": "refs/heads/monster-scope-aware-execution-leases",
     "path": "devsystem/scope_aware_execution_lease_state_v1.json",
-    "revision": 56,
-    "generation": 26,
-    "state_hash": "d47b9e621a48a26fee6d684cc0b9a7cfadac83d9c4474f6d80c9675947578bda",
-    "holder_count": 2,
+    "revision": 62,
+    "generation": 30,
+    "state_hash": "0e08da109aeab26ed4ed7682088528bca4159156ee698f95ed6e992c10ab60ee",
+    "holder_count": 3,
     "holder_owner_id": null,
     "holder_lease_id": null,
     "remaining_holder_owner_ids": [
       "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
+      "chatgpt:monster-v2:monster-v6-step1-proof-reuse-integration-v1",
       "chatgpt:monster:cfb-top-picks-repair-step3-market-reasoning-v1"
     ]
   },
@@ -112,13 +114,13 @@
     "version": "MONSTER_V5_ZERO_CONTEXT_RESUME_PACKET_V1",
     "ref": "refs/heads/monster-zero-context-resume",
     "path": "devsystem/zero_context_resume_packet_state_v1.json",
-    "generation": 2,
-    "packet_hash": "01e31da88319b5f14577c99f22789a98adec1088c9b596b00dad26afc31ee1c5",
-    "checkpoint_count": 31,
-    "main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
-    "authoritative_run_id": 36926839599,
-    "only_next_legal_action": "START_MONSTER_V6_STEP2",
+    "generation": 3,
+    "packet_hash": "a27809506a2951d91303e0156dcf439be47f8a7b91774e52b795faba35142682",
+    "checkpoint_count": 32,
+    "main_sha": "0f46df917a5f18f02359de435b676cba88702d52",
+    "authoritative_run_id": 36929552958,
+    "only_next_legal_action": "START_MONSTER_V6_STEP3",
     "mutation_authority": false
   },
-  "state_hash": "0fd95afc824a49b780f4b3f5c041f31e2ae37dcd5280f90aa4867d128ff10b2e"
+  "state_hash": "b8b669f8d323db25732ce5d0d1cb9488db1381d59f4b1d2305f1af835fc05ea7"
 }
