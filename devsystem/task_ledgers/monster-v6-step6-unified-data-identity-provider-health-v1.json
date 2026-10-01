@@ -1,0 +1,74 @@
+{
+  "version": 2,
+  "task_id": "monster-v6-step6-unified-data-identity-provider-health-v1",
+  "title": "MONSTER V6 Step 6 - Unified Data Identity + Provider Health Graph",
+  "project": "MONSTER V6",
+  "step": 6,
+  "total_steps": 6,
+  "status": "DONE",
+  "problem": "Canonical team/player/event identity, provider aliases, provider health, field availability, fallback order, and field-level provenance exist across multiple sports modules but are not expressed through one reusable control-plane contract.",
+  "root_cause": "Provider-specific identity and fallback logic evolved independently. A provider outage, alias mismatch, or missing field can therefore trigger repeated diagnosis or source-specific breakage even when another verified provider can satisfy the same data field.",
+  "failure_owner": "DATA_CONTROL_PLANE",
+  "patch": "Add a read-only unified identity/provider-health graph contract. Resolve team/player/event aliases into canonical entities, route each DATA_FIELD across provider health and field availability, require successful proof for usable sources, record provenance, reject source locks, and fail closed after source exhaustion.",
+  "historical_basis": [
+    "cfb_top_picks_source_router_v1.py: DATA_FIELD + no source loyalty",
+    "sports_api/nfl_data_router_v1.py: provider priority + attempts + provenance",
+    "nfl_prop_analytics_roster_truth_v1.py: WSH/WAS provider alias normalization",
+    "sports_api/wnba_prop_feed_failover.py: provider health/failover attempt history"
+  ],
+  "protections": {
+    "step_2a_required": true,
+    "scope_lease_required_for_downstream_mutation": true,
+    "exact_identity_required": true,
+    "team_player_event_supported": true,
+    "data_field_is_unit_of_work": true,
+    "no_source_loyalty": true,
+    "provider_health_required": true,
+    "field_availability_required": true,
+    "successful_proof_required_for_usable_source": true,
+    "field_level_provenance_required": true,
+    "source_exhaustion_fails_closed": true,
+    "fabrication_forbidden": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "mutation_authority_granted": false,
+    "product_runtime_modified": false
+  },
+  "acceptance": {
+    "provider_alias_resolves_to_canonical_identity": true,
+    "team_player_event_identity_supported": true,
+    "unhealthy_primary_falls_back": true,
+    "different_fields_can_select_different_providers": true,
+    "selected_source_carries_last_successful_proof": true,
+    "every_attempt_is_recorded": true,
+    "source_lock_is_rejected": true,
+    "all_provider_failure_returns_unavailable": true,
+    "ambiguous_identity_fails_closed": true,
+    "graph_tamper_fails_closed": true
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "DATA_CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py",
+    "permanent_contract": "devsystem/unified_data_identity_provider_health_graph_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "proof_plan": {
+    "pre_pr_workflow": ".github/workflows/monster-v6-step6-unified-data-identity-provider-health.yml",
+    "focused_self_test": "python devsystem/unified_data_identity_provider_health_graph_v1.py --cases devsystem/unified_data_identity_provider_health_cases_v1.json",
+    "focused_tests": "python -m pytest -q tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py",
+    "generic_v6_step2_preflight": true,
+    "expensive_pr_ci_after_preflight_green": true
+  },
+  "completion_contract": {
+    "after_freeze": "MONSTER_V6_COMPLETE",
+    "no_step7": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

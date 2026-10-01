@@ -1,0 +1,300 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V6_UNIFIED_DATA_IDENTITY_PROVIDER_HEALTH_CASES_V1",
+  "historical_basis": [
+    {
+      "source": "cfb_top_picks_source_router_v1.py",
+      "fact": "UNIT_OF_WORK is DATA_FIELD and NO_SOURCE_LOYALTY is true",
+      "lesson": "route each required field independently instead of binding the page to one provider"
+    },
+    {
+      "source": "sports_api/nfl_data_router_v1.py",
+      "fact": "route_metric records provider attempts, selected provider, and fallback rank",
+      "lesson": "provider fallback must retain deterministic provenance"
+    },
+    {
+      "source": "nfl_prop_analytics_roster_truth_v1.py",
+      "fact": "NFLverse maps WSH to canonical WAS while ESPN maps canonical WAS to WSH",
+      "lesson": "provider-specific aliases must resolve through one canonical identity"
+    },
+    {
+      "source": "sports_api/wnba_prop_feed_failover.py",
+      "fact": "failover records provider_order, selected_provider_id, selected_failover_rank, and attempts",
+      "lesson": "provider health or unusable output should move to the next source without fabricating data"
+    }
+  ],
+  "reference_graph": {
+    "schema_version": 1,
+    "version": "MONSTER_V6_UNIFIED_DATA_IDENTITY_PROVIDER_HEALTH_GRAPH_V1",
+    "revision": 1,
+    "unit_of_work": "DATA_FIELD",
+    "no_source_loyalty": true,
+    "entities": [
+      {
+        "entity_id": "nfl:team:was",
+        "entity_type": "team",
+        "canonical_key": "WAS",
+        "canonical_name": "Washington Commanders",
+        "aliases": [
+          {
+            "value": "Washington Commanders",
+            "provider_id": "*"
+          },
+          {
+            "value": "WSH",
+            "provider_id": "espn"
+          },
+          {
+            "value": "WSH",
+            "provider_id": "nflverse"
+          }
+        ],
+        "provider_ids": {
+          "espn": "WSH",
+          "nflverse": "WAS",
+          "cbs": "WAS"
+        }
+      },
+      {
+        "entity_id": "nfl:player:example-qb",
+        "entity_type": "player",
+        "canonical_key": "example-qb",
+        "canonical_name": "Example Quarterback",
+        "aliases": [
+          {
+            "value": "Example QB",
+            "provider_id": "*"
+          },
+          {
+            "value": "athlete-100",
+            "provider_id": "espn"
+          }
+        ],
+        "provider_ids": {
+          "espn": "athlete-100",
+          "nflverse": "player-100"
+        }
+      },
+      {
+        "entity_id": "nfl:event:example-was-home",
+        "entity_type": "event",
+        "canonical_key": "IND@WAS:2026-10-01",
+        "canonical_name": "Indianapolis at Washington 2026-10-01",
+        "aliases": [
+          {
+            "value": "IND at WAS 2026-10-01",
+            "provider_id": "*"
+          },
+          {
+            "value": "event-espn-100",
+            "provider_id": "espn"
+          }
+        ],
+        "provider_ids": {
+          "espn": "event-espn-100",
+          "cbs": "event-cbs-100"
+        }
+      }
+    ],
+    "providers": [
+      {
+        "provider_id": "espn",
+        "health": "UNHEALTHY",
+        "health_reason": "reference fixture: primary provider unavailable",
+        "fields": {
+          "active_roster": {
+            "status": "AVAILABLE",
+            "last_successful_proof": {
+              "proven_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "workflow_run_id": 6101,
+              "terminal_receipt_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+              "conclusion": "SUCCESS"
+            }
+          },
+          "schedule": {
+            "status": "AVAILABLE",
+            "last_successful_proof": {
+              "proven_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "workflow_run_id": 6101,
+              "terminal_receipt_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+              "conclusion": "SUCCESS"
+            }
+          },
+          "injury_report": {
+            "status": "UNAVAILABLE",
+            "reason": "reference fixture unavailable"
+          }
+        }
+      },
+      {
+        "provider_id": "nflverse",
+        "health": "HEALTHY",
+        "health_reason": "reference fixture healthy",
+        "last_successful_proof": {
+          "proven_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "workflow_run_id": 6102,
+          "terminal_receipt_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "conclusion": "SUCCESS"
+        },
+        "fields": {
+          "active_roster": {
+            "status": "AVAILABLE",
+            "last_successful_proof": {
+              "proven_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "workflow_run_id": 6102,
+              "terminal_receipt_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+              "conclusion": "SUCCESS"
+            }
+          },
+          "injury_report": {
+            "status": "UNAVAILABLE",
+            "reason": "reference fixture unavailable"
+          }
+        }
+      },
+      {
+        "provider_id": "cbs",
+        "health": "HEALTHY",
+        "health_reason": "reference fixture healthy",
+        "last_successful_proof": {
+          "proven_sha": "cccccccccccccccccccccccccccccccccccccccc",
+          "workflow_run_id": 6103,
+          "terminal_receipt_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+          "conclusion": "SUCCESS"
+        },
+        "fields": {
+          "schedule": {
+            "status": "AVAILABLE",
+            "last_successful_proof": {
+              "proven_sha": "cccccccccccccccccccccccccccccccccccccccc",
+              "workflow_run_id": 6103,
+              "terminal_receipt_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+              "conclusion": "SUCCESS"
+            }
+          },
+          "injury_report": {
+            "status": "UNAVAILABLE",
+            "reason": "reference fixture unavailable"
+          }
+        }
+      }
+    ],
+    "field_routes": {
+      "active_roster": [
+        "espn",
+        "nflverse"
+      ],
+      "schedule": [
+        "espn",
+        "cbs"
+      ],
+      "injury_report": [
+        "espn",
+        "nflverse",
+        "cbs"
+      ]
+    },
+    "protections": {
+      "exact_identity_resolution": true,
+      "field_level_routing": true,
+      "provider_health_required": true,
+      "field_availability_required": true,
+      "successful_proof_required_for_usable_source": true,
+      "field_level_provenance_required": true,
+      "all_provider_failure_fails_closed": true,
+      "fabrication_forbidden": true,
+      "source_lock_forbidden": true,
+      "advisory_only": true,
+      "step_2a_required_for_downstream_mutation": true,
+      "scope_lease_required_for_downstream_mutation": true,
+      "mutation_authority": false
+    },
+    "graph_id": "UDIPHG-E3F492248F6F20883CEAF4A0"
+  },
+  "cases": [
+    {
+      "case_id": "UNHEALTHY_PRIMARY_FALLS_BACK_BY_FIELD",
+      "operation": "route_field",
+      "args": {
+        "entity_id": "nfl:team:was",
+        "field": "active_roster"
+      },
+      "expected": {
+        "ready": true,
+        "selected_provider_id": "nflverse",
+        "fallback_rank": 2,
+        "unit_of_work": "DATA_FIELD",
+        "no_source_loyalty": true
+      }
+    },
+    {
+      "case_id": "SECOND_FIELD_CAN_USE_DIFFERENT_PROVIDER",
+      "operation": "route_field",
+      "args": {
+        "entity_id": "nfl:team:was",
+        "field": "schedule"
+      },
+      "expected": {
+        "ready": true,
+        "selected_provider_id": "cbs",
+        "fallback_rank": 2,
+        "unit_of_work": "DATA_FIELD",
+        "no_source_loyalty": true
+      }
+    },
+    {
+      "case_id": "ALL_PROVIDERS_EXHAUST_TO_UNAVAILABLE",
+      "operation": "route_field",
+      "args": {
+        "entity_id": "nfl:team:was",
+        "field": "injury_report"
+      },
+      "expected": {
+        "ready": false,
+        "state": "UNAVAILABLE_AFTER_SOURCE_EXHAUSTION",
+        "fabricated": false
+      }
+    },
+    {
+      "case_id": "WASHINGTON_ESPN_ALIAS_RESOLVES_TO_CANONICAL",
+      "operation": "resolve_identity",
+      "args": {
+        "entity_type": "team",
+        "value": "WSH",
+        "provider_id": "espn"
+      },
+      "expected": {
+        "ready": true,
+        "entity_id": "nfl:team:was",
+        "canonical_key": "WAS",
+        "provider_entity_id": "WSH"
+      }
+    },
+    {
+      "case_id": "SOURCE_LOCK_IS_FORBIDDEN",
+      "operation": "source_lock",
+      "args": {
+        "entity_id": "nfl:team:was",
+        "field": "active_roster",
+        "source_lock": "espn"
+      },
+      "expected": {
+        "status": "BLOCKED",
+        "reason": "SOURCE_LOYALTY_FORBIDDEN"
+      }
+    },
+    {
+      "case_id": "TEAM_PLAYER_EVENT_IDENTITY_TYPES_SUPPORTED",
+      "operation": "entity_types",
+      "args": {},
+      "expected": {
+        "entity_types": [
+          "event",
+          "player",
+          "team"
+        ]
+      }
+    }
+  ],
+  "cases_id": "UDIPHC-926182256BB11838148E1E24"
+}

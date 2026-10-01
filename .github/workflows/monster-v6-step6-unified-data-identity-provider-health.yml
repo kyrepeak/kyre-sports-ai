@@ -1,0 +1,42 @@
+name: MONSTER V6 Step 6 Unified Data Identity Provider Health
+
+on:
+  push:
+    branches:
+      - "monster/monster-v6-step6-unified-data-identity-provider-health-v1"
+    paths:
+      - "devsystem/unified_data_identity_provider_health_graph_v1.py"
+      - "devsystem/unified_data_identity_provider_health_cases_v1.json"
+      - "tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py"
+      - "devsystem/task_ledgers/monster-v6-step6-unified-data-identity-provider-health-v1.json"
+      - ".github/workflows/monster-v6-step6-unified-data-identity-provider-health.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v6-step6-unified-data-identity-provider-health-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-proof:
+    name: unified identity provider-health focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate unified graph contract and historical cases
+        run: python devsystem/unified_data_identity_provider_health_graph_v1.py --cases devsystem/unified_data_identity_provider_health_cases_v1.json
+
+      - name: Run focused unified graph regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py
+
+      - name: Emit Step 6 GREEN marker
+        run: echo "MONSTER_V6_STEP6_UNIFIED_DATA_IDENTITY_PROVIDER_HEALTH_GREEN"
