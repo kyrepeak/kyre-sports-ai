@@ -26,6 +26,7 @@ DEPLOYMENT_WAIT_SECONDS = 600.0
 MAX_VISIBLE_SHELL_SECONDS = 0.75
 MAX_FINAL_PLAYER_SECONDS = 1.50
 PRECOMPUTE_SETTLE_MS = 1250
+STEP7_MARKER_OBSERVE_TIMEOUT_SECONDS = 10.0
 
 
 def _bool_attr(marker, name: str) -> bool:
@@ -109,6 +110,26 @@ def _wait_first_visible_content(page, started: float, player_name: str):
     )
 
 
+def _wait_step7_marker_resilient(page, *, timeout_seconds: float = STEP7_MARKER_OBSERVE_TIMEOUT_SECONDS):
+    """Observe the frozen Step-7 marker after the Game transition without racing Streamlit."""
+    deadline = time.monotonic() + float(timeout_seconds)
+    while time.monotonic() < deadline:
+        for candidate in page.frames:
+            try:
+                marker = candidate.locator(STEP7_SELECTOR).first
+                if marker.count() > 0:
+                    return candidate, marker
+            except Exception:
+                pass
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        page.wait_for_timeout(min(50, max(1, int(remaining * 1000))))
+    raise BrowserQAFailure(
+        "Frozen Step-7 precompute marker did not become observable after the Game transition."
+    )
+
+
 def _wait_step8_streamlit(page):
     started = time.monotonic()
     deadline = started + DEPLOYMENT_WAIT_SECONDS
@@ -153,8 +174,8 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             frame, slate_seconds, deploy_seconds = _wait_step8_streamlit(page)
             frame, first_name, _ = step5_profile._select_game_with_two_players(page, frame)
 
-            if frame.locator(STEP7_SELECTOR).count() < 1:
-                raise BrowserQAFailure("Frozen Step-7 precompute marker is missing under Step 8.")
+            frame, _ = _wait_step7_marker_resilient(page)
+            print("WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEP7_MARKER_GREEN")
 
             page.wait_for_timeout(PRECOMPUTE_SETTLE_MS)
             first = frame.get_by_role("button", name=first_name, exact=True)
