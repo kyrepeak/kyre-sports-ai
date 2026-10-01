@@ -48,5 +48,17 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "preflight_execution": {
+    "workflow": ".github/workflows/monster-v6-step2-preflight-gate.yml",
+    "trigger": "push to monster/** before PR",
+    "sequence": [
+      "fetch main and authoritative control refs",
+      "compiler self-test",
+      "focused unit tests",
+      "compile actual branch preflight",
+      "GO_TO_CI or BLOCK_BEFORE_CI"
+    ],
+    "expensive_pr_ci_starts_only_after_preflight_green": true
+  }
 }
