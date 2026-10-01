@@ -4,36 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 29,
+  "revision": 30,
   "generation": 9,
-  "holders": [
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v5-step5",
-      "lease_id": "SCOPE-LEASE-E896CA1F137EF1ECEE5F4B4C",
-      "generation": 9,
-      "acquired_at_utc": "2026-10-01T06:01:00Z",
-      "heartbeat_at_utc": "2026-10-01T06:01:00Z",
-      "expires_at_utc": "2026-10-01T07:01:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/devsystem-targeted-ci.yml",
-          "devsystem/permanent_gate_v1.py",
-          "devsystem/task_ledgers/monster-v5-step5-zero-context-resume-packet-v1.json",
-          "devsystem/zero_context_resume_packet_v1.py",
-          "tests/test_devsystem_permanent_gate_v1.py",
-          "tests/test_devsystem_zero_context_resume_packet_v1.py"
-        ],
-        "dependency_tokens": [
-          "domain:devsystem",
-          "project:monster-v5-step5"
-        ],
-        "shared_resources": [
-          "workflow:devsystem-targeted-ci"
-        ],
-        "resource_identity": {},
-        "exclusive": false
-      }
-    }
-  ],
-  "state_hash": "e724c179b741ef4b40e8a53c89169aa3fa7e41b9163bd1b2699d13138f5e4999"
+  "holders": [],
+  "state_hash": "963b01e4b790d22f658e2324a118209a7c7a31e576a8f5885ddd7c2811bfe17b"
 }
