@@ -143,15 +143,17 @@ def _wait_step7_precompute_ready(page, *, timeout_seconds: float = STEP7_PRECOMP
                     continue
                 target = int(marker.get_attribute("data-target-players") or "0")
                 completed = int(marker.get_attribute("data-completed") or "0")
+                green = int(marker.get_attribute("data-green") or "0")
                 running = int(marker.get_attribute("data-running") or "0")
                 errors = int(marker.get_attribute("data-errors") or "0")
                 last = {
                     "target": target,
                     "completed": completed,
+                    "green": green,
                     "running": running,
                     "errors": errors,
                 }
-                if target > 0 and completed >= target and running == 0 and errors == 0:
+                if target > 0 and completed >= target and green >= target and errors == 0:
                     return candidate, marker, last
             except Exception:
                 pass

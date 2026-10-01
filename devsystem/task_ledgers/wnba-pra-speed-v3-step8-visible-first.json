@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_PRECOMPUTE_PRECONDITION_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_COMPLETED_GREEN_PRECOMPUTE_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -100,12 +100,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_PRECOMPUTE_PRECONDITION_VERIFIER_PROOF",
-    "authoritative_failed_run": 36808720882,
-    "authoritative_failed_job": 110198750702,
+    "next_legal_action": "ONE_EXACT_HEAD_COMPLETED_GREEN_PRECOMPUTE_VERIFIER_PROOF",
+    "authoritative_failed_run": 36809414009,
+    "authoritative_failed_job": 110200897888,
     "failure_owner": "VERIFIER",
-    "failure_class": "CACHED_COLD_TIMER_STARTED_BEFORE_STEP7_PRECOMPUTE_READY",
-    "patch_count": 16
+    "failure_class": "STALE_RUNNING_COUNT_BLOCKED_VALID_COMPLETED_GREEN_PRECOMPUTE_RESULTS",
+    "patch_count": 17
   },
   "branch_failure": {
     "run": 36809191844,
@@ -274,18 +274,18 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36808720882,
-    "job": 110198750702,
+    "run": 36809414009,
+    "job": 110200897888,
     "owner": "VERIFIER",
-    "failure_class": "CACHED_COLD_TIMER_STARTED_BEFORE_STEP7_PRECOMPUTE_READY",
+    "failure_class": "STALE_RUNNING_COUNT_BLOCKED_VALID_COMPLETED_GREEN_PRECOMPUTE_RESULTS",
     "evidence": [
-      "The merged-main proof observed the frozen Step-7 marker and exact-player Game Center continuity at 0.019 seconds, inside the unchanged 0.750-second target.",
-      "The final Player then took 2.748 seconds and tripped the unchanged 1.50-second cached-cold guard.",
-      "The verifier used only a fixed 1.25-second settle delay and never proved Step-7 background precompute completion before starting the cached-cold timer.",
-      "Step-7 exposes target/completed/running/errors on its frozen marker specifically to prove precompute readiness."
+      "Production reported target=13, completed=13, running=13, errors=0 before timing.",
+      "The frozen Step-7 marker exposes data-green separately from the background running count.",
+      "Completed per-player results are keyed to the current Game Center player IDs; once all target results are completed and green with zero errors, cached-cold readiness is established.",
+      "A nonzero running count can represent duplicate/background futures and is not evidence that completed valid cache results are unusable."
     ],
-    "root_cause": "The verifier labeled the Player open cached-cold without establishing that the frozen Step-7 background precompute had completed.",
-    "patch": "Wait before the speed timer until the frozen Step-7 marker reports target>0, completed>=target, running=0, errors=0; then keep the exact 0.750s first-visible and 1.50s final-player thresholds unchanged.",
+    "root_cause": "The verifier required running==0 in addition to complete valid results, so stale or duplicate background futures could block a semantically ready cached-cold state.",
+    "patch": "Require target>0, completed>=target, green>=target, and errors==0. Retain running only for diagnostics; do not use it as a readiness gate. Preserve all speed thresholds and product code.",
     "product_code_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
@@ -453,6 +453,25 @@
       ],
       "root_cause": "The verifier labeled the Player open cached-cold without establishing that the frozen Step-7 background precompute had completed.",
       "patch": "Wait before the speed timer until the frozen Step-7 marker reports target>0, completed>=target, running=0, errors=0; then keep the exact 0.750s first-visible and 1.50s final-player thresholds unchanged.",
+      "product_code_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36809414009,
+      "job": 110200897888,
+      "owner": "VERIFIER",
+      "failure_class": "STALE_RUNNING_COUNT_BLOCKED_VALID_COMPLETED_GREEN_PRECOMPUTE_RESULTS",
+      "evidence": [
+        "Production reported target=13, completed=13, running=13, errors=0 before timing.",
+        "The frozen Step-7 marker exposes data-green separately from the background running count.",
+        "Completed per-player results are keyed to the current Game Center player IDs; once all target results are completed and green with zero errors, cached-cold readiness is established.",
+        "A nonzero running count can represent duplicate/background futures and is not evidence that completed valid cache results are unusable."
+      ],
+      "root_cause": "The verifier required running==0 in addition to complete valid results, so stale or duplicate background futures could block a semantically ready cached-cold state.",
+      "patch": "Require target>0, completed>=target, green>=target, and errors==0. Retain running only for diagnostics; do not use it as a readiness gate. Preserve all speed thresholds and product code.",
       "product_code_changed": false,
       "projection_math_changed": false,
       "market_math_changed": false,
