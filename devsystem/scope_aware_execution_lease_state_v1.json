@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 74,
-  "generation": 35,
+  "revision": 75,
+  "generation": 36,
   "holders": [
     {
       "owner_id": "chatgpt:monster-v2:monster-v6-step1-proof-reuse-integration-v1",
@@ -31,6 +31,37 @@
         ],
         "resource_identity": {
           "main:base": "428fae0d2148ebf92f10d053f6f4d4bb9c2729fa"
+        },
+        "exclusive": false
+      }
+    },
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v6-step5-semantic-ui-verifier-v1",
+      "lease_id": "SCOPE-LEASE-85CADC0B119923A4E7AAE037",
+      "generation": 36,
+      "acquired_at_utc": "2026-10-01T22:17:00Z",
+      "heartbeat_at_utc": "2026-10-01T22:17:00Z",
+      "expires_at_utc": "2026-10-02T00:17:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v6-step5-semantic-ui-verifier.yml",
+          "devsystem/semantic_ui_verifier_cases_v1.json",
+          "devsystem/semantic_ui_verifier_contract_v1.py",
+          "devsystem/task_ledgers/monster-v6-step5-semantic-ui-verifier-v1.json",
+          "tests/test_devsystem_semantic_ui_verifier_contract_v1.py"
+        ],
+        "dependency_tokens": [
+          "read:production-verifier-v1",
+          "read:passing-yards-step6-verifier-repair",
+          "project:monster-v6-step5-semantic-ui-verifier"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v6-step5-semantic-ui-verifier-v1",
+          "workflow:monster-v6-step5-semantic-ui-verifier"
+        ],
+        "resource_identity": {
+          "main:base": "bea8a48a775f6c01047a24a9bb3e48d95709f3e4",
+          "registry:hash": "e735f9ed48378302acd2776c69489cfadf1a8d2675daf1c7a85a10b530a6bda2"
         },
         "exclusive": false
       }
@@ -69,5 +100,5 @@
       }
     }
   ],
-  "state_hash": "e9b58d3a305723524d819a914fba6766bb2e3fd71dcdf1b209310a610e669f11"
+  "state_hash": "9f7896e5098b31dcf8331750e607769d2dfa16073657ffcb71f516e6846141e9"
 }
