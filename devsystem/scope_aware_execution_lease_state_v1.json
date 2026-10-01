@@ -4,34 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 38,
+  "revision": 39,
   "generation": 15,
-  "holders": [
-    {
-      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step1-history-router-v5",
-      "lease_id": "SCOPE-LEASE-8ABE1AB966F300128DD9F86D",
-      "generation": 15,
-      "acquired_at_utc": "2026-10-01T16:38:00Z",
-      "heartbeat_at_utc": "2026-10-01T16:38:00Z",
-      "expires_at_utc": "2026-10-01T16:53:00Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/frozen_artifact_registry_state_v1.json"
-        ],
-        "dependency_tokens": [
-          "control:frozen-registry",
-          "project:cfb-top-picks-repair-step1-history-router"
-        ],
-        "shared_resources": [
-          "frozen-artifact-registry"
-        ],
-        "resource_identity": {
-          "main:head": "ee626fead9000de556ec4e0c319608a46aa15dec",
-          "registry:ref": "017b6f6badda9cdcfa904b151e39db24a488b6e0"
-        },
-        "exclusive": false
-      }
-    }
-  ],
-  "state_hash": "cfd968d5f9cc8be7c0779f27a6067c18f1a1d27c0e4a196c1a512685326de493"
+  "holders": [],
+  "state_hash": "cfe8b356852c891a7299507b4a439fa4311f79a1a5b6053d2d944314fbc161b4"
 }
