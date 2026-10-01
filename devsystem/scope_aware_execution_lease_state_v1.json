@@ -4,36 +4,38 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 67,
-  "generation": 32,
+  "revision": 68,
+  "generation": 33,
   "holders": [
     {
-      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
-      "lease_id": "SCOPE-LEASE-0AAADF237F26544D1975D67C",
-      "generation": 26,
-      "acquired_at_utc": "2026-10-01T20:58:00Z",
-      "heartbeat_at_utc": "2026-10-01T21:13:30Z",
-      "expires_at_utc": "2026-10-01T21:43:30Z",
+      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-market-reasoning-v1",
+      "lease_id": "SCOPE-LEASE-3AE4C890066146530683D2EC",
+      "generation": 33,
+      "acquired_at_utc": "2026-10-01T22:04:08Z",
+      "heartbeat_at_utc": "2026-10-01T22:04:08Z",
+      "expires_at_utc": "2026-10-01T22:34:08Z",
       "scope": {
         "write_paths": [
-          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
-          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
-          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
-          "tests/test_wnba_pra_speed_v3_step9.py"
+          ".github/workflows/cfb-top-picks-repair-step3-market-reasoning-v1.yml",
+          "devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py",
+          "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
+          "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py"
         ],
         "dependency_tokens": [
-          "domain:wnba",
-          "project:wnba-pra-speed-v3-step9"
+          "domain:cfb",
+          "project:cfb-top-picks-repair-step3-market-reasoning"
         ],
         "shared_resources": [
-          "branch:fix/wnba-pra-speed-v3-step9-upcoming-game-r8",
-          "pr:wnba-pra-speed-v3-step9-upcoming-game-r8",
-          "workflow:devsystem-targeted-ci",
-          "workflow:wnba-pra-speed-v3-step9-final-cert"
+          "branch:cfb-top-picks-repair-step3-market-reasoning-v1",
+          "deploy:pickvault",
+          "pr:cfb-top-picks-repair-step3-market-reasoning-v1",
+          "workflow:cfb-top-picks-repair-step3-market-reasoning-v1",
+          "workflow:devsystem-targeted-ci"
         ],
         "resource_identity": {
-          "main:base": "cb12320bdf29867d991fcee8518530dfdb9d128c",
-          "step9:failed-run": "36817421429"
+          "branch:head": "3762754c7d94945eac7825589287e1759892f2da",
+          "main:base": "0feac7ad028e307b915abec5415b43ac77991be2",
+          "repair:step": "3"
         },
         "exclusive": false
       }
@@ -98,5 +100,5 @@
       }
     }
   ],
-  "state_hash": "e09d36b9bc75a734022d655886a052bc8ea0b8de82f157437774b1ff1df4a24f"
+  "state_hash": "6f360e92c6385e50e9388f7b785173df02907d202ebe730a9669f78c611f68dc"
 }
