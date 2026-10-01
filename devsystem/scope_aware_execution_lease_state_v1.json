@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 62,
-  "generation": 30,
+  "revision": 63,
+  "generation": 31,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
@@ -67,6 +67,33 @@
       }
     },
     {
+      "owner_id": "chatgpt:monster-v2:monster-v6-step3-deployment-convergence-controller-v1",
+      "lease_id": "SCOPE-LEASE-6A6391E58EDE8DDE4525EDB6",
+      "generation": 31,
+      "acquired_at_utc": "2026-10-01T21:45:00Z",
+      "heartbeat_at_utc": "2026-10-01T21:45:00Z",
+      "expires_at_utc": "2026-10-01T23:45:00Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/deployment_convergence_controller_v1.py",
+          "devsystem/task_ledgers/monster-v6-step3-deployment-convergence-controller-v1.json",
+          "tests/test_devsystem_deployment_convergence_controller_v1.py"
+        ],
+        "dependency_tokens": [
+          "read:deployment-truth-control-plane-v1",
+          "project:monster-v6-step3-deployment-convergence-controller"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v6-step3-deployment-convergence-controller-v1"
+        ],
+        "resource_identity": {
+          "main:base": "0f46df917a5f18f02359de435b676cba88702d52",
+          "registry:hash": "6a5e6ad7db7097c212799cc757ad2a5a78c2715264f6d3f892ec16d99b6cd828"
+        },
+        "exclusive": false
+      }
+    },
+    {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-market-reasoning-v1",
       "lease_id": "SCOPE-LEASE-AD5173C1D4A78DEA62887160",
       "generation": 30,
@@ -95,5 +122,5 @@
       }
     }
   ],
-  "state_hash": "0e08da109aeab26ed4ed7682088528bca4159156ee698f95ed6e992c10ab60ee"
+  "state_hash": "cfce9d8baa6ddd1be64de525bcd3384efd4209553d3f59ba7a61db162a59bf37"
 }
