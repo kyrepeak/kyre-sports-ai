@@ -1,11 +1,23 @@
 {
+  "version": 2,
   "task_id": "monster-v6-step1-content-addressed-proof-reuse-v1",
   "title": "MONSTER V6 Step 1 — Content-Addressed Proof Reuse",
   "project": "MONSTER V6",
   "step": 1,
   "total_steps": 6,
-  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
-  "scope": "Add a fail-closed content-addressed proof reuse engine so unchanged static artifacts and dependencies can reuse a prior successful terminal proof across unrelated head movement. Production/live-state proof is never reusable. Step 2A and scope-aware mutation leases remain mandatory.",
+  "status": "DONE",
+  "problem": "Unchanged frozen/static artifacts can repeatedly trigger expensive proof even when their exact blob identities and dependency identities are unchanged.",
+  "root_cause": "The existing adaptive proof and blast-radius layers select proof obligations, but there is no fail-closed repository contract for reusing a prior successful terminal proof by exact content identity.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "Add a read-only content-addressed proof reuse engine that requires exact artifact blobs, exact dependency blobs, proof-policy identity, sufficient proof scope, successful terminal receipt, and tamper-evident fingerprint. Production/live-state proofs are never reusable.",
+  "protections": {
+    "step_2a_required": true,
+    "scope_lease_required_for_mutation": true,
+    "frozen_artifacts_modified": false,
+    "product_runtime_modified": false,
+    "production_live_proof_reused": false,
+    "mutation_authority_granted": false
+  },
   "acceptance": {
     "exact_artifact_blobs_required": true,
     "exact_dependency_blobs_required": true,
@@ -14,9 +26,29 @@
     "successful_terminal_receipt_required": true,
     "tamper_evident_fingerprint_required": true,
     "production_live_proof_never_reused": true,
-    "unrelated_head_movement_may_reuse": true,
-    "mutation_authority_granted": false
+    "unrelated_head_movement_may_reuse": true
   },
-  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
-  "proof_policy": "Focused self-test and permanent-contract on exact PR head, then one authoritative DevSystem PR proof, exact-head merge, one merged-main proof, terminal receipt, frozen-registry checkpoint, lease release."
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_content_addressed_proof_reuse_v1.py",
+    "permanent_contract": "devsystem/permanent_gate_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "step2a": {
+    "single_branch": "monster/monster-v6-step1-content-proof-reuse-v1",
+    "single_pr_required": true,
+    "duplicate_async_forbidden": true,
+    "exact_head_required": true,
+    "failed_run_id": 36926351509,
+    "failure_class": "B_CONTROL_PLANE_LEDGER_CONTRACT",
+    "recovery_patch_limit": 1
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
