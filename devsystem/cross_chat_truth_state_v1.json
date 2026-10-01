@@ -4,14 +4,14 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 69,
+  "truth_epoch": 70,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 2,
   "total_steps": 5,
-  "step_title": "Detached Execution / Background Continuation — CI Repair",
+  "step_title": "Detached Execution / Background Continuation - CI Repair",
   "step_status": "ACTIVE",
-  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR_TRUTH_REFRESH",
+  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR_TRUTH_HASH_FIXED",
   "main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
   "active_pr": 1296,
   "active_run": 36812569889,
@@ -78,5 +78,5 @@
     "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a",
     "workstream_count": 0
   },
-  "state_hash": "64fb50cfefbe8428bbda7eb8a75112b1cb1a46ed4e3c6e4aef07c1350d31c5b9"
+  "state_hash": "5abe1fc4a3ae2288fe82cb4b7a516b44120658274aa8478abeecdd6a22ea2761"
 }
