@@ -1,0 +1,83 @@
+name: CFB Top Picks Repair Step 3 Market Reasoning
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py"
+      - "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py"
+      - "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json"
+      - ".github/workflows/cfb-top-picks-repair-step3-market-reasoning-v1.yml"
+      - "cfb_top_picks_market_reasoning_v1.py"
+      - "cfb_top_picks_history_router_v1.py"
+      - "cfb_top_picks_offense_research_v1.py"
+      - "cfb_top_picks_defense_pace_research_v1.py"
+      - "cfb_top_picks_engine_v1.py"
+      - "cfb_top_picks_details_v*.py"
+      - "cfb_top_picks_page_v*.py"
+  push:
+    branches: [main]
+    paths:
+      - "devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py"
+      - "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py"
+      - "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json"
+      - ".github/workflows/cfb-top-picks-repair-step3-market-reasoning-v1.yml"
+      - "cfb_top_picks_market_reasoning_v1.py"
+      - "cfb_top_picks_history_router_v1.py"
+      - "cfb_top_picks_offense_research_v1.py"
+      - "cfb_top_picks_defense_pace_research_v1.py"
+      - "cfb_top_picks_engine_v1.py"
+      - "cfb_top_picks_details_v*.py"
+      - "cfb_top_picks_page_v*.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-top-picks-repair-step3-market-reasoning-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore shared hot Python environment
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
+      - name: Build environment on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          .venv-browser-qa/bin/python -m playwright install chromium
+      - name: Activate environment
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+      - name: Static and permanent Step 3 regression proof
+        run: |
+          python -m py_compile devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py
+          python -m pytest -q tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py
+      - name: Certify live Top 10 market reasoning usability
+        run: python -m devsystem.cfb_top_picks_market_reasoning_repair_step3_v1
+      - name: Certify merged-main public reasoning surface
+        if: github.event_name == 'push'
+        run: python -m devsystem.cfb_top_picks_market_reasoning_repair_step3_v1 --public
+      - name: Upload Step 3 market reasoning evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-top-picks-repair-step3-market-reasoning-evidence-${{ github.run_id }}
+          path: artifacts/cfb-top-picks-repair-step3-market-reasoning
+          if-no-files-found: ignore
