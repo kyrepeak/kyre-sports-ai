@@ -36,6 +36,30 @@ DEFENSE_PACE_RESEARCH_PROJECTION_WEIGHT = 0.0
 API2_USED = False
 RECENT_ALLOWANCE_WINDOW = 3
 
+# First-party transition-team snapshots are used only when the standard NCAA
+# FBS/FCS table identity cannot supply the supporting Defense/Pace fields.
+# Values below come from the University of West Florida's 2026 cumulative
+# football statistics, verified 2026-10-01.  They are descriptive research
+# inputs only and retain 0.0% projection/ranking/probability weight.
+_TEAM_OFFICIAL_DEFENSE_PACE_FALLBACKS = {
+    "west florida": {
+        "games": 4.0,
+        "opponent_red_zone_attempts": 13.0,
+        "opponent_red_zone_touchdowns": 7.0,
+        "opponent_pass_attempts": 110.0,
+        "opponent_pass_completions": 59.0,
+        "opponent_pass_yards": 695.0,
+        "opponent_rush_attempts": 160.0,
+        "opponent_rush_yards": 707.0,
+        "total_offensive_plays": 242.0,
+        "total_possession_seconds": 6854.0,
+        "source": "University of West Florida Athletics 2026 cumulative football statistics",
+        "source_url": "https://goargos.com/sports/football/stats?path=general",
+        "verified_at": "2026-10-01",
+        "note": "First-party current-season transition-team fallback",
+    },
+}
+
 CORE_FIELDS = (
     "points_allowed_per_game",
     "recent_points_allowed_avg",
@@ -67,6 +91,11 @@ def _float(value: Any) -> float | None:
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _official_transition_snapshot(profile: Mapping[str, Any]) -> dict[str, Any]:
+    team_key = _clean(profile.get("team")).casefold()
+    return dict(_TEAM_OFFICIAL_DEFENSE_PACE_FALLBACKS.get(team_key) or {})
 
 
 def _metric(
@@ -130,7 +159,41 @@ def _red_zone_defense(
     division: str,
     observed_at: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    official = _official_transition_snapshot(profile)
+
+    def official_fallback(reason: str) -> tuple[dict[str, Any], dict[str, Any]]:
+        attempts = _float(official.get("opponent_red_zone_attempts"))
+        touchdowns = _float(official.get("opponent_red_zone_touchdowns"))
+        rate = (
+            float(touchdowns) / float(attempts)
+            if touchdowns is not None and attempts is not None and attempts > 0
+            else None
+        )
+        metric = _metric(
+            rate,
+            source=_clean(official.get("source")),
+            observed_at=observed_at,
+            status="VERIFIED_FALLBACK" if rate is not None else "UNAVAILABLE",
+            note=(
+                f"Opponent red-zone touchdown rate allowed; "
+                f"verified snapshot {_clean(official.get('verified_at'))}; {reason}"
+            ),
+        )
+        return metric, {
+            "ready": rate is not None,
+            "division": division or "FCS_TRANSITION",
+            "provider": _clean(official.get("source")),
+            "source_url": _clean(official.get("source_url")),
+            "fallback": True,
+            "verified_at": _clean(official.get("verified_at")),
+            "attempts": attempts,
+            "touchdowns": touchdowns,
+            "reason": reason,
+        }
+
     if division not in {"FBS", "FCS"}:
+        if official:
+            return official_fallback("NCAA division/stat-table identity unavailable")
         return _metric(
             None,
             source="",
@@ -143,25 +206,159 @@ def _red_zone_defense(
     row = pace_identity._lookup(tables.get("red_zone_defense") or {}, profile)
     metrics = red_zone._metrics(row, True) if row else {}
     rate = _float(metrics.get("touchdown_rate"))
+    if rate is not None:
+        return _metric(
+            rate,
+            source=f"NCAA {division} Red Zone Defense",
+            observed_at=observed_at,
+            note="Opponent red-zone touchdown rate allowed",
+        ), {
+            "ready": True,
+            "division": division,
+            "metrics": dict(metrics),
+            "attempts": list(diag.get("attempts") or []),
+        }
+
+    if official:
+        return official_fallback("NCAA red-zone defense row unavailable")
+
     return _metric(
-        rate,
-        source=f"NCAA {division} Red Zone Defense",
+        None,
+        source="",
         observed_at=observed_at,
-        note="Opponent red-zone touchdown rate allowed",
+        note="No verified NCAA or official-team red-zone defense field available",
     ), {
-        "ready": rate is not None,
+        "ready": False,
         "division": division,
         "metrics": dict(metrics),
         "attempts": list(diag.get("attempts") or []),
     }
-
 
 def _explosive_defense(
     profile: Mapping[str, Any],
     division: str,
     observed_at: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    official = _official_transition_snapshot(profile)
+
+    def score_proxy(
+        pass_metrics: Mapping[str, Any],
+        rush_metrics: Mapping[str, Any],
+        baselines: Mapping[str, Any],
+    ) -> tuple[float | None, str]:
+        signals: list[tuple[float, float]] = []
+        for value, baseline, full_ratio, weight in (
+            (
+                pass_metrics.get("yards_per_attempt_allowed"),
+                baselines.get("pass_ypa_allowed"),
+                explosive.PASS_FULL_SIGNAL_RATIO,
+                explosive.PASS_WEIGHT * 0.65,
+            ),
+            (
+                pass_metrics.get("yards_per_completion_allowed"),
+                baselines.get("pass_ypc_allowed"),
+                explosive.PASS_FULL_SIGNAL_RATIO,
+                explosive.PASS_WEIGHT * 0.35,
+            ),
+            (
+                rush_metrics.get("yards_per_rush_allowed"),
+                baselines.get("rush_ypr_allowed"),
+                explosive.RUSH_FULL_SIGNAL_RATIO,
+                explosive.RUSH_WEIGHT,
+            ),
+        ):
+            signal = explosive._ratio_signal(value, baseline, full_ratio)
+            if signal is not None:
+                signals.append((float(signal), float(weight)))
+
+        weight_sum = sum(weight for _, weight in signals)
+        proxy = (
+            sum(signal * weight for signal, weight in signals) / weight_sum
+            if weight_sum > 0
+            else None
+        )
+        if proxy is None:
+            label = "UNAVAILABLE"
+        elif proxy >= 0.25:
+            label = "HIGH VULNERABILITY"
+        elif proxy >= 0.08:
+            label = "ABOVE-AVG VULNERABILITY"
+        elif proxy <= -0.25:
+            label = "STRONG SUPPRESSION"
+        elif proxy <= -0.08:
+            label = "ABOVE-AVG SUPPRESSION"
+        else:
+            label = "BALANCED"
+        return proxy, label
+
+    def official_fallback(reason: str) -> tuple[dict[str, Any], dict[str, Any]]:
+        bundle, diag = explosive._load_explosive_division("FCS")
+        baselines = dict(bundle.get("baselines") or {})
+        pass_attempts = _float(official.get("opponent_pass_attempts"))
+        pass_completions = _float(official.get("opponent_pass_completions"))
+        pass_yards = _float(official.get("opponent_pass_yards"))
+        rush_attempts = _float(official.get("opponent_rush_attempts"))
+        rush_yards = _float(official.get("opponent_rush_yards"))
+        pass_metrics = {
+            "yards_per_attempt_allowed": (
+                float(pass_yards) / float(pass_attempts)
+                if pass_yards is not None and pass_attempts and pass_attempts > 0
+                else None
+            ),
+            "yards_per_completion_allowed": (
+                float(pass_yards) / float(pass_completions)
+                if pass_yards is not None and pass_completions and pass_completions > 0
+                else None
+            ),
+        }
+        rush_metrics = {
+            "yards_per_rush_allowed": (
+                float(rush_yards) / float(rush_attempts)
+                if rush_yards is not None and rush_attempts and rush_attempts > 0
+                else None
+            ),
+        }
+        proxy, label = score_proxy(pass_metrics, rush_metrics, baselines)
+        metric = _metric(
+            proxy,
+            source=(
+                _clean(official.get("source"))
+                + " + NCAA FCS passing/rushing defense efficiency baselines"
+            ),
+            observed_at=observed_at,
+            status="VERIFIED_FALLBACK" if proxy is not None else "UNAVAILABLE",
+            note=(
+                "Explosive-susceptibility efficiency proxy from first-party "
+                f"opponent efficiency; verified snapshot {_clean(official.get('verified_at'))}; {reason}"
+            ),
+        )
+        metric["label"] = label
+        metric["pass_yards_per_attempt_allowed"] = _float(
+            pass_metrics.get("yards_per_attempt_allowed")
+        )
+        metric["pass_yards_per_completion_allowed"] = _float(
+            pass_metrics.get("yards_per_completion_allowed")
+        )
+        metric["rush_yards_per_attempt_allowed"] = _float(
+            rush_metrics.get("yards_per_rush_allowed")
+        )
+        return metric, {
+            "ready": proxy is not None,
+            "division": "FCS_TRANSITION",
+            "provider": _clean(official.get("source")),
+            "source_url": _clean(official.get("source_url")),
+            "fallback": True,
+            "verified_at": _clean(official.get("verified_at")),
+            "pass_metrics": pass_metrics,
+            "rush_metrics": rush_metrics,
+            "baselines": baselines,
+            "attempts": list(diag.get("attempts") or []),
+            "reason": reason,
+        }
+
     if division not in {"FBS", "FCS"}:
+        if official:
+            return official_fallback("NCAA division/stat-table identity unavailable")
         metric = _metric(
             None,
             source="",
@@ -179,50 +376,10 @@ def _explosive_defense(
     rush_row = pace_identity._lookup(tables.get("rush_defense") or {}, profile)
     pass_metrics = explosive._pass_defense_metrics(pass_row)
     rush_metrics = explosive._rush_metrics(rush_row, True)
+    proxy, label = score_proxy(pass_metrics, rush_metrics, baselines)
 
-    signals: list[tuple[float, float]] = []
-    for value, baseline, full_ratio, weight in (
-        (
-            pass_metrics.get("yards_per_attempt_allowed"),
-            baselines.get("pass_ypa_allowed"),
-            explosive.PASS_FULL_SIGNAL_RATIO,
-            explosive.PASS_WEIGHT * 0.65,
-        ),
-        (
-            pass_metrics.get("yards_per_completion_allowed"),
-            baselines.get("pass_ypc_allowed"),
-            explosive.PASS_FULL_SIGNAL_RATIO,
-            explosive.PASS_WEIGHT * 0.35,
-        ),
-        (
-            rush_metrics.get("yards_per_rush_allowed"),
-            baselines.get("rush_ypr_allowed"),
-            explosive.RUSH_FULL_SIGNAL_RATIO,
-            explosive.RUSH_WEIGHT,
-        ),
-    ):
-        signal = explosive._ratio_signal(value, baseline, full_ratio)
-        if signal is not None:
-            signals.append((float(signal), float(weight)))
-
-    weight_sum = sum(weight for _, weight in signals)
-    proxy = (
-        sum(signal * weight for signal, weight in signals) / weight_sum
-        if weight_sum > 0
-        else None
-    )
-    if proxy is None:
-        label = "UNAVAILABLE"
-    elif proxy >= 0.25:
-        label = "HIGH VULNERABILITY"
-    elif proxy >= 0.08:
-        label = "ABOVE-AVG VULNERABILITY"
-    elif proxy <= -0.25:
-        label = "STRONG SUPPRESSION"
-    elif proxy <= -0.08:
-        label = "ABOVE-AVG SUPPRESSION"
-    else:
-        label = "BALANCED"
+    if proxy is None and official:
+        return official_fallback("NCAA defensive efficiency rows unavailable")
 
     metric = _metric(
         proxy,
@@ -251,7 +408,6 @@ def _explosive_defense(
         "baselines": dict(baselines),
         "attempts": list(diag.get("attempts") or []),
     }
-
 
 def _espn_core_plays(
     team_id: str,
@@ -306,6 +462,7 @@ def _pace_profile(
     season: int,
     observed_at: str,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    official = _official_transition_snapshot(profile)
     ncaa_bundle: Mapping[str, Any] = {}
     ncaa_diag: Mapping[str, Any] = {}
     ncaa: Mapping[str, Any] = {}
@@ -322,24 +479,98 @@ def _pace_profile(
             note="Offensive plays per game",
         )
         espn_diag = {}
+        seconds = _metric(
+            ncaa.get("seconds_per_offensive_play"),
+            source=f"NCAA {division} Total Offense + Time of Possession",
+            observed_at=observed_at,
+            note="Possession-clock seconds per offensive play",
+        )
+        pace_index = _metric(
+            ncaa.get("pace_index"),
+            source=f"NCAA {division} division-relative pace baseline",
+            observed_at=observed_at,
+            note="plays/game relative to same-division median",
+        )
+        fallback_diag: dict[str, Any] = {}
+    elif official:
+        games = _float(official.get("games"))
+        total_plays = _float(official.get("total_offensive_plays"))
+        possession_seconds = _float(official.get("total_possession_seconds"))
+        plays_pg = (
+            float(total_plays) / float(games)
+            if total_plays is not None and games and games > 0
+            else None
+        )
+        seconds_per_play = (
+            float(possession_seconds) / float(total_plays)
+            if possession_seconds is not None and total_plays and total_plays > 0
+            else None
+        )
+        fcs_bundle, fcs_diag = pace_identity._load_pace_division("FCS")
+        fcs_baseline = _float(fcs_bundle.get("baseline_plays_per_game"))
+        index = (
+            float(plays_pg) / float(fcs_baseline)
+            if plays_pg is not None and fcs_baseline and fcs_baseline > 0
+            else None
+        )
+        source = _clean(official.get("source"))
+        verified = _clean(official.get("verified_at"))
+        plays = _metric(
+            plays_pg,
+            source=source,
+            observed_at=observed_at,
+            status="VERIFIED_FALLBACK" if plays_pg is not None else "UNAVAILABLE",
+            note=f"First-party transition-team plays/game; verified snapshot {verified}",
+        )
+        seconds = _metric(
+            seconds_per_play,
+            source=source,
+            observed_at=observed_at,
+            status="VERIFIED_FALLBACK" if seconds_per_play is not None else "UNAVAILABLE",
+            note=f"First-party possession seconds / offensive play; verified snapshot {verified}",
+        )
+        pace_index = _metric(
+            index,
+            source=source + " + NCAA FCS division-relative pace baseline",
+            observed_at=observed_at,
+            status="VERIFIED_FALLBACK" if index is not None else "UNAVAILABLE",
+            note="first-party plays/game relative to NCAA FCS median",
+        )
+        espn_diag = {}
+        fallback_diag = {
+            "ready": all(
+                item.get("value") is not None
+                for item in (plays, seconds, pace_index)
+            ),
+            "division": "FCS_TRANSITION",
+            "provider": source,
+            "source_url": _clean(official.get("source_url")),
+            "verified_at": verified,
+            "games": games,
+            "total_offensive_plays": total_plays,
+            "total_possession_seconds": possession_seconds,
+            "fcs_baseline_plays_per_game": fcs_baseline,
+            "fcs_diagnostics": dict(fcs_diag),
+        }
     else:
         plays, espn_diag = _espn_core_plays(team_id, season, observed_at)
         if plays.get("value") is not None:
             plays["status"] = "VERIFIED_FALLBACK"
             plays["note"] = "NCAA pace row unavailable; exact-team ESPN Core fallback used"
+        seconds = _metric(
+            None,
+            source="",
+            observed_at=observed_at,
+            note="NCAA Time of Possession row unavailable",
+        )
+        pace_index = _metric(
+            None,
+            source="",
+            observed_at=observed_at,
+            note="NCAA division pace baseline unavailable for team identity",
+        )
+        fallback_diag = {}
 
-    seconds = _metric(
-        ncaa.get("seconds_per_offensive_play"),
-        source=f"NCAA {division} Total Offense + Time of Possession" if division else "",
-        observed_at=observed_at,
-        note="Possession-clock seconds per offensive play",
-    )
-    pace_index = _metric(
-        ncaa.get("pace_index"),
-        source=f"NCAA {division} division-relative pace baseline" if division else "",
-        observed_at=observed_at,
-        note="plays/game relative to same-division median",
-    )
     index_value = _float(pace_index.get("value"))
     if index_value is None:
         label = "DATA LIMITED"
@@ -356,13 +587,16 @@ def _pace_profile(
         "seconds_per_play": seconds,
         "pace_index": pace_index,
     }, {
-        "ready": plays.get("value") is not None,
-        "division": division,
+        "ready": all(
+            item.get("value") is not None
+            for item in (plays, seconds, pace_index)
+        ),
+        "division": division or ("FCS_TRANSITION" if official else ""),
         "ncaa": dict(ncaa),
         "ncaa_diagnostics": dict(ncaa_diag),
         "espn_fallback": dict(espn_diag),
+        "official_transition_fallback": fallback_diag,
     }
-
 
 def _side_profile(
     side: str,

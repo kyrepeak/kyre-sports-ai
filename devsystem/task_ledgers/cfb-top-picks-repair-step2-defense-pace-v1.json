@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-repair-step2-defense-pace-v1",
+  "title": "CFB Top Picks Repair Mission — Step 2 Defense + Pace Completeness",
+  "project": "CFB Top Picks Missing Research Repair",
+  "step": 2,
+  "total_steps": 5,
+  "status": "DONE",
+  "problem": "The existing 20-team Defense/Pace certification allowed supporting_ready >= 2 of 6, so West Florida passed while four visible supporting fields remained unavailable.",
+  "root_cause": "West Florida is a 2026 FCS transition-team identity absent from the standard NCAA FBS/FCS stat rows consumed by the Defense/Pace research layer. The offense layer already had a first-party transition fallback, but Defense/Pace did not.",
+  "failure_owner": "PRODUCT",
+  "patch": "Add a local first-party University of West Florida 2026 cumulative-stat fallback for red-zone defense, opponent pass/rush efficiency, possession clock and plays, reuse existing NCAA FCS baselines/formulas, and strengthen the live 20-team cert to require all 6 supporting fields for every team.",
+  "external_evidence": {
+    "source": "University of West Florida Athletics 2026 cumulative football statistics",
+    "source_url": "https://goargos.com/sports/football/stats?path=general",
+    "verified_at": "2026-10-01",
+    "opponent_red_zone_touchdowns": 7,
+    "opponent_red_zone_attempts": 13,
+    "opponent_pass_yards": 695,
+    "opponent_pass_attempts": 110,
+    "opponent_pass_completions": 59,
+    "opponent_rush_yards": 707,
+    "opponent_rush_attempts": 160,
+    "total_offensive_plays": 242,
+    "total_possession_seconds": 6854
+  },
+  "protections": {
+    "step1_history_router_modified": false,
+    "shared_ou_engines_modified": false,
+    "api2_modified": false,
+    "probability_modified": false,
+    "ranking_modified": false,
+    "selection_modified": false,
+    "sportsbook_projection_weight": 0
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "PRODUCT",
+    "permanent_test": "tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py",
+    "permanent_contract": "devsystem/cfb_top_picks_defense_pace_repair_step2_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "step2a": {
+    "single_branch": "cfb-top-picks-repair-step2-defense-pace-v1",
+    "single_pr_required": true,
+    "duplicate_async_forbidden": true,
+    "exact_head_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

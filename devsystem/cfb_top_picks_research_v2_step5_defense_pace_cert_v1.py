@@ -106,12 +106,14 @@ def run(artifact_dir: str | Path = "artifacts/cfb-top-picks-research-v2-step5") 
                             f"CFB_TOP_PICKS_RESEARCH_V2_STEP5_SUPPORT_OBSERVED_AT_MISSING:{field}"
                         )
 
-            if int(profile.get("supporting_ready") or 0) < 2:
+            if int(profile.get("supporting_ready") or 0) != len(research.SUPPORTING_FIELDS):
                 raise AssertionError(
-                    "CFB_TOP_PICKS_RESEARCH_V2_STEP5_SUPPORT_TOO_THIN:"
+                    "CFB_TOP_PICKS_REPAIR_STEP2_SUPPORT_INCOMPLETE:"
                     + str(profile.get("team") or "")
                     + ":"
                     + str(profile.get("supporting_ready"))
+                    + "/"
+                    + str(len(research.SUPPORTING_FIELDS))
                 )
 
             team_evidence.append({
@@ -139,6 +141,7 @@ def run(artifact_dir: str | Path = "artifacts/cfb-top-picks-research-v2-step5") 
         "teams_certified": len(team_evidence),
         "core_fields_per_team": len(research.CORE_FIELDS),
         "supporting_fields_per_team": len(research.SUPPORTING_FIELDS),
+        "full_supporting_completeness_required": True,
         "teams": team_evidence,
     }
     (artifacts / "cfb_top_picks_research_v2_step5_defense_pace.json").write_text(
@@ -149,6 +152,7 @@ def run(artifact_dir: str | Path = "artifacts/cfb-top-picks-research-v2-step5") 
     print("CFB_TOP_PICKS_RESEARCH_V2_STEP5_PROVENANCE_GREEN")
     print("CFB_TOP_PICKS_RESEARCH_V2_STEP5_MULTI_SOURCE_GREEN")
     print("CFB_TOP_PICKS_RESEARCH_V2_STEP5_FROZEN_GREEN")
+    print("CFB_TOP_PICKS_REPAIR_STEP2_20_TEAM_FULL_SUPPORT_GREEN")
     print(json.dumps(payload, indent=2, sort_keys=True))
     return payload
 
