@@ -297,4 +297,4 @@ def test_step8_client_preview_is_browser_visible_before_rerun_permanently():
     assert "WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_GREEN" in profile
     assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_REPAIR_SCOPE_GREEN" in workflow
-    assert "WNBA_PRA_SPEED_V3_STEP8_GAME_CARD_CONTINUITY_VERIFIER_SCOPE_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_PLAYER_CARD_VERIFIER_SCOPE_GREEN" in workflow
