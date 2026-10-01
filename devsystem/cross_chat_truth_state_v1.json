@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 80,
-  "program_id": "MONSTER_V5",
-  "program_title": "MONSTER V5",
-  "current_step": 5,
-  "total_steps": 5,
-  "step_title": "Zero-Context Resume Packet",
+  "truth_epoch": 81,
+  "program_id": "MONSTER_V6",
+  "program_title": "MONSTER V6",
+  "current_step": 1,
+  "total_steps": 6,
+  "step_title": "Content-Addressed Proof Reuse",
   "step_status": "FROZEN",
-  "active_checkpoint": "MONSTER_V5_STEP5",
-  "main_sha": "6583961ce28281989bcbf5dd95018cd633021230",
+  "active_checkpoint": "MONSTER_V6_STEP1",
+  "main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
   "active_pr": null,
-  "active_run": 36823232652,
-  "active_head_sha": "6583961ce28281989bcbf5dd95018cd633021230",
+  "active_run": 36926839599,
+  "active_head_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
   "blocker": null,
-  "next_legal_action": "MONSTER_V5_COMPLETE",
+  "next_legal_action": "START_MONSTER_V6_STEP2",
   "lease": {
     "revision": 64,
     "generation": 12,
@@ -26,12 +26,14 @@
     "holder_lease_id": null
   },
   "frozen_registry": {
-    "revision": 14,
-    "state_hash": "7a3060e9fb6f10930be83143526b047bd2bf4f6e32c8b8e90c545744300b75c6",
-    "checkpoint_count": 28,
+    "revision": 17,
+    "state_hash": "1900c699de535349fc2edb12d37366d17b3a573dd1e9437631771771add06848",
+    "checkpoint_count": 31,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
+    "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER",
+    "CFB_TOP_PICKS_REPAIR_STEP2_DEFENSE_PACE",
     "MONSTER_2A_STEP1",
     "MONSTER_2A_STEP2",
     "MONSTER_2A_STEP3",
@@ -58,6 +60,7 @@
     "MONSTER_V5_STEP3",
     "MONSTER_V5_STEP4",
     "MONSTER_V5_STEP5",
+    "MONSTER_V6_STEP1",
     "WNBA_PRA_SPEED_V3_STEP7",
     "WNBA_PRA_SPEED_V3_STEP8"
   ],
@@ -66,20 +69,23 @@
     "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
     "ref": "refs/heads/monster-scope-aware-execution-leases",
     "path": "devsystem/scope_aware_execution_lease_state_v1.json",
-    "revision": 30,
-    "generation": 9,
-    "state_hash": "963b01e4b790d22f658e2324a118209a7c7a31e576a8f5885ddd7c2811bfe17b",
-    "holder_count": 0,
+    "revision": 56,
+    "generation": 26,
+    "state_hash": "d47b9e621a48a26fee6d684cc0b9a7cfadac83d9c4474f6d80c9675947578bda",
+    "holder_count": 2,
     "holder_owner_id": null,
     "holder_lease_id": null,
-    "remaining_holder_owner_ids": []
+    "remaining_holder_owner_ids": [
+      "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
+      "chatgpt:monster:cfb-top-picks-repair-step3-market-reasoning-v1"
+    ]
   },
   "detached_continuation": {
     "version": "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_V1",
-    "revision": 0,
-    "generation": 0,
-    "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a",
-    "workstream_count": 0
+    "revision": 2,
+    "generation": 2,
+    "state_hash": "d3a5b0e9a96a15e6772451a83591a4f60f922e4e7c0be5f3494ee144233fd3e6",
+    "workstream_count": 1
   },
   "event_driven_resume": {
     "version": "MONSTER_V5_EVENT_DRIVEN_RESUME_V1",
@@ -106,13 +112,13 @@
     "version": "MONSTER_V5_ZERO_CONTEXT_RESUME_PACKET_V1",
     "ref": "refs/heads/monster-zero-context-resume",
     "path": "devsystem/zero_context_resume_packet_state_v1.json",
-    "generation": 1,
-    "packet_hash": "cd76dc90e10b3f942d09a3eef934eea02904d8310c1150c2675d195b214ca571",
-    "checkpoint_count": 28,
-    "main_sha": "6583961ce28281989bcbf5dd95018cd633021230",
-    "authoritative_run_id": 36823232652,
-    "only_next_legal_action": "MONSTER_V5_COMPLETE",
+    "generation": 2,
+    "packet_hash": "01e31da88319b5f14577c99f22789a98adec1088c9b596b00dad26afc31ee1c5",
+    "checkpoint_count": 31,
+    "main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+    "authoritative_run_id": 36926839599,
+    "only_next_legal_action": "START_MONSTER_V6_STEP2",
     "mutation_authority": false
   },
-  "state_hash": "6297606a43cfa05ba56321cbe681b7bff77b3efb178e650621319429c9e5d372"
+  "state_hash": "0fd95afc824a49b780f4b3f5c041f31e2ae37dcd5280f90aa4867d128ff10b2e"
 }
