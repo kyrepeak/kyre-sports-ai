@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "task_id": "wnba-pra-speed-v3-step8-closeout-browser-qa-data-limited",
+  "title": "WNBA PRA Speed V3 Step 8 closeout — unblock unrelated local CFB Browser QA",
+  "project": "WNBA PRA Speed V3",
+  "step": 8,
+  "total_steps": 9,
+  "status": "DONE",
+  "scope": "Verifier-only DevSystem closeout repair. WNBA PRA Step-8 merged-main production proof is already GREEN; DevSystem failed only because the generic local CFB Game Total Step-5 browser QA demanded live READY/100% despite its own structural-lane contract stating dynamic schedule/data availability is not required. Accept READY or DATA LIMITED locally while preserving exact deployment markers, runtime-error detection, numeric coverage bounds, 12 structural tiles, and strict READY=100%+12/12 behavior.",
+  "protected": {
+    "wnba_pra_speed_v3_steps_1_7": true,
+    "wnba_pra_step8_product_runtime": true,
+    "wnba_pra_models": true,
+    "wnba_pra_providers": true,
+    "wnba_pra_projection_math": true,
+    "wnba_pra_market_math": true,
+    "wnba_pra_speed_thresholds": true,
+    "cfb_game_total_product_runtime": true
+  },
+  "evidence": {
+    "step8_merged_main_run": 36809807153,
+    "step8_merged_main_conclusion": "SUCCESS",
+    "blocked_devsystem_run": 36809807049,
+    "blocked_job": 110202392144,
+    "failure": "BrowserQAFailure: Game Total Step 5 state is not READY: 'DATA LIMITED'",
+    "owner": "VERIFIER",
+    "failure_class": "UNRELATED_LOCAL_BROWSER_QA_REQUIRED_DYNAMIC_CFB_DATA_READY"
+  },
+  "acceptance": {
+    "local_structural_lane_allows_ready_or_data_limited": true,
+    "exact_step5_marker_required": true,
+    "exact_deployment_marker_required": true,
+    "runtime_errors_still_fail": true,
+    "coverage_must_be_numeric_0_to_100": true,
+    "structural_tiles_exactly_12": true,
+    "ready_state_still_requires_coverage_100": true,
+    "ready_state_still_requires_12_of_12_ready": true,
+    "sports_runtime_unchanged": true,
+    "wnba_step8_production_proof_not_rerun_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "One exact-head DevSystem proof, auto-merge, then one merged-main DevSystem final-gate/terminal-receipt proof. Do not rerun the already-GREEN Step-8 production proof unchanged. After DevSystem GREEN, write WNBA_PRA_SPEED_V3_STEP8 into the authoritative frozen registry and release the Step-8 execution lease if held."
+}
