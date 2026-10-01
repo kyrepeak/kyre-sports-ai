@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 79,
+  "revision": 80,
   "generation": 38,
   "holders": [
     {
@@ -67,43 +67,6 @@
       }
     },
     {
-      "owner_id": "chatgpt:monster-v2:monster-v6-step5-semantic-ui-verifier-v1",
-      "lease_id": "SCOPE-LEASE-85CADC0B119923A4E7AAE037",
-      "generation": 36,
-      "acquired_at_utc": "2026-10-01T22:17:00Z",
-      "heartbeat_at_utc": "2026-10-01T22:32:00Z",
-      "expires_at_utc": "2026-10-02T00:32:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-v6-step5-semantic-ui-verifier.yml",
-          "devsystem/cross_chat_truth_state_v1.json",
-          "devsystem/frozen_artifact_registry_state_v1.json",
-          "devsystem/semantic_ui_verifier_cases_v1.json",
-          "devsystem/semantic_ui_verifier_contract_v1.py",
-          "devsystem/task_ledgers/monster-v6-step5-semantic-ui-verifier-v1.json",
-          "devsystem/zero_context_resume_packet_state_v1.json",
-          "tests/test_devsystem_semantic_ui_verifier_contract_v1.py"
-        ],
-        "dependency_tokens": [
-          "read:production-verifier-v1",
-          "read:passing-yards-step6-verifier-repair",
-          "project:monster-v6-step5-semantic-ui-verifier"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v6-step5-semantic-ui-verifier-v1",
-          "control:cross-chat-truth",
-          "control:frozen-artifact-registry",
-          "control:zero-context-resume",
-          "workflow:monster-v6-step5-semantic-ui-verifier"
-        ],
-        "resource_identity": {
-          "main:base": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
-          "registry:hash": "e735f9ed48378302acd2776c69489cfadf1a8d2675daf1c7a85a10b530a6bda2"
-        },
-        "exclusive": false
-      }
-    },
-    {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-market-reasoning-v1",
       "lease_id": "SCOPE-LEASE-E89772FB57FE3FEC9F75EA2E",
       "generation": 35,
@@ -137,5 +100,5 @@
       }
     }
   ],
-  "state_hash": "efe6fdb94475179a23be8e5bc10551ba16dca9ad7c38c069c58b346d512d4380"
+  "state_hash": "a0717c8a93031d8ea559a85c4f8440c79b0604abd2e8e91b1af80ec0f860f747"
 }
