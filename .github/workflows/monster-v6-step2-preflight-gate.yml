@@ -1,0 +1,56 @@
+name: MONSTER V6 Step 2 Preflight Gate
+
+on:
+  push:
+    branches:
+      - "monster/**"
+    paths:
+      - "devsystem/**"
+      - "tests/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v6-step2-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: compile cheap pre-CI gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch authoritative preflight control refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git fetch --no-tags origin refs/heads/monster-frozen-artifact-registry:refs/remotes/origin/monster-frozen-artifact-registry
+          git fetch --no-tags origin refs/heads/monster-scope-aware-execution-leases:refs/remotes/origin/monster-scope-aware-execution-leases
+
+      - name: Run compiler contract self-test
+        run: python devsystem/preflight_gate_compiler_v1.py
+
+      - name: Run focused compiler tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_preflight_gate_compiler_v1.py
+
+      - name: Compile actual branch preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          python devsystem/preflight_gate_compiler_v1.py             --git-preflight             --base refs/remotes/origin/main             --head HEAD             --branch "$GITHUB_REF_NAME"
+
+      - name: Emit preflight GREEN marker
+        run: echo "MONSTER_V6_STEP2_PREFLIGHT_GREEN"
