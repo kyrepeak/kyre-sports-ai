@@ -1,0 +1,42 @@
+name: MONSTER V6 Step 5 Semantic UI Verifier
+
+on:
+  push:
+    branches:
+      - "monster/monster-v6-step5-semantic-ui-verifier-v1"
+    paths:
+      - "devsystem/semantic_ui_verifier_contract_v1.py"
+      - "devsystem/semantic_ui_verifier_cases_v1.json"
+      - "tests/test_devsystem_semantic_ui_verifier_contract_v1.py"
+      - "devsystem/task_ledgers/monster-v6-step5-semantic-ui-verifier-v1.json"
+      - ".github/workflows/monster-v6-step5-semantic-ui-verifier.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v6-step5-semantic-ui-verifier-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-proof:
+    name: semantic UI verifier focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate semantic verifier contract and historical cases
+        run: python devsystem/semantic_ui_verifier_contract_v1.py --cases devsystem/semantic_ui_verifier_cases_v1.json
+
+      - name: Run semantic verifier regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_semantic_ui_verifier_contract_v1.py
+
+      - name: Emit Step 5 GREEN marker
+        run: echo "MONSTER_V6_STEP5_SEMANTIC_UI_VERIFIER_GREEN"

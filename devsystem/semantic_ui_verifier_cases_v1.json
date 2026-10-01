@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V6_SEMANTIC_UI_VERIFIER_CASES_V1",
+  "historical_basis": [
+    {
+      "source": "devsystem/task_ledgers/passing-yards-universal-step6-controls-v1.json",
+      "failure_run": 35675715862,
+      "failure_job": 106581703959,
+      "failure": "framework-internal data-baseweb descendant selector timed out while visible controls and durable readiness checks were already present",
+      "lesson": "framework-internal descendant markup is not a durable acceptance contract"
+    },
+    {
+      "source": "devsystem/task_ledgers/passing-yards-universal-step6-controls-v1.json",
+      "failure_run": 35676052842,
+      "failure_job": 106582706983,
+      "failure": "arbitrary 28px child-height threshold failed even though visible wrapper was 68px and the interactive descendant was rendered at 25.59375px",
+      "lesson": "style acceptance belongs to the visible wrapper; interactive descendants only need positive rendered dimensions unless explicitly contracted"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "DOM_RESHUFFLE_PRESERVES_SEMANTICS",
+      "expected": "GREEN",
+      "contract": {
+        "contract_id": "passing-yards-controls",
+        "requirements": [
+          {
+            "capability_id": "slate-date",
+            "kind": "interactive",
+            "role": "combobox",
+            "accessible_name": "Slate Date",
+            "min_wrapper_height": 40
+          },
+          {
+            "capability_id": "matchup",
+            "kind": "interactive",
+            "role": "combobox",
+            "accessible_name": "Matchup",
+            "min_wrapper_height": 40
+          }
+        ]
+      },
+      "observations": [
+        {
+          "role": "combobox",
+          "accessible_name": "Matchup",
+          "visible": true,
+          "interactive": true,
+          "wrapper_width": 220,
+          "wrapper_height": 64,
+          "interactive_width": 140,
+          "interactive_height": 26
+        },
+        {
+          "role": "combobox",
+          "accessible_name": "Slate Date",
+          "visible": true,
+          "interactive": true,
+          "wrapper_width": 195.171875,
+          "wrapper_height": 68,
+          "interactive_width": 123,
+          "interactive_height": 25.59375
+        }
+      ]
+    },
+    {
+      "case_id": "HIDDEN_MARKER_CANNOT_PROVE_CONTROL",
+      "expected": "BLOCKED",
+      "contract": {
+        "contract_id": "hidden-marker-negative",
+        "requirements": [
+          {
+            "capability_id": "sport-picker",
+            "kind": "interactive",
+            "role": "combobox",
+            "accessible_name": "Sport"
+          }
+        ]
+      },
+      "observations": [
+        {
+          "kind": "diagnostic_marker",
+          "text": "SPORT_PICKER_READY",
+          "visible": false,
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "case_id": "AMBIGUOUS_SEMANTIC_MATCH_FAILS_CLOSED",
+      "expected": "BLOCKED",
+      "contract": {
+        "contract_id": "ambiguous-negative",
+        "requirements": [
+          {
+            "capability_id": "market-picker",
+            "kind": "interactive",
+            "role": "combobox",
+            "accessible_name": "Market"
+          }
+        ]
+      },
+      "observations": [
+        {
+          "role": "combobox",
+          "accessible_name": "Market",
+          "visible": true,
+          "interactive": true,
+          "wrapper_width": 180,
+          "wrapper_height": 60,
+          "interactive_width": 120,
+          "interactive_height": 24
+        },
+        {
+          "role": "combobox",
+          "accessible_name": "Market",
+          "visible": true,
+          "interactive": true,
+          "wrapper_width": 180,
+          "wrapper_height": 60,
+          "interactive_width": 120,
+          "interactive_height": 24
+        }
+      ]
+    },
+    {
+      "case_id": "ROUTE_AND_VISIBLE_TEXT_SEMANTICS",
+      "expected": "GREEN",
+      "contract": {
+        "contract_id": "route-text",
+        "requirements": [
+          {
+            "capability_id": "route",
+            "kind": "route",
+            "route": "College Football -> Over/Under"
+          },
+          {
+            "capability_id": "page-marker",
+            "kind": "text",
+            "text": "CFB O/U CLEAN PAGE V30 ACTIVE"
+          }
+        ]
+      },
+      "observations": [
+        {
+          "kind": "route",
+          "route": "College Football -> Over/Under",
+          "visible": true
+        },
+        {
+          "kind": "text",
+          "text": "CFB O/U CLEAN PAGE V30 ACTIVE",
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "forbidden_brittle_examples": [
+    "[data-baseweb='input']",
+    ".stDateInput > div > div:nth-child(2)",
+    "div.css-18ni7ap.e8zbici2 > div:nth-of-type(3)"
+  ],
+  "cases_id": "SEMCASES-2049A1859A5DCEC828A5BA0F"
+}
