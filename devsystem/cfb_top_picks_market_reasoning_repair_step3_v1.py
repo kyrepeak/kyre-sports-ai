@@ -23,7 +23,7 @@ import cfb_top_picks_page_v9 as page
 
 MODEL_VERSION = "CFB TOP PICKS REPAIR STEP 3 • MARKET-AWARE REASONING LIVE CERT"
 MISSION_STEP = "3/5"
-PUBLIC_URL = "https://pickvault.streamlit.app"
+PUBLIC_URL = "https://pickvault.streamlit.app"\nPUBLIC_HEADING = "Market-Aware Football Reasoning"
 API2_USED = False
 SPORTSBOOK_PROJECTION_WEIGHT = 0.0
 MARKET_REASONING_PROJECTION_WEIGHT = 0.0
