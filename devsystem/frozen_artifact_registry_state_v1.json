@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 18,
-  "source_main_sha": "0f46df917a5f18f02359de435b676cba88702d52",
+  "revision": 19,
+  "source_main_sha": "0feac7ad028e307b915abec5415b43ac77991be2",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -389,8 +389,27 @@
         "devsystem/task_ledgers/monster-v6-step2-preflight-gate-compiler-v1.json": "38fe5620208df822525da372c7c1e48f7abb0cfe",
         "tests/test_devsystem_preflight_gate_compiler_v1.py": "e2d890187662c5a6a68be67d29c6790d18d2290d"
       }
+    },
+    "MONSTER_V6_STEP3": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V6_STEP3",
+      "source_main_sha": "0feac7ad028e307b915abec5415b43ac77991be2",
+      "proven_merge_sha": "0feac7ad028e307b915abec5415b43ac77991be2",
+      "focused_preflight_run_id": 36931072685,
+      "generic_preflight_run_id": 36931072197,
+      "pr_proof_run_id": 36931145380,
+      "proof_run_id": 36931336806,
+      "pr_terminal_receipt_digest": "sha256:50a12f011a3d6ad6141464e3f39ee8632a0d229750eeed9850dd33d4637b2fb3",
+      "terminal_receipt_digest": "sha256:58351639dd062954ec6e54900b0771721aa6d1b07f33fa0fdcd76ac991cd029e",
+      "regression_debt_state": "CLEARED",
+      "artifacts": {
+        ".github/workflows/monster-v6-step3-deployment-convergence.yml": "fd5b2fb5f57d7ac69b635fe0aa225f23627b1a3c",
+        "devsystem/deployment_convergence_controller_v1.py": "117b4953b5112be9ca8065e5a9cafb48d5f2112a",
+        "devsystem/task_ledgers/monster-v6-step3-deployment-convergence-controller-v1.json": "d46569c67d774d5e107af5d0eacc242146475833",
+        "tests/test_devsystem_deployment_convergence_controller_v1.py": "706c57e3a631ad380a2e44959f2228a13ce8dd72"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "6a5e6ad7db7097c212799cc757ad2a5a78c2715264f6d3f892ec16d99b6cd828"
+  "state_hash": "9f7e6c062623bd2f43ba798589d4d35ddfbd924198e71406869bec0372ad50ce"
 }
