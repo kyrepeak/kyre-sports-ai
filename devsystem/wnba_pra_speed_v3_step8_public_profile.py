@@ -27,6 +27,7 @@ MAX_VISIBLE_SHELL_SECONDS = 0.75
 MAX_FINAL_PLAYER_SECONDS = 1.50
 PRECOMPUTE_SETTLE_MS = 1250
 STEP7_MARKER_OBSERVE_TIMEOUT_SECONDS = 10.0
+STEP7_PRECOMPUTE_READY_TIMEOUT_SECONDS = 30.0
 
 
 def _bool_attr(marker, name: str) -> bool:
@@ -130,6 +131,40 @@ def _wait_step7_marker_resilient(page, *, timeout_seconds: float = STEP7_MARKER_
     )
 
 
+def _wait_step7_precompute_ready(page, *, timeout_seconds: float = STEP7_PRECOMPUTE_READY_TIMEOUT_SECONDS):
+    """Establish the cached-cold precondition before timing the Player open."""
+    deadline = time.monotonic() + float(timeout_seconds)
+    last = {}
+    while time.monotonic() < deadline:
+        for candidate in page.frames:
+            try:
+                marker = candidate.locator(STEP7_SELECTOR).first
+                if marker.count() < 1:
+                    continue
+                target = int(marker.get_attribute("data-target-players") or "0")
+                completed = int(marker.get_attribute("data-completed") or "0")
+                running = int(marker.get_attribute("data-running") or "0")
+                errors = int(marker.get_attribute("data-errors") or "0")
+                last = {
+                    "target": target,
+                    "completed": completed,
+                    "running": running,
+                    "errors": errors,
+                }
+                if target > 0 and completed >= target and running == 0 and errors == 0:
+                    return candidate, marker, last
+            except Exception:
+                pass
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        page.wait_for_timeout(min(100, max(1, int(remaining * 1000))))
+    raise BrowserQAFailure(
+        "Frozen Step-7 precompute did not establish the cached-cold Player precondition "
+        f"within {timeout_seconds:.1f}s; last={last}"
+    )
+
+
 def _wait_step8_streamlit(page):
     started = time.monotonic()
     deadline = started + DEPLOYMENT_WAIT_SECONDS
@@ -177,6 +212,11 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
             frame, _ = _wait_step7_marker_resilient(page)
             print("WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEP7_MARKER_GREEN")
 
+            frame, _, precompute = _wait_step7_precompute_ready(page)
+            print(
+                "WNBA_PRA_SPEED_V3_STEP8_PRECOMPUTE_READY_GREEN="
+                f"{precompute['completed']}/{precompute['target']}"
+            )
             page.wait_for_timeout(PRECOMPUTE_SETTLE_MS)
             first = frame.get_by_role("button", name=first_name, exact=True)
             if first.count() < 1:
