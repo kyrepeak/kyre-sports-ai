@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "task_id": "monster-v6-step2-preflight-gate-compiler-v1",
+  "title": "MONSTER V6 Step 2 — Preflight Gate Compiler",
+  "project": "MONSTER V6",
+  "step": 2,
+  "total_steps": 6,
+  "status": "DONE",
+  "problem": "Cheap deterministic contract mistakes are often discovered only after an expensive GitHub Actions proof has started.",
+  "root_cause": "Existing exact-head, Action Ledger V2, adaptive proof, frozen-artifact, scope, test, syntax, and workflow guards exist separately but are not compiled into one fail-closed pre-CI decision.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "Add a read-only preflight gate compiler that combines cheap deterministic checks and emits GO_TO_CI only when the candidate is safe to spend an authoritative CI run on.",
+  "protections": {
+    "step_2a_required": true,
+    "scope_lease_required_for_mutation": true,
+    "compiler_does_not_replace_terminal_proof": true,
+    "frozen_artifacts_modified": false,
+    "product_runtime_modified": false,
+    "mutation_authority_granted": false
+  },
+  "acceptance": {
+    "stale_head_blocks_before_ci": true,
+    "invalid_action_ledger_blocks_before_ci": true,
+    "python_syntax_blocks_before_ci": true,
+    "missing_required_test_blocks_before_ci": true,
+    "missing_permanent_marker_blocks_before_ci": true,
+    "malformed_workflow_blocks_before_ci": true,
+    "frozen_touch_without_thaw_blocks_before_ci": true,
+    "missing_scope_authorization_blocks_before_ci": true,
+    "clean_bundle_emits_go_to_ci": true
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_preflight_gate_compiler_v1.py",
+    "permanent_contract": "devsystem/preflight_gate_compiler_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "step2a": {
+    "single_branch": "monster/monster-v6-step2-preflight-gate-compiler-v1",
+    "single_pr_required": true,
+    "duplicate_async_forbidden": true,
+    "exact_head_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
