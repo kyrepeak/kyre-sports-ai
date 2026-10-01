@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V6_PROVEN_REPAIR_MEMORY_CATALOG_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "revision": 1,
+  "records": [
+    {
+      "schema_version": 1,
+      "version": "MONSTER_V6_PROVEN_REPAIR_MEMORY_V1",
+      "signature": {
+        "owner": "VERIFIER",
+        "failure_code": "ACTION_LEDGER_V2_INVALID",
+        "surface": "control-plane",
+        "evidence_signal": "contract-invalid"
+      },
+      "root_cause": "The task ledger used a legacy MONSTER status shape instead of Action Ledger V2 status DONE plus a valid genesis action_log.",
+      "repair_pattern": {
+        "summary": "Upgrade only the task ledger to Action Ledger V2 without changing product or engine logic.",
+        "steps": [
+          "set version to 2",
+          "set status to DONE",
+          "add valid genesis action_log",
+          "record failed proof/classification",
+          "rerun one exact-head proof"
+        ],
+        "mutation_owner": "VERIFIER",
+        "touched_paths": [
+          "devsystem/task_ledgers/monster-v6-step1-content-addressed-proof-reuse-v1.json"
+        ]
+      },
+      "failed_evidence": {
+        "workflow_run_id": 36926351509,
+        "conclusion": "FAILURE"
+      },
+      "proof": {
+        "checkpoint_id": "MONSTER_V6_STEP1",
+        "proven_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+        "workflow_run_id": 36926839599,
+        "terminal_receipt_digest": "sha256:cc76c262af2e0aba9298d7674baa83b94f3a55258297827d73e98f5bc38386a7",
+        "conclusion": "SUCCESS"
+      },
+      "protections": {
+        "advisory_only": true,
+        "fresh_ownership_required": true,
+        "step_2a_required": true,
+        "scope_lease_required": true,
+        "preflight_required": true,
+        "mutation_authority": false
+      },
+      "record_id": "REPAIR-94F974580D6239FAA6B72934"
+    },
+    {
+      "schema_version": 1,
+      "version": "MONSTER_V6_PROVEN_REPAIR_MEMORY_V1",
+      "signature": {
+        "owner": "CI",
+        "failure_code": "PYTHON_PACKAGE_BOOTSTRAP_MISSING",
+        "surface": "workflow-control",
+        "evidence_signal": "module-import"
+      },
+      "root_cause": "A DevSystem script executed directly from its package directory, so the repository root was absent from sys.path and package imports failed before the real contract ran.",
+      "repair_pattern": {
+        "summary": "Bootstrap the repository root for direct-script execution before importing devsystem modules.",
+        "steps": [
+          "import sys and pathlib Path",
+          "when __package__ is empty insert repository root into sys.path",
+          "leave product/runtime logic unchanged",
+          "rerun one exact-head preflight proof"
+        ],
+        "mutation_owner": "CI",
+        "touched_paths": [
+          "devsystem/preflight_gate_compiler_v1.py"
+        ]
+      },
+      "failed_evidence": {
+        "workflow_run_id": 36929063423,
+        "conclusion": "FAILURE"
+      },
+      "proof": {
+        "checkpoint_id": "MONSTER_V6_STEP2",
+        "proven_sha": "0f46df917a5f18f02359de435b676cba88702d52",
+        "workflow_run_id": 36929552958,
+        "terminal_receipt_digest": "sha256:13dded24a25dffa395b147d8993cb2eb00dfbc91468466075318f0330115559a",
+        "conclusion": "SUCCESS"
+      },
+      "protections": {
+        "advisory_only": true,
+        "fresh_ownership_required": true,
+        "step_2a_required": true,
+        "scope_lease_required": true,
+        "preflight_required": true,
+        "mutation_authority": false
+      },
+      "record_id": "REPAIR-F873C2CE8411AF268C21C254"
+    }
+  ],
+  "protections": {
+    "exact_signature_match_only": true,
+    "successful_proof_required": true,
+    "terminal_receipt_required": true,
+    "duplicate_signature_forbidden": true,
+    "advisory_only": true,
+    "fresh_failure_ownership_required": true,
+    "step_2a_required": true,
+    "scope_lease_required": true,
+    "preflight_required": true,
+    "mutation_authority": false
+  },
+  "catalog_id": "CATALOG-F20F2D555CDFC123326343A9"
+}
