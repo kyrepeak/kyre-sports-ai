@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 71,
+  "revision": 72,
   "generation": 34,
   "holders": [
     {
@@ -67,44 +67,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v6-step4-proven-repair-memory-v1",
-      "lease_id": "SCOPE-LEASE-EF8FA2049F611500B7002969",
-      "generation": 32,
-      "acquired_at_utc": "2026-10-01T21:59:00Z",
-      "heartbeat_at_utc": "2026-10-01T22:09:30Z",
-      "expires_at_utc": "2026-10-01T23:59:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-v6-step4-proven-repair-memory.yml",
-          "devsystem/cross_chat_truth_state_v1.json",
-          "devsystem/frozen_artifact_registry_state_v1.json",
-          "devsystem/proven_repair_memory_catalog_v1.json",
-          "devsystem/proven_repair_memory_v1.py",
-          "devsystem/task_ledgers/monster-v6-step4-proven-repair-memory-v1.json",
-          "devsystem/zero_context_resume_packet_state_v1.json",
-          "tests/test_devsystem_proven_repair_memory_v1.py"
-        ],
-        "dependency_tokens": [
-          "read:evidence-truth-ledger-v1",
-          "read:failure-ownership-engine-v1",
-          "project:monster-v6-step4-proven-repair-memory"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v6-step4-proven-repair-memory-v1",
-          "control:cross-chat-truth",
-          "control:frozen-artifact-registry",
-          "control:zero-context-resume",
-          "workflow:monster-v6-step4-proven-repair-memory"
-        ],
-        "resource_identity": {
-          "main:base": "0feac7ad028e307b915abec5415b43ac77991be2",
-          "registry:hash": "9f7e6c062623bd2f43ba798589d4d35ddfbd924198e71406869bec0372ad50ce"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "308a1ad63e0e2295b6269e5b6539d2a0b396f3bd38332a90c1672c1fc77a75ae"
+  "state_hash": "80972f90b91de9f7a382dc69ca351cb056e1b6e2a49c79c74f051211c7d740f0"
 }
