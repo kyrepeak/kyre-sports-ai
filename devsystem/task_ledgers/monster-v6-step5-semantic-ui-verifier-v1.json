@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "task_id": "monster-v6-step5-semantic-ui-verifier-v1",
+  "title": "MONSTER V6 Step 5 - Semantic UI Verifier Contract",
+  "project": "MONSTER V6",
+  "step": 5,
+  "total_steps": 6,
+  "status": "DONE",
+  "problem": "UI proofs can falsely fail when framework-internal DOM descendants, generated classes, element order, or arbitrary child-size thresholds change while the visible user-facing capability still works.",
+  "root_cause": "Verifier acceptance has sometimes encoded implementation shape instead of durable user-visible semantics such as role, accessible name, visible wrapper, interaction, route outcome, and visible text.",
+  "failure_owner": "VERIFIER",
+  "historical_evidence": {
+    "passing_yards_step6_failure_runs": [
+      35675715862,
+      35676052842
+    ],
+    "first_root_cause": "framework-internal data-baseweb descendant markup was treated as a durable public DOM contract",
+    "second_root_cause": "an arbitrary 28px internal-child height threshold was enforced even though the visible wrapper and real interactive control were healthy"
+  },
+  "patch": "Add a dependency-light semantic UI verification contract that proves unique visible interactive capabilities by role/name or label, route/text outcomes by visible semantics, wrapper-level style acceptance, and rejects framework-internal/positional selector truth.",
+  "protections": {
+    "step_2a_required": true,
+    "semantic_truth_over_dom_shape": true,
+    "framework_internal_selectors_forbidden": true,
+    "hidden_markers_diagnostic_only": true,
+    "unique_semantic_match_required": true,
+    "wrapper_owns_style_acceptance": true,
+    "positive_child_dimensions_only_by_default": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "mutation_authority_granted": false,
+    "product_runtime_modified": false
+  },
+  "acceptance": {
+    "dom_reorder_preserves_green": true,
+    "internal_dom_selector_not_required": true,
+    "real_25px_child_with_68px_wrapper_green": true,
+    "hidden_marker_cannot_prove_control": true,
+    "ambiguous_match_fails_closed": true,
+    "missing_capability_fails_closed": true,
+    "route_and_visible_text_semantics_supported": true,
+    "cases_tamper_fails_closed": true
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "VERIFIER",
+    "permanent_test": "tests/test_devsystem_semantic_ui_verifier_contract_v1.py",
+    "permanent_contract": "devsystem/semantic_ui_verifier_contract_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "proof_plan": {
+    "pre_pr_workflow": ".github/workflows/monster-v6-step5-semantic-ui-verifier.yml",
+    "focused_self_test": "python devsystem/semantic_ui_verifier_contract_v1.py --cases devsystem/semantic_ui_verifier_cases_v1.json",
+    "focused_tests": "python -m pytest -q tests/test_devsystem_semantic_ui_verifier_contract_v1.py",
+    "generic_v6_step2_preflight": true,
+    "expensive_pr_ci_after_preflight_green": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
