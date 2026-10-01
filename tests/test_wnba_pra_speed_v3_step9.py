@@ -37,15 +37,21 @@ def test_step9_is_certification_only_and_keeps_final_speed_budgets():
     assert '"data_meaning_changed_by_step9": False' in source
 
 
-def test_step9_primes_immutable_wnba_pra_route_before_frozen_profiles():
+def test_step9_primes_exact_labeled_wnba_pra_route_before_frozen_profiles():
     source = _source()
     assert 'urlencode({"ks_jump_sport": "WNBA", "ks_jump_market": "PRA"})' in source
-    assert "def _prime_wnba_pra_route(page, route_url: str):" in source
-    assert 'page.goto(route_url, wait_until="domcontentloaded", timeout=120000)' in source
-    assert "frozen_route_to_wnba_pra(page)" in source
+    assert 'SPORT_LABEL = "🏟️ Sport"' in source
+    assert 'WNBA_MARKET_LABEL = "🎯 WNBA Market"' in source
+    assert "def _choose_labeled_route_value(page, frame, label: str, value: str)" in source
+    assert 'get_by_role("combobox", name=label, exact=True)' in source
+    assert 'get_by_role("option", name=value, exact=True)' in source
+    assert '_choose_labeled_route_value(page, frame, SPORT_LABEL, "WNBA")' in source
+    assert '_choose_labeled_route_value(page, frame, WNBA_MARKET_LABEL, "PRA")' in source
+    assert "_wait_page(" in source
+    assert "frozen_route_to_wnba_pra" not in source
     assert "step5_profile._route_to_wnba_pra = primed_route" in source
     assert "step8_profile._route_to_wnba_pra = primed_route" in source
-    assert "WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_GREEN" in source
+    assert "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_GREEN" in source
 
 
 def test_step9_requires_browser_resident_step8_continuity():
@@ -102,5 +108,6 @@ def test_step9_workflow_has_exact_scope_and_main_production_gate():
     assert "Run final production speed certification" in workflow
     assert "python -m devsystem.wnba_pra_speed_v3_step9_final_cert" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_IMPORT_PATH_REPAIR_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_VERIFIER_SCOPE_GREEN" in workflow
     assert "github.event_name == 'push'" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_BRANCH_GREEN" in workflow
