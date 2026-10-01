@@ -207,6 +207,7 @@ def validate() -> dict:
         "MONSTER_V5_EXECUTION_HEARTBEAT_DEADMAN_RECOVERY_GREEN",
         "python devsystem/zero_context_resume_packet_v1.py",
         "MONSTER_V5_ZERO_CONTEXT_RESUME_PACKET_GREEN",
+        "actions: read",
         "content-proof-reuse:",
         "python devsystem/content_addressed_proof_reuse_ci_v1.py",
         "reuse_sport_critical",
