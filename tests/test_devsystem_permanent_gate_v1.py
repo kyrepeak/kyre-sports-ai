@@ -825,4 +825,4 @@ def test_monster_v6_proof_reuse_ci_adapter_is_permanent():
     assert "content-proof-reuse:" in workflow
     assert "python devsystem/content_addressed_proof_reuse_ci_v1.py" in workflow
     assert "reuse_sport_critical" in workflow
-    assert "REUSE_PARENT_SPORT_PROOF" in workflow
+    assert "needs.content-proof-reuse.outputs.reuse_sport_critical != 'true'" in workflow
