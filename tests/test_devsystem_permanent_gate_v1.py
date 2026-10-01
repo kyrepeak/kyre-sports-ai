@@ -63,6 +63,7 @@ def test_permanent_contract_is_green():
     assert result["event_driven_resume_v1_permanent"] is True
     assert result["execution_heartbeat_deadman_recovery_v1_permanent"] is True
     assert result["zero_context_resume_packet_v1_permanent"] is True
+    assert result["content_addressed_proof_reuse_v1_permanent"] is True
     assert result["main_push_proof_concurrency_isolated"] is True
 
 
@@ -795,3 +796,15 @@ def test_production_verification_v5_is_the_only_automatic_main_verifier():
     assert "workflow_dispatch:" in v5
     assert "\n  push:" in v5
     assert "branches: [main]" in v5
+
+
+def test_monster_v6_content_addressed_proof_reuse_contract_is_green():
+    from devsystem.content_addressed_proof_reuse_v1 import contract_self_test
+
+    result = contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["identical_content_reuses_after_unrelated_head_move"] is True
+    assert result["artifact_drift_requires_new_proof"] is True
+    assert result["dependency_drift_requires_new_proof"] is True
+    assert result["production_state_proof_not_reused"] is True
+    assert result["step_2a_still_required_for_mutation"] is True
