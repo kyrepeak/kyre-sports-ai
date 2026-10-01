@@ -14,6 +14,12 @@ def _source() -> str:
     return CERT.read_text(encoding="utf-8")
 
 
+def test_step9_direct_script_bootstraps_repo_root_permanently():
+    source = _source()
+    assert "if __package__ in {None, \"\"}:" in source
+    assert "sys.path.insert(0, str(Path(__file__).resolve().parents[1]))" in source
+
+
 def test_step9_is_certification_only_and_keeps_final_speed_budgets():
     source = _source()
     tree = ast.parse(source)
@@ -83,5 +89,7 @@ def test_step9_workflow_has_exact_scope_and_main_production_gate():
     assert "Enforce exact Step-9 PR scope" in workflow
     assert "Run Step-9 permanent contract" in workflow
     assert "Run final production speed certification" in workflow
+    assert "python -m devsystem.wnba_pra_speed_v3_step9_final_cert" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP9_IMPORT_PATH_REPAIR_GREEN" in workflow
     assert "github.event_name == 'push'" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_BRANCH_GREEN" in workflow
