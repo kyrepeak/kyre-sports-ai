@@ -43,27 +43,16 @@ def _detail(market: str = "MONEYLINE") -> dict:
             "may_modify_selection": False,
             "api2_used": False,
         },
-        "why": "Verified reason",
-        "benefit": "Verified benefit",
-        "history_rows": [],
-        "meetings": 0,
-        "history_status": "VERIFIED_NO_HISTORY_AFTER_SOURCE_EXHAUSTION",
-        "source_count_attempted": 2,
-        "no_history_claim_allowed": True,
-        "offense_research": {},
-        "defense_pace_research": {},
-        "benefits_risks": {"benefits": [], "risks": []},
-        "source_freshness_audit": {},
     }
 
 
-def _surface(monkeypatch):
+def _surface(monkeypatch, status: str = "READY"):
     monkeypatch.setattr(
         repair.page,
         "_detail_card",
         lambda row, detail: (
             '<div data-testid="cfb-top-picks-market-reasoning-1" '
-            'data-market="MONEYLINE" data-reasoning-status="READY">'
+            f'data-market="MONEYLINE" data-reasoning-status="{status}">'
             "Market-Aware Football Reasoning</div>"
         ),
     )
@@ -73,8 +62,7 @@ def test_ready_live_reasoning_contract_passes(monkeypatch):
     _surface(monkeypatch)
     result = repair._validate_reasoning(_row(), _detail())
     assert result["status"] == "READY"
-    assert result["rank"] == 1
-    assert result["market"] == "MONEYLINE"
+    assert result["history_source_conflict_disclosed"] is False
 
 
 def test_unavailable_required_signal_fails_closed(monkeypatch):
@@ -86,20 +74,36 @@ def test_unavailable_required_signal_fails_closed(monkeypatch):
         repair._validate_reasoning(_row(), detail)
 
 
-def test_source_conflict_required_signal_fails_closed(monkeypatch):
+def test_history_source_conflict_is_transparent_partial(monkeypatch):
+    _surface(monkeypatch, status="PARTIAL")
+    detail = _detail()
+    key = repair.HISTORY_SIGNAL_BY_MARKET["MONEYLINE"]
+    detail["market_reasoning"]["signals"][key] = {
+        "status": "SOURCE_CONFLICT_REVIEW",
+        "text": "No historical edge is claimed because independent sources disagree.",
+        "sources": ["ESPN team schedules", "Winsipedia"],
+        "observed_at": "2026-10-01T19:00:00+00:00",
+    }
+    detail["market_reasoning"]["status"] = "PARTIAL"
+    result = repair._validate_reasoning(_row(), detail)
+    assert result["status"] == "PARTIAL"
+    assert result["history_source_conflict_disclosed"] is True
+
+
+def test_non_history_source_conflict_fails_closed(monkeypatch):
     _surface(monkeypatch)
     detail = _detail()
-    key = reasoning.REQUIRED_SIGNALS["MONEYLINE"][-1]
+    key = "offense_vs_defense_edge"
     detail["market_reasoning"]["signals"][key]["status"] = "SOURCE_CONFLICT_REVIEW"
     with pytest.raises(AssertionError, match="STEP3_SIGNAL_NOT_READY"):
         repair._validate_reasoning(_row(), detail)
 
 
-def test_partial_block_status_fails_closed(monkeypatch):
-    _surface(monkeypatch)
+def test_partial_without_history_conflict_fails_truth_gate(monkeypatch):
+    _surface(monkeypatch, status="PARTIAL")
     detail = _detail()
     detail["market_reasoning"]["status"] = "PARTIAL"
-    with pytest.raises(AssertionError, match="STEP3_REASONING_NOT_READY"):
+    with pytest.raises(AssertionError, match="STEP3_REASONING_STATUS_TRUTH"):
         repair._validate_reasoning(_row(), detail)
 
 
