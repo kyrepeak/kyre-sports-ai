@@ -5,7 +5,7 @@
   "project": "CFB Top Picks Missing Research Repair",
   "step": 1,
   "total_steps": 5,
-  "status": "PATCHED_AWAITING_PROOF",
+  "status": "DONE",
   "problem": "Production Top Picks displayed SOURCE_CONFLICT_REVIEW for Virginia vs Florida St. even though the teams have verified historical meetings.",
   "root_cause": "The Top Picks router sent the display abbreviation Florida St. into the shared Winsipedia slug guesser, producing florida-st instead of Winsipedia's canonical florida-state slug. ESPN's limited recent-history lane did not independently recover the all-time series, so the router correctly failed closed into SOURCE_CONFLICT_REVIEW.",
   "failure_owner": "PRODUCT",
@@ -35,5 +35,17 @@
     "verified_winsipedia_path": "https://www.winsipedia.com/games/florida-state/vs/virginia",
     "production_display_alias": "Florida St.",
     "canonical_lookup_name": "Florida State"
+  },
+  "control_plane_repair": {
+    "failed_run_id": 36891276542,
+    "failed_job_id": 110467315247,
+    "failure_owner": "CI",
+    "failure_class": "ACTION_LEDGER_TASK_STATUS_CONTRACT",
+    "exact_failure": "ActionLedgerFailure: future task ledger must finish in DONE state",
+    "patch": "Change only this new Step-1 task ledger status from PATCHED_AWAITING_PROOF to DONE. Product code and regression guards remain unchanged.",
+    "product_code_changed": false,
+    "regression_guard_changed": false,
+    "old_head": "b056c5b0085eb11211e154353af3970e599990de",
+    "old_head_proof_reusable": false
   }
 }
