@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 84,
+  "revision": 85,
   "generation": 40,
   "holders": [
     {
@@ -31,45 +31,6 @@
         ],
         "resource_identity": {
           "main:base": "428fae0d2148ebf92f10d053f6f4d4bb9c2729fa"
-        },
-        "exclusive": false
-      }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v6-step6-unified-data-identity-provider-health-v1",
-      "lease_id": "SCOPE-LEASE-F5032200E9D669D7286DF497",
-      "generation": 39,
-      "acquired_at_utc": "2026-10-01T22:38:00Z",
-      "heartbeat_at_utc": "2026-10-01T22:53:00Z",
-      "expires_at_utc": "2026-10-02T00:53:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-v6-step6-unified-data-identity-provider-health.yml",
-          "devsystem/cross_chat_truth_state_v1.json",
-          "devsystem/frozen_artifact_registry_state_v1.json",
-          "devsystem/task_ledgers/monster-v6-step6-unified-data-identity-provider-health-v1.json",
-          "devsystem/unified_data_identity_provider_health_cases_v1.json",
-          "devsystem/unified_data_identity_provider_health_graph_v1.py",
-          "devsystem/zero_context_resume_packet_state_v1.json",
-          "tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py"
-        ],
-        "dependency_tokens": [
-          "read:cfb-data-field-source-router",
-          "read:nfl-multisource-data-router",
-          "read:nfl-roster-identity-aliases",
-          "read:wnba-provider-failover",
-          "project:monster-v6-step6-unified-data-identity-provider-health"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v6-step6-unified-data-identity-provider-health-v1",
-          "control:cross-chat-truth",
-          "control:frozen-artifact-registry",
-          "control:zero-context-resume",
-          "workflow:monster-v6-step6-unified-data-identity-provider-health"
-        ],
-        "resource_identity": {
-          "main:base": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
-          "registry:hash": "b16c63235baf57211efda659e8796100f991379ff34182bb80f3b5a07c0d96a1"
         },
         "exclusive": false
       }
@@ -139,5 +100,5 @@
       }
     }
   ],
-  "state_hash": "2a8c60e460df9c2087ee8b56a048bdfb8a6966bb80d693c81270427e7721b0de"
+  "state_hash": "1012838719596cf4d050186bae63475709e29b5c51441cf915822a8042c15967"
 }
