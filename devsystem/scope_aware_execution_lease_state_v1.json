@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 18,
+  "revision": 19,
   "generation": 5,
   "holders": [
     {
@@ -12,8 +12,8 @@
       "lease_id": "SCOPE-LEASE-F04FB35A96AEE083FCA91DE9",
       "generation": 4,
       "acquired_at_utc": "2026-10-01T03:49:00Z",
-      "heartbeat_at_utc": "2026-10-01T03:49:00Z",
-      "expires_at_utc": "2026-10-01T04:19:00Z",
+      "heartbeat_at_utc": "2026-10-01T04:30:00Z",
+      "expires_at_utc": "2026-10-01T05:00:00Z",
       "scope": {
         "write_paths": [
           ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
@@ -33,5 +33,5 @@
       }
     }
   ],
-  "state_hash": "7355b885b3c0678d9a73841280c8a9991a5ea2ba16ae7a1d1bd19fd6f2580700"
+  "state_hash": "f1378bdffc4917e359000c1af16f310c57ef50618a931c111510db20ae3085f7"
 }
