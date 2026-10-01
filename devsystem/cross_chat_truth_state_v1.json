@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 70,
+  "truth_epoch": 71,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 2,
   "total_steps": 5,
   "step_title": "Detached Execution / Background Continuation - CI Repair",
   "step_status": "ACTIVE",
-  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR_TRUTH_HASH_FIXED",
-  "main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
-  "active_pr": 1296,
-  "active_run": 36812569889,
-  "active_head_sha": "a21a983e4b96bdd2f7d67bb398ef231dd4322d2c",
+  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR_MERGED_MAIN_PROOF",
+  "main_sha": "f04698e1a183d33e0092b1eef51b8eb9873fe8b6",
+  "active_pr": null,
+  "active_run": 36812972209,
+  "active_head_sha": "f04698e1a183d33e0092b1eef51b8eb9873fe8b6",
   "blocker": null,
-  "next_legal_action": "RERUN_FAILED_JOBS_ON_AUTHORITATIVE_RUN_36812569889",
+  "next_legal_action": "WAIT_FOR_MERGED_MAIN_RUN_36812972209_TERMINAL",
   "lease": {
     "revision": 64,
     "generation": 12,
@@ -62,9 +62,9 @@
     "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
     "ref": "refs/heads/monster-scope-aware-execution-leases",
     "path": "devsystem/scope_aware_execution_lease_state_v1.json",
-    "revision": 16,
+    "revision": 17,
     "generation": 5,
-    "state_hash": "dc7f43cb19c9ea773c54900e74b7a64aa9f89a6f7a1c033159730d850c616df9",
+    "state_hash": "ae55da088a2dc565ff1146135472100d4d870fd999c2af9e6adb769e628f1c3e",
     "holder_count": 2,
     "holder_owner_id": "chatgpt:monster-v5-step2-ci-repair",
     "holder_lease_id": "SCOPE-LEASE-70F6D876506EC0F926567F67"
@@ -78,5 +78,5 @@
     "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a",
     "workstream_count": 0
   },
-  "state_hash": "5abe1fc4a3ae2288fe82cb4b7a516b44120658274aa8478abeecdd6a22ea2761"
+  "state_hash": "7060905591e86aba18d5cfcd6daf50868b22981670b8187a62fcd4dd03230e6e"
 }
