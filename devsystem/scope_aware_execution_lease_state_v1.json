@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 75,
+  "revision": 76,
   "generation": 36,
   "holders": [
     {
@@ -40,8 +40,8 @@
       "lease_id": "SCOPE-LEASE-85CADC0B119923A4E7AAE037",
       "generation": 36,
       "acquired_at_utc": "2026-10-01T22:17:00Z",
-      "heartbeat_at_utc": "2026-10-01T22:17:00Z",
-      "expires_at_utc": "2026-10-02T00:17:00Z",
+      "heartbeat_at_utc": "2026-10-01T22:22:30Z",
+      "expires_at_utc": "2026-10-02T00:22:30Z",
       "scope": {
         "write_paths": [
           ".github/workflows/monster-v6-step5-semantic-ui-verifier.yml",
@@ -60,7 +60,7 @@
           "workflow:monster-v6-step5-semantic-ui-verifier"
         ],
         "resource_identity": {
-          "main:base": "bea8a48a775f6c01047a24a9bb3e48d95709f3e4",
+          "main:base": "1fa72e4bc8ff19ed2cd46473607389bace050ed7",
           "registry:hash": "e735f9ed48378302acd2776c69489cfadf1a8d2675daf1c7a85a10b530a6bda2"
         },
         "exclusive": false
@@ -100,5 +100,5 @@
       }
     }
   ],
-  "state_hash": "9f7896e5098b31dcf8331750e607769d2dfa16073657ffcb71f516e6846141e9"
+  "state_hash": "ae019974d66b0d386fa634e6330c57da806ce70d9d6e5cc729fdb994df8c32a9"
 }
