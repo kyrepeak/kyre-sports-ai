@@ -36,5 +36,12 @@
     "providers_unchanged": true
   },
   "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
-  "proof_policy": "Exact PR head must pass permanent-contract and devsystem-final-gate; merge via auto-merge; merged-main proof must pass; initialize authoritative scope-lease state; freeze Step 1 module/test/ledger; publish next legal action START_MONSTER_V5_STEP2; release bootstrap V4 lease."
+  "proof_policy": "Exact PR head must pass permanent-contract and devsystem-final-gate; merge via auto-merge; merged-main proof must pass; initialize authoritative scope-lease state; freeze Step 1 module/test/ledger; publish next legal action START_MONSTER_V5_STEP2; release bootstrap V4 lease.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
