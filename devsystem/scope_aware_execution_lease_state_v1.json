@@ -4,39 +4,35 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 34,
-  "generation": 12,
+  "revision": 35,
+  "generation": 13,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
-      "lease_id": "SCOPE-LEASE-38CB442DF0045576754E75A7",
-      "generation": 12,
-      "acquired_at_utc": "2026-10-01T09:08:00Z",
-      "heartbeat_at_utc": "2026-10-01T09:08:00Z",
-      "expires_at_utc": "2026-10-01T09:38:00Z",
+      "lease_id": "SCOPE-LEASE-72E5E00DD146E9FD5BFBFD84",
+      "generation": 13,
+      "acquired_at_utc": "2026-10-01T16:05:00Z",
+      "heartbeat_at_utc": "2026-10-01T16:05:00Z",
+      "expires_at_utc": "2026-10-01T16:35:00Z",
       "scope": {
         "write_paths": [
-          "app.py",
-          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-public-deploy-refresh-r4.json"
+          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml"
         ],
         "dependency_tokens": [
           "domain:wnba",
           "project:wnba-pra-speed-v3-step9"
         ],
         "shared_resources": [
-          "branch:fix/wnba-pra-speed-v3-step9-public-deploy-refresh-r5",
-          "deploy:pickvault",
-          "pr:1304",
-          "pr:wnba-pra-speed-v3-step9-deploy-refresh",
-          "workflow:devsystem-targeted-ci"
+          "workflow-run:36817421429",
+          "workflow:wnba-pra-speed-v3-step9-final-cert"
         ],
         "resource_identity": {
-          "main:base": "6583961ce28281989bcbf5dd95018cd633021230",
-          "pr:1304:head": "917292b0e3530abf25b636cf0411052b5cd030eb"
+          "main:head": "6f242753232aa0712e7812e5da9e275c0aa8239f",
+          "production-run:36817421429:head": "073f4cd0a9b80de9c6936dffc128c30fc99966b8"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "0847691a00a3c60999178f6d9c7b572d4aa760c899530918b6b4a4bc047469ff"
+  "state_hash": "55dd4ae47cfe2a2d7820bf80eba927e8ac959d5d5965a25509991c97a7553ff7"
 }
