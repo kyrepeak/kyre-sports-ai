@@ -25,7 +25,8 @@
     "step_2a_remains_mandatory": true,
     "scope_lease_remains_mandatory": true,
     "product_runtime_unchanged": true,
-    "permanent_ci_enforcement": true
+    "permanent_ci_enforcement": true,
+    "main_push_proof_concurrency_isolated": true
   },
   "protected": {
     "monster_v5_step1": true,
@@ -43,6 +44,35 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
-  "proof_policy": "Exact PR head must pass the permanent DevSystem contract and final gate, merge via auto-merge, merged-main proof must pass, authoritative detached-continuation state must be initialized, Step 2 artifacts must be frozen, repository truth must advance to Step 2 FROZEN with next legal action START_MONSTER_V5_STEP3, and the Step-2 scope lease must be released."
+  "phase": "CI_CONCURRENCY_REPAIR_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Exact PR head must pass the permanent DevSystem contract and final gate, merge via auto-merge, merged-main proof must pass, authoritative detached-continuation state must be initialized, Step 2 artifacts must be frozen, repository truth must advance to Step 2 FROZEN with next legal action START_MONSTER_V5_STEP3, and the Step-2 scope lease must be released.",
+  "regression_debt_closeout": {
+    "failure_id": "MONSTER_V5_STEP2_MAIN_PUSH_PROOF_CONCURRENCY_CANCELLATION",
+    "owner": "CI",
+    "source_runs": [
+      36806283619,
+      36806477020
+    ],
+    "root_cause": "DevSystem targeted CI grouped every refs/heads/main run into one cancel-in-progress concurrency slot, so unrelated later main pushes cancelled valid merged-main certification before CFB critical could finish.",
+    "repair": "SHA-isolate concurrency for push events on refs/heads/main while preserving rolling ref-based cancellation for pull_request, workflow_dispatch, and non-main refs.",
+    "state": "CLEARED",
+    "permanent_regression_guards": [
+      {
+        "kind": "CONTRACT",
+        "path": ".github/workflows/devsystem-targeted-ci.yml",
+        "permanent": true
+      },
+      {
+        "kind": "CONTRACT",
+        "path": "devsystem/permanent_gate_v1.py",
+        "permanent": true
+      },
+      {
+        "kind": "TEST",
+        "path": "tests/test_devsystem_permanent_gate_v1.py",
+        "permanent": true
+      }
+    ],
+    "proof_rule": "The permanent DevSystem contract fails if main push proofs stop being SHA-isolated, preventing reintroduction of cross-main cancellation churn."
+  }
 }
