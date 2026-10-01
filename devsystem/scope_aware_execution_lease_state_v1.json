@@ -4,40 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 80,
-  "generation": 38,
+  "revision": 81,
+  "generation": 39,
   "holders": [
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
-      "lease_id": "SCOPE-LEASE-STEP9-DUPKEY-GUARD-R1",
-      "generation": 38,
-      "acquired_at_utc": "2026-10-01T22:24:00Z",
-      "heartbeat_at_utc": "2026-10-01T22:30:00Z",
-      "expires_at_utc": "2026-10-01T23:00:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
-          "app.py",
-          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
-          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
-          "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
-          "tests/test_wnba_pra_speed_v3_step9.py"
-        ],
-        "dependency_tokens": [
-          "domain:wnba",
-          "project:wnba-pra-speed-v3-step9"
-        ],
-        "shared_resources": [
-          "branch:fix/wnba-pra-speed-v3-step9-duplicate-key-guard-r10"
-        ],
-        "resource_identity": {
-          "main:base": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
-          "step9:failed-run": "36927758434",
-          "runtime-defect": "StreamlitDuplicateElementKey"
-        },
-        "exclusive": false
-      }
-    },
     {
       "owner_id": "chatgpt:monster-v2:monster-v6-step1-proof-reuse-integration-v1",
       "lease_id": "SCOPE-LEASE-4B1EA04F71FCEC08AA0B89ED",
@@ -98,7 +67,71 @@
         },
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v6-step6-unified-data-identity-provider-health-v1",
+      "lease_id": "SCOPE-LEASE-F5032200E9D669D7286DF497",
+      "generation": 39,
+      "acquired_at_utc": "2026-10-01T22:38:00Z",
+      "heartbeat_at_utc": "2026-10-01T22:38:00Z",
+      "expires_at_utc": "2026-10-02T00:38:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v6-step6-unified-data-identity-provider-health.yml",
+          "devsystem/task_ledgers/monster-v6-step6-unified-data-identity-provider-health-v1.json",
+          "devsystem/unified_data_identity_provider_health_cases_v1.json",
+          "devsystem/unified_data_identity_provider_health_graph_v1.py",
+          "tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py"
+        ],
+        "dependency_tokens": [
+          "read:cfb-data-field-source-router",
+          "read:nfl-multisource-data-router",
+          "read:nfl-roster-identity-aliases",
+          "read:wnba-provider-failover",
+          "project:monster-v6-step6-unified-data-identity-provider-health"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v6-step6-unified-data-identity-provider-health-v1",
+          "workflow:monster-v6-step6-unified-data-identity-provider-health"
+        ],
+        "resource_identity": {
+          "main:base": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
+          "registry:hash": "b16c63235baf57211efda659e8796100f991379ff34182bb80f3b5a07c0d96a1"
+        },
+        "exclusive": false
+      }
+    },
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
+      "lease_id": "SCOPE-LEASE-STEP9-DUPKEY-GUARD-R1",
+      "generation": 38,
+      "acquired_at_utc": "2026-10-01T22:24:00Z",
+      "heartbeat_at_utc": "2026-10-01T22:30:00Z",
+      "expires_at_utc": "2026-10-01T23:00:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
+          "app.py",
+          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
+          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
+          "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
+          "tests/test_wnba_pra_speed_v3_step9.py"
+        ],
+        "dependency_tokens": [
+          "domain:wnba",
+          "project:wnba-pra-speed-v3-step9"
+        ],
+        "shared_resources": [
+          "branch:fix/wnba-pra-speed-v3-step9-duplicate-key-guard-r10"
+        ],
+        "resource_identity": {
+          "main:base": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
+          "step9:failed-run": "36927758434",
+          "runtime-defect": "StreamlitDuplicateElementKey"
+        },
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "a0717c8a93031d8ea559a85c4f8440c79b0604abd2e8e91b1af80ec0f860f747"
+  "state_hash": "4740ada1287ceb50b4f6711f2501a1b6d68eac5f063275d26006431151ca0643"
 }
