@@ -99,6 +99,8 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_zero_context_resume_packet_v1.py",
     "devsystem/content_addressed_proof_reuse_v1.py",
     "tests/test_devsystem_content_addressed_proof_reuse_v1.py",
+    "devsystem/content_addressed_proof_reuse_ci_v1.py",
+    "tests/test_devsystem_content_addressed_proof_reuse_ci_v1.py",
 )
 
 
@@ -205,6 +207,10 @@ def validate() -> dict:
         "MONSTER_V5_EXECUTION_HEARTBEAT_DEADMAN_RECOVERY_GREEN",
         "python devsystem/zero_context_resume_packet_v1.py",
         "MONSTER_V5_ZERO_CONTEXT_RESUME_PACKET_GREEN",
+        "content-proof-reuse:",
+        "python devsystem/content_addressed_proof_reuse_ci_v1.py",
+        "reuse_sport_critical",
+        "REUSE_PARENT_SPORT_PROOF",
         "group: devsystem-targeted-ci-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.sha || github.ref }}",
         "fetch-depth: 0",
     )
@@ -431,6 +437,7 @@ def validate() -> dict:
         "execution_heartbeat_deadman_recovery_v1_permanent": True,
         "zero_context_resume_packet_v1_permanent": True,
         "content_addressed_proof_reuse_v1_permanent": True,
+        "content_addressed_proof_reuse_ci_v1_permanent": True,
         "main_push_proof_concurrency_isolated": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
