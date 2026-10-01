@@ -44,6 +44,21 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _winsipedia_lookup_name(name: Any, espn_team_id: Any = "") -> str:
+    """Normalize display abbreviations only for the Winsipedia lookup lane.
+
+    ESPN identity remains authoritative and untouched.  Many CFB display names
+    end in "St." while Winsipedia uses the full "State" slug (for example,
+    Florida St. -> florida-state).
+    """
+    text = _clean(name)
+    if not text:
+        return ""
+    if _clean(espn_team_id) == "52":
+        return "Florida State"
+    return re.sub(r"\bSt\.?$", "State", text, flags=re.IGNORECASE)
+
+
 def _f(value: Any, default: float = 0.0) -> float:
     try:
         return float(value)
@@ -207,12 +222,14 @@ def resolve_matchup_history(
         "away": {
             "canonical_name": away,
             "espn_team_id": away_id,
-            "winsipedia_slug": recovery._slug_guess(away) if away else "",
+            "winsipedia_lookup_name": _winsipedia_lookup_name(away, away_id),
+            "winsipedia_slug": recovery._slug_guess(_winsipedia_lookup_name(away, away_id)) if away else "",
         },
         "home": {
             "canonical_name": home,
             "espn_team_id": home_id,
-            "winsipedia_slug": recovery._slug_guess(home) if home else "",
+            "winsipedia_lookup_name": _winsipedia_lookup_name(home, home_id),
+            "winsipedia_slug": recovery._slug_guess(_winsipedia_lookup_name(home, home_id)) if home else "",
         },
     }
 
@@ -262,8 +279,16 @@ def resolve_matchup_history(
 
     wins: dict[str, Any] = {}
     wins_error = ""
+    wins_away_lookup = _winsipedia_lookup_name(away, away_id)
+    wins_home_lookup = _winsipedia_lookup_name(home, home_id)
     try:
-        wins = dict(recovery._fetch_winsipedia_games(away, home) or {})
+        wins = dict(
+            recovery._fetch_winsipedia_games(
+                wins_away_lookup,
+                wins_home_lookup,
+            )
+            or {}
+        )
     except Exception as exc:
         wins_error = f"{type(exc).__name__}: {exc}"[:260]
     wins_meetings = int(_f(wins.get("meetings"), 0.0))
@@ -282,6 +307,10 @@ def resolve_matchup_history(
         "meetings": wins_meetings,
         "error": wins_error,
         "source_url": _clean(wins.get("source_url")),
+        "lookup_names": {
+            "away": wins_away_lookup,
+            "home": wins_home_lookup,
+        },
         "observed_at": observed_at,
     })
 
