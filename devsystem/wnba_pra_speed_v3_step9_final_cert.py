@@ -45,7 +45,14 @@ def _prime_wnba_pra_route(page, route_url: str):
     session from owning the positional sport/market controls.
     """
     page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
-    return frozen_route_to_wnba_pra(page)
+    try:
+        return frozen_route_to_wnba_pra(page)
+    except BrowserQAFailure:
+        # The frozen helper may trigger a Streamlit rerun that canonicalizes the
+        # browser URL back to root. Never let a retry inherit that stale route:
+        # reacquire the immutable WNBA/PRA handoff once before failing closed.
+        page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+        return frozen_route_to_wnba_pra(page)
 
 
 def _bounded(label: str, value: float, limit: float) -> float:
