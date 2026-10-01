@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 65,
+  "truth_epoch": 66,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
-  "current_step": 2,
+  "current_step": 3,
   "total_steps": 5,
-  "step_title": "Detached Execution / Background Continuation",
-  "step_status": "FROZEN",
-  "active_checkpoint": "MONSTER_V5_STEP2",
-  "main_sha": "5f443ccae35987a1f83274487f69b87693876644",
+  "step_title": "Event-Driven Resume",
+  "step_status": "ACTIVE",
+  "active_checkpoint": "MONSTER_V5_STEP3",
+  "main_sha": "841d36a9724c79aaf47e55ee2384038971210f68",
   "active_pr": null,
-  "active_run": 36806283619,
-  "active_head_sha": "ef9feb22dadf5897f3288852fe68c3a3a31abead",
+  "active_run": null,
+  "active_head_sha": "841d36a9724c79aaf47e55ee2384038971210f68",
   "blocker": null,
-  "next_legal_action": "START_MONSTER_V5_STEP3",
+  "next_legal_action": "CREATE_MONSTER_V5_STEP3_BRANCH",
   "lease": {
     "revision": 64,
     "generation": 12,
@@ -61,12 +61,12 @@
     "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
     "ref": "refs/heads/monster-scope-aware-execution-leases",
     "path": "devsystem/scope_aware_execution_lease_state_v1.json",
-    "revision": 10,
-    "generation": 1,
-    "state_hash": "c26af434f4210067ed18ce4a785a016b88a905e04b9ed2ecbc6e72fcc7c063ee",
-    "holder_count": 0,
-    "holder_owner_id": null,
-    "holder_lease_id": null
+    "revision": 11,
+    "generation": 2,
+    "state_hash": "64a3c958c16b725dce7090134874a74ba4d34be855462320d9ff9fd30e04118c",
+    "holder_count": 1,
+    "holder_owner_id": "chatgpt:monster-v5-step3",
+    "holder_lease_id": "SCOPE-LEASE-676DAE709CD1DA246E16B596"
   },
   "detached_continuation": {
     "version": "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_V1",
@@ -77,5 +77,5 @@
     "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a",
     "workstream_count": 0
   },
-  "state_hash": "41821bc7236ac8ac73f02bd8311f615c8f0b6a89326224785be0f91a6d4fd295"
+  "state_hash": "06075ee77b7309e09b0d8154281d4eb36933bde6942b30d97cf5a7a460f2e3ed"
 }
