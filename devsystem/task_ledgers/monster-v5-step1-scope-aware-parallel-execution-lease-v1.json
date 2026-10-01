@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "task_id": "monster-v5-step1-scope-aware-parallel-execution-lease-v1",
+  "title": "MONSTER V5 Step 1 — Scope-Aware Parallel Execution Lease",
+  "project": "MONSTER V5",
+  "step": 1,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Add a repository-backed scope-aware lease layer that permits multiple simultaneous mutation owners only when write paths, dependency tokens, and shared resources are provably disjoint. Preserve the frozen V4 repo-wide lease as bootstrap compatibility and keep Step 2A mandatory.",
+  "acceptance": {
+    "disjoint_parallel_holders": true,
+    "path_prefix_overlap_serializes": true,
+    "dependency_overlap_serializes": true,
+    "shared_resource_overlap_serializes": true,
+    "exclusive_scope_serializes": true,
+    "frozen_artifact_scope_fails_closed": true,
+    "action_scope_cannot_exceed_lease": true,
+    "scoped_identity_drift_blocks": true,
+    "unrelated_main_movement_does_not_revoke_scope": true,
+    "renew_release_are_holder_local": true,
+    "stale_cas_blocks": true,
+    "project_blast_radius_tokens_reused": true,
+    "step_2a_chain_preserved": true,
+    "dedicated_authoritative_ref": true,
+    "product_runtime_unchanged": true,
+    "permanent_ci_enforcement": true
+  },
+  "protected": {
+    "monster_v4_steps_1_6": true,
+    "monster_v3_steps_1_8": true,
+    "monster_2a_steps_1_5": true,
+    "frozen_v4_lease_module_unchanged": true,
+    "frozen_blast_radius_module_unchanged": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Exact PR head must pass permanent-contract and devsystem-final-gate; merge via auto-merge; merged-main proof must pass; initialize authoritative scope-lease state; freeze Step 1 module/test/ledger; publish next legal action START_MONSTER_V5_STEP2; release bootstrap V4 lease."
+}
