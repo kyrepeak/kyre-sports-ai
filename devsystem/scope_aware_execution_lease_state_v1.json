@@ -4,35 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 46,
+  "revision": 47,
   "generation": 19,
-  "holders": [
-    {
-      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step2-defense-pace-v5",
-      "lease_id": "SCOPE-LEASE-2C180533A476FF06E590D542",
-      "generation": 19,
-      "acquired_at_utc": "2026-10-01T17:16:00Z",
-      "heartbeat_at_utc": "2026-10-01T17:16:00Z",
-      "expires_at_utc": "2026-10-01T17:31:00Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/detached_execution_continuation_state_v1.json"
-        ],
-        "dependency_tokens": [
-          "control:detached-continuation",
-          "project:cfb-top-picks-missing-research-repair"
-        ],
-        "shared_resources": [
-          "detached-continuation-state"
-        ],
-        "resource_identity": {
-          "continuation:ref": "7f9192eb21a50e08cfb39ba3a2e0b896988a7fab",
-          "main:head": "991039c36085843e6ce02373523a6b71e019ce23",
-          "registry:ref": "d2d69e94b6aa1fa5bc6526e5743abd9fc526fc86"
-        },
-        "exclusive": false
-      }
-    }
-  ],
-  "state_hash": "0f5aed27e5a423b8e4c5678d102ba260f35f4115db2330b334bed731b2406437"
+  "holders": [],
+  "state_hash": "717e20fb123351da9798e117bcfd7b8c2cab3d901c3ae13f0317cdf76483375d"
 }
