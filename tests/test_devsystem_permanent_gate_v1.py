@@ -58,6 +58,7 @@ def test_permanent_contract_is_green():
     assert result["project_blast_radius_map_v1_permanent"] is True
     assert result["monster_self_benchmark_v1_permanent"] is True
     assert result["regression_debt_zero_gate_v1_permanent"] is True
+    assert result["scope_aware_execution_lease_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -480,6 +481,36 @@ def test_regression_debt_zero_gate_is_permanently_enforced():
     assert "MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN" in workflow
     assert "tests/test_devsystem_regression_debt_zero_gate_v1.py" in workflow
 
+
+
+def test_scope_aware_execution_lease_is_permanently_enforced():
+    lease = _load(
+        "scope_aware_execution_lease_v1",
+        "devsystem/scope_aware_execution_lease_v1.py",
+    )
+    result = lease.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["disjoint_parallel_allowed"] is True
+    assert result["same_path_overlap_blocked"] is True
+    assert result["dependency_overlap_blocked"] is True
+    assert result["shared_resource_overlap_blocked"] is True
+    assert result["exclusive_scope_blocks_parallel"] is True
+    assert result["frozen_path_blocked"] is True
+    assert result["stale_cas_blocked"] is True
+    assert result["action_within_scope_authorized"] is True
+    assert result["action_outside_scope_blocked"] is True
+    assert result["unrelated_main_movement_tolerated"] is True
+    assert result["scoped_identity_drift_blocked"] is True
+    assert result["release_is_holder_local"] is True
+    assert result["blast_radius_tokens_reused"] is True
+    assert result["step_2a_chain_preserved"] is True
+    assert result["dedicated_authoritative_ref"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/scope_aware_execution_lease_v1.py" in workflow
+    assert "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_GREEN" in workflow
+    assert "tests/test_devsystem_scope_aware_execution_lease_v1.py" in workflow
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
     contract = _load("forward_motion_contract_v1", "devsystem/forward_motion_contract_v1.py")
