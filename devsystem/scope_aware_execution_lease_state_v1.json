@@ -4,9 +4,44 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 14,
-  "generation": 4,
+  "revision": 15,
+  "generation": 5,
   "holders": [
+    {
+      "owner_id": "chatgpt:monster-v5-step2-ci-repair",
+      "lease_id": "SCOPE-LEASE-70F6D876506EC0F926567F67",
+      "generation": 5,
+      "acquired_at_utc": "2026-10-01T03:51:07Z",
+      "heartbeat_at_utc": "2026-10-01T03:51:07Z",
+      "expires_at_utc": "2026-10-01T04:51:07Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/devsystem-targeted-ci.yml",
+          "devsystem/permanent_gate_v1.py",
+          "devsystem/task_ledgers/monster-v5-step2-main-proof-concurrency-repair-v1.json",
+          "tests/test_devsystem_permanent_gate_v1.py"
+        ],
+        "dependency_tokens": [
+          "control:detached-continuation",
+          "control:permanent-gate",
+          "control:proof-concurrency",
+          "domain:devsystem"
+        ],
+        "shared_resources": [
+          "control:cross-chat-truth",
+          "control:devsystem-final-gate",
+          "control:frozen-registry",
+          "workflow:devsystem-targeted-ci"
+        ],
+        "resource_identity": {
+          "blob:.github/workflows/devsystem-targeted-ci.yml": "cd4027b89049f9e023219ea9dec17051f49392bb",
+          "blob:devsystem/detached_execution_continuation_v1.py": "4c6d1b4b10f65e344491dbb2e78c62e4444db927",
+          "blob:devsystem/permanent_gate_v1.py": "c3d73b2cee58bbc0ba2a3c711361df66d8c55ba6",
+          "blob:tests/test_devsystem_permanent_gate_v1.py": "6060c01ccd5989bb974f67d2e13769879ceb9de4"
+        },
+        "exclusive": false
+      }
+    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9",
       "lease_id": "SCOPE-LEASE-F04FB35A96AEE083FCA91DE9",
@@ -33,5 +68,5 @@
       }
     }
   ],
-  "state_hash": "414335eb0f743378502ea6f667c677640794a2e22e0f4731106c5ecb3d90a065"
+  "state_hash": "420899a5886516fcf88e5e85e4e2310e2a33bb93c1dae02b52ab644125d70fdc"
 }
