@@ -227,9 +227,9 @@ def test_step8_task_ledger_has_valid_genesis_action_log():
 def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
     source = PROFILE.read_text(encoding="utf-8")
     assert 'FINAL_HERO_SELECTOR = ".wn4-hero"' in source
-    assert "def _visible_step8_surface(page):" in source
+    assert "def _visible_step8_surface(page, player_name: str):" in source
     assert "for candidate in page.frames:" in source
-    assert "def _wait_first_visible_content(page, started: float):" in source
+    assert "def _wait_first_visible_content(page, started: float, player_name: str):" in source
     assert "_wait_first_visible_content(" in source
     assert "WNBA_PRA_SPEED_V3_STEP8_FRAME_REACQUIRE_GREEN" in source
     assert "MutationObserver" not in source
