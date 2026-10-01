@@ -1,0 +1,48 @@
+{
+  "version": 2,
+  "task_id": "monster-v5-step2-detached-execution-continuation-v1",
+  "title": "MONSTER V5 Step 2 — Detached Execution / Background Continuation",
+  "project": "MONSTER V5",
+  "step": 2,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Add a repository-backed detached continuation state so an independent worker can reconstruct exact workstream state without chat history. Persist branch, PR, head SHA, authoritative async run, scope lease identity, blocker, last completed action, next legal action, frozen-registry identity, worker handoff lineage, and tamper-evident packet hashes. This layer never grants mutation authority; MONSTER Step 2A and the V5 scope-aware lease remain mandatory.",
+  "acceptance": {
+    "repository_backed_continuation_state": true,
+    "tamper_evident_packet": true,
+    "cas_persistence": true,
+    "one_chained_latest_packet_per_workstream": true,
+    "live_async_waits_without_duplicate": true,
+    "failed_async_requires_classification": true,
+    "worker_handoff_is_cas_bound": true,
+    "handoff_does_not_grant_mutation": true,
+    "resume_without_chat_history": true,
+    "unrelated_main_movement_is_advisory_when_scope_stable": true,
+    "scope_drift_fails_closed": true,
+    "frozen_scope_drift_fails_closed": true,
+    "repository_head_drift_fails_closed": true,
+    "multiple_workstreams_supported": true,
+    "step_2a_remains_mandatory": true,
+    "scope_lease_remains_mandatory": true,
+    "product_runtime_unchanged": true,
+    "permanent_ci_enforcement": true
+  },
+  "protected": {
+    "monster_v5_step1": true,
+    "monster_v4_steps_1_6": true,
+    "monster_v3_steps_1_8": true,
+    "monster_2a_steps_1_5": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Exact PR head must pass the permanent DevSystem contract and final gate, merge via auto-merge, merged-main proof must pass, authoritative detached-continuation state must be initialized, Step 2 artifacts must be frozen, repository truth must advance to Step 2 FROZEN with next legal action START_MONSTER_V5_STEP3, and the Step-2 scope lease must be released."
+}
