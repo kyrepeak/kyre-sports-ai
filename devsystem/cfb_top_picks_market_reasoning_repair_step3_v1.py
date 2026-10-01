@@ -43,6 +43,20 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _validate_public_heading(reasoning_loc: Any) -> str:
+    headings = reasoning_loc.locator("h4")
+    count = headings.count()
+    if count != 1:
+        raise AssertionError(f"STEP3_PUBLIC_HEADING_COUNT:{count}")
+    heading = headings.first
+    if not heading.is_visible():
+        raise AssertionError("STEP3_PUBLIC_HEADING_NOT_VISIBLE")
+    text = _clean(heading.text_content(timeout=5000))
+    if text != PUBLIC_HEADING:
+        raise AssertionError(f"STEP3_PUBLIC_HEADING_TEXT:{text!r}")
+    return text
+
+
 def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> dict[str, Any]:
     rank = int(row.get("rank") or 0)
     market = _clean(row.get("market")).upper()
@@ -264,13 +278,11 @@ def run_public(
                         reasoning_loc.get_attribute("data-reasoning-status")
                     ).upper()
                     market = _clean(reasoning_loc.get_attribute("data-market")).upper()
-                    text = _clean(reasoning_loc.inner_text())
                     if status not in {"READY", "PARTIAL"}:
                         raise AssertionError(f"STEP3_PUBLIC_STATUS:{status}")
                     if market not in reasoning.REQUIRED_SIGNALS:
                         raise AssertionError(f"STEP3_PUBLIC_MARKET:{market}")
-                    if "Market-Aware Football Reasoning" not in text:
-                        raise AssertionError("STEP3_PUBLIC_HEADING_MISSING")
+                    heading = _validate_public_heading(reasoning_loc)
 
                     body = _clean(
                         reasoning_frame.locator("body").inner_text(timeout=5000)
@@ -287,6 +299,7 @@ def run_public(
                         "detail_href": href,
                         "market": market,
                         "reasoning_status": status,
+                        "heading": heading,
                         "viewport": [390, 844],
                         "v9_marker": True,
                     }
