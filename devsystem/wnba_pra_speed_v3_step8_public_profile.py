@@ -142,9 +142,12 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 raise BrowserQAFailure("Frozen Step-7 precompute marker is missing under Step 8.")
 
             page.wait_for_timeout(PRECOMPUTE_SETTLE_MS)
-            first = frame.get_by_role("button", name=first_name, exact=True)
+            button_name = f"Open {first_name} PRA"
+            first = frame.get_by_role("button", name=button_name, exact=False).first
             if first.count() < 1:
-                first = frame.get_by_role("button", name="Open", exact=False).first
+                raise BrowserQAFailure(
+                    f"Step-8 could not find the exact Player button for {first_name!r}."
+                )
 
             started = time.monotonic()
             first.focus()
