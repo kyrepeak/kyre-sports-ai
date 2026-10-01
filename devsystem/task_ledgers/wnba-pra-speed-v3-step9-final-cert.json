@@ -5,7 +5,7 @@
   "id": "wnba-pra-speed-v3-step9-final-cert",
   "title": "WNBA PRA Speed V3 Step 9 — Final strict production speed certification",
   "project": "WNBA PRA Speed V3",
-  "phase": "FINAL_PRODUCTION_CERTIFICATION_ROUTE_PRIME_REPAIR",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION_LABELED_ROUTE_REPAIR",
   "step": 9,
   "total_steps": 9,
   "status": "DONE",
@@ -66,11 +66,11 @@
     "no_unchanged_failed_reruns": true,
     "protect_frozen_steps_1_8": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_EXACT_HEAD_ROUTE_PRIME_REPAIR_PROOF",
-    "authoritative_failed_run": 36814190536,
-    "authoritative_failed_job": 110215630967,
+    "next_legal_action": "ONE_EXACT_HEAD_LABELED_ROUTE_REPAIR_PROOF",
+    "authoritative_failed_run": 36815708141,
+    "authoritative_failed_job": 110220220604,
     "failure_owner": "VERIFIER",
-    "failure_class": "STALE_SPORT_MARKET_SESSION_BLOCKED_WNBA_PRA_ROUTE_ACQUISITION"
+    "failure_class": "QUERY_HANDOFF_IGNORED_STALE_MLB_ROUTE_EXACT_LABELED_CONTROL_REQUIRED"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -80,23 +80,45 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36814190536,
-    "job": 110215630967,
+    "run": 36815708141,
+    "job": 110220220604,
     "owner": "VERIFIER",
-    "failure_class": "STALE_SPORT_MARKET_SESSION_BLOCKED_WNBA_PRA_ROUTE_ACQUISITION",
+    "failure_class": "QUERY_HANDOFF_IGNORED_STALE_MLB_ROUTE_EXACT_LABELED_CONTROL_REQUIRED",
     "evidence": [
-      "Merged-main DevSystem run 36814190834 completed SUCCESS.",
-      "Step-9 production reached the frozen Step-5 profiler but never reached any speed measurement.",
-      "The live browser body remained on MLB Live Odds / Run Line while Step-5 waited for the WNBA PRA marker for 600 seconds.",
-      "The API fast-history route was deployed GREEN, proving this was not an API deployment failure."
+      "Merged-main DevSystem run 36815708133 completed SUCCESS.",
+      "The Step-9 certifier emitted WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_GREEN and used the WNBA/PRA query URL.",
+      "The live body still remained on MLB Live Odds / Run Line for the full 600-second Step-5 deployment window.",
+      "No true-cold, warm, cached-cold, or visible-continuity timing was measured before failure."
     ],
-    "root_cause": "The reused frozen navigation helper tried to switch sport/market through positional comboboxes from a stale MLB-loaded Streamlit session. Streamlit reruns can canonicalize the URL to root, so reload-based verifier retries can lose the intended WNBA/PRA route.",
-    "patch": "Step-9 certifier only: enter the existing certified ?ks_jump_sport=WNBA&ks_jump_market=PRA query handoff and re-prime that immutable route before each frozen Step-5/Step-8 route check. Do not modify frozen product/runtime code or any speed budget.",
+    "root_cause": "The production Streamlit session ignored/canonicalized the query handoff and retained stale MLB route state. Query priming alone is therefore insufficient proof of route acquisition.",
+    "patch": "Verifier-only: after the query hint, select the exact visible 🏟️ Sport control to WNBA and the exact 🎯 WNBA Market control to PRA by accessible labels/options, then require the frozen WNBA PRA slate contract before timing. Preserve all product code and speed budgets.",
     "product_code_changed": false,
     "runtime_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
     "data_meaning_changed": false,
     "threshold_changed": false
-  }
+  },
+  "production_failure_history": [
+    {
+      "run": 36814190536,
+      "job": 110215630967,
+      "owner": "VERIFIER",
+      "failure_class": "STALE_SPORT_MARKET_SESSION_BLOCKED_WNBA_PRA_ROUTE_ACQUISITION",
+      "evidence": [
+        "Merged-main DevSystem run 36814190834 completed SUCCESS.",
+        "Step-9 production reached the frozen Step-5 profiler but never reached any speed measurement.",
+        "The live browser body remained on MLB Live Odds / Run Line while Step-5 waited for the WNBA PRA marker for 600 seconds.",
+        "The API fast-history route was deployed GREEN, proving this was not an API deployment failure."
+      ],
+      "root_cause": "The reused frozen navigation helper tried to switch sport/market through positional comboboxes from a stale MLB-loaded Streamlit session. Streamlit reruns can canonicalize the URL to root, so reload-based verifier retries can lose the intended WNBA/PRA route.",
+      "patch": "Step-9 certifier only: enter the existing certified ?ks_jump_sport=WNBA&ks_jump_market=PRA query handoff and re-prime that immutable route before each frozen Step-5/Step-8 route check. Do not modify frozen product/runtime code or any speed budget.",
+      "product_code_changed": false,
+      "runtime_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    }
+  ]
 }
