@@ -4,35 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 27,
+  "revision": 28,
   "generation": 8,
   "holders": [
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v5-step4",
-      "lease_id": "SCOPE-LEASE-213B6076CAB3A177E4FC4AD8",
-      "generation": 7,
-      "acquired_at_utc": "2026-10-01T05:04:00Z",
-      "heartbeat_at_utc": "2026-10-01T05:04:00Z",
-      "expires_at_utc": "2026-10-01T06:04:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/devsystem-targeted-ci.yml",
-          "devsystem/execution_heartbeat_deadman_recovery_v1.py",
-          "devsystem/permanent_gate_v1.py",
-          "devsystem/task_ledgers/monster-v5-step4-execution-heartbeat-deadman-recovery-v1.json",
-          "tests/test_devsystem_execution_heartbeat_deadman_recovery_v1.py"
-        ],
-        "dependency_tokens": [
-          "domain:devsystem",
-          "project:monster-v5-step4"
-        ],
-        "shared_resources": [
-          "workflow:devsystem-targeted-ci"
-        ],
-        "resource_identity": {},
-        "exclusive": false
-      }
-    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-deploy",
       "lease_id": "SCOPE-LEASE-7747D526576D92937C53A9DD",
@@ -81,5 +55,5 @@
       }
     }
   ],
-  "state_hash": "3266cc19c1ef09ff98f64554c65d98824b7cab4de14efcb21274a3a93eda7971"
+  "state_hash": "745ebbff39dd3c7dbf9e6fc18d4e4b12700c09c357c9f058cad6b4729023003b"
 }
