@@ -162,3 +162,44 @@ def test_public_heading_contract_rejects_wrong_h4_text():
     with pytest.raises(AssertionError, match="STEP3_PUBLIC_HEADING_TEXT"):
         repair._validate_public_heading(loc)
 
+class _FakeMarker:
+    def __init__(self, *, count: int = 1, text: str = repair.page.PAGE_MARKER):
+        self._count = count
+        self._text = text
+
+    def count(self) -> int:
+        return self._count
+
+    @property
+    def first(self):
+        return self
+
+    def text_content(self, timeout: int = 5000) -> str:
+        return self._text
+
+
+class _FakeFrame:
+    def __init__(self, marker: _FakeMarker):
+        self.marker = marker
+
+    def locator(self, selector: str):
+        assert selector == '[data-testid="cfb-top-picks-research-v2-step9-marker"]'
+        return self.marker
+
+
+def test_public_v9_marker_contract_reads_hidden_dom_marker():
+    frame = _FakeFrame(_FakeMarker())
+    assert repair._validate_public_v9_marker(frame) == repair.page.PAGE_MARKER
+
+
+def test_public_v9_marker_contract_rejects_missing_marker():
+    frame = _FakeFrame(_FakeMarker(count=0))
+    with pytest.raises(AssertionError, match="STEP3_PUBLIC_V9_MARKER_COUNT"):
+        repair._validate_public_v9_marker(frame)
+
+
+def test_public_v9_marker_contract_rejects_wrong_marker_text():
+    frame = _FakeFrame(_FakeMarker(text="stale-marker"))
+    with pytest.raises(AssertionError, match="STEP3_PUBLIC_V9_MARKER_TEXT"):
+        repair._validate_public_v9_marker(frame)
+
