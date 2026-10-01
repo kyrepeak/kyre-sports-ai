@@ -37,6 +37,10 @@ def test_browser_qa_contract_is_explicit_and_safe():
         module.CFB_GAME_TOTAL_STEP5_DEPLOYMENT_MARKER
         == "CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"
     )
+    assert module.CFB_GAME_TOTAL_STEP5_ALLOWED_LOCAL_STATES == (
+        "READY",
+        "DATA LIMITED",
+    )
     assert 'data-testid="gt157-step-5"' in module.CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR
     assert 'data-step5-deployment-marker' in module.CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR
 
@@ -124,6 +128,17 @@ def test_browser_qa_enters_cfb_over_under_through_certified_fast_route():
     assert "page.goto(_cfb_over_under_url(base_url)" in run_source
     assert "_choose(page, frame, 0, CFB_SPORT)" not in run_source
     assert "_choose(page, frame, 1, CFB_MARKET)" not in run_source
+
+
+def test_game_total_local_browser_qa_is_structural_when_live_data_is_limited():
+    module = _load_module()
+    source = inspect.getsource(module._wait_for_game_total_step5)
+    assert "state not in CFB_GAME_TOTAL_STEP5_ALLOWED_LOCAL_STATES" in source
+    assert 'state == "READY"' in source
+    assert "coverage_value != 100 or ready_tiles != 12" in source
+    assert "tile_count != 12" in source
+    assert "DEVSYSTEM_BROWSER_QA_GAME_TOTAL_DATA_LIMITED_STRUCTURAL_GREEN" in source
+    assert 'Game Total Step 5 state is not READY' not in source
 
 
 def test_browser_qa_enters_exact_game_total_step5_route():
