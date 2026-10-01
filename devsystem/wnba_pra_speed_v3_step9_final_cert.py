@@ -10,15 +10,16 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import time
 from typing import Any
 from urllib.parse import urlencode
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from devsystem.browser_qa_v1 import BrowserQAFailure
+from devsystem.browser_qa_v1 import BrowserQAFailure, _find_app_frame
 from devsystem.wnba_pra_speed_v3_step2_public_profile import PUBLIC_HOST
-from devsystem.wnba_nav_v2_step7_public_freeze import _route_to_wnba_pra as frozen_route_to_wnba_pra
+from devsystem.wnba_nav_v2_step7_public_freeze import SLATE_READY_BUDGET_SECONDS, _wait_page
 from devsystem import wnba_pra_speed_v3_step5_public_profile as step5_profile
 from devsystem import wnba_pra_speed_v3_step8_public_profile as step8_profile
 
@@ -29,6 +30,9 @@ VISIBLE_CONTINUITY_SECONDS_MAX = 0.75
 
 PROJECT = "WNBA PRA Speed V3"
 STEP = "9/9"
+SPORT_LABEL = "🏟️ Sport"
+WNBA_MARKET_LABEL = "🎯 WNBA Market"
+ROUTE_CONTROL_TIMEOUT_SECONDS = 30.0
 
 
 def _wnba_pra_route_url(base_url: str) -> str:
@@ -37,15 +41,64 @@ def _wnba_pra_route_url(base_url: str) -> str:
     return base_url.rstrip("/") + "/?" + query
 
 
-def _prime_wnba_pra_route(page, route_url: str):
-    """Re-enter the immutable WNBA/PRA query route before frozen route checks.
+def _choose_labeled_route_value(page, frame, label: str, value: str) -> None:
+    """Choose an exact Streamlit selectbox value by its accessible label."""
+    combo = frame.get_by_role("combobox", name=label, exact=True)
+    if combo.count() < 1:
+        raise BrowserQAFailure(f"Step-9 route control missing: {label!r}")
+    combo.first.click()
 
-    Streamlit can canonicalize the browser URL back to root after a rerun.
-    Re-navigation here is verifier-only and prevents a stale prior MLB/NFL
-    session from owning the positional sport/market controls.
+    deadline = time.monotonic() + ROUTE_CONTROL_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        for owner in (frame, page):
+            try:
+                option = owner.get_by_role("option", name=value, exact=True).first
+                if option.count() > 0 and option.is_visible():
+                    option.click()
+                    return
+            except Exception:
+                pass
+        page.wait_for_timeout(100)
+
+    raise BrowserQAFailure(
+        f"Step-9 route option {value!r} did not become selectable for {label!r}."
+    )
+
+
+def _prime_wnba_pra_route(page, route_url: str):
+    """Enter WNBA/PRA using exact labeled controls, not positional state.
+
+    The query handoff remains a harmless first hint, but live production can
+    retain a stale MLB route. The authoritative verifier action is therefore
+    the exact visible Sport -> WNBA and WNBA Market -> PRA interaction.
     """
     page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
-    return frozen_route_to_wnba_pra(page)
+    frame, _ = _find_app_frame(page, timeout_seconds=120.0)
+
+    _choose_labeled_route_value(page, frame, SPORT_LABEL, "WNBA")
+
+    deadline = time.monotonic() + ROUTE_CONTROL_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        frame, _ = _find_app_frame(page, timeout_seconds=12.0)
+        market = frame.get_by_role("combobox", name=WNBA_MARKET_LABEL, exact=True)
+        if market.count() > 0:
+            break
+        page.wait_for_timeout(100)
+    else:
+        raise BrowserQAFailure("Step-9 WNBA market selector did not appear.")
+
+    _choose_labeled_route_value(page, frame, WNBA_MARKET_LABEL, "PRA")
+    frame, ready = _wait_page(
+        page,
+        "slate",
+        timeout_seconds=SLATE_READY_BUDGET_SECONDS,
+    )
+    if ready > SLATE_READY_BUDGET_SECONDS:
+        raise BrowserQAFailure(
+            f"Step-9 WNBA PRA slate budget exceeded: {ready:.3f}s"
+        )
+    print("WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_GREEN")
+    return frame, ready
 
 
 def _bounded(label: str, value: float, limit: float) -> float:
