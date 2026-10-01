@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 77,
-  "generation": 37,
+  "revision": 78,
+  "generation": 38,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
       "lease_id": "SCOPE-LEASE-STEP9-DUPKEY-GUARD-R1",
-      "generation": 37,
+      "generation": 38,
       "acquired_at_utc": "2026-10-01T22:24:00Z",
-      "heartbeat_at_utc": "2026-10-01T22:24:00Z",
-      "expires_at_utc": "2026-10-01T22:54:00Z",
+      "heartbeat_at_utc": "2026-10-01T22:30:00Z",
+      "expires_at_utc": "2026-10-01T23:00:00Z",
       "scope": {
         "write_paths": [
           ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
@@ -28,13 +28,10 @@
           "project:wnba-pra-speed-v3-step9"
         ],
         "shared_resources": [
-          "branch:fix/wnba-pra-speed-v3-step9-duplicate-key-guard-r9",
-          "pr:wnba-pra-speed-v3-step9-duplicate-key-guard-r9",
-          "workflow:devsystem-targeted-ci",
-          "workflow:wnba-pra-speed-v3-step9-final-cert"
+          "branch:fix/wnba-pra-speed-v3-step9-duplicate-key-guard-r10"
         ],
         "resource_identity": {
-          "main:base": "1fa72e4bc8ff19ed2cd46473607389bace050ed7",
+          "main:base": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
           "step9:failed-run": "36927758434",
           "runtime-defect": "StreamlitDuplicateElementKey"
         },
@@ -134,5 +131,5 @@
       }
     }
   ],
-  "state_hash": "a87e7051beca2ff4bbe9bccb8c59053729752d72f01e22f26ef978780e4ad526"
+  "state_hash": "cda2f31b0567ad702175781ddc1ecfac6e8ad060af494f0235a30199052c3f77"
 }
