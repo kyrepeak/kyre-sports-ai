@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "task": "wnba-pra-speed-v3-step9-final-cert",
+  "task_id": "wnba-pra-speed-v3-step9-final-cert",
+  "id": "wnba-pra-speed-v3-step9-final-cert",
+  "title": "WNBA PRA Speed V3 Step 9 — Final strict production speed certification",
+  "project": "WNBA PRA Speed V3",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION",
+  "step": 9,
+  "total_steps": 9,
+  "status": "DONE",
+  "scope": "Certification-only final gate. Compose the frozen Step-5 production true-cold/warm profile with the frozen Step-8 cached-cold/visible-first profile and fail closed unless every final speed budget passes. Step 9 adds no product/runtime/model/provider/router/math behavior.",
+  "source_main": "68666801387cb1a4a759a15d73a907411d1f1e05",
+  "speed_targets": {
+    "warm_same_session_seconds_max": 0.75,
+    "cached_cold_seconds_max": 1.5,
+    "true_cold_seconds_max": 2.5,
+    "visible_continuity_seconds_max": 0.75
+  },
+  "protected": {
+    "speed_v3_steps_1_8": true,
+    "step8_registry_checkpoint": "WNBA_PRA_SPEED_V3_STEP8",
+    "step8_registry_revision": 10,
+    "step8_source_main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
+    "navigation_v2_steps_1_7": true,
+    "product_runtime_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
+    "sportsbook_projection_influence_changed": false
+  },
+  "proof_contract": {
+    "true_cold_source": "frozen Step-5 production profile fresh browser/session traversal",
+    "warm_same_session_source": "frozen Step-5 production profile zero-read warm reopen",
+    "cached_cold_source": "frozen Step-8 production profile after frozen Step-7 precompute readiness",
+    "visible_continuity_source": "frozen Step-8 browser-resident exact-player continuity",
+    "exact_pr_scope_only": true,
+    "merged_main_production_required": true,
+    "devsystem_final_gate_required": true,
+    "terminal_receipt_required": true,
+    "frozen_registry_required": true
+  },
+  "freeze_exit": {
+    "required_tokens": [
+      "WNBA_PRA_SPEED_V3_STEP9_TRUE_COLD_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP9_WARM_SAME_SESSION_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP9_CACHED_COLD_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP9_VISIBLE_CONTINUITY_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP9_FROZEN_STEPS1_8_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP9_PROFILE_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP9_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP9_FROZEN"
+    ]
+  },
+  "regression_debt": {
+    "state": "ZERO",
+    "open_debt_count": 0
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9",
+    "scope_lease_id": "SCOPE-LEASE-F04FB35A96AEE083FCA91DE9",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "protect_frozen_steps_1_8": true,
+    "failure_must_be_classified_before_patch": true,
+    "next_legal_action": "ONE_EXACT_HEAD_STEP9_PROOF"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
