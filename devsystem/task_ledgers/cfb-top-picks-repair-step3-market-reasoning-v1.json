@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -8,8 +8,8 @@
   "status": "DONE",
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
   "root_cause": "The proof layer certified the presence of Market-Aware Football Reasoning, not live completeness. Synthetic fixtures covered happy-path READY behavior, while the live Top-10 verifier did not enforce the same readiness contract on every required market signal.",
-  "failure_owner": "CI",
-  "patch": "Add an additive verifier-only Step-3 repair that certifies all 10 live ranked picks through the final V9 detail chain, requires every non-history market signal to be usable/sourced/fresh, permits SOURCE_CONFLICT_REVIEW only on the dedicated history signal while requiring the block to remain transparently PARTIAL, permanently regression-tests unavailable/non-history conflict fail-closed behavior, and checks the merged-main public reasoning surface without modifying frozen product owners.",
+  "failure_owner": "VERIFIER",
+  "patch": "Keep the proven Step-3 football reasoning product unchanged and repair only the public verifier: validate the reasoning card's child h4 directly, require exactly one heading, require it to be visible, and require exact text 'Market-Aware Football Reasoning'. This replaces the unstable parent-container inner_text assertion that produced a false negative after the public reasoning element, READY/PARTIAL status, market identity, live Top-10 reasoning, and merged-main DevSystem proof were already present.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -23,13 +23,14 @@
   },
   "regression_debt": {
     "created": true,
-    "owner_class": "CI",
+    "owner_class": "VERIFIER",
     "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
     "permanent_contract": "devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py",
     "state": "PENDING_PROOF"
   },
   "step2a": {
-    "single_branch": "cfb-top-picks-repair-step3-market-reasoning-v1",
+    "single_branch": "cfb-top-picks-repair-step3-public-verifier-r1",
+    "repair_of_merge_sha": "1fa72e4bc8ff19ed2cd46473607389bace050ed7",
     "single_pr_required": true,
     "duplicate_async_forbidden": true,
     "exact_head_required": true,
@@ -61,5 +62,18 @@
     "final_v9_surface_required": true,
     "source_and_freshness_required": true,
     "projection_probability_ranking_selection_unchanged": true
+  },
+  "post_merge_public_verifier_repair": {
+    "source_merge_sha": "1fa72e4bc8ff19ed2cd46473607389bace050ed7",
+    "source_failed_run_id": 36934226273,
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_HEADING_MISSING",
+    "owner": "VERIFIER",
+    "product_reasoning_present": true,
+    "public_reasoning_element_found": true,
+    "public_status_and_market_found": true,
+    "root_cause": "The public proof used the parent reasoning container's aggregated inner_text as a proxy for the visible heading. The repository contract renders the heading as a dedicated h4 child, and no CFB/sitewide mobile CSS hides that h4. The verifier must assert the semantic child directly.",
+    "patch": "Require exactly one child h4 on the public reasoning element, require h4 visibility, and require exact heading text via text_content.",
+    "product_code_modified": false,
+    "proof_state": "PENDING_PROOF"
   }
 }
