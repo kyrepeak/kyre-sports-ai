@@ -4,31 +4,31 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 56,
+  "truth_epoch": 57,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 1,
   "total_steps": 5,
   "step_title": "Scope-Aware Parallel Execution Lease",
-  "step_status": "ACTIVE",
-  "active_checkpoint": "MONSTER_V5_STEP1_MERGED_MAIN_PROOF",
+  "step_status": "FROZEN",
+  "active_checkpoint": "MONSTER_V5_STEP1",
   "main_sha": "9a767c0cc6ea450e991d412930865174f42a8c94",
   "active_pr": null,
   "active_run": 36804202999,
   "active_head_sha": "9a767c0cc6ea450e991d412930865174f42a8c94",
   "blocker": null,
-  "next_legal_action": "WAIT_FOR_MERGED_MAIN_RUN_36804202999_TERMINAL",
+  "next_legal_action": "START_MONSTER_V5_STEP2",
   "lease": {
-    "revision": 63,
+    "revision": 64,
     "generation": 12,
-    "state_hash": "e392ff84d8b92d85638d8f75853870bd76cf093b79ae3d53a573954057bd32b5",
-    "holder_owner_id": "chatgpt:monster-v5-step1",
-    "holder_lease_id": "LEASE-57AEB0446DB8F15E2E18350A"
+    "state_hash": "8a3e66c2706f16a18f26811c29c13e023abe41bed99af14d665e586d03e87d53",
+    "holder_owner_id": null,
+    "holder_lease_id": null
   },
   "frozen_registry": {
-    "revision": 7,
-    "state_hash": "20583e2aac4acc456ec7138676ae4131a37c163557df193487d69f8b2170aa0d",
-    "checkpoint_count": 21,
+    "revision": 8,
+    "state_hash": "84fbae2a15b68801a20eabcdd06049bc9c559431409541553f4d3e3cc2c6db49",
+    "checkpoint_count": 22,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
@@ -52,7 +52,18 @@
     "MONSTER_V4_STEP4",
     "MONSTER_V4_STEP5",
     "MONSTER_V4_STEP6",
+    "MONSTER_V5_STEP1",
     "WNBA_PRA_SPEED_V3_STEP7"
   ],
-  "state_hash": "74578810b970c80fb8390a6f0a6f5d77fcb6073f7c8f4efb9852b1a6d6149181"
+  "scope_lease": {
+    "mode": "SCOPE_AWARE",
+    "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
+    "ref": "refs/heads/monster-scope-aware-execution-leases",
+    "path": "devsystem/scope_aware_execution_lease_state_v1.json",
+    "revision": 0,
+    "generation": 0,
+    "state_hash": "56140bdb7be78e6dbabcdc1419c0b22cd00a3a0f2ea4b477b88701eddc0f852f",
+    "holder_count": 0
+  },
+  "state_hash": "deb0184658ad3cc5f9f7b7b906328751567b7da8016e564c479472e94659d309"
 }
