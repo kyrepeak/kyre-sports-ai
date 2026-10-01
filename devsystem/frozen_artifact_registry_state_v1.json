@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 9,
-  "source_main_sha": "5f443ccae35987a1f83274487f69b87693876644",
+  "revision": 10,
+  "source_main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -242,8 +242,26 @@
         "tests/test_devsystem_detached_execution_continuation_v1.py": "de4c39dc5839f29c0181e9d9ed98e72696c85de7",
         "devsystem/task_ledgers/monster-v5-step2-detached-execution-continuation-v1.json": "63d4f748998dc189b1038c842fd772ac472578e9"
       }
+    },
+    "WNBA_PRA_SPEED_V3_STEP8": {
+      "status": "FROZEN",
+      "checkpoint_id": "WNBA_PRA_SPEED_V3_STEP8",
+      "source_main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
+      "proven_merge_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
+      "production_proof_run_id": 36809807153,
+      "production_proof_sha": "bb976898edc7f61cdb9c648aceb153fd873d0660",
+      "devsystem_proof_run_id": 36811143415,
+      "terminal_receipt_digest": "sha256:df99e9cf3965f00fdd4c11a2c53bfa79d2c174ee321bb66afc5603485902baa3",
+      "artifacts": {
+        "wnba_pra_speed_v3_step8_visible_first.py": "d9a15616d85c1d111b023e33eabb3e307a06070e",
+        "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py": "c8924855468878416589326c6a0b57922a505606",
+        "tests/test_wnba_pra_speed_v3_step8.py": "fd33b6233c90e98660e85e34e2d303c93baedbff",
+        "devsystem/wnba_pra_speed_v3_step8_public_profile.py": "27572c504160517c7cdeba2318ac498d4e983d35",
+        "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json": "be1b8380ac67c7761b760ab2cf7f2df4cfc6daa8",
+        ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml": "9166a39d5d4638d71938049eedb8470d440a4701"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "ebed94ee43c4ee3070d677aebcecf6f6a72b56c1b5930f8cdd2b043c1d0ab559"
+  "state_hash": "22917fd754882fe776e5c0709bb16b4772b6c6a90ff231813c2b803aa74ce41e"
 }
