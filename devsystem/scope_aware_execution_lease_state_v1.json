@@ -4,47 +4,31 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 11,
-  "generation": 2,
+  "revision": 12,
+  "generation": 3,
   "holders": [
     {
-      "owner_id": "chatgpt:monster-v5-step3",
-      "lease_id": "SCOPE-LEASE-676DAE709CD1DA246E16B596",
-      "generation": 2,
-      "acquired_at_utc": "2026-10-01T02:43:14Z",
-      "heartbeat_at_utc": "2026-10-01T02:43:14Z",
-      "expires_at_utc": "2026-10-01T03:43:14Z",
+      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step8",
+      "lease_id": "SCOPE-LEASE-F5DD1F20483C17D945FD0654",
+      "generation": 3,
+      "acquired_at_utc": "2026-10-01T03:43:27Z",
+      "heartbeat_at_utc": "2026-10-01T03:43:27Z",
+      "expires_at_utc": "2026-10-01T03:58:27Z",
       "scope": {
         "write_paths": [
-          ".github/workflows/devsystem-targeted-ci.yml",
-          "devsystem/event_driven_resume_state_v1.json",
-          "devsystem/event_driven_resume_v1.py",
-          "devsystem/permanent_gate_v1.py",
-          "devsystem/task_ledgers/monster-v5-step3-event-driven-resume-v1.json",
-          "tests/test_devsystem_event_driven_resume_v1.py",
-          "tests/test_devsystem_permanent_gate_v1.py"
+          "devsystem/frozen_artifact_registry_state_v1.json"
         ],
         "dependency_tokens": [
-          "control:detached-continuation",
-          "control:event-driven-resume",
-          "control:permanent-gate",
-          "domain:devsystem"
+          "checkpoint:wnba-pra-speed-v3-step8",
+          "domain:wnba"
         ],
         "shared_resources": [
-          "control:cross-chat-truth",
-          "control:devsystem-final-gate",
-          "control:frozen-registry",
-          "workflow:devsystem-targeted-ci"
+          "control:frozen-registry"
         ],
-        "resource_identity": {
-          "blob:.github/workflows/devsystem-targeted-ci.yml": "cd4027b89049f9e023219ea9dec17051f49392bb",
-          "blob:devsystem/detached_execution_continuation_v1.py": "4c6d1b4b10f65e344491dbb2e78c62e4444db927",
-          "blob:devsystem/permanent_gate_v1.py": "c3d73b2cee58bbc0ba2a3c711361df66d8c55ba6",
-          "blob:tests/test_devsystem_permanent_gate_v1.py": "6060c01ccd5989bb974f67d2e13769879ceb9de4"
-        },
+        "resource_identity": {},
         "exclusive": false
       }
     }
   ],
-  "state_hash": "64a3c958c16b725dce7090134874a74ba4d34be855462320d9ff9fd30e04118c"
+  "state_hash": "c4679c9fa0e6a1148e8a54de14010527d3042aaa753b0ed29b9ef67031a6dc35"
 }
