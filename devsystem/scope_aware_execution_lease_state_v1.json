@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 53,
-  "generation": 24,
+  "revision": 54,
+  "generation": 25,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
@@ -39,6 +39,37 @@
       }
     },
     {
+      "owner_id": "chatgpt:monster-v2:monster-v6-step1-content-proof-reuse-v1",
+      "lease_id": "SCOPE-LEASE-4518C8585C76DDFB2493B2D0",
+      "generation": 25,
+      "acquired_at_utc": "2026-10-01T20:59:30Z",
+      "heartbeat_at_utc": "2026-10-01T20:59:30Z",
+      "expires_at_utc": "2026-10-01T22:59:30Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/content_addressed_proof_reuse_v1.py",
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/permanent_gate_v1.py",
+          "devsystem/task_ledgers/monster-v6-step1-content-addressed-proof-reuse-v1.json",
+          "tests/test_devsystem_content_addressed_proof_reuse_v1.py",
+          "tests/test_devsystem_permanent_gate_v1.py"
+        ],
+        "dependency_tokens": [
+          "domain:devsystem",
+          "project:monster-v6-step1-content-addressed-proof-reuse"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v6-step1-content-proof-reuse-v1",
+          "control:frozen-artifact-registry"
+        ],
+        "resource_identity": {
+          "main:base": "2a759481143b2f11887516a74283108a58fb2e4c",
+          "registry:hash": "92e2b55397419ba4b059663b5fa7dd56a26ebebf030705bb2cf37d37bff05223"
+        },
+        "exclusive": false
+      }
+    },
+    {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-market-reasoning-v1",
       "lease_id": "SCOPE-LEASE-5FBF6A04FD516B18F2EA750B",
       "generation": 23,
@@ -67,5 +98,5 @@
       }
     }
   ],
-  "state_hash": "86489400a5c6f4259e6e5262c59d2678b9bf361fede0a8025f99de144150ce14"
+  "state_hash": "04a8a1c349a4b878c1cad8d9d8f7287aba18e6d6783a9dd5096fbb857d07d6d7"
 }
