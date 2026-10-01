@@ -4,8 +4,34 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 13,
-  "generation": 3,
-  "holders": [],
-  "state_hash": "2d9833344484f1021aa51990fab952de21dda19016ddce79f6f8a7b71b741ce5"
+  "revision": 14,
+  "generation": 4,
+  "holders": [
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9",
+      "lease_id": "SCOPE-LEASE-F04FB35A96AEE083FCA91DE9",
+      "generation": 4,
+      "acquired_at_utc": "2026-10-01T03:49:00Z",
+      "heartbeat_at_utc": "2026-10-01T03:49:00Z",
+      "expires_at_utc": "2026-10-01T04:19:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
+          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
+          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
+          "tests/test_wnba_pra_speed_v3_step9.py"
+        ],
+        "dependency_tokens": [
+          "domain:wnba",
+          "project:wnba-pra-speed-v3-step9"
+        ],
+        "shared_resources": [
+          "workflow:wnba-pra-speed-v3-step9-final-cert"
+        ],
+        "resource_identity": {},
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "414335eb0f743378502ea6f667c677640794a2e22e0f4731106c5ecb3d90a065"
 }
