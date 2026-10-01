@@ -11,12 +11,14 @@ import json
 from pathlib import Path
 import sys
 from typing import Any
+from urllib.parse import urlencode
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.browser_qa_v1 import BrowserQAFailure
 from devsystem.wnba_pra_speed_v3_step2_public_profile import PUBLIC_HOST
+from devsystem.wnba_nav_v2_step7_public_freeze import _route_to_wnba_pra as frozen_route_to_wnba_pra
 from devsystem import wnba_pra_speed_v3_step5_public_profile as step5_profile
 from devsystem import wnba_pra_speed_v3_step8_public_profile as step8_profile
 
@@ -27,6 +29,23 @@ VISIBLE_CONTINUITY_SECONDS_MAX = 0.75
 
 PROJECT = "WNBA PRA Speed V3"
 STEP = "9/9"
+
+
+def _wnba_pra_route_url(base_url: str) -> str:
+    """Return the immutable certified public route handoff for WNBA PRA."""
+    query = urlencode({"ks_jump_sport": "WNBA", "ks_jump_market": "PRA"})
+    return base_url.rstrip("/") + "/?" + query
+
+
+def _prime_wnba_pra_route(page, route_url: str):
+    """Re-enter the immutable WNBA/PRA query route before frozen route checks.
+
+    Streamlit can canonicalize the browser URL back to root after a rerun.
+    Re-navigation here is verifier-only and prevents a stale prior MLB/NFL
+    session from owning the positional sport/market controls.
+    """
+    page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+    return frozen_route_to_wnba_pra(page)
 
 
 def _bounded(label: str, value: float, limit: float) -> float:
@@ -114,19 +133,34 @@ def certify_results(
 def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
+    route_url = _wnba_pra_route_url(production_url)
 
-    # True-cold + warm same-session proof runs first in a fresh browser context.
-    step5_result = step5_profile.run(
-        production_url=production_url,
-        artifact_dir=artifacts / "step5-final-proof",
-    )
+    original_step5_route = step5_profile._route_to_wnba_pra
+    original_step8_route = step8_profile._route_to_wnba_pra
 
-    # Cached-cold + browser-resident visible-first proof runs second and requires
-    # the frozen Step-7 precompute readiness gate before timing.
-    step8_result = step8_profile.run(
-        production_url=production_url,
-        artifact_dir=artifacts / "step8-final-proof",
-    )
+    def primed_route(page):
+        return _prime_wnba_pra_route(page, route_url)
+
+    step5_profile._route_to_wnba_pra = primed_route
+    step8_profile._route_to_wnba_pra = primed_route
+    print(f"WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_URL={route_url}")
+    print("WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_GREEN")
+    try:
+        # True-cold + warm same-session proof runs first in a fresh browser context.
+        step5_result = step5_profile.run(
+            production_url=route_url,
+            artifact_dir=artifacts / "step5-final-proof",
+        )
+
+        # Cached-cold + browser-resident visible-first proof runs second and requires
+        # the frozen Step-7 precompute readiness gate before timing.
+        step8_result = step8_profile.run(
+            production_url=route_url,
+            artifact_dir=artifacts / "step8-final-proof",
+        )
+    finally:
+        step5_profile._route_to_wnba_pra = original_step5_route
+        step8_profile._route_to_wnba_pra = original_step8_route
 
     result = certify_results(
         step5_result=step5_result,

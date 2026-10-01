@@ -37,6 +37,17 @@ def test_step9_is_certification_only_and_keeps_final_speed_budgets():
     assert '"data_meaning_changed_by_step9": False' in source
 
 
+def test_step9_primes_immutable_wnba_pra_route_before_frozen_profiles():
+    source = _source()
+    assert 'urlencode({"ks_jump_sport": "WNBA", "ks_jump_market": "PRA"})' in source
+    assert "def _prime_wnba_pra_route(page, route_url: str):" in source
+    assert 'page.goto(route_url, wait_until="domcontentloaded", timeout=120000)' in source
+    assert "frozen_route_to_wnba_pra(page)" in source
+    assert "step5_profile._route_to_wnba_pra = primed_route" in source
+    assert "step8_profile._route_to_wnba_pra = primed_route" in source
+    assert "WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_GREEN" in source
+
+
 def test_step9_requires_browser_resident_step8_continuity():
     source = _source()
     assert '"game_card_continuity"' in source
