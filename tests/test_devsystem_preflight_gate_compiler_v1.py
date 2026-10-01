@@ -109,3 +109,8 @@ def test_compiler_never_grants_mutation_authority():
     assert result["protections"]["step_2a_still_required"] is True
     assert result["protections"]["scope_lease_still_required_for_mutation"] is True
     assert result["protections"]["mutation_authority_granted"] is False
+
+
+def test_required_permanent_contract_path_must_exist():
+    result = _run(required_permanent_paths=["devsystem/permanent_contract.py"])
+    assert any(item["code"] == "PERMANENT_CONTRACT_PATH_MISSING" for item in result["blockers"])
