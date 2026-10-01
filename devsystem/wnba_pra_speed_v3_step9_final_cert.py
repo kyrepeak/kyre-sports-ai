@@ -277,7 +277,9 @@ def certify_results(
         "step5_profile_green": True,
         "step8_profile_green": True,
         "frozen_steps_1_8_preserved": True,
-        "product_runtime_changed_by_step9": False,
+        "product_runtime_changed_by_step9": True,
+        "runtime_change_scope": "duplicate_player_identity_dedupe_guard",
+        "projection_values_changed_by_step9": False,
         "projection_math_changed_by_step9": False,
         "market_math_changed_by_step9": False,
         "data_meaning_changed_by_step9": False,
@@ -359,6 +361,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     print("WNBA_PRA_SPEED_V3_STEP9_CACHED_COLD_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_VISIBLE_CONTINUITY_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_FROZEN_STEPS1_8_GREEN")
+    print("WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_PROFILE_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_FROZEN")
