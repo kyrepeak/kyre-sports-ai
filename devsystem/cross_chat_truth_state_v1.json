@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 67,
+  "truth_epoch": 68,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 2,
   "total_steps": 5,
   "step_title": "Detached Execution / Background Continuation — CI Repair",
   "step_status": "ACTIVE",
-  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR",
+  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR_EXACT_HEAD_PROOF",
   "main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
-  "active_pr": null,
-  "active_run": null,
-  "active_head_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
+  "active_pr": 1296,
+  "active_run": 36812569889,
+  "active_head_sha": "a21a983e4b96bdd2f7d67bb398ef231dd4322d2c",
   "blocker": null,
-  "next_legal_action": "CREATE_MONSTER_V5_STEP2_CI_REPAIR_BRANCH",
+  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_RUN_36812569889_TERMINAL",
   "lease": {
     "revision": 64,
     "generation": 12,
@@ -61,9 +61,9 @@
     "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
     "ref": "refs/heads/monster-scope-aware-execution-leases",
     "path": "devsystem/scope_aware_execution_lease_state_v1.json",
-    "revision": 15,
+    "revision": 16,
     "generation": 5,
-    "state_hash": "420899a5886516fcf88e5e85e4e2310e2a33bb93c1dae02b52ab644125d70fdc",
+    "state_hash": "dc7f43cb19c9ea773c54900e74b7a64aa9f89a6f7a1c033159730d850c616df9",
     "holder_count": 2,
     "holder_owner_id": "chatgpt:monster-v5-step2-ci-repair",
     "holder_lease_id": "SCOPE-LEASE-70F6D876506EC0F926567F67"
@@ -77,5 +77,5 @@
     "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a",
     "workstream_count": 0
   },
-  "state_hash": "a9a1ddc2e4360718922120db522ba5e7b7a8e795b9ee632156d1ec9e40c31d8e"
+  "state_hash": "59a79a276eb6c62b1e5aeb108c2351a395ef477ce3eb31f0837483c7a68ac4ba"
 }
