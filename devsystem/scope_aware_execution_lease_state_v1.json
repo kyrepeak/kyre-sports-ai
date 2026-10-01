@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 21,
+  "revision": 22,
   "generation": 6,
   "holders": [
     {
@@ -12,8 +12,8 @@
       "lease_id": "SCOPE-LEASE-6001A920A25D7733457C3DE9",
       "generation": 6,
       "acquired_at_utc": "2026-10-01T04:37:16Z",
-      "heartbeat_at_utc": "2026-10-01T04:46:00Z",
-      "expires_at_utc": "2026-10-01T05:46:00Z",
+      "heartbeat_at_utc": "2026-10-01T04:47:30Z",
+      "expires_at_utc": "2026-10-01T05:47:30Z",
       "scope": {
         "write_paths": [
           ".github/workflows/devsystem-targeted-ci.yml",
@@ -37,9 +37,9 @@
           "workflow:devsystem-targeted-ci"
         ],
         "resource_identity": {
-          "blob:.github/workflows/devsystem-targeted-ci.yml": "cf2f417ae7b71d8e45835bce5cf55357010aecfa",
-          "blob:devsystem/permanent_gate_v1.py": "3e4eb5c88ed0df5789d8bebd3f7dfb4825d4980c",
-          "blob:tests/test_devsystem_permanent_gate_v1.py": "d13c2d88359ee7a33eaac9b160e599a3626f72fe",
+          "blob:.github/workflows/devsystem-targeted-ci.yml": "f8574e794da897e4546d996f99fa2abea4998892",
+          "blob:devsystem/permanent_gate_v1.py": "ac321118548aecac195f772c32a2188494149986",
+          "blob:tests/test_devsystem_permanent_gate_v1.py": "2125cc399e41359374bc72d2186766bd2a8e5155",
           "blob:devsystem/detached_execution_continuation_v1.py": "4c6d1b4b10f65e344491dbb2e78c62e4444db927"
         },
         "exclusive": false
@@ -71,5 +71,5 @@
       }
     }
   ],
-  "state_hash": "30dff43f419aed2706d3f4e3d0182909755ab6be281f790be0b5feefda9f45ca"
+  "state_hash": "32f138510b605b01d6f10431aa23f589eb62676a77f51e8ee4752e5141306fd1"
 }
