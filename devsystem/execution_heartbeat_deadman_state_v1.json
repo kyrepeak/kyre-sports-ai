@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V5_EXECUTION_HEARTBEAT_DEADMAN_RECOVERY_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "state_ref": "refs/heads/monster-execution-heartbeat-deadman",
+  "state_path": "devsystem/execution_heartbeat_deadman_state_v1.json",
+  "revision": 0,
+  "generation": 0,
+  "workers": [],
+  "recovery_receipts": [],
+  "consumed_recovery_receipts": [],
+  "state_hash": "98e6e84c63aeb51ec3eed234aef626446408d80c61efeb4fb326eb70620639e9"
+}
