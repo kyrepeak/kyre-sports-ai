@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "task_id": "monster-v6-step3-deployment-convergence-controller-v1",
+  "title": "MONSTER V6 Step 3 — Deployment Convergence Controller",
+  "project": "MONSTER V6",
+  "step": 3,
+  "total_steps": 6,
+  "status": "DONE",
+  "problem": "Merged code can be mistaken for broken code while production is queued, building, activating, stale, or waiting for runtime/UI proof, causing unnecessary refresh/redeploy loops.",
+  "root_cause": "Deployment identity and proof states were observable but lacked one bounded convergence controller that separated wait, refresh, full redeploy, runtime verification, and terminal classification.",
+  "failure_owner": "DEPLOYMENT_CONTROL_PLANE",
+  "patch": "Add a read-only deployment convergence state machine with at most one refresh, one full redeploy, and one runtime verification; exact-SHA runtime failures never trigger another redeploy.",
+  "protections": {
+    "step_2a_required": true,
+    "scope_lease_required_for_external_action": true,
+    "product_patch_allowed": false,
+    "mutation_authority_granted": false,
+    "one_refresh_max": true,
+    "one_full_redeploy_max": true,
+    "one_runtime_verify_max": true,
+    "wait_while_deployment_in_flight": true,
+    "frozen_artifacts_modified": false,
+    "product_runtime_modified": false
+  },
+  "acceptance": {
+    "queued_building_activating_wait": true,
+    "stale_sha_refresh_once": true,
+    "stale_after_refresh_full_redeploy_once": true,
+    "stale_after_bounded_recovery_classifies": true,
+    "failed_deploy_full_redeploy_once": true,
+    "exact_sha_runtime_verify_once": true,
+    "exact_sha_runtime_failure_never_redeploys": true,
+    "exact_sha_green_runtime_converges": true,
+    "tamper_fails_closed": true
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "DEPLOYMENT_CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_deployment_convergence_controller_v1.py",
+    "permanent_contract": "devsystem/deployment_convergence_controller_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "proof_plan": {
+    "pre_pr_workflow": ".github/workflows/monster-v6-step3-deployment-convergence.yml",
+    "focused_self_test": "python devsystem/deployment_convergence_controller_v1.py",
+    "focused_tests": "python -m pytest -q tests/test_devsystem_deployment_convergence_controller_v1.py",
+    "expensive_pr_ci_after_preflight_green": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
