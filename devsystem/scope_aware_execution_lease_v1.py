@@ -23,7 +23,7 @@ from typing import Any, Mapping, Sequence
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from devsystem.mandatory_2a_global_enforcement_v1 import enforce_certified_action
+from devsystem.mandatory_2a_adversarial_certification_v1 import enforce_certified_action
 
 VERSION = "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 LEASE_REF = "refs/heads/monster-scope-aware-execution-leases"
