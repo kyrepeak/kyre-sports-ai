@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 16,
-  "source_main_sha": "991039c36085843e6ce02373523a6b71e019ce23",
+  "revision": 17,
+  "source_main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -355,8 +355,24 @@
         "tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py": "1862954c06d4b94094191fb0aba273bfc9aeb9ea",
         "devsystem/task_ledgers/cfb-top-picks-repair-step2-defense-pace-v1.json": "2af3bd00fe5bce532e774b50e418a5bdc0a7eec0"
       }
+    },
+    "MONSTER_V6_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V6_STEP1",
+      "source_main_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+      "proven_merge_sha": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+      "pr_proof_run_id": 36926601094,
+      "proof_run_id": 36926839599,
+      "terminal_receipt_digest": "sha256:cc76c262af2e0aba9298d7674baa83b94f3a55258297827d73e98f5bc38386a7",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "STATIC_CONTENT",
+      "artifacts": {
+        "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+        "tests/test_devsystem_content_addressed_proof_reuse_v1.py": "ec864afca442dae6b3877827c8c9dc595e668975",
+        "devsystem/task_ledgers/monster-v6-step1-content-addressed-proof-reuse-v1.json": "e8b9cfa4302e0b94aec232b9b23fc976869a7852"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "92e2b55397419ba4b059663b5fa7dd56a26ebebf030705bb2cf37d37bff05223"
+  "state_hash": "1900c699de535349fc2edb12d37366d17b3a573dd1e9437631771771add06848"
 }
