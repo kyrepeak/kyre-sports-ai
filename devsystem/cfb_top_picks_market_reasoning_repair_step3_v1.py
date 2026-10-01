@@ -200,102 +200,111 @@ def run_public(
     artifact_dir: str | Path = "artifacts/cfb-top-picks-repair-step3-market-reasoning",
 ) -> dict[str, Any]:
     from playwright.sync_api import sync_playwright
+    from devsystem import cfb_top_picks_nav_step3_public_cert_v1 as public_nav
 
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
-
-    picks, _diag = engine.build_top_picks(limit=10)
-    if len(picks) != 10:
-        raise AssertionError(f"STEP3_PUBLIC_TOP10_COUNT:{len(picks)}")
-    first = dict(picks[0])
-    event_id = _clean(first.get("event_id"))
-    market = _clean(first.get("market")).upper()
-    if not event_id:
-        raise AssertionError("STEP3_PUBLIC_EVENT_ID_EMPTY")
-
-    query = urlencode(
-        {
-            "ks_sport": "College Football",
-            "ks_cfb_market": "Top Picks",
-            "top_pick_detail": event_id,
-        }
-    )
-    target = base_url.rstrip("/") + "/?" + query
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(
             headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"]
         )
+        p = None
         try:
-            p = browser.new_page(viewport={"width": 390, "height": 844})
-            p.goto(target, wait_until="domcontentloaded", timeout=120000)
-            deadline = time.monotonic() + 240.0
-            last_body = ""
-            selector = '[data-testid="cfb-top-picks-market-reasoning-1"]'
-            found = None
-            found_frame = None
+            deadline = time.monotonic() + 600.0
+            last_error = ""
             while time.monotonic() < deadline:
-                for frame in p.frames:
-                    try:
-                        loc = frame.locator(selector)
-                        if loc.count() == 1 and loc.first.is_visible():
-                            found = loc.first
-                            found_frame = frame
-                            break
-                    except Exception:
-                        pass
-                if found is not None:
-                    break
+                if p is not None:
+                    p.close()
+                p = browser.new_page(viewport={"width": 390, "height": 844})
                 try:
-                    last_body = "\n".join(
-                        frame.locator("body").inner_text(timeout=1500)
-                        for frame in p.frames
+                    public_nav._attempt_normal_flow(p, base_url, 390, 844)
+
+                    detail_link = None
+                    for frame in p.frames:
+                        try:
+                            loc = frame.locator('a[href*="top_pick_detail="]')
+                            if loc.count() > 0 and loc.first.is_visible():
+                                detail_link = loc.first
+                                break
+                        except Exception:
+                            pass
+                    if detail_link is None:
+                        raise AssertionError("STEP3_PUBLIC_DETAIL_LINK_MISSING")
+
+                    href = _clean(detail_link.get_attribute("href"))
+                    detail_link.click(timeout=15000)
+
+                    reasoning_loc = None
+                    reasoning_frame = None
+                    reasoning_deadline = time.monotonic() + 180.0
+                    while time.monotonic() < reasoning_deadline:
+                        for frame in p.frames:
+                            try:
+                                loc = frame.locator(
+                                    '[data-testid^="cfb-top-picks-market-reasoning-"]'
+                                    '[data-reasoning-status]'
+                                )
+                                if loc.count() == 1 and loc.first.is_visible():
+                                    reasoning_loc = loc.first
+                                    reasoning_frame = frame
+                                    break
+                            except Exception:
+                                pass
+                        if reasoning_loc is not None:
+                            break
+                        p.wait_for_timeout(500)
+
+                    if reasoning_loc is None or reasoning_frame is None:
+                        raise AssertionError("STEP3_PUBLIC_REASONING_NOT_READY")
+
+                    status = _clean(
+                        reasoning_loc.get_attribute("data-reasoning-status")
+                    ).upper()
+                    market = _clean(reasoning_loc.get_attribute("data-market")).upper()
+                    text = _clean(reasoning_loc.inner_text())
+                    if status not in {"READY", "PARTIAL"}:
+                        raise AssertionError(f"STEP3_PUBLIC_STATUS:{status}")
+                    if market not in reasoning.REQUIRED_SIGNALS:
+                        raise AssertionError(f"STEP3_PUBLIC_MARKET:{market}")
+                    if "Market-Aware Football Reasoning" not in text:
+                        raise AssertionError("STEP3_PUBLIC_HEADING_MISSING")
+
+                    body = _clean(
+                        reasoning_frame.locator("body").inner_text(timeout=5000)
                     )
-                except Exception:
-                    pass
-                p.wait_for_timeout(750)
-            if found is None or found_frame is None:
-                raise AssertionError(
-                    "STEP3_PUBLIC_REASONING_NOT_READY:" + last_body[:5000]
-                )
+                    if "CFB_TOP_PICKS_RESEARCH_V2_STEP9_FULL_SLATE_CERTIFIED" not in body:
+                        raise AssertionError("STEP3_PUBLIC_V9_MARKER_MISSING")
 
-            status = _clean(found.get_attribute("data-reasoning-status")).upper()
-            rendered_market = _clean(found.get_attribute("data-market")).upper()
-            text = _clean(found.inner_text())
-            if status not in {"READY", "PARTIAL"}:
-                raise AssertionError(f"STEP3_PUBLIC_STATUS:{status}")
-            if rendered_market != market:
-                raise AssertionError(
-                    f"STEP3_PUBLIC_MARKET:{rendered_market}:{market}"
-                )
-            if "Market-Aware Football Reasoning" not in text:
-                raise AssertionError("STEP3_PUBLIC_HEADING_MISSING")
-
-            body = _clean(found_frame.locator("body").inner_text(timeout=5000))
-            if "CFB_TOP_PICKS_RESEARCH_V2_STEP9_FULL_SLATE_CERTIFIED" not in body:
-                raise AssertionError("STEP3_PUBLIC_V9_MARKER_MISSING")
-
-            screenshot = artifacts / "public_reasoning_390_green.png"
-            p.screenshot(path=str(screenshot), full_page=True)
-            payload = {
-                "status": "GREEN",
-                "host": base_url,
-                "event_id": event_id,
-                "market": market,
-                "reasoning_status": status,
-                "viewport": [390, 844],
-                "v9_marker": True,
-            }
-            (artifacts / "public_reasoning.json").write_text(
-                json.dumps(payload, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
+                    screenshot = artifacts / "public_reasoning_390_green.png"
+                    p.screenshot(path=str(screenshot), full_page=True)
+                    payload = {
+                        "status": "GREEN",
+                        "host": base_url,
+                        "flow": "normal app -> College Football -> Top Picks -> first live card",
+                        "detail_href": href,
+                        "market": market,
+                        "reasoning_status": status,
+                        "viewport": [390, 844],
+                        "v9_marker": True,
+                    }
+                    (artifacts / "public_reasoning.json").write_text(
+                        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+                    print("CFB_TOP_PICKS_REPAIR_STEP3_PUBLIC_REASONING_GREEN")
+                    print(json.dumps(payload, indent=2, sort_keys=True))
+                    return payload
+                except Exception as exc:
+                    last_error = repr(exc)
+                    time.sleep(6)
+            raise AssertionError(
+                "STEP3_PUBLIC_DEPLOY_NOT_READY:" + last_error
             )
-            print("CFB_TOP_PICKS_REPAIR_STEP3_PUBLIC_REASONING_GREEN")
-            print(json.dumps(payload, indent=2, sort_keys=True))
-            return payload
         finally:
+            if p is not None:
+                p.close()
             browser.close()
-
 
 def main() -> int:
     parser = argparse.ArgumentParser()
