@@ -4,8 +4,40 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 41,
-  "generation": 16,
-  "holders": [],
-  "state_hash": "000ba3cd35fd4c0ea4c8dc1867f3e713796f1eadba02ef88e1c5994939ad8dbc"
+  "revision": 42,
+  "generation": 17,
+  "holders": [
+    {
+      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step2-defense-pace-v5",
+      "lease_id": "SCOPE-LEASE-846955CBE14ED158DA1B9257",
+      "generation": 17,
+      "acquired_at_utc": "2026-10-01T16:54:00Z",
+      "heartbeat_at_utc": "2026-10-01T16:54:00Z",
+      "expires_at_utc": "2026-10-01T17:24:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/devsystem-targeted-ci.yml",
+          "cfb_top_picks_defense_pace_research_v1.py",
+          "devsystem/cfb_top_picks_defense_pace_repair_step2_v1.py",
+          "devsystem/cfb_top_picks_research_v2_step5_defense_pace_cert_v1.py",
+          "devsystem/task_ledgers/cfb-top-picks-repair-step2-defense-pace-v1.json",
+          "tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py"
+        ],
+        "dependency_tokens": [
+          "domain:cfb",
+          "project:cfb-top-picks-repair-step2-defense-pace",
+          "workflow:devsystem-targeted-ci"
+        ],
+        "shared_resources": [
+          "cfb-top-picks-defense-pace",
+          "workflow:devsystem-targeted-ci"
+        ],
+        "resource_identity": {
+          "main:head": "ee626fead9000de556ec4e0c319608a46aa15dec"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "b16c8eaaba4ea50af43408630e399c1b165f0ddd602fa9a23e7cbb6917f44c90"
 }
