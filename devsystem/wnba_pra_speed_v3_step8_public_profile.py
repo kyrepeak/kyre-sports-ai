@@ -18,7 +18,7 @@ STEP8_SELECTOR = '[data-wnba-pra-speed-v3-step8="visible-first"][data-active="tr
 SHELL_SELECTOR = '[data-wnba-pra-speed-v3-step8-shell="visible"]'
 FINAL_HERO_SELECTOR = ".wn4-hero"
 CLIENT_PREVIEW_SELECTOR = '[data-wnba-pra-speed-v3-step8-click-preview="true"]'
-CONTINUITY_CARD_SELECTOR = '[class*="st-key-wnba_pra_speed_v3_step8_preview_"]'
+CONTINUITY_CARD_SELECTOR = ".wn3-player"
 RESULT_SELECTOR = '[data-wnba-pra-speed-v3-step8-result="true"]'
 STEP7_SELECTOR = '[data-wnba-pra-speed-v3-step7="active-player-precompute"]'
 
