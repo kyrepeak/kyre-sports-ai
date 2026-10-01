@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 21,
-  "source_main_sha": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
+  "revision": 22,
+  "source_main_sha": "37a7dde0d6a080136b0664c2da6d4ca54ee095b9",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -470,8 +470,46 @@
         "devsystem/task_ledgers/monster-v6-step5-semantic-ui-verifier-v1.json": "b6ede3a7a12b06029a4c7061a343546d50f6530f",
         "tests/test_devsystem_semantic_ui_verifier_contract_v1.py": "aa738d822bbb8accd324b0786683722614fc3640"
       }
+    },
+    "MONSTER_V6_STEP6": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V6_STEP6",
+      "source_main_sha": "37a7dde0d6a080136b0664c2da6d4ca54ee095b9",
+      "proven_merge_sha": "37a7dde0d6a080136b0664c2da6d4ca54ee095b9",
+      "focused_preflight_run_id": 36936867872,
+      "generic_preflight_run_id": 36936867784,
+      "pr_proof_run_id": 36936951884,
+      "proof_run_id": 36937127022,
+      "pr_terminal_receipt_digest": "sha256:22be7357655051829d1101ff5b73256821efd10c80e4561772c4a684800de181",
+      "terminal_receipt_digest": "sha256:6121a0fcf6f69f2cde847f2cea0bda0b6be6d9b4f0555a8275e69b836893a73f",
+      "regression_debt_state": "CLEARED",
+      "graph_contract": {
+        "graph_id": "UDIPHG-E3F492248F6F20883CEAF4A0",
+        "cases_id": "UDIPHC-926182256BB11838148E1E24",
+        "unit_of_work": "DATA_FIELD",
+        "no_source_loyalty": true,
+        "entity_types": [
+          "event",
+          "player",
+          "team"
+        ],
+        "source_exhaustion_fails_closed": true
+      },
+      "completion_contract": {
+        "total_steps": 6,
+        "all_steps_complete": true,
+        "no_step7": true,
+        "next_legal_action": "MONSTER_V6_COMPLETE"
+      },
+      "artifacts": {
+        ".github/workflows/monster-v6-step6-unified-data-identity-provider-health.yml": "dc74a1a21e14335cd7269dc1eadac9fb0166cefd",
+        "devsystem/unified_data_identity_provider_health_cases_v1.json": "61fe493c1157841fb6e6a26e31aba1767f532dbf",
+        "devsystem/unified_data_identity_provider_health_graph_v1.py": "17b73564967355c6eda4f00a23d57f37bdb09309",
+        "devsystem/task_ledgers/monster-v6-step6-unified-data-identity-provider-health-v1.json": "ff6004ed08500625eb7f3ba6460055187c456ee6",
+        "tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py": "30928573fa90255681a0149d764170f48fc8c34f"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "b16c63235baf57211efda659e8796100f991379ff34182bb80f3b5a07c0d96a1"
+  "state_hash": "d6b0a77618d4dcd05453f9fdc932ff9f84b130d9a5ef046df2621a4793752d14"
 }
