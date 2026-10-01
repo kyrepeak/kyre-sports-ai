@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 7,
-  "source_main_sha": "cf40a3aa5d42063fd0a41bb70c61b654a9084390",
+  "revision": 8,
+  "source_main_sha": "9a767c0cc6ea450e991d412930865174f42a8c94",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -219,8 +219,18 @@
         "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json": "d954bb7f1e81c8eb52b8f0697bdc7b6ec85b0309",
         ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml": "56ff291abf9d92a18e2978ae4213381efbcd78fb"
       }
+    },
+    "MONSTER_V5_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V5_STEP1",
+      "source_main_sha": "9a767c0cc6ea450e991d412930865174f42a8c94",
+      "artifacts": {
+        "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+        "tests/test_devsystem_scope_aware_execution_lease_v1.py": "de3c5da69908a41617a20c930842ccc3225daad9",
+        "devsystem/task_ledgers/monster-v5-step1-scope-aware-parallel-execution-lease-v1.json": "425dcc4948699aacf31e9bbf14f21d48f9db4a3b"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "20583e2aac4acc456ec7138676ae4131a37c163557df193487d69f8b2170aa0d"
+  "state_hash": "84fbae2a15b68801a20eabcdd06049bc9c559431409541553f4d3e3cc2c6db49"
 }
