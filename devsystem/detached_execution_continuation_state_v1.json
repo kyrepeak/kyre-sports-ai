@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "state_ref": "refs/heads/monster-detached-execution-continuations",
+  "state_path": "devsystem/detached_execution_continuation_state_v1.json",
+  "revision": 0,
+  "generation": 0,
+  "continuations": {},
+  "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a"
+}
