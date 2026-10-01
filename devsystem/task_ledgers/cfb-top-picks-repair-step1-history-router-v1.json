@@ -47,5 +47,22 @@
     "regression_guard_changed": false,
     "old_head": "b056c5b0085eb11211e154353af3970e599990de",
     "old_head_proof_reusable": false
+  },
+  "action_log": {
+    "events": [],
+    "consumed_receipts": [],
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "control_plane_repair_2": {
+    "failed_run_id": 36891564519,
+    "failed_job_id": 110468320383,
+    "failure_owner": "CI",
+    "failure_class": "ACTION_LEDGER_MISSING_ACTION_LOG",
+    "exact_failure": "ActionLedgerFailure: task ledger requires action_log",
+    "patch": "Add an empty valid Action Ledger V2 genesis action_log to this Step-1 ledger only.",
+    "product_code_changed": false,
+    "regression_guard_changed": false,
+    "previous_head": "9d481b4d4db21f49b2569042e296410c3e4623bd",
+    "previous_head_proof_reusable": false
   }
 }
