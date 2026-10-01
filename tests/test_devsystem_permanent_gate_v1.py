@@ -822,6 +822,7 @@ def test_monster_v6_proof_reuse_ci_adapter_is_permanent():
     assert result["product_runtime_mutation"] is False
 
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "actions: read" in workflow
     assert "content-proof-reuse:" in workflow
     assert "python devsystem/content_addressed_proof_reuse_ci_v1.py" in workflow
     assert "reuse_sport_critical" in workflow
