@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 19,
-  "source_main_sha": "0feac7ad028e307b915abec5415b43ac77991be2",
+  "revision": 20,
+  "source_main_sha": "bea8a48a775f6c01047a24a9bb3e48d95709f3e4",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -408,8 +408,34 @@
         "devsystem/task_ledgers/monster-v6-step3-deployment-convergence-controller-v1.json": "d46569c67d774d5e107af5d0eacc242146475833",
         "tests/test_devsystem_deployment_convergence_controller_v1.py": "706c57e3a631ad380a2e44959f2228a13ce8dd72"
       }
+    },
+    "MONSTER_V6_STEP4": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V6_STEP4",
+      "source_main_sha": "bea8a48a775f6c01047a24a9bb3e48d95709f3e4",
+      "proven_merge_sha": "bea8a48a775f6c01047a24a9bb3e48d95709f3e4",
+      "focused_preflight_run_id": 36932523433,
+      "generic_preflight_run_id": 36932523397,
+      "pr_proof_run_id": 36932612076,
+      "proof_run_id": 36932812684,
+      "pr_terminal_receipt_digest": "sha256:d3f7e4eddcb9ce3581e1e3330e2eb3e2c9fa3b31c67dce024e3e8eeb6d3646bd",
+      "terminal_receipt_digest": "sha256:cf0758a4f19940213a524ca5ab85bfcdf815c9d8a497facfc861f2c7f9b88aa4",
+      "regression_debt_state": "CLEARED",
+      "repair_catalog": {
+        "catalog_id": "CATALOG-F20F2D555CDFC123326343A9",
+        "revision": 1,
+        "seeded_proven_repairs": 2,
+        "registry_backed_seed_proofs": true
+      },
+      "artifacts": {
+        ".github/workflows/monster-v6-step4-proven-repair-memory.yml": "3b7497cc5b25f8ca17352daf22cee7f993a162d5",
+        "devsystem/proven_repair_memory_catalog_v1.json": "1678d8d2f43ed0a5dba939e78da6cedd5a4036ed",
+        "devsystem/proven_repair_memory_v1.py": "0e666819ab32f4361abf57bb63e464bc2c2275e7",
+        "devsystem/task_ledgers/monster-v6-step4-proven-repair-memory-v1.json": "dc1934b0936decb6e986a288df88b20185665556",
+        "tests/test_devsystem_proven_repair_memory_v1.py": "2a42a1ff75569d26b048724b0e70fbe901509f3d"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "9f7e6c062623bd2f43ba798589d4d35ddfbd924198e71406869bec0372ad50ce"
+  "state_hash": "e735f9ed48378302acd2776c69489cfadf1a8d2675daf1c7a85a10b530a6bda2"
 }
