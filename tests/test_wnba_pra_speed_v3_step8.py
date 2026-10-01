@@ -237,6 +237,18 @@ def test_step8_browser_continuity_is_final_production_contract_permanently():
     assert "WNBA_PRA_SPEED_V3_STEP8_BROWSER_CONTINUITY_FINAL_CONTRACT_SCOPE_GREEN" in workflow
 
 
+def test_step8_waits_for_frozen_step7_marker_after_game_transition_permanently():
+    source = PROFILE.read_text(encoding="utf-8")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "STEP7_MARKER_OBSERVE_TIMEOUT_SECONDS = 10.0" in source
+    assert "def _wait_step7_marker_resilient(page" in source
+    assert "for candidate in page.frames:" in source
+    assert "frame, _ = _wait_step7_marker_resilient(page)" in source
+    assert "WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEP7_MARKER_GREEN" in source
+    assert 'frame.locator(STEP7_SELECTOR).count() < 1' not in source
+    assert "WNBA_PRA_SPEED_V3_STEP8_STEP7_MARKER_OBSERVATION_VERIFIER_SCOPE_GREEN" in workflow
+
+
 def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
     source = PROFILE.read_text(encoding="utf-8")
     assert 'FINAL_HERO_SELECTOR = ".wn4-hero"' in source
