@@ -98,6 +98,8 @@ def _validate_reasoning(row: Mapping[str, Any], detail: Mapping[str, Any]) -> di
         raise AssertionError(f"STEP3_PROJECTION_WEIGHT:{rank}")
     if float(block.get("sportsbook_projection_weight") or 0.0) != 0.0:
         raise AssertionError(f"STEP3_SPORTSBOOK_WEIGHT:{rank}")
+    if block.get("may_modify_projection") is not False:
+        raise AssertionError(f"STEP3_PROJECTION_FIREWALL:{rank}")
     if block.get("may_modify_probability") is not False:
         raise AssertionError(f"STEP3_PROBABILITY_FIREWALL:{rank}")
     if block.get("may_modify_ranking") is not False:
