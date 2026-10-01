@@ -59,6 +59,7 @@ def test_permanent_contract_is_green():
     assert result["monster_self_benchmark_v1_permanent"] is True
     assert result["regression_debt_zero_gate_v1_permanent"] is True
     assert result["scope_aware_execution_lease_v1_permanent"] is True
+    assert result["detached_execution_continuation_v1_permanent"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -511,6 +512,37 @@ def test_scope_aware_execution_lease_is_permanently_enforced():
     assert "python devsystem/scope_aware_execution_lease_v1.py" in workflow
     assert "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_GREEN" in workflow
     assert "tests/test_devsystem_scope_aware_execution_lease_v1.py" in workflow
+
+
+def test_detached_execution_continuation_is_permanently_enforced():
+    continuation = _load(
+        "detached_execution_continuation_v1",
+        "devsystem/detached_execution_continuation_v1.py",
+    )
+    result = continuation.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["repository_backed_state_contract"] is True
+    assert result["tamper_evident_packet"] is True
+    assert result["cas_persistence"] is True
+    assert result["live_async_waits_without_duplicate"] is True
+    assert result["worker_handoff_is_cas_bound"] is True
+    assert result["handoff_does_not_grant_mutation"] is True
+    assert result["resume_without_chat_history"] is True
+    assert result["unrelated_main_movement_tolerated"] is True
+    assert result["scope_drift_fails_closed"] is True
+    assert result["frozen_scope_drift_fails_closed"] is True
+    assert result["head_drift_fails_closed"] is True
+    assert result["failed_async_forces_classification"] is True
+    assert result["multiple_workstreams_supported"] is True
+    assert result["step_2a_still_required"] is True
+    assert result["scope_lease_still_required"] is True
+    assert result["packet_never_grants_mutation"] is True
+    assert result["product_runtime_mutation"] is False
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/detached_execution_continuation_v1.py" in workflow
+    assert "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_GREEN" in workflow
+    assert "tests/test_devsystem_detached_execution_continuation_v1.py" in workflow
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
     contract = _load("forward_motion_contract_v1", "devsystem/forward_motion_contract_v1.py")
