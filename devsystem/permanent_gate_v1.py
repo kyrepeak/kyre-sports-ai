@@ -93,6 +93,8 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_detached_execution_continuation_v1.py",
     "devsystem/event_driven_resume_v1.py",
     "tests/test_devsystem_event_driven_resume_v1.py",
+    "devsystem/execution_heartbeat_deadman_recovery_v1.py",
+    "tests/test_devsystem_execution_heartbeat_deadman_recovery_v1.py",
 )
 
 
@@ -195,6 +197,8 @@ def validate() -> dict:
         "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_GREEN",
         "python devsystem/event_driven_resume_v1.py",
         "MONSTER_V5_EVENT_DRIVEN_RESUME_GREEN",
+        "python devsystem/execution_heartbeat_deadman_recovery_v1.py",
+        "MONSTER_V5_EXECUTION_HEARTBEAT_DEADMAN_RECOVERY_GREEN",
         "group: devsystem-targeted-ci-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.sha || github.ref }}",
         "fetch-depth: 0",
     )
@@ -418,6 +422,7 @@ def validate() -> dict:
         "scope_aware_execution_lease_v1_permanent": True,
         "detached_execution_continuation_v1_permanent": True,
         "event_driven_resume_v1_permanent": True,
+        "execution_heartbeat_deadman_recovery_v1_permanent": True,
         "main_push_proof_concurrency_isolated": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
