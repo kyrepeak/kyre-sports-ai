@@ -241,3 +241,101 @@ def test_step5_research_is_descriptive_only_and_api2_is_separate():
     assert research.MAY_MODIFY_RANKING is False
     assert research.MAY_MODIFY_SELECTION is False
     assert research.API2_USED is False
+
+def test_west_florida_transition_fallback_completes_all_supporting_fields(monkeypatch):
+    row = {
+        "event_id": "401999999",
+        "away": "West Florida",
+        "home": "LSU",
+        "away_team_id": "110242",
+        "home_team_id": "99",
+    }
+    game = {
+        "espn_event_id": "401999999",
+        "game_id": "401999999",
+        "game_date": "2026-10-03",
+        "kickoff_iso": "2026-10-03T20:00:00Z",
+        "away_team": "West Florida",
+        "home_team": "LSU",
+        "away_espn_team_id": "110242",
+        "home_espn_team_id": "99",
+        "away_team_slug": "west-florida",
+        "home_team_slug": "lsu",
+    }
+
+    monkeypatch.setattr(research.readable, "_live_defense", _live_defense)
+    monkeypatch.setattr(research.readable, "_completed_rows", _rows)
+    monkeypatch.setattr(research.readable, "_snapshot_team", lambda team_id: {})
+    monkeypatch.setattr(
+        research.offense_research,
+        "_resolve_division",
+        lambda profile: ("", {}),
+    )
+    monkeypatch.setattr(
+        research.explosive,
+        "_load_explosive_division",
+        lambda division: (
+            {
+                "baselines": {
+                    "pass_ypa_allowed": 7.0,
+                    "pass_ypc_allowed": 12.0,
+                    "rush_ypr_allowed": 4.5,
+                }
+            },
+            {"attempts": []},
+        ),
+    )
+    monkeypatch.setattr(
+        research.pace_identity,
+        "_load_pace_division",
+        lambda division: (
+            {
+                "baseline_plays_per_game": 65.0,
+                "baseline_seconds_per_play": 27.0,
+            },
+            {"attempts": []},
+        ),
+    )
+
+    profile = research._side_profile("away", row, game, "2026-10-03")
+    metrics = profile["metrics"]
+
+    assert profile["team"] == "West Florida"
+    assert profile["team_id"] == "110242"
+    assert profile["supporting_ready"] == len(research.SUPPORTING_FIELDS)
+    assert profile["supporting_ready"] == 6
+    assert metrics["red_zone_td_rate_allowed"]["status"] == "VERIFIED_FALLBACK"
+    assert round(metrics["red_zone_td_rate_allowed"]["value"], 8) == round(7 / 13, 8)
+    assert metrics["explosive_susceptibility_proxy"]["status"] == "VERIFIED_FALLBACK"
+    assert round(
+        metrics["explosive_susceptibility_proxy"]["pass_yards_per_attempt_allowed"],
+        8,
+    ) == round(695 / 110, 8)
+    assert round(
+        metrics["explosive_susceptibility_proxy"]["pass_yards_per_completion_allowed"],
+        8,
+    ) == round(695 / 59, 8)
+    assert round(
+        metrics["explosive_susceptibility_proxy"]["rush_yards_per_attempt_allowed"],
+        8,
+    ) == round(707 / 160, 8)
+    assert metrics["seconds_per_play"]["status"] == "VERIFIED_FALLBACK"
+    assert round(metrics["seconds_per_play"]["value"], 8) == round(6854 / 242, 8)
+    assert metrics["pace_index"]["status"] == "VERIFIED_FALLBACK"
+    assert round(metrics["pace_index"]["value"], 8) == round((242 / 4) / 65, 8)
+    for field in research.SUPPORTING_FIELDS:
+        assert metrics[field]["value"] is not None
+        assert metrics[field]["source"]
+        assert metrics[field]["observed_at"]
+
+
+def test_unknown_transition_team_still_fails_closed_without_official_snapshot():
+    metric, diag = research._red_zone_defense(
+        {"team": "Unknown Transition Team", "team_slug": ""},
+        "",
+        "2026-10-01T00:00:00+00:00",
+    )
+    assert metric["value"] is None
+    assert metric["status"] == "UNAVAILABLE"
+    assert diag["ready"] is False
+

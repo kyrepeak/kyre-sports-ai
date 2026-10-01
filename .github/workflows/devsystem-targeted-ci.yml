@@ -228,6 +228,8 @@ jobs:
         run: python devsystem/cfb_top_picks_research_v2_step4_offense_v1.py
       - name: Validate CFB Top Picks Research V2 Step 5 defense-pace contract
         run: python devsystem/cfb_top_picks_research_v2_step5_defense_pace_v1.py
+      - name: Validate CFB Top Picks repair Step 2 Defense/Pace completeness
+        run: python devsystem/cfb_top_picks_defense_pace_repair_step2_v1.py
       - name: Validate CFB Top Picks Research V2 Step 6 market-reasoning contract
         run: python devsystem/cfb_top_picks_research_v2_step6_market_reasoning_v1.py
       - name: Certify CFB Top Picks Research V2 Step 6 all-market reasoning
@@ -502,6 +504,7 @@ jobs:
             tests/test_nfl_passing_yards_keyerror_safe_entry_v183.py \
             tests/test_nfl_passing_yards_stuck_slate_v184.py \
             tests/test_nfl_all_markets_no_rerun_v185.py \
+            tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py \
             tests/test_cfb_top_picks_research_v2_step7_benefits_risks_v1.py \
             tests/test_cfb_top_picks_research_v2_step8_source_router_v1.py \
             tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py \
