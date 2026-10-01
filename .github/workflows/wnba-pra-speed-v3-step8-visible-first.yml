@@ -91,7 +91,7 @@ jobs:
           elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP8_VERIFIER_REPAIR_SCOPE_GREEN"
             echo "WNBA_PRA_SPEED_V3_STEP8_FRAME_RESILIENT_VERIFIER_SCOPE_GREEN"
-            echo "WNBA_PRA_SPEED_V3_STEP8_FOCUS_ENGAGEMENT_VERIFIER_SCOPE_GREEN"
+            echo "WNBA_PRA_SPEED_V3_STEP8_GAME_CARD_CONTINUITY_VERIFIER_SCOPE_GREEN"
           elif diff -q /tmp/expected-product-repair.txt /tmp/actual.txt >/dev/null; then
             echo "WNBA_PRA_SPEED_V3_STEP8_PRODUCT_REPAIR_SCOPE_GREEN"
           elif diff -q /tmp/expected-shell-lifetime-repair.txt /tmp/actual.txt >/dev/null; then
