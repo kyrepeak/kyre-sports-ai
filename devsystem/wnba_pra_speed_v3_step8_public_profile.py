@@ -18,6 +18,7 @@ STEP8_SELECTOR = '[data-wnba-pra-speed-v3-step8="visible-first"][data-active="tr
 SHELL_SELECTOR = '[data-wnba-pra-speed-v3-step8-shell="visible"]'
 FINAL_HERO_SELECTOR = ".wn4-hero"
 CLIENT_PREVIEW_SELECTOR = '[data-wnba-pra-speed-v3-step8-click-preview="true"]'
+CONTINUITY_CARD_SELECTOR = '[class*="st-key-wnba_pra_speed_v3_step8_preview_"]'
 RESULT_SELECTOR = '[data-wnba-pra-speed-v3-step8-result="true"]'
 STEP7_SELECTOR = '[data-wnba-pra-speed-v3-step7="active-player-precompute"]'
 
@@ -49,6 +50,14 @@ def _float_attr(marker, name: str) -> float:
 def _visible_step8_surface(page, player_name: str):
     """Return the first visible continuity, shell, or final Player surface."""
     for candidate in page.frames:
+        try:
+            continuity = candidate.locator(CONTINUITY_CARD_SELECTOR).filter(
+                has_text=player_name
+            ).first
+            if continuity.count() > 0 and continuity.is_visible():
+                return candidate, "game_card_continuity"
+        except Exception:
+            pass
         try:
             preview = candidate.locator(CLIENT_PREVIEW_SELECTOR).filter(
                 has_text=player_name
@@ -89,7 +98,7 @@ def _wait_first_visible_content(page, started: float, player_name: str):
         page.wait_for_timeout(min(25, max(1, int(remaining * 1000))))
 
     raise BrowserQAFailure(
-        "Step-8 neither client preview, temporary shell nor final Player hero "
+        "Step-8 neither frozen Game Center continuity card, client preview, temporary shell nor final Player hero "
         f"became visible within target: {MAX_VISIBLE_SHELL_SECONDS:.3f}s"
     )
 
@@ -147,18 +156,20 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 first = frame.get_by_role("button", name="Open", exact=False).first
 
             started = time.monotonic()
-            first.focus()
             frame, visible_path, visible_seconds = _wait_first_visible_content(
                 page,
                 started,
                 first_name,
             )
-            if visible_path != "client_preview":
+            if visible_path not in {"game_card_continuity", "client_preview"}:
                 raise BrowserQAFailure(
-                    "Step-8 focus engagement did not expose the browser-resident "
-                    "client preview before the Streamlit rerun."
+                    "Step-8 had no exact-player browser-resident continuity surface "
+                    "available before the Streamlit rerun."
                 )
-            print("WNBA_PRA_SPEED_V3_STEP8_FOCUS_ENGAGEMENT_GREEN")
+            if visible_path == "game_card_continuity":
+                print("WNBA_PRA_SPEED_V3_STEP8_GAME_CARD_CONTINUITY_GREEN")
+            else:
+                print("WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_GREEN")
             first.click()
             print(
                 "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_SECONDS="

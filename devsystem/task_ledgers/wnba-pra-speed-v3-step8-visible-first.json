@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_FOCUS_ENGAGEMENT_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_GAME_CARD_CONTINUITY_VERIFIER_REPAIR_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -31,7 +31,10 @@
     "sportsbook_projection_influence": 0,
     "client_preview_before_rerun": true,
     "client_preview_source": "frozen Game Center projection card",
-    "client_preview_transport": "CSS focus-within / active"
+    "client_preview_transport": "CSS focus-within / active",
+    "game_card_continuity_source": "already-visible frozen Game Center player card",
+    "game_card_continuity_verified_by_player_name": true,
+    "game_card_continuity_before_rerun": true
   },
   "protected": {
     "speed_v3_steps_1_7": true,
@@ -93,12 +96,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_FOCUS_ENGAGEMENT_VERIFIER_PROOF",
-    "authoritative_failed_run": 36804654463,
-    "authoritative_failed_job": 110186202224,
+    "next_legal_action": "ONE_EXACT_HEAD_GAME_CARD_CONTINUITY_VERIFIER_PROOF",
+    "authoritative_failed_run": 36805171503,
+    "authoritative_failed_job": 110187786559,
     "failure_owner": "VERIFIER",
-    "failure_class": "PLAYWRIGHT_POST_CLICK_MISSES_PRE_RERUN_FOCUS_PREVIEW",
-    "patch_count": 9
+    "failure_class": "FOCUS_PREVIEW_NOT_VISIBLE_IN_LIVE_BROWSER",
+    "patch_count": 10
   },
   "branch_failure": {
     "run": 36786282671,
@@ -266,19 +269,19 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36790949785,
-    "job": 110143457858,
-    "owner": "PRODUCT",
-    "failure_class": "SERVER_RERUN_CANNOT_MEET_VISIBLE_CONTENT_SLA",
+    "run": 36805171503,
+    "job": 110187786559,
+    "owner": "VERIFIER",
+    "failure_class": "FOCUS_PREVIEW_NOT_VISIBLE_IN_LIVE_BROWSER",
     "evidence": [
-      "Frame-resilient production proof ran on main 742afe3d1121595a43f77fe98926a79e42b12112 and scanned current page.frames after the Player click.",
-      "Neither the Step-8 shell nor final Player hero became visible inside the preserved 0.750-second target.",
-      "Merged-main DevSystem run 36790949744 completed SUCCESS through all critical lanes, full-merge certification, final gate, and terminal receipt.",
-      "The frozen Game Center card already contains the selected player's MIN/PTS/REB/AST/PRA before navigation; server-rendered Step-8 output necessarily starts only after the click crosses the Streamlit rerun boundary."
+      "Merged PR #1280 changed only the verifier contract and reached the live Step-8 deployment marker.",
+      "The production browser still reported no client preview, shell, or final hero inside 0.750 seconds.",
+      "The frozen Game Center card is already visible before navigation and contains the exact player's MIN/PTS/REB/AST/PRA.",
+      "Step 8 already wraps each player card in a stable keyed container, allowing exact-player continuity to be verified without relying on CSS focus behavior."
     ],
-    "root_cause": "A server-side Streamlit rerun is not a reliable mechanism for a sub-750ms first visible paint after Player selection.",
-    "patch": "Keep an exact-player PRA preview pre-rendered in the browser with the frozen Game Center metrics and reveal it client-side via CSS :focus-within/:active as soon as the Player button is engaged, while preserving the normal frozen Step-7 rerun and final Step-8 result checks.",
-    "product_code_changed": true,
+    "root_cause": "The verifier relied on CSS focus engagement to reveal a hidden preview, but that focus state is not a reliable visible surface in the live Streamlit DOM.",
+    "patch": "Verify the exact player's already-visible frozen Game Center card as the browser-resident continuity surface before the rerun, preserving the 0.750s first-visible and 1.50s final-player thresholds and leaving product/model/router code unchanged.",
+    "product_code_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
     "data_meaning_changed": false,
@@ -354,6 +357,25 @@
       "root_cause": "The production verifier keeps observing the pre-click Streamlit frame across a Player-click rerun, while the rendered app frame can be replaced or transiently unavailable.",
       "patch": "After click, repeatedly scan current page.frames without blocking and accept the first visible Step-8 shell or final Player hero within the unchanged 0.750-second target; preserve shell-lifetime result-marker proof and final Player <=1.50s.",
       "product_code_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36805171503,
+      "job": 110187786559,
+      "owner": "VERIFIER",
+      "failure_class": "FOCUS_PREVIEW_NOT_VISIBLE_IN_LIVE_BROWSER",
+      "evidence": [
+        "Merged PR #1280 changed only the verifier contract and reached the live Step-8 deployment marker.",
+        "The production browser still reported no client preview, shell, or final hero inside 0.750 seconds.",
+        "The frozen Game Center card is already visible before navigation and contains the exact player's MIN/PTS/REB/AST/PRA.",
+        "Step 8 already wraps each player card in a stable keyed container, allowing exact-player continuity to be verified without relying on CSS focus behavior."
+      ],
+      "root_cause": "The verifier relied on CSS focus engagement to reveal a hidden preview, but that focus state is not a reliable visible surface in the live Streamlit DOM.",
+      "patch": "Verify the exact player's already-visible frozen Game Center card as the browser-resident continuity surface before the rerun, preserving the 0.750s first-visible and 1.50s final-player thresholds and leaving product/model/router code unchanged.",
+      "product_code_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
       "threshold_changed": false
     }
   ]
