@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -9,7 +9,7 @@
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
   "root_cause": "The proof layer certified the presence of Market-Aware Football Reasoning, not live completeness. Synthetic fixtures covered happy-path READY behavior, while the live Top-10 verifier did not enforce the same readiness contract on every required market signal.",
   "failure_owner": "VERIFIER",
-  "patch": "Keep the proven Step-3 football reasoning product unchanged and repair only the public verifier: validate the reasoning card's child h4 directly, require exactly one heading, require it to be visible, and require exact text 'Market-Aware Football Reasoning'. This replaces the unstable parent-container inner_text assertion that produced a false negative after the public reasoning element, READY/PARTIAL status, market identity, live Top-10 reasoning, and merged-main DevSystem proof were already present.",
+  "patch": "Keep the proven Step-3 football reasoning product unchanged. Public verifier now checks the visible reasoning h4 semantically and checks the intentionally hidden Step-9 diagnostic marker by its exact data-testid + DOM text, instead of using rendered body.inner_text for a hidden marker.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -73,6 +73,19 @@
     "public_status_and_market_found": true,
     "root_cause": "The public proof used the parent reasoning container's aggregated inner_text as a proxy for the visible heading. The repository contract renders the heading as a dedicated h4 child, and no CFB/sitewide mobile CSS hides that h4. The verifier must assert the semantic child directly.",
     "patch": "Require exactly one child h4 on the public reasoning element, require h4 visibility, and require exact heading text via text_content.",
+    "product_code_modified": false,
+    "proof_state": "PENDING_PROOF"
+  },
+  "post_merge_public_marker_repair": {
+    "source_merge_sha": "17e9ecf4653df71d0c19c98d4fa274ebdbe77bc2",
+    "source_failed_run_id": 36937949347,
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_V9_MARKER_MISSING",
+    "owner": "VERIFIER",
+    "visible_reasoning_heading_proven": true,
+    "live_top10_reasoning_proven": true,
+    "merged_main_devsystem_proven": true,
+    "root_cause": "The Step-9 marker is intentionally a 1x1 overflow-hidden diagnostic DOM node. body.inner_text only represents rendered text and is not a valid identity probe for this hidden marker.",
+    "patch": "Query the marker directly by data-testid, require exactly one DOM node, and require exact page.PAGE_MARKER text_content. Visibility is not required for an intentionally hidden diagnostic marker.",
     "product_code_modified": false,
     "proof_state": "PENDING_PROOF"
   }
