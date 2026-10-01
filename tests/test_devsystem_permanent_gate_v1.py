@@ -60,6 +60,7 @@ def test_permanent_contract_is_green():
     assert result["regression_debt_zero_gate_v1_permanent"] is True
     assert result["scope_aware_execution_lease_v1_permanent"] is True
     assert result["detached_execution_continuation_v1_permanent"] is True
+    assert result["main_push_proof_concurrency_isolated"] is True
 
 
 def test_persistent_execution_brain_is_permanently_enforced():
@@ -543,6 +544,14 @@ def test_detached_execution_continuation_is_permanently_enforced():
     assert "python devsystem/detached_execution_continuation_v1.py" in workflow
     assert "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_GREEN" in workflow
     assert "tests/test_devsystem_detached_execution_continuation_v1.py" in workflow
+
+
+def test_main_push_proof_concurrency_is_sha_isolated():
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    marker = "group: devsystem-targeted-ci-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.sha || github.ref }}"
+    assert marker in workflow
+    assert "cancel-in-progress: true" in workflow
+    assert "group: devsystem-targeted-ci-${{ github.ref }}" not in workflow
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
     contract = _load("forward_motion_contract_v1", "devsystem/forward_motion_contract_v1.py")
