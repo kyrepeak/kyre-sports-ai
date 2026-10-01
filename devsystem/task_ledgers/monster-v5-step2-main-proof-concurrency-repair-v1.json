@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "task_id": "monster-v5-step2-main-proof-concurrency-repair-v1",
+  "title": "MONSTER V5 Step 2 — Main Proof Concurrency Repair",
+  "project": "MONSTER V5",
+  "step": 2,
+  "total_steps": 5,
+  "status": "DONE",
+  "owner": "CI",
+  "source_runs": [
+    36806283619,
+    36806477020
+  ],
+  "root_cause": "DevSystem targeted CI grouped every refs/heads/main run into one cancel-in-progress concurrency slot, so unrelated later main pushes cancelled valid merged-main certification before required critical lanes could finish.",
+  "repair": "SHA-isolate concurrency for push events on refs/heads/main while preserving ref-based cancel-in-progress behavior for pull_request, workflow_dispatch, and non-main refs.",
+  "acceptance": {
+    "main_push_proof_concurrency_isolated": true,
+    "non_main_ref_cancellation_preserved": true,
+    "permanent_gate_requires_exact_marker": true,
+    "permanent_test_requires_exact_marker": true,
+    "original_monster_v5_step2_artifacts_untouched": true,
+    "product_runtime_unchanged": true,
+    "regression_debt_zero": true
+  },
+  "regression_debt": {
+    "failure_id": "MONSTER_V5_STEP2_MAIN_PUSH_PROOF_CONCURRENCY_CANCELLATION",
+    "owner": "CI",
+    "state": "CLEARED",
+    "permanent_regression_guards": [
+      {
+        "kind": "CONTRACT",
+        "path": ".github/workflows/devsystem-targeted-ci.yml",
+        "permanent": true
+      },
+      {
+        "kind": "CONTRACT",
+        "path": "devsystem/permanent_gate_v1.py",
+        "permanent": true
+      },
+      {
+        "kind": "TEST",
+        "path": "tests/test_devsystem_permanent_gate_v1.py",
+        "permanent": true
+      }
+    ]
+  },
+  "protected": {
+    "MONSTER_V5_STEP2": true,
+    "frozen_original_step2_ledger": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Exact clean repair head must pass permanent-contract, DevSystem final gate, terminal receipt, merge, merged-main full certification, then freeze this dedicated repair ledger as MONSTER_V5_STEP2_CI_REPAIR without changing the original MONSTER_V5_STEP2 freeze entry."
+}
