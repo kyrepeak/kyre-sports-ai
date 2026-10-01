@@ -147,3 +147,122 @@ def test_parent_proof_missing_or_expired_fails_closed():
         token="x",
         api_json=fake_api,
     ) is None
+
+
+def _complete_tree(product_sha=B, adapter_sha=A):
+    return {
+        ".github/workflows/devsystem-targeted-ci.yml": A,
+        "devsystem/change_classifier_v1.py": A,
+        "devsystem/content_addressed_proof_reuse_v1.py": A,
+        "devsystem/content_addressed_proof_reuse_ci_v1.py": adapter_sha,
+        "devsystem/permanent_gate_v1.py": A,
+        "devsystem/other_control.py": C,
+        "cfb_runtime.py": product_sha,
+        "sports_api/nfl_runtime.py": B,
+        "tests/test_wnba_runtime.py": C,
+    }
+
+
+def _proof_api(base_sha):
+    def fake_api(url: str, auth_value: str):
+        if "/actions/runs?" in url:
+            return {
+                "workflow_runs": [
+                    {
+                        "id": 42,
+                        "name": TARGET_WORKFLOW_NAME,
+                        "event": "push",
+                        "head_sha": base_sha,
+                        "conclusion": "success",
+                        "run_number": 100,
+                    }
+                ]
+            }
+        return {
+            "artifacts": [
+                {
+                    "id": 100,
+                    "name": "monster-v4-step5-terminal-proof-42",
+                    "expired": False,
+                    "digest": DIGEST,
+                    "workflow_run": {"head_sha": base_sha},
+                }
+            ]
+        }
+    return fake_api
+
+
+def test_exact_product_and_policy_blobs_reuse_parent_proof(monkeypatch, tmp_path):
+    base = A
+    head = B
+    base_tree = _complete_tree()
+    head_tree = dict(base_tree)
+    head_tree["devsystem/other_control.py"] = A
+
+    import devsystem.content_addressed_proof_reuse_ci_v1 as module
+    monkeypatch.setattr(
+        module,
+        "_git_tree",
+        lambda ref, root: base_tree if ref == base else head_tree,
+    )
+    result = evaluate_ci_reuse(
+        base_sha=base,
+        head_sha=head,
+        repository="owner/repo",
+        token="x",
+        root=tmp_path,
+        api_json=_proof_api(base),
+    )
+    assert result["decision"] == "REUSE_PARENT_SPORT_PROOF"
+    assert result["reuse_sport_critical"] is True
+    assert result["parent_proof_run_id"] == 42
+
+
+def test_product_blob_drift_forces_fresh_sport_proof(monkeypatch, tmp_path):
+    base = A
+    head = B
+    base_tree = _complete_tree(product_sha=B)
+    head_tree = _complete_tree(product_sha=C)
+
+    import devsystem.content_addressed_proof_reuse_ci_v1 as module
+    monkeypatch.setattr(
+        module,
+        "_git_tree",
+        lambda ref, root: base_tree if ref == base else head_tree,
+    )
+    result = evaluate_ci_reuse(
+        base_sha=base,
+        head_sha=head,
+        repository="owner/repo",
+        token="x",
+        root=tmp_path,
+        api_json=_proof_api(base),
+    )
+    assert result["decision"] == "RUN_FRESH_SPORT_PROOF"
+    assert result["reuse_sport_critical"] is False
+    assert "ARTIFACT_BLOB_DRIFT" in result["reason"]
+
+
+def test_policy_dependency_drift_forces_fresh_sport_proof(monkeypatch, tmp_path):
+    base = A
+    head = B
+    base_tree = _complete_tree(adapter_sha=A)
+    head_tree = _complete_tree(adapter_sha=C)
+
+    import devsystem.content_addressed_proof_reuse_ci_v1 as module
+    monkeypatch.setattr(
+        module,
+        "_git_tree",
+        lambda ref, root: base_tree if ref == base else head_tree,
+    )
+    result = evaluate_ci_reuse(
+        base_sha=base,
+        head_sha=head,
+        repository="owner/repo",
+        token="x",
+        root=tmp_path,
+        api_json=_proof_api(base),
+    )
+    assert result["decision"] == "RUN_FRESH_SPORT_PROOF"
+    assert result["reuse_sport_critical"] is False
+    assert "DEPENDENCY_BLOB_DRIFT" in result["reason"]
