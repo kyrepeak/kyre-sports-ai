@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CERT = ROOT / "devsystem/wnba_pra_speed_v3_step9_final_cert.py"
 LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json"
 WORKFLOW = ROOT / ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml"
+APP = ROOT / "app.py"
+GUARD = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py"
 
 
 def _source() -> str:
@@ -68,6 +70,21 @@ def test_step9_rejects_completed_and_past_wnba_slates():
     assert "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN" in source
 
 
+def test_step9_duplicate_key_guard_is_narrow_and_deterministic():
+    guard = GUARD.read_text(encoding="utf-8")
+    app = APP.read_text(encoding="utf-8")
+    source = _source()
+    assert 'PLAYER_BUTTON_KEY_PREFIX = "wnba_nav_v2_step3_player_"' in guard
+    assert 'DUPLICATE_KEY_SUFFIX = "__step9_dup_"' in guard
+    assert 'if occurrence:' in guard
+    assert 'kwargs["key"] = f"{raw_key}{DUPLICATE_KEY_SUFFIX}{occurrence}"' in guard
+    assert "st.button = guarded_button" in guard
+    assert "st.button = original_button" in guard
+    assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8 as frozen_parent" in guard
+    assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard import record_bootstrap_import_ms, render_app" in app
+    assert "WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_SCOPE_GREEN" in source
+
+
 def test_step9_requires_browser_resident_step8_continuity():
     source = _source()
     assert '"game_card_continuity"' in source
@@ -124,5 +141,8 @@ def test_step9_workflow_has_exact_scope_and_main_production_gate():
     assert "WNBA_PRA_SPEED_V3_STEP9_IMPORT_PATH_REPAIR_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_VERIFIER_SCOPE_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN" in workflow
+    assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py" in workflow
+    assert "app.py" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_SCOPE_GREEN" in workflow
     assert "github.event_name == 'push'" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_BRANCH_GREEN" in workflow
