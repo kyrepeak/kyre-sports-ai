@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 68,
+  "truth_epoch": 69,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 2,
   "total_steps": 5,
   "step_title": "Detached Execution / Background Continuation — CI Repair",
   "step_status": "ACTIVE",
-  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR_EXACT_HEAD_PROOF",
+  "active_checkpoint": "MONSTER_V5_STEP2_CI_REPAIR_TRUTH_REFRESH",
   "main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
   "active_pr": 1296,
   "active_run": 36812569889,
   "active_head_sha": "a21a983e4b96bdd2f7d67bb398ef231dd4322d2c",
   "blocker": null,
-  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_RUN_36812569889_TERMINAL",
+  "next_legal_action": "RERUN_FAILED_JOBS_ON_AUTHORITATIVE_RUN_36812569889",
   "lease": {
     "revision": 64,
     "generation": 12,
@@ -54,7 +54,8 @@
     "MONSTER_V4_STEP6",
     "MONSTER_V5_STEP1",
     "MONSTER_V5_STEP2",
-    "WNBA_PRA_SPEED_V3_STEP7"
+    "WNBA_PRA_SPEED_V3_STEP7",
+    "WNBA_PRA_SPEED_V3_STEP8"
   ],
   "scope_lease": {
     "mode": "SCOPE_AWARE",
@@ -77,5 +78,5 @@
     "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a",
     "workstream_count": 0
   },
-  "state_hash": "59a79a276eb6c62b1e5aeb108c2351a395ef477ce3eb31f0837483c7a68ac4ba"
+  "state_hash": "64fb50cfefbe8428bbda7eb8a75112b1cb1a46ed4e3c6e4aef07c1350d31c5b9"
 }
