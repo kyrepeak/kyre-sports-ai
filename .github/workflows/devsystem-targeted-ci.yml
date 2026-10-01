@@ -186,6 +186,10 @@ jobs:
         run: |
           python devsystem/regression_debt_zero_gate_v1.py
           echo "MONSTER_V4_REGRESSION_DEBT_ZERO_GATE_GREEN"
+      - name: Validate MONSTER V5 Scope-Aware Execution Lease V1
+        run: |
+          python devsystem/scope_aware_execution_lease_v1.py
+          echo "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_GREEN"
       - name: Validate Monster Speed V3 Step 2 cache split
         run: python devsystem/monster_speed_v3_step2_cache_split_v1.py
       - name: Validate Monster Speed V3 Step 3 fast/full lane split
@@ -290,6 +294,7 @@ jobs:
             tests/test_devsystem_project_blast_radius_map_v1.py \
             tests/test_devsystem_monster_self_benchmark_v1.py \
             tests/test_devsystem_regression_debt_zero_gate_v1.py \
+            tests/test_devsystem_scope_aware_execution_lease_v1.py \
             tests/test_devsystem_sport_cache_v1.py \
             tests/test_monster_speed_v3_step2_cache_split_v1.py \
             tests/test_monster_speed_v3_step3_lane_split_v1.py \
