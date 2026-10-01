@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 20,
-  "source_main_sha": "bea8a48a775f6c01047a24a9bb3e48d95709f3e4",
+  "revision": 21,
+  "source_main_sha": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -434,8 +434,44 @@
         "devsystem/task_ledgers/monster-v6-step4-proven-repair-memory-v1.json": "dc1934b0936decb6e986a288df88b20185665556",
         "tests/test_devsystem_proven_repair_memory_v1.py": "2a42a1ff75569d26b048724b0e70fbe901509f3d"
       }
+    },
+    "MONSTER_V6_STEP5": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V6_STEP5",
+      "source_main_sha": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
+      "proven_merge_sha": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
+      "stale_base_recovery": {
+        "original_candidate_sha": "b4524180536f15d30789bc2292caa09aa1dc46f0",
+        "superseded_focused_run_id": 36934561393,
+        "superseded_generic_preflight_run_id": 36934561334,
+        "forward_port_base_sha": "1fa72e4bc8ff19ed2cd46473607389bace050ed7",
+        "final_candidate_sha": "9ccc6afab42aad3703ad4f5c3283e7ce8ef121cd",
+        "content_blobs_preserved": true
+      },
+      "focused_preflight_run_id": 36934713406,
+      "generic_preflight_run_id": 36934713425,
+      "pr_proof_run_id": 36934780933,
+      "proof_run_id": 36935015403,
+      "pr_terminal_receipt_digest": "sha256:b0ac56f1d0a78b0405ccfb6364b8ed828cac57abcd4830b703db5bb58650a1f6",
+      "terminal_receipt_digest": "sha256:285c3f52ee1ac293db2f6cbf2b0c124c22e28b5f5c903312dba8c15f9a5d1cd6",
+      "regression_debt_state": "CLEARED",
+      "semantic_cases": {
+        "cases_id": "SEMCASES-2049A1859A5DCEC828A5BA0F",
+        "historical_failure_runs": [
+          35675715862,
+          35676052842
+        ],
+        "historical_source_verified": true
+      },
+      "artifacts": {
+        ".github/workflows/monster-v6-step5-semantic-ui-verifier.yml": "2c2c3708502bfd430b18a426edeb65055ba3953c",
+        "devsystem/semantic_ui_verifier_cases_v1.json": "6a8d47e1fb096738c1d6f96a313ce50b4c9972cf",
+        "devsystem/semantic_ui_verifier_contract_v1.py": "a50b78196b34dea97485fbcbe98bbf3b831f6181",
+        "devsystem/task_ledgers/monster-v6-step5-semantic-ui-verifier-v1.json": "b6ede3a7a12b06029a4c7061a343546d50f6530f",
+        "tests/test_devsystem_semantic_ui_verifier_contract_v1.py": "aa738d822bbb8accd324b0786683722614fc3640"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "e735f9ed48378302acd2776c69489cfadf1a8d2675daf1c7a85a10b530a6bda2"
+  "state_hash": "b16c63235baf57211efda659e8796100f991379ff34182bb80f3b5a07c0d96a1"
 }
