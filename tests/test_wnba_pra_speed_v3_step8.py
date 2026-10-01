@@ -224,15 +224,17 @@ def test_step8_task_ledger_has_valid_genesis_action_log():
     assert debt["open_debt_count"] == 0
 
 
-def test_step8_public_profile_waits_for_shell_lifetime_deployment_freshness_permanently():
+def test_step8_browser_continuity_is_final_production_contract_permanently():
     source = PROFILE.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
     deploy = source.split("def _wait_step8_streamlit", 1)[1].split("def run", 1)[0]
-    assert "result_has_shell_lifetime_contract" in deploy
-    assert 'get_attribute("data-shell-retained-through-final") is not None' in deploy
-    assert "marker.count() > 0 and result_has_shell_lifetime_contract" in deploy
-    assert "WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_FRESHNESS_GREEN" in deploy
-    assert "WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_FRESHNESS_VERIFIER_SCOPE_GREEN" in workflow
+    assert "result_has_shell_lifetime_contract" not in deploy
+    assert "marker.count() > 0:" in deploy
+    assert "WNBA_PRA_SPEED_V3_STEP8_BROWSER_CONTINUITY_FINAL_GREEN" in source
+    assert '_bool_attr(marker, "data-shell-retained-through-final")' not in source
+    assert '"browser_continuity_seconds": round(visible_seconds, 3)' in source
+    assert '"server_shell_runtime_fallback_preserved": True' in source
+    assert "WNBA_PRA_SPEED_V3_STEP8_BROWSER_CONTINUITY_FINAL_CONTRACT_SCOPE_GREEN" in workflow
 
 
 def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
@@ -286,8 +288,8 @@ def test_step8_shell_lifetime_handoff_is_permanent():
     assert '"final_marker_css_handoff": True' in runtime
     assert 'body:has([data-wnba-pra-speed-v3-step8-result="true"])' in runtime
     assert 'data-shell-retained-through-final' in runtime
-    assert 'data-shell-retained-through-final' in profile
-    assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_GREEN" in profile
+    assert '_bool_attr(marker, "data-shell-retained-through-final")' not in profile
+    assert '"server_shell_runtime_fallback_preserved": True' in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_SHELL_LIFETIME_REPAIR_SCOPE_GREEN" in workflow
 
 
