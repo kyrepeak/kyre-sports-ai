@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "task_id": "monster-v5-step4-execution-heartbeat-deadman-recovery-v1",
+  "title": "MONSTER V5 Step 4 - Execution Heartbeat + Dead-Man Recovery",
+  "project": "MONSTER V5",
+  "step": 4,
+  "total_steps": 5,
+  "status": "DONE",
+  "scope": "Add repository-safe execution heartbeats that bind liveness to the exact workstream, continuation packet and scoped lease; distinguish an expired worker heartbeat from an authoritative async run that is still active; and issue a one-shot dead-man recovery receipt only when the worker is expired and the authoritative run is terminal or absent. Recovery never grants mutation authority: Step 2A and a fresh scoped execution lease remain mandatory.",
+  "acceptance": {
+    "heartbeat_state_repository_backed": true,
+    "heartbeat_bound_to_exact_workstream": true,
+    "heartbeat_bound_to_exact_continuation_hash": true,
+    "heartbeat_bound_to_scope_lease": true,
+    "live_worker_takeover_blocked": true,
+    "expired_heartbeat_detected": true,
+    "running_job_distinguished_from_dead_worker": true,
+    "active_authoritative_run_blocks_takeover": true,
+    "unknown_run_state_fails_closed": true,
+    "terminal_or_absent_run_allows_recovery": true,
+    "recovery_requires_new_owner": true,
+    "recovery_requires_new_scope_lease": true,
+    "recovery_receipt_one_shot": true,
+    "continuation_drift_fails_closed": true,
+    "stale_cas_fails_closed": true,
+    "step_2a_remains_mandatory": true,
+    "scope_lease_remains_mandatory": true,
+    "recovery_never_grants_mutation_authority": true,
+    "product_runtime_unchanged": true,
+    "permanent_ci_enforcement": true
+  },
+  "protected": {
+    "monster_v5_step1": true,
+    "monster_v5_step2": true,
+    "monster_v5_step2_ci_repair": true,
+    "monster_v5_step3": true,
+    "monster_v4_steps_1_6": true,
+    "monster_v3_steps_1_8": true,
+    "monster_2a_steps_1_5": true,
+    "sports_models_unchanged": true,
+    "routers_unchanged": true,
+    "providers_unchanged": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "proof_policy": "Exact PR head must pass permanent DevSystem contract and final gate, merge through the single Step-4 PR, merged-main DevSystem proof and terminal receipt must pass, the dedicated authoritative heartbeat/dead-man state ref must be initialized, MONSTER_V5_STEP4 must be content-addressed in the frozen registry, final truth must publish Step 4 FROZEN with START_MONSTER_V5_STEP5, and only the Step-4 scope lease may be released."
+}

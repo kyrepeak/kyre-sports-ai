@@ -61,6 +61,7 @@ def test_permanent_contract_is_green():
     assert result["scope_aware_execution_lease_v1_permanent"] is True
     assert result["detached_execution_continuation_v1_permanent"] is True
     assert result["event_driven_resume_v1_permanent"] is True
+    assert result["execution_heartbeat_deadman_recovery_v1_permanent"] is True
     assert result["main_push_proof_concurrency_isolated"] is True
 
 
