@@ -241,11 +241,11 @@ def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
 def test_step8_public_profile_accepts_frozen_game_card_continuity_permanently():
     source = PROFILE.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
-    assert 'CONTINUITY_CARD_SELECTOR = \'[class*="st-key-wnba_pra_speed_v3_step8_preview_"]\'' in source
+    assert 'CONTINUITY_CARD_SELECTOR = ".wn3-player"' in source
     assert 'return candidate, "game_card_continuity"' in source
     assert "has_text=player_name" in source
     assert "WNBA_PRA_SPEED_V3_STEP8_GAME_CARD_CONTINUITY_GREEN" in source
-    assert "WNBA_PRA_SPEED_V3_STEP8_GAME_CARD_CONTINUITY_VERIFIER_SCOPE_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_PLAYER_CARD_VERIFIER_SCOPE_GREEN" in workflow
 
 
 def test_step8_router_emits_shell_before_frozen_parent_permanently():
