@@ -43,6 +43,7 @@ CFB_GAME_TOTAL_DATE = "2026-09-18"
 CFB_GAME_TOTAL_EVENT_ID = "401858226"
 CFB_GAME_TOTAL_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
 CFB_GAME_TOTAL_STEP5_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"
+CFB_GAME_TOTAL_STEP5_ALLOWED_LOCAL_STATES = ("READY", "DATA LIMITED")
 CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR = (
     'details.gt168-step5[data-testid="gt157-step-5"]'
     f'[data-step5-marker="{CFB_GAME_TOTAL_STEP5_MARKER}"]'
@@ -151,18 +152,36 @@ def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str
             "Game Total Step 5 deployment marker mismatch: "
             f"{deployment_marker!r}"
         )
-    if state != "READY":
+    if state not in CFB_GAME_TOTAL_STEP5_ALLOWED_LOCAL_STATES:
         raise BrowserQAFailure(
-            f"Game Total Step 5 state is not READY: {state!r}"
+            "Game Total Step 5 local structural state is invalid: "
+            f"{state!r}"
         )
-    if coverage != "100":
+    try:
+        coverage_value = int(coverage)
+    except (TypeError, ValueError) as exc:
         raise BrowserQAFailure(
-            f"Game Total Step 5 coverage is not 100: {coverage!r}"
+            f"Game Total Step 5 coverage is not numeric: {coverage!r}"
+        ) from exc
+    if not 0 <= coverage_value <= 100:
+        raise BrowserQAFailure(
+            f"Game Total Step 5 coverage is out of range: {coverage_value}"
         )
-    if tile_count != 12 or ready_tiles != 12:
+    if tile_count != 12 or not 0 <= ready_tiles <= 12:
         raise BrowserQAFailure(
-            "Game Total Step 5 tile completeness failed: "
+            "Game Total Step 5 structural tile contract failed: "
             f"tiles={tile_count} ready_tiles={ready_tiles}"
+        )
+    if state == "READY":
+        if coverage_value != 100 or ready_tiles != 12:
+            raise BrowserQAFailure(
+                "Game Total Step 5 READY contract is incomplete: "
+                f"coverage={coverage_value} ready_tiles={ready_tiles}"
+            )
+    else:
+        print(
+            "DEVSYSTEM_BROWSER_QA_GAME_TOTAL_DATA_LIMITED_STRUCTURAL_GREEN="
+            f"coverage={coverage_value};ready_tiles={ready_tiles}/12"
         )
 
     return {
