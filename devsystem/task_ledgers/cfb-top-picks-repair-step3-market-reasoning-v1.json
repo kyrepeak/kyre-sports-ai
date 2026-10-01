@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
+  "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
+  "project": "CFB Top Picks Missing Research Repair",
+  "step": 3,
+  "total_steps": 5,
+  "status": "DONE",
+  "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
+  "root_cause": "The proof layer certified the presence of Market-Aware Football Reasoning, not live completeness. Synthetic fixtures covered happy-path READY behavior, while the live Top-10 verifier did not enforce the same readiness contract on every required market signal.",
+  "failure_owner": "CI",
+  "patch": "Add an additive verifier-only Step-3 repair that certifies all 10 live ranked picks through the final V9 detail chain, requires READY reasoning with every required market signal usable and sourced/fresh, permanently regression-tests fail-closed behavior for unavailable/conflicted signals, and checks the merged-main public reasoning surface without modifying frozen product owners.",
+  "protections": {
+    "step1_history_router_modified": false,
+    "step2_defense_pace_modified": false,
+    "frozen_market_reasoning_engine_modified": false,
+    "final_v9_page_modified": false,
+    "api2_modified": false,
+    "probability_modified": false,
+    "ranking_modified": false,
+    "selection_modified": false,
+    "sportsbook_projection_weight": 0
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CI",
+    "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
+    "permanent_contract": "devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "step2a": {
+    "single_branch": "cfb-top-picks-repair-step3-market-reasoning-v1",
+    "single_pr_required": true,
+    "duplicate_async_forbidden": true,
+    "exact_head_required": true,
+    "merged_main_public_required": true,
+    "no_stale_base_merge": true
+  },
+  "exit_contract": {
+    "focused_exact_head_live_10_of_10_green": true,
+    "devsystem_exact_head_green": true,
+    "merge_exact_head_only": true,
+    "merged_main_live_10_of_10_green": true,
+    "merged_main_public_reasoning_green": true,
+    "terminal_receipt_required": true,
+    "frozen_registry_required": true,
+    "scope_lease_release_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
