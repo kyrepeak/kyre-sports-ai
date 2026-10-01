@@ -4,20 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 74,
+  "truth_epoch": 75,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 3,
   "total_steps": 5,
   "step_title": "Event-Driven Resume",
   "step_status": "ACTIVE",
-  "active_checkpoint": "MONSTER_V5_STEP3",
+  "active_checkpoint": "MONSTER_V5_STEP3_EXACT_HEAD_PROOF",
   "main_sha": "c1648ded2de04895e7cfeb3191cfcb723726ee35",
-  "active_pr": null,
-  "active_run": null,
-  "active_head_sha": "c1648ded2de04895e7cfeb3191cfcb723726ee35",
+  "active_pr": 1299,
+  "active_run": 36816546685,
+  "active_head_sha": "55f82816e0b2a09ed3c6e351eec95e9173cc320e",
   "blocker": null,
-  "next_legal_action": "CREATE_MONSTER_V5_STEP3_BRANCH",
+  "next_legal_action": "WAIT_FOR_AUTHORITATIVE_RUN_36816546685_TERMINAL",
   "lease": {
     "revision": 64,
     "generation": 12,
@@ -63,9 +63,9 @@
     "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
     "ref": "refs/heads/monster-scope-aware-execution-leases",
     "path": "devsystem/scope_aware_execution_lease_state_v1.json",
-    "revision": 20,
+    "revision": 21,
     "generation": 6,
-    "state_hash": "144f43d01efa8e93721f1c48112b3d608ad64ade03167162e12c850b43f75558",
+    "state_hash": "30dff43f419aed2706d3f4e3d0182909755ab6be281f790be0b5feefda9f45ca",
     "holder_count": 2,
     "holder_owner_id": "chatgpt:monster-v5-step3",
     "holder_lease_id": "SCOPE-LEASE-6001A920A25D7733457C3DE9"
@@ -77,5 +77,5 @@
     "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a",
     "workstream_count": 0
   },
-  "state_hash": "e524e0b55d41468afd31a864eeda80cb55e32fa464fd021b21176d63f49571af"
+  "state_hash": "0f27b9bd9c883a6971bb16999527ceec902ad59e9f9ac4a451499e6c198ce153"
 }
