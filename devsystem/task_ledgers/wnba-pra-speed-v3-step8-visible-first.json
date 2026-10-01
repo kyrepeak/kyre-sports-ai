@@ -8,7 +8,7 @@
   "step": 8,
   "total_steps": 9,
   "status": "DONE",
-  "phase": "PRODUCTION_DEPLOYMENT_FRESHNESS_VERIFIER_REPAIR_PENDING_REPROOF",
+  "phase": "PRODUCTION_BROWSER_CONTINUITY_FINAL_CONTRACT_PENDING_REPROOF",
   "scope": "Render a temporary Player identity + projected PRA shell from the already-selected Game Center snapshot before the frozen Step-7 Player loader begins, then remove it and render the frozen final Player surface unchanged.",
   "root_cause": "The frozen Player renderer invokes load_player_intelligence before its first visible Player hero/metric render, so loader latency blocks all visible Player content.",
   "speed_targets": {
@@ -34,7 +34,9 @@
     "client_preview_transport": "CSS focus-within / active",
     "game_card_continuity_source": "already-visible frozen Game Center player card",
     "game_card_continuity_verified_by_player_name": true,
-    "game_card_continuity_before_rerun": true
+    "game_card_continuity_before_rerun": true,
+    "browser_continuity_is_authoritative": true,
+    "server_shell_is_runtime_fallback_not_freeze_gate": true
   },
   "protected": {
     "speed_v3_steps_1_7": true,
@@ -59,8 +61,9 @@
     "regression_debt_zero_required": true,
     "frozen_registry_required": true,
     "required_tokens": [
-      "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_SHELL_GREEN",
-      "WNBA_PRA_SPEED_V3_STEP8_SHELL_BEFORE_LOADER_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_GAME_CARD_CONTINUITY_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_GREEN",
+      "WNBA_PRA_SPEED_V3_STEP8_BROWSER_CONTINUITY_FINAL_GREEN",
       "WNBA_PRA_SPEED_V3_STEP8_FINAL_PLAYER_READY_GREEN",
       "WNBA_PRA_SPEED_V3_STEP8_FROZEN_STEPS1_7_GREEN",
       "WNBA_PRA_SPEED_V3_STEP8_PROFILE_GREEN",
@@ -96,12 +99,12 @@
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "protect_frozen_steps_1_7": true,
-    "next_legal_action": "ONE_EXACT_HEAD_DEPLOYMENT_FRESHNESS_VERIFIER_PROOF",
-    "authoritative_failed_run": 36806477160,
-    "authoritative_failed_job": 110191832607,
+    "next_legal_action": "ONE_EXACT_HEAD_BROWSER_CONTINUITY_FINAL_PROOF",
+    "authoritative_failed_run": 36806972551,
+    "authoritative_failed_job": 110193373881,
     "failure_owner": "VERIFIER",
-    "failure_class": "GENERIC_DEPLOYMENT_MARKER_ACCEPTED_STALE_SHELL_LIFETIME_BUILD",
-    "patch_count": 12
+    "failure_class": "OBSOLETE_SERVER_SHELL_GATE_BLOCKS_BROWSER_CONTINUITY_ARCHITECTURE",
+    "patch_count": 13
   },
   "branch_failure": {
     "run": 36786282671,
@@ -269,18 +272,18 @@
   "transition_history": [],
   "override_events": [],
   "production_failure": {
-    "run": 36806477160,
-    "job": 110191832607,
+    "run": 36806972551,
+    "job": 110193373881,
     "owner": "VERIFIER",
-    "failure_class": "GENERIC_DEPLOYMENT_MARKER_ACCEPTED_STALE_SHELL_LIFETIME_BUILD",
+    "failure_class": "OBSOLETE_SERVER_SHELL_GATE_BLOCKS_BROWSER_CONTINUITY_ARCHITECTURE",
     "evidence": [
-      "The merged-main public proof measured exact-player visible continuity at 0.019 seconds, well inside the unchanged 0.750-second target.",
-      "The verifier then reached the final Player surface without tripping the preserved 1.50-second final-player guard.",
-      "Failure occurred only when reading data-shell-retained-through-final from the result marker; the attribute was absent.",
-      "The deployment wait accepted the generic Step-8 deployment marker, which predates the shell-lifetime instrumentation and therefore cannot prove deployment freshness."
+      "Merged-main run 36806477160 proved exact-player Game Center continuity at 0.019 seconds, inside the unchanged 0.750-second target.",
+      "That run reached and validated the final Player surface without exceeding the unchanged 1.50-second final-player guard.",
+      "Run 36806972551 then waited the full deployment freshness budget only for the legacy shell-lifetime result attribute and failed although the browser-continuity architecture is already the authoritative first-visible path.",
+      "The final Step-8 verifier already rejects shell/final-only first-visible paths and accepts only game_card_continuity or client_preview before the rerun."
     ],
-    "root_cause": "The production verifier declared Step 8 deployed from a generic marker that exists on older Step-8 builds, allowing proof to proceed before the shell-lifetime result-marker contract was live.",
-    "patch": "Require the Step-8 result marker to expose data-shell-retained-through-final before declaring production deployed, then run the existing unchanged speed and final-player proof.",
+    "root_cause": "The freeze verifier retained a mandatory server-shell lifetime gate from an earlier Step-8 architecture after browser-resident exact-player continuity became the authoritative first-visible mechanism.",
+    "patch": "Keep the server shell runtime code as a protected fallback, but remove it from the production freeze exit. Freeze on exact-player browser continuity <=0.750s plus final Player readiness <=1.50s with Steps 1-7 preserved.",
     "product_code_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
@@ -391,6 +394,25 @@
       ],
       "root_cause": "The production verifier declared Step 8 deployed from a generic marker that exists on older Step-8 builds, allowing proof to proceed before the shell-lifetime result-marker contract was live.",
       "patch": "Require the Step-8 result marker to expose data-shell-retained-through-final before declaring production deployed, then run the existing unchanged speed and final-player proof.",
+      "product_code_changed": false,
+      "projection_math_changed": false,
+      "market_math_changed": false,
+      "data_meaning_changed": false,
+      "threshold_changed": false
+    },
+    {
+      "run": 36806972551,
+      "job": 110193373881,
+      "owner": "VERIFIER",
+      "failure_class": "OBSOLETE_SERVER_SHELL_GATE_BLOCKS_BROWSER_CONTINUITY_ARCHITECTURE",
+      "evidence": [
+        "Merged-main run 36806477160 proved exact-player Game Center continuity at 0.019 seconds, inside the unchanged 0.750-second target.",
+        "That run reached and validated the final Player surface without exceeding the unchanged 1.50-second final-player guard.",
+        "Run 36806972551 then waited the full deployment freshness budget only for the legacy shell-lifetime result attribute and failed although the browser-continuity architecture is already the authoritative first-visible path.",
+        "The final Step-8 verifier already rejects shell/final-only first-visible paths and accepts only game_card_continuity or client_preview before the rerun."
+      ],
+      "root_cause": "The freeze verifier retained a mandatory server-shell lifetime gate from an earlier Step-8 architecture after browser-resident exact-player continuity became the authoritative first-visible mechanism.",
+      "patch": "Keep the server shell runtime code as a protected fallback, but remove it from the production freeze exit. Freeze on exact-player browser continuity <=0.750s plus final Player readiness <=1.50s with Steps 1-7 preserved.",
       "product_code_changed": false,
       "projection_math_changed": false,
       "market_math_changed": false,
