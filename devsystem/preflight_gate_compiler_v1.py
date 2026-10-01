@@ -15,9 +15,13 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.action_ledger_v2 import ActionLedgerFailure, validate_action_ledger
 from devsystem.adaptive_proof_engine_v1 import plan_proof
