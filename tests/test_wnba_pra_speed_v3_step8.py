@@ -280,6 +280,9 @@ def test_step8_client_preview_is_browser_visible_before_rerun_permanently():
     assert "game_center._render_player_card = original_player_card" in router
     assert "CLIENT_PREVIEW_SELECTOR" in profile
     assert '"client_preview"' in profile
+    assert 'button_name = f"Open {first_name} PRA"' in profile
+    assert 'get_by_role("button", name=button_name, exact=False).first' in profile
+    assert 'get_by_role("button", name="Open", exact=False).first' not in profile
     assert "first.focus()" in profile
     assert profile.index("first.focus()") < profile.index("first.click()")
     assert 'if visible_path != "client_preview":' in profile
@@ -288,3 +291,4 @@ def test_step8_client_preview_is_browser_visible_before_rerun_permanently():
     assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in profile
     assert "WNBA_PRA_SPEED_V3_STEP8_CLIENT_PREVIEW_REPAIR_SCOPE_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP8_FOCUS_ENGAGEMENT_VERIFIER_SCOPE_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP8_PLAYER_SELECTOR_VERIFIER_SCOPE_GREEN" in workflow
