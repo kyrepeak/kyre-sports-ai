@@ -5,12 +5,12 @@
   "id": "wnba-pra-speed-v3-step9-final-cert",
   "title": "WNBA PRA Speed V3 Step 9 — Final strict production speed certification",
   "project": "WNBA PRA Speed V3",
-  "phase": "FINAL_PRODUCTION_CERTIFICATION_UPCOMING_GAME_REPAIR",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION_DUPLICATE_KEY_GUARD_REPAIR",
   "step": 9,
   "total_steps": 9,
   "status": "DONE",
   "scope": "Certification-only final gate. Compose the frozen Step-5 production true-cold/warm profile with the frozen Step-8 cached-cold/visible-first profile and fail closed unless every final speed budget passes. Step 9 adds no product/runtime/model/provider/router/math behavior.",
-  "source_main": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+  "source_main": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
   "speed_targets": {
     "warm_same_session_seconds_max": 0.75,
     "cached_cold_seconds_max": 1.5,
@@ -58,7 +58,7 @@
   },
   "two_a": {
     "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
-    "scope_lease_id": "SCOPE-LEASE-0AAADF237F26544D1975D67C",
+    "scope_lease_id": "SCOPE-LEASE-STEP9-DUPKEY-GUARD-R1",
     "one_active_problem": true,
     "one_active_branch": true,
     "one_active_pr_max": 1,
@@ -66,11 +66,11 @@
     "no_unchanged_failed_reruns": true,
     "protect_frozen_steps_1_8": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_FRESH_EXACT_HEAD_CURRENT_MAIN_PROOF",
-    "authoritative_failed_run": 36817421429,
-    "authoritative_failed_job": 110460851588,
-    "failure_owner": "VERIFIER",
-    "failure_class": "STALE_HISTORICAL_GAME_FALLBACK_MUST_USE_FUTURE_PREGAME"
+    "next_legal_action": "ONE_EXACT_HEAD_DUPLICATE_KEY_GUARD_PROOF",
+    "authoritative_failed_run": 36927758434,
+    "authoritative_failed_job": 110589293590,
+    "failure_owner": "RUNTIME_UI",
+    "failure_class": "STREAMLIT_DUPLICATE_ELEMENT_KEY_GAME_CENTER_PLAYER_BUTTON"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -150,5 +150,25 @@
     "exact_head_step9_run": 36925830624,
     "exact_head_devsystem_run": 36925830634,
     "recovery_rule": "Forward-port the same verifier-only upcoming-game repair onto current main and obtain one fresh exact-head proof before merge."
+  },
+  "duplicate_key_guard_repair": {
+    "classification": "A_RUNTIME_UI_DUPLICATE_ELEMENT_KEY",
+    "failed_run": 36927758434,
+    "failed_job": 110589293590,
+    "evidence": [
+      "Merged-main Step-9 production reached the current/future Indiana Fever @ Las Vegas Aces Game Center and rendered 28 players.",
+      "The browser then surfaced streamlit.errors.StreamlitDuplicateElementKey before Player timing could begin.",
+      "Frozen wnba_pra_game_center_v2_step3.py generates player button keys only from game_id + player_id, so duplicate projection rows can reuse the same Streamlit key."
+    ],
+    "root_cause": "The frozen Game Center can render more than one record with the same player_id inside one game, producing the same explicit Streamlit button key twice.",
+    "patch": "Step-9-only wrapper intercepts st.button only for keys beginning wnba_nav_v2_step3_player_. The first key is preserved exactly; later repeats receive deterministic __step9_dup_N suffixes for that render. The wrapper restores st.button in finally.",
+    "frozen_game_center_modified": false,
+    "frozen_speed_steps_1_8_modified": false,
+    "player_identity_changed": false,
+    "navigation_target_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
+    "speed_threshold_changed": false
   }
 }
