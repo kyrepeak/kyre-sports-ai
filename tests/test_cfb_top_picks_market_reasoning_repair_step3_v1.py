@@ -116,3 +116,49 @@ def test_step3_is_verifier_only_and_keeps_projection_firewalls():
     assert repair.MAY_MODIFY_SELECTION is False
     assert repair.SPORTSBOOK_PROJECTION_WEIGHT == 0.0
     assert repair.MARKET_REASONING_PROJECTION_WEIGHT == 0.0
+
+class _FakeHeading:
+    def __init__(self, *, count: int = 1, visible: bool = True, text: str = repair.PUBLIC_HEADING):
+        self._count = count
+        self._visible = visible
+        self._text = text
+
+    def count(self) -> int:
+        return self._count
+
+    @property
+    def first(self):
+        return self
+
+    def is_visible(self) -> bool:
+        return self._visible
+
+    def text_content(self, timeout: int = 5000) -> str:
+        return self._text
+
+
+class _FakeReasoningLocator:
+    def __init__(self, heading: _FakeHeading):
+        self.heading = heading
+
+    def locator(self, selector: str):
+        assert selector == "h4"
+        return self.heading
+
+
+def test_public_heading_contract_requires_visible_exact_h4():
+    loc = _FakeReasoningLocator(_FakeHeading())
+    assert repair._validate_public_heading(loc) == repair.PUBLIC_HEADING
+
+
+def test_public_heading_contract_rejects_hidden_h4():
+    loc = _FakeReasoningLocator(_FakeHeading(visible=False))
+    with pytest.raises(AssertionError, match="STEP3_PUBLIC_HEADING_NOT_VISIBLE"):
+        repair._validate_public_heading(loc)
+
+
+def test_public_heading_contract_rejects_wrong_h4_text():
+    loc = _FakeReasoningLocator(_FakeHeading(text="Market reasoning"))
+    with pytest.raises(AssertionError, match="STEP3_PUBLIC_HEADING_TEXT"):
+        repair._validate_public_heading(loc)
+
