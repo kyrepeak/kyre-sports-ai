@@ -4,9 +4,38 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 57,
-  "generation": 27,
+  "revision": 58,
+  "generation": 28,
   "holders": [
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v6-step2-preflight-gate-compiler-v1",
+      "lease_id": "SCOPE-LEASE-0584CD0EDE917802AEEC31CF",
+      "generation": 28,
+      "acquired_at_utc": "2026-10-01T21:24:00Z",
+      "heartbeat_at_utc": "2026-10-01T21:24:00Z",
+      "expires_at_utc": "2026-10-01T23:24:00Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/preflight_gate_compiler_v1.py",
+          "devsystem/task_ledgers/monster-v6-step2-preflight-gate-compiler-v1.json",
+          "tests/test_devsystem_preflight_gate_compiler_v1.py"
+        ],
+        "dependency_tokens": [
+          "read:action-ledger-v2",
+          "read:adaptive-proof-engine-v1",
+          "read:frozen-artifact-registry-v1",
+          "read:scope-aware-execution-lease-v1"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v6-step2-preflight-gate-compiler-v1"
+        ],
+        "resource_identity": {
+          "main:base": "428fae0d2148ebf92f10d053f6f4d4bb9c2729fa",
+          "registry:hash": "1900c699de535349fc2edb12d37366d17b3a573dd1e9437631771771add06848"
+        },
+        "exclusive": false
+      }
+    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
       "lease_id": "SCOPE-LEASE-0AAADF237F26544D1975D67C",
@@ -67,5 +96,5 @@
       }
     }
   ],
-  "state_hash": "f0a2f718efe9d8b656bde4060d9e59807f4725b93c616b23e3849ce0bc45c1f6"
+  "state_hash": "a845c837addcb92f3460b437136af88916ca200acd0771c387160652386c61f8"
 }
