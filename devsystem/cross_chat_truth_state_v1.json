@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 77,
+  "truth_epoch": 78,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 3,
@@ -88,10 +88,8 @@
     "revision": 0,
     "generation": 0,
     "state_hash": "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789",
-    "watch_count": 0,
-    "ready_count": 0,
-    "consumed_event_count": 0,
-    "polling_required": false
+    "active_watch_count": 0,
+    "ready_count": 0
   },
-  "state_hash": "df401e87b9baeb8c68bca7fd2a116d9c1cdc854b4d294352f27a1681558c3ea5"
+  "state_hash": "719761676611eceddd5cf5342f7270e38e03b5ee51dc89d2099d8d7c6c53c662"
 }
