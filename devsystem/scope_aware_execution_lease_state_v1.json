@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 63,
+  "revision": 64,
   "generation": 31,
   "holders": [
     {
@@ -71,10 +71,11 @@
       "lease_id": "SCOPE-LEASE-6A6391E58EDE8DDE4525EDB6",
       "generation": 31,
       "acquired_at_utc": "2026-10-01T21:45:00Z",
-      "heartbeat_at_utc": "2026-10-01T21:45:00Z",
-      "expires_at_utc": "2026-10-01T23:45:00Z",
+      "heartbeat_at_utc": "2026-10-01T21:46:00Z",
+      "expires_at_utc": "2026-10-01T23:46:00Z",
       "scope": {
         "write_paths": [
+          ".github/workflows/monster-v6-step3-deployment-convergence.yml",
           "devsystem/deployment_convergence_controller_v1.py",
           "devsystem/task_ledgers/monster-v6-step3-deployment-convergence-controller-v1.json",
           "tests/test_devsystem_deployment_convergence_controller_v1.py"
@@ -84,7 +85,8 @@
           "project:monster-v6-step3-deployment-convergence-controller"
         ],
         "shared_resources": [
-          "branch:monster/monster-v6-step3-deployment-convergence-controller-v1"
+          "branch:monster/monster-v6-step3-deployment-convergence-controller-v1",
+          "workflow:monster-v6-step3-deployment-convergence"
         ],
         "resource_identity": {
           "main:base": "0f46df917a5f18f02359de435b676cba88702d52",
@@ -122,5 +124,5 @@
       }
     }
   ],
-  "state_hash": "cfce9d8baa6ddd1be64de525bcd3384efd4209553d3f59ba7a61db162a59bf37"
+  "state_hash": "288294bb1de03511e3a4bb297490d35ad66e95bc0b7d265f770dc737782ffd47"
 }
