@@ -210,7 +210,7 @@ def validate() -> dict:
         "content-proof-reuse:",
         "python devsystem/content_addressed_proof_reuse_ci_v1.py",
         "reuse_sport_critical",
-        "REUSE_PARENT_SPORT_PROOF",
+        "needs.content-proof-reuse.outputs.reuse_sport_critical != 'true'",
         "group: devsystem-targeted-ci-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.sha || github.ref }}",
         "fetch-depth: 0",
     )
