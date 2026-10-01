@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 62,
+  "truth_epoch": 63,
   "program_id": "MONSTER_V5",
   "program_title": "MONSTER V5",
   "current_step": 2,
@@ -60,12 +60,12 @@
     "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
     "ref": "refs/heads/monster-scope-aware-execution-leases",
     "path": "devsystem/scope_aware_execution_lease_state_v1.json",
-    "revision": 6,
+    "revision": 7,
     "generation": 1,
-    "state_hash": "bf1a619d3ea11aa8a95babb4f67f715f615d8f299b015bbb0e0fcc3cb7953d84",
+    "state_hash": "07356f13e1c3748a52b4ef898a706881d04eb10e326c9cf616345a79663e3bab",
     "holder_count": 1,
     "holder_owner_id": "chatgpt:monster-v5-step2",
     "holder_lease_id": "SCOPE-LEASE-82C6518711F339F44411F489"
   },
-  "state_hash": "ac25c770e8bd394bf1e00ac9d1a67db731576bce3fbaccc030144bb1af74fb01"
+  "state_hash": "d1846a9e4c90c27c682d7c79e19408e31331a182ab8cd747ba53396a491c3afe"
 }
