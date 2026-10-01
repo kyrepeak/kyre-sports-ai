@@ -4,8 +4,63 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "state_ref": "refs/heads/monster-detached-execution-continuations",
   "state_path": "devsystem/detached_execution_continuation_state_v1.json",
-  "revision": 0,
-  "generation": 0,
-  "continuations": {},
-  "state_hash": "7c5940ce69812fcdda420f5dd6715e0cb35590f97a09141e786e3f53c5ab445a"
+  "revision": 1,
+  "generation": 1,
+  "continuations": {
+    "cfb-top-picks-missing-research-repair": {
+      "version": "MONSTER_V5_DETACHED_EXECUTION_CONTINUATION_V1",
+      "workstream_id": "cfb-top-picks-missing-research-repair",
+      "generation": 1,
+      "previous_packet_hash": null,
+      "program": {
+        "id": "CFB_TOP_PICKS_MISSING_RESEARCH_REPAIR",
+        "title": "CFB Top Picks Missing Research Repair",
+        "current_step": 1,
+        "total_steps": 5,
+        "step_title": "Matchup History Router"
+      },
+      "execution": {
+        "state": "FROZEN",
+        "async_state": "SUCCESS",
+        "blocker": null,
+        "last_completed_action": "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER_FROZEN",
+        "next_legal_action": "WAIT_FOR_USER_STEP2_AUTHORIZATION"
+      },
+      "repository": {
+        "branch": "main",
+        "head_sha": "ee626fead9000de556ec4e0c319608a46aa15dec",
+        "main_sha": "ee626fead9000de556ec4e0c319608a46aa15dec",
+        "pr_number": 1305
+      },
+      "authoritative_async": {
+        "run_id": 36892822948,
+        "job_id": 110474144982
+      },
+      "scope_lease": {
+        "owner_id": "chatgpt:monster:cfb-top-picks-repair-step1-history-router-v5",
+        "lease_id": "SCOPE-LEASE-46FE2DC2F0B357A15234A5AA",
+        "generation": 16,
+        "revision": 40,
+        "state_hash": "f20f35b37cf7c0e985872e644ab565e8b3b63de2c68612487a574d66f0d26ec6"
+      },
+      "frozen_registry": {
+        "revision": 15,
+        "state_hash": "14827580f538c78443cb3923ac6f454dde497900cabab313218e423138469361",
+        "checkpoint_count": 29
+      },
+      "worker": {
+        "worker_id": "chatgpt:monster:cfb-top-picks-repair-step1-history-router-v5"
+      },
+      "protections": {
+        "step_2a_required": true,
+        "scope_lease_required_for_mutation": true,
+        "packet_does_not_authorize_mutation": true,
+        "network_calls": false,
+        "auto_mutate": false,
+        "may_modify_product_runtime": false
+      },
+      "packet_hash": "de1a4576f7162b12bbb7ac6c1fa636db3415160fc1e6c3c09a3297d6657491bd"
+    }
+  },
+  "state_hash": "7c3e994618ebb11fc6ae3b4c396ae16fec1d68985a9e7338f02b853c243e12fd"
 }
