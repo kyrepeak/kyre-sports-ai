@@ -237,6 +237,11 @@ def test_step8_public_profile_reacquires_frames_across_reruns_permanently():
     assert "MAX_VISIBLE_SHELL_SECONDS = 0.75" in source
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert "WNBA_PRA_SPEED_V3_STEP8_FRAME_RESILIENT_VERIFIER_SCOPE_GREEN" in workflow
+    assert "result_contract = frame.locator(" in source
+    assert "'[data-shell-retained-through-final]'" in source
+    assert "marker.count() > 0 and result_contract.count() > 0" in source
+    assert "WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_CONTRACT_READY_GREEN" in source
+    assert "WNBA_PRA_SPEED_V3_STEP8_DEPLOYMENT_FRESHNESS_VERIFIER_SCOPE_GREEN" in workflow
 
 def test_step8_public_profile_accepts_frozen_game_card_continuity_permanently():
     source = PROFILE.read_text(encoding="utf-8")
