@@ -147,12 +147,19 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 first = frame.get_by_role("button", name="Open", exact=False).first
 
             started = time.monotonic()
-            first.click()
+            first.focus()
             frame, visible_path, visible_seconds = _wait_first_visible_content(
                 page,
                 started,
                 first_name,
             )
+            if visible_path != "client_preview":
+                raise BrowserQAFailure(
+                    "Step-8 focus engagement did not expose the browser-resident "
+                    "client preview before the Streamlit rerun."
+                )
+            print("WNBA_PRA_SPEED_V3_STEP8_FOCUS_ENGAGEMENT_GREEN")
+            first.click()
             print(
                 "WNBA_PRA_SPEED_V3_STEP8_VISIBLE_CONTENT_SECONDS="
                 f"{visible_seconds:.3f}"
