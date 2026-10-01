@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 70,
+  "revision": 71,
   "generation": 34,
   "holders": [
     {
@@ -73,14 +73,17 @@
       "lease_id": "SCOPE-LEASE-EF8FA2049F611500B7002969",
       "generation": 32,
       "acquired_at_utc": "2026-10-01T21:59:00Z",
-      "heartbeat_at_utc": "2026-10-01T21:59:00Z",
+      "heartbeat_at_utc": "2026-10-01T22:09:30Z",
       "expires_at_utc": "2026-10-01T23:59:00Z",
       "scope": {
         "write_paths": [
           ".github/workflows/monster-v6-step4-proven-repair-memory.yml",
+          "devsystem/cross_chat_truth_state_v1.json",
+          "devsystem/frozen_artifact_registry_state_v1.json",
           "devsystem/proven_repair_memory_catalog_v1.json",
           "devsystem/proven_repair_memory_v1.py",
           "devsystem/task_ledgers/monster-v6-step4-proven-repair-memory-v1.json",
+          "devsystem/zero_context_resume_packet_state_v1.json",
           "tests/test_devsystem_proven_repair_memory_v1.py"
         ],
         "dependency_tokens": [
@@ -90,6 +93,9 @@
         ],
         "shared_resources": [
           "branch:monster/monster-v6-step4-proven-repair-memory-v1",
+          "control:cross-chat-truth",
+          "control:frozen-artifact-registry",
+          "control:zero-context-resume",
           "workflow:monster-v6-step4-proven-repair-memory"
         ],
         "resource_identity": {
@@ -100,5 +106,5 @@
       }
     }
   ],
-  "state_hash": "32b8f03271cdff2db90f67fe676b4f5f08f232ad02df600d9962d5f679344572"
+  "state_hash": "308a1ad63e0e2295b6269e5b6539d2a0b396f3bd38332a90c1672c1fc77a75ae"
 }
