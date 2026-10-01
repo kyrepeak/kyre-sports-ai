@@ -49,9 +49,9 @@
     "old_head_proof_reusable": false
   },
   "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
-    "consumed_receipts": [],
-    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+    "consumed_receipts": []
   },
   "control_plane_repair_2": {
     "failed_run_id": 36891564519,
@@ -59,10 +59,12 @@
     "failure_owner": "CI",
     "failure_class": "ACTION_LEDGER_MISSING_ACTION_LOG",
     "exact_failure": "ActionLedgerFailure: task ledger requires action_log",
-    "patch": "Add an empty valid Action Ledger V2 genesis action_log to this Step-1 ledger only.",
+    "patch": "Add the required empty genesis action_log plus empty transition/override arrays to this ledger only.",
     "product_code_changed": false,
     "regression_guard_changed": false,
-    "previous_head": "9d481b4d4db21f49b2569042e296410c3e4623bd",
-    "previous_head_proof_reusable": false
-  }
+    "old_head": "9d481b4d4db21f49b2569042e296410c3e4623bd",
+    "old_head_proof_reusable": false
+  },
+  "transition_history": [],
+  "override_events": []
 }
