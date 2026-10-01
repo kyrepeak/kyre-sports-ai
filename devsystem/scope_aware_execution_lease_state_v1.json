@@ -4,8 +4,36 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 30,
-  "generation": 9,
-  "holders": [],
-  "state_hash": "963b01e4b790d22f658e2324a118209a7c7a31e576a8f5885ddd7c2811bfe17b"
+  "revision": 31,
+  "generation": 10,
+  "holders": [
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
+      "lease_id": "SCOPE-LEASE-09B5F8C20A1D4E77A2C9F501",
+      "generation": 10,
+      "acquired_at_utc": "2026-10-01T06:40:00Z",
+      "heartbeat_at_utc": "2026-10-01T06:40:00Z",
+      "expires_at_utc": "2026-10-01T07:10:00Z",
+      "scope": {
+        "write_paths": [
+          "app.py",
+          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-public-deploy-refresh-r4.json"
+        ],
+        "dependency_tokens": [
+          "domain:wnba",
+          "project:wnba-pra-speed-v3-step9"
+        ],
+        "shared_resources": [
+          "deploy:pickvault",
+          "workflow:devsystem-targeted-ci"
+        ],
+        "resource_identity": {
+          "main:observed": "6583961ce28281989bcbf5dd95018cd633021230",
+          "pr:1302:head": "7d0142125698cf385faf025215b650b498591359"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "bde5bb1f9b781a93c00e049c7b0c75bdc9144db7dc7fcd9fb06cd07e68241ce1"
 }
