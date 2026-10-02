@@ -4,19 +4,20 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 108,
-  "generation": 53,
+  "revision": 109,
+  "generation": 54,
   "holders": [
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-router-v9-propagation-r1",
-      "lease_id": "SCOPE-LEASE-35198EA75681B2578F057CC9",
-      "generation": 42,
-      "acquired_at_utc": "2026-10-02T00:38:00Z",
-      "heartbeat_at_utc": "2026-10-02T00:38:00Z",
-      "expires_at_utc": "2026-10-02T01:08:00Z",
+      "lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
+      "generation": 54,
+      "acquired_at_utc": "2026-10-02T02:32:00Z",
+      "heartbeat_at_utc": "2026-10-02T02:32:00Z",
+      "expires_at_utc": "2026-10-02T03:02:00Z",
       "scope": {
         "write_paths": [
           ".github/workflows/cfb-top-picks-repair-step3-market-reasoning-v1.yml",
+          "devsystem/cfb_top_picks_research_v2_step9_full_slate_v1.py",
           "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
           "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py",
           "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py"
@@ -33,44 +34,14 @@
           "workflow:devsystem-targeted-ci"
         ],
         "resource_identity": {
-          "main:base": "c5f627337b39d75f85125e0e2e08a4edd7ebb942",
+          "branch:head": "e6e97712446c8890e4bc5734d9ad62b2e43279c7",
+          "main:base": "11efd07ae262e59527a59dfd6450312dd2b7d983",
           "repair:step": "3",
-          "source:failed-public-run": "36939785974"
-        },
-        "exclusive": false
-      }
-    },
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v6-performance-r12",
-      "lease_id": "SCOPE-LEASE-STEP9-PERF-V6-R12",
-      "generation": 43,
-      "acquired_at_utc": "2026-10-02T00:39:00Z",
-      "heartbeat_at_utc": "2026-10-02T00:39:00Z",
-      "expires_at_utc": "2026-10-02T01:19:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
-          "app.py",
-          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
-          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
-          "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
-          "tests/test_wnba_pra_speed_v3_step9.py"
-        ],
-        "dependency_tokens": [
-          "domain:wnba",
-          "project:wnba-pra-speed-v3-step9-performance-r12"
-        ],
-        "shared_resources": [
-          "branch:fix/wnba-pra-speed-v3-step9-precompute-handoff-r12"
-        ],
-        "resource_identity": {
-          "main:base": "c5f627337b39d75f85125e0e2e08a4edd7ebb942",
-          "step9:failed-production-run": "36945103822",
-          "failure:true-cold-seconds": "3.977"
+          "verification:shard": "cfb-top-picks-step3"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "c8b6817348ffbd5b61d50b6415d0c5fbf4213d202dc1922219f2c8ed3d4eae95"
+  "state_hash": "32d208686269d443d0cc2718d2e66227dfa140ec796c390c5b21a91e2e638dad"
 }
