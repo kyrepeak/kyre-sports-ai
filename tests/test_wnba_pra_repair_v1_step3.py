@@ -123,3 +123,15 @@ def test_step3_workflow_exact_scope_has_no_app_py_and_guards_parents():
     assert "393c29711962bf1d42b8fc58322938c92e23000a" in workflow
     assert "51eef1fe2526801a467f155d1c0b32d516ef8a35" in workflow
     assert "merged-main-component" in workflow
+
+
+def test_step3_execution_plan_is_bound_to_v8_and_current_main():
+    plan = json.loads((ROOT / "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json").read_text(encoding="utf-8"))
+    assert plan["version"] == "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1"
+    assert plan["base_main_sha"] == "5bdbe8548a3cc20db2100d2d6b458b49c6956521"
+    assert plan["rollback_checkpoint_id"] == "rollback_anchor"
+    assert plan["step_2a_required"] is True
+    assert plan["mutation_authority"] is False
+    assert plan["freeze_contract"]["exact_pr_head_proof"] is True
+    assert plan["freeze_contract"]["merged_main_proof"] is True
+    assert plan["freeze_contract"]["green_plus_frozen"] is True
