@@ -4,9 +4,36 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 158,
-  "generation": 79,
+  "revision": 159,
+  "generation": 80,
   "holders": [
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
+      "lease_id": "SCOPE-LEASE-93EC7753A1FC22E4392FDEB4",
+      "generation": 80,
+      "acquired_at_utc": "2026-10-02T10:08:00Z",
+      "heartbeat_at_utc": "2026-10-02T10:08:00Z",
+      "expires_at_utc": "2026-10-02T11:08:00Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json"
+        ],
+        "dependency_tokens": [
+          "control:frozen-artifact-registry",
+          "pr:1341",
+          "step:wnba-pra-repair-v1-step3"
+        ],
+        "shared_resources": [
+          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
+        ],
+        "resource_identity": {
+          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+          "pr:head": "31a7cba2867b0f420a28d6d482685f0d7f92732d",
+          "pr:merge": "df2abe885253b13b6b4b2ee1c953729ac2918d11"
+        },
+        "exclusive": false
+      }
+    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-recovery",
       "lease_id": "SCOPE-LEASE-DB57976B29ECD4FA74D409C5",
@@ -80,5 +107,5 @@
       }
     }
   ],
-  "state_hash": "e761f68a6e8c67b5dcbef21e1a66cd642393a5c6eecc7ad97b40b9e6a450aaa2"
+  "state_hash": "a3675699da450bd5203e31bb63fcc94cf60009698ebe93a847fac78b09fef546"
 }
