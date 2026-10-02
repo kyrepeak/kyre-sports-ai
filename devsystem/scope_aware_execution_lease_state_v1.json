@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 171,
-  "generation": 92,
+  "revision": 172,
+  "generation": 93,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
@@ -61,6 +61,33 @@
       }
     },
     {
+      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-final-thaw",
+      "lease_id": "SCOPE-LEASE-B9D54924C3D202CC56B3A3F7",
+      "generation": 93,
+      "acquired_at_utc": "2026-10-02T16:06:00Z",
+      "heartbeat_at_utc": "2026-10-02T16:06:00Z",
+      "expires_at_utc": "2026-10-02T17:06:00Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json"
+        ],
+        "dependency_tokens": [
+          "control:frozen-artifact-registry",
+          "pr:1342",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
+        ],
+        "resource_identity": {
+          "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+          "pr:head": "a1ab11a00afbaf5337b04b308083e6eeb8061983",
+          "pr:merge": "582fb3796d2a2e636573f97e3cea8a34fe0e0e77"
+        },
+        "exclusive": false
+      }
+    },
+    {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-recovery",
       "lease_id": "SCOPE-LEASE-DB57976B29ECD4FA74D409C5",
       "generation": 69,
@@ -89,34 +116,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-ledger",
-      "lease_id": "SCOPE-LEASE-EE86C523DDFDE180BA54EBB3",
-      "generation": 92,
-      "acquired_at_utc": "2026-10-02T16:04:00Z",
-      "heartbeat_at_utc": "2026-10-02T16:04:00Z",
-      "expires_at_utc": "2026-10-02T17:04:00Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
-        ],
-        "dependency_tokens": [
-          "control:action-ledger",
-          "pr:1342",
-          "step:wnba-pra-repair-v1-step2"
-        ],
-        "shared_resources": [
-          "branch:api2-wnba-repair-v1-step2-cold-game-center"
-        ],
-        "resource_identity": {
-          "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
-          "pr:head": "d828fd79749bcb6f050a3010805f1ea5d639a752",
-          "pr:number": "1342"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "1801d39dd3050a68d6c78e73e582dd28ca30dd12980a5a448ec11ef7140a160b"
+  "state_hash": "501c8f9259826cb911e062a84dd019548d5fc263779ef6cff4e1531bf640084b"
 }
