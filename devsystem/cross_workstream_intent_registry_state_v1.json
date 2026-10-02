@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 30,
-  "generation": 30,
-  "next_sequence": 25,
+  "revision": 31,
+  "generation": 31,
+  "next_sequence": 26,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -967,7 +967,7 @@
     {
       "intent_id": "intent-d4f025f9738819e9f2be7a3e",
       "sequence": 23,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 merged-main exact thaw",
       "mission_key": "wnba pra repair v1 step 2 merged main exact thaw",
       "semantic_fingerprint": "d4f025f9738819e9f2be7a3e94f492ebb93888f9edfa8f9cd10ac7885d4a3827",
@@ -999,7 +999,7 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:17:00Z",
-      "updated_at_utc": "2026-10-02T16:17:00Z",
+      "updated_at_utc": "2026-10-02T16:21:00Z",
       "expires_at_utc": "2026-10-02T17:17:00Z"
     },
     {
@@ -1041,7 +1041,47 @@
       "submitted_at_utc": "2026-10-02T16:21:00Z",
       "updated_at_utc": "2026-10-02T16:24:00Z",
       "expires_at_utc": "2026-10-02T17:21:00Z"
+    },
+    {
+      "intent_id": "intent-a0c5342c5f244e43b60d9295",
+      "sequence": 25,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 frozen Game-loader seam correction",
+      "mission_key": "wnba pra repair v1 step 2 frozen game loader seam correction",
+      "semantic_fingerprint": "a0c5342c5f244e43b60d929558531951d99947f41651b95adaf8ccdd295ac03e",
+      "base_sha": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "dependency:wnba-pra-step5-game-cache",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:api2-wnba-repair-v1-step2-game-loader-seam",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
+        ],
+        "resource_identity": {
+          "main:base": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-game-loader-seam",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-game-loader-seam",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-game-loader-seam",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-game-loader-seam"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T16:21:00Z",
+      "updated_at_utc": "2026-10-02T16:21:00Z",
+      "expires_at_utc": "2026-10-02T17:21:00Z"
     }
   ],
-  "state_hash": "19990d9a73ad0a39f6c3e4d72f67ceee419dc964077c769b2cbecec1a5eca55b"
+  "state_hash": "7f11975f757f08fe8cc381f2438854f64efd72b32ed9a0a6988219187cc7c9a4"
 }
