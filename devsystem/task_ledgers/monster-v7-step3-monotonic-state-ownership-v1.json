@@ -75,5 +75,12 @@
     "step4_name": "Shared Resource Lease Sharding",
     "no_step4_before_freeze": true
   },
-  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
