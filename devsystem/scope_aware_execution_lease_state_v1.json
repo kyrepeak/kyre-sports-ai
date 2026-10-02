@@ -4,8 +4,39 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 138,
-  "generation": 68,
-  "holders": [],
-  "state_hash": "9fc36a31a5be2cf308702cceaa3c1288727f93d38c9bf6272593f8ecda3a8440"
+  "revision": 139,
+  "generation": 69,
+  "holders": [
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-recovery",
+      "lease_id": "SCOPE-LEASE-DB57976B29ECD4FA74D409C5",
+      "generation": 69,
+      "acquired_at_utc": "2026-10-02T05:53:22Z",
+      "heartbeat_at_utc": "2026-10-02T05:53:22Z",
+      "expires_at_utc": "2026-10-02T06:53:22Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
+          "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "checkpoint:wnba-pra-repair-v1-step2-public-proof",
+          "frozen-dependency:wnba_pra_speed_v3_step9",
+          "project:wnba-pra-repair-v1"
+        ],
+        "shared_resources": [
+          "branch:api2/wnba-pra-repair-v1-step2-proof-recovery",
+          "pr:wnba-pra-repair-v1-step2-proof-recovery",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
+        ],
+        "resource_identity": {
+          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+          "wnba:pra-repair-step": "2"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "e233d009010035db56811dd76a77a4effe730bb71dfb074c69dcef363964fdeb"
 }
