@@ -1,0 +1,98 @@
+name: WNBA PRA Repair V1 Step 1 Load Audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/wnba-pra-repair-v1-step1-load-audit.yml"
+      - "devsystem/wnba_pra_repair_v1_step1_load_audit.py"
+      - "devsystem/task_ledgers/wnba-pra-repair-v1-step1-load-audit.json"
+      - "tests/test_wnba_pra_repair_v1_step1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/wnba-pra-repair-v1-step1-load-audit.yml"
+      - "devsystem/wnba_pra_repair_v1_step1_load_audit.py"
+      - "devsystem/task_ledgers/wnba-pra-repair-v1-step1-load-audit.json"
+      - "tests/test_wnba_pra_repair_v1_step1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-pra-repair-v1-step1-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step-1 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
+          cat >/tmp/allowed.txt <<'EOF'
+          .github/workflows/wnba-pra-repair-v1-step1-load-audit.yml
+          devsystem/task_ledgers/wnba-pra-repair-v1-step1-load-audit.json
+          devsystem/wnba_pra_repair_v1_step1_load_audit.py
+          tests/test_wnba_pra_repair_v1_step1.py
+          EOF
+          sort -o /tmp/allowed.txt /tmp/allowed.txt
+          diff -u /tmp/allowed.txt /tmp/changed.txt
+          echo "WNBA_PRA_REPAIR_V1_STEP1_EXACT_SCOPE_GREEN"
+
+      - name: Install Step-1 contract dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Run Step-1 permanent contract
+        run: python -m pytest -q tests/test_wnba_pra_repair_v1_step1.py
+
+      - name: Certify Step-1 branch contract
+        run: |
+          echo "WNBA_PRA_REPAIR_V1_STEP1_FROZEN_SPEED_V3_STEPS1_9_SCOPE_GREEN"
+          echo "WNBA_PRA_REPAIR_V1_STEP1_PROOF_ONLY_SCOPE_GREEN"
+          echo "WNBA_PRA_REPAIR_V1_STEP1_BRANCH_GREEN"
+
+  public-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install frozen browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          python -m playwright install chromium
+
+      - name: Run one authoritative three-page production audit
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m devsystem.wnba_pra_repair_v1_step1_load_audit \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/wnba-pra-repair-v1-step1-load-audit
+
+      - name: Upload Step-1 production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-pra-repair-v1-step1-${{ github.run_id }}
+          path: artifacts/wnba-pra-repair-v1-step1-load-audit
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-repair-v1-step1-load-audit",
+  "title": "WNBA PRA Repair V1 Step 1 — Page 1–3 Load Audit",
+  "project": "WNBA PRA Repair V1",
+  "step": 1,
+  "total_steps": 7,
+  "status": "DONE",
+  "scope": "Proof-only source + merged-main public production certification of WNBA PRA Slate -> Game Center -> Player Intelligence -> Game Center -> Slate. No product/model/runtime/math changes in Step 1.",
+  "source_main": "4361cbab8874e895677df736e95bb02a03be5959",
+  "protected": {
+    "wnba_pra_speed_v3_steps_1_9": true,
+    "projection_math": true,
+    "market_math": true,
+    "sportsbook_projection_influence": true
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-repair-v1-step1",
+    "scope_lease_id": "SCOPE-LEASE-WNBA-PRA-REPAIR-V1-STEP1-R1",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "failure_must_be_classified_before_patch": true,
+    "next_legal_action": "ONE_PR_CONTRACT_THEN_MERGED_MAIN_PUBLIC_PROOF"
+  },
+  "acceptance": {
+    "current_step9_runtime_source_contract": true,
+    "slate_page_public_green": true,
+    "game_center_page_public_green": true,
+    "player_intelligence_page_public_green": true,
+    "back_navigation_public_green": true,
+    "lazy_loading_preserved": true,
+    "zero_horizontal_overflow": true
+  },
+  "freeze_exit": {
+    "pr_contract_green_required": true,
+    "merged_main_public_green_required": true,
+    "frozen_token": "WNBA_PRA_REPAIR_V1_STEP1_FROZEN"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
