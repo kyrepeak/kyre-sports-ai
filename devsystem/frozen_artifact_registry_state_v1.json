@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 85,
-  "source_main_sha": "7ffa51a7b93404d1151e4d81c2f0539612f50614",
+  "revision": 86,
+  "source_main_sha": "f5fd459b778b0ce30a2cfbf3301493d0c2165ee8",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1627,6 +1627,22 @@
       }
     }
   },
-  "active_thaws": [],
-  "state_hash": "f3592ed6d41bd8ba7dc19abec1966db389e32bb072e7a6bc67a06523d4098a32"
+  "active_thaws": [
+    {
+      "thaw_id": "THAW-API2-STEP3-DYNAMIC-C9041E6D9507",
+      "status": "ACTIVE",
+      "target_head_sha": "c9041e6d95072ca3432d9d48613565f82892fe9c",
+      "files": {
+        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": {
+          "from_blob": "8cd22adc492bcd286d701694d48342bfe44f6729",
+          "to_blob": "bd73f14edb2ce84db7c8e3a8a70774bf50e37ef7"
+        },
+        "tests/test_devsystem_dependency_chain_auto_refresh_v1.py": {
+          "from_blob": "a5d8d5ec0f0b81d25dcf3ba773bf045f04074a35",
+          "to_blob": "1c899472c0f04bcc64a3559a820e305d362e7148"
+        }
+      }
+    }
+  ],
+  "state_hash": "2d4d075ef9101ab290da482ecb074fc51cc971efb8af85c77262fd6551104a65"
 }
