@@ -48,11 +48,18 @@ def _near_complete(status="PENDING", **overrides):
     ]
 
 
-def _waiting(kind, *, last="2026-10-02T01:59:00Z", timeout=120, owner="OWNER"):
+def _waiting(
+    kind,
+    *,
+    entered="2026-10-02T01:50:00Z",
+    last="2026-10-02T01:59:00Z",
+    timeout=120,
+    owner="OWNER",
+):
     return _near_complete(
         status="WAITING",
         wait_kind=kind,
-        entered_wait_at_utc="2026-10-02T01:50:00Z",
+        entered_wait_at_utc=entered,
         last_material_event_at_utc=last,
         wait_timeout_seconds=timeout,
         owner=owner,
@@ -297,6 +304,7 @@ def test_async_overdue_without_heartbeat_context_requests_heartbeat_inspection()
 def test_active_authoritative_run_is_not_misclassified_stuck():
     plan = _waiting(
         "EXACT_HEAD_PROOF",
+        entered="2026-10-02T01:00:00Z",
         last="2026-10-02T01:00:00Z",
         timeout=60,
         owner="AUTHORITATIVE_PROOF",
@@ -352,6 +360,7 @@ def test_expired_heartbeat_but_run_still_active_is_not_recovered():
         _state(),
         checkpoints=_waiting(
             "EXACT_HEAD_PROOF",
+            entered="2026-10-02T01:00:00Z",
             last="2026-10-02T01:00:00Z",
             timeout=60,
             owner="AUTHORITATIVE_PROOF",
@@ -389,6 +398,7 @@ def test_dead_man_eligible_routes_one_recovery_receipt():
         _state(),
         checkpoints=_waiting(
             "EXACT_HEAD_PROOF",
+            entered="2026-10-02T01:00:00Z",
             last="2026-10-02T01:00:00Z",
             timeout=60,
             owner="AUTHORITATIVE_PROOF",
