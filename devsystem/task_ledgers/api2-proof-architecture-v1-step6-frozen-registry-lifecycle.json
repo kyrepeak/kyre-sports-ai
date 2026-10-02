@@ -1,0 +1,67 @@
+{
+  "version": 6,
+  "task_id": "api2-proof-architecture-v1-step6-frozen-registry-lifecycle",
+  "project": "API2 Proof Architecture V1",
+  "step": "6/7",
+  "title": "Frozen Registry Lifecycle Reconciliation",
+  "status": "DONE",
+  "source_main": "322bc62bb4d6021b8958dd49ed8f48558972d153",
+  "problem": "Frozen-baseline forward-ports can leave historical exact-head thaw pairs stale, and freshly written authoritative registry state can race CI propagation, causing otherwise-correct proof chains to fail or loop.",
+  "root_cause": "The frozen V4 registry verifier is intentionally strict and immutable, but API2 had no lifecycle planner to atomically advance shared baselines while retiring obsolete thaw pairs and no bounded state-progress rule for authoritative ref refresh.",
+  "patch": "Keep the frozen registry verifier untouched. Add a pure lifecycle planner that advances every frozen owner of an explicitly changed baseline in one state transition, retires thaw file-pairs for the moved baseline without rebasing authority, preserves unrelated grants, recomputes revision/hash, and validates the result. Add a pre-verifier authoritative lifecycle audit plus a bounded three-attempt registry ref refresh that stops immediately when the state hash does not advance.",
+  "proof_case": {
+    "registry_revision_at_audit": 79,
+    "active_thaws_at_audit": 44,
+    "invalid_pairs_at_audit": 0,
+    "prior_observed_failures": [
+      "registry propagation race",
+      "obsolete Step-4 thaw pair after frozen Step-3 baseline forward-port"
+    ]
+  },
+  "protected": {
+    "step1": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "step2": "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "step3": "API2_PROOF_ARCHITECTURE_V1_STEP3",
+    "step4": "API2_PROOF_ARCHITECTURE_V1_STEP4",
+    "step5": "API2_PROOF_ARCHITECTURE_V1_STEP5",
+    "frozen_registry_engine_untouched": true,
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "registry_retry_requires_state_hash_progress": true,
+    "exact_head_merge_required": true
+  },
+  "acceptance": {
+    "clean_registry_audit": true,
+    "atomic_multi_checkpoint_baseline_forward_port": true,
+    "obsolete_thaw_pairs_retired_without_rebase": true,
+    "unrelated_thaws_preserved": true,
+    "ambiguous_baseline_update_fails_closed": true,
+    "bounded_registry_refresh": true,
+    "unchanged_registry_state_stops_retry": true,
+    "permanent_devsystem_enforcement": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "green_plus_frozen_claimed": false,
+  "repair": {
+    "failure_owner": "PROOF_VERIFIER",
+    "focused_run": 37053268637,
+    "devsystem_run": 37053268460,
+    "failure": "SYNTHETIC_TEST_FIXTURE_USED_NON_HEX_GIT_BLOB_IDS",
+    "evidence": "The frozen V4 registry rejected keep.py blob values built from k/m because Git blob SHAs must match [0-9a-f]{40}; five Step-6 tests failed before lifecycle behavior was exercised.",
+    "patch": "Replace only the synthetic keep.py baseline/target values with hex-valid c/d 40-character values and keep all lifecycle semantics unchanged.",
+    "product_code_changed": false,
+    "patch_budget": "1/1"
+  }
+}

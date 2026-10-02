@@ -1,0 +1,64 @@
+name: API2 Proof Architecture V1 Step 6 Frozen Registry Lifecycle
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - "devsystem/api2_frozen_registry_lifecycle_v1.py"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
+      - "tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - "devsystem/api2_frozen_registry_lifecycle_v1.py"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
+      - "tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-proof-architecture-v1-step6-${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  registry-lifecycle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Step 6 lifecycle contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py
+          python devsystem/api2_frozen_registry_lifecycle_v1.py self-test
+      - name: Audit authoritative registry lifecycle
+        run: |
+          git fetch origin monster-frozen-artifact-registry --depth=1
+          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/api2-step6-registry.json
+          python devsystem/api2_frozen_registry_lifecycle_v1.py audit \
+            --registry-file /tmp/api2-step6-registry.json \
+            --json-out /tmp/api2-step6-audit.json
+          cat /tmp/api2-step6-audit.json
+      - name: Certify exact head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP6_BRANCH_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP6_READY_TO_MERGE"
+      - name: Certify merged main freeze
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP6_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP6_FROZEN"

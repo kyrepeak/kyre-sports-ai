@@ -156,11 +156,46 @@ jobs:
         run: python devsystem/semantic_action_normalizer_v1.py
       - name: Validate MONSTER V4 Frozen Artifact Registry V1
         run: python devsystem/frozen_artifact_registry_v1.py
+      - name: Validate API2 Proof Architecture V1 Step 6 Frozen Registry Lifecycle
+        run: python devsystem/api2_frozen_registry_lifecycle_v1.py self-test
       - name: Enforce authoritative frozen artifact registry
+        shell: bash
         run: |
-          git fetch origin monster-frozen-artifact-registry --depth=1
-          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/monster-frozen-artifact-registry.json
-          python devsystem/frozen_artifact_registry_v1.py verify-head --registry-file /tmp/monster-frozen-artifact-registry.json --head HEAD
+          set -euo pipefail
+          last_hash=""
+          for attempt in 1 2 3
+          do
+            git fetch origin monster-frozen-artifact-registry --depth=1
+            git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/monster-frozen-artifact-registry.json
+            python devsystem/api2_frozen_registry_lifecycle_v1.py audit \
+              --registry-file /tmp/monster-frozen-artifact-registry.json \
+              --json-out /tmp/api2-registry-lifecycle.json
+            current_hash="$(python - <<'PY'
+          import json
+          print(json.load(open("/tmp/api2-registry-lifecycle.json"))["state_hash"])
+          PY
+          )"
+            echo "API2_STEP6_REGISTRY_ATTEMPT=$attempt"
+            echo "API2_STEP6_REGISTRY_STATE_HASH=$current_hash"
+            if python devsystem/frozen_artifact_registry_v1.py verify-head \
+              --registry-file /tmp/monster-frozen-artifact-registry.json \
+              --head HEAD
+            then
+              echo "API2_STEP6_AUTHORITATIVE_REGISTRY_GREEN"
+              exit 0
+            fi
+            if [ "$attempt" -ge 3 ]; then
+              echo "API2_STEP6_REGISTRY_RETRY_BUDGET_EXHAUSTED"
+              exit 1
+            fi
+            if [ -n "$last_hash" ] && [ "$current_hash" = "$last_hash" ]; then
+              echo "API2_STEP6_REGISTRY_NO_PROGRESS_BLOCKED"
+              exit 1
+            fi
+            last_hash="$current_hash"
+            sleep 5
+          done
+          exit 1
       - name: Validate MONSTER V4 Cross-Chat Truth Handshake V1
         run: python devsystem/cross_chat_truth_handshake_v1.py
       - name: Validate authoritative cross-chat truth packet
@@ -309,6 +344,7 @@ jobs:
             tests/test_devsystem_distributed_execution_lease_v1.py \
             tests/test_devsystem_semantic_action_normalizer_v1.py \
             tests/test_devsystem_frozen_artifact_registry_v1.py \
+            tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py \
             tests/test_devsystem_cross_chat_truth_handshake_v1.py \
             tests/test_devsystem_terminal_proof_receipt_v1.py \
             tests/test_devsystem_evidence_truth_ledger_v1.py \
