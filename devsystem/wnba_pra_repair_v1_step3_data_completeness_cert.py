@@ -31,6 +31,7 @@ from devsystem.execution_plan_compiler_v1 import validate_execution_plan
 from devsystem.chaos_adversarial_certification_harness_v1 import (
     contract_self_test as chaos_contract_self_test,
 )
+from devsystem.upstream_blocker_short_circuit_v1 import evaluate_upstream_dependency
 import wnba_pra_repair_v1_step3_data as data
 
 PROJECT = "WNBA PRA Repair V1"
@@ -45,6 +46,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
 OVERLAY = ROOT / "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
 PLAN = ROOT / "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
+UPSTREAM_DEPENDENCY_ID = "wnba-pra-repair-v1-step3-public"
 
 
 class Step3CertificationFailure(RuntimeError):
@@ -260,16 +262,63 @@ def _open_any_player(page, route_url: str):
     )
 
 
+def upstream_preflight(*, artifact_dir: str | Path | None = None) -> dict[str, Any]:
+    gate = evaluate_upstream_dependency(UPSTREAM_DEPENDENCY_ID)
+    if gate["downstream_proof_allowed"]:
+        print("WNBA_PRA_REPAIR_V1_STEP3_UPSTREAM_GREEN_FROZEN")
+        return gate
+
+    receipt = {
+        "project": PROJECT,
+        "step": STEP,
+        "status": "UPSTREAM_BLOCKED",
+        "proof_kind": "UPSTREAM_SHORT_CIRCUIT",
+        "dependency_id": UPSTREAM_DEPENDENCY_ID,
+        "upstream_owner": gate["upstream_owner"],
+        "downstream_owner": gate["downstream_owner"],
+        "reason": gate["reason"],
+        "downstream_proof_allowed": False,
+        "browser_proof_attempted": False,
+        "deployment_attempts_used": 0,
+        "product_patch_allowed": False,
+    }
+    if artifact_dir is not None:
+        artifacts = Path(artifact_dir)
+        artifacts.mkdir(parents=True, exist_ok=True)
+        (artifacts / "wnba_pra_repair_v1_step3_upstream_blocked.json").write_text(
+            json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    print("WNBA_PRA_REPAIR_V1_STEP3_UPSTREAM_BLOCKED")
+    print(f"WNBA_PRA_REPAIR_V1_STEP3_UPSTREAM_OWNER={gate['upstream_owner']}")
+    print(f"WNBA_PRA_REPAIR_V1_STEP3_UPSTREAM_REASON={gate['reason']}")
+    print("WNBA_PRA_REPAIR_V1_STEP3_DEPLOYMENT_ATTEMPTS_USED=0")
+    return gate
+
+
 def run_production(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
-    # Browser stack is imported only for merged-main production proof.
+    artifacts = Path(artifact_dir)
+    artifacts.mkdir(parents=True, exist_ok=True)
+
+    upstream = upstream_preflight(artifact_dir=artifacts)
+    if not upstream["downstream_proof_allowed"]:
+        return {
+            "project": PROJECT,
+            "step": STEP,
+            "status": "UPSTREAM_BLOCKED",
+            "proof_kind": "UPSTREAM_SHORT_CIRCUIT",
+            "upstream": upstream,
+            "browser_proof_attempted": False,
+            "deployment_attempts_used": 0,
+            "green_plus_frozen_allowed": False,
+        }
+
+    # Browser stack is imported only after upstream GREEN + FROZEN is proven.
     global BrowserQAFailure, nav, speed9
     from playwright.sync_api import sync_playwright
     from devsystem.browser_qa_v1 import BrowserQAFailure
     from devsystem import wnba_nav_v2_step7_public_freeze as nav
     from devsystem import wnba_pra_speed_v3_step9_final_cert as speed9
-
-    artifacts = Path(artifact_dir)
-    artifacts.mkdir(parents=True, exist_ok=True)
 
     plan = compiled_plan()
     source = certify_source_contract()

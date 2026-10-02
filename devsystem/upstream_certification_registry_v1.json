@@ -1,0 +1,23 @@
+{
+  "version": "API2_UPSTREAM_CERTIFICATION_REGISTRY_V1",
+  "policy": "UPSTREAM_GREEN_FROZEN_BEFORE_DOWNSTREAM_PROOF",
+  "dependencies": {
+    "wnba-pra-repair-v1-step3-public": {
+      "upstream_owner": "wnba-pra-repair-v1-step2-team-identity",
+      "downstream_owner": "wnba-pra-repair-v1-step3-data-completeness",
+      "evidence": {
+        "type": "TASK_LEDGER_GREEN_FROZEN",
+        "path": "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
+        "required_status": "DONE",
+        "required_boolean": "green_plus_frozen_claimed"
+      },
+      "blocked_decision": "UPSTREAM_BLOCKED",
+      "allowed_decision": "PROCEED_DOWNSTREAM_PROOF",
+      "wake_paths": [
+        "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+        "wnba_pra_repair_v1_step2_team_identity.py"
+      ]
+    }
+  }
+}

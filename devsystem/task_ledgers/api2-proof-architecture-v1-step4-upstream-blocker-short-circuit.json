@@ -1,0 +1,54 @@
+{
+  "version": 4,
+  "task_id": "api2-proof-architecture-v1-step4-upstream-blocker-short-circuit",
+  "project": "API2 Proof Architecture V1",
+  "step": "4/7",
+  "title": "Upstream Blocker Short-Circuit",
+  "status": "DONE",
+  "source_main": "eecee9576dc54d28a32a728df3b651b7a6c9db37",
+  "problem": "Dependent public proofs can spend full retry budgets even when their required upstream step is not GREEN + FROZEN.",
+  "root_cause": "Downstream verifiers treated source-complete or reachable shell state as sufficient to start expensive proof, without a shared pre-proof upstream certification gate.",
+  "proof_case": {
+    "downstream": "wnba-pra-repair-v1-step3-data-completeness",
+    "upstream": "wnba-pra-repair-v1-step2-team-identity",
+    "upstream_ledger_status": "DONE",
+    "upstream_green_plus_frozen_claimed": false,
+    "prior_downstream_attempts": 12,
+    "prior_terminal_reason": "no_tappable_players",
+    "new_decision": "UPSTREAM_BLOCKED",
+    "expected_deployment_attempts": 0
+  },
+  "patch": "Add a reusable upstream certification registry and gate. Downstream proof begins only when the upstream ledger explicitly claims GREEN + FROZEN. The WNBA Step-3 production verifier now checks upstream before browser imports or retry loops, and the Step-4 orchestrator wakes automatically when the upstream ledger changes.",
+  "protected": {
+    "step1": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "step2": "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "step3": "API2_PROOF_ARCHITECTURE_V1_STEP3",
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true
+  },
+  "acceptance": {
+    "dependency_check_before_browser_import": true,
+    "dependency_check_before_retry_loop": true,
+    "source_done_not_equal_green_frozen": true,
+    "blocked_upstream_returns_UPSTREAM_BLOCKED": true,
+    "blocked_upstream_deployment_attempts_zero": true,
+    "blocked_upstream_product_patch_allowed": false,
+    "green_frozen_upstream_opens_downstream_proof": true,
+    "upstream_ledger_change_wakes_orchestrator": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "green_plus_frozen_claimed": false
+}

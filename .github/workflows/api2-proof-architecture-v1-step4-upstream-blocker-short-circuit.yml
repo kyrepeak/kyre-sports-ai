@@ -1,0 +1,126 @@
+name: API2 Proof Architecture V1 Step 4 Upstream Blocker Short Circuit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml"
+      - "devsystem/upstream_blocker_short_circuit_v1.py"
+      - "devsystem/upstream_certification_registry_v1.json"
+      - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
+      - "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json"
+      - "tests/test_devsystem_upstream_blocker_short_circuit_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml"
+      - "devsystem/upstream_blocker_short_circuit_v1.py"
+      - "devsystem/upstream_certification_registry_v1.json"
+      - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
+      - "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json"
+      - "tests/test_devsystem_upstream_blocker_short_circuit_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-proof-architecture-v1-step4-${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  upstream-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      allowed: ${{ steps.gate.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Step 4 contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_upstream_blocker_short_circuit_v1.py
+          python -m devsystem.upstream_blocker_short_circuit_v1 self-test
+      - name: Evaluate real WNBA upstream gate
+        id: gate
+        shell: bash
+        run: |
+          python -m devsystem.upstream_blocker_short_circuit_v1 check \
+            --dependency-id wnba-pra-repair-v1-step3-public \
+            --json-out /tmp/upstream.json
+          cat /tmp/upstream.json
+          allowed="$(python - <<'PY'
+          import json
+          print(str(json.load(open("/tmp/upstream.json"))["downstream_proof_allowed"]).lower())
+          PY
+          )"
+          echo "allowed=$allowed" >> "$GITHUB_OUTPUT"
+          if [ "$allowed" = "false" ]; then
+            echo "UPSTREAM_BLOCKED"
+            echo "API2_STEP4_EXPENSIVE_PROOF_SKIPPED_GREEN"
+          fi
+
+      - name: Prove legacy Step-3 verifier short-circuits before browser imports
+        if: steps.gate.outputs.allowed == 'false'
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          rm -rf /tmp/api2-step4-blocked
+          python -m devsystem.wnba_pra_repair_v1_step3_data_completeness_cert \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir /tmp/api2-step4-blocked
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("/tmp/api2-step4-blocked/wnba_pra_repair_v1_step3_upstream_blocked.json")
+          assert path.exists()
+          payload = json.loads(path.read_text())
+          assert payload["status"] == "UPSTREAM_BLOCKED"
+          assert payload["browser_proof_attempted"] is False
+          assert payload["deployment_attempts_used"] == 0
+          print("API2_STEP4_WNBA_ZERO_BROWSER_ATTEMPTS_GREEN")
+          PY
+
+      - name: Certify exact head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP4_BRANCH_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP4_READY_TO_MERGE"
+
+      - name: Certify merged main freeze
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP4_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP4_FROZEN"
+
+  downstream-proof:
+    if: github.event_name == 'push' && needs.upstream-gate.outputs.allowed == 'true'
+    needs: upstream-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser stack only after upstream GREEN + FROZEN
+        run: |
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          python -m playwright install chromium
+      - name: Run downstream proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          python -m devsystem.wnba_pra_repair_v1_step3_data_completeness_cert \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/api2-step4-downstream-proof
