@@ -1,0 +1,378 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "mission_id": "wnba-pra-repair-v1-step3-data-completeness",
+  "mission": "WNBA PRA Repair V1 Step 3 Page 3 Data Completeness",
+  "base_main_sha": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+  "dependency_versions": {
+    "step1_blast_simulator": "MONSTER_V8_PRE_MUTATION_BLAST_RADIUS_SIMULATOR_V1",
+    "step2_rollback_engine": "MONSTER_V8_TRANSACTIONAL_ROLLBACK_ENGINE_V1",
+    "step3_intent_arbiter": "MONSTER_V8_CROSS_WORKSTREAM_INTENT_ARBITER_V1",
+    "step4_project_state": "MONSTER_PROJECT_STATE_V1",
+    "step5_adaptive_stuck": "MONSTER_V8_ADAPTIVE_STUCK_THRESHOLDS_V1",
+    "step6_chaos_certification": "MONSTER_V8_CHAOS_ADVERSARIAL_CERTIFICATION_HARNESS_V1"
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": "rollback_anchor",
+      "title": "Seal exact GREEN rollback anchor",
+      "action_type": "READ_ONLY",
+      "depends_on": [],
+      "write_paths": [],
+      "dependency_tokens": [
+        "branch:a681f864292dffa01838d24132e0a04ccbfea974",
+        "main:5bdbe8548a3cc20db2100d2d6b458b49c6956521"
+      ],
+      "shared_resources": [],
+      "expected_proof": [
+        "exact branch SHA",
+        "exact main SHA",
+        "frozen artifact registry state",
+        "transaction-owned surface manifest"
+      ],
+      "completion_criteria": [
+        "baseline identity sealed",
+        "whole-repository rollback forbidden"
+      ],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "nonfrozen_patch",
+      "title": "Repair Step-3 non-frozen data-completeness layer",
+      "action_type": "MUTATION",
+      "depends_on": [
+        "rollback_anchor"
+      ],
+      "write_paths": [
+        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
+        "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json",
+        "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json",
+        "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+        "tests/test_wnba_pra_repair_v1_step3.py",
+        "wnba_pra_repair_v1_step3_data.py"
+      ],
+      "dependency_tokens": [
+        "dependency:wnba-pra-repair-v1-step2",
+        "frozen:wnba-pra-speed-v3-step9"
+      ],
+      "shared_resources": [
+        "branch:api2/wnba-pra-repair-v1-step3-data-completeness"
+      ],
+      "expected_proof": [
+        "Step 2A exact identity",
+        "authoritative scope lease",
+        "focused contract tests"
+      ],
+      "completion_criteria": [
+        "Page-3 form/opponent/usage/pace/H2H contracts encoded",
+        "Step-3 overlay inherits Step-2 identity layer",
+        "no frozen file changed"
+      ],
+      "step_2a_required": true,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "frozen_activation",
+      "title": "Authorize exact-head app activation",
+      "action_type": "MUTATION",
+      "depends_on": [
+        "nonfrozen_patch",
+        "rollback_anchor"
+      ],
+      "write_paths": [
+        "app.py",
+        "devsystem/frozen_artifact_registry_state_v1.json"
+      ],
+      "dependency_tokens": [
+        "control:frozen-artifact-registry",
+        "frozen:wnba-pra-speed-v3-step9"
+      ],
+      "shared_resources": [
+        "app-entrypoint:app.py#shard[domain=wnba,route=pra]",
+        "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
+      ],
+      "expected_proof": [
+        "Step 2A app scope authorization",
+        "exact app.py from/to blobs",
+        "exact-head frozen-artifact thaw",
+        "registry CAS success"
+      ],
+      "completion_criteria": [
+        "Step-3 runtime active above Step-2 parent",
+        "frozen registry authorizes exact candidate head only",
+        "registry mutation remains Step-3 scoped"
+      ],
+      "step_2a_required": true,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "exact_head_proof",
+      "title": "Certify exact Step-3 head",
+      "action_type": "READ_ONLY",
+      "depends_on": [
+        "frozen_activation"
+      ],
+      "write_paths": [],
+      "dependency_tokens": [
+        "proof:devsystem",
+        "proof:final-gate",
+        "proof:focused"
+      ],
+      "shared_resources": [
+        "workflow:wnba-pra-repair-v1-step3-data-completeness"
+      ],
+      "expected_proof": [
+        "DevSystem final gate success",
+        "focused tests success",
+        "terminal proof receipt"
+      ],
+      "completion_criteria": [
+        "no contradictory checks",
+        "proof bound to exact PR head"
+      ],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "merge_exact_head",
+      "title": "Merge exact certified head",
+      "action_type": "MUTATION",
+      "depends_on": [
+        "exact_head_proof",
+        "rollback_anchor"
+      ],
+      "write_paths": [
+        "app.py",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+        "wnba_pra_repair_v1_step3_data.py"
+      ],
+      "dependency_tokens": [
+        "merge:exact-certified-head"
+      ],
+      "shared_resources": [
+        "pr:api2/wnba-pra-repair-v1-step3-data-completeness"
+      ],
+      "expected_proof": [
+        "PR mergeable",
+        "expected head SHA match",
+        "required final gate green"
+      ],
+      "completion_criteria": [
+        "new main SHA captured",
+        "only certified head merged"
+      ],
+      "step_2a_required": true,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "merged_main_proof",
+      "title": "Prove merged-main Page-3 completeness",
+      "action_type": "READ_ONLY",
+      "depends_on": [
+        "merge_exact_head"
+      ],
+      "write_paths": [],
+      "dependency_tokens": [
+        "proof:merged-main",
+        "proof:production"
+      ],
+      "shared_resources": [
+        "deployment:streamlit#shard[domain=wnba,route=pra]"
+      ],
+      "expected_proof": [
+        "final gate",
+        "merged-main source contract",
+        "production Page-3 context proof",
+        "terminal receipt"
+      ],
+      "completion_criteria": [
+        "no projection/market/probability changes",
+        "opponent/recent5/recent10/usage/pace/H2H link green",
+        "upstream Page-2 status reported separately"
+      ],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "freeze_release",
+      "title": "Freeze Step 3 and release only its lease",
+      "action_type": "MUTATION",
+      "depends_on": [
+        "merged_main_proof",
+        "rollback_anchor"
+      ],
+      "write_paths": [
+        "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+      ],
+      "dependency_tokens": [
+        "freeze:step3"
+      ],
+      "shared_resources": [],
+      "expected_proof": [
+        "freeze token",
+        "lease release receipt",
+        "unified proof bundle complete"
+      ],
+      "completion_criteria": [
+        "WNBA_PRA_REPAIR_V1_STEP3_FROZEN emitted",
+        "WNBA_PRA_REPAIR_V1_STEP3_GREEN emitted",
+        "only Step-3 lease released"
+      ],
+      "step_2a_required": true,
+      "mutation_authority": false
+    }
+  ],
+  "topological_order": [
+    "rollback_anchor",
+    "nonfrozen_patch",
+    "frozen_activation",
+    "exact_head_proof",
+    "merge_exact_head",
+    "merged_main_proof",
+    "freeze_release"
+  ],
+  "edges": [
+    {
+      "from": "exact_head_proof",
+      "to": "merge_exact_head"
+    },
+    {
+      "from": "frozen_activation",
+      "to": "exact_head_proof"
+    },
+    {
+      "from": "merge_exact_head",
+      "to": "merged_main_proof"
+    },
+    {
+      "from": "merged_main_proof",
+      "to": "freeze_release"
+    },
+    {
+      "from": "nonfrozen_patch",
+      "to": "frozen_activation"
+    },
+    {
+      "from": "rollback_anchor",
+      "to": "freeze_release"
+    },
+    {
+      "from": "rollback_anchor",
+      "to": "frozen_activation"
+    },
+    {
+      "from": "rollback_anchor",
+      "to": "merge_exact_head"
+    },
+    {
+      "from": "rollback_anchor",
+      "to": "nonfrozen_patch"
+    }
+  ],
+  "resource_plan": {
+    "write_paths": [
+      ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
+      "app.py",
+      "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json",
+      "devsystem/frozen_artifact_registry_state_v1.json",
+      "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json",
+      "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
+      "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+      "tests/test_wnba_pra_repair_v1_step3.py",
+      "wnba_pra_repair_v1_step3_data.py"
+    ],
+    "dependency_tokens": [
+      "branch:a681f864292dffa01838d24132e0a04ccbfea974",
+      "control:frozen-artifact-registry",
+      "dependency:wnba-pra-repair-v1-step2",
+      "freeze:step3",
+      "frozen:wnba-pra-speed-v3-step9",
+      "main:5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+      "merge:exact-certified-head",
+      "proof:devsystem",
+      "proof:final-gate",
+      "proof:focused",
+      "proof:merged-main",
+      "proof:production"
+    ],
+    "shared_resources": [
+      "app-entrypoint:app.py#shard[domain=wnba,route=pra]",
+      "branch:api2/wnba-pra-repair-v1-step3-data-completeness",
+      "deployment:streamlit#shard[domain=wnba,route=pra]",
+      "pr:api2/wnba-pra-repair-v1-step3-data-completeness",
+      "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]",
+      "workflow:wnba-pra-repair-v1-step3-data-completeness"
+    ]
+  },
+  "proof_plan": {
+    "rollback_anchor": [
+      "exact branch SHA",
+      "exact main SHA",
+      "frozen artifact registry state",
+      "transaction-owned surface manifest"
+    ],
+    "nonfrozen_patch": [
+      "Step 2A exact identity",
+      "authoritative scope lease",
+      "focused contract tests"
+    ],
+    "frozen_activation": [
+      "Step 2A app scope authorization",
+      "exact app.py from/to blobs",
+      "exact-head frozen-artifact thaw",
+      "registry CAS success"
+    ],
+    "exact_head_proof": [
+      "DevSystem final gate success",
+      "focused tests success",
+      "terminal proof receipt"
+    ],
+    "merge_exact_head": [
+      "PR mergeable",
+      "expected head SHA match",
+      "required final gate green"
+    ],
+    "merged_main_proof": [
+      "final gate",
+      "merged-main source contract",
+      "production Page-3 context proof",
+      "terminal receipt"
+    ],
+    "freeze_release": [
+      "freeze token",
+      "lease release receipt",
+      "unified proof bundle complete"
+    ]
+  },
+  "rollback_checkpoint_id": "rollback_anchor",
+  "freeze_contract": {
+    "exact_pr_head_proof": true,
+    "devsystem_final_gate": true,
+    "merge_exact_certified_head": true,
+    "merged_main_proof": true,
+    "terminal_proof_receipt": true,
+    "green_plus_frozen": true,
+    "freeze_tokens": [
+      "FROZEN",
+      "GREEN"
+    ]
+  },
+  "completion_criteria": [
+    "Step 3 is GREEN + FROZEN",
+    "Step-3 lease released",
+    "merged-main Page-3 data completeness proof is GREEN",
+    "no projection market probability ranking or qualification math changed"
+  ],
+  "step_2a_required": true,
+  "mutation_authority": false,
+  "network_calls": false,
+  "auto_mutate": false,
+  "may_modify_product_runtime": false,
+  "plan_id": "PLAN-A6106A95F3EB1983B4CA9DB2",
+  "plan_digest": "sha256:a6106a95f3eb1983b4ca9db292110a2d08c0827dc88080b67f687363cdbb2767",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "next_legal_action": "ENTER_CHECKPOINT:frozen_activation"
+}

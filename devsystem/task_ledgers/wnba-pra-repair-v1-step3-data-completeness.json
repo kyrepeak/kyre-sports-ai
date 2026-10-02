@@ -1,0 +1,92 @@
+{
+  "version": 3,
+  "task_id": "wnba-pra-repair-v1-step3-data-completeness",
+  "title": "WNBA PRA Repair V1 Step 3 — Page 3 Data Completeness",
+  "project": "WNBA PRA Repair V1",
+  "step": 3,
+  "total_steps": 7,
+  "status": "DONE",
+  "proof_mode": "MERGED_MAIN_PRODUCTION_REQUIRED",
+  "source_main": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+  "execution_plan": {
+    "plan_id": "PLAN-A6106A95F3EB1983B4CA9DB2",
+    "plan_digest": "sha256:a6106a95f3eb1983b4ca9db292110a2d08c0827dc88080b67f687363cdbb2767",
+    "current_checkpoint": "exact_head_proof"
+  },
+  "root_causes": [
+    "Page 3 coupled opponent identity to a qualified consumer-card match although selected-game truth already proves the opponent.",
+    "The Game Center role row carried L5/L10 production and usage evidence but dropped it before the selected-player snapshot reached Page 3.",
+    "The Page-3 presentation hardcoded pace and usage placeholders instead of exposing existing PRA V3.6 pace context and role-engine usage evidence.",
+    "H2H matching received no opponent key whenever consumer qualification was absent."
+  ],
+  "patch": "Activate a reversible Step-3 overlay above the merged Step-2 team-identity runtime. Preserve role-row L5/L10 and usage fields, derive opponent from selected-game truth, use verified role-row aggregate fallback when history is missing, reuse PRA V3.6 pace context, and pass canonical opponent identity into H2H matching.",
+  "protected": {
+    "step1_load_audit": true,
+    "step2_public_recovery_separate_workstream": true,
+    "step2_identity_runtime_as_parent": true,
+    "wnba_pra_speed_v3_steps_1_9": true,
+    "frozen_game_center_step3": true,
+    "frozen_player_intelligence_step4": true,
+    "projection_math": true,
+    "market_math": true,
+    "probability_math": true,
+    "qualification": true,
+    "ranking": true,
+    "sportsbook_projection_influence": true,
+    "other_sports": true
+  },
+  "v8": {
+    "execution_plan_compiler": true,
+    "pre_mutation_blast_radius": true,
+    "transactional_rollback": true,
+    "cross_workstream_intent_arbiter": true,
+    "unified_proof_bundle_required": true,
+    "adaptive_stuck_thresholds": true,
+    "chaos_adversarial_certification": true,
+    "app_exact_head_thaw_required": true,
+    "component_only_freeze_rejected": true,
+    "frozen_registry_write_declared_in_plan": true
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-repair-v1-step3",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "failure_must_be_classified_before_patch": true,
+    "upstream_step2_recovery_not_touched": true,
+    "next_legal_action": "EXACT_HEAD_PROOF_THEN_DEVSYSTEM_FINAL_GATE_THEN_MERGE_EXACT_CERTIFIED_HEAD_THEN_MERGED_MAIN_PRODUCTION_PROOF"
+  },
+  "acceptance": {
+    "opponent_identity_consumer_independent": true,
+    "recent5_pra_public_ready_required": true,
+    "recent10_pra_public_ready_required": true,
+    "pace_context_public_ready_required": true,
+    "usage_context_public_ready_required": true,
+    "h2h_selected_game_opponent_link_public_ready_required": true,
+    "step2_identity_parent_preserved": true,
+    "runtime_activation_required": true,
+    "merged_main_public_player_page_proof_required": true,
+    "universal_final_card_deferred_to_step4": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_changed": false
+  },
+  "freeze_exit": {
+    "exact_head_source_contract_green_required": true,
+    "devsystem_final_gate_green_required": true,
+    "merge_exact_certified_head_required": true,
+    "merged_main_production_proof_green_required": true,
+    "terminal_proof_receipt_required": true,
+    "scope_lease_release_required": true,
+    "frozen_token": "WNBA_PRA_REPAIR_V1_STEP3_FROZEN"
+  },
+  "green_plus_frozen_claimed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "closeout_note": "Task ledger is DONE for PR action-ledger contract only. GREEN + FROZEN remains unclaimed until exact-head, DevSystem final gate, exact-head merge, merged-main production proof, terminal receipt, and lease release complete."
+}
