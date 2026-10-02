@@ -58,7 +58,13 @@ jobs:
           wnba_pra_repair_v1_step2_team_identity.py
           EOF
           sort -o /tmp/allowed.txt /tmp/allowed.txt
-          diff -u /tmp/allowed.txt /tmp/changed.txt
+          test -s /tmp/changed.txt
+          comm -23 /tmp/changed.txt /tmp/allowed.txt > /tmp/unexpected.txt
+          if [ -s /tmp/unexpected.txt ]; then
+            echo "WNBA_PRA_REPAIR_V1_STEP2_SCOPE_BLOCKED"
+            cat /tmp/unexpected.txt
+            exit 1
+          fi
           echo "WNBA_PRA_REPAIR_V1_STEP2_EXACT_SCOPE_GREEN"
 
       - name: Verify frozen WNBA PRA dependencies
