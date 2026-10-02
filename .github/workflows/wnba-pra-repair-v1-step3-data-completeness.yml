@@ -60,6 +60,12 @@ jobs:
           cat >/tmp/allowed.txt <<'EOF'
           .github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml
           .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
+          .github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml
+          devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json
+          devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json
+          devsystem/upstream_blocker_short_circuit_v1.py
+          devsystem/upstream_certification_registry_v1.json
+          tests/test_devsystem_upstream_blocker_short_circuit_v1.py
           app.py
           devsystem/dependency_chain_auto_refresh_v1.py
           devsystem/dependency_chain_registry_v1.json

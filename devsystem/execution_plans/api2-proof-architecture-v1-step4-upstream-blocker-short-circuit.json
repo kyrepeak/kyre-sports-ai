@@ -1,0 +1,52 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "mission_id": "api2-proof-architecture-v1-step4-upstream-blocker-short-circuit",
+  "mission": "API2 Proof Architecture V1 Step 4 Upstream Blocker Short Circuit",
+  "step": "4/7",
+  "base_main_sha": "eecee9576dc54d28a32a728df3b651b7a6c9db37",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "policy": "UPSTREAM_GREEN_FROZEN_BEFORE_DOWNSTREAM_PROOF",
+  "checkpoints": [
+    "audit-upstream-proof-state",
+    "install-upstream-certification-registry",
+    "install-short-circuit-engine",
+    "wire-downstream-preflight-before-browser",
+    "prove-real-upstream-blocked-zero-attempt-case",
+    "forward-port-step3-scope-whitelist",
+    "exact-head-proof",
+    "merge-exact-certified-head",
+    "merged-main-proof",
+    "freeze-registry"
+  ],
+  "write_paths": [
+    ".github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml",
+    "devsystem/upstream_blocker_short_circuit_v1.py",
+    "devsystem/upstream_certification_registry_v1.json",
+    "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
+    "devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json",
+    "devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json",
+    "tests/test_devsystem_upstream_blocker_short_circuit_v1.py",
+    ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
+  ],
+  "protected": [
+    "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "API2_PROOF_ARCHITECTURE_V1_STEP3",
+    "product-runtime",
+    "model-math",
+    "projection-math",
+    "step3-product-semantics"
+  ],
+  "freeze_exit": [
+    "focused-exact-head-green",
+    "real-upstream-blocked-zero-attempt-proof",
+    "devsystem-final-gate-green",
+    "terminal-proof-receipt-green",
+    "merge-exact-certified-head",
+    "merged-main-focused-green",
+    "merged-main-devsystem-green",
+    "frozen-registry-entry"
+  ]
+}
