@@ -808,3 +808,41 @@ def test_monster_v6_content_addressed_proof_reuse_contract_is_green():
     assert result["dependency_drift_requires_new_proof"] is True
     assert result["production_state_proof_not_reused"] is True
     assert result["step_2a_still_required_for_mutation"] is True
+
+
+def test_monster_v7_causal_state_lineage_is_permanently_enforced():
+    lineage = _load(
+        "causal_state_lineage_graph_v1",
+        "devsystem/causal_state_lineage_graph_v1.py",
+    )
+    result = lineage.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["exact_writer_recorded"] is True
+    assert result["exact_consumers_recorded"] is True
+    assert result["generation_history_recorded"] is True
+    assert result["causal_backtrace_available"] is True
+    assert result["stale_consumer_fails_closed"] is True
+    assert result["conflicting_generation_fails_closed"] is True
+    assert result["missing_writer_fails_closed"] is True
+    assert result["tamper_fails_closed"] is True
+    assert result["network_calls"] is False
+    assert result["auto_mutate"] is False
+    assert result["may_modify_product_runtime"] is False
+    assert result["mutation_authority_granted"] is False
+
+    permanent = _load(
+        "permanent_gate_v1_v7_causal_lineage",
+        "devsystem/permanent_gate_v1.py",
+    )
+    required = set(permanent.REQUIRED_DEVSYSTEM_FILES)
+    assert "devsystem/causal_state_lineage_graph_v1.py" in required
+    assert "tests/test_devsystem_causal_state_lineage_graph_v1.py" in required
+    assert "devsystem/task_ledgers/monster-v7-step1-causal-state-lineage-v1.json" in required
+    assert ".github/workflows/monster-v7-step1-causal-state-lineage.yml" in required
+
+    workflow = (
+        ROOT / ".github/workflows/monster-v7-step1-causal-state-lineage.yml"
+    ).read_text(encoding="utf-8")
+    assert "python devsystem/causal_state_lineage_graph_v1.py" in workflow
+    assert "tests/test_devsystem_causal_state_lineage_graph_v1.py" in workflow
+    assert "MONSTER_V7_STEP1_CAUSAL_STATE_LINEAGE_GREEN" in workflow
