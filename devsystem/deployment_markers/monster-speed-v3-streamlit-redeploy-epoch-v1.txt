@@ -1,4 +1,4 @@
-MONSTER_SPEED_V3_STREAMLIT_REDEPLOY_EPOCH=1
+MONSTER_SPEED_V3_STREAMLIT_REDEPLOY_EPOCH=2
 
 Purpose:
 - Use this file for harmless deployment/restart intent.
