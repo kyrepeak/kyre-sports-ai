@@ -16,9 +16,14 @@ import hashlib
 import json
 import math
 import re
+import sys
 from copy import deepcopy
+from pathlib import Path
 from statistics import median
 from typing import Any, Mapping, Sequence
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.progress_truth_stuck_state_detector_v1 import (
     VERSION as PROGRESS_TRUTH_VERSION,
