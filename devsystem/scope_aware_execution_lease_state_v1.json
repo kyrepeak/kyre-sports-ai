@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 107,
+  "revision": 108,
   "generation": 53,
   "holders": [
     {
@@ -70,39 +70,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v7-step7-progress-truth-stuck-detector-v1",
-      "lease_id": "SCOPE-LEASE-V7S7-PROGRESS-001",
-      "generation": 53,
-      "acquired_at_utc": "2026-10-02T02:16:30Z",
-      "heartbeat_at_utc": "2026-10-02T02:16:30Z",
-      "expires_at_utc": "2026-10-02T02:56:30Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-v7-step7-progress-truth-stuck-detector.yml",
-          "devsystem/progress_truth_stuck_state_detector_v1.py",
-          "devsystem/task_ledgers/monster-v7-step7-progress-truth-stuck-detector-v1.json",
-          "tests/test_devsystem_progress_truth_stuck_state_detector_v1.py"
-        ],
-        "dependency_tokens": [
-          "project:monster-v7",
-          "control-plane:progress-truth-stuck-detector",
-          "frozen-dependency:MONSTER_V7_STEP6",
-          "frozen-dependency:MONSTER_V5_HEARTBEAT_DEADMAN"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v7-step7-progress-truth-stuck-detector-v1",
-          "pr:monster-v7-step7-progress-truth-stuck-detector-v1",
-          "workflow:monster-v7-step7-progress-truth-stuck-detector"
-        ],
-        "resource_identity": {
-          "main:base": "0ad522b330d6bb873cb684017cbf95230db80a42",
-          "monster:v7-step": "7"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "12de9847dbb2fccd0e44ab03b09ca9b4dd0d26fd93bbb61bf16c4bc7b4a69847"
+  "state_hash": "c8b6817348ffbd5b61d50b6415d0c5fbf4213d202dc1922219f2c8ed3d4eae95"
 }
