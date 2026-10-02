@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 182,
-  "generation": 103,
+  "revision": 183,
+  "generation": 104,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
@@ -65,32 +65,32 @@
       }
     },
     {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-cross-team-id",
-      "lease_id": "SCOPE-LEASE-F08AEADA68658DB1EF374BB3",
-      "generation": 103,
-      "acquired_at_utc": "2026-10-02T16:47:00Z",
-      "heartbeat_at_utc": "2026-10-02T16:47:00Z",
-      "expires_at_utc": "2026-10-02T17:47:00Z",
+      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1344-thaw",
+      "lease_id": "SCOPE-LEASE-EAF24959887CCB8CD0227B95",
+      "generation": 104,
+      "acquired_at_utc": "2026-10-02T16:52:00Z",
+      "heartbeat_at_utc": "2026-10-02T16:52:00Z",
+      "expires_at_utc": "2026-10-02T17:52:00Z",
       "scope": {
         "write_paths": [
-          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
-          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
-          "tests/test_wnba_pra_repair_v1_step2.py"
+          "devsystem/frozen_artifact_registry_state_v1.json"
         ],
         "dependency_tokens": [
-          "identity:cross-team-player-id",
+          "control:frozen-artifact-registry",
+          "pr:1344",
           "step:wnba-pra-repair-v1-step2"
         ],
         "shared_resources": [
-          "branch:api2-wnba-repair-v1-step2-cross-team-id",
-          "workflow:wnba-pra-repair-v1-step2-team-identity"
+          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
         ],
         "resource_identity": {
-          "main:base": "e1a892e7ed7c37a9191a3448333ab5e98b549a68"
+          "main:base": "e1a892e7ed7c37a9191a3448333ab5e98b549a68",
+          "pr:head": "4eeefe2c325a07db159a5ee753ac7b6ac918d8de",
+          "pr:merge": "f094ef8ebebb9b63fbdbce6bcc96f0d631f5ac3a"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "004f47a7adec2e3968a0f1f3d5e00495fb09d4176c52f6481eb9d09434a1ddc5"
+  "state_hash": "2d4feb9a8747a29bf23b754c6142224fd92f4daa31e72da63a15ad4fce7bc276"
 }
