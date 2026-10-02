@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 6,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -7,9 +7,9 @@
   "total_steps": 5,
   "status": "DONE",
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
-  "root_cause": "The proof layer certified the presence of Market-Aware Football Reasoning, not live completeness. Synthetic fixtures covered happy-path READY behavior, while the live Top-10 verifier did not enforce the same readiness contract on every required market signal.",
-  "failure_owner": "VERIFIER",
-  "patch": "Keep the proven Step-3 football reasoning product unchanged. Public verifier now checks the visible reasoning h4 semantically and checks the intentionally hidden Step-9 diagnostic marker by its exact data-testid + DOM text, instead of using rendered body.inner_text for a hidden marker.",
+  "root_cause": "The active CFB Top Picks router stack nests Step 9 -> Step 8 -> Step 7 -> Step 6. Step 9 only changed Step 8's TOP_PICKS_PAGE selector, but Step 7 and Step 6 each overwrote the same shared base router selector with their older page versions before the real render. Production therefore showed the Step-6 reasoning block while omitting the Step-9 certification marker.",
+  "failure_owner": "CONTRACT",
+  "patch": "Repair only the Step-9 router wrapper so V9 is propagated through every nested CFB page owner (Steps 8, 7, and 6) for the duration of the render, then restore every prior selector in reverse order. Add a permanent regression proving propagation + restoration and make the focused Step-3 workflow trigger on Step-9 router changes.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -19,18 +19,21 @@
     "probability_modified": false,
     "ranking_modified": false,
     "selection_modified": false,
-    "sportsbook_projection_weight": 0
+    "sportsbook_projection_weight": 0,
+    "step9_router_modified": true,
+    "model_modified": false,
+    "projection_modified": false
   },
   "regression_debt": {
     "created": true,
-    "owner_class": "VERIFIER",
+    "owner_class": "CONTRACT",
     "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
-    "permanent_contract": "devsystem/cfb_top_picks_market_reasoning_repair_step3_v1.py",
+    "permanent_contract": "devsystem/cfb_top_picks_research_v2_step9_full_slate_v1.py",
     "state": "PENDING_PROOF"
   },
   "step2a": {
-    "single_branch": "cfb-top-picks-repair-step3-public-verifier-r1",
-    "repair_of_merge_sha": "1fa72e4bc8ff19ed2cd46473607389bace050ed7",
+    "single_branch": "cfb-top-picks-repair-step3-router-v9-propagation-r1",
+    "repair_of_merge_sha": "45070ee5b6f378e74c233a17a85632fe12787b74",
     "single_pr_required": true,
     "duplicate_async_forbidden": true,
     "exact_head_required": true,
@@ -88,5 +91,30 @@
     "patch": "Query the marker directly by data-testid, require exactly one DOM node, and require exact page.PAGE_MARKER text_content. Visibility is not required for an intentionally hidden diagnostic marker.",
     "product_code_modified": false,
     "proof_state": "PENDING_PROOF"
+  },
+  "post_merge_router_propagation_repair": {
+    "source_merge_sha": "45070ee5b6f378e74c233a17a85632fe12787b74",
+    "source_failed_run_id": 36939785974,
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_V9_MARKER_COUNT:0",
+    "owner": "ROUTER",
+    "public_reasoning_heading_proven": true,
+    "live_top10_reasoning_proven": true,
+    "merged_main_devsystem_proven": true,
+    "v9_marker_missing_in_public_dom": true,
+    "root_cause": "Nested CFB page-owner wrappers overwrite the outer Step-9 TOP_PICKS_PAGE choice before the base Top Picks router renders. Step 8 propagates into Step 7, and Step 7/Step 6 restore their own older page choices, so the public route reaches the reasoning surface without the final V9 wrapper.",
+    "patch": "Step 9 temporarily sets TOP_PICKS_PAGE=v9 on Step 8, Step 7, and Step 6 page owners before delegating, then restores all originals in reverse order after render.",
+    "product_code_modified": true,
+    "model_or_ranking_modified": false,
+    "proof_state": "PENDING_PROOF"
+  },
+  "post_router_devsystem_contract_repair": {
+    "source_pr": 1321,
+    "source_head": "e6e97712446c8890e4bc5734d9ad62b2e43279c7",
+    "source_failed_run_id": 36947480383,
+    "failure_class": "A_DETERMINISTIC_CONTRACT",
+    "earliest_causal_divergence": "devsystem/cfb_top_picks_research_v2_step9_full_slate_v1.py still encoded the obsolete single-owner Step-8 router architecture after the production repair legally propagated V9 through Steps 8, 7, and 6.",
+    "patch": "Update only the permanent Step-9 architecture contract to require Step-8/7/6 ownership imports, propagation across the nested owner chain, and reverse-order restoration. Preserve the already-proven router behavior and model firewalls.",
+    "focused_router_proof_run_id": 36947480302,
+    "regression_debt_state": "PENDING_PROOF"
   }
 }

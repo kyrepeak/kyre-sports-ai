@@ -4,6 +4,7 @@ import pytest
 
 import cfb_top_picks_market_reasoning_v1 as reasoning
 from devsystem import cfb_top_picks_market_reasoning_repair_step3_v1 as repair
+import streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 as router
 
 
 def _row(market: str = "MONEYLINE") -> dict:
@@ -202,4 +203,36 @@ def test_public_v9_marker_contract_rejects_wrong_marker_text():
     frame = _FakeFrame(_FakeMarker(text="stale-marker"))
     with pytest.raises(AssertionError, match="STEP3_PUBLIC_V9_MARKER_TEXT"):
         repair._validate_public_v9_marker(frame)
+
+def test_step9_router_propagates_v9_through_nested_page_owners(monkeypatch):
+    owners = router._page_owner_chain()
+    assert owners == (
+        router.cfb_step8_parent,
+        router.cfb_step7_parent,
+        router.cfb_step6_parent,
+    )
+
+    original_pages = ("cfb_top_picks_page_v8", "cfb_top_picks_page_v7", "cfb_top_picks_page_v6")
+    for owner, original in zip(owners, original_pages):
+        monkeypatch.setattr(owner, "TOP_PICKS_PAGE", original)
+
+    observed = {}
+
+    def fake_render():
+        observed["during_render"] = tuple(owner.TOP_PICKS_PAGE for owner in owners)
+        return "rendered"
+
+    monkeypatch.setattr(router.current_parent, "render_app", fake_render)
+
+    assert router.render_app() == "rendered"
+    assert observed["during_render"] == (router.TOP_PICKS_PAGE,) * 3
+    assert tuple(owner.TOP_PICKS_PAGE for owner in owners) == original_pages
+
+
+def test_step9_router_keeps_model_firewalls():
+    assert router.TOP_PICKS_PAGE == "cfb_top_picks_page_v9"
+    assert router.MAY_MODIFY_OTHER_SPORTS is False
+    assert router.MAY_MODIFY_WNBA_SPEED_STEP4 is False
+    assert router.MAY_MODIFY_TOP_PICKS_RANKING is False
+    assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 

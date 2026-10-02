@@ -56,8 +56,18 @@ def check_repository() -> dict[str, object]:
         failures.append("Step-9 router must preserve current WNBA Speed Step 4 parent")
     if "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as cfb_step8_parent" not in router:
         failures.append("Step-9 router must preserve frozen CFB Step 8 ownership")
-    if "cfb_step8_parent.TOP_PICKS_PAGE = TOP_PICKS_PAGE" not in router:
-        failures.append("Step-9 router must advance only the nested Step-8 Top Picks page")
+    if "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step7 as cfb_step7_parent" not in router:
+        failures.append("Step-9 router must preserve frozen CFB Step 7 ownership")
+    if "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6 as cfb_step6_parent" not in router:
+        failures.append("Step-9 router must preserve frozen CFB Step 6 ownership")
+    for token in (
+        "def _page_owner_chain()",
+        "cfb_step8_parent, cfb_step7_parent, cfb_step6_parent",
+        "owner.TOP_PICKS_PAGE = TOP_PICKS_PAGE",
+        "zip(reversed(owners), reversed(original_pages))",
+    ):
+        if token not in router:
+            failures.append(f"Step-9 router propagation contract missing {token}")
     if "import cfb_top_picks_source_router_v1 as prior" not in source_router:
         failures.append("Step-9 provenance closeout must wrap frozen Step 8 source router")
     if 'normalized["source_attempts"] = list(normalized.get("sources_attempted") or [])' not in source_router:
