@@ -1,0 +1,73 @@
+name: API2 Proof Architecture V1 Step 3 Dependency Auto Refresh
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml"
+      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
+      - "devsystem/dependency_chain_auto_refresh_v1.py"
+      - "devsystem/dependency_chain_registry_v1.json"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
+      - "tests/test_devsystem_dependency_chain_auto_refresh_v1.py"
+      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
+      - "wnba_pra_repair_v1_step2_team_identity.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml"
+      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
+      - "devsystem/dependency_chain_auto_refresh_v1.py"
+      - "devsystem/dependency_chain_registry_v1.json"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
+      - "tests/test_devsystem_dependency_chain_auto_refresh_v1.py"
+      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
+      - "wnba_pra_repair_v1_step2_team_identity.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-proof-architecture-v1-step3-${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  dependency-auto-refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run dependency auto-refresh contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_dependency_chain_auto_refresh_v1.py
+          python -m devsystem.dependency_chain_auto_refresh_v1 self-test
+      - name: Resolve current registered parent identity
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python -m devsystem.dependency_chain_auto_refresh_v1 verify \
+            --dependency-id wnba-pra-repair-v1-step3-step2 \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --json-out /tmp/api2-step3-dependency.json
+          cat /tmp/api2-step3-dependency.json
+      - name: Certify exact head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP3_BRANCH_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP3_READY_TO_MERGE"
+      - name: Certify merged main freeze
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP3_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP3_FROZEN"

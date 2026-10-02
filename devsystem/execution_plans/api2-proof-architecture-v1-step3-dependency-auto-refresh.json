@@ -1,0 +1,47 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "mission_id": "api2-proof-architecture-v1-step3-dependency-auto-refresh",
+  "mission": "API2 Proof Architecture V1 Step 3 Dependency Chain Auto Refresh",
+  "step": "3/7",
+  "base_main_sha": "60392dccd676f6e8df6e7ea37fd087e2bea6fbc1",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "policy": "DYNAMIC_PARENT_IDENTITY_WITH_COMPATIBILITY_PROOF",
+  "checkpoints": [
+    "audit-stale-parent-pin",
+    "register-parent-paths",
+    "install-dynamic-parent-resolver",
+    "wake-child-on-parent-change",
+    "exact-head-proof",
+    "merge-exact-certified-head",
+    "merged-main-proof",
+    "freeze-registry"
+  ],
+  "write_paths": [
+    ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml",
+    ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
+    "devsystem/dependency_chain_auto_refresh_v1.py",
+    "devsystem/dependency_chain_registry_v1.json",
+    "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json",
+    "devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json",
+    "tests/test_devsystem_dependency_chain_auto_refresh_v1.py"
+  ],
+  "protected": [
+    "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "product-runtime",
+    "model-math",
+    "projection-math"
+  ],
+  "freeze_exit": [
+    "focused-exact-head-green",
+    "wnba-step3-dependent-contract-green",
+    "devsystem-final-gate-green",
+    "terminal-proof-receipt-green",
+    "merge-exact-certified-head",
+    "merged-main-focused-green",
+    "merged-main-devsystem-green",
+    "frozen-registry-entry"
+  ]
+}

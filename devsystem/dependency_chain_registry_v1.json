@@ -1,0 +1,26 @@
+{
+  "version": "API2_DEPENDENCY_CHAIN_REGISTRY_V1",
+  "policy": "DYNAMIC_PARENT_IDENTITY_WITH_COMPATIBILITY_PROOF",
+  "dependencies": {
+    "wnba-pra-repair-v1-step3-step2": {
+      "parent_step": "WNBA PRA Repair V1 Step 2",
+      "child_step": "WNBA PRA Repair V1 Step 3",
+      "workflow_path": ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
+      "parent_paths": [
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+        "wnba_pra_repair_v1_step2_team_identity.py"
+      ],
+      "child_paths": [
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+        "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
+        "tests/test_wnba_pra_repair_v1_step3.py"
+      ],
+      "compatibility_tests": [
+        "tests/test_wnba_pra_repair_v1_step3.py",
+        "tests/test_wnba_pra_repair_v1_step2.py"
+      ],
+      "wake_on_parent_change": true,
+      "static_parent_blob_pins_forbidden": true
+    }
+  }
+}
