@@ -34,7 +34,8 @@ def test_step9_is_certification_only_and_keeps_final_speed_budgets():
     assert "step8_profile.run(" in source
     assert '"frozen_steps_1_8_preserved": True' in source
     assert '"product_runtime_changed_by_step9": True' in source
-    assert '"runtime_change_scope": "duplicate_player_identity_dedupe_guard"' in source
+    assert '"runtime_change_scope": "duplicate_player_identity_dedupe_guard+precompute_response_handoff"' in source
+    assert '"precompute_response_handoff_required": True' in source
     assert '"projection_values_changed_by_step9": False' in source
     assert '"projection_math_changed_by_step9": False' in source
     assert '"market_math_changed_by_step9": False' in source
@@ -87,12 +88,35 @@ def test_step9_duplicate_key_guard_preserves_frozen_game_center_bytes():
     assert "def _dedupe_game_center_payload(payload: Any) -> Any:" in overlay
     assert "seen_player_ids: set[int] = set()" in overlay
     assert "duplicate_player_rows_suppressed" in overlay
-    assert "game_center.load_game_center = guarded_loader" in overlay
-    assert "game_center.load_game_center = original_loader" in overlay
+    assert "game_center.load_game_center = guarded_game_loader" in overlay
+    assert "game_center.load_game_center = original_game_loader" in overlay
     assert 'MAY_MODIFY_WNBA_MODEL = False' in overlay
     assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in overlay
     assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard import record_bootstrap_import_ms, render_app" in app
     assert "Frozen WNBA PRA Speed V3 Step 8 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step8 import record_bootstrap_import_ms, render_app" in app
+
+
+def test_step9_precompute_handoff_reuses_existing_future_and_preserves_fallback():
+    overlay = OVERLAY.read_text(encoding="utf-8")
+    app = APP.read_text(encoding="utf-8")
+    assert "PRECOMPUTE_JOIN_SECONDS = 2.25" in overlay
+    assert "PRECOMPUTE_HANDOFF_MAX_AGE_SECONDS = 5.0" in overlay
+    assert "_STEP9_PRECOMPUTED_BUNDLES.pop(_bundle_key(player_id), None)" in overlay
+    assert "age_seconds > PRECOMPUTE_HANDOFF_MAX_AGE_SECONDS" in overlay
+    assert "def _capture_precompute_bundle(player_id: int)" in overlay
+    assert "step7_precompute._warm_one = _capture_precompute_bundle" in overlay
+    assert "def _join_precompute(player_id: int)" in overlay
+    assert "future.result(timeout=PRECOMPUTE_JOIN_SECONDS)" in overlay
+    assert "never launch a new one" in overlay
+    assert "def _pair_from_precomputed_outer(" in overlay
+    assert "streamlit_network_reads=0" in overlay
+    assert '"network_reads": 0' in overlay
+    assert "original_loader(str(game_id), pid)" in overlay
+    assert "step7_precompute._warm_one = original_warm_one" in overlay
+    assert "step4_cache.load_cached_bundle_pair = original_bundle_loader" in overlay
+    assert "MAY_MODIFY_WNBA_MODEL = False" in overlay
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in overlay
+    assert "WNBA_PRA_SPEED_V3_STEP9_PRECOMPUTE_HANDOFF_2026_10_01_R3" in app
 
 
 def test_step9_emits_final_green_and_frozen_tokens():
@@ -104,6 +128,7 @@ def test_step9_emits_final_green_and_frozen_tokens():
         "WNBA_PRA_SPEED_V3_STEP9_VISIBLE_CONTINUITY_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_FROZEN_STEPS1_8_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_GREEN",
+        "WNBA_PRA_SPEED_V3_STEP9_PRECOMPUTE_HANDOFF_PERFORMANCE_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_PROFILE_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_FROZEN",
@@ -144,5 +169,6 @@ def test_step9_workflow_has_exact_scope_and_main_production_gate():
     assert "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_VERIFIER_SCOPE_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_SCOPE_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP9_PRECOMPUTE_HANDOFF_SCOPE_GREEN" in workflow
     assert "github.event_name == 'push'" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_BRANCH_GREEN" in workflow
