@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 18,
-  "generation": 18,
-  "next_sequence": 16,
+  "revision": 19,
+  "generation": 19,
+  "next_sequence": 17,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -632,7 +632,7 @@
     {
       "intent_id": "intent-d55516d2081c813f93363370",
       "sequence": 15,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 cache identity handoff",
       "mission_key": "wnba pra repair v1 step 2 cache identity handoff",
       "semantic_fingerprint": "d55516d2081c813f9336337093d8b7836f2d808305012d733fcfbfb32db26ade",
@@ -665,9 +665,54 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T15:35:00Z",
-      "updated_at_utc": "2026-10-02T15:35:00Z",
+      "updated_at_utc": "2026-10-02T15:53:00Z",
       "expires_at_utc": "2026-10-02T16:35:00Z"
+    },
+    {
+      "intent_id": "intent-0d83b558e84ad2adef4ae6e7",
+      "sequence": 16,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 PR 1342 cold Game Center correction",
+      "mission_key": "wnba pra repair v1 step 2 pr 1342 cold game center correction",
+      "semantic_fingerprint": "0d83b558e84ad2adef4ae6e7abbc2d77f342435cda7edcdefab1eb0aae9aeaaf",
+      "base_sha": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-repair-v1-step2-team-identity.yml",
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "control:step2-exact-scope",
+          "dependency:wnba-pra-step5-cache",
+          "pr:1342",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:api2-wnba-repair-v1-step2-cold-game-center",
+          "pr:1342",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
+        ],
+        "resource_identity": {
+          "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+          "pr:head": "6edf84847c53746c606dabbb7018d10d046972e1",
+          "pr:number": "1342"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1342",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-pr1342",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1342",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-pr1342"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T15:53:00Z",
+      "updated_at_utc": "2026-10-02T15:53:00Z",
+      "expires_at_utc": "2026-10-02T16:53:00Z"
     }
   ],
-  "state_hash": "531254ed3badb1ba14dae6d1bde3aaf515eb06f27f961d89136fac5413223ee8"
+  "state_hash": "fb564117815f31fb8f1e3e5529d1a7852562fdbe4c54d0b65f5e866ec93fd552"
 }
