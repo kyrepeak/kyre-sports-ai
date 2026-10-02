@@ -145,6 +145,63 @@ def _prewarm_game_center_dependencies(
         list(pool.map(_warm, calls))
 
 
+def _suppress_cross_team_player_id_conflicts(payload: Any) -> Any:
+    """Fail closed when one player ID is claimed by multiple game teams.
+
+    Streamlit widget/container keys are global to the rendered page. The frozen
+    Step-9 guard removes duplicate IDs within one team, but a provider identity
+    collision can still place the same player ID under both teams. We never
+    guess which team owns that conflicting identity: every row carrying a
+    cross-team-conflicting player ID is suppressed before player controls render.
+    """
+    if not isinstance(payload, Mapping):
+        return payload
+
+    teams_obj = payload.get("teams")
+    if not isinstance(teams_obj, Mapping):
+        return payload
+
+    owners: dict[int, set[str]] = {}
+    for team_key, rows_obj in teams_obj.items():
+        rows = rows_obj if isinstance(rows_obj, (list, tuple)) else []
+        for row in rows:
+            if not isinstance(row, Mapping):
+                continue
+            pid = game_center._integer(row.get("player_id"))
+            if pid is not None:
+                owners.setdefault(int(pid), set()).add(str(team_key))
+
+    conflict_ids = {
+        pid for pid, team_keys in owners.items()
+        if len(team_keys) > 1
+    }
+
+    clean_payload = dict(payload)
+    clean_teams: dict[str, list[Any]] = {}
+    suppressed = 0
+    for team_key, rows_obj in teams_obj.items():
+        rows = list(rows_obj or []) if isinstance(rows_obj, (list, tuple)) else []
+        kept: list[Any] = []
+        for row in rows:
+            pid = (
+                game_center._integer(row.get("player_id"))
+                if isinstance(row, Mapping)
+                else None
+            )
+            if pid is not None and int(pid) in conflict_ids:
+                suppressed += 1
+                continue
+            kept.append(dict(row) if isinstance(row, Mapping) else row)
+        clean_teams[str(team_key)] = kept
+
+    clean_payload["teams"] = clean_teams
+    clean_payload["players"] = sum(len(rows) for rows in clean_teams.values())
+    clean_payload["cross_team_duplicate_player_ids"] = sorted(conflict_ids)
+    clean_payload["cross_team_duplicate_player_rows_suppressed"] = suppressed
+    clean_payload["cross_team_duplicate_key_guard_active"] = True
+    return clean_payload
+
+
 def _team_player_count(payload: Mapping[str, Any], team_id: int) -> int:
     teams = payload.get("teams") if isinstance(payload, Mapping) else None
     if not isinstance(teams, Mapping):
@@ -177,6 +234,8 @@ def _proof_marker(payload: Mapping[str, Any]) -> None:
         f'data-home-team-id="{home_id}" '
         f'data-away-player-count="{away_count}" '
         f'data-home-player-count="{home_count}" '
+        f'data-cross-team-conflicts="{len(payload.get("cross_team_duplicate_player_ids") or [])}" '
+        f'data-cross-team-rows-suppressed="{int(payload.get("cross_team_duplicate_player_rows_suppressed") or 0)}" '
         f'data-away-id-repaired="{str(bool(snapshot.get("away_identity_repaired"))).lower()}" '
         f'data-home-id-repaired="{str(bool(snapshot.get("home_identity_repaired"))).lower()}" '
         f'data-identity-version="{escape(identity.VERSION)}"></div>',
@@ -219,7 +278,8 @@ def render_app() -> Any:
             away_team,
             home_team,
         )
-        return frozen_parent._dedupe_game_center_payload(payload)
+        payload = frozen_parent._dedupe_game_center_payload(payload)
+        return _suppress_cross_team_player_id_conflicts(payload)
 
     if hasattr(original_game_loader, "clear"):
         guarded_game_loader.clear = original_game_loader.clear  # type: ignore[attr-defined]
@@ -256,6 +316,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "TEAM_IDENTITY_VERSION",
     "_prewarm_game_center_dependencies",
+    "_suppress_cross_team_player_id_conflicts",
     "_proof_marker",
     "_reconciled_slate_loader",
     "record_bootstrap_import_ms",

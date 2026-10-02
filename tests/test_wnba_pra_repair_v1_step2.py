@@ -101,7 +101,33 @@ def test_step2_prewarm_preserves_frozen_math_and_parallelizes_exact_primitives()
     assert "players._espn_roster" in source
     assert "_prewarm_game_center_dependencies(" in source
     assert "payload = original_game_loader(" in source
-    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "payload = frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "return _suppress_cross_team_player_id_conflicts(payload)" in source
+    assert "MAY_MODIFY_WNBA_MODEL = False" in source
+    assert "MAY_MODIFY_PROJECTION_MATH = False" in source
+    assert "MAY_MODIFY_MARKET_MATH = False" in source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
+
+
+
+def test_step2_cross_team_duplicate_ids_fail_closed_before_streamlit_controls():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "def _suppress_cross_team_player_id_conflicts(payload: Any) -> Any:" in source
+    assert "owners.setdefault(int(pid), set()).add(str(team_key))" in source
+    assert "if len(team_keys) > 1" in source
+    assert "cross_team_duplicate_player_ids" in source
+    assert "cross_team_duplicate_player_rows_suppressed" in source
+    assert "cross_team_duplicate_key_guard_active" in source
+    assert "payload = frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "return _suppress_cross_team_player_id_conflicts(payload)" in source
+    assert 'data-cross-team-conflicts=' in source
+    assert 'data-cross-team-rows-suppressed=' in source
+
+
+def test_step2_does_not_make_team_ownership_guess_for_conflicting_player_id():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "every row carrying a" in source
+    assert "cross-team-conflicting player ID is suppressed" in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
     assert "MAY_MODIFY_PROJECTION_MATH = False" in source
     assert "MAY_MODIFY_MARKET_MATH = False" in source
@@ -173,4 +199,5 @@ def test_step2_patches_step5_import_time_game_loader_seam():
     assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
     assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
     assert "payload = original_game_loader(" in source
-    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "payload = frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "return _suppress_cross_team_player_id_conflicts(payload)" in source
