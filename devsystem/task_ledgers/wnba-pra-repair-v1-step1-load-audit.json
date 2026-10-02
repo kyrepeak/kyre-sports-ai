@@ -38,5 +38,10 @@
     "pr_contract_green_required": true,
     "merged_main_public_green_required": true,
     "frozen_token": "WNBA_PRA_REPAIR_V1_STEP1_FROZEN"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
   }
 }
