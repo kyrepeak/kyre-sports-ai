@@ -101,7 +101,8 @@ def test_step2_prewarm_preserves_frozen_math_and_parallelizes_exact_primitives()
     assert "players._espn_roster" in source
     assert "_prewarm_game_center_dependencies(" in source
     assert "payload = original_game_loader(" in source
-    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "payload = frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "return _suppress_cross_team_player_id_conflicts(payload)" in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
     assert "MAY_MODIFY_PROJECTION_MATH = False" in source
     assert "MAY_MODIFY_MARKET_MATH = False" in source
@@ -198,4 +199,5 @@ def test_step2_patches_step5_import_time_game_loader_seam():
     assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
     assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
     assert "payload = original_game_loader(" in source
-    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "payload = frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "return _suppress_cross_team_player_id_conflicts(payload)" in source
