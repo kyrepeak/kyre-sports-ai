@@ -216,7 +216,7 @@ def test_step2_ledger_locks_step2a_and_protects_previous_work():
     assert ledger["two_a"]["one_active_pr_max"] == 1
     assert ledger["two_a"]["no_duplicate_async_runs"] is True
     assert ledger["two_a"]["no_unchanged_failed_reruns"] is True
-    assert ledger["repair"]["compiled_plan_id"] == "PLAN-6CB605F56375D61438827D7F"
+    assert ledger["repair"]["compiled_plan_id"] == "PLAN-STEP2-RUNTIME-BUNDLE-ATTEST-V1"
     assert ledger["repair"]["exact_deployment_sha_gate_required"] is True
     assert ledger["repair"]["deployment_convergence_refresh_max"] == 1
     assert ledger["action_log"]["head_chain_hash"] == "0" * 64
