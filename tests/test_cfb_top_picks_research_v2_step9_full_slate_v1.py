@@ -55,8 +55,12 @@ def test_step9_wraps_frozen_step8():
     router_text = Path("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py").read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 as current_parent" in router_text
     assert "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as cfb_step8_parent" in router_text
-
-    assert "cfb_step8_parent.TOP_PICKS_PAGE = TOP_PICKS_PAGE" in router_text
+    assert "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step7 as cfb_step7_parent" in router_text
+    assert "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6 as cfb_step6_parent" in router_text
+    assert "def _page_owner_chain()" in router_text
+    assert "cfb_step8_parent, cfb_step7_parent, cfb_step6_parent" in router_text
+    assert "owner.TOP_PICKS_PAGE = TOP_PICKS_PAGE" in router_text
+    assert "zip(reversed(owners), reversed(original_pages))" in router_text
 
 def test_step9_fair_model_price_has_truthful_sportsbook_unavailable_state():
     from devsystem.cfb_top_picks_research_v2_step9_full_slate_cert_v1 import (
