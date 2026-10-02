@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
-      - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
+      - "app.py"
       - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
       - "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
       - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
@@ -16,7 +16,8 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
-      - "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+      - "app.py"
+      - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
       - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
       - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
       - "tests/test_wnba_pra_repair_v1_step3.py"
@@ -42,7 +43,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce exact Step-3 component scope
+      - name: Enforce exact Step-3 scope
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
@@ -50,6 +51,7 @@ jobs:
           git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
           cat >/tmp/allowed.txt <<'EOF'
           .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
+          app.py
           devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json
           devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json
           devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py
@@ -72,8 +74,9 @@ jobs:
           test "$(git hash-object streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py)" = "51eef1fe2526801a467f155d1c0b32d516ef8a35"
           echo "WNBA_PRA_REPAIR_V1_STEP3_PARENT_DEPENDENCIES_GREEN"
 
-      - name: Compile Step-3 component
+      - name: Compile Step-3 runtime
         run: |
+          python -m py_compile app.py
           python -m py_compile wnba_pra_repair_v1_step3_data.py
           python -m py_compile streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py
           python -m py_compile devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py
@@ -83,23 +86,27 @@ jobs:
 
       - name: Run focused Step-3 regression contract
         run: |
-          python -m pytest -q             tests/test_wnba_pra_repair_v1_step3.py             tests/test_wnba_pra_repair_v1_step2.py             tests/test_wnba_pra_speed_v3_step9.py
+          python -m pytest -q \
+            tests/test_wnba_pra_repair_v1_step3.py \
+            tests/test_wnba_pra_repair_v1_step2.py \
+            tests/test_wnba_pra_speed_v3_step9.py
 
-      - name: Run V8 component certification
-        run: python -m devsystem.wnba_pra_repair_v1_step3_data_completeness_cert
+      - name: Run exact-head V8 source certification
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m devsystem.wnba_pra_repair_v1_step3_data_completeness_cert --source-only
 
       - name: Exact-head Step-3 contract GREEN
         run: |
-          echo "WNBA_PRA_REPAIR_V1_STEP3_COMPONENT_SCOPE_GREEN"
+          echo "WNBA_PRA_REPAIR_V1_STEP3_SOURCE_SCOPE_GREEN"
           echo "WNBA_PRA_REPAIR_V1_STEP3_STEP2_PARENT_GREEN"
-          echo "WNBA_PRA_REPAIR_V1_STEP3_APP_FROZEN_UNTOUCHED_GREEN"
           echo "WNBA_PRA_REPAIR_V1_STEP3_BRANCH_GREEN"
 
-  merged-main-component:
+  public-production:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: contract
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,20 +115,28 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Verify merged main contains Step-3 base lineage
+      - name: Verify merged-main base lineage
         shell: bash
         run: |
           set -euo pipefail
           git merge-base --is-ancestor 5bdbe8548a3cc20db2100d2d6b458b49c6956521 HEAD
           echo "WNBA_PRA_REPAIR_V1_STEP3_MERGED_MAIN_LINEAGE_GREEN"
 
-      - name: Run merged-main V8 component certification
+      - name: Install frozen browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          python -m playwright install chromium
+
+      - name: Run one authoritative merged-main Page-3 proof
         env:
           PYTHONPATH: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
-        run: python -m devsystem.wnba_pra_repair_v1_step3_data_completeness_cert
+        run: |
+          python -m devsystem.wnba_pra_repair_v1_step3_data_completeness_cert \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/wnba-pra-repair-v1-step3-data-completeness
 
-      - name: Upload Step-3 merged-main evidence
+      - name: Upload Step-3 production evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:

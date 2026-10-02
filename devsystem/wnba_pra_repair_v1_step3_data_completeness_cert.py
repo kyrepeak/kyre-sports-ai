@@ -257,8 +257,12 @@ def _open_any_player(page, route_url: str):
 
 
 def run_production(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
-    # Lazy import keeps exact-head source certification lightweight.
+    # Browser stack is imported only for merged-main production proof.
+    global BrowserQAFailure, nav, speed9
     from playwright.sync_api import sync_playwright
+    from devsystem.browser_qa_v1 import BrowserQAFailure
+    from devsystem import wnba_nav_v2_step7_public_freeze as nav
+    from devsystem import wnba_pra_speed_v3_step9_final_cert as speed9
 
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)

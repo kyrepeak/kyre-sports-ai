@@ -11,6 +11,7 @@ DATA = ROOT / "wnba_pra_repair_v1_step3_data.py"
 OVERLAY = ROOT / "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
 CERT = ROOT / "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
 LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+PLAN = ROOT / "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
 WORKFLOW = ROOT / ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
 APP = ROOT / "app.py"
 
@@ -77,61 +78,70 @@ def test_step3_retains_context_fields_the_frozen_page_dropped():
         assert token in source
 
 
-def test_step3_does_not_touch_frozen_app_activation():
+def test_step3_runtime_is_activated_above_step2():
     app = APP.read_text(encoding="utf-8")
-    assert "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity" in app
-    assert "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness" not in app
+    assert "WNBA_PRA_REPAIR_V1_STEP3_DATA_COMPLETENESS_RUNTIME" in app
+    assert "from streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness import record_bootstrap_import_ms, render_app" in app
+    assert "Frozen WNBA PRA Repair V1 Step 2 compatibility: from streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity import record_bootstrap_import_ms, render_app" in app
 
 
-def test_step3_cert_uses_v8_plan_and_chaos_contract():
+def test_step3_cert_cannot_freeze_from_source_only_proof():
     source = CERT.read_text(encoding="utf-8")
-    assert "compile_execution_plan" in source
     assert "validate_execution_plan" in source
     assert "chaos_contract_self_test" in source
-    assert "WNBA_PRA_REPAIR_V1_STEP3_V8_PLAN_GREEN" in source
-    assert "WNBA_PRA_REPAIR_V1_STEP3_V8_CHAOS_GREEN" in source
+    assert "def source_only_result" in source
+    assert '"green_plus_frozen_allowed": False' in source
+    assert "def run_production" in source
+    for attr in (
+        "data-opponent-ready",
+        "data-recent5-ready",
+        "data-recent10-ready",
+        "data-usage-ready",
+        "data-pace-ready",
+        "data-history-opponent-linked",
+        "data-consumer-independent-context",
+    ):
+        assert attr in source
     assert "WNBA_PRA_REPAIR_V1_STEP3_GREEN" in source
     assert "WNBA_PRA_REPAIR_V1_STEP3_FROZEN" in source
 
 
-def test_step3_ledger_records_component_freeze_and_step2a():
+def test_step3_ledger_requires_merged_main_production_before_freeze():
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert ledger["project"] == "WNBA PRA Repair V1"
     assert ledger["step"] == 3
     assert ledger["total_steps"] == 7
-    assert ledger["status"] == "DONE"
-    assert ledger["proof_mode"] == "MERGED_MAIN_COMPONENT"
-    assert ledger["production_activation_deferred_to_step4"] is True
-    assert ledger["protected"]["step1_load_audit"] is True
-    assert ledger["protected"]["frozen_app_py"] is True
-    assert ledger["two_a"]["one_active_problem"] is True
-    assert ledger["two_a"]["one_active_branch"] is True
-    assert ledger["two_a"]["one_active_pr_max"] == 1
+    assert ledger["status"] == "ACTIVE"
+    assert ledger["proof_mode"] == "MERGED_MAIN_PRODUCTION_REQUIRED"
+    assert ledger["v8"]["component_only_freeze_rejected"] is True
+    assert ledger["v8"]["app_exact_head_thaw_required"] is True
     assert ledger["two_a"]["no_duplicate_async_runs"] is True
-    assert ledger["action_log"]["head_chain_hash"] == "0" * 64
+    assert ledger["freeze_exit"]["merged_main_production_proof_green_required"] is True
+    assert ledger["green_plus_frozen_claimed"] is False
 
 
-def test_step3_workflow_exact_scope_has_no_app_py_and_guards_parents():
+def test_step3_workflow_requires_app_activation_and_real_production_proof():
     workflow = WORKFLOW.read_text(encoding="utf-8")
-    assert "WNBA PRA Repair V1 Step 3 Data Completeness" in workflow
-    assert "Enforce exact Step-3 component scope" in workflow
-    assert "Verify frozen parent dependencies" in workflow
-    assert "app.py" not in workflow
-    assert "4e51bd0e0c631b71cf9af7a443038edbe1b7061c" in workflow
-    assert "9e571c95a8dc5229e39dfa60fbcffa18afb38bc1" in workflow
-    assert "a181c8949991bb139521f7d379046f34147e5306" in workflow
-    assert "393c29711962bf1d42b8fc58322938c92e23000a" in workflow
-    assert "51eef1fe2526801a467f155d1c0b32d516ef8a35" in workflow
-    assert "merged-main-component" in workflow
+    assert "Enforce exact Step-3 scope" in workflow
+    assert "app.py" in workflow
+    assert "--source-only" in workflow
+    assert "public-production:" in workflow
+    assert "python -m playwright install chromium" in workflow
+    assert "--production-url https://pickvault.streamlit.app" in workflow
+    assert "merged-main-component" not in workflow
 
 
-def test_step3_execution_plan_is_bound_to_v8_and_current_main():
-    plan = json.loads((ROOT / "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json").read_text(encoding="utf-8"))
+def test_step3_execution_plan_is_strong_and_bound_to_v8():
+    plan = json.loads(PLAN.read_text(encoding="utf-8"))
     assert plan["version"] == "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1"
     assert plan["base_main_sha"] == "5bdbe8548a3cc20db2100d2d6b458b49c6956521"
     assert plan["rollback_checkpoint_id"] == "rollback_anchor"
     assert plan["step_2a_required"] is True
     assert plan["mutation_authority"] is False
+    assert "frozen_activation" in plan["topological_order"]
+    assert "merged_main_proof" in plan["topological_order"]
+    assert "freeze_release" in plan["topological_order"]
+    assert "app.py" in plan["resource_plan"]["write_paths"]
     assert plan["freeze_contract"]["exact_pr_head_proof"] is True
     assert plan["freeze_contract"]["merged_main_proof"] is True
     assert plan["freeze_contract"]["green_plus_frozen"] is True
