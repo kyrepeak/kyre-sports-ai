@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 89,
-  "generation": 42,
+  "revision": 90,
+  "generation": 43,
   "holders": [
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-router-v9-propagation-r1",
@@ -39,7 +39,38 @@
         },
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v6-performance-r12",
+      "lease_id": "SCOPE-LEASE-STEP9-PERF-V6-R12",
+      "generation": 43,
+      "acquired_at_utc": "2026-10-02T00:39:00Z",
+      "heartbeat_at_utc": "2026-10-02T00:39:00Z",
+      "expires_at_utc": "2026-10-02T01:19:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
+          "app.py",
+          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
+          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
+          "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
+          "tests/test_wnba_pra_speed_v3_step9.py"
+        ],
+        "dependency_tokens": [
+          "domain:wnba",
+          "project:wnba-pra-speed-v3-step9-performance-r12"
+        ],
+        "shared_resources": [
+          "branch:fix/wnba-pra-speed-v3-step9-precompute-handoff-r12"
+        ],
+        "resource_identity": {
+          "main:base": "c5f627337b39d75f85125e0e2e08a4edd7ebb942",
+          "step9:failed-production-run": "36945103822",
+          "failure:true-cold-seconds": "3.977"
+        },
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "bbf7d85e6aaa24f36a8305144084509f7f7c0e81ad033ef5d6b25092200b17ad"
+  "state_hash": "64ade95e4caef5520b4fadb07bd2b013df10bb200bc62f50fbd8a079469020b0"
 }
