@@ -1,0 +1,148 @@
+{
+  "version": 2,
+  "task_id": "monster-v8-step6-chaos-adversarial-certification-v1",
+  "title": "MONSTER V8 Step 6 - Chaos / Adversarial Certification Harness",
+  "project": "MONSTER V8",
+  "step": 6,
+  "total_steps": 7,
+  "status": "DONE",
+  "problem": "Individual MONSTER control-plane protections can each pass their own deterministic contracts while cross-layer failure modes remain untested as one upgrade-wide adversarial matrix.",
+  "root_cause": "There was no single V8 certification harness that intentionally replays the real failure classes seen across chats, async proof, rollback, queue handoff, state ownership, frozen artifacts, deployment truth, dead-man recovery, replay protection, detached continuation, and adaptive stuck detection.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "Add MONSTER_V8_CHAOS_ADVERSARIAL_CERTIFICATION_HARNESS_V1. The harness composes the frozen pure self-tests into one tamper-evident 11-scenario crash-test certificate covering duplicate chats, stale SHA, dropped connection after mutation, partial queue acknowledgement, old writer wake-up, frozen-file edits, deployment drift, dead runner recovery, duplicate merge attempts, slow-live async protection, and detached-worker resume. Every scenario must pass without network calls, product/runtime mutation, duplicate execution authority, or bypass of Step 2A.",
+  "protected": {
+    "monster_v8_steps_1_through_5_frozen": true,
+    "step_2a_required": true,
+    "exact_head_proof_required": true,
+    "single_authoritative_async_path": true,
+    "no_duplicate_runs": true,
+    "no_duplicate_merge": true,
+    "no_blind_polling": true,
+    "no_network_calls": true,
+    "no_auto_mutation": true,
+    "no_product_runtime_change": true,
+    "mutation_authority_granted": false
+  },
+  "acceptance": {
+    "duplicate_chats_join_existing_intent": true,
+    "stale_main_and_head_blocked": true,
+    "dropped_connection_does_not_duplicate_restore": true,
+    "rollback_requires_green_recertification": true,
+    "delayed_queue_ack_reconciles_from_live_lease": true,
+    "old_writer_wakeup_blocked": true,
+    "frozen_edit_without_exact_thaw_blocked": true,
+    "deployment_drift_classified_as_deployment_owned": true,
+    "dead_runner_requires_terminal_run_and_one_shot_recovery": true,
+    "recovery_never_grants_mutation_authority": true,
+    "duplicate_merge_attempt_loop_skipped": true,
+    "slow_live_authoritative_run_protected": true,
+    "detached_async_resume_waits_without_duplicate": true,
+    "certificate_digest_tamper_evident": true,
+    "all_scenarios_required": true
+  },
+  "dependencies": {
+    "MONSTER_V8_STEP5": {
+      "status": "FROZEN",
+      "artifact": "devsystem/adaptive_stuck_thresholds_v1.py",
+      "required_blob": "5a68516d45417a7175eb6e88f7e9d4749a2dbe1c"
+    },
+    "MONSTER_V8_STEP3": {
+      "status": "FROZEN",
+      "artifact": "devsystem/cross_workstream_intent_arbiter_v1.py",
+      "required_blob": "e1db49a3f2d16fe2eb89b243658deba92fbde160"
+    },
+    "MONSTER_2A_ADVERSARIAL": {
+      "status": "FROZEN_DEPENDENCY",
+      "artifact": "devsystem/mandatory_2a_adversarial_certification_v1.py",
+      "required_blob": "97cbde42f8b7b5222bc345879b4208b89dda4cee"
+    },
+    "MONSTER_V8_STEP2": {
+      "status": "FROZEN",
+      "artifact": "devsystem/transactional_rollback_engine_v1.py",
+      "required_blob": "609e5b9b3f416cff47d5867b57a63782ea0e18b8"
+    },
+    "MONSTER_V7_QUEUE": {
+      "status": "FROZEN_DEPENDENCY",
+      "artifact": "devsystem/atomic_wait_queue_lease_handoff_v1.py",
+      "required_blob": "6d5a75b2d66a0439563b92ee04a1b8c8024d1dad"
+    },
+    "MONSTER_V7_OWNERSHIP": {
+      "status": "FROZEN_DEPENDENCY",
+      "artifact": "devsystem/monotonic_state_ownership_guard_v1.py",
+      "required_blob": "52b167271b7ff14de4b948a8ccbacb03e377774a"
+    },
+    "MONSTER_V4_FROZEN_REGISTRY": {
+      "status": "FROZEN_DEPENDENCY",
+      "artifact": "devsystem/frozen_artifact_registry_v1.py",
+      "required_blob": "ede316bb19a900b544abe4d652d6cfbcde6a9f82"
+    },
+    "MONSTER_V3_DEPLOYMENT_TRUTH": {
+      "status": "FROZEN_DEPENDENCY",
+      "artifact": "devsystem/deployment_truth_control_plane_v1.py",
+      "required_blob": "2c39e1fd1b6a7af219bf14f48f124d695a925d59"
+    },
+    "MONSTER_V5_HEARTBEAT": {
+      "status": "FROZEN_DEPENDENCY",
+      "artifact": "devsystem/execution_heartbeat_deadman_recovery_v1.py",
+      "required_blob": "a8be77d18e0ba7bcc8bbba4ef45451d18c2bf469"
+    },
+    "MONSTER_2A_REPLAY_LOCK": {
+      "status": "FROZEN_DEPENDENCY",
+      "artifact": "devsystem/mandatory_2a_replay_lock_v1.py",
+      "required_blob": "83a01f4ffe7a8dfe8403f681d8c5038004616ae2"
+    }
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_chaos_adversarial_certification_harness_v1.py",
+    "permanent_contract": "devsystem/chaos_adversarial_certification_harness_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "intent": {
+    "owner_id": "chatgpt:monster-v2:monster-v8-step6-chaos-adversarial-certification-v1",
+    "workstream_id": "monster-v8-step6-chaos-adversarial-certification-v1",
+    "branch": "monster/monster-v8-step6-chaos-adversarial-certification-v1",
+    "base_main_sha": "4361cbab8874e895677df736e95bb02a03be5959"
+  },
+  "scope_lease": {
+    "lease_id": "SCOPE-LEASE-V8S6-CHAOS-001",
+    "allowed_write_paths": [
+      "devsystem/chaos_adversarial_certification_harness_v1.py",
+      "tests/test_devsystem_chaos_adversarial_certification_harness_v1.py",
+      "devsystem/task_ledgers/monster-v8-step6-chaos-adversarial-certification-v1.json",
+      ".github/workflows/monster-v8-step6-chaos-adversarial-certification-v1.yml"
+    ]
+  },
+  "proof_plan": {
+    "focused_workflow": ".github/workflows/monster-v8-step6-chaos-adversarial-certification-v1.yml",
+    "focused_self_test": "python devsystem/chaos_adversarial_certification_harness_v1.py",
+    "focused_tests": "python -m pytest -q tests/test_devsystem_chaos_adversarial_certification_harness_v1.py",
+    "frozen_dependency_blob_checks": true,
+    "exact_pr_head_required": true,
+    "devsystem_targeted_ci_required": true,
+    "merged_main_focused_proof_required": true,
+    "merged_main_devsystem_required": true,
+    "terminal_receipt_required": true
+  },
+  "completion_contract": {
+    "completed_steps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "next_legal_action": "START_MONSTER_V8_STEP7",
+    "no_step7_before_freeze": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+}
