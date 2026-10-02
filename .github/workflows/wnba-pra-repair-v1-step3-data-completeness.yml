@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
+      - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
+      - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
       - "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
       - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
       - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
@@ -48,6 +50,7 @@ jobs:
           git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
           cat >/tmp/allowed.txt <<'EOF'
           .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
+          devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json
           devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json
           devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py
           streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py
