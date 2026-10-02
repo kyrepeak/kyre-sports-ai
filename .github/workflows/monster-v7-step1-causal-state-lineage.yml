@@ -1,0 +1,56 @@
+name: MONSTER V7 Step 1 Causal State Lineage
+
+on:
+  push:
+    branches:
+      - "monster/monster-v7-step1-causal-state-lineage-v1"
+    paths:
+      - "devsystem/causal_state_lineage_graph_v1.py"
+      - "tests/test_devsystem_causal_state_lineage_graph_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step1-causal-state-lineage-v1.json"
+      - "devsystem/permanent_gate_v1.py"
+      - "tests/test_devsystem_permanent_gate_v1.py"
+      - ".github/workflows/monster-v7-step1-causal-state-lineage.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "devsystem/causal_state_lineage_graph_v1.py"
+      - "tests/test_devsystem_causal_state_lineage_graph_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step1-causal-state-lineage-v1.json"
+      - "devsystem/permanent_gate_v1.py"
+      - "tests/test_devsystem_permanent_gate_v1.py"
+      - ".github/workflows/monster-v7-step1-causal-state-lineage.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v7-step1-causal-state-lineage-${{ github.event_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  focused-proof:
+    name: causal state lineage focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run causal state lineage contract
+        run: python devsystem/causal_state_lineage_graph_v1.py
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_causal_state_lineage_graph_v1.py
+
+      - name: Run permanent DevSystem enforcement regression
+        run: python -m pytest -q tests/test_devsystem_permanent_gate_v1.py -k "causal_state_lineage"
+
+      - name: Emit Step 1 GREEN marker
+        run: echo "MONSTER_V7_STEP1_CAUSAL_STATE_LINEAGE_GREEN"
