@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 39,
-  "generation": 39,
-  "next_sequence": 30,
+  "revision": 40,
+  "generation": 40,
+  "next_sequence": 31,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -1207,7 +1207,7 @@
     {
       "intent_id": "intent-810a71f1814f3718d43de6ba",
       "sequence": 29,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 cross-team duplicate player identity containment",
       "mission_key": "wnba pra repair v1 step 2 cross team duplicate player identity containment",
       "semantic_fingerprint": "810a71f1814f3718d43de6ba15b2dc88dd057d4f16efb7f470ed17d34e744672",
@@ -1241,9 +1241,49 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:47:00Z",
-      "updated_at_utc": "2026-10-02T16:47:00Z",
+      "updated_at_utc": "2026-10-02T16:51:00Z",
       "expires_at_utc": "2026-10-02T17:47:00Z"
+    },
+    {
+      "intent_id": "intent-8ea5442a5ec4dc733559fa4b",
+      "sequence": 30,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 PR1344 exact thaw",
+      "mission_key": "wnba pra repair v1 step 2 pr1344 exact thaw",
+      "semantic_fingerprint": "8ea5442a5ec4dc733559fa4b5bb937c49b975f9a187add6a8bf267c985d91886",
+      "base_sha": "e1a892e7ed7c37a9191a3448333ab5e98b549a68",
+      "scope": {
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json"
+        ],
+        "dependency_tokens": [
+          "control:frozen-artifact-registry",
+          "pr:1344",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
+        ],
+        "resource_identity": {
+          "main:base": "e1a892e7ed7c37a9191a3448333ab5e98b549a68",
+          "pr:head": "4eeefe2c325a07db159a5ee753ac7b6ac918d8de",
+          "pr:merge": "f094ef8ebebb9b63fbdbce6bcc96f0d631f5ac3a"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1344-thaw",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-pr1344-thaw",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1344-thaw",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-pr1344-thaw"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T16:51:00Z",
+      "updated_at_utc": "2026-10-02T16:51:00Z",
+      "expires_at_utc": "2026-10-02T17:51:00Z"
     }
   ],
-  "state_hash": "9aae4d4263799714f35dd35c1a1c0b9d62680df040a58cbd6bf6108b5822b84e"
+  "state_hash": "0a2999791788917bcb54be158ae8f6fef0ffb5b17073e55f60aacb1c39e017f7"
 }
