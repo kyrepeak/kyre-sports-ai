@@ -51,5 +51,10 @@
     "frozen_registry_registration_required": true,
     "frozen_token": "API2_PROOF_ARCHITECTURE_V1_STEP1_FROZEN"
   },
-  "green_plus_frozen_claimed": false
+  "green_plus_frozen_claimed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
 }
