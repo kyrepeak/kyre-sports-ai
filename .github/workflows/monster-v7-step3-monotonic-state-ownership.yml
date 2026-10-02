@@ -1,0 +1,61 @@
+name: MONSTER V7 Step 3 Monotonic State Ownership
+
+on:
+  push:
+    branches:
+      - "monster/monster-v7-step3-monotonic-state-ownership-v1"
+    paths:
+      - "devsystem/monotonic_state_ownership_guard_v1.py"
+      - "tests/test_devsystem_monotonic_state_ownership_guard_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step3-monotonic-state-ownership-v1.json"
+      - ".github/workflows/monster-v7-step3-monotonic-state-ownership.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "devsystem/monotonic_state_ownership_guard_v1.py"
+      - "tests/test_devsystem_monotonic_state_ownership_guard_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step3-monotonic-state-ownership-v1.json"
+      - ".github/workflows/monster-v7-step3-monotonic-state-ownership.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v7-step3-ownership-${{ github.event_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  focused-proof:
+    name: monotonic state ownership focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen Step 1 lineage dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/causal_state_lineage_graph_v1.py)" = "898e66f879b364fc79d3be466d617268e7a5f876"
+
+      - name: Verify frozen Step 2 backtrace dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/automatic_root_cause_backtrace_v1.py)" = "f18b450897ff9f811709c112602703a15e129777"
+
+      - name: Run monotonic ownership contract
+        run: python devsystem/monotonic_state_ownership_guard_v1.py
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_monotonic_state_ownership_guard_v1.py
+
+      - name: Emit Step 3 GREEN marker
+        run: echo "MONSTER_V7_STEP3_MONOTONIC_STATE_OWNERSHIP_GREEN"
