@@ -5,13 +5,13 @@
   "project": "WNBA PRA Repair V1",
   "step": 3,
   "total_steps": 7,
-  "status": "ACTIVE",
+  "status": "DONE",
   "proof_mode": "MERGED_MAIN_PRODUCTION_REQUIRED",
   "source_main": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
   "execution_plan": {
     "plan_id": "PLAN-A6106A95F3EB1983B4CA9DB2",
     "plan_digest": "sha256:a6106a95f3eb1983b4ca9db292110a2d08c0827dc88080b67f687363cdbb2767",
-    "current_checkpoint": "frozen_activation"
+    "current_checkpoint": "exact_head_proof"
   },
   "root_causes": [
     "Page 3 coupled opponent identity to a qualified consumer-card match although selected-game truth already proves the opponent.",
@@ -56,7 +56,7 @@
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
     "upstream_step2_recovery_not_touched": true,
-    "next_legal_action": "STAGE_EXACT_APP_HEAD_THEN_REGISTRY_THAW_THEN_ATTACH_HEAD"
+    "next_legal_action": "EXACT_HEAD_PROOF_THEN_DEVSYSTEM_FINAL_GATE_THEN_MERGE_EXACT_CERTIFIED_HEAD_THEN_MERGED_MAIN_PRODUCTION_PROOF"
   },
   "acceptance": {
     "opponent_identity_consumer_independent": true,
@@ -87,5 +87,6 @@
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
-  }
+  },
+  "closeout_note": "Task ledger is DONE for PR action-ledger contract only. GREEN + FROZEN remains unclaimed until exact-head, DevSystem final gate, exact-head merge, merged-main production proof, terminal receipt, and lease release complete."
 }
