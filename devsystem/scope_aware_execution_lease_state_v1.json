@@ -4,36 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 169,
-  "generation": 90,
+  "revision": 170,
+  "generation": 91,
   "holders": [
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-thaw",
-      "lease_id": "SCOPE-LEASE-382E10D76C741B79A3E54CB5",
-      "generation": 90,
-      "acquired_at_utc": "2026-10-02T15:58:00Z",
-      "heartbeat_at_utc": "2026-10-02T15:58:00Z",
-      "expires_at_utc": "2026-10-02T16:58:00Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/frozen_artifact_registry_state_v1.json"
-        ],
-        "dependency_tokens": [
-          "control:frozen-artifact-registry",
-          "pr:1342",
-          "step:wnba-pra-repair-v1-step2"
-        ],
-        "shared_resources": [
-          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
-        ],
-        "resource_identity": {
-          "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
-          "pr:head": "d828fd79749bcb6f050a3010805f1ea5d639a752",
-          "pr:merge": "dc795d5fe378e7cefde7010cf3344d777b97f3d6"
-        },
-        "exclusive": false
-      }
-    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
       "lease_id": "SCOPE-LEASE-93EC7753A1FC22E4392FDEB4",
@@ -62,32 +35,26 @@
       }
     },
     {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1342",
-      "lease_id": "SCOPE-LEASE-990DF0D94815B3A078570641",
-      "generation": 88,
-      "acquired_at_utc": "2026-10-02T15:54:00Z",
-      "heartbeat_at_utc": "2026-10-02T15:54:00Z",
-      "expires_at_utc": "2026-10-02T16:54:00Z",
+      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1342-game-seam",
+      "lease_id": "SCOPE-LEASE-9683E7B54B84A818553657A6",
+      "generation": 91,
+      "acquired_at_utc": "2026-10-02T16:03:00Z",
+      "heartbeat_at_utc": "2026-10-02T16:03:00Z",
+      "expires_at_utc": "2026-10-02T17:03:00Z",
       "scope": {
         "write_paths": [
-          ".github/workflows/wnba-pra-repair-v1-step2-team-identity.yml",
           "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
           "tests/test_wnba_pra_repair_v1_step2.py"
         ],
         "dependency_tokens": [
-          "control:step2-exact-scope",
-          "dependency:wnba-pra-step5-cache",
-          "pr:1342",
-          "step:wnba-pra-repair-v1-step2"
+          "dependency:wnba-pra-step5-game-cache"
         ],
         "shared_resources": [
-          "branch:api2-wnba-repair-v1-step2-cold-game-center",
-          "pr:1342",
-          "workflow:wnba-pra-repair-v1-step2-team-identity"
+          "branch:api2-wnba-repair-v1-step2-cold-game-center#shard[files=overlay-tests]"
         ],
         "resource_identity": {
           "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
-          "pr:head": "6edf84847c53746c606dabbb7018d10d046972e1",
+          "pr:head": "d828fd79749bcb6f050a3010805f1ea5d639a752",
           "pr:number": "1342"
         },
         "exclusive": false
@@ -124,5 +91,5 @@
       }
     }
   ],
-  "state_hash": "a47d71788a5c68bb55e3151d1735f3482495b9873ea8d2a3470e3d506d703429"
+  "state_hash": "90a35ef96a13cee45cd2edcac75406797dc7a310d1869c638cb037eed8b9c60c"
 }
