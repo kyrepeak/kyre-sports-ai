@@ -617,3 +617,378 @@ def test_unified_proof_bundle_never_grants_mutation_authority():
     assert PROOF_BUNDLE_MUTATION_AUTHORITY is False
     assert bundle["mutation_authority"] is False
     assert bundle["step_2a_required"] is True
+
+
+# ---------------------------------------------------------------------------
+# MONSTER V8 Step 4 — Unified Proof Bundle
+# ---------------------------------------------------------------------------
+
+import pytest
+
+from sports_api.monster_project_state_v1 import (
+    UNIFIED_PROOF_BUNDLE_VERSION,
+    UnifiedProofBundleError,
+    build_unified_proof_bundle,
+    unified_proof_bundle_summary,
+    validate_unified_proof_bundle,
+)
+
+
+_BUNDLE_PROOF_HEAD = "1" * 40
+_BUNDLE_MERGED_MAIN = "2" * 40
+_BUNDLE_CHECKPOINT = "MONSTER_V8_STEP4"
+_BUNDLE_WORKSTREAM = "ws:monster-v8-step4-unified-proof-bundle-v1"
+
+
+def _bundle_inputs(**overrides):
+    payload = {
+        "repository": "kyrepeak/kyre-sports-ai",
+        "checkpoint_id": _BUNDLE_CHECKPOINT,
+        "workstream_id": _BUNDLE_WORKSTREAM,
+        "proof_head_sha": _BUNDLE_PROOF_HEAD,
+        "merged_main_sha": _BUNDLE_MERGED_MAIN,
+        "focused_proof": {
+            "run_id": 4101,
+            "head_sha": _BUNDLE_PROOF_HEAD,
+            "conclusion": "success",
+            "test_count": 47,
+        },
+        "devsystem_proof": {
+            "run_id": 4102,
+            "head_sha": _BUNDLE_PROOF_HEAD,
+            "conclusion": "success",
+            "final_gate": "success",
+        },
+        "terminal_receipt": {
+            "run_id": 4102,
+            "head_sha": _BUNDLE_PROOF_HEAD,
+            "receipt_hash": "sha256:" + ("a" * 64),
+            "artifact_id": 55123,
+            "artifact_zip_sha256": "b" * 64,
+        },
+        "artifacts": {
+            "sports_api/monster_project_state_v1.py": "3" * 40,
+            "tests/test_monster_project_state_v1.py": "4" * 40,
+        },
+        "dependencies": {
+            "devsystem/terminal_proof_receipt_v1.py": "5" * 40,
+        },
+        "deployment": {
+            "required": False,
+            "status": "NOT_REQUIRED",
+        },
+        "lineage": {
+            "checkpoint_id": _BUNDLE_CHECKPOINT,
+            "root_event_id": "write:monster-v8-step4",
+            "lineage_digest": "sha256:" + ("6" * 64),
+            "writer_count": 2,
+            "consumer_count": 3,
+        },
+        "regression_debt": {
+            "state": "CLEARED",
+            "permanent_test": "tests/test_monster_project_state_v1.py",
+        },
+        "freeze_receipt": {
+            "status": "FROZEN",
+            "checkpoint_id": _BUNDLE_CHECKPOINT,
+            "source_main_sha": _BUNDLE_MERGED_MAIN,
+            "registry_revision": 99,
+            "registry_state_hash": "7" * 64,
+            "freeze_commit_sha": "8" * 40,
+        },
+        "proof_reuse": {
+            "decision": "REUSE_APPROVED",
+            "source_head_sha": _BUNDLE_PROOF_HEAD,
+            "current_head_sha": _BUNDLE_MERGED_MAIN,
+            "content_fingerprint": "9" * 64,
+            "all_artifact_blobs_identical": True,
+            "all_dependency_blobs_identical": True,
+        },
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_unified_proof_bundle_builds_one_certified_packet():
+    bundle = build_unified_proof_bundle(**_bundle_inputs())
+
+    assert bundle["version"] == UNIFIED_PROOF_BUNDLE_VERSION
+    assert bundle["certification_state"] == "CERTIFIED"
+    assert bundle["complete"] is True
+    assert bundle["focused_proof"]["test_count"] == 47
+    assert bundle["devsystem_proof"]["final_gate"] == "success"
+    assert bundle["regression_debt"]["state"] == "CLEARED"
+    assert bundle["freeze_receipt"]["status"] == "FROZEN"
+    assert bundle["bundle_digest"].startswith("sha256:")
+
+
+def test_unified_proof_bundle_is_byte_stable_for_identical_inputs():
+    one = build_unified_proof_bundle(**_bundle_inputs())
+    two = build_unified_proof_bundle(**_bundle_inputs())
+
+    assert one == two
+    assert json.dumps(one, sort_keys=True) == json.dumps(two, sort_keys=True)
+
+
+def test_unified_proof_bundle_round_trip_validation_is_exact():
+    bundle = build_unified_proof_bundle(**_bundle_inputs())
+
+    assert validate_unified_proof_bundle(bundle) == bundle
+
+
+def test_unified_proof_bundle_tamper_is_rejected():
+    bundle = build_unified_proof_bundle(**_bundle_inputs())
+    tampered = copy.deepcopy(bundle)
+    tampered["focused_proof"]["test_count"] = 48
+
+    with pytest.raises(UnifiedProofBundleError, match="tampered"):
+        validate_unified_proof_bundle(tampered)
+
+
+def test_focused_proof_must_bind_exact_proof_head():
+    inputs = _bundle_inputs()
+    inputs["focused_proof"] = {
+        **inputs["focused_proof"],
+        "head_sha": "f" * 40,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="focused_proof.head_sha mismatch"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_focused_proof_must_be_successful():
+    inputs = _bundle_inputs()
+    inputs["focused_proof"] = {
+        **inputs["focused_proof"],
+        "conclusion": "failure",
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="must be successful"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_focused_proof_requires_positive_test_count():
+    inputs = _bundle_inputs()
+    inputs["focused_proof"] = {
+        **inputs["focused_proof"],
+        "test_count": 0,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="test_count must be positive"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_devsystem_final_gate_must_be_success():
+    inputs = _bundle_inputs()
+    inputs["devsystem_proof"] = {
+        **inputs["devsystem_proof"],
+        "final_gate": "failure",
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="final_gate must be success"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_terminal_receipt_run_must_match_devsystem_run():
+    inputs = _bundle_inputs()
+    inputs["terminal_receipt"] = {
+        **inputs["terminal_receipt"],
+        "run_id": 9999,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="must match devsystem proof run"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_invalid_artifact_blob_fails_closed():
+    inputs = _bundle_inputs()
+    inputs["artifacts"] = {
+        "sports_api/monster_project_state_v1.py": "not-a-blob",
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="full git SHA"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_artifact_and_dependency_paths_cannot_overlap():
+    inputs = _bundle_inputs()
+    inputs["dependencies"] = {
+        "sports_api/monster_project_state_v1.py": "5" * 40,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="must not overlap"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_static_work_can_explicitly_skip_deployment():
+    bundle = build_unified_proof_bundle(**_bundle_inputs())
+
+    assert bundle["deployment"] == {
+        "required": False,
+        "status": "NOT_REQUIRED",
+        "certified": False,
+    }
+
+
+def test_required_deployment_must_be_green_and_certified():
+    inputs = _bundle_inputs()
+    inputs["deployment"] = {
+        "required": True,
+        "status": "FAILED",
+        "certified": False,
+        "certified_sha": _BUNDLE_MERGED_MAIN,
+        "receipt_digest": "c" * 64,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="must be GREEN and certified"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_required_deployment_must_bind_merged_main():
+    inputs = _bundle_inputs()
+    inputs["deployment"] = {
+        "required": True,
+        "status": "GREEN",
+        "certified": True,
+        "certified_sha": "f" * 40,
+        "receipt_digest": "c" * 64,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="certified_sha mismatch"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_required_deployment_can_certify_exact_merged_main():
+    inputs = _bundle_inputs()
+    inputs["deployment"] = {
+        "required": True,
+        "status": "GREEN",
+        "certified": True,
+        "certified_sha": _BUNDLE_MERGED_MAIN,
+        "receipt_digest": "c" * 64,
+    }
+
+    bundle = build_unified_proof_bundle(**inputs)
+
+    assert bundle["deployment"]["status"] == "GREEN"
+    assert bundle["deployment"]["certified_sha"] == _BUNDLE_MERGED_MAIN
+
+
+def test_lineage_must_bind_same_checkpoint():
+    inputs = _bundle_inputs()
+    inputs["lineage"] = {
+        **inputs["lineage"],
+        "checkpoint_id": "OTHER",
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="lineage.checkpoint_id mismatch"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_regression_debt_must_be_cleared():
+    inputs = _bundle_inputs()
+    inputs["regression_debt"] = {
+        **inputs["regression_debt"],
+        "state": "OPEN",
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="must be CLEARED"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_freeze_receipt_must_bind_same_checkpoint():
+    inputs = _bundle_inputs()
+    inputs["freeze_receipt"] = {
+        **inputs["freeze_receipt"],
+        "checkpoint_id": "OTHER",
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="freeze_receipt.checkpoint_id mismatch"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_freeze_receipt_must_bind_exact_merged_main():
+    inputs = _bundle_inputs()
+    inputs["freeze_receipt"] = {
+        **inputs["freeze_receipt"],
+        "source_main_sha": "f" * 40,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="source_main_sha mismatch"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_head_movement_requires_approved_proof_reuse():
+    inputs = _bundle_inputs()
+    inputs["proof_reuse"] = {
+        **inputs["proof_reuse"],
+        "decision": "NOT_REQUIRED",
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="requires REUSE_APPROVED"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_proof_reuse_requires_identical_artifact_and_dependency_blobs():
+    inputs = _bundle_inputs()
+    inputs["proof_reuse"] = {
+        **inputs["proof_reuse"],
+        "all_artifact_blobs_identical": False,
+    }
+
+    with pytest.raises(UnifiedProofBundleError, match="identical artifact blobs"):
+        build_unified_proof_bundle(**inputs)
+
+
+def test_same_head_uses_not_required_proof_reuse():
+    same = "d" * 40
+    inputs = _bundle_inputs(
+        proof_head_sha=same,
+        merged_main_sha=same,
+    )
+    inputs["focused_proof"] = {
+        **inputs["focused_proof"],
+        "head_sha": same,
+    }
+    inputs["devsystem_proof"] = {
+        **inputs["devsystem_proof"],
+        "head_sha": same,
+    }
+    inputs["terminal_receipt"] = {
+        **inputs["terminal_receipt"],
+        "head_sha": same,
+    }
+    inputs["freeze_receipt"] = {
+        **inputs["freeze_receipt"],
+        "source_main_sha": same,
+    }
+    inputs["proof_reuse"] = {
+        "decision": "NOT_REQUIRED",
+    }
+
+    bundle = build_unified_proof_bundle(**inputs)
+
+    assert bundle["proof_reuse"]["decision"] == "NOT_REQUIRED"
+
+
+def test_unified_proof_bundle_summary_is_small_and_authoritative():
+    bundle = build_unified_proof_bundle(**_bundle_inputs())
+    summary = unified_proof_bundle_summary(bundle)
+
+    assert summary["certification_state"] == "CERTIFIED"
+    assert summary["focused_test_count"] == 47
+    assert summary["artifact_count"] == 2
+    assert summary["dependency_count"] == 1
+    assert summary["regression_debt_state"] == "CLEARED"
+    assert summary["freeze_status"] == "FROZEN"
+    assert summary["complete"] is True
+    assert summary["mutation_authority"] is False
+
+
+def test_unified_proof_bundle_never_grants_mutation_authority():
+    bundle = build_unified_proof_bundle(**_bundle_inputs())
+
+    assert bundle["network_calls"] is False
+    assert bundle["auto_fix"] is False
+    assert bundle["may_modify_runtime"] is False
+    assert bundle["mutation_authority"] is False
