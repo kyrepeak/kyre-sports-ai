@@ -4,17 +4,17 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "queue_ref": "refs/heads/monster-lease-wait-queue",
   "queue_state_path": "devsystem/atomic_wait_queue_state_v1.json",
-  "revision": 1,
-  "generation": 1,
+  "revision": 2,
+  "generation": 2,
   "tickets": [
     {
-      "ticket_id": "WAIT-TICKET-D51204FD27FB654201C37478",
+      "ticket_id": "WAIT-TICKET-DB41A76BECD74762595C40BD",
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
       "queue_key": "deploy:pickvault",
-      "sequence": 1,
+      "sequence": 2,
       "blocked_by_lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
-      "enqueued_at_utc": "2026-10-02T02:38:00Z",
-      "expires_at_utc": "2026-10-02T03:38:00Z",
+      "enqueued_at_utc": "2026-10-02T03:39:00Z",
+      "expires_at_utc": "2026-10-02T04:09:00Z",
       "status": "WAITING",
       "scope": {
         "write_paths": [
@@ -40,7 +40,7 @@
           "candidate:head": "232bba81c532f2b198235ed246f62fa0140c9313",
           "failure:run": "36945103822",
           "main:base": "11efd07ae262e59527a59dfd6450312dd2b7d983",
-          "queue:ticket": "WAIT-TICKET-D51204FD27FB654201C37478",
+          "queue:ticket": "WAIT-TICKET-DB41A76BECD74762595C40BD",
           "verification:shard": "wnba-pra-speed-v3-step9"
         },
         "exclusive": false
@@ -48,5 +48,5 @@
     }
   ],
   "handoff_receipts": [],
-  "state_hash": "807b5400282183f26e4ceb0a70ef32c6a0fe8b62dd8173ddb4621df3b8eb7dcb"
+  "state_hash": "91f231884f5d88edf363549b3de1069083bf2f10351b8aabca1901b66553504a"
 }
