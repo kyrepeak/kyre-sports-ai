@@ -12,8 +12,15 @@ from sports_api.monster_project_state_v1 import (
     NETWORK_CALLS,
     PROJECT_STATE_VERSION,
     PROJECTION_WEIGHT,
+    PROOF_BUNDLE_AUTO_MUTATE,
+    PROOF_BUNDLE_MAY_MODIFY_RUNTIME,
+    PROOF_BUNDLE_MUTATION_AUTHORITY,
+    PROOF_BUNDLE_NETWORK_CALLS,
+    UNIFIED_PROOF_BUNDLE_VERSION,
     build_project_state,
+    build_unified_proof_bundle,
     protection_snapshot,
+    validate_unified_proof_bundle,
 )
 
 SHA_A = "a" * 40
@@ -399,3 +406,214 @@ def test_incomplete_green_production_packet_fails_closed_unknown():
 
     assert report["state"] == "UNKNOWN"
     assert any("production certification" in reason.lower() for reason in report["reasons"])
+
+
+
+PROOF_HEAD = "7" * 40
+PROOF_ARTIFACT = "8" * 40
+PROOF_DEPENDENCY = "9" * 40
+
+
+def _proof_lane(run_id, status="SUCCESS", head_sha=PROOF_HEAD, test_count=21):
+    return {
+        "run_id": run_id,
+        "status": status,
+        "head_sha": head_sha,
+        "test_count": test_count,
+    }
+
+
+def _proof_bundle(**overrides):
+    packet = {
+        "checkpoint_id": "MONSTER_V8_STEP4",
+        "repository": "kyrepeak/kyre-sports-ai",
+        "expected_head_sha": PROOF_HEAD,
+        "observed_head_sha": PROOF_HEAD,
+        "focused_proof": _proof_lane(101),
+        "devsystem_proof": _proof_lane(102),
+        "terminal_receipt_digest": "sha256:" + ("a" * 64),
+        "artifacts": {"sports_api/monster_project_state_v1.py": PROOF_ARTIFACT},
+        "dependencies": {"devsystem/terminal_proof_receipt_v1.py": PROOF_DEPENDENCY},
+        "regression_debt_state": "CLEARED",
+    }
+    packet.update(overrides)
+    return build_unified_proof_bundle(**packet)
+
+
+def test_unified_proof_bundle_green_on_complete_exact_head_evidence():
+    bundle = _proof_bundle()
+
+    assert bundle["version"] == UNIFIED_PROOF_BUNDLE_VERSION
+    assert bundle["status"] == "GREEN"
+    assert bundle["exact_head"] is True
+    assert bundle["blockers"] == []
+    assert bundle["next_legal_action"] == "CERTIFICATION_BUNDLE_GREEN"
+
+
+def test_unified_proof_bundle_exact_head_mismatch_blocks():
+    bundle = _proof_bundle(observed_head_sha="6" * 40)
+
+    assert bundle["status"] == "BLOCKED"
+    assert "EXACT_HEAD_MISMATCH" in bundle["blockers"]
+    assert bundle["next_legal_action"] == "REFRESH_HEAD_AND_REBUILD_PROOF_BUNDLE"
+
+
+def test_unified_proof_bundle_focused_failure_blocks():
+    bundle = _proof_bundle(
+        focused_proof=_proof_lane(101, status="FAILURE"),
+    )
+
+    assert "FOCUSED_PROOF:NOT_SUCCESS" in bundle["blockers"]
+    assert bundle["next_legal_action"] == "RESOLVE_EXACT_HEAD_PROOF_FAILURE"
+
+
+def test_unified_proof_bundle_devsystem_head_mismatch_blocks():
+    bundle = _proof_bundle(
+        devsystem_proof=_proof_lane(102, head_sha="6" * 40),
+    )
+
+    assert "DEVSYSTEM_PROOF:HEAD_MISMATCH" in bundle["blockers"]
+
+
+def test_unified_proof_bundle_requires_terminal_receipt_digest():
+    bundle = _proof_bundle(terminal_receipt_digest="bad")
+
+    assert "TERMINAL_RECEIPT_DIGEST_INVALID" in bundle["blockers"]
+    assert bundle["next_legal_action"] == "RESOLVE_TERMINAL_RECEIPT"
+
+
+def test_unified_proof_bundle_requires_artifact_identity():
+    bundle = _proof_bundle(artifacts={})
+
+    assert "ARTIFACT_IDENTITY_MISSING_OR_INVALID" in bundle["blockers"]
+
+
+def test_unified_proof_bundle_requires_dependency_identity():
+    bundle = _proof_bundle(dependencies={})
+
+    assert "DEPENDENCY_IDENTITY_MISSING_OR_INVALID" in bundle["blockers"]
+
+
+def test_unified_proof_bundle_blocks_uncleared_regression_debt():
+    bundle = _proof_bundle(regression_debt_state="PENDING")
+
+    assert "REGRESSION_DEBT_NOT_CLEARED" in bundle["blockers"]
+    assert bundle["next_legal_action"] == "CLEAR_REGRESSION_DEBT"
+
+
+def test_unified_proof_bundle_can_require_freeze():
+    bundle = _proof_bundle(require_freeze=True)
+
+    assert "FREEZE_RECORD_REQUIRED" in bundle["blockers"]
+    assert bundle["next_legal_action"] == "REGISTER_OR_REPAIR_FROZEN_CHECKPOINT"
+
+
+def test_unified_proof_bundle_accepts_exact_frozen_record():
+    bundle = _proof_bundle(
+        require_freeze=True,
+        freeze_record={
+            "status": "FROZEN",
+            "source_main_sha": PROOF_HEAD,
+            "registry_revision": 33,
+            "state_hash": "b" * 64,
+        },
+    )
+
+    assert bundle["status"] == "GREEN"
+
+
+def test_unified_proof_bundle_rejects_freeze_head_drift():
+    bundle = _proof_bundle(
+        require_freeze=True,
+        freeze_record={
+            "status": "FROZEN",
+            "source_main_sha": "6" * 40,
+            "registry_revision": 33,
+            "state_hash": "b" * 64,
+        },
+    )
+
+    assert "FREEZE_HEAD_MISMATCH" in bundle["blockers"]
+
+
+def test_unified_proof_bundle_can_require_deployment():
+    bundle = _proof_bundle(require_deployment=True)
+
+    assert "DEPLOYMENT_EVIDENCE_REQUIRED" in bundle["blockers"]
+    assert bundle["next_legal_action"] == "RESTORE_DEPLOYMENT_CERTIFICATION"
+
+
+def test_unified_proof_bundle_accepts_exact_green_deployment():
+    bundle = _proof_bundle(
+        require_deployment=True,
+        deployment_evidence={
+            "status": "GREEN",
+            "head_sha": PROOF_HEAD,
+            "certified": True,
+        },
+    )
+
+    assert bundle["status"] == "GREEN"
+
+
+def test_unified_proof_bundle_rejects_wrong_deployment_head():
+    bundle = _proof_bundle(
+        require_deployment=True,
+        deployment_evidence={
+            "status": "GREEN",
+            "head_sha": "6" * 40,
+            "certified": True,
+        },
+    )
+
+    assert "DEPLOYMENT_HEAD_MISMATCH" in bundle["blockers"]
+
+
+def test_unified_proof_bundle_checks_optional_lineage_identity():
+    bundle = _proof_bundle(
+        lineage_evidence={
+            "status": "GREEN",
+            "head_sha": "6" * 40,
+            "lineage_digest": "sha256:" + ("c" * 64),
+        },
+    )
+
+    assert "LINEAGE_HEAD_MISMATCH" in bundle["blockers"]
+
+
+def test_unified_proof_bundle_is_byte_stable():
+    one = _proof_bundle()
+    two = _proof_bundle()
+
+    assert one == two
+    assert json.dumps(one, sort_keys=True) == json.dumps(two, sort_keys=True)
+
+
+def test_unified_proof_bundle_digest_detects_tampering():
+    bundle = _proof_bundle()
+    tampered = copy.deepcopy(bundle)
+    tampered["focused_proof"]["run_id"] = 999
+
+    try:
+        validate_unified_proof_bundle(tampered)
+    except ValueError as exc:
+        assert "digest mismatch" in str(exc)
+    else:
+        raise AssertionError("tampered proof bundle was accepted")
+
+
+def test_unified_proof_bundle_validate_green_contract():
+    bundle = _proof_bundle()
+
+    assert validate_unified_proof_bundle(bundle, require_green=True) == bundle
+
+
+def test_unified_proof_bundle_never_grants_mutation_authority():
+    bundle = _proof_bundle()
+
+    assert PROOF_BUNDLE_NETWORK_CALLS is False
+    assert PROOF_BUNDLE_AUTO_MUTATE is False
+    assert PROOF_BUNDLE_MAY_MODIFY_RUNTIME is False
+    assert PROOF_BUNDLE_MUTATION_AUTHORITY is False
+    assert bundle["mutation_authority"] is False
+    assert bundle["step_2a_required"] is True
