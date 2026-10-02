@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 154,
-  "generation": 77,
+  "revision": 156,
+  "generation": 78,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
-      "lease_id": "SCOPE-LEASE-769C7E5CF2A3DC0712A43055",
-      "generation": 77,
-      "acquired_at_utc": "2026-10-02T06:25:00Z",
-      "heartbeat_at_utc": "2026-10-02T06:25:00Z",
-      "expires_at_utc": "2026-10-02T07:25:00Z",
+      "lease_id": "SCOPE-LEASE-22ED2E3DED0CC0491BE0DABC",
+      "generation": 78,
+      "acquired_at_utc": "2026-10-02T06:27:00Z",
+      "heartbeat_at_utc": "2026-10-02T06:27:00Z",
+      "expires_at_utc": "2026-10-02T07:27:00Z",
       "scope": {
         "write_paths": [
           ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
@@ -44,7 +44,7 @@
         "resource_identity": {
           "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
           "task:step": "3",
-          "branch:head": "e4f54bed3e4f3ad0e873c8476a3f56a498699c6e"
+          "branch:head": "69a8bc7f73aa469529a8cd2a1aa5c106b2459dd2"
         },
         "exclusive": false
       }
@@ -80,5 +80,5 @@
       }
     }
   ],
-  "state_hash": "ff9f23dcc6587a78cda7a7458b40a9c1b92be02dcbb00d67513c32d18fdc4308"
+  "state_hash": "ebce91ddb992cb8f8384f0dbe1f811becd5e97178cafb2d09729d74fc4b622ad"
 }
