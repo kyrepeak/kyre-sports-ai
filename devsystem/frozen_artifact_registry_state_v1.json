@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 28,
-  "source_main_sha": "0ad522b330d6bb873cb684017cbf95230db80a42",
+  "revision": 29,
+  "source_main_sha": "11efd07ae262e59527a59dfd6450312dd2b7d983",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -994,8 +994,99 @@
         "devsystem/task_ledgers/monster-v7-step6-final-mile-autopilot-v1.json": "5d03034dc1c3f7b7646cc91866b5c791c6a9f923",
         "tests/test_devsystem_final_mile_autopilot_v1.py": "bde2a21eb158e08e23e8ec5bdc2336b7b03177cb"
       }
+    },
+    "MONSTER_V7_STEP7": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V7_STEP7",
+      "source_main_sha": "11efd07ae262e59527a59dfd6450312dd2b7d983",
+      "proven_merge_sha": "11efd07ae262e59527a59dfd6450312dd2b7d983",
+      "pr_head_sha": "81f206e678cf0fce331cca53568797b3e03d2b27",
+      "failed_pre_pr_focused_run_id": 36955217834,
+      "successful_pre_pr_focused_run_id": 36955297733,
+      "pr_focused_proof_run_id": 36955352830,
+      "pr_devsystem_proof_run_id": 36955352758,
+      "proof_run_id": 36955352758,
+      "focused_test_count": 23,
+      "terminal_receipt_digest": "sha256:14f370be3391004eea667c2926bcbef39a573d7d888445e223a5dafde309d51e",
+      "terminal_receipt_job_id": 110677255039,
+      "terminal_receipt_artifact_id": 11205597198,
+      "terminal_receipt_artifact_zip_sha256": "c896e12017e30bba15f5f2b0ff2b419ddc6e7fb65706506b89957636cd42597b",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "STATIC_CONTENT",
+      "content_addressed_proof_reuse": {
+        "version": "MONSTER_V6_CONTENT_ADDRESSED_PROOF_REUSE_V1",
+        "decision": "REUSE_APPROVED",
+        "reusable": true,
+        "checkpoint_id": "MONSTER_V7_STEP7",
+        "proof_run_id": 36955352758,
+        "source_main_sha": "81f206e678cf0fce331cca53568797b3e03d2b27",
+        "current_head_sha": "11efd07ae262e59527a59dfd6450312dd2b7d983",
+        "head_moved": true,
+        "content_fingerprint": "f2ac916f30c2743a39d792acdde9a80dfe818694070d43099024fa7442710cd8",
+        "reasons": [],
+        "next_legal_action": "REUSE_TERMINAL_PROOF",
+        "proof_policy_version": "MONSTER_V7_STEP7_STATIC_CONTROL_PLANE_V1",
+        "proof_scope": [
+          "DEVSYSTEM_FULL",
+          "FOCUSED_TEST",
+          "STATIC_CONTRACT"
+        ],
+        "all_artifact_blobs_identical": true,
+        "artifact_count": 4,
+        "all_dependency_blobs_identical": true,
+        "dependency_count": 5,
+        "dependencies": {
+          "devsystem/final_mile_autopilot_v1.py": "e23d4bbbfc96d2f86192f21a986baa53d3557744",
+          "devsystem/execution_heartbeat_deadman_recovery_v1.py": "a8be77d18e0ba7bcc8bbba4ef45451d18c2bf469",
+          "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+          "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+          "devsystem/terminal_proof_receipt_v1.py": "e009da0790abbed2b24664b1031abf41d2f6c1fd"
+        },
+        "production_live_state_reused": false
+      },
+      "progress_truth_contract": {
+        "checkpoint_weights_total_10000_bps": true,
+        "only_terminal_complete_checkpoints_count": true,
+        "hundred_percent_requires_all_required_complete": true,
+        "high_progress_remainder_always_named": true,
+        "monotonic_checkpoint_order_enforced": true,
+        "material_event_resets_wait_clock": true,
+        "healthy_wait_not_misclassified_stuck": true,
+        "active_authoritative_run_not_misclassified_stuck": true,
+        "dead_man_recovery_reused": true,
+        "stuck_route_checkpoint_specific": true,
+        "duplicate_escalation_suppressed": true,
+        "new_material_event_allows_new_classification": true,
+        "no_blind_polling": true
+      },
+      "failure_recovery": {
+        "failure_class": "DETERMINISTIC_TEST_FIXTURE_CHRONOLOGY",
+        "failed_run_id": 36955217834,
+        "patch_head_sha": "81f206e678cf0fce331cca53568797b3e03d2b27",
+        "successful_run_id": 36955297733,
+        "duplicate_reruns": 0
+      },
+      "completion_contract": {
+        "total_steps": 7,
+        "completed_steps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "next_legal_action": "MONSTER_V7_COMPLETE"
+      },
+      "artifacts": {
+        ".github/workflows/monster-v7-step7-progress-truth-stuck-detector.yml": "fd474b1c68d1c0c095b7b81cfa96cd2d43a8c12d",
+        "devsystem/progress_truth_stuck_state_detector_v1.py": "8d35332713a83cecdf484f1c21d32c4b7541ade7",
+        "devsystem/task_ledgers/monster-v7-step7-progress-truth-stuck-detector-v1.json": "5111cf6eb65dd22af0a8a1b6bb1aed0929acfaeb",
+        "tests/test_devsystem_progress_truth_stuck_state_detector_v1.py": "27caa62de24a32ab38aa4ecac2f92d59b3b29709"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "6172028ccc62751c7aa2067696f7c410778e068ab2121b57b028d38e7ba699ae"
+  "state_hash": "b49fe59f0d3cf8ce2966d0ab1bf2d1ef4a5a6f0a764ce0c5672cefc2d23c1444"
 }
