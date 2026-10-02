@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 2,
-  "generation": 2,
-  "next_sequence": 3,
+  "revision": 3,
+  "generation": 3,
+  "next_sequence": 4,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -55,7 +55,7 @@
     {
       "intent_id": "intent-0c771d1802a002e5a4668f5e",
       "sequence": 2,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "MONSTER V8 Step 4 Unified Proof Bundle",
       "mission_key": "monster v8 step 4 unified proof bundle",
       "semantic_fingerprint": "0c771d1802a002e5a4668f5e63ee8ad0edfdd725e215f94bdd2060609ee1dd5e",
@@ -94,9 +94,54 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T04:27:30Z",
-      "updated_at_utc": "2026-10-02T04:27:30Z",
+      "updated_at_utc": "2026-10-02T04:32:30Z",
       "expires_at_utc": "2026-10-02T05:07:30Z"
+    },
+    {
+      "intent_id": "intent-da37d1541ee930da94301829",
+      "sequence": 3,
+      "status": "ACTIVE",
+      "mission": "MONSTER V8 Step 4 Unified Proof Bundle",
+      "mission_key": "monster v8 step 4 unified proof bundle",
+      "semantic_fingerprint": "da37d1541ee930da94301829ee860ea96bda2b7761525692398782394f34750c",
+      "base_sha": "2d2eed003cdb2196d9198647442d928acef9e654",
+      "scope": {
+        "write_paths": [
+          "sports_api/monster_project_state_v1.py",
+          "tests/test_monster_project_state_v1.py"
+        ],
+        "dependency_tokens": [
+          "control-plane:unified-proof-bundle",
+          "direct_dependencies:sports_api.monster_project_state_v1",
+          "direct_dependents:tests.test_monster_project_state_v1",
+          "frozen-dependency:monster_v8_step3",
+          "project:monster-v8",
+          "transitive_dependencies:sports_api.monster_project_state_v1",
+          "transitive_dependents:tests.test_monster_project_state_v1"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v8-step4-unified-proof-bundle-v1",
+          "pr:monster-v8-step4-unified-proof-bundle-v1"
+        ],
+        "resource_identity": {
+          "main:base": "2d2eed003cdb2196d9198647442d928acef9e654",
+          "monster:v8-step": "4"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
+      "canonical_workstream_id": "ws:monster-v8-step4-unified-proof-bundle-v1",
+      "participants": [
+        {
+          "owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
+          "workstream_id": "ws:monster-v8-step4-unified-proof-bundle-v1"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T04:32:30Z",
+      "updated_at_utc": "2026-10-02T04:32:30Z",
+      "expires_at_utc": "2026-10-02T05:12:30Z"
     }
   ],
-  "state_hash": "714d2b2e6e582aac0dbaa2214e2d448546add876fc266afb726180d93eb24011"
+  "state_hash": "294d0126b1d750a0dcd634ad6d6e9b4f541a5e83b26f2faa8b0575300b650be6"
 }
