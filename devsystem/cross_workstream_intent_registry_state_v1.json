@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 8,
-  "generation": 8,
-  "next_sequence": 7,
+  "revision": 9,
+  "generation": 9,
+  "next_sequence": 8,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -278,7 +278,58 @@
       "submitted_at_utc": "2026-10-02T05:53:22Z",
       "updated_at_utc": "2026-10-02T05:53:22Z",
       "expires_at_utc": "2026-10-02T06:53:22Z"
+    },
+    {
+      "intent_id": "intent-aa74b89be77182e1939a7089",
+      "sequence": 7,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 3 Page 3 Data Completeness",
+      "mission_key": "wnba pra repair v1 step 3 page 3 data completeness",
+      "semantic_fingerprint": "aa74b89be77182e1939a7089c0bbafe01f6177a4c1654237865250d98d919f3f",
+      "base_sha": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
+          "app.py",
+          "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json",
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json",
+          "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+          "tests/test_wnba_pra_repair_v1_step3.py",
+          "wnba_pra_repair_v1_step3_data.py"
+        ],
+        "dependency_tokens": [
+          "dependency:wnba-pra-repair-v1-step2",
+          "domain:wnba",
+          "frozen:wnba-pra-speed-v3-step9",
+          "route:wnba-pra"
+        ],
+        "shared_resources": [
+          "app-entrypoint:app.py#shard[domain=wnba,route=pra]",
+          "branch:api2/wnba-pra-repair-v1-step3-data-completeness",
+          "deployment:streamlit#shard[domain=wnba,route=pra]",
+          "pr:api2/wnba-pra-repair-v1-step3-data-completeness",
+          "workflow:wnba-pra-repair-v1-step3-data-completeness"
+        ],
+        "resource_identity": {
+          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+          "task:step": "3"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step3-data-completeness",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
+          "workstream_id": "ws:wnba-pra-repair-v1-step3-data-completeness"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T05:58:00Z",
+      "updated_at_utc": "2026-10-02T05:58:00Z",
+      "expires_at_utc": "2026-10-02T06:58:00Z"
     }
   ],
-  "state_hash": "f25514fc28aaa72120fe612aadb870ff6c658b9a27c81cd767863911bbf42be3"
+  "state_hash": "a847954232f4448efe957c20f532bcbff67042277fedcf81ecb77b1796bfd038"
 }
