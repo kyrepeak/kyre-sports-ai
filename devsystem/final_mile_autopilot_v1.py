@@ -575,25 +575,31 @@ def advance(
                 continue
 
             next_action = str(validated["next_legal_action"])
-            if next_action == "WAIT_FOR_DEPLOYMENT_EVENT":
+            if next_action in {
+                "WAIT_FOR_DEPLOYMENT_EVENT",
+                "WAIT_FOR_DEPLOYMENT_IDENTITY_EVENT",
+            }:
                 return {
                     "result": {
-                        "decision": "WAIT_FOR_DEPLOYMENT_EVENT",
+                        "decision": next_action,
                         "phase": phase,
-                        "next_legal_action": "WAIT_FOR_DEPLOYMENT_EVENT",
+                        "next_legal_action": next_action,
                         "polling_required": False,
                         "mutation_authority": False,
                     },
                     "state": state,
                 }
-            if next_action in {
-                "REFRESH_DEPLOYMENT",
-                "FULL_REDEPLOY",
-                "VERIFY_RUNTIME",
-            }:
+
+            deployment_action_adapter = {
+                "REFRESH_DEPLOYMENT_ONCE": "REFRESH_DEPLOYMENT",
+                "FULL_REDEPLOY_ONCE": "FULL_REDEPLOY",
+                "VERIFY_RUNTIME_ONCE": "VERIFY_RUNTIME",
+            }
+            adapted_action = deployment_action_adapter.get(next_action)
+            if adapted_action:
                 return _action_result(
                     state,
-                    action=next_action,
+                    action=adapted_action,
                     evidence=evidence,
                     wait_action="WAIT_FOR_DEPLOYMENT_EVENT",
                 )
