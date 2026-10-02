@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 104,
-  "generation": 51,
+  "revision": 105,
+  "generation": 52,
   "holders": [
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-router-v9-propagation-r1",
@@ -70,7 +70,38 @@
         },
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v7-step6-final-mile-autopilot-v1",
+      "lease_id": "SCOPE-LEASE-V7S6-AUTOPILOT-001",
+      "generation": 52,
+      "acquired_at_utc": "2026-10-02T02:05:30Z",
+      "heartbeat_at_utc": "2026-10-02T02:05:30Z",
+      "expires_at_utc": "2026-10-02T02:45:30Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v7-step6-final-mile-autopilot.yml",
+          "devsystem/final_mile_autopilot_v1.py",
+          "devsystem/task_ledgers/monster-v7-step6-final-mile-autopilot-v1.json",
+          "tests/test_devsystem_final_mile_autopilot_v1.py"
+        ],
+        "dependency_tokens": [
+          "project:monster-v7",
+          "control-plane:final-mile-autopilot",
+          "frozen-dependency:MONSTER_V7_STEP5"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v7-step6-final-mile-autopilot-v1",
+          "pr:monster-v7-step6-final-mile-autopilot-v1",
+          "workflow:monster-v7-step6-final-mile-autopilot"
+        ],
+        "resource_identity": {
+          "main:base": "02bd1e7ed59465f4b67ed3902119207d7daa642a",
+          "monster:v7-step": "6"
+        },
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "382956e3085f314a581e089dde66ea3ac5a7a4c4283b31291d6cbc2c39ed5b15"
+  "state_hash": "1f025ecdf7ee0930f4512e491a5747a165ba64ead24ecbe961a4a9821f70c185"
 }
