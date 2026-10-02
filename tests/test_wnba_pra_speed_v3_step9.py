@@ -88,8 +88,8 @@ def test_step9_duplicate_key_guard_preserves_frozen_game_center_bytes():
     assert "def _dedupe_game_center_payload(payload: Any) -> Any:" in overlay
     assert "seen_player_ids: set[int] = set()" in overlay
     assert "duplicate_player_rows_suppressed" in overlay
-    assert "game_center.load_game_center = guarded_loader" in overlay
-    assert "game_center.load_game_center = original_loader" in overlay
+    assert "game_center.load_game_center = guarded_game_loader" in overlay
+    assert "game_center.load_game_center = original_game_loader" in overlay
     assert 'MAY_MODIFY_WNBA_MODEL = False' in overlay
     assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in overlay
     assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard import record_bootstrap_import_ms, render_app" in app
