@@ -4,9 +4,54 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 0,
-  "generation": 0,
-  "next_sequence": 1,
-  "intents": [],
-  "state_hash": "50b970d0bf95ce0a5106773555c551cb7723d755348965102387d670c113dc67"
+  "revision": 1,
+  "generation": 1,
+  "next_sequence": 2,
+  "intents": [
+    {
+      "intent_id": "intent-4cb6e00a072cde38012dccd8",
+      "sequence": 1,
+      "status": "ACTIVE",
+      "mission": "MONSTER V8 Step 4 Unified Proof Bundle",
+      "mission_key": "monster v8 step 4 unified proof bundle",
+      "semantic_fingerprint": "4cb6e00a072cde38012dccd82d587f255d4991736b627611a7827daa38d41269",
+      "base_sha": "77761608a8b0f70a1cb0e1f4c38babf954b21e8e",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v8-step4-unified-proof-bundle.yml",
+          "devsystem/task_ledgers/monster-v8-step4-unified-proof-bundle-v1.json",
+          "devsystem/unified_proof_bundle_v1.py",
+          "tests/test_devsystem_unified_proof_bundle_v1.py"
+        ],
+        "dependency_tokens": [
+          "control-plane:unified-proof-bundle",
+          "frozen-dependency:monster_v8_step3",
+          "project:monster-v8"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v8-step4-unified-proof-bundle-v1",
+          "pr:monster-v8-step4-unified-proof-bundle-v1",
+          "workflow:monster-v8-step4-unified-proof-bundle"
+        ],
+        "resource_identity": {
+          "main:base": "77761608a8b0f70a1cb0e1f4c38babf954b21e8e",
+          "monster:v8-step": "4"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
+      "canonical_workstream_id": "ws:monster-v8-step4-unified-proof-bundle-v1",
+      "participants": [
+        {
+          "owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
+          "workstream_id": "ws:monster-v8-step4-unified-proof-bundle-v1"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T04:24:30Z",
+      "updated_at_utc": "2026-10-02T04:24:30Z",
+      "expires_at_utc": "2026-10-02T05:04:30Z"
+    }
+  ],
+  "state_hash": "5b97826f8e85ace3293617b9663c678a85aa7d373fc8287f88329d8650472cb4"
 }
