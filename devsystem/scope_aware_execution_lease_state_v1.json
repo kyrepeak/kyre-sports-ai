@@ -4,36 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 135,
+  "revision": 136,
   "generation": 67,
-  "holders": [
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
-      "lease_id": "SCOPE-LEASE-8045832A96D4259220408648",
-      "generation": 67,
-      "acquired_at_utc": "2026-10-02T04:00:00Z",
-      "heartbeat_at_utc": "2026-10-02T04:56:55Z",
-      "expires_at_utc": "2026-10-02T05:26:55Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/frozen_artifact_registry_state_v1.json",
-          "devsystem/cross_chat_truth_state_v1.json"
-        ],
-        "dependency_tokens": [
-          "project:wnba-pra-speed-v3-step9-closeout"
-        ],
-        "shared_resources": [
-          "control:frozen-registry",
-          "control:cross-chat-truth"
-        ],
-        "resource_identity": {
-          "proven_merge_sha": "2d2eed003cdb2196d9198647442d928acef9e654",
-          "production_proof_run": "36965042005",
-          "devsystem_proof_run": "36965041979"
-        },
-        "exclusive": false
-      }
-    }
-  ],
-  "state_hash": "dd58ee5922982a167e70f3e50ffcdcbadb67eaeb2a1f7c4fd15ea3c57b83cf5e"
+  "holders": [],
+  "state_hash": "7f4a4b1881e89ba468b4ba78a75430f0aad96d9855a697cb5e31d13a8b1b3c1b"
 }
