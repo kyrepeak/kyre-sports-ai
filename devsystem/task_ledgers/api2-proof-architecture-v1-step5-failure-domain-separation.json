@@ -57,5 +57,17 @@
     "events": [],
     "consumed_receipts": []
   },
-  "green_plus_frozen_claimed": false
+  "green_plus_frozen_claimed": false,
+  "repair": {
+    "failure_owner": "CONTROL_PLANE",
+    "focused_run": 37050823102,
+    "focused_failure": "DIRECT_SCRIPT_IMPORT_PATH",
+    "focused_evidence": "9 tests passed before direct invocation failed with ModuleNotFoundError: No module named 'devsystem'",
+    "devsystem_run": 37050822955,
+    "devsystem_failure": "FROZEN_REGISTRY_OBSOLETE_THAW_PAIR",
+    "registry_evidence": "Two Step-4 thaw file-pairs still referenced the pre-forward-port Step-3 workflow baseline after Step 4 permanently adopted the new blob.",
+    "patch": "Add direct-script repo-root bootstrap to Step-5 router; normalize only obsolete Step-3 workflow file-pairs from Step-4 thaws; preserve all product/runtime files.",
+    "product_code_changed": false,
+    "patch_budget": "1/1"
+  }
 }
