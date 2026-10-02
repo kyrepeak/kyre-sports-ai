@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 84,
-  "source_main_sha": "2b164deee3747ef607a5bca7787de0becb848359",
+  "revision": 85,
+  "source_main_sha": "7ffa51a7b93404d1151e4d81c2f0539612f50614",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1613,8 +1613,20 @@
         "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json": "87ce5594fee40dee81063bc52478ce92e3584b2c",
         "tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py": "8445e75b9260a0f897f590b0a8fc7a4afe09cd90"
       }
+    },
+    "API2_PROOF_ARCHITECTURE_V1_STEP7": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP7",
+      "source_main_sha": "7ffa51a7b93404d1151e4d81c2f0539612f50614",
+      "artifacts": {
+        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "e7410a1225456b234bbba383592c9fdeeb5ac95a",
+        "devsystem/api2_proof_convergence_v1.py": "7b131a44b8eeeddc61350c7e581b37fb56fa71d0",
+        "devsystem/execution_plans/api2-proof-architecture-v1-step7-end-to-end-convergence.json": "4b76cb80e77341a41b6ad8bf6cb4800c853a28ff",
+        "devsystem/task_ledgers/api2-proof-architecture-v1-step7-end-to-end-convergence.json": "62a3a73efcf8f3a728f92762d6b32829dfac9db2",
+        "tests/test_devsystem_api2_proof_convergence_v1.py": "0451cc7564b5d0200548ac8b6b9804355ca56d6b"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "bf2562581b9a357e1d6f3057b6f1a11983da908d58ea47eb5011b3d84249d5c6"
+  "state_hash": "f3592ed6d41bd8ba7dc19abec1966db389e32bb072e7a6bc67a06523d4098a32"
 }
