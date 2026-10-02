@@ -111,7 +111,7 @@ def test_step3_ledger_requires_merged_main_production_before_freeze():
     assert ledger["project"] == "WNBA PRA Repair V1"
     assert ledger["step"] == 3
     assert ledger["total_steps"] == 7
-    assert ledger["status"] == "ACTIVE"
+    assert ledger["status"] == "DONE"
     assert ledger["proof_mode"] == "MERGED_MAIN_PRODUCTION_REQUIRED"
     assert ledger["v8"]["component_only_freeze_rejected"] is True
     assert ledger["v8"]["app_exact_head_thaw_required"] is True
