@@ -81,5 +81,22 @@
     "market_math_changed": false,
     "probability_math_changed": false,
     "sportsbook_influence_changed": false
+  },
+  "green_plus_frozen_claimed": false,
+  "repair": {
+    "failure_domain": "PROOF_VERIFIER",
+    "failure_evidence_run_id": 37037653213,
+    "failure_evidence_job_id": 110939816621,
+    "root_cause": "Public proof stopped at the lightweight WNBA Game Center shell and invoked full-game readiness before the one legal lazy-load handoff.",
+    "patch_scope": [
+      "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py",
+      "tests/test_wnba_pra_repair_v1_step2.py"
+    ],
+    "product_runtime_mutated": false,
+    "frozen_product_artifacts_mutated": false,
+    "checkpoint": "EXACT_HEAD_REPROOF_AFTER_VERIFIER_REPAIR",
+    "pr_number": 1352,
+    "authoritative_head_sha": "664b536dd6742691464d1142e4fbdbde27b37a61",
+    "stale_failed_run_rerun": false
   }
 }
