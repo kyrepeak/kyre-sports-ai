@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 120,
-  "generation": 58,
+  "revision": 121,
+  "generation": 59,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
@@ -38,7 +38,39 @@
         },
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v8-step2-transactional-rollback-v1",
+      "lease_id": "SCOPE-LEASE-V8S2-ROLLBACK-001",
+      "generation": 59,
+      "acquired_at_utc": "2026-10-02T03:56:00Z",
+      "heartbeat_at_utc": "2026-10-02T03:56:00Z",
+      "expires_at_utc": "2026-10-02T04:36:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v8-step2-transactional-rollback.yml",
+          "devsystem/transactional_rollback_engine_v1.py",
+          "devsystem/task_ledgers/monster-v8-step2-transactional-rollback-engine-v1.json",
+          "tests/test_devsystem_transactional_rollback_engine_v1.py"
+        ],
+        "dependency_tokens": [
+          "project:monster-v8",
+          "control-plane:transactional-rollback",
+          "frozen-dependency:MONSTER_V8_STEP1",
+          "frozen-dependency:MONSTER_V4_TERMINAL_PROOF"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v8-step2-transactional-rollback-v1",
+          "pr:monster-v8-step2-transactional-rollback-v1",
+          "workflow:monster-v8-step2-transactional-rollback"
+        ],
+        "resource_identity": {
+          "main:base": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
+          "monster:v8-step": "2"
+        },
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "0363728b76d62dd5f4444f3d4c151cb5739c12636bb592c87ee1b2b222b28d77"
+  "state_hash": "1b9fb3aa0e852966597ede97e5e390aefd2748a386959c37cf874c58a9f4ec57"
 }
