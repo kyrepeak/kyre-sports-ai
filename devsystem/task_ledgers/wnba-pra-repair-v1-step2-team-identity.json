@@ -85,18 +85,20 @@
   "green_plus_frozen_claimed": false,
   "repair": {
     "failure_domain": "PROOF_VERIFIER",
-    "failure_evidence_run_id": 37037653213,
-    "failure_evidence_job_id": 110939816621,
-    "root_cause": "Public proof stopped at the lightweight WNBA Game Center shell and invoked full-game readiness before the one legal lazy-load handoff.",
+    "failure_evidence_run_id": 37067617305,
+    "failure_evidence_job_id": 111039391478,
+    "root_cause": "The repaired public verifier diverged from the frozen one-click navigation contract: it treated the transient Game Center continuity shell as a second actionable stage, clicked the stale Open Game Center control again, and then used the legacy 24-second destination budget. The canonical WNBA production speed proof performs one click and allows a 120-second Game Center setup window.",
     "patch_scope": [
       "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py",
       "tests/test_wnba_pra_repair_v1_step2.py"
     ],
     "product_runtime_mutated": false,
     "frozen_product_artifacts_mutated": false,
-    "checkpoint": "EXACT_HEAD_REPROOF_AFTER_VERIFIER_REPAIR",
-    "pr_number": 1352,
-    "authoritative_head_sha": "664b536dd6742691464d1142e4fbdbde27b37a61",
-    "stale_failed_run_rerun": false
+    "canonical_transport": "ONE_CLICK_DESTINATION_RENDER",
+    "canonical_game_setup_timeout_seconds": 120,
+    "prior_repair_pr_number": 1352,
+    "prior_merged_main_sha": "1e58c895ed8332d392bfe02e6e129a0b0b0a178d",
+    "stale_failed_run_rerun": false,
+    "checkpoint": "EXACT_HEAD_REPROOF_AFTER_CANONICAL_VERIFIER_ALIGNMENT"
   }
 }
