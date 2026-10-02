@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-repair-v1-step3-data-completeness",
+  "title": "WNBA PRA Repair V1 Step 3 — Page 3 Data Completeness",
+  "project": "WNBA PRA Repair V1",
+  "step": 3,
+  "total_steps": 7,
+  "status": "DONE",
+  "scope": "Page-3 presentation/data handoff repair above frozen WNBA PRA Speed V3 Step 9. Preserve L5/L10 form and usage fields from the frozen role row, derive opponent identity from selected-game truth rather than the consumer Top-5, use existing PRA V3.6 pace context, and retain exact history/H2H when available. No final-card forcing in Step 3.",
+  "source_main": "3f7a0f74eaf0c7c5aca5b86b15a9d748a163a173",
+  "root_causes": [
+    "Page 3 derived opponent_team_key only from an exact qualified consumer card. When the Step-18 consumer was unavailable/stale or the selected player was not on the qualified board, opponent identity became N/A even though the selected game already proved the opponent.",
+    "The frozen Game Center role row already contains L5/L10 production and usage fields, but _record_from_role_row drops them before the selected-player snapshot reaches Page 3.",
+    "The frozen Page-3 renderer hardcodes pace and usage as N/A instead of exposing already-established WNBA PRA context/role evidence.",
+    "History/H2H lookup received a null opponent key whenever consumer qualification was absent, so same-opponent history could not match even when player game-log history was present."
+  ],
+  "patch": "Add a reversible runtime overlay above frozen Speed V3 Step 9. Preserve role-row L5/L10 and usage evidence, derive canonical opponent identity from selected game + player team, backfill recent aggregates only from the verified role row when per-game history is absent, reuse PRA V3.6 matchup_factors_v36 for pace display, and transparently label a display-only production-role proxy only when verified usage is unavailable.",
+  "protected": {
+    "step1_load_audit": true,
+    "step2_branch_preserved_but_not_claimed_green": true,
+    "wnba_pra_speed_v3_steps_1_9": true,
+    "frozen_game_center_step3": true,
+    "frozen_player_intelligence_step4": true,
+    "frozen_speed_v3_step9_router": true,
+    "projection_math": true,
+    "market_math": true,
+    "probability_math": true,
+    "qualification": true,
+    "ranking": true,
+    "sportsbook_projection_influence": true,
+    "other_sports": true
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-repair-v1-step3",
+    "scope_lease_id": "SCOPE-LEASE-WNBA-PRA-REPAIR-V1-STEP3-R1",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "skipped_step2_pr_closed_before_step3": true,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "failure_must_be_classified_before_patch": true,
+    "deployment_wait_must_stay_inside_single_authoritative_run": true,
+    "next_legal_action": "ONE_EXACT_HEAD_CONTRACT_THEN_ONE_MERGED_MAIN_PUBLIC_DEPLOYMENT_WATCH"
+  },
+  "acceptance": {
+    "opponent_identity_consumer_independent": true,
+    "recent5_pra_available": true,
+    "recent10_pra_available": true,
+    "pace_context_available": true,
+    "usage_context_available": true,
+    "h2h_uses_selected_game_opponent": true,
+    "stale_hardcoded_pace_na_removed": true,
+    "stale_hardcoded_usage_na_removed": true,
+    "universal_final_card_deferred_to_step4": true,
+    "frozen_speed_v3_steps_1_9_preserved": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_changed": false
+  },
+  "freeze_exit": {
+    "exact_head_contract_green_required": true,
+    "devsystem_final_gate_green_required": true,
+    "merged_main_public_proof_green_required": true,
+    "frozen_token": "WNBA_PRA_REPAIR_V1_STEP3_FROZEN"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
