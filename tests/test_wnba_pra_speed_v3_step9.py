@@ -100,6 +100,9 @@ def test_step9_precompute_handoff_reuses_existing_future_and_preserves_fallback(
     overlay = OVERLAY.read_text(encoding="utf-8")
     app = APP.read_text(encoding="utf-8")
     assert "PRECOMPUTE_JOIN_SECONDS = 2.25" in overlay
+    assert "PRECOMPUTE_HANDOFF_MAX_AGE_SECONDS = 5.0" in overlay
+    assert "_STEP9_PRECOMPUTED_BUNDLES.pop(_bundle_key(player_id), None)" in overlay
+    assert "age_seconds > PRECOMPUTE_HANDOFF_MAX_AGE_SECONDS" in overlay
     assert "def _capture_precompute_bundle(player_id: int)" in overlay
     assert "step7_precompute._warm_one = _capture_precompute_bundle" in overlay
     assert "def _join_precompute(player_id: int)" in overlay
