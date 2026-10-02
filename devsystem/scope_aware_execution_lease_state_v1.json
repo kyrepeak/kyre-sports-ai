@@ -4,35 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 119,
+  "revision": 120,
   "generation": 58,
   "holders": [
-    {
-      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-deploy-refresh-r1",
-      "lease_id": "SCOPE-LEASE-24B95BFD5B27192BFA8073FB",
-      "generation": 58,
-      "acquired_at_utc": "2026-10-02T03:46:11Z",
-      "heartbeat_at_utc": "2026-10-02T03:46:11Z",
-      "expires_at_utc": "2026-10-02T04:16:11Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
-          "requirements.txt"
-        ],
-        "dependency_tokens": [
-          "domain:cfb",
-          "project:cfb-top-picks-repair-step3-deploy-refresh"
-        ],
-        "shared_resources": [
-          "branch:cfb-top-picks-repair-step3-deploy-refresh-r1"
-        ],
-        "resource_identity": {
-          "main:base": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
-          "repair:class": "streamlit-full-redeploy"
-        },
-        "exclusive": false
-      }
-    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
       "lease_id": "SCOPE-LEASE-7FA89503C0512467519EA53D",
@@ -66,5 +40,5 @@
       }
     }
   ],
-  "state_hash": "9300f89ca091544704c87a9aa78546bbe1b93c566c201955bb597def3827ddd7"
+  "state_hash": "0363728b76d62dd5f4444f3d4c151cb5739c12636bb592c87ee1b2b222b28d77"
 }
