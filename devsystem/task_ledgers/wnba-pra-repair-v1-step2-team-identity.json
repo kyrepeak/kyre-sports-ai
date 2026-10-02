@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "task_id": "wnba-pra-repair-v1-step2-team-identity",
   "title": "WNBA PRA Repair V1 Step 2 — Page 2 Team-ID Repair",
   "project": "WNBA PRA Repair V1",
@@ -30,7 +30,7 @@
     "no_duplicate_async_runs": true,
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "EXACT_DEPLOYMENT_PARITY_THEN_ONE_PUBLIC_PRODUCT_PROOF"
+    "next_legal_action": "ONE_CONTENT_ADDRESSED_DEPLOYMENT_IDENTITY_PATCH_THEN_EXACT_HEAD_PROOF"
   },
   "acceptance": {
     "canonical_2026_team_registry_count": 15,
@@ -85,10 +85,10 @@
   },
   "green_plus_frozen_claimed": false,
   "repair": {
-    "failure_domain": "DEPLOYMENT",
-    "failure_evidence_run_id": 37068573392,
-    "failure_evidence_job_id": 111042419646,
-    "root_cause": "The corrected one-click verifier reached a public GAME CENTER READY state with the historical duplicate-key symptom, but the run did not prove that Streamlit was serving the merged-main checkout. API2 therefore owns this as DEPLOYMENT until exact deployed-SHA parity is established; product mutation is forbidden before that gate opens.",
+    "failure_domain": "CONTROL_PLANE_DEPLOYMENT_IDENTITY_COLLECTOR",
+    "failure_evidence_run_id": 37075923509,
+    "failure_evidence_job_id": 111066968284,
+    "root_cause": "Merged-main public proof failed twice with exact-deployment state INCOMPLETE and observed production SHA blank. The active Streamlit runtime does not expose a usable Git HEAD or supported commit environment variable, so the current deployment identity collector cannot bind runtime bytes to merged-main identity even though the Step-2 marker path is wired and invoked.",
     "patch_scope": [
       "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
       "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py",
@@ -101,7 +101,7 @@
     "prior_repair_pr_number": 1352,
     "prior_merged_main_sha": "1e58c895ed8332d392bfe02e6e129a0b0b0a178d",
     "stale_failed_run_rerun": false,
-    "checkpoint": "EXACT_DEPLOYMENT_PARITY_BEFORE_PRODUCT_REPRODUCTION",
+    "checkpoint": "EXACT_HEAD_REPROOF_AFTER_CONTENT_ADDRESSED_RUNTIME_ATTESTATION",
     "control_plane_paths": [
       "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
     ],
@@ -112,10 +112,22 @@
     "deployment_convergence_wait_ms": 75000,
     "deployment_convergence_refresh_max": 1,
     "product_patch_forbidden_until_exact_deployment_parity": true,
-    "compiled_plan_id": "PLAN-6CB605F56375D61438827D7F",
+    "compiled_plan_id": "PLAN-STEP2-RUNTIME-BUNDLE-ATTEST-V1",
     "compiled_plan_digest": "sha256:6cb605f56375d61438827d7f5650225671656f622805cf66093b9f606785e3a3",
-    "rollback_anchor_main_sha": "f5fd459b778b0ce30a2cfbf3301493d0c2165ee8",
-    "authoritative_head_binding": "PR_HEAD_AT_PROOF"
+    "rollback_anchor_main_sha": "c8f7b574c3da0981618eadab0ac6c09d41526c6c",
+    "authoritative_head_binding": "PR_HEAD_AT_PROOF",
+    "controlled_retry_exhausted": true,
+    "controlled_retry_job_id": 111066968284,
+    "content_addressed_runtime_bundle_attestation": true,
+    "runtime_attestation_paths": [
+      "app.py",
+      "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+      "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+      "wnba_pra_repair_v1_step2_team_identity.py",
+      "wnba_pra_game_center_v2_step3.py"
+    ],
+    "attestation_policy": "FAIL_CLOSED_UNLESS_RUNTIME_GIT_BLOB_BUNDLE_EQUALS_EXACT_HEAD_BUNDLE",
+    "no_additional_unchanged_deployment_retry": true
   },
   "control_plane_compatibility": {
     "failure_owner": "CONTROL_PLANE",

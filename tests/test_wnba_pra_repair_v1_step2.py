@@ -157,6 +157,9 @@ def test_step2_cert_requires_real_public_two_team_proof():
     assert "_require_exact_deployment(page, frame, route_url)" in source
     assert "DEPLOYMENT_CONVERGENCE_WAIT_MS = 75000" in source
     assert "WNBA_PRA_REPAIR_V1_STEP2_EXACT_DEPLOYMENT_PARITY_GREEN" in source
+    assert "CONTENT_ADDRESSED_RUNTIME_BUNDLE" in source
+    assert "WNBA_PRA_REPAIR_V1_STEP2_RUNTIME_BUNDLE_ATTESTATION_GREEN" in source
+    assert "def _expected_runtime_bundle()" in source
     assert "_wait_game_shell" not in source
     assert "_advance_shell_once" not in source
     assert "WNBA_PRA_REPAIR_V1_STEP2_GAME_SHELL_HANDOFF_ONCE" not in source
@@ -182,11 +185,17 @@ def test_step2_runtime_exposes_exact_deployment_identity_without_changing_model_
     source = OVERLAY.read_text(encoding="utf-8")
     assert 'DEPLOYMENT_PROOF_MARKER = "streamlit-runtime-v1"' in source
     assert "def _runtime_deployment_identity()" in source
+    assert "def _runtime_bundle_attestation()" in source
+    assert "RUNTIME_ATTESTATION_PATHS" in source
+    assert "hashlib.sha1(header + data).hexdigest()" in source
     assert '["git", "rev-parse", spec]' in source
     assert 'data-api2-exact-deployment=' in source
     assert 'data-production-sha=' in source
     assert 'data-build-id=' in source
     assert 'data-deploy-id=' in source
+    assert 'data-runtime-bundle-digest=' in source
+    assert 'data-runtime-bundle-file-count=' in source
+    assert 'data-runtime-bundle-complete=' in source
     assert "_deployment_proof_marker()" in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
     assert "MAY_MODIFY_PROJECTION_MATH = False" in source
