@@ -103,5 +103,22 @@
   },
   "transition_history": [],
   "override_events": [],
-  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+  "phase": "PATCHED_AWAITING_EXACT_HEAD_REPROOF",
+  "recovery": {
+    "first_failed_focused_run": 36967017576,
+    "first_failed_focused_job": 110712867635,
+    "first_failure_class": "DETERMINISTIC_DIRECT_SCRIPT_IMPORT_PATH",
+    "first_root_cause": "Direct execution of devsystem/adaptive_stuck_thresholds_v1.py did not place the repository root on sys.path before importing the frozen devsystem dependency.",
+    "first_patch": "Add the established direct-script repository-root bootstrap before the frozen devsystem import.",
+    "second_failed_focused_run": 36967168212,
+    "second_failed_focused_job": 110713316030,
+    "second_failure_class": "DETERMINISTIC_PR_SYNTHETIC_SHA_SCOPE_PROOF",
+    "second_root_cause": "The PR scope verifier used github.sha, which is GitHub's synthetic PR merge SHA, while checkout intentionally pinned the exact pull_request.head.sha. The synthetic SHA was not present in that exact-head checkout.",
+    "second_patch": "Bind PR scope proof to pull_request.head.sha and retain github.sha only for push/main proof.",
+    "core_contract_passed_before_second_failure": true,
+    "focused_regression_tests_passed_before_second_failure": true,
+    "safety_proof_passed_before_second_failure": true,
+    "duplicate_reruns": 0,
+    "unchanged_failed_run_reruns": 0
+  }
 }
