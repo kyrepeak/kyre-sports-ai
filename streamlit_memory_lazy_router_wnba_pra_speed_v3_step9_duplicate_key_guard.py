@@ -35,6 +35,7 @@ MAY_MODIFY_OTHER_SPORTS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 PRECOMPUTE_JOIN_SECONDS = 2.25
+PRECOMPUTE_HANDOFF_MAX_AGE_SECONDS = 5.0
 _STEP9_BUNDLE_LOCK = Lock()
 _STEP9_PRECOMPUTED_BUNDLES: dict[tuple[int, int], dict[str, Any]] = {}
 _STEP9_HANDOFF_STATE: dict[str, Any] = {}
@@ -91,13 +92,29 @@ def _bundle_key(player_id: int) -> tuple[int, int]:
 
 def _store_precomputed_outer(player_id: int, body: Mapping[str, Any]) -> None:
     with _STEP9_BUNDLE_LOCK:
-        _STEP9_PRECOMPUTED_BUNDLES[_bundle_key(player_id)] = deepcopy(dict(body))
+        _STEP9_PRECOMPUTED_BUNDLES[_bundle_key(player_id)] = {
+            "body": deepcopy(dict(body)),
+            "stored_at": step7_precompute.monotonic(),
+        }
 
 
-def _precomputed_outer(player_id: int) -> dict[str, Any] | None:
+def _take_precomputed_outer(player_id: int) -> dict[str, Any] | None:
+    """Consume one fresh handoff body; never extend the frozen server cache."""
     with _STEP9_BUNDLE_LOCK:
-        body = _STEP9_PRECOMPUTED_BUNDLES.get(_bundle_key(player_id))
-        return deepcopy(body) if isinstance(body, Mapping) else None
+        entry = _STEP9_PRECOMPUTED_BUNDLES.pop(_bundle_key(player_id), None)
+    if not isinstance(entry, Mapping):
+        return None
+    body = entry.get("body")
+    try:
+        age_seconds = max(
+            0.0,
+            step7_precompute.monotonic() - float(entry.get("stored_at") or 0.0),
+        )
+    except (TypeError, ValueError):
+        return None
+    if age_seconds > PRECOMPUTE_HANDOFF_MAX_AGE_SECONDS:
+        return None
+    return deepcopy(body) if isinstance(body, Mapping) else None
 
 
 def _capture_precompute_bundle(player_id: int) -> dict[str, Any]:
@@ -164,7 +181,7 @@ def _future_for_player(player_id: int):
 def _join_precompute(player_id: int) -> tuple[dict[str, Any] | None, float, bool]:
     """Bounded-join the one existing Step-7 future; never launch a new one."""
     pid = int(player_id)
-    outer = _precomputed_outer(pid)
+    outer = _take_precomputed_outer(pid)
     if outer is not None:
         return outer, 0.0, False
 
@@ -185,7 +202,7 @@ def _join_precompute(player_id: int) -> tuple[dict[str, Any] | None, float, bool
     except Exception:
         pass
     waited_ms = (perf_counter() - started) * 1000.0
-    return _precomputed_outer(pid), waited_ms, joined
+    return _take_precomputed_outer(pid), waited_ms, joined
 
 
 def _pair_from_precomputed_outer(
@@ -320,6 +337,7 @@ __all__ = [
     "MAY_MODIFY_OTHER_SPORTS",
     "MAY_MODIFY_WNBA_MODEL",
     "MODEL_VERSION",
+    "PRECOMPUTE_HANDOFF_MAX_AGE_SECONDS",
     "PRECOMPUTE_JOIN_SECONDS",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_capture_precompute_bundle",
