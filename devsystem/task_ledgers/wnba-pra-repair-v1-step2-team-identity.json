@@ -116,5 +116,29 @@
     "compiled_plan_digest": "sha256:6cb605f56375d61438827d7f5650225671656f622805cf66093b9f606785e3a3",
     "rollback_anchor_main_sha": "f5fd459b778b0ce30a2cfbf3301493d0c2165ee8",
     "authoritative_head_binding": "PR_HEAD_AT_PROOF"
+  },
+  "control_plane_compatibility": {
+    "failure_owner": "CONTROL_PLANE",
+    "evidence": {
+      "dependency_auto_refresh_run_id": 37069133857,
+      "dependency_auto_refresh_job_id": 111044143370,
+      "step3_contract_run_id": 37069133957,
+      "step3_contract_job_id": 111044143687
+    },
+    "root_causes": [
+      "The dynamic dependency regression test contradicted the dynamic-parent contract by pinning the historical Step-2 router blob 3180431d724b26bd7d1129cb0139c81ffdfe49ac.",
+      "The Step-3 compatibility wake correctly triggered on a registered Step-2 parent change, but its exact-scope allowlist rejected the Step-2 verifier/test/ledger support files carried by the same bounded parent update."
+    ],
+    "patch": [
+      "Resolve expected Step-2 parent blob from current HEAD:path in the dependency regression test.",
+      "Allow exactly the dependency compatibility test and Step-3 workflow in the Step-2 PR scope.",
+      "Allow exactly the Step-2 workflow/cert/test/ledger support paths in the Step-3 child compatibility scope."
+    ],
+    "compiled_plan_id": "PLAN-5D4E6D809B11D3B2FC2E9957",
+    "compiled_plan_digest": "sha256:5d4e6d809b11d3b2fc2e9957e3a8eb9a654de5748e0da98059d847edf37574e3",
+    "prepatch_head_sha": "eee110e9d0ee14914b6777f4fbbd791ae4f7b655",
+    "no_product_runtime_logic_change": true,
+    "wildcard_scope_added": false,
+    "checkpoint": "CONTROL_PLANE_COMPATIBILITY_REPROOF"
   }
 }
