@@ -1,0 +1,48 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "mission_id": "api2-proof-architecture-v1-step2-required-integration-lanes",
+  "mission": "API2 Proof Architecture V1 Step 2 Required Integration Lanes",
+  "step": "2/7",
+  "base_main_sha": "e4de274ca6d0f8399e9e9a2d26a22896a800a4cd",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "required_lane_result": "success",
+  "optional_lane_result": "success_or_skipped",
+  "checkpoints": [
+    "audit-current-pr-skips",
+    "patch-classifier-ownership",
+    "patch-premerge-critical-browser-lanes",
+    "patch-final-required-lane-enforcement",
+    "exact-head-proof",
+    "merge-exact-certified-head",
+    "merged-main-proof",
+    "freeze-registry"
+  ],
+  "write_paths": [
+    ".github/workflows/devsystem-targeted-ci.yml",
+    ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml",
+    "devsystem/change_classifier_v1.py",
+    "devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json",
+    "devsystem/task_ledgers/api2-proof-architecture-v1-step2-required-integration-lanes.json",
+    "tests/test_devsystem_change_classifier_v1.py",
+    "tests/test_devsystem_workflow_parallelism_v1.py",
+    "tests/test_devsystem_required_integration_lanes_v1.py"
+  ],
+  "protected": [
+    "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "product-runtime",
+    "model-math",
+    "projection-math",
+    "sportsbook-logic"
+  ],
+  "freeze_exit": [
+    "focused-exact-head-green",
+    "devsystem-final-gate-green",
+    "terminal-proof-receipt-green",
+    "merge-exact-certified-head",
+    "merged-main-focused-green",
+    "merged-main-devsystem-green",
+    "frozen-registry-entry"
+  ]
+}

@@ -60,3 +60,23 @@ def test_devsystem_change_is_core_high_risk():
     assert result["core"] is True
     assert result["infra"] is True
     assert result["risk_tier"] == "high"
+
+
+def test_root_streamlit_wnba_router_is_wnba_owned_not_core():
+    module = _load()
+    result = module.classify([
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
+    ])
+    assert result["wnba"] is True
+    assert result["nba"] is False
+    assert result["core"] is False
+    assert result["ui"] is True
+    assert result["risk_tier"] == "medium"
+
+
+def test_unscoped_root_streamlit_file_remains_core():
+    module = _load()
+    result = module.classify(["streamlit_memory_lazy_router_generic.py"])
+    assert result["core"] is True
+    assert result["ui"] is True
+    assert result["risk_tier"] == "high"
