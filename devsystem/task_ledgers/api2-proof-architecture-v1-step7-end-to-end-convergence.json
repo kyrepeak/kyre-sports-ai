@@ -39,5 +39,19 @@
     "merged_main_reproof": true,
     "final_registry_freeze": true
   },
-  "green_plus_frozen_claimed": false
+  "green_plus_frozen_claimed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "repair": {
+    "failure_owner": "CONTROL_PLANE",
+    "failed_job": 111001615559,
+    "failed_run": 37055830494,
+    "failure": "STEP7_TASK_LEDGER_MISSING_ACTION_LOG_ENVELOPE",
+    "evidence": "MONSTER Anti-Loop V2 replay was GREEN; Action Ledger V2 then failed closed because the new Step-7 task ledger did not include the required action_log object.",
+    "patch": "Add only the required genesis action_log envelope to the Step-7 task ledger. No runtime, model, projection, market, registry-engine, or prior-step artifact is modified.",
+    "product_code_changed": false
+  }
 }
