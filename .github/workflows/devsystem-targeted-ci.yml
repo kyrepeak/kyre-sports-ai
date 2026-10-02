@@ -177,7 +177,6 @@ jobs:
       - name: Validate API2 Proof Architecture V1 Step 5 Failure Domain Separation
         run: |
           python devsystem/api2_failure_domain_router_v1.py
-          python -m pytest -q tests/test_devsystem_api2_failure_domain_router_v1.py
           echo "API2_PROOF_ARCHITECTURE_V1_STEP5_FAILURE_DOMAIN_GREEN"
       - name: Validate MONSTER Deployment Truth Control Plane V1
         run: python devsystem/deployment_truth_control_plane_v1.py

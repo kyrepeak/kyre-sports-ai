@@ -69,5 +69,14 @@
     "patch": "Add direct-script repo-root bootstrap to Step-5 router; normalize only obsolete Step-3 workflow file-pairs from Step-4 thaws; preserve all product/runtime files.",
     "product_code_changed": false,
     "patch_budget": "1/1"
+  },
+  "repair_2": {
+    "failure_owner": "CONTROL_PLANE",
+    "devsystem_run": 37051144794,
+    "failure": "PYTEST_INVOKED_BEFORE_DEPENDENCY_INSTALL",
+    "evidence": "Step-5 self-test emitted GREEN, then python -m pytest failed with No module named pytest.",
+    "patch": "Keep the dependency-free Step-5 self-test at the early permanent-contract checkpoint and rely on the existing later permanent pytest suite, where this test file is already registered after dependency installation.",
+    "product_code_changed": false,
+    "patch_budget": "2/2"
   }
 }
