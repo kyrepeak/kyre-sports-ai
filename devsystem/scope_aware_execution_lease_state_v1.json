@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 122,
-  "generation": 60,
+  "revision": 123,
+  "generation": 61,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
-      "lease_id": "SCOPE-LEASE-0C63EFB3DC243BADDE705D1D",
-      "generation": 60,
-      "acquired_at_utc": "2026-10-02T03:58:00Z",
-      "heartbeat_at_utc": "2026-10-02T03:58:00Z",
-      "expires_at_utc": "2026-10-02T04:28:00Z",
+      "lease_id": "SCOPE-LEASE-8045832A96D4259220408648",
+      "generation": 61,
+      "acquired_at_utc": "2026-10-02T04:00:00Z",
+      "heartbeat_at_utc": "2026-10-02T04:00:00Z",
+      "expires_at_utc": "2026-10-02T04:30:00Z",
       "scope": {
         "write_paths": [
           ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
@@ -25,19 +25,19 @@
         ],
         "dependency_tokens": [
           "domain:wnba",
-          "project:wnba-pra-speed-v3-step9-performance-r13"
+          "project:wnba-pra-speed-v3-step9-performance-r14"
         ],
         "shared_resources": [
-          "branch:fix/wnba-pra-speed-v3-step9-precompute-handoff-r13",
+          "branch:fix/wnba-pra-speed-v3-step9-precompute-handoff-r14",
           "deploy:pickvault",
-          "pr:wnba-pra-speed-v3-step9-precompute-handoff-r13",
+          "pr:wnba-pra-speed-v3-step9-precompute-handoff-r14",
           "workflow:devsystem-targeted-ci",
           "workflow:wnba-pra-speed-v3-step9-final-cert"
         ],
         "resource_identity": {
-          "candidate:head": "232bba81c532f2b198235ed246f62fa0140c9313",
+          "candidate:source-head": "232bba81c532f2b198235ed246f62fa0140c9313",
           "failure:run": "36945103822",
-          "main:base": "11efd07ae262e59527a59dfd6450312dd2b7d983",
+          "main:base": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
           "queue:ticket": "WAIT-TICKET-DB41A76BECD74762595C40BD",
           "verification:shard": "wnba-pra-speed-v3-step9"
         },
@@ -66,7 +66,7 @@
         ],
         "shared_resources": [
           "branch:monster/monster-v8-step2-transactional-rollback-v1",
-          "pr:monster-v8-step2-transactional-rollback-v1",
+          "pr:monster/monster-v8-step2-transactional-rollback-v1",
           "workflow:monster-v8-step2-transactional-rollback"
         ],
         "resource_identity": {
@@ -77,5 +77,5 @@
       }
     }
   ],
-  "state_hash": "7fd6d348cc371dbfb9a55d6e00d30cffbb8b06e99ff0a0102ca19126d246f71e"
+  "state_hash": "fc7d3440128d6441c080bd5d4c06f1a50d4f8128f9e76291b8599dbb1bfec173"
 }
