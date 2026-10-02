@@ -28,6 +28,7 @@ PROJECT = "WNBA PRA Repair V1"
 STEP = "2/7"
 PUBLIC_HOST = "https://pickvault.streamlit.app"
 PROOF_SELECTOR = '[data-wnba-pra-repair-v1-step2="wnba-pra-repair-v1-step2-team-identity"]'
+GAME_SETUP_TIMEOUT_SECONDS = 120.0
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
@@ -96,43 +97,6 @@ def _int_attr(locator, name: str) -> int:
         raise BrowserQAFailure(f"Step-2 marker attribute {name} is not an integer: {raw!r}") from exc
 
 
-def _wait_game_shell(page, timeout_seconds: float = 15.0):
-    """Wait for the lightweight Game Center shell before the expensive player load."""
-    started = time.monotonic()
-    deadline = started + timeout_seconds
-    last = ""
-    while time.monotonic() < deadline:
-        frame, _ = nav._find_app_frame(
-            page,
-            timeout_seconds=min(8.0, max(2.0, deadline - time.monotonic())),
-        )
-        try:
-            body = nav._body(frame)
-            back = frame.get_by_role("button", name="← Back to WNBA Slate", exact=True)
-            if "WNBA GAME CENTER" in body.upper() and back.count() > 0:
-                print("WNBA_PRA_REPAIR_V1_STEP2_GAME_SHELL_GREEN")
-                return frame, time.monotonic() - started
-            last = body[:2000]
-        except Exception:
-            pass
-        page.wait_for_timeout(300)
-    raise BrowserQAFailure(f"Step-2 Game Center shell did not render. body={last!r}")
-
-
-def _advance_shell_once(page, frame):
-    """Perform at most one legal lazy-load handoff from shell to full Game Center."""
-    marker = frame.locator(PROOF_SELECTOR).first
-    if marker.count() > 0:
-        return frame
-    open_button = nav._game_button(frame)
-    if open_button.count() < 1:
-        raise BrowserQAFailure("Step-2 Game Center shell has no bounded lazy-load handoff.")
-    print("WNBA_PRA_REPAIR_V1_STEP2_GAME_SHELL_HANDOFF_ONCE")
-    open_button.first.click()
-    frame, _ = nav._wait_page(page, "game", timeout_seconds=nav.GAME_READY_BUDGET_SECONDS)
-    return frame
-
-
 def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -151,9 +115,13 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
 
             started = time.monotonic()
             game_button.click()
-            frame, _ = _wait_game_shell(page)
-            frame = _advance_shell_once(page, frame)
+            frame, _ = nav._wait_page(
+                page,
+                "game",
+                timeout_seconds=GAME_SETUP_TIMEOUT_SECONDS,
+            )
             game_seconds = time.monotonic() - started
+            print("WNBA_PRA_REPAIR_V1_STEP2_CANONICAL_SINGLE_CLICK_GAME_TRANSITION_GREEN")
 
             marker = frame.locator(PROOF_SELECTOR).first
             if marker.count() < 1:
