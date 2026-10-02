@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 103,
+  "revision": 104,
   "generation": 51,
   "holders": [
     {
@@ -70,41 +70,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v7-step5-atomic-wait-queue-handoff-v1",
-      "lease_id": "SCOPE-LEASE-V7S5-WAITQUEUE-001",
-      "generation": 51,
-      "acquired_at_utc": "2026-10-02T01:51:00Z",
-      "heartbeat_at_utc": "2026-10-02T01:51:00Z",
-      "expires_at_utc": "2026-10-02T02:31:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-v7-step5-atomic-wait-queue-handoff.yml",
-          "devsystem/atomic_wait_queue_lease_handoff_v1.py",
-          "devsystem/atomic_wait_queue_state_v1.json",
-          "devsystem/task_ledgers/monster-v7-step5-atomic-wait-queue-handoff-v1.json",
-          "tests/test_devsystem_atomic_wait_queue_lease_handoff_v1.py"
-        ],
-        "dependency_tokens": [
-          "project:monster-v7",
-          "control-plane:atomic-wait-queue-handoff",
-          "frozen-dependency:MONSTER_V7_STEP4"
-        ],
-        "shared_resources": [
-          "branch:monster-lease-wait-queue",
-          "branch:monster/monster-v7-step5-atomic-wait-queue-handoff-v1",
-          "pr:monster-v7-step5-atomic-wait-queue-handoff-v1",
-          "queue:monster-v7-atomic-wait-queue",
-          "workflow:monster-v7-step5-atomic-wait-queue-handoff"
-        ],
-        "resource_identity": {
-          "main:base": "d88001cbccdc11cad0d3ff17a720e4ea8a403a4b",
-          "monster:v7-step": "5"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "d29ea910eaeba30072c2c69c5702266925ea11794789aeebac57b9d61ad958c0"
+  "state_hash": "382956e3085f314a581e089dde66ea3ac5a7a4c4283b31291d6cbc2c39ed5b15"
 }
