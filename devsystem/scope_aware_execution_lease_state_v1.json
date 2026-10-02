@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 109,
+  "revision": 110,
   "generation": 54,
   "holders": [
     {
@@ -12,8 +12,8 @@
       "lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
       "generation": 54,
       "acquired_at_utc": "2026-10-02T02:32:00Z",
-      "heartbeat_at_utc": "2026-10-02T02:32:00Z",
-      "expires_at_utc": "2026-10-02T03:02:00Z",
+      "heartbeat_at_utc": "2026-10-02T02:35:30Z",
+      "expires_at_utc": "2026-10-02T03:05:30Z",
       "scope": {
         "write_paths": [
           ".github/workflows/cfb-top-picks-repair-step3-market-reasoning-v1.yml",
@@ -34,7 +34,7 @@
           "workflow:devsystem-targeted-ci"
         ],
         "resource_identity": {
-          "branch:head": "e6e97712446c8890e4bc5734d9ad62b2e43279c7",
+          "branch:head": "969d797428a246bb34334f34ad02057e730e70a2",
           "main:base": "11efd07ae262e59527a59dfd6450312dd2b7d983",
           "repair:step": "3",
           "verification:shard": "cfb-top-picks-step3"
@@ -43,5 +43,5 @@
       }
     }
   ],
-  "state_hash": "32d208686269d443d0cc2718d2e66227dfa140ec796c390c5b21a91e2e638dad"
+  "state_hash": "d0f0d5597437ec5701dfafeb58b9d9e93cc1356e34ef8fba5a5907153b131ba6"
 }
