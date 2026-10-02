@@ -73,9 +73,28 @@ def test_step2_overlay_wraps_parent_and_restores_frozen_modules():
     assert 'FROZEN_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard"' in source
     assert "identity.reconcile_slate_payload(payload)" in source
     assert "slate.load_slate = guarded_slate_loader" in source
+    assert "performance._FROZEN_SLATE_LOADER = guarded_slate_loader" in source
+    assert "game_center.load_game_center = guarded_game_loader" in source
     assert "game_center.render_game_center = guarded_game_renderer" in source
     assert "slate.load_slate = original_slate_loader" in source
+    assert "performance._FROZEN_SLATE_LOADER = original_cached_slate_loader" in source
+    assert "game_center.load_game_center = original_game_loader" in source
     assert "game_center.render_game_center = original_game_renderer" in source
+    assert "MAY_MODIFY_WNBA_MODEL = False" in source
+    assert "MAY_MODIFY_PROJECTION_MATH = False" in source
+    assert "MAY_MODIFY_MARKET_MATH = False" in source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
+
+
+
+def test_step2_prewarm_preserves_frozen_math_and_parallelizes_only_dependencies():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "ThreadPoolExecutor(max_workers=3" in source
+    assert "availability._verified_pool_for_day" in source
+    assert "availability.availability_for_game_key" in source
+    assert "role.advanced_usage_table" in source
+    assert "_prewarm_game_center_dependencies(" in source
+    assert "return original_game_loader(" in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
     assert "MAY_MODIFY_PROJECTION_MATH = False" in source
     assert "MAY_MODIFY_MARKET_MATH = False" in source
