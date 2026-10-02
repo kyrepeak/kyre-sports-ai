@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 116,
-  "generation": 56,
+  "revision": 117,
+  "generation": 57,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
-      "lease_id": "SCOPE-LEASE-38926E2954271AF620D5E35F",
-      "generation": 55,
-      "acquired_at_utc": "2026-10-02T02:36:00Z",
-      "heartbeat_at_utc": "2026-10-02T02:36:00Z",
-      "expires_at_utc": "2026-10-02T03:36:00Z",
+      "lease_id": "SCOPE-LEASE-7FA89503C0512467519EA53D",
+      "generation": 57,
+      "acquired_at_utc": "2026-10-02T03:39:00Z",
+      "heartbeat_at_utc": "2026-10-02T03:39:00Z",
+      "expires_at_utc": "2026-10-02T04:09:00Z",
       "scope": {
         "write_paths": [
           ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
@@ -90,10 +90,10 @@
           "tests/test_devsystem_pre_mutation_blast_radius_simulator_v1.py"
         ],
         "dependency_tokens": [
-          "project:monster-v8",
           "control-plane:pre-mutation-blast-radius",
+          "frozen-dependency:MONSTER_V3_BLAST_RADIUS",
           "frozen-dependency:MONSTER_V7_COMPLETE",
-          "frozen-dependency:MONSTER_V3_BLAST_RADIUS"
+          "project:monster-v8"
         ],
         "shared_resources": [
           "branch:monster/monster-v8-step1-pre-mutation-blast-radius-v1",
@@ -108,5 +108,5 @@
       }
     }
   ],
-  "state_hash": "b1cc3fd1f40a7e1b0557249a538a785a341b0ee648f71a07018aca6016d7d011"
+  "state_hash": "f4a64db7ff462041405bed277b34e0639fdb5ce8b84cff54ffb8f616f74c6ab9"
 }
