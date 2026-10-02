@@ -75,10 +75,12 @@ def test_step2_overlay_wraps_parent_and_restores_frozen_modules():
     assert "slate.load_slate = guarded_slate_loader" in source
     assert "performance._FROZEN_SLATE_LOADER = guarded_slate_loader" in source
     assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
     assert "game_center.load_game_center = guarded_game_loader" in source
     assert "game_center.render_game_center = guarded_game_renderer" in source
     assert "slate.load_slate = original_slate_loader" in source
     assert "performance._FROZEN_SLATE_LOADER = original_cached_slate_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
     assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
     assert "game_center.load_game_center = original_game_loader" in source
     assert "game_center.render_game_center = original_game_renderer" in source
@@ -161,3 +163,11 @@ def test_step2_workflow_exact_scope_and_frozen_blob_guards():
     assert "github.event_name == 'push'" in workflow
     assert "python -m devsystem.wnba_pra_repair_v1_step2_team_identity_cert" in workflow
     assert "WNBA_PRA_REPAIR_V1_STEP2_BRANCH_GREEN" in workflow
+
+
+def test_step2_patches_step5_import_time_game_loader_seam():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "original_cached_game_loader = performance._FROZEN_GAME_LOADER" in source
+    assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
+    assert "return original_game_loader(" in source
