@@ -4,18 +4,19 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 175,
-  "generation": 96,
+  "revision": 176,
+  "generation": 97,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-game-loader-seam",
       "lease_id": "SCOPE-LEASE-893E7A56925F8D78425E28EE",
       "generation": 96,
       "acquired_at_utc": "2026-10-02T16:23:00Z",
-      "heartbeat_at_utc": "2026-10-02T16:23:00Z",
-      "expires_at_utc": "2026-10-02T17:23:00Z",
+      "heartbeat_at_utc": "2026-10-02T16:24:00Z",
+      "expires_at_utc": "2026-10-02T17:24:00Z",
       "scope": {
         "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
           "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
           "tests/test_wnba_pra_repair_v1_step2.py"
         ],
@@ -91,5 +92,5 @@
       }
     }
   ],
-  "state_hash": "7bb7367daff176f07c08115447d5f2724f176a69724ebf483b49822f0bdf6055"
+  "state_hash": "c292334cf9a88e29cda27069761bd4c966894f98d82ccf462c7f9a3d4332784e"
 }
