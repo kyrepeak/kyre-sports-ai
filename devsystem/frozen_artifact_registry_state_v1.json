@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 22,
-  "source_main_sha": "37a7dde0d6a080136b0664c2da6d4ca54ee095b9",
+  "revision": 23,
+  "source_main_sha": "ba5addcd6c5100997d6de46cdf969d8c5be5d41a",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -508,8 +508,65 @@
         "devsystem/task_ledgers/monster-v6-step6-unified-data-identity-provider-health-v1.json": "ff6004ed08500625eb7f3ba6460055187c456ee6",
         "tests/test_devsystem_unified_data_identity_provider_health_graph_v1.py": "30928573fa90255681a0149d764170f48fc8c34f"
       }
+    },
+    "MONSTER_V7_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V7_STEP1",
+      "source_main_sha": "ba5addcd6c5100997d6de46cdf969d8c5be5d41a",
+      "proven_merge_sha": "ba5addcd6c5100997d6de46cdf969d8c5be5d41a",
+      "pr_head_sha": "53bebf0e7a932b2ca0c976ea8933667720461068",
+      "pr_focused_proof_run_id": 36949382961,
+      "pr_devsystem_proof_run_id": 36949382834,
+      "proof_run_id": 36949382961,
+      "terminal_receipt_digest": "sha256:efa67d516afc33c72a92a7522c8aa1197bd613d75af2f660f8003fb01f330a5f",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "STATIC_CONTENT",
+      "content_addressed_proof_reuse": {
+        "version": "MONSTER_V6_CONTENT_ADDRESSED_PROOF_REUSE_V1",
+        "decision": "REUSE_APPROVED",
+        "source_head_sha": "53bebf0e7a932b2ca0c976ea8933667720461068",
+        "target_merge_sha": "ba5addcd6c5100997d6de46cdf969d8c5be5d41a",
+        "proof_policy_version": "MONSTER_V7_STEP1_STATIC_CONTROL_PLANE_V1",
+        "content_fingerprint": "d76f6f3ea03576aee6cca2203797408963b12f9314808e78976557f17f477793",
+        "all_artifact_blobs_identical": true,
+        "artifact_count": 6,
+        "all_dependency_blobs_identical": true,
+        "dependency_count": 3,
+        "dependencies": {
+          "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+          "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+          "devsystem/terminal_proof_receipt_v1.py": "e009da0790abbed2b24664b1031abf41d2f6c1fd"
+        },
+        "production_live_state_reused": false,
+        "reasons": []
+      },
+      "lineage_contract": {
+        "exact_writer_recorded": true,
+        "exact_consumers_recorded": true,
+        "generation_history_recorded": true,
+        "causal_backtrace_available": true,
+        "stale_consumption_fails_closed": true,
+        "conflicting_generation_fails_closed": true,
+        "missing_writer_fails_closed": true,
+        "tamper_fails_closed": true
+      },
+      "completion_contract": {
+        "total_steps": 7,
+        "completed_steps": [
+          1
+        ],
+        "next_legal_action": "START_MONSTER_V7_STEP2"
+      },
+      "artifacts": {
+        ".github/workflows/monster-v7-step1-causal-state-lineage.yml": "ba59a9eaa5374585e0f3ca64da1713857ac37d6c",
+        "devsystem/causal_state_lineage_graph_v1.py": "898e66f879b364fc79d3be466d617268e7a5f876",
+        "devsystem/permanent_gate_v1.py": "5f4c13304c912f8cb2bd957fcee8105b4efffa65",
+        "devsystem/task_ledgers/monster-v7-step1-causal-state-lineage-v1.json": "ba62883ef3fae0964cd153f76e454973544a2797",
+        "tests/test_devsystem_causal_state_lineage_graph_v1.py": "a8b7c11e748d31a17f1b97c5c56a9026bebf7197",
+        "tests/test_devsystem_permanent_gate_v1.py": "bdbef82bb1a5d179dacafca73c889e31f0ec4f14"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "d6b0a77618d4dcd05453f9fdc932ff9f84b130d9a5ef046df2621a4793752d14"
+  "state_hash": "01e6445601be05ef27dd4a4d7d601db762d71a7cc81258d8727acc7eed6ebe54"
 }
