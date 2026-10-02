@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 import subprocess
 from typing import Iterable
@@ -34,7 +35,8 @@ def _domain_match(path: str, domain: str) -> bool:
     )
     if p.startswith(candidates):
         return True
-    return f"/{domain}_" in p
+    token = re.compile(rf"(^|[/_.-]){re.escape(domain)}(?=[/_.-]|$)")
+    return bool(token.search(p))
 
 
 def _is_core(path: str, matched_domains: set[str]) -> bool:
@@ -55,9 +57,10 @@ def _is_core(path: str, matched_domains: set[str]) -> bool:
             ".streamlit/",
             "devsystem/",
             "tests/test_devsystem_",
-            "streamlit_",
         )
     ):
+        return True
+    if low.startswith("streamlit_") and not matched_domains:
         return True
     if low.startswith("sports_api/") and not matched_domains:
         return True

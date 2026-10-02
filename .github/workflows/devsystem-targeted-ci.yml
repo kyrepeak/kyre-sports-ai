@@ -353,11 +353,8 @@ jobs:
   browser-qa:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
-      github.event_name != 'pull_request' &&
-      (needs.classify.outputs.ui == 'true' ||
-      needs.classify.outputs.cfb == 'true' ||
-      needs.classify.outputs.nfl == 'true' ||
-      needs.classify.outputs.core == 'true')
+      needs.classify.outputs.ui == 'true' ||
+      needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
@@ -429,8 +426,8 @@ jobs:
   cfb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
-      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
-      (needs.classify.outputs.cfb == 'true' || needs.classify.outputs.core == 'true')
+      needs.classify.outputs.cfb == 'true' ||
+      needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -514,8 +511,8 @@ jobs:
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
-      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
-      (needs.classify.outputs.mlb == 'true' || needs.classify.outputs.core == 'true')
+      needs.classify.outputs.mlb == 'true' ||
+      needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -554,8 +551,8 @@ jobs:
   wnba-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
-      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
-      (needs.classify.outputs.wnba == 'true' || needs.classify.outputs.core == 'true')
+      needs.classify.outputs.wnba == 'true' ||
+      needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -708,8 +705,8 @@ jobs:
   nfl-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
-      (github.event_name != 'pull_request' || needs.classify.outputs.model == 'true') &&
-      (needs.classify.outputs.nfl == 'true' || needs.classify.outputs.core == 'true')
+      needs.classify.outputs.nfl == 'true' ||
+      needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -864,6 +861,12 @@ jobs:
           PR_FAST_RESULT: ${{ needs.pr-fast.result }}
           FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
           EVENT_NAME: ${{ github.event_name }}
+          CFB_TOUCHED: ${{ needs.classify.outputs.cfb }}
+          MLB_TOUCHED: ${{ needs.classify.outputs.mlb }}
+          WNBA_TOUCHED: ${{ needs.classify.outputs.wnba }}
+          NFL_TOUCHED: ${{ needs.classify.outputs.nfl }}
+          CORE_TOUCHED: ${{ needs.classify.outputs.core }}
+          UI_TOUCHED: ${{ needs.classify.outputs.ui }}
         run: |
           set -euo pipefail
           allowed="success skipped"
@@ -888,6 +891,28 @@ jobs:
               failed=1
             fi
           done
+          require_success_if() {
+            lane="$1"
+            result="$2"
+            shift 2
+            required=false
+            for flag in "$@"; do
+              if [ "$flag" = "true" ]; then
+                required=true
+              fi
+            done
+            if [ "$required" = "true" ] && [ "$result" != "success" ]; then
+              echo "DEVSYSTEM_REQUIRED_LANE_BLOCKED lane=$lane result=${result:-unknown}"
+              failed=1
+            fi
+          }
+          require_success_if "browser-qa" "$BROWSER_QA_RESULT" "$UI_TOUCHED" "$CORE_TOUCHED"
+          require_success_if "cfb-critical" "$CFB_CRITICAL_RESULT" "$CFB_TOUCHED" "$CORE_TOUCHED"
+          require_success_if "mlb-critical" "$MLB_CRITICAL_RESULT" "$MLB_TOUCHED" "$CORE_TOUCHED"
+          require_success_if "wnba-critical" "$WNBA_CRITICAL_RESULT" "$WNBA_TOUCHED" "$CORE_TOUCHED"
+          require_success_if "nfl-critical" "$NFL_CRITICAL_RESULT" "$NFL_TOUCHED" "$CORE_TOUCHED"
+          require_success_if "core-smoke" "$CORE_SMOKE_RESULT" "$CORE_TOUCHED"
+          echo "DEVSYSTEM_REQUIRED_LANE_POLICY_GREEN"
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_FAST_RESULT" != "success" ]; then
             echo "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED"
             failed=1

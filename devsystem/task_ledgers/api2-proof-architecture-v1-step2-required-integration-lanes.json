@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "task_id": "api2-proof-architecture-v1-step2-required-integration-lanes",
+  "project": "API2 Proof Architecture V1",
+  "step": "2/7",
+  "title": "Required Integration Lanes",
+  "status": "DONE",
+  "source_main": "e4de274ca6d0f8399e9e9a2d26a22896a800a4cd",
+  "problem": "Relevant sport critical and browser integration lanes can be skipped on pull requests, while the required final gate accepts skipped as equivalent to tested for those in-scope lanes.",
+  "root_cause": "Sport critical jobs were PR-deferred unless model math changed, browser QA was push-only, root sport-specific Streamlit files could be classified as core, and the final gate had no touched-domain rule requiring success for in-scope integration lanes.",
+  "patch": "Classify token-bound sport ownership in root router names, keep sport-owned Streamlit files out of generic core, run touched sport critical lanes and UI/core browser QA on pull requests, and fail the final gate whenever an in-scope required lane is not success. Forward-port the older Monster Speed V3 Step 3 contract so FAST means targeted-required premerge proof rather than blanket PR deferral.",
+  "protected": {
+    "step1_checkpoint": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "sportsbook_logic_changed": false
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true
+  },
+  "acceptance": {
+    "root_wnba_streamlit_classifies_wnba_not_nba": true,
+    "sport_owned_streamlit_is_not_generic_core": true,
+    "touched_sport_critical_runs_premerge": true,
+    "ui_or_core_browser_qa_runs_premerge": true,
+    "optional_lane_may_skip": true,
+    "required_lane_must_succeed": true,
+    "legacy_speed_v3_contract_forward_ported": true,
+    "fast_pr_means_targeted_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "green_plus_frozen_claimed": false
+}
