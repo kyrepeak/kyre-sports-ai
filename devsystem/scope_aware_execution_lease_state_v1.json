@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 96,
-  "generation": 46,
+  "revision": 97,
+  "generation": 47,
   "holders": [
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-router-v9-propagation-r1",
@@ -70,7 +70,39 @@
         },
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v7-step3-monotonic-state-ownership-v1",
+      "lease_id": "SCOPE-LEASE-V7S3-OWNERSHIP-001",
+      "generation": 47,
+      "acquired_at_utc": "2026-10-02T01:30:00Z",
+      "heartbeat_at_utc": "2026-10-02T01:30:00Z",
+      "expires_at_utc": "2026-10-02T02:10:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v7-step3-monotonic-state-ownership.yml",
+          "devsystem/monotonic_state_ownership_guard_v1.py",
+          "devsystem/task_ledgers/monster-v7-step3-monotonic-state-ownership-v1.json",
+          "tests/test_devsystem_monotonic_state_ownership_guard_v1.py"
+        ],
+        "dependency_tokens": [
+          "project:monster-v7",
+          "control-plane:monotonic-state-ownership",
+          "frozen-dependency:MONSTER_V7_STEP1",
+          "frozen-dependency:MONSTER_V7_STEP2"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v7-step3-monotonic-state-ownership-v1",
+          "pr:monster-v7-step3-monotonic-state-ownership-v1",
+          "workflow:monster-v7-step3-monotonic-state-ownership"
+        ],
+        "resource_identity": {
+          "main:base": "0ed6b4e5b467173303fb3c44162d342858f54ec3",
+          "monster:v7-step": "3"
+        },
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "32b0526d326c38a6fee1d99d2fb6c61a173bf14c342cc4022c4f17257c4d9f07"
+  "state_hash": "851e4e805d8c417cb30931719a52fe44fc8731c94a2b6fbd02364e30bbcc06cb"
 }
