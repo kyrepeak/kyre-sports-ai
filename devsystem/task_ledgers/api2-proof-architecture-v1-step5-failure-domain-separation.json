@@ -1,0 +1,61 @@
+{
+  "version": 5,
+  "task_id": "api2-proof-architecture-v1-step5-failure-domain-separation",
+  "project": "API2 Proof Architecture V1",
+  "step": "5/7",
+  "title": "Failure Ownership Separation",
+  "status": "DONE",
+  "source_main": "8ccec768913e0b81f12ef3d3966de81aef6ebc69",
+  "problem": "Proof failures can be treated as product defects even when the real owner is control-plane, deployment, upstream dependency, verifier, or external infrastructure.",
+  "root_cause": "MONSTER already had a frozen low-level failure ownership engine, but API2 proof steps did not have one permanent routing layer that translated ownership into product-vs-nonproduct repair domains and enforced mutation scope before patch/retry.",
+  "patch": "Reuse the frozen MONSTER Failure Ownership Engine V1. Add an API2 failure-domain router that emits exactly one repair domain, product mutation permission, scoped legal action, and deterministic decision fingerprint. Install its self-test and permanent test in DevSystem targeted CI.",
+  "proof_cases": {
+    "frozen_registry": {
+      "observed": "permanent-contract frozen artifact mismatch without exact thaw grant",
+      "domain": "CONTROL_PLANE",
+      "product_mutation_allowed": false
+    },
+    "upstream_dependency": {
+      "observed": "WNBA Step 3 no tappable players while Page 2 GREEN + FROZEN is unclaimed",
+      "domain": "UPSTREAM_DEPENDENCY",
+      "product_mutation_allowed": false,
+      "route_owner": "wnba-pra-repair-v1-step2-team-identity"
+    }
+  },
+  "protected": {
+    "step1": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "step2": "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "step3": "API2_PROOF_ARCHITECTURE_V1_STEP3",
+    "step4": "API2_PROOF_ARCHITECTURE_V1_STEP4",
+    "frozen_monster_failure_engine": "MONSTER_V3_STEP4",
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "classify_before_patch": true,
+    "exact_head_merge_required": true
+  },
+  "acceptance": {
+    "exactly_one_failure_domain": true,
+    "product_is_only_product_mutation_domain": true,
+    "control_plane_cannot_patch_product": true,
+    "deployment_cannot_patch_product": true,
+    "upstream_dependency_cannot_patch_downstream": true,
+    "proof_verifier_cannot_patch_product": true,
+    "external_is_observe_only": true,
+    "stale_evidence_cannot_patch": true,
+    "permanent_devsystem_enforcement": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "green_plus_frozen_claimed": false
+}

@@ -1,0 +1,86 @@
+name: API2 Proof Architecture V1 Step 5 Failure Domain Separation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - "devsystem/api2_failure_domain_router_v1.py"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step5-failure-domain-separation.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step5-failure-domain-separation.json"
+      - "tests/test_devsystem_api2_failure_domain_router_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - "devsystem/api2_failure_domain_router_v1.py"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step5-failure-domain-separation.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step5-failure-domain-separation.json"
+      - "tests/test_devsystem_api2_failure_domain_router_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-proof-architecture-v1-step5-${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  failure-domain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Step 5 permanent contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_api2_failure_domain_router_v1.py
+          python devsystem/api2_failure_domain_router_v1.py
+      - name: Prove real frozen-registry failure cannot become product work
+        run: |
+          python - <<'PY'
+          from devsystem.api2_failure_domain_router_v1 import classify_api2_failure
+          result = classify_api2_failure({
+              "job": "permanent-contract",
+              "layer": "control-plane",
+              "evidence_signal": "frozen-registry-mismatch",
+              "diagnosis": "frozen artifact mismatch without exact thaw grant",
+          })
+          assert result["domain"] == "CONTROL_PLANE"
+          assert result["product_mutation_allowed"] is False
+          print("API2_STEP5_CONTROL_PLANE_NOT_PRODUCT_GREEN")
+          PY
+      - name: Prove real Step 4 upstream blocker cannot patch downstream
+        run: |
+          python - <<'PY'
+          from devsystem.upstream_blocker_short_circuit_v1 import evaluate_upstream_dependency
+          from devsystem.api2_failure_domain_router_v1 import classify_api2_failure
+          gate = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
+          result = classify_api2_failure({
+              "job": "wnba-step3-public-production",
+              "layer": "wnba",
+              "evidence_signal": "no-tappable-players",
+          }, upstream_gate=gate)
+          assert result["domain"] == "UPSTREAM_DEPENDENCY"
+          assert result["patch_allowed"] is False
+          assert result["upstream_owner"] == "wnba-pra-repair-v1-step2-team-identity"
+          print("API2_STEP5_UPSTREAM_OWNER_ROUTING_GREEN")
+          PY
+      - name: Certify exact head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP5_BRANCH_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP5_READY_TO_MERGE"
+      - name: Certify merged main freeze
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP5_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP5_FROZEN"
