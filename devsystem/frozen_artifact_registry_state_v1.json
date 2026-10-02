@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 48,
+  "revision": 49,
   "source_main_sha": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1708,7 +1708,29 @@
           "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
         }
       }
+    },
+    {
+      "thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP2-PR1343-HEAD-126A5832",
+      "status": "ACTIVE",
+      "target_head_sha": "126a5832a5e6d93502144ec7c304d52c923feb71",
+      "files": {
+        "app.py": {
+          "from_blob": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
+          "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
+        }
+      }
+    },
+    {
+      "thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP2-PR1343-MERGE-4D9BED08",
+      "status": "ACTIVE",
+      "target_head_sha": "4d9bed080bbcc625b2ea3272bff4d500d727bd72",
+      "files": {
+        "app.py": {
+          "from_blob": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
+          "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
+        }
+      }
     }
   ],
-  "state_hash": "5826d8452145787bcadb8dc7f0e2c08a5bee906a76ffa6cdb7bf6c3107a2867c"
+  "state_hash": "6baaeff58522338b83e32fe70ab735e64f56441632745fa6f8704c25048d032d"
 }
