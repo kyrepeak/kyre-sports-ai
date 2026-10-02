@@ -4,9 +4,34 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 164,
-  "generation": 85,
+  "revision": 165,
+  "generation": 86,
   "holders": [
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
+      "lease_id": "SCOPE-LEASE-36A451015A7EBF4C3D71D975",
+      "generation": 86,
+      "acquired_at_utc": "2026-10-02T15:31:40Z",
+      "heartbeat_at_utc": "2026-10-02T15:31:40Z",
+      "expires_at_utc": "2026-10-02T16:31:40Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json"
+        ],
+        "dependency_tokens": [
+          "control:frozen-artifact-registry",
+          "main:9c9c975c07083532fb7242fe39deaa57e530f3ab",
+          "step:wnba-pra-repair-v1-step3"
+        ],
+        "shared_resources": [
+          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
+        ],
+        "resource_identity": {
+          "main:target": "9c9c975c07083532fb7242fe39deaa57e530f3ab"
+        },
+        "exclusive": false
+      }
+    },
     {
       "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
       "lease_id": "SCOPE-LEASE-93EC7753A1FC22E4392FDEB4",
@@ -63,42 +88,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
-      "lease_id": "SCOPE-LEASE-FBCD17F1F9A3D476AE814EF3",
-      "generation": 85,
-      "acquired_at_utc": "2026-10-02T15:30:00Z",
-      "heartbeat_at_utc": "2026-10-02T15:30:00Z",
-      "expires_at_utc": "2026-10-02T16:30:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
-          "app.py",
-          "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json",
-          "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json",
-          "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
-          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
-          "tests/test_wnba_pra_repair_v1_step3.py",
-          "wnba_pra_repair_v1_step3_data.py"
-        ],
-        "dependency_tokens": [
-          "merge:exact-certified-head",
-          "pr:1341",
-          "step:wnba-pra-repair-v1-step3"
-        ],
-        "shared_resources": [
-          "pr:api2/wnba-pra-repair-v1-step3-data-completeness",
-          "branch:main#shard[domain=wnba,route=pra]"
-        ],
-        "resource_identity": {
-          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
-          "pr:head": "cbf469b3bc9fd6d2317c3e5a39afcd4f7173f471",
-          "pr:number": "1341"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "7c01a1fa732c6e6bbfd427330f0a4da5a501f2de303b2dbd9941154f0461964f"
+  "state_hash": "ff08339ee044c8f60ba88b5c524bcc2511b218c502d6a9916cf2939e0dad987f"
 }
