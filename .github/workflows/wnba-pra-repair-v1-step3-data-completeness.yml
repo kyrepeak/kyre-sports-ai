@@ -1,0 +1,123 @@
+name: WNBA PRA Repair V1 Step 3 Data Completeness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+      - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
+      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
+      - "tests/test_wnba_pra_repair_v1_step3.py"
+      - "wnba_pra_repair_v1_step3_data.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+      - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
+      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
+      - "tests/test_wnba_pra_repair_v1_step3.py"
+      - "wnba_pra_repair_v1_step3_data.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-pra-repair-v1-step3-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step-3 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
+          cat >/tmp/allowed.txt <<'EOF'
+          .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
+          app.py
+          devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json
+          devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py
+          streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py
+          tests/test_wnba_pra_repair_v1_step3.py
+          wnba_pra_repair_v1_step3_data.py
+          EOF
+          sort -o /tmp/allowed.txt /tmp/allowed.txt
+          diff -u /tmp/allowed.txt /tmp/changed.txt
+          echo "WNBA_PRA_REPAIR_V1_STEP3_EXACT_SCOPE_GREEN"
+
+      - name: Verify frozen WNBA PRA dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object wnba_pra_game_center_v2_step3.py)" = "a181c8949991bb139521f7d379046f34147e5306"
+          test "$(git hash-object wnba_pra_player_intelligence_v2_step4.py)" = "393c29711962bf1d42b8fc58322938c92e23000a"
+          test "$(git hash-object streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py)" = "51eef1fe2526801a467f155d1c0b32d516ef8a35"
+          echo "WNBA_PRA_REPAIR_V1_STEP3_FROZEN_DEPENDENCIES_GREEN"
+
+      - name: Compile Step-3 repair
+        run: |
+          python -m py_compile wnba_pra_repair_v1_step3_data.py
+          python -m py_compile streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py
+          python -m py_compile devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py
+          python -m py_compile app.py
+
+      - name: Install Step-3 contract dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Run Step-3 permanent contract
+        run: python -m pytest -q tests/test_wnba_pra_repair_v1_step3.py tests/test_wnba_pra_speed_v3_step9.py
+
+      - name: Certify Step-3 branch contract
+        run: |
+          echo "WNBA_PRA_REPAIR_V1_STEP3_CONSUMER_INDEPENDENT_CONTEXT_SCOPE_GREEN"
+          echo "WNBA_PRA_REPAIR_V1_STEP3_FROZEN_SPEED_V3_STEPS1_9_SCOPE_GREEN"
+          echo "WNBA_PRA_REPAIR_V1_STEP3_BRANCH_GREEN"
+
+  public-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install frozen browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          python -m playwright install chromium
+
+      - name: Run one authoritative merged-main Page-3 proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m devsystem.wnba_pra_repair_v1_step3_data_completeness_cert \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/wnba-pra-repair-v1-step3-data-completeness
+
+      - name: Upload Step-3 production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-pra-repair-v1-step3-${{ github.run_id }}
+          path: artifacts/wnba-pra-repair-v1-step3-data-completeness
+          if-no-files-found: warn
+          retention-days: 14
