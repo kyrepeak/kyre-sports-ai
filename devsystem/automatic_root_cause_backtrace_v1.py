@@ -17,8 +17,13 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Mapping
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.causal_state_lineage_graph_v1 import (
     VERSION as LINEAGE_VERSION,
