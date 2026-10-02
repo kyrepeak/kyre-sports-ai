@@ -7,6 +7,9 @@ environment configuration.
 """
 from __future__ import annotations
 
+import hashlib
+import json
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -429,6 +432,312 @@ def build_project_state(
     return report
 
 
+UNIFIED_PROOF_BUNDLE_VERSION = "MONSTER_V8_UNIFIED_PROOF_BUNDLE_V1"
+PROOF_BUNDLE_NETWORK_CALLS = False
+PROOF_BUNDLE_AUTO_MUTATE = False
+PROOF_BUNDLE_MAY_MODIFY_RUNTIME = False
+PROOF_BUNDLE_MUTATION_AUTHORITY = False
+
+_PROOF_SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
+_PROOF_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _proof_canonical(value: Any) -> str:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+
+
+def _proof_digest(value: Any) -> str:
+    return hashlib.sha256(_proof_canonical(value).encode("utf-8")).hexdigest()
+
+
+def _proof_sha40(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    return text if _PROOF_SHA40_RE.fullmatch(text) else ""
+
+
+def _proof_blob_map(value: Any) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        return {}
+    out: dict[str, str] = {}
+    for raw_path, raw_blob in value.items():
+        path = str(raw_path or "").strip().replace("\\", "/")
+        blob = _proof_sha40(raw_blob)
+        if not path or path.startswith("/") or ".." in path.split("/") or not blob:
+            return {}
+        out[path] = blob
+    return dict(sorted(out.items()))
+
+
+def _proof_lane(
+    value: Any,
+    *,
+    lane: str,
+    expected_head_sha: str,
+) -> tuple[dict[str, Any], list[str]]:
+    blockers: list[str] = []
+    if not isinstance(value, Mapping):
+        return {}, [f"{lane}:MISSING_OR_MALFORMED"]
+
+    run_id = value.get("run_id")
+    status = str(value.get("status") or "").strip().upper()
+    head_sha = _proof_sha40(value.get("head_sha"))
+    test_count = value.get("test_count")
+
+    if not isinstance(run_id, int) or run_id <= 0:
+        blockers.append(f"{lane}:RUN_ID_INVALID")
+    if status != "SUCCESS":
+        blockers.append(f"{lane}:NOT_SUCCESS")
+    if head_sha != expected_head_sha:
+        blockers.append(f"{lane}:HEAD_MISMATCH")
+    if test_count is not None and (
+        not isinstance(test_count, int) or test_count < 0
+    ):
+        blockers.append(f"{lane}:TEST_COUNT_INVALID")
+
+    return {
+        "run_id": run_id,
+        "status": status,
+        "head_sha": head_sha,
+        "test_count": test_count,
+    }, blockers
+
+
+def build_unified_proof_bundle(
+    *,
+    checkpoint_id: str,
+    repository: str,
+    expected_head_sha: str,
+    observed_head_sha: str,
+    focused_proof: Mapping[str, Any],
+    devsystem_proof: Mapping[str, Any],
+    terminal_receipt_digest: str,
+    artifacts: Mapping[str, Any],
+    dependencies: Mapping[str, Any],
+    regression_debt_state: str,
+    freeze_record: Mapping[str, Any] | None = None,
+    deployment_evidence: Mapping[str, Any] | None = None,
+    lineage_evidence: Mapping[str, Any] | None = None,
+    require_freeze: bool = False,
+    require_deployment: bool = False,
+) -> dict[str, Any]:
+    """Build one tamper-evident, exact-head certification packet.
+
+    The bundle unifies repository proof but grants no authority to mutate,
+    merge, deploy, freeze, or retry. Missing or contradictory required evidence
+    blocks certification instead of being interpreted optimistically.
+    """
+    checkpoint = str(checkpoint_id or "").strip()
+    repo = str(repository or "").strip().lower()
+    expected = _proof_sha40(expected_head_sha)
+    observed = _proof_sha40(observed_head_sha)
+    blockers: list[str] = []
+
+    if not checkpoint:
+        blockers.append("CHECKPOINT_ID_MISSING")
+    if "/" not in repo:
+        blockers.append("REPOSITORY_INVALID")
+    if not expected:
+        blockers.append("EXPECTED_HEAD_INVALID")
+    if not observed:
+        blockers.append("OBSERVED_HEAD_INVALID")
+    if expected and observed and expected != observed:
+        blockers.append("EXACT_HEAD_MISMATCH")
+
+    focused, focused_blockers = _proof_lane(
+        focused_proof,
+        lane="FOCUSED_PROOF",
+        expected_head_sha=expected,
+    )
+    devsystem, devsystem_blockers = _proof_lane(
+        devsystem_proof,
+        lane="DEVSYSTEM_PROOF",
+        expected_head_sha=expected,
+    )
+    blockers.extend(focused_blockers)
+    blockers.extend(devsystem_blockers)
+
+    receipt = str(terminal_receipt_digest or "").strip().lower()
+    if not (
+        receipt.startswith("sha256:")
+        and _PROOF_SHA256_RE.fullmatch(receipt[7:])
+    ):
+        blockers.append("TERMINAL_RECEIPT_DIGEST_INVALID")
+
+    artifact_map = _proof_blob_map(artifacts)
+    dependency_map = _proof_blob_map(dependencies)
+    if not artifact_map:
+        blockers.append("ARTIFACT_IDENTITY_MISSING_OR_INVALID")
+    if not dependency_map:
+        blockers.append("DEPENDENCY_IDENTITY_MISSING_OR_INVALID")
+
+    debt = str(regression_debt_state or "").strip().upper()
+    if debt != "CLEARED":
+        blockers.append("REGRESSION_DEBT_NOT_CLEARED")
+
+    freeze: dict[str, Any] | None = None
+    if freeze_record is not None:
+        if not isinstance(freeze_record, Mapping):
+            blockers.append("FREEZE_RECORD_MALFORMED")
+        else:
+            freeze = {
+                "status": str(freeze_record.get("status") or "").strip().upper(),
+                "source_main_sha": _proof_sha40(
+                    freeze_record.get("source_main_sha")
+                ),
+                "registry_revision": freeze_record.get("registry_revision"),
+                "state_hash": str(
+                    freeze_record.get("state_hash") or ""
+                ).strip().lower(),
+            }
+            if freeze["status"] != "FROZEN":
+                blockers.append("FREEZE_STATUS_NOT_FROZEN")
+            if freeze["source_main_sha"] != expected:
+                blockers.append("FREEZE_HEAD_MISMATCH")
+            if (
+                not isinstance(freeze["registry_revision"], int)
+                or freeze["registry_revision"] < 0
+            ):
+                blockers.append("FREEZE_REVISION_INVALID")
+            if not _PROOF_SHA256_RE.fullmatch(freeze["state_hash"]):
+                blockers.append("FREEZE_STATE_HASH_INVALID")
+    elif require_freeze:
+        blockers.append("FREEZE_RECORD_REQUIRED")
+
+    deployment: dict[str, Any] | None = None
+    if deployment_evidence is not None:
+        if not isinstance(deployment_evidence, Mapping):
+            blockers.append("DEPLOYMENT_EVIDENCE_MALFORMED")
+        else:
+            deployment = {
+                "status": str(
+                    deployment_evidence.get("status") or ""
+                ).strip().upper(),
+                "head_sha": _proof_sha40(
+                    deployment_evidence.get("head_sha")
+                ),
+                "certified": deployment_evidence.get("certified"),
+            }
+            if deployment["status"] != "GREEN":
+                blockers.append("DEPLOYMENT_NOT_GREEN")
+            if deployment["head_sha"] != expected:
+                blockers.append("DEPLOYMENT_HEAD_MISMATCH")
+            if deployment["certified"] is not True:
+                blockers.append("DEPLOYMENT_NOT_CERTIFIED")
+    elif require_deployment:
+        blockers.append("DEPLOYMENT_EVIDENCE_REQUIRED")
+
+    lineage: dict[str, Any] | None = None
+    if lineage_evidence is not None:
+        if not isinstance(lineage_evidence, Mapping):
+            blockers.append("LINEAGE_EVIDENCE_MALFORMED")
+        else:
+            lineage = {
+                "status": str(
+                    lineage_evidence.get("status") or ""
+                ).strip().upper(),
+                "head_sha": _proof_sha40(lineage_evidence.get("head_sha")),
+                "lineage_digest": str(
+                    lineage_evidence.get("lineage_digest") or ""
+                ).strip().lower(),
+            }
+            if lineage["status"] != "GREEN":
+                blockers.append("LINEAGE_NOT_GREEN")
+            if lineage["head_sha"] != expected:
+                blockers.append("LINEAGE_HEAD_MISMATCH")
+            digest = lineage["lineage_digest"]
+            if digest and not (
+                digest.startswith("sha256:")
+                and _PROOF_SHA256_RE.fullmatch(digest[7:])
+            ):
+                blockers.append("LINEAGE_DIGEST_INVALID")
+
+    blockers = sorted(set(blockers))
+    status = "GREEN" if not blockers else "BLOCKED"
+    if "EXACT_HEAD_MISMATCH" in blockers:
+        next_action = "REFRESH_HEAD_AND_REBUILD_PROOF_BUNDLE"
+    elif any(x.startswith(("FOCUSED_PROOF:", "DEVSYSTEM_PROOF:")) for x in blockers):
+        next_action = "RESOLVE_EXACT_HEAD_PROOF_FAILURE"
+    elif any(x.startswith("TERMINAL_RECEIPT") for x in blockers):
+        next_action = "RESOLVE_TERMINAL_RECEIPT"
+    elif any(x.startswith("REGRESSION_DEBT") for x in blockers):
+        next_action = "CLEAR_REGRESSION_DEBT"
+    elif any(x.startswith("FREEZE_") for x in blockers):
+        next_action = "REGISTER_OR_REPAIR_FROZEN_CHECKPOINT"
+    elif any(x.startswith("DEPLOYMENT_") for x in blockers):
+        next_action = "RESTORE_DEPLOYMENT_CERTIFICATION"
+    elif blockers:
+        next_action = "RESOLVE_PROOF_BUNDLE_BLOCKERS"
+    else:
+        next_action = "CERTIFICATION_BUNDLE_GREEN"
+
+    core = {
+        "version": UNIFIED_PROOF_BUNDLE_VERSION,
+        "checkpoint_id": checkpoint,
+        "repository": repo,
+        "status": status,
+        "expected_head_sha": expected,
+        "observed_head_sha": observed,
+        "exact_head": bool(expected and expected == observed),
+        "focused_proof": focused,
+        "devsystem_proof": devsystem,
+        "terminal_receipt_digest": receipt,
+        "artifacts": artifact_map,
+        "dependencies": dependency_map,
+        "regression_debt_state": debt,
+        "freeze_record": freeze,
+        "deployment_evidence": deployment,
+        "lineage_evidence": lineage,
+        "requirements": {
+            "freeze_required": bool(require_freeze),
+            "deployment_required": bool(require_deployment),
+        },
+        "blockers": blockers,
+        "blocker_count": len(blockers),
+        "next_legal_action": next_action,
+        "step_2a_required": True,
+        "network_calls": PROOF_BUNDLE_NETWORK_CALLS,
+        "auto_mutate": PROOF_BUNDLE_AUTO_MUTATE,
+        "may_modify_runtime": PROOF_BUNDLE_MAY_MODIFY_RUNTIME,
+        "mutation_authority": PROOF_BUNDLE_MUTATION_AUTHORITY,
+    }
+    core["bundle_digest"] = "sha256:" + _proof_digest(core)
+    return core
+
+
+def validate_unified_proof_bundle(
+    bundle: Mapping[str, Any],
+    *,
+    require_green: bool = False,
+) -> dict[str, Any]:
+    """Validate bundle tamper evidence and fail closed on unsafe authority."""
+    if not isinstance(bundle, Mapping):
+        raise ValueError("unified proof bundle must be a mapping")
+    payload = dict(bundle)
+    supplied = str(payload.pop("bundle_digest", "") or "").strip().lower()
+    if not (
+        supplied.startswith("sha256:")
+        and _PROOF_SHA256_RE.fullmatch(supplied[7:])
+    ):
+        raise ValueError("unified proof bundle digest is invalid")
+    expected = "sha256:" + _proof_digest(payload)
+    if supplied != expected:
+        raise ValueError("unified proof bundle digest mismatch")
+    if payload.get("version") != UNIFIED_PROOF_BUNDLE_VERSION:
+        raise ValueError("unified proof bundle version mismatch")
+    if payload.get("mutation_authority") is not False:
+        raise ValueError("unified proof bundle cannot grant mutation authority")
+    if payload.get("step_2a_required") is not True:
+        raise ValueError("unified proof bundle must require Step 2A")
+    if require_green and payload.get("status") != "GREEN":
+        raise ValueError("unified proof bundle is not GREEN")
+    return dict(bundle)
+
+
 __all__ = [
     "AUTHORITATIVE_MERGE_GATE",
     "AUTO_FIX",
@@ -438,6 +747,13 @@ __all__ = [
     "NETWORK_CALLS",
     "PROJECT_STATE_VERSION",
     "PROJECTION_WEIGHT",
+    "UNIFIED_PROOF_BUNDLE_VERSION",
+    "PROOF_BUNDLE_NETWORK_CALLS",
+    "PROOF_BUNDLE_AUTO_MUTATE",
+    "PROOF_BUNDLE_MAY_MODIFY_RUNTIME",
+    "PROOF_BUNDLE_MUTATION_AUTHORITY",
+    "build_unified_proof_bundle",
+    "validate_unified_proof_bundle",
     "build_project_state",
     "protection_snapshot",
 ]
