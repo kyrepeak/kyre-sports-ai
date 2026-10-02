@@ -441,3 +441,545 @@ __all__ = [
     "build_project_state",
     "protection_snapshot",
 ]
+
+
+# ---------------------------------------------------------------------------
+# MONSTER V8 Step 4 — Unified Proof Bundle
+# ---------------------------------------------------------------------------
+
+import hashlib as _bundle_hashlib
+import json as _bundle_json
+import re as _bundle_re
+
+UNIFIED_PROOF_BUNDLE_VERSION = "MONSTER_V8_UNIFIED_PROOF_BUNDLE_V1"
+
+_BUNDLE_SHA40 = _bundle_re.compile(r"^[0-9a-f]{40}$")
+_BUNDLE_HASH64 = _bundle_re.compile(r"^[0-9a-f]{64}$")
+
+
+class UnifiedProofBundleError(ValueError):
+    """Raised when unified certification evidence is incomplete or inconsistent."""
+
+
+def _bundle_canonical(value: Any) -> str:
+    return _bundle_json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+
+
+def _bundle_sha256(value: Any) -> str:
+    return _bundle_hashlib.sha256(
+        _bundle_canonical(value).encode("utf-8")
+    ).hexdigest()
+
+
+def _bundle_text(value: Any, field: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        raise UnifiedProofBundleError(f"{field} is required")
+    return text
+
+
+def _bundle_sha(value: Any, field: str) -> str:
+    text = str(value or "").strip().lower()
+    if not _BUNDLE_SHA40.fullmatch(text):
+        raise UnifiedProofBundleError(f"{field} must be a full git SHA")
+    return text
+
+
+def _bundle_hash64(value: Any, field: str, *, prefixed: bool) -> str:
+    text = str(value or "").strip().lower()
+    if text.startswith("sha256:"):
+        text = text[7:]
+    if not _BUNDLE_HASH64.fullmatch(text):
+        raise UnifiedProofBundleError(f"{field} must be sha256")
+    return f"sha256:{text}" if prefixed else text
+
+
+def _bundle_path(value: Any) -> str:
+    text = str(value or "").strip().replace("\\", "/")
+    while text.startswith("./"):
+        text = text[2:]
+    if not text or text.startswith("/") or ".." in text.split("/"):
+        raise UnifiedProofBundleError("artifact/dependency path must be repository-relative")
+    return text
+
+
+def _bundle_blob_map(value: Any, field: str, *, require_nonempty: bool) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError(f"{field} must be an object")
+    normalized: dict[str, str] = {}
+    for raw_path, raw_blob in value.items():
+        path = _bundle_path(raw_path)
+        if path in normalized:
+            raise UnifiedProofBundleError(f"duplicate {field} path: {path}")
+        normalized[path] = _bundle_sha(raw_blob, f"{field}[{path}]")
+    if require_nonempty and not normalized:
+        raise UnifiedProofBundleError(f"{field} cannot be empty")
+    return dict(sorted(normalized.items()))
+
+
+def _bundle_run(
+    value: Any,
+    *,
+    field: str,
+    proof_head_sha: str,
+    require_test_count: bool,
+    require_final_gate: bool,
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError(f"{field} must be an object")
+    try:
+        run_id = int(value.get("run_id"))
+    except (TypeError, ValueError) as exc:
+        raise UnifiedProofBundleError(f"{field}.run_id must be positive") from exc
+    if run_id <= 0:
+        raise UnifiedProofBundleError(f"{field}.run_id must be positive")
+    head_sha = _bundle_sha(value.get("head_sha"), f"{field}.head_sha")
+    if head_sha != proof_head_sha:
+        raise UnifiedProofBundleError(f"{field}.head_sha mismatch")
+    conclusion = _bundle_text(value.get("conclusion"), f"{field}.conclusion").lower()
+    if conclusion != "success":
+        raise UnifiedProofBundleError(f"{field} must be successful")
+    result: dict[str, Any] = {
+        "run_id": run_id,
+        "head_sha": head_sha,
+        "conclusion": conclusion,
+    }
+    if require_test_count:
+        try:
+            test_count = int(value.get("test_count"))
+        except (TypeError, ValueError) as exc:
+            raise UnifiedProofBundleError(
+                f"{field}.test_count must be positive"
+            ) from exc
+        if test_count <= 0:
+            raise UnifiedProofBundleError(f"{field}.test_count must be positive")
+        result["test_count"] = test_count
+    if require_final_gate:
+        final_gate = _bundle_text(
+            value.get("final_gate"),
+            f"{field}.final_gate",
+        ).lower()
+        if final_gate != "success":
+            raise UnifiedProofBundleError(f"{field}.final_gate must be success")
+        result["final_gate"] = final_gate
+    return result
+
+
+def _bundle_terminal_receipt(
+    value: Any,
+    *,
+    proof_head_sha: str,
+    devsystem_run_id: int,
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("terminal_receipt must be an object")
+    try:
+        run_id = int(value.get("run_id"))
+        artifact_id = int(value.get("artifact_id"))
+    except (TypeError, ValueError) as exc:
+        raise UnifiedProofBundleError(
+            "terminal_receipt run_id/artifact_id must be positive"
+        ) from exc
+    if run_id <= 0 or artifact_id <= 0:
+        raise UnifiedProofBundleError(
+            "terminal_receipt run_id/artifact_id must be positive"
+        )
+    if run_id != devsystem_run_id:
+        raise UnifiedProofBundleError(
+            "terminal_receipt.run_id must match devsystem proof run"
+        )
+    head_sha = _bundle_sha(value.get("head_sha"), "terminal_receipt.head_sha")
+    if head_sha != proof_head_sha:
+        raise UnifiedProofBundleError("terminal_receipt.head_sha mismatch")
+    return {
+        "run_id": run_id,
+        "head_sha": head_sha,
+        "receipt_hash": _bundle_hash64(
+            value.get("receipt_hash"),
+            "terminal_receipt.receipt_hash",
+            prefixed=True,
+        ),
+        "artifact_id": artifact_id,
+        "artifact_zip_sha256": _bundle_hash64(
+            value.get("artifact_zip_sha256"),
+            "terminal_receipt.artifact_zip_sha256",
+            prefixed=False,
+        ),
+    }
+
+
+def _bundle_deployment(value: Any, *, merged_main_sha: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("deployment must be an object")
+    required = bool(value.get("required"))
+    status = _bundle_text(value.get("status"), "deployment.status").upper()
+    if not required:
+        if status != "NOT_REQUIRED":
+            raise UnifiedProofBundleError(
+                "non-required deployment must use NOT_REQUIRED status"
+            )
+        return {
+            "required": False,
+            "status": "NOT_REQUIRED",
+            "certified": False,
+        }
+
+    if status != "GREEN" or value.get("certified") is not True:
+        raise UnifiedProofBundleError(
+            "required deployment must be GREEN and certified"
+        )
+    certified_sha = _bundle_sha(
+        value.get("certified_sha"),
+        "deployment.certified_sha",
+    )
+    if certified_sha != merged_main_sha:
+        raise UnifiedProofBundleError("deployment.certified_sha mismatch")
+    return {
+        "required": True,
+        "status": "GREEN",
+        "certified": True,
+        "certified_sha": certified_sha,
+        "receipt_digest": _bundle_hash64(
+            value.get("receipt_digest"),
+            "deployment.receipt_digest",
+            prefixed=True,
+        ),
+    }
+
+
+def _bundle_lineage(value: Any, *, checkpoint_id: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("lineage must be an object")
+    observed_checkpoint = _bundle_text(
+        value.get("checkpoint_id"),
+        "lineage.checkpoint_id",
+    )
+    if observed_checkpoint != checkpoint_id:
+        raise UnifiedProofBundleError("lineage.checkpoint_id mismatch")
+    try:
+        writer_count = int(value.get("writer_count"))
+        consumer_count = int(value.get("consumer_count"))
+    except (TypeError, ValueError) as exc:
+        raise UnifiedProofBundleError(
+            "lineage writer_count/consumer_count must be integers"
+        ) from exc
+    if writer_count <= 0 or consumer_count < 0:
+        raise UnifiedProofBundleError(
+            "lineage requires at least one writer and non-negative consumers"
+        )
+    return {
+        "checkpoint_id": checkpoint_id,
+        "root_event_id": _bundle_text(
+            value.get("root_event_id"),
+            "lineage.root_event_id",
+        ),
+        "lineage_digest": _bundle_hash64(
+            value.get("lineage_digest"),
+            "lineage.lineage_digest",
+            prefixed=True,
+        ),
+        "writer_count": writer_count,
+        "consumer_count": consumer_count,
+    }
+
+
+def _bundle_regression_debt(value: Any) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("regression_debt must be an object")
+    state = _bundle_text(
+        value.get("state"),
+        "regression_debt.state",
+    ).upper()
+    if state != "CLEARED":
+        raise UnifiedProofBundleError("regression debt must be CLEARED")
+    return {
+        "state": "CLEARED",
+        "permanent_test": _bundle_path(value.get("permanent_test")),
+    }
+
+
+def _bundle_freeze_receipt(
+    value: Any,
+    *,
+    checkpoint_id: str,
+    merged_main_sha: str,
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("freeze_receipt must be an object")
+    status = _bundle_text(value.get("status"), "freeze_receipt.status").upper()
+    if status != "FROZEN":
+        raise UnifiedProofBundleError("freeze_receipt must be FROZEN")
+    observed_checkpoint = _bundle_text(
+        value.get("checkpoint_id"),
+        "freeze_receipt.checkpoint_id",
+    )
+    if observed_checkpoint != checkpoint_id:
+        raise UnifiedProofBundleError("freeze_receipt.checkpoint_id mismatch")
+    source_main_sha = _bundle_sha(
+        value.get("source_main_sha"),
+        "freeze_receipt.source_main_sha",
+    )
+    if source_main_sha != merged_main_sha:
+        raise UnifiedProofBundleError("freeze_receipt.source_main_sha mismatch")
+    try:
+        revision = int(value.get("registry_revision"))
+    except (TypeError, ValueError) as exc:
+        raise UnifiedProofBundleError(
+            "freeze_receipt.registry_revision must be positive"
+        ) from exc
+    if revision <= 0:
+        raise UnifiedProofBundleError(
+            "freeze_receipt.registry_revision must be positive"
+        )
+    result = {
+        "status": "FROZEN",
+        "checkpoint_id": checkpoint_id,
+        "source_main_sha": source_main_sha,
+        "registry_revision": revision,
+        "registry_state_hash": _bundle_hash64(
+            value.get("registry_state_hash"),
+            "freeze_receipt.registry_state_hash",
+            prefixed=False,
+        ),
+    }
+    if value.get("freeze_commit_sha") is not None:
+        result["freeze_commit_sha"] = _bundle_sha(
+            value.get("freeze_commit_sha"),
+            "freeze_receipt.freeze_commit_sha",
+        )
+    return result
+
+
+def _bundle_proof_reuse(
+    value: Any,
+    *,
+    proof_head_sha: str,
+    merged_main_sha: str,
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("proof_reuse must be an object")
+    decision = _bundle_text(
+        value.get("decision"),
+        "proof_reuse.decision",
+    ).upper()
+
+    if proof_head_sha == merged_main_sha:
+        if decision != "NOT_REQUIRED":
+            raise UnifiedProofBundleError(
+                "proof reuse must be NOT_REQUIRED when proof head equals merged main"
+            )
+        return {
+            "decision": "NOT_REQUIRED",
+            "source_head_sha": proof_head_sha,
+            "current_head_sha": merged_main_sha,
+            "all_artifact_blobs_identical": True,
+            "all_dependency_blobs_identical": True,
+        }
+
+    if decision != "REUSE_APPROVED":
+        raise UnifiedProofBundleError(
+            "head movement requires REUSE_APPROVED proof reuse"
+        )
+    source_head = _bundle_sha(
+        value.get("source_head_sha"),
+        "proof_reuse.source_head_sha",
+    )
+    current_head = _bundle_sha(
+        value.get("current_head_sha"),
+        "proof_reuse.current_head_sha",
+    )
+    if source_head != proof_head_sha or current_head != merged_main_sha:
+        raise UnifiedProofBundleError("proof_reuse head identity mismatch")
+    if value.get("all_artifact_blobs_identical") is not True:
+        raise UnifiedProofBundleError("proof reuse requires identical artifact blobs")
+    if value.get("all_dependency_blobs_identical") is not True:
+        raise UnifiedProofBundleError("proof reuse requires identical dependency blobs")
+    return {
+        "decision": "REUSE_APPROVED",
+        "source_head_sha": source_head,
+        "current_head_sha": current_head,
+        "content_fingerprint": _bundle_hash64(
+            value.get("content_fingerprint"),
+            "proof_reuse.content_fingerprint",
+            prefixed=False,
+        ),
+        "all_artifact_blobs_identical": True,
+        "all_dependency_blobs_identical": True,
+    }
+
+
+def build_unified_proof_bundle(
+    *,
+    repository: str,
+    checkpoint_id: str,
+    workstream_id: str,
+    proof_head_sha: str,
+    merged_main_sha: str,
+    focused_proof: Mapping[str, Any],
+    devsystem_proof: Mapping[str, Any],
+    terminal_receipt: Mapping[str, Any],
+    artifacts: Mapping[str, Any],
+    dependencies: Mapping[str, Any],
+    deployment: Mapping[str, Any],
+    lineage: Mapping[str, Any],
+    regression_debt: Mapping[str, Any],
+    freeze_receipt: Mapping[str, Any],
+    proof_reuse: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Build one deterministic, self-validating MONSTER certification packet."""
+    repo = _bundle_text(repository, "repository").lower()
+    if "/" not in repo:
+        raise UnifiedProofBundleError("repository must be owner/name")
+    checkpoint = _bundle_text(checkpoint_id, "checkpoint_id")
+    workstream = _bundle_text(workstream_id, "workstream_id")
+    proof_head = _bundle_sha(proof_head_sha, "proof_head_sha")
+    merged_main = _bundle_sha(merged_main_sha, "merged_main_sha")
+
+    focused = _bundle_run(
+        focused_proof,
+        field="focused_proof",
+        proof_head_sha=proof_head,
+        require_test_count=True,
+        require_final_gate=False,
+    )
+    devsystem = _bundle_run(
+        devsystem_proof,
+        field="devsystem_proof",
+        proof_head_sha=proof_head,
+        require_test_count=False,
+        require_final_gate=True,
+    )
+    receipt = _bundle_terminal_receipt(
+        terminal_receipt,
+        proof_head_sha=proof_head,
+        devsystem_run_id=devsystem["run_id"],
+    )
+    artifact_map = _bundle_blob_map(
+        artifacts,
+        "artifacts",
+        require_nonempty=True,
+    )
+    dependency_map = _bundle_blob_map(
+        dependencies,
+        "dependencies",
+        require_nonempty=False,
+    )
+    overlap = sorted(set(artifact_map) & set(dependency_map))
+    if overlap:
+        raise UnifiedProofBundleError(
+            "artifact/dependency paths must not overlap: " + ", ".join(overlap)
+        )
+
+    core = {
+        "schema_version": 1,
+        "version": UNIFIED_PROOF_BUNDLE_VERSION,
+        "repository": repo,
+        "checkpoint_id": checkpoint,
+        "workstream_id": workstream,
+        "proof_head_sha": proof_head,
+        "merged_main_sha": merged_main,
+        "focused_proof": focused,
+        "devsystem_proof": devsystem,
+        "terminal_receipt": receipt,
+        "artifacts": artifact_map,
+        "dependencies": dependency_map,
+        "deployment": _bundle_deployment(
+            deployment,
+            merged_main_sha=merged_main,
+        ),
+        "lineage": _bundle_lineage(
+            lineage,
+            checkpoint_id=checkpoint,
+        ),
+        "regression_debt": _bundle_regression_debt(regression_debt),
+        "freeze_receipt": _bundle_freeze_receipt(
+            freeze_receipt,
+            checkpoint_id=checkpoint,
+            merged_main_sha=merged_main,
+        ),
+        "proof_reuse": _bundle_proof_reuse(
+            proof_reuse,
+            proof_head_sha=proof_head,
+            merged_main_sha=merged_main,
+        ),
+        "certification_state": "CERTIFIED",
+        "complete": True,
+        "network_calls": False,
+        "auto_fix": False,
+        "may_modify_runtime": False,
+        "mutation_authority": False,
+    }
+    bundle = dict(core)
+    bundle["bundle_digest"] = "sha256:" + _bundle_sha256(core)
+    return bundle
+
+
+def validate_unified_proof_bundle(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate all proof identities and return the normalized bundle."""
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("unified proof bundle must be an object")
+    supplied = dict(value)
+    if supplied.get("schema_version") != 1:
+        raise UnifiedProofBundleError("unified proof bundle schema mismatch")
+    if supplied.get("version") != UNIFIED_PROOF_BUNDLE_VERSION:
+        raise UnifiedProofBundleError("unified proof bundle version mismatch")
+
+    rebuilt = build_unified_proof_bundle(
+        repository=supplied.get("repository"),
+        checkpoint_id=supplied.get("checkpoint_id"),
+        workstream_id=supplied.get("workstream_id"),
+        proof_head_sha=supplied.get("proof_head_sha"),
+        merged_main_sha=supplied.get("merged_main_sha"),
+        focused_proof=supplied.get("focused_proof") or {},
+        devsystem_proof=supplied.get("devsystem_proof") or {},
+        terminal_receipt=supplied.get("terminal_receipt") or {},
+        artifacts=supplied.get("artifacts") or {},
+        dependencies=supplied.get("dependencies") or {},
+        deployment=supplied.get("deployment") or {},
+        lineage=supplied.get("lineage") or {},
+        regression_debt=supplied.get("regression_debt") or {},
+        freeze_receipt=supplied.get("freeze_receipt") or {},
+        proof_reuse=supplied.get("proof_reuse") or {},
+    )
+    if supplied != rebuilt:
+        raise UnifiedProofBundleError(
+            "unified proof bundle is non-canonical or has been tampered with"
+        )
+    return rebuilt
+
+
+def unified_proof_bundle_summary(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a small control-room summary from a validated certification bundle."""
+    bundle = validate_unified_proof_bundle(value)
+    return {
+        "version": bundle["version"],
+        "checkpoint_id": bundle["checkpoint_id"],
+        "certification_state": bundle["certification_state"],
+        "proof_head_sha": bundle["proof_head_sha"],
+        "merged_main_sha": bundle["merged_main_sha"],
+        "focused_test_count": bundle["focused_proof"]["test_count"],
+        "devsystem_run_id": bundle["devsystem_proof"]["run_id"],
+        "terminal_receipt_hash": bundle["terminal_receipt"]["receipt_hash"],
+        "artifact_count": len(bundle["artifacts"]),
+        "dependency_count": len(bundle["dependencies"]),
+        "deployment_status": bundle["deployment"]["status"],
+        "regression_debt_state": bundle["regression_debt"]["state"],
+        "freeze_status": bundle["freeze_receipt"]["status"],
+        "bundle_digest": bundle["bundle_digest"],
+        "complete": bundle["complete"],
+        "mutation_authority": bundle["mutation_authority"],
+    }
+
+
+__all__ += [
+    "UNIFIED_PROOF_BUNDLE_VERSION",
+    "UnifiedProofBundleError",
+    "build_unified_proof_bundle",
+    "validate_unified_proof_bundle",
+    "unified_proof_bundle_summary",
+]
