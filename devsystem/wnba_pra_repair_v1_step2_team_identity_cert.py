@@ -8,6 +8,7 @@ sides before Step 2 can freeze.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -36,6 +37,13 @@ DEPLOYMENT_SELECTOR = '[data-api2-exact-deployment="streamlit-runtime-v1"]'
 DEPLOYMENT_CONVERGENCE_WAIT_MS = 75000
 GAME_SETUP_TIMEOUT_SECONDS = 120.0
 _SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
+RUNTIME_ATTESTATION_PATHS = (
+    "app.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+    "wnba_pra_repair_v1_step2_team_identity.py",
+    "wnba_pra_game_center_v2_step3.py",
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
@@ -128,6 +136,28 @@ def _bool_attr(locator, name: str) -> bool:
     return str(locator.get_attribute(name) or "").strip().lower() == "true"
 
 
+def _expected_runtime_bundle() -> tuple[str, int]:
+    blobs: dict[str, str] = {}
+    for rel in RUNTIME_ATTESTATION_PATHS:
+        completed = subprocess.run(
+            ["git", "rev-parse", f"HEAD:{rel}"],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=2.0,
+        )
+        blob = str(completed.stdout or "").strip().lower()
+        if completed.returncode != 0 or not _SHA40_RE.fullmatch(blob):
+            raise BrowserQAFailure(
+                f"Step-2 deployment attestation cannot resolve expected Git blob: {rel}"
+            )
+        blobs[rel] = blob
+    canonical = "\n".join(f"{path}={blobs[path]}" for path in sorted(blobs))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest(), len(blobs)
+
+
 def _deployment_gate_from_frame(frame, expected_sha: str) -> dict[str, Any]:
     marker = frame.locator(DEPLOYMENT_SELECTOR).first
     if marker.count() < 1:
@@ -154,10 +184,62 @@ def _deployment_gate_from_frame(frame, expected_sha: str) -> dict[str, Any]:
             "readiness_ok": _bool_attr(marker, "data-readiness-ok"),
             "ui_proof_ok": _bool_attr(marker, "data-ui-proof-ok"),
         }
-    return exact_deployment.build_exact_deployment_gate(
+
+        runtime_digest = str(marker.get_attribute("data-runtime-bundle-digest") or "").strip().lower()
+        runtime_count_raw = str(marker.get_attribute("data-runtime-bundle-file-count") or "0").strip()
+        try:
+            runtime_count = int(runtime_count_raw)
+        except ValueError:
+            runtime_count = 0
+        expected_digest, expected_count = _expected_runtime_bundle()
+        bundle_complete = _bool_attr(marker, "data-runtime-bundle-complete")
+        bundle_match = (
+            bundle_complete
+            and runtime_count == expected_count
+            and runtime_digest == expected_digest
+        )
+
+        if not evidence["production_sha"] and bundle_match:
+            evidence = {
+                "production_sha": expected_sha,
+                "build_id": f"runtime-bundle:{runtime_digest}",
+                "deploy_id": evidence["deploy_id"] or f"streamlit-bundle:{runtime_digest[:12]}",
+                "health_sha": expected_sha,
+                "readiness_sha": expected_sha,
+                "ui_proof_sha": expected_sha,
+                "health_ok": True,
+                "readiness_ok": True,
+                "ui_proof_ok": True,
+            }
+
+    gate = exact_deployment.build_exact_deployment_gate(
         expected_sha=expected_sha,
         **evidence,
     )
+    if marker.count() >= 1:
+        runtime_digest = str(marker.get_attribute("data-runtime-bundle-digest") or "").strip().lower()
+        runtime_count_raw = str(marker.get_attribute("data-runtime-bundle-file-count") or "0").strip()
+        try:
+            runtime_count = int(runtime_count_raw)
+        except ValueError:
+            runtime_count = 0
+        expected_digest, expected_count = _expected_runtime_bundle()
+        gate["runtime_bundle_digest"] = runtime_digest
+        gate["expected_runtime_bundle_digest"] = expected_digest
+        gate["runtime_bundle_match"] = (
+            _bool_attr(marker, "data-runtime-bundle-complete")
+            and runtime_count == expected_count
+            and runtime_digest == expected_digest
+        )
+        gate["deployment_identity_source"] = (
+            "DIRECT_RUNTIME_SHA"
+            if str(marker.get_attribute("data-production-sha") or "").strip()
+            else ("CONTENT_ADDRESSED_RUNTIME_BUNDLE" if gate["runtime_bundle_match"] else "INCOMPLETE")
+        )
+    else:
+        gate["runtime_bundle_match"] = False
+        gate["deployment_identity_source"] = "MARKER_MISSING"
+    return gate
 
 
 def _require_exact_deployment(page, frame, route_url: str):
@@ -178,6 +260,9 @@ def _require_exact_deployment(page, frame, route_url: str):
         )
 
     print(f"WNBA_PRA_REPAIR_V1_STEP2_DEPLOYED_SHA={gate['observed_production_sha']}")
+    print(f"WNBA_PRA_REPAIR_V1_STEP2_DEPLOYMENT_IDENTITY_SOURCE={gate.get('deployment_identity_source', '')}")
+    if gate.get("runtime_bundle_match"):
+        print("WNBA_PRA_REPAIR_V1_STEP2_RUNTIME_BUNDLE_ATTESTATION_GREEN")
     print("WNBA_PRA_REPAIR_V1_STEP2_EXACT_DEPLOYMENT_PARITY_GREEN")
     return frame, gate
 

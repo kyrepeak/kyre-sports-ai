@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+import hashlib
 from html import escape
 import os
 from pathlib import Path
@@ -53,6 +54,13 @@ _RUNTIME_SHA_ENV_KEYS = (
     "SOURCE_COMMIT",
     "COMMIT_SHA",
 )
+RUNTIME_ATTESTATION_PATHS = (
+    "app.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+    "wnba_pra_repair_v1_step2_team_identity.py",
+    "wnba_pra_game_center_v2_step3.py",
+)
 
 
 def _full_sha(value: Any) -> str:
@@ -78,6 +86,29 @@ def _git_rev(spec: str) -> str:
     return _full_sha(completed.stdout)
 
 
+def _git_blob_sha(path: Path) -> str:
+    data = path.read_bytes()
+    header = f"blob {len(data)}\0".encode("utf-8")
+    return hashlib.sha1(header + data).hexdigest()
+
+
+@lru_cache(maxsize=1)
+def _runtime_bundle_attestation() -> dict[str, Any]:
+    root = Path(__file__).resolve().parent
+    blobs: dict[str, str] = {}
+    for rel in RUNTIME_ATTESTATION_PATHS:
+        target = root / rel
+        if not target.is_file():
+            return {"digest": "", "file_count": 0, "complete": False}
+        try:
+            blobs[rel] = _git_blob_sha(target)
+        except Exception:
+            return {"digest": "", "file_count": 0, "complete": False}
+    canonical = "\n".join(f"{path}={blobs[path]}" for path in sorted(blobs))
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return {"digest": digest, "file_count": len(blobs), "complete": True}
+
+
 @lru_cache(maxsize=1)
 def _runtime_deployment_identity() -> dict[str, Any]:
     runtime_sha = ""
@@ -93,6 +124,7 @@ def _runtime_deployment_identity() -> dict[str, Any]:
     build_id = f"tree:{tree_sha}" if tree_sha else ""
     deploy_id = f"streamlit:{host}" if host else ""
     ready = bool(runtime_sha and build_id and deploy_id)
+    bundle = _runtime_bundle_attestation()
     return {
         "production_sha": runtime_sha,
         "build_id": build_id,
@@ -103,6 +135,9 @@ def _runtime_deployment_identity() -> dict[str, Any]:
         "health_ok": ready,
         "readiness_ok": ready,
         "ui_proof_ok": ready,
+        "runtime_bundle_digest": str(bundle["digest"]),
+        "runtime_bundle_file_count": int(bundle["file_count"]),
+        "runtime_bundle_complete": bool(bundle["complete"]),
     }
 
 
@@ -119,7 +154,10 @@ def _deployment_proof_marker() -> None:
         f'data-ui-proof-sha="{escape(str(evidence["ui_proof_sha"]), quote=True)}" '
         f'data-health-ok="{str(bool(evidence["health_ok"])).lower()}" '
         f'data-readiness-ok="{str(bool(evidence["readiness_ok"])).lower()}" '
-        f'data-ui-proof-ok="{str(bool(evidence["ui_proof_ok"])).lower()}"></div>',
+        f'data-ui-proof-ok="{str(bool(evidence["ui_proof_ok"])).lower()}" '
+        f'data-runtime-bundle-digest="{escape(str(evidence["runtime_bundle_digest"]), quote=True)}" '
+        f'data-runtime-bundle-file-count="{int(evidence["runtime_bundle_file_count"])}" '
+        f'data-runtime-bundle-complete="{str(bool(evidence["runtime_bundle_complete"])).lower()}"></div>',
         unsafe_allow_html=True,
     )
 
@@ -398,6 +436,9 @@ __all__ = [
     "MODEL_VERSION",
     "PROOF_MARKER",
     "DEPLOYMENT_PROOF_MARKER",
+    "RUNTIME_ATTESTATION_PATHS",
+    "_git_blob_sha",
+    "_runtime_bundle_attestation",
     "_runtime_deployment_identity",
     "_deployment_proof_marker",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
