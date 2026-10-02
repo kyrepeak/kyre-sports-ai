@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 32,
-  "source_main_sha": "77761608a8b0f70a1cb0e1f4c38babf954b21e8e",
+  "revision": 33,
+  "source_main_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1365,8 +1365,109 @@
         "devsystem/task_ledgers/monster-v8-step3-cross-workstream-intent-arbiter-v1.json": "d7d1c96faccb3d78da311c475909736132394136",
         "tests/test_devsystem_cross_workstream_intent_arbiter_v1.py": "52071715b88e512f2c2dd5e7b801239ea223049f"
       }
+    },
+    "MONSTER_V8_STEP4": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V8_STEP4",
+      "source_main_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
+      "proven_merge_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
+      "pr_head_sha": "e51c0eeceaa456f93f20f1e9019272c5006e4ce5",
+      "pr_number": 1334,
+      "merged_main_focused_proof_run_id": 36965817065,
+      "merged_main_devsystem_proof_run_id": 36965817089,
+      "proof_run_id": 36965817089,
+      "focused_project_state_test_count": 67,
+      "production_cert_test_count": 31,
+      "terminal_receipt_digest": "sha256:62d4793ca6b5ab289c719bf1264da685aef0778a2c631b40e142850bff640d54",
+      "terminal_receipt_job_id": 110709961954,
+      "terminal_receipt_artifact_id": 11209612498,
+      "terminal_receipt_artifact_zip_sha256": "ee8239e9283fa03efe86bd5d8fb266f2b9f1b218476514556079e4403db557e3",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "EXACT_MERGED_MAIN_CONTENT",
+      "content_addressed_proof_reuse": {
+        "version": "MONSTER_V6_CONTENT_ADDRESSED_PROOF_REUSE_V1",
+        "decision": "NOT_REQUIRED",
+        "reusable": false,
+        "checkpoint_id": "MONSTER_V8_STEP4",
+        "proof_run_id": 36965817089,
+        "source_main_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
+        "current_head_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
+        "head_moved": false,
+        "reasons": [
+          "authoritative focused and DevSystem proofs ran on exact merged main"
+        ],
+        "all_artifact_blobs_identical": true,
+        "artifact_count": 3,
+        "all_dependency_blobs_identical": true,
+        "dependency_count": 8,
+        "dependencies": {
+          "devsystem/causal_state_lineage_graph_v1.py": "898e66f879b364fc79d3be466d617268e7a5f876",
+          "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+          "devsystem/cross_workstream_intent_arbiter_v1.py": "e1db49a3f2d16fe2eb89b243658deba92fbde160",
+          "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+          "devsystem/pre_mutation_blast_radius_simulator_v1.py": "75812e61e7b6dc4a12ee3e860f7cfd670e95dad6",
+          "devsystem/regression_debt_zero_gate_v1.py": "765c6477948781e2ad534d7e1cd990360a2ae190",
+          "devsystem/terminal_proof_receipt_v1.py": "e009da0790abbed2b24664b1031abf41d2f6c1fd",
+          "devsystem/transactional_rollback_engine_v1.py": "609e5b9b3f416cff47d5867b57a63782ea0e18b8"
+        },
+        "production_live_state_reused": false
+      },
+      "unified_proof_bundle": {
+        "version": "MONSTER_V8_UNIFIED_PROOF_BUNDLE_V1",
+        "certification_state": "CERTIFIED",
+        "self_certification_digest": "sha256:eafb85f46757a5f8e952874d4c85f4edd82eeeb5efac80849dd2e6559f44cec8",
+        "exact_merged_main_focused_proof": true,
+        "exact_merged_main_devsystem_proof": true,
+        "final_gate_green": true,
+        "terminal_receipt_bound": true,
+        "artifact_identity_bound": true,
+        "dependency_identity_bound": true,
+        "deployment_status": "NOT_REQUIRED",
+        "regression_debt_state": "CLEARED",
+        "proof_reuse_status": "NOT_REQUIRED",
+        "mutation_authority_granted": false
+      },
+      "proof_policy_resolution": {
+        "pr_focused_run_id": 36965693257,
+        "pr_focused_result": "FAILURE",
+        "failure_class": "PR_ONLY_MAINTENANCE_SURFACE_POLICY_CONTRADICTION",
+        "failure_detail": "legacy Project-State PR allowlist rejected the mandatory Step-4 task ledger after bundle tests and safety checks had passed",
+        "skipped_checkpoint": true,
+        "skipped_checkpoint_not_reported_green": true,
+        "authoritative_replacement": [
+          "merged-main focused run 36965817065 SUCCESS",
+          "merged-main DevSystem run 36965817089 SUCCESS",
+          "devsystem-final-gate SUCCESS",
+          "terminal receipt SUCCESS"
+        ],
+        "duplicate_reruns": 0
+      },
+      "step2a_contract": {
+        "intent_arbitration_used": true,
+        "pre_mutation_blast_radius_used": true,
+        "rollback_baseline_sealed": true,
+        "holder_local_lease_used": true,
+        "duplicate_branch_pr_runs_suppressed": true,
+        "blind_polling_suppressed": true,
+        "skipped_failure_explicitly_recorded": true
+      },
+      "completion_contract": {
+        "total_steps": 7,
+        "completed_steps": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "next_legal_action": "START_MONSTER_V8_STEP5"
+      },
+      "artifacts": {
+        "devsystem/task_ledgers/monster-v8-step4-unified-proof-bundle-v1.json": "5af1f26dfb6d8a4ff3ead9962861410d536f101d",
+        "sports_api/monster_project_state_v1.py": "e72331a7fc1b82477d83517f75eb04d29bc5cef8",
+        "tests/test_monster_project_state_v1.py": "b142c8956ea522a691377abecb294867c292ef6d"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "a0a921d4dcf78862f933eae92ed1b1106cf7579b3111f06926e2768c7e0ef5c5"
+  "state_hash": "a8feed976f8dd4123530e3088bff00e60680d20c537e012e9994b03a48cf7cfc"
 }
