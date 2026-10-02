@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 126,
+  "revision": 127,
   "generation": 62,
   "holders": [
     {
@@ -43,38 +43,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v8-step3-cross-workstream-intent-arbiter-v1",
-      "lease_id": "SCOPE-LEASE-V8S3-INTENT-001",
-      "generation": 62,
-      "acquired_at_utc": "2026-10-02T04:11:30Z",
-      "heartbeat_at_utc": "2026-10-02T04:11:30Z",
-      "expires_at_utc": "2026-10-02T04:51:30Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-v8-step3-cross-workstream-intent-arbiter.yml",
-          "devsystem/cross_workstream_intent_arbiter_v1.py",
-          "devsystem/task_ledgers/monster-v8-step3-cross-workstream-intent-arbiter-v1.json",
-          "tests/test_devsystem_cross_workstream_intent_arbiter_v1.py"
-        ],
-        "dependency_tokens": [
-          "control-plane:cross-workstream-intent-arbiter",
-          "frozen-dependency:MONSTER_V8_STEP2",
-          "project:monster-v8"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v8-step3-cross-workstream-intent-arbiter-v1",
-          "pr:monster-v8-step3-cross-workstream-intent-arbiter-v1",
-          "workflow:monster-v8-step3-cross-workstream-intent-arbiter"
-        ],
-        "resource_identity": {
-          "main:base": "89c77e8ddb6717ce0bc7ea94069cbdcc4af3994d",
-          "monster:v8-step": "3"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "d93a31a97cbded80f5a27756bde07f9b0fe5e327116ee8f9b0e7d121473c4076"
+  "state_hash": "de2ec1a9c875726cb383deddaef3a96e796eb0479d99d67cbe7834e8126b6e89"
 }
