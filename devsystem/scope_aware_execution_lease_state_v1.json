@@ -4,8 +4,35 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 136,
-  "generation": 67,
-  "holders": [],
-  "state_hash": "7f4a4b1881e89ba468b4ba78a75430f0aad96d9855a697cb5e31d13a8b1b3c1b"
+  "revision": 137,
+  "generation": 68,
+  "holders": [
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v8-step7-execution-plan-compiler-v1",
+      "lease_id": "SCOPE-LEASE-783BDA125D26AEAC7E9C2F53",
+      "generation": 68,
+      "acquired_at_utc": "2026-10-02T05:40:00Z",
+      "heartbeat_at_utc": "2026-10-02T05:40:00Z",
+      "expires_at_utc": "2026-10-02T07:40:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v8-step7-execution-plan-compiler-v1.yml",
+          "devsystem/execution_plan_compiler_v1.py",
+          "devsystem/task_ledgers/monster-v8-step7-execution-plan-compiler-v1.json",
+          "tests/test_devsystem_execution_plan_compiler_v1.py"
+        ],
+        "dependency_tokens": [
+          "control:monster-v8-step7"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v8-step7-execution-plan-compiler-v1"
+        ],
+        "resource_identity": {
+          "main:base": "3f7a0f74eaf0c7c5aca5b86b15a9d748a163a173"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "47fb3423dfa8f2df498f420a4017aae44d8a695b609ea77b69e616428d7cb48d"
 }
