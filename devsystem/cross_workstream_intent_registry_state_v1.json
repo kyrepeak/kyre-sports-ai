@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 4,
-  "generation": 4,
-  "next_sequence": 5,
+  "revision": 5,
+  "generation": 5,
+  "next_sequence": 6,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -145,7 +145,7 @@
     {
       "intent_id": "intent-8bc152bf48b94f5fdba425f0",
       "sequence": 4,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "MONSTER V8 Step 4 Unified Proof Bundle",
       "mission_key": "monster v8 step 4 unified proof bundle",
       "semantic_fingerprint": "8bc152bf48b94f5fdba425f06fb1e9f92c74b6b95406573400cd7c736be23e51",
@@ -185,9 +185,56 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T04:41:00Z",
-      "updated_at_utc": "2026-10-02T04:41:00Z",
+      "updated_at_utc": "2026-10-02T04:45:00Z",
       "expires_at_utc": "2026-10-02T05:21:00Z"
+    },
+    {
+      "intent_id": "intent-0f1bd2a5b28ea9ac714f40a2",
+      "sequence": 5,
+      "status": "ACTIVE",
+      "mission": "MONSTER V8 Step 4 Unified Proof Bundle",
+      "mission_key": "monster v8 step 4 unified proof bundle",
+      "semantic_fingerprint": "0f1bd2a5b28ea9ac714f40a2efc290fe2e175bea3548b8c3758a64a0da5ea13b",
+      "base_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-project-state-v1.yml",
+          "devsystem/task_ledgers/monster-v8-step4-unified-proof-bundle-v1.json",
+          "sports_api/monster_project_state_v1.py",
+          "tests/test_monster_project_state_v1.py"
+        ],
+        "dependency_tokens": [
+          "control-plane:unified-proof-bundle",
+          "direct_dependencies:sports_api.monster_project_state_v1",
+          "direct_dependents:tests.test_monster_project_state_v1",
+          "frozen-dependency:monster_v8_step3",
+          "project:monster-v8",
+          "transitive_dependencies:sports_api.monster_project_state_v1",
+          "transitive_dependents:tests.test_monster_project_state_v1"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v8-step4-unified-proof-bundle-v1",
+          "pr:monster-v8-step4-unified-proof-bundle-v1"
+        ],
+        "resource_identity": {
+          "main:base": "e7b86908f5c886ba58216886fd71118e28a91c40",
+          "monster:v8-step": "4"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
+      "canonical_workstream_id": "ws:monster-v8-step4-unified-proof-bundle-v1-final",
+      "participants": [
+        {
+          "owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
+          "workstream_id": "ws:monster-v8-step4-unified-proof-bundle-v1-final"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T04:45:00Z",
+      "updated_at_utc": "2026-10-02T04:45:00Z",
+      "expires_at_utc": "2026-10-02T05:25:00Z"
     }
   ],
-  "state_hash": "4a6d5f41f1dd955ca7241541309871a77cd3966e59f39685dad5b695f75339d4"
+  "state_hash": "7c0942fc31a2a3ff9a36344efe1828d8c30cc4fb74bff7cc13ab10bb5a68bcb3"
 }
