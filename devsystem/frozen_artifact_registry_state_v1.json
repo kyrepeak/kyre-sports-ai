@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 87,
-  "source_main_sha": "f5fd459b778b0ce30a2cfbf3301493d0c2165ee8",
+  "revision": 88,
+  "source_main_sha": "c8f7b574c3da0981618eadab0ac6c09d41526c6c",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1566,12 +1566,12 @@
       "source_main_sha": "eecee9576dc54d28a32a728df3b651b7a6c9db37",
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml": "afe4388538dfd4e3cfb7cea48faa5308f9ee956d",
-        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": "8cd22adc492bcd286d701694d48342bfe44f6729",
+        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": "bd73f14edb2ce84db7c8e3a8a70774bf50e37ef7",
         "devsystem/dependency_chain_auto_refresh_v1.py": "7391884ffe696403e0a60cb0b6f880fea02b273b",
         "devsystem/dependency_chain_registry_v1.json": "8ba3eeb0ef69761d30362bbcc6db07facc0ccc41",
         "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json": "c9b9a416aeee4ccd099c331fc2e2eedb93ee5a55",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json": "285622ad6a11b0d145d7b53ba5ecd68c29fb6250",
-        "tests/test_devsystem_dependency_chain_auto_refresh_v1.py": "a5d8d5ec0f0b81d25dcf3ba773bf045f04074a35"
+        "tests/test_devsystem_dependency_chain_auto_refresh_v1.py": "1c899472c0f04bcc64a3559a820e305d362e7148"
       }
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP4": {
@@ -1627,37 +1627,6 @@
       }
     }
   },
-  "active_thaws": [
-    {
-      "thaw_id": "THAW-API2-STEP3-DYNAMIC-C9041E6D9507",
-      "status": "ACTIVE",
-      "target_head_sha": "c9041e6d95072ca3432d9d48613565f82892fe9c",
-      "files": {
-        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": {
-          "from_blob": "8cd22adc492bcd286d701694d48342bfe44f6729",
-          "to_blob": "bd73f14edb2ce84db7c8e3a8a70774bf50e37ef7"
-        },
-        "tests/test_devsystem_dependency_chain_auto_refresh_v1.py": {
-          "from_blob": "a5d8d5ec0f0b81d25dcf3ba773bf045f04074a35",
-          "to_blob": "1c899472c0f04bcc64a3559a820e305d362e7148"
-        }
-      }
-    },
-    {
-      "thaw_id": "THAW-API2-STEP3-MERGE-2C66C2E12A9D",
-      "status": "ACTIVE",
-      "target_head_sha": "2c66c2e12a9dd2b1e0b7027f34fda61f77a0db08",
-      "files": {
-        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": {
-          "from_blob": "8cd22adc492bcd286d701694d48342bfe44f6729",
-          "to_blob": "bd73f14edb2ce84db7c8e3a8a70774bf50e37ef7"
-        },
-        "tests/test_devsystem_dependency_chain_auto_refresh_v1.py": {
-          "from_blob": "a5d8d5ec0f0b81d25dcf3ba773bf045f04074a35",
-          "to_blob": "1c899472c0f04bcc64a3559a820e305d362e7148"
-        }
-      }
-    }
-  ],
-  "state_hash": "b5691a56247ef9a5d3a873ef7a213c9ee2d122053b744365ae1d728c0e73746e"
+  "active_thaws": [],
+  "state_hash": "50c27cb1fbc5f12904070d8f81f6bdf5bd5407cc4f5a526f28b1258ed2b9a3ae"
 }
