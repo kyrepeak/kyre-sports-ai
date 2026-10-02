@@ -74,10 +74,12 @@ def test_step2_overlay_wraps_parent_and_restores_frozen_modules():
     assert "identity.reconcile_slate_payload(payload)" in source
     assert "slate.load_slate = guarded_slate_loader" in source
     assert "performance._FROZEN_SLATE_LOADER = guarded_slate_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
     assert "game_center.load_game_center = guarded_game_loader" in source
     assert "game_center.render_game_center = guarded_game_renderer" in source
     assert "slate.load_slate = original_slate_loader" in source
     assert "performance._FROZEN_SLATE_LOADER = original_cached_slate_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
     assert "game_center.load_game_center = original_game_loader" in source
     assert "game_center.render_game_center = original_game_renderer" in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
@@ -94,7 +96,8 @@ def test_step2_prewarm_preserves_frozen_math_and_parallelizes_only_dependencies(
     assert "availability.availability_for_game_key" in source
     assert "role.advanced_usage_table" in source
     assert "_prewarm_game_center_dependencies(" in source
-    assert "return original_game_loader(" in source
+    assert "payload = original_game_loader(" in source
+    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
     assert "MAY_MODIFY_WNBA_MODEL = False" in source
     assert "MAY_MODIFY_PROJECTION_MATH = False" in source
     assert "MAY_MODIFY_MARKET_MATH = False" in source

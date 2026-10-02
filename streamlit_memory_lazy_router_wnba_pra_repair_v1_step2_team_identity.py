@@ -136,6 +136,7 @@ def _proof_marker(payload: Mapping[str, Any]) -> None:
 def render_app() -> Any:
     original_slate_loader = slate.load_slate
     original_cached_slate_loader = performance._FROZEN_SLATE_LOADER
+    original_cached_game_loader = performance._FROZEN_GAME_LOADER
     original_game_loader = game_center.load_game_center
     original_game_renderer = game_center.render_game_center
 
@@ -159,7 +160,7 @@ def render_app() -> Any:
             away_id,
             home_id,
         )
-        return original_game_loader(
+        payload = original_game_loader(
             game_id,
             game_date,
             away_id,
@@ -167,6 +168,7 @@ def render_app() -> Any:
             away_team,
             home_team,
         )
+        return frozen_parent._dedupe_game_center_payload(payload)
 
     if hasattr(original_game_loader, "clear"):
         guarded_game_loader.clear = original_game_loader.clear  # type: ignore[attr-defined]
@@ -179,6 +181,7 @@ def render_app() -> Any:
 
     slate.load_slate = guarded_slate_loader
     performance._FROZEN_SLATE_LOADER = guarded_slate_loader
+    performance._FROZEN_GAME_LOADER = guarded_game_loader
     game_center.load_game_center = guarded_game_loader
     game_center.render_game_center = guarded_game_renderer
     try:
@@ -186,6 +189,7 @@ def render_app() -> Any:
     finally:
         slate.load_slate = original_slate_loader
         performance._FROZEN_SLATE_LOADER = original_cached_slate_loader
+        performance._FROZEN_GAME_LOADER = original_cached_game_loader
         game_center.load_game_center = original_game_loader
         game_center.render_game_center = original_game_renderer
 
