@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 23,
-  "generation": 23,
-  "next_sequence": 20,
+  "revision": 24,
+  "generation": 24,
+  "next_sequence": 21,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -795,7 +795,7 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T15:57:00Z",
-      "updated_at_utc": "2026-10-02T16:02:00Z",
+      "updated_at_utc": "2026-10-02T16:03:00Z",
       "expires_at_utc": "2026-10-02T16:57:00Z"
     },
     {
@@ -839,7 +839,47 @@
       "submitted_at_utc": "2026-10-02T15:58:00Z",
       "updated_at_utc": "2026-10-02T15:58:00Z",
       "expires_at_utc": "2026-10-02T16:58:00Z"
+    },
+    {
+      "intent_id": "intent-6f54e6515e062837b3bb02c6",
+      "sequence": 20,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 action-ledger recovery closeout",
+      "mission_key": "wnba pra repair v1 step 2 action ledger recovery closeout",
+      "semantic_fingerprint": "6f54e6515e062837b3bb02c62b2689588dbd514d9029bf76039914132795b9e3",
+      "base_sha": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
+        ],
+        "dependency_tokens": [
+          "control:action-ledger",
+          "pr:1342",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:api2-wnba-repair-v1-step2-cold-game-center"
+        ],
+        "resource_identity": {
+          "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+          "pr:head": "d828fd79749bcb6f050a3010805f1ea5d639a752",
+          "pr:number": "1342"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-ledger",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-ledger",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-ledger",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-ledger"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T16:03:00Z",
+      "updated_at_utc": "2026-10-02T16:03:00Z",
+      "expires_at_utc": "2026-10-02T17:03:00Z"
     }
   ],
-  "state_hash": "67d5d9ee3b6ca97f8c327a5c9bfe041cdcffeeb137db4c280c907e3f72d1f2da"
+  "state_hash": "d2c094bde897d63b05e5a435894ede4b27c5ac3c58fdb6d3718238b0e9527a32"
 }
