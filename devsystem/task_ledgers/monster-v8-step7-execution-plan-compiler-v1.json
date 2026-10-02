@@ -1,0 +1,139 @@
+{
+  "version": 2,
+  "task_id": "monster-v8-step7-execution-plan-compiler-v1",
+  "title": "MONSTER V8 Step 7 - Execution Plan Compiler",
+  "project": "MONSTER V8",
+  "step": 7,
+  "total_steps": 7,
+  "status": "DONE",
+  "problem": "MONSTER can have strong individual gates yet still discover checkpoint order, proof requirements, resource ownership, rollback placement, and freeze conditions incrementally while a mission is already in motion.",
+  "root_cause": "The V8 control plane lacked one deterministic pre-execution compiler that binds a mission to exact repository truth and converts declared intent into a complete legal execution graph before Step 1 begins.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "Add MONSTER_V8_EXECUTION_PLAN_COMPILER_V1. Compile every mission into a deterministic tamper-evident DAG with exact-main identity, checkpoint dependencies, write/dependency/resource scope, expected proof, one rollback anchor that dominates every mutation, mandatory Step 2A re-entry for each mutation, merged-main freeze contract, completion criteria, and deterministic next-checkpoint routing. Stale, cyclic, tampered, dependency-skipping, weak-freeze, or rollback-bypassing plans fail closed. The compiler is read-only and grants no mutation authority.",
+  "protected": {
+    "monster_v8_steps_1_through_6_frozen": true,
+    "step_2a_required": true,
+    "exact_main_identity_required": true,
+    "one_compiled_plan_per_mission": true,
+    "dependency_graph_must_be_acyclic": true,
+    "rollback_anchor_must_dominate_mutations": true,
+    "proof_required_per_checkpoint": true,
+    "freeze_contract_cannot_weaken": true,
+    "no_network_calls": true,
+    "no_auto_mutation": true,
+    "no_product_runtime_change": true,
+    "mutation_authority_granted": false
+  },
+  "acceptance": {
+    "exact_main_bound": true,
+    "deterministic_plan_digest": true,
+    "deterministic_topological_order": true,
+    "unknown_dependencies_blocked": true,
+    "cycles_blocked": true,
+    "duplicate_checkpoint_ids_blocked": true,
+    "resource_shards_compiled": true,
+    "proof_plan_compiled": true,
+    "rollback_anchor_dominates_all_mutations": true,
+    "mutation_requires_explicit_write_scope": true,
+    "every_mutation_reenters_step_2a": true,
+    "compiler_never_grants_mutation_authority": true,
+    "stale_compiled_plan_blocked": true,
+    "tampered_plan_blocked": true,
+    "completed_checkpoint_dependency_bypass_blocked": true,
+    "exact_pr_head_proof_required": true,
+    "devsystem_final_gate_required": true,
+    "exact_certified_merge_required": true,
+    "merged_main_proof_required": true,
+    "terminal_proof_receipt_required": true,
+    "green_plus_frozen_required": true
+  },
+  "dependencies": {
+    "MONSTER_V8_STEP1": {
+      "status": "FROZEN",
+      "artifact": "devsystem/pre_mutation_blast_radius_simulator_v1.py",
+      "required_blob": "75812e61e7b6dc4a12ee3e860f7cfd670e95dad6"
+    },
+    "MONSTER_V8_STEP2": {
+      "status": "FROZEN",
+      "artifact": "devsystem/transactional_rollback_engine_v1.py",
+      "required_blob": "609e5b9b3f416cff47d5867b57a63782ea0e18b8"
+    },
+    "MONSTER_V8_STEP3": {
+      "status": "FROZEN",
+      "artifact": "devsystem/cross_workstream_intent_arbiter_v1.py",
+      "required_blob": "e1db49a3f2d16fe2eb89b243658deba92fbde160"
+    },
+    "MONSTER_V8_STEP4": {
+      "status": "FROZEN",
+      "artifact": "sports_api/monster_project_state_v1.py",
+      "required_blob": "e72331a7fc1b82477d83517f75eb04d29bc5cef8"
+    },
+    "MONSTER_V8_STEP5": {
+      "status": "FROZEN",
+      "artifact": "devsystem/adaptive_stuck_thresholds_v1.py",
+      "required_blob": "5a68516d45417a7175eb6e88f7e9d4749a2dbe1c"
+    },
+    "MONSTER_V8_STEP6": {
+      "status": "FROZEN",
+      "artifact": "devsystem/chaos_adversarial_certification_harness_v1.py",
+      "required_blob": "88c82005872c9723b942e1b0787b6a1a19470ab2"
+    }
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_execution_plan_compiler_v1.py",
+    "permanent_contract": "devsystem/execution_plan_compiler_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "intent": {
+    "owner_id": "chatgpt:monster-v2:monster-v8-step7-execution-plan-compiler-v1",
+    "workstream_id": "monster-v8-step7-execution-plan-compiler-v1",
+    "branch": "monster/monster-v8-step7-execution-plan-compiler-v1",
+    "base_main_sha": "3f7a0f74eaf0c7c5aca5b86b15a9d748a163a173"
+  },
+  "scope_lease": {
+    "lease_id": "SCOPE-LEASE-V8S7-PLAN-001",
+    "allowed_write_paths": [
+      "devsystem/execution_plan_compiler_v1.py",
+      "tests/test_devsystem_execution_plan_compiler_v1.py",
+      "devsystem/task_ledgers/monster-v8-step7-execution-plan-compiler-v1.json",
+      ".github/workflows/monster-v8-step7-execution-plan-compiler-v1.yml"
+    ]
+  },
+  "proof_plan": {
+    "focused_workflow": ".github/workflows/monster-v8-step7-execution-plan-compiler-v1.yml",
+    "focused_self_test": "python devsystem/execution_plan_compiler_v1.py",
+    "focused_tests": "python -m pytest -q tests/test_devsystem_execution_plan_compiler_v1.py",
+    "frozen_dependency_blob_checks": true,
+    "exact_pr_head_required": true,
+    "devsystem_targeted_ci_required": true,
+    "devsystem_final_gate_required": true,
+    "terminal_proof_receipt_required": true,
+    "merged_main_focused_proof_required": true,
+    "merged_main_full_certification_required": true,
+    "merged_main_devsystem_required": true
+  },
+  "completion_contract": {
+    "completed_steps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "after_freeze": "MONSTER_V8_COMPLETE",
+    "no_step8": true,
+    "overall_progress_percent": 100
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+}
