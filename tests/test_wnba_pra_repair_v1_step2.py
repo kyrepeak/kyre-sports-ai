@@ -139,3 +139,38 @@ def test_step2_workflow_exact_scope_and_frozen_blob_guards():
     assert "github.event_name == 'push'" in workflow
     assert "python -m devsystem.wnba_pra_repair_v1_step2_team_identity_cert" in workflow
     assert "WNBA_PRA_REPAIR_V1_STEP2_BRANCH_GREEN" in workflow
+
+
+def test_step2_overlay_repairs_step5_import_time_loader_bypass():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "import wnba_pra_performance_v2_step5 as performance" in source
+    assert "original_perf_slate_loader = performance._FROZEN_SLATE_LOADER" in source
+    assert "original_perf_game_loader = performance._FROZEN_GAME_LOADER" in source
+    assert "performance._FROZEN_SLATE_LOADER = guarded_slate_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
+    assert "performance._FROZEN_SLATE_LOADER = original_perf_slate_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = original_perf_game_loader" in source
+
+
+def test_step2_cold_game_center_prewarms_exact_frozen_inputs_concurrently():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "ThreadPoolExecutor" in source
+    assert "availability._verified_pool_for_day" in source
+    assert "availability._event_summary" in source
+    assert "availability._team_injury_feed" in source
+    assert "role._advanced_usage_fetch" in source
+    assert "(season, 0)" in source
+    assert "(season, 10)" in source
+    assert "(season, 5)" in source
+    assert 'thread_name_prefix="wnba-page2-warm"' in source
+
+
+def test_step2_latency_patch_preserves_frozen_authoritative_values():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "_prewarm_game_inputs(game_id, game_date, away_id, home_id)" in source
+    assert "payload = original_game_loader(" in source
+    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
+    assert "MAY_MODIFY_WNBA_MODEL = False" in source
+    assert "MAY_MODIFY_PROJECTION_MATH = False" in source
+    assert "MAY_MODIFY_MARKET_MATH = False" in source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
