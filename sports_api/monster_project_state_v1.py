@@ -983,3 +983,352 @@ __all__ += [
     "validate_unified_proof_bundle",
     "unified_proof_bundle_summary",
 ]
+
+
+# ---------------------------------------------------------------------------
+# MONSTER V8 Step 4 — compatibility contract for the established proof packet
+# ---------------------------------------------------------------------------
+
+PROOF_BUNDLE_NETWORK_CALLS = False
+PROOF_BUNDLE_AUTO_MUTATE = False
+PROOF_BUNDLE_MAY_MODIFY_RUNTIME = False
+PROOF_BUNDLE_MUTATION_AUTHORITY = False
+
+_build_unified_proof_bundle_strict = build_unified_proof_bundle
+_validate_unified_proof_bundle_strict = validate_unified_proof_bundle
+
+
+def _legacy_sha40(value: Any) -> str | None:
+    text = str(value or "").strip().lower()
+    return text if _BUNDLE_SHA40.fullmatch(text) else None
+
+
+def _legacy_digest(value: Any) -> str | None:
+    text = str(value or "").strip().lower()
+    raw = text[7:] if text.startswith("sha256:") else text
+    return f"sha256:{raw}" if _BUNDLE_HASH64.fullmatch(raw) else None
+
+
+def _legacy_blob_map(value: Any) -> dict[str, str] | None:
+    if not isinstance(value, Mapping) or not value:
+        return None
+    out: dict[str, str] = {}
+    for raw_path, raw_sha in value.items():
+        try:
+            path = _bundle_path(raw_path)
+        except UnifiedProofBundleError:
+            return None
+        sha = _legacy_sha40(raw_sha)
+        if sha is None:
+            return None
+        out[path] = sha
+    return dict(sorted(out.items()))
+
+
+def _legacy_lane(
+    value: Any,
+    *,
+    label: str,
+    expected_head_sha: str,
+    blockers: list[str],
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        blockers.append(f"{label}:MISSING")
+        return {}
+    try:
+        run_id = int(value.get("run_id"))
+    except (TypeError, ValueError):
+        run_id = 0
+    status = str(value.get("status") or "").strip().upper()
+    head_sha = str(value.get("head_sha") or "").strip().lower()
+    try:
+        test_count = int(value.get("test_count"))
+    except (TypeError, ValueError):
+        test_count = 0
+
+    if run_id <= 0:
+        blockers.append(f"{label}:RUN_ID_INVALID")
+    if status != "SUCCESS":
+        blockers.append(f"{label}:NOT_SUCCESS")
+    if head_sha != expected_head_sha:
+        blockers.append(f"{label}:HEAD_MISMATCH")
+    if test_count <= 0:
+        blockers.append(f"{label}:TEST_COUNT_INVALID")
+
+    return {
+        "run_id": run_id,
+        "status": status,
+        "head_sha": head_sha,
+        "test_count": test_count,
+    }
+
+
+def _legacy_next_action(blockers: list[str]) -> str:
+    if not blockers:
+        return "CERTIFICATION_BUNDLE_GREEN"
+    if "EXACT_HEAD_MISMATCH" in blockers:
+        return "REFRESH_HEAD_AND_REBUILD_PROOF_BUNDLE"
+    if any(
+        item.startswith("FOCUSED_PROOF:")
+        or item.startswith("DEVSYSTEM_PROOF:")
+        for item in blockers
+    ):
+        return "RESOLVE_EXACT_HEAD_PROOF_FAILURE"
+    if "TERMINAL_RECEIPT_DIGEST_INVALID" in blockers:
+        return "RESOLVE_TERMINAL_RECEIPT"
+    if "REGRESSION_DEBT_NOT_CLEARED" in blockers:
+        return "CLEAR_REGRESSION_DEBT"
+    if any(item.startswith("FREEZE_") for item in blockers):
+        return "REGISTER_OR_REPAIR_FROZEN_CHECKPOINT"
+    if any(item.startswith("DEPLOYMENT_") for item in blockers):
+        return "RESTORE_DEPLOYMENT_CERTIFICATION"
+    if any(item.startswith("LINEAGE_") for item in blockers):
+        return "REBUILD_CAUSAL_LINEAGE_EVIDENCE"
+    if (
+        "ARTIFACT_IDENTITY_MISSING_OR_INVALID" in blockers
+        or "DEPENDENCY_IDENTITY_MISSING_OR_INVALID" in blockers
+    ):
+        return "REBUILD_CONTENT_IDENTITY_MANIFEST"
+    return "RUN_AUTOMATIC_ROOT_CAUSE_BACKTRACE"
+
+
+def _build_unified_proof_bundle_legacy(
+    *,
+    checkpoint_id: str,
+    repository: str,
+    expected_head_sha: str,
+    observed_head_sha: str,
+    focused_proof: Mapping[str, Any],
+    devsystem_proof: Mapping[str, Any],
+    terminal_receipt_digest: str,
+    artifacts: Mapping[str, Any],
+    dependencies: Mapping[str, Any],
+    regression_debt_state: str,
+    require_freeze: bool = False,
+    freeze_record: Mapping[str, Any] | None = None,
+    require_deployment: bool = False,
+    deployment_evidence: Mapping[str, Any] | None = None,
+    lineage_evidence: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    checkpoint = str(checkpoint_id or "").strip()
+    repo = str(repository or "").strip().lower()
+    expected = str(expected_head_sha or "").strip().lower()
+    observed = str(observed_head_sha or "").strip().lower()
+    blockers: list[str] = []
+
+    if not checkpoint:
+        blockers.append("CHECKPOINT_ID_MISSING")
+    if "/" not in repo:
+        blockers.append("REPOSITORY_INVALID")
+    if _legacy_sha40(expected) is None:
+        blockers.append("EXPECTED_HEAD_INVALID")
+    if _legacy_sha40(observed) is None:
+        blockers.append("OBSERVED_HEAD_INVALID")
+
+    exact_head = bool(
+        _legacy_sha40(expected)
+        and _legacy_sha40(observed)
+        and expected == observed
+    )
+    if not exact_head:
+        blockers.append("EXACT_HEAD_MISMATCH")
+
+    focused = _legacy_lane(
+        focused_proof,
+        label="FOCUSED_PROOF",
+        expected_head_sha=expected,
+        blockers=blockers,
+    )
+    devsystem = _legacy_lane(
+        devsystem_proof,
+        label="DEVSYSTEM_PROOF",
+        expected_head_sha=expected,
+        blockers=blockers,
+    )
+
+    receipt = _legacy_digest(terminal_receipt_digest)
+    if receipt is None:
+        blockers.append("TERMINAL_RECEIPT_DIGEST_INVALID")
+
+    artifact_map = _legacy_blob_map(artifacts)
+    if artifact_map is None:
+        blockers.append("ARTIFACT_IDENTITY_MISSING_OR_INVALID")
+        artifact_map = {}
+
+    dependency_map = _legacy_blob_map(dependencies)
+    if dependency_map is None:
+        blockers.append("DEPENDENCY_IDENTITY_MISSING_OR_INVALID")
+        dependency_map = {}
+
+    debt = str(regression_debt_state or "").strip().upper()
+    if debt != "CLEARED":
+        blockers.append("REGRESSION_DEBT_NOT_CLEARED")
+
+    normalized_freeze: dict[str, Any] | None = None
+    if require_freeze:
+        if not isinstance(freeze_record, Mapping):
+            blockers.append("FREEZE_RECORD_REQUIRED")
+        else:
+            freeze_status = str(freeze_record.get("status") or "").strip().upper()
+            freeze_head = str(
+                freeze_record.get("source_main_sha") or ""
+            ).strip().lower()
+            try:
+                freeze_revision = int(freeze_record.get("registry_revision"))
+            except (TypeError, ValueError):
+                freeze_revision = 0
+            freeze_hash = _legacy_digest(freeze_record.get("state_hash"))
+            if freeze_status != "FROZEN":
+                blockers.append("FREEZE_STATUS_NOT_FROZEN")
+            if freeze_head != expected:
+                blockers.append("FREEZE_HEAD_MISMATCH")
+            if freeze_revision <= 0 or freeze_hash is None:
+                blockers.append("FREEZE_RECORD_INVALID")
+            normalized_freeze = {
+                "status": freeze_status,
+                "source_main_sha": freeze_head,
+                "registry_revision": freeze_revision,
+                "state_hash": freeze_hash,
+            }
+
+    normalized_deployment: dict[str, Any] | None = None
+    if require_deployment:
+        if not isinstance(deployment_evidence, Mapping):
+            blockers.append("DEPLOYMENT_EVIDENCE_REQUIRED")
+        else:
+            dep_status = str(
+                deployment_evidence.get("status") or ""
+            ).strip().upper()
+            dep_head = str(
+                deployment_evidence.get("head_sha") or ""
+            ).strip().lower()
+            dep_certified = deployment_evidence.get("certified") is True
+            if dep_status != "GREEN" or not dep_certified:
+                blockers.append("DEPLOYMENT_NOT_GREEN")
+            if dep_head != expected:
+                blockers.append("DEPLOYMENT_HEAD_MISMATCH")
+            normalized_deployment = {
+                "status": dep_status,
+                "head_sha": dep_head,
+                "certified": dep_certified,
+            }
+
+    normalized_lineage: dict[str, Any] | None = None
+    if lineage_evidence is not None:
+        if not isinstance(lineage_evidence, Mapping):
+            blockers.append("LINEAGE_EVIDENCE_INVALID")
+        else:
+            lineage_status = str(
+                lineage_evidence.get("status") or ""
+            ).strip().upper()
+            lineage_head = str(
+                lineage_evidence.get("head_sha") or ""
+            ).strip().lower()
+            lineage_digest = _legacy_digest(
+                lineage_evidence.get("lineage_digest")
+            )
+            if lineage_status != "GREEN":
+                blockers.append("LINEAGE_NOT_GREEN")
+            if lineage_head != expected:
+                blockers.append("LINEAGE_HEAD_MISMATCH")
+            if lineage_digest is None:
+                blockers.append("LINEAGE_DIGEST_INVALID")
+            normalized_lineage = {
+                "status": lineage_status,
+                "head_sha": lineage_head,
+                "lineage_digest": lineage_digest,
+            }
+
+    blockers = sorted(set(blockers))
+    core = {
+        "version": UNIFIED_PROOF_BUNDLE_VERSION,
+        "checkpoint_id": checkpoint,
+        "repository": repo,
+        "expected_head_sha": expected,
+        "observed_head_sha": observed,
+        "exact_head": exact_head,
+        "focused_proof": focused,
+        "devsystem_proof": devsystem,
+        "terminal_receipt_digest": receipt or str(
+            terminal_receipt_digest or ""
+        ).strip(),
+        "artifacts": artifact_map,
+        "dependencies": dependency_map,
+        "regression_debt_state": debt,
+        "require_freeze": bool(require_freeze),
+        "freeze_record": normalized_freeze,
+        "require_deployment": bool(require_deployment),
+        "deployment_evidence": normalized_deployment,
+        "lineage_evidence": normalized_lineage,
+        "status": "GREEN" if not blockers else "BLOCKED",
+        "blockers": blockers,
+        "next_legal_action": _legacy_next_action(blockers),
+        "step_2a_required": True,
+        "network_calls": PROOF_BUNDLE_NETWORK_CALLS,
+        "auto_mutate": PROOF_BUNDLE_AUTO_MUTATE,
+        "may_modify_runtime": PROOF_BUNDLE_MAY_MODIFY_RUNTIME,
+        "mutation_authority": PROOF_BUNDLE_MUTATION_AUTHORITY,
+    }
+    bundle = dict(core)
+    bundle["bundle_digest"] = "sha256:" + _bundle_sha256(core)
+    return bundle
+
+
+def build_unified_proof_bundle(**kwargs: Any) -> dict[str, Any]:
+    """Build either the established gate packet or the strict final packet."""
+    if (
+        "expected_head_sha" in kwargs
+        or "observed_head_sha" in kwargs
+        or "terminal_receipt_digest" in kwargs
+    ):
+        return _build_unified_proof_bundle_legacy(**kwargs)
+    return _build_unified_proof_bundle_strict(**kwargs)
+
+
+def validate_unified_proof_bundle(
+    value: Mapping[str, Any],
+    *,
+    require_green: bool = False,
+) -> dict[str, Any]:
+    """Validate either unified bundle representation without weakening either."""
+    if not isinstance(value, Mapping):
+        raise UnifiedProofBundleError("unified proof bundle must be an object")
+
+    if value.get("schema_version") == 1:
+        bundle = _validate_unified_proof_bundle_strict(value)
+        if require_green and bundle.get("certification_state") != "CERTIFIED":
+            raise UnifiedProofBundleError(
+                "unified proof bundle is not certified green"
+            )
+        return bundle
+
+    supplied = dict(value)
+    digest = supplied.get("bundle_digest")
+    core = dict(supplied)
+    core.pop("bundle_digest", None)
+    expected = "sha256:" + _bundle_sha256(core)
+    if digest != expected:
+        raise UnifiedProofBundleError("unified proof bundle digest mismatch")
+    if supplied.get("version") != UNIFIED_PROOF_BUNDLE_VERSION:
+        raise UnifiedProofBundleError("unified proof bundle version mismatch")
+    if supplied.get("mutation_authority") is not False:
+        raise UnifiedProofBundleError(
+            "unified proof bundle cannot grant mutation authority"
+        )
+    if supplied.get("step_2a_required") is not True:
+        raise UnifiedProofBundleError(
+            "unified proof bundle must require Step 2A"
+        )
+    if require_green and supplied.get("status") != "GREEN":
+        raise UnifiedProofBundleError(
+            "unified proof bundle is not GREEN"
+        )
+    return supplied
+
+
+__all__ += [
+    "PROOF_BUNDLE_NETWORK_CALLS",
+    "PROOF_BUNDLE_AUTO_MUTATE",
+    "PROOF_BUNDLE_MAY_MODIFY_RUNTIME",
+    "PROOF_BUNDLE_MUTATION_AUTHORITY",
+]
