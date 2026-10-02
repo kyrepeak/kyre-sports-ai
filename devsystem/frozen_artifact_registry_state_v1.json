@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 30,
-  "source_main_sha": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
+  "revision": 31,
+  "source_main_sha": "89c77e8ddb6717ce0bc7ea94069cbdcc4af3994d",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1179,8 +1179,97 @@
         "devsystem/task_ledgers/monster-v8-step1-pre-mutation-blast-radius-simulator-v1.json": "e01cd9c681ff9b2e0ebc51255de937a158cc5c82",
         "tests/test_devsystem_pre_mutation_blast_radius_simulator_v1.py": "b6e24e64555c07205b8d649fb8fdab689aabb211"
       }
+    },
+    "MONSTER_V8_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V8_STEP2",
+      "source_main_sha": "89c77e8ddb6717ce0bc7ea94069cbdcc4af3994d",
+      "proven_merge_sha": "89c77e8ddb6717ce0bc7ea94069cbdcc4af3994d",
+      "pr_head_sha": "c0554ab1ad0cdc91b78a86d48e94236a9589edbd",
+      "pre_pr_focused_proof_run_id": 36962695314,
+      "pr_focused_proof_run_id": 36962742597,
+      "pr_devsystem_proof_run_id": 36962742623,
+      "proof_run_id": 36962742623,
+      "focused_test_count": 31,
+      "terminal_receipt_digest": "sha256:65522d5dbca5a494bc3647ced5f5b4c3358be41f435b1723cca1a48b761b384e",
+      "terminal_receipt_job_id": 110700618805,
+      "terminal_receipt_artifact_id": 11209085825,
+      "terminal_receipt_artifact_zip_sha256": "357e1a9459dca71e74ac6c247c21d307cb36764a5245b1f1bf092003729d4e6b",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "STATIC_CONTENT",
+      "content_addressed_proof_reuse": {
+        "version": "MONSTER_V6_CONTENT_ADDRESSED_PROOF_REUSE_V1",
+        "decision": "REUSE_APPROVED",
+        "reusable": true,
+        "checkpoint_id": "MONSTER_V8_STEP2",
+        "proof_run_id": 36962742623,
+        "source_main_sha": "c0554ab1ad0cdc91b78a86d48e94236a9589edbd",
+        "current_head_sha": "89c77e8ddb6717ce0bc7ea94069cbdcc4af3994d",
+        "head_moved": true,
+        "content_fingerprint": "9e70db27f39e71faca0d2520ddc9ccd7e34c9c1aa4455872ccbdb3302b86df64",
+        "reasons": [],
+        "next_legal_action": "REUSE_TERMINAL_PROOF",
+        "proof_policy_version": "MONSTER_V8_STEP2_STATIC_CONTROL_PLANE_V1",
+        "proof_scope": [
+          "DEVSYSTEM_FULL",
+          "FOCUSED_TEST",
+          "STATIC_CONTRACT",
+          "ROLLBACK_SAFETY"
+        ],
+        "all_artifact_blobs_identical": true,
+        "artifact_count": 4,
+        "all_dependency_blobs_identical": true,
+        "dependency_count": 5,
+        "dependencies": {
+          "devsystem/pre_mutation_blast_radius_simulator_v1.py": "75812e61e7b6dc4a12ee3e860f7cfd670e95dad6",
+          "devsystem/terminal_proof_receipt_v1.py": "e009da0790abbed2b24664b1031abf41d2f6c1fd",
+          "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+          "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+          "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf"
+        },
+        "production_live_state_reused": false
+      },
+      "rollback_contract": {
+        "baseline_requires_exact_green_terminal_proof": true,
+        "baseline_requires_valid_step1_simulation": true,
+        "path_scoped_restore_only": true,
+        "whole_repo_ref_reset_forbidden": true,
+        "unrelated_newer_commits_preserved": true,
+        "newer_writer_on_owned_surface_blocks": true,
+        "dependency_drift_blocks": true,
+        "resource_drift_blocks": true,
+        "nonterminal_failure_cannot_rollback": true,
+        "terminal_success_forbids_rollback": true,
+        "restore_action_single_use": true,
+        "restoration_identity_exact": true,
+        "rollback_requires_fresh_recertification": true,
+        "recertification_action_single_use": true,
+        "step_2a_required": true,
+        "mutation_authority_granted": false
+      },
+      "closeout_recovery": {
+        "failure_class": "STALE_CONCURRENCY_CANONICALIZATION_MISMATCH",
+        "failed_guard": "LEASE_STATE_HASH_VALIDATION",
+        "root_cause": "lease validator sorts holders by lease_id before hashing",
+        "patch": "validator-parity canonicalization",
+        "duplicate_freeze_writes": 0
+      },
+      "completion_contract": {
+        "total_steps": 7,
+        "completed_steps": [
+          1,
+          2
+        ],
+        "next_legal_action": "START_MONSTER_V8_STEP3"
+      },
+      "artifacts": {
+        ".github/workflows/monster-v8-step2-transactional-rollback.yml": "af35ad54a4343e504378820758af65005c3eeb14",
+        "devsystem/transactional_rollback_engine_v1.py": "609e5b9b3f416cff47d5867b57a63782ea0e18b8",
+        "devsystem/task_ledgers/monster-v8-step2-transactional-rollback-engine-v1.json": "90a3c0ef32e929ecd8c9037838161383b10d707d",
+        "tests/test_devsystem_transactional_rollback_engine_v1.py": "5e8b7a75fb224af8dceb07086868be219b841595"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "120d130f3b756f454065bf5205e4cc98ae32a0b3821354412fa802b8c77b5853"
+  "state_hash": "93f7d1ad70c1fb2d07387e520ed6e15beb59f231ad8a6c0266009e665de35e11"
 }
