@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 133,
+  "revision": 134,
   "generation": 66,
   "holders": [
     {
@@ -43,43 +43,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
-      "lease_id": "SCOPE-LEASE-V8S4-PROOFBUNDLE-004",
-      "generation": 66,
-      "acquired_at_utc": "2026-10-02T04:45:00Z",
-      "heartbeat_at_utc": "2026-10-02T04:45:00Z",
-      "expires_at_utc": "2026-10-02T05:25:00Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-project-state-v1.yml",
-          "devsystem/task_ledgers/monster-v8-step4-unified-proof-bundle-v1.json",
-          "sports_api/monster_project_state_v1.py",
-          "tests/test_monster_project_state_v1.py"
-        ],
-        "dependency_tokens": [
-          "control-plane:unified-proof-bundle",
-          "direct_dependencies:sports_api.monster_project_state_v1",
-          "direct_dependents:tests.test_monster_project_state_v1",
-          "frozen-dependency:monster_v8_step3",
-          "project:monster-v8",
-          "transitive_dependencies:sports_api.monster_project_state_v1",
-          "transitive_dependents:tests.test_monster_project_state_v1"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v8-step4-unified-proof-bundle-v1",
-          "pr:monster-v8-step4-unified-proof-bundle-v1",
-          "workflow:monster-project-state-v1"
-        ],
-        "resource_identity": {
-          "main:base": "e7b86908f5c886ba58216886fd71118e28a91c40",
-          "monster:v8-step": "4",
-          "intent:id": "intent-0f1bd2a5b28ea9ac714f40a2"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "9fa498b9746ab27d23d407e0d9f284d461ceb5b69c102e7feec745aadacb69ea"
+  "state_hash": "c51df407024511b5a1168bd073ef374c3c4bbceabacc6727eb9497996b0e5b77"
 }
