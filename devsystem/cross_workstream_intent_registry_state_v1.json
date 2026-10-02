@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 33,
-  "generation": 33,
+  "revision": 34,
+  "generation": 34,
   "next_sequence": 27,
   "intents": [
     {
@@ -1005,7 +1005,7 @@
     {
       "intent_id": "intent-642c68829e8590f1e698955d",
       "sequence": 24,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 frozen Game-loader seam correction",
       "mission_key": "wnba pra repair v1 step 2 frozen game loader seam correction",
       "semantic_fingerprint": "642c68829e8590f1e698955d25f6dd0832dd9ee7653c04ef76a3d0e321325711",
@@ -1040,13 +1040,13 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:21:00Z",
-      "updated_at_utc": "2026-10-02T16:24:00Z",
+      "updated_at_utc": "2026-10-02T16:34:00Z",
       "expires_at_utc": "2026-10-02T17:21:00Z"
     },
     {
       "intent_id": "intent-a0c5342c5f244e43b60d9295",
       "sequence": 25,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 frozen Game-loader seam correction",
       "mission_key": "wnba pra repair v1 step 2 frozen game loader seam correction",
       "semantic_fingerprint": "a0c5342c5f244e43b60d929558531951d99947f41651b95adaf8ccdd295ac03e",
@@ -1080,7 +1080,7 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:21:00Z",
-      "updated_at_utc": "2026-10-02T16:21:00Z",
+      "updated_at_utc": "2026-10-02T16:34:00Z",
       "expires_at_utc": "2026-10-02T17:21:00Z"
     },
     {
@@ -1124,5 +1124,5 @@
       "expires_at_utc": "2026-10-02T17:34:00Z"
     }
   ],
-  "state_hash": "2168207c5e7378492a000355bb0d975afc8e4b8db0240b3dde66babf7d636818"
+  "state_hash": "42747bf82cd1cd3d3d94b975c0bd3dd8c2729a19f9c61496eedcb4a99fa58d15"
 }
