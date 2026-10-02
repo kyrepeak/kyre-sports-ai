@@ -1,0 +1,61 @@
+name: MONSTER V7 Step 7 Progress Truth Stuck Detector
+
+on:
+  push:
+    branches:
+      - "monster/monster-v7-step7-progress-truth-stuck-detector-v1"
+    paths:
+      - "devsystem/progress_truth_stuck_state_detector_v1.py"
+      - "tests/test_devsystem_progress_truth_stuck_state_detector_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step7-progress-truth-stuck-detector-v1.json"
+      - ".github/workflows/monster-v7-step7-progress-truth-stuck-detector.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "devsystem/progress_truth_stuck_state_detector_v1.py"
+      - "tests/test_devsystem_progress_truth_stuck_state_detector_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step7-progress-truth-stuck-detector-v1.json"
+      - ".github/workflows/monster-v7-step7-progress-truth-stuck-detector.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v7-step7-progress-${{ github.event_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  focused-proof:
+    name: progress truth stuck detector focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen Step 6 autopilot dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/final_mile_autopilot_v1.py)" = "e23d4bbbfc96d2f86192f21a986baa53d3557744"
+
+      - name: Verify frozen heartbeat dead-man dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/execution_heartbeat_deadman_recovery_v1.py)" = "a8be77d18e0ba7bcc8bbba4ef45451d18c2bf469"
+
+      - name: Run progress truth contract
+        run: python devsystem/progress_truth_stuck_state_detector_v1.py
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_progress_truth_stuck_state_detector_v1.py
+
+      - name: Emit Step 7 GREEN marker
+        run: echo "MONSTER_V7_STEP7_PROGRESS_TRUTH_STUCK_DETECTOR_GREEN"
