@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 14,
-  "generation": 14,
+  "revision": 15,
+  "generation": 15,
   "next_sequence": 13,
   "intents": [
     {
@@ -486,8 +486,8 @@
         ],
         "resource_identity": {
           "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
-          "branch:head": "1714946abd20841e09217d29743c5afd8a897256",
-          "pr:merge": "90327541ec1a725b2445f88366f41bda66d9c688"
+          "branch:head": "cbf469b3bc9fd6d2317c3e5a39afcd4f7173f471",
+          "pr:merge": "b49cb313903ee853f1be006167dcb0ab8b695fa6"
         },
         "exclusive": false
       },
@@ -501,8 +501,8 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T15:20:00Z",
-      "updated_at_utc": "2026-10-02T15:20:00Z",
-      "expires_at_utc": "2026-10-02T16:20:00Z"
+      "updated_at_utc": "2026-10-02T15:25:20Z",
+      "expires_at_utc": "2026-10-02T16:25:20Z"
     },
     {
       "intent_id": "intent-c63dfaeef3232ef958bd33a0",
@@ -544,5 +544,5 @@
       "expires_at_utc": "2026-10-02T16:23:30Z"
     }
   ],
-  "state_hash": "13d6386385ecf99575af4c9929adcc9890a1b1fed6f88c0e584f2a0d6a01f39e"
+  "state_hash": "26be56ed027a0c7ad973d61e69fc964a9aac8c3f549b6d1c7b66680c89a89a34"
 }
