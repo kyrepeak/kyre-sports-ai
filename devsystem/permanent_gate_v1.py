@@ -99,6 +99,10 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_zero_context_resume_packet_v1.py",
     "devsystem/content_addressed_proof_reuse_v1.py",
     "tests/test_devsystem_content_addressed_proof_reuse_v1.py",
+    "devsystem/causal_state_lineage_graph_v1.py",
+    "tests/test_devsystem_causal_state_lineage_graph_v1.py",
+    "devsystem/task_ledgers/monster-v7-step1-causal-state-lineage-v1.json",
+    ".github/workflows/monster-v7-step1-causal-state-lineage.yml",
 )
 
 
