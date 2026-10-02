@@ -132,7 +132,18 @@ def validate_local_architecture(root: Path | str | None = None) -> dict[str, Any
             raise ProofConvergenceFailure(
                 f"{contract['checkpoint']}: ledger is not DONE"
             )
-        if plan.get("step") != contract["step"]:
+        plan_step = plan.get("step")
+        if plan_step is None:
+            if contract["checkpoint"] != "API2_PROOF_ARCHITECTURE_V1_STEP1":
+                raise ProofConvergenceFailure(
+                    f"{contract['checkpoint']}: execution-plan step missing"
+                )
+            mission = str(plan.get("mission") or "")
+            if "API2 Proof Architecture V1 Step 1 " not in mission:
+                raise ProofConvergenceFailure(
+                    f"{contract['checkpoint']}: legacy plan mission identity drift"
+                )
+        elif plan_step != contract["step"]:
             raise ProofConvergenceFailure(
                 f"{contract['checkpoint']}: execution-plan step drift"
             )
