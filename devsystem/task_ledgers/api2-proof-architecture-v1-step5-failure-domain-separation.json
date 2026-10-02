@@ -1,0 +1,82 @@
+{
+  "version": 5,
+  "task_id": "api2-proof-architecture-v1-step5-failure-domain-separation",
+  "project": "API2 Proof Architecture V1",
+  "step": "5/7",
+  "title": "Failure Ownership Separation",
+  "status": "DONE",
+  "source_main": "8ccec768913e0b81f12ef3d3966de81aef6ebc69",
+  "problem": "Proof failures can be treated as product defects even when the real owner is control-plane, deployment, upstream dependency, verifier, or external infrastructure.",
+  "root_cause": "MONSTER already had a frozen low-level failure ownership engine, but API2 proof steps did not have one permanent routing layer that translated ownership into product-vs-nonproduct repair domains and enforced mutation scope before patch/retry.",
+  "patch": "Reuse the frozen MONSTER Failure Ownership Engine V1. Add an API2 failure-domain router that emits exactly one repair domain, product mutation permission, scoped legal action, and deterministic decision fingerprint. Install its self-test and permanent test in DevSystem targeted CI.",
+  "proof_cases": {
+    "frozen_registry": {
+      "observed": "permanent-contract frozen artifact mismatch without exact thaw grant",
+      "domain": "CONTROL_PLANE",
+      "product_mutation_allowed": false
+    },
+    "upstream_dependency": {
+      "observed": "WNBA Step 3 no tappable players while Page 2 GREEN + FROZEN is unclaimed",
+      "domain": "UPSTREAM_DEPENDENCY",
+      "product_mutation_allowed": false,
+      "route_owner": "wnba-pra-repair-v1-step2-team-identity"
+    }
+  },
+  "protected": {
+    "step1": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "step2": "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "step3": "API2_PROOF_ARCHITECTURE_V1_STEP3",
+    "step4": "API2_PROOF_ARCHITECTURE_V1_STEP4",
+    "frozen_monster_failure_engine": "MONSTER_V3_STEP4",
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "classify_before_patch": true,
+    "exact_head_merge_required": true
+  },
+  "acceptance": {
+    "exactly_one_failure_domain": true,
+    "product_is_only_product_mutation_domain": true,
+    "control_plane_cannot_patch_product": true,
+    "deployment_cannot_patch_product": true,
+    "upstream_dependency_cannot_patch_downstream": true,
+    "proof_verifier_cannot_patch_product": true,
+    "external_is_observe_only": true,
+    "stale_evidence_cannot_patch": true,
+    "permanent_devsystem_enforcement": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "green_plus_frozen_claimed": false,
+  "repair": {
+    "failure_owner": "CONTROL_PLANE",
+    "focused_run": 37050823102,
+    "focused_failure": "DIRECT_SCRIPT_IMPORT_PATH",
+    "focused_evidence": "9 tests passed before direct invocation failed with ModuleNotFoundError: No module named 'devsystem'",
+    "devsystem_run": 37050822955,
+    "devsystem_failure": "FROZEN_REGISTRY_OBSOLETE_THAW_PAIR",
+    "registry_evidence": "Two Step-4 thaw file-pairs still referenced the pre-forward-port Step-3 workflow baseline after Step 4 permanently adopted the new blob.",
+    "patch": "Add direct-script repo-root bootstrap to Step-5 router; normalize only obsolete Step-3 workflow file-pairs from Step-4 thaws; preserve all product/runtime files.",
+    "product_code_changed": false,
+    "patch_budget": "1/1"
+  },
+  "repair_2": {
+    "failure_owner": "CONTROL_PLANE",
+    "devsystem_run": 37051144794,
+    "failure": "PYTEST_INVOKED_BEFORE_DEPENDENCY_INSTALL",
+    "evidence": "Step-5 self-test emitted GREEN, then python -m pytest failed with No module named pytest.",
+    "patch": "Keep the dependency-free Step-5 self-test at the early permanent-contract checkpoint and rely on the existing later permanent pytest suite, where this test file is already registered after dependency installation.",
+    "product_code_changed": false,
+    "patch_budget": "2/2"
+  }
+}
