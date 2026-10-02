@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 33,
+  "revision": 34,
   "source_main_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1466,8 +1466,72 @@
         "sports_api/monster_project_state_v1.py": "e72331a7fc1b82477d83517f75eb04d29bc5cef8",
         "tests/test_monster_project_state_v1.py": "b142c8956ea522a691377abecb294867c292ef6d"
       }
+    },
+    "WNBA_PRA_SPEED_V3_STEP9": {
+      "status": "FROZEN",
+      "checkpoint_id": "WNBA_PRA_SPEED_V3_STEP9",
+      "source_main_sha": "e7b86908f5c886ba58216886fd71118e28a91c40",
+      "proven_merge_sha": "2d2eed003cdb2196d9198647442d928acef9e654",
+      "pr_number": 1332,
+      "pr_head_sha": "f922df1c5ca624161d1d508f07d4df44fdb931b5",
+      "exact_head_step9_proof_run_id": 36964819519,
+      "exact_head_devsystem_proof_run_id": 36964819550,
+      "merged_main_production_proof_run_id": 36965042005,
+      "merged_main_production_proof_attempt": 2,
+      "merged_main_devsystem_proof_run_id": 36965041979,
+      "proof_run_id": 36965042005,
+      "terminal_receipt_digest": "sha256:3cd092ae079a42080fd60e9d7abfba243096779586410c3be0562bf8cb359e7b",
+      "terminal_receipt_job_id": 110707630162,
+      "terminal_receipt_artifact_id": 11209084698,
+      "terminal_receipt_artifact_zip_sha256": "c4da6f0fc6f2890a7c1db2a62f365bfb3027e23eb60ae1f14cd5ecb069192d2e",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "MERGED_MAIN_PRODUCTION",
+      "performance_contract": {
+        "true_cold_seconds": 0.446,
+        "true_cold_limit_seconds": 2.5,
+        "warm_same_session_seconds": 0.448,
+        "warm_same_session_limit_seconds": 0.75,
+        "cached_cold_seconds": 0.461,
+        "cached_cold_limit_seconds": 1.5,
+        "visible_continuity_seconds": 0.019,
+        "visible_continuity_limit_seconds": 0.75,
+        "frozen_steps_1_8_green": true,
+        "duplicate_key_guard_green": true,
+        "precompute_handoff_performance_green": true
+      },
+      "recovery_lineage": {
+        "original_failed_merged_main_run_id": 36965042005,
+        "original_failed_attempt": 1,
+        "failure_class": "EXTERNAL_STALE_STREAMLIT_RUNTIME",
+        "external_recovery": "USER_STREAMLIT_REBOOT",
+        "replacement_attempt": 2,
+        "duplicate_reruns": 0
+      },
+      "completion_contract": {
+        "total_steps": 9,
+        "completed_steps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "next_legal_action": "PROJECT_COMPLETE"
+      },
+      "artifacts": {
+        ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml": "0fe38d0bed64fe15d52deb30b7d92cc012bf6e68",
+        "app.py": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
+        "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json": "eac68bf9b00be8ce743f78e0ae64a4f513c457e4",
+        "devsystem/wnba_pra_speed_v3_step9_final_cert.py": "175c7afd6f171467f9afae0db743d8e03593d7e0",
+        "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py": "51eef1fe2526801a467f155d1c0b32d516ef8a35",
+        "tests/test_wnba_pra_speed_v3_step9.py": "b471a73f9bb1444a0ca261ca5ad4245777589faa"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "a8feed976f8dd4123530e3088bff00e60680d20c537e012e9994b03a48cf7cfc"
+  "state_hash": "6895710f037fc91337a3fdf3a7cdd07ce44a6e15c8ec5b97c4ef90508807203b"
 }
