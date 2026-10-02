@@ -4,45 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "queue_ref": "refs/heads/monster-lease-wait-queue",
   "queue_state_path": "devsystem/atomic_wait_queue_state_v1.json",
-  "revision": 4,
+  "revision": 5,
   "generation": 3,
-  "tickets": [
-    {
-      "ticket_id": "WAIT-TICKET-F3ACA0AAE1232B604A6D3D17",
-      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-deploy-refresh-r1",
-      "queue_key": "deploy:pickvault",
-      "sequence": 3,
-      "blocked_by_lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
-      "enqueued_at_utc": "2026-10-02T03:46:11Z",
-      "expires_at_utc": "2026-10-02T04:16:11Z",
-      "status": "WAITING",
-      "scope": {
-        "write_paths": [
-          "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
-          "requirements.txt"
-        ],
-        "dependency_tokens": [
-          "domain:cfb",
-          "project:cfb-top-picks-repair-step3-deploy-refresh"
-        ],
-        "shared_resources": [
-          "branch:cfb-top-picks-repair-step3-deploy-refresh-r1",
-          "deploy:pickvault",
-          "pr:cfb-top-picks-repair-step3-deploy-refresh-r1",
-          "workflow:cfb-top-picks-repair-step3-market-reasoning-v1",
-          "workflow:devsystem-targeted-ci"
-        ],
-        "resource_identity": {
-          "candidate:head": "28f294b587ed33128004fbdfcf5118092edf4d6e",
-          "main:base": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
-          "queue:ticket": "WAIT-TICKET-F3ACA0AAE1232B604A6D3D17",
-          "repair:class": "streamlit-full-redeploy",
-          "verification:shard": "cfb-top-picks-step3"
-        },
-        "exclusive": false
-      }
-    }
-  ],
+  "tickets": [],
   "handoff_receipts": [
     {
       "ticket_id": "WAIT-TICKET-DB41A76BECD74762595C40BD",
@@ -54,5 +18,5 @@
       "lease_state_hash": "7fd6d348cc371dbfb9a55d6e00d30cffbb8b06e99ff0a0102ca19126d246f71e"
     }
   ],
-  "state_hash": "d51459cc419b680bdeffbc6aa854061d7959a671cad403afef6898f21b2520cf"
+  "state_hash": "c52bee94254d23e20fc93951add463d1bdbff491a46cb282f584ce78338a3647"
 }
