@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V8_CROSS_WORKSTREAM_INTENT_ARBITER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "intent_ref": "refs/heads/monster-workstream-intent-registry",
+  "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
+  "revision": 0,
+  "generation": 0,
+  "next_sequence": 1,
+  "intents": [],
+  "state_hash": "50b970d0bf95ce0a5106773555c551cb7723d755348965102387d670c113dc67"
+}
