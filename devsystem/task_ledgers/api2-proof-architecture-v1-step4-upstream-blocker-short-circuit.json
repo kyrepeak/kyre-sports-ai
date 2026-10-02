@@ -18,14 +18,15 @@
     "new_decision": "UPSTREAM_BLOCKED",
     "expected_deployment_attempts": 0
   },
-  "patch": "Add a reusable upstream certification registry and gate. Downstream proof begins only when the upstream ledger explicitly claims GREEN + FROZEN. The WNBA Step-3 production verifier now checks upstream before browser imports or retry loops, and the Step-4 orchestrator wakes automatically when the upstream ledger changes.",
+  "patch": "Add a reusable upstream certification registry and gate. Downstream proof begins only when the upstream ledger explicitly claims GREEN + FROZEN. The WNBA Step-3 production verifier now checks upstream before browser imports or retry loops, and the Step-4 orchestrator wakes automatically when the upstream ledger changes. Forward-port the frozen WNBA Step-3 exact-scope whitelist to recognize Step-4 control-plane artifacts; no Step-3 product/runtime semantics change.",
   "protected": {
     "step1": "API2_PROOF_ARCHITECTURE_V1_STEP1",
     "step2": "API2_PROOF_ARCHITECTURE_V1_STEP2",
     "step3": "API2_PROOF_ARCHITECTURE_V1_STEP3",
     "product_runtime_changed": false,
     "model_math_changed": false,
-    "projection_math_changed": false
+    "projection_math_changed": false,
+    "step3_scope_forward_port_only": true
   },
   "two_a": {
     "one_active_problem": true,
@@ -43,7 +44,8 @@
     "blocked_upstream_deployment_attempts_zero": true,
     "blocked_upstream_product_patch_allowed": false,
     "green_frozen_upstream_opens_downstream_proof": true,
-    "upstream_ledger_change_wakes_orchestrator": true
+    "upstream_ledger_change_wakes_orchestrator": true,
+    "step3_exact_scope_forward_ported": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
