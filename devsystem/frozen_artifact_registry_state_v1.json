@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 29,
-  "source_main_sha": "11efd07ae262e59527a59dfd6450312dd2b7d983",
+  "revision": 30,
+  "source_main_sha": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1085,8 +1085,102 @@
         "devsystem/task_ledgers/monster-v7-step7-progress-truth-stuck-detector-v1.json": "5111cf6eb65dd22af0a8a1b6bb1aed0929acfaeb",
         "tests/test_devsystem_progress_truth_stuck_state_detector_v1.py": "27caa62de24a32ab38aa4ecac2f92d59b3b29709"
       }
+    },
+    "MONSTER_V8_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V8_STEP1",
+      "source_main_sha": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
+      "proven_merge_sha": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
+      "pr_head_sha": "862a6bd06aaabcf35c122604fc1ed4a6f447a93b",
+      "pre_pr_focused_proof_run_id": 36961089456,
+      "superseded_pr_focused_run_id": 36961161027,
+      "superseded_pr_devsystem_run_id": 36961161013,
+      "pr_focused_proof_run_id": 36961455040,
+      "pr_devsystem_proof_run_id": 36961455041,
+      "proof_run_id": 36961455041,
+      "focused_test_count": 21,
+      "terminal_receipt_digest": "sha256:92f815fa14c7f7956d82094df435b285522d7f459719bbb1bb10048f5d34ca0a",
+      "terminal_receipt_job_id": 110696072602,
+      "terminal_receipt_artifact_id": 11208070813,
+      "terminal_receipt_artifact_zip_sha256": "e7e3a4b4ef2473df6dd3f7f0d2012dfb05fbb13172df440d4d96db594b30ad2c",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "STATIC_CONTENT",
+      "content_addressed_proof_reuse": {
+        "version": "MONSTER_V6_CONTENT_ADDRESSED_PROOF_REUSE_V1",
+        "decision": "REUSE_APPROVED",
+        "reusable": true,
+        "checkpoint_id": "MONSTER_V8_STEP1",
+        "proof_run_id": 36961455041,
+        "source_main_sha": "862a6bd06aaabcf35c122604fc1ed4a6f447a93b",
+        "current_head_sha": "735d48d9a4460dd08f6a3bceca69ad364187bdf2",
+        "head_moved": true,
+        "content_fingerprint": "883f40e2789131e99a8bb0fb2d5e19e92304f376f99206a3501f97ec98ff6657",
+        "reasons": [],
+        "next_legal_action": "REUSE_TERMINAL_PROOF",
+        "proof_policy_version": "MONSTER_V8_STEP1_STATIC_CONTROL_PLANE_V1",
+        "proof_scope": [
+          "DEVSYSTEM_FULL",
+          "FOCUSED_TEST",
+          "STATIC_CONTRACT",
+          "CURRENT_MAIN_RECONCILIATION"
+        ],
+        "all_artifact_blobs_identical": true,
+        "artifact_count": 4,
+        "all_dependency_blobs_identical": true,
+        "dependency_count": 7,
+        "dependencies": {
+          "devsystem/project_blast_radius_map_v1.py": "24f1464122ec9814434a543835bb7a9f8b246118",
+          "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+          "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+          "devsystem/shared_resource_lease_sharding_v1.py": "0e104b166bac9425ab2b84e253446b3faae5c0af",
+          "sports_api/monster_dependency_map_v1.py": "b7de79e0818064fb3e48c02ae8ae06262440294c",
+          "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+          "devsystem/terminal_proof_receipt_v1.py": "e009da0790abbed2b24664b1031abf41d2f6c1fd"
+        },
+        "production_live_state_reused": false
+      },
+      "blast_radius_contract": {
+        "stale_head_blocks": true,
+        "direct_frozen_write_blocks": true,
+        "transitive_frozen_reach_blocks": true,
+        "undeclared_write_blocks": true,
+        "undeclared_dependency_blocks": true,
+        "undeclared_resource_blocks": true,
+        "workflow_impact_predicted": true,
+        "deployment_impact_predicted": true,
+        "live_workstream_conflict_blocks": true,
+        "expired_holder_ignored": true,
+        "sharded_disjoint_holder_allowed": true,
+        "global_parent_conflicts_with_child": true,
+        "unknown_target_fails_safe": true,
+        "simulation_receipt_tamper_evident": true,
+        "green_only_requests_step2a_gate": true,
+        "mutation_authority_granted": false
+      },
+      "reconciliation_history": {
+        "stale_base_detected": true,
+        "old_head_sha": "050b9aabc3ab7b686028ad9072456600659e1477",
+        "current_main_before_reconciliation": "3cec279b50418fd7d08b400e23a228ccfe9c724b",
+        "reconciled_head_sha": "862a6bd06aaabcf35c122604fc1ed4a6f447a93b",
+        "reconciliation_kind": "NON_FORCE_TWO_PARENT_MERGE_COMMIT",
+        "old_artifact_blobs_preserved": true,
+        "duplicate_manual_reruns": 0
+      },
+      "completion_contract": {
+        "total_steps": 7,
+        "completed_steps": [
+          1
+        ],
+        "next_legal_action": "START_MONSTER_V8_STEP2"
+      },
+      "artifacts": {
+        ".github/workflows/monster-v8-step1-pre-mutation-blast-radius.yml": "4ce02994927c2bf700e7faffd48a634d6958e80e",
+        "devsystem/pre_mutation_blast_radius_simulator_v1.py": "75812e61e7b6dc4a12ee3e860f7cfd670e95dad6",
+        "devsystem/task_ledgers/monster-v8-step1-pre-mutation-blast-radius-simulator-v1.json": "e01cd9c681ff9b2e0ebc51255de937a158cc5c82",
+        "tests/test_devsystem_pre_mutation_blast_radius_simulator_v1.py": "b6e24e64555c07205b8d649fb8fdab689aabb211"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "b49fe59f0d3cf8ce2966d0ab1bf2d1ef4a5a6f0a764ce0c5672cefc2d23c1444"
+  "state_hash": "120d130f3b756f454065bf5205e4cc98ae32a0b3821354412fa802b8c77b5853"
 }
