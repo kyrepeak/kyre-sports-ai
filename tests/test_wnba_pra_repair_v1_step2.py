@@ -151,9 +151,12 @@ def test_step2_cert_requires_real_public_two_team_proof():
     source = CERT.read_text(encoding="utf-8")
     assert "nav._find_game_date()" in source
     assert "speed9._prime_wnba_pra_route" in source
-    assert "_wait_game_shell(page)" in source
-    assert "_advance_shell_once(page, frame)" in source
-    assert "WNBA_PRA_REPAIR_V1_STEP2_GAME_SHELL_HANDOFF_ONCE" in source
+    assert "GAME_SETUP_TIMEOUT_SECONDS = 120.0" in source
+    assert 'timeout_seconds=GAME_SETUP_TIMEOUT_SECONDS' in source
+    assert "_wait_game_shell" not in source
+    assert "_advance_shell_once" not in source
+    assert "WNBA_PRA_REPAIR_V1_STEP2_GAME_SHELL_HANDOFF_ONCE" not in source
+    assert "WNBA_PRA_REPAIR_V1_STEP2_CANONICAL_SINGLE_CLICK_GAME_TRANSITION_GREEN" in source
     assert "step2_runtime_composition_safe" in source
     assert "data-away-team-id" in source
     assert "data-home-team-id" in source
