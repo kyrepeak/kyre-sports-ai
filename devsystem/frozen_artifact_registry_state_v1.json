@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 59,
+  "revision": 60,
   "source_main_sha": "e4de274ca6d0f8399e9e9a2d26a22896a800a4cd",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1530,6 +1530,18 @@
         "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py": "51eef1fe2526801a467f155d1c0b32d516ef8a35",
         "tests/test_wnba_pra_speed_v3_step9.py": "b471a73f9bb1444a0ca261ca5ad4245777589faa"
       }
+    },
+    "API2_PROOF_ARCHITECTURE_V1_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+      "source_main_sha": "e4de274ca6d0f8399e9e9a2d26a22896a800a4cd",
+      "artifacts": {
+        ".github/workflows/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.yml": "93d52d6973b01bfe054a710bfc17c7102128af1d",
+        "devsystem/api2_exact_deployment_sha_gate_v1.py": "69b0e7dd9e6d4d11f1e4aa0ac2135c2b2b3ed6d9",
+        "devsystem/execution_plans/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json": "91697738d308765a54d1c42d9f67c789b51c20e7",
+        "devsystem/task_ledgers/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json": "7e150a570e26c081e5d4b3572191d99d390f6b6d",
+        "tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py": "848a39b5e4ab6b72296eec3bb657379a62bd132a"
+      }
     }
   },
   "active_thaws": [
@@ -1875,5 +1887,5 @@
       }
     }
   ],
-  "state_hash": "334ee817009ae40eef5f43149027d22aef9fde088133937edc65674b9c267ef8"
+  "state_hash": "57e5dade81b67dc456c2c1e75f66a36ea950a13619c4ae71610d6652951849f8"
 }
