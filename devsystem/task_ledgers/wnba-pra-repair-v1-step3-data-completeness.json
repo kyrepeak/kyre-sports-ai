@@ -9,8 +9,8 @@
   "proof_mode": "MERGED_MAIN_PRODUCTION_REQUIRED",
   "source_main": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
   "execution_plan": {
-    "plan_id": "PLAN-DEC3CC447F621425ABC4FEDE",
-    "plan_digest": "sha256:dec3cc447f621425abc4fede6fb12b94e4f4771687bea17c5aebd3880bf199d5",
+    "plan_id": "PLAN-A6106A95F3EB1983B4CA9DB2",
+    "plan_digest": "sha256:a6106a95f3eb1983b4ca9db292110a2d08c0827dc88080b67f687363cdbb2767",
     "current_checkpoint": "frozen_activation"
   },
   "root_causes": [
@@ -44,7 +44,8 @@
     "adaptive_stuck_thresholds": true,
     "chaos_adversarial_certification": true,
     "app_exact_head_thaw_required": true,
-    "component_only_freeze_rejected": true
+    "component_only_freeze_rejected": true,
+    "frozen_registry_write_declared_in_plan": true
   },
   "two_a": {
     "scope_lease_owner": "chatgpt:api2:wnba-pra-repair-v1-step3",
@@ -55,7 +56,7 @@
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
     "upstream_step2_recovery_not_touched": true,
-    "next_legal_action": "OBTAIN_EXACT_HEAD_APP_THAW_THEN_ACTIVATE_RUNTIME_THEN_EXACT_HEAD_PROOF"
+    "next_legal_action": "STAGE_EXACT_APP_HEAD_THEN_REGISTRY_THAW_THEN_ATTACH_HEAD"
   },
   "acceptance": {
     "opponent_identity_consumer_independent": true,

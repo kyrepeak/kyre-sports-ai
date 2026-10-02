@@ -82,22 +82,27 @@
         "rollback_anchor"
       ],
       "write_paths": [
-        "app.py"
+        "app.py",
+        "devsystem/frozen_artifact_registry_state_v1.json"
       ],
       "dependency_tokens": [
+        "control:frozen-artifact-registry",
         "frozen:wnba-pra-speed-v3-step9"
       ],
       "shared_resources": [
-        "app-entrypoint:app.py#shard[domain=wnba,route=pra]"
+        "app-entrypoint:app.py#shard[domain=wnba,route=pra]",
+        "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
       ],
       "expected_proof": [
         "Step 2A app scope authorization",
         "exact app.py from/to blobs",
-        "exact-head frozen-artifact thaw"
+        "exact-head frozen-artifact thaw",
+        "registry CAS success"
       ],
       "completion_criteria": [
         "Step-3 runtime active above Step-2 parent",
-        "frozen registry authorizes exact candidate head only"
+        "frozen registry authorizes exact candidate head only",
+        "registry mutation remains Step-3 scoped"
       ],
       "step_2a_required": true,
       "mutation_authority": false
@@ -271,6 +276,7 @@
       ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
       "app.py",
       "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json",
+      "devsystem/frozen_artifact_registry_state_v1.json",
       "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json",
       "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
       "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
@@ -279,6 +285,7 @@
     ],
     "dependency_tokens": [
       "branch:a681f864292dffa01838d24132e0a04ccbfea974",
+      "control:frozen-artifact-registry",
       "dependency:wnba-pra-repair-v1-step2",
       "freeze:step3",
       "frozen:wnba-pra-speed-v3-step9",
@@ -295,6 +302,7 @@
       "branch:api2/wnba-pra-repair-v1-step3-data-completeness",
       "deployment:streamlit#shard[domain=wnba,route=pra]",
       "pr:api2/wnba-pra-repair-v1-step3-data-completeness",
+      "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]",
       "workflow:wnba-pra-repair-v1-step3-data-completeness"
     ]
   },
@@ -313,7 +321,8 @@
     "frozen_activation": [
       "Step 2A app scope authorization",
       "exact app.py from/to blobs",
-      "exact-head frozen-artifact thaw"
+      "exact-head frozen-artifact thaw",
+      "registry CAS success"
     ],
     "exact_head_proof": [
       "DevSystem final gate success",
@@ -361,9 +370,9 @@
   "network_calls": false,
   "auto_mutate": false,
   "may_modify_product_runtime": false,
-  "plan_id": "PLAN-DEC3CC447F621425ABC4FEDE",
-  "plan_digest": "sha256:dec3cc447f621425abc4fede6fb12b94e4f4771687bea17c5aebd3880bf199d5",
+  "plan_id": "PLAN-A6106A95F3EB1983B4CA9DB2",
+  "plan_digest": "sha256:a6106a95f3eb1983b4ca9db292110a2d08c0827dc88080b67f687363cdbb2767",
   "status": "COMPILED",
   "decision": "EXECUTE_COMPILED_PLAN",
-  "next_legal_action": "ENTER_CHECKPOINT:rollback_anchor"
+  "next_legal_action": "ENTER_CHECKPOINT:frozen_activation"
 }
