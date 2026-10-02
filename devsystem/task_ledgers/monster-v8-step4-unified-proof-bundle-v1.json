@@ -1,0 +1,100 @@
+{
+  "version": 2,
+  "task_id": "monster-v8-step4-unified-proof-bundle-v1",
+  "title": "MONSTER V8 Step 4 - Unified Proof Bundle",
+  "project": "MONSTER V8",
+  "step": 4,
+  "total_steps": 7,
+  "status": "DONE",
+  "problem": "Proof for one MONSTER checkpoint is distributed across exact-head tests, DevSystem, terminal receipt, artifact/dependency identity, deployment state, lineage, regression debt, proof reuse, and frozen-registry evidence.",
+  "root_cause": "No single tamper-evident certification packet cross-checks all required proof identities before a checkpoint is treated as GREEN or FROZEN.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "Extend the existing repository-wide Monster Project State control-plane surface with MONSTER_V8_UNIFIED_PROOF_BUNDLE_V1. The bundle binds exact proof head and merged-main identity, focused and DevSystem runs, terminal receipt, artifact/dependency blobs, deployment evidence or explicit NOT_REQUIRED, lineage, regression debt, frozen registry, and content-addressed proof reuse into one deterministic digest. It fails closed on contradictions and grants no mutation authority.",
+  "recovery": {
+    "first_failed_focused_run": 36965420696,
+    "first_failed_focused_job": 110708005151,
+    "focused_failure_class": "DETERMINISTIC_PUBLIC_EXPORT_OMISSION",
+    "focused_root_cause": "Tests import the proof-bundle safety constants but the module did not export them.",
+    "first_failed_devsystem_run": 36965420609,
+    "first_failed_permanent_job": 110708052312,
+    "permanent_failure_class": "DETERMINISTIC_ACTION_LEDGER_SCHEMA",
+    "permanent_root_cause": "Non-documentation PR requires exactly one changed task ledger.",
+    "patch_budget": 1,
+    "duplicate_reruns": 0
+  },
+  "protected": {
+    "monster_v8_steps_1_2_3_frozen": true,
+    "existing_project_state_behavior_preserved": true,
+    "only_mapped_project_state_code_surface_changed": true,
+    "mandatory_task_ledger_is_control_plane_evidence": true,
+    "no_product_runtime_change": true,
+    "no_network_calls": true,
+    "no_auto_mutation": true,
+    "mutation_authority_granted": false,
+    "step_2a_required": true
+  },
+  "acceptance": {
+    "exact_head_mismatch_blocks": true,
+    "failed_focused_proof_blocks": true,
+    "failed_devsystem_proof_blocks": true,
+    "terminal_receipt_required": true,
+    "artifact_identity_required": true,
+    "dependency_identity_required": true,
+    "regression_debt_must_be_cleared": true,
+    "freeze_identity_cross_checked": true,
+    "deployment_required_only_when_policy_requires": true,
+    "lineage_identity_cross_checked": true,
+    "bundle_digest_tamper_evident": true,
+    "moved_head_requires_proof_reuse_identity": true,
+    "bundle_never_grants_mutation_authority": true
+  },
+  "intent": {
+    "intent_id": "intent-8bc152bf48b94f5fdba425f0",
+    "owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
+    "branch": "monster/monster-v8-step4-unified-proof-bundle-v1",
+    "base_main_sha": "2d2eed003cdb2196d9198647442d928acef9e654"
+  },
+  "lease": {
+    "lease_id": "SCOPE-LEASE-V8S4-PROOFBUNDLE-003",
+    "allowed_write_paths": [
+      "devsystem/task_ledgers/monster-v8-step4-unified-proof-bundle-v1.json",
+      "sports_api/monster_project_state_v1.py",
+      "tests/test_monster_project_state_v1.py"
+    ]
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_monster_project_state_v1.py",
+    "permanent_contract": "sports_api/monster_project_state_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "proof_plan": {
+    "focused_workflow": ".github/workflows/monster-project-state-v1.yml",
+    "focused_tests": "python -m pytest -q tests/test_monster_project_state_v1.py",
+    "exact_pr_head_required": true,
+    "devsystem_targeted_ci_required": true,
+    "terminal_receipt_required": true,
+    "merged_main_blob_identity_required": true,
+    "unified_bundle_required": true,
+    "frozen_registry_required": true
+  },
+  "completion_contract": {
+    "completed_steps": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "next_legal_action": "START_MONSTER_V8_STEP5",
+    "no_step5_before_freeze": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+}
