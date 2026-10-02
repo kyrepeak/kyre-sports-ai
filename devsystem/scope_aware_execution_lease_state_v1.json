@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 92,
-  "generation": 44,
+  "revision": 93,
+  "generation": 45,
   "holders": [
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-router-v9-propagation-r1",
@@ -70,7 +70,39 @@
         },
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "chatgpt:monster-v2:monster-v7-step2-root-cause-backtrace-v1",
+      "lease_id": "SCOPE-LEASE-V7S2-ROOTCAUSE-001",
+      "generation": 45,
+      "acquired_at_utc": "2026-10-02T01:16:20Z",
+      "heartbeat_at_utc": "2026-10-02T01:16:20Z",
+      "expires_at_utc": "2026-10-02T01:56:20Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/monster-v7-step2-automatic-root-cause-backtrace.yml",
+          "devsystem/automatic_root_cause_backtrace_v1.py",
+          "devsystem/task_ledgers/monster-v7-step2-automatic-root-cause-backtrace-v1.json",
+          "tests/test_devsystem_automatic_root_cause_backtrace_v1.py"
+        ],
+        "dependency_tokens": [
+          "project:monster-v7",
+          "control-plane:automatic-root-cause-backtrace",
+          "frozen-dependency:MONSTER_V7_STEP1"
+        ],
+        "shared_resources": [
+          "branch:monster/monster-v7-step2-automatic-root-cause-backtrace-v1",
+          "pr:monster-v7-step2-automatic-root-cause-backtrace-v1",
+          "workflow:monster-v7-step2-automatic-root-cause-backtrace"
+        ],
+        "resource_identity": {
+          "main:base": "ba5addcd6c5100997d6de46cdf969d8c5be5d41a",
+          "monster:v7-step": "2",
+          "depends:on": "MONSTER_V7_STEP1"
+        },
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "44210a7d19989b29de5f1c6d5c0955cd0475b9a939bca0e545f068a07861c492"
+  "state_hash": "d9317d1d5fcb9cfe5c3317b3a941edbf80d726b737a39e654f569bcd20f9bca5"
 }
