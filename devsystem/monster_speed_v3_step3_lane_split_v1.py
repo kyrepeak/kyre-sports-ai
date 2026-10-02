@@ -1,4 +1,9 @@
-"""Monster Speed V3 Step 3 — fast PR / full merged-main lane guard."""
+"""Monster Speed V3 Step 3 — targeted-required PR / full merged-main lane guard.
+
+API2 Proof Architecture V1 Step 2 forward-ports the original speed contract:
+PRs stay targeted, but any integration lane relevant to the classified change
+must run before merge. Irrelevant lanes may still skip.
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,8 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/devsystem-targeted-ci.yml"
 
+
 class LaneSplitFailure(RuntimeError):
     pass
+
 
 def _job_block(text: str, name: str) -> str:
     marker = f"  {name}:\n"
@@ -21,6 +28,7 @@ def _job_block(text: str, name: str) -> str:
             break
         out.append(line)
     return "\n".join(out)
+
 
 def check_repository() -> dict[str, object]:
     text = WORKFLOW.read_text(encoding="utf-8")
@@ -43,38 +51,76 @@ def check_repository() -> dict[str, object]:
         failures.append("full merge token missing")
 
     browser = _job_block(text, "browser-qa")
-    if "github.event_name != 'pull_request'" not in browser:
-        failures.append("browser QA still runs on routine PRs")
+    if "github.event_name != 'pull_request'" in browser:
+        failures.append("browser QA is still PR-deferred")
+    for marker in (
+        "needs.classify.outputs.ui == 'true'",
+        "needs.classify.outputs.core == 'true'",
+    ):
+        if marker not in browser:
+            failures.append(f"browser QA missing targeted requirement: {marker}")
 
-    for name in ("cfb-critical", "mlb-critical", "wnba-critical", "nfl-critical"):
+    for domain in ("cfb", "mlb", "wnba", "nfl"):
+        name = f"{domain}-critical"
         block = _job_block(text, name)
-        if "github.event_name != 'pull_request'" not in block:
-            failures.append(f"{name} not deferred from routine PR")
-        if "needs.classify.outputs.model == 'true'" not in block:
-            failures.append(f"{name} lost high-risk model PR escape hatch")
+        if "github.event_name != 'pull_request'" in block:
+            failures.append(f"{name} is still deferred from PR")
+        if "needs.classify.outputs.model == 'true'" in block:
+            failures.append(f"{name} still depends on model-only PR escape hatch")
+        for marker in (
+            f"needs.classify.outputs.{domain} == 'true'",
+            "needs.classify.outputs.core == 'true'",
+        ):
+            if marker not in block:
+                failures.append(f"{name} missing targeted requirement: {marker}")
 
     final = _job_block(text, "devsystem-final-gate")
-    for required in ("- pr-fast", "- full-merge-certification", "PR_FAST_RESULT", "FULL_MERGE_RESULT", "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED", "MONSTER_SPEED_V3_STEP3_FULL_MERGE_REQUIRED"):
+    for required in (
+        "- pr-fast",
+        "- full-merge-certification",
+        "PR_FAST_RESULT",
+        "FULL_MERGE_RESULT",
+        "MONSTER_SPEED_V3_STEP3_FAST_PR_REQUIRED",
+        "MONSTER_SPEED_V3_STEP3_FULL_MERGE_REQUIRED",
+        "require_success_if()",
+        "DEVSYSTEM_REQUIRED_LANE_BLOCKED",
+        "DEVSYSTEM_REQUIRED_LANE_POLICY_GREEN",
+    ):
         if required not in final:
             failures.append(f"final gate missing {required}")
+
+    for lane in (
+        "browser-qa",
+        "cfb-critical",
+        "mlb-critical",
+        "wnba-critical",
+        "nfl-critical",
+        "core-smoke",
+    ):
+        if f'require_success_if "{lane}"' not in final:
+            failures.append(f"final gate does not require success for in-scope {lane}")
 
     if failures:
         raise LaneSplitFailure(" | ".join(failures))
 
     return {
         "status": "GREEN",
-        "pr_mode": "FAST",
+        "pr_mode": "TARGETED_REQUIRED",
         "merged_main_mode": "FULL",
-        "routine_pr_browser_qa": False,
-        "high_risk_model_pr_full_sport_proof": True,
+        "relevant_pr_browser_qa": True,
+        "relevant_pr_sport_proof": True,
+        "optional_pr_lanes_skippable": True,
+        "required_pr_lanes_must_succeed": True,
         "full_merge_required_on_main": True,
     }
 
+
 def main() -> int:
     result = check_repository()
-    print("MONSTER_SPEED_V3_STEP3_FAST_PR_FULL_MERGE_GREEN")
+    print("MONSTER_SPEED_V3_STEP3_TARGETED_REQUIRED_PR_FULL_MERGE_GREEN")
     print(result)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
