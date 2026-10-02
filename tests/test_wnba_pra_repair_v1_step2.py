@@ -14,6 +14,7 @@ CERT = ROOT / "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py"
 LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
 WORKFLOW = ROOT / ".github/workflows/wnba-pra-repair-v1-step2-team-identity.yml"
 APP = ROOT / "app.py"
+STEP3_OVERLAY = ROOT / "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
 
 
 def test_step2_identity_registry_is_lightweight_unique_and_complete():
@@ -136,8 +137,13 @@ def test_step2_does_not_make_team_ownership_guess_for_conflicting_player_id():
 
 def test_step2_app_activates_overlay_and_keeps_step9_compatibility():
     app = APP.read_text(encoding="utf-8")
-    assert "WNBA_PRA_REPAIR_V1_STEP2_TEAM_ID_RUNTIME" in app
-    assert "from streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity import record_bootstrap_import_ms, render_app" in app
+    step3 = STEP3_OVERLAY.read_text(encoding="utf-8")
+    direct = "from streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity import record_bootstrap_import_ms, render_app" in app
+    composed = (
+        "from streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness import record_bootstrap_import_ms, render_app" in app
+        and 'FROZEN_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity"' in step3
+    )
+    assert direct or composed
     assert "Frozen WNBA PRA Speed V3 Step 9 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard import record_bootstrap_import_ms, render_app" in app
 
 
@@ -145,6 +151,10 @@ def test_step2_cert_requires_real_public_two_team_proof():
     source = CERT.read_text(encoding="utf-8")
     assert "nav._find_game_date()" in source
     assert "speed9._prime_wnba_pra_route" in source
+    assert "_wait_game_shell(page)" in source
+    assert "_advance_shell_once(page, frame)" in source
+    assert "WNBA_PRA_REPAIR_V1_STEP2_GAME_SHELL_HANDOFF_ONCE" in source
+    assert "step2_runtime_composition_safe" in source
     assert "data-away-team-id" in source
     assert "data-home-team-id" in source
     assert "data-away-player-count" in source
