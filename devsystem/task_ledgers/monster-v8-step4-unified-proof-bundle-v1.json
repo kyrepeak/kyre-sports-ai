@@ -20,7 +20,12 @@
     "permanent_failure_class": "DETERMINISTIC_ACTION_LEDGER_SCHEMA",
     "permanent_root_cause": "Non-documentation PR requires exactly one changed task ledger.",
     "patch_budget": 1,
-    "duplicate_reruns": 0
+    "duplicate_reruns": 0,
+    "focused_maintenance_failure_run": 36965693257,
+    "focused_maintenance_failure_job": 110708902138,
+    "focused_maintenance_failure_class": "DETERMINISTIC_FOCUSED_MAINTENANCE_ALLOWLIST",
+    "focused_maintenance_root_cause": "Mandatory Step-4 task ledger was not yet included in the existing Project State focused workflow maintenance surface.",
+    "focused_maintenance_patch": "Allow exactly the Step-4 task ledger path in the existing Project State maintenance-surface check."
   },
   "protected": {
     "monster_v8_steps_1_2_3_frozen": true,
