@@ -1,6 +1,6 @@
 """WNBA PRA Repair V1 Step 3 — Page-3 data completeness overlay.
 
-This wrapper sits above the frozen WNBA PRA Speed V3 Step-9 runtime.  It does
+This wrapper sits above the merged Step-2 team-identity runtime, which itself preserves the frozen WNBA PRA Speed V3 Step-9 runtime.  It does
 not change projection, probability, qualification, market, Monte Carlo, ranking,
 or sportsbook math.
 
@@ -20,7 +20,7 @@ from typing import Any, Mapping
 
 import streamlit as st
 
-import streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard as frozen_parent
+import streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity as frozen_parent
 import wnba_pra_game_center_v2_step3 as game_center
 import wnba_pra_player_intelligence_v2_step4 as player_intelligence
 import wnba_pra_performance_v2_step5 as performance
@@ -28,7 +28,7 @@ import wnba_pra_repair_v1_step3_data as data
 import wnba_pra_slate_v2_step2 as slate
 
 MODEL_VERSION = "WNBA PRA REPAIR V1 • STEP 3 DATA COMPLETENESS"
-FROZEN_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard"
+FROZEN_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity"
 MAY_MODIFY_WNBA_MODEL = False
 MAY_MODIFY_PROJECTION_MATH = False
 MAY_MODIFY_MARKET_MATH = False
