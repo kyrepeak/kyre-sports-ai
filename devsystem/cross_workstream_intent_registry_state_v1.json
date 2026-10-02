@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 15,
-  "generation": 15,
-  "next_sequence": 13,
+  "revision": 16,
+  "generation": 16,
+  "next_sequence": 14,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -542,7 +542,55 @@
       "submitted_at_utc": "2026-10-02T15:23:30Z",
       "updated_at_utc": "2026-10-02T15:23:30Z",
       "expires_at_utc": "2026-10-02T16:23:30Z"
+    },
+    {
+      "intent_id": "intent-a0b7ded46cd2563d415bcc23",
+      "sequence": 13,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 3 exact certified-head merge",
+      "mission_key": "wnba pra repair v1 step 3 exact certified-head merge",
+      "semantic_fingerprint": "a0b7ded46cd2563d415bcc230c433dae15eebf4e3b93e8a78a3ea5d68b75aabe",
+      "base_sha": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml",
+          "app.py",
+          "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json",
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json",
+          "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+          "tests/test_wnba_pra_repair_v1_step3.py",
+          "wnba_pra_repair_v1_step3_data.py"
+        ],
+        "dependency_tokens": [
+          "merge:exact-certified-head",
+          "pr:1341",
+          "step:wnba-pra-repair-v1-step3"
+        ],
+        "shared_resources": [
+          "pr:api2/wnba-pra-repair-v1-step3-data-completeness",
+          "branch:main#shard[domain=wnba,route=pra]"
+        ],
+        "resource_identity": {
+          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+          "pr:head": "cbf469b3bc9fd6d2317c3e5a39afcd4f7173f471",
+          "pr:number": "1341"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step3-data-completeness",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
+          "workstream_id": "ws:wnba-pra-repair-v1-step3-data-completeness"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T15:29:30Z",
+      "updated_at_utc": "2026-10-02T15:29:30Z",
+      "expires_at_utc": "2026-10-02T16:29:30Z"
     }
   ],
-  "state_hash": "26be56ed027a0c7ad973d61e69fc964a9aac8c3f549b6d1c7b66680c89a89a34"
+  "state_hash": "a7762d735f9463f767cb1e54bffc106bd09465da27b669ffdec8d378bdba2384"
 }
