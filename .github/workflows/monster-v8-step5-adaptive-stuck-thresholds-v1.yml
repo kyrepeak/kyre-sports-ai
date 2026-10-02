@@ -100,19 +100,56 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
           CURRENT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = "pull_request" ]; then
             BASE_SHA="$PR_BASE_SHA"
+            HEAD_SHA="$PR_HEAD_SHA"
           else
             BASE_SHA="$PUSH_BEFORE_SHA"
+            HEAD_SHA="$CURRENT_SHA"
           fi
-          if [ -z "${BASE_SHA:-}" ] || printf '%s' "$BASE_SHA" | grep -Eq '^0+$'; then
+          if [ -z "${BASE_SHA:-}" ] || printf '%s' "$BASE_SHA" | grep -Eq '^0+
+          python - <<'PY'
+          from pathlib import Path
+
+          allowed = {
+              ".github/workflows/monster-v8-step5-adaptive-stuck-thresholds-v1.yml",
+              "devsystem/adaptive_stuck_thresholds_v1.py",
+              "devsystem/task_ledgers/monster-v8-step5-adaptive-stuck-thresholds-v1.json",
+              "tests/test_devsystem_adaptive_stuck_thresholds_v1.py",
+          }
+          actual = {
+              line.strip()
+              for line in Path("/tmp/step5-scope.txt").read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          }
+          unexpected = sorted(actual - allowed)
+          assert actual, "Step 5 proof surface unexpectedly empty"
+          assert not unexpected, f"unexpected Step 5 files: {unexpected}"
+          print("MONSTER_V8_STEP5_SCOPE_GREEN", sorted(actual))
+          PY
+
+      - name: Emit Step 5 proof marker
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+        run: |
+          echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_GREEN"
+          if [ "$EVENT_NAME" = "push" ] && [ "$GIT_REF" = "refs/heads/main" ]; then
+            echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_MERGED_MAIN_GREEN"
+            echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_FROZEN"
+          else
+            echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_EXACT_HEAD_GREEN"
+          fi
+; then
             BASE_SHA="$(git rev-parse HEAD^)"
           fi
-          git diff --name-only "$BASE_SHA...$CURRENT_SHA" | sort > /tmp/step5-scope.txt
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" | sort > /tmp/step5-scope.txt
           python - <<'PY'
           from pathlib import Path
 
