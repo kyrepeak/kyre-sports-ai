@@ -6,10 +6,10 @@
   "step": 2,
   "total_steps": 7,
   "status": "DONE",
-  "scope": "Page-2 canonical identity plus cold Game Center readiness recovery above the frozen WNBA PRA runtime. Preserve canonical selected-game identity through the Step-5 cached Slate handoff and prewarm only the unchanged frozen availability/usage dependencies so the existing Game Center can render player rows inside the certified readiness budget.",
-  "source_main": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
-  "root_cause": "Public Page 2 reached the selected matchup shell but produced no tappable player rows inside the 24-second Game Center readiness budget. Canonical Dallas and Golden State team IDs already matched the role-engine namespace. The cold Game Center path then performed multiple independent external dependency reads sequentially, and Step-5 also retained an import-time frozen Slate loader that could bypass the runtime identity wrapper.",
-  "patch": "Keep Step-5's cached Slate source on the canonical Step-2 payload and prewarm the unchanged frozen player-pool, availability, and advanced-usage dependency groups concurrently before calling the original frozen Game Center loader. No projection, market, probability, qualification, ranking, or sportsbook math is changed.",
+  "scope": "Page-2 canonical identity plus cold Game Center readiness recovery above the frozen WNBA PRA runtime. Preserve canonical selected-game identity through the Step-5 cached Slate/Game-loader handoff and parallelize only the unchanged frozen provider primitives so the existing Game Center can render player rows inside the certified readiness budget.",
+  "source_main": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
+  "root_cause": "Merged-main public proof still timed out on Page 2 after the import-time _FROZEN_GAME_LOADER seam was fixed. Repository tracing confirmed the route was correct; the remaining cold wall time came from composite prewarm calls whose internals still serialized roster, injury and usage provider reads before the frozen Game Center could render player rows.",
+  "patch": "Keep the frozen Game Center loader and frozen role/projection math authoritative. Prewarm its exact cached primitives concurrently: fast season/L10/L5 player production, season schedule fallback, event summary, both injury feeds, all slate roster endpoints, and season/L10/L5 advanced-usage windows. Then call the unchanged frozen Game Center loader so only transport wall time changes.",
   "protected": {
     "step1_load_audit": true,
     "wnba_pra_speed_v3_steps_1_9": true,
@@ -22,15 +22,15 @@
     "other_sports": true
   },
   "two_a": {
-    "scope_lease_owner": "chatgpt:api2:wnba-pra-repair-v1-step2-ledger",
-    "scope_lease_id": "SCOPE-LEASE-EE86C523DDFDE180BA54EBB3",
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-repair-v1-step2-game-loader-seam",
+    "scope_lease_id": "SCOPE-LEASE-893E7A56925F8D78425E28EE",
     "one_active_problem": true,
     "one_active_branch": true,
     "one_active_pr_max": 1,
     "no_duplicate_async_runs": true,
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_FINAL_EXACT_HEAD_PROOF_THEN_MERGE_CERTIFIED_HEAD_THEN_MERGED_MAIN_PUBLIC_PROOF"
+    "next_legal_action": "ONE_EXACT_HEAD_PROOF_THEN_EXACT_HEAD_MERGE_THEN_ONE_MERGED_MAIN_PUBLIC_PROOF"
   },
   "acceptance": {
     "canonical_2026_team_registry_count": 15,
@@ -44,7 +44,11 @@
     "sportsbook_projection_influence_changed": false,
     "cold_game_center_dependencies_prewarmed_without_formula_change": true,
     "step5_cached_slate_uses_canonical_identity": true,
-    "public_game_center_player_buttons_required": true
+    "public_game_center_player_buttons_required": true,
+    "step5_frozen_game_loader_uses_guarded_loader": true,
+    "exact_frozen_provider_primitives_warmed_in_parallel": true,
+    "frozen_game_center_loader_remains_authoritative": true,
+    "route_dispatch_changed": false
   },
   "freeze_exit": {
     "exact_head_contract_green_required": true,
@@ -58,9 +62,9 @@
     "consumed_receipts": []
   },
   "recovery": {
-    "recovery_id": "WNBA_PRA_REPAIR_V1_STEP2_COLD_GAME_CENTER_R1",
+    "recovery_id": "WNBA_PRA_REPAIR_V1_STEP2_COLD_PROVIDER_PARALLEL_R3",
     "pr_number": 1342,
-    "base_main": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+    "base_main": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
     "prior_failed_public_run": 37027591913,
     "focused_contract_run": 37030348502,
     "focused_contract_result": "SUCCESS",
@@ -76,6 +80,24 @@
     "model_math_changed": false,
     "projection_math_changed": false,
     "market_math_changed": false,
-    "sportsbook_influence_changed": false
+    "sportsbook_influence_changed": false,
+    "public_failure_run": 37032373563,
+    "failure_symptom": "Game Center shell rendered with Open Game Center placeholder and no player buttons",
+    "confirmed_bypass": "wnba_pra_performance_v2_step5._observe_game_center -> _FROZEN_GAME_LOADER",
+    "seam_patch_required": true,
+    "task_ledger_changed_in_pr": true,
+    "probability_math_changed": false,
+    "prior_public_failure_run": 37032373563,
+    "prior_seam_fix_present_on_main": true,
+    "remaining_bottleneck": "serialized provider primitives inside composite cold prewarm",
+    "provider_primitives_parallelized": [
+      "players.old_players.player_form_table",
+      "players._espn_season_schedule",
+      "availability._event_summary",
+      "availability._team_injury_feed",
+      "role._advanced_usage_fetch",
+      "players._espn_roster"
+    ],
+    "route_dispatch_changed": false
   }
 }

@@ -89,12 +89,16 @@ def test_step2_overlay_wraps_parent_and_restores_frozen_modules():
 
 
 
-def test_step2_prewarm_preserves_frozen_math_and_parallelizes_only_dependencies():
+def test_step2_prewarm_preserves_frozen_math_and_parallelizes_exact_primitives():
     source = OVERLAY.read_text(encoding="utf-8")
-    assert "ThreadPoolExecutor(max_workers=3" in source
-    assert "availability._verified_pool_for_day" in source
-    assert "availability.availability_for_game_key" in source
-    assert "role.advanced_usage_table" in source
+    assert "workers = min(12, max(1, len(calls)))" in source
+    assert "ThreadPoolExecutor(" in source
+    assert "players.old_players.player_form_table" in source
+    assert "players._espn_season_schedule" in source
+    assert "availability._event_summary" in source
+    assert "availability._team_injury_feed" in source
+    assert "role._advanced_usage_fetch" in source
+    assert "players._espn_roster" in source
     assert "_prewarm_game_center_dependencies(" in source
     assert "payload = original_game_loader(" in source
     assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
@@ -161,3 +165,12 @@ def test_step2_workflow_exact_scope_and_frozen_blob_guards():
     assert "github.event_name == 'push'" in workflow
     assert "python -m devsystem.wnba_pra_repair_v1_step2_team_identity_cert" in workflow
     assert "WNBA_PRA_REPAIR_V1_STEP2_BRANCH_GREEN" in workflow
+
+
+def test_step2_patches_step5_import_time_game_loader_seam():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "original_cached_game_loader = performance._FROZEN_GAME_LOADER" in source
+    assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
+    assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
+    assert "payload = original_game_loader(" in source
+    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
