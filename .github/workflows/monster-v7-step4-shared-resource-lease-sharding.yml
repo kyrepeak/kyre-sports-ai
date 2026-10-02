@@ -1,0 +1,61 @@
+name: MONSTER V7 Step 4 Shared Resource Lease Sharding
+
+on:
+  push:
+    branches:
+      - "monster/monster-v7-step4-shared-resource-lease-sharding-v1"
+    paths:
+      - "devsystem/shared_resource_lease_sharding_v1.py"
+      - "tests/test_devsystem_shared_resource_lease_sharding_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step4-shared-resource-lease-sharding-v1.json"
+      - ".github/workflows/monster-v7-step4-shared-resource-lease-sharding.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "devsystem/shared_resource_lease_sharding_v1.py"
+      - "tests/test_devsystem_shared_resource_lease_sharding_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step4-shared-resource-lease-sharding-v1.json"
+      - ".github/workflows/monster-v7-step4-shared-resource-lease-sharding.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v7-step4-sharding-${{ github.event_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  focused-proof:
+    name: shared resource lease sharding focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen V5 scope lease dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/scope_aware_execution_lease_v1.py)" = "71383fa4ca36b0b4d80a6c87617912df6d52e4cf"
+
+      - name: Verify frozen Step 3 ownership dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/monotonic_state_ownership_guard_v1.py)" = "52b167271b7ff14de4b948a8ccbacb03e377774a"
+
+      - name: Run shared resource sharding contract
+        run: python devsystem/shared_resource_lease_sharding_v1.py
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_shared_resource_lease_sharding_v1.py
+
+      - name: Emit Step 4 GREEN marker
+        run: echo "MONSTER_V7_STEP4_SHARED_RESOURCE_LEASE_SHARDING_GREEN"
