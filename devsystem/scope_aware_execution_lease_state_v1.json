@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 117,
+  "revision": 118,
   "generation": 57,
   "holders": [
     {
@@ -74,39 +74,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v8-step1-pre-mutation-blast-radius-v1",
-      "lease_id": "SCOPE-LEASE-V8S1-BLAST-001",
-      "generation": 56,
-      "acquired_at_utc": "2026-10-02T03:33:30Z",
-      "heartbeat_at_utc": "2026-10-02T03:33:30Z",
-      "expires_at_utc": "2026-10-02T04:13:30Z",
-      "scope": {
-        "write_paths": [
-          ".github/workflows/monster-v8-step1-pre-mutation-blast-radius.yml",
-          "devsystem/pre_mutation_blast_radius_simulator_v1.py",
-          "devsystem/task_ledgers/monster-v8-step1-pre-mutation-blast-radius-simulator-v1.json",
-          "tests/test_devsystem_pre_mutation_blast_radius_simulator_v1.py"
-        ],
-        "dependency_tokens": [
-          "control-plane:pre-mutation-blast-radius",
-          "frozen-dependency:MONSTER_V3_BLAST_RADIUS",
-          "frozen-dependency:MONSTER_V7_COMPLETE",
-          "project:monster-v8"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v8-step1-pre-mutation-blast-radius-v1",
-          "pr:monster-v8-step1-pre-mutation-blast-radius-v1",
-          "workflow:monster-v8-step1-pre-mutation-blast-radius"
-        ],
-        "resource_identity": {
-          "main:base": "11efd07ae262e59527a59dfd6450312dd2b7d983",
-          "monster:v8-step": "1"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "f4a64db7ff462041405bed277b34e0639fdb5ce8b84cff54ffb8f616f74c6ab9"
+  "state_hash": "12c477a5c60fcee14c3b60a6e8f7e91727e6c6633fc5f50c00c0cc2a0ba5b05e"
 }
