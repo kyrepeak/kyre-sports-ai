@@ -27,13 +27,10 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from devsystem.browser_qa_v1 import BrowserQAFailure
 from devsystem.execution_plan_compiler_v1 import validate_execution_plan
 from devsystem.chaos_adversarial_certification_harness_v1 import (
     contract_self_test as chaos_contract_self_test,
 )
-from devsystem import wnba_nav_v2_step7_public_freeze as nav
-from devsystem import wnba_pra_speed_v3_step9_final_cert as speed9
 import wnba_pra_repair_v1_step3_data as data
 
 PROJECT = "WNBA PRA Repair V1"
@@ -52,6 +49,13 @@ PLAN = ROOT / "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completen
 
 class Step3CertificationFailure(RuntimeError):
     pass
+
+
+# Source-only proof must not import browser/network dependencies.
+# run_production replaces these placeholders after the frozen browser stack is installed.
+BrowserQAFailure = Step3CertificationFailure
+nav = None
+speed9 = None
 
 
 def compiled_plan() -> dict[str, Any]:
