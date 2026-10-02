@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 123,
+  "revision": 124,
   "generation": 61,
   "holders": [
     {
@@ -16,10 +16,10 @@
       "expires_at_utc": "2026-10-02T04:30:00Z",
       "scope": {
         "write_paths": [
-          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
           "app.py",
           "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
           "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
+          "github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
           "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
           "tests/test_wnba_pra_speed_v3_step9.py"
         ],
@@ -53,16 +53,16 @@
       "expires_at_utc": "2026-10-02T04:36:00Z",
       "scope": {
         "write_paths": [
-          ".github/workflows/monster-v8-step2-transactional-rollback.yml",
-          "devsystem/transactional_rollback_engine_v1.py",
           "devsystem/task_ledgers/monster-v8-step2-transactional-rollback-engine-v1.json",
+          "devsystem/transactional_rollback_engine_v1.py",
+          "github/workflows/monster-v8-step2-transactional-rollback.yml",
           "tests/test_devsystem_transactional_rollback_engine_v1.py"
         ],
         "dependency_tokens": [
-          "project:monster-v8",
           "control-plane:transactional-rollback",
-          "frozen-dependency:MONSTER_V8_STEP1",
-          "frozen-dependency:MONSTER_V4_TERMINAL_PROOF"
+          "frozen-dependency:monster_v4_terminal_proof",
+          "frozen-dependency:monster_v8_step1",
+          "project:monster-v8"
         ],
         "shared_resources": [
           "branch:monster/monster-v8-step2-transactional-rollback-v1",
@@ -77,5 +77,5 @@
       }
     }
   ],
-  "state_hash": "fc7d3440128d6441c080bd5d4c06f1a50d4f8128f9e76291b8599dbb1bfec173"
+  "state_hash": "1788ff842e5fd680bf94ae3eac16dc7c29d8210e4bdfad75ab46c279f91d0fed"
 }
