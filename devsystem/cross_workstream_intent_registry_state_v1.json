@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 38,
-  "generation": 38,
-  "next_sequence": 29,
+  "revision": 39,
+  "generation": 39,
+  "next_sequence": 30,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -1126,7 +1126,7 @@
     {
       "intent_id": "intent-0eaf16dd4a6dd6f0a5987179",
       "sequence": 27,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 PR1343 exact certified-head merge",
       "mission_key": "wnba pra repair v1 step 2 pr1343 exact certified head merge",
       "semantic_fingerprint": "0eaf16dd4a6dd6f0a5987179636d625a9414b4d1349e16cd3150d8e735cb2617",
@@ -1163,13 +1163,13 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:37:00Z",
-      "updated_at_utc": "2026-10-02T16:37:00Z",
+      "updated_at_utc": "2026-10-02T16:47:00Z",
       "expires_at_utc": "2026-10-02T17:37:00Z"
     },
     {
       "intent_id": "intent-ed82edf80a05251096917efe",
       "sequence": 28,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 PR1343 merged-main exact thaw",
       "mission_key": "wnba pra repair v1 step 2 pr1343 merged main exact thaw",
       "semantic_fingerprint": "ed82edf80a05251096917efed49432b265d722498cb8b053cb3acc21ab24b054",
@@ -1201,9 +1201,49 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:42:00Z",
-      "updated_at_utc": "2026-10-02T16:42:00Z",
+      "updated_at_utc": "2026-10-02T16:47:00Z",
       "expires_at_utc": "2026-10-02T17:42:00Z"
+    },
+    {
+      "intent_id": "intent-810a71f1814f3718d43de6ba",
+      "sequence": 29,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 cross-team duplicate player identity containment",
+      "mission_key": "wnba pra repair v1 step 2 cross team duplicate player identity containment",
+      "semantic_fingerprint": "810a71f1814f3718d43de6ba15b2dc88dd057d4f16efb7f470ed17d34e744672",
+      "base_sha": "e1a892e7ed7c37a9191a3448333ab5e98b549a68",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "identity:cross-team-player-id",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:api2-wnba-repair-v1-step2-cross-team-id",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
+        ],
+        "resource_identity": {
+          "main:base": "e1a892e7ed7c37a9191a3448333ab5e98b549a68"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-cross-team-id",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-cross-team-id",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-cross-team-id",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-cross-team-id"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T16:47:00Z",
+      "updated_at_utc": "2026-10-02T16:47:00Z",
+      "expires_at_utc": "2026-10-02T17:47:00Z"
     }
   ],
-  "state_hash": "6bda48f514d3e559eb24a5fb1b00ea5e781147ddc5c41d8afc5fd2af0b8fafbf"
+  "state_hash": "9aae4d4263799714f35dd35c1a1c0b9d62680df040a58cbd6bf6108b5822b84e"
 }
