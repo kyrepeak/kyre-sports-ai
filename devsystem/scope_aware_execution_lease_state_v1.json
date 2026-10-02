@@ -4,9 +4,41 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 110,
-  "generation": 54,
+  "revision": 111,
+  "generation": 55,
   "holders": [
+    {
+      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
+      "lease_id": "SCOPE-LEASE-38926E2954271AF620D5E35F",
+      "generation": 55,
+      "acquired_at_utc": "2026-10-02T02:36:00Z",
+      "heartbeat_at_utc": "2026-10-02T02:36:00Z",
+      "expires_at_utc": "2026-10-02T03:36:00Z",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml",
+          "app.py",
+          "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json",
+          "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
+          "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
+          "tests/test_wnba_pra_speed_v3_step9.py"
+        ],
+        "dependency_tokens": [
+          "domain:wnba",
+          "project:wnba-pra-speed-v3-step9-performance-r13"
+        ],
+        "shared_resources": [
+          "branch:fix/wnba-pra-speed-v3-step9-precompute-handoff-r13"
+        ],
+        "resource_identity": {
+          "failure:run": "36945103822",
+          "main:base": "11efd07ae262e59527a59dfd6450312dd2b7d983",
+          "repair:source-head": "566379fd0469cf5a1910383a696291fcf17e8864",
+          "verification:shard": "wnba-pra-speed-v3-step9"
+        },
+        "exclusive": false
+      }
+    },
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-router-v9-propagation-r1",
       "lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
@@ -43,5 +75,5 @@
       }
     }
   ],
-  "state_hash": "d0f0d5597437ec5701dfafeb58b9d9e93cc1356e34ef8fba5a5907153b131ba6"
+  "state_hash": "063ed3035165f615e67fc11cb733fc12086b5c4b894eb61cd101f91d2ca6119a"
 }
