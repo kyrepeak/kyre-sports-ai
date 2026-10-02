@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 75,
+  "revision": 76,
   "source_main_sha": "8ccec768913e0b81f12ef3d3966de81aef6ebc69",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -2059,7 +2059,22 @@
           "to_blob": "c250e3234f876a6674875b8a4eb0f97ef2865114"
         }
       }
+    },
+    {
+      "thaw_id": "THAW-API2-PROOF-ARCH-V1-STEP5-MERGE-85C4BFD9",
+      "status": "ACTIVE",
+      "target_head_sha": "85c4bfd9da7d010e5830775c9b5a3af008b07f34",
+      "files": {
+        "app.py": {
+          "from_blob": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
+          "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
+        },
+        ".github/workflows/devsystem-targeted-ci.yml": {
+          "from_blob": "a0418c1e1b96746b13561589e08dc64340f26d88",
+          "to_blob": "cad39bded9b469ab412c224f9565d2c69e0436b3"
+        }
+      }
     }
   ],
-  "state_hash": "01af1b6e21701c44da7416d85c8a9f4fb7f96a7d4b775b7dacb96ce68f14eb96"
+  "state_hash": "9b301139954fbc9d702fa39b534aab1b5d75c1b16b75c8024ab7ff419bb5ba14"
 }
