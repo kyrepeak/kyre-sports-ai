@@ -1,0 +1,57 @@
+{
+  "version": 7,
+  "task_id": "api2-proof-architecture-v1-step7-end-to-end-convergence",
+  "project": "API2 Proof Architecture V1",
+  "step": "7/7",
+  "title": "End-to-End Proof Convergence",
+  "status": "DONE",
+  "source_main": "2b164deee3747ef607a5bca7787de0becb848359",
+  "problem": "The six proof upgrades are individually frozen, but without one terminal composition gate the architecture can still drift into a state where every piece exists while the complete proof chain is no longer jointly certifiable.",
+  "root_cause": "API2 had no final read-only convergence layer that requires the complete Step-1-through-Step-6 local contract chain and the authoritative frozen-registry chain to agree before architecture closeout.",
+  "patch": "Add a read-only Step-7 convergence validator plus a permanent GitHub workflow. It verifies all six prior ledgers/plans/engines/workflows, requires all six authoritative frozen checkpoints, verifies the candidate head against the frozen registry, and then uses the normal exact-head plus merged-main proof chain for final closeout.",
+  "protected": {
+    "step1": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "step2": "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "step3": "API2_PROOF_ARCHITECTURE_V1_STEP3",
+    "step4": "API2_PROOF_ARCHITECTURE_V1_STEP4",
+    "step5": "API2_PROOF_ARCHITECTURE_V1_STEP5",
+    "step6": "API2_PROOF_ARCHITECTURE_V1_STEP6",
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_logic_changed": false
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true
+  },
+  "acceptance": {
+    "six_step_local_contract_chain_green": true,
+    "six_step_authoritative_frozen_chain_green": true,
+    "current_head_frozen_registry_verification": true,
+    "dedicated_exact_head_proof": true,
+    "full_devsystem_certification": true,
+    "exact_certified_head_merge": true,
+    "merged_main_reproof": true,
+    "final_registry_freeze": true
+  },
+  "green_plus_frozen_claimed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "repair": {
+    "failure_owner": "CONTROL_PLANE",
+    "failed_job": 111001615559,
+    "failed_run": 37055830494,
+    "failure": "STEP7_TASK_LEDGER_MISSING_ACTION_LOG_ENVELOPE",
+    "evidence": "MONSTER Anti-Loop V2 replay was GREEN; Action Ledger V2 then failed closed because the new Step-7 task ledger did not include the required action_log object.",
+    "patch": "Add only the required genesis action_log envelope to the Step-7 task ledger. No runtime, model, projection, market, registry-engine, or prior-step artifact is modified.",
+    "product_code_changed": false
+  }
+}

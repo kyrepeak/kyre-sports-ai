@@ -1,0 +1,82 @@
+name: API2 Proof Architecture V1 Step 7 End-to-End Convergence
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-proof-architecture-v1-step7-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  convergence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate Step 7 focused contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_api2_proof_convergence_v1.py
+          python devsystem/api2_proof_convergence_v1.py self-test
+
+      - name: Validate compiled MONSTER V8 execution plan
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          plan = json.loads(
+              Path("devsystem/execution_plans/api2-proof-architecture-v1-step7-end-to-end-convergence.json").read_text()
+          )
+          assert plan["version"] == "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1"
+          assert plan["repository"] == "kyrepeak/kyre-sports-ai"
+          assert plan["step"] == "7/7"
+          assert plan["base_main_sha"] == "2b164deee3747ef607a5bca7787de0becb848359"
+          assert plan["status"] == "COMPILED"
+          assert plan["decision"] == "EXECUTE_COMPILED_PLAN"
+          assert plan["step_2a"]["duplicate_async_runs_forbidden"] is True
+          assert plan["step_2a"]["blind_polling_forbidden"] is True
+          assert plan["step_2a"]["exact_head_merge_required"] is True
+          print("API2_PROOF_ARCHITECTURE_V1_STEP7_V8_PLAN_GREEN")
+          PY
+
+      - name: Audit authoritative frozen Step 1 through Step 6 chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin monster-frozen-artifact-registry --depth=1
+          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/api2-step7-registry.json
+          python devsystem/api2_proof_convergence_v1.py audit-registry             --registry-file /tmp/api2-step7-registry.json             --json-out /tmp/api2-step7-registry-audit.json
+          cat /tmp/api2-step7-registry-audit.json
+
+      - name: Verify exact candidate head against authoritative frozen registry
+        run: |
+          python devsystem/frozen_artifact_registry_v1.py verify-head             --registry-file /tmp/api2-step7-registry.json             --head HEAD
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP7_FROZEN_PARENT_CHAIN_GREEN"
+
+      - name: Certify exact head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP7_BRANCH_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP7_READY_TO_MERGE"
+
+      - name: Certify merged main final freeze
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP7_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP7_FROZEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_7_OF_7_GREEN_FROZEN"
