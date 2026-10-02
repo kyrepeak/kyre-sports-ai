@@ -4,30 +4,31 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 174,
-  "generation": 95,
+  "revision": 175,
+  "generation": 96,
   "holders": [
     {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-main-thaw",
-      "lease_id": "SCOPE-LEASE-3CF00460315D11F79AEE0B76",
-      "generation": 95,
-      "acquired_at_utc": "2026-10-02T16:18:00Z",
-      "heartbeat_at_utc": "2026-10-02T16:18:00Z",
-      "expires_at_utc": "2026-10-02T17:18:00Z",
+      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-game-loader-seam",
+      "lease_id": "SCOPE-LEASE-893E7A56925F8D78425E28EE",
+      "generation": 96,
+      "acquired_at_utc": "2026-10-02T16:23:00Z",
+      "heartbeat_at_utc": "2026-10-02T16:23:00Z",
+      "expires_at_utc": "2026-10-02T17:23:00Z",
       "scope": {
         "write_paths": [
-          "devsystem/frozen_artifact_registry_state_v1.json"
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
         ],
         "dependency_tokens": [
-          "control:frozen-artifact-registry",
-          "main:2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
+          "dependency:wnba-pra-step5-game-loader",
           "step:wnba-pra-repair-v1-step2"
         ],
         "shared_resources": [
-          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
+          "branch:api2-wnba-repair-v1-step2-game-loader-seam",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
         ],
         "resource_identity": {
-          "main:target": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f"
+          "main:base": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f"
         },
         "exclusive": false
       }
@@ -90,5 +91,5 @@
       }
     }
   ],
-  "state_hash": "1b4fe36cf4a08219dfc86fe652ca4085270223aeb7be7eea160218a6b34b80e2"
+  "state_hash": "7bb7367daff176f07c08115447d5f2724f176a69724ebf483b49822f0bdf6055"
 }
