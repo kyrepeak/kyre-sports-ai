@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 35,
-  "generation": 35,
+  "revision": 36,
+  "generation": 36,
   "next_sequence": 28,
   "intents": [
     {
@@ -1120,7 +1120,7 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:34:00Z",
-      "updated_at_utc": "2026-10-02T16:37:00Z",
+      "updated_at_utc": "2026-10-02T16:39:00Z",
       "expires_at_utc": "2026-10-02T17:34:00Z"
     },
     {
@@ -1167,5 +1167,5 @@
       "expires_at_utc": "2026-10-02T17:37:00Z"
     }
   ],
-  "state_hash": "a78739e78427016032205382abfa64afc9a411653aec842e8564b84f460f59ba"
+  "state_hash": "5c535e1aed12bd9a9d8ad148e87122fcde567c19a3778cfa60f7a3f59a24b40f"
 }
