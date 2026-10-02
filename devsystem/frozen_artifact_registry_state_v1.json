@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 27,
-  "source_main_sha": "02bd1e7ed59465f4b67ed3902119207d7daa642a",
+  "revision": 28,
+  "source_main_sha": "0ad522b330d6bb873cb684017cbf95230db80a42",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -902,8 +902,100 @@
         "devsystem/task_ledgers/monster-v7-step5-atomic-wait-queue-handoff-v1.json": "c79f189fa593680c4d086213fadade4ca40b3541",
         "tests/test_devsystem_atomic_wait_queue_lease_handoff_v1.py": "2956867d430e806766955e5f8b43fb85765a9ba4"
       }
+    },
+    "MONSTER_V7_STEP6": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V7_STEP6",
+      "source_main_sha": "0ad522b330d6bb873cb684017cbf95230db80a42",
+      "proven_merge_sha": "0ad522b330d6bb873cb684017cbf95230db80a42",
+      "pr_head_sha": "21a94232ffba5b84c7d2cfe62ede623ba4c2715f",
+      "failed_pre_pr_focused_run_id": 36954342890,
+      "successful_pre_pr_focused_run_id": 36954426661,
+      "pr_focused_proof_run_id": 36954472781,
+      "pr_devsystem_proof_run_id": 36954472787,
+      "proof_run_id": 36954472787,
+      "focused_test_count": 22,
+      "terminal_receipt_digest": "sha256:8a19230ce6d11365f3164ff40c66afc606f84804fffa09409a3d40f1c54c06ac",
+      "terminal_receipt_job_id": 110674612936,
+      "terminal_receipt_artifact_id": 11205640954,
+      "terminal_receipt_artifact_zip_sha256": "b5908e7cad86d5fbce539e9415deb09b68ff7d3e2ab0a7cbaab7c6a6fae3c17d",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "STATIC_CONTENT",
+      "content_addressed_proof_reuse": {
+        "version": "MONSTER_V6_CONTENT_ADDRESSED_PROOF_REUSE_V1",
+        "decision": "REUSE_APPROVED",
+        "reusable": true,
+        "checkpoint_id": "MONSTER_V7_STEP6",
+        "proof_run_id": 36954472787,
+        "source_main_sha": "21a94232ffba5b84c7d2cfe62ede623ba4c2715f",
+        "current_head_sha": "0ad522b330d6bb873cb684017cbf95230db80a42",
+        "head_moved": true,
+        "content_fingerprint": "24bd718283918927147fce0a5913bb7abc7013b5b88280312c9d3ed8651b2515",
+        "reasons": [],
+        "next_legal_action": "REUSE_TERMINAL_PROOF",
+        "proof_policy_version": "MONSTER_V7_STEP6_STATIC_CONTROL_PLANE_V1",
+        "proof_scope": [
+          "DEVSYSTEM_FULL",
+          "FOCUSED_TEST",
+          "STATIC_CONTRACT"
+        ],
+        "all_artifact_blobs_identical": true,
+        "artifact_count": 4,
+        "all_dependency_blobs_identical": true,
+        "dependency_count": 5,
+        "dependencies": {
+          "devsystem/atomic_wait_queue_lease_handoff_v1.py": "6d5a75b2d66a0439563b92ee04a1b8c8024d1dad",
+          "devsystem/deployment_convergence_controller_v1.py": "117b4953b5112be9ca8065e5a9cafb48d5f2112a",
+          "devsystem/terminal_proof_receipt_v1.py": "e009da0790abbed2b24664b1031abf41d2f6c1fd",
+          "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+          "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82"
+        },
+        "production_live_state_reused": false
+      },
+      "failure_recovery": {
+        "failure_class": "DETERMINISTIC_DEPLOYMENT_ACTION_ADAPTER_MISMATCH",
+        "failed_run_id": 36954342890,
+        "failed_test_count": 1,
+        "passed_test_count_before_patch": 21,
+        "patch_commit": "21a94232ffba5b84c7d2cfe62ede623ba4c2715f",
+        "successful_pre_pr_run_id": 36954426661,
+        "duplicate_manual_reruns": 0
+      },
+      "autopilot_contract": {
+        "wait_or_acquire": true,
+        "exact_head_proof": true,
+        "exact_head_merge": true,
+        "merged_main_certification": true,
+        "deployment_when_required": true,
+        "static_path_skips_deployment": true,
+        "freeze_to_done": true,
+        "single_use_external_actions": true,
+        "unchanged_evidence_waits_for_event": true,
+        "terminal_failures_route_to_backtrace": true,
+        "exact_sha_identity_enforced": true,
+        "handoff_ticket_identity_enforced": true,
+        "product_runtime_mutation_authority": false
+      },
+      "completion_contract": {
+        "total_steps": 7,
+        "completed_steps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "next_legal_action": "START_MONSTER_V7_STEP7"
+      },
+      "artifacts": {
+        ".github/workflows/monster-v7-step6-final-mile-autopilot.yml": "264c22fe28dcb5e903d8f12b6b7fb29e87399bd7",
+        "devsystem/final_mile_autopilot_v1.py": "e23d4bbbfc96d2f86192f21a986baa53d3557744",
+        "devsystem/task_ledgers/monster-v7-step6-final-mile-autopilot-v1.json": "5d03034dc1c3f7b7646cc91866b5c791c6a9f923",
+        "tests/test_devsystem_final_mile_autopilot_v1.py": "bde2a21eb158e08e23e8ec5bdc2336b7b03177cb"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "30c1ca150fff177e84c91e8a7689b1bf37b82ffd4804dd880609bce1e5430319"
+  "state_hash": "6172028ccc62751c7aa2067696f7c410778e068ab2121b57b028d38e7ba699ae"
 }
