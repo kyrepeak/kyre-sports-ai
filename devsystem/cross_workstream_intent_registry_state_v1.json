@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 10,
-  "generation": 10,
-  "next_sequence": 9,
+  "revision": 11,
+  "generation": 11,
+  "next_sequence": 10,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -383,7 +383,47 @@
       "submitted_at_utc": "2026-10-02T06:24:00Z",
       "updated_at_utc": "2026-10-02T06:24:00Z",
       "expires_at_utc": "2026-10-02T07:24:00Z"
+    },
+    {
+      "intent_id": "intent-d0078c2d195251b77b38b986",
+      "sequence": 9,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 3 synthetic PR-merge thaw correction",
+      "mission_key": "wnba pra repair v1 step 3 synthetic pr-merge thaw correction",
+      "semantic_fingerprint": "d0078c2d195251b77b38b9861e9684c7fbd3900aa9229edd27641ecc271fd800",
+      "base_sha": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+      "scope": {
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json"
+        ],
+        "dependency_tokens": [
+          "control:frozen-artifact-registry",
+          "pr:1341",
+          "step:wnba-pra-repair-v1-step3"
+        ],
+        "shared_resources": [
+          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
+        ],
+        "resource_identity": {
+          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+          "pr:head": "31a7cba2867b0f420a28d6d482685f0d7f92732d",
+          "pr:merge": "df2abe885253b13b6b4b2ee1c953729ac2918d11"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
+          "workstream_id": "ws:wnba-pra-repair-v1-step3-synthetic-merge-thaw"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T10:06:00Z",
+      "updated_at_utc": "2026-10-02T10:06:00Z",
+      "expires_at_utc": "2026-10-02T11:06:00Z"
     }
   ],
-  "state_hash": "20aab086a29af091268d1d02f6af2662878f2d760f43d482dcdba1e113e9f122"
+  "state_hash": "7bcbd934b61b7a7f5f382115146105b8bc2829760d2ad40b4bd9b268bfa7a12f"
 }
