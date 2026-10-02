@@ -172,4 +172,5 @@ def test_step2_patches_step5_import_time_game_loader_seam():
     assert "original_cached_game_loader = performance._FROZEN_GAME_LOADER" in source
     assert "performance._FROZEN_GAME_LOADER = guarded_game_loader" in source
     assert "performance._FROZEN_GAME_LOADER = original_cached_game_loader" in source
-    assert "return original_game_loader(" in source
+    assert "payload = original_game_loader(" in source
+    assert "return frozen_parent._dedupe_game_center_payload(payload)" in source
