@@ -10,7 +10,12 @@ DEPLOYMENT-owned and can never authorize a product patch.
 from __future__ import annotations
 
 import json
+from pathlib import Path
+import sys
 from typing import Any
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem import deployment_truth_control_plane_v1 as deployment_truth
 
