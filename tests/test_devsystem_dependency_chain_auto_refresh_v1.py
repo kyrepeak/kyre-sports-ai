@@ -47,9 +47,19 @@ def test_current_step2_router_identity_is_resolved_dynamically():
     assert result["status"] == "GREEN"
     assert result["decision"] == "DEPENDENCY_CURRENT"
     assert result["static_parent_blob_pin"] is False
-    assert result["parent_blobs"][
-        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
-    ] == "3180431d724b26bd7d1129cb0139c81ffdfe49ac"
+    parent_path = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
+    completed = subprocess.run(
+        ["git", "rev-parse", f"HEAD:{parent_path}"],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    current_blob = completed.stdout.strip().lower()
+    assert len(current_blob) == 40
+    assert result["parent_blobs"][parent_path] == current_blob
 
 
 def test_engine_self_test_is_green():
