@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "task_id": "wnba-pra-repair-v1-step2-team-identity",
   "title": "WNBA PRA Repair V1 Step 2 — Page 2 Team-ID Repair",
   "project": "WNBA PRA Repair V1",
@@ -30,7 +30,7 @@
     "no_duplicate_async_runs": true,
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_CONTENT_ADDRESSED_DEPLOYMENT_IDENTITY_PATCH_THEN_EXACT_HEAD_PROOF"
+    "next_legal_action": "EXACT_HEAD_PROOF_THEN_MERGE_THEN_ONE_MERGED_MAIN_PUBLIC_PROOF"
   },
   "acceptance": {
     "canonical_2026_team_registry_count": 15,
@@ -152,5 +152,29 @@
     "no_product_runtime_logic_change": true,
     "wildcard_scope_added": false,
     "checkpoint": "CONTROL_PLANE_COMPATIBILITY_REPROOF"
+  },
+  "deployment_refresh_r2": {
+    "failure_owner": "DEPLOYMENT",
+    "trigger_reason": "Merged-main Step-2 public proof 37077547743 remained deployment-identity INCOMPLETE after the bounded wait even though source contract, DevSystem, API2 convergence, and content-addressed runtime attestation code were GREEN on main.",
+    "failed_public_run_id": 37077547743,
+    "failed_public_job_id": 111070751933,
+    "prior_main_sha": "cd62dcdb8273874306737d801602ba16d6c1e305",
+    "compiled_plan_id": "PLAN-STEP2-DEPLOYMENT-LEDGER-REFRESH-R2",
+    "mutation_scope": [
+      "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
+    ],
+    "deployment_only": true,
+    "runtime_files_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_math_changed": false,
+    "sportsbook_influence_changed": false,
+    "frozen_artifacts_changed": false,
+    "product_behavior_changed": false,
+    "refresh_mechanism": "LEDGER_ONLY_MAIN_REVISION",
+    "proof_reuse_policy": "SOURCE_AND_CONTROL_PLANE_PROOF_REUSED_BY_CONTENT_IDENTITY; ONE_FRESH_MERGED_MAIN_PUBLIC_PROOF_REQUIRED",
+    "next_legal_action": "EXACT_HEAD_PROOF_THEN_MERGE_THEN_ONE_MERGED_MAIN_PUBLIC_PROOF",
+    "green_plus_frozen": false
   }
 }
