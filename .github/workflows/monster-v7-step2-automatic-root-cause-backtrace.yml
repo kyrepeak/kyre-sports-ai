@@ -1,0 +1,55 @@
+name: MONSTER V7 Step 2 Automatic Root-Cause Backtrace
+
+on:
+  push:
+    branches:
+      - "monster/monster-v7-step2-automatic-root-cause-backtrace-v1"
+    paths:
+      - "devsystem/automatic_root_cause_backtrace_v1.py"
+      - "tests/test_devsystem_automatic_root_cause_backtrace_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step2-automatic-root-cause-backtrace-v1.json"
+      - ".github/workflows/monster-v7-step2-automatic-root-cause-backtrace.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "devsystem/automatic_root_cause_backtrace_v1.py"
+      - "tests/test_devsystem_automatic_root_cause_backtrace_v1.py"
+      - "devsystem/task_ledgers/monster-v7-step2-automatic-root-cause-backtrace-v1.json"
+      - ".github/workflows/monster-v7-step2-automatic-root-cause-backtrace.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v7-step2-root-cause-${{ github.event_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  focused-proof:
+    name: automatic root-cause backtrace focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen Step 1 lineage dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/causal_state_lineage_graph_v1.py)" = "898e66f879b364fc79d3be466d617268e7a5f876"
+
+      - name: Run automatic root-cause backtrace contract
+        run: python devsystem/automatic_root_cause_backtrace_v1.py
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_automatic_root_cause_backtrace_v1.py
+
+      - name: Emit Step 2 GREEN marker
+        run: echo "MONSTER_V7_STEP2_AUTOMATIC_ROOT_CAUSE_BACKTRACE_GREEN"

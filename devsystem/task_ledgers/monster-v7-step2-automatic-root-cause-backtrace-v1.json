@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "task_id": "monster-v7-step2-automatic-root-cause-backtrace-v1",
+  "title": "MONSTER V7 Step 2 - Automatic Root-Cause Backtrace",
+  "project": "MONSTER V7",
+  "step": 2,
+  "total_steps": 7,
+  "status": "DONE",
+  "problem": "When a downstream checkpoint stalls or shows the wrong state, diagnosis can stop at the closest visible symptom instead of identifying the first upstream writer that actually introduced the bad state.",
+  "root_cause": "Step 1 records exact state lineage, but the control plane still needs a deterministic consumer that walks that lineage backward from a failing target and converts writer generations into a single evidence-backed root-cause attribution.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "Add a read-only Automatic Root-Cause Backtrace engine that consumes the frozen Step-1 lineage graph, anchors to a proven-good digest or last-known-good WRITE, walks the target writer chain backward, identifies the first divergent WRITE after the good anchor, records affected consumers and the full causal path, and fails closed when attribution evidence is insufficient.",
+  "protected": {
+    "monster_v7_step1_frozen": true,
+    "monster_v7_step1_artifacts_untouched": true,
+    "step_2a_required": true,
+    "scope_lease_required_for_mutation": true,
+    "single_authoritative_async_run": true,
+    "no_blind_polling": true,
+    "no_force_ref_rewrites": true,
+    "no_product_runtime_changes": true
+  },
+  "acceptance": {
+    "first_divergent_writer_is_root_cause": true,
+    "nearest_symptom_writer_not_misblamed": true,
+    "backward_writer_chain_recorded": true,
+    "affected_consumers_recorded": true,
+    "causal_path_recorded": true,
+    "progress_stall_context_preserved": true,
+    "insufficient_evidence_never_guesses": true,
+    "pre_regression_target_not_falsely_blamed": true,
+    "tampered_step1_lineage_fails_closed": true,
+    "root_writer_becomes_patch_owner": true
+  },
+  "dependencies": {
+    "MONSTER_V7_STEP1": {
+      "status": "FROZEN",
+      "required_version": "MONSTER_V7_CAUSAL_STATE_LINEAGE_GRAPH_V1",
+      "artifact": "devsystem/causal_state_lineage_graph_v1.py",
+      "required_blob": "898e66f879b364fc79d3be466d617268e7a5f876"
+    }
+  },
+  "regression_debt": {
+    "created": true,
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_devsystem_automatic_root_cause_backtrace_v1.py",
+    "permanent_contract": "devsystem/automatic_root_cause_backtrace_v1.py",
+    "state": "PENDING_PROOF"
+  },
+  "scope_lease": {
+    "owner_id": "chatgpt:monster-v2:monster-v7-step2-root-cause-backtrace-v1",
+    "lease_id": "SCOPE-LEASE-V7S2-ROOTCAUSE-001",
+    "base_main_sha": "ba5addcd6c5100997d6de46cdf969d8c5be5d41a"
+  },
+  "proof_plan": {
+    "focused_workflow": ".github/workflows/monster-v7-step2-automatic-root-cause-backtrace.yml",
+    "focused_self_test": "python devsystem/automatic_root_cause_backtrace_v1.py",
+    "focused_tests": "python -m pytest -q tests/test_devsystem_automatic_root_cause_backtrace_v1.py",
+    "step1_dependency_blob_check": true,
+    "exact_head_required": true,
+    "merged_main_content_identity_required": true,
+    "terminal_receipt_required": true,
+    "frozen_registry_required": true
+  },
+  "completion_contract": {
+    "after_freeze": "START_MONSTER_V7_STEP3",
+    "step3_name": "Monotonic State Ownership Guard",
+    "no_step3_before_freeze": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "phase": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+}
