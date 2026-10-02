@@ -232,7 +232,7 @@ def _sample_registry() -> dict[str, Any]:
                 "status": "FROZEN",
                 "checkpoint_id": "STEP_A",
                 "source_main_sha": "1" * 40,
-                "artifacts": {"shared.yml": "a" * 40, "keep.py": "k" * 40},
+                "artifacts": {"shared.yml": "a" * 40, "keep.py": "c" * 40},
             },
             "STEP_B": {
                 "status": "FROZEN",
@@ -259,8 +259,8 @@ def _sample_registry() -> dict[str, Any]:
                 "target_head_sha": "3" * 40,
                 "files": {
                     "keep.py": {
-                        "from_blob": "k" * 40,
-                        "to_blob": "m" * 40,
+                        "from_blob": "c" * 40,
+                        "to_blob": "d" * 40,
                     }
                 },
             },

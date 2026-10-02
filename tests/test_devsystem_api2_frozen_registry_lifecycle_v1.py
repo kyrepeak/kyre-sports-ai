@@ -63,7 +63,7 @@ def test_forward_port_retires_obsolete_thaw_pairs_without_rebasing_authority():
     assert [x["thaw_id"] for x in result["retired_thaw_file_pairs"]] == ["THAW-SHARED-OLD"]
     assert result["retired_empty_thaw_grants"] == ["THAW-SHARED-OLD"]
     assert [x["thaw_id"] for x in result["registry"]["active_thaws"]] == ["THAW-KEEP"]
-    assert result["registry"]["active_thaws"][0]["files"]["keep.py"]["from_blob"] == "k" * 40
+    assert result["registry"]["active_thaws"][0]["files"]["keep.py"]["from_blob"] == "c" * 40
 
 
 def test_wrong_baseline_update_fails_closed():

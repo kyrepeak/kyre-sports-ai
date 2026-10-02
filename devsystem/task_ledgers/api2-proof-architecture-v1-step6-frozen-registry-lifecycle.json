@@ -53,5 +53,15 @@
     "events": [],
     "consumed_receipts": []
   },
-  "green_plus_frozen_claimed": false
+  "green_plus_frozen_claimed": false,
+  "repair": {
+    "failure_owner": "PROOF_VERIFIER",
+    "focused_run": 37053268637,
+    "devsystem_run": 37053268460,
+    "failure": "SYNTHETIC_TEST_FIXTURE_USED_NON_HEX_GIT_BLOB_IDS",
+    "evidence": "The frozen V4 registry rejected keep.py blob values built from k/m because Git blob SHAs must match [0-9a-f]{40}; five Step-6 tests failed before lifecycle behavior was exercised.",
+    "patch": "Replace only the synthetic keep.py baseline/target values with hex-valid c/d 40-character values and keep all lifecycle semantics unchanged.",
+    "product_code_changed": false,
+    "patch_budget": "1/1"
+  }
 }
