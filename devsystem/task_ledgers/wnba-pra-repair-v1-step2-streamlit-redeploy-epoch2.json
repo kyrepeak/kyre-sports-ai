@@ -49,5 +49,20 @@
     "rerun exactly the prior failed public-production job once because deployment state materially changed",
     "freeze Step 2 only after public GREEN + FROZEN tokens"
   ],
-  "green_plus_frozen": false
+  "green_plus_frozen": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "step2a_compatibility_patch": {
+    "failure_owner": "CONTROL_PLANE",
+    "failure_run_id": 37079911666,
+    "failure_job_id": 111077955500,
+    "root_cause": "Deployment refresh task ledger omitted the permanent action_log schema required by DevSystem action_ledger_v2.",
+    "patch": "Add empty genesis action_log plus empty transition/override history. No deployment marker or runtime behavior change.",
+    "rollback_anchor_head_sha": "9ee31185e84cf97516c803dd5a80c73bb120ad6c"
+  }
 }
