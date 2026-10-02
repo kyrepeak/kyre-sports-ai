@@ -1,0 +1,40 @@
+{
+  "version": 3,
+  "task_id": "api2-proof-architecture-v1-step3-dependency-auto-refresh",
+  "project": "API2 Proof Architecture V1",
+  "step": "3/7",
+  "title": "Dependency Chain Auto Refresh",
+  "status": "DONE",
+  "source_main": "60392dccd676f6e8df6e7ea37fd087e2bea6fbc1",
+  "problem": "Child workflows can retain stale hard-coded parent blob pins after an upstream step changes, causing later steps to fail for bookkeeping drift instead of real incompatibility.",
+  "root_cause": "Parent identity was encoded as literal blob constants and parent paths were absent from child workflow triggers.",
+  "patch": "Register parent paths once, dynamically resolve base/head parent blobs on every proof, wake the child workflow on parent changes, and run child compatibility contracts against the current parent identity.",
+  "proof_case": {
+    "dependency_id": "wnba-pra-repair-v1-step3-step2",
+    "stale_router_blob": "4e51bd0e0c631b71cf9af7a443038edbe1b7061c",
+    "current_router_blob": "3180431d724b26bd7d1129cb0139c81ffdfe49ac",
+    "static_pin_removed": true,
+    "parent_change_wakes_child": true
+  },
+  "protected": {
+    "step1": "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "step2": "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "green_plus_frozen_claimed": false
+}

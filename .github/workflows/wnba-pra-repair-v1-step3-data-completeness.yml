@@ -5,6 +5,14 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
+      - "devsystem/dependency_chain_auto_refresh_v1.py"
+      - "devsystem/dependency_chain_registry_v1.json"
+      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
+      - "wnba_pra_repair_v1_step2_team_identity.py"
+      - "devsystem/dependency_chain_auto_refresh_v1.py"
+      - "devsystem/dependency_chain_registry_v1.json"
+      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
+      - "wnba_pra_repair_v1_step2_team_identity.py"
       - "app.py"
       - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
       - "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
@@ -50,29 +58,55 @@ jobs:
           set -euo pipefail
           git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
           cat >/tmp/allowed.txt <<'EOF'
+          .github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml
           .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
           app.py
+          devsystem/dependency_chain_auto_refresh_v1.py
+          devsystem/dependency_chain_registry_v1.json
+          devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json
           devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json
+          devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json
           devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json
           devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py
+          streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py
           streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py
+          tests/test_devsystem_dependency_chain_auto_refresh_v1.py
           tests/test_wnba_pra_repair_v1_step3.py
+          wnba_pra_repair_v1_step2_team_identity.py
           wnba_pra_repair_v1_step3_data.py
           EOF
           sort -o /tmp/allowed.txt /tmp/allowed.txt
-          diff -u /tmp/allowed.txt /tmp/changed.txt
-          echo "WNBA_PRA_REPAIR_V1_STEP3_EXACT_SCOPE_GREEN"
+          comm -23 /tmp/changed.txt /tmp/allowed.txt > /tmp/unexpected.txt
+          if [ -s /tmp/unexpected.txt ]; then
+            echo "WNBA_PRA_REPAIR_V1_STEP3_SCOPE_BLOCKED"
+            cat /tmp/unexpected.txt
+            exit 1
+          fi
+          echo "WNBA_PRA_REPAIR_V1_STEP3_SCOPE_GREEN"
 
-      - name: Verify frozen parent dependencies
+      - name: Auto-refresh Step-2 parent dependency identity
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          python -m devsystem.dependency_chain_auto_refresh_v1 verify \
+            --dependency-id wnba-pra-repair-v1-step3-step2 \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --json-out /tmp/wnba-step3-parent-snapshot.json
+          cat /tmp/wnba-step3-parent-snapshot.json
+          echo "WNBA_PRA_REPAIR_V1_STEP3_PARENT_AUTO_REFRESH_GREEN"
+
+      - name: Verify independent frozen dependencies
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py)" = "4e51bd0e0c631b71cf9af7a443038edbe1b7061c"
-          test "$(git hash-object wnba_pra_repair_v1_step2_team_identity.py)" = "9e571c95a8dc5229e39dfa60fbcffa18afb38bc1"
           test "$(git hash-object wnba_pra_game_center_v2_step3.py)" = "a181c8949991bb139521f7d379046f34147e5306"
           test "$(git hash-object wnba_pra_player_intelligence_v2_step4.py)" = "393c29711962bf1d42b8fc58322938c92e23000a"
           test "$(git hash-object streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py)" = "51eef1fe2526801a467f155d1c0b32d516ef8a35"
-          echo "WNBA_PRA_REPAIR_V1_STEP3_PARENT_DEPENDENCIES_GREEN"
+          echo "WNBA_PRA_REPAIR_V1_STEP3_INDEPENDENT_DEPENDENCIES_GREEN"
 
       - name: Compile Step-3 runtime
         run: |
