@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 72,
+  "revision": 73,
   "source_main_sha": "8ccec768913e0b81f12ef3d3966de81aef6ebc69",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1566,12 +1566,26 @@
       "source_main_sha": "eecee9576dc54d28a32a728df3b651b7a6c9db37",
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml": "afe4388538dfd4e3cfb7cea48faa5308f9ee956d",
-        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": "63659a3788df8e8e7fed0bd6b2357cf01ee3efff",
+        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": "8cd22adc492bcd286d701694d48342bfe44f6729",
         "devsystem/dependency_chain_auto_refresh_v1.py": "7391884ffe696403e0a60cb0b6f880fea02b273b",
         "devsystem/dependency_chain_registry_v1.json": "8ba3eeb0ef69761d30362bbcc6db07facc0ccc41",
         "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json": "c9b9a416aeee4ccd099c331fc2e2eedb93ee5a55",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json": "285622ad6a11b0d145d7b53ba5ecd68c29fb6250",
         "tests/test_devsystem_dependency_chain_auto_refresh_v1.py": "a5d8d5ec0f0b81d25dcf3ba773bf045f04074a35"
+      }
+    },
+    "API2_PROOF_ARCHITECTURE_V1_STEP4": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP4",
+      "source_main_sha": "8ccec768913e0b81f12ef3d3966de81aef6ebc69",
+      "artifacts": {
+        ".github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml": "7d0c605b40528719e7531be2d8d415c1882141c1",
+        "devsystem/upstream_blocker_short_circuit_v1.py": "f7e36922e03bd070eb57f4650c7c74dcc55beed5",
+        "devsystem/upstream_certification_registry_v1.json": "4f6f1da1530a257f4a4488706e4b918d9582cf6f",
+        "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py": "413db2503661647ad0f95a6f2314a182af490b02",
+        "devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "11b0a4c84fe4b034a82795d185dbcad24f7797f8",
+        "devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "a1c361dcebeabf8d934df2e7df18b22dce1d9e6d",
+        "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": "524e68d04a872dfcd5fe482ab6775e65d0669800"
       }
     }
   },
@@ -2025,5 +2039,5 @@
       }
     }
   ],
-  "state_hash": "1de396b2e34fed037d6619c3d0c34f24056227741a0d3bbdedb6fdf7a147f2c0"
+  "state_hash": "e55be9992c936c224a49627bd111e11a561311da562f894696d0fbbfdcb9670e"
 }
