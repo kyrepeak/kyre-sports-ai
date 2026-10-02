@@ -180,7 +180,7 @@
     "duplicate_key_guard_green": true,
     "api_single_flight_preserved": true,
     "root_cause": "Step-7 background precompute fetches and validates the complete Step-4 cached bundle but discards the response body. An immediate first-Player foreground open therefore cannot consume that already-running/already-fetched body; it waits on the same API single-flight and then performs an additional Streamlit-to-API cached-bundle read before rendering.",
-    "patch": "Step-9 overlay only: preserve the verified full Step-7 precompute response in process memory; on first Player cold-open bounded-join only the already-existing Step-7 future; if the verified body is available, feed the exact Step-4 consumer/history pair directly with zero additional foreground bundle network reads. Otherwise use the unchanged frozen Step-4 loader.",
+    "patch": "Step-9 overlay only: preserve the verified full Step-7 precompute response in process memory; on first Player cold-open bounded-join only the already-existing Step-7 future; if the verified body is available, feed the exact Step-4 consumer/history pair directly with zero additional foreground bundle network reads. Otherwise use the unchanged frozen Step-4 loader. The in-process handoff is one-shot and expires after 5 seconds; older bodies are discarded and fall back to the frozen Step-4 API path, so the server cache TTL is not extended.",
     "duplicate_precompute_started": false,
     "precompute_join_seconds": 2.25,
     "fallback_loader_preserved": true,
@@ -189,6 +189,10 @@
     "projection_math_changed": false,
     "market_math_changed": false,
     "data_meaning_changed": false,
-    "sportsbook_projection_influence_changed": false
+    "sportsbook_projection_influence_changed": false,
+    "handoff_one_shot": true,
+    "handoff_max_age_seconds": 5,
+    "server_cache_ttl_extended": false,
+    "local_cache_semantics_added": false
   }
 }
