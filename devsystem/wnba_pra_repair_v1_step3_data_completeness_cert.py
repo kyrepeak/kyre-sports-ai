@@ -19,7 +19,6 @@ from typing import Any
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from devsystem.browser_qa_v1 import BrowserQAFailure
 from devsystem.execution_plan_compiler_v1 import (
     compile_execution_plan,
     validate_execution_plan,
@@ -28,6 +27,10 @@ from devsystem.chaos_adversarial_certification_harness_v1 import (
     contract_self_test as chaos_contract_self_test,
 )
 import wnba_pra_repair_v1_step3_data as data
+
+class Step3CertificationFailure(RuntimeError):
+    pass
+
 
 PROJECT = "WNBA PRA Repair V1"
 STEP = "3/7"
@@ -166,7 +169,7 @@ def certify_source_contract() -> dict[str, Any]:
     }
     failed = [name for name, ok in checks.items() if not ok]
     if failed:
-        raise BrowserQAFailure(f"Step-3 source contract failed: {failed}")
+        raise Step3CertificationFailure(f"Step-3 source contract failed: {failed}")
     return {"status": "GREEN", "checks": checks}
 
 
@@ -181,15 +184,15 @@ def certify_helpers() -> dict[str, Any]:
     }
     opponent = data.opponent_identity(game, 1611661317)
     if opponent.get("opponent_team_key") != "seattle-storm":
-        raise BrowserQAFailure("Step-3 canonical opponent helper failed.")
+        raise Step3CertificationFailure("Step-3 canonical opponent helper failed.")
 
     fallback = data.form_fallback({"l5_pra": 27.4, "l10_pra": 26.1})
     if fallback.get("recent5_pra") != 27.4 or fallback.get("recent10_pra") != 26.1:
-        raise BrowserQAFailure("Step-3 recent-form fallback failed.")
+        raise Step3CertificationFailure("Step-3 recent-form fallback failed.")
 
     usage = data.weighted_usage(20.0, 22.0, 24.0)
     if usage is None or round(usage, 4) != 21.5:
-        raise BrowserQAFailure("Step-3 usage blend contract failed.")
+        raise Step3CertificationFailure("Step-3 usage blend contract failed.")
 
     return {
         "status": "GREEN",
@@ -209,7 +212,7 @@ def run(*, artifact_dir: str | Path) -> dict[str, Any]:
     helpers = certify_helpers()
     chaos = chaos_contract_self_test()
     if chaos.get("status") != "GREEN" or chaos.get("all_scenarios_pass") is not True:
-        raise BrowserQAFailure("MONSTER V8 chaos/adversarial certification is not GREEN.")
+        raise Step3CertificationFailure("MONSTER V8 chaos/adversarial certification is not GREEN.")
 
     merged_main_sha = str(os.environ.get("GITHUB_SHA") or "").strip()
     result = {
