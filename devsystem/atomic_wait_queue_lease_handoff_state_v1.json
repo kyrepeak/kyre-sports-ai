@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "version": "MONSTER_V7_ATOMIC_WAIT_QUEUE_LEASE_HANDOFF_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "queue_ref": "refs/heads/monster-atomic-wait-queue",
+  "queue_state_path": "devsystem/atomic_wait_queue_lease_handoff_state_v1.json",
+  "revision": 0,
+  "next_sequence": 1,
+  "tickets": [],
+  "state_hash": "d66ab2da39367cd0cc26121777a892981a0fa8f2f63997ef2f7b7a5cba25e268"
+}
