@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 6,
-  "generation": 6,
-  "next_sequence": 6,
+  "revision": 7,
+  "generation": 7,
+  "next_sequence": 7,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -234,7 +234,50 @@
       "submitted_at_utc": "2026-10-02T04:45:00Z",
       "updated_at_utc": "2026-10-02T04:48:30Z",
       "expires_at_utc": "2026-10-02T05:25:00Z"
+    },
+    {
+      "intent_id": "intent-0df91e218946d89ec8bd3020",
+      "sequence": 6,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 merged-main public-proof verifier recovery",
+      "mission_key": "wnba pra repair v1 step 2 merged main public proof verifier recovery",
+      "semantic_fingerprint": "0df91e218946d89ec8bd30207cce2823a8f6e7df4830d67c8212e4a6eb5824ab",
+      "base_sha": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
+          "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "checkpoint:wnba-pra-repair-v1-step2-public-proof",
+          "frozen-dependency:wnba_pra_speed_v3_step9",
+          "project:wnba-pra-repair-v1"
+        ],
+        "shared_resources": [
+          "branch:api2/wnba-pra-repair-v1-step2-proof-recovery",
+          "pr:wnba-pra-repair-v1-step2-proof-recovery",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
+        ],
+        "resource_identity": {
+          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+          "wnba:pra-repair-step": "2"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-recovery",
+      "canonical_workstream_id": "ws:api2:wnba-pra-repair-v1-step2-proof-recovery",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-recovery",
+          "workstream_id": "ws:api2:wnba-pra-repair-v1-step2-proof-recovery"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T05:53:22Z",
+      "updated_at_utc": "2026-10-02T05:53:22Z",
+      "expires_at_utc": "2026-10-02T06:53:22Z"
     }
   ],
-  "state_hash": "7408ebdebeb7a1fac7d3c33ba4c2f410e85838dcae56a83d1afe747e0143b784"
+  "state_hash": "ba7b2f80d90e13b58fa2793186847e2d3685258d0981a9335f0aee6e4bc35ee0"
 }
