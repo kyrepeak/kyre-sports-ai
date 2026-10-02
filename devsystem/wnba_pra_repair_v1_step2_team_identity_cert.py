@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 import time
 from typing import Any
@@ -20,6 +23,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.browser_qa_v1 import BrowserQAFailure
+from devsystem import api2_exact_deployment_sha_gate_v1 as exact_deployment
 from devsystem import wnba_nav_v2_step7_public_freeze as nav
 from devsystem import wnba_pra_speed_v3_step9_final_cert as speed9
 import wnba_pra_repair_v1_step2_team_identity as identity
@@ -28,7 +32,10 @@ PROJECT = "WNBA PRA Repair V1"
 STEP = "2/7"
 PUBLIC_HOST = "https://pickvault.streamlit.app"
 PROOF_SELECTOR = '[data-wnba-pra-repair-v1-step2="wnba-pra-repair-v1-step2-team-identity"]'
+DEPLOYMENT_SELECTOR = '[data-api2-exact-deployment="streamlit-runtime-v1"]'
+DEPLOYMENT_CONVERGENCE_WAIT_MS = 75000
 GAME_SETUP_TIMEOUT_SECONDS = 120.0
+_SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
@@ -65,6 +72,7 @@ def certify_source_contract() -> dict[str, Any]:
     checks = {
         "step2_runtime_active": direct_runtime_active or composed_runtime_active,
         "step2_runtime_composition_safe": direct_runtime_active or composed_runtime_active,
+        "exact_deployment_marker_present": 'data-api2-exact-deployment=' in overlay,
         "step9_parent_preserved": (
             'FROZEN_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard"'
         ) in overlay,
@@ -97,6 +105,83 @@ def _int_attr(locator, name: str) -> int:
         raise BrowserQAFailure(f"Step-2 marker attribute {name} is not an integer: {raw!r}") from exc
 
 
+def _expected_deployment_sha() -> str:
+    env_sha = str(os.environ.get("GITHUB_SHA") or "").strip().lower()
+    if _SHA40_RE.fullmatch(env_sha):
+        return env_sha
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=2.0,
+    )
+    value = str(completed.stdout or "").strip().lower()
+    if completed.returncode != 0 or not _SHA40_RE.fullmatch(value):
+        raise BrowserQAFailure("Step-2 exact deployment gate cannot resolve expected merged-main SHA.")
+    return value
+
+
+def _bool_attr(locator, name: str) -> bool:
+    return str(locator.get_attribute(name) or "").strip().lower() == "true"
+
+
+def _deployment_gate_from_frame(frame, expected_sha: str) -> dict[str, Any]:
+    marker = frame.locator(DEPLOYMENT_SELECTOR).first
+    if marker.count() < 1:
+        evidence = {
+            "production_sha": "",
+            "build_id": "",
+            "deploy_id": "",
+            "health_sha": "",
+            "readiness_sha": "",
+            "ui_proof_sha": "",
+            "health_ok": False,
+            "readiness_ok": False,
+            "ui_proof_ok": False,
+        }
+    else:
+        evidence = {
+            "production_sha": str(marker.get_attribute("data-production-sha") or ""),
+            "build_id": str(marker.get_attribute("data-build-id") or ""),
+            "deploy_id": str(marker.get_attribute("data-deploy-id") or ""),
+            "health_sha": str(marker.get_attribute("data-health-sha") or ""),
+            "readiness_sha": str(marker.get_attribute("data-readiness-sha") or ""),
+            "ui_proof_sha": str(marker.get_attribute("data-ui-proof-sha") or ""),
+            "health_ok": _bool_attr(marker, "data-health-ok"),
+            "readiness_ok": _bool_attr(marker, "data-readiness-ok"),
+            "ui_proof_ok": _bool_attr(marker, "data-ui-proof-ok"),
+        }
+    return exact_deployment.build_exact_deployment_gate(
+        expected_sha=expected_sha,
+        **evidence,
+    )
+
+
+def _require_exact_deployment(page, frame, route_url: str):
+    expected_sha = _expected_deployment_sha()
+    gate = _deployment_gate_from_frame(frame, expected_sha)
+    if not gate["gate_open"]:
+        print(f"WNBA_PRA_REPAIR_V1_STEP2_DEPLOYMENT_WAIT_STATE={gate['state']}")
+        print(f"WNBA_PRA_REPAIR_V1_STEP2_DEPLOYMENT_WAIT_ACTION={gate['next_legal_action']}")
+        page.wait_for_timeout(DEPLOYMENT_CONVERGENCE_WAIT_MS)
+        frame, _ = speed9._prime_wnba_pra_route(page, route_url)
+        gate = _deployment_gate_from_frame(frame, expected_sha)
+
+    if not gate["gate_open"]:
+        raise BrowserQAFailure(
+            "Step-2 exact deployment gate blocked public product proof: "
+            f"state={gate['state']} action={gate['next_legal_action']} "
+            f"expected={gate['expected_sha']} observed={gate['observed_production_sha']}"
+        )
+
+    print(f"WNBA_PRA_REPAIR_V1_STEP2_DEPLOYED_SHA={gate['observed_production_sha']}")
+    print("WNBA_PRA_REPAIR_V1_STEP2_EXACT_DEPLOYMENT_PARITY_GREEN")
+    return frame, gate
+
+
 def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -110,6 +195,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
         page = context.new_page()
         try:
             frame, slate_seconds = speed9._prime_wnba_pra_route(page, route_url)
+            frame, deployment_gate = _require_exact_deployment(page, frame, route_url)
             frame = nav._set_date_with_game(page, frame, target_date)
             game_button = nav._game_button(frame).first
 
@@ -154,6 +240,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
                 "step": STEP,
                 "status": "GREEN",
                 "production_url": production_url,
+                "exact_deployment_gate": deployment_gate,
                 "target_date": target_date,
                 "slate_ready_seconds": round(float(slate_seconds), 3),
                 "game_ready_seconds": round(float(game_seconds), 3),

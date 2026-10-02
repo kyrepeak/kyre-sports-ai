@@ -59,6 +59,7 @@ jobs:
           git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
           cat >/tmp/allowed.txt <<'EOF'
           .github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml
+          .github/workflows/wnba-pra-repair-v1-step2-team-identity.yml
           .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
           .github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml
           devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json
@@ -72,11 +73,14 @@ jobs:
           devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json
           devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json
           devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json
+          devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json
           devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json
+          devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py
           devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py
           streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py
           streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py
           tests/test_devsystem_dependency_chain_auto_refresh_v1.py
+          tests/test_wnba_pra_repair_v1_step2.py
           tests/test_wnba_pra_repair_v1_step3.py
           wnba_pra_repair_v1_step2_team_identity.py
           wnba_pra_repair_v1_step3_data.py

@@ -19,7 +19,13 @@ always restored.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 from html import escape
+import os
+from pathlib import Path
+import re
+import socket
+import subprocess
 from typing import Any, Mapping
 
 import streamlit as st
@@ -39,6 +45,83 @@ MAY_MODIFY_OTHER_SPORTS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 TEAM_IDENTITY_VERSION = identity.VERSION
 PROOF_MARKER = "wnba-pra-repair-v1-step2-team-identity"
+DEPLOYMENT_PROOF_MARKER = "streamlit-runtime-v1"
+_SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
+_RUNTIME_SHA_ENV_KEYS = (
+    "STREAMLIT_GIT_COMMIT",
+    "GIT_COMMIT",
+    "SOURCE_COMMIT",
+    "COMMIT_SHA",
+)
+
+
+def _full_sha(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    return text if _SHA40_RE.fullmatch(text) else ""
+
+
+def _git_rev(spec: str) -> str:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", spec],
+            cwd=Path(__file__).resolve().parent,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=2.0,
+        )
+    except Exception:
+        return ""
+    if completed.returncode != 0:
+        return ""
+    return _full_sha(completed.stdout)
+
+
+@lru_cache(maxsize=1)
+def _runtime_deployment_identity() -> dict[str, Any]:
+    runtime_sha = ""
+    for key in _RUNTIME_SHA_ENV_KEYS:
+        runtime_sha = _full_sha(os.environ.get(key))
+        if runtime_sha:
+            break
+    if not runtime_sha:
+        runtime_sha = _git_rev("HEAD")
+
+    tree_sha = _git_rev("HEAD^{tree}") if runtime_sha else ""
+    host = str(socket.gethostname() or "").strip()
+    build_id = f"tree:{tree_sha}" if tree_sha else ""
+    deploy_id = f"streamlit:{host}" if host else ""
+    ready = bool(runtime_sha and build_id and deploy_id)
+    return {
+        "production_sha": runtime_sha,
+        "build_id": build_id,
+        "deploy_id": deploy_id,
+        "health_sha": runtime_sha if ready else "",
+        "readiness_sha": runtime_sha if ready else "",
+        "ui_proof_sha": runtime_sha if ready else "",
+        "health_ok": ready,
+        "readiness_ok": ready,
+        "ui_proof_ok": ready,
+    }
+
+
+def _deployment_proof_marker() -> None:
+    evidence = _runtime_deployment_identity()
+    st.markdown(
+        '<div style="display:none" '
+        f'data-api2-exact-deployment="{escape(DEPLOYMENT_PROOF_MARKER, quote=True)}" '
+        f'data-production-sha="{escape(str(evidence["production_sha"]), quote=True)}" '
+        f'data-build-id="{escape(str(evidence["build_id"]), quote=True)}" '
+        f'data-deploy-id="{escape(str(evidence["deploy_id"]), quote=True)}" '
+        f'data-health-sha="{escape(str(evidence["health_sha"]), quote=True)}" '
+        f'data-readiness-sha="{escape(str(evidence["readiness_sha"]), quote=True)}" '
+        f'data-ui-proof-sha="{escape(str(evidence["ui_proof_sha"]), quote=True)}" '
+        f'data-health-ok="{str(bool(evidence["health_ok"])).lower()}" '
+        f'data-readiness-ok="{str(bool(evidence["readiness_ok"])).lower()}" '
+        f'data-ui-proof-ok="{str(bool(evidence["ui_proof_ok"])).lower()}"></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -244,6 +327,7 @@ def _proof_marker(payload: Mapping[str, Any]) -> None:
 
 
 def render_app() -> Any:
+    _deployment_proof_marker()
     original_slate_loader = slate.load_slate
     original_cached_slate_loader = performance._FROZEN_SLATE_LOADER
     original_cached_game_loader = performance._FROZEN_GAME_LOADER
@@ -313,6 +397,9 @@ __all__ = [
     "MAY_MODIFY_WNBA_MODEL",
     "MODEL_VERSION",
     "PROOF_MARKER",
+    "DEPLOYMENT_PROOF_MARKER",
+    "_runtime_deployment_identity",
+    "_deployment_proof_marker",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "TEAM_IDENTITY_VERSION",
     "_prewarm_game_center_dependencies",

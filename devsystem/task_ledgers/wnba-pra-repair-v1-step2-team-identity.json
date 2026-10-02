@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "task_id": "wnba-pra-repair-v1-step2-team-identity",
   "title": "WNBA PRA Repair V1 Step 2 — Page 2 Team-ID Repair",
   "project": "WNBA PRA Repair V1",
@@ -30,7 +30,7 @@
     "no_duplicate_async_runs": true,
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_EXACT_HEAD_PROOF_THEN_EXACT_HEAD_MERGE_THEN_ONE_MERGED_MAIN_PUBLIC_PROOF"
+    "next_legal_action": "EXACT_DEPLOYMENT_PARITY_THEN_ONE_PUBLIC_PRODUCT_PROOF"
   },
   "acceptance": {
     "canonical_2026_team_registry_count": 15,
@@ -58,7 +58,8 @@
     "exact_head_contract_green_required": true,
     "devsystem_final_gate_green_required": true,
     "merged_main_public_proof_green_required": true,
-    "frozen_token": "WNBA_PRA_REPAIR_V1_STEP2_FROZEN"
+    "frozen_token": "WNBA_PRA_REPAIR_V1_STEP2_FROZEN",
+    "exact_deployment_parity_green_required": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -84,11 +85,12 @@
   },
   "green_plus_frozen_claimed": false,
   "repair": {
-    "failure_domain": "PROOF_VERIFIER",
-    "failure_evidence_run_id": 37067617305,
-    "failure_evidence_job_id": 111039391478,
-    "root_cause": "The repaired public verifier diverged from the frozen one-click navigation contract: it treated the transient Game Center continuity shell as a second actionable stage, clicked the stale Open Game Center control again, and then used the legacy 24-second destination budget. The canonical WNBA production speed proof performs one click and allows a 120-second Game Center setup window.",
+    "failure_domain": "DEPLOYMENT",
+    "failure_evidence_run_id": 37068573392,
+    "failure_evidence_job_id": 111042419646,
+    "root_cause": "The corrected one-click verifier reached a public GAME CENTER READY state with the historical duplicate-key symptom, but the run did not prove that Streamlit was serving the merged-main checkout. API2 therefore owns this as DEPLOYMENT until exact deployed-SHA parity is established; product mutation is forbidden before that gate opens.",
     "patch_scope": [
+      "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
       "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py",
       "tests/test_wnba_pra_repair_v1_step2.py"
     ],
@@ -99,6 +101,44 @@
     "prior_repair_pr_number": 1352,
     "prior_merged_main_sha": "1e58c895ed8332d392bfe02e6e129a0b0b0a178d",
     "stale_failed_run_rerun": false,
-    "checkpoint": "EXACT_HEAD_REPROOF_AFTER_CANONICAL_VERIFIER_ALIGNMENT"
+    "checkpoint": "EXACT_DEPLOYMENT_PARITY_BEFORE_PRODUCT_REPRODUCTION",
+    "control_plane_paths": [
+      "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
+    ],
+    "runtime_proof_instrumentation_added": true,
+    "product_runtime_logic_mutated": false,
+    "exact_deployment_sha_gate_required": true,
+    "deployment_convergence_policy": "ONE_BOUNDED_WAIT_ONE_CONTROLLED_REFRESH",
+    "deployment_convergence_wait_ms": 75000,
+    "deployment_convergence_refresh_max": 1,
+    "product_patch_forbidden_until_exact_deployment_parity": true,
+    "compiled_plan_id": "PLAN-6CB605F56375D61438827D7F",
+    "compiled_plan_digest": "sha256:6cb605f56375d61438827d7f5650225671656f622805cf66093b9f606785e3a3",
+    "rollback_anchor_main_sha": "f5fd459b778b0ce30a2cfbf3301493d0c2165ee8",
+    "authoritative_head_binding": "PR_HEAD_AT_PROOF"
+  },
+  "control_plane_compatibility": {
+    "failure_owner": "CONTROL_PLANE",
+    "evidence": {
+      "dependency_auto_refresh_run_id": 37069133857,
+      "dependency_auto_refresh_job_id": 111044143370,
+      "step3_contract_run_id": 37069133957,
+      "step3_contract_job_id": 111044143687
+    },
+    "root_causes": [
+      "The dynamic dependency regression test contradicted the dynamic-parent contract by pinning the historical Step-2 router blob 3180431d724b26bd7d1129cb0139c81ffdfe49ac.",
+      "The Step-3 compatibility wake correctly triggered on a registered Step-2 parent change, but its exact-scope allowlist rejected the Step-2 verifier/test/ledger support files carried by the same bounded parent update."
+    ],
+    "patch": [
+      "Resolve expected Step-2 parent blob from current HEAD:path in the dependency regression test.",
+      "Allow exactly the dependency compatibility test and Step-3 workflow in the Step-2 PR scope.",
+      "Allow exactly the Step-2 workflow/cert/test/ledger support paths in the Step-3 child compatibility scope."
+    ],
+    "compiled_plan_id": "PLAN-5D4E6D809B11D3B2FC2E9957",
+    "compiled_plan_digest": "sha256:5d4e6d809b11d3b2fc2e9957e3a8eb9a654de5748e0da98059d847edf37574e3",
+    "prepatch_head_sha": "eee110e9d0ee14914b6777f4fbbd791ae4f7b655",
+    "no_product_runtime_logic_change": true,
+    "wildcard_scope_added": false,
+    "checkpoint": "CONTROL_PLANE_COMPATIBILITY_REPROOF"
   }
 }

@@ -50,10 +50,12 @@ jobs:
           git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
           cat >/tmp/allowed.txt <<'EOF'
           .github/workflows/wnba-pra-repair-v1-step2-team-identity.yml
+          .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
           app.py
           devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json
           devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py
           streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py
+          tests/test_devsystem_dependency_chain_auto_refresh_v1.py
           tests/test_wnba_pra_repair_v1_step2.py
           wnba_pra_repair_v1_step2_team_identity.py
           EOF
