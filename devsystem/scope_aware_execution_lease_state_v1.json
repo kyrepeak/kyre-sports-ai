@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 131,
-  "generation": 64,
+  "revision": 132,
+  "generation": 65,
   "holders": [
     {
       "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
@@ -46,13 +46,14 @@
     },
     {
       "owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
-      "lease_id": "SCOPE-LEASE-V8S4-PROOFBUNDLE-002",
-      "generation": 64,
-      "acquired_at_utc": "2026-10-02T04:35:30Z",
-      "heartbeat_at_utc": "2026-10-02T04:35:30Z",
-      "expires_at_utc": "2026-10-02T05:15:30Z",
+      "lease_id": "SCOPE-LEASE-V8S4-PROOFBUNDLE-003",
+      "generation": 65,
+      "acquired_at_utc": "2026-10-02T04:41:00Z",
+      "heartbeat_at_utc": "2026-10-02T04:41:00Z",
+      "expires_at_utc": "2026-10-02T05:21:00Z",
       "scope": {
         "write_paths": [
+          "devsystem/task_ledgers/monster-v8-step4-unified-proof-bundle-v1.json",
           "sports_api/monster_project_state_v1.py",
           "tests/test_monster_project_state_v1.py"
         ],
@@ -71,13 +72,13 @@
           "workflow:monster-project-state-v1"
         ],
         "resource_identity": {
-          "intent:id": "intent-da37d1541ee930da94301829",
           "main:base": "2d2eed003cdb2196d9198647442d928acef9e654",
-          "monster:v8-step": "4"
+          "monster:v8-step": "4",
+          "intent:id": "intent-8bc152bf48b94f5fdba425f0"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "1d0c0b46511d1606d21729840ebc49f4f7b58b960f45890b6a9dbff1262c015d"
+  "state_hash": "01950ab39f31c6e0ccd1f0f493621c5cd366d4cfe2079351fcabc73953d9df49"
 }
