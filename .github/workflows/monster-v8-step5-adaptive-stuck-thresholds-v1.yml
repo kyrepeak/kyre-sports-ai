@@ -1,0 +1,151 @@
+name: MONSTER V8 Step 5 Adaptive Stuck Thresholds
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "devsystem/adaptive_stuck_thresholds_v1.py"
+      - "tests/test_devsystem_adaptive_stuck_thresholds_v1.py"
+      - "devsystem/task_ledgers/monster-v8-step5-adaptive-stuck-thresholds-v1.json"
+      - ".github/workflows/monster-v8-step5-adaptive-stuck-thresholds-v1.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "devsystem/adaptive_stuck_thresholds_v1.py"
+      - "tests/test_devsystem_adaptive_stuck_thresholds_v1.py"
+      - "devsystem/task_ledgers/monster-v8-step5-adaptive-stuck-thresholds-v1.json"
+      - ".github/workflows/monster-v8-step5-adaptive-stuck-thresholds-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v8-step5-adaptive-${{ github.event_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  focused-proof:
+    name: adaptive stuck thresholds focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen V8 Step 4 dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object sports_api/monster_project_state_v1.py)" = "e72331a7fc1b82477d83517f75eb04d29bc5cef8"
+
+      - name: Verify frozen V7 Progress Truth dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/progress_truth_stuck_state_detector_v1.py)" = "8d35332713a83cecdf484f1c21d32c4b7541ade7"
+
+      - name: Verify frozen V5 heartbeat/dead-man dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/execution_heartbeat_deadman_recovery_v1.py)" = "a8be77d18e0ba7bcc8bbba4ef45451d18c2bf469"
+
+      - name: Compile Step 5
+        run: python -m py_compile devsystem/adaptive_stuck_thresholds_v1.py
+
+      - name: Run Step 5 contract
+        run: python devsystem/adaptive_stuck_thresholds_v1.py
+
+      - name: Run Step 5 and frozen-detector regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q \
+            tests/test_devsystem_adaptive_stuck_thresholds_v1.py \
+            tests/test_devsystem_progress_truth_stuck_state_detector_v1.py
+
+      - name: Prove control-plane-only safety
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          import devsystem.adaptive_stuck_thresholds_v1 as step5
+
+          assert step5.NETWORK_CALLS is False
+          assert step5.AUTO_MUTATE is False
+          assert step5.MAY_MODIFY_PRODUCT_RUNTIME is False
+          assert step5.MUTATION_AUTHORITY_GRANTED is False
+
+          tree = ast.parse(Path("devsystem/adaptive_stuck_thresholds_v1.py").read_text(encoding="utf-8"))
+          forbidden = {"requests", "urllib", "http", "socket", "subprocess"}
+          imported = set()
+          for node in ast.walk(tree):
+              if isinstance(node, ast.Import):
+                  imported.update(alias.name.split(".")[0] for alias in node.names)
+              elif isinstance(node, ast.ImportFrom) and node.module:
+                  imported.add(node.module.split(".")[0])
+          assert not (imported & forbidden), sorted(imported & forbidden)
+          print("MONSTER_V8_STEP5_CONTROL_PLANE_SAFETY_GREEN")
+          PY
+
+      - name: Enforce exact Step 5 write surface
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            BASE_SHA="$PR_BASE_SHA"
+            HEAD_SHA="$PR_HEAD_SHA"
+          else
+            BASE_SHA="$PUSH_BEFORE_SHA"
+            HEAD_SHA="$CURRENT_SHA"
+          fi
+          if [ -z "${BASE_SHA:-}" ] || printf '%s' "$BASE_SHA" | grep -Eq '^0+$'; then
+            BASE_SHA="$(git rev-parse HEAD^)"
+          fi
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" | sort > /tmp/step5-scope.txt
+          python - <<'PY'
+          from pathlib import Path
+
+          allowed = {
+              ".github/workflows/monster-v8-step5-adaptive-stuck-thresholds-v1.yml",
+              "devsystem/adaptive_stuck_thresholds_v1.py",
+              "devsystem/task_ledgers/monster-v8-step5-adaptive-stuck-thresholds-v1.json",
+              "tests/test_devsystem_adaptive_stuck_thresholds_v1.py",
+          }
+          actual = {
+              line.strip()
+              for line in Path("/tmp/step5-scope.txt").read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          }
+          unexpected = sorted(actual - allowed)
+          assert actual, "Step 5 proof surface unexpectedly empty"
+          assert not unexpected, f"unexpected Step 5 files: {unexpected}"
+          print("MONSTER_V8_STEP5_SCOPE_GREEN", sorted(actual))
+          PY
+
+      - name: Emit Step 5 proof marker
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+        run: |
+          echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_GREEN"
+          if [ "$EVENT_NAME" = "push" ] && [ "$GIT_REF" = "refs/heads/main" ]; then
+            echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_MERGED_MAIN_GREEN"
+            echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_FROZEN"
+          else
+            echo "MONSTER_V8_STEP5_ADAPTIVE_STUCK_THRESHOLDS_EXACT_HEAD_GREEN"
+          fi
