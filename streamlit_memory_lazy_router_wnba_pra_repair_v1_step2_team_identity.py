@@ -15,6 +15,7 @@ always restored.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from html import escape
 from typing import Any, Mapping
 
@@ -22,6 +23,7 @@ import streamlit as st
 
 import streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard as frozen_parent
 import wnba_pra_game_center_v2_step3 as game_center
+import wnba_pra_performance_v2_step5 as performance
 import wnba_pra_slate_v2_step2 as slate
 import wnba_pra_repair_v1_step2_team_identity as identity
 
@@ -43,6 +45,46 @@ def record_bootstrap_import_ms(value: float) -> None:
 def _reconciled_slate_loader(original_loader, day_str: str) -> dict[str, Any]:
     payload = original_loader(str(day_str))
     return identity.reconcile_slate_payload(payload)
+
+
+def _prewarm_game_inputs(
+    game_id: str,
+    game_date: str,
+    away_id: int,
+    home_id: int,
+) -> None:
+    """Warm the exact frozen Page-2 inputs concurrently.
+
+    The frozen Game Center/role engine still owns every returned value and all
+    projection math.  This only overlaps independent cached provider reads that
+    the frozen path would otherwise perform sequentially.
+    """
+    try:
+        import wnba_availability_v27 as availability
+        import wnba_role_v28 as role
+
+        season = int(str(game_date)[:4])
+        calls = (
+            (availability._verified_pool_for_day, (str(game_date),)),
+            (availability._event_summary, (str(game_id),)),
+            (availability._team_injury_feed, (int(away_id),)),
+            (availability._team_injury_feed, (int(home_id),)),
+            (role._advanced_usage_fetch, (season, 0)),
+            (role._advanced_usage_fetch, (season, 10)),
+            (role._advanced_usage_fetch, (season, 5)),
+        )
+        with ThreadPoolExecutor(max_workers=len(calls), thread_name_prefix="wnba-page2-warm") as pool:
+            futures = [pool.submit(fn, *args) for fn, args in calls]
+            for future in futures:
+                try:
+                    future.result()
+                except Exception:
+                    # Preserve frozen loader fallback semantics.  A failed warm
+                    # must never replace or fabricate the authoritative read.
+                    pass
+    except Exception:
+        # Warmup is latency-only; the unchanged frozen loader remains authority.
+        pass
 
 
 def _team_player_count(payload: Mapping[str, Any], team_id: int) -> int:
@@ -86,13 +128,41 @@ def _proof_marker(payload: Mapping[str, Any]) -> None:
 
 def render_app() -> Any:
     original_slate_loader = slate.load_slate
+    original_game_loader = game_center.load_game_center
     original_game_renderer = game_center.render_game_center
+    original_perf_slate_loader = performance._FROZEN_SLATE_LOADER
+    original_perf_game_loader = performance._FROZEN_GAME_LOADER
 
     def guarded_slate_loader(day_str: str) -> dict[str, Any]:
         return _reconciled_slate_loader(original_slate_loader, day_str)
 
     if hasattr(original_slate_loader, "clear"):
         guarded_slate_loader.clear = original_slate_loader.clear  # type: ignore[attr-defined]
+
+    def guarded_game_loader(
+        game_id: str,
+        game_date: str,
+        away_id: int,
+        home_id: int,
+        away_team: str,
+        home_team: str,
+    ) -> dict[str, Any]:
+        _prewarm_game_inputs(game_id, game_date, away_id, home_id)
+        payload = original_game_loader(
+            game_id,
+            game_date,
+            away_id,
+            home_id,
+            away_team,
+            home_team,
+        )
+        # Step 5's static frozen-loader reference used to bypass the Step-9
+        # duplicate-key wrapper.  Preserve the already-frozen Step-9 behavior
+        # explicitly on this handoff.
+        return frozen_parent._dedupe_game_center_payload(payload)
+
+    if hasattr(original_game_loader, "clear"):
+        guarded_game_loader.clear = original_game_loader.clear  # type: ignore[attr-defined]
 
     def guarded_game_renderer(state):
         payload = original_game_renderer(state)
@@ -101,12 +171,21 @@ def render_app() -> Any:
         return payload
 
     slate.load_slate = guarded_slate_loader
+    game_center.load_game_center = guarded_game_loader
     game_center.render_game_center = guarded_game_renderer
+
+    # Step-5 caches import-time loader references.  Patch those exact seams so
+    # Page 2 cannot bypass canonical team identity or the latency-only warmup.
+    performance._FROZEN_SLATE_LOADER = guarded_slate_loader
+    performance._FROZEN_GAME_LOADER = guarded_game_loader
     try:
         return frozen_parent.render_app()
     finally:
         slate.load_slate = original_slate_loader
+        game_center.load_game_center = original_game_loader
         game_center.render_game_center = original_game_renderer
+        performance._FROZEN_SLATE_LOADER = original_perf_slate_loader
+        performance._FROZEN_GAME_LOADER = original_perf_game_loader
 
 
 __all__ = [
@@ -119,6 +198,7 @@ __all__ = [
     "PROOF_MARKER",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "TEAM_IDENTITY_VERSION",
+    "_prewarm_game_inputs",
     "_proof_marker",
     "_reconciled_slate_loader",
     "record_bootstrap_import_ms",
