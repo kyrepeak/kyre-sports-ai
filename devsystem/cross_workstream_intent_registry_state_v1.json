@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 21,
-  "generation": 21,
-  "next_sequence": 19,
+  "revision": 22,
+  "generation": 22,
+  "next_sequence": 20,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -671,7 +671,7 @@
     {
       "intent_id": "intent-0d83b558e84ad2adef4ae6e7",
       "sequence": 16,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 PR 1342 cold Game Center correction",
       "mission_key": "wnba pra repair v1 step 2 pr 1342 cold game center correction",
       "semantic_fingerprint": "0d83b558e84ad2adef4ae6e7abbc2d77f342435cda7edcdefab1eb0aae9aeaaf",
@@ -710,7 +710,7 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T15:53:00Z",
-      "updated_at_utc": "2026-10-02T15:53:00Z",
+      "updated_at_utc": "2026-10-02T15:58:00Z",
       "expires_at_utc": "2026-10-02T16:53:00Z"
     },
     {
@@ -793,7 +793,49 @@
       "submitted_at_utc": "2026-10-02T15:57:00Z",
       "updated_at_utc": "2026-10-02T15:57:00Z",
       "expires_at_utc": "2026-10-02T16:57:00Z"
+    },
+    {
+      "intent_id": "intent-c4f55da31320f9a5cae50cba",
+      "sequence": 19,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 PR 1342 frozen Game-loader seam correction",
+      "mission_key": "wnba pra repair v1 step 2 pr 1342 frozen game loader seam correction",
+      "semantic_fingerprint": "c4f55da31320f9a5cae50cba1f21d236f5b79d3fe9726d972d8b1341e6c1d813",
+      "base_sha": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+      "scope": {
+        "write_paths": [
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "dependency:wnba-pra-step5-game-cache",
+          "pr:1342",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:api2-wnba-repair-v1-step2-cold-game-center",
+          "pr:1342"
+        ],
+        "resource_identity": {
+          "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+          "pr:head": "d828fd79749bcb6f050a3010805f1ea5d639a752",
+          "pr:number": "1342"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1342-game-seam",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-pr1342-game-seam",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1342-game-seam",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-pr1342-game-seam"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T15:58:00Z",
+      "updated_at_utc": "2026-10-02T15:58:00Z",
+      "expires_at_utc": "2026-10-02T16:58:00Z"
     }
   ],
-  "state_hash": "d65fe1b21502ab2e8add209a2e432e4887a81391b64117199517679a040b35e6"
+  "state_hash": "ccd03335b9bbcabb4e7a53841812c0de0e66187e3600e969acb28c7caf4124a9"
 }
