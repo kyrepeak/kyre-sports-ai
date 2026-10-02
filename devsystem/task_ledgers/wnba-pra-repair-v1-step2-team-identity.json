@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-repair-v1-step2-team-identity",
+  "title": "WNBA PRA Repair V1 Step 2 — Page 2 Team-ID Repair",
+  "project": "WNBA PRA Repair V1",
+  "step": 2,
+  "total_steps": 7,
+  "status": "DONE",
+  "scope": "Identity-only overlay above frozen WNBA PRA Speed V3 Step 9. Reconcile public schedule team ID/name/tricode to canonical 2026 WNBA roster/role IDs before the selected game enters frozen Game Center; fail closed on conflict; emit hidden Page-2 production proof.",
+  "source_main": "213c884b900ae66cc79ecdc9addbf7ecf2f87de3",
+  "root_cause": "Page 2 accepted the schedule's raw official_team_id and later exact-matched that number against the frozen roster/role TEAM_ID namespace without a reconciliation boundary. A provider numeric alias or drift can therefore preserve the correct visible team name while producing an empty team player group.",
+  "patch": "Install a lightweight 15-team 2026 canonical identity resolver above the frozen Slate/Game Center. Reconcile each side from numeric ID + full name + tricode; repair only when the textual identity uniquely resolves; fail closed on disagreement; leave frozen Page-2 and Speed V3 Steps 1-9 bytes untouched.",
+  "protected": {
+    "step1_load_audit": true,
+    "wnba_pra_speed_v3_steps_1_9": true,
+    "frozen_slate_step2": true,
+    "frozen_game_center_step3": true,
+    "frozen_player_intelligence_step4": true,
+    "projection_math": true,
+    "market_math": true,
+    "sportsbook_projection_influence": true,
+    "other_sports": true
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-repair-v1-step2",
+    "scope_lease_id": "SCOPE-LEASE-WNBA-PRA-REPAIR-V1-STEP2-R1",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "failure_must_be_classified_before_patch": true,
+    "next_legal_action": "ONE_EXACT_HEAD_CONTRACT_THEN_ONE_MERGED_MAIN_PUBLIC_PROOF"
+  },
+  "acceptance": {
+    "canonical_2026_team_registry_count": 15,
+    "conflicting_identity_fails_closed": true,
+    "numeric_alias_repair_is_identity_only": true,
+    "both_public_game_center_team_ids_canonical": true,
+    "both_public_game_center_team_player_groups_nonempty": true,
+    "frozen_speed_v3_steps_1_9_preserved": true,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence_changed": false
+  },
+  "freeze_exit": {
+    "exact_head_contract_green_required": true,
+    "devsystem_final_gate_green_required": true,
+    "merged_main_public_proof_green_required": true,
+    "frozen_token": "WNBA_PRA_REPAIR_V1_STEP2_FROZEN"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
