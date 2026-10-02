@@ -1,0 +1,61 @@
+name: MONSTER V8 Step 2 Transactional Rollback
+
+on:
+  push:
+    branches:
+      - "monster/monster-v8-step2-transactional-rollback-v1"
+    paths:
+      - "devsystem/transactional_rollback_engine_v1.py"
+      - "tests/test_devsystem_transactional_rollback_engine_v1.py"
+      - "devsystem/task_ledgers/monster-v8-step2-transactional-rollback-engine-v1.json"
+      - ".github/workflows/monster-v8-step2-transactional-rollback.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "devsystem/transactional_rollback_engine_v1.py"
+      - "tests/test_devsystem_transactional_rollback_engine_v1.py"
+      - "devsystem/task_ledgers/monster-v8-step2-transactional-rollback-engine-v1.json"
+      - ".github/workflows/monster-v8-step2-transactional-rollback.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-v8-step2-rollback-${{ github.event_name }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  focused-proof:
+    name: transactional rollback focused proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen V8 Step 1 dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/pre_mutation_blast_radius_simulator_v1.py)" = "75812e61e7b6dc4a12ee3e860f7cfd670e95dad6"
+
+      - name: Verify frozen terminal-proof dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/terminal_proof_receipt_v1.py)" = "e009da0790abbed2b24664b1031abf41d2f6c1fd"
+
+      - name: Run transactional rollback contract
+        run: python devsystem/transactional_rollback_engine_v1.py
+
+      - name: Run focused regression tests
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_transactional_rollback_engine_v1.py
+
+      - name: Emit V8 Step 2 GREEN marker
+        run: echo "MONSTER_V8_STEP2_TRANSACTIONAL_ROLLBACK_GREEN"
