@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 129,
+  "revision": 130,
   "generation": 63,
   "holders": [
     {
@@ -43,41 +43,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "chatgpt:monster-v2:monster-v8-step4-unified-proof-bundle-v1",
-      "lease_id": "SCOPE-LEASE-V8S4-PROOFBUNDLE-001",
-      "generation": 63,
-      "acquired_at_utc": "2026-10-02T04:29:30Z",
-      "heartbeat_at_utc": "2026-10-02T04:29:30Z",
-      "expires_at_utc": "2026-10-02T05:09:30Z",
-      "scope": {
-        "write_paths": [
-          "sports_api/monster_project_state_v1.py",
-          "tests/test_monster_project_state_v1.py"
-        ],
-        "dependency_tokens": [
-          "control-plane:unified-proof-bundle",
-          "direct_dependencies:sports_api.monster_project_state_v1",
-          "direct_dependents:tests.test_monster_project_state_v1",
-          "frozen-dependency:monster_v8_step3",
-          "project:monster-v8",
-          "transitive_dependencies:sports_api.monster_project_state_v1",
-          "transitive_dependents:tests.test_monster_project_state_v1"
-        ],
-        "shared_resources": [
-          "branch:monster/monster-v8-step4-unified-proof-bundle-v1",
-          "pr:monster-v8-step4-unified-proof-bundle-v1",
-          "workflow:monster-project-state-v1"
-        ],
-        "resource_identity": {
-          "intent:id": "intent-0c771d1802a002e5a4668f5e",
-          "main:base": "77761608a8b0f70a1cb0e1f4c38babf954b21e8e",
-          "monster:v8-step": "4"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "659784e3438979dd1220d7a6c638b992d4101f6979b7e81df0089b780c44d6d9"
+  "state_hash": "8041048f98d43c7bbfe5ea2b1391cc3f988f0d43698aaf0787921414840fba12"
 }
