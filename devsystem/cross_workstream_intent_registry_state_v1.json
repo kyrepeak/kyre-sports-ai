@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 22,
-  "generation": 22,
+  "revision": 23,
+  "generation": 23,
   "next_sequence": 20,
   "intents": [
     {
@@ -757,7 +757,7 @@
     {
       "intent_id": "intent-21604de8b8421fb1bf4b37fe",
       "sequence": 18,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 synthetic PR-merge thaw",
       "mission_key": "wnba pra repair v1 step 2 synthetic pr merge thaw",
       "semantic_fingerprint": "21604de8b8421fb1bf4b37fead04a234c0d5bbe2a6775ef0a90ceffe50c79ffe",
@@ -785,13 +785,17 @@
       "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-thaw",
       "participants": [
         {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1342-game-seam",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-pr1342-game-seam"
+        },
+        {
           "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-thaw",
           "workstream_id": "ws:wnba-pra-repair-v1-step2-thaw"
         }
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T15:57:00Z",
-      "updated_at_utc": "2026-10-02T15:57:00Z",
+      "updated_at_utc": "2026-10-02T16:02:00Z",
       "expires_at_utc": "2026-10-02T16:57:00Z"
     },
     {
@@ -837,5 +841,5 @@
       "expires_at_utc": "2026-10-02T16:58:00Z"
     }
   ],
-  "state_hash": "ccd03335b9bbcabb4e7a53841812c0de0e66187e3600e969acb28c7caf4124a9"
+  "state_hash": "67d5d9ee3b6ca97f8c327a5c9bfe041cdcffeeb137db4c280c907e3f72d1f2da"
 }
