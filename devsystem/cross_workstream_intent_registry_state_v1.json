@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 29,
-  "generation": 29,
+  "revision": 30,
+  "generation": 30,
   "next_sequence": 25,
   "intents": [
     {
@@ -1012,6 +1012,7 @@
       "base_sha": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
       "scope": {
         "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
           "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
           "tests/test_wnba_pra_repair_v1_step2.py"
         ],
@@ -1038,9 +1039,9 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:21:00Z",
-      "updated_at_utc": "2026-10-02T16:21:00Z",
+      "updated_at_utc": "2026-10-02T16:24:00Z",
       "expires_at_utc": "2026-10-02T17:21:00Z"
     }
   ],
-  "state_hash": "9acc88c9ec56e1fa5df2dffe60f79571914498c8f161710274dc729c269f9e51"
+  "state_hash": "19990d9a73ad0a39f6c3e4d72f67ceee419dc964077c769b2cbecec1a5eca55b"
 }
