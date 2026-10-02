@@ -56,41 +56,92 @@ def _prewarm_game_center_dependencies(
     away_id: int,
     home_id: int,
 ) -> None:
-    """Warm unchanged frozen dependency caches concurrently.
+    """Warm exact frozen provider primitives concurrently.
 
-    The frozen Game Center performs these three independent groups sequentially:
-    current player pool, availability, and advanced usage. Running the exact
-    frozen functions concurrently changes only wall-clock ordering. The frozen
-    loader still executes afterward and consumes the same cached values.
+    This is transport-only acceleration.  We do not replace the frozen Game
+    Center loader or role engine.  Instead we warm the exact cached primitives
+    they call so the authoritative frozen functions keep identical semantics
+    while avoiding serial network wall time on a cold Page-2 render.
     """
+    import pandas as pd
     import wnba_availability_v27 as availability
+    import wnba_players_v25 as players
     import wnba_role_v28 as role
 
     day = str(game_date)
     try:
-        season = int(day[:4])
-    except (TypeError, ValueError):
+        season = int(pd.to_datetime(day).year)
+    except Exception:
         season = 2026
 
-    calls = (
-        (availability._verified_pool_for_day, (day,)),
-        (
-            availability.availability_for_game_key,
-            (str(game_id), int(away_id), int(home_id), day),
-        ),
-        (role.advanced_usage_table, (season,)),
-    )
+    # Resolve the date-safe slate once so roster prewarms cover every team that
+    # _verified_pool_for_day() would otherwise fetch serially.
+    try:
+        schedule = availability.context.schedule_for_date(day)
+    except Exception:
+        schedule = None
 
-    def _warm(call) -> None:
+    team_ids: list[int] = []
+    team_meta: dict[int, tuple[str, str]] = {}
+    if schedule is not None and not getattr(schedule, "empty", True):
+        try:
+            ids = (
+                schedule["away_team_id"].astype(int).tolist()
+                + schedule["home_team_id"].astype(int).tolist()
+            )
+            team_ids = sorted(set(int(x) for x in ids if int(x) > 0))
+            for _, row in schedule.iterrows():
+                for side in ("away", "home"):
+                    tid = int(row.get(f"{side}_team_id") or 0)
+                    if tid > 0:
+                        team_meta[tid] = (
+                            str(row.get(f"{side}_team") or ""),
+                            str(row.get(f"{side}_tricode") or ""),
+                        )
+        except Exception:
+            team_ids = []
+
+    for tid in (int(away_id), int(home_id)):
+        if tid > 0 and tid not in team_ids:
+            team_ids.append(tid)
+    team_ids = sorted(set(team_ids))
+
+    calls: list[tuple[Any, tuple[Any, ...]]] = [
+        # Player production: V2.3.2 already parallelizes season/L10/L5.
+        (players.old_players.player_form_table, (season,)),
+        # Prime the season schedule in case Streamlit Cloud must use the ESPN
+        # game-summary fallback after the WNBA Stats transport is unavailable.
+        (players._espn_season_schedule, (season,)),
+        # Availability primitives used by availability_for_game_key().
+        (availability._event_summary, (str(game_id),)),
+        (availability._team_injury_feed, (int(away_id),)),
+        (availability._team_injury_feed, (int(home_id),)),
+        # Advanced usage primitives. advanced_usage_table() consumes these
+        # exact cached windows sequentially after the warm.
+        (role._advanced_usage_fetch, (season, 0)),
+        (role._advanced_usage_fetch, (season, 10)),
+        (role._advanced_usage_fetch, (season, 5)),
+    ]
+
+    # Roster requests are independent and safe to fan out.  The later frozen
+    # pool builder calls the same cached _espn_roster() identities.
+    for tid in team_ids:
+        name, abbr = team_meta.get(int(tid), ("", ""))
+        calls.append((players._espn_roster, (int(tid), name, abbr)))
+
+    def _warm(call: tuple[Any, tuple[Any, ...]]) -> None:
         fn, args = call
         try:
             fn(*args)
         except Exception:
-            # Preserve the frozen loader's existing fail-soft/provider behavior.
-            # The authoritative call still happens immediately afterward.
+            # Preserve existing fail-soft/provider fallback behavior.
             return
 
-    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="wnba-pra-step2") as pool:
+    workers = min(12, max(1, len(calls)))
+    with ThreadPoolExecutor(
+        max_workers=workers,
+        thread_name_prefix="wnba-pra-step2",
+    ) as pool:
         list(pool.map(_warm, calls))
 
 
