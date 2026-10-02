@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "task_id": "api2-proof-architecture-v1-step1-exact-deployment-sha-gate",
+  "project": "API2 Proof Architecture V1",
+  "step": "1/7",
+  "title": "Exact Deployment SHA Gate",
+  "status": "DONE",
+  "source_main": "d15011ee87f4a2831b8c8e5236af0f68a5bf43e2",
+  "problem": "Public product/browser proofs can begin before production identity parity is established, so a stale hosted deployment can be misread as a regression in the newly merged code.",
+  "root_cause": "The frozen Deployment Truth Control Plane correctly classifies deployment parity and drift, but no additive pre-proof gate converts that truth into a mandatory allow/block decision for expensive product proof.",
+  "patch": "Compose the frozen Deployment Truth Control Plane with a dependency-light Exact Deployment SHA Gate. Only DEPLOYMENT_PARITY opens public product proof. STALE_DEPLOYMENT, IDENTITY_CONFLICT, INCOMPLETE, and PROOF_FAILED fail closed and never authorize a product patch.",
+  "protected": {
+    "deployment_truth_parent_blob": "2c39e1fd1b6a7af219bf14f48f124d695a925d59",
+    "deployment_truth_parent_tests_blob": "cae010e271dcbd1fa640b53bb8700270593d5f4e",
+    "app_py_changed": false,
+    "product_runtime_changed": false,
+    "wnba_changed": false,
+    "nfl_changed": false,
+    "cfb_changed": false,
+    "mlb_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:monster:api2-proof-architecture-v1-step1",
+    "scope_lease_id": "SCOPE-LEASE-5F456300303D4B8DEAC7D8C5",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true
+  },
+  "acceptance": {
+    "exact_deployment_parity_opens_gate": true,
+    "stale_deployment_blocks_product_proof": true,
+    "identity_conflict_blocks_product_proof": true,
+    "missing_identity_fails_closed": true,
+    "runtime_or_ui_proof_failure_blocks_product_proof": true,
+    "product_patch_never_authorized_by_gate": true,
+    "network_calls": false,
+    "product_runtime_mutation": false
+  },
+  "freeze_exit": {
+    "compiled_v8_plan_required": true,
+    "exact_pr_head_proof_required": true,
+    "devsystem_final_gate_required": true,
+    "terminal_proof_receipt_required": true,
+    "merge_exact_certified_head_required": true,
+    "merged_main_proof_required": true,
+    "frozen_registry_registration_required": true,
+    "frozen_token": "API2_PROOF_ARCHITECTURE_V1_STEP1_FROZEN"
+  },
+  "green_plus_frozen_claimed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

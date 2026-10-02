@@ -1,0 +1,81 @@
+name: API2 Proof Architecture V1 Step 1 Exact Deployment SHA Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.yml"
+      - "devsystem/api2_exact_deployment_sha_gate_v1.py"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json"
+      - "tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.yml"
+      - "devsystem/api2_exact_deployment_sha_gate_v1.py"
+      - "devsystem/execution_plans/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json"
+      - "devsystem/task_ledgers/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json"
+      - "tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-proof-architecture-v1-step1-${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  exact-deployment-sha-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prove frozen Deployment Truth parent is byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object devsystem/deployment_truth_control_plane_v1.py)" = "2c39e1fd1b6a7af219bf14f48f124d695a925d59"
+          test "$(git hash-object tests/test_devsystem_deployment_truth_control_plane_v1.py)" = "cae010e271dcbd1fa640b53bb8700270593d5f4e"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP1_FROZEN_PARENT_GREEN"
+
+      - name: Validate compiled MONSTER V8 execution plan
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from devsystem.execution_plan_compiler_v1 import validate_execution_plan
+          path = Path("devsystem/execution_plans/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json")
+          plan = json.loads(path.read_text(encoding="utf-8"))
+          validate_execution_plan(plan, observed_main_sha=plan["base_main_sha"])
+          print("API2_PROOF_ARCHITECTURE_V1_STEP1_V8_PLAN_GREEN")
+          PY
+
+      - name: Run exact-deployment gate contract
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q             tests/test_devsystem_deployment_truth_control_plane_v1.py             tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py
+
+      - name: Run dependency-light gate self-test
+        run: python devsystem/api2_exact_deployment_sha_gate_v1.py
+
+      - name: Certify exact head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP1_BRANCH_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP1_READY_TO_MERGE"
+
+      - name: Certify merged main freeze
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP1_GREEN"
+          echo "API2_PROOF_ARCHITECTURE_V1_STEP1_FROZEN"

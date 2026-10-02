@@ -1,0 +1,139 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "mission_id": "api2-proof-architecture-v1-step1-exact-deployment-sha-gate",
+  "mission": "API2 Proof Architecture V1 Step 1 Exact Deployment SHA Gate",
+  "base_main_sha": "d15011ee87f4a2831b8c8e5236af0f68a5bf43e2",
+  "dependency_versions": {
+    "step1_blast_simulator": "MONSTER_V8_PRE_MUTATION_BLAST_RADIUS_SIMULATOR_V1",
+    "step2_rollback_engine": "MONSTER_V8_TRANSACTIONAL_ROLLBACK_ENGINE_V1",
+    "step3_intent_arbiter": "MONSTER_V8_CROSS_WORKSTREAM_INTENT_ARBITER_V1",
+    "step4_project_state": "MONSTER_PROJECT_STATE_V1",
+    "step5_adaptive_stuck": "MONSTER_V8_ADAPTIVE_STUCK_THRESHOLDS_V1",
+    "step6_chaos_certification": "MONSTER_V8_CHAOS_ADVERSARIAL_CERTIFICATION_HARNESS_V1"
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": "rollback_anchor",
+      "title": "Seal current main and frozen deployment-truth parent",
+      "action_type": "READ_ONLY",
+      "depends_on": [],
+      "write_paths": [],
+      "dependency_tokens": ["frozen:monster-v3-step5-deployment-truth", "main:d15011ee87f4a2831b8c8e5236af0f68a5bf43e2"],
+      "shared_resources": [],
+      "expected_proof": ["current frozen artifact registry snapshot", "exact current main SHA", "frozen deployment truth parent blob"],
+      "completion_criteria": ["product runtime excluded from write scope", "rollback anchor sealed"],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "additive_patch",
+      "title": "Add exact-deployment pre-proof gate",
+      "action_type": "MUTATION",
+      "depends_on": ["rollback_anchor"],
+      "write_paths": [".github/workflows/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.yml", "devsystem/api2_exact_deployment_sha_gate_v1.py", "devsystem/execution_plans/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json", "devsystem/task_ledgers/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json", "tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py"],
+      "dependency_tokens": ["control:deployment-truth", "control:step2a", "domain:devsystem"],
+      "shared_resources": ["branch:monster-api2-proof-architecture-v1-step1"],
+      "expected_proof": ["Step 2A authorization", "frozen parent remains byte-identical", "single scoped branch"],
+      "completion_criteria": ["gate composes frozen deployment truth engine", "no network or product mutation authority", "stale deployment blocks product proof"],
+      "step_2a_required": true,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "exact_head_proof",
+      "title": "Certify exact PR head",
+      "action_type": "READ_ONLY",
+      "depends_on": ["additive_patch"],
+      "write_paths": [],
+      "dependency_tokens": ["proof:devsystem-final-gate", "proof:focused"],
+      "shared_resources": ["workflow:api2-proof-architecture-v1-step1"],
+      "expected_proof": ["DevSystem final gate GREEN", "focused contract GREEN", "terminal proof receipt"],
+      "completion_criteria": ["exact PR head certified", "no contradictory required check"],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "merge_exact_head",
+      "title": "Merge only exact certified head",
+      "action_type": "MUTATION",
+      "depends_on": ["exact_head_proof", "rollback_anchor"],
+      "write_paths": [".github/workflows/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.yml", "devsystem/api2_exact_deployment_sha_gate_v1.py", "devsystem/execution_plans/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json", "devsystem/task_ledgers/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json", "tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py"],
+      "dependency_tokens": ["merge:exact-certified-head"],
+      "shared_resources": ["pr:api2-proof-architecture-v1-step1"],
+      "expected_proof": ["PR head SHA equals certified head", "required branch protection GREEN"],
+      "completion_criteria": ["exact certified head merged", "merged main SHA captured"],
+      "step_2a_required": true,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "merged_main_proof",
+      "title": "Certify merged-main exact-deployment gate",
+      "action_type": "READ_ONLY",
+      "depends_on": ["merge_exact_head"],
+      "write_paths": [],
+      "dependency_tokens": ["proof:merged-main", "proof:terminal-receipt"],
+      "shared_resources": ["workflow:api2-proof-architecture-v1-step1-main"],
+      "expected_proof": ["merged-main DevSystem proof GREEN", "merged-main focused contract GREEN", "terminal receipt"],
+      "completion_criteria": ["Step 1 GREEN on merged main", "frozen parent unchanged"],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "freeze_registry",
+      "title": "Register Step 1 frozen artifacts",
+      "action_type": "MUTATION",
+      "depends_on": ["merged_main_proof", "rollback_anchor"],
+      "write_paths": ["devsystem/frozen_artifact_registry_state_v1.json"],
+      "dependency_tokens": ["freeze:api2-proof-architecture-v1-step1"],
+      "shared_resources": ["registry:monster-frozen-artifact-registry"],
+      "expected_proof": ["GREEN and FROZEN tokens", "artifact blob identities", "registry CAS success"],
+      "completion_criteria": ["Step 1 registered FROZEN", "lease released"],
+      "step_2a_required": true,
+      "mutation_authority": false
+    }
+  ],
+  "topological_order": ["rollback_anchor", "additive_patch", "exact_head_proof", "merge_exact_head", "merged_main_proof", "freeze_registry"],
+  "edges": [
+    {"from": "additive_patch", "to": "exact_head_proof"},
+    {"from": "exact_head_proof", "to": "merge_exact_head"},
+    {"from": "merge_exact_head", "to": "merged_main_proof"},
+    {"from": "merged_main_proof", "to": "freeze_registry"},
+    {"from": "rollback_anchor", "to": "additive_patch"},
+    {"from": "rollback_anchor", "to": "freeze_registry"},
+    {"from": "rollback_anchor", "to": "merge_exact_head"}
+  ],
+  "resource_plan": {
+    "write_paths": [".github/workflows/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.yml", "devsystem/api2_exact_deployment_sha_gate_v1.py", "devsystem/execution_plans/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json", "devsystem/frozen_artifact_registry_state_v1.json", "devsystem/task_ledgers/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json", "tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py"],
+    "dependency_tokens": ["control:deployment-truth", "control:step2a", "domain:devsystem", "freeze:api2-proof-architecture-v1-step1", "frozen:monster-v3-step5-deployment-truth", "main:d15011ee87f4a2831b8c8e5236af0f68a5bf43e2", "merge:exact-certified-head", "proof:devsystem-final-gate", "proof:focused", "proof:merged-main", "proof:terminal-receipt"],
+    "shared_resources": ["branch:monster-api2-proof-architecture-v1-step1", "pr:api2-proof-architecture-v1-step1", "registry:monster-frozen-artifact-registry", "workflow:api2-proof-architecture-v1-step1", "workflow:api2-proof-architecture-v1-step1-main"]
+  },
+  "proof_plan": {
+    "rollback_anchor": ["current frozen artifact registry snapshot", "exact current main SHA", "frozen deployment truth parent blob"],
+    "additive_patch": ["Step 2A authorization", "frozen parent remains byte-identical", "single scoped branch"],
+    "exact_head_proof": ["DevSystem final gate GREEN", "focused contract GREEN", "terminal proof receipt"],
+    "merge_exact_head": ["PR head SHA equals certified head", "required branch protection GREEN"],
+    "merged_main_proof": ["merged-main DevSystem proof GREEN", "merged-main focused contract GREEN", "terminal receipt"],
+    "freeze_registry": ["GREEN and FROZEN tokens", "artifact blob identities", "registry CAS success"]
+  },
+  "rollback_checkpoint_id": "rollback_anchor",
+  "freeze_contract": {
+    "exact_pr_head_proof": true,
+    "devsystem_final_gate": true,
+    "merge_exact_certified_head": true,
+    "merged_main_proof": true,
+    "terminal_proof_receipt": true,
+    "green_plus_frozen": true,
+    "freeze_tokens": ["FROZEN", "GREEN"]
+  },
+  "completion_criteria": ["Step 1 is GREEN + FROZEN", "frozen deployment truth parent remains byte-identical", "future public product proofs can be blocked until exact deployment parity", "no product runtime change"],
+  "step_2a_required": true,
+  "mutation_authority": false,
+  "network_calls": false,
+  "auto_mutate": false,
+  "may_modify_product_runtime": false,
+  "plan_id": "PLAN-80690BAD72211259511C83C4",
+  "plan_digest": "sha256:80690bad72211259511c83c4944b7e2c93ed407c21198c4f49387012e103622b",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "next_legal_action": "ENTER_CHECKPOINT:rollback_anchor"
+}
