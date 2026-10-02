@@ -5,12 +5,12 @@
   "id": "wnba-pra-speed-v3-step9-final-cert",
   "title": "WNBA PRA Speed V3 Step 9 — Final strict production speed certification",
   "project": "WNBA PRA Speed V3",
-  "phase": "FINAL_PRODUCTION_CERTIFICATION_DUPLICATE_KEY_GUARD_REPAIR",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION_TRUE_COLD_REPAIR",
   "step": 9,
   "total_steps": 9,
   "status": "DONE",
   "scope": "Final Step-9 production certification plus a narrow runtime compatibility overlay that suppresses duplicate (team, player_id) Game Center rows before frozen Streamlit player-button rendering. Frozen Steps 1-8 bytes, projection values, model math, market math, data meaning, and sportsbook influence remain unchanged.",
-  "source_main": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
+  "source_main": "c5f627337b39d75f85125e0e2e08a4edd7ebb942",
   "speed_targets": {
     "warm_same_session_seconds_max": 0.75,
     "cached_cold_seconds_max": 1.5,
@@ -57,8 +57,8 @@
     "open_debt_count": 0
   },
   "two_a": {
-    "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
-    "scope_lease_id": "SCOPE-LEASE-STEP9-DUPKEY-GUARD-R1",
+    "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9-v6-performance-r12",
+    "scope_lease_id": "SCOPE-LEASE-STEP9-PERF-V6-R12",
     "one_active_problem": true,
     "one_active_branch": true,
     "one_active_pr_max": 1,
@@ -66,11 +66,11 @@
     "no_unchanged_failed_reruns": true,
     "protect_frozen_steps_1_8": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_EXACT_HEAD_DUPLICATE_KEY_GUARD_PROOF",
-    "authoritative_failed_run": 36927758434,
-    "authoritative_failed_job": 110589293590,
-    "failure_owner": "PRODUCT_RUNTIME",
-    "failure_class": "STREAMLIT_DUPLICATE_ELEMENT_KEY_FROM_DUPLICATE_PLAYER_IDENTITY"
+    "next_legal_action": "PREFLIGHT_THEN_ONE_EXACT_HEAD_PROOF_AFTER_SHARED_RESOURCE_LEASE",
+    "authoritative_failed_run": 36945103822,
+    "authoritative_failed_job": 110645370474,
+    "failure_owner": "PRODUCT",
+    "failure_class": "TRUE_COLD_PLAYER_3_977_GT_2_500"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -168,5 +168,31 @@
     "data_meaning_changed": false,
     "sportsbook_projection_influence_changed": false,
     "speed_threshold_changed": false
+  },
+  "true_cold_performance_repair_r12": {
+    "classification": "A_RUNTIME_PERFORMANCE",
+    "failed_run": 36945103822,
+    "failed_job": 110645370474,
+    "observed_true_cold_seconds": 3.977,
+    "required_true_cold_seconds_max": 2.5,
+    "deployment_wait_seconds_excluded": true,
+    "no_past_games_green": true,
+    "duplicate_key_guard_green": true,
+    "api_single_flight_preserved": true,
+    "root_cause": "Step-7 background precompute fetches and validates the complete Step-4 cached bundle but discards the response body. An immediate first-Player foreground open therefore cannot consume that already-running/already-fetched body; it waits on the same API single-flight and then performs an additional Streamlit-to-API cached-bundle read before rendering.",
+    "patch": "Step-9 overlay only: preserve the verified full Step-7 precompute response in process memory; on first Player cold-open bounded-join only the already-existing Step-7 future; if the verified body is available, feed the exact Step-4 consumer/history pair directly with zero additional foreground bundle network reads. Otherwise use the unchanged frozen Step-4 loader. The in-process handoff is one-shot and expires after 5 seconds; older bodies are discarded and fall back to the frozen Step-4 API path, so the server cache TTL is not extended.",
+    "duplicate_precompute_started": false,
+    "precompute_join_seconds": 2.25,
+    "fallback_loader_preserved": true,
+    "frozen_steps_1_8_modified": false,
+    "projection_values_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
+    "sportsbook_projection_influence_changed": false,
+    "handoff_one_shot": true,
+    "handoff_max_age_seconds": 5,
+    "server_cache_ttl_extended": false,
+    "local_cache_semantics_added": false
   }
 }
