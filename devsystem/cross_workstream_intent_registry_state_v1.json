@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 34,
-  "generation": 34,
-  "next_sequence": 27,
+  "revision": 35,
+  "generation": 35,
+  "next_sequence": 28,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -1086,7 +1086,7 @@
     {
       "intent_id": "intent-017ade215c3382cead88875c",
       "sequence": 26,
-      "status": "ACTIVE",
+      "status": "COMPLETE",
       "mission": "WNBA PRA Repair V1 Step 2 PR1343 exact thaw",
       "mission_key": "wnba pra repair v1 step 2 pr1343 exact thaw",
       "semantic_fingerprint": "017ade215c3382cead88875c7b02fd503369aa8b6c7c4046d5aed716db16394a",
@@ -1120,9 +1120,52 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T16:34:00Z",
-      "updated_at_utc": "2026-10-02T16:34:00Z",
+      "updated_at_utc": "2026-10-02T16:37:00Z",
       "expires_at_utc": "2026-10-02T17:34:00Z"
+    },
+    {
+      "intent_id": "intent-0eaf16dd4a6dd6f0a5987179",
+      "sequence": 27,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 PR1343 exact certified-head merge",
+      "mission_key": "wnba pra repair v1 step 2 pr1343 exact certified head merge",
+      "semantic_fingerprint": "0eaf16dd4a6dd6f0a5987179636d625a9414b4d1349e16cd3150d8e735cb2617",
+      "base_sha": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "merge:exact-certified-head",
+          "pr:1343",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:main#shard[domain=wnba,route=pra]",
+          "pr:1343"
+        ],
+        "resource_identity": {
+          "main:base": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
+          "pr:head": "126a5832a5e6d93502144ec7c304d52c923feb71",
+          "pr:number": "1343"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1343-merge",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-pr1343-merge",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1343-merge",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-pr1343-merge"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T16:37:00Z",
+      "updated_at_utc": "2026-10-02T16:37:00Z",
+      "expires_at_utc": "2026-10-02T17:37:00Z"
     }
   ],
-  "state_hash": "42747bf82cd1cd3d3d94b975c0bd3dd8c2729a19f9c61496eedcb4a99fa58d15"
+  "state_hash": "a78739e78427016032205382abfa64afc9a411653aec842e8564b84f460f59ba"
 }
