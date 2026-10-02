@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 11,
-  "generation": 11,
-  "next_sequence": 10,
+  "revision": 12,
+  "generation": 12,
+  "next_sequence": 11,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -423,7 +423,47 @@
       "submitted_at_utc": "2026-10-02T10:06:00Z",
       "updated_at_utc": "2026-10-02T10:06:00Z",
       "expires_at_utc": "2026-10-02T11:06:00Z"
+    },
+    {
+      "intent_id": "intent-48a3264aac9289d3e48ef1b8",
+      "sequence": 10,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 3 action-ledger closeout",
+      "mission_key": "wnba pra repair v1 step 3 action-ledger closeout",
+      "semantic_fingerprint": "48a3264aac9289d3e48ef1b8943ce9135e82a1aa186cb45dee1ca29fbacdbd35",
+      "base_sha": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+        ],
+        "dependency_tokens": [
+          "control:action-ledger",
+          "pr:1341",
+          "step:wnba-pra-repair-v1-step3"
+        ],
+        "shared_resources": [
+          "branch:api2/wnba-pra-repair-v1-step3-data-completeness"
+        ],
+        "resource_identity": {
+          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
+          "branch:head": "31a7cba2867b0f420a28d6d482685f0d7f92732d",
+          "pr:number": "1341"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step3-data-completeness",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3",
+          "workstream_id": "ws:wnba-pra-repair-v1-step3-data-completeness"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T15:18:00Z",
+      "updated_at_utc": "2026-10-02T15:18:00Z",
+      "expires_at_utc": "2026-10-02T16:18:00Z"
     }
   ],
-  "state_hash": "7bcbd934b61b7a7f5f382115146105b8bc2829760d2ad40b4bd9b268bfa7a12f"
+  "state_hash": "0c000d929c7a13e320cd3e05305a497dd3ace13a6b8d65a80a0b30071bc5a2ab"
 }
