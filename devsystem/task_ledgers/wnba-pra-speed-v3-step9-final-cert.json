@@ -5,12 +5,12 @@
   "id": "wnba-pra-speed-v3-step9-final-cert",
   "title": "WNBA PRA Speed V3 Step 9 — Final strict production speed certification",
   "project": "WNBA PRA Speed V3",
-  "phase": "FINAL_PRODUCTION_CERTIFICATION_UPCOMING_GAME_REPAIR",
+  "phase": "FINAL_PRODUCTION_CERTIFICATION_DUPLICATE_KEY_GUARD_REPAIR",
   "step": 9,
   "total_steps": 9,
   "status": "DONE",
-  "scope": "Certification-only final gate. Compose the frozen Step-5 production true-cold/warm profile with the frozen Step-8 cached-cold/visible-first profile and fail closed unless every final speed budget passes. Step 9 adds no product/runtime/model/provider/router/math behavior.",
-  "source_main": "cb12320bdf29867d991fcee8518530dfdb9d128c",
+  "scope": "Final Step-9 production certification plus a narrow runtime compatibility overlay that suppresses duplicate (team, player_id) Game Center rows before frozen Streamlit player-button rendering. Frozen Steps 1-8 bytes, projection values, model math, market math, data meaning, and sportsbook influence remain unchanged.",
+  "source_main": "4bac47331fcf2ab17c2fe67c7c4538b9d0f3f379",
   "speed_targets": {
     "warm_same_session_seconds_max": 0.75,
     "cached_cold_seconds_max": 1.5,
@@ -23,7 +23,7 @@
     "step8_registry_revision": 10,
     "step8_source_main_sha": "68666801387cb1a4a759a15d73a907411d1f1e05",
     "navigation_v2_steps_1_7": true,
-    "product_runtime_changed": false,
+    "product_runtime_changed": true,
     "projection_math_changed": false,
     "market_math_changed": false,
     "data_meaning_changed": false,
@@ -58,7 +58,7 @@
   },
   "two_a": {
     "scope_lease_owner": "chatgpt:api2:wnba-pra-speed-v3-step9-v5",
-    "scope_lease_id": "SCOPE-LEASE-0AAADF237F26544D1975D67C",
+    "scope_lease_id": "SCOPE-LEASE-STEP9-DUPKEY-GUARD-R1",
     "one_active_problem": true,
     "one_active_branch": true,
     "one_active_pr_max": 1,
@@ -66,11 +66,11 @@
     "no_unchanged_failed_reruns": true,
     "protect_frozen_steps_1_8": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "ONE_FRESH_EXACT_HEAD_CURRENT_MAIN_PROOF",
-    "authoritative_failed_run": 36817421429,
-    "authoritative_failed_job": 110460851588,
-    "failure_owner": "VERIFIER",
-    "failure_class": "STALE_HISTORICAL_GAME_FALLBACK_MUST_USE_FUTURE_PREGAME"
+    "next_legal_action": "ONE_EXACT_HEAD_DUPLICATE_KEY_GUARD_PROOF",
+    "authoritative_failed_run": 36927758434,
+    "authoritative_failed_job": 110589293590,
+    "failure_owner": "PRODUCT_RUNTIME",
+    "failure_class": "STREAMLIT_DUPLICATE_ELEMENT_KEY_FROM_DUPLICATE_PLAYER_IDENTITY"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -150,5 +150,23 @@
     "exact_head_step9_run": 36925830624,
     "exact_head_devsystem_run": 36925830634,
     "recovery_rule": "Forward-port the same verifier-only upcoming-game repair onto current main and obtain one fresh exact-head proof before merge."
+  },
+  "duplicate_key_guard_repair": {
+    "classification": "A_CODE_PRODUCT_RUNTIME_DEFECT",
+    "failed_run": 36927758434,
+    "failed_job": 110589293590,
+    "observed_matchup": "Indiana Fever @ Las Vegas Aces",
+    "observed_game_center_players": 28,
+    "failure": "streamlit.errors.StreamlitDuplicateElementKey",
+    "root_cause": "The frozen Game Center creates each player button key from game_id + player_id. A duplicate player identity row in the current projection payload therefore emits the same Streamlit key twice and crashes the Game Center before final Step-9 speed timing can complete.",
+    "patch": "Leave the frozen Game Center byte-for-byte unchanged. Add a Step-9 router overlay that deduplicates repeated player_id rows independently within each team before the frozen Game Center renders buttons, preserves the first row and all of its projection values, recalculates the visible player count, and restores the frozen loader after render.",
+    "frozen_game_center_modified": false,
+    "frozen_steps_1_8_modified": false,
+    "projection_values_changed": false,
+    "model_math_changed": false,
+    "market_math_changed": false,
+    "data_meaning_changed": false,
+    "sportsbook_projection_influence_changed": false,
+    "speed_threshold_changed": false
   }
 }

@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CERT = ROOT / "devsystem/wnba_pra_speed_v3_step9_final_cert.py"
 LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json"
 WORKFLOW = ROOT / ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml"
+OVERLAY = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py"
+APP = ROOT / "app.py"
 
 
 def _source() -> str:
@@ -31,7 +33,9 @@ def test_step9_is_certification_only_and_keeps_final_speed_budgets():
     assert "step5_profile.run(" in source
     assert "step8_profile.run(" in source
     assert '"frozen_steps_1_8_preserved": True' in source
-    assert '"product_runtime_changed_by_step9": False' in source
+    assert '"product_runtime_changed_by_step9": True' in source
+    assert '"runtime_change_scope": "duplicate_player_identity_dedupe_guard"' in source
+    assert '"projection_values_changed_by_step9": False' in source
     assert '"projection_math_changed_by_step9": False' in source
     assert '"market_math_changed_by_step9": False' in source
     assert '"data_meaning_changed_by_step9": False' in source
@@ -77,6 +81,20 @@ def test_step9_requires_browser_resident_step8_continuity():
     assert "WNBA_PRA_SPEED_V3_STEP9_VISIBLE_CONTINUITY_GREEN" in source
 
 
+def test_step9_duplicate_key_guard_preserves_frozen_game_center_bytes():
+    overlay = OVERLAY.read_text(encoding="utf-8")
+    app = APP.read_text(encoding="utf-8")
+    assert "def _dedupe_game_center_payload(payload: Any) -> Any:" in overlay
+    assert "seen_player_ids: set[int] = set()" in overlay
+    assert "duplicate_player_rows_suppressed" in overlay
+    assert "game_center.load_game_center = guarded_loader" in overlay
+    assert "game_center.load_game_center = original_loader" in overlay
+    assert 'MAY_MODIFY_WNBA_MODEL = False' in overlay
+    assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in overlay
+    assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard import record_bootstrap_import_ms, render_app" in app
+    assert "Frozen WNBA PRA Speed V3 Step 8 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step8 import record_bootstrap_import_ms, render_app" in app
+
+
 def test_step9_emits_final_green_and_frozen_tokens():
     source = _source()
     required = (
@@ -85,6 +103,7 @@ def test_step9_emits_final_green_and_frozen_tokens():
         "WNBA_PRA_SPEED_V3_STEP9_CACHED_COLD_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_VISIBLE_CONTINUITY_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_FROZEN_STEPS1_8_GREEN",
+        "WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_PROFILE_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_GREEN",
         "WNBA_PRA_SPEED_V3_STEP9_FROZEN",
@@ -124,5 +143,6 @@ def test_step9_workflow_has_exact_scope_and_main_production_gate():
     assert "WNBA_PRA_SPEED_V3_STEP9_IMPORT_PATH_REPAIR_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_VERIFIER_SCOPE_GREEN" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN" in workflow
+    assert "WNBA_PRA_SPEED_V3_STEP9_DUPLICATE_KEY_GUARD_SCOPE_GREEN" in workflow
     assert "github.event_name == 'push'" in workflow
     assert "WNBA_PRA_SPEED_V3_STEP9_BRANCH_GREEN" in workflow
