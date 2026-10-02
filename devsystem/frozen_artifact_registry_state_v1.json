@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 23,
-  "source_main_sha": "ba5addcd6c5100997d6de46cdf969d8c5be5d41a",
+  "revision": 24,
+  "source_main_sha": "0ed6b4e5b467173303fb3c44162d342858f54ec3",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -565,8 +565,86 @@
         "tests/test_devsystem_causal_state_lineage_graph_v1.py": "a8b7c11e748d31a17f1b97c5c56a9026bebf7197",
         "tests/test_devsystem_permanent_gate_v1.py": "bdbef82bb1a5d179dacafca73c889e31f0ec4f14"
       }
+    },
+    "MONSTER_V7_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "MONSTER_V7_STEP2",
+      "source_main_sha": "0ed6b4e5b467173303fb3c44162d342858f54ec3",
+      "proven_merge_sha": "0ed6b4e5b467173303fb3c44162d342858f54ec3",
+      "pr_head_sha": "4bc585404a978f5686903326cf102f1bacf49097",
+      "failed_pre_pr_run_id": 36950478604,
+      "successful_pre_pr_run_id": 36950541797,
+      "pr_focused_proof_run_id": 36950589143,
+      "pr_devsystem_proof_run_id": 36950589133,
+      "proof_run_id": 36950589133,
+      "focused_test_count": 15,
+      "terminal_receipt_digest": "sha256:212947170895ebf9628234c3a81e85d3334a779ae34394af440bb9f658d21b91",
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "STATIC_CONTENT",
+      "content_addressed_proof_reuse": {
+        "version": "MONSTER_V6_CONTENT_ADDRESSED_PROOF_REUSE_V1",
+        "decision": "REUSE_APPROVED",
+        "reusable": true,
+        "checkpoint_id": "MONSTER_V7_STEP2",
+        "proof_run_id": 36950589133,
+        "source_main_sha": "4bc585404a978f5686903326cf102f1bacf49097",
+        "current_head_sha": "0ed6b4e5b467173303fb3c44162d342858f54ec3",
+        "head_moved": true,
+        "content_fingerprint": "e0342845ba950a1358ebbf0c0bd1c991bd6ce300a920ab48df5e230856e8c256",
+        "reasons": [],
+        "next_legal_action": "REUSE_TERMINAL_PROOF",
+        "proof_policy_version": "MONSTER_V7_STEP2_STATIC_CONTROL_PLANE_V1",
+        "proof_scope": [
+          "DEVSYSTEM_FULL",
+          "FOCUSED_TEST",
+          "STATIC_CONTRACT"
+        ],
+        "all_artifact_blobs_identical": true,
+        "artifact_count": 4,
+        "all_dependency_blobs_identical": true,
+        "dependency_count": 4,
+        "dependencies": {
+          "devsystem/causal_state_lineage_graph_v1.py": "898e66f879b364fc79d3be466d617268e7a5f876",
+          "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+          "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+          "devsystem/terminal_proof_receipt_v1.py": "e009da0790abbed2b24664b1031abf41d2f6c1fd"
+        },
+        "production_live_state_reused": false
+      },
+      "root_cause_contract": {
+        "first_divergent_writer_is_root_cause": true,
+        "nearest_symptom_writer_not_misblamed": true,
+        "backward_writer_chain_recorded": true,
+        "affected_consumers_recorded": true,
+        "causal_path_recorded": true,
+        "insufficient_evidence_never_guesses": true,
+        "tampered_step1_lineage_fails_closed": true,
+        "root_writer_becomes_patch_owner": true,
+        "step1_frozen_dependency_preserved": true
+      },
+      "failure_recovery": {
+        "failure_class": "DETERMINISTIC_IMPORT_PATH_BOOTSTRAP",
+        "failed_run_id": 36950478604,
+        "patch_commit": "4bc585404a978f5686903326cf102f1bacf49097",
+        "successful_run_id": 36950541797,
+        "duplicate_reruns": 0
+      },
+      "completion_contract": {
+        "total_steps": 7,
+        "completed_steps": [
+          1,
+          2
+        ],
+        "next_legal_action": "START_MONSTER_V7_STEP3"
+      },
+      "artifacts": {
+        ".github/workflows/monster-v7-step2-automatic-root-cause-backtrace.yml": "6739dcd4926bdbd9058fbe5977ea9ad91cfb2619",
+        "devsystem/automatic_root_cause_backtrace_v1.py": "f18b450897ff9f811709c112602703a15e129777",
+        "devsystem/task_ledgers/monster-v7-step2-automatic-root-cause-backtrace-v1.json": "7a50e7ad9a6e396ecefb4a76cedf09cf080d66e0",
+        "tests/test_devsystem_automatic_root_cause_backtrace_v1.py": "b44b806de6492586ee190776c564499f2a62241b"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "01e6445601be05ef27dd4a4d7d601db762d71a7cc81258d8727acc7eed6ebe54"
+  "state_hash": "784d0eed42b557e43dcdd7a82aa039cec86f578b091d2de012d7d3ac96e54f0d"
 }
