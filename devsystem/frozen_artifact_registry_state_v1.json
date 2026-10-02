@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 77,
+  "revision": 78,
   "source_main_sha": "322bc62bb4d6021b8958dd49ed8f48558972d153",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1548,7 +1548,7 @@
       "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP2",
       "source_main_sha": "60392dccd676f6e8df6e7ea37fd087e2bea6fbc1",
       "artifacts": {
-        ".github/workflows/devsystem-targeted-ci.yml": "a0418c1e1b96746b13561589e08dc64340f26d88",
+        ".github/workflows/devsystem-targeted-ci.yml": "cad39bded9b469ab412c224f9565d2c69e0436b3",
         ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml": "be8d0b985f9c2e96fbf89abf2b07c2a1e1433595",
         "devsystem/change_classifier_v1.py": "6f151c5ece852a461e37af1a319712f0ec384890",
         "devsystem/monster_speed_v3_step3_lane_split_v1.py": "5ddb14e2d8881a0213baf56e289d04eb60a688b9",
@@ -1586,6 +1586,19 @@
         "devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "11b0a4c84fe4b034a82795d185dbcad24f7797f8",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "a1c361dcebeabf8d934df2e7df18b22dce1d9e6d",
         "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": "524e68d04a872dfcd5fe482ab6775e65d0669800"
+      }
+    },
+    "API2_PROOF_ARCHITECTURE_V1_STEP5": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP5",
+      "source_main_sha": "322bc62bb4d6021b8958dd49ed8f48558972d153",
+      "artifacts": {
+        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": "250a77379774977c815a4026ebffc571abc777ed",
+        ".github/workflows/devsystem-targeted-ci.yml": "cad39bded9b469ab412c224f9565d2c69e0436b3",
+        "devsystem/api2_failure_domain_router_v1.py": "0ccf296bac93f1034f0168f71a1f69994114ca93",
+        "devsystem/execution_plans/api2-proof-architecture-v1-step5-failure-domain-separation.json": "89e68da1fc3b2af1dcd1e1a3cf0ecefdabf67577",
+        "devsystem/task_ledgers/api2-proof-architecture-v1-step5-failure-domain-separation.json": "5403ca83fea3dc90ea74f17a7d3c6da9f718bd9f",
+        "tests/test_devsystem_api2_failure_domain_router_v1.py": "06d28b491f5acb722a967a6785779ae3646007f6"
       }
     }
   },
@@ -2068,10 +2081,6 @@
         "app.py": {
           "from_blob": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
           "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
-        },
-        ".github/workflows/devsystem-targeted-ci.yml": {
-          "from_blob": "a0418c1e1b96746b13561589e08dc64340f26d88",
-          "to_blob": "cad39bded9b469ab412c224f9565d2c69e0436b3"
         }
       }
     },
@@ -2083,13 +2092,9 @@
         "app.py": {
           "from_blob": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
           "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
-        },
-        ".github/workflows/devsystem-targeted-ci.yml": {
-          "from_blob": "a0418c1e1b96746b13561589e08dc64340f26d88",
-          "to_blob": "cad39bded9b469ab412c224f9565d2c69e0436b3"
         }
       }
     }
   ],
-  "state_hash": "1e9508d865af04d7e28549e646504a107fb6b5e190d0bcec84faab251ffb5138"
+  "state_hash": "bac318c929be79445c79db44eb269233301ab33a33880a5e4bcc8c2ae3b3faad"
 }
