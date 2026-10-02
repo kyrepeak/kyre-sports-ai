@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 28,
-  "generation": 28,
-  "next_sequence": 24,
+  "revision": 29,
+  "generation": 29,
+  "next_sequence": 25,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -1001,7 +1001,46 @@
       "submitted_at_utc": "2026-10-02T16:17:00Z",
       "updated_at_utc": "2026-10-02T16:17:00Z",
       "expires_at_utc": "2026-10-02T17:17:00Z"
+    },
+    {
+      "intent_id": "intent-642c68829e8590f1e698955d",
+      "sequence": 24,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 frozen Game-loader seam correction",
+      "mission_key": "wnba pra repair v1 step 2 frozen game loader seam correction",
+      "semantic_fingerprint": "642c68829e8590f1e698955d25f6dd0832dd9ee7653c04ef76a3d0e321325711",
+      "base_sha": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f",
+      "scope": {
+        "write_paths": [
+          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
+          "tests/test_wnba_pra_repair_v1_step2.py"
+        ],
+        "dependency_tokens": [
+          "dependency:wnba-pra-step5-game-loader",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:api2-wnba-repair-v1-step2-game-loader-seam",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
+        ],
+        "resource_identity": {
+          "main:base": "2a4a5fbec1f1a928cecc535e5e880f4a5dde242f"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-game-loader-seam",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-game-loader-seam",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-game-loader-seam",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-game-loader-seam"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T16:21:00Z",
+      "updated_at_utc": "2026-10-02T16:21:00Z",
+      "expires_at_utc": "2026-10-02T17:21:00Z"
     }
   ],
-  "state_hash": "220e16bde3f02a8be495698b6b40f03d03e7aba1c86e27bd7e084174b5a65c6f"
+  "state_hash": "9acc88c9ec56e1fa5df2dffe60f79571914498c8f161710274dc729c269f9e51"
 }
