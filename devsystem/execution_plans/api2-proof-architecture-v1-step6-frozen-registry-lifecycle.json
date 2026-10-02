@@ -1,0 +1,55 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "mission_id": "api2-proof-architecture-v1-step6-frozen-registry-lifecycle",
+  "mission": "API2 Proof Architecture V1 Step 6 Frozen Registry Lifecycle Reconciliation",
+  "step": "6/7",
+  "base_main_sha": "322bc62bb4d6021b8958dd49ed8f48558972d153",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "policy": "ATOMIC_BASELINE_FORWARD_PORT_AND_PROGRESS_BOUNDED_REGISTRY_REFRESH",
+  "checkpoints": [
+    "audit-authoritative-registry",
+    "preserve-frozen-v4-registry-engine",
+    "install-lifecycle-planner",
+    "install-pre-verifier-lifecycle-audit",
+    "install-state-progress-bounded-refresh",
+    "exact-head-proof",
+    "merge-exact-certified-head",
+    "merged-main-proof",
+    "forward-port-step5-devsystem-workflow-baseline",
+    "freeze-registry"
+  ],
+  "write_paths": [
+    ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml",
+    ".github/workflows/devsystem-targeted-ci.yml",
+    "devsystem/api2_frozen_registry_lifecycle_v1.py",
+    "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json",
+    "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json",
+    "tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py"
+  ],
+  "protected": [
+    "API2_PROOF_ARCHITECTURE_V1_STEP1",
+    "API2_PROOF_ARCHITECTURE_V1_STEP2",
+    "API2_PROOF_ARCHITECTURE_V1_STEP3",
+    "API2_PROOF_ARCHITECTURE_V1_STEP4",
+    "API2_PROOF_ARCHITECTURE_V1_STEP5",
+    "MONSTER_V4_STEP3",
+    "product-runtime",
+    "model-math",
+    "projection-math"
+  ],
+  "freeze_exit": [
+    "focused-exact-head-green",
+    "authoritative-registry-lifecycle-green",
+    "permanent-devsystem-lifecycle-gate-green",
+    "required-integration-lanes-green",
+    "devsystem-final-gate-green",
+    "terminal-proof-receipt-green",
+    "merge-exact-certified-head",
+    "merged-main-focused-green",
+    "merged-main-devsystem-green",
+    "step5-workflow-baseline-forward-ported",
+    "frozen-registry-entry"
+  ]
+}
