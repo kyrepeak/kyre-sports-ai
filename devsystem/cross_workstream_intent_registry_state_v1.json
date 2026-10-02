@@ -4,9 +4,9 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "intent_ref": "refs/heads/monster-workstream-intent-registry",
   "intent_state_path": "devsystem/cross_workstream_intent_registry_state_v1.json",
-  "revision": 19,
-  "generation": 19,
-  "next_sequence": 17,
+  "revision": 20,
+  "generation": 20,
+  "next_sequence": 18,
   "intents": [
     {
       "intent_id": "intent-4cb6e00a072cde38012dccd8",
@@ -665,7 +665,7 @@
       ],
       "blocked_by": [],
       "submitted_at_utc": "2026-10-02T15:35:00Z",
-      "updated_at_utc": "2026-10-02T15:53:00Z",
+      "updated_at_utc": "2026-10-02T15:52:00Z",
       "expires_at_utc": "2026-10-02T16:35:00Z"
     },
     {
@@ -712,7 +712,48 @@
       "submitted_at_utc": "2026-10-02T15:53:00Z",
       "updated_at_utc": "2026-10-02T15:53:00Z",
       "expires_at_utc": "2026-10-02T16:53:00Z"
+    },
+    {
+      "intent_id": "intent-5481cd3f05ff62cbb0b8a8ed",
+      "sequence": 17,
+      "status": "ACTIVE",
+      "mission": "WNBA PRA Repair V1 Step 2 proof-contract subset-scope correction",
+      "mission_key": "wnba pra repair v1 step 2 proof contract subset scope correction",
+      "semantic_fingerprint": "5481cd3f05ff62cbb0b8a8edc9fdb98f558f7a63e479da8750e6dda6f28fd7bc",
+      "base_sha": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+      "scope": {
+        "write_paths": [
+          ".github/workflows/wnba-pra-repair-v1-step2-team-identity.yml"
+        ],
+        "dependency_tokens": [
+          "ci:step2-scope-guard",
+          "pr:1342",
+          "step:wnba-pra-repair-v1-step2"
+        ],
+        "shared_resources": [
+          "branch:api2-wnba-repair-v1-step2-cold-game-center",
+          "workflow:wnba-pra-repair-v1-step2-team-identity"
+        ],
+        "resource_identity": {
+          "main:base": "9c9c975c07083532fb7242fe39deaa57e530f3ab",
+          "pr:head": "6edf84847c53746c606dabbb7018d10d046972e1",
+          "pr:number": "1342"
+        },
+        "exclusive": false
+      },
+      "leader_owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-contract",
+      "canonical_workstream_id": "ws:wnba-pra-repair-v1-step2-proof-contract",
+      "participants": [
+        {
+          "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-contract",
+          "workstream_id": "ws:wnba-pra-repair-v1-step2-proof-contract"
+        }
+      ],
+      "blocked_by": [],
+      "submitted_at_utc": "2026-10-02T15:52:00Z",
+      "updated_at_utc": "2026-10-02T15:52:00Z",
+      "expires_at_utc": "2026-10-02T16:52:00Z"
     }
   ],
-  "state_hash": "fb564117815f31fb8f1e3e5529d1a7852562fdbe4c54d0b65f5e866ec93fd552"
+  "state_hash": "f0c8010b81691d90819c73baa67bc715228828c2a60b89a35768218d9b9d423a"
 }
