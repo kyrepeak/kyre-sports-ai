@@ -116,5 +116,15 @@
     "patch": "Update only the permanent Step-9 architecture contract to require Step-8/7/6 ownership imports, propagation across the nested owner chain, and reverse-order restoration. Preserve the already-proven router behavior and model firewalls.",
     "focused_router_proof_run_id": 36947480302,
     "regression_debt_state": "PENDING_PROOF"
+  },
+  "post_merge_step9_test_action_ledger_repair": {
+    "source_pr": 1329,
+    "source_head": "55f7b4423275bfa3a9e3e456692ce5bc6ad655cc",
+    "source_failed_run_id": 36958432298,
+    "failure_class": "A_DETERMINISTIC_CONTROL_PLANE",
+    "earliest_causal_divergence": "The post-merge repair PR changed a permanent Step-9 regression test and its focused workflow ownership but did not change exactly one task ledger, violating the active Monster Anti-Loop V2 action-ledger contract.",
+    "patch": "Update this existing Step-3 task ledger in the same repair PR so the non-documentation diff has exactly one changed task ledger. Preserve the valid zero-event genesis action log; no receipt is invented or replayed.",
+    "product_code_modified": false,
+    "proof_state": "PENDING_PROOF"
   }
 }
