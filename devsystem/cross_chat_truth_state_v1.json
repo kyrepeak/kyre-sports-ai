@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "truth_ref": "refs/heads/monster-cross-chat-truth",
   "truth_path": "devsystem/cross_chat_truth_state_v1.json",
-  "truth_epoch": 86,
+  "truth_epoch": 87,
   "program_id": "MONSTER_V6",
   "program_title": "MONSTER V6",
   "current_step": 6,
@@ -26,9 +26,9 @@
     "holder_lease_id": null
   },
   "frozen_registry": {
-    "revision": 22,
-    "state_hash": "d6b0a77618d4dcd05453f9fdc932ff9f84b130d9a5ef046df2621a4793752d14",
-    "checkpoint_count": 36,
+    "revision": 34,
+    "state_hash": "6895710f037fc91337a3fdf3a7cdd07ce44a6e15c8ec5b97c4ef90508807203b",
+    "checkpoint_count": 48,
     "active_thaws": 0
   },
   "frozen_checkpoints": [
@@ -66,8 +66,20 @@
     "MONSTER_V6_STEP4",
     "MONSTER_V6_STEP5",
     "MONSTER_V6_STEP6",
+    "MONSTER_V7_STEP1",
+    "MONSTER_V7_STEP2",
+    "MONSTER_V7_STEP3",
+    "MONSTER_V7_STEP4",
+    "MONSTER_V7_STEP5",
+    "MONSTER_V7_STEP6",
+    "MONSTER_V7_STEP7",
+    "MONSTER_V8_STEP1",
+    "MONSTER_V8_STEP2",
+    "MONSTER_V8_STEP3",
+    "MONSTER_V8_STEP4",
     "WNBA_PRA_SPEED_V3_STEP7",
-    "WNBA_PRA_SPEED_V3_STEP8"
+    "WNBA_PRA_SPEED_V3_STEP8",
+    "WNBA_PRA_SPEED_V3_STEP9"
   ],
   "scope_lease": {
     "mode": "SCOPE_AWARE",
@@ -126,5 +138,5 @@
     "only_next_legal_action": "MONSTER_V6_COMPLETE",
     "mutation_authority": false
   },
-  "state_hash": "06b121b7deba1c4c40666bc9b1e37afadac29a55954be81e71ff6a1810b5d773"
+  "state_hash": "f754f720ca10233af77387550dbada45728872fed2182f3a0767d70a687b8b00"
 }
