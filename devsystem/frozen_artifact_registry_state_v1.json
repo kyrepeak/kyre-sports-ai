@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 55,
+  "revision": 56,
   "source_main_sha": "d15011ee87f4a2831b8c8e5236af0f68a5bf43e2",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1829,7 +1829,29 @@
           "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
         }
       }
+    },
+    {
+      "thaw_id": "THAW-API2-PROOF-ARCH-V1-STEP1-HEAD-1073BC58",
+      "status": "ACTIVE",
+      "target_head_sha": "1073bc58a4b539b68dbacac12016d3b2b0d0140b",
+      "files": {
+        "app.py": {
+          "from_blob": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
+          "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
+        }
+      }
+    },
+    {
+      "thaw_id": "THAW-API2-PROOF-ARCH-V1-STEP1-MERGE-6F8B879B",
+      "status": "ACTIVE",
+      "target_head_sha": "6f8b879b962c03131f6b2d89374839b49ddaf924",
+      "files": {
+        "app.py": {
+          "from_blob": "e1ca16336f35728c623232b751b31d3eb1ae9f18",
+          "to_blob": "d5e000aad9cb1d7367fca66b83f5fdece74128e2"
+        }
+      }
     }
   ],
-  "state_hash": "cf3870b9a73e6e7669465cd2c60d3fb215020dcfb593dd25b43069a843ef4fd7"
+  "state_hash": "ed23f16557d2182f461f1302ce729c90848ce802aea22656af47a91b3b3a681d"
 }
