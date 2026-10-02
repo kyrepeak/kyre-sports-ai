@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 65,
-  "source_main_sha": "e4de274ca6d0f8399e9e9a2d26a22896a800a4cd",
+  "revision": 66,
+  "source_main_sha": "60392dccd676f6e8df6e7ea37fd087e2bea6fbc1",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1542,6 +1542,23 @@
         "devsystem/task_ledgers/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.json": "7e150a570e26c081e5d4b3572191d99d390f6b6d",
         "tests/test_devsystem_api2_exact_deployment_sha_gate_v1.py": "848a39b5e4ab6b72296eec3bb657379a62bd132a"
       }
+    },
+    "API2_PROOF_ARCHITECTURE_V1_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP2",
+      "source_main_sha": "60392dccd676f6e8df6e7ea37fd087e2bea6fbc1",
+      "artifacts": {
+        ".github/workflows/devsystem-targeted-ci.yml": "a0418c1e1b96746b13561589e08dc64340f26d88",
+        ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml": "be8d0b985f9c2e96fbf89abf2b07c2a1e1433595",
+        "devsystem/change_classifier_v1.py": "6f151c5ece852a461e37af1a319712f0ec384890",
+        "devsystem/monster_speed_v3_step3_lane_split_v1.py": "5ddb14e2d8881a0213baf56e289d04eb60a688b9",
+        "devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json": "a71491357bb2c1985fd103fa41f245abcac633b3",
+        "devsystem/task_ledgers/api2-proof-architecture-v1-step2-required-integration-lanes.json": "89498162e680635ab807332e16c0ba0193f7e174",
+        "tests/test_devsystem_change_classifier_v1.py": "09312069fdc91928196bfee9ee34a772394ac930",
+        "tests/test_devsystem_workflow_parallelism_v1.py": "d2ff729d095c3008157f675e34440c4ae9b1cfe0",
+        "tests/test_devsystem_required_integration_lanes_v1.py": "22f55626341a009076e3604fad7682f168bc4e2f",
+        "tests/test_monster_speed_v3_step3_lane_split_v1.py": "aed7b9d0bb8315b919839409f92041638349792e"
+      }
     }
   },
   "active_thaws": [
@@ -1931,5 +1948,5 @@
       }
     }
   ],
-  "state_hash": "dcbb4df0d1af21756c4a3f4bb51b41b4602baad1c74a6c0aae75e4e33c0b5501"
+  "state_hash": "d621e5889a8809ba4c679ac4b0e50d139bc04ea5abbbd67795ed455b6ccbe224"
 }
