@@ -1,0 +1,77 @@
+name: CFB Top Picks Step 3 Public Navigation Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/cfb_top_picks_step3_public_navigation_diagnostic_v1.py"
+      - ".github/workflows/cfb-top-picks-step3-public-navigation-diagnostic-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-top-picks-step3-public-navigation-diagnostic-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Enforce diagnostic-only blast radius
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/changed.txt
+          cat > /tmp/allowed.txt <<'EOF'
+          .github/workflows/cfb-top-picks-step3-public-navigation-diagnostic-v1.yml
+          devsystem/cfb_top_picks_step3_public_navigation_diagnostic_v1.py
+          EOF
+          sort -o /tmp/allowed.txt /tmp/allowed.txt
+          diff -u /tmp/allowed.txt /tmp/changed.txt
+          echo "CFB_STEP3_PUBLIC_NAV_DIAGNOSTIC_SCOPE_GREEN"
+
+      - name: Set up Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore shared browser stack
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Compile diagnostic
+        run: python -m py_compile devsystem/cfb_top_picks_step3_public_navigation_diagnostic_v1.py
+
+      - name: Compare card click vs exact direct detail URL
+        run: |
+          python -m devsystem.cfb_top_picks_step3_public_navigation_diagnostic_v1             --base-url "https://pickvault.streamlit.app"             --artifact-dir "artifacts/cfb-step3-public-navigation-diagnostic"             --main-sha "${{ github.event.pull_request.base.sha }}"             --run-id "${{ github.run_id }}"
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-step3-public-navigation-diagnostic-${{ github.run_id }}
+          path: artifacts/cfb-step3-public-navigation-diagnostic
+          if-no-files-found: error
