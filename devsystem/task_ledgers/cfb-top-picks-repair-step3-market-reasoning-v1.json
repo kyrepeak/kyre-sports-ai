@@ -5,7 +5,7 @@
   "project": "CFB Top Picks Missing Research Repair",
   "step": 3,
   "total_steps": 5,
-  "status": "IN_PROGRESS",
+  "status": "DONE",
   "problem": "Merged-main public proof and the terminal click-vs-direct diagnostic both reach the correct CFB V9 page with an expanded, fully loaded selected detail and no WNBA ownership, but the final Market-Aware Football Reasoning DOM surface is absent.",
   "root_cause": "The final V9 detail presentation did not explicitly guarantee preservation of the V6-owned Market-Aware Football Reasoning block after V7 Benefits/Risks and V8 Sources + Freshness transformations. The selected detail data remains valid, but the final presentation contract could omit the reasoning surface.",
   "failure_owner": "PRESENTATION",
