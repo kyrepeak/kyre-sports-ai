@@ -46,6 +46,12 @@ SHELL_SPORT_SESSION_KEY = "ks_sport_touch"
 SHELL_MARKET_SESSION_KEY = "ks_wnba_market_touch"
 SHELL_SPORT_VALUE = "WNBA"
 SHELL_MARKET_VALUE = "PRA"
+CFB_ROUTE_QUERY_SPORT = "ks_sport"
+CFB_ROUTE_QUERY_MARKET = "ks_cfb_market"
+CFB_SPORT_SESSION_KEY = "ks_sport_touch"
+CFB_MARKET_SESSION_KEY = "ks_cfb_market_touch"
+CFB_SPORT_VALUE = "College Football"
+CFB_TOP_PICKS_VALUE = "Top Picks"
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -368,6 +374,35 @@ def _render_marker() -> None:
     )
 
 
+def _query_value(key: str) -> str:
+    try:
+        raw = st.query_params.get(key)
+    except Exception:
+        return ""
+    if isinstance(raw, (list, tuple)):
+        raw = raw[-1] if raw else ""
+    return str(raw or "").strip()
+
+
+def _protect_explicit_cfb_top_picks_route() -> bool:
+    """Yield universal shell ownership to an explicit College Football / Top Picks route."""
+    if (
+        _query_value(CFB_ROUTE_QUERY_SPORT) != CFB_SPORT_VALUE
+        or _query_value(CFB_ROUTE_QUERY_MARKET) != CFB_TOP_PICKS_VALUE
+    ):
+        return False
+
+    try:
+        st.query_params.pop(SHELL_SPORT_QUERY_KEY, None)
+        st.query_params.pop(SHELL_MARKET_QUERY_KEY, None)
+    except Exception:
+        pass
+
+    st.session_state[CFB_SPORT_SESSION_KEY] = CFB_SPORT_VALUE
+    st.session_state[CFB_MARKET_SESSION_KEY] = CFB_TOP_PICKS_VALUE
+    return True
+
+
 def _pin_deep_wnba_shell_route(state: navigation.NavigationState | None = None) -> navigation.NavigationState:
     """Keep the universal shell on WNBA/PRA across Game/Player reruns.
 
@@ -377,6 +412,8 @@ def _pin_deep_wnba_shell_route(state: navigation.NavigationState | None = None) 
     overlay owns the repair without changing frozen navigation or model math.
     """
     resolved = state or navigation.current_state()
+    if _protect_explicit_cfb_top_picks_route():
+        return resolved
     if resolved.page not in {navigation.PAGE_GAME, navigation.PAGE_PLAYER}:
         return resolved
 
@@ -451,6 +488,13 @@ __all__ = [
     "SHELL_MARKET_SESSION_KEY",
     "SHELL_SPORT_VALUE",
     "SHELL_MARKET_VALUE",
+    "CFB_ROUTE_QUERY_SPORT",
+    "CFB_ROUTE_QUERY_MARKET",
+    "CFB_SPORT_SESSION_KEY",
+    "CFB_MARKET_SESSION_KEY",
+    "CFB_SPORT_VALUE",
+    "CFB_TOP_PICKS_VALUE",
+    "_protect_explicit_cfb_top_picks_route",
     "_pin_deep_wnba_shell_route",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "record_bootstrap_import_ms",
