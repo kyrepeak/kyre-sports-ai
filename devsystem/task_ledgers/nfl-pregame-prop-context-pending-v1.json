@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "task_id": "nfl-pregame-prop-context-pending-v1",
+  "title": "NFL pregame prop context pending-state availability fix",
+  "project": "NFL Rushing + Receiving Yards",
+  "status": "DONE",
+  "certification_state": "MERGE_ON_GREEN",
+  "source_main": "00d0834c1423baad4447c5c260f027314ef108ad",
+  "scope": "Allow exact-ID pregame Rushing and Receiving Yards context pages to load while final inactive lists are still pending, without admitting known unavailable players or changing projections, sportsbook logic, widget keys, navigation, Passing Yards, Prop Analytics, or frozen Visual V2 work.",
+  "acceptance": [
+    "Exact two-team ESPN event identity is still required.",
+    "Only verified pregame state may open a provisional prop pool.",
+    "PENDING remains truthful and does not claim final inactive confirmation.",
+    "Known event-level unavailable/inactive players remain excluded.",
+    "Known league injury-feed unavailable players remain excluded.",
+    "Current ESPN roster and depth-chart membership remain required.",
+    "Unknown event state still fails closed.",
+    "Live and final games remain closed to the pregame prop pool.",
+    "Rushing and Receiving production collectors continue to use the shared exact-ID eligibility owner.",
+    "No Passing Yards behavior changes.",
+    "No Prop Analytics or Visual V2 files change.",
+    "No projection, probability, sportsbook, recommendation, staking, or wager behavior changes."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
