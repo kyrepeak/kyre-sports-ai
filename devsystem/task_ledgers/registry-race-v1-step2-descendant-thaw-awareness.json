@@ -1,0 +1,35 @@
+{
+  "version": "REGISTRY_RACE_REPAIR_V1_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Registry Race Repair V1",
+  "step": 2,
+  "total_steps": 3,
+  "mission": "Inherited-Thaw / Descendant Awareness",
+  "status": "DONE",
+  "base_main_sha": "cb6b46a99f1a9c0f22447f9ea68219286374bc4c",
+  "problem": "A later workstream inheriting a legitimate frozen-file change from updated main can still look like it authored an unauthorized mutation because exact-head thaw identity is too narrow.",
+  "root_cause": "The verifier has blob truth and exact thaw identity, but no explicit lineage certificate proving that the authorized thaw target was merged into authoritative main and that the later candidate descends from that main.",
+  "patch": "Add a read-only descendant-thaw certifier. It requires exact blob-pair authority plus the ancestry chain thaw target -> authoritative main -> candidate. Valid inheritance is certified as AUTHORIZED_INHERITED_THAW but still requires registry reconciliation before normal frozen verification resumes.",
+  "protected": {
+    "step1_frozen": true,
+    "existing_frozen_artifacts": true,
+    "product_runtime": true,
+    "model_projection": true,
+    "step_2a": true
+  },
+  "acceptance": {
+    "valid_inherited_thaw_certified": true,
+    "inherited_thaw_not_new_mutation": true,
+    "candidate_must_descend_from_main": true,
+    "thaw_target_must_be_merged_into_main": true,
+    "exact_candidate_thaw_preserved": true,
+    "unmatched_blob_blocked": true,
+    "registry_reconciliation_still_required": true,
+    "mutation_authority_granted": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

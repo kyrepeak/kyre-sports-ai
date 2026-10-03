@@ -1,0 +1,49 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Registry Race Repair V1",
+  "step": "2/3",
+  "mission": "Inherited-Thaw / Descendant Awareness",
+  "base_main_sha": "cb6b46a99f1a9c0f22447f9ea68219286374bc4c",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "model_projection": false,
+    "frozen_parent_mutation": false,
+    "files": [
+      ".github/workflows/registry-race-v1-step2-descendant-thaw-awareness.yml",
+      "devsystem/descendant_thaw_awareness_v1.py",
+      "devsystem/execution_plans/registry-race-v1-step2-descendant-thaw-awareness.json",
+      "devsystem/task_ledgers/registry-race-v1-step2-descendant-thaw-awareness.json",
+      "tests/test_devsystem_descendant_thaw_awareness_v1.py"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "protect_step1_frozen": true,
+    "rollback_main_sha": "cb6b46a99f1a9c0f22447f9ea68219286374bc4c"
+  },
+  "descendant_contract": {
+    "lineage": "thaw_target -> authoritative_main -> candidate_head",
+    "exact_blob_pair_required": true,
+    "thaw_target_must_be_ancestor_of_main": true,
+    "main_must_be_ancestor_of_candidate": true,
+    "valid_inheritance_is_not_new_mutation": true,
+    "inherited_authority_still_requires_registry_reconciliation": true,
+    "exact_candidate_thaw_behavior_preserved": true,
+    "fail_closed_on_divergent_candidate": true,
+    "fail_closed_on_unmerged_target": true,
+    "mutation_authority_granted": false
+  },
+  "completion_contract": {
+    "total_steps": 3,
+    "after_freeze": "REGISTRY_RACE_V1_STEP3_WAIT_AND_ONE_RESUME",
+    "overall_progress_percent": 66.7
+  }
+}
