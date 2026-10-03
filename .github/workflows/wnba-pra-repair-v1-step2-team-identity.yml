@@ -51,11 +51,15 @@ jobs:
           cat >/tmp/allowed.txt <<'EOF'
           .github/workflows/wnba-pra-repair-v1-step2-team-identity.yml
           .github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml
+          .github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml
           app.py
+          devsystem/upstream_blocker_short_circuit_v1.py
           devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json
           devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py
           streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py
+          tests/test_devsystem_api2_failure_domain_router_v1.py
           tests/test_devsystem_dependency_chain_auto_refresh_v1.py
+          tests/test_devsystem_upstream_blocker_short_circuit_v1.py
           tests/test_wnba_pra_repair_v1_step2.py
           wnba_pra_repair_v1_step2_team_identity.py
           EOF
