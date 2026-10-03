@@ -1,0 +1,33 @@
+{
+  "version": "API2_CONTROL_PLANE_EFFICIENCY_V1_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": 2,
+  "total_steps": 7,
+  "mission": "Root-Cause Collapse Engine",
+  "status": "DONE",
+  "base_main_sha": "6a70bdd7e760aa689dfab6c8e541ba09e6a45317",
+  "protected": {
+    "step1_frozen": true,
+    "product_runtime": true,
+    "model_projection": true
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_blind_reruns": true,
+    "exact_head_merge_required": true
+  },
+  "repair": {
+    "problem": "One root failure can surface as several downstream red jobs, creating duplicate diagnosis and repair work.",
+    "root_cause": "Failure packets enumerate failed lanes but do not explicitly collapse duplicate signatures and aggregate consequence lanes into a truthful repair queue.",
+    "patch": "Integrate a deterministic root-cause collapse engine into the existing DevSystem failure packet; preserve genuinely independent roots and activate only the primary root for repair."
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
