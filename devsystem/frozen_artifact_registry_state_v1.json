@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 97,
-  "source_main_sha": "fafec87b889d91693658b05f6f6aab86b2d46150",
+  "revision": 98,
+  "source_main_sha": "b1bb9c7376e9585915b7e72ef836656439c2a94b",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1656,8 +1656,21 @@
         "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step2-root-cause-collapse.json": "ab8c288764c2b319348f9a43591cb31fea0b81f5",
         "tests/test_devsystem_root_cause_collapse_engine_v1.py": "184c5fcfa41e4b7fd149b343303e8855796e5309"
       }
+    },
+    "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP3": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP3",
+      "source_main_sha": "b1bb9c7376e9585915b7e72ef836656439c2a94b",
+      "artifacts": {
+        ".github/workflows/api2-control-plane-efficiency-v1-step3-wait-not-fail.yml": "323bce1229a6bb5b0e8c0dd91129c7ea4af7f3c5",
+        "devsystem/execution_plans/api2-control-plane-efficiency-v1-step3-wait-not-fail.json": "71dced64551d9d3d66e4d8c346b1218eb403a70a",
+        "devsystem/failure_triage_v1.py": "9910ec894ad645d52b994ec78afe2b8ccca80baf",
+        "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step3-wait-not-fail.json": "ed401a0caea56774182527416bbc5a86057571be",
+        "devsystem/wait_state_machine_v1.py": "6e2d34a91ee0726d1cabe5ccd96db1e97b67728d",
+        "tests/test_devsystem_wait_state_machine_v1.py": "d92e1464e397cff9ef7521b0c7b3b9f9938af48a"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "00808a5ec800daf9f451dd544ddd9f1d3e5ffb924691f15c590ac258c3b89403"
+  "state_hash": "58dbc40d54c314e49610f5f3dedeb432e1bc4beffc8300c46514e46329935488"
 }
