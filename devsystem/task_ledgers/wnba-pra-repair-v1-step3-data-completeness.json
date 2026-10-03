@@ -56,7 +56,7 @@
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
     "upstream_step2_recovery_not_touched": true,
-    "next_legal_action": "ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_BOUNDED_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
+    "next_legal_action": "ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
   },
   "acceptance": {
     "opponent_identity_consumer_independent": true,
@@ -181,5 +181,37 @@
     "no_streamlit_reboot": true,
     "no_unchanged_rerun": true,
     "next_legal_action": "ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_BOUNDED_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
+  },
+  "deep_route_shell_lock_r1": {
+    "failure_class": "PRODUCT_ROUTE_STATE_HANDOFF",
+    "failed_merged_main_step3_run_id": 37091743792,
+    "failed_upstream_downstream_run_id": 37091743807,
+    "merged_main_sha": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
+    "direct_evidence": [
+      "Step-3 proof entered WNBA/PRA successfully and selected the 2026-10-02 WNBA slate.",
+      "After clicking Open Game Center, the visible body reported MLB Live Odds / Run Line instead of WNBA Game Center.",
+      "The frozen WNBA navigation writer persisted only wnba_pra_* deep-route state while the universal shell defaults to MLB when its sport widget state is not preserved."
+    ],
+    "root_cause": "The Game/Player rerun did not carry an explicit WNBA/PRA universal-shell handoff, allowing the shell to fall back to MLB even though WNBA deep-navigation state remained valid.",
+    "patch": [
+      "Keep the frozen WNBA navigation module unchanged.",
+      "In the non-frozen Step-3 overlay, pin ks_sport_touch=WNBA and ks_wnba_market_touch=PRA whenever WNBA navigation is at Game or Player depth.",
+      "Persist ks_jump_sport=WNBA and ks_jump_market=PRA alongside deep-route query writes so a rerun/new shell session retains route ownership.",
+      "Restore the original navigation query writer after each render."
+    ],
+    "mutation_scope": [
+      "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+      "tests/test_wnba_pra_repair_v1_step3.py",
+      "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+    ],
+    "frozen_files_changed": 0,
+    "app_entrypoint_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_changed": false,
+    "ranking_changed": false,
+    "qualification_changed": false,
+    "next_legal_action": "ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
   }
 }

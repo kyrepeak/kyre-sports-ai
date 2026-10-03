@@ -22,6 +22,7 @@ import streamlit as st
 
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity as frozen_parent
 import wnba_pra_game_center_v2_step3 as game_center
+import wnba_pra_navigation_v2_step1 as navigation
 import wnba_pra_player_intelligence_v2_step4 as player_intelligence
 import wnba_pra_performance_v2_step5 as performance
 import wnba_pra_repair_v1_step3_data as data
@@ -39,6 +40,12 @@ MAY_MODIFY_OTHER_SPORTS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 SESSION_CONTEXT = "ks_wnba_pra_repair_v1_step3_context"
 PROOF_MARKER = "data-completeness"
+SHELL_SPORT_QUERY_KEY = "ks_jump_sport"
+SHELL_MARKET_QUERY_KEY = "ks_jump_market"
+SHELL_SPORT_SESSION_KEY = "ks_sport_touch"
+SHELL_MARKET_SESSION_KEY = "ks_wnba_market_touch"
+SHELL_SPORT_VALUE = "WNBA"
+SHELL_MARKET_VALUE = "PRA"
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -361,11 +368,34 @@ def _render_marker() -> None:
     )
 
 
+def _pin_deep_wnba_shell_route(state: navigation.NavigationState | None = None) -> navigation.NavigationState:
+    """Keep the universal shell on WNBA/PRA across Game/Player reruns.
+
+    The frozen navigation layer owns only wnba_pra_* route state. Streamlit can
+    re-enter the universal shell after its query update; without an explicit
+    shell handoff that shell may fall back to its default MLB route. This Step-3
+    overlay owns the repair without changing frozen navigation or model math.
+    """
+    resolved = state or navigation.current_state()
+    if resolved.page not in {navigation.PAGE_GAME, navigation.PAGE_PLAYER}:
+        return resolved
+
+    st.session_state[SHELL_SPORT_SESSION_KEY] = SHELL_SPORT_VALUE
+    st.session_state[SHELL_MARKET_SESSION_KEY] = SHELL_MARKET_VALUE
+    try:
+        st.query_params[SHELL_SPORT_QUERY_KEY] = SHELL_SPORT_VALUE
+        st.query_params[SHELL_MARKET_QUERY_KEY] = SHELL_MARKET_VALUE
+    except Exception:
+        pass
+    return resolved
+
+
 def render_app() -> Any:
     original_record = game_center._record_from_role_row
     original_history = player_intelligence._history_summary
     original_row = player_intelligence._row
     original_player_renderer = player_intelligence.render_player_intelligence
+    original_nav_query_writer = navigation._write_query
 
     def enriched_record(row: Any, team_id: int):
         return _enrich_role_record(original_record, row, team_id)
@@ -382,6 +412,13 @@ def render_app() -> Any:
         _render_marker()
         return result
 
+    def stable_nav_query_writer(state):
+        result = original_nav_query_writer(state)
+        _pin_deep_wnba_shell_route(state)
+        return result
+
+    _pin_deep_wnba_shell_route()
+    navigation._write_query = stable_nav_query_writer
     game_center._record_from_role_row = enriched_record
     player_intelligence._history_summary = repaired_history
     player_intelligence._row = repaired_row
@@ -389,6 +426,7 @@ def render_app() -> Any:
     try:
         return frozen_parent.render_app()
     finally:
+        navigation._write_query = original_nav_query_writer
         game_center._record_from_role_row = original_record
         player_intelligence._history_summary = original_history
         player_intelligence._row = original_row
@@ -407,6 +445,13 @@ __all__ = [
     "MODEL_VERSION",
     "PROOF_MARKER",
     "SESSION_CONTEXT",
+    "SHELL_SPORT_QUERY_KEY",
+    "SHELL_MARKET_QUERY_KEY",
+    "SHELL_SPORT_SESSION_KEY",
+    "SHELL_MARKET_SESSION_KEY",
+    "SHELL_SPORT_VALUE",
+    "SHELL_MARKET_VALUE",
+    "_pin_deep_wnba_shell_route",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "record_bootstrap_import_ms",
     "render_app",
