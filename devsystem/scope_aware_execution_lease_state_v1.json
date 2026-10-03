@@ -4,49 +4,50 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 190,
-  "generation": 110,
+  "revision": 191,
+  "generation": 111,
   "holders": [
     {
-      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-deploy-refresh-v9",
-      "lease_id": "SCOPE-LEASE-CFB-STEP3-V9-REGREADY-R1",
-      "generation": 110,
-      "acquired_at_utc": "2026-10-03T04:22:16Z",
-      "heartbeat_at_utc": "2026-10-03T04:39:00Z",
-      "expires_at_utc": "2026-10-03T05:39:00Z",
+      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-public-detail-route-guard-v1",
+      "lease_id": "SCOPE-LEASE-CFB-STEP3-PUBLIC-DETAIL-GUARD-R1",
+      "generation": 111,
+      "acquired_at_utc": "2026-10-03T05:02:00Z",
+      "heartbeat_at_utc": "2026-10-03T05:02:00Z",
+      "expires_at_utc": "2026-10-03T06:02:00Z",
       "scope": {
         "write_paths": [
-          "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
-          "devsystem/execution_plans/cfb-top-picks-repair-step3-deploy-refresh.json",
           "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
+          "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py",
+          "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
           "refs/heads/main"
         ],
         "dependency_tokens": [
           "domain:cfb",
           "project:cfb-top-picks-repair-step3",
-          "repair:deployment-convergence",
-          "registry-race:resumed-once"
+          "repair:public-detail-route-guard",
+          "registry-race:resume-exhausted"
         ],
         "shared_resources": [
-          "branch:cfb-top-picks-repair-step3-deploy-refresh-r1",
-          "deploy:pickvault",
+          "branch:cfb-top-picks-repair-step3-public-detail-route-guard-r1",
           "deployment:streamlit",
-          "pr:cfb-top-picks-repair-step3-deploy-refresh-r1",
+          "pr:cfb-top-picks-repair-step3-public-detail-route-guard-r1",
           "workflow:cfb-top-picks-repair-step3-market-reasoning#shard[domain=cfb,step=3]",
           "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
         ],
         "resource_identity": {
-          "main:base": "01529a7b1faf288f6ee881ebd3af8180237c466a",
-          "plan:id": "PLAN-5F07D41DA1910AB6CAFFBEF3",
+          "main:base": "f632efe772284be19c8d9fffcecb476a326d37d2",
+          "branch:head": "f632efe772284be19c8d9fffcecb476a326d37d2",
+          "plan:id": "PLAN-A31037C319000C2D67D36B11",
+          "plan:digest": "sha256:a31037c319000c2d67d36b112929a4bc55540a24ab52b044f4cbd81090dc59c6",
           "repair:step": "3",
-          "branch:head": "6ec7da78164fda19b2e3d3b82c56ddf01582433c",
-          "registry:revision": "117",
-          "registry:state_hash": "9df410a0ce9540fd8f75203eca0b7d1a4c00247b956a8ed6435b72f45f883d6e",
-          "registry:resume_count": "1"
+          "registry:revision": "118",
+          "registry:state_hash": "f0997ba49337b8079c4bb3d478f95a7769741b2845378b3dfe198b5861869b91",
+          "registry:resume_count": "1",
+          "public:failed_run": "37097289180"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "da53154f9d112ee2840c6fee79b80a17b6471191da144340a03c0ca04014a361"
+  "state_hash": "bd6aabf299f3c3005b402116822879bf63a025441b4ed8821ad150ca98c4776f"
 }
