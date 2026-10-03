@@ -30,7 +30,7 @@
     "no_duplicate_async_runs": true,
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
-    "next_legal_action": "FRESH_CURRENT_MAIN_STEP2_PROOF_AFTER_CANONICAL_REDEPLOY"
+    "next_legal_action": "STEP2_FREEZE_CLOSEOUT_PROOF_THEN_RELEASE_STEP3"
   },
   "acceptance": {
     "canonical_2026_team_registry_count": 15,
@@ -83,7 +83,7 @@
     "probability_math_changed": false,
     "sportsbook_influence_changed": false
   },
-  "green_plus_frozen_claimed": false,
+  "green_plus_frozen_claimed": true,
   "repair": {
     "failure_domain": "CONTROL_PLANE_DEPLOYMENT_IDENTITY_COLLECTOR",
     "failure_evidence_run_id": 37075923509,
@@ -197,5 +197,32 @@
     "proof_contract": "Create one fresh Step-2 workflow lineage from current main after redeploy. Runtime-bundle attestation may certify identical runtime bytes even when public Git SHA is unavailable.",
     "next_legal_action": "EXACT_HEAD_PROOF_THEN_MERGE_THEN_ONE_FRESH_CURRENT_MAIN_PUBLIC_PROOF",
     "green_plus_frozen": false
+  },
+  "freeze_closeout": {
+    "status": "GREEN_PLUS_FROZEN_CLAIMED",
+    "proof_main_sha": "79ec006f02790449e49e60fbf8a338b269f5b1a9",
+    "proof_run_id": 37081293856,
+    "proof_job_id": 111083141770,
+    "proof_tokens": [
+      "WNBA_PRA_REPAIR_V1_STEP2_RUNTIME_BUNDLE_ATTESTATION_GREEN",
+      "WNBA_PRA_REPAIR_V1_STEP2_EXACT_DEPLOYMENT_PARITY_GREEN",
+      "WNBA_PRA_REPAIR_V1_STEP2_BOTH_TEAM_IDS_CANONICAL_GREEN",
+      "WNBA_PRA_REPAIR_V1_STEP2_BOTH_TEAM_PLAYER_GROUPS_GREEN",
+      "WNBA_PRA_REPAIR_V1_STEP2_GREEN",
+      "WNBA_PRA_REPAIR_V1_STEP2_FROZEN"
+    ],
+    "deployed_sha": "79ec006f02790449e49e60fbf8a338b269f5b1a9",
+    "deployment_identity_source": "DIRECT_RUNTIME_SHA",
+    "away_team_id": "1611661321",
+    "home_team_id": "1611661331",
+    "away_player_count": 16,
+    "home_player_count": 15,
+    "game_ready_seconds": 21.547,
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_math_changed": false,
+    "sportsbook_influence_changed": false
   }
 }
