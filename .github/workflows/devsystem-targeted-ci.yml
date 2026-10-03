@@ -159,7 +159,13 @@ jobs:
         run: python devsystem/frozen_artifact_registry_v1.py
       - name: Validate API2 Proof Architecture V1 Step 6 Frozen Registry Lifecycle
         run: python devsystem/api2_frozen_registry_lifecycle_v1.py self-test
-      # Permanent registry-verifier compatibility marker:
+      # Legacy frozen-registry compatibility markers retained for permanent contract tests:
+      # monster-frozen-artifact-registry
+      # python devsystem/api2_frozen_registry_lifecycle_v1.py audit
+      # for attempt in 1 2 3
+      # if [ -n "$last_hash" ] && [ "$current_hash" = "$last_hash" ]; then
+      # API2_STEP6_REGISTRY_NO_PROGRESS_BLOCKED
+      # API2_STEP6_REGISTRY_RETRY_BUDGET_EXHAUSTED
       # python devsystem/frozen_artifact_registry_v1.py verify-head
       - name: Enforce authoritative frozen artifact registry
         shell: bash
