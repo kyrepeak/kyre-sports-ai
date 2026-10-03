@@ -1,0 +1,48 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Registry Race Repair V1",
+  "step": "1/3",
+  "mission": "Registry Reconciliation Barrier",
+  "base_main_sha": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "model_projection": false,
+    "frozen_parent_mutation": false,
+    "files": [
+      ".github/workflows/registry-race-v1-step1-reconciliation-barrier.yml",
+      "devsystem/registry_reconciliation_barrier_v1.py",
+      "devsystem/execution_plans/registry-race-v1-step1-reconciliation-barrier.json",
+      "devsystem/task_ledgers/registry-race-v1-step1-reconciliation-barrier.json",
+      "tests/test_devsystem_registry_reconciliation_barrier_v1.py"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "protect_existing_frozen_artifacts": true,
+    "rollback_main_sha": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d"
+  },
+  "barrier_contract": {
+    "aligned_registry_allows_verification": true,
+    "unrelated_main_advance_does_not_block": true,
+    "exact_candidate_thaw_allows_verification": true,
+    "newly_merged_inherited_thaw_blocks_stale_verification": true,
+    "reconciliation_state_is_wait_not_hard_failure": true,
+    "unauthorized_drift_hard_blocks": true,
+    "no_network_calls": true,
+    "no_auto_mutation": true,
+    "mutation_authority_granted": false
+  },
+  "completion_contract": {
+    "total_steps": 3,
+    "after_freeze": "REGISTRY_RACE_V1_STEP2_DESCENDANT_AWARENESS",
+    "overall_progress_percent": 33.3
+  }
+}
