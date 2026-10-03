@@ -170,3 +170,20 @@ def test_step3_execution_plan_is_strong_and_bound_to_v8():
     assert plan["freeze_contract"]["exact_pr_head_proof"] is True
     assert plan["freeze_contract"]["merged_main_proof"] is True
     assert plan["freeze_contract"]["green_plus_frozen"] is True
+
+
+def test_step3_deep_navigation_preserves_universal_wnba_pra_shell_route():
+    source = OVERLAY.read_text(encoding="utf-8")
+    assert "import wnba_pra_navigation_v2_step1 as navigation" in source
+    assert 'SHELL_SPORT_QUERY_KEY = "ks_jump_sport"' in source
+    assert 'SHELL_MARKET_QUERY_KEY = "ks_jump_market"' in source
+    assert 'SHELL_SPORT_SESSION_KEY = "ks_sport_touch"' in source
+    assert 'SHELL_MARKET_SESSION_KEY = "ks_wnba_market_touch"' in source
+    assert 'SHELL_SPORT_VALUE = "WNBA"' in source
+    assert 'SHELL_MARKET_VALUE = "PRA"' in source
+    assert "def _pin_deep_wnba_shell_route" in source
+    assert "navigation.PAGE_GAME" in source
+    assert "navigation.PAGE_PLAYER" in source
+    assert "original_nav_query_writer = navigation._write_query" in source
+    assert "navigation._write_query = stable_nav_query_writer" in source
+    assert "navigation._write_query = original_nav_query_writer" in source
