@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 94,
+  "revision": 95,
   "source_main_sha": "1a53940520d839adb5838099b678afb1de7760b4",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1631,14 +1631,18 @@
     {
       "thaw_id": "THAW-API2-CONTROL-PLANE-EFFICIENCY-V1-STEP1-STEP7",
       "status": "ACTIVE",
-      "target_head_sha": "f184b8459f3eac3aedac33ab1601611743ab5755",
+      "target_head_sha": "28af54b8c59ef4905ca315a6f95b4367b1554fb5",
       "files": {
         ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": {
           "from_blob": "e7410a1225456b234bbba383592c9fdeeb5ac95a",
           "to_blob": "1daa66a7e9421916c06a9e9338305784102462b7"
+        },
+        ".github/workflows/devsystem-targeted-ci.yml": {
+          "from_blob": "6b596676d5966f53c39f0258039c69a1c33bd9e2",
+          "to_blob": "16ef05c962ef41935b6c711ed26b54091059a780"
         }
       }
     }
   ],
-  "state_hash": "75d46a2670047848b0ff5926b80aea4c57a30e546d251a739718dba4aa2b11ee"
+  "state_hash": "efdb17729d5b475e32a591ad88ff1b71c16b71fc536b93a59dbe7538a3b26956"
 }
