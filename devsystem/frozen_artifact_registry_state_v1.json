@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 109,
-  "source_main_sha": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
+  "revision": 110,
+  "source_main_sha": "cb6b46a99f1a9c0f22447f9ea68219286374bc4c",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1717,8 +1717,20 @@
         "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step7-execution-plan-compiler.json": "98586ccf5030a011642c6524106a6e3e73eb4274",
         "tests/test_devsystem_api2_execution_plan_compiler_cert_v1.py": "104c4f97a1228c4a3c48e8fa22150e8a0e652538"
       }
+    },
+    "REGISTRY_RACE_V1_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "REGISTRY_RACE_V1_STEP1",
+      "source_main_sha": "cb6b46a99f1a9c0f22447f9ea68219286374bc4c",
+      "artifacts": {
+        ".github/workflows/registry-race-v1-step1-reconciliation-barrier.yml": "ca4ca47c7fecece8adf672071b21d2d3e9fac663",
+        "devsystem/registry_reconciliation_barrier_v1.py": "5ac7cd0eb3aa76b8ef60e8b77746869fe616dc50",
+        "devsystem/execution_plans/registry-race-v1-step1-reconciliation-barrier.json": "9dbd3762220b13461e8733254368c7030a240166",
+        "devsystem/task_ledgers/registry-race-v1-step1-reconciliation-barrier.json": "58069e171b77c34705e77bfdb2e66c8f490e7d8a",
+        "tests/test_devsystem_registry_reconciliation_barrier_v1.py": "8e85220367d214c56b12eb8840b41b514e12f669"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "3156ade3b118ae9b1038e2bd2ca0cc7e106facf209c945f0cf5673b4fe601cf7"
+  "state_hash": "1892ec539813c13d41b49a3e002fd10a18e12b2771ac8fd23a34a56de6bf2d5b"
 }
