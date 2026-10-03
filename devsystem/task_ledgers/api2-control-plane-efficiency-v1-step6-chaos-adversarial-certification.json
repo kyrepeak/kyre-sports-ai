@@ -1,0 +1,47 @@
+{
+  "version": "API2_CONTROL_PLANE_EFFICIENCY_V1_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": 6,
+  "total_steps": 7,
+  "mission": "Chaos / Adversarial Certification",
+  "status": "DONE",
+  "base_main_sha": "32a478be301b76af2550754c40e1719a95cb9571",
+  "protected": {
+    "steps_1_5_frozen": true,
+    "monster_v8_chaos_parent": true,
+    "api2_step5_state_aware_parent": true,
+    "product_runtime": true,
+    "model_projection": true
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_blind_reruns": true,
+    "exact_head_merge_required": true
+  },
+  "repair": {
+    "problem": "Individual control-plane protections can be GREEN while cross-layer crash conditions still interact in ways that create duplicate authority, stale writes, false failures, or unsafe recovery.",
+    "root_cause": "API2 had no upgrade-wide adversarial certification step that reused the proven MONSTER chaos matrix and also proved the new state-aware proof layer classifies those failures without reopening frozen work or granting mutation authority.",
+    "patch": "Reuse the frozen 11-scenario MONSTER V8 chaos harness and add five API2 integration scenarios for slow-live WAIT, transient-noise idempotence, frozen-edit BLOCKED, deployment-owned terminal failure, and one retry only after registry state progress. Produce one tamper-evident read-only certificate."
+  },
+  "acceptance": {
+    "base_chaos_scenarios": 11,
+    "api2_integration_scenarios": 5,
+    "combined_scenarios": 16,
+    "all_scenarios_required": true,
+    "duplicate_execution_authority_forbidden": true,
+    "blind_retry_forbidden": true,
+    "step_2a_preserved": true,
+    "product_runtime_mutation": false,
+    "mutation_authority_granted": false,
+    "tamper_evident_certificate": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
