@@ -187,3 +187,15 @@ def test_step3_deep_navigation_preserves_universal_wnba_pra_shell_route():
     assert "original_nav_query_writer = navigation._write_query" in source
     assert "navigation._write_query = stable_nav_query_writer" in source
     assert "navigation._write_query = original_nav_query_writer" in source
+
+
+def test_step3_initial_slate_wait_accepts_off_day_before_real_game_date():
+    source = CERT.read_text(encoding="utf-8")
+    assert "def _wait_initial_slate_shell" in source
+    assert "def _prime_wnba_pra_for_target_date" in source
+    assert 'nav._step7_marker(frame, "slate").count() > 0' in source
+    assert '"WNBA Slate" in body' in source
+    assert '"No player/model prefetch" in body' in source
+    assert 'frame.get_by_label("📅 Slate date", exact=True)' in source
+    assert "frame, slate_seconds = _prime_wnba_pra_for_target_date(page, route_url)" in source
+    assert "frame = nav._set_date_with_game(page, frame, target_date)" in source
