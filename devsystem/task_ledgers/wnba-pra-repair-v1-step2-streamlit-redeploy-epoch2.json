@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-repair-v1-step2-streamlit-redeploy-epoch2",
+  "title": "WNBA PRA Repair V1 Step 2 — Canonical Streamlit Restart Epoch 2",
+  "project": "WNBA PRA Repair V1",
+  "step": 2,
+  "total_steps": 7,
+  "status": "DONE",
+  "failure_owner": "DEPLOYMENT",
+  "source_main": "cfd6825134ee12ac9326931517272024dababb3d",
+  "failed_public_run_id": 37079511217,
+  "failed_public_job_id": 111076771587,
+  "problem": "After a ledger-only main revision, public proof still served a process that never exposed the Step-2 exact-deployment marker. Source, API2 convergence, DevSystem, and all branch proof remained GREEN.",
+  "root_cause": "The ledger-only revision did not force the hosted Streamlit process to restart/re-import the current Step-2/Step-3 overlay chain. The repository's canonical deployment marker exists specifically for harmless restart intent.",
+  "patch": "Advance only the canonical Streamlit redeploy epoch from 1 to 2 and add this deployment receipt. No runtime/product/router/model/data/math/verifier code changes.",
+  "compiled_plan_id": "PLAN-STEP2-STREAMLIT-REDEPLOY-EPOCH2",
+  "rollback_anchor_main_sha": "cfd6825134ee12ac9326931517272024dababb3d",
+  "scope": [
+    "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
+    "devsystem/task_ledgers/wnba-pra-repair-v1-step2-streamlit-redeploy-epoch2.json"
+  ],
+  "protected": {
+    "product_runtime": true,
+    "wnba_step2_runtime": true,
+    "wnba_step3_runtime": true,
+    "frozen_speed_v3_steps_1_9": true,
+    "model_math": true,
+    "projection_math": true,
+    "probability_math": true,
+    "market_math": true,
+    "sportsbook_influence": true,
+    "app_py": true,
+    "requirements_txt": true
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr": true,
+    "duplicate_async_runs": false,
+    "unchanged_failed_rerun": false,
+    "frozen_artifact_mutation": false,
+    "active_thaw_required": false
+  },
+  "proof_plan": [
+    "canonical redeploy marker exact-head proof",
+    "DevSystem final gate and terminal receipt",
+    "merge exact certified head",
+    "allow one fresh deployment convergence interval",
+    "rerun exactly the prior failed public-production job once because deployment state materially changed",
+    "freeze Step 2 only after public GREEN + FROZEN tokens"
+  ],
+  "green_plus_frozen": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "step2a_compatibility_patch": {
+    "failure_owner": "CONTROL_PLANE",
+    "failure_run_id": 37079911666,
+    "failure_job_id": 111077955500,
+    "root_cause": "Deployment refresh task ledger omitted the permanent action_log schema required by DevSystem action_ledger_v2.",
+    "patch": "Add empty genesis action_log plus empty transition/override history. No deployment marker or runtime behavior change.",
+    "rollback_anchor_head_sha": "9ee31185e84cf97516c803dd5a80c73bb120ad6c"
+  }
+}
