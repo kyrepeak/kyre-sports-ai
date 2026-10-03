@@ -4,8 +4,49 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 195,
-  "generation": 114,
-  "holders": [],
-  "state_hash": "0fa48a5702093ede5bc78a7832be651c8f377b7c2155587178ee3f3152651204"
+  "revision": 196,
+  "generation": 115,
+  "holders": [
+    {
+      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-public-detail-route-guard-v1",
+      "lease_id": "SCOPE-LEASE-8BE4323D2C764D6168A8A910",
+      "generation": 115,
+      "acquired_at_utc": "2026-10-03T07:01:00Z",
+      "heartbeat_at_utc": "2026-10-03T07:01:00Z",
+      "expires_at_utc": "2026-10-03T07:31:00Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
+          "refs/heads/main",
+          "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py",
+          "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py"
+        ],
+        "dependency_tokens": [
+          "domain:cfb",
+          "project:cfb-top-picks-repair-step3",
+          "registry-race:resumed-once",
+          "repair:public-detail-route-guard"
+        ],
+        "shared_resources": [
+          "branch:cfb-top-picks-repair-step3-public-detail-route-guard-r1",
+          "deployment:streamlit",
+          "pr:cfb-top-picks-repair-step3-public-detail-route-guard-r1",
+          "workflow:cfb-top-picks-repair-step3-market-reasoning#shard[domain=cfb,step=3]",
+          "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
+        ],
+        "resource_identity": {
+          "branch:head": "c651acb3218587123db4706b3c845aa35a25d5a2",
+          "main:base": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
+          "plan:id": "PLAN-877D9733A30F62E39282A70F",
+          "plan:digest": "sha256:877d9733a30f62e39282a70f65f4e4416d149e5901f8d2586e255bd7388d0f8a",
+          "registry:revision": "119",
+          "registry:resume_count": "1",
+          "registry:state_hash": "7d2b8aeb60b868590ca29f2810e555b390df2cf3691b61f4f7063f91212c0c52",
+          "repair:step": "3"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "bacc1bb9c037ac05a8aea203850fd1fdc9254af8519d661f39a99cf1ad3f3b6f"
 }
