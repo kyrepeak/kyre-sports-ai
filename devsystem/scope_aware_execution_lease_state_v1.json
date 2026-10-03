@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 187,
-  "generation": 107,
+  "revision": 188,
+  "generation": 108,
   "holders": [
     {
-      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-deploy-refresh-r2",
-      "lease_id": "SCOPE-LEASE-B84AFA2ED6AF723608640DE6",
-      "generation": 107,
-      "acquired_at_utc": "2026-10-03T03:03:09Z",
-      "heartbeat_at_utc": "2026-10-03T03:07:00Z",
-      "expires_at_utc": "2026-10-03T04:07:00Z",
+      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-deploy-refresh-v9",
+      "lease_id": "SCOPE-LEASE-CFB-STEP3-V9-REGREADY-R1",
+      "generation": 108,
+      "acquired_at_utc": "2026-10-03T04:22:16Z",
+      "heartbeat_at_utc": "2026-10-03T04:22:16Z",
+      "expires_at_utc": "2026-10-03T05:22:16Z",
       "scope": {
         "write_paths": [
           "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
@@ -24,7 +24,8 @@
         "dependency_tokens": [
           "domain:cfb",
           "project:cfb-top-picks-repair-step3",
-          "repair:deployment-convergence"
+          "repair:deployment-convergence",
+          "registry-race:resumed-once"
         ],
         "shared_resources": [
           "branch:cfb-top-picks-repair-step3-deploy-refresh-r1",
@@ -35,14 +36,17 @@
           "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
         ],
         "resource_identity": {
-          "main:base": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
-          "plan:id": "PLAN-4FD3D8F417AFBD6120B5F1F6",
+          "main:base": "d9270a72810869aa48367743d010f6416c365cfe",
+          "plan:id": "PLAN-A3F92138880C6070A864011D",
           "repair:step": "3",
-          "branch:head": "5b3b8c8d0a3f6c8b5c3a7c23a2c0605562421b5c"
+          "branch:head": "5b3b8c8d0a3f6c8b5c3a7c23a2c0605562421b5c",
+          "registry:revision": "116",
+          "registry:state_hash": "41bbda7db1e33f20361ccbf86838d730d1ed13b25def81912e151c1a2f4770d7",
+          "registry:resume_count": "1"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "c5d87bf089234f92e4f42f004547c7c31033663eab1cdf4a89132234c2c86e19"
+  "state_hash": "58f8cb990a5fd87dc5cfa89b43865dbb192d827df1b0f2ad314ea0f0c2064908"
 }
