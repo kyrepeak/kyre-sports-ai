@@ -236,3 +236,44 @@ def test_step9_router_keeps_model_firewalls():
     assert router.MAY_MODIFY_TOP_PICKS_RANKING is False
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
+
+
+def test_step9_detail_route_guard_clears_competing_wnba_jump_and_reprimes_cfb(monkeypatch):
+    query = {
+        "ks_sport": "College Football",
+        "ks_cfb_market": "Top Picks",
+        "top_pick_detail": "401234567",
+        "ks_jump_sport": "WNBA",
+        "ks_jump_market": "PRA",
+    }
+    session = {
+        "ks_sport_touch": "WNBA",
+        "ks_cfb_market_touch": "Moneyline",
+        "ks_wnba_market_touch": "PRA",
+    }
+    monkeypatch.setattr(router.st, "query_params", query)
+    monkeypatch.setattr(router.st, "session_state", session)
+
+    assert router._protect_cfb_detail_route() is True
+    assert "ks_jump_sport" not in query
+    assert "ks_jump_market" not in query
+    assert session[router.top_picks_base.SPORT_KEY] == router.top_picks_base.CFB_SPORT_LABEL
+    assert session[router.top_picks_base.CFB_MARKET_KEY] == router.top_picks_base.TOP_PICKS_MARKET
+    assert session["ks_wnba_market_touch"] == "PRA"
+
+
+def test_step9_detail_route_guard_does_not_touch_non_detail_route(monkeypatch):
+    query = {
+        "ks_sport": "College Football",
+        "ks_cfb_market": "Top Picks",
+        "ks_jump_sport": "WNBA",
+        "ks_jump_market": "PRA",
+    }
+    session = {"ks_sport_touch": "WNBA"}
+    monkeypatch.setattr(router.st, "query_params", query)
+    monkeypatch.setattr(router.st, "session_state", session)
+
+    assert router._protect_cfb_detail_route() is False
+    assert query["ks_jump_sport"] == "WNBA"
+    assert query["ks_jump_market"] == "PRA"
+    assert session["ks_sport_touch"] == "WNBA"
