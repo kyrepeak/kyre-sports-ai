@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 89,
+  "revision": 90,
   "source_main_sha": "c8f7b574c3da0981618eadab0ac6c09d41526c6c",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1631,7 +1631,7 @@
     {
       "thaw_id": "THAW-API2-STEP4-WNBA-STEP2-FREEZE-STATE-V1",
       "status": "ACTIVE",
-      "target_head_sha": "93b1367e2a91000928cc2fc6286b128756340460",
+      "target_head_sha": "dd217ec14719ced1dbed0051e4e9b61dea0fa84d",
       "files": {
         "devsystem/upstream_blocker_short_circuit_v1.py": {
           "from_blob": "f7e36922e03bd070eb57f4650c7c74dcc55beed5",
@@ -1646,14 +1646,18 @@
     {
       "thaw_id": "THAW-API2-STEP5-WNBA-STEP2-FREEZE-STATE-V1",
       "status": "ACTIVE",
-      "target_head_sha": "93b1367e2a91000928cc2fc6286b128756340460",
+      "target_head_sha": "dd217ec14719ced1dbed0051e4e9b61dea0fa84d",
       "files": {
         "tests/test_devsystem_api2_failure_domain_router_v1.py": {
           "from_blob": "06d28b491f5acb722a967a6785779ae3646007f6",
           "to_blob": "14ce6c3683638eb2961a2016728b3fd540fab0be"
+        },
+        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": {
+          "from_blob": "250a77379774977c815a4026ebffc571abc777ed",
+          "to_blob": "fa12ddbb637f92afb6e75f7526021607c446c8f1"
         }
       }
     }
   ],
-  "state_hash": "88cdb215a6e9bb6f512f5d789a68662e52bfe8483294b499491edc05a5d1ab18"
+  "state_hash": "55e3cff5cd5aec4f2584750365a41c6d9fa3ecab9bfce8809ee8e9bf49ab6db3"
 }
