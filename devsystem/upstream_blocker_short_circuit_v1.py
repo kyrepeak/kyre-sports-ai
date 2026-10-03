@@ -120,26 +120,42 @@ def evaluate_upstream_dependency(
 
 def contract_self_test() -> dict[str, Any]:
     payload = _registry()
-    blocked = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
+    real = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
     spec = _spec("wnba-pra-repair-v1-step3-public", registry=payload)
+    blocked_ledger = {
+        "task_id": "synthetic-blocked-upstream",
+        "status": spec["evidence"]["required_status"],
+        spec["evidence"]["required_boolean"]: False,
+    }
+    blocked = evaluate_ledger_payload(
+        "wnba-pra-repair-v1-step3-public", spec, blocked_ledger
+    )
     green_ledger = {
         "task_id": "synthetic-green-upstream",
         "status": spec["evidence"]["required_status"],
         spec["evidence"]["required_boolean"]: True,
     }
-    allowed = evaluate_ledger_payload("wnba-pra-repair-v1-step3-public", spec, green_ledger)
-    if blocked["status"] != "UPSTREAM_BLOCKED":
-        raise UpstreamGateFailure("real WNBA proof case should currently be upstream blocked")
-    if blocked["downstream_proof_allowed"] is not False:
-        raise UpstreamGateFailure("blocked upstream may not authorize downstream proof")
-    if allowed["decision"] != "PROCEED_DOWNSTREAM_PROOF":
+    allowed = evaluate_ledger_payload(
+        "wnba-pra-repair-v1-step3-public", spec, green_ledger
+    )
+    if real["status"] not in {"UPSTREAM_BLOCKED", "GREEN"}:
+        raise UpstreamGateFailure("real WNBA proof case returned an invalid state")
+    if real["status"] == "GREEN":
+        if real["decision"] != "PROCEED_DOWNSTREAM_PROOF" or real["downstream_proof_allowed"] is not True:
+            raise UpstreamGateFailure("GREEN + FROZEN real upstream did not open downstream proof")
+    elif real["decision"] != "UPSTREAM_BLOCKED" or real["downstream_proof_allowed"] is not False:
+        raise UpstreamGateFailure("blocked real upstream did not fail closed")
+    if blocked["status"] != "UPSTREAM_BLOCKED" or blocked["downstream_proof_allowed"] is not False:
+        raise UpstreamGateFailure("synthetic unfrozen upstream did not block downstream proof")
+    if allowed["decision"] != "PROCEED_DOWNSTREAM_PROOF" or allowed["downstream_proof_allowed"] is not True:
         raise UpstreamGateFailure("GREEN + FROZEN upstream did not open downstream proof")
     return {
         "status": "GREEN",
         "version": VERSION,
         "registered_dependency_count": len(payload["dependencies"]),
-        "real_wnba_case": blocked["status"],
-        "real_wnba_reason": blocked["reason"],
+        "real_wnba_case": real["status"],
+        "real_wnba_reason": real["reason"],
+        "real_wnba_proof_allowed": real["downstream_proof_allowed"],
         "blocked_proof_allowed": blocked["downstream_proof_allowed"],
         "green_frozen_proof_allowed": allowed["downstream_proof_allowed"],
         "product_patch_allowed_when_blocked": blocked["product_patch_allowed"],

@@ -58,21 +58,40 @@ jobs:
           assert result["product_mutation_allowed"] is False
           print("API2_STEP5_CONTROL_PLANE_NOT_PRODUCT_GREEN")
           PY
-      - name: Prove real Step 4 upstream blocker cannot patch downstream
+      - name: Prove upstream blocker routing and real-state release
         run: |
           python - <<'PY'
+          from copy import deepcopy
           from devsystem.upstream_blocker_short_circuit_v1 import evaluate_upstream_dependency
           from devsystem.api2_failure_domain_router_v1 import classify_api2_failure
-          gate = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
+          real_gate = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
+          assert real_gate["status"] in {"UPSTREAM_BLOCKED", "GREEN"}
+          if real_gate["status"] == "GREEN":
+              assert real_gate["decision"] == "PROCEED_DOWNSTREAM_PROOF"
+              assert real_gate["downstream_proof_allowed"] is True
+          else:
+              assert real_gate["decision"] == "UPSTREAM_BLOCKED"
+              assert real_gate["downstream_proof_allowed"] is False
+
+          blocked_gate = deepcopy(real_gate)
+          blocked_gate.update({
+              "status": "UPSTREAM_BLOCKED",
+              "decision": "UPSTREAM_BLOCKED",
+              "downstream_proof_allowed": False,
+              "expensive_proof_allowed": False,
+              "green_plus_frozen_claimed": False,
+              "reason": "GREEN_PLUS_FROZEN_NOT_CLAIMED",
+          })
           result = classify_api2_failure({
               "job": "wnba-step3-public-production",
               "layer": "wnba",
               "evidence_signal": "no-tappable-players",
-          }, upstream_gate=gate)
+          }, upstream_gate=blocked_gate)
           assert result["domain"] == "UPSTREAM_DEPENDENCY"
           assert result["patch_allowed"] is False
           assert result["upstream_owner"] == "wnba-pra-repair-v1-step2-team-identity"
           print("API2_STEP5_UPSTREAM_OWNER_ROUTING_GREEN")
+          print(f"API2_STEP5_REAL_UPSTREAM_STATE={real_gate['status']}")
           PY
       - name: Certify exact head
         if: github.event_name == 'pull_request'

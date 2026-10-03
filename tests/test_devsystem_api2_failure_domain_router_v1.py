@@ -27,8 +27,27 @@ def test_real_frozen_registry_failure_is_control_plane_not_product():
     assert decision["next_legal_action"] == "PATCH_CONTROL_PLANE_OWNER"
 
 
-def test_real_step4_upstream_block_routes_to_upstream_owner():
-    gate = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
+def test_step4_upstream_block_routes_to_upstream_owner_and_real_gate_is_state_aware():
+    real_gate = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
+    assert real_gate["status"] in {"UPSTREAM_BLOCKED", "GREEN"}
+    if real_gate["status"] == "GREEN":
+        assert real_gate["decision"] == "PROCEED_DOWNSTREAM_PROOF"
+        assert real_gate["downstream_proof_allowed"] is True
+    else:
+        assert real_gate["decision"] == "UPSTREAM_BLOCKED"
+        assert real_gate["downstream_proof_allowed"] is False
+
+    blocked_gate = copy.deepcopy(real_gate)
+    blocked_gate.update(
+        {
+            "status": "UPSTREAM_BLOCKED",
+            "decision": "UPSTREAM_BLOCKED",
+            "downstream_proof_allowed": False,
+            "expensive_proof_allowed": False,
+            "green_plus_frozen_claimed": False,
+            "reason": "GREEN_PLUS_FROZEN_NOT_CLAIMED",
+        }
+    )
     decision = classify_api2_failure(
         {
             "job": "wnba-step3-public-production",
@@ -36,9 +55,8 @@ def test_real_step4_upstream_block_routes_to_upstream_owner():
             "evidence_signal": "no-tappable-players",
             "diagnosis": "Page 3 cannot traverse uncertified Page 2",
         },
-        upstream_gate=gate,
+        upstream_gate=blocked_gate,
     )
-    assert gate["status"] == "UPSTREAM_BLOCKED"
     assert decision["domain"] == "UPSTREAM_DEPENDENCY"
     assert decision["upstream_owner"] == "wnba-pra-repair-v1-step2-team-identity"
     assert decision["patch_allowed"] is False

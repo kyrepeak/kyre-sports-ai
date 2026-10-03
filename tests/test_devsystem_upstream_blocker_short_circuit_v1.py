@@ -9,15 +9,22 @@ from devsystem import upstream_blocker_short_circuit_v1 as gate
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "devsystem/upstream_certification_registry_v1.json"
 STEP3_CERT = ROOT / "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
+STEP2_LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json"
 
 
-def test_real_wnba_step2_blocks_step3_public_proof_today():
+def test_real_wnba_step2_gate_matches_authoritative_ledger_state():
+    ledger = json.loads(STEP2_LEDGER.read_text(encoding="utf-8"))
     result = gate.evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
-    assert result["status"] == "UPSTREAM_BLOCKED"
-    assert result["decision"] == "UPSTREAM_BLOCKED"
-    assert result["reason"] == "GREEN_PLUS_FROZEN_NOT_CLAIMED"
-    assert result["downstream_proof_allowed"] is False
-    assert result["expensive_proof_allowed"] is False
+    expected_green = (
+        ledger.get("status") == "DONE"
+        and ledger.get("green_plus_frozen_claimed") is True
+    )
+    assert result["status"] == ("GREEN" if expected_green else "UPSTREAM_BLOCKED")
+    assert result["decision"] == (
+        "PROCEED_DOWNSTREAM_PROOF" if expected_green else "UPSTREAM_BLOCKED"
+    )
+    assert result["downstream_proof_allowed"] is expected_green
+    assert result["expensive_proof_allowed"] is expected_green
     assert result["product_patch_allowed"] is False
 
 
@@ -63,7 +70,10 @@ def test_step3_preflight_happens_before_browser_import_and_retry_loop():
 def test_contract_self_test_is_green_and_non_mutating():
     result = gate.contract_self_test()
     assert result["status"] == "GREEN"
-    assert result["real_wnba_case"] == "UPSTREAM_BLOCKED"
+    assert result["real_wnba_case"] in {"UPSTREAM_BLOCKED", "GREEN"}
+    assert result["real_wnba_proof_allowed"] is (
+        result["real_wnba_case"] == "GREEN"
+    )
     assert result["blocked_proof_allowed"] is False
     assert result["green_frozen_proof_allowed"] is True
     assert result["network_calls"] is False
