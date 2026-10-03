@@ -1,0 +1,340 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "mission_id": "cfb-top-picks-repair-step3-deploy-refresh",
+  "mission": "CFB Top Picks Repair Step 3 canonical Streamlit deployment convergence and freeze",
+  "base_main_sha": "01529a7b1faf288f6ee881ebd3af8180237c466a",
+  "dependency_versions": {
+    "step1_blast_simulator": "MONSTER_V8_PRE_MUTATION_BLAST_RADIUS_SIMULATOR_V1",
+    "step2_rollback_engine": "MONSTER_V8_TRANSACTIONAL_ROLLBACK_ENGINE_V1",
+    "step3_intent_arbiter": "MONSTER_V8_CROSS_WORKSTREAM_INTENT_ARBITER_V1",
+    "step4_project_state": "MONSTER_PROJECT_STATE_V1",
+    "step5_adaptive_stuck": "MONSTER_V8_ADAPTIVE_STUCK_THRESHOLDS_V1",
+    "step6_chaos_certification": "MONSTER_V8_CHAOS_ADVERSARIAL_CERTIFICATION_HARNESS_V1"
+  },
+  "checkpoints": [
+    {
+      "checkpoint_id": "01_ROLLBACK_ANCHOR",
+      "title": "Seal exact CFB Step 3 rollback anchor",
+      "action_type": "READ_ONLY",
+      "depends_on": [],
+      "write_paths": [],
+      "dependency_tokens": [
+        "frozen:cfb-top-picks-repair-step1",
+        "frozen:cfb-top-picks-repair-step2",
+        "main:01529a7b1faf288f6ee881ebd3af8180237c466a"
+      ],
+      "shared_resources": [],
+      "expected_proof": [
+        "Steps 1-2 frozen registry entries",
+        "exact current main SHA",
+        "no CFB Step 3 active lease or queue ticket"
+      ],
+      "completion_criteria": [
+        "Steps 1-2 protected",
+        "rollback identity sealed"
+      ],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "02_DEPLOYMENT_REPAIR",
+      "title": "Advance canonical Streamlit redeploy epoch for CFB Step 3",
+      "action_type": "MUTATION",
+      "depends_on": [
+        "01_ROLLBACK_ANCHOR"
+      ],
+      "write_paths": [
+        "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
+        "devsystem/execution_plans/cfb-top-picks-repair-step3-deploy-refresh.json",
+        "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json"
+      ],
+      "dependency_tokens": [
+        "domain:cfb",
+        "project:cfb-top-picks-repair-step3",
+        "repair:deployment-convergence"
+      ],
+      "shared_resources": [
+        "branch:cfb-top-picks-repair-step3-deploy-refresh-r1",
+        "deployment:streamlit"
+      ],
+      "expected_proof": [
+        "Step 2A scope authorization",
+        "epoch 2 to 3 only",
+        "exactly one changed task ledger",
+        "no requirements.txt change"
+      ],
+      "completion_criteria": [
+        "canonical redeploy intent staged",
+        "no product/router/model semantics changed"
+      ],
+      "step_2a_required": true,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "03_EXACT_HEAD_PROOF",
+      "title": "Certify exact CFB Step 3 deploy-refresh head",
+      "action_type": "READ_ONLY",
+      "depends_on": [
+        "02_DEPLOYMENT_REPAIR"
+      ],
+      "write_paths": [],
+      "dependency_tokens": [
+        "proof:devsystem",
+        "proof:focused",
+        "proof:terminal-receipt"
+      ],
+      "shared_resources": [
+        "workflow:cfb-top-picks-repair-step3-market-reasoning#shard[domain=cfb,step=3]",
+        "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
+      ],
+      "expected_proof": [
+        "DevSystem final gate success",
+        "Registry Race V1 reconciliation state GREEN or RESUMED_ONCE_GREEN",
+        "focused Step 3 proof success",
+        "terminal proof receipt"
+      ],
+      "completion_criteria": [
+        "exact PR head certified",
+        "no contradictory required checks",
+        "registry reconciliation resume consumed at most once"
+      ],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "04_MERGE_EXACT_HEAD",
+      "title": "Merge exact certified CFB Step 3 repair head",
+      "action_type": "MUTATION",
+      "depends_on": [
+        "01_ROLLBACK_ANCHOR",
+        "03_EXACT_HEAD_PROOF"
+      ],
+      "write_paths": [
+        "refs/heads/main"
+      ],
+      "dependency_tokens": [
+        "merge:exact-certified-head"
+      ],
+      "shared_resources": [
+        "git:protected-main",
+        "pr:cfb-top-picks-repair-step3-deploy-refresh-r1"
+      ],
+      "expected_proof": [
+        "PR mergeable",
+        "exact-head required proofs green",
+        "expected head SHA match"
+      ],
+      "completion_criteria": [
+        "exact certified head merged",
+        "merge SHA captured"
+      ],
+      "step_2a_required": true,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "05_MERGED_MAIN_PROOF",
+      "title": "Certify merged-main CFB Step 3 public reasoning surface",
+      "action_type": "READ_ONLY",
+      "depends_on": [
+        "04_MERGE_EXACT_HEAD"
+      ],
+      "write_paths": [],
+      "dependency_tokens": [
+        "proof:merged-main",
+        "proof:public-runtime",
+        "proof:terminal-receipt"
+      ],
+      "shared_resources": [
+        "deployment:streamlit",
+        "workflow:cfb-top-picks-repair-step3-market-reasoning#shard[domain=cfb,step=3]",
+        "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
+      ],
+      "expected_proof": [
+        "merged-main DevSystem success",
+        "merged-main focused proof success",
+        "public V9 marker success",
+        "terminal proof receipt"
+      ],
+      "completion_criteria": [
+        "Market-Aware Football Reasoning visible",
+        "exact V9 marker present",
+        "live Top 10 reasoning green"
+      ],
+      "step_2a_required": false,
+      "mutation_authority": false
+    },
+    {
+      "checkpoint_id": "06_FREEZE_RELEASE",
+      "title": "Freeze CFB Step 3 and release only CFB authority",
+      "action_type": "MUTATION",
+      "depends_on": [
+        "01_ROLLBACK_ANCHOR",
+        "05_MERGED_MAIN_PROOF"
+      ],
+      "write_paths": [
+        "devsystem/frozen_artifact_registry_state_v1.json",
+        "devsystem/scope_aware_execution_lease_state_v1.json"
+      ],
+      "dependency_tokens": [
+        "control:frozen-artifact-registry",
+        "freeze:cfb-top-picks-repair-step3"
+      ],
+      "shared_resources": [
+        "registry:monster-frozen-artifact-registry#shard[domain=cfb,step=3]"
+      ],
+      "expected_proof": [
+        "CFB lease released",
+        "registry CAS success",
+        "registry readback FROZEN",
+        "regression debt CLEARED"
+      ],
+      "completion_criteria": [
+        "CFB_TOP_PICKS_REPAIR_STEP3_MARKET_REASONING FROZEN",
+        "no CFB Step 3 holder remains",
+        "unrelated thaws preserved"
+      ],
+      "step_2a_required": true,
+      "mutation_authority": false
+    }
+  ],
+  "topological_order": [
+    "01_ROLLBACK_ANCHOR",
+    "02_DEPLOYMENT_REPAIR",
+    "03_EXACT_HEAD_PROOF",
+    "04_MERGE_EXACT_HEAD",
+    "05_MERGED_MAIN_PROOF",
+    "06_FREEZE_RELEASE"
+  ],
+  "edges": [
+    {
+      "from": "01_ROLLBACK_ANCHOR",
+      "to": "02_DEPLOYMENT_REPAIR"
+    },
+    {
+      "from": "01_ROLLBACK_ANCHOR",
+      "to": "04_MERGE_EXACT_HEAD"
+    },
+    {
+      "from": "01_ROLLBACK_ANCHOR",
+      "to": "06_FREEZE_RELEASE"
+    },
+    {
+      "from": "02_DEPLOYMENT_REPAIR",
+      "to": "03_EXACT_HEAD_PROOF"
+    },
+    {
+      "from": "03_EXACT_HEAD_PROOF",
+      "to": "04_MERGE_EXACT_HEAD"
+    },
+    {
+      "from": "04_MERGE_EXACT_HEAD",
+      "to": "05_MERGED_MAIN_PROOF"
+    },
+    {
+      "from": "05_MERGED_MAIN_PROOF",
+      "to": "06_FREEZE_RELEASE"
+    }
+  ],
+  "resource_plan": {
+    "write_paths": [
+      "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
+      "devsystem/execution_plans/cfb-top-picks-repair-step3-deploy-refresh.json",
+      "devsystem/frozen_artifact_registry_state_v1.json",
+      "devsystem/scope_aware_execution_lease_state_v1.json",
+      "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
+      "refs/heads/main"
+    ],
+    "dependency_tokens": [
+      "control:frozen-artifact-registry",
+      "domain:cfb",
+      "freeze:cfb-top-picks-repair-step1",
+      "freeze:cfb-top-picks-repair-step2",
+      "freeze:cfb-top-picks-repair-step3",
+      "main:01529a7b1faf288f6ee881ebd3af8180237c466a",
+      "merge:exact-certified-head",
+      "project:cfb-top-picks-repair-step3",
+      "proof:devsystem",
+      "proof:focused",
+      "proof:merged-main",
+      "proof:public-runtime",
+      "proof:terminal-receipt",
+      "repair:deployment-convergence"
+    ],
+    "shared_resources": [
+      "branch:cfb-top-picks-repair-step3-deploy-refresh-r1",
+      "deployment:streamlit",
+      "git:protected-main",
+      "pr:cfb-top-picks-repair-step3-deploy-refresh-r1",
+      "registry:monster-frozen-artifact-registry#shard[domain=cfb,step=3]",
+      "workflow:cfb-top-picks-repair-step3-market-reasoning#shard[domain=cfb,step=3]",
+      "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
+    ]
+  },
+  "proof_plan": {
+    "01_ROLLBACK_ANCHOR": [
+      "Steps 1-2 frozen registry entries",
+      "exact current main SHA",
+      "no CFB Step 3 active lease or queue ticket"
+    ],
+    "02_DEPLOYMENT_REPAIR": [
+      "Step 2A scope authorization",
+      "epoch 2 to 3 only",
+      "exactly one changed task ledger",
+      "no requirements.txt change"
+    ],
+    "03_EXACT_HEAD_PROOF": [
+      "DevSystem final gate success",
+      "Registry Race V1 reconciliation state GREEN or RESUMED_ONCE_GREEN",
+      "focused Step 3 proof success",
+      "terminal proof receipt"
+    ],
+    "04_MERGE_EXACT_HEAD": [
+      "PR mergeable",
+      "exact-head required proofs green",
+      "expected head SHA match"
+    ],
+    "05_MERGED_MAIN_PROOF": [
+      "merged-main DevSystem success",
+      "merged-main focused proof success",
+      "public V9 marker success",
+      "terminal proof receipt"
+    ],
+    "06_FREEZE_RELEASE": [
+      "CFB lease released",
+      "registry CAS success",
+      "registry readback FROZEN",
+      "regression debt CLEARED"
+    ]
+  },
+  "rollback_checkpoint_id": "01_ROLLBACK_ANCHOR",
+  "freeze_contract": {
+    "exact_pr_head_proof": true,
+    "devsystem_final_gate": true,
+    "merge_exact_certified_head": true,
+    "merged_main_proof": true,
+    "terminal_proof_receipt": true,
+    "green_plus_frozen": true,
+    "freeze_tokens": [
+      "FROZEN",
+      "GREEN"
+    ]
+  },
+  "completion_criteria": [
+    "CFB Step 3 is GREEN + FROZEN",
+    "Steps 1-2 remain GREEN + FROZEN",
+    "only CFB Step 3 authority is released",
+    "public V9 reasoning surface is certified",
+    "regression debt is CLEARED"
+  ],
+  "step_2a_required": true,
+  "mutation_authority": false,
+  "network_calls": false,
+  "auto_mutate": false,
+  "may_modify_product_runtime": false,
+  "plan_id": "PLAN-5F07D41DA1910AB6CAFFBEF3",
+  "plan_digest": "sha256:5f07d41da1910ab6caffbef349d9f29dcd9f3835d4ffd232807cb8c0b6da714f",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "next_legal_action": "ENTER_CHECKPOINT:01_ROLLBACK_ANCHOR"
+}

@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 10,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -7,9 +7,9 @@
   "total_steps": 5,
   "status": "DONE",
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
-  "root_cause": "The active CFB Top Picks router stack nests Step 9 -> Step 8 -> Step 7 -> Step 6. Step 9 only changed Step 8's TOP_PICKS_PAGE selector, but Step 7 and Step 6 each overwrote the same shared base router selector with their older page versions before the real render. Production therefore showed the Step-6 reasoning block while omitting the Step-9 certification marker.",
-  "failure_owner": "CONTRACT",
-  "patch": "Repair only the Step-9 router wrapper so V9 is propagated through every nested CFB page owner (Steps 8, 7, and 6) for the duration of the render, then restore every prior selector in reverse order. Add a permanent regression proving propagation + restoration and make the focused Step-3 workflow trigger on Step-9 router changes.",
+  "root_cause": "DevSystem false-red was caused by legitimate WNBA frozen-registry lag inherited from authoritative main. Registry Race Repair V1 observed the authoritative registry hash advance, active thaw retirement, and source_main_sha catch up; exactly one resume is now legal. Main also advanced and changed DevSystem proof infrastructure, so the same CFB branch must be forward-synced and reproven once.",
+  "failure_owner": "REGISTRY_STATE",
+  "patch": "Forward-sync the same CFB branch once onto the new disjoint WNBA main descendant, preserve redeploy epoch 3, recompile the plan, and run one fresh exact-head proof pair because the merge candidate SHA changes. Registry Race resume count remains 1/1 and is not repeated.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -26,19 +26,20 @@
   },
   "regression_debt": {
     "created": true,
-    "owner_class": "CONTRACT",
-    "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
+    "owner_class": "DEPLOYMENT",
+    "permanent_test": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py",
     "permanent_contract": "devsystem/cfb_top_picks_research_v2_step9_full_slate_v1.py",
     "state": "PENDING_PROOF"
   },
   "step2a": {
-    "single_branch": "cfb-top-picks-repair-step3-router-v9-propagation-r1",
-    "repair_of_merge_sha": "45070ee5b6f378e74c233a17a85632fe12787b74",
+    "single_branch": "cfb-top-picks-repair-step3-deploy-refresh-r1",
+    "repair_of_merge_sha": "3cec279b50418fd7d08b400e23a228ccfe9c724b",
     "single_pr_required": true,
     "duplicate_async_forbidden": true,
     "exact_head_required": true,
     "merged_main_public_required": true,
-    "no_stale_base_merge": true
+    "no_stale_base_merge": true,
+    "registry_resume_count": 1
   },
   "exit_contract": {
     "focused_exact_head_live_10_of_10_green": true,
@@ -126,5 +127,75 @@
     "patch": "Update this existing Step-3 task ledger in the same repair PR so the non-documentation diff has exactly one changed task ledger. Preserve the valid zero-event genesis action log; no receipt is invented or replayed.",
     "product_code_modified": false,
     "proof_state": "PENDING_PROOF"
+  },
+  "monster_v8": {
+    "execution_plan_compiler": true,
+    "compiled_plan_id": "PLAN-4FD3D8F417AFBD6120B5F1F6",
+    "compiled_plan_digest": "sha256:4fd3d8f417afbd6120b5f1f6239cf17c62462cb348e80bc1ff33d6ed95459be2",
+    "compiled_plan_path": "devsystem/execution_plans/cfb-top-picks-repair-step3-deploy-refresh.json",
+    "base_main_sha": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
+    "workflow_fanout_governor": true,
+    "root_cause_collapse_engine": true,
+    "wait_not_fail_state_machine": true,
+    "frozen_registry_auto_reconciliation": true,
+    "state_aware_proof_contracts": true,
+    "chaos_adversarial_certification": true,
+    "shared_workstream_state": false
+  },
+  "post_merge_public_deployment_convergence_repair": {
+    "source_merge_sha": "3cec279b50418fd7d08b400e23a228ccfe9c724b",
+    "source_failed_run_id": 36959367383,
+    "failed_job_id": 110689393077,
+    "failure_class": "B_EXTERNAL_STALE_DEPLOYMENT",
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_V9_MARKER_COUNT:0",
+    "evidence": {
+      "static_regression_green": true,
+      "live_top10_reasoning_green": true,
+      "merged_main_devsystem_green": true,
+      "current_main_router_chain_v9_propagation_green": true,
+      "public_v9_marker_count": 0
+    },
+    "root_cause": "The hosted Streamlit process did not restart/re-import the certified V9 route after merged-main product and DevSystem proofs were green.",
+    "patch": "Advance canonical Streamlit redeploy epoch 2 -> 3. requirements.txt remains untouched.",
+    "canonical_redeploy_epoch_from": 2,
+    "canonical_redeploy_epoch_to": 3,
+    "dependency_versions_changed": false,
+    "product_code_modified": false,
+    "proof_state": "PENDING_PROOF"
+  },
+  "monster_v9": {
+    "master_control_plane": true,
+    "registry_race_repair_v1": true,
+    "registry_state_hash_before": "b22fc83d3212884896e1fa20adeea3ce9fe19457be1ca60e8231e0eb9e57ceaa",
+    "registry_state_hash_ready": "41bbda7db1e33f20361ccbf86838d730d1ed13b25def81912e151c1a2f4770d7",
+    "registry_revision_ready": 116,
+    "registry_source_main_sha_ready": "d9270a72810869aa48367743d010f6416c365cfe",
+    "registry_active_thaws_ready": [],
+    "registry_wait_state": "RESUMED_ONCE_REGISTRY_READY",
+    "registry_resume_count": 1,
+    "max_registry_resume_count": 1,
+    "compiled_plan_id": "PLAN-5F07D41DA1910AB6CAFFBEF3",
+    "compiled_plan_digest": "sha256:5f07d41da1910ab6caffbef349d9f29dcd9f3835d4ffd232807cb8c0b6da714f",
+    "base_main_sha": "01529a7b1faf288f6ee881ebd3af8180237c466a",
+    "exact_candidate_head_before_refresh": "5b3b8c8d0a3f6c8b5c3a7c23a2c0605562421b5c",
+    "exact_head_green_before_disjoint_main_advance": {
+      "head_sha": "46964bdb3b62d5bb96b23b83ec0da6a5635343ea",
+      "focused_run_id": 37096481222,
+      "devsystem_run_id": 37096481152,
+      "focused_success": true,
+      "devsystem_success": true
+    },
+    "disjoint_main_advance": {
+      "from": "d9270a72810869aa48367743d010f6416c365cfe",
+      "to": "01529a7b1faf288f6ee881ebd3af8180237c466a",
+      "changed_paths": [
+        "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+        "tests/test_wnba_pra_repair_v1_step3.py"
+      ],
+      "cfb_repair_overlap": false,
+      "devsystem_workflow_overlap": false
+    },
+    "proof_reuse_decision": "STATIC_CONTENT_MAY_REUSE_BY_IDENTITY; FULL_EXACT_HEAD_PROOF_REQUIRED_ON_NEW_MERGE_CANDIDATE"
   }
 }
