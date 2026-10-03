@@ -1,0 +1,45 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": "3/7",
+  "mission": "WAIT != FAIL State Machine",
+  "base_main_sha": "769b4bd24ec8d0153342e5e5d8e84509ec3513e1",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "model_projection": false,
+    "frozen_artifact_mutation": false,
+    "files": [
+      ".github/workflows/api2-control-plane-efficiency-v1-step3-wait-not-fail.yml",
+      "devsystem/failure_triage_v1.py",
+      "devsystem/wait_state_machine_v1.py",
+      "devsystem/execution_plans/api2-control-plane-efficiency-v1-step3-wait-not-fail.json",
+      "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step3-wait-not-fail.json",
+      "tests/test_devsystem_wait_state_machine_v1.py"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "protect_steps_1_2_frozen": true
+  },
+  "wait_contract": {
+    "wait_is_not_failure": true,
+    "wait_removed_from_repair_queue": true,
+    "blind_retry_allowed": false,
+    "recheck_requires_state_token_change": true
+  },
+  "proof": {
+    "focused_contract": true,
+    "failure_packet_integration": true,
+    "exact_head_registry_verification": true,
+    "merged_main_reproof": true,
+    "final_registry_freeze": true
+  }
+}
