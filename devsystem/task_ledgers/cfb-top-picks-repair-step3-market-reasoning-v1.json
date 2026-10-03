@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 8,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -7,9 +7,9 @@
   "total_steps": 5,
   "status": "DONE",
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
-  "root_cause": "The active CFB Top Picks router stack nests Step 9 -> Step 8 -> Step 7 -> Step 6. Step 9 only changed Step 8's TOP_PICKS_PAGE selector, but Step 7 and Step 6 each overwrote the same shared base router selector with their older page versions before the real render. Production therefore showed the Step-6 reasoning block while omitting the Step-9 certification marker.",
-  "failure_owner": "CONTRACT",
-  "patch": "Repair only the Step-9 router wrapper so V9 is propagated through every nested CFB page owner (Steps 8, 7, and 6) for the duration of the render, then restore every prior selector in reverse order. Add a permanent regression proving propagation + restoration and make the focused Step-3 workflow trigger on Step-9 router changes.",
+  "root_cause": "The corrected Step-9 -> Step-8 -> Step-7 -> Step-6 router chain is certified on merged main, but the public Streamlit runtime remained stale and exposed zero V9 marker nodes through the full bounded proof window. Repository truth now provides a canonical redeploy epoch marker specifically for harmless restart intent.",
+  "failure_owner": "DEPLOYMENT",
+  "patch": "Advance only devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt from epoch 2 to 3. Do not edit requirements.txt, dependencies, product/router/model/ranking/probability/selection/sportsbook logic, or public acceptance criteria.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -26,14 +26,14 @@
   },
   "regression_debt": {
     "created": true,
-    "owner_class": "CONTRACT",
-    "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
+    "owner_class": "DEPLOYMENT",
+    "permanent_test": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py",
     "permanent_contract": "devsystem/cfb_top_picks_research_v2_step9_full_slate_v1.py",
     "state": "PENDING_PROOF"
   },
   "step2a": {
-    "single_branch": "cfb-top-picks-repair-step3-router-v9-propagation-r1",
-    "repair_of_merge_sha": "45070ee5b6f378e74c233a17a85632fe12787b74",
+    "single_branch": "cfb-top-picks-repair-step3-deploy-refresh-r1",
+    "repair_of_merge_sha": "3cec279b50418fd7d08b400e23a228ccfe9c724b",
     "single_pr_required": true,
     "duplicate_async_forbidden": true,
     "exact_head_required": true,
@@ -124,6 +124,41 @@
     "failure_class": "A_DETERMINISTIC_CONTROL_PLANE",
     "earliest_causal_divergence": "The post-merge repair PR changed a permanent Step-9 regression test and its focused workflow ownership but did not change exactly one task ledger, violating the active Monster Anti-Loop V2 action-ledger contract.",
     "patch": "Update this existing Step-3 task ledger in the same repair PR so the non-documentation diff has exactly one changed task ledger. Preserve the valid zero-event genesis action log; no receipt is invented or replayed.",
+    "product_code_modified": false,
+    "proof_state": "PENDING_PROOF"
+  },
+  "monster_v8": {
+    "execution_plan_compiler": true,
+    "compiled_plan_id": "PLAN-4FD3D8F417AFBD6120B5F1F6",
+    "compiled_plan_digest": "sha256:4fd3d8f417afbd6120b5f1f6239cf17c62462cb348e80bc1ff33d6ed95459be2",
+    "compiled_plan_path": "devsystem/execution_plans/cfb-top-picks-repair-step3-deploy-refresh.json",
+    "base_main_sha": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
+    "workflow_fanout_governor": true,
+    "root_cause_collapse_engine": true,
+    "wait_not_fail_state_machine": true,
+    "frozen_registry_auto_reconciliation": true,
+    "state_aware_proof_contracts": true,
+    "chaos_adversarial_certification": true,
+    "shared_workstream_state": false
+  },
+  "post_merge_public_deployment_convergence_repair": {
+    "source_merge_sha": "3cec279b50418fd7d08b400e23a228ccfe9c724b",
+    "source_failed_run_id": 36959367383,
+    "failed_job_id": 110689393077,
+    "failure_class": "B_EXTERNAL_STALE_DEPLOYMENT",
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_V9_MARKER_COUNT:0",
+    "evidence": {
+      "static_regression_green": true,
+      "live_top10_reasoning_green": true,
+      "merged_main_devsystem_green": true,
+      "current_main_router_chain_v9_propagation_green": true,
+      "public_v9_marker_count": 0
+    },
+    "root_cause": "The hosted Streamlit process did not restart/re-import the certified V9 route after merged-main product and DevSystem proofs were green.",
+    "patch": "Advance canonical Streamlit redeploy epoch 2 -> 3. requirements.txt remains untouched.",
+    "canonical_redeploy_epoch_from": 2,
+    "canonical_redeploy_epoch_to": 3,
+    "dependency_versions_changed": false,
     "product_code_modified": false,
     "proof_state": "PENDING_PROOF"
   }
