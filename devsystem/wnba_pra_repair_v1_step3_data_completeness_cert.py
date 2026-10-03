@@ -165,9 +165,64 @@ def _true(marker, attr: str) -> bool:
     return str(marker.get_attribute(attr) or "").strip().lower() == "true"
 
 
+def _wait_initial_slate_shell(page, *, timeout_seconds: float):
+    """Accept a real off-day WNBA Slate before switching to the proved game date.
+
+    The frozen nav Slate-ready helper also requires the game-list-only caption
+    "Detailed PRA edges stay asleep on this page". The Slate renderer returns
+    before that caption on an OFF_DAY, even though the real WNBA Slate, date
+    control, Step-7 marker and lazy-load contract are already visible. Step 3
+    must reach that shell first, then activate nav._find_game_date().
+    """
+    started = time.monotonic()
+    deadline = started + float(timeout_seconds)
+    last = ""
+    while time.monotonic() < deadline:
+        frame, _ = nav._find_app_frame(
+            page,
+            timeout_seconds=min(12.0, max(2.0, deadline - time.monotonic())),
+        )
+        try:
+            body = nav._body(frame)
+            date_input = frame.locator('[data-testid="stDateInput"] input').first
+            if date_input.count() < 1:
+                date_input = frame.get_by_label("📅 Slate date", exact=True)
+            if (
+                nav._step7_marker(frame, "slate").count() > 0
+                and "WNBA Slate" in body
+                and "No player/model prefetch" in body
+                and date_input.count() > 0
+            ):
+                print("WNBA_PRA_REPAIR_V1_STEP3_OFFDAY_SLATE_SHELL_GREEN")
+                return frame, time.monotonic() - started
+            last = body[:5000]
+        except Exception:
+            pass
+        page.wait_for_timeout(250)
+    raise BrowserQAFailure(
+        f"Step-3 initial WNBA Slate shell did not become ready. body={last!r}"
+    )
+
+
+def _prime_wnba_pra_for_target_date(page, route_url: str):
+    """Reuse the exact Step-9 labeled route with an off-day-tolerant first Slate wait."""
+    original_wait_page = nav._wait_page
+
+    def step3_wait_page(page_arg, page_name: str, *, timeout_seconds: float):
+        if page_name == "slate":
+            return _wait_initial_slate_shell(page_arg, timeout_seconds=timeout_seconds)
+        return original_wait_page(page_arg, page_name, timeout_seconds=timeout_seconds)
+
+    nav._wait_page = step3_wait_page
+    try:
+        return speed9._prime_wnba_pra_route(page, route_url)
+    finally:
+        nav._wait_page = original_wait_page
+
+
 def _open_player_on_date(page, route_url: str, target_date: str):
     page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
-    frame, slate_seconds = speed9._prime_wnba_pra_route(page, route_url)
+    frame, slate_seconds = _prime_wnba_pra_for_target_date(page, route_url)
     frame = nav._set_date_with_game(page, frame, target_date)
 
     game_count = nav._game_button(frame).count()
