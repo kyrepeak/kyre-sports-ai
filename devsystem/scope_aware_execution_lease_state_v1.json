@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 189,
-  "generation": 109,
+  "revision": 190,
+  "generation": 110,
   "holders": [
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-deploy-refresh-v9",
       "lease_id": "SCOPE-LEASE-CFB-STEP3-V9-REGREADY-R1",
-      "generation": 109,
+      "generation": 110,
       "acquired_at_utc": "2026-10-03T04:22:16Z",
-      "heartbeat_at_utc": "2026-10-03T04:30:00Z",
-      "expires_at_utc": "2026-10-03T05:30:00Z",
+      "heartbeat_at_utc": "2026-10-03T04:39:00Z",
+      "expires_at_utc": "2026-10-03T05:39:00Z",
       "scope": {
         "write_paths": [
           "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
@@ -39,14 +39,14 @@
           "main:base": "01529a7b1faf288f6ee881ebd3af8180237c466a",
           "plan:id": "PLAN-5F07D41DA1910AB6CAFFBEF3",
           "repair:step": "3",
-          "branch:head": "46964bdb3b62d5bb96b23b83ec0da6a5635343ea",
-          "registry:revision": "116",
-          "registry:state_hash": "41bbda7db1e33f20361ccbf86838d730d1ed13b25def81912e151c1a2f4770d7",
+          "branch:head": "6ec7da78164fda19b2e3d3b82c56ddf01582433c",
+          "registry:revision": "117",
+          "registry:state_hash": "9df410a0ce9540fd8f75203eca0b7d1a4c00247b956a8ed6435b72f45f883d6e",
           "registry:resume_count": "1"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "3c0ae33f6911780aae80098bdd0da52d51327aecebe093af7b649ff1c24bf62c"
+  "state_hash": "da53154f9d112ee2840c6fee79b80a17b6471191da144340a03c0ca04014a361"
 }
