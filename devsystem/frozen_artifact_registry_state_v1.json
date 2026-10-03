@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 90,
+  "revision": 91,
   "source_main_sha": "c8f7b574c3da0981618eadab0ac6c09d41526c6c",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1657,7 +1657,37 @@
           "to_blob": "fa12ddbb637f92afb6e75f7526021607c446c8f1"
         }
       }
+    },
+    {
+      "thaw_id": "THAW-API2-STEP4-WNBA-STEP2-FREEZE-MERGE-V1",
+      "status": "ACTIVE",
+      "target_head_sha": "5c6446bf091b86f4f45b22c97c0c26b0a9c4470c",
+      "files": {
+        "devsystem/upstream_blocker_short_circuit_v1.py": {
+          "from_blob": "f7e36922e03bd070eb57f4650c7c74dcc55beed5",
+          "to_blob": "b68edf40ac3eb92cd9aa10eeb3499eddc2582f0d"
+        },
+        "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": {
+          "from_blob": "524e68d04a872dfcd5fe482ab6775e65d0669800",
+          "to_blob": "dfe7a98e6d47d47ccd3850a189a452b5848b0b78"
+        }
+      }
+    },
+    {
+      "thaw_id": "THAW-API2-STEP5-WNBA-STEP2-FREEZE-MERGE-V1",
+      "status": "ACTIVE",
+      "target_head_sha": "5c6446bf091b86f4f45b22c97c0c26b0a9c4470c",
+      "files": {
+        "tests/test_devsystem_api2_failure_domain_router_v1.py": {
+          "from_blob": "06d28b491f5acb722a967a6785779ae3646007f6",
+          "to_blob": "14ce6c3683638eb2961a2016728b3fd540fab0be"
+        },
+        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": {
+          "from_blob": "250a77379774977c815a4026ebffc571abc777ed",
+          "to_blob": "fa12ddbb637f92afb6e75f7526021607c446c8f1"
+        }
+      }
     }
   ],
-  "state_hash": "55e3cff5cd5aec4f2584750365a41c6d9fa3ecab9bfce8809ee8e9bf49ab6db3"
+  "state_hash": "4f5ac5a119daa169ad397e9c464267ab8a8d7c7e80c27479085e2593637c45d0"
 }
