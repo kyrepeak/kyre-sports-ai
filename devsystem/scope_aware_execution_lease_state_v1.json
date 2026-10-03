@@ -4,96 +4,44 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 185,
-  "generation": 106,
+  "revision": 186,
+  "generation": 107,
   "holders": [
     {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-pr1344-merge",
-      "lease_id": "SCOPE-LEASE-929C8BAF9B05678C58F4535F",
-      "generation": 106,
-      "acquired_at_utc": "2026-10-02T17:01:00Z",
-      "heartbeat_at_utc": "2026-10-02T17:01:00Z",
-      "expires_at_utc": "2026-10-02T18:01:00Z",
+      "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-deploy-refresh-r2",
+      "lease_id": "SCOPE-LEASE-B84AFA2ED6AF723608640DE6",
+      "generation": 107,
+      "acquired_at_utc": "2026-10-03T03:03:09Z",
+      "heartbeat_at_utc": "2026-10-03T03:03:09Z",
+      "expires_at_utc": "2026-10-03T04:03:09Z",
       "scope": {
         "write_paths": [
-          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
-          "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py",
-          "tests/test_wnba_pra_repair_v1_step2.py"
+          "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
+          "devsystem/execution_plans/cfb-top-picks-repair-step3-deploy-refresh.json",
+          "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
+          "refs/heads/main"
         ],
         "dependency_tokens": [
-          "merge:exact-certified-head",
-          "pr:1344",
-          "step:wnba-pra-repair-v1-step2"
+          "domain:cfb",
+          "project:cfb-top-picks-repair-step3",
+          "repair:deployment-convergence"
         ],
         "shared_resources": [
-          "branch:main#shard[domain=wnba,route=pra]",
-          "pr:1344"
+          "branch:cfb-top-picks-repair-step3-deploy-refresh-r1",
+          "deploy:pickvault",
+          "deployment:streamlit",
+          "pr:cfb-top-picks-repair-step3-deploy-refresh-r1",
+          "workflow:cfb-top-picks-repair-step3-market-reasoning#shard[domain=cfb,step=3]",
+          "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
         ],
         "resource_identity": {
-          "main:base": "e1a892e7ed7c37a9191a3448333ab5e98b549a68",
-          "pr:head": "22c48ef8c8d3201cda711360e19610e73d3f2770",
-          "pr:number": "1344"
-        },
-        "exclusive": false
-      }
-    },
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step3-synthetic-merge-thaw",
-      "lease_id": "SCOPE-LEASE-93EC7753A1FC22E4392FDEB4",
-      "generation": 80,
-      "acquired_at_utc": "2026-10-02T10:08:00Z",
-      "heartbeat_at_utc": "2026-10-02T10:08:00Z",
-      "expires_at_utc": "2026-10-02T11:08:00Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/frozen_artifact_registry_state_v1.json"
-        ],
-        "dependency_tokens": [
-          "control:frozen-artifact-registry",
-          "pr:1341",
-          "step:wnba-pra-repair-v1-step3"
-        ],
-        "shared_resources": [
-          "registry:monster-frozen-artifact-registry#shard[domain=wnba,route=pra]"
-        ],
-        "resource_identity": {
-          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
-          "pr:head": "31a7cba2867b0f420a28d6d482685f0d7f92732d",
-          "pr:merge": "df2abe885253b13b6b4b2ee1c953729ac2918d11"
-        },
-        "exclusive": false
-      }
-    },
-    {
-      "owner_id": "chatgpt:api2:wnba-pra-repair-v1-step2-proof-recovery",
-      "lease_id": "SCOPE-LEASE-DB57976B29ECD4FA74D409C5",
-      "generation": 69,
-      "acquired_at_utc": "2026-10-02T05:53:22Z",
-      "heartbeat_at_utc": "2026-10-02T05:53:22Z",
-      "expires_at_utc": "2026-10-02T06:53:22Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/task_ledgers/wnba-pra-repair-v1-step2-team-identity.json",
-          "devsystem/wnba_pra_repair_v1_step2_team_identity_cert.py",
-          "tests/test_wnba_pra_repair_v1_step2.py"
-        ],
-        "dependency_tokens": [
-          "checkpoint:wnba-pra-repair-v1-step2-public-proof",
-          "frozen-dependency:wnba_pra_speed_v3_step9",
-          "project:wnba-pra-repair-v1"
-        ],
-        "shared_resources": [
-          "branch:api2/wnba-pra-repair-v1-step2-proof-recovery",
-          "pr:wnba-pra-repair-v1-step2-proof-recovery",
-          "workflow:wnba-pra-repair-v1-step2-team-identity"
-        ],
-        "resource_identity": {
-          "main:base": "5bdbe8548a3cc20db2100d2d6b458b49c6956521",
-          "wnba:pra-repair-step": "2"
+          "main:base": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
+          "plan:id": "PLAN-4FD3D8F417AFBD6120B5F1F6",
+          "repair:step": "3"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "fc3417912e2342053d0fa3293313b76b9f2fdc71dae2c7b90929e82fde00974b"
+  "state_hash": "0b8cea25d0dcf110f87f332fe4de1fd4820ec73f32a1a7ab20122fe560b9c808"
 }
