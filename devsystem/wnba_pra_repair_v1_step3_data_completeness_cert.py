@@ -39,10 +39,11 @@ STEP = "3/7"
 BASE_MAIN_SHA = "5bdbe8548a3cc20db2100d2d6b458b49c6956521"
 PUBLIC_HOST = "https://pickvault.streamlit.app"
 PROOF_SELECTOR = '[data-wnba-pra-repair-v1-step3="data-completeness"]'
-DEPLOYMENT_ATTEMPTS = 12
-DEPLOYMENT_RETRY_SECONDS = 15.0
-GAME_SETUP_TIMEOUT_SECONDS = 120.0
-PLAYER_SETUP_TIMEOUT_SECONDS = 120.0
+DEPLOYMENT_ATTEMPTS = 2
+DEPLOYMENT_RETRY_SECONDS = 5.0
+GAME_SETUP_TIMEOUT_SECONDS = 90.0
+PLAYER_SETUP_TIMEOUT_SECONDS = 90.0
+MAX_GAME_ATTEMPTS_PER_DATE = 2
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
@@ -174,7 +175,7 @@ def _open_player_on_date(page, route_url: str, target_date: str):
         raise BrowserQAFailure(f"Step-3 found no games on {target_date}.")
 
     failures: list[str] = []
-    for index in range(game_count):
+    for index in range(min(game_count, MAX_GAME_ATTEMPTS_PER_DATE)):
         frame, _ = nav._find_app_frame(page, timeout_seconds=8.0)
         buttons = nav._game_button(frame)
         if index >= buttons.count():
@@ -240,19 +241,20 @@ def _candidate_dates() -> list[str]:
 
 
 def _open_any_player(page, route_url: str):
-    failures: list[str] = []
-    for target_date in _candidate_dates():
-        try:
-            frame, slate_seconds, game_seconds, player_seconds = _open_player_on_date(
-                page, route_url, target_date
-            )
-            return frame, target_date, slate_seconds, game_seconds, player_seconds
-        except Exception as exc:
-            failures.append(f"{target_date}:{type(exc).__name__}:{str(exc)[:220]}")
-    raise BrowserQAFailure(
-        "Step-3 could not reach any real public Player Intelligence route; "
-        + " | ".join(failures)
-    )
+    # Canonical current-slate proof only. Step 2 already proves the selected
+    # current WNBA date contains real team/player rows; Step 3 must not fan out
+    # across historical dates and multiply 90s browser waits.
+    target_date = nav._find_game_date()
+    try:
+        frame, slate_seconds, game_seconds, player_seconds = _open_player_on_date(
+            page, route_url, target_date
+        )
+        return frame, target_date, slate_seconds, game_seconds, player_seconds
+    except Exception as exc:
+        raise BrowserQAFailure(
+            "Step-3 bounded current-slate Player Intelligence proof failed; "
+            f"{target_date}:{type(exc).__name__}:{str(exc)[:420]}"
+        ) from exc
 
 
 def upstream_preflight(*, artifact_dir: str | Path | None = None) -> dict[str, Any]:
