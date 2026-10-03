@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -7,9 +7,9 @@
   "total_steps": 5,
   "status": "DONE",
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
-  "root_cause": "The merged-main CFB board and live reasoning engine were GREEN, but a Top Picks detail click reruns beneath the active WNBA PRA Step-3 wrapper. That outer wrapper can pin universal ks_jump_sport/ks_jump_market to WNBA/PRA before the inherited CFB Step-9 router renders. The valid CFB-specific route query survives, but competing universal jump state can steal shell ownership during the rerun and prevent the finished V9 reasoning detail surface from appearing.",
+  "root_cause": "The CFB Step-9 detail guard was nested below WNBA PRA Speed V3 Step 5. On the public detail rerun, the outer WNBA PRA Step-3 repair could pin universal shell state to WNBA/PRA. Speed Step 5 then sees PRA and can use its direct trampoline path before nested CFB Step 9 executes, so the inner CFB guard never gets a chance to restore College Football / Top Picks. The manual Streamlit reboot reproduced the same public reasoning failure on attempt 2, ruling out deployment freshness as the primary blocker.",
   "failure_owner": "CONTROL_PLANE",
-  "patch": "CFB Step-9 router only: on a valid CFB Top Picks detail rerun, remove competing universal ks_jump_sport/ks_jump_market state and re-prime the frozen CFB Top Picks route before delegating. Registry Race V1 has now reconciled revision 119 and consumed its single resume. WNBA code, app.py, model/data/ranking/probability/selection logic, and redeploy epoch remain unchanged.",
+  "patch": "Add one outer-shell yield guard to the unfrozen WNBA PRA Step-3 presentation overlay: when query state explicitly requests College Football / Top Picks, clear only competing universal ks_jump_sport/ks_jump_market state and restore CFB shell/session ownership before WNBA deep-route pin logic can run. Preserve real WNBA Game/Player pin behavior unchanged. Add permanent CFB regression proving both the CFB yield and WNBA pin paths.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -28,7 +28,7 @@
     "created": true,
     "owner_class": "CONTROL_PLANE",
     "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
-    "permanent_contract": "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py",
+    "permanent_contract": "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
     "state": "PENDING_PROOF"
   },
   "step2a": {
@@ -232,5 +232,30 @@
     "registry_state_hash_ready": "7d2b8aeb60b868590ca29f2810e555b390df2cf3691b61f4f7063f91212c0c52",
     "registry_source_main_sha_ready": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
     "registry_active_thaws_ready": []
+  },
+  "monster_v9_outer_shell_guard": {
+    "plan_id": "PLAN-32FC424C42E3DC3A334ED90C",
+    "plan_digest": "sha256:32fc424c42e3dc3a334ed90c2b0f05065d2efe54fe2552b383c3ac14973eab76",
+    "base_main_sha": "efc9b622198bc01c8194eb9c101703481c24b05e",
+    "branch": "cfb-top-picks-repair-step3-outer-shell-guard-r1",
+    "source_failed_run_id": 37117997574,
+    "source_failed_run_attempt": 2,
+    "source_failed_job_id": 111270511172,
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_REASONING_NOT_READY",
+    "failure_class": "CONTROL_PLANE",
+    "prior_reboot_recovery_exhausted": true,
+    "registry_revision": 119,
+    "registry_state_hash": "7d2b8aeb60b868590ca29f2810e555b390df2cf3691b61f4f7063f91212c0c52",
+    "registry_resume_count": 1,
+    "registry_resume_max": 1,
+    "app_py_modified": false,
+    "deployment_epoch_modified": false,
+    "wnba_model_modified": false,
+    "projection_math_modified": false,
+    "market_math_modified": false,
+    "probability_modified": false,
+    "ranking_modified": false,
+    "selection_modified": false,
+    "proof_state": "PENDING_EXACT_HEAD_PROOF"
   }
 }

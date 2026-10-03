@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 import cfb_top_picks_market_reasoning_v1 as reasoning
 from devsystem import cfb_top_picks_market_reasoning_repair_step3_v1 as repair
 import streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 as router
+import streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness as wnba_outer
 
 
 def _row(market: str = "MONEYLINE") -> dict:
@@ -277,3 +280,44 @@ def test_step9_detail_route_guard_does_not_touch_non_detail_route(monkeypatch):
     assert query["ks_jump_sport"] == "WNBA"
     assert query["ks_jump_market"] == "PRA"
     assert session["ks_sport_touch"] == "WNBA"
+
+
+def test_outer_wnba_shell_guard_yields_to_explicit_cfb_top_picks_detail(monkeypatch):
+    query = {
+        "ks_sport": "College Football",
+        "ks_cfb_market": "Top Picks",
+        "top_pick_detail": "401234567",
+        "ks_jump_sport": "WNBA",
+        "ks_jump_market": "PRA",
+    }
+    session = {
+        "ks_sport_touch": "WNBA",
+        "ks_cfb_market_touch": "Moneyline",
+        "ks_wnba_market_touch": "PRA",
+    }
+    monkeypatch.setattr(wnba_outer.st, "query_params", query)
+    monkeypatch.setattr(wnba_outer.st, "session_state", session)
+
+    state = SimpleNamespace(page=wnba_outer.navigation.PAGE_GAME)
+    assert wnba_outer._pin_deep_wnba_shell_route(state) is state
+
+    assert "ks_jump_sport" not in query
+    assert "ks_jump_market" not in query
+    assert session["ks_sport_touch"] == "College Football"
+    assert session["ks_cfb_market_touch"] == "Top Picks"
+    assert session["ks_wnba_market_touch"] == "PRA"
+
+
+def test_outer_wnba_shell_guard_keeps_real_wnba_game_pin(monkeypatch):
+    query = {}
+    session = {}
+    monkeypatch.setattr(wnba_outer.st, "query_params", query)
+    monkeypatch.setattr(wnba_outer.st, "session_state", session)
+
+    state = SimpleNamespace(page=wnba_outer.navigation.PAGE_GAME)
+    assert wnba_outer._pin_deep_wnba_shell_route(state) is state
+
+    assert query["ks_jump_sport"] == "WNBA"
+    assert query["ks_jump_market"] == "PRA"
+    assert session["ks_sport_touch"] == "WNBA"
+    assert session["ks_wnba_market_touch"] == "PRA"
