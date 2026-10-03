@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 106,
-  "source_main_sha": "94bd2940b2c1faa8e549fe4e578caa0e21e83356",
+  "revision": 107,
+  "source_main_sha": "aa3be3c7ee6e735fed55584f2841bedddae3ac61",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1705,6 +1705,18 @@
         "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step6-chaos-adversarial-certification.json": "4bb6a556c02e59b05fc1c382011946351bb0722f",
         "tests/test_devsystem_api2_chaos_adversarial_certifier_v1.py": "1d3651f0d6b53f4dd528da920037441ba3b7fe4f"
       }
+    },
+    "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP7": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP7",
+      "source_main_sha": "aa3be3c7ee6e735fed55584f2841bedddae3ac61",
+      "artifacts": {
+        ".github/workflows/api2-control-plane-efficiency-v1-step7-execution-plan-compiler.yml": "8874f4f6dc2fc7b7e35c1126a79787638ca2201d",
+        "devsystem/api2_execution_plan_compiler_cert_v1.py": "a1b2dd744e0a6285a7aa9314e5d9fe306e21bf60",
+        "devsystem/execution_plans/api2-control-plane-efficiency-v1-step7-execution-plan-compiler.json": "199c5a495f7b3e7321c9fbfcd86ac72a99bbbe33",
+        "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step7-execution-plan-compiler.json": "98586ccf5030a011642c6524106a6e3e73eb4274",
+        "tests/test_devsystem_api2_execution_plan_compiler_cert_v1.py": "104c4f97a1228c4a3c48e8fa22150e8a0e652538"
+      }
     }
   },
   "active_thaws": [
@@ -1720,5 +1732,5 @@
       }
     }
   ],
-  "state_hash": "f7ff50736048f857baa08ce965f781f2e1424e26e192c8aa3a91c12b94700c0d"
+  "state_hash": "9271fa64aed54bba9ccff7c917c40a7e7b11a3b5629e0d54d9539bf02dee7d80"
 }
