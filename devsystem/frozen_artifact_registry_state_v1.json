@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 115,
+  "revision": 116,
   "source_main_sha": "d9270a72810869aa48367743d010f6416c365cfe",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1741,8 +1741,22 @@
         "devsystem/task_ledgers/registry-race-v1-step2-descendant-thaw-awareness.json": "37bd780131d41b53bc16f82f57b59c5eef705363",
         "tests/test_devsystem_descendant_thaw_awareness_v1.py": "1d2e2bbf300abe888ed9c348f314ac0c3bc51c05"
       }
+    },
+    "REGISTRY_RACE_V1_STEP3": {
+      "status": "FROZEN",
+      "checkpoint_id": "REGISTRY_RACE_V1_STEP3",
+      "source_main_sha": "d9270a72810869aa48367743d010f6416c365cfe",
+      "artifacts": {
+        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
+        ".github/workflows/registry-race-v1-step3-wait-one-resume.yml": "68a23e37a5d4f4e2766d4ef73bbb209b2b4ac650",
+        "devsystem/registry_wait_resume_gate_v1.sh": "cc7a8f209d8297fccd70897f5e268f6043b595ac",
+        "devsystem/registry_wait_resume_v1.py": "1c1afb990418fc7896db0e73799a66e98fc0e777",
+        "devsystem/execution_plans/registry-race-v1-step3-wait-one-resume.json": "051fad6da307da5cd895c694e4271bf641c1dc66",
+        "devsystem/task_ledgers/registry-race-v1-step3-wait-one-resume.json": "3da3f30b2b76b83d6f55bfca4605cc7a549143be",
+        "tests/test_devsystem_registry_wait_resume_v1.py": "e1d558fec8fa16e21d9464e5cb574593625a0c4d"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "ae4de829b5dd8180207cc70057bbe03d62ab47554b1f7cf3cf484124081b864a"
+  "state_hash": "41bbda7db1e33f20361ccbf86838d730d1ed13b25def81912e151c1a2f4770d7"
 }
