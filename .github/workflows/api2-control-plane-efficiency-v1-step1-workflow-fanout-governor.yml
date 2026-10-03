@@ -1,0 +1,72 @@
+name: API2 Control-Plane Efficiency V1 Step 1 Workflow Fan-Out Governor
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml"
+      - ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/devsystem-failure-packet-v1.yml"
+      - ".github/workflows/wnba-nav-step6-fast-cert.yml"
+      - ".github/workflows/wnba-nav-step6-responsive-cert.yml"
+      - "devsystem/workflow_fanout_governor_v1.py"
+      - "devsystem/workflow_fanout_policy_v1.json"
+      - "devsystem/execution_plans/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
+      - "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
+      - "tests/test_devsystem_workflow_fanout_governor_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml"
+      - ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+      - ".github/workflows/devsystem-failure-packet-v1.yml"
+      - ".github/workflows/wnba-nav-step6-fast-cert.yml"
+      - ".github/workflows/wnba-nav-step6-responsive-cert.yml"
+      - "devsystem/workflow_fanout_governor_v1.py"
+      - "devsystem/workflow_fanout_policy_v1.json"
+      - "devsystem/execution_plans/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
+      - "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
+      - "tests/test_devsystem_workflow_fanout_governor_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-control-plane-efficiency-v1-step1-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fanout-governor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run permanent fan-out contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_workflow_fanout_governor_v1.py
+          python devsystem/workflow_fanout_governor_v1.py
+      - name: Verify exact PR head against authoritative frozen registry
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin monster-frozen-artifact-registry --depth=1
+          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/frozen-registry.json
+          python devsystem/frozen_artifact_registry_v1.py verify-head             --registry-file /tmp/frozen-registry.json             --head HEAD
+          echo "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1_EXACT_THAW_GREEN"
+      - name: Certify exact PR head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1_BRANCH_GREEN"
+          echo "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1_READY_TO_MERGE"
+      - name: Certify merged main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1_MAIN_GREEN"
