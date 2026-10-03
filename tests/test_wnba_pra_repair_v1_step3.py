@@ -115,6 +115,16 @@ def test_step3_cert_cannot_freeze_from_source_only_proof():
     assert "WNBA_PRA_REPAIR_V1_STEP3_FROZEN" in source
 
 
+def test_step3_production_waits_for_canonical_player_ready_game_center():
+    source = CERT.read_text(encoding="utf-8")
+    assert "GAME_SETUP_TIMEOUT_SECONDS = 120.0" in source
+    assert "PLAYER_SETUP_TIMEOUT_SECONDS = 120.0" in source
+    assert 'timeout_seconds=GAME_SETUP_TIMEOUT_SECONDS' in source
+    assert 'timeout_seconds=PLAYER_SETUP_TIMEOUT_SECONDS' in source
+    assert "_wait_game_shell(page)" not in source
+    assert "canonical Game Center has no tappable player controls" in source
+
+
 def test_step3_ledger_requires_merged_main_production_before_freeze():
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert ledger["project"] == "WNBA PRA Repair V1"
