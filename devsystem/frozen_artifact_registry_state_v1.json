@@ -4,7 +4,7 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 107,
+  "revision": 108,
   "source_main_sha": "aa3be3c7ee6e735fed55584f2841bedddae3ac61",
   "entries": {
     "MONSTER_V3_STEP1": {
@@ -1723,7 +1723,7 @@
     {
       "thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP3-BOUNDED-PROOF-R1",
       "status": "ACTIVE",
-      "target_head_sha": "b182c5bcb2998939ee2af21a47b5ddb41b955d67",
+      "target_head_sha": "cf74c2ddc48ab36ff07196faf2f0889c44462d99",
       "files": {
         "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py": {
           "from_blob": "c6a0114a99b5d310c7c5e4bdb7312f5de21d50bc",
@@ -1732,5 +1732,5 @@
       }
     }
   ],
-  "state_hash": "9271fa64aed54bba9ccff7c917c40a7e7b11a3b5629e0d54d9539bf02dee7d80"
+  "state_hash": "b22fc83d3212884896e1fa20adeea3ce9fe19457be1ca60e8231e0eb9e57ceaa"
 }
