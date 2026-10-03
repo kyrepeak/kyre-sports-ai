@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 110,
-  "source_main_sha": "cb6b46a99f1a9c0f22447f9ea68219286374bc4c",
+  "revision": 111,
+  "source_main_sha": "3bddb34bd784489e8c20370d961018d1b869a363",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1729,8 +1729,20 @@
         "devsystem/task_ledgers/registry-race-v1-step1-reconciliation-barrier.json": "58069e171b77c34705e77bfdb2e66c8f490e7d8a",
         "tests/test_devsystem_registry_reconciliation_barrier_v1.py": "8e85220367d214c56b12eb8840b41b514e12f669"
       }
+    },
+    "REGISTRY_RACE_V1_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "REGISTRY_RACE_V1_STEP2",
+      "source_main_sha": "3bddb34bd784489e8c20370d961018d1b869a363",
+      "artifacts": {
+        ".github/workflows/registry-race-v1-step2-descendant-thaw-awareness.yml": "b48d4e22461bc9f739773108feaa87ca0fbfa8ef",
+        "devsystem/descendant_thaw_awareness_v1.py": "09a44374886d9c3116756f62c0f71a64935bea1a",
+        "devsystem/execution_plans/registry-race-v1-step2-descendant-thaw-awareness.json": "730bda6e468ad4533c8809b13178ebd291dcaad8",
+        "devsystem/task_ledgers/registry-race-v1-step2-descendant-thaw-awareness.json": "37bd780131d41b53bc16f82f57b59c5eef705363",
+        "tests/test_devsystem_descendant_thaw_awareness_v1.py": "1d2e2bbf300abe888ed9c348f314ac0c3bc51c05"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "1892ec539813c13d41b49a3e002fd10a18e12b2771ac8fd23a34a56de6bf2d5b"
+  "state_hash": "8ea5f1ebfd711b0fdb35318292b1aa9b1af444badfa998247e877fd186d75996"
 }
