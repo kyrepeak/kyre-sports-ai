@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 103,
-  "source_main_sha": "ce44638d3f051e7f9ef6ec25b74fafd6e5b0506f",
+  "revision": 104,
+  "source_main_sha": "32a478be301b76af2550754c40e1719a95cb9571",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1681,8 +1681,20 @@
         "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step4-frozen-registry-auto-reconciliation.json": "142520ddb05f781dd1a1ff840a0f7847a596c963",
         "tests/test_devsystem_frozen_registry_auto_reconciler_v1.py": "8c883c85d3cb7bd8ef7ae4bfe2af26b61f694f7d"
       }
+    },
+    "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP5": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP5",
+      "source_main_sha": "32a478be301b76af2550754c40e1719a95cb9571",
+      "artifacts": {
+        ".github/workflows/api2-control-plane-efficiency-v1-step5-state-aware-proof-contracts.yml": "b83e8ba35b89f8d3dc801a407a654e82f5693e91",
+        "devsystem/execution_plans/api2-control-plane-efficiency-v1-step5-state-aware-proof-contracts.json": "004514445e83fcf48c04ac30b81a2da7db5e5954",
+        "devsystem/state_aware_proof_contract_v1.py": "733b5acfdb5835458cd90c087612908277d38da1",
+        "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step5-state-aware-proof-contracts.json": "76cea7a048f270fadd2dc589b8098c374a814712",
+        "tests/test_devsystem_state_aware_proof_contract_v1.py": "6e61394ef444a09a341ac76b4a28769645b3a137"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "3c0455cc3d43455e0112364c3c827f37febd965a57db48df7be463a3ddb90261"
+  "state_hash": "03962b0877c891bd2eaf56189c3a52061130fe3608f82aae701e24b5069701dc"
 }
