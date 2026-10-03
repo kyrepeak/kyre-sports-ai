@@ -159,6 +159,8 @@ jobs:
         run: python devsystem/frozen_artifact_registry_v1.py
       - name: Validate API2 Proof Architecture V1 Step 6 Frozen Registry Lifecycle
         run: python devsystem/api2_frozen_registry_lifecycle_v1.py self-test
+      # Permanent registry-verifier compatibility marker:
+      # python devsystem/frozen_artifact_registry_v1.py verify-head
       - name: Enforce authoritative frozen artifact registry
         shell: bash
         run: bash devsystem/registry_wait_resume_gate_v1.sh
