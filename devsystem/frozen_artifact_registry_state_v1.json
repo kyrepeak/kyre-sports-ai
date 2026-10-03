@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 91,
-  "source_main_sha": "c8f7b574c3da0981618eadab0ac6c09d41526c6c",
+  "revision": 92,
+  "source_main_sha": "1a53940520d839adb5838099b678afb1de7760b4",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1580,12 +1580,12 @@
       "source_main_sha": "8ccec768913e0b81f12ef3d3966de81aef6ebc69",
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml": "7d0c605b40528719e7531be2d8d415c1882141c1",
-        "devsystem/upstream_blocker_short_circuit_v1.py": "f7e36922e03bd070eb57f4650c7c74dcc55beed5",
+        "devsystem/upstream_blocker_short_circuit_v1.py": "b68edf40ac3eb92cd9aa10eeb3499eddc2582f0d",
         "devsystem/upstream_certification_registry_v1.json": "4f6f1da1530a257f4a4488706e4b918d9582cf6f",
         "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py": "413db2503661647ad0f95a6f2314a182af490b02",
         "devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "11b0a4c84fe4b034a82795d185dbcad24f7797f8",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "a1c361dcebeabf8d934df2e7df18b22dce1d9e6d",
-        "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": "524e68d04a872dfcd5fe482ab6775e65d0669800"
+        "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": "dfe7a98e6d47d47ccd3850a189a452b5848b0b78"
       }
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP5": {
@@ -1593,12 +1593,12 @@
       "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP5",
       "source_main_sha": "322bc62bb4d6021b8958dd49ed8f48558972d153",
       "artifacts": {
-        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": "250a77379774977c815a4026ebffc571abc777ed",
+        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": "fa12ddbb637f92afb6e75f7526021607c446c8f1",
         ".github/workflows/devsystem-targeted-ci.yml": "6b596676d5966f53c39f0258039c69a1c33bd9e2",
         "devsystem/api2_failure_domain_router_v1.py": "0ccf296bac93f1034f0168f71a1f69994114ca93",
         "devsystem/execution_plans/api2-proof-architecture-v1-step5-failure-domain-separation.json": "89e68da1fc3b2af1dcd1e1a3cf0ecefdabf67577",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step5-failure-domain-separation.json": "5403ca83fea3dc90ea74f17a7d3c6da9f718bd9f",
-        "tests/test_devsystem_api2_failure_domain_router_v1.py": "06d28b491f5acb722a967a6785779ae3646007f6"
+        "tests/test_devsystem_api2_failure_domain_router_v1.py": "14ce6c3683638eb2961a2016728b3fd540fab0be"
       }
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP6": {
@@ -1627,67 +1627,6 @@
       }
     }
   },
-  "active_thaws": [
-    {
-      "thaw_id": "THAW-API2-STEP4-WNBA-STEP2-FREEZE-STATE-V1",
-      "status": "ACTIVE",
-      "target_head_sha": "dd217ec14719ced1dbed0051e4e9b61dea0fa84d",
-      "files": {
-        "devsystem/upstream_blocker_short_circuit_v1.py": {
-          "from_blob": "f7e36922e03bd070eb57f4650c7c74dcc55beed5",
-          "to_blob": "b68edf40ac3eb92cd9aa10eeb3499eddc2582f0d"
-        },
-        "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": {
-          "from_blob": "524e68d04a872dfcd5fe482ab6775e65d0669800",
-          "to_blob": "dfe7a98e6d47d47ccd3850a189a452b5848b0b78"
-        }
-      }
-    },
-    {
-      "thaw_id": "THAW-API2-STEP5-WNBA-STEP2-FREEZE-STATE-V1",
-      "status": "ACTIVE",
-      "target_head_sha": "dd217ec14719ced1dbed0051e4e9b61dea0fa84d",
-      "files": {
-        "tests/test_devsystem_api2_failure_domain_router_v1.py": {
-          "from_blob": "06d28b491f5acb722a967a6785779ae3646007f6",
-          "to_blob": "14ce6c3683638eb2961a2016728b3fd540fab0be"
-        },
-        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": {
-          "from_blob": "250a77379774977c815a4026ebffc571abc777ed",
-          "to_blob": "fa12ddbb637f92afb6e75f7526021607c446c8f1"
-        }
-      }
-    },
-    {
-      "thaw_id": "THAW-API2-STEP4-WNBA-STEP2-FREEZE-MERGE-V1",
-      "status": "ACTIVE",
-      "target_head_sha": "5c6446bf091b86f4f45b22c97c0c26b0a9c4470c",
-      "files": {
-        "devsystem/upstream_blocker_short_circuit_v1.py": {
-          "from_blob": "f7e36922e03bd070eb57f4650c7c74dcc55beed5",
-          "to_blob": "b68edf40ac3eb92cd9aa10eeb3499eddc2582f0d"
-        },
-        "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": {
-          "from_blob": "524e68d04a872dfcd5fe482ab6775e65d0669800",
-          "to_blob": "dfe7a98e6d47d47ccd3850a189a452b5848b0b78"
-        }
-      }
-    },
-    {
-      "thaw_id": "THAW-API2-STEP5-WNBA-STEP2-FREEZE-MERGE-V1",
-      "status": "ACTIVE",
-      "target_head_sha": "5c6446bf091b86f4f45b22c97c0c26b0a9c4470c",
-      "files": {
-        "tests/test_devsystem_api2_failure_domain_router_v1.py": {
-          "from_blob": "06d28b491f5acb722a967a6785779ae3646007f6",
-          "to_blob": "14ce6c3683638eb2961a2016728b3fd540fab0be"
-        },
-        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": {
-          "from_blob": "250a77379774977c815a4026ebffc571abc777ed",
-          "to_blob": "fa12ddbb637f92afb6e75f7526021607c446c8f1"
-        }
-      }
-    }
-  ],
-  "state_hash": "4f5ac5a119daa169ad397e9c464267ab8a8d7c7e80c27479085e2593637c45d0"
+  "active_thaws": [],
+  "state_hash": "f597e01f3e895a1fb05b42264bbba2e5dc43f594b53fcc13546a317d72231684"
 }
