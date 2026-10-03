@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 108,
-  "source_main_sha": "aa3be3c7ee6e735fed55584f2841bedddae3ac61",
+  "revision": 109,
+  "source_main_sha": "9c935ad1f8bdc669c05097fc8389e79dbfc9a24d",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1582,7 +1582,7 @@
         ".github/workflows/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.yml": "7d0c605b40528719e7531be2d8d415c1882141c1",
         "devsystem/upstream_blocker_short_circuit_v1.py": "b68edf40ac3eb92cd9aa10eeb3499eddc2582f0d",
         "devsystem/upstream_certification_registry_v1.json": "4f6f1da1530a257f4a4488706e4b918d9582cf6f",
-        "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py": "c6a0114a99b5d310c7c5e4bdb7312f5de21d50bc",
+        "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py": "84e2c0868b37c23d54678ca55a3507ceef6a79f4",
         "devsystem/execution_plans/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "11b0a4c84fe4b034a82795d185dbcad24f7797f8",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step4-upstream-blocker-short-circuit.json": "a1c361dcebeabf8d934df2e7df18b22dce1d9e6d",
         "tests/test_devsystem_upstream_blocker_short_circuit_v1.py": "dfe7a98e6d47d47ccd3850a189a452b5848b0b78"
@@ -1719,18 +1719,6 @@
       }
     }
   },
-  "active_thaws": [
-    {
-      "thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP3-BOUNDED-PROOF-R1",
-      "status": "ACTIVE",
-      "target_head_sha": "cf74c2ddc48ab36ff07196faf2f0889c44462d99",
-      "files": {
-        "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py": {
-          "from_blob": "c6a0114a99b5d310c7c5e4bdb7312f5de21d50bc",
-          "to_blob": "84e2c0868b37c23d54678ca55a3507ceef6a79f4"
-        }
-      }
-    }
-  ],
-  "state_hash": "b22fc83d3212884896e1fa20adeea3ce9fe19457be1ca60e8231e0eb9e57ceaa"
+  "active_thaws": [],
+  "state_hash": "3156ade3b118ae9b1038e2bd2ca0cc7e106facf209c945f0cf5673b4fe601cf7"
 }
