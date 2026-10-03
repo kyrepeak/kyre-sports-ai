@@ -10,6 +10,7 @@ def test_repository_fanout_governor_is_green():
     assert result["proof_lanes"]["step7"] == "PATH_SCOPED_AND_STALE_CANCELLED"
     assert result["proof_lanes"]["failure_packet"] == "SOURCE_FAILURE_ONLY"
     assert result["proof_lanes"]["targeted_ci"] == "CENTRAL_BROAD_DISPATCHER_PRESERVED"
+    assert result["proof_lanes"]["permanent_contract"] == "EXACT_PR_HEAD_IDENTITY"
     assert result["proof_lanes"]["wnba_nav_fast_cert"] == "WNBA_PATH_SCOPED"
     assert result["proof_lanes"]["wnba_nav_responsive_cert"] == "WNBA_PATH_SCOPED"
     assert result["proof_lanes"]["workflow_quarantine"] == "WORKFLOW_CHANGE_SAFETY_PRESERVED"
@@ -71,3 +72,14 @@ def test_workflow_change_quarantine_safety_lane_is_preserved():
     ).read_text(encoding="utf-8")
     assert '".github/workflows/**"' in text
     assert "cancel-in-progress: true" in text
+
+
+def test_devsystem_permanent_contract_verifies_exact_pr_head_identity():
+    text = (
+        ROOT / ".github" / "workflows" / "devsystem-targeted-ci.yml"
+    ).read_text(encoding="utf-8")
+    assert "permanent-contract:" in text
+    assert (
+        "ref: ${{ github.event_name == 'pull_request' && "
+        "github.event.pull_request.head.sha || github.sha }}"
+    ) in text

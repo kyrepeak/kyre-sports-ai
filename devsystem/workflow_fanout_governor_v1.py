@@ -60,6 +60,10 @@ def audit_repository(root: Path = ROOT) -> dict[str, Any]:
             and "pull_request:\n    branches: [main]" in targeted_ci
             and "cancel-in-progress: true" in targeted_ci
         ),
+        "permanent_contract_uses_exact_pr_head": (
+            "permanent-contract:" in targeted_ci
+            and "ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" in targeted_ci
+        ),
         "wnba_nav_fast_cert_path_scoped": (
             "pull_request:\n    branches: [main]\n    paths:" in wnba_fast
             and "devsystem/wnba_nav_step6_fast_cert.py" in wnba_fast
@@ -97,6 +101,7 @@ def audit_repository(root: Path = ROOT) -> dict[str, Any]:
             "step7": "PATH_SCOPED_AND_STALE_CANCELLED",
             "failure_packet": "SOURCE_FAILURE_ONLY",
             "targeted_ci": "CENTRAL_BROAD_DISPATCHER_PRESERVED",
+            "permanent_contract": "EXACT_PR_HEAD_IDENTITY",
             "wnba_nav_fast_cert": "WNBA_PATH_SCOPED",
             "wnba_nav_responsive_cert": "WNBA_PATH_SCOPED",
             "workflow_quarantine": "WORKFLOW_CHANGE_SAFETY_PRESERVED",

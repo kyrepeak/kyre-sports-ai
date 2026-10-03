@@ -11,7 +11,8 @@
     "failure_packet_source_workflow": "DevSystem targeted CI",
     "wnba_nav_fast_cert_path_scoped": true,
     "wnba_nav_responsive_cert_path_scoped": true,
-    "workflow_change_quarantine_preserved": true
+    "workflow_change_quarantine_preserved": true,
+    "permanent_contract_exact_pr_head": true
   },
   "safety": {
     "step_2a_required": true,
