@@ -13,6 +13,7 @@ import streamlit as st
 import cfb_top_picks_details_v5 as details
 import cfb_top_picks_engine_v1 as engine
 import cfb_top_picks_page_v4 as base
+import cfb_top_picks_page_v6 as reasoning_owner
 import cfb_top_picks_page_v8 as prior
 
 MODEL_VERSION = "CFB TOP PICKS V9 • RESEARCH V2 STEP 9 FULL-SLATE CERTIFIED"
@@ -42,6 +43,33 @@ def _detail_card(row: dict, detail: dict) -> str:
         raise RuntimeError("Step 9 could not remove the obsolete frozen audit footer.")
     if '<div class="tp4-audit">' in cleaned or "&lt;div class=&quot;tp4-audit" in cleaned:
         raise RuntimeError("Step 9 raw audit markup leak detected.")
+
+    rank = int(row.get("rank") or 0)
+    reasoning = detail.get("market_reasoning") or {}
+    reasoning_status = str(reasoning.get("status") or "").strip().upper()
+    reasoning_token = f'data-testid="cfb-top-picks-market-reasoning-{rank}"'
+    reasoning_count = cleaned.count(reasoning_token)
+
+    if reasoning_count > 1:
+        raise RuntimeError("Step 9 market reasoning preservation produced a duplicate reasoning block.")
+
+    if reasoning_status in {"READY", "PARTIAL"} and reasoning_count == 0:
+        sources_html = prior._sources_html(row, detail)
+        if sources_html not in cleaned:
+            raise RuntimeError(
+                "Step 9 could not find the Sources + Freshness boundary required to restore market reasoning."
+            )
+        reasoning_html = reasoning_owner._market_reasoning_html(row, detail)
+        if reasoning_token not in reasoning_html:
+            raise RuntimeError("Step 9 V6 reasoning owner did not render the expected final reasoning identity.")
+        cleaned = cleaned.replace(sources_html, reasoning_html + "\n" + sources_html, 1)
+        reasoning_count = cleaned.count(reasoning_token)
+
+    if reasoning_status in {"READY", "PARTIAL"} and reasoning_count != 1:
+        raise RuntimeError(
+            "Step 9 failed closed because READY/PARTIAL market reasoning was not preserved exactly once."
+        )
+
     return cleaned
 
 

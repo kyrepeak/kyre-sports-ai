@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 import cfb_top_picks_market_reasoning_v1 as reasoning
+import cfb_top_picks_page_v9 as page_v9
 from devsystem import cfb_top_picks_market_reasoning_repair_step3_v1 as repair
 import streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 as router
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness as wnba_outer
@@ -321,3 +322,128 @@ def test_outer_wnba_shell_guard_keeps_real_wnba_game_pin(monkeypatch):
     assert query["ks_jump_market"] == "PRA"
     assert session["ks_sport_touch"] == "WNBA"
     assert session["ks_wnba_market_touch"] == "PRA"
+
+
+def _real_v9_row() -> dict:
+    return {
+        "rank": 1,
+        "event_id": "401234567",
+        "away": "Away State",
+        "home": "Home Tech",
+        "time": "7:00 PM",
+        "network": "ESPN",
+        "market": "MONEYLINE",
+        "pick": "Away State",
+        "odds": "-115",
+        "probability": 64,
+        "toughness": 3,
+        "toughness_label": "MEDIUM",
+    }
+
+
+def _real_v9_detail() -> dict:
+    detail = _detail("MONEYLINE")
+    detail.update(
+        {
+            "event_id": "401234567",
+            "why": "Verified matchup context supports the selected market.",
+            "benefit": "Legacy benefit input retained only for the V7 transformation.",
+            "history_source": "ESPN exact-team schedule history",
+            "history_status": "VERIFIED_HISTORY",
+            "history_rows": [
+                {"date": "2025-10-01", "away_points": 31, "home_points": 24}
+            ],
+            "meetings": 1,
+            "source_count_verified": 1,
+            "source_count_attempted": 1,
+            "offense_research": {
+                "status": "PARTIAL",
+                "away": {},
+                "home": {},
+                "reasoning": ["Verified offense context remains read-only research."],
+            },
+            "defense_pace_research": {
+                "status": "PARTIAL",
+                "away": {},
+                "home": {},
+                "reasoning": ["Verified defense and pace context remains read-only research."],
+            },
+            "benefits_risks": {
+                "status": "READY",
+                "benefits": [
+                    {
+                        "text": "Verified matchup evidence supports this selection.",
+                        "status": "VERIFIED",
+                        "sources": ["verified source"],
+                        "observed_at": "2026-10-03T20:00:00+00:00",
+                    }
+                ],
+                "risks": [
+                    {
+                        "text": "Variance remains a verified risk.",
+                        "status": "VERIFIED",
+                        "sources": ["verified source"],
+                        "observed_at": "2026-10-03T20:00:00+00:00",
+                    }
+                ],
+            },
+            "source_freshness_audit": {
+                "status": "READY",
+                "sources": [
+                    {
+                        "source": "verified source",
+                        "material_fact_count": 6,
+                        "observed_at": "2026-10-03T20:00:00+00:00",
+                    }
+                ],
+                "material_fact_count": 6,
+                "fallback_used_count": 0,
+                "unavailable_field_count": 0,
+                "violation_count": 0,
+                "projection_weight": 0.0,
+            },
+        }
+    )
+    return detail
+
+
+def test_real_v9_page_html_preserves_market_reasoning_exactly_once():
+    row = _real_v9_row()
+    detail = _real_v9_detail()
+    diag = {"slate_date": "2026-10-03", "games_analyzed": 1}
+
+    html = page_v9._page_html(
+        [row],
+        diag,
+        "2026-10-03",
+        row["event_id"],
+        detail,
+    )
+
+    assert 'data-cfb-top-picks-visual="v5"' in html
+    assert html.count('data-testid="cfb-top-picks-research-v2-step9-marker"') == 1
+    assert 'data-expanded="true"' in html
+    assert "Why This Pick" in html
+    assert "Actual Matchup History" in html
+    assert "Defense + Pace Research" in html
+    assert "Benefits" in html
+    assert "Risks" in html
+    assert "Sources + Freshness" in html
+    assert "Market-Aware Football Reasoning" in html
+    assert html.count('data-testid="cfb-top-picks-market-reasoning-1"') == 1
+    assert 'data-reasoning-status="READY"' in html
+    assert "<h4>Market-Aware Football Reasoning</h4>" in html
+    assert '<div class="tp4-audit">' not in html
+    assert "&lt;div class=&quot;tp4-audit" not in html
+
+
+def test_v9_reasoning_preservation_never_duplicates_existing_v6_surface():
+    row = _real_v9_row()
+    detail = _real_v9_detail()
+
+    html = page_v9._detail_card(row, detail)
+
+    assert html.count('data-testid="cfb-top-picks-market-reasoning-1"') == 1
+    assert 'data-reasoning-status="READY"' in html
+    assert "Sources + Freshness" in html
+    assert '<div class="tp4-audit">' not in html
