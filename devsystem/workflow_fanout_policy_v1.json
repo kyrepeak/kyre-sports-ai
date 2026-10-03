@@ -1,0 +1,20 @@
+{
+  "version": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1_WORKFLOW_FANOUT_GOVERNOR_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "objective": "Prevent unrelated and stale control-plane proof fan-out without weakening required proof.",
+  "central_broad_dispatcher": ".github/workflows/devsystem-targeted-ci.yml",
+  "guards": {
+    "step7_path_scoped": true,
+    "step7_cancel_stale_heads": true,
+    "step7_pr_concurrency_identity": "github.event.pull_request.number",
+    "failure_packet_failure_only": true,
+    "failure_packet_source_workflow": "DevSystem targeted CI"
+  },
+  "safety": {
+    "step_2a_required": true,
+    "frozen_artifact_change_requires_exact_thaw": true,
+    "product_runtime_mutation_allowed": false,
+    "model_projection_mutation_allowed": false,
+    "blind_reruns_allowed": false
+  }
+}

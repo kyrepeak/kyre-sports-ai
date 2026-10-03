@@ -1,0 +1,32 @@
+{
+  "version": "API2_CONTROL_PLANE_EFFICIENCY_V1_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": 1,
+  "total_steps": 7,
+  "mission": "Workflow Fan-Out Governor",
+  "status": "DONE",
+  "base_main_sha": "1a53940520d839adb5838099b678afb1de7760b4",
+  "protected": {
+    "api2_proof_architecture_v1_steps_1_7": true,
+    "product_runtime": true,
+    "model_projection": true
+  },
+  "two_a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "exact_head_merge_required": true
+  },
+  "repair": {
+    "root_cause": "Broad convergence triggers and unconditional failure-packet runner allocation amplify each change into avoidable control-plane work.",
+    "patch": "Path-scope Step-7 convergence, cancel stale Step-7 heads, gate failure-packet runner allocation to failed DevSystem source runs, and permanently audit those contracts."
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
