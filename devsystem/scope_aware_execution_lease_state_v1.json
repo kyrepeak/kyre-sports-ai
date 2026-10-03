@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 191,
-  "generation": 111,
+  "revision": 192,
+  "generation": 112,
   "holders": [
     {
       "owner_id": "chatgpt:monster:cfb-top-picks-repair-step3-public-detail-route-guard-v1",
       "lease_id": "SCOPE-LEASE-CFB-STEP3-PUBLIC-DETAIL-GUARD-R1",
-      "generation": 111,
-      "acquired_at_utc": "2026-10-03T05:02:00Z",
-      "heartbeat_at_utc": "2026-10-03T05:02:00Z",
-      "expires_at_utc": "2026-10-03T06:02:00Z",
+      "generation": 112,
+      "acquired_at_utc": "2026-10-03T05:05:00Z",
+      "heartbeat_at_utc": "2026-10-03T05:05:00Z",
+      "expires_at_utc": "2026-10-03T06:05:00Z",
       "scope": {
         "write_paths": [
           "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json",
@@ -25,7 +25,7 @@
           "domain:cfb",
           "project:cfb-top-picks-repair-step3",
           "repair:public-detail-route-guard",
-          "registry-race:resume-exhausted"
+          "registry-race:wait-reconciliation"
         ],
         "shared_resources": [
           "branch:cfb-top-picks-repair-step3-public-detail-route-guard-r1",
@@ -35,19 +35,20 @@
           "workflow:devsystem-targeted-ci#shard[domain=cfb,step=3]"
         ],
         "resource_identity": {
-          "main:base": "f632efe772284be19c8d9fffcecb476a326d37d2",
-          "branch:head": "f632efe772284be19c8d9fffcecb476a326d37d2",
-          "plan:id": "PLAN-A31037C319000C2D67D36B11",
-          "plan:digest": "sha256:a31037c319000c2d67d36b112929a4bc55540a24ab52b044f4cbd81090dc59c6",
+          "main:base": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
+          "branch:head": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
+          "plan:id": "PLAN-C558C8C8894D0E03DDDF3D0C",
+          "plan:digest": "sha256:c558c8c8894d0e03dddf3d0c51c7acad821b5a9eedb20e309cffbc6c7412e757",
           "repair:step": "3",
           "registry:revision": "118",
           "registry:state_hash": "f0997ba49337b8079c4bb3d478f95a7769741b2845378b3dfe198b5861869b91",
-          "registry:resume_count": "1",
+          "registry:wait_state": "WAIT_REGISTRY_RECONCILIATION",
+          "registry:resume_count": "0",
           "public:failed_run": "37097289180"
         },
         "exclusive": false
       }
     }
   ],
-  "state_hash": "bd6aabf299f3c3005b402116822879bf63a025441b4ed8821ad150ca98c4776f"
+  "state_hash": "0e60d30011f44dc3587ddbd3d8ccceac7c3dfb9c6a4faca5a1942dce02aeeebf"
 }
