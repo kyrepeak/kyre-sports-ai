@@ -1,0 +1,59 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": "5/7",
+  "mission": "State-Aware Proof Contracts",
+  "base_main_sha": "ce44638d3f051e7f9ef6ec25b74fafd6e5b0506f",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "model_projection": false,
+    "frozen_parent_mutation": false,
+    "files": [
+      ".github/workflows/api2-control-plane-efficiency-v1-step5-state-aware-proof-contracts.yml",
+      "devsystem/state_aware_proof_contract_v1.py",
+      "devsystem/execution_plans/api2-control-plane-efficiency-v1-step5-state-aware-proof-contracts.json",
+      "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step5-state-aware-proof-contracts.json",
+      "tests/test_devsystem_state_aware_proof_contract_v1.py"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "protect_steps_1_4_frozen": true,
+    "rollback_main_sha": "ce44638d3f051e7f9ef6ec25b74fafd6e5b0506f"
+  },
+  "proof_contract": {
+    "objective": "Test stable valid states instead of temporary conditions.",
+    "states": [
+      "READY",
+      "WAIT",
+      "RECONCILING",
+      "FAILED",
+      "BLOCKED"
+    ],
+    "transient_observations_non_authoritative": true,
+    "wait_is_valid_nonfailure_state": true,
+    "reconciliation_requires_state_hash_progress": true,
+    "terminal_failure_requires_classified_domain": true,
+    "unknown_state_fails_closed": true,
+    "mutation_authority_granted": false
+  },
+  "proof": [
+    "focused Step-5 contract tests",
+    "frozen Step-3 WAIT tests",
+    "frozen Step-4 reconciliation tests",
+    "frozen registry verify-head",
+    "exact PR head GREEN",
+    "DevSystem final gate GREEN",
+    "merge exact certified head",
+    "merged-main Step-5 GREEN",
+    "freeze registry read-back"
+  ]
+}
