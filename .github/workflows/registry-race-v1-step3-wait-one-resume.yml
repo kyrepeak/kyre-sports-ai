@@ -1,0 +1,62 @@
+name: Registry Race V1 Step 3 WAIT One Resume
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/registry-race-v1-step3-wait-one-resume.yml"
+      - "devsystem/registry_wait_resume_v1.py"
+      - "devsystem/execution_plans/registry-race-v1-step3-wait-one-resume.json"
+      - "devsystem/task_ledgers/registry-race-v1-step3-wait-one-resume.json"
+      - "tests/test_devsystem_registry_wait_resume_v1.py"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/registry-race-v1-step3-wait-one-resume.yml"
+      - "devsystem/registry_wait_resume_v1.py"
+      - "devsystem/execution_plans/registry-race-v1-step3-wait-one-resume.json"
+      - "devsystem/task_ledgers/registry-race-v1-step3-wait-one-resume.json"
+      - "tests/test_devsystem_registry_wait_resume_v1.py"
+      - ".github/workflows/devsystem-targeted-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: registry-race-v1-step3-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wait-one-resume:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Step 3 WAIT + one-resume contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m py_compile devsystem/registry_wait_resume_v1.py
+          python -m pytest -q             tests/test_devsystem_registry_wait_resume_v1.py             tests/test_devsystem_descendant_thaw_awareness_v1.py             tests/test_devsystem_registry_reconciliation_barrier_v1.py
+          python devsystem/registry_wait_resume_v1.py self-test
+      - name: Prove Steps 1 and 2 remain frozen through WAIT gate
+        run: |
+          bash devsystem/registry_wait_resume_gate_v1.sh
+          echo "REGISTRY_RACE_V1_STEP3_FROZEN_PARENTS_GREEN"
+      - name: Certify exact PR head
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "REGISTRY_RACE_V1_STEP3_BRANCH_GREEN"
+          echo "REGISTRY_RACE_V1_STEP3_READY_TO_MERGE"
+      - name: Certify merged main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "REGISTRY_RACE_V1_STEP3_MAIN_GREEN"
+          echo "REGISTRY_RACE_REPAIR_V1_COMPLETE"

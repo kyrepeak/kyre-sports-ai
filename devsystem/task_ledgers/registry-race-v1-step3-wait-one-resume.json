@@ -1,0 +1,38 @@
+{
+  "version": "REGISTRY_RACE_REPAIR_V1_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Registry Race Repair V1",
+  "step": 3,
+  "total_steps": 3,
+  "mission": "WAIT Registry State + One Resume",
+  "status": "DONE",
+  "base_main_sha": "3bddb34bd784489e8c20370d961018d1b869a363",
+  "problem": "DevSystem currently retries the same stale frozen-registry verification and converts no registry progress into a hard failure, creating false-red cascades during legitimate cross-workstream registry lag.",
+  "root_cause": "Steps 1 and 2 can now identify a legitimate inherited thaw and the need for registry reconciliation, but the shared DevSystem workflow still uses the old verify/sleep/verify loop and has no WAIT state with a single state-change resume budget.",
+  "patch": "Add a read-only WAIT + one-resume contract and wire it into the frozen DevSystem registry gate under one exact-head thaw. A legitimate inherited thaw enters WAIT_REGISTRY_RECONCILIATION; only authoritative registry state-hash movement permits one resume and one frozen verification. Unchanged state never reruns proof, a second resume is forbidden, and unauthorized drift remains a hard failure. Shared registry state watching is centralized in devsystem/registry_wait_resume_gate_v1.sh so the focused proof and shared DevSystem path cannot drift.",
+  "protected": {
+    "step1_frozen": true,
+    "step2_frozen": true,
+    "product_runtime": true,
+    "model_projection": true,
+    "exact_head_thaw_only_for_devsystem_workflow": true,
+    "step_2a": true
+  },
+  "acceptance": {
+    "legitimate_inherited_thaw_waits": true,
+    "wait_not_failure": true,
+    "unchanged_registry_no_proof_rerun": true,
+    "registry_hash_change_required": true,
+    "exactly_one_resume": true,
+    "exactly_one_post_resume_frozen_verification": true,
+    "second_resume_blocked": true,
+    "unauthorized_drift_blocked": true,
+    "mutation_authority_granted": false,
+    "shared_wait_gate_used_by_focused_and_devsystem": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
