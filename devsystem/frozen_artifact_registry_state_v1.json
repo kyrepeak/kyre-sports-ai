@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 96,
-  "source_main_sha": "6a70bdd7e760aa689dfab6c8e541ba09e6a45317",
+  "revision": 97,
+  "source_main_sha": "fafec87b889d91693658b05f6f6aab86b2d46150",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1643,8 +1643,21 @@
         "devsystem/workflow_fanout_policy_v1.json": "5fb31429a40ae1bdd8e54a9e80102978df0da13f",
         "tests/test_devsystem_workflow_fanout_governor_v1.py": "1989b7a12396059ed2140de7fe1b1a88f286112e"
       }
+    },
+    "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP2": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP2",
+      "source_main_sha": "fafec87b889d91693658b05f6f6aab86b2d46150",
+      "artifacts": {
+        ".github/workflows/api2-control-plane-efficiency-v1-step2-root-cause-collapse.yml": "52db7c4f647839a8e1ccd4ee55c29093d91cf25b",
+        "devsystem/failure_packet_v1.py": "a87bb3aec8e6d66f13280b18c88974298fa5cc96",
+        "devsystem/root_cause_collapse_engine_v1.py": "0a52a98499d5ba2a0b9beb9b29c2b9c10afd99b5",
+        "devsystem/execution_plans/api2-control-plane-efficiency-v1-step2-root-cause-collapse.json": "c2d2c83caf2b1bfc074a51c67d66fef9910906bd",
+        "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step2-root-cause-collapse.json": "ab8c288764c2b319348f9a43591cb31fea0b81f5",
+        "tests/test_devsystem_root_cause_collapse_engine_v1.py": "184c5fcfa41e4b7fd149b343303e8855796e5309"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "5ab11189d4d594dd1693530ad933598b6c731308ce3dd391a86cf3f65c6e02f8"
+  "state_hash": "00808a5ec800daf9f451dd544ddd9f1d3e5ffb924691f15c590ac258c3b89403"
 }
