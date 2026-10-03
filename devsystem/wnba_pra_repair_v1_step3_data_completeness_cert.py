@@ -41,6 +41,8 @@ PUBLIC_HOST = "https://pickvault.streamlit.app"
 PROOF_SELECTOR = '[data-wnba-pra-repair-v1-step3="data-completeness"]'
 DEPLOYMENT_ATTEMPTS = 12
 DEPLOYMENT_RETRY_SECONDS = 15.0
+GAME_SETUP_TIMEOUT_SECONDS = 120.0
+PLAYER_SETUP_TIMEOUT_SECONDS = 120.0
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
@@ -162,27 +164,6 @@ def _true(marker, attr: str) -> bool:
     return str(marker.get_attribute(attr) or "").strip().lower() == "true"
 
 
-def _wait_game_shell(page, timeout_seconds: float = 12.0):
-    started = time.monotonic()
-    deadline = started + timeout_seconds
-    last = ""
-    while time.monotonic() < deadline:
-        frame, _ = nav._find_app_frame(
-            page,
-            timeout_seconds=min(8.0, max(2.0, deadline - time.monotonic())),
-        )
-        try:
-            body = nav._body(frame)
-            back = frame.get_by_role("button", name="← Back to WNBA Slate", exact=True)
-            if "WNBA GAME CENTER" in body.upper() and back.count() > 0:
-                return frame, time.monotonic() - started
-            last = body[:2000]
-        except Exception:
-            pass
-        page.wait_for_timeout(300)
-    raise BrowserQAFailure(f"Step-3 game shell did not render. body={last!r}")
-
-
 def _open_player_on_date(page, route_url: str, target_date: str):
     page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
     frame, slate_seconds = speed9._prime_wnba_pra_route(page, route_url)
@@ -202,18 +183,30 @@ def _open_player_on_date(page, route_url: str, target_date: str):
         started = time.monotonic()
         buttons.nth(index).click()
         try:
-            frame, _ = _wait_game_shell(page)
+            # Canonical Page-2 readiness is player-control readiness, not shell-only
+            # readiness. The frozen Step-2 production proof has legitimately taken
+            # >20s, so use the repository-established 120s game setup contract.
+            frame, _ = nav._wait_page(
+                page,
+                "game",
+                timeout_seconds=GAME_SETUP_TIMEOUT_SECONDS,
+            )
             game_seconds = time.monotonic() - started
             player_buttons = frame.get_by_role("button", name=re.compile(r"^Open .+ PRA →$"))
-            if player_buttons.count() > 0:
-                player_started = time.monotonic()
-                player_buttons.first.click()
-                frame, _ = nav._wait_page(page, "player", timeout_seconds=45.0)
-                player_seconds = time.monotonic() - player_started
-                print(f"WNBA_PRA_REPAIR_V1_STEP3_PROOF_DATE={target_date}")
-                print(f"WNBA_PRA_REPAIR_V1_STEP3_PROOF_GAME_INDEX={index}")
-                return frame, slate_seconds, game_seconds, player_seconds
-            failures.append(f"game[{index}]:no_tappable_players")
+            if player_buttons.count() < 1:
+                raise BrowserQAFailure("Step-3 canonical Game Center has no tappable player controls.")
+
+            player_started = time.monotonic()
+            player_buttons.first.click()
+            frame, _ = nav._wait_page(
+                page,
+                "player",
+                timeout_seconds=PLAYER_SETUP_TIMEOUT_SECONDS,
+            )
+            player_seconds = time.monotonic() - player_started
+            print(f"WNBA_PRA_REPAIR_V1_STEP3_PROOF_DATE={target_date}")
+            print(f"WNBA_PRA_REPAIR_V1_STEP3_PROOF_GAME_INDEX={index}")
+            return frame, slate_seconds, game_seconds, player_seconds
         except Exception as exc:
             failures.append(f"game[{index}]:{type(exc).__name__}:{str(exc)[:160]}")
 
