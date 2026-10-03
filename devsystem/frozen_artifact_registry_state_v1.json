@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 95,
-  "source_main_sha": "1a53940520d839adb5838099b678afb1de7760b4",
+  "revision": 96,
+  "source_main_sha": "6a70bdd7e760aa689dfab6c8e541ba09e6a45317",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1548,7 +1548,7 @@
       "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP2",
       "source_main_sha": "60392dccd676f6e8df6e7ea37fd087e2bea6fbc1",
       "artifacts": {
-        ".github/workflows/devsystem-targeted-ci.yml": "6b596676d5966f53c39f0258039c69a1c33bd9e2",
+        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
         ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml": "be8d0b985f9c2e96fbf89abf2b07c2a1e1433595",
         "devsystem/change_classifier_v1.py": "6f151c5ece852a461e37af1a319712f0ec384890",
         "devsystem/monster_speed_v3_step3_lane_split_v1.py": "5ddb14e2d8881a0213baf56e289d04eb60a688b9",
@@ -1594,7 +1594,7 @@
       "source_main_sha": "322bc62bb4d6021b8958dd49ed8f48558972d153",
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": "fa12ddbb637f92afb6e75f7526021607c446c8f1",
-        ".github/workflows/devsystem-targeted-ci.yml": "6b596676d5966f53c39f0258039c69a1c33bd9e2",
+        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
         "devsystem/api2_failure_domain_router_v1.py": "0ccf296bac93f1034f0168f71a1f69994114ca93",
         "devsystem/execution_plans/api2-proof-architecture-v1-step5-failure-domain-separation.json": "89e68da1fc3b2af1dcd1e1a3cf0ecefdabf67577",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step5-failure-domain-separation.json": "5403ca83fea3dc90ea74f17a7d3c6da9f718bd9f",
@@ -1607,7 +1607,7 @@
       "source_main_sha": "2b164deee3747ef607a5bca7787de0becb848359",
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml": "657d4095083891b528c3dbd7ffa67bb50408f224",
-        ".github/workflows/devsystem-targeted-ci.yml": "6b596676d5966f53c39f0258039c69a1c33bd9e2",
+        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
         "devsystem/api2_frozen_registry_lifecycle_v1.py": "0810a07e178c9fb64077d32b7ed5c4f8a0ba9695",
         "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json": "5f638b44d02ef8fc6fab6af0ea4ae350706649e2",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json": "87ce5594fee40dee81063bc52478ce92e3584b2c",
@@ -1619,30 +1619,32 @@
       "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP7",
       "source_main_sha": "7ffa51a7b93404d1151e4d81c2f0539612f50614",
       "artifacts": {
-        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "e7410a1225456b234bbba383592c9fdeeb5ac95a",
+        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "1daa66a7e9421916c06a9e9338305784102462b7",
         "devsystem/api2_proof_convergence_v1.py": "7b131a44b8eeeddc61350c7e581b37fb56fa71d0",
         "devsystem/execution_plans/api2-proof-architecture-v1-step7-end-to-end-convergence.json": "4b76cb80e77341a41b6ad8bf6cb4800c853a28ff",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step7-end-to-end-convergence.json": "62a3a73efcf8f3a728f92762d6b32829dfac9db2",
         "tests/test_devsystem_api2_proof_convergence_v1.py": "0451cc7564b5d0200548ac8b6b9804355ca56d6b"
       }
-    }
-  },
-  "active_thaws": [
-    {
-      "thaw_id": "THAW-API2-CONTROL-PLANE-EFFICIENCY-V1-STEP1-STEP7",
-      "status": "ACTIVE",
-      "target_head_sha": "28af54b8c59ef4905ca315a6f95b4367b1554fb5",
-      "files": {
-        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": {
-          "from_blob": "e7410a1225456b234bbba383592c9fdeeb5ac95a",
-          "to_blob": "1daa66a7e9421916c06a9e9338305784102462b7"
-        },
-        ".github/workflows/devsystem-targeted-ci.yml": {
-          "from_blob": "6b596676d5966f53c39f0258039c69a1c33bd9e2",
-          "to_blob": "16ef05c962ef41935b6c711ed26b54091059a780"
-        }
+    },
+    "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1",
+      "source_main_sha": "6a70bdd7e760aa689dfab6c8e541ba09e6a45317",
+      "artifacts": {
+        ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml": "0ab2d1d0a4c0f527bac4e3b32899b838914a4a08",
+        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "1daa66a7e9421916c06a9e9338305784102462b7",
+        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
+        ".github/workflows/devsystem-failure-packet-v1.yml": "c7b251b61c126e99ae912fd82157b7c9c29e107f",
+        ".github/workflows/wnba-nav-step6-fast-cert.yml": "ae0dffbae828a97ca7409a808475892902eb5857",
+        ".github/workflows/wnba-nav-step6-responsive-cert.yml": "50cede7754cc19ea60d305a49986be66d645be6a",
+        "devsystem/execution_plans/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json": "e964975da513e33d33c3d7cd03c2b07abab07158",
+        "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json": "c5f23e14fed539532cf9e879e40ff89714cdce39",
+        "devsystem/workflow_fanout_governor_v1.py": "6b1562c2118e1e6b3fbd679659ef4cb0440e6f2e",
+        "devsystem/workflow_fanout_policy_v1.json": "5fb31429a40ae1bdd8e54a9e80102978df0da13f",
+        "tests/test_devsystem_workflow_fanout_governor_v1.py": "1989b7a12396059ed2140de7fe1b1a88f286112e"
       }
     }
-  ],
-  "state_hash": "efdb17729d5b475e32a591ad88ff1b71c16b71fc536b93a59dbe7538a3b26956"
+  },
+  "active_thaws": [],
+  "state_hash": "5ab11189d4d594dd1693530ad933598b6c731308ce3dd391a86cf3f65c6e02f8"
 }
