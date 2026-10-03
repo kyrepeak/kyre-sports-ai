@@ -1,0 +1,39 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": "2/7",
+  "mission": "Root-Cause Collapse Engine",
+  "base_main_sha": "6a70bdd7e760aa689dfab6c8e541ba09e6a45317",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "model_projection": false,
+    "frozen_artifact_mutation": false,
+    "files": [
+      ".github/workflows/api2-control-plane-efficiency-v1-step2-root-cause-collapse.yml",
+      "devsystem/failure_packet_v1.py",
+      "devsystem/root_cause_collapse_engine_v1.py",
+      "devsystem/execution_plans/api2-control-plane-efficiency-v1-step2-root-cause-collapse.json",
+      "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step2-root-cause-collapse.json",
+      "tests/test_devsystem_root_cause_collapse_engine_v1.py"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "protect_step1_frozen": true
+  },
+  "proof": {
+    "focused_contract": true,
+    "failure_packet_integration": true,
+    "exact_head_registry_verification": true,
+    "merged_main_reproof": true,
+    "final_registry_freeze": true
+  }
+}

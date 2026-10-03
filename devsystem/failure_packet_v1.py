@@ -42,6 +42,16 @@ def _load_history():
     return module
 
 
+def _load_root_cause_collapse():
+    path = ROOT / "devsystem" / "root_cause_collapse_engine_v1.py"
+    spec = importlib.util.spec_from_file_location("root_cause_collapse_engine_v1", path)
+    if not spec or not spec.loader:
+        raise RuntimeError("Unable to load root_cause_collapse_engine_v1")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _needs_with_failed_step_evidence(
     needs: dict[str, Any],
     failed_steps: dict[str, list[str]] | None,
@@ -71,9 +81,11 @@ def build_packet(
     triage_module = _load_triage()
     fingerprint_module = _load_fingerprint()
     history_module = _load_history()
+    collapse_module = _load_root_cause_collapse()
     enriched_needs = _needs_with_failed_step_evidence(needs, failed_steps)
     report = triage_module.triage(enriched_needs)
     fingerprint_module.attach_fingerprints(report)
+    collapse_summary = collapse_module.collapse_failures(report)
     history_summary = history_module.attach_recurrence(
         report,
         history_packets,
@@ -94,6 +106,7 @@ def build_packet(
         "lane_results": lane_results,
         "failed_steps": failed_steps or {},
         "history": history_summary,
+        "root_cause_collapse": collapse_summary,
         "triage": report,
     }
 
@@ -156,6 +169,23 @@ def render_markdown(packet: dict[str, Any]) -> str:
             f"- **Retry reason:** {primary.get('retry_reason', 'insufficient evidence for retry guidance')}",
             f"- **Inspect first:** {primary['inspect_first']}",
         ])
+
+    collapse = packet.get("root_cause_collapse") or {}
+    root = collapse.get("primary_root") or {}
+    collapsed = collapse.get("collapsed_failures") or []
+    repair_queue = collapse.get("repair_queue") or []
+    lines.extend([
+        "",
+        "## Root-Cause Collapse",
+        "",
+        f"- **Decision:** {collapse.get('decision', 'unavailable')}",
+        f"- **Independent root count:** {collapse.get('root_count', 0)}",
+        f"- **Primary root lane:** {root.get('job') or 'none'}",
+        f"- **Root cause ID:** {root.get('root_cause_id') or 'none'}",
+        f"- **Collapsed downstream/duplicate lanes:** {', '.join(item.get('job', '') for item in collapsed) if collapsed else 'none'}",
+        f"- **Repair queue:** {', '.join(item.get('job', '') for item in repair_queue) if repair_queue else 'none'}",
+        f"- **Next legal action:** {collapse.get('next_legal_action', 'none')}",
+    ])
 
     failures = triage.get("failures") or []
     lines.extend(["", "## All Failed Lanes", ""])
