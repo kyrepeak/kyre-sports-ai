@@ -192,6 +192,16 @@ def diagnose_evidence(text: str | None) -> dict[str, str] | None:
 
 
 
+def _load_wait_state_machine():
+    path = Path(__file__).with_name("wait_state_machine_v1.py")
+    spec = importlib.util.spec_from_file_location("wait_state_machine_v1_runtime", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("API2 WAIT state machine unavailable")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _attach_failure_owner(failure: dict[str, str]) -> dict[str, str]:
     """Attach Step-4 ownership before any remediation can be selected."""
     path = Path(__file__).with_name("failure_ownership_engine_v1.py")
@@ -215,6 +225,8 @@ def _attach_failure_owner(failure: dict[str, str]) -> dict[str, str]:
 
 def triage(needs: dict[str, Any]) -> dict[str, Any]:
     failures: list[dict[str, str]] = []
+    waits: list[dict[str, Any]] = []
+    wait_module = _load_wait_state_machine()
     for name, payload in sorted(needs.items()):
         payload = payload or {}
         result = str(payload.get("result") or "unknown")
@@ -222,9 +234,8 @@ def triage(needs: dict[str, Any]) -> dict[str, Any]:
             continue
         route = _route_for(name)
         failure: dict[str, str] = {"job": name, "result": result, **route}
-        evidence = diagnose_evidence(
-            str(payload.get("evidence") or payload.get("log_excerpt") or "")
-        )
+        raw_evidence = str(payload.get("evidence") or payload.get("log_excerpt") or "")
+        evidence = diagnose_evidence(raw_evidence)
         if evidence:
             # Evidence refines the failure mode and next action; the lane remains the owner.
             failure.update(evidence)
@@ -238,20 +249,54 @@ def triage(needs: dict[str, Any]) -> dict[str, Any]:
                 "retry_policy": "investigate-first",
                 "retry_reason": "lane-level failure alone is not enough evidence to safely recommend a retry",
             })
+        wait_decision = wait_module.classify_wait(
+            job_name=name,
+            layer=route["layer"],
+            evidence_signal=failure.get("evidence_signal", "none"),
+            evidence_text=raw_evidence,
+        )
+        if wait_decision is not None:
+            waiting = dict(failure)
+            waiting.update({
+                "disposition": "WAIT",
+                "wait_state": wait_decision["state"],
+                "wait_owner": wait_decision["owner"],
+                "wait_state_token": wait_decision["state_token"],
+                "wake_condition": wait_decision["wake_condition"],
+                "recheck_policy": wait_decision["recheck_policy"],
+                "blind_retry_allowed": wait_decision["blind_retry_allowed"],
+                "next_legal_action": wait_decision["next_legal_action"],
+            })
+            waits.append(waiting)
+            continue
         failures.append(_attach_failure_owner(failure))
 
     primary = failures[0] if failures else None
+    status = "FAILURES_FOUND" if failures else ("WAITING" if waits else "GREEN")
     return {
-        "status": "FAILURES_FOUND" if failures else "GREEN",
+        "status": status,
         "failure_count": len(failures),
+        "wait_count": len(waits),
         "primary": primary,
         "failures": failures,
+        "waits": waits,
     }
 
 
 def render_summary(report: dict[str, Any]) -> str:
     if report["status"] == "GREEN":
         return "DEVSYSTEM_FAILURE_TRIAGE_GREEN no failed lanes"
+    if report["status"] == "WAITING":
+        waiting = (report.get("waits") or [{}])[0]
+        return (
+            "DEVSYSTEM_FAILURE_TRIAGE_WAITING "
+            f"primary={waiting.get('job')} "
+            f"state={waiting.get('wait_state')} "
+            f"owner={waiting.get('wait_owner')} "
+            f"wake={waiting.get('wake_condition')} "
+            f"recheck_policy={waiting.get('recheck_policy')} "
+            f"blind_retry_allowed={waiting.get('blind_retry_allowed')}"
+        )
     primary = report["primary"] or {}
     return (
         "DEVSYSTEM_FAILURE_TRIAGE "
