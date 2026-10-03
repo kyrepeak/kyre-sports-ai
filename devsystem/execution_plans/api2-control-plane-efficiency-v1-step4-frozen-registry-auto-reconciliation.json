@@ -1,0 +1,49 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": "4/7",
+  "mission": "Frozen Registry Auto-Reconciliation",
+  "base_main_sha": "b1bb9c7376e9585915b7e72ef836656439c2a94b",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "model_projection": false,
+    "frozen_parent_mutation": false,
+    "files": [
+      ".github/workflows/api2-control-plane-efficiency-v1-step4-frozen-registry-auto-reconciliation.yml",
+      "devsystem/frozen_registry_auto_reconciler_v1.py",
+      "devsystem/execution_plans/api2-control-plane-efficiency-v1-step4-frozen-registry-auto-reconciliation.json",
+      "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step4-frozen-registry-auto-reconciliation.json",
+      "tests/test_devsystem_frozen_registry_auto_reconciler_v1.py"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "protect_steps_1_3_frozen": true
+  },
+  "reconciliation_contract": {
+    "every_mismatch_requires_exact_thaw": true,
+    "thaw_target_must_be_newly_merged": true,
+    "all_frozen_owners_move_atomically": true,
+    "obsolete_thaws_retired": true,
+    "unrelated_thaws_preserved": true,
+    "frozen_deletion_blocks": true,
+    "state_hash_must_advance": true,
+    "retry_only_after_state_hash_change": true,
+    "planner_auto_mutates": false
+  },
+  "proof": {
+    "focused_contract": true,
+    "live_registry_head_audit": true,
+    "exact_head_registry_verification": true,
+    "merged_main_reproof": true,
+    "final_registry_freeze": true
+  }
+}
