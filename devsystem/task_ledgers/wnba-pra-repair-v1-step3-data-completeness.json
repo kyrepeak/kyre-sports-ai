@@ -88,5 +88,32 @@
     "events": [],
     "consumed_receipts": []
   },
-  "closeout_note": "Task ledger is DONE for PR action-ledger contract only. GREEN + FROZEN remains unclaimed until exact-head, DevSystem final gate, exact-head merge, merged-main production proof, terminal receipt, and lease release complete."
+  "closeout_note": "Task ledger is DONE for PR action-ledger contract only. GREEN + FROZEN remains unclaimed until exact-head, DevSystem final gate, exact-head merge, merged-main production proof, terminal receipt, and lease release complete.",
+  "proof_closeout_trigger": {
+    "status": "EXACT_HEAD_REPROOF_REQUIRED",
+    "base_main_sha": "fafec87b889d91693658b05f6f6aab86b2d46150",
+    "prior_pr_head_sha": "2e188bea47ca9b1a44ab24b609192fd26c085b19",
+    "reason": "Step 2 is GREEN + FROZEN, so Step 3 downstream proof is legally released. This ledger receipt pairs with the non-runtime Step-3 upstream-release contract test and satisfies the V2 action-ledger requirement for exactly one changed task ledger.",
+    "mutation_scope": [
+      "tests/test_wnba_pra_repair_v1_step3.py",
+      "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+    ],
+    "product_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_math_changed": false,
+    "ranking_changed": false,
+    "qualification_changed": false,
+    "frozen_artifact_changed": false,
+    "green_plus_frozen_claimed": false,
+    "next_legal_action": "EXACT_HEAD_PROOF_THEN_DEVSYSTEM_FINAL_GATE_THEN_MERGE_EXACT_CERTIFIED_HEAD_THEN_MERGED_MAIN_PRODUCTION_PROOF",
+    "forward_port": {
+      "reason": "Non-overlapping main drift after exact-head proof; Step 2A forward-port preserves only the Step-3 test + ledger diff.",
+      "from_base_sha": "6a70bdd7e760aa689dfab6c8e541ba09e6a45317",
+      "to_base_sha": "fafec87b889d91693658b05f6f6aab86b2d46150",
+      "previous_certified_head_sha": "2e188bea47ca9b1a44ab24b609192fd26c085b19",
+      "drift_overlap_with_step3": false
+    }
+  }
 }

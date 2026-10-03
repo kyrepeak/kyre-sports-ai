@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import wnba_pra_repair_v1_step3_data as data
+from devsystem.upstream_blocker_short_circuit_v1 import evaluate_upstream_dependency
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "wnba_pra_repair_v1_step3_data.py"
@@ -14,6 +15,14 @@ LEDGER = ROOT / "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completene
 PLAN = ROOT / "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
 WORKFLOW = ROOT / ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
 APP = ROOT / "app.py"
+
+
+def test_step3_upstream_step2_green_frozen_releases_downstream_proof():
+    gate = evaluate_upstream_dependency("wnba-pra-repair-v1-step3-public")
+    assert gate["status"] == "GREEN"
+    assert gate["decision"] == "PROCEED_DOWNSTREAM_PROOF"
+    assert gate["downstream_proof_allowed"] is True
+    assert gate["upstream_owner"] == "wnba-pra-repair-v1-step2-team-identity"
 
 
 def test_step3_opponent_is_selected_game_truth_not_consumer_top5():
