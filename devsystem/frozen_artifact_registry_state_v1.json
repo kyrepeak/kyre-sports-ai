@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 104,
-  "source_main_sha": "32a478be301b76af2550754c40e1719a95cb9571",
+  "revision": 105,
+  "source_main_sha": "94bd2940b2c1faa8e549fe4e578caa0e21e83356",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1693,8 +1693,20 @@
         "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step5-state-aware-proof-contracts.json": "76cea7a048f270fadd2dc589b8098c374a814712",
         "tests/test_devsystem_state_aware_proof_contract_v1.py": "6e61394ef444a09a341ac76b4a28769645b3a137"
       }
+    },
+    "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP6": {
+      "status": "FROZEN",
+      "checkpoint_id": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP6",
+      "source_main_sha": "94bd2940b2c1faa8e549fe4e578caa0e21e83356",
+      "artifacts": {
+        ".github/workflows/api2-control-plane-efficiency-v1-step6-chaos-adversarial-certification.yml": "71ab8e6d662f7a123442d42c7d3d927b1b5e8e6d",
+        "devsystem/api2_chaos_adversarial_certifier_v1.py": "c0deec121f7cc249a63ca97245be295da1259cf5",
+        "devsystem/execution_plans/api2-control-plane-efficiency-v1-step6-chaos-adversarial-certification.json": "ec0f6868334dfc3cc61aa71a65ed73eb549c61d2",
+        "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step6-chaos-adversarial-certification.json": "4bb6a556c02e59b05fc1c382011946351bb0722f",
+        "tests/test_devsystem_api2_chaos_adversarial_certifier_v1.py": "1d3651f0d6b53f4dd528da920037441ba3b7fe4f"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "03962b0877c891bd2eaf56189c3a52061130fe3608f82aae701e24b5069701dc"
+  "state_hash": "21a4d75162040ad344ed8b070fb14692d32149ac643dbfb164979ec746d39591"
 }
