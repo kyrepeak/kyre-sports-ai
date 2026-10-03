@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 114,
-  "source_main_sha": "3bddb34bd784489e8c20370d961018d1b869a363",
+  "revision": 115,
+  "source_main_sha": "d9270a72810869aa48367743d010f6416c365cfe",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1548,7 +1548,7 @@
       "checkpoint_id": "API2_PROOF_ARCHITECTURE_V1_STEP2",
       "source_main_sha": "60392dccd676f6e8df6e7ea37fd087e2bea6fbc1",
       "artifacts": {
-        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
+        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
         ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml": "be8d0b985f9c2e96fbf89abf2b07c2a1e1433595",
         "devsystem/change_classifier_v1.py": "6f151c5ece852a461e37af1a319712f0ec384890",
         "devsystem/monster_speed_v3_step3_lane_split_v1.py": "5ddb14e2d8881a0213baf56e289d04eb60a688b9",
@@ -1594,7 +1594,7 @@
       "source_main_sha": "322bc62bb4d6021b8958dd49ed8f48558972d153",
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": "fa12ddbb637f92afb6e75f7526021607c446c8f1",
-        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
+        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
         "devsystem/api2_failure_domain_router_v1.py": "0ccf296bac93f1034f0168f71a1f69994114ca93",
         "devsystem/execution_plans/api2-proof-architecture-v1-step5-failure-domain-separation.json": "89e68da1fc3b2af1dcd1e1a3cf0ecefdabf67577",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step5-failure-domain-separation.json": "5403ca83fea3dc90ea74f17a7d3c6da9f718bd9f",
@@ -1607,7 +1607,7 @@
       "source_main_sha": "2b164deee3747ef607a5bca7787de0becb848359",
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml": "657d4095083891b528c3dbd7ffa67bb50408f224",
-        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
+        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
         "devsystem/api2_frozen_registry_lifecycle_v1.py": "0810a07e178c9fb64077d32b7ed5c4f8a0ba9695",
         "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json": "5f638b44d02ef8fc6fab6af0ea4ae350706649e2",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json": "87ce5594fee40dee81063bc52478ce92e3584b2c",
@@ -1633,7 +1633,7 @@
       "artifacts": {
         ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml": "0ab2d1d0a4c0f527bac4e3b32899b838914a4a08",
         ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "1daa66a7e9421916c06a9e9338305784102462b7",
-        ".github/workflows/devsystem-targeted-ci.yml": "16ef05c962ef41935b6c711ed26b54091059a780",
+        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
         ".github/workflows/devsystem-failure-packet-v1.yml": "c7b251b61c126e99ae912fd82157b7c9c29e107f",
         ".github/workflows/wnba-nav-step6-fast-cert.yml": "ae0dffbae828a97ca7409a808475892902eb5857",
         ".github/workflows/wnba-nav-step6-responsive-cert.yml": "50cede7754cc19ea60d305a49986be66d645be6a",
@@ -1743,18 +1743,6 @@
       }
     }
   },
-  "active_thaws": [
-    {
-      "thaw_id": "THAW-REGISTRY-RACE-V1-STEP3-DEVSYSTEM-WORKFLOW-R1",
-      "status": "ACTIVE",
-      "target_head_sha": "0d67220485029361035f1e85aee87374331d68d9",
-      "files": {
-        ".github/workflows/devsystem-targeted-ci.yml": {
-          "from_blob": "16ef05c962ef41935b6c711ed26b54091059a780",
-          "to_blob": "eaf314176069a90ab4de25a9f73933b708951768"
-        }
-      }
-    }
-  ],
-  "state_hash": "82c678338583de7dacaac168d64a3b35b5dfb43fb61aa915fb7631ec70d3f895"
+  "active_thaws": [],
+  "state_hash": "ae4de829b5dd8180207cc70057bbe03d62ab47554b1f7cf3cf484124081b864a"
 }
