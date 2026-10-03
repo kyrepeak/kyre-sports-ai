@@ -1,0 +1,66 @@
+{
+  "version": "MONSTER_V8_EXECUTION_PLAN_COMPILER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API2 Control-Plane Efficiency V1",
+  "step": "6/7",
+  "mission": "Chaos / Adversarial Certification",
+  "base_main_sha": "32a478be301b76af2550754c40e1719a95cb9571",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "model_projection": false,
+    "frozen_parent_mutation": false,
+    "files": [
+      ".github/workflows/api2-control-plane-efficiency-v1-step6-chaos-adversarial-certification.yml",
+      "devsystem/api2_chaos_adversarial_certifier_v1.py",
+      "devsystem/execution_plans/api2-control-plane-efficiency-v1-step6-chaos-adversarial-certification.json",
+      "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step6-chaos-adversarial-certification.json",
+      "tests/test_devsystem_api2_chaos_adversarial_certifier_v1.py"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "protect_steps_1_5_frozen": true,
+    "rollback_main_sha": "32a478be301b76af2550754c40e1719a95cb9571"
+  },
+  "certification_contract": {
+    "reuse_frozen_monster_v8_chaos_harness": true,
+    "base_adversarial_scenarios": 11,
+    "api2_state_integration_scenarios": 5,
+    "combined_required_scenarios": 16,
+    "duplicate_chats": true,
+    "stale_sha": true,
+    "dropped_connection": true,
+    "delayed_acknowledgement": true,
+    "old_writer": true,
+    "frozen_file_edit": true,
+    "deployment_drift": true,
+    "dead_runner": true,
+    "duplicate_merge": true,
+    "slow_live_run": true,
+    "worker_recovery": true,
+    "fail_closed": true,
+    "idempotent": true,
+    "nonduplicative": true,
+    "step_2a_preserved": true,
+    "mutation_authority_granted": false
+  },
+  "proof": [
+    "focused Step-6 crash-test workflow GREEN",
+    "frozen MONSTER chaos harness GREEN",
+    "frozen API2 Step-5 state-aware proof GREEN",
+    "Steps 1-5 registry verify-head GREEN",
+    "API2 convergence GREEN",
+    "DevSystem final gate GREEN",
+    "terminal proof receipt GREEN",
+    "merge exact certified head",
+    "merged-main Step-6 GREEN",
+    "freeze registry read-back"
+  ]
+}
