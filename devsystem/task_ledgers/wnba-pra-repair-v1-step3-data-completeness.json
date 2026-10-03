@@ -56,7 +56,7 @@
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
     "upstream_step2_recovery_not_touched": true,
-    "next_legal_action": "EXACT_HEAD_PROOF_THEN_DEVSYSTEM_FINAL_GATE_THEN_MERGE_EXACT_CERTIFIED_HEAD_THEN_MERGED_MAIN_PRODUCTION_PROOF"
+    "next_legal_action": "ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_BOUNDED_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
   },
   "acceptance": {
     "opponent_identity_consumer_independent": true,
@@ -149,5 +149,37 @@
     "prior_step2_game_ready_seconds": 21.547,
     "exact_thaw_required": true,
     "next_legal_action": "EXACT_HEAD_REPROOF_THEN_DEVSYSTEM_FINAL_GATE_THEN_MERGE_THEN_ONE_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
+  },
+  "bounded_production_verifier_repair_r2": {
+    "failure_class": "CONTROL_PLANE_VERIFIER_TIMEOUT",
+    "failed_merged_main_run_id": 37088042891,
+    "failed_public_job_id": 111102323375,
+    "failed_main_sha": "ce44638d3f051e7f9ef6ec25b74fafd6e5b0506f",
+    "observable_signal": "The single authoritative Page-3 proof consumed the full 35-minute job window and was cancelled before emitting production evidence.",
+    "root_cause": "Step-3 searched multiple candidate dates and multiple games while allowing up to 120 seconds for Game Center plus 120 seconds for Player readiness on each attempt, so verifier fan-out could exceed the workflow budget without proving a product failure.",
+    "patch": [
+      "Use the canonical current WNBA date from nav._find_game_date() instead of scanning historical candidate dates.",
+      "Bound each date to at most two real games.",
+      "Bound Game Center and Player readiness to 90 seconds each.",
+      "Reduce outer deployment attempts to two with a five-second retry pause.",
+      "Preserve canonical player-ready nav._wait_page contracts and make no product/runtime/model changes."
+    ],
+    "rollback_anchor_main_sha": "94bd2940b2c1faa8e549fe4e578caa0e21e83356",
+    "mutation_scope": [
+      "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py",
+      "tests/test_wnba_pra_repair_v1_step3.py",
+      "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+    ],
+    "product_runtime_changed": false,
+    "frozen_runtime_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_math_changed": false,
+    "ranking_changed": false,
+    "qualification_changed": false,
+    "no_streamlit_reboot": true,
+    "no_unchanged_rerun": true,
+    "next_legal_action": "ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_BOUNDED_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
   }
 }

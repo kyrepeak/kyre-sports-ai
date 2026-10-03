@@ -117,10 +117,16 @@ def test_step3_cert_cannot_freeze_from_source_only_proof():
 
 def test_step3_production_waits_for_canonical_player_ready_game_center():
     source = CERT.read_text(encoding="utf-8")
-    assert "GAME_SETUP_TIMEOUT_SECONDS = 120.0" in source
-    assert "PLAYER_SETUP_TIMEOUT_SECONDS = 120.0" in source
+    assert "GAME_SETUP_TIMEOUT_SECONDS = 90.0" in source
+    assert "PLAYER_SETUP_TIMEOUT_SECONDS = 90.0" in source
+    assert "MAX_GAME_ATTEMPTS_PER_DATE = 2" in source
+    assert "DEPLOYMENT_ATTEMPTS = 2" in source
+    assert "DEPLOYMENT_RETRY_SECONDS = 5.0" in source
     assert 'timeout_seconds=GAME_SETUP_TIMEOUT_SECONDS' in source
     assert 'timeout_seconds=PLAYER_SETUP_TIMEOUT_SECONDS' in source
+    assert "range(min(game_count, MAX_GAME_ATTEMPTS_PER_DATE))" in source
+    assert "target_date = nav._find_game_date()" in source
+    assert "for target_date in _candidate_dates()" not in source
     assert "_wait_game_shell(page)" not in source
     assert "canonical Game Center has no tappable player controls" in source
 
