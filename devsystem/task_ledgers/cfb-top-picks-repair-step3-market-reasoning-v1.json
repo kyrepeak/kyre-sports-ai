@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 12,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -9,7 +9,7 @@
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
   "root_cause": "The merged-main CFB board and live reasoning engine were GREEN, but a Top Picks detail click reruns beneath the active WNBA PRA Step-3 wrapper. That outer wrapper can pin universal ks_jump_sport/ks_jump_market to WNBA/PRA before the inherited CFB Step-9 router renders. The valid CFB-specific route query survives, but competing universal jump state can steal shell ownership during the rerun and prevent the finished V9 reasoning detail surface from appearing.",
   "failure_owner": "CONTROL_PLANE",
-  "patch": "CFB Step-9 router only: when and only when a valid CFB Top Picks detail query is present, remove the competing universal ks_jump_sport/ks_jump_market query keys and re-prime the existing frozen CFB Top Picks session state before delegating. WNBA code, app.py, model/data/ranking/probability/selection logic, and deployment epoch remain unchanged.",
+  "patch": "CFB Step-9 router only: on a valid CFB Top Picks detail rerun, remove competing universal ks_jump_sport/ks_jump_market state and re-prime the frozen CFB Top Picks route before delegating. Registry Race V1 has now reconciled revision 119 and consumed its single resume. WNBA code, app.py, model/data/ranking/probability/selection logic, and redeploy epoch remain unchanged.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -39,7 +39,12 @@
     "exact_head_required": true,
     "merged_main_public_required": true,
     "no_stale_base_merge": true,
-    "registry_resume_count": 1
+    "registry_resume_count": 1,
+    "authoritative_branch": "cfb-top-picks-repair-step3-public-detail-route-guard-r1",
+    "one_authoritative_async_chain": true,
+    "duplicate_pr_forbidden": true,
+    "duplicate_run_forbidden": true,
+    "registry_resume_max": 1
   },
   "exit_contract": {
     "focused_exact_head_live_10_of_10_green": true,
@@ -199,8 +204,8 @@
     "proof_reuse_decision": "STATIC_CONTENT_MAY_REUSE_BY_IDENTITY; FULL_EXACT_HEAD_PROOF_REQUIRED_ON_NEW_MERGE_CANDIDATE"
   },
   "monster_v9_public_detail_route_guard": {
-    "plan_id": "PLAN-C558C8C8894D0E03DDDF3D0C",
-    "plan_digest": "sha256:c558c8c8894d0e03dddf3d0c51c7acad821b5a9eedb20e309cffbc6c7412e757",
+    "plan_id": "PLAN-877D9733A30F62E39282A70F",
+    "plan_digest": "sha256:877d9733a30f62e39282a70f65f4e4416d149e5901f8d2586e255bd7388d0f8a",
     "base_main_sha": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
     "branch": "cfb-top-picks-repair-step3-public-detail-route-guard-r1",
     "source_failed_merged_main_run_id": 37097289180,
@@ -213,8 +218,8 @@
     "inherited_thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP3-OFFDAY-SLATE-R3",
     "inherited_thaw_target_sha": "18f5b95fd74a9d1d562a5a4f26523cdc1fb6ddc3",
     "inherited_thaw_to_blob": "ba50fcb2386fe419849363b4acc87f02267f1880",
-    "registry_wait_state": "WAIT_REGISTRY_RECONCILIATION",
-    "registry_resume_count": 0,
+    "registry_wait_state": "RESUMED_ONCE_REGISTRY_READY",
+    "registry_resume_count": 1,
     "max_registry_resume_count": 1,
     "wnba_code_modified": false,
     "app_py_modified": false,
@@ -222,6 +227,10 @@
     "deployment_epoch_modified": false,
     "exact_head_proof_required": true,
     "merged_main_public_proof_required": true,
-    "proof_state": "STAGED_WAIT_REGISTRY"
+    "proof_state": "READY_FOR_EXACT_HEAD_PROOF",
+    "registry_revision_ready": 119,
+    "registry_state_hash_ready": "7d2b8aeb60b868590ca29f2810e555b390df2cf3691b61f4f7063f91212c0c52",
+    "registry_source_main_sha_ready": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
+    "registry_active_thaws_ready": []
   }
 }
