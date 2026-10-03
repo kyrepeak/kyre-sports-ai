@@ -8,7 +8,10 @@
     "step7_cancel_stale_heads": true,
     "step7_pr_concurrency_identity": "github.event.pull_request.number",
     "failure_packet_failure_only": true,
-    "failure_packet_source_workflow": "DevSystem targeted CI"
+    "failure_packet_source_workflow": "DevSystem targeted CI",
+    "wnba_nav_fast_cert_path_scoped": true,
+    "wnba_nav_responsive_cert_path_scoped": true,
+    "workflow_change_quarantine_preserved": true
   },
   "safety": {
     "step_2a_required": true,

@@ -37,6 +37,9 @@ def audit_repository(root: Path = ROOT) -> dict[str, Any]:
     step7 = _read(root / ".github" / "workflows" / "api2-proof-architecture-v1-step7-end-to-end-convergence.yml")
     failure_packet = _read(root / ".github" / "workflows" / "devsystem-failure-packet-v1.yml")
     targeted_ci = _read(root / ".github" / "workflows" / "devsystem-targeted-ci.yml")
+    wnba_fast = _read(root / ".github" / "workflows" / "wnba-nav-step6-fast-cert.yml")
+    wnba_responsive = _read(root / ".github" / "workflows" / "wnba-nav-step6-responsive-cert.yml")
+    workflow_quarantine = _read(root / ".github" / "workflows" / "monster-speed-v3-step1-quarantine-v1.yml")
 
     checks = {
         "step7_pr_path_scoped": (
@@ -56,6 +59,20 @@ def audit_repository(root: Path = ROOT) -> dict[str, Any]:
             "name: DevSystem targeted CI" in targeted_ci
             and "pull_request:\n    branches: [main]" in targeted_ci
             and "cancel-in-progress: true" in targeted_ci
+        ),
+        "wnba_nav_fast_cert_path_scoped": (
+            "pull_request:\n    branches: [main]\n    paths:" in wnba_fast
+            and "devsystem/wnba_nav_step6_fast_cert.py" in wnba_fast
+            and "wnba_pra_responsive_v2_step6.py" in wnba_fast
+        ),
+        "wnba_nav_responsive_cert_path_scoped": (
+            "pull_request:\n    branches: [main]\n    paths:" in wnba_responsive
+            and "devsystem/wnba_nav_step6_responsive_cert.py" in wnba_responsive
+            and "devsystem/wnba_nav_step6_responsive_harness.py" in wnba_responsive
+        ),
+        "workflow_change_quarantine_preserved": (
+            '".github/workflows/**"' in workflow_quarantine
+            and "cancel-in-progress: true" in workflow_quarantine
         ),
         "product_runtime_untouched_by_policy": (
             policy["safety"]["product_runtime_mutation_allowed"] is False
@@ -80,6 +97,9 @@ def audit_repository(root: Path = ROOT) -> dict[str, Any]:
             "step7": "PATH_SCOPED_AND_STALE_CANCELLED",
             "failure_packet": "SOURCE_FAILURE_ONLY",
             "targeted_ci": "CENTRAL_BROAD_DISPATCHER_PRESERVED",
+            "wnba_nav_fast_cert": "WNBA_PATH_SCOPED",
+            "wnba_nav_responsive_cert": "WNBA_PATH_SCOPED",
+            "workflow_quarantine": "WORKFLOW_CHANGE_SAFETY_PRESERVED",
         },
         "network_calls": NETWORK_CALLS,
         "auto_mutate": AUTO_MUTATE,

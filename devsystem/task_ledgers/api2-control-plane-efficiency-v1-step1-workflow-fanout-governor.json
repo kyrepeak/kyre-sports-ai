@@ -21,12 +21,16 @@
     "exact_head_merge_required": true
   },
   "repair": {
-    "root_cause": "Broad convergence triggers and unconditional failure-packet runner allocation amplify each change into avoidable control-plane work.",
-    "patch": "Path-scope Step-7 convergence, cancel stale Step-7 heads, gate failure-packet runner allocation to failed DevSystem source runs, and permanently audit those contracts."
+    "root_cause": "Broad convergence triggers, unconditional failure-packet runner allocation, and WNBA navigation certs without PR path filters amplify unrelated control-plane changes into avoidable workflow fan-out.",
+    "patch": "Path-scope Step-7 convergence and both WNBA Navigation Step-6 certs, cancel stale Step-7 heads, gate failure-packet runner allocation to failed DevSystem source runs, preserve the workflow-change quarantine safety lane, and permanently audit those contracts."
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
+  },
+  "proof_evidence": {
+    "unrelated_wnba_navigation_runs_observed_on_initial_step1_head": 2,
+    "workflow_change_quarantine_relevant_and_preserved": true
   }
 }
