@@ -21,6 +21,9 @@ CFB_V5_ROOT = '[data-testid="cfb-top-picks-step5-root"][data-cfb-top-picks-visua
 CFB_V9_MARKER = '[data-testid="cfb-top-picks-research-v2-step9-marker"]'
 REASONING = '[data-testid^="cfb-top-picks-market-reasoning-"][data-reasoning-status]'
 DETAIL_LINK = 'a[href*="top_pick_detail="]'
+EXPANDED_DETAIL = 'details.tp4-details[data-expanded="true"]'
+DETAIL_PANEL = '[data-testid^="cfb-top-picks-detail-panel-"]'
+LOADING_TEXT = "Loading verified historical context for this selected matchup only."
 ROUTE_KEYS = ("ks_sport","ks_cfb_market","top_pick_detail","ks_jump_sport","ks_jump_market")
 WNBA_MARKERS = {
     "repair_step3": '[data-wnba-pra-repair-v1-step3="data-completeness"]',
@@ -119,6 +122,30 @@ def _capture(page: Any, frame: Any, *, path: str, before: dict[str, str], href: 
     wnba_total = sum(wnba.values())
     owner = "CFB_TOP_PICKS" if cfb_v5 else ("WNBA_PRA" if wnba_total else "UNKNOWN")
     expected_detail = _clean(_query(resolved).get("top_pick_detail"))
+
+    current_detail_ids = []
+    panel_text = ""
+    for current in page.frames:
+        try:
+            links = current.locator(DETAIL_LINK)
+            for index in range(links.count()):
+                value = _clean(links.nth(index).get_attribute("href"))
+                event_id = _clean(_query(value).get("top_pick_detail"))
+                if event_id:
+                    current_detail_ids.append(event_id)
+        except Exception:
+            pass
+        try:
+            panels = current.locator(DETAIL_PANEL)
+            if panels.count() > 0 and not panel_text:
+                panel_text = _clean(panels.first.inner_text(timeout=2500))
+        except Exception:
+            pass
+
+    expanded_detail_count = _all_count(page, EXPANDED_DETAIL)
+    detail_panel_count = _all_count(page, DETAIL_PANEL)
+    selected_event_still_collapsed = expected_detail in current_detail_ids
+    loading_placeholder_present = LOADING_TEXT in panel_text
     if route["ks_sport"] != "College Football":
         divergent = "ks_sport"
     elif route["ks_cfb_market"] != "Top Picks":
@@ -127,6 +154,10 @@ def _capture(page: Any, frame: Any, *, path: str, before: dict[str, str], href: 
         divergent = "top_pick_detail"
     elif wnba_total:
         divergent = "wnba_pra_owner_with_cfb_query"
+    elif selected_event_still_collapsed and expanded_detail_count == 0:
+        divergent = "selected_event_not_expanded"
+    elif detail_panel_count > 0 and loading_placeholder_present:
+        divergent = "detail_stuck_loading"
     elif cfb_v5 == 0:
         divergent = "cfb_v5_root_missing"
     elif cfb_v9 == 0:
@@ -152,6 +183,12 @@ def _capture(page: Any, frame: Any, *, path: str, before: dict[str, str], href: 
         "heading": heading,
         "wnba_pra_marker_counts": wnba,
         "visible_root_owner": owner,
+        "card_detail_event_ids_after": sorted(set(current_detail_ids)),
+        "selected_event_still_collapsed": selected_event_still_collapsed,
+        "expanded_detail_count": expanded_detail_count,
+        "detail_panel_count": detail_panel_count,
+        "loading_placeholder_present": loading_placeholder_present,
+        "detail_panel_text_start": panel_text[:500],
         "first_divergent_state": divergent,
     }
 
