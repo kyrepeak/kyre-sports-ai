@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
@@ -7,9 +7,9 @@
   "total_steps": 5,
   "status": "DONE",
   "problem": "The frozen Step-6 synthetic market-reasoning cert and the final Step-9 live full-slate cert could both pass while a live ranked pick still had PARTIAL reasoning, because the final live validator required signal shape/text/freshness but did not require market_reasoning.status READY or reject UNAVAILABLE/SOURCE_CONFLICT_REVIEW required signals.",
-  "root_cause": "DevSystem false-red was caused by legitimate WNBA frozen-registry lag inherited from authoritative main. Registry Race Repair V1 observed the authoritative registry hash advance, active thaw retirement, and source_main_sha catch up; exactly one resume is now legal. Main also advanced and changed DevSystem proof infrastructure, so the same CFB branch must be forward-synced and reproven once.",
-  "failure_owner": "REGISTRY_STATE",
-  "patch": "Forward-sync the same CFB branch once onto the new disjoint WNBA main descendant, preserve redeploy epoch 3, recompile the plan, and run one fresh exact-head proof pair because the merge candidate SHA changes. Registry Race resume count remains 1/1 and is not repeated.",
+  "root_cause": "The merged-main CFB board and live reasoning engine were GREEN, but a Top Picks detail click reruns beneath the active WNBA PRA Step-3 wrapper. That outer wrapper can pin universal ks_jump_sport/ks_jump_market to WNBA/PRA before the inherited CFB Step-9 router renders. The valid CFB-specific route query survives, but competing universal jump state can steal shell ownership during the rerun and prevent the finished V9 reasoning detail surface from appearing.",
+  "failure_owner": "CONTROL_PLANE",
+  "patch": "CFB Step-9 router only: when and only when a valid CFB Top Picks detail query is present, remove the competing universal ks_jump_sport/ks_jump_market query keys and re-prime the existing frozen CFB Top Picks session state before delegating. WNBA code, app.py, model/data/ranking/probability/selection logic, and deployment epoch remain unchanged.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -26,9 +26,9 @@
   },
   "regression_debt": {
     "created": true,
-    "owner_class": "DEPLOYMENT",
-    "permanent_test": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py",
-    "permanent_contract": "devsystem/cfb_top_picks_research_v2_step9_full_slate_v1.py",
+    "owner_class": "CONTROL_PLANE",
+    "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
+    "permanent_contract": "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py",
     "state": "PENDING_PROOF"
   },
   "step2a": {
@@ -197,5 +197,31 @@
       "devsystem_workflow_overlap": false
     },
     "proof_reuse_decision": "STATIC_CONTENT_MAY_REUSE_BY_IDENTITY; FULL_EXACT_HEAD_PROOF_REQUIRED_ON_NEW_MERGE_CANDIDATE"
+  },
+  "monster_v9_public_detail_route_guard": {
+    "plan_id": "PLAN-C558C8C8894D0E03DDDF3D0C",
+    "plan_digest": "sha256:c558c8c8894d0e03dddf3d0c51c7acad821b5a9eedb20e309cffbc6c7412e757",
+    "base_main_sha": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
+    "branch": "cfb-top-picks-repair-step3-public-detail-route-guard-r1",
+    "source_failed_merged_main_run_id": 37097289180,
+    "source_failed_job_id": 111129704326,
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_REASONING_NOT_READY",
+    "failure_class": "CONTROL_PLANE",
+    "rollback_anchor_sha": "f632efe772284be19c8d9fffcecb476a326d37d2",
+    "registry_revision_at_stage": 118,
+    "registry_state_hash_at_stage": "f0997ba49337b8079c4bb3d478f95a7769741b2845378b3dfe198b5861869b91",
+    "inherited_thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP3-OFFDAY-SLATE-R3",
+    "inherited_thaw_target_sha": "18f5b95fd74a9d1d562a5a4f26523cdc1fb6ddc3",
+    "inherited_thaw_to_blob": "ba50fcb2386fe419849363b4acc87f02267f1880",
+    "registry_wait_state": "WAIT_REGISTRY_RECONCILIATION",
+    "registry_resume_count": 0,
+    "max_registry_resume_count": 1,
+    "wnba_code_modified": false,
+    "app_py_modified": false,
+    "product_model_modified": false,
+    "deployment_epoch_modified": false,
+    "exact_head_proof_required": true,
+    "merged_main_public_proof_required": true,
+    "proof_state": "STAGED_WAIT_REGISTRY"
   }
 }
