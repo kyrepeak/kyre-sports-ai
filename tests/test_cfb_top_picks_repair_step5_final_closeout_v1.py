@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from devsystem import cfb_top_picks_repair_step5_final_closeout_v1 as cert
+
+
+WORKFLOW = Path(".github/workflows/cfb-top-picks-repair-step5-final-closeout-v1.yml").read_text(
+    encoding="utf-8"
+)
 
 
 def test_step5_final_closeout_is_proof_only_and_keeps_api2_separate():
@@ -70,3 +77,8 @@ def test_step5_live_payload_fails_closed_if_prior_cert_is_not_green():
         assert "STEP5_STEP3_NOT_GREEN" in str(exc)
     else:
         raise AssertionError("Step 5 accepted a non-green Step 3 proof")
+
+
+def test_step5_pr_proof_checks_out_exact_authoritative_head():
+    assert "github.event.pull_request.head.sha || github.sha" in WORKFLOW
+    assert "ref: ${{ github.event.pull_request.head.sha || github.sha }}" in WORKFLOW
