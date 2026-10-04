@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-repair-step4-detail-integrity-v1",
+  "title": "CFB Top Picks Repair Step 4 — Why, Actual Matchup History, Benefits Integrity",
+  "project": "CFB Top Picks Repair Mission",
+  "step": "4/5",
+  "status": "DONE",
+  "source_main_sha": "2bbc552ad95a2d89ed82e312445ac33ae17cf9af",
+  "problem": "The original Step-4 tap-to-expand Why / Actual Matchup History / Benefits contract existed historically but had never been re-certified or frozen against the current repaired V9/V5 Top Picks stack after Steps 1-3 were repaired and frozen.",
+  "root_cause": "The legacy Step-4 verifier targeted the old V4 page/router ownership and manual-only workflow, so it could not serve as current proof for the final V9 page or the current V5 detail builder.",
+  "patch": "Add proof-only Step-4 certification against current production owners. Certify all 10 live ranked picks for exact event/team identity, terminal non-fabricated history state, zero history/sportsbook influence, and the visible Why This Pick / Actual Matchup History / Benefits sections. On merged main, certify the real public tap-to-expand flow and preserve the frozen Step-3 Market-Aware Football Reasoning surface. No product logic is modified.",
+  "acceptance": {
+    "current_v9_page_owner": true,
+    "current_v5_detail_owner": true,
+    "top10_details_certified": 10,
+    "tap_to_expand_ranked_matchup": true,
+    "why_this_pick_section": true,
+    "actual_matchup_history_section": true,
+    "benefits_section": true,
+    "exact_espn_event_identity_required": true,
+    "exact_espn_team_ids_required": true,
+    "history_status_terminal": true,
+    "no_history_requires_verified_source_exhaustion": true,
+    "history_projection_weight": 0,
+    "history_selection_weight": 0,
+    "history_ranking_weight": 0,
+    "sportsbook_projection_weight": 0,
+    "public_production_proof_required": true,
+    "step3_reasoning_preserved": true,
+    "no_history_fabrication": true
+  },
+  "protected": {
+    "step1_history_router": true,
+    "step2_defense_pace": true,
+    "step3_market_reasoning": true,
+    "router": true,
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "ranking": true,
+    "selection": true,
+    "sportsbook": true,
+    "api2": true
+  },
+  "proof_reuse": {
+    "merged_main_devsystem_run": 37241133481,
+    "merged_main_step3_public_run": 37241133495,
+    "existing_full_slate_10_of_10_details_green": true,
+    "existing_history_and_benefits_proven": true,
+    "new_step4_specific_visible_section_proof_required": true
+  },
+  "proof_state": "PENDING_EXACT_HEAD_PROOF",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
