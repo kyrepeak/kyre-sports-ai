@@ -1,0 +1,101 @@
+name: CFB Top Picks Repair Step 5 Final Closeout
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/cfb_top_picks_repair_step5_final_closeout_v1.py"
+      - "tests/test_cfb_top_picks_repair_step5_final_closeout_v1.py"
+      - "devsystem/task_ledgers/cfb-top-picks-repair-step5-final-closeout-v1.json"
+      - ".github/workflows/cfb-top-picks-repair-step5-final-closeout-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "devsystem/cfb_top_picks_repair_step5_final_closeout_v1.py"
+      - "tests/test_cfb_top_picks_repair_step5_final_closeout_v1.py"
+      - "devsystem/task_ledgers/cfb-top-picks-repair-step5-final-closeout-v1.json"
+      - ".github/workflows/cfb-top-picks-repair-step5-final-closeout-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-top-picks-repair-step5-final-closeout-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore shared hot Python environment
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
+      - name: Build environment on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_requirements.lock
+          .venv-browser-qa/bin/python -m playwright install chromium
+      - name: Activate environment
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+      - name: Static Step 5 final-closeout contract
+        run: |
+          python -m pytest -q tests/test_cfb_top_picks_repair_step5_final_closeout_v1.py
+      - name: Live repaired-stack closeout
+        if: github.event_name != 'pull_request' || success()
+        run: python -m devsystem.cfb_top_picks_repair_step5_final_closeout_v1
+      - name: Start branch Streamlit
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p artifacts/cfb-top-picks-repair-step5-final-closeout
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/cfb-top-picks-repair-step5-final-closeout/streamlit.log 2>&1 &
+          echo $! > /tmp/cfb_top_picks_repair_step5_pid
+      - name: Branch 390 768 1440 visual and detail proof
+        if: github.event_name == 'pull_request'
+        run: |
+          python devsystem/cfb_top_picks_step5_visual_cert_v1.py \
+            --base-url http://127.0.0.1:8501 \
+            --mode branch \
+            --artifact-dir artifacts/cfb-top-picks-repair-step5-final-closeout
+      - name: Merged-main public visual/detail proof
+        if: github.event_name == 'push'
+        run: |
+          python devsystem/cfb_top_picks_step5_visual_cert_v1.py \
+            --base-url https://pickvault.streamlit.app \
+            --mode public \
+            --artifact-dir artifacts/cfb-top-picks-repair-step5-final-closeout-public
+      - name: Merged-main public repaired-detail proof
+        if: github.event_name == 'push'
+        run: |
+          python -m devsystem.cfb_top_picks_repair_step4_detail_integrity_v1 \
+            --public \
+            --base-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/cfb-top-picks-repair-step5-final-closeout-public
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfb-top-picks-repair-step5-final-closeout-${{ github.run_id }}
+          path: artifacts/cfb-top-picks-repair-step5-final-closeout*
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Stop branch Streamlit
+        if: always() && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          if [ -f /tmp/cfb_top_picks_repair_step5_pid ]; then
+            kill "$(cat /tmp/cfb_top_picks_repair_step5_pid)" 2>/dev/null || true
+          fi
