@@ -125,12 +125,12 @@ def render_top_picks_page() -> None:
 
     board = st.empty()
     initial = _loading_detail(selected_row) if selected_row is not None else None
-    board.markdown(_page_html(picks, diag, slate_day, selected_event, initial), unsafe_allow_html=True)
+    board.html(_page_html(picks, diag, slate_day, selected_event, initial))
 
     if selected_row is not None:
         with st.spinner("Loading verified matchup research..."):
             selected_detail = details.build_pick_detail(selected_row, slate_day)
-        board.markdown(_page_html(picks, diag, slate_day, selected_event, selected_detail), unsafe_allow_html=True)
+        board.html(_page_html(picks, diag, slate_day, selected_event, selected_detail))
 
     if not picks:
         st.markdown(
