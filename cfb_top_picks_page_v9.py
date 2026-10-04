@@ -36,6 +36,38 @@ _AUDIT_BLOCK = re.compile(
 )
 
 
+def _preserve_market_reasoning_surface(html: str, row: dict, detail: dict, *, boundary: str) -> str:
+    rank = int(row.get("rank") or 0)
+    reasoning = detail.get("market_reasoning") or {}
+    reasoning_status = str(reasoning.get("status") or "").strip().upper()
+    reasoning_token = f'data-testid="cfb-top-picks-market-reasoning-{rank}"'
+    reasoning_count = html.count(reasoning_token)
+
+    if reasoning_count > 1:
+        raise RuntimeError(
+            f"Step 9 {boundary} market reasoning preservation produced a duplicate reasoning block."
+        )
+
+    if reasoning_status in {"READY", "PARTIAL"} and reasoning_count == 0:
+        sources_html = prior._sources_html(row, detail)
+        if sources_html not in html:
+            raise RuntimeError(
+                f"Step 9 {boundary} could not find the Sources + Freshness boundary required to restore market reasoning."
+            )
+        reasoning_html = reasoning_owner._market_reasoning_html(row, detail)
+        if reasoning_token not in reasoning_html:
+            raise RuntimeError("Step 9 V6 reasoning owner did not render the expected final reasoning identity.")
+        html = html.replace(sources_html, reasoning_html + "\n" + sources_html, 1)
+        reasoning_count = html.count(reasoning_token)
+
+    if reasoning_status in {"READY", "PARTIAL"} and reasoning_count != 1:
+        raise RuntimeError(
+            f"Step 9 {boundary} failed closed because READY/PARTIAL market reasoning was not preserved exactly once."
+        )
+
+    return html
+
+
 def _detail_card(row: dict, detail: dict) -> str:
     html = prior._detail_card(row, detail)
     cleaned, count = _AUDIT_BLOCK.subn("", html, count=1)
@@ -43,34 +75,7 @@ def _detail_card(row: dict, detail: dict) -> str:
         raise RuntimeError("Step 9 could not remove the obsolete frozen audit footer.")
     if '<div class="tp4-audit">' in cleaned or "&lt;div class=&quot;tp4-audit" in cleaned:
         raise RuntimeError("Step 9 raw audit markup leak detected.")
-
-    rank = int(row.get("rank") or 0)
-    reasoning = detail.get("market_reasoning") or {}
-    reasoning_status = str(reasoning.get("status") or "").strip().upper()
-    reasoning_token = f'data-testid="cfb-top-picks-market-reasoning-{rank}"'
-    reasoning_count = cleaned.count(reasoning_token)
-
-    if reasoning_count > 1:
-        raise RuntimeError("Step 9 market reasoning preservation produced a duplicate reasoning block.")
-
-    if reasoning_status in {"READY", "PARTIAL"} and reasoning_count == 0:
-        sources_html = prior._sources_html(row, detail)
-        if sources_html not in cleaned:
-            raise RuntimeError(
-                "Step 9 could not find the Sources + Freshness boundary required to restore market reasoning."
-            )
-        reasoning_html = reasoning_owner._market_reasoning_html(row, detail)
-        if reasoning_token not in reasoning_html:
-            raise RuntimeError("Step 9 V6 reasoning owner did not render the expected final reasoning identity.")
-        cleaned = cleaned.replace(sources_html, reasoning_html + "\n" + sources_html, 1)
-        reasoning_count = cleaned.count(reasoning_token)
-
-    if reasoning_status in {"READY", "PARTIAL"} and reasoning_count != 1:
-        raise RuntimeError(
-            "Step 9 failed closed because READY/PARTIAL market reasoning was not preserved exactly once."
-        )
-
-    return cleaned
+    return _preserve_market_reasoning_surface(cleaned, row, detail, boundary="detail-card")
 
 
 def _loading_detail(row: dict) -> dict:
@@ -89,6 +94,12 @@ def _page_html(picks, diag, slate_day, selected_event="", selected_detail=None) 
             if frozen not in html:
                 raise RuntimeError("Step 9 could not find frozen Step-8 detail card.")
             html = html.replace(frozen, _detail_card(selected, selected_detail), 1)
+            html = _preserve_market_reasoning_surface(
+                html,
+                selected,
+                selected_detail,
+                boundary="final-page",
+            )
 
     root = 'data-cfb-top-picks-visual="v5">'
     if root not in html:
@@ -137,6 +148,6 @@ def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo
 __all__ = [
     "CSS", "FINAL_CERT_PROJECTION_INFLUENCE", "MAY_MODIFY_PROBABILITY",
     "MAY_MODIFY_RANKING", "MAY_MODIFY_SELECTION", "MODEL_VERSION", "PAGE_MARKER",
-    "SPORTSBOOK_PROJECTION_INFLUENCE", "_detail_card", "_loading_detail",
+    "SPORTSBOOK_PROJECTION_INFLUENCE", "_detail_card", "_loading_detail", "_preserve_market_reasoning_surface",
     "_page_html", "render_cfb_hub", "render_top_picks_page",
 ]
