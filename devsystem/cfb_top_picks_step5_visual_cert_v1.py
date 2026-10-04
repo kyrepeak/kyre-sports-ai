@@ -119,7 +119,6 @@ def _certify_board(page, base_url: str, width: int, height: int, artifacts: Path
     for marker in (
         "Top Picks",
         "10 Best Daily College Football Picks",
-        "Tap a matchup for Why • History • Benefits",
     ):
         assert marker in body, (width, marker)
 
@@ -132,6 +131,9 @@ def _certify_board(page, base_url: str, width: int, height: int, artifacts: Path
     assert root.locator(CARD).count() == 10
     links = root.locator(OPEN_LINK)
     assert links.count() == 10
+    for i in range(links.count()):
+        label = links.nth(i).get_attribute("aria-label") or ""
+        assert "Why History Benefits" in label, (width, i, label)
     _assert_no_overflow(frame)
     _assert_cards_inside_viewport(frame, width)
 
