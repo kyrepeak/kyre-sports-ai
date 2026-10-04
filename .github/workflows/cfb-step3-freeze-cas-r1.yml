@@ -1,0 +1,188 @@
+name: CFB Step 3 Final Frozen Registry CAS R1
+
+on:
+  push:
+    branches:
+      - cfb-step3-freeze-cas-r1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cfb-step3-final-registry-freeze
+  cancel-in-progress: false
+
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: CAS freeze CFB Top Picks Repair Step 3
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          REGISTRY_REF="refs/heads/monster-frozen-artifact-registry"
+          REGISTRY_PATH="devsystem/frozen_artifact_registry_state_v1.json"
+          EXPECTED_REVISION="119"
+          EXPECTED_STATE_HASH="7d2b8aeb60b868590ca29f2810e555b390df2cf3691b61f4f7063f91212c0c52"
+          MERGED_MAIN="2bbc552ad95a2d89ed82e312445ac33ae17cf9af"
+
+          git fetch origin "$REGISTRY_REF"
+          EXPECTED_REGISTRY_HEAD="$(git rev-parse FETCH_HEAD)"
+          echo "EXPECTED_REGISTRY_HEAD=$EXPECTED_REGISTRY_HEAD"
+
+          rm -rf /tmp/cfb-step3-freeze-registry
+          git worktree add --detach /tmp/cfb-step3-freeze-registry "$EXPECTED_REGISTRY_HEAD"
+
+          REGISTRY_FILE="/tmp/cfb-step3-freeze-registry/$REGISTRY_PATH"
+          export REGISTRY_FILE EXPECTED_REVISION EXPECTED_STATE_HASH MERGED_MAIN
+
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from copy import deepcopy
+          from pathlib import Path
+
+          path = Path(os.environ["REGISTRY_FILE"])
+          registry = json.loads(path.read_text(encoding="utf-8"))
+          expected_revision = int(os.environ["EXPECTED_REVISION"])
+          expected_hash = os.environ["EXPECTED_STATE_HASH"]
+          merged_main = os.environ["MERGED_MAIN"]
+
+          def canonical(payload):
+              return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+          def state_hash(payload):
+              body = deepcopy(payload)
+              body.pop("state_hash", None)
+              return hashlib.sha256(canonical(body).encode("utf-8")).hexdigest()
+
+          if int(registry.get("revision", -1)) != expected_revision:
+              raise SystemExit(
+                  f"CFB_STEP3_FREEZE_BLOCKED_REVISION expected={expected_revision} actual={registry.get('revision')}"
+              )
+          if registry.get("state_hash") != expected_hash:
+              raise SystemExit(
+                  f"CFB_STEP3_FREEZE_BLOCKED_HASH expected={expected_hash} actual={registry.get('state_hash')}"
+              )
+          computed_old = state_hash(registry)
+          if computed_old != expected_hash:
+              raise SystemExit(
+                  f"CFB_STEP3_FREEZE_BLOCKED_OLD_HASH_RECOMPUTE expected={expected_hash} actual={computed_old}"
+              )
+          if registry.get("active_thaws") != []:
+              raise SystemExit("CFB_STEP3_FREEZE_BLOCKED_ACTIVE_THAW")
+
+          checkpoint = "CFB_TOP_PICKS_REPAIR_STEP3_MARKET_REASONING"
+          if checkpoint in registry.get("entries", {}):
+              raise SystemExit("CFB_STEP3_FREEZE_BLOCKED_DUPLICATE_ENTRY")
+
+          entry = {
+              "status": "FROZEN",
+              "checkpoint_id": checkpoint,
+              "source_main_sha": merged_main,
+              "proven_merge_sha": merged_main,
+              "proof_run_id": 37241133481,
+              "focused_market_reasoning_proof_run_id": 37241133495,
+              "terminal_receipt_digest": "sha256:032870344f9ba1da60d1931845012ecc3fa484b4d64720e6846d43a1307f400b",
+              "regression_debt_state": "CLEARED",
+              "live_top10_reasoning_usable_10_of_10": True,
+              "public_reasoning_surface_green": True,
+              "renderer_boundary": "st.html",
+              "regression_guard": {
+                  "test": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py",
+                  "contract": "cfb_top_picks_page_v9.py",
+              },
+              "artifacts": {
+                  "cfb_top_picks_page_v9.py": "5a53a688e74bdb700b7a0ad6996ed624dbde3d3f",
+                  "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py": "f8ef800da0c9945d224889990afb5166ea001d0b",
+                  "devsystem/task_ledgers/cfb-top-picks-repair-step3-html-render-boundary-r1.json": "dd2b9af15a937af1bb4903e0a7e2048753492dcb",
+              },
+          }
+
+          registry["entries"][checkpoint] = entry
+          registry["revision"] = expected_revision + 1
+          registry["source_main_sha"] = merged_main
+          registry["state_hash"] = state_hash(registry)
+
+          if registry["revision"] != 120:
+              raise SystemExit("CFB_STEP3_FREEZE_BLOCKED_REVISION_ADVANCE")
+          if registry.get("active_thaws") != []:
+              raise SystemExit("CFB_STEP3_FREEZE_BLOCKED_POST_ACTIVE_THAW")
+          if state_hash(registry) != registry["state_hash"]:
+              raise SystemExit("CFB_STEP3_FREEZE_BLOCKED_NEW_HASH_RECOMPUTE")
+
+          path.write_text(json.dumps(registry, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+          print("CFB_STEP3_FREEZE_PAYLOAD_GREEN")
+          print(f"CFB_STEP3_FREEZE_REVISION={registry['revision']}")
+          print(f"CFB_STEP3_FREEZE_STATE_HASH={registry['state_hash']}")
+          PY
+
+          cd /tmp/cfb-step3-freeze-registry
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$REGISTRY_PATH"
+          git diff --cached --exit-code && { echo "CFB_STEP3_FREEZE_BLOCKED_NO_DIFF"; exit 1; } || true
+          git commit -m "CFB Step 3: freeze Market-Aware reasoning"
+          NEW_REGISTRY_HEAD="$(git rev-parse HEAD)"
+
+          git push \
+            --force-with-lease="$REGISTRY_REF:$EXPECTED_REGISTRY_HEAD" \
+            origin "HEAD:$REGISTRY_REF"
+
+          echo "CFB_STEP3_FREEZE_CAS_GREEN"
+          echo "CFB_STEP3_FREEZE_OLD_REGISTRY_HEAD=$EXPECTED_REGISTRY_HEAD"
+          echo "CFB_STEP3_FREEZE_NEW_REGISTRY_HEAD=$NEW_REGISTRY_HEAD"
+
+      - name: Read back authoritative registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/monster-frozen-artifact-registry
+          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/cfb-step3-registry-readback.json
+          python - <<'PY'
+          import hashlib
+          import json
+          from copy import deepcopy
+          from pathlib import Path
+
+          registry = json.loads(Path("/tmp/cfb-step3-registry-readback.json").read_text(encoding="utf-8"))
+          checkpoint = "CFB_TOP_PICKS_REPAIR_STEP3_MARKET_REASONING"
+          expected_artifacts = {
+              "cfb_top_picks_page_v9.py": "5a53a688e74bdb700b7a0ad6996ed624dbde3d3f",
+              "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py": "f8ef800da0c9945d224889990afb5166ea001d0b",
+              "devsystem/task_ledgers/cfb-top-picks-repair-step3-html-render-boundary-r1.json": "dd2b9af15a937af1bb4903e0a7e2048753492dcb",
+          }
+
+          body = deepcopy(registry)
+          stored_hash = body.pop("state_hash")
+          computed = hashlib.sha256(
+              json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+          ).hexdigest()
+
+          entry = registry.get("entries", {}).get(checkpoint)
+          if registry.get("revision") != 120:
+              raise SystemExit("CFB_STEP3_FREEZE_READBACK_REVISION_BLOCKED")
+          if stored_hash != computed:
+              raise SystemExit("CFB_STEP3_FREEZE_READBACK_HASH_BLOCKED")
+          if registry.get("active_thaws") != []:
+              raise SystemExit("CFB_STEP3_FREEZE_READBACK_THAW_BLOCKED")
+          if not isinstance(entry, dict) or entry.get("status") != "FROZEN":
+              raise SystemExit("CFB_STEP3_FREEZE_READBACK_ENTRY_BLOCKED")
+          if entry.get("source_main_sha") != "2bbc552ad95a2d89ed82e312445ac33ae17cf9af":
+              raise SystemExit("CFB_STEP3_FREEZE_READBACK_MAIN_BLOCKED")
+          if entry.get("artifacts") != expected_artifacts:
+              raise SystemExit("CFB_STEP3_FREEZE_READBACK_ARTIFACTS_BLOCKED")
+
+          print("CFB_STEP3_FREEZE_READBACK_GREEN")
+          print("CFB_STEP3_GREEN")
+          print("CFB_STEP3_FROZEN")
+          print(f"CFB_STEP3_REGISTRY_REVISION={registry['revision']}")
+          print(f"CFB_STEP3_REGISTRY_STATE_HASH={stored_hash}")
+          PY
