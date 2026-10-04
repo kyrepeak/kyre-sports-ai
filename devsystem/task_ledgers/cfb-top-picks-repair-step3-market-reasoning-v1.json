@@ -1,15 +1,15 @@
 {
-  "version": 15,
+  "version": 16,
   "task_id": "cfb-top-picks-repair-step3-market-reasoning-v1",
   "title": "CFB Top Picks Repair Mission — Step 3 Market-Aware Football Reasoning",
   "project": "CFB Top Picks Missing Research Repair",
   "step": 3,
   "total_steps": 5,
   "status": "DONE",
-  "problem": "Merged-main public proof and the terminal click-vs-direct diagnostic both reach the correct CFB V9 page with an expanded, fully loaded selected detail and no WNBA ownership, but the final Market-Aware Football Reasoning DOM surface is absent.",
-  "root_cause": "The final V9 detail presentation did not explicitly guarantee preservation of the V6-owned Market-Aware Football Reasoning block after V7 Benefits/Risks and V8 Sources + Freshness transformations. The selected detail data remains valid, but the final presentation contract could omit the reasoning surface.",
+  "problem": "The public CFB V9 detail reaches the correct fully loaded selected card and carries valid market_reasoning-derived Benefits/Risks, but the final composed page DOM can still omit the dedicated Market-Aware Football Reasoning block.",
+  "root_cause": "V9 guaranteed reasoning preservation only inside its _detail_card helper. The production failure proves a later/final page-composition boundary can emit a fully loaded V9 detail without the numbered reasoning surface even though the market_reasoning payload remains present.",
   "failure_owner": "PRESENTATION",
-  "patch": "Reuse V6 as the sole market-reasoning renderer. V9 keeps the normal V8 card, removes only the obsolete tp4-audit footer, preserves an existing ranked reasoning block without duplication, and if legitimate READY/PARTIAL market_reasoning is missing restores exactly one V6-rendered block immediately before Sources + Freshness. V9 fails closed if the block cannot be preserved exactly once.",
+  "patch": "Keep V6 as the sole reasoning renderer, preserve the existing V9 detail-card guard, and add a second idempotent fail-closed preservation pass against the final V9 page HTML after nested V6/V7/V8 composition. Restore exactly one reasoning block immediately before Sources + Freshness only when READY/PARTIAL reasoning is present and the final page lost it.",
   "protections": {
     "step1_history_router_modified": false,
     "step2_defense_pace_modified": false,
@@ -339,6 +339,45 @@
     "selection_modified": false,
     "sportsbook_modified": false,
     "api2_modified": false,
+    "proof_state": "PENDING_EXACT_HEAD_PROOF"
+  },
+  "monster_v9_user_authorized_v9_final_page_preservation_r2": {
+    "authorization_received_utc": "2026-10-04T01:37:40Z",
+    "authorization_scope": "ONE_V9_PRESENTATION_ONLY_REPAIR_PR",
+    "source_main_sha": "47fbffd54cbb199fd5bf668cd49f4c5bad7df28d",
+    "source_failed_public_run_id": 37166485272,
+    "source_failed_public_job_id": 111330328713,
+    "failure_token": "STEP3_PUBLIC_DEPLOY_NOT_READY:STEP3_PUBLIC_REASONING_NOT_READY",
+    "evidence": {
+      "live_top10_reasoning_usable_10_of_10": true,
+      "live_final_v9_reasoning_surface_green": true,
+      "merged_main_devsystem_green": true,
+      "public_cfb_v5_root_count": 1,
+      "public_cfb_v9_marker_count": 1,
+      "public_expanded_detail_count": 1,
+      "public_detail_panel_count": 1,
+      "public_loading_placeholder_present": false,
+      "public_wnba_marker_count": 0,
+      "public_reasoning_selector_count": 0,
+      "reasoning_payload_indirectly_proven_by_benefits_risks": true
+    },
+    "branch": "cfb-top-picks-step3-v9-final-page-preservation-r2",
+    "allowed_files": [
+      "cfb_top_picks_page_v9.py",
+      "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
+      "devsystem/task_ledgers/cfb-top-picks-repair-step3-market-reasoning-v1.json"
+    ],
+    "router_modified": false,
+    "model_modified": false,
+    "projection_modified": false,
+    "probability_modified": false,
+    "ranking_modified": false,
+    "selection_modified": false,
+    "sportsbook_modified": false,
+    "api2_modified": false,
+    "step1_modified": false,
+    "step2_modified": false,
+    "deployment_control_modified": false,
     "proof_state": "PENDING_EXACT_HEAD_PROOF"
   }
 }
