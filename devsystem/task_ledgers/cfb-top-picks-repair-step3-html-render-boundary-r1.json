@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-repair-step3-html-render-boundary-r1",
+  "title": "CFB Top Picks Repair Step 3 — Streamlit HTML Render Boundary",
+  "project": "CFB Top Picks Missing Research Repair",
+  "step": 3,
+  "total_steps": 5,
+  "status": "DONE",
+  "failure_owner": "PRESENTATION_RENDER_BOUNDARY",
+  "problem": "The certified V9 Python page HTML contains exactly one READY/PARTIAL Market-Aware Football Reasoning block, while the public Streamlit browser DOM reaches the correct V9 owner and fully loaded detail card but loses the numbered reasoning node.",
+  "root_cause": "The visible CFB Top Picks body was emitted through a Streamlit Markdown placeholder using unsafe_allow_html. TDD isolated the first broken arrow at the Streamlit HTML render boundary: current V9 calls board.markdown for the raw HTML body, while this repository already has a proven repair pattern that keeps CSS in st.markdown and emits the visible raw HTML body through Streamlit's HTML primitive.",
+  "patch": "Preserve all existing V9 HTML generation, reasoning, routing, data, model, ranking, probability, selection, and sportsbook behavior. Keep CSS in st.markdown. Change only the two visible placeholder body emissions from board.markdown(..., unsafe_allow_html=True) to board.html(...), preserving the existing two-phase loading-detail replacement flow.",
+  "tdd": {
+    "red_head": "5acca9a90c4a8404b36a844c931cf56235bda44b",
+    "red_run_id": 37240525057,
+    "red_job_id": 111548161846,
+    "red_failure_token": "STEP3_VISIBLE_BODY_MUST_USE_STREAMLIT_HTML",
+    "red_result": "1 failed, 27 passed",
+    "permanent_test": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py",
+    "production_file": "cfb_top_picks_page_v9.py"
+  },
+  "evidence": {
+    "public_click_v9_owner_present": true,
+    "public_direct_v9_owner_present": true,
+    "public_detail_fully_loaded": true,
+    "public_wnba_owner_absent": true,
+    "public_reasoning_selector_missing": true,
+    "raw_v9_reasoning_selector_present_exactly_once": true,
+    "repository_native_streamlit_html_precedent": true
+  },
+  "protections": {
+    "router_modified": false,
+    "model_modified": false,
+    "projection_modified": false,
+    "probability_modified": false,
+    "ranking_modified": false,
+    "selection_modified": false,
+    "sportsbook_modified": false,
+    "api2_modified": false,
+    "step1_modified": false,
+    "step2_modified": false,
+    "deployment_control_modified": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
