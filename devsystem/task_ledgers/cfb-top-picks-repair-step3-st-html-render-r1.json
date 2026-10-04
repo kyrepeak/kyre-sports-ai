@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "task_id": "cfb-top-picks-repair-step3-st-html-render-r1",
+  "title": "CFB Top Picks Repair Step 3 — Streamlit raw HTML renderer boundary",
+  "project": "CFB Top Picks Missing Research Repair",
+  "step": 3,
+  "total_steps": 5,
+  "status": "DONE",
+  "failure_owner": "PRESENTATION_RENDER_BOUNDARY",
+  "problem": "The certified V9 Python HTML contains exactly one READY/PARTIAL Market-Aware Football Reasoning selector, while the hosted Streamlit hydrated DOM omits that selector on both click and direct-detail paths.",
+  "root_cause": "The visible V9 board body was sent through Streamlit Markdown hydration instead of the raw HTML rendering primitive, creating an HTML-string-to-browser-DOM divergence after server-side contracts had already passed.",
+  "patch": "Keep CSS on st.markdown and render the visible V9 board body through the Streamlit placeholder raw-HTML path for both initial and loaded-detail states.",
+  "source_main_sha": "15f6732a8dafdf4f9b8ae002e6be9f20043e28a0",
+  "branch": "cfb-top-picks-step3-st-html-render-r1",
+  "pull_request": 1382,
+  "tdd": {
+    "red_head": "715df640035673f7acf3c0477d053fa0cc87e230",
+    "red_run_id": 37240709158,
+    "red_job_id": 111548689282,
+    "red_result": "22 passed, 1 failed: raw-HTML renderer regression",
+    "green_patch_head_before_ledger": "d119be667cd1167d556346a770ccb03db34f4428",
+    "permanent_test": "tests/test_cfb_top_picks_market_reasoning_repair_step3_v1.py",
+    "permanent_contract": "cfb_top_picks_page_v9.py"
+  },
+  "protections": {
+    "router_modified": false,
+    "model_modified": false,
+    "projection_modified": false,
+    "probability_modified": false,
+    "ranking_modified": false,
+    "selection_modified": false,
+    "sportsbook_modified": false,
+    "api2_modified": false,
+    "step1_modified": false,
+    "step2_modified": false,
+    "deployment_control_modified": false
+  },
+  "proof_state": "PENDING_EXACT_HEAD_PROOF",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
