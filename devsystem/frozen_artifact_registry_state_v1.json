@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 120,
-  "source_main_sha": "2bbc552ad95a2d89ed82e312445ac33ae17cf9af",
+  "revision": 121,
+  "source_main_sha": "4845a4101ddcb76fa8b6819f6b3c6dc786d41dce",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1777,8 +1777,43 @@
         "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py": "f8ef800da0c9945d224889990afb5166ea001d0b",
         "devsystem/task_ledgers/cfb-top-picks-repair-step3-html-render-boundary-r1.json": "dd2b9af15a937af1bb4903e0a7e2048753492dcb"
       }
+    },
+    "CFB_TOP_PICKS_REPAIR_STEP4_DETAIL_INTEGRITY": {
+      "status": "FROZEN",
+      "checkpoint_id": "CFB_TOP_PICKS_REPAIR_STEP4_DETAIL_INTEGRITY",
+      "source_main_sha": "4845a4101ddcb76fa8b6819f6b3c6dc786d41dce",
+      "proven_merge_sha": "4845a4101ddcb76fa8b6819f6b3c6dc786d41dce",
+      "proof_run_id": 37242800409,
+      "focused_detail_integrity_proof_run_id": 37242800431,
+      "terminal_receipt_digest": "sha256:6d4ab1cc97ffe55a00fef43acabf59afe4ddcb646994f99973f94467c3a74f3b",
+      "regression_debt_state": "CLEARED",
+      "live_top10_details_10_of_10": true,
+      "public_detail_surface_green": true,
+      "required_sections": [
+        "Why This Pick",
+        "Actual Matchup History",
+        "Benefits"
+      ],
+      "exact_event_identity": true,
+      "exact_team_identity": true,
+      "step3_reasoning_preserved": true,
+      "history_fabricated": false,
+      "history_projection_weight": 0.0,
+      "history_selection_weight": 0.0,
+      "history_ranking_weight": 0.0,
+      "sportsbook_projection_weight": 0.0,
+      "regression_guard": {
+        "test": "tests/test_cfb_top_picks_repair_step4_detail_integrity_v1.py",
+        "contract": "devsystem/cfb_top_picks_repair_step4_detail_integrity_v1.py"
+      },
+      "artifacts": {
+        "devsystem/cfb_top_picks_repair_step4_detail_integrity_v1.py": "983c8fcdaaf6afc9181dbdf98dc82b70bec4f3c6",
+        "tests/test_cfb_top_picks_repair_step4_detail_integrity_v1.py": "87f72a64323a508634ba46e8645a27eeb7c51358",
+        "devsystem/task_ledgers/cfb-top-picks-repair-step4-detail-integrity-v1.json": "ac9c84be70be73dc6874f9cd126fae92a73dc020",
+        ".github/workflows/cfb-top-picks-repair-step4-detail-integrity-v1.yml": "fbac19f9e9bb7ecea486964f901cbb4966ee060a"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "205644b62610f6af727326a14ca8e217ebc7e18e4cf1e991a1a14b8a9f8ac15d"
+  "state_hash": "44f27680ab270d6bb5aa62bc3382a0b963db7d6501cfd924a3324ed32b89e050"
 }
