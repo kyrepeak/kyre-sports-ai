@@ -122,6 +122,7 @@ def test_step3_is_verifier_only_and_keeps_projection_firewalls():
     assert repair.SPORTSBOOK_PROJECTION_WEIGHT == 0.0
     assert repair.MARKET_REASONING_PROJECTION_WEIGHT == 0.0
 
+
 class _FakeHeading:
     def __init__(self, *, count: int = 1, visible: bool = True, text: str = repair.PUBLIC_HEADING):
         self._count = count
@@ -167,6 +168,7 @@ def test_public_heading_contract_rejects_wrong_h4_text():
     with pytest.raises(AssertionError, match="STEP3_PUBLIC_HEADING_TEXT"):
         repair._validate_public_heading(loc)
 
+
 class _FakeMarker:
     def __init__(self, *, count: int = 1, text: str = repair.page.PAGE_MARKER):
         self._count = count
@@ -208,6 +210,7 @@ def test_public_v9_marker_contract_rejects_wrong_marker_text():
     with pytest.raises(AssertionError, match="STEP3_PUBLIC_V9_MARKER_TEXT"):
         repair._validate_public_v9_marker(frame)
 
+
 def test_step9_router_propagates_v9_through_nested_page_owners(monkeypatch):
     owners = router._page_owner_chain()
     assert owners == (
@@ -239,7 +242,6 @@ def test_step9_router_keeps_model_firewalls():
     assert router.MAY_MODIFY_WNBA_SPEED_STEP4 is False
     assert router.MAY_MODIFY_TOP_PICKS_RANKING is False
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
-
 
 
 def test_step9_detail_route_guard_clears_competing_wnba_jump_and_reprimes_cfb(monkeypatch):
@@ -448,6 +450,7 @@ def test_v9_reasoning_preservation_never_duplicates_existing_v6_surface():
     assert "Sources + Freshness" in html
     assert '<div class="tp4-audit">' not in html
 
+
 def test_v9_final_page_reasserts_reasoning_after_final_composition_drop(monkeypatch):
     row = _real_v9_row()
     detail = _real_v9_detail()
@@ -490,3 +493,55 @@ def test_v9_final_page_preservation_does_not_duplicate_reasoning():
 
     assert html.count('data-testid="cfb-top-picks-market-reasoning-1"') == 1
 
+
+class _RendererBoard:
+    def __init__(self):
+        self.markdown_calls = []
+        self.html_calls = []
+
+    def markdown(self, body, **kwargs):
+        self.markdown_calls.append((body, kwargs))
+
+    def html(self, body):
+        self.html_calls.append(body)
+
+
+class _RendererSpinner:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+class _RendererStreamlit:
+    def __init__(self):
+        self.board = _RendererBoard()
+        self.markdown_calls = []
+
+    def markdown(self, body, **kwargs):
+        self.markdown_calls.append((body, kwargs))
+
+    def spinner(self, _label):
+        return _RendererSpinner()
+
+    def empty(self):
+        return self.board
+
+
+def test_v9_visible_board_uses_raw_html_renderer_not_markdown(monkeypatch):
+    fake_st = _RendererStreamlit()
+    monkeypatch.setattr(page_v9, "st", fake_st)
+    monkeypatch.setattr(
+        page_v9.engine,
+        "build_top_picks",
+        lambda limit=10: ([_real_v9_row()], {"slate_date": "2026-10-03", "games_analyzed": 1}),
+    )
+    monkeypatch.setattr(page_v9.base, "_query_value", lambda _key: "")
+
+    page_v9.render_top_picks_page()
+
+    assert len(fake_st.markdown_calls) == 1  # CSS stays on Markdown.
+    assert len(fake_st.board.html_calls) == 1
+    assert fake_st.board.markdown_calls == []
+    assert 'data-testid="cfb-top-picks-research-v2-step9-marker"' in fake_st.board.html_calls[0]
