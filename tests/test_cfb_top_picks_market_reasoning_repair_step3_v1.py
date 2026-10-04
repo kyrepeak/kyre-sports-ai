@@ -447,3 +447,46 @@ def test_v9_reasoning_preservation_never_duplicates_existing_v6_surface():
     assert 'data-reasoning-status="READY"' in html
     assert "Sources + Freshness" in html
     assert '<div class="tp4-audit">' not in html
+
+def test_v9_final_page_reasserts_reasoning_after_final_composition_drop(monkeypatch):
+    row = _real_v9_row()
+    detail = _real_v9_detail()
+    diag = {"slate_date": "2026-10-03", "games_analyzed": 1}
+
+    real_card = page_v9._detail_card(row, detail)
+    reasoning_html = page_v9.reasoning_owner._market_reasoning_html(row, detail)
+    assert reasoning_html in real_card
+    dropped_card = real_card.replace(reasoning_html, "", 1)
+    assert 'data-testid="cfb-top-picks-market-reasoning-1"' not in dropped_card
+    assert "Sources + Freshness" in dropped_card
+
+    monkeypatch.setattr(page_v9, "_detail_card", lambda _row, _detail: dropped_card)
+
+    html = page_v9._page_html(
+        [row],
+        diag,
+        "2026-10-03",
+        row["event_id"],
+        detail,
+    )
+
+    assert html.count('data-testid="cfb-top-picks-market-reasoning-1"') == 1
+    assert 'data-reasoning-status="READY"' in html
+    assert "<h4>Market-Aware Football Reasoning</h4>" in html
+    assert html.index("Market-Aware Football Reasoning") < html.index("Sources + Freshness")
+    assert '<div class="tp4-audit">' not in html
+
+
+def test_v9_final_page_preservation_does_not_duplicate_reasoning():
+    row = _real_v9_row()
+    detail = _real_v9_detail()
+    html = page_v9._page_html(
+        [row],
+        {"slate_date": "2026-10-03", "games_analyzed": 1},
+        "2026-10-03",
+        row["event_id"],
+        detail,
+    )
+
+    assert html.count('data-testid="cfb-top-picks-market-reasoning-1"') == 1
+
