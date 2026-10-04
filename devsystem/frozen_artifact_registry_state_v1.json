@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 119,
-  "source_main_sha": "c2c9ee0cbc67a297bccccd65c19fb8f8c0a48f86",
+  "revision": 120,
+  "source_main_sha": "2bbc552ad95a2d89ed82e312445ac33ae17cf9af",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1755,8 +1755,30 @@
         "devsystem/task_ledgers/registry-race-v1-step3-wait-one-resume.json": "3da3f30b2b76b83d6f55bfca4605cc7a549143be",
         "tests/test_devsystem_registry_wait_resume_v1.py": "e1d558fec8fa16e21d9464e5cb574593625a0c4d"
       }
+    },
+    "CFB_TOP_PICKS_REPAIR_STEP3_MARKET_REASONING": {
+      "status": "FROZEN",
+      "checkpoint_id": "CFB_TOP_PICKS_REPAIR_STEP3_MARKET_REASONING",
+      "source_main_sha": "2bbc552ad95a2d89ed82e312445ac33ae17cf9af",
+      "proven_merge_sha": "2bbc552ad95a2d89ed82e312445ac33ae17cf9af",
+      "proof_run_id": 37241133481,
+      "focused_market_reasoning_proof_run_id": 37241133495,
+      "terminal_receipt_digest": "sha256:032870344f9ba1da60d1931845012ecc3fa484b4d64720e6846d43a1307f400b",
+      "regression_debt_state": "CLEARED",
+      "live_top10_reasoning_usable_10_of_10": true,
+      "public_reasoning_surface_green": true,
+      "renderer_boundary": "st.html",
+      "regression_guard": {
+        "test": "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py",
+        "contract": "cfb_top_picks_page_v9.py"
+      },
+      "artifacts": {
+        "cfb_top_picks_page_v9.py": "5a53a688e74bdb700b7a0ad6996ed624dbde3d3f",
+        "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py": "f8ef800da0c9945d224889990afb5166ea001d0b",
+        "devsystem/task_ledgers/cfb-top-picks-repair-step3-html-render-boundary-r1.json": "dd2b9af15a937af1bb4903e0a7e2048753492dcb"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "7d2b8aeb60b868590ca29f2810e555b390df2cf3691b61f4f7063f91212c0c52"
+  "state_hash": "205644b62610f6af727326a14ca8e217ebc7e18e4cf1e991a1a14b8a9f8ac15d"
 }
