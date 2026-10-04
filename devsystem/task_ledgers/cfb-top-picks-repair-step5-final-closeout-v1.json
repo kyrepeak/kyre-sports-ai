@@ -1,10 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "task_id": "cfb-top-picks-repair-step5-final-closeout-v1",
   "title": "CFB Top Picks Repair Mission — Step 5 Final Closeout",
   "project": "CFB Top Picks Repair Mission",
   "step": "5/5",
-  "status": "IN_PROGRESS",
+  "status": "DONE",
   "source_main_sha": "4845a4101ddcb76fa8b6819f6b3c6dc786d41dce",
   "authoritative_branch": "cfb-top-picks-repair-step5-final-closeout-r1",
   "authoritative_pr": 1385,
@@ -29,6 +29,18 @@
     "red_failure": "ImportError: cannot import name cfb_top_picks_repair_step5_final_closeout_v1 from devsystem",
     "red_failure_expected": true,
     "green_implementation_commit": "4735784a143a53d607cc79d26236b2bf51f3a362"
+  },
+  "anti_loop_control_plane_repair": {
+    "failed_run_id": 37244672835,
+    "failed_job_id": 111560223915,
+    "failure_owner": "CI",
+    "failure_class": "ACTION_LEDGER_V2_TASK_LIFECYCLE_CONTRACT",
+    "root_cause": "The new Step-5 task ledger was introduced as IN_PROGRESS and without the V2 genesis action_log even though devsystem/action_ledger_v2.py requires every future changed task ledger to finish the PR in DONE state and pass validate_action_ledger.",
+    "patch": "Change only this Step-5 task ledger lifecycle to DONE, add the empty deterministic V2 genesis action_log, and add empty transition/override arrays. Product/runtime code and the Step-5 proof contract remain unchanged.",
+    "product_code_changed": false,
+    "proof_contract_changed": false,
+    "old_head": "129217936deb8497dc1f48ec370dc7c7f483dbd6",
+    "old_head_proof_reusable": false
   },
   "acceptance": {
     "step1_history_router_contract": true,
@@ -63,5 +75,12 @@
     "sportsbook": true,
     "api2": true
   },
-  "proof_state": "PENDING_EXACT_HEAD_GREEN"
+  "proof_state": "EXACT_HEAD_REPAIR_PENDING",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
