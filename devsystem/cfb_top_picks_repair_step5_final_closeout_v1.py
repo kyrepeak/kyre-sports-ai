@@ -16,11 +16,13 @@ from devsystem import cfb_top_picks_defense_pace_repair_step2_v1 as step2
 from devsystem import cfb_top_picks_history_router_repair_step1_v1 as step1
 from devsystem import cfb_top_picks_market_reasoning_repair_step3_v1 as step3
 from devsystem import cfb_top_picks_repair_step4_detail_integrity_v1 as step4
-from devsystem import cfb_top_picks_step5_visual_cert_v1 as visual
 
 MODEL_VERSION = "CFB TOP PICKS REPAIR STEP 5 • FINAL CLOSEOUT CERT"
 MISSION_STEP = "5/5"
 PUBLIC_URL = "https://pickvault.streamlit.app"
+
+ROOT = Path(__file__).resolve().parents[1]
+LEGACY_VISUAL_CERT = ROOT / "devsystem/cfb_top_picks_step5_visual_cert_v1.py"
 
 REQUIRED_REPAIR_STEPS = (
     "MATCHUP_HISTORY_ROUTER",
@@ -56,6 +58,20 @@ def _require_green(payload: Mapping[str, Any], token: str) -> None:
         raise AssertionError(token)
 
 
+def _legacy_visual_contract_intact() -> bool:
+    """Inspect the script without importing its script-local browser dependency."""
+    source = LEGACY_VISUAL_CERT.read_text(encoding="utf-8")
+    required = (
+        'PUBLIC_URL = "https://pickvault.streamlit.app"',
+        'ROOT = \'[data-testid="cfb-top-picks-step5-root"][data-cfb-top-picks-visual="v5"]\'',
+        "WIDTHS = ((390, 844), (768, 1024), (1440, 1000))",
+        'CARD = \'article[data-testid^="cfb-top-picks-card-"]\'',
+        'DETAIL = \'[data-testid^="cfb-top-picks-detail-panel-"]\'',
+        'print("CFB_TOP_PICKS_STEP5_PUBLIC_PRODUCTION_GREEN")',
+    )
+    return all(token in source for token in required)
+
+
 def verify_repository_contract() -> dict[str, Any]:
     """Fail closed if any frozen repair contract or final visual owner drifts."""
     step1_result = step1.check_repository()
@@ -78,11 +94,7 @@ def verify_repository_contract() -> dict[str, Any]:
         and callable(getattr(step4, "run_live", None))
         and tuple(step4.REQUIRED_SECTIONS) == REQUIRED_DETAIL_SECTIONS[:3]
     )
-    legacy_step5_visual_contract = (
-        tuple(visual.WIDTHS) == REQUIRED_VIEWPORTS
-        and visual.PUBLIC_URL == PUBLIC_URL
-        and visual.ROOT.startswith('[data-testid="cfb-top-picks-step5-root"')
-    )
+    legacy_step5_visual_contract = _legacy_visual_contract_intact()
 
     checks = {
         "current_v9_page": current_v9_page,
