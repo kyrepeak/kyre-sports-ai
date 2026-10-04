@@ -62,6 +62,7 @@ def test_step9_wraps_frozen_step8():
     assert "owner.TOP_PICKS_PAGE = TOP_PICKS_PAGE" in router_text
     assert "zip(reversed(owners), reversed(original_pages))" in router_text
 
+
 def test_step9_fair_model_price_has_truthful_sportsbook_unavailable_state():
     from devsystem.cfb_top_picks_research_v2_step9_full_slate_cert_v1 import (
         FAIR_PRICE_NO_SPORTSBOOK,
@@ -76,3 +77,39 @@ def test_step9_fair_model_price_has_truthful_sportsbook_unavailable_state():
     assert "FanDuel" not in _sportsbook(row)
     assert "ESPN" not in _sportsbook(row)
 
+
+class _NoopSpinner:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+class _HtmlOnlyBoard:
+    def __init__(self):
+        self.html_calls: list[str] = []
+
+    def html(self, body, *args, **kwargs):
+        self.html_calls.append(str(body))
+
+    def markdown(self, *args, **kwargs):
+        raise AssertionError("STEP3_VISIBLE_BODY_MUST_USE_STREAMLIT_HTML")
+
+
+def test_step9_visible_page_body_uses_streamlit_html_boundary(monkeypatch):
+    row = _row()
+    board = _HtmlOnlyBoard()
+    css_calls: list[str] = []
+
+    monkeypatch.setattr(page.st, "markdown", lambda body, *args, **kwargs: css_calls.append(str(body)))
+    monkeypatch.setattr(page.st, "spinner", lambda *args, **kwargs: _NoopSpinner())
+    monkeypatch.setattr(page.st, "empty", lambda: board)
+    monkeypatch.setattr(page.engine, "build_top_picks", lambda limit=10: ([row], {"slate_date": "2026-10-03"}))
+    monkeypatch.setattr(page.base, "_query_value", lambda name: "")
+
+    page.render_top_picks_page()
+
+    assert len(css_calls) == 1
+    assert len(board.html_calls) == 1
+    assert 'data-testid="cfb-top-picks-research-v2-step9-marker"' in board.html_calls[0]
