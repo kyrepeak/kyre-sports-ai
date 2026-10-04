@@ -10,6 +10,34 @@ WORKFLOW = Path(".github/workflows/cfb-top-picks-repair-step5-final-closeout-v1.
 )
 
 
+def _green_step3_payload() -> dict:
+    return {
+        "status": "GREEN",
+        "ranked_picks_certified": 10,
+        "all_reasoning_usable": True,
+        "projection_changed": False,
+        "probability_changed": False,
+        "ranking_changed": False,
+        "selection_changed": False,
+        "sportsbook_projection_weight": 0.0,
+        "api2_used": False,
+    }
+
+
+def _green_step4_payload() -> dict:
+    return {
+        "status": "GREEN",
+        "ranked_picks_certified": 10,
+        "selected_matchup_detail_contract": True,
+        "projection_changed": False,
+        "probability_changed": False,
+        "ranking_changed": False,
+        "selection_changed": False,
+        "sportsbook_projection_weight": 0.0,
+        "api2_used": False,
+    }
+
+
 def test_step5_final_closeout_is_proof_only_and_keeps_api2_separate():
     assert cert.MISSION_STEP == "5/5"
     assert cert.API2_USED is False
@@ -53,10 +81,7 @@ def test_step5_repository_contract_is_current_v9_v5_and_fail_closed():
 
 
 def test_step5_live_payload_requires_step3_and_step4_green():
-    payload = cert._finalize_live_payload(
-        {"status": "GREEN", "ranked_picks_certified": 10, "all_reasoning_usable": True},
-        {"status": "GREEN", "ranked_picks_certified": 10, "selected_matchup_detail_contract": True},
-    )
+    payload = cert._finalize_live_payload(_green_step3_payload(), _green_step4_payload())
     assert payload["status"] == "GREEN"
     assert payload["ranked_picks_certified"] == 10
     assert payload["step3_market_reasoning_green"] is True
@@ -68,11 +93,10 @@ def test_step5_live_payload_requires_step3_and_step4_green():
 
 
 def test_step5_live_payload_fails_closed_if_prior_cert_is_not_green():
+    step3 = _green_step3_payload()
+    step3["status"] = "RED"
     try:
-        cert._finalize_live_payload(
-            {"status": "RED", "ranked_picks_certified": 10, "all_reasoning_usable": True},
-            {"status": "GREEN", "ranked_picks_certified": 10, "selected_matchup_detail_contract": True},
-        )
+        cert._finalize_live_payload(step3, _green_step4_payload())
     except AssertionError as exc:
         assert "STEP5_STEP3_NOT_GREEN" in str(exc)
     else:
