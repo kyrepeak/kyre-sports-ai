@@ -1,4 +1,4 @@
-"""Hydration-safe wrapper for the NFL Passing Yards public production cert.
+"""Hydration-safe wrapper for the NFL Passing Yards public production cert.\n\nSTEP3_FINAL_PRODUCTION_CERT_1131DD_V1
 
 V4 is certification-only. The public Passing Yards route can show its bridge
 banner before the slate/date/matchup widgets finish their Streamlit rerun. V4
