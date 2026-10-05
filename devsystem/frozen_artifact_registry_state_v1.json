@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 128,
-  "source_main_sha": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
+  "revision": 129,
+  "source_main_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1550,11 +1550,11 @@
       "artifacts": {
         ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
         ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml": "be8d0b985f9c2e96fbf89abf2b07c2a1e1433595",
-        "devsystem/change_classifier_v1.py": "6f151c5ece852a461e37af1a319712f0ec384890",
+        "devsystem/change_classifier_v1.py": "352074abc9d5f807ef6bfad593743c19cef49e00",
         "devsystem/monster_speed_v3_step3_lane_split_v1.py": "5ddb14e2d8881a0213baf56e289d04eb60a688b9",
         "devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json": "a71491357bb2c1985fd103fa41f245abcac633b3",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step2-required-integration-lanes.json": "89498162e680635ab807332e16c0ba0193f7e174",
-        "tests/test_devsystem_change_classifier_v1.py": "09312069fdc91928196bfee9ee34a772394ac930",
+        "tests/test_devsystem_change_classifier_v1.py": "265129d2ce89da49426b36059294fcba381cfb7b",
         "tests/test_devsystem_workflow_parallelism_v1.py": "d2ff729d095c3008157f675e34440c4ae9b1cfe0",
         "tests/test_devsystem_required_integration_lanes_v1.py": "22f55626341a009076e3604fad7682f168bc4e2f",
         "tests/test_monster_speed_v3_step3_lane_split_v1.py": "aed7b9d0bb8315b919839409f92041638349792e"
@@ -2014,24 +2014,20 @@
         "devsystem/task_ledgers/nfl-live-game-repair-step4-receiving-live-v1.json": "85dad99ff4258ddd9fa0e6f2da4abe6385932725",
         ".github/workflows/nfl-live-game-repair-step4-receiving-live-v1.yml": "6285934136e289f34b600f51a4d681f87d323e86"
       }
-    }
-  },
-  "active_thaws": [
-    {
-      "thaw_id": "THAW-NBA-OU-STEP1-CLASSIFIER-R1",
-      "status": "ACTIVE",
-      "target_head_sha": "5ad719200a6c2520d7c1d9fe8a2082b4863a5abc",
-      "files": {
-        "devsystem/change_classifier_v1.py": {
-          "from_blob": "6f151c5ece852a461e37af1a319712f0ec384890",
-          "to_blob": "352074abc9d5f807ef6bfad593743c19cef49e00"
-        },
-        "tests/test_devsystem_change_classifier_v1.py": {
-          "from_blob": "09312069fdc91928196bfee9ee34a772394ac930",
-          "to_blob": "265129d2ce89da49426b36059294fcba381cfb7b"
-        }
+    },
+    "NBA_OVER_UNDER_STEP1_PAGE_ISOLATION": {
+      "status": "FROZEN",
+      "checkpoint_id": "NBA_OVER_UNDER_STEP1_PAGE_ISOLATION",
+      "source_main_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
+      "artifacts": {
+        "devsystem/change_classifier_v1.py": "352074abc9d5f807ef6bfad593743c19cef49e00",
+        "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json": "541541587796d79987aec918977b47ad9f9062d2",
+        "nba_page_isolation_v1.py": "c5b133017bc6449409474972669b0defb34723f7",
+        "tests/test_devsystem_change_classifier_v1.py": "265129d2ce89da49426b36059294fcba381cfb7b",
+        "tests/test_nba_page_isolation_v1.py": "094e7f60c781a2fd789b9212e845f0ae44be7cb1"
       }
     }
-  ],
-  "state_hash": "2070b24be787764ed350ed7b6ee1cc8ee325f1cf6b08131319e9bef84f69b8e1"
+  },
+  "active_thaws": [],
+  "state_hash": "e26c448eee1dc1240b6b2d36bc1c9e1a0243b6d7f0fb96da1cc8815f78bc1384"
 }
