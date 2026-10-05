@@ -1,0 +1,47 @@
+name: NFL Live Game Repair Step 1 Root Cause
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/nfl_live_game_repair_step1_root_cause_v1.py"
+      - "tests/test_nfl_live_game_repair_step1_root_cause_v1.py"
+      - "devsystem/task_ledgers/nfl-live-game-repair-step1-root-cause-v1.json"
+      - ".github/workflows/nfl-live-game-repair-step1-root-cause-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "devsystem/nfl_live_game_repair_step1_root_cause_v1.py"
+      - "tests/test_nfl_live_game_repair_step1_root_cause_v1.py"
+      - "devsystem/task_ledgers/nfl-live-game-repair-step1-root-cause-v1.json"
+      - ".github/workflows/nfl-live-game-repair-step1-root-cause-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-live-game-repair-step1-root-cause-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Prove exact checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$expected"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Step 1 root-cause contract
+        run: python -m pytest -q tests/test_nfl_live_game_repair_step1_root_cause_v1.py
