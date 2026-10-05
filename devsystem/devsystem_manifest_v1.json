@@ -67,13 +67,14 @@
     },
     "nba": {
       "status": "active",
-      "description": "NBA protected lane beginning with the Over/Under data foundation; no production route or model activation yet.",
+      "description": "NBA protected lane with a Kyre Sports API-first Over/Under data foundation; Streamlit page and model remain inactive.",
       "critical_job": "nba-step2-data-foundation",
       "critical_tests": [
-        "tests/test_nba_data_foundation_v1.py"
+        "tests/test_nba_data_foundation_v1.py",
+        "tests/test_nba_kyre_api_bridge_v1.py"
       ],
       "browser_coverage": null,
-      "production_probe": "NBA Step 2 data contract only; public route remains inactive"
+      "production_probe": "Kyre Sports API GET /api/v1/nba/over-under/slate; Streamlit NBA page route remains inactive"
     },
     "nhl": {
       "status": "planned",
