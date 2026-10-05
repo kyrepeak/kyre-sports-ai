@@ -1,0 +1,174 @@
+name: NFL Passing Yards Production Visual Parity Proof
+
+on:
+  push:
+    branches:
+      - "monster/nfl-passing-why-production-visual-proof-v1"
+    paths:
+      - ".github/workflows/nfl-passing-yards-production-visual-parity-proof-v1.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/nfl-passing-yards-production-visual-parity-proof-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  production-visual-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install local browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove only the approved Why This Projection visual contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+          import nfl_passing_yards_public_prod_cert_v1 as base
+
+          PRODUCT_SHA = "794f19326e78dd94b2f0663cb007aee9d673ec6a"
+          URL = "https://kyre-sports-ai.streamlit.app"
+          out = Path("artifacts/nfl-passing-why-production-visual")
+          out.mkdir(parents=True, exist_ok=True)
+
+          health = base._wait_for_public_streamlit(URL, timeout_seconds=180)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1170, "height": 2532})
+              try:
+                  page.goto(URL + "/", wait_until="domcontentloaded", timeout=120000)
+                  frame, _ = base._find_app_frame(page, timeout_seconds=120)
+                  base._assert_no_runtime_error(base._body(frame), "initial public app")
+
+                  sport = frame.get_by_role("combobox").nth(0)
+                  base._choose(page, sport, "NFL")
+                  market = frame.get_by_role("combobox", name="🎯 NFL Market", exact=True)
+                  market.wait_for(state="visible", timeout=60000)
+                  base._choose(page, market, "Passing Yards")
+
+                  # Navigate to one concrete Passing Yards matchup before testing
+                  # the matchup-scoped Why This Projection component.
+                  matchup = base._matchup_combobox(frame)
+                  matchup.click()
+                  chosen = ""
+                  for scope in (frame, page):
+                      try:
+                          options = scope.get_by_role("option")
+                          texts = [text.strip() for text in options.all_inner_texts() if text.strip()]
+                          texts = [text for text in texts if "choose matchup" not in text.casefold()]
+                          if texts:
+                              chosen = texts[0]
+                              break
+                      except Exception:
+                          pass
+                  try:
+                      page.keyboard.press("Escape")
+                  except Exception:
+                      pass
+                  if not chosen:
+                      raise AssertionError("local visual verifier could not resolve a concrete Passing Yards matchup")
+                  base._choose(page, matchup, chosen)
+
+                  panel = frame.locator('section[data-reference-why-projection="true"]')
+                  deadline = time.monotonic() + 180
+                  observed = {}
+                  while time.monotonic() < deadline:
+                      panel_count = panel.count()
+                      cards = panel.locator("section.kpy16-whycard").count() if panel_count else 0
+                      drivers = panel.locator(".kpy16-reason").count() if panel_count else 0
+                      duplicate = frame.locator("section.kpass36-dashboard").count()
+                      if panel_count == 1 and cards == 2 and drivers == 12 and duplicate == 0:
+                          observed = {
+                              "panel": panel_count,
+                              "cards": cards,
+                              "drivers": drivers,
+                              "duplicate": duplicate,
+                          }
+                          break
+                      page.wait_for_timeout(750)
+
+                  if not observed:
+                      observed = {
+                          "panel": panel.count(),
+                          "cards": panel.locator("section.kpy16-whycard").count() if panel.count() else 0,
+                          "drivers": panel.locator(".kpy16-reason").count() if panel.count() else 0,
+                          "duplicate": frame.locator("section.kpass36-dashboard").count(),
+                      }
+                      raise AssertionError("local visual structure failed: " + json.dumps(observed, sort_keys=True))
+
+                  root = panel.first
+                  title = root.locator(".kpy16-whytitle").inner_text(timeout=10000).strip()
+                  cards = root.locator("section.kpy16-whycard")
+                  per_card = [cards.nth(i).locator(".kpy16-reason").count() for i in range(2)]
+
+                  card_grid = root.locator(".kpy16-whygrid").evaluate(
+                      "(el) => getComputedStyle(el).gridTemplateColumns"
+                  )
+                  driver_grid = cards.first.locator(".kpy16-reasons").evaluate(
+                      "(el) => getComputedStyle(el).gridTemplateColumns"
+                  )
+
+                  if title != "Why This Projection":
+                      raise AssertionError(f"wrong local title: {title!r}")
+                  if per_card != [6, 6]:
+                      raise AssertionError(f"driver count per card mismatch: {per_card}")
+                  if len(card_grid.split()) != 1:
+                      raise AssertionError(f"QB cards are not stacked one-per-row: {card_grid!r}")
+                  if len(driver_grid.split()) != 3:
+                      raise AssertionError(f"driver grid is not three columns: {driver_grid!r}")
+
+                  screenshot = out / "why_this_projection_reference_production_green.png"
+                  root.screenshot(path=str(screenshot))
+
+                  result = {
+                      "status": "GREEN",
+                      "product_sha": PRODUCT_SHA,
+                      "production_url": URL,
+                      "health_http": health["health_http"],
+                      "root_http": health["root_http"],
+                      "panel_count": 1,
+                      "qb_cards": 2,
+                      "driver_tiles": 12,
+                      "drivers_per_card": per_card,
+                      "qb_card_grid": card_grid,
+                      "driver_grid": driver_grid,
+                      "giant_v36_dashboards": 0,
+                      "screenshot": str(screenshot),
+                  }
+                  (out / "result.json").write_text(
+                      json.dumps(result, indent=2, sort_keys=True),
+                      encoding="utf-8",
+                  )
+                  print("NFL_PASSING_WHY_LOCAL_VISUAL_GREEN")
+                  print(json.dumps(result, sort_keys=True))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload local visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-why-local-visual-${{ github.run_id }}
+          path: artifacts/nfl-passing-why-production-visual
+          if-no-files-found: warn
+          retention-days: 7
