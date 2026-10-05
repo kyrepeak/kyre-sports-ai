@@ -65,13 +65,13 @@ def _blob(path: str) -> str:
 def verify_repository_contract() -> dict[str, Any]:
     router = _read(ROUTER_PATH)
     rushing = _read(RUSHING_PATH)
-    receiving = _read(RECEIVING_PATH)
+    _read(RECEIVING_PATH)
     base = _read(BASE_RUSHING_PATH)
     context_api = _read(CONTEXT_API_PATH)
     shared = _read(SHARED_GATE_PATH)
 
     checks = {
-        "router_owner": '"Rushing Yards": "nfl_rushing_yards_hub_v16"' in router,
+        "router_owner_exact": '"Rushing Yards": "nfl_rushing_yards_hub_v16"' in router,
         "shared_guard_called": (
             "from nfl_prop_app_eligibility_v1 import guard_context_payload" in rushing
             and "return guard_context_payload(" in rushing
