@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 121,
-  "source_main_sha": "4845a4101ddcb76fa8b6819f6b3c6dc786d41dce",
+  "revision": 122,
+  "source_main_sha": "08112c19f588362f27022dfb07d65ec0eed94754",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1812,8 +1812,48 @@
         "devsystem/task_ledgers/cfb-top-picks-repair-step4-detail-integrity-v1.json": "ac9c84be70be73dc6874f9cd126fae92a73dc020",
         ".github/workflows/cfb-top-picks-repair-step4-detail-integrity-v1.yml": "fbac19f9e9bb7ecea486964f901cbb4966ee060a"
       }
+    },
+    "CFB_TOP_PICKS_REPAIR_STEP5_FINAL_CLOSEOUT": {
+      "status": "FROZEN",
+      "checkpoint_id": "CFB_TOP_PICKS_REPAIR_STEP5_FINAL_CLOSEOUT",
+      "source_main_sha": "08112c19f588362f27022dfb07d65ec0eed94754",
+      "proven_merge_sha": "08112c19f588362f27022dfb07d65ec0eed94754",
+      "branch_proof_run_id": 37245732018,
+      "proof_run_id": 37246033946,
+      "focused_final_closeout_proof_run_id": 37246033948,
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "MERGED_MAIN_PUBLIC",
+      "live_top10_closeout_10_of_10": true,
+      "public_visual_detail_surface_green": true,
+      "public_repaired_detail_surface_green": true,
+      "required_viewports": [
+        390,
+        768,
+        1440
+      ],
+      "step1_history_router_preserved": true,
+      "step2_defense_pace_preserved": true,
+      "step3_market_reasoning_preserved": true,
+      "step4_detail_integrity_preserved": true,
+      "history_projection_weight": 0.0,
+      "history_selection_weight": 0.0,
+      "history_ranking_weight": 0.0,
+      "sportsbook_projection_weight": 0.0,
+      "api2_used": false,
+      "product_mutation": false,
+      "regression_guard": {
+        "test": "tests/test_cfb_top_picks_repair_step5_final_closeout_v1.py",
+        "contract": "devsystem/cfb_top_picks_repair_step5_final_closeout_v1.py"
+      },
+      "artifacts": {
+        "devsystem/cfb_top_picks_repair_step5_final_closeout_v1.py": "895748fd5f69f50d54bdc95038e4ed79d67b03be",
+        "tests/test_cfb_top_picks_repair_step5_final_closeout_v1.py": "bf1dee6b7f354cb465ff16004227874c17986688",
+        "devsystem/task_ledgers/cfb-top-picks-repair-step5-final-closeout-v1.json": "752f6a5f7442b6cfdc1183b94acbe4e3f93fdc68",
+        ".github/workflows/cfb-top-picks-repair-step5-final-closeout-v1.yml": "a695242001c9db05397bcdf86f6375e9a4b2b9a4",
+        "devsystem/cfb_top_picks_step5_visual_cert_v1.py": "49e607a815e99e2d3eb1eaef82dac4fc1384e99f"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "44f27680ab270d6bb5aa62bc3382a0b963db7d6501cfd924a3324ed32b89e050"
+  "state_hash": "44d69ef4cf54dc73041598340710949577887536f908c4bf3397157c013835f9"
 }
