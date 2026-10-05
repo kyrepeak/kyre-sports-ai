@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import wnba_pra_repair_v1_step3_data as data
 from devsystem.upstream_blocker_short_circuit_v1 import evaluate_upstream_dependency
@@ -199,3 +200,45 @@ def test_step3_initial_slate_wait_accepts_off_day_before_real_game_date():
     assert 'frame.get_by_label("📅 Slate date", exact=True)' in source
     assert "frame, slate_seconds = _prime_wnba_pra_for_target_date(page, route_url)" in source
     assert "frame = nav._set_date_with_game(page, frame, target_date)" in source
+
+
+def test_step3_ci_bridge_targets_speed9_imported_wait_alias(monkeypatch):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    calls: list[tuple[str, str, float]] = []
+
+    def frozen_wait(page, page_name: str, *, timeout_seconds: float):
+        calls.append(("frozen", page_name, timeout_seconds))
+        return page_name, timeout_seconds
+
+    def offday_wait(page, *, timeout_seconds: float):
+        calls.append(("offday", "slate", timeout_seconds))
+        return "slate", timeout_seconds
+
+    cert = SimpleNamespace(_wait_initial_slate_shell=offday_wait)
+    speed9 = SimpleNamespace(_wait_page=frozen_wait)
+
+    assert data.install_step3_proof_wait_alias(
+        cert_module=cert,
+        speed9_module=speed9,
+    ) is True
+    assert speed9._wait_page(object(), "slate", timeout_seconds=12.0) == ("slate", 12.0)
+    assert speed9._wait_page(object(), "game", timeout_seconds=9.0) == ("game", 9.0)
+    assert calls == [("offday", "slate", 12.0), ("frozen", "game", 9.0)]
+    assert speed9._step3_offday_wait_alias_bridge_v1 is True
+
+
+def test_step3_ci_bridge_is_disabled_in_public_runtime(monkeypatch):
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+
+    def frozen_wait(page, page_name: str, *, timeout_seconds: float):
+        return page_name, timeout_seconds
+
+    speed9 = SimpleNamespace(_wait_page=frozen_wait)
+    cert = SimpleNamespace(_wait_initial_slate_shell=lambda *args, **kwargs: None)
+    original = speed9._wait_page
+
+    assert data.install_step3_proof_wait_alias(
+        cert_module=cert,
+        speed9_module=speed9,
+    ) is False
+    assert speed9._wait_page is original
