@@ -1,4 +1,4 @@
-name: NBA Step 1 Registry Authority R3
+name: NBA Step 1 Registry Authority R4
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  retarget-exact-thaw:
+  freeze-merged-step1:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -23,56 +23,42 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify final proof head and retarget only the existing NBA Step-1 thaw
+      - name: Forward-port merged baselines, retire thaw, and freeze NBA Step 1
         shell: bash
         env:
-          EXPECTED_MAIN: 9a1fe7ba34e1325e544dc76f0a6798478511a47c
-          FINAL_HEAD: 5ad719200a6c2520d7c1d9fe8a2082b4863a5abc
-          FINAL_BRANCH: nba-step1-proof-head-staging-r1
-          EXPECTED_REGISTRY_HEAD: 5770c640a002a9f34246ad0b7cdc5cd5cb4ffd9c
+          MERGED_MAIN: eb4ed13666055cd426d57f154641064ad73e535e
+          FEATURE_HEAD: 5ad719200a6c2520d7c1d9fe8a2082b4863a5abc
+          EXPECTED_REGISTRY_HEAD: 9a45b220d1e1a2ca2083aeae78af5fc278a8e80a
           REGISTRY_BRANCH: monster-frozen-artifact-registry
-          OLD_TARGET: d787e29f14cd842e6d5af14c25711caf117d566a
           THAW_ID: THAW-NBA-OU-STEP1-CLASSIFIER-R1
         run: |
           set -euo pipefail
 
-          git fetch --no-tags origin main "$FINAL_BRANCH" "$REGISTRY_BRANCH" --force
-          test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
-          test "$(git rev-parse origin/$FINAL_BRANCH)" = "$FINAL_HEAD"
+          git fetch --no-tags origin main "$REGISTRY_BRANCH" --force
+          test "$(git rev-parse origin/main)" = "$MERGED_MAIN"
           test "$(git rev-parse origin/$REGISTRY_BRANCH)" = "$EXPECTED_REGISTRY_HEAD"
 
-          git checkout --detach "origin/$FINAL_BRANCH"
-          changed_since_old="$(git diff --name-only "$OLD_TARGET" "$FINAL_HEAD")"
-          test "$changed_since_old" = "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json"
-          python - <<'PY'
-          import json, subprocess
-          ledger = json.loads(subprocess.check_output([
-              'git','show','HEAD:devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json'
-          ], text=True))
-          assert ledger['status'] == 'DONE', ledger['status']
-          assert ledger['action_log']['head_chain_hash'] == '0' * 64
-          assert ledger['action_log']['events'] == []
-          assert ledger['action_log']['consumed_receipts'] == []
-          PY
-          python devsystem/action_ledger_v2.py verify-pr --base "$EXPECTED_MAIN" --head "$FINAL_HEAD"
+          git checkout --detach origin/main
+          git show "origin/$REGISTRY_BRANCH:devsystem/frozen_artifact_registry_state_v1.json" > /tmp/registry.json
 
-          git checkout -B registry-write "origin/$REGISTRY_BRANCH"
           python - <<'PY'
-          import hashlib, json, os
+          import json, os, subprocess
           from pathlib import Path
+          from devsystem.api2_frozen_registry_lifecycle_v1 import plan_baseline_forward_port
+          from devsystem.frozen_artifact_registry_v1 import _hash, _payload_without_hash, validate_registry
 
-          path = Path('devsystem/frozen_artifact_registry_state_v1.json')
-          payload = json.loads(path.read_text(encoding='utf-8'))
-          assert payload['revision'] == 127, payload['revision']
-          assert payload['source_main_sha'] == os.environ['EXPECTED_MAIN']
-          thaws = payload.get('active_thaws') or []
-          assert len(thaws) == 1, thaws
-          grant = thaws[0]
-          assert grant['thaw_id'] == os.environ['THAW_ID'], grant
-          assert grant['status'] == 'ACTIVE', grant
-          assert grant['target_head_sha'] == os.environ['OLD_TARGET'], grant
+          main = os.environ['MERGED_MAIN']
+          feature = os.environ['FEATURE_HEAD']
+          thaw_id = os.environ['THAW_ID']
+          registry = json.loads(Path('/tmp/registry.json').read_text(encoding='utf-8'))
 
-          expected_files = {
+          assert registry['revision'] == 128, registry['revision']
+          assert len(registry.get('active_thaws') or []) == 1, registry.get('active_thaws')
+          grant = registry['active_thaws'][0]
+          assert grant['thaw_id'] == thaw_id, grant
+          assert grant['target_head_sha'] == feature, grant
+
+          expected_pairs = {
               'devsystem/change_classifier_v1.py': {
                   'from_blob': '6f151c5ece852a461e37af1a319712f0ec384890',
                   'to_blob': '352074abc9d5f807ef6bfad593743c19cef49e00',
@@ -82,23 +68,64 @@ jobs:
                   'to_blob': '265129d2ce89da49426b36059294fcba381cfb7b',
               },
           }
-          assert grant['files'] == expected_files, grant['files']
+          assert grant['files'] == expected_pairs, grant['files']
 
-          grant['target_head_sha'] = os.environ['FINAL_HEAD']
-          payload['revision'] = 128
-          payload['source_main_sha'] = os.environ['EXPECTED_MAIN']
-          unsigned = dict(payload)
-          unsigned.pop('state_hash', None)
-          canonical = json.dumps(unsigned, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
-          payload['state_hash'] = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
-          path.write_text(json.dumps(payload, indent=2) + '\n', encoding='utf-8')
-          print('NBA_STEP1_THAW_RETARGETED=' + os.environ['FINAL_HEAD'])
-          print('NBA_STEP1_REGISTRY_REVISION=128')
-          print('NBA_STEP1_REGISTRY_STATE_HASH=' + payload['state_hash'])
+          def blob(path: str) -> str:
+              value = subprocess.check_output(['git','rev-parse',f'{main}:{path}'], text=True).strip().lower()
+              assert len(value) == 40
+              return value
+
+          artifacts = {
+              'devsystem/change_classifier_v1.py': blob('devsystem/change_classifier_v1.py'),
+              'devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json': blob('devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json'),
+              'nba_page_isolation_v1.py': blob('nba_page_isolation_v1.py'),
+              'tests/test_devsystem_change_classifier_v1.py': blob('tests/test_devsystem_change_classifier_v1.py'),
+              'tests/test_nba_page_isolation_v1.py': blob('tests/test_nba_page_isolation_v1.py'),
+          }
+          assert artifacts['devsystem/change_classifier_v1.py'] == expected_pairs['devsystem/change_classifier_v1.py']['to_blob']
+          assert artifacts['tests/test_devsystem_change_classifier_v1.py'] == expected_pairs['tests/test_devsystem_change_classifier_v1.py']['to_blob']
+
+          plan = plan_baseline_forward_port(
+              registry,
+              updates={
+                  path: pair for path, pair in expected_pairs.items()
+              },
+              source_main_sha=main,
+          )
+          assert plan['status'] == 'GREEN', plan
+          assert plan['decision'] == 'FROZEN_BASELINE_FORWARD_PORT_PLANNED', plan
+          assert thaw_id in plan['retired_empty_thaw_grants'], plan
+          assert plan['registry']['active_thaws'] == [], plan['registry']['active_thaws']
+          assert plan['next_revision'] == 129, plan['next_revision']
+
+          result = plan['registry']
+          checkpoint = 'NBA_OVER_UNDER_STEP1_PAGE_ISOLATION'
+          assert checkpoint not in result['entries']
+          result['entries'][checkpoint] = {
+              'status': 'FROZEN',
+              'checkpoint_id': checkpoint,
+              'source_main_sha': main,
+              'artifacts': artifacts,
+          }
+          result['state_hash'] = _hash(_payload_without_hash(result))
+          validated = validate_registry(result)
+          assert validated['status'] == 'GREEN'
+          assert result['revision'] == 129
+          assert result['source_main_sha'] == main
+          assert result['active_thaws'] == []
+
+          Path('/tmp/registry.next.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
+          print('NBA_STEP1_REGISTRY_FROZEN_REVISION=129')
+          print('NBA_STEP1_REGISTRY_STATE_HASH=' + result['state_hash'])
+          print('NBA_STEP1_FROZEN_CHECKPOINT=' + checkpoint)
+          for path, value in sorted(artifacts.items()):
+              print(f'NBA_STEP1_FROZEN_ARTIFACT {path}={value}')
           PY
 
+          git checkout -B registry-write "origin/$REGISTRY_BRANCH"
+          cp /tmp/registry.next.json devsystem/frozen_artifact_registry_state_v1.json
+          git add devsystem/frozen_artifact_registry_state_v1.json
           git config user.name 'nba-step1-registry-authority'
           git config user.email 'actions@users.noreply.github.com'
-          git add devsystem/frozen_artifact_registry_state_v1.json
-          git commit -m 'registry: retarget NBA Step 1 thaw after ledger finalization'
+          git commit -m 'registry: freeze merged NBA Step 1 isolation foundation'
           git push --force-with-lease=refs/heads/${REGISTRY_BRANCH}:${EXPECTED_REGISTRY_HEAD} origin HEAD:${REGISTRY_BRANCH}
