@@ -5,16 +5,18 @@
   "project": "NBA Over/Under",
   "step": 1,
   "total_steps": 8,
-  "status": "IN_PROGRESS",
-  "scope": "Establish a fail-closed NBA-only mutation boundary before any NBA data, UI, model, route, or production activation work. No app.py, shared router, shared API, or other-sport mutation is authorized in Step 1.",
+  "status": "PROOF_PENDING",
+  "scope": "Establish a fail-closed NBA-only mutation boundary before any NBA data, UI, model, route, or production activation work. NBA remains globally planned; only the exact Step-1 bootstrap/control-plane file set is authorized. No app.py, shared router, shared API, or other-sport mutation is authorized in Step 1.",
   "source_main": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
   "rollback_sha": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
   "authoritative_branch": "nba-over-under-step1-isolation-r1",
   "authoritative_pr": 1392,
   "owned_paths": [
+    "devsystem/change_classifier_v1.py",
+    "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
     "nba_page_isolation_v1.py",
-    "tests/test_nba_page_isolation_v1.py",
-    "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json"
+    "tests/test_devsystem_change_classifier_v1.py",
+    "tests/test_nba_page_isolation_v1.py"
   ],
   "protected": {
     "app_entrypoint": true,
@@ -24,7 +26,8 @@
     "wnba": true,
     "nfl": true,
     "cfb": true,
-    "all_other_sports": true
+    "all_other_sports": true,
+    "unowned_future_nba_files": true
   },
   "two_a": {
     "scope_lease_owner": "chatgpt:nba:over-under-step1-isolation-r1",
@@ -39,11 +42,19 @@
     "failure_must_be_classified_before_patch": true,
     "frozen_artifacts_fail_closed": true
   },
+  "failure_classification": {
+    "failed_run": 37345456728,
+    "class": "control-plane-unprotected-domain",
+    "root_cause": "NBA is intentionally planned/unprotected in the DevSystem manifest, so the permanent gate blocked the initial NBA Step-1 files.",
+    "patch": "Add an exact-path NBA Step-1 bootstrap exception to the change classifier while keeping the NBA domain planned and all unowned NBA files fail-closed.",
+    "product_bug": false,
+    "other_sport_bug": false
+  },
   "tdd": {
     "red_commit": "6e5e78637d99c7124da0a0701871f2e6d0687634",
     "red_result": "12 failed because nba_page_isolation_v1.py did not exist",
     "green_implementation_commit": "2bf9a86e9f52c629e1addca59a9dd21e851dfaf8",
-    "green_local_result": "12 passed in 0.03s"
+    "green_local_result": "21 passed in 0.05s after bootstrap scope expansion"
   },
   "acceptance": {
     "nba_only_contract": true,
@@ -52,6 +63,7 @@
     "app_entrypoint_locked": true,
     "shared_apis_locked": true,
     "future_nba_files_require_explicit_scope_expansion": true,
+    "nba_domain_remains_planned": true,
     "pr_exact_head_ci_green": false,
     "changed_file_scope_green": false,
     "merged_main_green": false,

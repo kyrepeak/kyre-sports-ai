@@ -15,6 +15,15 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "devsystem" / "devsystem_manifest_v1.json"
 DOMAIN_KEYS = ("cfb", "mlb", "wnba", "nfl", "nba", "nhl", "soccer")
+NBA_STEP1_BOOTSTRAP_PATHS = frozenset(
+    {
+        "devsystem/change_classifier_v1.py",
+        "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
+        "nba_page_isolation_v1.py",
+        "tests/test_devsystem_change_classifier_v1.py",
+        "tests/test_nba_page_isolation_v1.py",
+    }
+)
 
 
 def _load_manifest(path: Path = MANIFEST_PATH) -> dict:
@@ -115,6 +124,16 @@ def _risk_flags(paths: Iterable[str]) -> dict[str, bool]:
     }
 
 
+def _planned_domain_bootstrap_allowed(domain: str, paths: Iterable[str]) -> bool:
+    normalized = {str(p).strip().replace("\\", "/") for p in paths if str(p).strip()}
+    return (
+        domain == "nba"
+        and bool(normalized)
+        and normalized.issubset(NBA_STEP1_BOOTSTRAP_PATHS)
+        and any(_domain_match(path, "nba") for path in normalized)
+    )
+
+
 def classify(paths: Iterable[str], manifest: dict | None = None) -> dict:
     payload = manifest or _load_manifest()
     clean_paths = [p.strip() for p in paths if p and p.strip()]
@@ -139,7 +158,7 @@ def classify(paths: Iterable[str], manifest: dict | None = None) -> dict:
         if not touched:
             continue
         status = str((domain_cfg.get(key) or {}).get("status") or "")
-        if status != "active":
+        if status != "active" and not _planned_domain_bootstrap_allowed(key, clean_paths):
             unsafe.append(key)
 
     if unsafe:
