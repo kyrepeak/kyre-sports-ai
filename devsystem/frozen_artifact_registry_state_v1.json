@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 123,
-  "source_main_sha": "997539f1904676aa7db11c7bcd7b5f16e1638926",
+  "revision": 124,
+  "source_main_sha": "d5392c2bc38b59dd28e1ca8d08c6a32c29289dd2",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1881,8 +1881,59 @@
         "devsystem/task_ledgers/nfl-live-game-repair-step1-root-cause-v1.json": "67f91c9a717c867f3ddb4000ebebe6114fd3f06f",
         ".github/workflows/nfl-live-game-repair-step1-root-cause-v1.yml": "6edbb51dac93df0a81b1e65b6f547db8fa57d949"
       }
+    },
+    "NFL_LIVE_GAME_REPAIR_STEP2_IDENTITY_BRIDGE": {
+      "status": "FROZEN",
+      "checkpoint_id": "NFL_LIVE_GAME_REPAIR_STEP2_IDENTITY_BRIDGE",
+      "source_main_sha": "d5392c2bc38b59dd28e1ca8d08c6a32c29289dd2",
+      "proven_merge_sha": "d5392c2bc38b59dd28e1ca8d08c6a32c29289dd2",
+      "pr_number": 1387,
+      "pr_head_sha": "6fab6acaed71df37d4c031af3bd8af288df8b804",
+      "pre_pr_focused_proof_run_id": 37248783729,
+      "pr_focused_proof_run_id": 37248832622,
+      "pr_devsystem_proof_run_id": 37248832619,
+      "pr_identity_regression_run_id": 37248832582,
+      "merged_main_focused_proof_run_id": 37249195955,
+      "merged_main_quarantine_run_id": 37249196023,
+      "proof_run_id": 37249196074,
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "MERGED_MAIN_LIVE_IDENTITY_BRIDGE",
+      "shared_gate": "nfl_prop_app_eligibility_v1.py",
+      "rushing_owner": "nfl_rushing_yards_hub_v16",
+      "receiving_owner": "nfl_receiving_yards_hub_v17",
+      "live_market_state": "CLOSED",
+      "live_prop_gate_open": false,
+      "live_identity_state": "LIVE",
+      "live_identity_gate_open": true,
+      "exact_event_identity_required": true,
+      "exact_team_identity_required": true,
+      "current_roster_athlete_id_required": true,
+      "final_post_fail_closed": true,
+      "page_specific_patch_required": false,
+      "rushing_page_mutated": false,
+      "receiving_page_mutated": false,
+      "passing_behavior_mutated": false,
+      "projection_mutated": false,
+      "probability_mutated": false,
+      "ranking_mutated": false,
+      "sportsbook_mutated": false,
+      "product_mutation": true,
+      "api2_used": false,
+      "tdd": {
+        "discarded_bootstrap_run_id": 37248363504,
+        "valid_red_run_id": 37248495693,
+        "green_pre_pr_run_id": 37248783729,
+        "duplicate_manual_reruns": 0
+      },
+      "artifacts": {
+        "nfl_prop_app_eligibility_v1.py": "01d8b0039e270b03d5f96fa4ac17f542f360a610",
+        "devsystem/nfl_live_game_repair_step2_identity_bridge_v1.py": "71681a51075349f1c3c9cb877a50167c58407ab1",
+        "tests/test_nfl_live_game_repair_step2_identity_bridge_v1.py": "8f1c8d5b149766d93442bb54fd59c824c21526c3",
+        "devsystem/task_ledgers/nfl-live-game-repair-step2-identity-bridge-v1.json": "4ab9629b23764c2736fc0b0c23ed9358f574d882",
+        ".github/workflows/nfl-live-game-repair-step2-identity-bridge-v1.yml": "3228092112e9bfb6e8ac31c6c3eda8379c77a8ca"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "54640387bbee39bcc984072346d10b09b66c90310c898f54393b626639dc0965"
+  "state_hash": "d037fd06cbc74e58cac3651e3f91f6bf662c0c877e81a2c2f218d46963e5af20"
 }
