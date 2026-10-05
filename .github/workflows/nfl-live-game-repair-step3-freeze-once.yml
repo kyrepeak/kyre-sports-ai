@@ -1,0 +1,130 @@
+name: NFL Live Game Repair Step 3 Registry Freeze Once
+
+on:
+  push:
+    branches: [monster-frozen-artifact-registry]
+    paths:
+      - ".github/workflows/nfl-live-game-repair-step3-freeze-once.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nfl-live-game-repair-step3-registry-freeze-once
+  cancel-in-progress: false
+
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Prove exact registry transaction identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD:devsystem/frozen_artifact_registry_state_v1.json)" = "07f0f72c6206a6a0da9c2bb58d4c48e9709d2f7a"
+
+      - name: CAS revision 124 to 125 and freeze Step 3
+        shell: bash
+        env:
+          REGISTRY: devsystem/frozen_artifact_registry_state_v1.json
+          WORKFLOW: .github/workflows/nfl-live-game-repair-step3-freeze-once.yml
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path("devsystem/frozen_artifact_registry_state_v1.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+
+          expected_hash = "d037fd06cbc74e58cac3651e3f91f6bf662c0c877e81a2c2f218d46963e5af20"
+          expected_source = "d5392c2bc38b59dd28e1ca8d08c6a32c29289dd2"
+          merge_sha = "97421997566842f78f2cf048e54e97c0d9de7ebf"
+          checkpoint = "NFL_LIVE_GAME_REPAIR_STEP3_RUSHING_LIVE"
+
+          def state_hash(value):
+              body = dict(value)
+              body.pop("state_hash", None)
+              canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+              return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+          assert payload["schema_version"] == 1
+          assert payload["version"] == "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
+          assert payload["registry_ref"] == "refs/heads/monster-frozen-artifact-registry"
+          assert payload["registry_path"] == "devsystem/frozen_artifact_registry_state_v1.json"
+          assert payload["revision"] == 124, payload["revision"]
+          assert payload["source_main_sha"] == expected_source, payload["source_main_sha"]
+          assert payload["state_hash"] == expected_hash, payload["state_hash"]
+          assert state_hash(payload) == expected_hash
+          assert payload.get("active_thaws") == [], payload.get("active_thaws")
+          assert checkpoint not in payload["entries"]
+          assert "NFL_LIVE_GAME_REPAIR_STEP2_IDENTITY_BRIDGE" in payload["entries"]
+
+          payload["entries"][checkpoint] = {
+              "status": "FROZEN",
+              "checkpoint_id": checkpoint,
+              "source_main_sha": merge_sha,
+              "proven_merge_sha": merge_sha,
+              "branch_proof_run_id": 37251428271,
+              "branch_devsystem_run_id": 37251428258,
+              "merged_main_proof_run_id": 37251723040,
+              "proof_run_id": 37251723030,
+              "quarantine_run_id": 37251723123,
+              "proof_kind": "MERGED_MAIN_REAL_LIVE_RUSHING",
+              "regression_debt_state": "CLEARED",
+              "real_live_event_id": "401872978",
+              "live_identity_state": "LIVE",
+              "live_identity_verified": True,
+              "live_prop_market_gate_open": False,
+              "live_stale_api_player_filter": True,
+              "final_post_fail_closed": True,
+              "rushing_mutation_scope": "LIVE_STALE_API_PLAYER_FILTER_ONLY",
+              "receiving_untouched": True,
+              "shared_step2_gate_unchanged": True,
+              "router_unchanged": True,
+              "render_deployment_mutated": False,
+              "api2_used": False,
+              "projection_changed": False,
+              "probability_changed": False,
+              "ranking_changed": False,
+              "sportsbook_changed": False,
+              "sportsbook_projection_influence": 0.0,
+              "artifacts": {
+                  "nfl_rushing_yards_hub_v16.py": "2a81e3130882b579a8d1e52bca0ef1f4e94c988c",
+                  "devsystem/nfl_live_game_repair_step3_rushing_live_v1.py": "f658ea4ac065079af3df5037726dc399934d4365",
+                  "tests/test_nfl_live_game_repair_step3_rushing_live_v1.py": "0ea431697764409af796752d61b41ab08ef7852f",
+                  "devsystem/task_ledgers/nfl-live-game-repair-step3-rushing-live-v1.json": "0fefa12c9dc0d1b6d6204c08d2ee6b5461c968cd",
+                  ".github/workflows/nfl-live-game-repair-step3-rushing-live-v1.yml": "dafab57ae7f0bdc1a6a1ea54667b3dded73f7844"
+              }
+          }
+          payload["revision"] = 125
+          payload["source_main_sha"] = merge_sha
+          payload["state_hash"] = state_hash(payload)
+
+          assert payload["revision"] == 125
+          assert payload["source_main_sha"] == merge_sha
+          assert payload["active_thaws"] == []
+          assert payload["entries"][checkpoint]["status"] == "FROZEN"
+          assert state_hash(payload) == payload["state_hash"]
+
+          path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+          print("NFL_LIVE_GAME_REPAIR_STEP3_REGISTRY_CAS_GREEN")
+          print("revision=125")
+          print("state_hash=" + payload["state_hash"])
+          PY
+
+          rm "$WORKFLOW"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$REGISTRY" "$WORKFLOW"
+          git diff --cached --check
+          git commit -m "Freeze NFL live-game repair Step 3 Rushing live"
+          git push origin HEAD:monster-frozen-artifact-registry
