@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "authority": "nba-step2-r2-builder",
+  "status": "RETIRED",
+  "reason": "Superseded by the smaller planned-domain Step-2 bootstrap candidate after the R2 builder remained queued before executing any step.",
+  "superseded_product_head": "7e43334ffa08873cda8019a6f16533a7d5917796",
+  "replacement_candidate_head": "fc36cb22b244219fce4ae237c39e53b36955bcb1",
+  "registry_state_revision_unchanged": 129,
+  "registry_state_bytes_mutated": false,
+  "product_runtime_mutation": false
+}
