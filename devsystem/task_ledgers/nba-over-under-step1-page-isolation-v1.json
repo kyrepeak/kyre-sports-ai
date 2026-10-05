@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "task_id": "nba-over-under-step1-page-isolation-v1",
+  "title": "NBA Over/Under Step 1 — Page Isolation Foundation",
+  "project": "NBA Over/Under",
+  "step": 1,
+  "total_steps": 8,
+  "status": "IN_PROGRESS",
+  "scope": "Establish a fail-closed NBA-only mutation boundary before any NBA data, UI, model, route, or production activation work. No app.py, shared router, shared API, or other-sport mutation is authorized in Step 1.",
+  "source_main": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
+  "rollback_sha": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
+  "authoritative_branch": "nba-over-under-step1-isolation-r1",
+  "authoritative_pr": 1392,
+  "owned_paths": [
+    "nba_page_isolation_v1.py",
+    "tests/test_nba_page_isolation_v1.py",
+    "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json"
+  ],
+  "protected": {
+    "app_entrypoint": true,
+    "shared_router": true,
+    "shared_apis": true,
+    "mlb": true,
+    "wnba": true,
+    "nfl": true,
+    "cfb": true,
+    "all_other_sports": true
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:nba:over-under-step1-isolation-r1",
+    "scope_lease_id": "SCOPE-LEASE-NBA-OU-STEP1-ISOLATION-R1",
+    "scope_lease_generation": 127,
+    "scope_lease_revision": 208,
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "failure_must_be_classified_before_patch": true,
+    "frozen_artifacts_fail_closed": true
+  },
+  "tdd": {
+    "red_commit": "6e5e78637d99c7124da0a0701871f2e6d0687634",
+    "red_result": "12 failed because nba_page_isolation_v1.py did not exist",
+    "green_implementation_commit": "2bf9a86e9f52c629e1addca59a9dd21e851dfaf8",
+    "green_local_result": "12 passed in 0.03s"
+  },
+  "acceptance": {
+    "nba_only_contract": true,
+    "other_sports_locked": true,
+    "shared_router_locked": true,
+    "app_entrypoint_locked": true,
+    "shared_apis_locked": true,
+    "future_nba_files_require_explicit_scope_expansion": true,
+    "pr_exact_head_ci_green": false,
+    "changed_file_scope_green": false,
+    "merged_main_green": false,
+    "frozen_registry_entry_written": false
+  },
+  "freeze_exit": {
+    "pr_contract_green_required": true,
+    "changed_file_scope_green_required": true,
+    "merged_main_green_required": true,
+    "frozen_registry_entry_required": true,
+    "frozen_token": "NBA_OVER_UNDER_STEP1_PAGE_ISOLATION_FROZEN"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
