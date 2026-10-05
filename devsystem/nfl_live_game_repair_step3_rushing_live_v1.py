@@ -1,9 +1,10 @@
 """NFL Rushing + Receiving live-game repair — Step 3/5 Rushing live cert.
 
-Step 2 already separated live render-time identity from the closed live prop-market
-gate. Step 3 proves the currently routed Rushing Yards V16 path consumes that
-bridge correctly. This module is proof-only: it does not modify page, router,
-projection, probability, ranking, sportsbook, staking, wagering, or API 2.
+Step 2 separated live render-time identity from the closed live prop-market gate.
+Step 3 repairs and proves the currently routed Rushing Yards V16 path when the
+shared API host returns a stale athlete ID during a live game. The only product
+mutation allowed here is a LIVE-only exact-ID roster reconciliation in Rushing
+V16; the frozen shared gate remains the final authority.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ MISSION_STEP = "3/5"
 MODEL_VERSION = "NFL LIVE GAME REPAIR STEP 3 • RUSHING LIVE CERT V1"
 RUSHING_OWNER = "nfl_rushing_yards_hub_v16.py"
 RECEIVING_OWNER = "nfl_receiving_yards_hub_v17.py"
+RUSHING_MUTATION_SCOPE = "LIVE_STALE_API_PLAYER_FILTER_ONLY"
 ROUTER_PATH = Path("streamlit_memory_lazy_router_v187.py")
 RUSHING_PATH = Path(RUSHING_OWNER)
 RECEIVING_PATH = Path(RECEIVING_OWNER)
@@ -29,7 +31,7 @@ BASE_RUSHING_PATH = Path("nfl_rushing_yards_hub_v1.py")
 CONTEXT_API_PATH = Path("nfl_rushing_yards_context_api_v1.py")
 SHARED_GATE_PATH = Path("nfl_prop_app_eligibility_v1.py")
 
-MAY_MODIFY_RUSHING_PAGE = False
+MAY_MODIFY_RUSHING_PAGE = True
 MAY_MODIFY_RECEIVING_PAGE = False
 MAY_MODIFY_ROUTER = False
 MAY_MODIFY_PROJECTION = False
@@ -39,7 +41,7 @@ MAY_MODIFY_SPORTSBOOK = False
 API2_USED = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
-_EXPECTED_RUSHING_BLOB = "bce79ae1dafda1af1864efa7fa2d860e16c93a5d"
+_EXPECTED_RUSHING_BLOB = "2a81e3130882b579a8d1e52bca0ef1f4e94c988c"
 _EXPECTED_RECEIVING_BLOB = "10d5eb4db39a70648b8f20887408d50df773b391"
 _EXPECTED_SHARED_GATE_BLOB = "01d8b0039e270b03d5f96fa4ac17f542f360a610"
 _EVENT_ID = "401000001"
@@ -74,7 +76,7 @@ def verify_repository_contract() -> dict[str, Any]:
         "router_owner_exact": '"Rushing Yards": "nfl_rushing_yards_hub_v16"' in router,
         "shared_guard_called": (
             "from nfl_prop_app_eligibility_v1 import guard_context_payload" in rushing
-            and "return guard_context_payload(" in rushing
+            and "guard_context_payload(" in rushing
             and "_ORIGINAL_LOAD = base_page._load_rushing_context" in rushing
         ),
         "context_api_state_agnostic": (
@@ -93,7 +95,13 @@ def verify_repository_contract() -> dict[str, Any]:
             and 'snapshot.get("identity_gate_open") is True' in shared
             and 'snapshot.get("prop_gate_open") is not True' in shared
         ),
-        "rushing_blob_frozen": _blob(RUSHING_OWNER) == _EXPECTED_RUSHING_BLOB,
+        "live_roster_reconciliation_present": (
+            "def _reconcile_live_roster_payload(" in rushing
+            and "athlete_id not in current_ids" in rushing
+            and "roster_loader=load_roster" in rushing
+            and 'result["step3_live_roster_filtered_count"] = filtered_count' in rushing
+        ),
+        "rushing_blob_step3_exact": _blob(RUSHING_OWNER) == _EXPECTED_RUSHING_BLOB,
         "receiving_untouched": _blob(RECEIVING_OWNER) == _EXPECTED_RECEIVING_BLOB,
         "shared_gate_step2_exact": _blob(str(SHARED_GATE_PATH)) == _EXPECTED_SHARED_GATE_BLOB,
     }
@@ -105,7 +113,8 @@ def verify_repository_contract() -> dict[str, Any]:
         "mission_step": MISSION_STEP,
         "router_owner": "nfl_rushing_yards_hub_v16",
         **checks,
-        "product_mutation": False,
+        "product_mutation": True,
+        "rushing_mutation_scope": RUSHING_MUTATION_SCOPE,
         "receiving_untouched": True,
         "api2_used": False,
     }
@@ -242,13 +251,22 @@ def certify_synthetic_final_rushing() -> dict[str, Any]:
 
 def certify_synthetic_stale_roster_rushing() -> dict[str, Any]:
     result = _run_wrapper(_live_snapshot(), stale_roster=True)
-    assert result.get("ready") is False
-    assert result.get("teams") == []
-    assert result.get("step7_app_identity_verified") is False
+    players = [
+        player
+        for team in (result.get("teams") or [])
+        for player in (team.get("players") or [])
+    ]
+    assert result.get("ready") is True
+    assert result.get("step7_app_identity_verified") is True
+    assert result.get("step7_app_live_identity_verified") is True
+    assert result.get("step3_live_roster_filtered_count") == 1
+    assert len(players) == 1
     return {
         "status": "GREEN",
-        "ready": False,
-        "identity_verified": False,
+        "ready": True,
+        "identity_verified": True,
+        "filtered_count": 1,
+        "player_count": len(players),
     }
 
 
@@ -313,7 +331,7 @@ def certify_current_live_rushing(*, attempts: int = 3) -> dict[str, Any]:
     assert result.get("market_enabled") is False
     assert float(result.get("sportsbook_influence") or 0.0) == 0.0
     assert len(teams) == 2
-    assert len(players) >= 2
+    assert len(players) >= 1
     assert all(player.get("step7_app_identity_verified") is True for player in players)
 
     return {
@@ -326,6 +344,7 @@ def certify_current_live_rushing(*, attempts: int = 3) -> dict[str, Any]:
         "prop_market_open": False,
         "team_count": len(teams),
         "player_count": len(players),
+        "filtered_count": int(result.get("step3_live_roster_filtered_count") or 0),
         "sportsbook_projection_influence": 0.0,
         "api2_used": False,
     }
@@ -339,7 +358,8 @@ def run(*, require_live: bool = False, artifact_dir: str | Path = "artifacts/nfl
         "synthetic_live": certify_synthetic_live_rushing(),
         "synthetic_final": certify_synthetic_final_rushing(),
         "synthetic_stale_roster": certify_synthetic_stale_roster_rushing(),
-        "product_mutation": False,
+        "product_mutation": True,
+        "rushing_mutation_scope": RUSHING_MUTATION_SCOPE,
         "receiving_untouched": True,
         "api2_used": False,
     }

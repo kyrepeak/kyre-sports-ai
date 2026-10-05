@@ -6,6 +6,7 @@ on:
       - main
       - nfl-live-game-repair-step3-rushing-live-r1
     paths:
+      - "nfl_rushing_yards_hub_v16.py"
       - "devsystem/nfl_live_game_repair_step3_rushing_live_v1.py"
       - "tests/test_nfl_live_game_repair_step3_rushing_live_v1.py"
       - "devsystem/task_ledgers/nfl-live-game-repair-step3-rushing-live-v1.json"
@@ -13,6 +14,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "nfl_rushing_yards_hub_v16.py"
       - "devsystem/nfl_live_game_repair_step3_rushing_live_v1.py"
       - "tests/test_nfl_live_game_repair_step3_rushing_live_v1.py"
       - "devsystem/task_ledgers/nfl-live-game-repair-step3-rushing-live-v1.json"
