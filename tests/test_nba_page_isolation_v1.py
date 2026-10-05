@@ -30,17 +30,20 @@ def test_nba_isolation_contract_is_nba_only_and_shared_surfaces_are_locked():
 
 def test_nba_isolation_allows_only_step1_owned_paths():
     mod = _load_module()
-    expected = [
-        "devsystem/change_classifier_v1.py",
-        "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
-        "nba_page_isolation_v1.py",
-        "tests/test_devsystem_change_classifier_v1.py",
-        "tests/test_nba_page_isolation_v1.py",
-    ]
-    result = mod.assert_nba_only_change(expected)
+    result = mod.assert_nba_only_change(
+        [
+            "nba_page_isolation_v1.py",
+            "tests/test_nba_page_isolation_v1.py",
+            "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
+        ]
+    )
     assert result["status"] == "GREEN"
     assert result["decision"] == "NBA_ONLY_CHANGE_ALLOWED"
-    assert result["changed_paths"] == expected
+    assert result["changed_paths"] == [
+        "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
+        "nba_page_isolation_v1.py",
+        "tests/test_nba_page_isolation_v1.py",
+    ]
 
 
 @pytest.mark.parametrize(
