@@ -1,0 +1,57 @@
+name: NFL Live Game Repair Step 2 Identity Bridge
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_prop_app_eligibility_v1.py"
+      - "devsystem/nfl_live_game_repair_step2_identity_bridge_v1.py"
+      - "tests/test_nfl_live_game_repair_step2_identity_bridge_v1.py"
+      - "devsystem/task_ledgers/nfl-live-game-repair-step2-identity-bridge-v1.json"
+      - ".github/workflows/nfl-live-game-repair-step2-identity-bridge-v1.yml"
+  push:
+    branches:
+      - main
+      - nfl-live-game-repair-step2-identity-bridge-r1
+    paths:
+      - "nfl_prop_app_eligibility_v1.py"
+      - "devsystem/nfl_live_game_repair_step2_identity_bridge_v1.py"
+      - "tests/test_nfl_live_game_repair_step2_identity_bridge_v1.py"
+      - "devsystem/task_ledgers/nfl-live-game-repair-step2-identity-bridge-v1.json"
+      - ".github/workflows/nfl-live-game-repair-step2-identity-bridge-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-live-game-repair-step2-identity-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Prove exact checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$expected"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Step 2 live identity bridge contract
+        run: python -m pytest -q tests/test_nfl_live_game_repair_step2_identity_bridge_v1.py
+      - name: Step 2 static safety certificate
+        run: python -m devsystem.nfl_live_game_repair_step2_identity_bridge_v1
+      - name: Shared app-identity regression suite
+        run: python -m pytest -q tests/test_nfl_prop_app_eligibility_v1.py
+      - name: Step 1 frozen regression proof
+        run: python -m pytest -q tests/test_nfl_live_game_repair_step1_root_cause_v1.py

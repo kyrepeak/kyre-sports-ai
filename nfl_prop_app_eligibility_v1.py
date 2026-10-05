@@ -7,7 +7,7 @@ immediately before a Streamlit player identity can render.
 Fail closed:
 - exact event summary/provider unavailable;
 - game-day inactive confirmation pending/unverified;
-- event already live/final (pregame prop identity is closed);
+- final events after the live identity window closes;
 - event/team IDs disagree with the payload;
 - current roster cannot be verified;
 - any rendered athlete ID is absent from the current eligible roster;
@@ -37,7 +37,7 @@ def _text(value: Any, default: str = "") -> str:
 
 
 def _load_event_snapshot(event_id: str) -> dict[str, Any]:
-    """Load one exact ESPN event and return a pregame-only identity snapshot."""
+    """Load one exact ESPN event and separate market state from identity state."""
     import nfl_game_day_availability_v1 as game_day
     import nfl_moneyline_hub_v2 as nfl_data
 
@@ -105,8 +105,10 @@ def _load_event_snapshot(event_id: str) -> dict[str, Any]:
         }
 
     # Step 5 permanently closes pregame player-prop identity after kickoff.
+    # Step 2 live-game repair keeps the market gate CLOSED while allowing only
+    # exact event + current-roster identity to bridge the active-game window.
     if state in {"in", "post"}:
-        return {
+        closed = {
             "ready": True,
             "state": "CLOSED",
             "prop_gate_open": False,
@@ -114,6 +116,10 @@ def _load_event_snapshot(event_id: str) -> dict[str, Any]:
             "http": diag.get("http"),
             "team_by_id": teams,
         }
+        if state == "in":
+            closed["identity_state"] = "LIVE"
+            closed["identity_gate_open"] = True
+        return closed
 
     event_map = nfl_data._parse_injuries(payload)
     availability = game_day.event_availability_snapshot(
@@ -175,7 +181,7 @@ def guard_context_payload(
     snapshot_loader: SnapshotLoader | None = None,
     roster_loader: RosterLoader | None = None,
 ) -> dict[str, Any]:
-    """Require exact live event + roster identity for every app player row."""
+    """Require exact event + current-roster identity for every app player row."""
     event_id = _text(official_event_id)
     if not isinstance(payload, Mapping):
         return _fail_context(payload, event_id, "player context payload is not an object")
@@ -186,24 +192,34 @@ def guard_context_payload(
 
     snapshot = (snapshot_loader or _load_event_snapshot)(event_id)
     state = _text(snapshot.get("state"), "UNVERIFIED").upper()
+    identity_state = _text(snapshot.get("identity_state"), state).upper()
     if snapshot.get("ready") is not True:
         return _fail_context(
             payload,
             event_id,
             _text(snapshot.get("reason"), "exact game-day identity is not verified"),
-            state=state,
+            state=identity_state,
         )
+
+    live_identity_bridge = (
+        state == "CLOSED"
+        and identity_state == "LIVE"
+        and snapshot.get("identity_gate_open") is True
+        and snapshot.get("prop_gate_open") is not True
+    )
+
     # Final inactive publication is an availability contract, not an identity
-    # contract. Before kickoff, PENDING is a truthful state: keep exact event +
-    # current-roster player identity visible while downstream frozen market
-    # gates continue to decide whether any market output is eligible.
+    # contract. Before kickoff, PENDING is a truthful state; during the game,
+    # the tightly-scoped LIVE bridge keeps only exact event/current-roster
+    # identity visible while the frozen market gate remains CLOSED.
     if state not in {"PENDING", "CONFIRMED"}:
-        return _fail_context(
-            payload,
-            event_id,
-            _text(snapshot.get("reason"), "pregame player identity is not available"),
-            state=state,
-        )
+        if not live_identity_bridge:
+            return _fail_context(
+                payload,
+                event_id,
+                _text(snapshot.get("reason"), "pregame player identity is not available"),
+                state=identity_state,
+            )
 
     team_by_id = {
         _text(team_id): _text(abbr).upper()
@@ -212,7 +228,12 @@ def guard_context_payload(
     }
     teams = payload.get("teams")
     if not isinstance(teams, list) or len(teams) != 2 or len(team_by_id) != 2:
-        return _fail_context(payload, event_id, "two-team exact identity contract failed", state=state)
+        return _fail_context(
+            payload,
+            event_id,
+            "two-team exact identity contract failed",
+            state=identity_state,
+        )
 
     allowed = {_text(pos).upper() for pos in allowed_positions}
     load_roster = roster_loader or _eligible_ids_for_team
@@ -222,7 +243,7 @@ def guard_context_payload(
 
     for raw_team in teams:
         if not isinstance(raw_team, Mapping):
-            return _fail_context(payload, event_id, "team row is not an object", state=state)
+            return _fail_context(payload, event_id, "team row is not an object", state=identity_state)
         team_id = _text(raw_team.get("official_team_id"))
         abbr = _text(raw_team.get("team_abbreviation")).upper()
         expected_abbr = team_by_id.get(team_id, "")
@@ -232,7 +253,12 @@ def guard_context_payload(
             or (abbr and abbr != expected_abbr)
             or team_id in seen_teams
         ):
-            return _fail_context(payload, event_id, "team identity no longer matches exact event", state=state)
+            return _fail_context(
+                payload,
+                event_id,
+                "team identity no longer matches exact event",
+                state=identity_state,
+            )
         seen_teams.add(team_id)
 
         current_ids, roster_diag = load_roster(expected_abbr)
@@ -241,17 +267,17 @@ def guard_context_payload(
                 payload,
                 event_id,
                 f"current roster identity unavailable for {expected_abbr}",
-                state=state,
+                state=identity_state,
             )
 
         raw_players = raw_team.get("players") or []
         if not isinstance(raw_players, list):
-            return _fail_context(payload, event_id, "player list is invalid", state=state)
+            return _fail_context(payload, event_id, "player list is invalid", state=identity_state)
 
         verified_players: list[dict[str, Any]] = []
         for raw_player in raw_players:
             if not isinstance(raw_player, Mapping):
-                return _fail_context(payload, event_id, "player row is not an object", state=state)
+                return _fail_context(payload, event_id, "player row is not an object", state=identity_state)
             athlete_id = _text(raw_player.get("official_athlete_id"))
             player_team_id = _text(raw_player.get("official_team_id"))
             position = _text(raw_player.get("position")).upper()
@@ -266,7 +292,7 @@ def guard_context_payload(
                     payload,
                     event_id,
                     "one or more app player identities are no longer current-roster verified",
-                    state=state,
+                    state=identity_state,
                 )
             seen_athletes.add(athlete_id)
             row = dict(raw_player)
@@ -281,7 +307,8 @@ def guard_context_payload(
     out = dict(payload)
     out["teams"] = verified_teams
     out["step7_app_identity_verified"] = True
-    out["step7_app_identity_state"] = state
+    out["step7_app_identity_state"] = identity_state
+    out["step7_app_live_identity_verified"] = live_identity_bridge
     out["step7_app_final_inactives_verified"] = snapshot.get("prop_gate_open") is True
     out["step7_app_identity_version"] = MODEL_VERSION
     return out
