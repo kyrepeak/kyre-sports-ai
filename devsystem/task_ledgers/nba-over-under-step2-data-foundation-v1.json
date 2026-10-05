@@ -9,8 +9,8 @@
   "scope": "Activate a protected NBA DevSystem lane and connect the NBA page-facing data client to the hosted Kyre Sports API first. Add only an NBA read-only FastAPI slate route backed by NBA official schedule truth, ESPN NBA fallback, Phoenix-time normalization, and optional server-side totals. No Streamlit NBA page route, app.py, model, projection, probability, ranking, selection, or other-sport product changes are authorized.",
   "source_main": "eb4ed13666055cd426d57f154641064ad73e535e",
   "rollback_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
-  "authoritative_branch": "nba-step2-data-foundation-r1",
-  "authoritative_pr": 1395,
+  "authoritative_branch": "nba-step2-atomic-staging-r1",
+  "authoritative_pr": 1397,
   "owned_paths": [
     "nba_data_foundation_v1.py",
     "sports_api/nba_over_under_data_v1.py",
@@ -69,6 +69,13 @@
       "root_cause": "Initial Step-2 implementation normalized direct providers but did not make the hosted Kyre Sports API the page-facing primary transport.",
       "patch": "Add a hosted Kyre Sports API-first client contract, NBA-only FastAPI provider/route, and a two-line additive production mount.",
       "other_sport_bug": false
+    },
+    "authority_rollover": {
+      "class": "CONTROL_PLANE",
+      "root_cause": "Superseded PR #1395 experienced concurrent head drift and the branch-ref connector action failed before mutation.",
+      "patch": "Close #1395 and move sole Step-2 authority to PR #1397 on the isolated finished candidate branch without rewriting product bytes.",
+      "old_pr": 1395,
+      "new_pr": 1397
     }
   },
   "tdd": {
