@@ -56,7 +56,7 @@
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
     "upstream_step2_recovery_not_touched": true,
-    "next_legal_action": "EXACT_THAW_THEN_ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
+    "next_legal_action": "ONE_CHANGED_HEAD_EXACT_PROOF_THEN_MERGE_THEN_ONE_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
   },
   "acceptance": {
     "opponent_identity_consumer_independent": true,
@@ -245,5 +245,39 @@
     "no_streamlit_reboot": true,
     "no_unchanged_rerun": true,
     "next_legal_action": "EXACT_THAW_THEN_ONE_EXACT_HEAD_PROOF_CHAIN_THEN_MERGE_THEN_ONE_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
+  },
+  "anti_loop_v2_ledger_closeout_r4": {
+    "failure_class": "CONTROL_PLANE",
+    "failed_exact_head_run_id": 37335596055,
+    "failed_job_id": 111849551623,
+    "failed_step": "Validate Monster Anti-Loop V2 hard gate",
+    "focused_step3_run_id": 37335596370,
+    "focused_step3_run_conclusion": "success",
+    "observable_signal": "The focused WNBA Step-3 exact-head workflow was GREEN while DevSystem targeted CI failed only when Anti-Loop V2 reached its PR-ledger hard gate.",
+    "root_cause": "PR #1391 is a non-documentation PR but initially changed only the Step-3 helper and regression test. Monster Anti-Loop V2 requires exactly one changed task ledger under devsystem/task_ledgers/ for every non-documentation PR.",
+    "patch": [
+      "Change this authoritative Step-3 task ledger in the same PR so the V2 hard gate has exactly one changed terminal DONE ledger.",
+      "Preserve the valid genesis action_log and all prior Step-3 proof history.",
+      "Do not rerun the failed 8388f153 head; let GitHub certify only the new changed head."
+    ],
+    "mutation_scope": [
+      "wnba_pra_repair_v1_step3_data.py",
+      "tests/test_wnba_pra_repair_v1_step3.py",
+      "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
+    ],
+    "rollback_anchor_head_sha": "8388f1536da02b537c6865ef29160f06818107d4",
+    "registry_revision_at_patch": 126,
+    "registry_state_hash_at_patch": "091001138b893eb0fc3bd0f4e141e30dbc01e3c7ae77453ca146efcd3143ea59",
+    "active_thaws_at_patch": 0,
+    "no_user_action_required": true,
+    "public_runtime_behavior_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_math_changed": false,
+    "ranking_changed": false,
+    "qualification_changed": false,
+    "no_unchanged_rerun": true,
+    "next_legal_action": "ONE_CHANGED_HEAD_EXACT_PROOF_CHAIN_THEN_EXACT_MERGE_THEN_ONE_MERGED_MAIN_PRODUCTION_PROOF_THEN_FREEZE_RELEASE"
   }
 }

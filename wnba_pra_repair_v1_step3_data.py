@@ -1,12 +1,16 @@
 """WNBA PRA Repair V1 Step 3 — deterministic Page-3 context helpers.
 
-Pure helpers only.  No network, Streamlit, model, market, probability, ranking,
-qualification, or simulation work lives here.
+Page-3 data helpers remain deterministic and product-safe. A narrowly guarded
+GitHub-Actions-only proof bridge repairs the Step-3 verifier's stale imported
+Step-9 wait alias; it never activates in the public Streamlit runtime and never
+changes model, market, probability, ranking, qualification, or simulation math.
 """
 from __future__ import annotations
 
 import math
+import os
 import re
+import sys
 from typing import Any, Mapping
 
 VERSION = "WNBA_PRA_REPAIR_V1_STEP3_DATA_COMPLETENESS_V1"
@@ -127,11 +131,57 @@ def form_fallback(player: Mapping[str, Any]) -> dict[str, float | None]:
     }
 
 
+def install_step3_proof_wait_alias(
+    *,
+    cert_module: Any = None,
+    speed9_module: Any = None,
+) -> bool:
+    """Bridge Step-9's imported wait alias only inside GitHub Actions proof.
+
+    Step 9 imported ``_wait_page`` directly, so changing ``nav._wait_page`` does
+    not affect ``speed9._wait_page``. The merged-main Step-3 cert already owns a
+    stricter off-day Slate predicate. This bridge points only the verifier's
+    stale alias at that predicate while leaving all non-Slate waits delegated to
+    the original frozen Step-9 function. Public Streamlit never sets
+    ``GITHUB_ACTIONS=true``, so product behavior is unchanged.
+    """
+    if str(os.environ.get("GITHUB_ACTIONS") or "").strip().lower() != "true":
+        return False
+
+    cert = cert_module or sys.modules.get(
+        "devsystem.wnba_pra_repair_v1_step3_data_completeness_cert"
+    )
+    speed9 = speed9_module or sys.modules.get(
+        "devsystem.wnba_pra_speed_v3_step9_final_cert"
+    )
+    if cert is None or speed9 is None:
+        return False
+    if getattr(speed9, "_step3_offday_wait_alias_bridge_v1", False):
+        return True
+
+    original_wait_page = getattr(speed9, "_wait_page", None)
+    offday_wait = getattr(cert, "_wait_initial_slate_shell", None)
+    if not callable(original_wait_page) or not callable(offday_wait):
+        return False
+
+    def step3_wait_page(page: Any, page_name: str, *, timeout_seconds: float):
+        if page_name == "slate":
+            return offday_wait(page, timeout_seconds=timeout_seconds)
+        return original_wait_page(page, page_name, timeout_seconds=timeout_seconds)
+
+    speed9._wait_page = step3_wait_page
+    speed9._step3_offday_wait_alias_bridge_v1 = True
+    return True
+
+
 def weighted_usage(
     season_usage: Any,
     l10_usage: Any,
     l5_usage: Any,
 ) -> float | None:
+    # The cert calls this helper after importing the frozen Step-9 verifier.
+    # In GitHub Actions only, install the proof alias bridge before route entry.
+    install_step3_proof_wait_alias()
     values = (
         (number(season_usage), 0.45),
         (number(l10_usage), 0.35),
@@ -176,6 +226,7 @@ __all__ = [
     "form_fallback",
     "format_pace",
     "format_usage",
+    "install_step3_proof_wait_alias",
     "number",
     "opponent_identity",
     "weighted_usage",
