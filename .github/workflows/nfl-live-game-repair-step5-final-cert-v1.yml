@@ -1,0 +1,60 @@
+name: NFL Live Game Repair Step 5 Final Cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'devsystem/nfl_live_game_repair_step5_final_cert_v1.py'
+      - 'tests/test_nfl_live_game_repair_step5_final_cert_v1.py'
+      - '.github/workflows/nfl-live-game-repair-step5-final-cert-v1.yml'
+      - 'devsystem/task_ledgers/nfl-live-game-repair-step5-final-cert-v1.json'
+  push:
+    branches: [main]
+    paths:
+      - 'devsystem/nfl_live_game_repair_step5_final_cert_v1.py'
+      - 'tests/test_nfl_live_game_repair_step5_final_cert_v1.py'
+      - '.github/workflows/nfl-live-game-repair-step5-final-cert-v1.yml'
+      - 'devsystem/task_ledgers/nfl-live-game-repair-step5-final-cert-v1.json'
+
+permissions:
+  contents: read
+
+jobs:
+  final-cert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact authoritative head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Prove exact checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED='${{ github.event.pull_request.head.sha || github.sha }}'
+          ACTUAL="$(git rev-parse HEAD)"
+          test "$ACTUAL" = "$EXPECTED"
+          echo "NFL_LIVE_GAME_STEP5_EXACT_HEAD=$ACTUAL"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest playwright
+          python -m playwright install --with-deps chromium
+      - name: Run Step 5 deterministic contract
+        run: python -m pytest -q tests/test_nfl_live_game_repair_step5_final_cert_v1.py
+      - name: Run Step 5 current-live and public responsive certification
+        run: python -m devsystem.nfl_live_game_repair_step5_final_cert_v1 --require-live --require-public
+      - name: Upload Step 5 proof artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-live-game-repair-step5-final-cert-${{ github.run_id }}
+          path: artifacts/nfl-live-game-repair-step5-final-cert/
+          if-no-files-found: warn
