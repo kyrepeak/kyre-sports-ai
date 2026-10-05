@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from devsystem import nfl_live_game_repair_step5_final_cert_v1 as cert
 
 
@@ -21,6 +23,15 @@ def test_step5_repository_contract_pins_frozen_runtime():
     assert proof["receiving_frozen_exact"] is True
     assert proof["shared_gate_frozen_exact"] is True
     assert proof["router_owners_exact"] is True
+    assert proof["production_target_canonical"] is True
+
+
+def test_step5_uses_single_canonical_production_target():
+    targets = json.loads(cert.PRODUCTION_TARGETS_PATH.read_text(encoding="utf-8"))
+    expected = targets["streamlit"]["url"].rstrip("/")
+    assert cert.production_base_url() == expected
+    assert cert.production_base_url() == "https://pickvault.streamlit.app"
+    assert cert.production_base_url() != cert.LEGACY_STREAMLIT_HOST
 
 
 def test_step5_pregame_live_final_lifecycle_is_green():
