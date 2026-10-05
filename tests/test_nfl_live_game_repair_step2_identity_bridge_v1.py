@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-import nfl_moneyline_hub_v2 as nfl_data
+import sys
+from types import ModuleType
+
 import nfl_prop_app_eligibility_v1 as guard
 
 
@@ -70,12 +72,25 @@ def _roster_loader(abbr: str):
     return rows.get(abbr, set()), {"ok": True, "http": 200}
 
 
+def _install_snapshot_modules(monkeypatch, state: str) -> None:
+    nfl_data = ModuleType("nfl_moneyline_hub_v2")
+    nfl_data.ESPN_BASE = "https://example.test"
+    nfl_data._json_get = lambda _url: (_summary(state), {"ok": True, "http": 200})
+    nfl_data._parse_injuries = lambda _payload: {}
+
+    game_day = ModuleType("nfl_game_day_availability_v1")
+    game_day.event_availability_snapshot = lambda *_args, **_kwargs: {
+        "state": "UNVERIFIED",
+        "prop_gate_open": False,
+    }
+    game_day.current_prop_eligible_keys = lambda _abbr: (set(), {}, {"ok": False})
+
+    monkeypatch.setitem(sys.modules, "nfl_moneyline_hub_v2", nfl_data)
+    monkeypatch.setitem(sys.modules, "nfl_game_day_availability_v1", game_day)
+
+
 def test_live_event_snapshot_opens_identity_bridge_without_reopening_market_gate(monkeypatch):
-    monkeypatch.setattr(
-        nfl_data,
-        "_json_get",
-        lambda _url: (_summary("in"), {"ok": True, "http": 200}),
-    )
+    _install_snapshot_modules(monkeypatch, "in")
 
     snapshot = guard._load_event_snapshot("401000001")
 
@@ -115,11 +130,7 @@ def test_live_identity_bridge_keeps_exact_current_roster_context_visible():
 
 
 def test_final_event_stays_fail_closed_for_rushing_and_receiving_context(monkeypatch):
-    monkeypatch.setattr(
-        nfl_data,
-        "_json_get",
-        lambda _url: (_summary("post"), {"ok": True, "http": 200}),
-    )
+    _install_snapshot_modules(monkeypatch, "post")
 
     snapshot = guard._load_event_snapshot("401000001")
     result = guard.guard_context_payload(
