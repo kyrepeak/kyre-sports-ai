@@ -1,19 +1,23 @@
 {
   "version": 1,
   "task_id": "nba-over-under-step2-data-foundation-v1",
-  "title": "NBA Over/Under Step 2 — Data Source + API Foundation",
+  "title": "NBA Over/Under Step 2 — Kyre Sports API + Data Foundation",
   "project": "NBA Over/Under",
   "step": 2,
   "total_steps": 8,
   "status": "DONE",
-  "scope": "Activate a protected NBA DevSystem lane and add an NBA-only normalized schedule and totals-market data boundary. No public route, app entrypoint, shared API, model, projection, probability, ranking, selection, or other-sport product changes are authorized in Step 2.",
+  "scope": "Activate a protected NBA DevSystem lane and connect the NBA page-facing data client to the hosted Kyre Sports API first. Add only an NBA read-only FastAPI slate route backed by NBA official schedule truth, ESPN NBA fallback, Phoenix-time normalization, and optional server-side totals. No Streamlit NBA page route, app.py, model, projection, probability, ranking, selection, or other-sport product changes are authorized.",
   "source_main": "eb4ed13666055cd426d57f154641064ad73e535e",
   "rollback_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
   "authoritative_branch": "nba-step2-data-foundation-r1",
   "authoritative_pr": 1395,
   "owned_paths": [
     "nba_data_foundation_v1.py",
+    "sports_api/nba_over_under_data_v1.py",
+    "sports_api/api/nba_over_under_v1.py",
+    "sports_api/main.py",
     "tests/test_nba_data_foundation_v1.py",
+    "tests/test_nba_kyre_api_bridge_v1.py",
     "devsystem/devsystem_manifest_v1.json",
     ".github/workflows/nba-over-under-step2-data-foundation-v1.yml",
     "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json"
@@ -21,8 +25,9 @@
   "protected": {
     "step1_frozen": true,
     "app_entrypoint": true,
-    "shared_router": true,
-    "shared_apis": true,
+    "streamlit_router": true,
+    "existing_shared_api_routes": true,
+    "shared_api_entrypoint_change": "NBA import + include_router only",
     "mlb": true,
     "wnba": true,
     "nfl": true,
@@ -39,7 +44,8 @@
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
     "frozen_artifacts_fail_closed": true,
-    "rollback_anchor_bound": true
+    "rollback_anchor_bound": true,
+    "anti_loop_skip_applied": true
   },
   "failure_classification": {
     "verifier_setup_failure": {
@@ -57,15 +63,26 @@
       "observed_failure": "ModuleNotFoundError: No module named 'nba_data_foundation_v1'",
       "product_bug": false,
       "other_sport_bug": false
+    },
+    "kyre_api_scope_gap": {
+      "class": "REQUIREMENT_GAP",
+      "root_cause": "Initial Step-2 implementation normalized direct providers but did not make the hosted Kyre Sports API the page-facing primary transport.",
+      "patch": "Add a hosted Kyre Sports API-first client contract, NBA-only FastAPI provider/route, and a two-line additive production mount.",
+      "other_sport_bug": false
     }
   },
   "tdd": {
     "red_head": "da3059709496bfcf73ba62ddc7290516368da3a0",
     "red_run": 37355332795,
     "red_result": "pytest reached collection and failed exactly because nba_data_foundation_v1 did not exist",
+    "kyre_bridge_static_red_head": "ba3815db1bf7b8e895a23167a8e8cd047abd95c3",
+    "kyre_bridge_static_red_result": "bridge contract references Kyre NBA constants/client method/API files absent on that head",
     "implementation_started_after_valid_red": true
   },
   "source_contract": {
+    "page_transport_primary": "KYRE_SPORTS_API",
+    "kyre_api_base_url": "https://kyre-sports-api.onrender.com",
+    "kyre_nba_slate_path": "/api/v1/nba/over-under/slate",
     "schedule_primary": "NBA_OFFICIAL_CDN",
     "schedule_fallback": "ESPN_NBA_SCOREBOARD",
     "odds_provider": "THE_ODDS_API",
@@ -74,10 +91,15 @@
     "timezone": "America/Phoenix",
     "other_sports_allowed": false,
     "projection_influence": 0.0,
-    "sportsbook_projection_influence": 0.0
+    "sportsbook_projection_influence": 0.0,
+    "provider_keys_server_side_only": true
   },
   "acceptance": {
     "nba_only_contract": true,
+    "kyre_sports_api_primary": true,
+    "certified_render_origin_only": true,
+    "nba_api_route_mounted": true,
+    "direct_schedule_fallback_after_kyre_failure_only": true,
     "official_schedule_primary": true,
     "espn_schedule_fallback": true,
     "valid_off_day_does_not_fallback": true,
@@ -85,9 +107,9 @@
     "strict_nba_team_guard": true,
     "totals_market_normalized": true,
     "odds_key_fail_closed": true,
-    "route_activation": false,
+    "streamlit_page_route_activation": false,
     "model_activation": false,
-    "shared_api_mutation": false,
+    "shared_api_change": "additive NBA route only",
     "other_sport_product_mutation": false,
     "pr_exact_head_ci_green": false,
     "merged_main_green": false,
