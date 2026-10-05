@@ -9,8 +9,8 @@
   "scope": "Establish a fail-closed NBA-only mutation boundary before any NBA data, UI, model, route, or production activation work. NBA remains globally planned; only the exact Step-1 bootstrap/control-plane file set is authorized. No app.py, shared router, shared API, or other-sport mutation is authorized in Step 1.",
   "source_main": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
   "rollback_sha": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
-  "authoritative_branch": "nba-over-under-step1-isolation-r1",
-  "authoritative_pr": 1392,
+  "authoritative_branch": "nba-step1-isolation-final-r1",
+  "authoritative_pr": 1394,
   "owned_paths": [
     "devsystem/change_classifier_v1.py",
     "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
@@ -43,10 +43,13 @@
     "frozen_artifacts_fail_closed": true
   },
   "failure_classification": {
-    "failed_run": 37345456728,
-    "class": "control-plane-unprotected-domain",
-    "root_cause": "NBA is intentionally planned/unprotected in the DevSystem manifest, so the permanent gate blocked the initial NBA Step-1 files.",
-    "patch": "Add an exact-path NBA Step-1 bootstrap exception to the change classifier while keeping the NBA domain planned and all unowned NBA files fail-closed.",
+    "initial_failed_run": 37345456728,
+    "initial_class": "control-plane-unprotected-domain",
+    "initial_root_cause": "NBA was intentionally planned/unprotected in the DevSystem manifest, so the permanent gate blocked the first Step-1 files.",
+    "bootstrap_patch": "Add an exact-path NBA Step-1 bootstrap exception to the change classifier while keeping the NBA domain planned and all unowned NBA files fail-closed.",
+    "anti_loop_failed_run": 37350918534,
+    "anti_loop_root_cause": "The Step-1 task ledger was PROOF_PENDING; Anti-Loop V2 requires the one changed task ledger to be DONE.",
+    "anti_loop_patch": "Finalize the Step-1 ledger to DONE and retarget exact frozen-registry authority before the final proof PR.",
     "product_bug": false,
     "other_sport_bug": false
   },
@@ -64,16 +67,33 @@
     "shared_apis_locked": true,
     "future_nba_files_require_explicit_scope_expansion": true,
     "nba_domain_remains_planned": true,
-    "pr_exact_head_ci_green": false,
-    "changed_file_scope_green": false,
-    "merged_main_green": false,
-    "frozen_registry_entry_written": false
+    "pr_exact_head_ci_green": true,
+    "changed_file_scope_green": true,
+    "merged_main_green": true,
+    "frozen_registry_entry_written": true
+  },
+  "final_proof": {
+    "implementation_pr": 1394,
+    "exact_pr_head_sha": "5ad719200a6c2520d7c1d9fe8a2082b4863a5abc",
+    "implementation_merge_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
+    "pr_devsystem_run": 37352120963,
+    "pr_api2_integration_run": 37352120912,
+    "merged_main_devsystem_run": 37352839487,
+    "merged_main_api2_run": 37352839116,
+    "registry_authority_run": 37353133761,
+    "terminal_receipt_job": 111909938665,
+    "registry_revision": 129,
+    "registry_state_hash": "e26c448eee1dc1240b6b2d36bc1c9e1a0243b6d7f0fb96da1cc8815f78bc1384",
+    "frozen_checkpoint": "NBA_OVER_UNDER_STEP1_PAGE_ISOLATION",
+    "active_thaws_after_freeze": 0,
+    "other_sport_product_mutations": 0
   },
   "freeze_exit": {
     "pr_contract_green_required": true,
     "changed_file_scope_green_required": true,
     "merged_main_green_required": true,
     "frozen_registry_entry_required": true,
+    "completed": true,
     "frozen_token": "NBA_OVER_UNDER_STEP1_PAGE_ISOLATION_FROZEN"
   },
   "action_log": {
