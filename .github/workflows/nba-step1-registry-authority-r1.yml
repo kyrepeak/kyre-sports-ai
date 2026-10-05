@@ -1,0 +1,87 @@
+name: NBA Step 1 Registry Authority R1
+
+on:
+  push:
+    branches:
+      - nba-step1-registry-authority-r1
+    paths:
+      - .github/workflows/nba-step1-registry-authority-r1.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nba-step1-registry-authority-r1
+  cancel-in-progress: false
+
+jobs:
+  exact-two-file-thaw:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply exact-head exact-file thaw to authoritative registry
+        shell: bash
+        env:
+          EXPECTED_REGISTRY_HEAD: 625ae390fbe972cb423ca420da71e8d9ada18571
+          TARGET_HEAD: d787e29f14cd842e6d5af14c25711caf117d566a
+          SOURCE_MAIN: 9a1fe7ba34e1325e544dc76f0a6798478511a47c
+        run: |
+          set -euo pipefail
+          git fetch origin monster-frozen-artifact-registry --depth=1
+          observed="$(git rev-parse FETCH_HEAD)"
+          test "$observed" = "$EXPECTED_REGISTRY_HEAD"
+          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/registry.json
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path('/tmp/registry.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          assert payload['revision'] == 126, payload['revision']
+          assert payload['state_hash'] == '091001138b893eb0fc3bd0f4e141e30dbc01e3c7ae77453ca146efcd3143ea59'
+          assert payload['active_thaws'] == []
+          step = payload['entries']['API2_PROOF_ARCHITECTURE_V1_STEP2']['artifacts']
+          pairs = {
+              'devsystem/change_classifier_v1.py': {
+                  'from_blob': '6f151c5ece852a461e37af1a319712f0ec384890',
+                  'to_blob': '352074abc9d5f807ef6bfad593743c19cef49e00',
+              },
+              'tests/test_devsystem_change_classifier_v1.py': {
+                  'from_blob': '09312069fdc91928196bfee9ee34a772394ac930',
+                  'to_blob': '265129d2ce89da49426b36059294fcba381cfb7b',
+              },
+          }
+          for filename, pair in pairs.items():
+              assert step[filename] == pair['from_blob'], (filename, step[filename])
+          payload['active_thaws'] = [{
+              'thaw_id': 'THAW-NBA-OU-STEP1-CLASSIFIER-R1',
+              'status': 'ACTIVE',
+              'target_head_sha': os.environ['TARGET_HEAD'],
+              'files': pairs,
+          }]
+          payload['revision'] += 1
+          payload['source_main_sha'] = os.environ['SOURCE_MAIN']
+          unsigned = dict(payload)
+          unsigned.pop('state_hash', None)
+          canonical = json.dumps(unsigned, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode('utf-8')
+          payload['state_hash'] = hashlib.sha256(canonical).hexdigest()
+          Path('/tmp/registry.next.json').write_text(
+              json.dumps(payload, indent=2, ensure_ascii=True) + '\n',
+              encoding='utf-8',
+          )
+          print('NBA_STEP1_REGISTRY_THAW_REVISION=' + str(payload['revision']))
+          print('NBA_STEP1_REGISTRY_THAW_STATE_HASH=' + payload['state_hash'])
+          PY
+          git checkout -B nba-registry-write FETCH_HEAD
+          cp /tmp/registry.next.json devsystem/frozen_artifact_registry_state_v1.json
+          git config user.name 'nba-step1-registry-authority'
+          git config user.email 'actions@users.noreply.github.com'
+          git add devsystem/frozen_artifact_registry_state_v1.json
+          git commit -m 'registry: authorize NBA Step 1 exact classifier thaw'
+          git push --force-with-lease=refs/heads/monster-frozen-artifact-registry:${EXPECTED_REGISTRY_HEAD} origin HEAD:monster-frozen-artifact-registry
+          echo 'NBA_STEP1_EXACT_TWO_FILE_THAW_APPLIED'
