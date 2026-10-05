@@ -1,0 +1,59 @@
+name: NFL Live Game Repair Step 4 Receiving Live
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_receiving_yards_hub_v17.py'
+      - 'devsystem/nfl_live_game_repair_step4_receiving_live_v1.py'
+      - 'tests/test_nfl_live_game_repair_step4_receiving_live_v1.py'
+      - '.github/workflows/nfl-live-game-repair-step4-receiving-live-v1.yml'
+      - 'devsystem/task_ledgers/nfl-live-game-repair-step4-receiving-live-v1.json'
+  push:
+    branches: [main]
+    paths:
+      - 'nfl_receiving_yards_hub_v17.py'
+      - 'devsystem/nfl_live_game_repair_step4_receiving_live_v1.py'
+      - 'tests/test_nfl_live_game_repair_step4_receiving_live_v1.py'
+      - '.github/workflows/nfl-live-game-repair-step4-receiving-live-v1.yml'
+      - 'devsystem/task_ledgers/nfl-live-game-repair-step4-receiving-live-v1.json'
+
+permissions:
+  contents: read
+
+jobs:
+  receiving-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact authoritative head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Prove exact checkout identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED='${{ github.event.pull_request.head.sha || github.sha }}'
+          ACTUAL="$(git rev-parse HEAD)"
+          test "$ACTUAL" = "$EXPECTED"
+          echo "NFL_LIVE_GAME_STEP4_EXACT_HEAD=$ACTUAL"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Step 4 deterministic Receiving contract
+        run: python -m pytest -q tests/test_nfl_live_game_repair_step4_receiving_live_v1.py
+      - name: Run Step 4 certification when present
+        shell: bash
+        run: |
+          if [ -f devsystem/nfl_live_game_repair_step4_receiving_live_v1.py ]; then
+            python -m devsystem.nfl_live_game_repair_step4_receiving_live_v1
+          else
+            echo 'NFL_LIVE_GAME_STEP4_CERT_PENDING'
+          fi
