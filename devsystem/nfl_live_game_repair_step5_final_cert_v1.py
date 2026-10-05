@@ -1,10 +1,14 @@
 """NFL Rushing + Receiving live-game repair — Step 5/5 final certification.
 
-This is a proof-only closeout. It freezes the already-routed Rushing V16,
-Receiving V17, shared identity gate, and V187 router; proves the full
-pregame -> LIVE -> final lifecycle; requires one current live event for both
-pages; and checks the two public routes at 390/768/1440 with a fresh Chromium
-browser for every route/viewport proof.
+Proof-only closeout for the frozen Rushing V16 / Receiving V17 runtime.
+The certification pins the protected runtime blobs, proves the full
+pregame -> LIVE -> final lifecycle, requires one current live event for both
+pages, and checks the two production routes at 390/768/1440 with a fresh
+Chromium browser for every route/viewport proof.
+
+Production URL ownership belongs to devsystem/production_targets_v1.json.
+Step 5 deliberately does not carry a second hard-coded Streamlit hostname so a
+retired deployment target cannot create a false product RED.
 """
 from __future__ import annotations
 
@@ -29,6 +33,8 @@ RUSHING_OWNER = "nfl_rushing_yards_hub_v16.py"
 RECEIVING_OWNER = "nfl_receiving_yards_hub_v17.py"
 SHARED_GATE = "nfl_prop_app_eligibility_v1.py"
 ROUTER_OWNER = "streamlit_memory_lazy_router_v187.py"
+PRODUCTION_TARGETS_PATH = Path("devsystem/production_targets_v1.json")
+LEGACY_STREAMLIT_HOST = "https://kyre-sports-ai.streamlit.app"
 
 _EXPECTED_RUSHING_BLOB = "2a81e3130882b579a8d1e52bca0ef1f4e94c988c"
 _EXPECTED_RECEIVING_BLOB = "d69990d75666db414839470db20f68958c284b9e"
@@ -38,6 +44,21 @@ _EXPECTED_ROUTER_BLOB = "449a6a0712ab0f6be70cebe5a3822e59f279e3b6"
 RESPONSIVE_VIEWPORTS = ((390, 844), (768, 1024), (1440, 1000))
 FRESH_BROWSER_PER_VIEWPORT = True
 PUBLIC_ROUTES = (("NFL", "Rushing Yards"), ("NFL", "Receiving Yards"))
+
+
+def production_base_url() -> str:
+    """Return the single canonical Streamlit production target, fail closed."""
+    try:
+        payload = json.loads(PRODUCTION_TARGETS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise AssertionError("NFL_LIVE_GAME_STEP5_PRODUCTION_TARGET_UNREADABLE") from exc
+    streamlit = payload.get("streamlit") if isinstance(payload, dict) else None
+    url = str((streamlit or {}).get("url") or "").strip().rstrip("/")
+    if not url.startswith("https://") or ".streamlit.app" not in url:
+        raise AssertionError("NFL_LIVE_GAME_STEP5_PRODUCTION_TARGET_INVALID")
+    if url == LEGACY_STREAMLIT_HOST:
+        raise AssertionError("NFL_LIVE_GAME_STEP5_STALE_STREAMLIT_TARGET")
+    return url
 
 
 def _blob(path: str) -> str:
@@ -55,6 +76,7 @@ def _blob(path: str) -> str:
 
 def verify_repository_contract() -> dict[str, Any]:
     router = Path(ROUTER_OWNER).read_text(encoding="utf-8")
+    target = production_base_url()
     checks = {
         "rushing_frozen_exact": _blob(RUSHING_OWNER) == _EXPECTED_RUSHING_BLOB,
         "receiving_frozen_exact": _blob(RECEIVING_OWNER) == _EXPECTED_RECEIVING_BLOB,
@@ -64,6 +86,7 @@ def verify_repository_contract() -> dict[str, Any]:
             '"Rushing Yards": "nfl_rushing_yards_hub_v16"' in router
             and '"Receiving Yards": "nfl_receiving_yards_hub_v17"' in router
         ),
+        "production_target_canonical": target != LEGACY_STREAMLIT_HOST,
     }
     failed = [name for name, value in checks.items() if value is not True]
     if failed:
@@ -71,6 +94,7 @@ def verify_repository_contract() -> dict[str, Any]:
     return {
         "status": "GREEN",
         **checks,
+        "production_base_url": target,
         "product_runtime_mutation": False,
         "router_mutation": False,
         "api2_used": False,
@@ -245,16 +269,21 @@ def certify_current_live_dual_page() -> dict[str, Any]:
 
 
 def certify_public_responsive(
-    *, artifact_dir: str | Path = "artifacts/nfl-live-game-repair-step5-final-cert"
+    *,
+    base_url: str | None = None,
+    artifact_dir: str | Path = "artifacts/nfl-live-game-repair-step5-final-cert",
 ) -> dict[str, Any]:
     from playwright.sync_api import sync_playwright
     from devsystem.sitewide_page_load_health_v1 import (
-        PUBLIC_BASE_URL,
         _fatal_marker,
         _root_overflow,
         _route_url,
         _wait_for_meaningful_route,
     )
+
+    target = (base_url or production_base_url()).strip().rstrip("/")
+    if not target.startswith("http://") and not target.startswith("https://"):
+        raise AssertionError("NFL_LIVE_GAME_STEP5_BROWSER_TARGET_INVALID")
 
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
@@ -263,13 +292,11 @@ def certify_public_responsive(
     with sync_playwright() as playwright:
         for sport_code, market in PUBLIC_ROUTES:
             for width, height in RESPONSIVE_VIEWPORTS:
-                # Intentionally launch a new browser for every viewport. This
-                # prevents session/storage/layout state from leaking between proofs.
                 browser = playwright.chromium.launch(headless=True)
                 try:
                     context = browser.new_context(viewport={"width": width, "height": height})
                     page = context.new_page()
-                    url = _route_url(PUBLIC_BASE_URL, sport_code, market)
+                    url = _route_url(target, sport_code, market)
                     page.goto(url, wait_until="domcontentloaded", timeout=60_000)
                     text, render_seconds = _wait_for_meaningful_route(
                         page,
@@ -305,13 +332,19 @@ def certify_public_responsive(
     expected = len(PUBLIC_ROUTES) * len(RESPONSIVE_VIEWPORTS)
     assert len(proofs) == expected
     assert all(row["status"] == "GREEN" for row in proofs)
-    return {"status": "GREEN", "proof_count": len(proofs), "proofs": proofs}
+    return {
+        "status": "GREEN",
+        "base_url": target,
+        "proof_count": len(proofs),
+        "proofs": proofs,
+    }
 
 
 def run(
     *,
     require_live: bool = False,
     require_public: bool = False,
+    production_url: str | None = None,
     artifact_dir: str | Path = "artifacts/nfl-live-game-repair-step5-final-cert",
 ) -> dict[str, Any]:
     artifacts = Path(artifact_dir)
@@ -329,7 +362,10 @@ def run(
     if require_live:
         payload["current_live_dual_page"] = certify_current_live_dual_page()
     if require_public:
-        payload["public_responsive"] = certify_public_responsive(artifact_dir=artifacts)
+        payload["public_responsive"] = certify_public_responsive(
+            base_url=production_url,
+            artifact_dir=artifacts,
+        )
 
     (artifacts / "step5_final_cert.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -347,6 +383,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--require-live", action="store_true")
     parser.add_argument("--require-public", action="store_true")
+    parser.add_argument("--production-url", default=None)
     parser.add_argument(
         "--artifact-dir",
         default="artifacts/nfl-live-game-repair-step5-final-cert",
@@ -355,6 +392,7 @@ def main() -> int:
     run(
         require_live=args.require_live,
         require_public=args.require_public,
+        production_url=args.production_url,
         artifact_dir=args.artifact_dir,
     )
     return 0
