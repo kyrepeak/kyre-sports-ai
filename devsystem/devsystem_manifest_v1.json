@@ -66,12 +66,14 @@
       "production_probe": "Streamlit NFL Passing Yards verified slate route; model remains off until dedicated projection steps are certified"
     },
     "nba": {
-      "status": "planned",
-      "description": "NBA domain reserved for future activation.",
-      "critical_job": null,
-      "critical_tests": [],
+      "status": "active",
+      "description": "NBA protected lane beginning with the Over/Under data foundation; no production route or model activation yet.",
+      "critical_job": "nba-step2-data-foundation",
+      "critical_tests": [
+        "tests/test_nba_data_foundation_v1.py"
+      ],
       "browser_coverage": null,
-      "production_probe": null
+      "production_probe": "NBA Step 2 data contract only; public route remains inactive"
     },
     "nhl": {
       "status": "planned",
