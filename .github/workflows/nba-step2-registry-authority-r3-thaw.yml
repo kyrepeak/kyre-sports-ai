@@ -1,0 +1,103 @@
+name: NBA Step 2 Registry Authority R3 Thaw
+
+on:
+  push:
+    branches:
+      - nba-step2-registry-authority-r1
+    paths:
+      - .github/workflows/nba-step2-registry-authority-r3-thaw.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nba-step2-registry-authority-r3-thaw
+  cancel-in-progress: false
+
+jobs:
+  authorize-minimal-bootstrap:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    env:
+      REGISTRY_BRANCH: monster-frozen-artifact-registry
+      EXPECTED_REGISTRY_HEAD: 9bc8a742abbee26d6a39b4af7da58c08b33b7ed8
+      EXPECTED_REVISION: '129'
+      EXPECTED_SOURCE_MAIN: eb4ed13666055cd426d57f154641064ad73e535e
+      TARGET_HEAD: fc36cb22b244219fce4ae237c39e53b36955bcb1
+      THAW_ID: THAW-NBA-OU-STEP2-BOOTSTRAP-R3
+      CLASSIFIER_FROM: 352074abc9d5f807ef6bfad593743c19cef49e00
+      CLASSIFIER_TO: 845651ca33ac69bf1d4efba945dd3824ad2d63c2
+      CLASSIFIER_TEST_FROM: 265129d2ce89da49426b36059294fcba381cfb7b
+      CLASSIFIER_TEST_TO: 0229d207cc7e4169cbd12740b38c76fb26ee3fd0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mint exact two-file Step-2 thaw
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$REGISTRY_BRANCH" --force
+          test "$(git rev-parse origin/$REGISTRY_BRANCH)" = "$EXPECTED_REGISTRY_HEAD"
+          git show "origin/$REGISTRY_BRANCH:devsystem/frozen_artifact_registry_state_v1.json" > /tmp/registry.json
+
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path('/tmp/registry.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          assert payload['revision'] == int(os.environ['EXPECTED_REVISION'])
+          assert payload['source_main_sha'] == os.environ['EXPECTED_SOURCE_MAIN']
+          assert (payload.get('active_thaws') or []) == []
+
+          pairs = {
+              'devsystem/change_classifier_v1.py': {
+                  'from_blob': os.environ['CLASSIFIER_FROM'],
+                  'to_blob': os.environ['CLASSIFIER_TO'],
+              },
+              'tests/test_devsystem_change_classifier_v1.py': {
+                  'from_blob': os.environ['CLASSIFIER_TEST_FROM'],
+                  'to_blob': os.environ['CLASSIFIER_TEST_TO'],
+              },
+          }
+
+          flattened = {}
+          for entry in payload['entries'].values():
+              for filename, blob in entry.get('artifacts', {}).items():
+                  previous = flattened.get(filename)
+                  if previous is not None:
+                      assert previous == blob, (filename, previous, blob)
+                  flattened[filename] = blob
+          for filename, pair in pairs.items():
+              assert flattened[filename] == pair['from_blob'], (filename, flattened[filename], pair)
+              assert pair['to_blob'] != pair['from_blob']
+
+          payload['active_thaws'] = [{
+              'thaw_id': os.environ['THAW_ID'],
+              'status': 'ACTIVE',
+              'target_head_sha': os.environ['TARGET_HEAD'],
+              'files': pairs,
+          }]
+          payload['revision'] += 1
+          unsigned = dict(payload)
+          unsigned.pop('state_hash', None)
+          canonical = json.dumps(unsigned, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
+          payload['state_hash'] = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+          Path('/tmp/registry.next.json').write_text(json.dumps(payload, indent=2) + '\n', encoding='utf-8')
+          print('NBA_STEP2_R3_THAW_TARGET=' + os.environ['TARGET_HEAD'])
+          print('NBA_STEP2_R3_THAW_REVISION=' + str(payload['revision']))
+          print('NBA_STEP2_R3_THAW_STATE_HASH=' + payload['state_hash'])
+          PY
+
+          git checkout -B registry-write "origin/$REGISTRY_BRANCH"
+          cp /tmp/registry.next.json devsystem/frozen_artifact_registry_state_v1.json
+          git config user.name 'nba-step2-registry-authority-r3'
+          git config user.email 'actions@users.noreply.github.com'
+          git add devsystem/frozen_artifact_registry_state_v1.json
+          git commit -m 'registry: authorize minimal NBA Step 2 bootstrap'
+          git push --force-with-lease=refs/heads/${REGISTRY_BRANCH}:${EXPECTED_REGISTRY_HEAD} origin HEAD:${REGISTRY_BRANCH}
+          echo NBA_STEP2_R3_THAW_GREEN
