@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "task_id": "nba-over-under-step2-data-foundation-v1",
+  "title": "NBA Over/Under Step 2 — Data Source + API Foundation",
+  "project": "NBA Over/Under",
+  "step": 2,
+  "total_steps": 8,
+  "status": "DONE",
+  "scope": "Activate a protected NBA DevSystem lane and add an NBA-only normalized schedule and totals-market data boundary. No public route, app entrypoint, shared API, model, projection, probability, ranking, selection, or other-sport product changes are authorized in Step 2.",
+  "source_main": "eb4ed13666055cd426d57f154641064ad73e535e",
+  "rollback_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
+  "authoritative_branch": "nba-step2-data-foundation-r1",
+  "authoritative_pr": 1395,
+  "owned_paths": [
+    "nba_data_foundation_v1.py",
+    "tests/test_nba_data_foundation_v1.py",
+    "devsystem/devsystem_manifest_v1.json",
+    ".github/workflows/nba-over-under-step2-data-foundation-v1.yml",
+    "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json"
+  ],
+  "protected": {
+    "step1_frozen": true,
+    "app_entrypoint": true,
+    "shared_router": true,
+    "shared_apis": true,
+    "mlb": true,
+    "wnba": true,
+    "nfl": true,
+    "cfb": true,
+    "all_other_sports": true,
+    "model_projection_probability_ranking_selection": true
+  },
+  "two_a": {
+    "scope_lease_owner": "chatgpt:nba:over-under-step2-data-foundation-r1",
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "failure_must_be_classified_before_patch": true,
+    "frozen_artifacts_fail_closed": true,
+    "rollback_anchor_bound": true
+  },
+  "failure_classification": {
+    "verifier_setup_failure": {
+      "failed_run": 37355201783,
+      "class": "PROOF_VERIFIER",
+      "root_cause": "The dedicated Step-2 workflow did not install pytest, so the contract never executed.",
+      "patch": "Install pytest in the dedicated proof workflow before running the contract.",
+      "product_bug": false,
+      "other_sport_bug": false
+    },
+    "valid_tdd_red": {
+      "failed_run": 37355332795,
+      "class": "EXPECTED_TDD_RED",
+      "root_cause": "The Step-2 contract imported nba_data_foundation_v1 before the implementation existed.",
+      "observed_failure": "ModuleNotFoundError: No module named 'nba_data_foundation_v1'",
+      "product_bug": false,
+      "other_sport_bug": false
+    }
+  },
+  "tdd": {
+    "red_head": "da3059709496bfcf73ba62ddc7290516368da3a0",
+    "red_run": 37355332795,
+    "red_result": "pytest reached collection and failed exactly because nba_data_foundation_v1 did not exist",
+    "implementation_started_after_valid_red": true
+  },
+  "source_contract": {
+    "schedule_primary": "NBA_OFFICIAL_CDN",
+    "schedule_fallback": "ESPN_NBA_SCOREBOARD",
+    "odds_provider": "THE_ODDS_API",
+    "odds_sport_key": "basketball_nba",
+    "odds_market": "totals",
+    "timezone": "America/Phoenix",
+    "other_sports_allowed": false,
+    "projection_influence": 0.0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "acceptance": {
+    "nba_only_contract": true,
+    "official_schedule_primary": true,
+    "espn_schedule_fallback": true,
+    "valid_off_day_does_not_fallback": true,
+    "phoenix_timezone_normalized": true,
+    "strict_nba_team_guard": true,
+    "totals_market_normalized": true,
+    "odds_key_fail_closed": true,
+    "route_activation": false,
+    "model_activation": false,
+    "shared_api_mutation": false,
+    "other_sport_product_mutation": false,
+    "pr_exact_head_ci_green": false,
+    "merged_main_green": false,
+    "frozen_registry_entry_written": false
+  },
+  "freeze_exit": {
+    "dedicated_contract_green_required": true,
+    "devsystem_final_gate_green_required": true,
+    "exact_head_merge_required": true,
+    "merged_main_green_required": true,
+    "terminal_receipt_required": true,
+    "frozen_registry_entry_required": true,
+    "frozen_token": "NBA_OVER_UNDER_STEP2_DATA_FOUNDATION_FROZEN"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
