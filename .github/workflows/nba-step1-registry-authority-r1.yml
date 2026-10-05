@@ -1,4 +1,4 @@
-name: NBA Step 1 Registry Authority R4
+name: NBA Registry Authority Step 2 R1
 
 on:
   push:
@@ -15,117 +15,162 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  freeze-merged-step1:
+  authorize-step2-targeted-ci:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Forward-port merged baselines, retire thaw, and freeze NBA Step 1
+      - name: Build exact NBA Step 2 CI candidate and mint thaw
         shell: bash
         env:
-          MERGED_MAIN: eb4ed13666055cd426d57f154641064ad73e535e
-          FEATURE_HEAD: 5ad719200a6c2520d7c1d9fe8a2082b4863a5abc
-          EXPECTED_REGISTRY_HEAD: 9a45b220d1e1a2ca2083aeae78af5fc278a8e80a
+          EXPECTED_MAIN: eb4ed13666055cd426d57f154641064ad73e535e
+          PRODUCT_HEAD: 7e43334ffa08873cda8019a6f16533a7d5917796
+          PRODUCT_BRANCH: nba-step2-atomic-staging-r1
+          EXPECTED_REGISTRY_HEAD: edfdc12d9dec459b611b09cf2ff2ec42e30f284b
           REGISTRY_BRANCH: monster-frozen-artifact-registry
-          THAW_ID: THAW-NBA-OU-STEP1-CLASSIFIER-R1
+          BASE_WORKFLOW_BLOB: eaf314176069a90ab4de25a9f73933b708951768
+          THAW_ID: THAW-NBA-OU-STEP2-TARGETED-CI-R1
         run: |
           set -euo pipefail
 
-          git fetch --no-tags origin main "$REGISTRY_BRANCH" --force
-          test "$(git rev-parse origin/main)" = "$MERGED_MAIN"
+          git fetch --no-tags origin main "$PRODUCT_BRANCH" "$REGISTRY_BRANCH" --force
+          test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
+          test "$(git rev-parse origin/$PRODUCT_BRANCH)" = "$PRODUCT_HEAD"
           test "$(git rev-parse origin/$REGISTRY_BRANCH)" = "$EXPECTED_REGISTRY_HEAD"
 
-          git checkout --detach origin/main
-          git show "origin/$REGISTRY_BRANCH:devsystem/frozen_artifact_registry_state_v1.json" > /tmp/registry.json
+          git checkout -B step2-candidate "origin/$PRODUCT_BRANCH"
+          test "$(git rev-parse HEAD:.github/workflows/devsystem-targeted-ci.yml)" = "$BASE_WORKFLOW_BLOB"
 
           python - <<'PY'
-          import json, os, subprocess
           from pathlib import Path
-          from devsystem.api2_frozen_registry_lifecycle_v1 import plan_baseline_forward_port
-          from devsystem.frozen_artifact_registry_v1 import _hash, _payload_without_hash, validate_registry
 
-          main = os.environ['MERGED_MAIN']
-          feature = os.environ['FEATURE_HEAD']
-          thaw_id = os.environ['THAW_ID']
-          registry = json.loads(Path('/tmp/registry.json').read_text(encoding='utf-8'))
+          path = Path('.github/workflows/devsystem-targeted-ci.yml')
+          text = path.read_text(encoding='utf-8')
+          assert '  nba-step2-data-foundation:\n' not in text
 
-          assert registry['revision'] == 128, registry['revision']
-          assert len(registry.get('active_thaws') or []) == 1, registry.get('active_thaws')
-          grant = registry['active_thaws'][0]
-          assert grant['thaw_id'] == thaw_id, grant
-          assert grant['target_head_sha'] == feature, grant
+          job = '''  nba-step2-data-foundation:\n    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]\n    if: >-\n      needs.classify.outputs.nba == 'true' ||\n      needs.classify.outputs.core == 'true'\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: "3.12"\n      - name: Install NBA Step 2 proof dependency\n        run: python -m pip install --disable-pip-version-check -q pytest\n      - name: Run NBA Over/Under Step 2 data + Kyre API contracts\n        run: >-\n          python -m pytest -q\n          tests/test_nba_data_foundation_v1.py\n          tests/test_nba_kyre_api_bridge_v1.py\n\n'''
+          marker = '  core-smoke:\n'
+          assert text.count(marker) == 1
+          text = text.replace(marker, job + marker, 1)
 
-          expected_pairs = {
-              'devsystem/change_classifier_v1.py': {
-                  'from_blob': '6f151c5ece852a461e37af1a319712f0ec384890',
-                  'to_blob': '352074abc9d5f807ef6bfad593743c19cef49e00',
-              },
-              'tests/test_devsystem_change_classifier_v1.py': {
-                  'from_blob': '09312069fdc91928196bfee9ee34a772394ac930',
-                  'to_blob': '265129d2ce89da49426b36059294fcba381cfb7b',
-              },
-          }
-          assert grant['files'] == expected_pairs, grant['files']
-
-          def blob(path: str) -> str:
-              value = subprocess.check_output(['git','rev-parse',f'{main}:{path}'], text=True).strip().lower()
-              assert len(value) == 40
-              return value
-
-          artifacts = {
-              'devsystem/change_classifier_v1.py': blob('devsystem/change_classifier_v1.py'),
-              'devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json': blob('devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json'),
-              'nba_page_isolation_v1.py': blob('nba_page_isolation_v1.py'),
-              'tests/test_devsystem_change_classifier_v1.py': blob('tests/test_devsystem_change_classifier_v1.py'),
-              'tests/test_nba_page_isolation_v1.py': blob('tests/test_nba_page_isolation_v1.py'),
-          }
-          assert artifacts['devsystem/change_classifier_v1.py'] == expected_pairs['devsystem/change_classifier_v1.py']['to_blob']
-          assert artifacts['tests/test_devsystem_change_classifier_v1.py'] == expected_pairs['tests/test_devsystem_change_classifier_v1.py']['to_blob']
-
-          plan = plan_baseline_forward_port(
-              registry,
-              updates={
-                  path: pair for path, pair in expected_pairs.items()
-              },
-              source_main_sha=main,
+          needs_old = '      - nfl-critical\n      - core-smoke\n'
+          assert text.count(needs_old) == 2, text.count(needs_old)
+          text = text.replace(
+              needs_old,
+              '      - nfl-critical\n      - nba-step2-data-foundation\n      - core-smoke\n',
           )
-          assert plan['status'] == 'GREEN', plan
-          assert plan['decision'] == 'FROZEN_BASELINE_FORWARD_PORT_PLANNED', plan
-          assert thaw_id in plan['retired_empty_thaw_grants'], plan
-          assert plan['registry']['active_thaws'] == [], plan['registry']['active_thaws']
-          assert plan['next_revision'] == 129, plan['next_revision']
 
-          result = plan['registry']
-          checkpoint = 'NBA_OVER_UNDER_STEP1_PAGE_ISOLATION'
-          assert checkpoint not in result['entries']
-          result['entries'][checkpoint] = {
-              'status': 'FROZEN',
-              'checkpoint_id': checkpoint,
-              'source_main_sha': main,
-              'artifacts': artifacts,
-          }
-          result['state_hash'] = _hash(_payload_without_hash(result))
-          validated = validate_registry(result)
-          assert validated['status'] == 'GREEN'
-          assert result['revision'] == 129
-          assert result['source_main_sha'] == main
-          assert result['active_thaws'] == []
+          full_env_old = '          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}\n          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}\n'
+          assert text.count(full_env_old) == 2, text.count(full_env_old)
+          text = text.replace(
+              full_env_old,
+              '          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}\n          NBA_STEP2_RESULT: ${{ needs.nba-step2-data-foundation.result }}\n          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}\n',
+          )
 
-          Path('/tmp/registry.next.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
-          print('NBA_STEP1_REGISTRY_FROZEN_REVISION=129')
-          print('NBA_STEP1_REGISTRY_STATE_HASH=' + result['state_hash'])
-          print('NBA_STEP1_FROZEN_CHECKPOINT=' + checkpoint)
-          for path, value in sorted(artifacts.items()):
-              print(f'NBA_STEP1_FROZEN_ARTIFACT {path}={value}')
+          full_loop_old = 'CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT CORE_SMOKE_RESULT'
+          assert text.count(full_loop_old) == 1
+          text = text.replace(
+              full_loop_old,
+              'CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT NBA_STEP2_RESULT CORE_SMOKE_RESULT',
+              1,
+          )
+
+          final_loop_old = '            NFL_CRITICAL_RESULT \\\n            CORE_SMOKE_RESULT \\\n'
+          assert text.count(final_loop_old) == 1, text.count(final_loop_old)
+          text = text.replace(
+              final_loop_old,
+              '            NFL_CRITICAL_RESULT \\\n            NBA_STEP2_RESULT \\\n            CORE_SMOKE_RESULT \\\n',
+              1,
+          )
+
+          touched_old = '          NFL_TOUCHED: ${{ needs.classify.outputs.nfl }}\n          CORE_TOUCHED: ${{ needs.classify.outputs.core }}\n'
+          assert text.count(touched_old) == 1
+          text = text.replace(
+              touched_old,
+              '          NFL_TOUCHED: ${{ needs.classify.outputs.nfl }}\n          NBA_TOUCHED: ${{ needs.classify.outputs.nba }}\n          CORE_TOUCHED: ${{ needs.classify.outputs.core }}\n',
+              1,
+          )
+
+          require_old = '          require_success_if "nfl-critical" "$NFL_CRITICAL_RESULT" "$NFL_TOUCHED" "$CORE_TOUCHED"\n          require_success_if "core-smoke" "$CORE_SMOKE_RESULT" "$CORE_TOUCHED"\n'
+          assert text.count(require_old) == 1
+          text = text.replace(
+              require_old,
+              '          require_success_if "nfl-critical" "$NFL_CRITICAL_RESULT" "$NFL_TOUCHED" "$CORE_TOUCHED"\n          require_success_if "nba-step2-data-foundation" "$NBA_STEP2_RESULT" "$NBA_TOUCHED" "$CORE_TOUCHED"\n          require_success_if "core-smoke" "$CORE_SMOKE_RESULT" "$CORE_TOUCHED"\n',
+              1,
+          )
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          python devsystem/permanent_gate_v1.py
+          python -m pytest -q tests/test_nba_data_foundation_v1.py tests/test_nba_kyre_api_bridge_v1.py
+
+          git config user.name 'nba-registry-authority'
+          git config user.email 'actions@users.noreply.github.com'
+          git add .github/workflows/devsystem-targeted-ci.yml
+          git commit -m 'ci(nba): add protected Step 2 critical lane'
+          CANDIDATE_HEAD="$(git rev-parse HEAD)"
+          NEW_WORKFLOW_BLOB="$(git rev-parse HEAD:.github/workflows/devsystem-targeted-ci.yml)"
+          export CANDIDATE_HEAD NEW_WORKFLOW_BLOB
+
+          python devsystem/action_ledger_v2.py verify-pr --base "$EXPECTED_MAIN" --head "$CANDIDATE_HEAD"
+
+          git show "origin/$REGISTRY_BRANCH:devsystem/frozen_artifact_registry_state_v1.json" > /tmp/registry.json
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          registry = json.loads(Path('/tmp/registry.json').read_text(encoding='utf-8'))
+          assert registry['revision'] == 129, registry['revision']
+          assert registry['source_main_sha'] == os.environ['EXPECTED_MAIN']
+          assert registry.get('active_thaws') == [], registry.get('active_thaws')
+
+          path = '.github/workflows/devsystem-targeted-ci.yml'
+          old_blob = os.environ['BASE_WORKFLOW_BLOB']
+          owners = [
+              checkpoint
+              for checkpoint, entry in registry['entries'].items()
+              if (entry.get('artifacts') or {}).get(path) == old_blob
+          ]
+          assert owners, 'frozen targeted-CI owner missing'
+
+          registry['active_thaws'] = [{
+              'thaw_id': os.environ['THAW_ID'],
+              'status': 'ACTIVE',
+              'target_head_sha': os.environ['CANDIDATE_HEAD'],
+              'files': {
+                  path: {
+                      'from_blob': old_blob,
+                      'to_blob': os.environ['NEW_WORKFLOW_BLOB'],
+                  }
+              },
+          }]
+          registry['revision'] = 130
+          registry['source_main_sha'] = os.environ['EXPECTED_MAIN']
+          unsigned = dict(registry)
+          unsigned.pop('state_hash', None)
+          canonical = json.dumps(unsigned, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
+          registry['state_hash'] = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+          Path('/tmp/registry.next.json').write_text(json.dumps(registry, indent=2) + '\n', encoding='utf-8')
+          print('NBA_STEP2_CANDIDATE_HEAD=' + os.environ['CANDIDATE_HEAD'])
+          print('NBA_STEP2_TARGETED_CI_BLOB=' + os.environ['NEW_WORKFLOW_BLOB'])
+          print('NBA_STEP2_THAW_REVISION=130')
+          print('NBA_STEP2_THAW_STATE_HASH=' + registry['state_hash'])
+          print('NBA_STEP2_FROZEN_OWNERS=' + ','.join(sorted(owners)))
           PY
 
           git checkout -B registry-write "origin/$REGISTRY_BRANCH"
           cp /tmp/registry.next.json devsystem/frozen_artifact_registry_state_v1.json
           git add devsystem/frozen_artifact_registry_state_v1.json
-          git config user.name 'nba-step1-registry-authority'
-          git config user.email 'actions@users.noreply.github.com'
-          git commit -m 'registry: freeze merged NBA Step 1 isolation foundation'
+          git commit -m 'registry: authorize NBA Step 2 targeted CI lane'
           git push --force-with-lease=refs/heads/${REGISTRY_BRANCH}:${EXPECTED_REGISTRY_HEAD} origin HEAD:${REGISTRY_BRANCH}
+
+          git checkout step2-candidate
+          git push --force-with-lease=refs/heads/${PRODUCT_BRANCH}:${PRODUCT_HEAD} origin HEAD:${PRODUCT_BRANCH}
+
+          echo "NBA_STEP2_REGISTRY_AUTHORITY_GREEN"
+          echo "NBA_STEP2_CANDIDATE_HEAD=$CANDIDATE_HEAD"
+          echo "NBA_STEP2_TARGETED_CI_BLOB=$NEW_WORKFLOW_BLOB"
