@@ -1,0 +1,64 @@
+name: NBA Step 2 Registry Authority R1 Repair
+
+on:
+  push:
+    branches:
+      - nba-step2-registry-authority-r1
+    paths:
+      - .github/workflows/nba-step2-registry-authority-r1-repair.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nba-step2-registry-authority-r1-repair
+  cancel-in-progress: false
+
+jobs:
+  repair-authority-helper:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Patch R1 helper without GitHub-expression interpolation
+        shell: bash
+        env:
+          EXPECTED_PARENT: 6bba067979554aab21cfbea05e2b0ee1059b74ae
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/nba-step2-registry-authority-r1.yml')
+          text = path.read_text(encoding='utf-8')
+          assert text.count('          import json\n          from pathlib import Path\n') == 1
+          text = text.replace(
+              '          import json\n          from pathlib import Path\n',
+              '          import json\n          import re\n          from pathlib import Path\n',
+              1,
+          )
+
+          start_marker = "          result_old = '"
+          end_marker = "          require_old = '"
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          old = text[start:end]
+          assert 'needs.nfl-critical.result' in old
+          assert 'needs.classify.outputs.nfl' in old
+          assert old.count('${{') >= 4
+
+          replacement = '''          # Match literal target-workflow expressions structurally so this helper's own\n          # GitHub Actions parser never expands target `${{ ... }}` tokens first.\n          result_pattern = re.compile(\n              r'(?m)^(          NFL_CRITICAL_RESULT: .*\\n)(          CORE_SMOKE_RESULT: .*\\n)'\n          )\n          result_matches = list(result_pattern.finditer(workflow))\n          assert len(result_matches) == 2, len(result_matches)\n          workflow = result_pattern.sub(\n              lambda m: (\n                  m.group(1)\n                  + m.group(2)\n                      .replace('CORE_SMOKE_RESULT', 'NBA_STEP2_RESULT')\n                      .replace('needs.core-smoke.result', 'needs.nba-step2-data-foundation.result')\n                  + m.group(2)\n              ),\n              workflow,\n          )\n\n          loop_old = '            NFL_CRITICAL_RESULT \\\\\\n            CORE_SMOKE_RESULT'\n          assert workflow.count(loop_old) == 2, workflow.count(loop_old)\n          workflow = workflow.replace(\n              loop_old,\n              '            NFL_CRITICAL_RESULT \\\\\\n            NBA_STEP2_RESULT \\\\\\n            CORE_SMOKE_RESULT',\n          )\n\n          touched_pattern = re.compile(\n              r'(?m)^(          NFL_TOUCHED: .*\\n)(          CORE_TOUCHED: .*\\n)'\n          )\n          touched_matches = list(touched_pattern.finditer(workflow))\n          assert len(touched_matches) == 1, len(touched_matches)\n          workflow = touched_pattern.sub(\n              lambda m: (\n                  m.group(1)\n                  + m.group(2)\n                      .replace('CORE_TOUCHED', 'NBA_TOUCHED')\n                      .replace('needs.classify.outputs.core', 'needs.classify.outputs.nba')\n                  + m.group(2)\n              ),\n              workflow,\n          )\n\n'''
+          text = text[:start] + replacement + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git diff --check
+          git diff -- .github/workflows/nba-step2-registry-authority-r1.yml
+          git config user.name "nba-step2-authority-repair"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/workflows/nba-step2-registry-authority-r1.yml
+          git commit -m "fix: prevent authority target-expression interpolation"
+          git push origin HEAD:nba-step2-registry-authority-r1
