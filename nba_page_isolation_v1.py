@@ -19,11 +19,9 @@ MAY_MODIFY_SHARED_APIS = False
 
 STEP1_OWNED_PATHS = frozenset(
     {
-        "devsystem/change_classifier_v1.py",
-        "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
         "nba_page_isolation_v1.py",
-        "tests/test_devsystem_change_classifier_v1.py",
         "tests/test_nba_page_isolation_v1.py",
+        "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json",
     }
 )
 
