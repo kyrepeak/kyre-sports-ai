@@ -6,23 +6,25 @@
   "step": 2,
   "total_steps": 8,
   "status": "DONE",
-  "scope": "Activate a protected NBA DevSystem lane and add an NBA-only normalized schedule and totals-market data boundary. No public route, app entrypoint, shared API, model, projection, probability, ranking, selection, or other-sport product changes are authorized in Step 2.",
+  "scope": "Activate a protected NBA DevSystem lane and add an NBA-only normalized schedule and totals-market data boundary. No public route, app entrypoint, shared API, model, projection, probability, ranking, selection, or other-sport product changes are authorized in Step 2. One narrowly scoped shared DevSystem workflow edit is authorized only to register and aggregate the NBA critical lane.",
   "source_main": "eb4ed13666055cd426d57f154641064ad73e535e",
   "rollback_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
-  "authoritative_branch": "nba-step2-data-foundation-r1",
-  "authoritative_pr": 1395,
+  "authoritative_branch": "nba-step2-data-foundation-final-r1",
+  "authoritative_pr": 1396,
   "owned_paths": [
     "nba_data_foundation_v1.py",
     "tests/test_nba_data_foundation_v1.py",
     "devsystem/devsystem_manifest_v1.json",
     ".github/workflows/nba-over-under-step2-data-foundation-v1.yml",
-    "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json"
+    "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json",
+    ".github/workflows/devsystem-targeted-ci.yml"
   ],
   "protected": {
     "step1_frozen": true,
     "app_entrypoint": true,
     "shared_router": true,
     "shared_apis": true,
+    "shared_devsystem_workflow": "EXACT_THAW_ONLY_FOR_NBA_CRITICAL_LANE_WIRING",
     "mlb": true,
     "wnba": true,
     "nfl": true,
@@ -31,7 +33,7 @@
     "model_projection_probability_ranking_selection": true
   },
   "two_a": {
-    "scope_lease_owner": "chatgpt:nba:over-under-step2-data-foundation-r1",
+    "scope_lease_owner": "chatgpt:nba:over-under-step2-data-foundation-final-r1",
     "one_active_problem": true,
     "one_active_branch": true,
     "one_active_pr_max": 1,
@@ -39,7 +41,8 @@
     "no_unchanged_failed_reruns": true,
     "failure_must_be_classified_before_patch": true,
     "frozen_artifacts_fail_closed": true,
-    "rollback_anchor_bound": true
+    "rollback_anchor_bound": true,
+    "shared_workflow_candidate_diff_inspected_before_attach": true
   },
   "failure_classification": {
     "verifier_setup_failure": {
@@ -57,13 +60,32 @@
       "observed_failure": "ModuleNotFoundError: No module named 'nba_data_foundation_v1'",
       "product_bug": false,
       "other_sport_bug": false
+    },
+    "devsystem_integration_blocker": {
+      "failed_run": 37356127400,
+      "class": "CONTROL_PLANE",
+      "root_cause": "The NBA manifest became active with critical_job nba-step2-data-foundation, but devsystem-targeted-ci.yml did not yet contain that job marker or aggregate the lane.",
+      "observed_failure": "PermanentGateFailure: targeted CI permanent markers missing: job:nba-step2-data-foundation",
+      "patch": "Add one NBA Step-2 critical job and aggregate only its result in PR fast, merged-main, and final-gate policy.",
+      "product_bug": false,
+      "other_sport_bug": false
+    },
+    "concurrent_scope_drift": {
+      "class": "SCOPE_DRIFT",
+      "root_cause": "Concurrent commits on superseded PR 1395 expanded Step 2 into sports_api route/provider/shared-health surfaces outside the authorized NBA data-foundation boundary.",
+      "resolution": "Close PR 1395 unmerged, preserve its history for audit, and continue from the last clean approved tree on replacement PR 1396 without shared API expansion.",
+      "superseded_pr": 1395,
+      "replacement_pr": 1396,
+      "product_bug": false,
+      "other_sport_bug": false
     }
   },
   "tdd": {
     "red_head": "da3059709496bfcf73ba62ddc7290516368da3a0",
     "red_run": 37355332795,
     "red_result": "pytest reached collection and failed exactly because nba_data_foundation_v1 did not exist",
-    "implementation_started_after_valid_red": true
+    "implementation_started_after_valid_red": true,
+    "dedicated_green_run_before_control_plane_wiring": 37356127478
   },
   "source_contract": {
     "schedule_primary": "NBA_OFFICIAL_CDN",

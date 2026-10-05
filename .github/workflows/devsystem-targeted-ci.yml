@@ -753,6 +753,23 @@ jobs:
             tests/test_nfl_foundation_v1.py \
             tests/test_nfl_passing_yards_compact_v1.py
 
+  nba-step2-data-foundation:
+    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
+    if: >-
+      needs.classify.outputs.nba == 'true' ||
+      needs.classify.outputs.core == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install NBA Step 2 proof dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Run NBA Step 2 data foundation critical path
+        run: python -m pytest -q tests/test_nba_data_foundation_v1.py
+
   core-smoke:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: needs.classify.outputs.core == 'true'
@@ -772,6 +789,7 @@ jobs:
       - workflow-hygiene
       - permanent-contract
       - regression-shield
+      - nba-step2-data-foundation
       - core-smoke
       - wnba-pra-speed-v3-step4-contract
       - wnba-pra-speed-v3-step5-contract
@@ -787,6 +805,7 @@ jobs:
           WORKFLOW_HYGIENE_RESULT: ${{ needs.workflow-hygiene.result }}
           PERMANENT_CONTRACT_RESULT: ${{ needs.permanent-contract.result }}
           REGRESSION_SHIELD_RESULT: ${{ needs.regression-shield.result }}
+          NBA_STEP2_RESULT: ${{ needs.nba-step2-data-foundation.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
           WNBA_PRA_STEP4_RESULT: ${{ needs.wnba-pra-speed-v3-step4-contract.result }}
           WNBA_PRA_STEP5_RESULT: ${{ needs.wnba-pra-speed-v3-step5-contract.result }}
@@ -796,7 +815,7 @@ jobs:
         run: |
           set -euo pipefail
           allowed="success skipped"
-          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT CORE_SMOKE_RESULT WNBA_PRA_STEP4_RESULT WNBA_PRA_STEP5_RESULT WNBA_PRA_STEP6_RESULT WNBA_PRA_STEP7_RESULT WNBA_PRA_STEP8_RESULT
+          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT NBA_STEP2_RESULT CORE_SMOKE_RESULT WNBA_PRA_STEP4_RESULT WNBA_PRA_STEP5_RESULT WNBA_PRA_STEP6_RESULT WNBA_PRA_STEP7_RESULT WNBA_PRA_STEP8_RESULT
           do
             result="${!name:-}"
             printf '%s=%s\n' "$name" "${result:-unknown}"
@@ -816,6 +835,7 @@ jobs:
       - mlb-critical
       - wnba-critical
       - nfl-critical
+      - nba-step2-data-foundation
       - core-smoke
     runs-on: ubuntu-24.04
     steps:
@@ -831,11 +851,12 @@ jobs:
           MLB_CRITICAL_RESULT: ${{ needs.mlb-critical.result }}
           WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
           NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
+          NBA_STEP2_RESULT: ${{ needs.nba-step2-data-foundation.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
         run: |
           set -euo pipefail
           allowed="success skipped"
-          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT BROWSER_QA_RESULT CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT CORE_SMOKE_RESULT
+          for name in CLASSIFY_RESULT WORKFLOW_HYGIENE_RESULT PERMANENT_CONTRACT_RESULT REGRESSION_SHIELD_RESULT BROWSER_QA_RESULT CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT NBA_STEP2_RESULT CORE_SMOKE_RESULT
           do
             result="${!name:-}"
             printf '%s=%s\n' "$name" "${result:-unknown}"
@@ -855,6 +876,7 @@ jobs:
       - mlb-critical
       - wnba-critical
       - nfl-critical
+      - nba-step2-data-foundation
       - core-smoke
       - pr-fast
       - full-merge-certification
@@ -872,6 +894,7 @@ jobs:
           MLB_CRITICAL_RESULT: ${{ needs.mlb-critical.result }}
           WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
           NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
+          NBA_STEP2_RESULT: ${{ needs.nba-step2-data-foundation.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
           PR_FAST_RESULT: ${{ needs.pr-fast.result }}
           FULL_MERGE_RESULT: ${{ needs.full-merge-certification.result }}
@@ -880,6 +903,7 @@ jobs:
           MLB_TOUCHED: ${{ needs.classify.outputs.mlb }}
           WNBA_TOUCHED: ${{ needs.classify.outputs.wnba }}
           NFL_TOUCHED: ${{ needs.classify.outputs.nfl }}
+          NBA_TOUCHED: ${{ needs.classify.outputs.nba }}
           CORE_TOUCHED: ${{ needs.classify.outputs.core }}
           UI_TOUCHED: ${{ needs.classify.outputs.ui }}
         run: |
@@ -896,6 +920,7 @@ jobs:
             MLB_CRITICAL_RESULT \
             WNBA_CRITICAL_RESULT \
             NFL_CRITICAL_RESULT \
+            NBA_STEP2_RESULT \
             CORE_SMOKE_RESULT \
             PR_FAST_RESULT \
             FULL_MERGE_RESULT
@@ -926,6 +951,7 @@ jobs:
           require_success_if "mlb-critical" "$MLB_CRITICAL_RESULT" "$MLB_TOUCHED" "$CORE_TOUCHED"
           require_success_if "wnba-critical" "$WNBA_CRITICAL_RESULT" "$WNBA_TOUCHED" "$CORE_TOUCHED"
           require_success_if "nfl-critical" "$NFL_CRITICAL_RESULT" "$NFL_TOUCHED" "$CORE_TOUCHED"
+          require_success_if "nba-step2-data-foundation" "$NBA_STEP2_RESULT" "$NBA_TOUCHED" "$CORE_TOUCHED"
           require_success_if "core-smoke" "$CORE_SMOKE_RESULT" "$CORE_TOUCHED"
           echo "DEVSYSTEM_REQUIRED_LANE_POLICY_GREEN"
           if [ "$EVENT_NAME" = "pull_request" ] && [ "$PR_FAST_RESULT" != "success" ]; then
