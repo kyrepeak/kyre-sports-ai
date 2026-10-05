@@ -8,6 +8,11 @@ on:
       - 'tests/test_nfl_live_game_repair_step5_final_cert_v1.py'
       - '.github/workflows/nfl-live-game-repair-step5-final-cert-v1.yml'
       - 'devsystem/task_ledgers/nfl-live-game-repair-step5-final-cert-v1.json'
+      - 'devsystem/production_targets_v1.json'
+      - 'nfl_rushing_yards_hub_v16.py'
+      - 'nfl_receiving_yards_hub_v17.py'
+      - 'nfl_prop_app_eligibility_v1.py'
+      - 'streamlit_memory_lazy_router_v187.py'
   push:
     branches: [main]
     paths:
@@ -15,6 +20,11 @@ on:
       - 'tests/test_nfl_live_game_repair_step5_final_cert_v1.py'
       - '.github/workflows/nfl-live-game-repair-step5-final-cert-v1.yml'
       - 'devsystem/task_ledgers/nfl-live-game-repair-step5-final-cert-v1.json'
+      - 'devsystem/production_targets_v1.json'
+      - 'nfl_rushing_yards_hub_v16.py'
+      - 'nfl_receiving_yards_hub_v17.py'
+      - 'nfl_prop_app_eligibility_v1.py'
+      - 'streamlit_memory_lazy_router_v187.py'
 
 permissions:
   contents: read
