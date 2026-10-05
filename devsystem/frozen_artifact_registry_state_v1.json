@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 122,
-  "source_main_sha": "08112c19f588362f27022dfb07d65ec0eed94754",
+  "revision": 123,
+  "source_main_sha": "997539f1904676aa7db11c7bcd7b5f16e1638926",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1852,8 +1852,37 @@
         ".github/workflows/cfb-top-picks-repair-step5-final-closeout-v1.yml": "a695242001c9db05397bcdf86f6375e9a4b2b9a4",
         "devsystem/cfb_top_picks_step5_visual_cert_v1.py": "49e607a815e99e2d3eb1eaef82dac4fc1384e99f"
       }
+    },
+    "NFL_LIVE_GAME_REPAIR_STEP1_ROOT_CAUSE": {
+      "status": "FROZEN",
+      "checkpoint_id": "NFL_LIVE_GAME_REPAIR_STEP1_ROOT_CAUSE",
+      "source_main_sha": "997539f1904676aa7db11c7bcd7b5f16e1638926",
+      "proven_merge_sha": "997539f1904676aa7db11c7bcd7b5f16e1638926",
+      "branch_focused_proof_run_id": 37247386646,
+      "branch_devsystem_proof_run_id": 37247386697,
+      "merged_main_focused_proof_run_id": 37247726321,
+      "proof_run_id": 37247726207,
+      "regression_debt_state": "CLEARED",
+      "proof_kind": "MERGED_MAIN_STATIC_ROOT_CAUSE",
+      "root_cause_class": "PREGAME_ONLY_APP_IDENTITY_GATE",
+      "rushing_owner": "nfl_rushing_yards_hub_v16",
+      "receiving_owner": "nfl_receiving_yards_hub_v17",
+      "shared_gate": "nfl_prop_app_eligibility_v1.py",
+      "live_state_forced_closed": true,
+      "guard_accepts_only_pregame_identity_states": true,
+      "kickoff_is_failure_boundary": true,
+      "page_specific_patch_required": false,
+      "next_patch_owner": "nfl_prop_app_eligibility_v1.py",
+      "product_mutation": false,
+      "api2_used": false,
+      "artifacts": {
+        "devsystem/nfl_live_game_repair_step1_root_cause_v1.py": "f02bb3babfba2da9dd4efe04a2fe23b01e61730e",
+        "tests/test_nfl_live_game_repair_step1_root_cause_v1.py": "03392dfe00d8c3931c8ffd2a75fcd56c95de634c",
+        "devsystem/task_ledgers/nfl-live-game-repair-step1-root-cause-v1.json": "67f91c9a717c867f3ddb4000ebebe6114fd3f06f",
+        ".github/workflows/nfl-live-game-repair-step1-root-cause-v1.yml": "6edbb51dac93df0a81b1e65b6f547db8fa57d949"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "44d69ef4cf54dc73041598340710949577887536f908c4bf3397157c013835f9"
+  "state_hash": "54640387bbee39bcc984072346d10b09b66c90310c898f54393b626639dc0965"
 }
