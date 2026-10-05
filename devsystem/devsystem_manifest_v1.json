@@ -66,15 +66,12 @@
       "production_probe": "Streamlit NFL Passing Yards verified slate route; model remains off until dedicated projection steps are certified"
     },
     "nba": {
-      "status": "active",
-      "description": "NBA protected lane with a Kyre Sports API-first Over/Under data foundation; Streamlit page and model remain inactive.",
-      "critical_job": "nba-step2-data-foundation",
-      "critical_tests": [
-        "tests/test_nba_data_foundation_v1.py",
-        "tests/test_nba_kyre_api_bridge_v1.py"
-      ],
+      "status": "planned",
+      "description": "NBA domain reserved for future activation.",
+      "critical_job": null,
+      "critical_tests": [],
       "browser_coverage": null,
-      "production_probe": "Kyre Sports API GET /api/v1/nba/over-under/slate; Streamlit NBA page route remains inactive"
+      "production_probe": null
     },
     "nhl": {
       "status": "planned",

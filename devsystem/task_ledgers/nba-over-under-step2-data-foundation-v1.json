@@ -6,21 +6,22 @@
   "step": 2,
   "total_steps": 8,
   "status": "DONE",
-  "scope": "Activate a protected NBA DevSystem lane and connect the NBA page-facing data client to the hosted Kyre Sports API first. Add only an NBA read-only FastAPI slate route backed by NBA official schedule truth, ESPN NBA fallback, Phoenix-time normalization, and optional server-side totals. No Streamlit NBA page route, app.py, model, projection, probability, ranking, selection, or other-sport product changes are authorized.",
+  "scope": "Connect the NBA page-facing data client to the hosted Kyre Sports API first and certify the exact Step-2 NBA data/API bootstrap while the broader NBA domain remains planned and fail-closed. Add only an NBA read-only FastAPI slate route backed by NBA official schedule truth, ESPN NBA fallback, Phoenix-time normalization, and optional server-side totals. No Streamlit NBA page route, app.py, model, projection, probability, ranking, selection, or other-sport product changes are authorized.",
   "source_main": "eb4ed13666055cd426d57f154641064ad73e535e",
   "rollback_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
   "authoritative_branch": "nba-step2-atomic-staging-r1",
   "authoritative_pr": 1397,
   "owned_paths": [
+    ".github/workflows/nba-over-under-step2-data-foundation-v1.yml",
+    "devsystem/change_classifier_v1.py",
+    "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json",
     "nba_data_foundation_v1.py",
-    "sports_api/nba_over_under_data_v1.py",
     "sports_api/api/nba_over_under_v1.py",
     "sports_api/main.py",
+    "sports_api/nba_over_under_data_v1.py",
+    "tests/test_devsystem_change_classifier_v1.py",
     "tests/test_nba_data_foundation_v1.py",
-    "tests/test_nba_kyre_api_bridge_v1.py",
-    "devsystem/devsystem_manifest_v1.json",
-    ".github/workflows/nba-over-under-step2-data-foundation-v1.yml",
-    "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json"
+    "tests/test_nba_kyre_api_bridge_v1.py"
   ],
   "protected": {
     "step1_frozen": true,
@@ -33,7 +34,8 @@
     "nfl": true,
     "cfb": true,
     "all_other_sports": true,
-    "model_projection_probability_ranking_selection": true
+    "model_projection_probability_ranking_selection": true,
+    "nba_domain_global_activation_deferred": true
   },
   "two_a": {
     "scope_lease_owner": "chatgpt:nba:over-under-step2-data-foundation-r1",
@@ -76,6 +78,14 @@
       "patch": "Close #1395 and move sole Step-2 authority to PR #1397 on the isolated finished candidate branch without rewriting product bytes.",
       "old_pr": 1395,
       "new_pr": 1397
+    },
+    "permanent_lane_activation_pivot": {
+      "failed_run": 37359202956,
+      "class": "CONTROL_PLANE",
+      "root_cause": "Activating the entire NBA domain in Step 2 required a broad permanent targeted-CI lane and five frozen shared control-plane forward-ports before the NBA page shell exists.",
+      "patch": "Restore the NBA manifest to planned and extend the existing fail-closed planned-domain bootstrap to the exact 10 Step-2 files only. Preserve arbitrary future NBA files as blocked until a later explicit activation step.",
+      "product_bug": false,
+      "other_sport_bug": false
     }
   },
   "tdd": {
@@ -114,6 +124,8 @@
     "strict_nba_team_guard": true,
     "totals_market_normalized": true,
     "odds_key_fail_closed": true,
+    "planned_domain_step2_bootstrap_only": true,
+    "arbitrary_future_nba_files_fail_closed": true,
     "streamlit_page_route_activation": false,
     "model_activation": false,
     "shared_api_change": "additive NBA route only",
