@@ -5,7 +5,7 @@
   "project": "NBA Over/Under",
   "step": 1,
   "total_steps": 8,
-  "status": "PROOF_PENDING",
+  "status": "DONE",
   "scope": "Establish a fail-closed NBA-only mutation boundary before any NBA data, UI, model, route, or production activation work. NBA remains globally planned; only the exact Step-1 bootstrap/control-plane file set is authorized. No app.py, shared router, shared API, or other-sport mutation is authorized in Step 1.",
   "source_main": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
   "rollback_sha": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
