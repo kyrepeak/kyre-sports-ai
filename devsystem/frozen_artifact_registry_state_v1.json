@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 125,
-  "source_main_sha": "97421997566842f78f2cf048e54e97c0d9de7ebf",
+  "revision": 126,
+  "source_main_sha": "5b9dd903c78a9705e55600f2e4b4a4f5b87da84b",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -1969,8 +1969,53 @@
         "devsystem/task_ledgers/nfl-live-game-repair-step3-rushing-live-v1.json": "0fefa12c9dc0d1b6d6204c08d2ee6b5461c968cd",
         ".github/workflows/nfl-live-game-repair-step3-rushing-live-v1.yml": "dafab57ae7f0bdc1a6a1ea54667b3dded73f7844"
       }
+    },
+    "NFL_LIVE_GAME_REPAIR_STEP4_RECEIVING_LIVE": {
+      "status": "FROZEN",
+      "checkpoint_id": "NFL_LIVE_GAME_REPAIR_STEP4_RECEIVING_LIVE",
+      "source_main_sha": "5b9dd903c78a9705e55600f2e4b4a4f5b87da84b",
+      "proven_merge_sha": "5b9dd903c78a9705e55600f2e4b4a4f5b87da84b",
+      "branch_proof_run_id": 37256090321,
+      "branch_devsystem_run_id": 37256090296,
+      "branch_identity_run_id": 37256090262,
+      "branch_quarantine_run_id": 37256090336,
+      "merged_main_proof_run_id": 37256530003,
+      "merged_main_devsystem_run_id": 37256529976,
+      "proof_run_id": 37256529976,
+      "quarantine_run_id": 37256529945,
+      "proof_kind": "MERGED_MAIN_REAL_LIVE_RECEIVING",
+      "regression_debt_state": "CLEARED",
+      "real_live_event_id": "401872978",
+      "real_live_event": "DET @ CAR",
+      "real_live_player_count": 17,
+      "real_live_filtered_count": 2,
+      "live_identity_state": "LIVE",
+      "live_identity_verified": true,
+      "live_prop_market_gate_open": false,
+      "live_stale_api_player_filter": true,
+      "malformed_identity_fail_closed": true,
+      "team_mismatched_numeric_identity_fail_closed": true,
+      "final_post_fail_closed": true,
+      "receiving_mutation_scope": "LIVE_STALE_API_PLAYER_FILTER_ONLY",
+      "rushing_untouched": true,
+      "shared_step2_gate_unchanged": true,
+      "router_unchanged": true,
+      "render_deployment_mutated": false,
+      "api2_used": false,
+      "projection_changed": false,
+      "probability_changed": false,
+      "ranking_changed": false,
+      "sportsbook_changed": false,
+      "sportsbook_projection_influence": 0.0,
+      "artifacts": {
+        "nfl_receiving_yards_hub_v17.py": "d69990d75666db414839470db20f68958c284b9e",
+        "tests/test_nfl_live_game_repair_step4_receiving_live_v1.py": "084bd1438b995fc85687890cb3f5ac00c1ecc88b",
+        "devsystem/nfl_live_game_repair_step4_receiving_live_v1.py": "6587df4fc628569ec217425b619e52a5d4be88c6",
+        "devsystem/task_ledgers/nfl-live-game-repair-step4-receiving-live-v1.json": "85dad99ff4258ddd9fa0e6f2da4abe6385932725",
+        ".github/workflows/nfl-live-game-repair-step4-receiving-live-v1.yml": "6285934136e289f34b600f51a4d681f87d323e86"
+      }
     }
   },
   "active_thaws": [],
-  "state_hash": "61fe0d1eb77a9af88b0ccb052f4588bb945c345b9364e9f87265f613222780d1"
+  "state_hash": "091001138b893eb0fc3bd0f4e141e30dbc01e3c7ae77453ca146efcd3143ea59"
 }
