@@ -43,8 +43,8 @@ jobs:
           python-version: '3.11'
       - name: Install proof dependency
         run: python -m pip install --disable-pip-version-check -q pytest
-      - name: Run NBA Step 2 data foundation contract
-        run: |
-          python -m pytest -q \
-            tests/test_nba_data_foundation_v1.py \
-            tests/test_nba_kyre_api_bridge_v1.py
+      - name: Run NBA Step 2 data + Kyre API contracts
+        run: >-
+          python -m pytest -q
+          tests/test_nba_data_foundation_v1.py
+          tests/test_nba_kyre_api_bridge_v1.py
