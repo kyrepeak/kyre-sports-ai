@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 126,
-  "source_main_sha": "5b9dd903c78a9705e55600f2e4b4a4f5b87da84b",
+  "revision": 127,
+  "source_main_sha": "9a1fe7ba34e1325e544dc76f0a6798478511a47c",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -2016,6 +2016,22 @@
       }
     }
   },
-  "active_thaws": [],
-  "state_hash": "091001138b893eb0fc3bd0f4e141e30dbc01e3c7ae77453ca146efcd3143ea59"
+  "active_thaws": [
+    {
+      "thaw_id": "THAW-NBA-OU-STEP1-CLASSIFIER-R1",
+      "status": "ACTIVE",
+      "target_head_sha": "d787e29f14cd842e6d5af14c25711caf117d566a",
+      "files": {
+        "devsystem/change_classifier_v1.py": {
+          "from_blob": "6f151c5ece852a461e37af1a319712f0ec384890",
+          "to_blob": "352074abc9d5f807ef6bfad593743c19cef49e00"
+        },
+        "tests/test_devsystem_change_classifier_v1.py": {
+          "from_blob": "09312069fdc91928196bfee9ee34a772394ac930",
+          "to_blob": "265129d2ce89da49426b36059294fcba381cfb7b"
+        }
+      }
+    }
+  ],
+  "state_hash": "4ec5a4667ffaa7c91b24e197f512880c0bc6228c4ab5b267228da7590a331713"
 }
