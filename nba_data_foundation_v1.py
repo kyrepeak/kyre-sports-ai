@@ -1,10 +1,9 @@
 """NBA Over/Under Step 2 — NBA-only data source and API foundation.
 
-This layer normalizes game identity, records, venue/time context, and totals
-market inputs for later NBA Over/Under steps. It does not render Streamlit,
-activate a route, project a score, rank a pick, or let sportsbook data influence
-any model. Network transport is injected so the contract is deterministic and
-fail-closed in tests.
+The Streamlit-side data client reads the hosted Kyre Sports API first. Direct
+NBA/ESPN provider access is a fail-safe fallback only. Step 2 does not render
+Streamlit, activate the NBA page route, project scores, rank picks, or let
+sportsbook data influence a model.
 """
 from __future__ import annotations
 
@@ -12,18 +11,18 @@ from datetime import date, datetime, timezone
 from typing import Any, Mapping, Protocol, Sequence
 from zoneinfo import ZoneInfo
 
-MODEL_VERSION = "NBA_OVER_UNDER_STEP2_DATA_FOUNDATION_V1"
+MODEL_VERSION = "NBA_OVER_UNDER_STEP2_DATA_FOUNDATION_V2"
 SPORT = "NBA"
 PAGE_SCOPE = "NBA_OVER_UNDER"
 PHOENIX_TIMEZONE = "America/Phoenix"
 PHOENIX_TZ = ZoneInfo(PHOENIX_TIMEZONE)
 
-NBA_OFFICIAL_SCHEDULE_URL = (
-    "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
-)
-ESPN_SCOREBOARD_URL = (
-    "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
-)
+KYRE_SPORTS_API_BASE_URL = "https://kyre-sports-api.onrender.com"
+KYRE_NBA_SLATE_PATH = "/api/v1/nba/over-under/slate"
+KYRE_NBA_SLATE_URL = KYRE_SPORTS_API_BASE_URL + KYRE_NBA_SLATE_PATH
+
+NBA_OFFICIAL_SCHEDULE_URL = "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json"
+ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
 THE_ODDS_API_URL = "https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
 ODDS_SPORT_KEY = "basketball_nba"
 ODDS_MARKET = "totals"
@@ -35,14 +34,11 @@ MAY_MODIFY_OTHER_SPORTS = False
 MODEL_PROJECTION_INFLUENCE = 0.0
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
-NBA_TEAM_ABBREVIATIONS = frozenset(
-    {
-        "ATL", "BOS", "BKN", "CHA", "CHI", "CLE", "DAL", "DEN", "DET",
-        "GSW", "HOU", "IND", "LAC", "LAL", "MEM", "MIA", "MIL", "MIN",
-        "NOP", "NYK", "OKC", "ORL", "PHI", "PHX", "POR", "SAC", "SAS",
-        "TOR", "UTA", "WAS",
-    }
-)
+NBA_TEAM_ABBREVIATIONS = frozenset({
+    "ATL", "BOS", "BKN", "CHA", "CHI", "CLE", "DAL", "DEN", "DET", "GSW",
+    "HOU", "IND", "LAC", "LAL", "MEM", "MIA", "MIL", "MIN", "NOP", "NYK",
+    "OKC", "ORL", "PHI", "PHX", "POR", "SAC", "SAS", "TOR", "UTA", "WAS",
+})
 
 
 class NBADataSourceError(RuntimeError):
@@ -61,7 +57,7 @@ class JSONTransport(Protocol):
 
 
 class RequestsJSONTransport:
-    """Small production transport kept outside the normalization rules."""
+    """Small read-only production transport used by the page-facing client."""
 
     def get_json(
         self,
@@ -73,7 +69,13 @@ class RequestsJSONTransport:
     ) -> Any:
         import requests
 
-        response = requests.get(url, params=params, headers=headers, timeout=timeout)
+        response = requests.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=timeout,
+            allow_redirects=True,
+        )
         response.raise_for_status()
         text = (response.text or "").lstrip()
         if not text or not text.startswith(("{", "[")):
@@ -86,6 +88,9 @@ def source_contract() -> dict[str, Any]:
         "version": MODEL_VERSION,
         "sport": SPORT,
         "page_scope": PAGE_SCOPE,
+        "page_transport_primary": "KYRE_SPORTS_API",
+        "kyre_api_base_url": KYRE_SPORTS_API_BASE_URL,
+        "kyre_nba_slate_path": KYRE_NBA_SLATE_PATH,
         "schedule_primary": "NBA_OFFICIAL_CDN",
         "schedule_fallback": "ESPN_NBA_SCOREBOARD",
         "odds_provider": "THE_ODDS_API",
@@ -177,11 +182,8 @@ def _official_team_name(team: Mapping[str, Any]) -> str:
 
 
 def _official_record(team: Mapping[str, Any]) -> str:
-    wins = team.get("wins")
-    losses = team.get("losses")
-    if wins is None or losses is None:
-        return ""
-    return f"{wins}-{losses}"
+    wins, losses = team.get("wins"), team.get("losses")
+    return "" if wins is None or losses is None else f"{wins}-{losses}"
 
 
 def normalize_official_schedule(
@@ -225,29 +227,25 @@ def normalize_official_schedule(
                 continue
             if game_day != target:
                 continue
-            rows.append(
-                {
-                    "game_id": str(game.get("gameId") or ""),
-                    "game_date_phoenix": game_day,
-                    "start_time_utc": str(raw_tip),
-                    "tip_phoenix": phoenix_tip,
-                    "status": _status_official(
-                        game.get("gameStatus"), game.get("gameStatusText")
-                    ),
-                    "status_text": str(game.get("gameStatusText") or ""),
-                    "home_team_id": int(home.get("teamId") or 0),
-                    "home_team": _official_team_name(home),
-                    "home_abbr": home_abbr,
-                    "home_record": _official_record(home),
-                    "away_team_id": int(away.get("teamId") or 0),
-                    "away_team": _official_team_name(away),
-                    "away_abbr": away_abbr,
-                    "away_record": _official_record(away),
-                    "arena": str(game.get("arenaName") or "").strip(),
-                    "city": str(game.get("arenaCity") or "").strip(),
-                    "source": "NBA_OFFICIAL_CDN",
-                }
-            )
+            rows.append({
+                "game_id": str(game.get("gameId") or ""),
+                "game_date_phoenix": game_day,
+                "start_time_utc": str(raw_tip),
+                "tip_phoenix": phoenix_tip,
+                "status": _status_official(game.get("gameStatus"), game.get("gameStatusText")),
+                "status_text": str(game.get("gameStatusText") or ""),
+                "home_team_id": int(home.get("teamId") or 0),
+                "home_team": _official_team_name(home),
+                "home_abbr": home_abbr,
+                "home_record": _official_record(home),
+                "away_team_id": int(away.get("teamId") or 0),
+                "away_team": _official_team_name(away),
+                "away_abbr": away_abbr,
+                "away_record": _official_record(away),
+                "arena": str(game.get("arenaName") or "").strip(),
+                "city": str(game.get("arenaCity") or "").strip(),
+                "source": "NBA_OFFICIAL_CDN",
+            })
     return rows
 
 
@@ -256,14 +254,10 @@ def _espn_record(competitor: Mapping[str, Any]) -> str:
     if not isinstance(records, list):
         return ""
     preferred = next(
-        (
-            record
-            for record in records
-            if isinstance(record, Mapping) and str(record.get("type") or "").lower() == "total"
-        ),
+        (r for r in records if isinstance(r, Mapping) and str(r.get("type") or "").lower() == "total"),
         None,
     )
-    record = preferred or next((item for item in records if isinstance(item, Mapping)), None)
+    record = preferred or next((r for r in records if isinstance(r, Mapping)), None)
     return str((record or {}).get("summary") or "")
 
 
@@ -282,19 +276,15 @@ def normalize_espn_schedule(
         if not isinstance(event, Mapping):
             continue
         competitions = event.get("competitions") or []
-        if not isinstance(competitions, list) or not competitions:
+        if not isinstance(competitions, list) or not competitions or not isinstance(competitions[0], Mapping):
             continue
         competition = competitions[0]
-        if not isinstance(competition, Mapping):
-            continue
         sides: dict[str, Mapping[str, Any]] = {}
         for competitor in competition.get("competitors") or []:
             if isinstance(competitor, Mapping):
                 sides[str(competitor.get("homeAway") or "").lower()] = competitor
-        home_comp = sides.get("home") or {}
-        away_comp = sides.get("away") or {}
-        home_team = home_comp.get("team") or {}
-        away_team = away_comp.get("team") or {}
+        home_comp, away_comp = sides.get("home") or {}, sides.get("away") or {}
+        home_team, away_team = home_comp.get("team") or {}, away_comp.get("team") or {}
         if not isinstance(home_team, Mapping) or not isinstance(away_team, Mapping):
             continue
         home_abbr = str(home_team.get("abbreviation") or "").strip().upper()
@@ -305,8 +295,7 @@ def normalize_espn_schedule(
         if not raw_tip:
             continue
         try:
-            game_day = _phoenix_date(raw_tip)
-            phoenix_tip = to_phoenix_time(raw_tip)
+            game_day, phoenix_tip = _phoenix_date(raw_tip), to_phoenix_time(raw_tip)
         except NBADataSourceError:
             continue
         if game_day != target:
@@ -320,39 +309,25 @@ def normalize_espn_schedule(
         address = venue.get("address") or {}
         if not isinstance(address, Mapping):
             address = {}
-        rows.append(
-            {
-                "game_id": str(event.get("id") or ""),
-                "game_date_phoenix": game_day,
-                "start_time_utc": str(raw_tip),
-                "tip_phoenix": phoenix_tip,
-                "status": _status_espn(
-                    status_type.get("state"),
-                    status_type.get("description") or status_type.get("detail"),
-                ),
-                "status_text": str(
-                    status_type.get("shortDetail")
-                    or status_type.get("detail")
-                    or status_type.get("description")
-                    or ""
-                ),
-                "home_team_id": int(home_team.get("id") or 0),
-                "home_team": str(
-                    home_team.get("displayName") or home_team.get("shortDisplayName") or home_abbr
-                ),
-                "home_abbr": home_abbr,
-                "home_record": _espn_record(home_comp),
-                "away_team_id": int(away_team.get("id") or 0),
-                "away_team": str(
-                    away_team.get("displayName") or away_team.get("shortDisplayName") or away_abbr
-                ),
-                "away_abbr": away_abbr,
-                "away_record": _espn_record(away_comp),
-                "arena": str(venue.get("fullName") or "").strip(),
-                "city": str(address.get("city") or "").strip(),
-                "source": "ESPN_NBA_SCOREBOARD",
-            }
-        )
+        rows.append({
+            "game_id": str(event.get("id") or ""),
+            "game_date_phoenix": game_day,
+            "start_time_utc": str(raw_tip),
+            "tip_phoenix": phoenix_tip,
+            "status": _status_espn(status_type.get("state"), status_type.get("description") or status_type.get("detail")),
+            "status_text": str(status_type.get("shortDetail") or status_type.get("detail") or status_type.get("description") or ""),
+            "home_team_id": int(home_team.get("id") or 0),
+            "home_team": str(home_team.get("displayName") or home_team.get("shortDisplayName") or home_abbr),
+            "home_abbr": home_abbr,
+            "home_record": _espn_record(home_comp),
+            "away_team_id": int(away_team.get("id") or 0),
+            "away_team": str(away_team.get("displayName") or away_team.get("shortDisplayName") or away_abbr),
+            "away_abbr": away_abbr,
+            "away_record": _espn_record(away_comp),
+            "arena": str(venue.get("fullName") or "").strip(),
+            "city": str(address.get("city") or "").strip(),
+            "source": "ESPN_NBA_SCOREBOARD",
+        })
     return rows
 
 
@@ -371,9 +346,7 @@ def normalize_totals_odds(payload: Sequence[Mapping[str, Any]]) -> list[dict[str
         raise NBADataSourceError("odds payload must be a list")
     rows: list[dict[str, Any]] = []
     for event in payload:
-        if not isinstance(event, Mapping):
-            continue
-        if str(event.get("sport_key") or "") != ODDS_SPORT_KEY:
+        if not isinstance(event, Mapping) or str(event.get("sport_key") or "") != ODDS_SPORT_KEY:
             continue
         raw_tip = event.get("commence_time")
         if not raw_tip:
@@ -389,46 +362,45 @@ def normalize_totals_odds(payload: Sequence[Mapping[str, Any]]) -> list[dict[str
                 if not isinstance(market, Mapping) or market.get("key") != ODDS_MARKET:
                     continue
                 outcomes = market.get("outcomes") or []
-                over = next(
-                    (item for item in outcomes if isinstance(item, Mapping) and item.get("name") == "Over"),
-                    None,
-                )
-                under = next(
-                    (item for item in outcomes if isinstance(item, Mapping) and item.get("name") == "Under"),
-                    None,
-                )
+                over = next((x for x in outcomes if isinstance(x, Mapping) and x.get("name") == "Over"), None)
+                under = next((x for x in outcomes if isinstance(x, Mapping) and x.get("name") == "Under"), None)
                 if not over or not under:
                     continue
-                over_point = _numeric(over.get("point"))
-                under_point = _numeric(under.get("point"))
+                over_point, under_point = _numeric(over.get("point")), _numeric(under.get("point"))
                 if over_point is None or under_point is None or over_point != under_point:
                     continue
-                over_price = _numeric(over.get("price"))
-                under_price = _numeric(under.get("price"))
+                over_price, under_price = _numeric(over.get("price")), _numeric(under.get("price"))
                 if over_price is None or under_price is None:
                     continue
-                rows.append(
-                    {
-                        "event_id": str(event.get("id") or ""),
-                        "home_team": str(event.get("home_team") or ""),
-                        "away_team": str(event.get("away_team") or ""),
-                        "commence_time_utc": str(raw_tip),
-                        "tip_phoenix": phoenix_tip,
-                        "bookmaker_key": str(bookmaker.get("key") or ""),
-                        "bookmaker": str(bookmaker.get("title") or ""),
-                        "market_total": over_point,
-                        "over_price": over_price,
-                        "under_price": under_price,
-                        "last_update": str(
-                            market.get("last_update")
-                            or bookmaker.get("last_update")
-                            or event.get("last_update")
-                            or ""
-                        ),
-                        "source": "THE_ODDS_API",
-                    }
-                )
+                rows.append({
+                    "event_id": str(event.get("id") or ""),
+                    "home_team": str(event.get("home_team") or ""),
+                    "away_team": str(event.get("away_team") or ""),
+                    "commence_time_utc": str(raw_tip),
+                    "tip_phoenix": phoenix_tip,
+                    "bookmaker_key": str(bookmaker.get("key") or ""),
+                    "bookmaker": str(bookmaker.get("title") or ""),
+                    "market_total": over_point,
+                    "over_price": over_price,
+                    "under_price": under_price,
+                    "last_update": str(market.get("last_update") or bookmaker.get("last_update") or event.get("last_update") or ""),
+                    "source": "THE_ODDS_API",
+                })
     return rows
+
+
+def _validate_kyre_slate(payload: Any, day: str) -> dict[str, Any]:
+    if not isinstance(payload, Mapping):
+        raise NBADataSourceError("Kyre Sports API returned a non-object slate")
+    if payload.get("data_type") != "nba_over_under_step2_slate_v1":
+        raise NBADataSourceError("Kyre Sports API NBA slate data_type is invalid")
+    if payload.get("source") != "Kyre Sports API":
+        raise NBADataSourceError("Kyre Sports API NBA slate source is invalid")
+    if payload.get("date") != day or payload.get("timezone") != PHOENIX_TIMEZONE:
+        raise NBADataSourceError("Kyre Sports API NBA slate identity is invalid")
+    if not isinstance(payload.get("games"), list) or not isinstance(payload.get("totals"), list):
+        raise NBADataSourceError("Kyre Sports API NBA slate shape is invalid")
+    return dict(payload)
 
 
 class NBADataClient:
@@ -438,7 +410,7 @@ class NBADataClient:
 
     @staticmethod
     def _headers() -> dict[str, str]:
-        return {"Accept": "application/json", "User-Agent": "Mozilla/5.0"}
+        return {"Accept": "application/json", "User-Agent": "kyre-sports-ai-nba-step2/1"}
 
     def schedule_for_date(self, selected_date: str | date | datetime) -> list[dict[str, Any]]:
         day = _day_text(selected_date)
@@ -448,7 +420,6 @@ class NBADataClient:
                 headers=self._headers(),
                 timeout=self.timeout,
             )
-            # A valid official feed with no selected-day games is a real off-day.
             return normalize_official_schedule(official, day)
         except Exception as primary_error:
             try:
@@ -487,25 +458,37 @@ class NBADataClient:
         except Exception as exc:
             raise NBADataSourceError(f"NBA totals odds unavailable: {exc}") from exc
 
+    def slate_for_date(self, selected_date: str | date | datetime) -> dict[str, Any]:
+        """Read the hosted Kyre Sports API first; fail over only if it is unavailable."""
+        day = _day_text(selected_date)
+        try:
+            payload = self.transport.get_json(
+                KYRE_NBA_SLATE_URL,
+                params={"date": day},
+                headers=self._headers(),
+                timeout=self.timeout,
+            )
+            return _validate_kyre_slate(payload, day)
+        except Exception as kyre_error:
+            games = self.schedule_for_date(day)
+            return {
+                "data_type": "nba_over_under_step2_slate_v1",
+                "source": "DIRECT_FALLBACK",
+                "date": day,
+                "timezone": PHOENIX_TIMEZONE,
+                "games": games,
+                "totals": [],
+                "market_state": "DIRECT_FALLBACK_NO_SERVER_MARKET",
+                "fallback_reason": str(kyre_error),
+            }
+
 
 __all__ = [
-    "MODEL_VERSION",
-    "SPORT",
-    "PAGE_SCOPE",
-    "PHOENIX_TIMEZONE",
-    "NBA_OFFICIAL_SCHEDULE_URL",
-    "ESPN_SCOREBOARD_URL",
-    "THE_ODDS_API_URL",
-    "ODDS_SPORT_KEY",
-    "ODDS_MARKET",
-    "NBA_TEAM_ABBREVIATIONS",
-    "NBADataSourceError",
-    "JSONTransport",
-    "RequestsJSONTransport",
-    "source_contract",
-    "to_phoenix_time",
-    "normalize_official_schedule",
-    "normalize_espn_schedule",
-    "normalize_totals_odds",
-    "NBADataClient",
+    "MODEL_VERSION", "SPORT", "PAGE_SCOPE", "PHOENIX_TIMEZONE",
+    "KYRE_SPORTS_API_BASE_URL", "KYRE_NBA_SLATE_PATH", "KYRE_NBA_SLATE_URL",
+    "NBA_OFFICIAL_SCHEDULE_URL", "ESPN_SCOREBOARD_URL", "THE_ODDS_API_URL",
+    "ODDS_SPORT_KEY", "ODDS_MARKET", "NBA_TEAM_ABBREVIATIONS",
+    "NBADataSourceError", "JSONTransport", "RequestsJSONTransport",
+    "source_contract", "to_phoenix_time", "normalize_official_schedule",
+    "normalize_espn_schedule", "normalize_totals_odds", "NBADataClient",
 ]
