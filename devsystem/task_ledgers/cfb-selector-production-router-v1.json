@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "task_id": "cfb-selector-production-router-v1",
+  "title": "Mount CFB verified selector identity router in production API",
+  "project": "DevSystem production verification",
+  "status": "DONE",
+  "scope": "Single-owner repair from production V5 run 36491623964. The live Game Total selector rendered verified matchups as disabled with 'ESPN ID unavailable'. The selector page already calls /api/v1/cfb/selector/verified-games, and sports_api/api/cfb_odds_v1.py already implements that strict official-identity endpoint, but sports_api/main.py did not mount cfb_odds_router. Mount only that existing router and lock the production contract in the V5 self-test.",
+  "acceptance": [
+    "sports_api/main.py imports and includes only the existing cfb_odds_router needed by the selector identity contract.",
+    "/api/v1/cfb/selector/verified-games remains official-ID-only, synthetic_ids=false, projection_weight=0.0, and fail closed.",
+    "No CFB selector UI, matchup selection logic, projection math, sportsbook influence, router UI, NFL Rushing, Receiving, Passing, roster, availability, probability, stake, or wager logic changes.",
+    "V5 regression proves the production API mounts the implemented selector identity endpoint."
+  ],
+  "evidence": {
+    "production_run": 36491623964,
+    "failure": "V163 initial selected game identity was not exposed on the app frame",
+    "failure_screenshot_observation": "GAMES ON THIS DAY cards rendered as disabled and displayed ESPN ID unavailable",
+    "owner": "sports_api/main.py production router registration",
+    "implemented_endpoint": "sports_api/api/cfb_odds_v1.py:/api/v1/cfb/selector/verified-games"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
