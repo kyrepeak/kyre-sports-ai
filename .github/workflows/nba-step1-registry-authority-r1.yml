@@ -1,4 +1,4 @@
-name: NBA Registry Authority Step 2 R1
+name: NBA Registry Authority Step 2 R2
 
 on:
   push:
@@ -48,63 +48,98 @@ jobs:
           from pathlib import Path
 
           path = Path('.github/workflows/devsystem-targeted-ci.yml')
-          text = path.read_text(encoding='utf-8')
-          assert '  nba-step2-data-foundation:\n' not in text
+          lines = path.read_text(encoding='utf-8').splitlines()
+          job_marker = '  nba-step2-data-foundation:'
+          assert job_marker not in lines
 
-          job = '''  nba-step2-data-foundation:\n    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]\n    if: >-\n      needs.classify.outputs.nba == 'true' ||\n      needs.classify.outputs.core == 'true'\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: "3.12"\n      - name: Install NBA Step 2 proof dependency\n        run: python -m pip install --disable-pip-version-check -q pytest\n      - name: Run NBA Over/Under Step 2 data + Kyre API contracts\n        run: >-\n          python -m pytest -q\n          tests/test_nba_data_foundation_v1.py\n          tests/test_nba_kyre_api_bridge_v1.py\n\n'''
-          marker = '  core-smoke:\n'
-          assert text.count(marker) == 1
-          text = text.replace(marker, job + marker, 1)
+          core_indexes = [i for i, line in enumerate(lines) if line == '  core-smoke:']
+          assert len(core_indexes) == 1, core_indexes
+          job_lines = [
+              '  nba-step2-data-foundation:',
+              '    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]',
+              '    if: >-',
+              "      needs.classify.outputs.nba == 'true' ||",
+              "      needs.classify.outputs.core == 'true'",
+              '    runs-on: ubuntu-24.04',
+              '    timeout-minutes: 10',
+              '    steps:',
+              '      - uses: actions/checkout@v4',
+              '      - uses: actions/setup-python@v5',
+              '        with:',
+              '          python-version: "3.12"',
+              '      - name: Install NBA Step 2 proof dependency',
+              '        run: python -m pip install --disable-pip-version-check -q pytest',
+              '      - name: Run NBA Over/Under Step 2 data + Kyre API contracts',
+              '        run: >-',
+              '          python -m pytest -q',
+              '          tests/test_nba_data_foundation_v1.py',
+              '          tests/test_nba_kyre_api_bridge_v1.py',
+              '',
+          ]
+          lines[core_indexes[0]:core_indexes[0]] = job_lines
 
-          needs_old = '      - nfl-critical\n      - core-smoke\n'
-          assert text.count(needs_old) == 2, text.count(needs_old)
-          text = text.replace(
-              needs_old,
-              '      - nfl-critical\n      - nba-step2-data-foundation\n      - core-smoke\n',
-          )
+          needs_pairs = [
+              i for i in range(len(lines) - 1)
+              if lines[i] == '      - nfl-critical' and lines[i + 1] == '      - core-smoke'
+          ]
+          assert len(needs_pairs) == 2, needs_pairs
+          for i in reversed(needs_pairs):
+              lines.insert(i + 1, '      - nba-step2-data-foundation')
 
-          full_env_old = '          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}\n          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}\n'
-          assert text.count(full_env_old) == 2, text.count(full_env_old)
-          text = text.replace(
-              full_env_old,
-              '          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}\n          NBA_STEP2_RESULT: ${{ needs.nba-step2-data-foundation.result }}\n          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}\n',
-          )
+          env_pairs = [
+              i for i in range(len(lines) - 1)
+              if lines[i] == '          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}'
+              and lines[i + 1] == '          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}'
+          ]
+          assert len(env_pairs) == 2, env_pairs
+          for i in reversed(env_pairs):
+              lines.insert(i + 1, '          NBA_STEP2_RESULT: ${{ needs.nba-step2-data-foundation.result }}')
 
-          full_loop_old = 'CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT CORE_SMOKE_RESULT'
-          assert text.count(full_loop_old) == 1
-          text = text.replace(
-              full_loop_old,
+          loop_marker = 'CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT CORE_SMOKE_RESULT'
+          loop_indexes = [i for i, line in enumerate(lines) if loop_marker in line]
+          assert len(loop_indexes) == 1, loop_indexes
+          i = loop_indexes[0]
+          lines[i] = lines[i].replace(
+              loop_marker,
               'CFB_CRITICAL_RESULT MLB_CRITICAL_RESULT WNBA_CRITICAL_RESULT NFL_CRITICAL_RESULT NBA_STEP2_RESULT CORE_SMOKE_RESULT',
-              1,
           )
 
-          final_loop_old = '            NFL_CRITICAL_RESULT \\\n            CORE_SMOKE_RESULT \\\n'
-          assert text.count(final_loop_old) == 1, text.count(final_loop_old)
-          text = text.replace(
-              final_loop_old,
-              '            NFL_CRITICAL_RESULT \\\n            NBA_STEP2_RESULT \\\n            CORE_SMOKE_RESULT \\\n',
-              1,
+          final_pairs = [
+              i for i in range(len(lines) - 1)
+              if lines[i].strip() == 'NFL_CRITICAL_RESULT \\'
+              and lines[i + 1].strip() == 'CORE_SMOKE_RESULT \\'
+          ]
+          assert len(final_pairs) == 1, final_pairs
+          lines.insert(final_pairs[0] + 1, '            NBA_STEP2_RESULT \\')
+
+          touched_pairs = [
+              i for i in range(len(lines) - 1)
+              if lines[i] == '          NFL_TOUCHED: ${{ needs.classify.outputs.nfl }}'
+              and lines[i + 1] == '          CORE_TOUCHED: ${{ needs.classify.outputs.core }}'
+          ]
+          assert len(touched_pairs) == 1, touched_pairs
+          lines.insert(touched_pairs[0] + 1, '          NBA_TOUCHED: ${{ needs.classify.outputs.nba }}')
+
+          require_pairs = [
+              i for i in range(len(lines) - 1)
+              if lines[i] == '          require_success_if "nfl-critical" "$NFL_CRITICAL_RESULT" "$NFL_TOUCHED" "$CORE_TOUCHED"'
+              and lines[i + 1] == '          require_success_if "core-smoke" "$CORE_SMOKE_RESULT" "$CORE_TOUCHED"'
+          ]
+          assert len(require_pairs) == 1, require_pairs
+          lines.insert(
+              require_pairs[0] + 1,
+              '          require_success_if "nba-step2-data-foundation" "$NBA_STEP2_RESULT" "$NBA_TOUCHED" "$CORE_TOUCHED"',
           )
 
-          touched_old = '          NFL_TOUCHED: ${{ needs.classify.outputs.nfl }}\n          CORE_TOUCHED: ${{ needs.classify.outputs.core }}\n'
-          assert text.count(touched_old) == 1
-          text = text.replace(
-              touched_old,
-              '          NFL_TOUCHED: ${{ needs.classify.outputs.nfl }}\n          NBA_TOUCHED: ${{ needs.classify.outputs.nba }}\n          CORE_TOUCHED: ${{ needs.classify.outputs.core }}\n',
-              1,
-          )
-
-          require_old = '          require_success_if "nfl-critical" "$NFL_CRITICAL_RESULT" "$NFL_TOUCHED" "$CORE_TOUCHED"\n          require_success_if "core-smoke" "$CORE_SMOKE_RESULT" "$CORE_TOUCHED"\n'
-          assert text.count(require_old) == 1
-          text = text.replace(
-              require_old,
-              '          require_success_if "nfl-critical" "$NFL_CRITICAL_RESULT" "$NFL_TOUCHED" "$CORE_TOUCHED"\n          require_success_if "nba-step2-data-foundation" "$NBA_STEP2_RESULT" "$NBA_TOUCHED" "$CORE_TOUCHED"\n          require_success_if "core-smoke" "$CORE_SMOKE_RESULT" "$CORE_TOUCHED"\n',
-              1,
-          )
-
+          text = chr(10).join(lines) + chr(10)
+          assert text.count('  nba-step2-data-foundation:' + chr(10)) == 1
           path.write_text(text, encoding='utf-8')
+          written = path.read_text(encoding='utf-8')
+          assert '  nba-step2-data-foundation:' + chr(10) in written
+          print('NBA_STEP2_TARGETED_CI_MARKER_GREEN')
           PY
 
+          grep -n '^  nba-step2-data-foundation:$' .github/workflows/devsystem-targeted-ci.yml
           python devsystem/permanent_gate_v1.py
           python -m pytest -q tests/test_nba_data_foundation_v1.py tests/test_nba_kyre_api_bridge_v1.py
 
@@ -154,7 +189,7 @@ jobs:
           unsigned.pop('state_hash', None)
           canonical = json.dumps(unsigned, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
           registry['state_hash'] = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
-          Path('/tmp/registry.next.json').write_text(json.dumps(registry, indent=2) + '\n', encoding='utf-8')
+          Path('/tmp/registry.next.json').write_text(json.dumps(registry, indent=2) + chr(10), encoding='utf-8')
           print('NBA_STEP2_CANDIDATE_HEAD=' + os.environ['CANDIDATE_HEAD'])
           print('NBA_STEP2_TARGETED_CI_BLOB=' + os.environ['NEW_WORKFLOW_BLOB'])
           print('NBA_STEP2_THAW_REVISION=130')
