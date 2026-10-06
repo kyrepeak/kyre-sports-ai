@@ -1,24 +1,6 @@
 name: CFB Top Picks Research V2 Step 1 Contract
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "devsystem/contracts/cfb_top_picks_research_v2_contract_v1.json"
-      - "devsystem/cfb_top_picks_research_v2_step1_contract_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step1_contract_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step1-contract-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step1-contract-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - "devsystem/contracts/cfb_top_picks_research_v2_contract_v1.json"
-      - "devsystem/cfb_top_picks_research_v2_step1_contract_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step1_contract_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step1-contract-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step1-contract-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
   workflow_dispatch:
 
 permissions:
