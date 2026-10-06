@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "task_id": "api2-task16-final-mobile-system-cert-v1",
+  "title": "API 2 Task 16/16 — Final Mobile + System Certification",
+  "status": "CERTIFICATION_READY",
+  "scope": "Verification-only final certification for NFL Game Totals V10 mobile/responsive usability, frozen system integrity, and Runless proof closeout.",
+  "baseline_main_sha": "1df20c8a593db06cdfb94193b901816dfe32c68d",
+  "pre_ledger_head_sha": "62fe4518a0642599ad197f68c3e79913580a6725",
+  "candidate_head_policy": "The exact branch head after this ledger commit is the authoritative Task-16 candidate; PR and Runless proof must use that exact SHA.",
+  "guardrails": {
+    "product_code_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "stake_sizing_enabled": false,
+    "wager_actions_enabled": false,
+    "adjacent_nfl_markets_changed": false,
+    "task15_runtime_frozen": true,
+    "step8_projection_frozen": true,
+    "nfl_hub_v18_frozen": true
+  },
+  "frozen_blobs": {
+    "sports_api/nfl_game_totals_total_projection_v1.py": "0738d4f9e995c9d1423118b8fc9a95a799c8c55d",
+    "nfl_hub_v18.py": "dfcf29636a10c798de037378624188f245f657e2",
+    "nfl_game_totals_hub_v8_1.py": "686cbe7eac7b35398dc754a04f8cdec218f76c6a",
+    "nfl_game_totals_hub_v9.py": "0f9e48384daf8b4f79f2edabdf9d234f90d19076",
+    "nfl_game_totals_hub_v10.py": "c22485c186e2f53c3b0a6b1302375dd9bb25468a",
+    "nfl_game_totals_market_read_v1.py": "ca86561ffbb329f686df752afdfc95da1f210ba3",
+    "nfl_hub_v36.py": "97bd832a46cf5bdab1b8a1e6162a8c9282dfeb01",
+    "streamlit_memory_lazy_router_v97.py": "e5fffd68c08365a1abd7c449c1aa1a98aef177a6"
+  },
+  "verification": {
+    "task16_cert_tests": "2/2 PASS",
+    "task15_regression_tests": "8/8 PASS",
+    "v8_1_mobile_contract_tests": "8/8 PASS",
+    "compile": "PASS",
+    "runless_fallback_workflow_count": 30,
+    "production_streamlit_target": "https://pickvault.streamlit.app",
+    "responsive_browser": {
+      "engine": "Chromium",
+      "source": "actual frozen V9/V10 functions and CSS executed from source AST; no product mutation",
+      "viewports": [
+        {"width": 390, "height": 844, "horizontal_overflow": false, "final_read_visible": true, "final_certification_visible": true, "mobile_grid_columns": 2, "recovery_controls_full_width": true},
+        {"width": 768, "height": 1024, "horizontal_overflow": false, "final_read_visible": true, "final_certification_visible": true, "recovery_controls_full_width": true},
+        {"width": 1440, "height": 1200, "horizontal_overflow": false, "final_read_visible": true, "final_certification_visible": true, "recovery_controls_full_width": true}
+      ]
+    }
+  },
+  "rulings": [
+    {
+      "id": "TASK16_BROWSER_SPLIT_PROOF",
+      "finding": "The execution sandbox blocks Chromium navigation to localhost and does not provide the Streamlit Python package, so a fresh hosted/local Streamlit session could not be driven from this environment.",
+      "decision": "Use real Chromium responsive rendering of the actual frozen V9/V10 HTML/CSS for viewport proof, combined with the existing dedicated V8.1 functional mobile contract for next-game recovery, fail-closed provider behavior, full-width controls, targeted cache clearing, and projection-firewall behavior.",
+      "cost_if_wrong": "A Streamlit-runtime-only responsive integration defect could remain undetected; therefore this evidence must not be described as a fresh hosted-production Streamlit browser session. Exact frozen runtime hashes and Runless proof remain mandatory before freeze."
+    },
+    {
+      "id": "TASK16_PYTHONPATH_HARNESS",
+      "finding": "The local pytest executable did not place the snapshot root on sys.path and initially could not import the devsystem namespace.",
+      "decision": "Run the unchanged tests with PYTHONPATH=. in the snapshot harness.",
+      "cost_if_wrong": "None to product behavior; only the local certification harness import path is affected."
+    }
+  ],
+  "proof_policy": {
+    "legacy_actions_fanout_required": 0,
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "merge_exact_certified_head_only": true,
+    "merged_main_readback_required": true
+  },
+  "freeze_state": "PENDING_EXACT_HEAD_RUNLESS_PROOF"
+}
