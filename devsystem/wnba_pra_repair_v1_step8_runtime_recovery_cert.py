@@ -1,8 +1,9 @@
 """WNBA PRA Repair V1 Step 8 — public runtime recovery certification.
 
 Deployment-only recovery owner. Source certification is browser-free; the public
-probe lazily reuses the existing exact-labeled WNBA/PRA route and future-pregame
-helpers. No WNBA product/model/router/math/data semantics are changed here.
+probe uses the exact-labeled WNBA/PRA route and future-pregame discovery. An
+off-day slate is valid route readiness; game readiness is checked only after the
+verifier selects a scheduled future pregame date.
 """
 from __future__ import annotations
 
@@ -90,9 +91,33 @@ def _future_pregame_dates() -> tuple[str, ...]:
 
 
 def _prime_wnba_pra_route(page, route_url: str):
-    from devsystem.wnba_pra_speed_v3_step9_final_cert import _prime_wnba_pra_route as impl
+    """Acquire the WNBA/PRA slate without requiring the default date to have a game."""
+    from devsystem.browser_qa_v1 import BrowserQAFailure
+    from devsystem import wnba_nav_v2_step7_public_freeze as nav
 
-    return impl(page, route_url)
+    started = time.monotonic()
+    page.goto(route_url, wait_until="domcontentloaded", timeout=90_000)
+    deadline = started + 90.0
+    last = ""
+    while time.monotonic() < deadline:
+        frame, _ = nav._find_app_frame(
+            page,
+            timeout_seconds=min(10.0, max(2.0, deadline - time.monotonic())),
+        )
+        try:
+            body = frame.locator("body").inner_text(timeout=4_000)
+            if "WNBA Slate" in body and "Slate date" in body:
+                elapsed = time.monotonic() - started
+                print("WNBA_PRA_REPAIR_V1_STEP8_OFF_DAY_SLATE_ACCEPTED_GREEN")
+                print(f"WNBA_PRA_REPAIR_V1_STEP8_ROUTE_READY_SECONDS={elapsed:.3f}")
+                return frame, elapsed
+            last = body[:5000]
+        except Exception:
+            pass
+        page.wait_for_timeout(250)
+    raise BrowserQAFailure(
+        f"Step-8 WNBA/PRA slate did not become route-ready. body={last!r}"
+    )
 
 
 def _route_url(base_url: str) -> str:
