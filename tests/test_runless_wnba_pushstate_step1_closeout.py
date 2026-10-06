@@ -7,15 +7,19 @@ from runless_proof_plane.wnba_pushstate_step1_closeout import (
     install_startup_gate,
     publish_candidate_gate,
     publish_candidate_gate_from_env,
+    publish_merged_main_gate,
 )
 
 CANDIDATE = "ab3fdb3e544500366618bea71bd29976307f0c9f"
 BASE = "f8fe7aef9f9519750aaa9053716d2059c9bbdb83"
+MERGED = "896bd5f78ef6b6f7d7084413cc1e35ac6489fdc2"
+CANDIDATE_RECEIPT = "6c9a1d3e0525afb80ca8efe30f4d7c297f256c67c878702affc5fa99af91c914"
 
 
 class FakeClient:
-    def __init__(self):
+    def __init__(self, main_sha=BASE):
         self.published = []
+        self.main_sha = main_sha
 
     def request(self, method, path, **kwargs):
         if method == "GET" and path == "/pulls/1416":
@@ -26,14 +30,16 @@ class FakeClient:
             }
         if method == "GET" and path == "/pulls/1416/files?per_page=100":
             return [{"filename": path} for path in STEP1_ARTIFACTS]
+        if method == "GET" and path == f"/commits/{MERGED}":
+            return {"sha": MERGED, "parents": [{"sha": BASE}, {"sha": CANDIDATE}]}
         raise AssertionError((method, path, kwargs))
 
     def branch_sha(self, branch):
         assert branch == "main"
-        return BASE
+        return self.main_sha
 
     def tree_blobs(self, sha):
-        assert sha == CANDIDATE
+        assert sha in {CANDIDATE, MERGED}
         return {
             path: f"{index + 1:040x}"
             for index, path in enumerate(STEP1_ARTIFACTS)
@@ -69,6 +75,7 @@ def proof_evidence():
 
 def arm_env(monkeypatch):
     monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "1")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START", "0")
     monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_SHA", CANDIDATE)
     monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_BASE_SHA", BASE)
     monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_PR", "1416")
@@ -78,6 +85,14 @@ def arm_env(monkeypatch):
     monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "RUNLESS_WNBA_PUSHSTATE_STEP1_GREEN")
     monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "_pin_deep_wnba_shell_route")
     monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "1")
+
+
+def arm_merged_env(monkeypatch):
+    arm_env(monkeypatch)
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "0")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START", "1")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_SHA", MERGED)
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_RECEIPT", CANDIDATE_RECEIPT)
 
 
 def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_checks():
@@ -122,3 +137,37 @@ def test_startup_hook_invokes_env_handoff_once(monkeypatch):
 
     assert app.state.wnba_pushstate_step1_gate["status"] == "GREEN"
     assert len(client.published) == 1
+
+
+def test_merged_main_gate_requires_exact_parent_and_artifact_identity():
+    client = FakeClient(main_sha=MERGED)
+    result = publish_merged_main_gate(
+        client,
+        merged_sha=MERGED,
+        base_sha=BASE,
+        candidate_sha=CANDIDATE,
+        candidate_receipt_digest=CANDIDATE_RECEIPT,
+        evidence=proof_evidence(),
+    )
+
+    assert result["status"] == "GREEN"
+    assert result["merged_sha"] == MERGED
+    assert result["check_id"] == 777
+    assert len(result["receipt_digest"]) == 64
+    assert client.published[0][0] == MERGED
+    assert client.published[0][1] == "runless-final-gate"
+    assert client.published[0][2] == "success"
+
+
+def test_startup_hook_prefers_merged_main_gate_when_armed(monkeypatch):
+    client = FakeClient(main_sha=MERGED)
+    app = FakeApp(client)
+    arm_merged_env(monkeypatch)
+
+    install_startup_gate(app)
+    app.handlers["startup"]()
+
+    assert app.state.wnba_pushstate_step1_gate["status"] == "GREEN"
+    assert app.state.wnba_pushstate_step1_gate["merged_sha"] == MERGED
+    assert len(client.published) == 1
+    assert client.published[0][0] == MERGED
