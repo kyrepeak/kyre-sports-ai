@@ -14,6 +14,21 @@
       "status": "ACTIVE",
       "target_head_sha": "fc36cb22b244219fce4ae237c39e53b36955bcb1",
       "thaw_id": "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    },
+    {
+      "files": {
+        ".github/workflows/devsystem-targeted-ci.yml": {
+          "from_blob": "eaf314176069a90ab4de25a9f73933b708951768",
+          "to_blob": "f1e4fffb1ce04e45669b328cb52d4542fa9082de"
+        },
+        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": {
+          "from_blob": "bd73f14edb2ce84db7c8e3a8a70774bf50e37ef7",
+          "to_blob": "a67253ff737091b6f7316518aceb89d1742681f0"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
+      "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
     }
   ],
   "entries": {
@@ -2129,9 +2144,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 132,
+  "revision": 133,
   "schema_version": 1,
   "source_main_sha": "fdcd1ef96e8bfd2588d3ad871bfa5049a6c0df0f",
-  "state_hash": "14b27e79b11f5a0fe61c99feffbf0f3cb138c11a01dbc90501f8604b5eb4734b",
+  "state_hash": "fbdbb0cec1ecf13e5c7d4dca186c237d6b6524e76fb1efac12eabd5f4d1be8da",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
