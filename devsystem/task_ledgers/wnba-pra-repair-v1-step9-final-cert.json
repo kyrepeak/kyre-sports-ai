@@ -36,7 +36,8 @@
     "repair_step9_red_commit": "1d96824e54156a126f49e7632e5117905e8bb79c",
     "repair_step9_red_observed": true,
     "repair_step9_red_result": "1 failed in 1.89s",
-    "repair_step9_green_observed": false
+    "repair_step9_green_observed": true,
+    "repair_step9_green_result": "1 passed in 2.20s"
   },
   "public_cert_contract": {
     "host": "https://pickvault.streamlit.app",
@@ -56,6 +57,6 @@
     "registry_readback_required": true,
     "freeze_token": "WNBA_PRA_REPAIR_V1_STEP9_FROZEN"
   },
-  "state": "READY_FOR_REPAIR_STEP9_GREEN",
+  "state": "READY_FOR_EXACT_CANDIDATE_PROOF",
   "green_plus_frozen_claimed": false
 }
