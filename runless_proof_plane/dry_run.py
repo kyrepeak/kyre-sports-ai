@@ -16,6 +16,8 @@ class DryRunFailure(RuntimeError):pass
 def _digest(v):return hashlib.sha256(json.dumps(v,sort_keys=True,default=str).encode()).hexdigest()
 def _exact(expected,actual):
     if expected!=actual:raise DryRunFailure("RUNLESS_EXACT_HEAD_DRIFT")
+def _require_deployment_identity(candidate,deployment_identity):
+    if not deployment_identity or len(deployment_identity)!=40 or deployment_identity!=candidate:raise DryRunFailure("RUNLESS_DEPLOYMENT_IDENTITY_MISMATCH")
 def _failclosed_self_tests(candidate_sha):
     evidence={}
     try:_exact(candidate_sha,"0"*40);evidence['wrong_sha']=False
@@ -43,9 +45,10 @@ def certify_dry_run(settings:Settings):
     if settings.bootstrap:raise DryRunFailure('RUNLESS_FULL_MODE_REQUIRED')
     candidate=settings.dry_run_candidate
     if not candidate or len(candidate)!=40:raise DryRunFailure('RUNLESS_DRY_RUN_CANDIDATE_REQUIRED')
+    _require_deployment_identity(candidate,settings.deployment_identity)
     auth=GithubAppAuth(settings);client=GithubClient(auth,settings.repository)
     repo=client.repository_info();branch_sha=client.branch_sha(settings.source_branch);_exact(candidate,branch_sha);commit=client.commit(candidate)
-    evidence=_failclosed_self_tests(candidate)
+    evidence=_failclosed_self_tests(candidate);evidence['deployment_identity_match']=True
     evidence['github_auth_read']=repo.get('full_name')==settings.repository and commit.get('sha')==candidate
     if not evidence['github_auth_read']:raise DryRunFailure('RUNLESS_GITHUB_AUTH_DIAGNOSTIC_FAILED')
     proof_id=f"dry-run-{candidate[:16]}";backend=GithubReceiptBackend(client,candidate,settings.receipt_ref,settings.receipt_path);store=ReceiptStore(backend,settings.receipt_ref,settings.receipt_path)
