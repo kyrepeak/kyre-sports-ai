@@ -27,3 +27,4 @@
 .github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml
 .github/workflows/wnba-nav-step6-fast-cert.yml
 .github/workflows/wnba-nav-step6-responsive-cert.yml
+.github/workflows/nfl-passing-yards-live-source-cert-v1.yml

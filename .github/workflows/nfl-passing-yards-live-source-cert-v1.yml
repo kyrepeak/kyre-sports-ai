@@ -1,24 +1,6 @@
 name: NFL Passing Yards live source cert
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'nfl_passing_yards_*.py'
-      - 'nfl_hub_v*.py'
-      - 'streamlit_memory_lazy_router_v*.py'
-      - 'app.py'
-      - 'tests/test_nfl_passing_yards_profile_espn_shape_v1.py'
-      - 'tests/test_nfl_passing_yards_defense_v3_timezone_v1.py'
-      - 'tests/test_nfl_passing_yards_v18_recursion_guard_v1.py'
-      - 'tests/test_nfl_passing_yards_step4_timezone_v1.py'
-      - 'devsystem/nfl_passing_yards_live_cert_v1.py'
-      - 'devsystem/nfl_passing_yards_live_cert_v2.py'
-      - 'devsystem/nfl_passing_yards_live_stage_cert_v1.py'
-      - 'devsystem/nfl_passing_yards_live_stage_cert_v2.py'
-      - 'devsystem/nfl_passing_yards_espn_payload_probe_v1.py'
-      - 'devsystem/nfl_passing_yards_espn_payload_probe_v2.py'
-      - '.github/workflows/nfl-passing-yards-live-source-cert-v1.yml'
   workflow_dispatch:
 
 permissions:
