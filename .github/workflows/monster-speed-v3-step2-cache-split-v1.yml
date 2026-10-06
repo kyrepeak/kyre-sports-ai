@@ -1,34 +1,6 @@
 name: Monster Speed V3 Step 2 Cache Split
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-production-verification-v5.yml"
-      - ".github/workflows/devsystem-cache-seed-v1.yml"
-      - "devsystem/root_requirements_fingerprint_v1.txt"
-      - "devsystem/monster_speed_v3_step2_cache_split_v1.py"
-      - "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt"
-      - "devsystem/task_ledgers/monster-speed-v3-step2-cache-split-v1.json"
-      - "tests/test_monster_speed_v3_step2_cache_split_v1.py"
-      - "tests/test_devsystem_browser_cache_v1.py"
-      - "tests/test_devsystem_sport_cache_v1.py"
-      - ".github/workflows/monster-speed-v3-step2-cache-split-v1.yml"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-production-verification-v5.yml"
-      - ".github/workflows/devsystem-cache-seed-v1.yml"
-      - "devsystem/root_requirements_fingerprint_v1.txt"
-      - "devsystem/monster_speed_v3_step2_cache_split_v1.py"
-      - "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt"
-      - "devsystem/task_ledgers/monster-speed-v3-step2-cache-split-v1.json"
-      - "tests/test_monster_speed_v3_step2_cache_split_v1.py"
-      - "tests/test_devsystem_browser_cache_v1.py"
-      - "tests/test_devsystem_sport_cache_v1.py"
-      - ".github/workflows/monster-speed-v3-step2-cache-split-v1.yml"
   workflow_dispatch:
 
 permissions:
