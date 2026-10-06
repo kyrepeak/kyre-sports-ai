@@ -1,43 +1,13 @@
 name: CFB Top Picks Research V2 Step 5 Defense Pace
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "cfb_top_picks_defense_pace_research_v1.py"
-      - "cfb_top_picks_details_v1.py"
-      - "cfb_top_picks_page_v4.py"
-      - "devsystem/cfb_top_picks_research_v2_step5_defense_pace_v1.py"
-      - "devsystem/cfb_top_picks_research_v2_step5_defense_pace_cert_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step5_contract_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step5_integration_v1.py"
-      - "tests/test_cfb_top_picks_step4_details_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step5-defense-pace-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step5-defense-pace-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - "cfb_top_picks_defense_pace_research_v1.py"
-      - "cfb_top_picks_details_v1.py"
-      - "cfb_top_picks_page_v4.py"
-      - "devsystem/cfb_top_picks_research_v2_step5_defense_pace_v1.py"
-      - "devsystem/cfb_top_picks_research_v2_step5_defense_pace_cert_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step5_contract_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step5_defense_pace_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step5_integration_v1.py"
-      - "tests/test_cfb_top_picks_step4_details_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step5-defense-pace-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step5-defense-pace-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: cfb-top-picks-research-v2-step5-\${{ github.ref }}
+  group: cfb-top-picks-research-v2-step5-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -58,7 +28,7 @@ jobs:
           path: |
             .venv-browser-qa
             ~/.cache/ms-playwright
-          key: devsystem-browser-stack-\${{ runner.os }}-py\${{ steps.browser-python.outputs.python-version }}-\${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
       - name: Build environment on cache miss
         if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         run: |
