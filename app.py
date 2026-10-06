@@ -68,6 +68,7 @@ WNBA_PRA_REPAIR_V1_STEP2_TEAM_ID_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP2_TEAM_IDENTI
 WNBA_PRA_REPAIR_V1_STEP3_DATA_COMPLETENESS_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP3_DATA_COMPLETENESS_2026_10_02_R1"
 WNBA_PRA_REPAIR_V1_STEP4_UNIVERSAL_CARD_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP4_UNIVERSAL_FINAL_CARD_2026_10_05_R1"
 WNBA_PRA_REPAIR_V1_STEP5_DECISION_FALLBACK_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP5_DECISION_FALLBACK_2026_10_06_R1"
+WNBA_PRA_REPAIR_V1_STEP7_FINAL_INTEGRATION_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP7_FINAL_INTEGRATION_2026_10_06_R1"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
 
@@ -330,7 +331,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_wnba_pra_repair_v1_step5_decision_fallback import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration import record_bootstrap_import_ms, render_app
+    # Frozen WNBA PRA Repair V1 Step 5 compatibility: from streamlit_memory_lazy_router_wnba_pra_repair_v1_step5_decision_fallback import record_bootstrap_import_ms, render_app
     # Frozen WNBA PRA Repair V1 Step 4 compatibility: from streamlit_memory_lazy_router_wnba_pra_repair_v1_step4_universal_card import record_bootstrap_import_ms, render_app
     # Frozen WNBA PRA Repair V1 Step 3 compatibility: from streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness import record_bootstrap_import_ms, render_app
     # Frozen WNBA PRA Repair V1 Step 2 compatibility: from streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity import record_bootstrap_import_ms, render_app
