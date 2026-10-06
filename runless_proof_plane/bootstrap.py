@@ -1,8 +1,9 @@
 from __future__ import annotations
 import os
 
-# WNBA pushState Repair V1 Step 2 merged-main certification.
-# Step-1 one-shot gates/freezes and Step-2 candidate publication are disarmed.
+# WNBA pushState Repair V1 Step 2 final freeze/read-back.
+# All prior one-shot publication/freeze paths are disarmed; only the narrow
+# Step-2 CAS-protected five-artifact freeze is active.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -13,6 +14,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .wnba_pushstate_step2_merged_closeout import install_startup_gate
+from .wnba_pushstate_step2_freeze import install_startup_freeze
 
-install_startup_gate(app)
+install_startup_freeze(app)
