@@ -1,0 +1,23 @@
+{
+  "task_id": "wnba-pushstate-repair-v1-step1-root-cause",
+  "workstream": "api2-wnba-pushstate-repair-v1-step1",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_wnba_pushstate_repair_v1_step1.py"],
+    ["python", "-m", "devsystem.wnba_pushstate_repair_v1_step1_root_cause_cert"]
+  ],
+  "artifacts": [
+    "devsystem/wnba_pushstate_repair_v1_step1_root_cause_cert.py",
+    "tests/test_wnba_pushstate_repair_v1_step1.py",
+    "devsystem/runless_proof_plans/wnba-pushstate-repair-v1-step1-root-cause.json",
+    "devsystem/task_ledgers/wnba-pushstate-repair-v1-step1-root-cause.json"
+  ],
+  "dependencies": [
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+    "wnba_pra_navigation_v2_step1.py",
+    "app.py",
+    "freeze:WNBA_PRA_REPAIR_V1_STEP9_FROZEN"
+  ],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "freeze_token": "WNBA_PUSHSTATE_REPAIR_V1_STEP1_FROZEN"
+}
