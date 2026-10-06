@@ -29,17 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "app.py": {
-          "from_blob": "28073247baf9d41f5efb59ece0e337f93856f380",
-          "to_blob": "b77737e3e5a8148188485710bc3a6e42a5757335"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "6794d8a8e5fe5888dc0c098c3ab6619cc4081aa1",
-      "thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP5-APP"
     }
   ],
   "entries": {
@@ -2058,7 +2047,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP4_FROZEN": {
       "artifacts": {
-        "app.py": "28073247baf9d41f5efb59ece0e337f93856f380",
+        "app.py": "b77737e3e5a8148188485710bc3a6e42a5757335",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step4-universal-card.json": "880fb49921c230e9df7b6dbf390191c83d84c85d",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step4-universal-card.json": "464d6e7e903add6c6e583839dedd467761c1a46f",
         "devsystem/wnba_pra_repair_v1_step4_universal_card_cert.py": "a71713915f0ac532fee0b926feba34004eaef14f",
@@ -2068,6 +2057,20 @@
       },
       "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP4_FROZEN",
       "source_main_sha": "e419cb82962f5311e36779a687cfb2fbaca7ee7b",
+      "status": "FROZEN"
+    },
+    "WNBA_PRA_REPAIR_V1_STEP5_FROZEN": {
+      "artifacts": {
+        "app.py": "b77737e3e5a8148188485710bc3a6e42a5757335",
+        "devsystem/runless_proof_plans/wnba-pra-repair-v1-step5-decision-fallback.json": "65c5caa0bc8eaa98ae34605bd07cfd7cb33af277",
+        "devsystem/task_ledgers/wnba-pra-repair-v1-step5-decision-fallback.json": "29acc8ee4ffd3a5fd2ba646214a3145fbf73bb65",
+        "devsystem/wnba_pra_repair_v1_step5_decision_fallback_cert.py": "f9bd0ab5110fe10914d009d0c4e7aaac0b74d67a",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step5_decision_fallback.py": "24b0afe8fdaac2c9c97197bea0a15b23fe54041a",
+        "tests/test_wnba_pra_repair_v1_step5.py": "cad7ff27da4d6f232219fb1a1185036e3290d958",
+        "wnba_pra_repair_v1_step5_decision_fallback.py": "0c846e0472cfc711203710b1048693c0b18fd398"
+      },
+      "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP5_FROZEN",
+      "source_main_sha": "19584f7ef016de66a0fd4a8ce907c45efac0ca8f",
       "status": "FROZEN"
     },
     "WNBA_PRA_SPEED_V3_STEP7": {
@@ -2104,7 +2107,7 @@
     "WNBA_PRA_SPEED_V3_STEP9": {
       "artifacts": {
         ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml": "0fe38d0bed64fe15d52deb30b7d92cc012bf6e68",
-        "app.py": "28073247baf9d41f5efb59ece0e337f93856f380",
+        "app.py": "b77737e3e5a8148188485710bc3a6e42a5757335",
         "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json": "eac68bf9b00be8ce743f78e0ae64a4f513c457e4",
         "devsystem/wnba_pra_speed_v3_step9_final_cert.py": "175c7afd6f171467f9afae0db743d8e03593d7e0",
         "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py": "51eef1fe2526801a467f155d1c0b32d516ef8a35",
@@ -2169,9 +2172,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 135,
+  "revision": 136,
   "schema_version": 1,
-  "source_main_sha": "e419cb82962f5311e36779a687cfb2fbaca7ee7b",
-  "state_hash": "cf7fd993ebecfc6520a062eadf1456f4f91cfb02fd3f49e4264a0cf9de87cbec",
+  "source_main_sha": "19584f7ef016de66a0fd4a8ce907c45efac0ca8f",
+  "state_hash": "db4ff18344f08c1f6a82bdf108974bc706f445f1beeef625596d4323a91fb3b0",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
