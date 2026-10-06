@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
 from types import SimpleNamespace
 
 from runless_proof_plane.wnba_pushstate_step1_closeout import (
@@ -171,3 +173,12 @@ def test_startup_hook_prefers_merged_main_gate_when_armed(monkeypatch):
     assert app.state.wnba_pushstate_step1_gate["merged_sha"] == MERGED
     assert len(client.published) == 1
     assert client.published[0][0] == MERGED
+
+
+def test_freeze_contract_runs_in_authoritative_closeout_lane():
+    path = Path(__file__).with_name("test_runless_wnba_pushstate_step1_freeze.py")
+    spec = importlib.util.spec_from_file_location("step1_freeze_contract", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.test_step1_freeze_is_cas_protected_and_preserves_unrelated_thaws()
