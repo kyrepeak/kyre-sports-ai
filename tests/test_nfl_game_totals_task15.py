@@ -6,10 +6,12 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-HELPER = ROOT / 'sports_api' / 'nfl_game_totals_market_read_v1.py'
+HELPER = ROOT / 'nfl_game_totals_market_read_v1.py'
 STEP9 = ROOT / 'nfl_game_totals_hub_v9.py'
 STEP10 = ROOT / 'nfl_game_totals_hub_v10.py'
-ROUTER = ROOT / 'nfl_hub_v18.py'
+ROUTER = ROOT / 'streamlit_memory_lazy_router_v97.py'
+HUB_WRAPPER = ROOT / 'nfl_hub_v36.py'
+FROZEN_V18 = ROOT / 'nfl_hub_v18.py'
 
 
 def _read(path: Path) -> str:
@@ -53,6 +55,7 @@ def test_task15_runtime_files_exist():
     assert HELPER.exists()
     assert STEP9.exists()
     assert STEP10.exists()
+    assert HUB_WRAPPER.exists()
 
 
 def test_market_read_uses_market_only_after_projection_is_complete():
@@ -123,8 +126,17 @@ def test_step10_finalizes_page_without_enabling_stakes_or_wagers():
     assert '("10", "FINAL CERTIFICATION", True)' in source
 
 
-def test_router_advances_only_game_total_to_v10():
-    source = _read(ROUTER)
-    assert 'if market == "Game Total":' in source
-    assert 'from nfl_game_totals_hub_v10 import render_nfl_game_totals_hub' in source
-    assert 'from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub' in source
+def test_current_router_advances_only_game_total_via_new_top_hub():
+    router = _read(ROUTER)
+    hub = _read(HUB_WRAPPER)
+    frozen_v18 = _read(FROZEN_V18)
+
+    assert 'ACTIVE_NFL_HUB = "nfl_hub_v36"' in router
+    assert 'GAME_TOTAL_MARKET = "Game Total"' in router
+    assert 'if market not in {PASSING_YARDS_MARKET, GAME_TOTAL_MARKET}:' in router
+    assert 'import nfl_hub_v35 as base' in hub
+    assert 'if market == "Game Total":' in hub
+    assert 'from nfl_game_totals_hub_v10 import render_nfl_game_totals_hub' in hub
+    assert 'return base.render_nfl_hub(market)' in hub
+    assert 'nfl_game_totals_hub_v10' not in frozen_v18
+    assert 'from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub' in frozen_v18
