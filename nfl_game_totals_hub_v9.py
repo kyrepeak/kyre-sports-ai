@@ -15,7 +15,7 @@ import streamlit as st
 
 import nfl_game_totals_hub_v8 as v8
 import nfl_game_totals_hub_v8_1 as mobile
-from sports_api.nfl_game_totals_market_read_v1 import build_market_final_read
+from nfl_game_totals_market_read_v1 import build_market_final_read
 
 MODEL_VERSION = "NFL GAME TOTALS V9 • PAGE STEP 9 MARKET + FINAL READ"
 PAGE_BUILD_STEP = 9
