@@ -1,0 +1,46 @@
+{
+  "version": "MONSTER_V9_STEP4_LEDGER_V1",
+  "project": "API 2",
+  "mission": "WNBA PRA Repair V1 Step 4 universal final PRA card",
+  "step": "4/7",
+  "base_main_sha": "109896154a140cb8888d6035712cd5f718863ad4",
+  "rollback_sha": "109896154a140cb8888d6035712cd5f718863ad4",
+  "authoritative_branch": "api2-wnba-pra-repair-v1-step4-universal-card-r1",
+  "authoritative_pr": 1408,
+  "step2a": {
+    "single_authority": true,
+    "duplicate_step4_prs_at_lock": 0,
+    "github_actions_fallback_authorized": false,
+    "frozen_step3_blob": "5bfc0aae913f96a083406a835bb21bc99438781b",
+    "frozen_player_intelligence_blob": "393c29711962bf1d42b8fc58322938c92e23000a"
+  },
+  "problem": "The frozen Player Intelligence surface renders a decision card only when one exact qualified PRA market card exists, so eligible players without that card do not receive the requested final PRA summary.",
+  "root_cause": "Final-card presentation was coupled to exact certified market qualification rather than universal player-page presentation.",
+  "patch": {
+    "strategy": "additive overlay above frozen Step 3",
+    "new_files": [
+      "streamlit_memory_lazy_router_wnba_pra_repair_v1_step4_universal_card.py",
+      "wnba_pra_repair_v1_step4_final_card.py"
+    ],
+    "activation_file": "app.py",
+    "truth_policy": "reuse existing certified line/side/probability when present; otherwise preserve missing market fields as N/A",
+    "step5_boundary": "no fallback decision engine or fabricated market values"
+  },
+  "tdd": {
+    "red_contract_commit": "41baf945e924bcdfdc2976d8f91af61d43723fbf",
+    "red_observed": "Step 4 overlay does not exist yet",
+    "behavioral_test": "tests/test_wnba_pra_repair_v1_step4.py",
+    "source_cert": "devsystem/wnba_pra_repair_v1_step4_universal_card_cert.py"
+  },
+  "proof_contract": {
+    "focused_pytest_required": true,
+    "source_cert_required": true,
+    "exact_candidate_gate_required": true,
+    "exact_head_merge_required": true,
+    "post_merge_public_proof_required": true,
+    "registry_cas_readback_required": true,
+    "freeze_token": "WNBA_PRA_REPAIR_V1_STEP4_FROZEN"
+  },
+  "state": "READY_FOR_EXACT_HEAD_PROOF",
+  "green_plus_frozen_claimed": false
+}
