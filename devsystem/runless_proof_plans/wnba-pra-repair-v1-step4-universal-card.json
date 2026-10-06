@@ -2,16 +2,26 @@
   "task_id": "wnba-pra-repair-v1-step4-universal-card",
   "workstream": "wnba-pra-repair-v1-step4",
   "commands": [
-    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_repair_v1_step4.py"]
+    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_repair_v1_step4.py"],
+    ["python", "-m", "devsystem.wnba_pra_repair_v1_step4_universal_card_cert"]
   ],
-  "artifacts": ["tests/test_wnba_pra_repair_v1_step4.py"],
+  "artifacts": [
+    "app.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step4_universal_card.py",
+    "wnba_pra_repair_v1_step4_final_card.py",
+    "tests/test_wnba_pra_repair_v1_step4.py",
+    "devsystem/wnba_pra_repair_v1_step4_universal_card_cert.py",
+    "devsystem/task_ledgers/wnba-pra-repair-v1-step4-universal-card.json"
+  ],
   "dependencies": [
     "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
     "wnba_pra_player_intelligence_v2_step4.py",
-    "devsystem/frozen_artifact_registry_state_v1.json"
+    "monster-frozen-artifact-registry:devsystem/frozen_artifact_registry_state_v1.json"
   ],
-  "probes": [],
-  "timeout_seconds": 600,
+  "probes": [
+    {"url": "https://pickvault.streamlit.app", "kind": "browser", "timeout_seconds": 60}
+  ],
+  "timeout_seconds": 900,
   "live_ttl_seconds": 900,
   "freeze_token": "WNBA_PRA_REPAIR_V1_STEP4_FROZEN"
 }
