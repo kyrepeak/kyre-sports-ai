@@ -1,27 +1,7 @@
 name: WNBA PRA Speed V3 Step 8 Visible First
 
 on:
-  pull_request:
-    paths:
-      - "app.py"
-      - "wnba_pra_speed_v3_step8_visible_first.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py"
-      - "devsystem/wnba_pra_speed_v3_step8_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json"
-      - "tests/test_wnba_pra_speed_v3_step8.py"
-      - ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - "app.py"
-      - "wnba_pra_speed_v3_step8_visible_first.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py"
-      - "devsystem/wnba_pra_speed_v3_step8_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json"
-      - "tests/test_wnba_pra_speed_v3_step8.py"
-      - ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
+  workflow_dispatch:
 
 jobs:
   focused-contract:
