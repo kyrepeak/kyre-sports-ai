@@ -1,92 +1,23 @@
 from __future__ import annotations
-
-import argparse
-import re
-from dataclasses import dataclass
+import argparse,re
 from pathlib import Path
-
-AUTHORIZATION_TOKEN = "KYRE_EXPLICIT_AUTHORIZATION"
-MANIFEST = Path("devsystem/runless_legacy_proof_workflows_v1.txt")
-
-
-@dataclass(frozen=True)
-class FallbackAuthorization:
-    authorized: bool
-    reason: str
-
-
-@dataclass(frozen=True)
-class AuditResult:
-    green: bool
-    failures: tuple[str, ...]
-    checked: tuple[str, ...]
-
-
-def authorize_manual_actions_fallback(explicit_authorization: str | None) -> FallbackAuthorization:
-    if explicit_authorization == AUTHORIZATION_TOKEN:
-        return FallbackAuthorization(True, "EXPLICIT_KYRE_AUTHORIZATION_PRESENT")
-    return FallbackAuthorization(False, "EXPLICIT_KYRE_AUTHORIZATION_REQUIRED")
-
-
-def _manifest_paths(root: Path) -> tuple[str, ...]:
-    manifest = root / MANIFEST
-    if not manifest.is_file():
-        return ()
-    return tuple(
-        line.strip()
-        for line in manifest.read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    )
-
-
-def _top_level_trigger_block(text: str) -> str:
-    lines = text.splitlines()
-    inside = False
-    out: list[str] = []
-    for line in lines:
-        if not inside and re.match(r"^on\s*:\s*$", line):
-            inside = True
-            continue
-        if inside:
-            if line and not line.startswith((" ", "\t")):
-                break
-            out.append(line)
-    return "\n".join(out)
-
-
-def audit_legacy_workflows(root: Path) -> AuditResult:
-    root = Path(root)
-    paths = _manifest_paths(root)
-    failures: list[str] = []
-    if not paths:
-        failures.append("RUNLESS_FALLBACK_MANIFEST_MISSING_OR_EMPTY")
-    for relative in paths:
-        path = root / relative
-        if not path.is_file():
-            failures.append(f"MISSING:{relative}")
-            continue
-        block = _top_level_trigger_block(path.read_text(encoding="utf-8"))
-        if not re.search(r"(?m)^\s{2}workflow_dispatch\s*:", block):
-            failures.append(f"NO_MANUAL_TRIGGER:{relative}")
-        if re.search(r"(?m)^\s{2}(pull_request|push)\s*:", block):
-            failures.append(f"AUTOMATIC_TRIGGER:{relative}")
-    return AuditResult(not failures, tuple(failures), paths)
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["audit"])
-    parser.add_argument("--root", default=".")
-    args = parser.parse_args()
-    result = audit_legacy_workflows(Path(args.root))
-    if result.green:
-        print(f"RUNLESS_ACTIONS_FALLBACK_POLICY_GREEN checked={len(result.checked)}")
-        return 0
-    print("RUNLESS_ACTIONS_FALLBACK_POLICY_RED")
-    for failure in result.failures:
-        print(failure)
+AUTO_RE=re.compile(r"(?m)^\s*(pull_request|pull_request_target|push)\s*:")
+def manifest_paths(root):
+    p=root/"devsystem/runless_legacy_proof_workflows_v1.txt"
+    if not p.exists():raise RuntimeError("RUNLESS_LEGACY_MANIFEST_MISSING")
+    return [x.strip() for x in p.read_text().splitlines() if x.strip() and not x.lstrip().startswith("#")]
+def audit_legacy_workflows(root):
+    bad=[]
+    for rel in manifest_paths(root):
+        p=root/rel
+        if not p.exists():bad.append((rel,"MISSING"));continue
+        text=p.read_text()
+        if AUTO_RE.search(text):bad.append((rel,"AUTOMATIC_TRIGGER"))
+        if "workflow_dispatch" not in text:bad.append((rel,"NO_MANUAL_FALLBACK"))
+    return {"green":not bad,"violations":bad}
+def main():
+    a=argparse.ArgumentParser();a.add_argument("command",choices=["audit"]);a.add_argument("--root",default=".");ns=a.parse_args();r=audit_legacy_workflows(Path(ns.root))
+    if r["green"]:print("RUNLESS_ACTIONS_FALLBACK_POLICY_GREEN");return 0
+    for x in r["violations"]:print("RUNLESS_ACTIONS_FALLBACK_POLICY_RED",*x)
     return 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__=="__main__":raise SystemExit(main())
