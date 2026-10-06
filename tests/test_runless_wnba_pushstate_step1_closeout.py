@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 from runless_proof_plane.wnba_pushstate_step1_closeout import (
     STEP1_ARTIFACTS,
+    install_startup_gate,
     publish_candidate_gate,
     publish_candidate_gate_from_env,
 )
@@ -41,6 +44,18 @@ class FakeClient:
         return {"id": 777, "conclusion": conclusion}
 
 
+class FakeApp:
+    def __init__(self, client):
+        self.state = SimpleNamespace(github_client=client)
+        self.handlers = {}
+
+    def on_event(self, name):
+        def decorator(func):
+            self.handlers[name] = func
+            return func
+        return decorator
+
+
 def proof_evidence():
     return {
         "worker_service_id": "srv-db2l7vad0e5s73bhc8pg",
@@ -50,6 +65,19 @@ def proof_evidence():
         "owner": "_pin_deep_wnba_shell_route",
         "feedback_loop_proven": True,
     }
+
+
+def arm_env(monkeypatch):
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "1")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_SHA", CANDIDATE)
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_BASE_SHA", BASE)
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_PR", "1416")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_SERVICE_ID", "srv-db2l7vad0e5s73bhc8pg")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_DEPLOY_ID", "dep-db2l7vqd0e5s73bhcbe0")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_TEST_RESULT", "1 passed in 1.89s")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "RUNLESS_WNBA_PUSHSTATE_STEP1_GREEN")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "_pin_deep_wnba_shell_route")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "1")
 
 
 def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_checks():
@@ -73,19 +101,24 @@ def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_check
 
 def test_env_handoff_requires_explicit_arm_and_exact_proof_metadata(monkeypatch):
     client = FakeClient()
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "1")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_SHA", CANDIDATE)
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_BASE_SHA", BASE)
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_PR", "1416")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_SERVICE_ID", "srv-db2l7vad0e5s73bhc8pg")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_DEPLOY_ID", "dep-db2l7vqd0e5s73bhcbe0")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_TEST_RESULT", "1 passed in 1.89s")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "RUNLESS_WNBA_PUSHSTATE_STEP1_GREEN")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "_pin_deep_wnba_shell_route")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "1")
+    arm_env(monkeypatch)
 
     result = publish_candidate_gate_from_env(client)
 
     assert result["status"] == "GREEN"
     assert result["candidate_sha"] == CANDIDATE
     assert client.published[0][1] == "runless-final-gate"
+
+
+def test_startup_hook_invokes_env_handoff_once(monkeypatch):
+    client = FakeClient()
+    app = FakeApp(client)
+    arm_env(monkeypatch)
+
+    install_startup_gate(app)
+    assert "startup" in app.handlers
+
+    app.handlers["startup"]()
+
+    assert app.state.wnba_pushstate_step1_gate["status"] == "GREEN"
+    assert len(client.published) == 1
