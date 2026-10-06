@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "task_id": "wnba-data-completeness-repair-v1-step1-source-id-truth",
+  "title": "WNBA Data Completeness Repair V1 Step 1 — Data Source + ID Truth",
+  "project": "API2",
+  "workstream": "api2-wnba-data-completeness-repair-v1-step1",
+  "step": "1/5",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "ec301504ee74fe247eaf62d992b78929d4b2f6ed",
+  "problem": "Live WNBA pages open but player identity/data hydration is inconsistent: literal nan identity text, zero-filled unmatched production rows, and player IDs can cross ESPN/WNBA Stats namespaces.",
+  "root_cause": "wnba_availability_v27._verified_pool_for_day matches current ESPN roster rows to production rows, then overwrites PLAYER_ID from the production row with the ESPN roster PLAYER_ID. Downstream official WNBA history reads then receive the wrong namespace. Unmatched rows are zero-filled and previously lacked explicit ID-source truth.",
+  "patch": "Keep current-roster membership/name/team metadata from ESPN while preserving matched production PLAYER_ID and PLAYER_ID_SOURCE; use ESPN ID/source only for unmatched roster-only rows; normalize textual identity columns so NaN cannot render as identity text.",
+  "ruling": "Step 1 repairs source/ID truth only. It does not repair per-game zero-stat normalization, recent-form/H2H PRA, projections, probabilities, markets, or final cards; those remain Steps 2-4.",
+  "protected": {
+    "WNBA_PUSHSTATE_REPAIR_V1_STEP1_FROZEN": true,
+    "WNBA_PUSHSTATE_REPAIR_V1_STEP2_FROZEN": true,
+    "WNBA_PUSHSTATE_REPAIR_V1_STEP3_FROZEN": true,
+    "WNBA_PUSHSTATE_REPAIR_V1_STEP4_FROZEN": true,
+    "other_pages": true,
+    "other_sports": true
+  },
+  "mutation_scope": [
+    "wnba_availability_v27.py",
+    "tests/test_wnba_data_completeness_repair_v1_step1.py",
+    "devsystem/wnba_data_completeness_repair_v1_step1_source_id_truth_cert.py",
+    "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step1-source-id-truth.json",
+    "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step1-source-id-truth.json"
+  ],
+  "expected_product_files_changed": 1,
+  "expected_cross_sport_files_changed": 0,
+  "runless_required": true,
+  "github_actions_fallback": false,
+  "freeze_token": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN"
+}
