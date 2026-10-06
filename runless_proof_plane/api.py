@@ -12,6 +12,7 @@ from .registry import freeze_task13
 from .step6_registry import freeze_step6
 from .step7_control import apply_step7_app_patch
 from .step7_registry import freeze_step7
+from .step8_registry import freeze_step8
 
 def create_app(settings=None):
     settings=settings or Settings.from_env();app=FastAPI(title="Runless Proof Plane",version="1");app.state.settings=settings;app.state.orchestrator=ProofOrchestrator();app.state.receipts={};app.state.dry_run={'status':'NOT_RUN'};app.state.freeze={'status':'NOT_RUN'};app.state.registry={'status':'NOT_RUN'};app.state.app_patch={'status':'NOT_RUN'};app.state.github_auth=GithubAppAuth(settings);app.state.github_client=GithubClient(app.state.github_auth,settings.repository);app.state.github_diag_cache=None
@@ -46,6 +47,15 @@ def create_app(settings=None):
                     app.state.github_client,
                     os.environ['RPP_STEP7_FREEZE_MERGED_SHA'],
                     os.environ.get('RPP_STEP7_FREEZE_TOKEN','WNBA_PRA_REPAIR_V1_STEP7_FROZEN'),
+                )
+            except Exception as exc:
+                app.state.registry={'status':'FAIL','error':type(exc).__name__,'detail':str(exc)[:240]}
+        if not settings.bootstrap and os.environ.get('RPP_STEP8_FREEZE_ON_START','0')=='1':
+            try:
+                app.state.registry=freeze_step8(
+                    app.state.github_client,
+                    os.environ['RPP_STEP8_FREEZE_MERGED_SHA'],
+                    os.environ.get('RPP_STEP8_FREEZE_TOKEN','WNBA_PRA_REPAIR_V1_STEP8_FROZEN'),
                 )
             except Exception as exc:
                 app.state.registry={'status':'FAIL','error':type(exc).__name__,'detail':str(exc)[:240]}
