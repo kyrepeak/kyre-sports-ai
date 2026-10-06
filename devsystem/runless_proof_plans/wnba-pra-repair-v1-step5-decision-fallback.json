@@ -1,0 +1,29 @@
+{
+  "task_id": "wnba-pra-repair-v1-step5-decision-fallback",
+  "workstream": "wnba-pra-repair-v1-step5",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_repair_v1_step5.py"],
+    ["python", "-m", "devsystem.wnba_pra_repair_v1_step5_decision_fallback_cert"]
+  ],
+  "artifacts": [
+    "app.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step5_decision_fallback.py",
+    "wnba_pra_repair_v1_step5_decision_fallback.py",
+    "tests/test_wnba_pra_repair_v1_step5.py",
+    "devsystem/wnba_pra_repair_v1_step5_decision_fallback_cert.py",
+    "devsystem/task_ledgers/wnba-pra-repair-v1-step5-decision-fallback.json"
+  ],
+  "dependencies": [
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step4_universal_card.py",
+    "wnba_pra_repair_v1_step4_final_card.py",
+    "wnba_pra_player_intelligence_v2_step4.py",
+    "sports_api/api/wnba_prop_threshold_probability.py",
+    "monster-frozen-artifact-registry:devsystem/frozen_artifact_registry_state_v1.json"
+  ],
+  "probes": [
+    {"url": "https://pickvault.streamlit.app", "kind": "browser", "timeout_seconds": 60}
+  ],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "freeze_token": "WNBA_PRA_REPAIR_V1_STEP5_FROZEN"
+}
