@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from typing import Any, Mapping
 
 from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt
@@ -115,3 +116,30 @@ def publish_candidate_gate(
         "receipt_digest": receipt["digest"],
         "check_id": check.get("id"),
     }
+
+
+def publish_candidate_gate_from_env(client) -> dict[str, Any]:
+    if os.getenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "").strip() != "1":
+        return {"status": "NOT_ARMED"}
+
+    candidate_sha = os.getenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_SHA", "").strip()
+    base_sha = os.getenv("RPP_WNBA_PUSHSTATE_STEP1_BASE_SHA", "").strip()
+    raw_pr = os.getenv("RPP_WNBA_PUSHSTATE_STEP1_PR", "").strip()
+    if not raw_pr.isdigit():
+        raise ValueError("WNBA_PUSHSTATE_STEP1_PR_REQUIRED")
+
+    evidence = {
+        "worker_service_id": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_SERVICE_ID", "").strip(),
+        "worker_deploy_id": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_DEPLOY_ID", "").strip(),
+        "test_result": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_TEST_RESULT", "").strip(),
+        "cert_token": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "").strip(),
+        "owner": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "").strip(),
+        "feedback_loop_proven": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "").strip() == "1",
+    }
+    return publish_candidate_gate(
+        client,
+        candidate_sha=candidate_sha,
+        base_sha=base_sha,
+        pr_number=int(raw_pr),
+        evidence=evidence,
+    )
