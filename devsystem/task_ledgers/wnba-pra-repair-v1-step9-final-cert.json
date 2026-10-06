@@ -1,0 +1,61 @@
+{
+  "version": "MONSTER_V9_WNBA_REPAIR_STEP9_LEDGER_V1",
+  "project": "API 2",
+  "mission": "WNBA PRA Repair V1 Step 9 public production certification and final freeze",
+  "step": "9/9",
+  "base_main_sha": "ff4146f2f4503b06fc448f6b523183044833b86e",
+  "rollback_sha": "ff4146f2f4503b06fc448f6b523183044833b86e",
+  "authoritative_branch": "api2-wnba-step9-segmented-date-r1",
+  "step2a": {
+    "single_authority": true,
+    "github_actions_fallback_authorized": false,
+    "runless_required_check": "runless-final-gate",
+    "runless_app_id": 5204253,
+    "frozen_step8_token": "WNBA_PRA_REPAIR_V1_STEP8_FROZEN",
+    "frozen_step8_main_sha": "af9b8e07ce048b41a9ad84385ede251d0bb560f5",
+    "product_runtime_mutation_allowed": false
+  },
+  "problem": "The legacy WNBA Speed-V3 Step-9 performance verifier over-scoped the repair closeout by requiring a future Game Center/two-player traversal, causing long browser waits after the repaired public WNBA/PRA future slate was already proven reachable.",
+  "root_cause": "Verification-contract mismatch. Repair Step 9 needs final public production reachability and future-only slate certification while deeper Game Center/player behavior is already owned by frozen Repair Steps 1-8. The legacy performance verifier reopened an unrelated browser seam.",
+  "patch": {
+    "strategy": "repair-specific final public cert plus deterministic future-date verifier mechanics",
+    "app_changed": false,
+    "router_changed": false,
+    "model_math_changed": false,
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_math_changed": false,
+    "data_meaning_changed": false,
+    "sportsbook_projection_influence_changed": false,
+    "past_games_allowed": false
+  },
+  "tdd": {
+    "segmented_date_red_observed": true,
+    "segmented_date_green_observed": true,
+    "segmented_date_green_result": "2 passed in 2.10s",
+    "repair_step9_red_commit": "1d96824e54156a126f49e7632e5117905e8bb79c",
+    "repair_step9_red_observed": true,
+    "repair_step9_red_result": "1 failed in 1.89s",
+    "repair_step9_green_observed": false
+  },
+  "public_cert_contract": {
+    "host": "https://pickvault.streamlit.app",
+    "future_pregame_only": true,
+    "exact_labeled_sport": "WNBA",
+    "exact_labeled_market": "PRA",
+    "future_slate_game_required": true,
+    "legacy_game_center_performance_reopen": false
+  },
+  "proof_contract": {
+    "focused_pytest_required": true,
+    "source_cert_required": true,
+    "fresh_public_production_cert_required": true,
+    "exact_candidate_runless_gate_required": true,
+    "exact_head_merge_required": true,
+    "merged_main_runless_gate_required": true,
+    "registry_readback_required": true,
+    "freeze_token": "WNBA_PRA_REPAIR_V1_STEP9_FROZEN"
+  },
+  "state": "READY_FOR_REPAIR_STEP9_GREEN",
+  "green_plus_frozen_claimed": false
+}
