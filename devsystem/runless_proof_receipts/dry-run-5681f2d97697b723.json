@@ -1,0 +1,28 @@
+{
+  "artifact_map": {
+    "runless-proof-plane-v1": "5681f2d97697b723481b62d603efcee99399f413"
+  },
+  "candidate_sha": "5681f2d97697b723481b62d603efcee99399f413",
+  "created_at": "2026-10-06T02:06:12.534622+00:00",
+  "dependency_map": {
+    "repository": "kyrepeak/kyre-sports-ai"
+  },
+  "deployment_identity": "5681f2d97697b723481b62d603efcee99399f413",
+  "digest": "83e904355f618daf57da0f4c8d06b822006c3b55696a5e0e32e06d7910c2e0a2",
+  "evidence_digests": [
+    "7e748448792cd099916900994c44766fad87a9f4004f8999843e34d64233b6d3"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_id": "dry-run-5681f2d97697b723",
+  "registry_after": {
+    "mode": "dry-run-read-only"
+  },
+  "registry_before": {
+    "mode": "dry-run-read-only"
+  },
+  "step": "dry-run-certification",
+  "task_id": "runless-proof-plane-v1-dry-run",
+  "workstream": "runless-proof-plane-v1"
+}
