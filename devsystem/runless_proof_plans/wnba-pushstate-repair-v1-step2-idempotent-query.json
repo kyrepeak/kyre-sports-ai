@@ -1,0 +1,40 @@
+{
+  "version": "RUNLESS_WNBA_PUSHSTATE_REPAIR_V1_STEP2",
+  "project": "API2",
+  "mission": "WNBA pushState Repair V1",
+  "step": "2/4",
+  "base_main_sha": "896bd5f78ef6b6f7d7084413cc1e35ac6489fdc2",
+  "branch": "api2-wnba-pushstate-repair-v1-step2-idempotent-query",
+  "problem": "Repeated deep WNBA reruns rewrite unchanged shell query params and flood browser history.pushState.",
+  "root_cause_owner": "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py::_pin_deep_wnba_shell_route",
+  "patch_contract": "Guard each WNBA/PRA shell query assignment with an exact current-value comparison; preserve first handoff and all non-navigation behavior.",
+  "tests": [
+    "tests/test_wnba_pushstate_repair_v1_step2.py",
+    "tests/test_wnba_pra_repair_v1_step3.py"
+  ],
+  "cert": "devsystem/wnba_pushstate_repair_v1_step2_idempotent_query_cert.py",
+  "required_scope": [
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+    "tests/test_wnba_pushstate_repair_v1_step2.py",
+    "devsystem/wnba_pushstate_repair_v1_step2_idempotent_query_cert.py",
+    "devsystem/runless_proof_plans/wnba-pushstate-repair-v1-step2-idempotent-query.json",
+    "devsystem/task_ledgers/wnba-pushstate-repair-v1-step2-idempotent-query.json"
+  ],
+  "forbidden_scope": [
+    "model math",
+    "projection math",
+    "probability",
+    "ranking",
+    "sportsbook influence",
+    "other sports"
+  ],
+  "proof": {
+    "runless_only": true,
+    "github_actions_fallback": false,
+    "exact_candidate_gate_required": true,
+    "exact_merge_required": true,
+    "merged_main_gate_required": true,
+    "registry_readback_required": true
+  },
+  "freeze_token": "WNBA_PUSHSTATE_REPAIR_V1_STEP2_FROZEN"
+}

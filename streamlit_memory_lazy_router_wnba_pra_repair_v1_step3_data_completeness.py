@@ -420,8 +420,10 @@ def _pin_deep_wnba_shell_route(state: navigation.NavigationState | None = None) 
     st.session_state[SHELL_SPORT_SESSION_KEY] = SHELL_SPORT_VALUE
     st.session_state[SHELL_MARKET_SESSION_KEY] = SHELL_MARKET_VALUE
     try:
-        st.query_params[SHELL_SPORT_QUERY_KEY] = SHELL_SPORT_VALUE
-        st.query_params[SHELL_MARKET_QUERY_KEY] = SHELL_MARKET_VALUE
+        if _query_value(SHELL_SPORT_QUERY_KEY) != SHELL_SPORT_VALUE:
+            st.query_params[SHELL_SPORT_QUERY_KEY] = SHELL_SPORT_VALUE
+        if _query_value(SHELL_MARKET_QUERY_KEY) != SHELL_MARKET_VALUE:
+            st.query_params[SHELL_MARKET_QUERY_KEY] = SHELL_MARKET_VALUE
     except Exception:
         pass
     return resolved

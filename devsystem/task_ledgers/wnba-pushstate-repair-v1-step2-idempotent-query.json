@@ -1,0 +1,38 @@
+{
+  "project": "API2",
+  "mission": "WNBA pushState Repair V1",
+  "step": 2,
+  "total_steps": 4,
+  "title": "Idempotent WNBA shell query writes",
+  "status": "READY_FOR_EXACT_CANDIDATE_PROOF",
+  "base_main_sha": "896bd5f78ef6b6f7d7084413cc1e35ac6489fdc2",
+  "rollback_sha": "896bd5f78ef6b6f7d7084413cc1e35ac6489fdc2",
+  "authoritative_branch": "api2-wnba-pushstate-repair-v1-step2-idempotent-query",
+  "problem": "Bad message format: Attempt to use history.pushState() more than 100 times per 10 seconds.",
+  "root_cause": "_pin_deep_wnba_shell_route unconditionally rewrites ks_jump_sport and ks_jump_market on every deep WNBA rerun, including after navigation._write_query.",
+  "patch": "Write ks_jump_sport=WNBA and ks_jump_market=PRA only when the current query value differs.",
+  "tdd": {
+    "red_redundant_writes_for_150_reruns": 300,
+    "green_redundant_writes_for_150_reruns": 0,
+    "first_missing_route_writes": 2,
+    "second_rerun_total_writes": 2
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_authoritative_branch": true,
+    "no_duplicate_async_runs": true,
+    "exact_head_required": true,
+    "frozen_step1_protected": true,
+    "other_sports_protected": true,
+    "model_math_protected": true,
+    "github_actions_fallback": false
+  },
+  "freeze_exit": {
+    "runless_candidate_success_required": true,
+    "exact_merge_required": true,
+    "merged_main_runless_success_required": true,
+    "registry_readback_required": true,
+    "freeze_token": "WNBA_PUSHSTATE_REPAIR_V1_STEP2_FROZEN"
+  },
+  "green_plus_frozen_claimed": false
+}
