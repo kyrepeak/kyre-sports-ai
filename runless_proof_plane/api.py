@@ -11,6 +11,7 @@ from .orchestrator import ProofOrchestrator
 from .registry import freeze_task13
 from .step6_registry import freeze_step6
 from .step7_control import apply_step7_app_patch
+from .step7_registry import freeze_step7
 
 def create_app(settings=None):
     settings=settings or Settings.from_env();app=FastAPI(title="Runless Proof Plane",version="1");app.state.settings=settings;app.state.orchestrator=ProofOrchestrator();app.state.receipts={};app.state.dry_run={'status':'NOT_RUN'};app.state.freeze={'status':'NOT_RUN'};app.state.registry={'status':'NOT_RUN'};app.state.app_patch={'status':'NOT_RUN'};app.state.github_auth=GithubAppAuth(settings);app.state.github_client=GithubClient(app.state.github_auth,settings.repository);app.state.github_diag_cache=None
@@ -39,6 +40,15 @@ def create_app(settings=None):
                 app.state.app_patch=apply_step7_app_patch(app.state.github_client)
             except Exception as exc:
                 app.state.app_patch={'status':'FAIL','error':type(exc).__name__,'detail':str(exc)[:240]}
+        if not settings.bootstrap and os.environ.get('RPP_STEP7_FREEZE_ON_START','0')=='1':
+            try:
+                app.state.registry=freeze_step7(
+                    app.state.github_client,
+                    os.environ['RPP_STEP7_FREEZE_MERGED_SHA'],
+                    os.environ.get('RPP_STEP7_FREEZE_TOKEN','WNBA_PRA_REPAIR_V1_STEP7_FROZEN'),
+                )
+            except Exception as exc:
+                app.state.registry={'status':'FAIL','error':type(exc).__name__,'detail':str(exc)[:240]}
     @app.get("/health")
     def health():return {"status":"healthy","service":"runless-proof-plane","version":VERSION,"mode":"bootstrap" if settings.bootstrap else "full","github_actions_enabled":False,"proof_authority":"disabled" if settings.bootstrap else "enabled","repository":settings.repository,"github_app_configured":bool(settings.github_app_id and settings.github_app_installation_id and settings.github_app_private_key),"dry_run":app.state.dry_run.get('status'),"freeze":app.state.freeze.get('status'),"registry":app.state.registry.get('status'),"app_patch":app.state.app_patch.get('status')}
     @app.get('/diagnostics/github')
