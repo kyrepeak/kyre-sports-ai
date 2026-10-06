@@ -24,3 +24,4 @@
 .github/workflows/wnba-pra-speed-v3-step6-history-cache.yml
 .github/workflows/wnba-pra-speed-v3-step7-precompute.yml
 .github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml
+.github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml
