@@ -83,8 +83,8 @@ def verify_repository_contract() -> dict[str, Any]:
         "shared_gate_frozen_exact": _blob(SHARED_GATE) == _EXPECTED_SHARED_GATE_BLOB,
         "router_frozen_exact": _blob(ROUTER_OWNER) == _EXPECTED_ROUTER_BLOB,
         "router_owners_exact": (
-            '"Rushing Yards": "nfl_rushing_yards_hub_v16"' in router
-            and '"Receiving Yards": "nfl_receiving_yards_hub_v17"' in router
+            '\"Rushing Yards\": \"nfl_rushing_yards_hub_v16\"' in router
+            and '\"Receiving Yards\": \"nfl_receiving_yards_hub_v17\"' in router
         ),
         "production_target_canonical": target != LEGACY_STREAMLIT_HOST,
     }
@@ -186,6 +186,16 @@ def certify_synthetic_lifecycle() -> dict[str, Any]:
     }
 
 
+def _clear_page_transport_cache(page: Any) -> bool:
+    """Clear the page's cached base API load so a cert retry is a fresh request."""
+    cached_loader = getattr(page, "_ORIGINAL_LOAD", None)
+    clear = getattr(cached_loader, "clear", None)
+    if not callable(clear):
+        return False
+    clear()
+    return True
+
+
 def _current_live_page(
     *, event_id: str, market: str, attempts: int = 3
 ) -> dict[str, Any]:
@@ -211,6 +221,7 @@ def _current_live_page(
         ):
             break
         if attempt < attempts:
+            _clear_page_transport_cache(page)
             time.sleep(5)
 
     teams = result.get("teams") or []
