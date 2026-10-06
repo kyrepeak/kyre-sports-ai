@@ -1,25 +1,6 @@
 name: WNBA Navigation V2 Step 6 Fast Cert
 on:
-  push:
-    branches: [feature/wnba-navigation-v2-step6-responsive-integration]
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/wnba-nav-step6-fast-cert.yml"
-      - ".github/workflows/wnba-nav-step6-responsive-cert.yml"
-      - "devsystem/wnba_nav_step6_fast_cert.py"
-      - "devsystem/wnba_nav_step6_responsive_cert.py"
-      - "devsystem/wnba_nav_step6_responsive_harness.py"
-      - "devsystem/browser_requirements.lock"
-      - "requirements.lock"
-      - "wnba_pra_responsive_v2_step6.py"
-      - "streamlit_memory_lazy_router_wnba_nav_v2_step6.py"
-      - "wnba_pra_navigation_v2_step1.py"
-      - "wnba_pra_slate_v2_step2.py"
-      - "wnba_pra_game_center_v2_step3.py"
-      - "wnba_pra_player_intelligence_v2_step4.py"
-      - "wnba_pra_performance_v2_step5.py"
-      - "app.py"
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
