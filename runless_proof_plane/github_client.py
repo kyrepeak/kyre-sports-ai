@@ -22,6 +22,12 @@ class GithubClient:
     def put_content(self,path,text,branch,message):
         payload={"message":message,"content":base64.b64encode(text.encode()).decode(),"branch":branch}
         return self.request("PUT",f"/contents/{quote(path,safe='/')}",json=payload)
+    def update_content(self,path,text,branch,message,sha):
+        payload={"message":message,"content":base64.b64encode(text.encode()).decode(),"branch":branch,"sha":sha}
+        return self.request("PUT",f"/contents/{quote(path,safe='/')}",json=payload)
+    def tree_blobs(self,sha):
+        commit=self.commit(sha);tree_sha=commit["commit"]["tree"]["sha"];tree=self.request("GET",f"/git/trees/{tree_sha}?recursive=1")
+        return {item["path"]:item["sha"] for item in tree.get("tree",[]) if item.get("type")=="blob"}
     def publish_check(self,sha,name,conclusion,output):
         p={"name":name,"head_sha":sha,"status":"completed" if conclusion else "in_progress","output":output}
         if conclusion:p["conclusion"]=conclusion
