@@ -29,17 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "app.py": {
-          "from_blob": "b77737e3e5a8148188485710bc3a6e42a5757335",
-          "to_blob": "b649282cd6fc771c6621cc09a655414f9422791a"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "488a18c77f487c9d1c579dfb42d7eb8d09ab61a8",
-      "thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP7-APP"
     }
   ],
   "entries": {
@@ -2058,7 +2047,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP4_FROZEN": {
       "artifacts": {
-        "app.py": "b77737e3e5a8148188485710bc3a6e42a5757335",
+        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step4-universal-card.json": "880fb49921c230e9df7b6dbf390191c83d84c85d",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step4-universal-card.json": "464d6e7e903add6c6e583839dedd467761c1a46f",
         "devsystem/wnba_pra_repair_v1_step4_universal_card_cert.py": "a71713915f0ac532fee0b926feba34004eaef14f",
@@ -2072,7 +2061,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP5_FROZEN": {
       "artifacts": {
-        "app.py": "b77737e3e5a8148188485710bc3a6e42a5757335",
+        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step5-decision-fallback.json": "65c5caa0bc8eaa98ae34605bd07cfd7cb33af277",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step5-decision-fallback.json": "29acc8ee4ffd3a5fd2ba646214a3145fbf73bb65",
         "devsystem/wnba_pra_repair_v1_step5_decision_fallback_cert.py": "f9bd0ab5110fe10914d009d0c4e7aaac0b74d67a",
@@ -2094,6 +2083,20 @@
       },
       "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP6_FROZEN",
       "source_main_sha": "4b7c1bd0ac0708f9b711430b3fec0bb137f46609",
+      "status": "FROZEN"
+    },
+    "WNBA_PRA_REPAIR_V1_STEP7_FROZEN": {
+      "artifacts": {
+        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
+        "devsystem/runless_proof_plans/wnba-pra-repair-v1-step7-final-integration.json": "e6b3c8956ae8c7d22e933b43905b322644343543",
+        "devsystem/task_ledgers/wnba-pra-repair-v1-step7-final-integration.json": "d28b7ba847af6424f80b2fb98dc1a9e2e4f40c2a",
+        "devsystem/wnba_pra_repair_v1_step7_final_integration_cert.py": "3ea24534f781f51d8e0364f660dc40eb5c8fcf6a",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "ff4829124afc1004311e0aa4272646a5875c20c8",
+        "tests/test_wnba_pra_repair_v1_step7.py": "ca0ba6837f1cd113701733b49ca7193e3b02a64a",
+        "wnba_pra_repair_v1_step7_final_integration.py": "a170e5321dbe8a9ff6e63744581e8328d4d4971d"
+      },
+      "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP7_FROZEN",
+      "source_main_sha": "2a7bcf74723d48903e3cb668dbc24a80dd3c590a",
       "status": "FROZEN"
     },
     "WNBA_PRA_SPEED_V3_STEP7": {
@@ -2130,7 +2133,7 @@
     "WNBA_PRA_SPEED_V3_STEP9": {
       "artifacts": {
         ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml": "0fe38d0bed64fe15d52deb30b7d92cc012bf6e68",
-        "app.py": "b77737e3e5a8148188485710bc3a6e42a5757335",
+        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
         "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json": "eac68bf9b00be8ce743f78e0ae64a4f513c457e4",
         "devsystem/wnba_pra_speed_v3_step9_final_cert.py": "175c7afd6f171467f9afae0db743d8e03593d7e0",
         "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py": "51eef1fe2526801a467f155d1c0b32d516ef8a35",
@@ -2195,9 +2198,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 138,
+  "revision": 139,
   "schema_version": 1,
-  "source_main_sha": "4b7c1bd0ac0708f9b711430b3fec0bb137f46609",
-  "state_hash": "21e40abed184a3749b8681b5eb57547a0fefa834ad0c15646e8a0323cbc40d52",
+  "source_main_sha": "2a7bcf74723d48903e3cb668dbc24a80dd3c590a",
+  "state_hash": "46788964eaf6460b36ba04c5a4b78ad58a336fc0ce7d6163a7c41b143c3d31b2",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
