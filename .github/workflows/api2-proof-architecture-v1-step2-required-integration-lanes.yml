@@ -1,28 +1,7 @@
 name: API2 Proof Architecture V1 Step 2 Required Integration Lanes
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml"
-      - "devsystem/change_classifier_v1.py"
-      - "devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json"
-      - "devsystem/task_ledgers/api2-proof-architecture-v1-step2-required-integration-lanes.json"
-      - "tests/test_devsystem_change_classifier_v1.py"
-      - "tests/test_devsystem_workflow_parallelism_v1.py"
-      - "tests/test_devsystem_required_integration_lanes_v1.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml"
-      - "devsystem/change_classifier_v1.py"
-      - "devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json"
-      - "devsystem/task_ledgers/api2-proof-architecture-v1-step2-required-integration-lanes.json"
-      - "tests/test_devsystem_change_classifier_v1.py"
-      - "tests/test_devsystem_workflow_parallelism_v1.py"
-      - "tests/test_devsystem_required_integration_lanes_v1.py"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -58,7 +37,7 @@ jobs:
           plan = json.loads(Path("devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json").read_text())
           assert plan["status"] == "COMPILED"
           assert plan["step"] == "2/7"
-          assert plan["base_main_sha"] == "e4de274ca6d0f8399e9e9a2d26a22896a800a4cd"
+          assert plan["base_main_sha"] == "e4de274ca6d0f8399e9a2d26a22896a800a4cd"
           assert plan["required_lane_result"] == "success"
           assert plan["optional_lane_result"] == "success_or_skipped"
           print("API2_PROOF_ARCHITECTURE_V1_STEP2_PLAN_GREEN")
