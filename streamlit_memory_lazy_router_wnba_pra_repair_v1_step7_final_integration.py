@@ -12,7 +12,9 @@ from typing import Any, Mapping
 import streamlit as st
 
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step5_decision_fallback as frozen_parent
+import streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness as deep_route
 import wnba_pra_game_center_v2_step3 as game_center
+import wnba_pra_navigation_v2_step1 as navigation
 import wnba_pra_player_intelligence_v2_step4 as player_intelligence
 import wnba_pra_repair_v1_step5_decision_fallback as step5_engine
 import wnba_pra_repair_v1_step6_completeness_sweep as step6
@@ -80,11 +82,33 @@ def _blocked(message: str, *, kind: str) -> dict[str, Any]:
     return {"state": "STEP7_INTEGRATION_BLOCKED", "kind": kind, "detail": message}
 
 
+def _pin_deep_wnba_session_route(
+    state: navigation.NavigationState | None = None,
+) -> navigation.NavigationState:
+    """Keep deep WNBA routes owned by session after universal jump consumption.
+
+    The universal router intentionally consumes and deletes ``ks_jump_*`` query
+    keys, then reruns. Re-injecting those one-shot jump keys on every Game/Player
+    render causes another consume+rereun before the destination can render.
+    Deep navigation already owns ``wnba_pra_*`` query state, so after the first
+    category handoff the durable shell ownership is session-only.
+    """
+    resolved = state or navigation.current_state()
+    if deep_route._protect_explicit_cfb_top_picks_route():
+        return resolved
+    if resolved.page not in {navigation.PAGE_GAME, navigation.PAGE_PLAYER}:
+        return resolved
+    st.session_state[deep_route.SHELL_SPORT_SESSION_KEY] = deep_route.SHELL_SPORT_VALUE
+    st.session_state[deep_route.SHELL_MARKET_SESSION_KEY] = deep_route.SHELL_MARKET_VALUE
+    return resolved
+
+
 def render_app() -> Any:
     original_game_renderer = game_center.render_game_center
     original_player_card_renderer = game_center._render_player_card
     original_player_renderer = player_intelligence.render_player_intelligence
     original_final_card_renderer = step5_engine.render_step5_final_card
+    original_deep_pin = deep_route._pin_deep_wnba_shell_route
 
     def guarded_game_renderer(state):
         game = _selected_game()
@@ -138,6 +162,7 @@ def render_app() -> Any:
         _proof_marker("final-card", True, str(audit.get("decision_source") or ""))
         return original_final_card_renderer(summary)
 
+    deep_route._pin_deep_wnba_shell_route = _pin_deep_wnba_session_route
     game_center.render_game_center = guarded_game_renderer
     game_center._render_player_card = guarded_player_card
     player_intelligence.render_player_intelligence = guarded_player_renderer
@@ -145,6 +170,7 @@ def render_app() -> Any:
     try:
         return frozen_parent.render_app()
     finally:
+        deep_route._pin_deep_wnba_shell_route = original_deep_pin
         game_center.render_game_center = original_game_renderer
         game_center._render_player_card = original_player_card_renderer
         player_intelligence.render_player_intelligence = original_player_renderer
