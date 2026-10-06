@@ -66,6 +66,7 @@ WNBA_PRA_SPEED_V3_STEP7_PUBLIC_DEPLOY_REFRESH = "WNBA_PRA_SPEED_V3_STEP7_PUBLIC_
 WNBA_PRA_SPEED_V3_STEP9_PUBLIC_DEPLOY_REFRESH = "WNBA_PRA_SPEED_V3_STEP9_PRECOMPUTE_HANDOFF_2026_10_01_R3"
 WNBA_PRA_REPAIR_V1_STEP2_TEAM_ID_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP2_TEAM_IDENTITY_2026_10_02_R1"
 WNBA_PRA_REPAIR_V1_STEP3_DATA_COMPLETENESS_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP3_DATA_COMPLETENESS_2026_10_02_R1"
+WNBA_PRA_REPAIR_V1_STEP4_UNIVERSAL_CARD_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP4_UNIVERSAL_FINAL_CARD_2026_10_05_R1"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
 
@@ -223,10 +224,10 @@ FROZEN_V88_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V88_NFL_PASSING_YARDS_STEP8_CO
 FROZEN_V89_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V89_NFL_PASSING_YARDS_STEP9_DISTRIBUTION_PROBABILITY_2026-09-11"
 FROZEN_V90_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V90_NFL_PASSING_YARDS_STEP10_MARKET_EDGE_FINAL_2026-09-11"
 FROZEN_V91_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V91_NFL_PASSING_YARDS_LIVE_ROUTE_AUTO_SLATE_2026-09-11"
-FROZEN_V92_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V92_NFL_PASSING_YARDS_CLEANUP_STEP1_2026-09-11"
-FROZEN_V93_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V93_NFL_PASSING_YARDS_CLEANUP_STEP2_2026-09-11"
-FROZEN_V94_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V94_NFL_PASSING_YARDS_CLEANUP_STEP3_2026-09-11"
-FROZEN_V95_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V95_NFL_PASSING_YARDS_CLEANUP_STEP4_2026-09-11"
+FROZEN_V92_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V92_CFB_OU_CLEANUP_STEP1_2026-09-11"
+FROZEN_V93_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V93_CFB_OU_CLEANUP_STEP2_2026-09-11"
+FROZEN_V94_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V94_CFB_OU_CLEANUP_STEP3_2026-09-11"
+FROZEN_V95_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V95_CFB_OU_CLEANUP_STEP4_2026-09-11"
 FROZEN_V96_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V96_NFL_PASSING_YARDS_ROUTE_PRECEDENCE_HOTFIX_V2_2026-09-11"
 FROZEN_V97_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V97_NFL_PASSING_YARDS_EARLY_SEASON_BRIDGE_2026-09-11"
 FROZEN_V98_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V98_NFL_RUSHING_YARDS_UI_CLEANUP_2026-09-12"
@@ -328,7 +329,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_wnba_pra_repair_v1_step4_universal_card import record_bootstrap_import_ms, render_app
+    # Frozen WNBA PRA Repair V1 Step 3 compatibility: from streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness import record_bootstrap_import_ms, render_app
     # Frozen WNBA PRA Repair V1 Step 2 compatibility: from streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity import record_bootstrap_import_ms, render_app
     # Frozen WNBA PRA Speed V3 Step 9 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard import record_bootstrap_import_ms, render_app
     # Frozen WNBA PRA Speed V3 Step 8 compatibility: from streamlit_memory_lazy_router_wnba_pra_speed_v3_step8 import record_bootstrap_import_ms, render_app
@@ -410,7 +412,8 @@ try:
     # Frozen V167 delegate compatibility: from streamlit_memory_lazy_router_v167 import record_bootstrap_import_ms, render_app
     # Frozen V166 delegate compatibility: from streamlit_memory_lazy_router_v166 import record_bootstrap_import_ms, render_app
     # Frozen V165 delegate compatibility: from streamlit_memory_lazy_router_v165 import record_bootstrap_import_ms, render_app
-    # Frozen V164 delegate compatibility: from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app\n    # Frozen V163 delegate compatibility: from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app
+    # Frozen V164 delegate compatibility: from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app\
+    # Frozen V163 delegate compatibility: from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
