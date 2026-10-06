@@ -51,3 +51,59 @@ def test_step5_responsive_contract_uses_fresh_browser_per_viewport():
     assert cert.RESPONSIVE_VIEWPORTS == ((390, 844), (768, 1024), (1440, 1000))
     assert cert.FRESH_BROWSER_PER_VIEWPORT is True
     assert cert.PUBLIC_ROUTES == (("NFL", "Rushing Yards"), ("NFL", "Receiving Yards"))
+
+
+def test_step5_live_retry_clears_cached_transport_failure(monkeypatch):
+    import nfl_rushing_yards_hub_v16 as page
+
+    state = {"cleared": False, "calls": 0}
+
+    class CachedTransport:
+        def clear(self) -> None:
+            state["cleared"] = True
+
+    def loader(event_id: str) -> dict:
+        state["calls"] += 1
+        if not state["cleared"]:
+            return {
+                "ready": False,
+                "data_available": False,
+                "reason": "Kyre Sports API request failed: ReadTimeout",
+            }
+        return {
+            "ready": True,
+            "data_available": True,
+            "reason": "",
+            "step7_app_identity_verified": True,
+            "step7_app_identity_state": "LIVE",
+            "step7_app_live_identity_verified": True,
+            "step7_app_final_inactives_verified": False,
+            "market_enabled": False,
+            "sportsbook_influence": 0.0,
+            "step3_live_roster_filtered_count": 0,
+            "teams": [
+                {
+                    "players": [
+                        {
+                            "official_athlete_id": "1",
+                            "step7_app_identity_verified": True,
+                        }
+                    ]
+                },
+                {"players": []},
+            ],
+        }
+
+    monkeypatch.setattr(page, "_load_rushing_context_step7", loader)
+    monkeypatch.setattr(page, "_ORIGINAL_LOAD", CachedTransport())
+    monkeypatch.setattr(cert.time, "sleep", lambda _seconds: None)
+
+    proof = cert._current_live_page(
+        event_id="401000001",
+        market="Rushing Yards",
+        attempts=2,
+    )
+
+    assert proof["status"] == "GREEN"
+    assert state["calls"] == 2
+    assert state["cleared"] is True
