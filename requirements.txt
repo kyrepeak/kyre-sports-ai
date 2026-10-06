@@ -28,3 +28,4 @@ posthog~=7.48
 # WNBA PRA Speed V3 Step 5 control-plane full-redeploy trigger 2026-09-30 R1
 # WNBA PRA Speed V3 Step 7 full Streamlit redeploy trigger 2026-09-30 R1
 # WNBA PRA Speed V3 Step 9 final control-plane full Streamlit redeploy trigger 2026-10-01 R1
+# WNBA PRA Repair V1 Step 8 runtime recovery full Streamlit redeploy trigger 2026-10-06 R1
