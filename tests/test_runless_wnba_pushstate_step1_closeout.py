@@ -3,6 +3,7 @@ from __future__ import annotations
 from runless_proof_plane.wnba_pushstate_step1_closeout import (
     STEP1_ARTIFACTS,
     publish_candidate_gate,
+    publish_candidate_gate_from_env,
 )
 
 CANDIDATE = "ab3fdb3e544500366618bea71bd29976307f0c9f"
@@ -40,9 +41,8 @@ class FakeClient:
         return {"id": 777, "conclusion": conclusion}
 
 
-def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_checks():
-    client = FakeClient()
-    evidence = {
+def proof_evidence():
+    return {
         "worker_service_id": "srv-db2l7vad0e5s73bhc8pg",
         "worker_deploy_id": "dep-db2l7vqd0e5s73bhcbe0",
         "test_result": "1 passed in 1.89s",
@@ -51,12 +51,15 @@ def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_check
         "feedback_loop_proven": True,
     }
 
+
+def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_checks():
+    client = FakeClient()
     result = publish_candidate_gate(
         client,
         candidate_sha=CANDIDATE,
         base_sha=BASE,
         pr_number=1416,
-        evidence=evidence,
+        evidence=proof_evidence(),
     )
 
     assert result["status"] == "GREEN"
@@ -66,3 +69,23 @@ def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_check
     assert client.published[0][0] == CANDIDATE
     assert client.published[0][1] == "runless-final-gate"
     assert client.published[0][2] == "success"
+
+
+def test_env_handoff_requires_explicit_arm_and_exact_proof_metadata(monkeypatch):
+    client = FakeClient()
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "1")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_SHA", CANDIDATE)
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_BASE_SHA", BASE)
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_PR", "1416")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_SERVICE_ID", "srv-db2l7vad0e5s73bhc8pg")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_DEPLOY_ID", "dep-db2l7vqd0e5s73bhcbe0")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_TEST_RESULT", "1 passed in 1.89s")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "RUNLESS_WNBA_PUSHSTATE_STEP1_GREEN")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "_pin_deep_wnba_shell_route")
+    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "1")
+
+    result = publish_candidate_gate_from_env(client)
+
+    assert result["status"] == "GREEN"
+    assert result["candidate_sha"] == CANDIDATE
+    assert client.published[0][1] == "runless-final-gate"
