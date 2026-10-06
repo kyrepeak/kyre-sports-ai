@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: cfb-top-picks-research-v2-step5-${{ github.ref }}
+  group: cfb-top-picks-research-v2-step5-\${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
           path: |
             .venv-browser-qa
             ~/.cache/ms-playwright
-          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
+          key: devsystem-browser-stack-\${{ runner.os }}-py\${{ steps.browser-python.outputs.python-version }}-\${{ hashFiles('requirements.lock', 'devsystem/browser_requirements.lock') }}
       - name: Build environment on cache miss
         if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         run: |
