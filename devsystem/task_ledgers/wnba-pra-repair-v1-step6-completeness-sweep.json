@@ -1,0 +1,50 @@
+{
+  "version": "MONSTER_V9_STEP6_LEDGER_V1",
+  "project": "API 2",
+  "mission": "WNBA PRA Repair V1 Step 6 full player/game completeness sweep",
+  "step": "6/9",
+  "base_main_sha": "19584f7ef016de66a0fd4a8ce907c45efac0ca8f",
+  "rollback_sha": "19584f7ef016de66a0fd4a8ce907c45efac0ca8f",
+  "authoritative_branch": "api2-wnba-pra-repair-v1-step6-completeness-sweep-r1",
+  "step2a": {
+    "single_authority": true,
+    "duplicate_step6_branches_at_lock": 0,
+    "github_actions_fallback_authorized": false,
+    "runless_required_check": "runless-final-gate",
+    "frozen_step5_token": "WNBA_PRA_REPAIR_V1_STEP5_FROZEN",
+    "frozen_step5_main_sha": "19584f7ef016de66a0fd4a8ce907c45efac0ca8f",
+    "product_runtime_mutation_allowed": false,
+    "frozen_steps_1_through_5_may_change": false
+  },
+  "problem": "No single proof gate verifies every WNBA game/player row and final-card terminal state across the repaired Step 1-5 chain before Step 7 integration.",
+  "root_cause": "Steps 1-5 certify individual ownership slices, but the chain lacks one additive completeness sweep that fails closed on any missing game identity, player identity/projection field, or final-card coverage.",
+  "patch": {
+    "strategy": "additive verification-only Step-6 sweep",
+    "game_contract": "canonical matchup identity and required game fields",
+    "player_contract": "positive player identity, selected-game team membership, and complete projection components",
+    "card_contract": "every player has one truthful Step-5 terminal card state, including explicit DATA LIMITED fail-closed coverage",
+    "projection_math_changed": false,
+    "market_math_changed": false,
+    "probability_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "tdd": {
+    "red_contract_commit": "pending",
+    "red_expected": "Step 6 completeness sweep engine does not exist yet",
+    "red_observed": false,
+    "behavioral_test": "tests/test_wnba_pra_repair_v1_step6.py"
+  },
+  "proof_contract": {
+    "focused_pytest_required": true,
+    "source_cert_required": true,
+    "exact_candidate_runless_gate_required": true,
+    "exact_head_merge_required": true,
+    "merged_main_runless_gate_required": true,
+    "registry_cas_readback_required": true,
+    "freeze_token": "WNBA_PRA_REPAIR_V1_STEP6_FROZEN"
+  },
+  "state": "RED_CONTRACT_READY",
+  "green_plus_frozen_claimed": false
+}
