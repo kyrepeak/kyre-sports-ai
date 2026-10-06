@@ -18,16 +18,24 @@
     "requirements_active_thaw_at_lock": false,
     "product_runtime_mutation_allowed": false
   },
-  "problem": "The public PickVault Streamlit runtime did not converge quickly to the newly frozen Step-7 WNBA PRA runtime even though exact candidate and merged-main Runless proof were GREEN and the Kyre WNBA API was healthy.",
-  "root_cause": "Hosted Streamlit deployment drift / stale process activation. Repository precedent for this failure class uses a comment-only requirements.txt touch to force a full Community Cloud rebuild.",
+  "problem": "The public PickVault Streamlit runtime did not converge to the newly frozen Step-7 WNBA PRA runtime even though exact candidate and merged-main Runless proof were GREEN and the Kyre WNBA API was healthy.",
+  "root_cause": "Hosted Streamlit deployment drift / stale process activation. The terminal public diagnostic remained on MLB Live Odds / Run Line for the full 600-second acquisition window while WNBA/PRA route priming and the Kyre WNBA API were healthy.",
   "diagnostic": {
-    "main_sha": "2a7bcf74723d48903e3cb668dbc24a80dd3c590a",
+    "source_main_sha": "2a7bcf74723d48903e3cb668dbc24a80dd3c590a",
+    "render_service": "wnba-step8-runtime-diagnostic",
+    "terminal_deploy": "dep-db2i8me0tbcc739bof8g",
+    "terminal_status": "update_failed",
     "api_fast_history_green": true,
-    "api_wait_seconds": 0.259,
+    "api_wait_seconds_terminal": 0.215,
     "future_playable_dates": ["2026-10-07", "2026-10-09", "2026-10-11", "2026-10-14"],
     "past_games_allowed": false,
     "first_browser_runner_failure_owner": "INFRA",
     "first_browser_runner_failure": "Playwright browser path did not survive Render build/runtime boundary",
+    "infra_repaired": true,
+    "terminal_failure_owner": "DEPLOYMENT",
+    "terminal_failure_class": "PUBLIC_STREAMLIT_STALE_MLB_ROUTE_600S",
+    "terminal_body_identity": "MLB Live Odds / Run Line",
+    "route_prime": "WNBA/PRA",
     "product_failure_proven": false
   },
   "patch": {
@@ -48,10 +56,9 @@
     "red_contract_commit": "bb5357034f7679eb20d794c7961b05a1ff684fb7",
     "red_observed": true,
     "red_result": "3 failed, 1 passed in 0.08s",
-    "red_expected": [
-      "Step-8 full-redeploy marker absent",
-      "Step-8 runtime-recovery cert absent"
-    ]
+    "green_observed": true,
+    "green_result": "4 passed in 0.03s",
+    "source_cert_green": true
   },
   "public_recovery_contract": {
     "host": "https://pickvault.streamlit.app",
@@ -73,6 +80,6 @@
     "registry_readback_required": true,
     "freeze_token": "WNBA_PRA_REPAIR_V1_STEP8_FROZEN"
   },
-  "state": "IMPLEMENTING_DEPLOYMENT_ONLY_RECOVERY",
+  "state": "READY_FOR_EXACT_CANDIDATE_RUNLESS",
   "green_plus_frozen_claimed": false
 }
