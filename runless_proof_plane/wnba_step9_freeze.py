@@ -11,6 +11,7 @@ from devsystem.frozen_artifact_registry_v1 import validate_registry
 REGISTRY_BRANCH = "monster-frozen-artifact-registry"
 REGISTRY_PATH = "devsystem/frozen_artifact_registry_state_v1.json"
 FREEZE_TOKEN = "WNBA_PRA_REPAIR_V1_STEP9_FROZEN"
+DEFAULT_MERGED_SHA = "f8fe7aef9f9519750aaa9053716d2059c9bbdb83"
 STALE_THAW_ID = "THAW-WNBA-PRA-REPAIR-V1-STEP9-GAME-HANDOFF-APP"
 RUNLESS_APP_ID = 5204253
 SPEED_CERT_PATH = "devsystem/wnba_pra_speed_v3_step9_final_cert.py"
@@ -77,7 +78,7 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
     missing = [path for path in ARTIFACT_PATHS if path not in tree]
     if missing:
         raise RuntimeError("WNBA_STEP9_FREEZE_ARTIFACTS_MISSING:" + ",".join(missing))
-    artifacts = {path: tree[path] for path in ARTIFACT_PATHS}
+    artifacts = dict(sorted((path, tree[path]) for path in ARTIFACT_PATHS))
     new_speed_blob = artifacts[SPEED_CERT_PATH]
 
     current, content_sha = _read_registry(client)
@@ -93,12 +94,10 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
     if len(stale_grants) > 1:
         raise RuntimeError("WNBA_STEP9_STALE_THAW_DUPLICATED")
     if stale_grants:
-        grant = stale_grants[0]
-        files = grant.get("files") or {}
+        files = stale_grants[0].get("files") or {}
         if set(files) != {"app.py"}:
             raise RuntimeError("WNBA_STEP9_STALE_THAW_SCOPE_DRIFT")
 
-    # No unrelated thaw may own any Step-9 freeze artifact.
     thaw_paths = {
         path
         for grant in original_unrelated_thaws
@@ -108,11 +107,8 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
     if overlap:
         raise RuntimeError("WNBA_STEP9_CONFLICTING_THAW:" + ",".join(overlap))
 
-    updated = deepcopy(current)
-
-    # Forward-port the one previously frozen verifier baseline atomically.
     speed_refs = []
-    for checkpoint, entry in updated.get("entries", {}).items():
+    for checkpoint, entry in current.get("entries", {}).items():
         entry_artifacts = entry.get("artifacts") or {}
         if SPEED_CERT_PATH in entry_artifacts:
             speed_refs.append((checkpoint, str(entry_artifacts[SPEED_CERT_PATH])))
@@ -121,9 +117,37 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
     for checkpoint, blob in speed_refs:
         if blob not in {EXPECTED_OLD_SPEED_BLOB, new_speed_blob}:
             raise RuntimeError("WNBA_STEP9_SPEED_BASELINE_DRIFT:" + checkpoint)
+
+    existing = current.get("entries", {}).get(freeze_token)
+    already_exact = (
+        existing is not None
+        and existing.get("status") == "FROZEN"
+        and existing.get("checkpoint_id") == freeze_token
+        and existing.get("source_main_sha") == merged_sha
+        and existing.get("artifacts") == artifacts
+        and not stale_grants
+        and all(blob == new_speed_blob for _, blob in speed_refs)
+    )
+    if already_exact:
+        return {
+            "status": "GREEN",
+            "idempotent": True,
+            "frozen_token": freeze_token,
+            "merged_sha": merged_sha,
+            "revision": int(current["revision"]),
+            "state_hash": str(current["state_hash"]),
+            "artifact_count": len(artifacts),
+            "retired_thaw": STALE_THAW_ID,
+            "active_thaw_count": len(current.get("active_thaws", [])),
+            "runless_check_id": runless["check_id"],
+            "runless_receipt": runless["receipt"],
+            "speed_baseline_blob": new_speed_blob,
+        }
+
+    updated = deepcopy(current)
+    for checkpoint, _ in speed_refs:
         updated["entries"][checkpoint]["artifacts"][SPEED_CERT_PATH] = new_speed_blob
 
-    existing = updated.get("entries", {}).get(freeze_token)
     if existing is not None:
         if (
             existing.get("status") != "FROZEN"
@@ -137,7 +161,7 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
             "status": "FROZEN",
             "checkpoint_id": freeze_token,
             "source_main_sha": merged_sha,
-            "artifacts": dict(sorted(artifacts.items())),
+            "artifacts": artifacts,
         }
 
     updated["active_thaws"] = original_unrelated_thaws
@@ -163,7 +187,7 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
     if (
         entry.get("status") != "FROZEN"
         or entry.get("source_main_sha") != merged_sha
-        or entry.get("artifacts") != dict(sorted(artifacts.items()))
+        or entry.get("artifacts") != artifacts
         or any(str(g.get("thaw_id")) == STALE_THAW_ID for g in readback.get("active_thaws", []))
         or readback.get("active_thaws", []) != original_unrelated_thaws
         or (readback.get("entries", {}).get("WNBA_PRA_SPEED_V3_STEP9", {}).get("artifacts", {}).get(SPEED_CERT_PATH) != new_speed_blob)
@@ -172,6 +196,7 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
 
     return {
         "status": "GREEN",
+        "idempotent": False,
         "frozen_token": freeze_token,
         "merged_sha": merged_sha,
         "revision": int(readback["revision"]),
@@ -186,6 +211,6 @@ def freeze_step9(client, merged_sha, freeze_token=FREEZE_TOKEN):
 
 
 def freeze_from_env(client):
-    merged_sha = os.getenv("RPP_WNBA_STEP9_FREEZE_MERGED_SHA", "").strip()
+    merged_sha = os.getenv("RPP_WNBA_STEP9_FREEZE_MERGED_SHA", DEFAULT_MERGED_SHA).strip() or DEFAULT_MERGED_SHA
     token = os.getenv("RPP_WNBA_STEP9_FREEZE_TOKEN", FREEZE_TOKEN).strip() or FREEZE_TOKEN
     return freeze_step9(client, merged_sha, token)
