@@ -2099,6 +2099,18 @@
       "source_main_sha": "2a7bcf74723d48903e3cb668dbc24a80dd3c590a",
       "status": "FROZEN"
     },
+    "WNBA_PRA_REPAIR_V1_STEP8_FROZEN": {
+      "artifacts": {
+        "devsystem/runless_proof_plans/wnba-pra-repair-v1-step8-runtime-recovery.json": "5a92ebd90a14a55a874bff16a0acd3580805cde4",
+        "devsystem/task_ledgers/wnba-pra-repair-v1-step8-runtime-recovery.json": "c98909c6014fe6178a37d3fadba17165da287553",
+        "devsystem/wnba_pra_repair_v1_step8_runtime_recovery_cert.py": "eec7e3d81d3194a02428b12babab5fad52b0d070",
+        "requirements.txt": "98b621afd372d472784850fed4b603c9989dcf7a",
+        "tests/test_wnba_pra_repair_v1_step8.py": "ae1ee8512f96f95672e6baa4ac7da758dcecebe3"
+      },
+      "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP8_FROZEN",
+      "source_main_sha": "af9b8e07ce048b41a9ad84385ede251d0bb560f5",
+      "status": "FROZEN"
+    },
     "WNBA_PRA_SPEED_V3_STEP7": {
       "artifacts": {
         ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml": "56ff291abf9d92a18e2978ae4213381efbcd78fb",
@@ -2198,9 +2210,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 139,
+  "revision": 140,
   "schema_version": 1,
-  "source_main_sha": "2a7bcf74723d48903e3cb668dbc24a80dd3c590a",
-  "state_hash": "46788964eaf6460b36ba04c5a4b78ad58a336fc0ce7d6163a7c41b143c3d31b2",
+  "source_main_sha": "af9b8e07ce048b41a9ad84385ede251d0bb560f5",
+  "state_hash": "9a69869f3ee8348f144f57f73ab507b050c3129f16ec4803bf947d8979a4a8e5",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
