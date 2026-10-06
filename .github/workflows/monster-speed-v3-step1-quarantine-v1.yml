@@ -1,24 +1,6 @@
 name: Monster Speed V3 Step 1 Quarantine
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/**"
-      - "devsystem/monster_speed_v3_step1_app_fanout_quarantine.txt"
-      - "devsystem/monster_speed_v3_step1_quarantine_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step1-app-fanout-quarantine-v1.json"
-      - "tests/test_monster_speed_v3_step1_quarantine_v1.py"
-      - ".github/workflows/monster-speed-v3-step1-quarantine-v1.yml"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/**"
-      - "devsystem/monster_speed_v3_step1_app_fanout_quarantine.txt"
-      - "devsystem/monster_speed_v3_step1_quarantine_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step1-app-fanout-quarantine-v1.json"
-      - "tests/test_monster_speed_v3_step1_quarantine_v1.py"
-      - ".github/workflows/monster-speed-v3-step1-quarantine-v1.yml"
   workflow_dispatch:
 
 permissions:
