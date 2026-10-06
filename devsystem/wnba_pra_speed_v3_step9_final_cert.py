@@ -44,6 +44,7 @@ WNBA_MARKET_LABEL = "🎯 WNBA Market"
 ROUTE_CONTROL_TIMEOUT_SECONDS = 30.0
 UPCOMING_GAME_SEARCH_DAYS = 31
 SCHEDULE_REQUEST_TIMEOUT_SECONDS = 15.0
+STEP9_GAME_SETUP_TIMEOUT_SECONDS = 30.0
 SCHEDULE_TIMEZONE = ZoneInfo("America/New_York")
 
 
@@ -367,6 +368,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     original_step5_dates = step5_profile.CERTIFIED_GAME_DATES
     original_nav_set_date = nav_profile._set_date_with_game
     original_step5_set_date = step5_profile._set_date_with_game
+    original_step5_game_setup_timeout = step5_profile.PROFILE_GAME_SETUP_TIMEOUT_SECONDS
     upcoming_game_dates = _future_pregame_dates()
 
     def primed_route(page):
@@ -378,9 +380,11 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     step5_profile.CERTIFIED_GAME_DATES = upcoming_game_dates
     nav_profile._set_date_with_game = _set_future_slate_date_segmented
     step5_profile._set_date_with_game = _set_future_slate_date_segmented
+    step5_profile.PROFILE_GAME_SETUP_TIMEOUT_SECONDS = STEP9_GAME_SETUP_TIMEOUT_SECONDS
     print(f"WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_URL={route_url}")
     print("WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_GREEN")
+    print("WNBA_PRA_SPEED_V3_STEP9_GAME_SETUP_FAIL_FAST_GREEN")
     try:
         # True-cold + warm same-session proof runs first in a fresh browser context.
         step5_result = step5_profile.run(
@@ -401,6 +405,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
         step5_profile.CERTIFIED_GAME_DATES = original_step5_dates
         nav_profile._set_date_with_game = original_nav_set_date
         step5_profile._set_date_with_game = original_step5_set_date
+        step5_profile.PROFILE_GAME_SETUP_TIMEOUT_SECONDS = original_step5_game_setup_timeout
 
     result = certify_results(
         step5_result=step5_result,
