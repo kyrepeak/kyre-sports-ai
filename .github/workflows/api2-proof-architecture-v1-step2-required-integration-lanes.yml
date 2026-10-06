@@ -33,7 +33,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          from pathlib import import Path
+          from pathlib import Path
           plan = json.loads(Path("devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json").read_text())
           assert plan["status"] == "COMPILED"
           assert plan["step"] == "2/7"
