@@ -3,8 +3,6 @@ from __future__ import annotations
 import pandas as pd
 
 import wnba_availability_v27 as availability
-import wnba_pra_game_center_v2_step3 as game_center
-import wnba_pra_player_intelligence_v2_step4 as player_intelligence
 
 
 def _schedule() -> pd.DataFrame:
@@ -20,7 +18,14 @@ def _schedule() -> pd.DataFrame:
     )
 
 
-def test_verified_pool_preserves_canonical_stats_player_id_when_roster_id_differs(monkeypatch):
+def _patch_sources(monkeypatch, *, raw: pd.DataFrame, roster: pd.DataFrame) -> None:
+    monkeypatch.setattr(availability.context, "schedule_for_date", lambda _day: _schedule())
+    monkeypatch.setattr(availability.players, "player_form_table", lambda _season: raw.copy())
+    monkeypatch.setattr(availability, "_rosters_for_schedule", lambda _schedule: roster.copy())
+    availability._verified_pool_for_day.clear()
+
+
+def test_verified_pool_preserves_production_player_id_when_roster_id_differs(monkeypatch):
     canonical_wnba_id = 204992
     espn_roster_id = 3149397
     raw = pd.DataFrame(
@@ -70,12 +75,8 @@ def test_verified_pool_preserves_canonical_stats_player_id_when_roster_id_differ
             }
         ]
     )
+    _patch_sources(monkeypatch, raw=raw, roster=roster)
 
-    monkeypatch.setattr(availability.context, "schedule_for_date", lambda _day: _schedule())
-    monkeypatch.setattr(availability.players, "player_form_table", lambda _season: raw.copy())
-    monkeypatch.setattr(availability, "_rosters_for_schedule", lambda _schedule: roster.copy())
-
-    availability._verified_pool_for_day.clear()
     result, diag = availability._verified_pool_for_day("2026-10-07")
     availability._verified_pool_for_day.clear()
 
@@ -86,7 +87,7 @@ def test_verified_pool_preserves_canonical_stats_player_id_when_roster_id_differ
     assert diag["state"] == "VERIFIED"
 
 
-def test_unmatched_roster_id_is_labeled_espn_not_silent_canonical(monkeypatch):
+def test_unmatched_roster_id_is_explicitly_labeled_espn(monkeypatch):
     roster = pd.DataFrame(
         [
             {
@@ -101,11 +102,8 @@ def test_unmatched_roster_id_is_labeled_espn_not_silent_canonical(monkeypatch):
             }
         ]
     )
-    monkeypatch.setattr(availability.context, "schedule_for_date", lambda _day: _schedule())
-    monkeypatch.setattr(availability.players, "player_form_table", lambda _season: pd.DataFrame())
-    monkeypatch.setattr(availability, "_rosters_for_schedule", lambda _schedule: roster.copy())
+    _patch_sources(monkeypatch, raw=pd.DataFrame(), roster=roster)
 
-    availability._verified_pool_for_day.clear()
     result, _ = availability._verified_pool_for_day("2026-10-07")
     availability._verified_pool_for_day.clear()
 
@@ -115,8 +113,46 @@ def test_unmatched_roster_id_is_labeled_espn_not_silent_canonical(monkeypatch):
     assert "no matched production row" in str(row["DATA_SOURCE"])
 
 
-def test_wnba_id_card_text_never_renders_nan():
-    assert game_center._text(float("nan")) == ""
-    assert player_intelligence._text(float("nan")) == ""
-    assert game_center._text(None) == ""
-    assert player_intelligence._text(None) == ""
+def test_verified_pool_never_emits_nan_identity_text(monkeypatch):
+    raw = pd.DataFrame(
+        [
+            {
+                "PLAYER_ID": 204992,
+                "PLAYER_NAME": "Sabrina Ionescu",
+                "TEAM_ID": 1611661313,
+                "TEAM_NAME": "New York Liberty",
+                "TEAM_ABBREVIATION": "NYL",
+                "POSITION": float("nan"),
+                "GP": 30,
+                "MIN": 31.2,
+                "PTS": 18.4,
+                "REB": 4.3,
+                "AST": 6.1,
+                "PRA": 28.8,
+                "PLAYER_ID_SOURCE": "WNBA Stats",
+                "DATA_SOURCE": "WNBA Stats LeagueID=10",
+            }
+        ]
+    )
+    roster = pd.DataFrame(
+        [
+            {
+                "PLAYER_ID": 3149397,
+                "PLAYER_NAME": "Sabrina Ionescu",
+                "TEAM_ID": 1611661313,
+                "TEAM_NAME": "New York Liberty",
+                "TEAM_ABBREVIATION": "NYL",
+                "POSITION": float("nan"),
+                "ROSTER_STATUS": "ACTIVE",
+                "PLAYER_ID_SOURCE": "ESPN",
+            }
+        ]
+    )
+    _patch_sources(monkeypatch, raw=raw, roster=roster)
+
+    result, _ = availability._verified_pool_for_day("2026-10-07")
+    availability._verified_pool_for_day.clear()
+
+    row = result.iloc[0]
+    assert row["POSITION"] == ""
+    assert str(row["POSITION"]).casefold() != "nan"
