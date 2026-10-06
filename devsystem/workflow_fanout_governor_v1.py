@@ -4,6 +4,12 @@ import json
 from pathlib import Path
 from typing import Any
 
+from devsystem.runless_actions_fallback_policy_v1 import (
+    AUTO_RE,
+    audit_legacy_workflows,
+    manifest_paths,
+)
+
 VERSION = "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1_WORKFLOW_FANOUT_GOVERNOR_V1"
 NETWORK_CALLS = False
 AUTO_MUTATE = False
@@ -29,61 +35,68 @@ def _policy(root: Path) -> dict[str, Any]:
         raise WorkflowFanoutGovernorFailure("fan-out policy version drift")
     if payload.get("repository") != "kyrepeak/kyre-sports-ai":
         raise WorkflowFanoutGovernorFailure("fan-out policy repository drift")
+    if payload.get("normal_proof_plane") != "runless-proof-plane":
+        raise WorkflowFanoutGovernorFailure("normal proof plane drift")
+    if payload.get("legacy_actions_mode") != "manual_only":
+        raise WorkflowFanoutGovernorFailure("legacy Actions mode drift")
     return payload
+
+
+def _manual_only(text: str) -> bool:
+    return "workflow_dispatch:" in text and AUTO_RE.search(text) is None
 
 
 def audit_repository(root: Path = ROOT) -> dict[str, Any]:
     policy = _policy(root)
-    step7 = _read(root / ".github" / "workflows" / "api2-proof-architecture-v1-step7-end-to-end-convergence.yml")
-    failure_packet = _read(root / ".github" / "workflows" / "devsystem-failure-packet-v1.yml")
-    targeted_ci = _read(root / ".github" / "workflows" / "devsystem-targeted-ci.yml")
-    wnba_fast = _read(root / ".github" / "workflows" / "wnba-nav-step6-fast-cert.yml")
-    wnba_responsive = _read(root / ".github" / "workflows" / "wnba-nav-step6-responsive-cert.yml")
-    workflow_quarantine = _read(root / ".github" / "workflows" / "monster-speed-v3-step1-quarantine-v1.yml")
+    step7 = _read(
+        root
+        / ".github"
+        / "workflows"
+        / "api2-proof-architecture-v1-step7-end-to-end-convergence.yml"
+    )
+    failure_packet = _read(
+        root / ".github" / "workflows" / "devsystem-failure-packet-v1.yml"
+    )
+    targeted_ci = _read(
+        root / ".github" / "workflows" / "devsystem-targeted-ci.yml"
+    )
+    wnba_fast = _read(
+        root / ".github" / "workflows" / "wnba-nav-step6-fast-cert.yml"
+    )
+    wnba_responsive = _read(
+        root / ".github" / "workflows" / "wnba-nav-step6-responsive-cert.yml"
+    )
+    workflow_quarantine = _read(
+        root / ".github" / "workflows" / "monster-speed-v3-step1-quarantine-v1.yml"
+    )
+    fallback_audit = audit_legacy_workflows(root)
 
     checks = {
-        "step7_pr_path_scoped": (
-            "pull_request:\n    branches: [main]\n    paths:" in step7
-            and step7.count("    paths:") >= 2
-        ),
-        "step7_push_path_scoped": "push:\n    branches: [main]\n    paths:" in step7,
-        "step7_cancel_stale_heads": (
-            "github.event.pull_request.number" in step7
-            and "cancel-in-progress: true" in step7
-        ),
+        "legacy_actions_manual_only": fallback_audit["green"],
+        "step7_manual_fallback": _manual_only(step7),
         "failure_packet_failure_only": (
             "if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'failure'"
             in failure_packet
         ),
-        "targeted_ci_remains_central_dispatcher": (
-            "name: DevSystem targeted CI" in targeted_ci
-            and "pull_request:\n    branches: [main]" in targeted_ci
-            and "cancel-in-progress: true" in targeted_ci
-        ),
+        "targeted_ci_manual_fallback": _manual_only(targeted_ci),
         "permanent_contract_uses_exact_pr_head": (
             "permanent-contract:" in targeted_ci
-            and "ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" in targeted_ci
+            and "ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+            in targeted_ci
         ),
-        "wnba_nav_fast_cert_path_scoped": (
-            "pull_request:\n    branches: [main]\n    paths:" in wnba_fast
-            and "devsystem/wnba_nav_step6_fast_cert.py" in wnba_fast
-            and "wnba_pra_responsive_v2_step6.py" in wnba_fast
-        ),
-        "wnba_nav_responsive_cert_path_scoped": (
-            "pull_request:\n    branches: [main]\n    paths:" in wnba_responsive
-            and "devsystem/wnba_nav_step6_responsive_cert.py" in wnba_responsive
-            and "devsystem/wnba_nav_step6_responsive_harness.py" in wnba_responsive
-        ),
-        "workflow_change_quarantine_preserved": (
-            '".github/workflows/**"' in workflow_quarantine
-            and "cancel-in-progress: true" in workflow_quarantine
+        "wnba_nav_fast_cert_manual_fallback": _manual_only(wnba_fast),
+        "wnba_nav_responsive_cert_manual_fallback": _manual_only(wnba_responsive),
+        "workflow_change_quarantine_manual_fallback": _manual_only(
+            workflow_quarantine
         ),
         "product_runtime_untouched_by_policy": (
             policy["safety"]["product_runtime_mutation_allowed"] is False
             and policy["safety"]["model_projection_mutation_allowed"] is False
         ),
         "blind_reruns_forbidden": policy["safety"]["blind_reruns_allowed"] is False,
-        "frozen_change_requires_exact_thaw": policy["safety"]["frozen_artifact_change_requires_exact_thaw"] is True,
+        "frozen_change_requires_exact_thaw": policy["safety"]
+        ["frozen_artifact_change_requires_exact_thaw"]
+        is True,
     }
 
     failed = sorted(name for name, ok in checks.items() if not ok)
@@ -95,16 +108,19 @@ def audit_repository(root: Path = ROOT) -> dict[str, Any]:
     return {
         "status": "GREEN",
         "version": VERSION,
-        "central_broad_dispatcher": policy["central_broad_dispatcher"],
+        "normal_proof_plane": policy["normal_proof_plane"],
+        "legacy_actions_mode": policy["legacy_actions_mode"],
+        "legacy_actions_manifest_count": len(manifest_paths(root)),
         "checks": checks,
         "proof_lanes": {
-            "step7": "PATH_SCOPED_AND_STALE_CANCELLED",
+            "step7": "RUNLESS_MANUAL_FALLBACK",
             "failure_packet": "SOURCE_FAILURE_ONLY",
-            "targeted_ci": "CENTRAL_BROAD_DISPATCHER_PRESERVED",
+            "targeted_ci": "RUNLESS_MANUAL_FALLBACK",
             "permanent_contract": "EXACT_PR_HEAD_IDENTITY",
-            "wnba_nav_fast_cert": "WNBA_PATH_SCOPED",
-            "wnba_nav_responsive_cert": "WNBA_PATH_SCOPED",
-            "workflow_quarantine": "WORKFLOW_CHANGE_SAFETY_PRESERVED",
+            "wnba_nav_fast_cert": "RUNLESS_MANUAL_FALLBACK",
+            "wnba_nav_responsive_cert": "RUNLESS_MANUAL_FALLBACK",
+            "workflow_quarantine": "RUNLESS_MANUAL_FALLBACK",
+            "legacy_actions": "MANIFEST_MANUAL_ONLY",
         },
         "network_calls": NETWORK_CALLS,
         "auto_mutate": AUTO_MUTATE,
