@@ -1,0 +1,50 @@
+{
+  "version": "MONSTER_V9_STEP5_LEDGER_V1",
+  "project": "API 2",
+  "mission": "WNBA PRA Repair V1 Step 5 decision/data fallback",
+  "step": "5/7",
+  "base_main_sha": "e419cb82962f5311e36779a687cfb2fbaca7ee7b",
+  "rollback_sha": "e419cb82962f5311e36779a687cfb2fbaca7ee7b",
+  "authoritative_branch": "api2-wnba-pra-repair-v1-step5-decision-fallback-r1",
+  "step2a": {
+    "single_authority": true,
+    "duplicate_step5_prs_at_lock": 0,
+    "github_actions_fallback_authorized": false,
+    "frozen_app_blob": "28073247baf9d41f5efb59ece0e337f93856f380",
+    "frozen_step4_overlay_blob": "2d6bcb223bae4a1db5477b27b72604faa68aa66c",
+    "frozen_step4_card_blob": "c9f6f516fe2f650e76cb085439b33c52642b5dc6",
+    "frozen_player_blob": "393c29711962bf1d42b8fc58322938c92e23000a",
+    "app_merge_blocked_until_registry_forward_port": true
+  },
+  "problem": "Players without an exact qualified PRA card reached the universal Step-4 card with line, direction and probability unavailable.",
+  "root_cause": "The frozen consumer board intentionally publishes only qualified exact market cards, so no decision source remained after exact-card lookup failed.",
+  "patch": {
+    "strategy": "additive Step-5 overlay above frozen Step 4",
+    "exact_market_precedence": true,
+    "model_fallback": "hosted frozen Step-5F threshold probability at a history-derived reference threshold",
+    "history_fallback": "official recent-game PRA hit rate at the same reference threshold",
+    "truth_policy": "reference thresholds are always labeled REFERENCE and never SPORTSBOOK; missing sources fail closed to N/A",
+    "local_monte_carlo_runs": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "tdd": {
+    "red_contract_commit": "411a18526bb727966a9f286c3c8a3f75090b021b",
+    "final_preproduction_test_commit": "25ae1d3411340c6b9e03b6c5dcbbbf1a7c87a53d",
+    "red_observed": "Step 5 decision fallback engine does not exist yet",
+    "focused_behavior_green": true,
+    "behavioral_test": "tests/test_wnba_pra_repair_v1_step5.py",
+    "source_cert": "devsystem/wnba_pra_repair_v1_step5_decision_fallback_cert.py"
+  },
+  "proof_contract": {
+    "focused_pytest_required": true,
+    "source_cert_required": true,
+    "exact_candidate_runless_gate_required": true,
+    "exact_head_merge_required": true,
+    "merged_main_runless_gate_required": true,
+    "registry_app_baseline_forward_port_required": true,
+    "registry_cas_readback_required": true,
+    "freeze_token": "WNBA_PRA_REPAIR_V1_STEP5_FROZEN"
+  },
+  "state": "READY_FOR_EXACT_HEAD_PROOF",
+  "green_plus_frozen_claimed": false
+}
