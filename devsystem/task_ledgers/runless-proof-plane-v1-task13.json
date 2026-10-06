@@ -1,0 +1,10 @@
+{
+  "task_id": "runless-proof-plane-v1-task13",
+  "status": "DONE",
+  "activation_mode": "v2-enforced",
+  "action_log": {
+    "events": [],
+    "consumed_receipts": [],
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}
