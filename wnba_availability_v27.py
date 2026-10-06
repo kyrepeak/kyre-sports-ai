@@ -39,6 +39,18 @@ def _norm_name(value) -> str:
     return re.sub(r"[^a-z0-9]", "", text)
 
 
+def _identity_text(value) -> str:
+    if value is None:
+        return ""
+    try:
+        if pd.isna(value):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    text = str(value).strip()
+    return "" if text.casefold() in {"nan", "none"} else text
+
+
 def _team_ids(schedule: pd.DataFrame) -> list[int]:
     if schedule is None or schedule.empty:
         return []
@@ -106,21 +118,42 @@ def _verified_pool_for_day(day_str: str):
         base = {c: (sr.get(c) if sr is not None else np.nan) for c in raw_cols}
         for c in players.PLAYER_COLUMNS:
             base.setdefault(c, np.nan)
-        for c in ["PLAYER_ID","PLAYER_NAME","TEAM_ID","TEAM_NAME","TEAM_ABBREVIATION","POSITION","ROSTER_STATUS"]:
+
+        # Roster identity validates current membership, but its ESPN athlete ID
+        # must never overwrite an already-matched production-row player ID.
+        # Downstream official WNBA game-history reads require the production
+        # namespace; mixing the two namespaces silently breaks history/PRA.
+        for c in ["PLAYER_NAME","TEAM_ID","TEAM_NAME","TEAM_ABBREVIATION","POSITION","ROSTER_STATUS"]:
             val = rr.get(c)
             if pd.notna(val) and str(val) != "":
                 base[c] = val
+
         if sr is None:
+            roster_pid = rr.get("PLAYER_ID")
+            if pd.notna(roster_pid) and str(roster_pid) != "":
+                base["PLAYER_ID"] = roster_pid
+            base["PLAYER_ID_SOURCE"] = _identity_text(rr.get("PLAYER_ID_SOURCE")) or "ESPN"
             for c in ["GP","MIN","PTS","REB","AST","PRA","L10_GP","L10_MIN","L10_PTS","L10_REB","L10_AST","L10_PRA","L5_GP","L5_MIN","L5_PTS","L5_REB","L5_AST","L5_PRA"]:
                 base[c] = 0.0
             base["DATA_SOURCE"] = "Current roster • no matched production row"
+        else:
+            production_pid = sr.get("PLAYER_ID")
+            if pd.notna(production_pid) and str(production_pid) != "":
+                base["PLAYER_ID"] = production_pid
+            source = _identity_text(sr.get("PLAYER_ID_SOURCE"))
+            if source:
+                base["PLAYER_ID_SOURCE"] = source
         rows.append(base)
+
     out = pd.DataFrame(rows)
     if not out.empty:
         for c in players.PLAYER_COLUMNS:
             if c not in out.columns:
                 out[c] = np.nan
         out = out.reindex(columns=players.PLAYER_COLUMNS)
+        for c in ("PLAYER_NAME","TEAM_NAME","TEAM_ABBREVIATION","POSITION","ROSTER_STATUS","DATA_SOURCE","PLAYER_ID_SOURCE"):
+            if c in out.columns:
+                out[c] = out[c].map(_identity_text)
         out["_MIN"] = pd.to_numeric(out["MIN"], errors="coerce").fillna(0)
         out = out.sort_values(["TEAM_ID","_MIN"], ascending=[True,False]).drop(columns="_MIN").reset_index(drop=True)
     diag = {
