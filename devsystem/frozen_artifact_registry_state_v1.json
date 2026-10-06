@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
-  "revision": 130,
-  "source_main_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
+  "revision": 131,
+  "source_main_sha": "95cbfe595bc6d1b1af7d26e54a4e2f31b3ff48d0",
   "entries": {
     "MONSTER_V3_STEP1": {
       "status": "FROZEN",
@@ -2026,6 +2026,44 @@
         "tests/test_devsystem_change_classifier_v1.py": "265129d2ce89da49426b36059294fcba381cfb7b",
         "tests/test_nba_page_isolation_v1.py": "094e7f60c781a2fd789b9212e845f0ae44be7cb1"
       }
+    },
+    "NFL_LIVE_GAME_REPAIR_STEP5_FINAL_CERT": {
+      "status": "FROZEN",
+      "checkpoint_id": "NFL_LIVE_GAME_REPAIR_STEP5_FINAL_CERT",
+      "source_main_sha": "95cbfe595bc6d1b1af7d26e54a4e2f31b3ff48d0",
+      "proven_merge_sha": "95cbfe595bc6d1b1af7d26e54a4e2f31b3ff48d0",
+      "pr_number": 1401,
+      "pr_head_sha": "0501ceb79dec34bd67a6b472d9c00b0067895ff5",
+      "branch_proof_run_id": 37402543953,
+      "branch_devsystem_run_id": 37402544074,
+      "merged_main_proof_run_id": 37403223920,
+      "merged_main_devsystem_run_id": 37403223774,
+      "proof_run_id": 37403223920,
+      "proof_kind": "MERGED_MAIN_REAL_LIVE_RUSHING_RECEIVING_FINAL_CERT",
+      "regression_debt_state": "CLEARED",
+      "same_authoritative_live_event": true,
+      "responsive_viewports_green": [
+        390,
+        768,
+        1440
+      ],
+      "product_runtime_mutation": false,
+      "router_mutation": false,
+      "projection_mutation": false,
+      "probability_mutation": false,
+      "ranking_mutation": false,
+      "sportsbook_mutation": false,
+      "api2_used": false,
+      "artifacts": {
+        "nfl_rushing_yards_hub_v16.py": "2a81e3130882b579a8d1e52bca0ef1f4e94c988c",
+        "nfl_receiving_yards_hub_v17.py": "d69990d75666db414839470db20f68958c284b9e",
+        "nfl_prop_app_eligibility_v1.py": "01d8b0039e270b03d5f96fa4ac17f542f360a610",
+        "streamlit_memory_lazy_router_v187.py": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+        "devsystem/nfl_live_game_repair_step5_final_cert_v1.py": "b2a28ec5a4a1925586af4207d3bef14f24d27d6d",
+        "tests/test_nfl_live_game_repair_step5_final_cert_v1.py": "8de591e0aae74a102abfc64bd0d9770e36e87f86",
+        "devsystem/task_ledgers/nfl-live-game-repair-step5-final-cert-v1.json": "b1ebfd111a44be40c84549526737c01e1b5ce992",
+        ".github/workflows/nfl-live-game-repair-step5-final-cert-v1.yml": "df4fa8e25751fb94c06976c1114d52e2fd26135e"
+      }
     }
   },
   "active_thaws": [
@@ -2045,5 +2083,5 @@
       }
     }
   ],
-  "state_hash": "d6c90c3c09fbf303c537fda4d3b4e10207d04f8abac65fff0d39b79da1962ba1"
+  "state_hash": "fa50931a10ea8bf8ddf703cf3d03b90ac135920b3d23130bb07c7f38ba278aa2"
 }
