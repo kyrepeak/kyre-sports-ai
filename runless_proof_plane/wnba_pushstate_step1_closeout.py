@@ -25,6 +25,17 @@ def _digest(value: Mapping[str, Any]) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _proof_evidence_from_env() -> dict[str, Any]:
+    return {
+        "worker_service_id": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_SERVICE_ID", "").strip(),
+        "worker_deploy_id": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_DEPLOY_ID", "").strip(),
+        "test_result": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_TEST_RESULT", "").strip(),
+        "cert_token": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "").strip(),
+        "owner": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "").strip(),
+        "feedback_loop_proven": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "").strip() == "1",
+    }
+
+
 def _require_exact_identity(
     client,
     *,
@@ -128,20 +139,96 @@ def publish_candidate_gate_from_env(client) -> dict[str, Any]:
     if not raw_pr.isdigit():
         raise ValueError("WNBA_PUSHSTATE_STEP1_PR_REQUIRED")
 
-    evidence = {
-        "worker_service_id": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_SERVICE_ID", "").strip(),
-        "worker_deploy_id": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_DEPLOY_ID", "").strip(),
-        "test_result": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_TEST_RESULT", "").strip(),
-        "cert_token": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "").strip(),
-        "owner": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "").strip(),
-        "feedback_loop_proven": os.getenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "").strip() == "1",
-    }
     return publish_candidate_gate(
         client,
         candidate_sha=candidate_sha,
         base_sha=base_sha,
         pr_number=int(raw_pr),
-        evidence=evidence,
+        evidence=_proof_evidence_from_env(),
+    )
+
+
+def publish_merged_main_gate(
+    client,
+    *,
+    merged_sha: str,
+    base_sha: str,
+    candidate_sha: str,
+    candidate_receipt_digest: str,
+    evidence: Mapping[str, Any],
+) -> dict[str, Any]:
+    if any(len(value) != 40 for value in (merged_sha, base_sha, candidate_sha)):
+        raise ValueError("WNBA_PUSHSTATE_STEP1_MERGED_BAD_SHA")
+    if len(candidate_receipt_digest) != 64:
+        raise ValueError("WNBA_PUSHSTATE_STEP1_CANDIDATE_RECEIPT_REQUIRED")
+    if client.branch_sha("main").lower() != merged_sha.lower():
+        raise ValueError("WNBA_PUSHSTATE_STEP1_MERGED_MAIN_DRIFT")
+
+    commit = client.request("GET", f"/commits/{merged_sha}")
+    if str(commit.get("sha") or "").lower() != merged_sha.lower():
+        raise ValueError("WNBA_PUSHSTATE_STEP1_MERGED_IDENTITY_MISMATCH")
+    parents = {str(item.get("sha") or "").lower() for item in (commit.get("parents") or [])}
+    if parents != {base_sha.lower(), candidate_sha.lower()}:
+        raise ValueError("WNBA_PUSHSTATE_STEP1_MERGE_PARENT_MISMATCH")
+
+    candidate_blobs = client.tree_blobs(candidate_sha)
+    merged_blobs = client.tree_blobs(merged_sha)
+    candidate_artifacts = {path: str(candidate_blobs.get(path) or "") for path in STEP1_ARTIFACTS}
+    merged_artifacts = {path: str(merged_blobs.get(path) or "") for path in STEP1_ARTIFACTS}
+    if any(len(blob) != 40 for blob in candidate_artifacts.values()):
+        raise ValueError("WNBA_PUSHSTATE_STEP1_CANDIDATE_ARTIFACT_MISSING")
+    if merged_artifacts != candidate_artifacts:
+        raise ValueError("WNBA_PUSHSTATE_STEP1_MERGED_ARTIFACT_DRIFT")
+
+    _require_terminal_evidence(evidence)
+    lineage = {
+        "base_sha": base_sha,
+        "candidate_sha": candidate_sha,
+        "merged_sha": merged_sha,
+        "candidate_receipt_digest": candidate_receipt_digest,
+        "artifact_map": merged_artifacts,
+    }
+    receipt = build_runless_receipt(
+        proof_id=f"wnba-pushstate-step1-merged-{merged_sha[:16]}",
+        task_id="wnba-pushstate-repair-v1-step1-root-cause",
+        project="API2",
+        workstream="api2-wnba-pushstate-repair-v1-step1",
+        step="1/4-merged-main-certification",
+        candidate_sha=merged_sha,
+        artifact_map=merged_artifacts,
+        dependency_map={
+            "base_main_sha": base_sha,
+            "certified_candidate_sha": candidate_sha,
+            "candidate_receipt_digest": candidate_receipt_digest,
+            "worker_service_id": evidence["worker_service_id"],
+            "worker_deploy_id": evidence["worker_deploy_id"],
+            "proof_authority": "Runless Proof Plane",
+            "proof_mode": "immutable-merge-lineage-and-artifact-equivalence",
+        },
+        registry_before={"mode": "read-only", "frozen_steps_1_through_9": "protected"},
+        registry_after={"mode": "read-only", "frozen_steps_1_through_9": "protected"},
+        evidence_digests=[_digest(dict(evidence)), _digest(lineage)],
+        failure_class="NONE",
+    )
+    check = publish_gate(client, merged_sha, "success", receipt)
+    return {
+        "status": "GREEN",
+        "merged_sha": merged_sha,
+        "receipt_digest": receipt["digest"],
+        "check_id": check.get("id"),
+    }
+
+
+def publish_merged_main_gate_from_env(client) -> dict[str, Any]:
+    if os.getenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START", "").strip() != "1":
+        return {"status": "NOT_ARMED"}
+    return publish_merged_main_gate(
+        client,
+        merged_sha=os.getenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_SHA", "").strip(),
+        base_sha=os.getenv("RPP_WNBA_PUSHSTATE_STEP1_BASE_SHA", "").strip(),
+        candidate_sha=os.getenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_SHA", "").strip(),
+        candidate_receipt_digest=os.getenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_RECEIPT", "").strip(),
+        evidence=_proof_evidence_from_env(),
     )
 
 
@@ -151,9 +238,11 @@ def install_startup_gate(app):
     @app.on_event("startup")
     def _publish_wnba_pushstate_step1_gate():
         try:
-            app.state.wnba_pushstate_step1_gate = publish_candidate_gate_from_env(
-                app.state.github_client
-            )
+            if os.getenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START", "").strip() == "1":
+                result = publish_merged_main_gate_from_env(app.state.github_client)
+            else:
+                result = publish_candidate_gate_from_env(app.state.github_client)
+            app.state.wnba_pushstate_step1_gate = result
         except Exception as exc:
             app.state.wnba_pushstate_step1_gate = {
                 "status": "FAIL",
