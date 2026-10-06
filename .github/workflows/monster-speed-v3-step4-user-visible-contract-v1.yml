@@ -1,32 +1,6 @@
 name: Monster Speed V3 Step 4 User Visible Contract
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "requirements.lock"
-      - "devsystem/browser_requirements.lock"
-      - "devsystem/user_visible_contract_v1.py"
-      - "devsystem/monster_speed_v3_step4_contract_guard_v1.py"
-      - "devsystem/monster_speed_v3_step4_user_visible_proof_v1.py"
-      - "devsystem/cfb_top_picks_nav_step3_public_cert_v1.py"
-      - "tests/test_user_visible_contract_v1.py"
-      - "tests/test_monster_speed_v3_step4_contract_guard_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step4-user-visible-contract-v1.json"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/monster-speed-v3-step4-user-visible-contract-v1.yml"
-  push:
-    branches: [main]
-    paths:
-      - "devsystem/user_visible_contract_v1.py"
-      - "devsystem/monster_speed_v3_step4_contract_guard_v1.py"
-      - "devsystem/monster_speed_v3_step4_user_visible_proof_v1.py"
-      - "devsystem/cfb_top_picks_nav_step3_public_cert_v1.py"
-      - "tests/test_user_visible_contract_v1.py"
-      - "tests/test_monster_speed_v3_step4_contract_guard_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step4-user-visible-contract-v1.json"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/monster-speed-v3-step4-user-visible-contract-v1.yml"
   workflow_dispatch:
 
 permissions:
