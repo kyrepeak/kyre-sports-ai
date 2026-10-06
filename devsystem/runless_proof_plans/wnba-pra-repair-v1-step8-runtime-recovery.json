@@ -1,0 +1,28 @@
+{
+  "task_id": "wnba-pra-repair-v1-step8-runtime-recovery",
+  "workstream": "wnba-pra-repair-v1-step8",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_repair_v1_step8.py"],
+    ["python", "-m", "devsystem.wnba_pra_repair_v1_step8_runtime_recovery_cert", "--source-only"]
+  ],
+  "artifacts": [
+    "requirements.txt",
+    "devsystem/wnba_pra_repair_v1_step8_runtime_recovery_cert.py",
+    "tests/test_wnba_pra_repair_v1_step8.py",
+    "devsystem/runless_proof_plans/wnba-pra-repair-v1-step8-runtime-recovery.json",
+    "devsystem/task_ledgers/wnba-pra-repair-v1-step8-runtime-recovery.json"
+  ],
+  "dependencies": [
+    "app.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py",
+    "devsystem/wnba_pra_speed_v3_step9_final_cert.py",
+    "devsystem/wnba_nav_v2_step7_public_freeze.py",
+    "monster-frozen-artifact-registry:devsystem/frozen_artifact_registry_state_v1.json"
+  ],
+  "probes": [
+    {"url": "https://pickvault.streamlit.app", "kind": "browser", "timeout_seconds": 120}
+  ],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "freeze_token": "WNBA_PRA_REPAIR_V1_STEP8_FROZEN"
+}
