@@ -1,22 +1,6 @@
 name: Monster Speed V3 Step 3 WNBA Cache Repair
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-cache-seed-v1.yml"
-      - "tests/test_devsystem_sport_cache_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step3-wnba-cache-repair-v1.json"
-      - ".github/workflows/monster-speed-v3-step3-wnba-cache-repair-v1.yml"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-cache-seed-v1.yml"
-      - "tests/test_devsystem_sport_cache_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step3-wnba-cache-repair-v1.json"
-      - ".github/workflows/monster-speed-v3-step3-wnba-cache-repair-v1.yml"
   workflow_dispatch:
 
 permissions:

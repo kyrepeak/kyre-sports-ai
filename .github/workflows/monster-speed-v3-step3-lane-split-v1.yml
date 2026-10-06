@@ -1,24 +1,6 @@
 name: Monster Speed V3 Step 3 Lane Split
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - "devsystem/monster_speed_v3_step3_lane_split_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step3-fast-pr-full-merge-v1.json"
-      - "tests/test_monster_speed_v3_step3_lane_split_v1.py"
-      - "tests/test_devsystem_workflow_parallelism_v1.py"
-      - ".github/workflows/monster-speed-v3-step3-lane-split-v1.yml"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - "devsystem/monster_speed_v3_step3_lane_split_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step3-fast-pr-full-merge-v1.json"
-      - "tests/test_monster_speed_v3_step3_lane_split_v1.py"
-      - "tests/test_devsystem_workflow_parallelism_v1.py"
-      - ".github/workflows/monster-speed-v3-step3-lane-split-v1.yml"
   workflow_dispatch:
 
 permissions:

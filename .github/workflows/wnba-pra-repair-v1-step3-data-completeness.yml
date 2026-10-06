@@ -1,35 +1,7 @@
 name: WNBA PRA Repair V1 Step 3 Data Completeness
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
-      - "devsystem/dependency_chain_auto_refresh_v1.py"
-      - "devsystem/dependency_chain_registry_v1.json"
-      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
-      - "wnba_pra_repair_v1_step2_team_identity.py"
-      - "devsystem/dependency_chain_auto_refresh_v1.py"
-      - "devsystem/dependency_chain_registry_v1.json"
-      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
-      - "wnba_pra_repair_v1_step2_team_identity.py"
-      - "app.py"
-      - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
-      - "devsystem/task_ledgers/wnba-pra-repair-v1-step3-data-completeness.json"
-      - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
-      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
-      - "tests/test_wnba_pra_repair_v1_step3.py"
-      - "wnba_pra_repair_v1_step3_data.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
-      - "app.py"
-      - "devsystem/execution_plans/wnba-pra-repair-v1-step3-data-completeness.json"
-      - "devsystem/wnba_pra_repair_v1_step3_data_completeness_cert.py"
-      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py"
-      - "tests/test_wnba_pra_repair_v1_step3.py"
-      - "wnba_pra_repair_v1_step3_data.py"
+  workflow_dispatch:
 
 permissions:
   contents: read

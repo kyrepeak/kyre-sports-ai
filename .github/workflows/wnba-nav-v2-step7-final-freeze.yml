@@ -1,28 +1,6 @@
 name: WNBA Navigation V2 Step 7 Final Freeze
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/wnba-nav-v2-step7-final-freeze.yml"
-      - "app.py"
-      - "wnba_pra_final_v2_step7.py"
-      - "streamlit_memory_lazy_router_wnba_nav_v2_step7.py"
-      - "tests/test_wnba_pra_navigation_v2_step7.py"
-      - "devsystem/wnba_nav_v2_step7_public_freeze.py"
-      - "devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/wnba-nav-v2-step7-final-freeze.yml"
-      - "app.py"
-      - "wnba_pra_final_v2_step7.py"
-      - "streamlit_memory_lazy_router_wnba_nav_v2_step7.py"
-      - "tests/test_wnba_pra_navigation_v2_step7.py"
-      - "devsystem/wnba_nav_v2_step7_public_freeze.py"
-      - "devsystem/task_ledgers/wnba-navigation-v2-step7-final-freeze.json"
   workflow_dispatch:
 
 permissions:

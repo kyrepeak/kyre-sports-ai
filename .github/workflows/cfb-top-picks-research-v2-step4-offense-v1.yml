@@ -1,34 +1,6 @@
 name: CFB Top Picks Research V2 Step 4 Offense
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "cfb_top_picks_offense_research_v1.py"
-      - "cfb_top_picks_details_v1.py"
-      - "cfb_top_picks_page_v4.py"
-      - "devsystem/cfb_top_picks_research_v2_step4_offense_v1.py"
-      - "devsystem/cfb_top_picks_research_v2_step4_offense_cert_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step4_contract_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step4_offense_v1.py"
-      - "tests/test_cfb_top_picks_step4_details_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step4-offense-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step4-offense-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - "cfb_top_picks_offense_research_v1.py"
-      - "cfb_top_picks_details_v1.py"
-      - "cfb_top_picks_page_v4.py"
-      - "devsystem/cfb_top_picks_research_v2_step4_offense_v1.py"
-      - "devsystem/cfb_top_picks_research_v2_step4_offense_cert_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step4_contract_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step4_offense_v1.py"
-      - "tests/test_cfb_top_picks_step4_details_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step4-offense-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step4-offense-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
   workflow_dispatch:
 
 permissions:

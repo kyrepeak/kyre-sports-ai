@@ -1,31 +1,6 @@
 name: WNBA PRA Speed V3 Step 4 Server Bundle Cache
 
 on:
-  pull_request:
-    paths:
-      - "sports_api/api/wnba_pra_cached_detail_bundle.py"
-      - "wnba_pra_speed_v3_step4_cache.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4.py"
-      - "sports_api/main.py"
-      - "app.py"
-      - "tests/test_wnba_pra_speed_v3_step4.py"
-      - "devsystem/wnba_pra_speed_v3_step4_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step4-server-cache.json"
-      - ".github/workflows/wnba-pra-speed-v3-step4-server-cache.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - "sports_api/api/wnba_pra_cached_detail_bundle.py"
-      - "wnba_pra_speed_v3_step4_cache.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4.py"
-      - "sports_api/main.py"
-      - "app.py"
-      - "tests/test_wnba_pra_speed_v3_step4.py"
-      - "devsystem/wnba_pra_speed_v3_step4_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step4-server-cache.json"
-      - ".github/workflows/wnba-pra-speed-v3-step4-server-cache.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
   workflow_dispatch:
 
 permissions:

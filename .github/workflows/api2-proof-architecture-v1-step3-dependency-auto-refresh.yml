@@ -1,30 +1,7 @@
 name: API2 Proof Architecture V1 Step 3 Dependency Auto Refresh
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml"
-      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
-      - "devsystem/dependency_chain_auto_refresh_v1.py"
-      - "devsystem/dependency_chain_registry_v1.json"
-      - "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
-      - "devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
-      - "tests/test_devsystem_dependency_chain_auto_refresh_v1.py"
-      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
-      - "wnba_pra_repair_v1_step2_team_identity.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml"
-      - ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml"
-      - "devsystem/dependency_chain_auto_refresh_v1.py"
-      - "devsystem/dependency_chain_registry_v1.json"
-      - "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
-      - "devsystem/task_ledgers/api2-proof-architecture-v1-step3-dependency-auto-refresh.json"
-      - "tests/test_devsystem_dependency_chain_auto_refresh_v1.py"
-      - "streamlit_memory_lazy_router_wnba_pra_repair_v1_step2_team_identity.py"
-      - "wnba_pra_repair_v1_step2_team_identity.py"
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -1,24 +1,6 @@
 name: Registry Race V1 Step 3 WAIT One Resume
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/registry-race-v1-step3-wait-one-resume.yml"
-      - "devsystem/registry_wait_resume_v1.py"
-      - "devsystem/execution_plans/registry-race-v1-step3-wait-one-resume.json"
-      - "devsystem/task_ledgers/registry-race-v1-step3-wait-one-resume.json"
-      - "tests/test_devsystem_registry_wait_resume_v1.py"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/registry-race-v1-step3-wait-one-resume.yml"
-      - "devsystem/registry_wait_resume_v1.py"
-      - "devsystem/execution_plans/registry-race-v1-step3-wait-one-resume.json"
-      - "devsystem/task_ledgers/registry-race-v1-step3-wait-one-resume.json"
-      - "tests/test_devsystem_registry_wait_resume_v1.py"
-      - ".github/workflows/devsystem-targeted-ci.yml"
   workflow_dispatch:
 
 permissions:

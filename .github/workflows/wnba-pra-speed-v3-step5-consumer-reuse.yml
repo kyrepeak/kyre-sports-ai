@@ -1,33 +1,6 @@
 name: WNBA PRA Speed V3 Step 5 Consumer Reuse
 
 on:
-  pull_request:
-    paths:
-      - "sports_api/api/wnba_pra_speed_v3_step5_fast_history.py"
-      - "wnba_pra_speed_v3_step5_consumer_reuse.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py"
-      - "sports_api/main.py"
-      - "app.py"
-      - "tests/test_wnba_pra_speed_v3_step5.py"
-      - "devsystem/wnba_pra_speed_v3_step5_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json"
-      - ".github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - "requirements.txt"
-  push:
-    branches: [main]
-    paths:
-      - "sports_api/api/wnba_pra_speed_v3_step5_fast_history.py"
-      - "wnba_pra_speed_v3_step5_consumer_reuse.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step5.py"
-      - "sports_api/main.py"
-      - "app.py"
-      - "tests/test_wnba_pra_speed_v3_step5.py"
-      - "devsystem/wnba_pra_speed_v3_step5_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step5-consumer-reuse.json"
-      - ".github/workflows/wnba-pra-speed-v3-step5-consumer-reuse.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - "requirements.txt"
   workflow_dispatch:
 
 permissions:

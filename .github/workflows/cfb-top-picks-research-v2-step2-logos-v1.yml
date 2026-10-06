@@ -1,32 +1,6 @@
 name: CFB Top Picks Research V2 Step 2 Logos
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "cfb_top_picks_team_identity_v1.py"
-      - "cfb_top_picks_engine_v1.py"
-      - "cfb_top_picks_page_v2.py"
-      - "devsystem/cfb_top_picks_research_v2_step2_logos_v1.py"
-      - "devsystem/cfb_top_picks_research_v2_step2_logo_cert_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step2_contract_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step2_logos_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step2_main_readiness_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step2-logos-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step2-logos-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - "cfb_top_picks_team_identity_v1.py"
-      - "cfb_top_picks_engine_v1.py"
-      - "cfb_top_picks_page_v2.py"
-      - "devsystem/cfb_top_picks_research_v2_step2_logos_v1.py"
-      - "devsystem/cfb_top_picks_research_v2_step2_logo_cert_v1.py"
-      - "tests/test_cfb_top_picks_research_v2_step2_logos_v1.py"
-      - "devsystem/task_ledgers/cfb-top-picks-research-v2-step2-logos-v1.json"
-      - ".github/workflows/cfb-top-picks-research-v2-step2-logos-v1.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
   workflow_dispatch:
 
 permissions:

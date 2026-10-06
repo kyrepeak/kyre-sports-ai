@@ -1,17 +1,17 @@
 {
   "version": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1_WORKFLOW_FANOUT_GOVERNOR_V1",
   "repository": "kyrepeak/kyre-sports-ai",
-  "objective": "Prevent unrelated and stale control-plane proof fan-out without weakening required proof.",
-  "central_broad_dispatcher": ".github/workflows/devsystem-targeted-ci.yml",
+  "objective": "Keep Runless as the normal proof plane while preserving GitHub Actions proof workflows as manual emergency fallback only.",
+  "normal_proof_plane": "runless-proof-plane",
+  "legacy_actions_mode": "manual_only",
+  "legacy_actions_manifest": "devsystem/runless_legacy_proof_workflows_v1.txt",
   "guards": {
-    "step7_path_scoped": true,
-    "step7_cancel_stale_heads": true,
-    "step7_pr_concurrency_identity": "github.event.pull_request.number",
+    "legacy_actions_manual_only": true,
+    "step7_manual_fallback": true,
     "failure_packet_failure_only": true,
-    "failure_packet_source_workflow": "DevSystem targeted CI",
-    "wnba_nav_fast_cert_path_scoped": true,
-    "wnba_nav_responsive_cert_path_scoped": true,
-    "workflow_change_quarantine_preserved": true,
+    "wnba_nav_fast_cert_manual_fallback": true,
+    "wnba_nav_responsive_cert_manual_fallback": true,
+    "workflow_change_quarantine_manual_fallback": true,
     "permanent_contract_exact_pr_head": true
   },
   "safety": {

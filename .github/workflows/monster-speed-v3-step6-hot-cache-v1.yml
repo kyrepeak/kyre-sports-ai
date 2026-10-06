@@ -1,34 +1,6 @@
 name: Monster Speed V3 Step 6 Hot Cache
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "requirements.lock"
-      - "devsystem/browser_requirements.lock"
-      - "devsystem/monster_speed_v3_step6_hot_cache_v1.py"
-      - "tests/test_monster_speed_v3_step6_hot_cache_v1.py"
-      - "tests/test_devsystem_browser_cache_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step6-hot-cache-v1.json"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-cache-seed-v1.yml"
-      - ".github/workflows/devsystem-production-verification-v5.yml"
-      - ".github/workflows/monster-speed-v3-step4-user-visible-contract-v1.yml"
-      - ".github/workflows/monster-speed-v3-step6-hot-cache-v1.yml"
-  push:
-    branches: [main]
-    paths:
-      - "requirements.lock"
-      - "devsystem/browser_requirements.lock"
-      - "devsystem/monster_speed_v3_step6_hot_cache_v1.py"
-      - "tests/test_monster_speed_v3_step6_hot_cache_v1.py"
-      - "tests/test_devsystem_browser_cache_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step6-hot-cache-v1.json"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-cache-seed-v1.yml"
-      - ".github/workflows/devsystem-production-verification-v5.yml"
-      - ".github/workflows/monster-speed-v3-step4-user-visible-contract-v1.yml"
-      - ".github/workflows/monster-speed-v3-step6-hot-cache-v1.yml"
   workflow_dispatch:
 
 permissions:

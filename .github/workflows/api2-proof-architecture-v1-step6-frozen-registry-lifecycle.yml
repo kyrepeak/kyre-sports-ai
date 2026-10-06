@@ -1,24 +1,7 @@
 name: API2 Proof Architecture V1 Step 6 Frozen Registry Lifecycle
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - "devsystem/api2_frozen_registry_lifecycle_v1.py"
-      - "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
-      - "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
-      - "tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - "devsystem/api2_frozen_registry_lifecycle_v1.py"
-      - "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
-      - "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json"
-      - "tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py"
+  workflow_dispatch:
 
 permissions:
   contents: read

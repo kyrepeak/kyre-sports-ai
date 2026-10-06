@@ -1,24 +1,6 @@
 name: Monster Speed V3 Step 5 Repository Automation
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/monster-speed-v3-step5-repo-settings-v1.yml"
-      - "devsystem/monster_speed_v3_step5_repo_settings_v1.py"
-      - "devsystem/evidence/monster-speed-v3-step5-repo-settings-v1.json"
-      - "devsystem/evidence/monster-speed-v3-step5-repo-settings-v1.json"
-      - "tests/test_monster_speed_v3_step5_repo_settings_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step5-auto-merge-branch-freshness-v1.json"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/monster-speed-v3-step5-repo-settings-v1.yml"
-      - "devsystem/monster_speed_v3_step5_repo_settings_v1.py"
-      - "tests/test_monster_speed_v3_step5_repo_settings_v1.py"
-      - "devsystem/task_ledgers/monster-speed-v3-step5-auto-merge-branch-freshness-v1.json"
   workflow_dispatch:
 
 permissions:
