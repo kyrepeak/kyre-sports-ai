@@ -19,7 +19,12 @@ def _run(*, enabled: bool) -> subprocess.CompletedProcess[str]:
     else:
         env.pop("WNBA_STEP9_RENDER_PORT_GUARD", None)
     return subprocess.run(
-        [sys.executable, "-c", "print('WNBA_STEP9_CERT_PROCESS_STARTED', flush=True)"],
+        [
+            sys.executable,
+            "-c",
+            "import argparse; assert argparse.ArgumentParser; "
+            "print('WNBA_STEP9_CERT_PROCESS_STARTED', flush=True)",
+        ],
         cwd=ROOT,
         env=env,
         text=True,
