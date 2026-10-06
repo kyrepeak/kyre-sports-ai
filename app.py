@@ -224,10 +224,10 @@ FROZEN_V88_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V88_NFL_PASSING_YARDS_STEP8_CO
 FROZEN_V89_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V89_NFL_PASSING_YARDS_STEP9_DISTRIBUTION_PROBABILITY_2026-09-11"
 FROZEN_V90_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V90_NFL_PASSING_YARDS_STEP10_MARKET_EDGE_FINAL_2026-09-11"
 FROZEN_V91_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V91_NFL_PASSING_YARDS_LIVE_ROUTE_AUTO_SLATE_2026-09-11"
-FROZEN_V92_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V92_CFB_OU_CLEANUP_STEP1_2026-09-11"
-FROZEN_V93_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V93_CFB_OU_CLEANUP_STEP2_2026-09-11"
-FROZEN_V94_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V94_CFB_OU_CLEANUP_STEP3_2026-09-11"
-FROZEN_V95_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V95_CFB_OU_CLEANUP_STEP4_2026-09-11"
+FROZEN_V92_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V92_NFL_PASSING_YARDS_CLEANUP_STEP1_2026-09-11"
+FROZEN_V93_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V93_NFL_PASSING_YARDS_CLEANUP_STEP2_2026-09-11"
+FROZEN_V94_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V94_NFL_PASSING_YARDS_CLEANUP_STEP3_2026-09-11"
+FROZEN_V95_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V95_NFL_PASSING_YARDS_CLEANUP_STEP4_2026-09-11"
 FROZEN_V96_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V96_NFL_PASSING_YARDS_ROUTE_PRECEDENCE_HOTFIX_V2_2026-09-11"
 FROZEN_V97_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V97_NFL_PASSING_YARDS_EARLY_SEASON_BRIDGE_2026-09-11"
 FROZEN_V98_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V98_NFL_RUSHING_YARDS_UI_CLEANUP_2026-09-12"
@@ -412,8 +412,7 @@ try:
     # Frozen V167 delegate compatibility: from streamlit_memory_lazy_router_v167 import record_bootstrap_import_ms, render_app
     # Frozen V166 delegate compatibility: from streamlit_memory_lazy_router_v166 import record_bootstrap_import_ms, render_app
     # Frozen V165 delegate compatibility: from streamlit_memory_lazy_router_v165 import record_bootstrap_import_ms, render_app
-    # Frozen V164 delegate compatibility: from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app\
-    # Frozen V163 delegate compatibility: from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app
+    # Frozen V164 delegate compatibility: from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app\n    # Frozen V163 delegate compatibility: from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
