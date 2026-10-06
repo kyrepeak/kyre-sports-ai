@@ -57,3 +57,12 @@ def test_step8_certifier_requires_future_pregame_and_step7_public_runtime():
     assert "_prime_wnba_pra_route" in source
     assert "WNBA_PRA_REPAIR_V1_STEP7_FINAL_INTEGRATION" in source
     assert "scheduled future WNBA pregame" in source
+
+
+def test_step8_public_prime_accepts_off_day_slate_before_future_date_selection():
+    source = CERT.read_text(encoding="utf-8")
+    assert "WNBA_PRA_REPAIR_V1_STEP8_OFF_DAY_SLATE_ACCEPTED_GREEN" in source
+    assert "Step-8 WNBA/PRA slate did not become route-ready" in source
+    assert '"WNBA Slate" in body' in source
+    assert '"Slate date" in body' in source
+    assert "from devsystem.wnba_pra_speed_v3_step9_final_cert import _prime_wnba_pra_route" not in source
