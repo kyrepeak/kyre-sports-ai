@@ -1,0 +1,57 @@
+{
+  "version": "MONSTER_V9_WNBA_PUSHSTATE_REPAIR_V1_STEP1_LEDGER_V1",
+  "project": "API 2",
+  "mission": "WNBA pushState navigation-loop repair",
+  "step": "1/4",
+  "step_name": "Find the loop owner",
+  "base_main_sha": "f8fe7aef9f9519750aaa9053716d2059c9bbdb83",
+  "rollback_sha": "f8fe7aef9f9519750aaa9053716d2059c9bbdb83",
+  "authoritative_branch": "api2-wnba-pushstate-repair-v1-step1-root-cause",
+  "step2a": {
+    "single_authority": true,
+    "single_active_problem": "WNBA browser history pushState loop",
+    "github_actions_fallback_authorized": false,
+    "runless_required_check": "runless-final-gate",
+    "runless_app_id": 5204253,
+    "product_runtime_mutation_allowed": false,
+    "frozen_steps_1_through_9_protected": true,
+    "unrelated_nba_workstream_untouched": true
+  },
+  "production_evidence": {
+    "error": "Attempt to use history.pushState() more than 100 times per 10 seconds",
+    "surface": "WNBA PRA slate / Game Center navigation",
+    "effect": "WNBA deep pages become inaccessible or stuck"
+  },
+  "root_cause": {
+    "owner": "_pin_deep_wnba_shell_route",
+    "file": "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py",
+    "mechanism": "The Step-3 overlay unconditionally writes ks_jump_sport and ks_jump_market through st.query_params on deep WNBA renders. Those browser-history writes trigger Streamlit reruns, which call the same unconditional writer again. The overlay also wraps navigation._write_query and invokes the same shell pin after navigation writes, creating a second entry into the same feedback loop.",
+    "frozen_navigation_contributor": "wnba_pra_navigation_v2_step1.py writes WNBA page/game/player query state during explicit transitions, but does not independently explain the continuous 100-per-10-second loop.",
+    "classification": "self-retriggering_query_param_feedback_loop"
+  },
+  "step1_scope": {
+    "diagnosis_only": true,
+    "product_patch": false,
+    "router_patch": false,
+    "model_patch": false,
+    "projection_math_patch": false,
+    "probability_patch": false,
+    "data_patch": false,
+    "sportsbook_patch": false
+  },
+  "proof": {
+    "cert": "devsystem/wnba_pushstate_repair_v1_step1_root_cause_cert.py",
+    "test": "tests/test_wnba_pushstate_repair_v1_step1.py",
+    "plan": "devsystem/runless_proof_plans/wnba-pushstate-repair-v1-step1-root-cause.json",
+    "required_provider": "Runless Proof Plane",
+    "required_check": "runless-final-gate"
+  },
+  "exit_criteria": [
+    "Runless proves the diagnosis contract on the exact candidate head",
+    "Merge the exact certified head only",
+    "Runless proves the exact merged-main head",
+    "Canonical frozen registry records WNBA_PUSHSTATE_REPAIR_V1_STEP1_FROZEN",
+    "Registry read-back confirms the freeze token before GREEN + FROZEN"
+  ],
+  "next_step": "Step 2 owns the minimal idempotent query-write patch; no fix belongs in Step 1"
+}
