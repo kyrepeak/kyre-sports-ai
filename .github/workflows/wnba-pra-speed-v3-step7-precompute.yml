@@ -1,27 +1,7 @@
 name: WNBA PRA Speed V3 Step 7 Precompute
 
 on:
-  pull_request:
-    paths:
-      - "wnba_pra_speed_v3_step7_precompute.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py"
-      - "app.py"
-      - "tests/test_wnba_pra_speed_v3_step7.py"
-      - "devsystem/wnba_pra_speed_v3_step7_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json"
-      - ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-  push:
-    branches: [main]
-    paths:
-      - "wnba_pra_speed_v3_step7_precompute.py"
-      - "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py"
-      - "app.py"
-      - "tests/test_wnba_pra_speed_v3_step7.py"
-      - "devsystem/wnba_pra_speed_v3_step7_public_profile.py"
-      - "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json"
-      - ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
