@@ -78,12 +78,7 @@ def _choose_labeled_route_value(page, frame, label: str, value: str) -> None:
 
 
 def _prime_wnba_pra_route(page, route_url: str):
-    """Enter WNBA/PRA using exact labeled controls, not positional state.
-
-    The query handoff remains a harmless first hint, but live production can
-    retain a stale MLB route. The authoritative verifier action is therefore
-    the exact visible Sport -> WNBA and WNBA Market -> PRA interaction.
-    """
+    """Enter WNBA/PRA without requiring today's off-day Slate to have a game."""
     page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
     frame, _ = _find_app_frame(page, timeout_seconds=120.0)
 
@@ -100,17 +95,90 @@ def _prime_wnba_pra_route(page, route_url: str):
         raise BrowserQAFailure("Step-9 WNBA market selector did not appear.")
 
     _choose_labeled_route_value(page, frame, WNBA_MARKET_LABEL, "PRA")
-    frame, ready = _wait_page(
-        page,
-        "slate",
-        timeout_seconds=SLATE_READY_BUDGET_SECONDS,
-    )
-    if ready > SLATE_READY_BUDGET_SECONDS:
-        raise BrowserQAFailure(
-            f"Step-9 WNBA PRA slate budget exceeded: {ready:.3f}s"
+    frame, _ = _find_app_frame(page, timeout_seconds=12.0)
+    ready = 0.0
+    if nav_profile._game_button(frame).count() > 0:
+        frame, ready = _wait_page(
+            page,
+            "slate",
+            timeout_seconds=SLATE_READY_BUDGET_SECONDS,
         )
+        if ready > SLATE_READY_BUDGET_SECONDS:
+            raise BrowserQAFailure(
+                f"Step-9 WNBA PRA slate budget exceeded: {ready:.3f}s"
+            )
+    else:
+        print("WNBA_PRA_SPEED_V3_STEP9_FUTURE_DATE_HANDOFF_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_LABELED_ROUTE_GREEN")
     return frame, ready
+
+
+def _set_future_slate_date_segmented(page, frame, target: str):
+    """Commit a future WNBA Slate date through Streamlit's segmented date fields."""
+    day = datetime.fromisoformat(target).date()
+    root = None
+    deadline = time.monotonic() + 12.0
+    while time.monotonic() < deadline:
+        frame, _ = _find_app_frame(page, timeout_seconds=8.0)
+        roots = frame.locator('[data-testid="stDateInput"]')
+        for index in range(roots.count()):
+            candidate = roots.nth(index)
+            text = (candidate.inner_text() or "").replace("\n", " ").strip()
+            if "Slate date" in text:
+                root = candidate
+                break
+        if root is not None:
+            break
+        page.wait_for_timeout(150)
+
+    if root is None:
+        raise BrowserQAFailure("Step-9 Slate date widget root missing.")
+
+    spins = root.get_by_role("spinbutton")
+    if spins.count() < 3:
+        raise BrowserQAFailure(
+            f"Step-9 expected segmented date fields; count={spins.count()}"
+        )
+
+    parts = {}
+    for index in range(spins.count()):
+        item = spins.nth(index)
+        aria = str(item.get_attribute("aria-label") or "").casefold()
+        if "month" in aria:
+            parts["month"] = item
+        elif "day" in aria:
+            parts["day"] = item
+        elif "year" in aria:
+            parts["year"] = item
+    if len(parts) < 3:
+        parts = {
+            "month": spins.nth(0),
+            "day": spins.nth(1),
+            "year": spins.nth(2),
+        }
+
+    print(f"WNBA_PRA_SPEED_V3_STEP9_SEGMENTED_DATE_ATTEMPT={target}")
+    parts["month"].fill(str(day.month))
+    parts["day"].fill(str(day.day))
+    parts["year"].fill(str(day.year))
+    parts["day"].press("Tab")
+
+    deadline = time.monotonic() + 20.0
+    last = ""
+    while time.monotonic() < deadline:
+        page.wait_for_timeout(250)
+        frame, _ = _find_app_frame(page, timeout_seconds=8.0)
+        if nav_profile._game_button(frame).count() > 0:
+            print(f"WNBA_PRA_SPEED_V3_STEP9_SEGMENTED_DATE_GREEN={target}")
+            return frame
+        try:
+            last = nav_profile._body(frame)[:1200]
+        except Exception:
+            pass
+
+    raise BrowserQAFailure(
+        f"Step-9 segmented date did not render a game for {target}; body={last!r}"
+    )
 
 
 def _future_pregame_dates() -> tuple[str, ...]:
@@ -297,6 +365,8 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     original_step8_route = step8_profile._route_to_wnba_pra
     original_nav_dates = nav_profile.CERTIFIED_GAME_DATES
     original_step5_dates = step5_profile.CERTIFIED_GAME_DATES
+    original_nav_set_date = nav_profile._set_date_with_game
+    original_step5_set_date = step5_profile._set_date_with_game
     upcoming_game_dates = _future_pregame_dates()
 
     def primed_route(page):
@@ -306,6 +376,8 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
     step8_profile._route_to_wnba_pra = primed_route
     nav_profile.CERTIFIED_GAME_DATES = upcoming_game_dates
     step5_profile.CERTIFIED_GAME_DATES = upcoming_game_dates
+    nav_profile._set_date_with_game = _set_future_slate_date_segmented
+    step5_profile._set_date_with_game = _set_future_slate_date_segmented
     print(f"WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_URL={route_url}")
     print("WNBA_PRA_SPEED_V3_STEP9_UPCOMING_GAME_VERIFIER_SCOPE_GREEN")
     print("WNBA_PRA_SPEED_V3_STEP9_ROUTE_PRIME_GREEN")
@@ -327,6 +399,8 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
         step8_profile._route_to_wnba_pra = original_step8_route
         nav_profile.CERTIFIED_GAME_DATES = original_nav_dates
         step5_profile.CERTIFIED_GAME_DATES = original_step5_dates
+        nav_profile._set_date_with_game = original_nav_set_date
+        step5_profile._set_date_with_game = original_step5_set_date
 
     result = certify_results(
         step5_result=step5_result,
