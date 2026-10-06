@@ -1,34 +1,7 @@
 name: API2 Control-Plane Efficiency V1 Step 1 Workflow Fan-Out Governor
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml"
-      - ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-failure-packet-v1.yml"
-      - ".github/workflows/wnba-nav-step6-fast-cert.yml"
-      - ".github/workflows/wnba-nav-step6-responsive-cert.yml"
-      - "devsystem/workflow_fanout_governor_v1.py"
-      - "devsystem/workflow_fanout_policy_v1.json"
-      - "devsystem/execution_plans/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
-      - "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
-      - "tests/test_devsystem_workflow_fanout_governor_v1.py"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml"
-      - ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml"
-      - ".github/workflows/devsystem-targeted-ci.yml"
-      - ".github/workflows/devsystem-failure-packet-v1.yml"
-      - ".github/workflows/wnba-nav-step6-fast-cert.yml"
-      - ".github/workflows/wnba-nav-step6-responsive-cert.yml"
-      - "devsystem/workflow_fanout_governor_v1.py"
-      - "devsystem/workflow_fanout_policy_v1.json"
-      - "devsystem/execution_plans/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
-      - "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json"
-      - "tests/test_devsystem_workflow_fanout_governor_v1.py"
+  workflow_dispatch:
 
 permissions:
   contents: read
