@@ -29,17 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": {
-          "from_blob": "ff4829124afc1004311e0aa4272646a5875c20c8",
-          "to_blob": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "bb9ef2fea11b6cb9d7617e911dc7dabcecd6e2e4",
-      "thaw_id": "THAW-API2-WNBA-PUSHSTATE-STEP3-GAME-HANDOFF"
     }
   ],
   "entries": {
@@ -2102,7 +2091,7 @@
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step7-final-integration.json": "e6b3c8956ae8c7d22e933b43905b322644343543",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step7-final-integration.json": "d28b7ba847af6424f80b2fb98dc1a9e2e4f40c2a",
         "devsystem/wnba_pra_repair_v1_step7_final_integration_cert.py": "3ea24534f781f51d8e0364f660dc40eb5c8fcf6a",
-        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "ff4829124afc1004311e0aa4272646a5875c20c8",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7",
         "tests/test_wnba_pra_repair_v1_step7.py": "ca0ba6837f1cd113701733b49ca7193e3b02a64a",
         "wnba_pra_repair_v1_step7_final_integration.py": "a170e5321dbe8a9ff6e63744581e8328d4d4971d"
       },
@@ -2252,14 +2241,23 @@
       "checkpoint_id": "WNBA_PUSHSTATE_REPAIR_V1_STEP2_FROZEN",
       "source_main_sha": "897f0ce90b5105477592a92279a9055ef27afbf8",
       "status": "FROZEN"
+    },
+    "WNBA_PUSHSTATE_REPAIR_V1_STEP3_FROZEN": {
+      "artifacts": {
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7",
+        "tests/test_wnba_pushstate_repair_v1_step3_game_handoff.py": "54f669061b71049c9c153db96ceada68983611b3"
+      },
+      "checkpoint_id": "WNBA_PUSHSTATE_REPAIR_V1_STEP3_FROZEN",
+      "source_main_sha": "ec301504ee74fe247eaf62d992b78929d4b2f6ed",
+      "status": "FROZEN"
     }
   },
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 145,
+  "revision": 146,
   "schema_version": 1,
-  "source_main_sha": "0a573142882c3a5db1db10d6585aa48b522be971",
-  "state_hash": "92ddb9ff031f74f59e1ab600199b14ea2416958136787c03793c3ca92bbd9199",
+  "source_main_sha": "ec301504ee74fe247eaf62d992b78929d4b2f6ed",
+  "state_hash": "6990eda3039cd40e68bf86d68bea656a56b7531c4f951e6d7a0d6d6ab3aabe73",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
