@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "task_id": "wnba-pra-repair-v1-step3-python-m-alias-r5",
+  "title": "WNBA PRA Repair V1 Step 3 — python -m proof alias repair R5 forward-port",
+  "project": "WNBA PRA Repair V1",
+  "step": 3,
+  "total_steps": 7,
+  "status": "READY_FOR_RUNLESS_PROOF",
+  "failure_class": "PROOF_VERIFIER",
+  "failed_merged_main_run_id": 37381071821,
+  "failed_public_job_ids": [112003016063, 112005041975],
+  "source_patch_head_sha": "d2050a045af897e802e03144e50d0c92d13b4966",
+  "forward_port_base_main_sha": "67091ef68aaa337990bb8ffe3f2e4e9306bcc0a5",
+  "root_cause": "The production cert is launched with python -m, so the executing Step-3 cert is registered as __main__. The previous bridge searched only the package-qualified cert key in sys.modules, returned False, and never replaced the frozen Step-9 directly imported _wait_page alias.",
+  "patch": [
+    "Resolve the package-qualified Step-3 cert first, then accept __main__ only when __spec__.name exactly matches the Step-3 cert module.",
+    "Regression-test the real python -m module topology and reject unrelated __main__ modules.",
+    "Keep the frozen Step-3 cert, frozen Step-9 cert, workflows, product runtime, routing, model, projection, probability, ranking, qualification, and sportsbook behavior unchanged."
+  ],
+  "mutation_scope": [
+    "wnba_pra_repair_v1_step3_data.py",
+    "tests/test_wnba_pra_repair_v1_step3.py",
+    "devsystem/task_ledgers/wnba-pra-repair-v1-step3-python-m-alias-r5.json"
+  ],
+  "step_2a": {
+    "authoritative_pr": 1399,
+    "authoritative_branch": "api2-wnba-step3-python-m-alias-r5",
+    "competing_step3_prs": 0,
+    "rollback_main_sha": "67091ef68aaa337990bb8ffe3f2e4e9306bcc0a5",
+    "no_duplicate_async_runs": true,
+    "force_with_lease_required": true,
+    "legacy_actions_fanout_required": 0,
+    "runless_final_gate_required": true,
+    "required_gate_app_id": 5204253
+  },
+  "frozen_artifact_changed": false,
+  "public_runtime_behavior_changed": false,
+  "model_math_changed": false,
+  "projection_math_changed": false,
+  "market_math_changed": false,
+  "probability_math_changed": false,
+  "ranking_changed": false,
+  "qualification_changed": false,
+  "sportsbook_changed": false,
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "FOCUSED_STEP3_PROOF_THEN_RUNLESS_EXACT_HEAD_GATE_THEN_EXACT_MERGE_THEN_ONE_MERGED_MAIN_PUBLIC_PROOF_THEN_FREEZE_READBACK"
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 
 import wnba_pra_repair_v1_step3_data as data
@@ -225,6 +226,59 @@ def test_step3_ci_bridge_targets_speed9_imported_wait_alias(monkeypatch):
     assert speed9._wait_page(object(), "game", timeout_seconds=9.0) == ("game", 9.0)
     assert calls == [("offday", "slate", 12.0), ("frozen", "game", 9.0)]
     assert speed9._step3_offday_wait_alias_bridge_v1 is True
+
+
+def test_step3_ci_bridge_resolves_python_m_cert_from_main_module(monkeypatch):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    calls: list[tuple[str, str, float]] = []
+
+    def frozen_wait(page, page_name: str, *, timeout_seconds: float):
+        calls.append(("frozen", page_name, timeout_seconds))
+        return page_name, timeout_seconds
+
+    def offday_wait(page, *, timeout_seconds: float):
+        calls.append(("offday", "slate", timeout_seconds))
+        return "slate", timeout_seconds
+
+    cert = SimpleNamespace(
+        __spec__=SimpleNamespace(name=data.STEP3_CERT_MODULE),
+        _wait_initial_slate_shell=offday_wait,
+    )
+    speed9 = SimpleNamespace(_wait_page=frozen_wait)
+
+    monkeypatch.delitem(sys.modules, data.STEP3_CERT_MODULE, raising=False)
+    monkeypatch.setitem(sys.modules, "__main__", cert)
+    monkeypatch.setitem(
+        sys.modules,
+        "devsystem.wnba_pra_speed_v3_step9_final_cert",
+        speed9,
+    )
+
+    assert data.install_step3_proof_wait_alias() is True
+    assert speed9._wait_page(object(), "slate", timeout_seconds=12.0) == ("slate", 12.0)
+    assert speed9._wait_page(object(), "game", timeout_seconds=9.0) == ("game", 9.0)
+    assert calls == [("offday", "slate", 12.0), ("frozen", "game", 9.0)]
+    assert speed9._step3_offday_wait_alias_bridge_v1 is True
+
+
+def test_step3_ci_bridge_rejects_unrelated_main_module(monkeypatch):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.delitem(sys.modules, data.STEP3_CERT_MODULE, raising=False)
+    monkeypatch.setitem(
+        sys.modules,
+        "__main__",
+        SimpleNamespace(
+            __spec__=SimpleNamespace(name="unrelated.module"),
+            _wait_initial_slate_shell=lambda *args, **kwargs: None,
+        ),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "devsystem.wnba_pra_speed_v3_step9_final_cert",
+        SimpleNamespace(_wait_page=lambda *args, **kwargs: None),
+    )
+
+    assert data.install_step3_proof_wait_alias() is False
 
 
 def test_step3_ci_bridge_is_disabled_in_public_runtime(monkeypatch):

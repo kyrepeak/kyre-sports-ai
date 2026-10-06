@@ -14,6 +14,7 @@ import sys
 from typing import Any, Mapping
 
 VERSION = "WNBA_PRA_REPAIR_V1_STEP3_DATA_COMPLETENESS_V1"
+STEP3_CERT_MODULE = "devsystem.wnba_pra_repair_v1_step3_data_completeness_cert"
 
 TEAM_REGISTRY: dict[int, tuple[str, str, str]] = {
     1611661330: ("atlanta-dream", "Atlanta Dream", "ATL"),
@@ -131,6 +132,21 @@ def form_fallback(player: Mapping[str, Any]) -> dict[str, float | None]:
     }
 
 
+def _loaded_step3_cert_module() -> Any:
+    cert = sys.modules.get(STEP3_CERT_MODULE)
+    if cert is not None:
+        return cert
+
+    # ``python -m devsystem.<cert>`` executes the cert as ``__main__``. Only
+    # accept that fallback when its import spec proves it is this exact cert;
+    # never bind an arbitrary process-wide ``__main__`` module.
+    main_module = sys.modules.get("__main__")
+    spec = getattr(main_module, "__spec__", None) if main_module is not None else None
+    if str(getattr(spec, "name", "") or "") == STEP3_CERT_MODULE:
+        return main_module
+    return None
+
+
 def install_step3_proof_wait_alias(
     *,
     cert_module: Any = None,
@@ -148,9 +164,7 @@ def install_step3_proof_wait_alias(
     if str(os.environ.get("GITHUB_ACTIONS") or "").strip().lower() != "true":
         return False
 
-    cert = cert_module or sys.modules.get(
-        "devsystem.wnba_pra_repair_v1_step3_data_completeness_cert"
-    )
+    cert = cert_module or _loaded_step3_cert_module()
     speed9 = speed9_module or sys.modules.get(
         "devsystem.wnba_pra_speed_v3_step9_final_cert"
     )
