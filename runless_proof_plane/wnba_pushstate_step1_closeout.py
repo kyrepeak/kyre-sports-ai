@@ -143,3 +143,22 @@ def publish_candidate_gate_from_env(client) -> dict[str, Any]:
         pr_number=int(raw_pr),
         evidence=evidence,
     )
+
+
+def install_startup_gate(app):
+    app.state.wnba_pushstate_step1_gate = {"status": "NOT_RUN"}
+
+    @app.on_event("startup")
+    def _publish_wnba_pushstate_step1_gate():
+        try:
+            app.state.wnba_pushstate_step1_gate = publish_candidate_gate_from_env(
+                app.state.github_client
+            )
+        except Exception as exc:
+            app.state.wnba_pushstate_step1_gate = {
+                "status": "FAIL",
+                "error": type(exc).__name__,
+                "detail": str(exc)[:400],
+            }
+
+    return app
