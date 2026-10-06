@@ -29,6 +29,17 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    },
+    {
+      "files": {
+        "app.py": {
+          "from_blob": "b77737e3e5a8148188485710bc3a6e42a5757335",
+          "to_blob": "b649282cd6fc771c6621cc09a655414f9422791a"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "488a18c77f487c9d1c579dfb42d7eb8d09ab61a8",
+      "thaw_id": "THAW-WNBA-PRA-REPAIR-V1-STEP7-APP"
     }
   ],
   "entries": {
@@ -2184,9 +2195,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 137,
+  "revision": 138,
   "schema_version": 1,
   "source_main_sha": "4b7c1bd0ac0708f9b711430b3fec0bb137f46609",
-  "state_hash": "a23a3c0f6200a170dc23424fb5e4a6359acd85fa83b7c90a2b27ae26c32b3246",
+  "state_hash": "21e40abed184a3749b8681b5eb57547a0fefa834ad0c15646e8a0323cbc40d52",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
