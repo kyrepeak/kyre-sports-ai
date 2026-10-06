@@ -124,6 +124,21 @@ def test_step5_fully_unavailable_fails_closed_without_inventing_probability():
     assert result["fallback_used"] is False
 
 
+def test_step5_renderer_contract_is_source_aware():
+    engine = _load_engine()
+    assert callable(engine.render_step5_final_card)
+    source = ENGINE.read_text(encoding="utf-8")
+    for token in (
+        "CERTIFIED MARKET",
+        "MODEL FALLBACK",
+        "HISTORY FALLBACK",
+        "DATA LIMITED",
+        "Reference Line",
+        "Sportsbook Line",
+    ):
+        assert token in source
+
+
 def test_step5_overlay_is_additive_above_frozen_step4_and_uses_hosted_step5f():
     assert OVERLAY.exists(), "Step 5 overlay does not exist yet"
     source = OVERLAY.read_text(encoding="utf-8")
