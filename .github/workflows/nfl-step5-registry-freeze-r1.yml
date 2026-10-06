@@ -1,0 +1,167 @@
+name: NFL Step 5 Registry Freeze R1
+
+on:
+  push:
+    branches: [nfl-step5-registry-freeze-r1]
+    paths:
+      - ".github/workflows/nfl-step5-registry-freeze-r1.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nfl-step5-registry-freeze-r1
+  cancel-in-progress: false
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      EXPECTED_REGISTRY_SHA: 0dfa39d6a157889dbbe436c6b465d2b29fbc2400
+      EXPECTED_REVISION: "130"
+      MERGED_SHA: 95cbfe595bc6d1b1af7d26e54a4e2f31b3ff48d0
+      CHECKPOINT: NFL_LIVE_GAME_REPAIR_STEP5_FINAL_CERT
+      REGISTRY_PATH: devsystem/frozen_artifact_registry_state_v1.json
+    steps:
+      - name: Checkout authoritative registry
+        uses: actions/checkout@v4
+        with:
+          ref: monster-frozen-artifact-registry
+          fetch-depth: 0
+
+      - name: CAS freeze Step 5 and verify remote readback
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_registry_sha="$(git rev-parse HEAD)"
+          test "$actual_registry_sha" = "$EXPECTED_REGISTRY_SHA" || {
+            echo "STEP5_FREEZE_WAIT_REGISTRY_MOVED:$actual_registry_sha:$EXPECTED_REGISTRY_SHA"
+            exit 2
+          }
+
+          git fetch origin "$MERGED_SHA" --no-tags
+
+          blob () { git rev-parse "$MERGED_SHA:$1"; }
+          RUSHING_BLOB="$(blob nfl_rushing_yards_hub_v16.py)"
+          RECEIVING_BLOB="$(blob nfl_receiving_yards_hub_v17.py)"
+          GATE_BLOB="$(blob nfl_prop_app_eligibility_v1.py)"
+          ROUTER_BLOB="$(blob streamlit_memory_lazy_router_v187.py)"
+          CERT_BLOB="$(blob devsystem/nfl_live_game_repair_step5_final_cert_v1.py)"
+          TEST_BLOB="$(blob tests/test_nfl_live_game_repair_step5_final_cert_v1.py)"
+          LEDGER_BLOB="$(blob devsystem/task_ledgers/nfl-live-game-repair-step5-final-cert-v1.json)"
+          WORKFLOW_BLOB="$(blob .github/workflows/nfl-live-game-repair-step5-final-cert-v1.yml)"
+
+          test "$RUSHING_BLOB" = "2a81e3130882b579a8d1e52bca0ef1f4e94c988c"
+          test "$RECEIVING_BLOB" = "d69990d75666db414839470db20f68958c284b9e"
+          test "$GATE_BLOB" = "01d8b0039e270b03d5f96fa4ac17f542f360a610"
+          test "$ROUTER_BLOB" = "449a6a0712ab0f6be70cebe5a3822e59f279e3b6"
+
+          export RUSHING_BLOB RECEIVING_BLOB GATE_BLOB ROUTER_BLOB CERT_BLOB TEST_BLOB LEDGER_BLOB WORKFLOW_BLOB
+          python - <<'PY'
+          import hashlib, json, os
+          from copy import deepcopy
+          from pathlib import Path
+
+          path = Path(os.environ["REGISTRY_PATH"])
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          checkpoint = os.environ["CHECKPOINT"]
+          merged = os.environ["MERGED_SHA"]
+          expected_revision = int(os.environ["EXPECTED_REVISION"])
+
+          def state_hash(obj):
+              body = deepcopy(obj)
+              body.pop("state_hash", None)
+              canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+              return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+          assert payload["revision"] == expected_revision, (payload["revision"], expected_revision)
+          assert payload["state_hash"] == state_hash(payload), "STEP5_FREEZE_PRESTATE_HASH_MISMATCH"
+          assert checkpoint not in payload["entries"], "STEP5_FREEZE_DUPLICATE_CHECKPOINT"
+
+          artifacts = {
+              "nfl_rushing_yards_hub_v16.py": os.environ["RUSHING_BLOB"],
+              "nfl_receiving_yards_hub_v17.py": os.environ["RECEIVING_BLOB"],
+              "nfl_prop_app_eligibility_v1.py": os.environ["GATE_BLOB"],
+              "streamlit_memory_lazy_router_v187.py": os.environ["ROUTER_BLOB"],
+              "devsystem/nfl_live_game_repair_step5_final_cert_v1.py": os.environ["CERT_BLOB"],
+              "tests/test_nfl_live_game_repair_step5_final_cert_v1.py": os.environ["TEST_BLOB"],
+              "devsystem/task_ledgers/nfl-live-game-repair-step5-final-cert-v1.json": os.environ["LEDGER_BLOB"],
+              ".github/workflows/nfl-live-game-repair-step5-final-cert-v1.yml": os.environ["WORKFLOW_BLOB"],
+          }
+
+          for thaw in payload.get("active_thaws", []):
+              overlap = set((thaw.get("files") or {}).keys()) & set(artifacts)
+              assert not overlap, f"STEP5_FREEZE_CONFLICTING_THAW:{thaw.get('thaw_id')}:{sorted(overlap)}"
+
+          payload["entries"][checkpoint] = {
+              "status": "FROZEN",
+              "checkpoint_id": checkpoint,
+              "source_main_sha": merged,
+              "proven_merge_sha": merged,
+              "pr_number": 1401,
+              "pr_head_sha": "0501ceb79dec34bd67a6b472d9c00b0067895ff5",
+              "branch_proof_run_id": 37402543953,
+              "branch_devsystem_run_id": 37402544074,
+              "merged_main_proof_run_id": 37403223920,
+              "merged_main_devsystem_run_id": 37403223774,
+              "proof_run_id": 37403223920,
+              "proof_kind": "MERGED_MAIN_REAL_LIVE_RUSHING_RECEIVING_FINAL_CERT",
+              "regression_debt_state": "CLEARED",
+              "same_authoritative_live_event": True,
+              "responsive_viewports_green": [390, 768, 1440],
+              "product_runtime_mutation": False,
+              "router_mutation": False,
+              "projection_mutation": False,
+              "probability_mutation": False,
+              "ranking_mutation": False,
+              "sportsbook_mutation": False,
+              "api2_used": False,
+              "artifacts": artifacts,
+          }
+          payload["revision"] = expected_revision + 1
+          payload["source_main_sha"] = merged
+          payload["state_hash"] = state_hash(payload)
+          path.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+          print("STEP5_FREEZE_PREPARED", payload["revision"], payload["state_hash"])
+          PY
+
+          git config user.name "nfl-step5-registry-freeze-r1"
+          git config user.email "actions@users.noreply.github.com"
+          git add "$REGISTRY_PATH"
+          git diff --cached --exit-code && { echo STEP5_FREEZE_NO_DIFF; exit 3; } || true
+          git commit -m "registry: freeze NFL live repair Step 5 final cert"
+          new_registry_sha="$(git rev-parse HEAD)"
+
+          git push origin HEAD:refs/heads/monster-frozen-artifact-registry
+
+          remote_registry_sha="$(git ls-remote origin refs/heads/monster-frozen-artifact-registry | cut -f1)"
+          test "$remote_registry_sha" = "$new_registry_sha" || {
+            echo "STEP5_FREEZE_REMOTE_REF_MISMATCH:$remote_registry_sha:$new_registry_sha"
+            exit 4
+          }
+
+          git show "$remote_registry_sha:$REGISTRY_PATH" > /tmp/registry-readback.json
+          python - <<'PY'
+          import hashlib, json, os
+          from copy import deepcopy
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/registry-readback.json').read_text(encoding='utf-8'))
+          checkpoint = os.environ['CHECKPOINT']
+          merged = os.environ['MERGED_SHA']
+          body = deepcopy(payload); body.pop('state_hash', None)
+          canonical = json.dumps(body, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
+          computed = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+          entry = payload['entries'][checkpoint]
+          assert payload['revision'] == int(os.environ['EXPECTED_REVISION']) + 1
+          assert payload['state_hash'] == computed
+          assert entry['status'] == 'FROZEN'
+          assert entry['proven_merge_sha'] == merged
+          assert entry['merged_main_proof_run_id'] == 37403223920
+          assert entry['merged_main_devsystem_run_id'] == 37403223774
+          print('NFL_LIVE_GAME_REPAIR_STEP5_GREEN_FROZEN')
+          print('REGISTRY_REVISION', payload['revision'])
+          print('REGISTRY_STATE_HASH', payload['state_hash'])
+          print('ACTIVE_THAWS', len(payload.get('active_thaws', [])))
+          PY
