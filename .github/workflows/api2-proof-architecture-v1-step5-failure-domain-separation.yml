@@ -62,7 +62,7 @@ jobs:
               "decision": "UPSTREAM_BLOCKED",
               "downstream_proof_allowed": False,
               "expensive_proof_allowed": False,
-              "green_plus_frozen_claimed": false,
+              "green_plus_frozen_claimed": False,
               "reason": "GREEN_PLUS_FROZEN_NOT_CLAIMED",
           })
           result = classify_api2_failure({
