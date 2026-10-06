@@ -1,9 +1,19 @@
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
 OVERLAY = ROOT / "streamlit_memory_lazy_router_wnba_pra_repair_v1_step4_universal_card.py"
 CARD = ROOT / "wnba_pra_repair_v1_step4_final_card.py"
+
+
+def _load_card_module():
+    assert CARD.exists(), "Step 4 final-card builder does not exist yet"
+    spec = spec_from_file_location("wnba_pra_repair_v1_step4_final_card_test", CARD)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_step4_runtime_overlay_is_explicitly_activated():
@@ -58,6 +68,37 @@ def test_step4_final_card_is_universal_and_truthful():
     lowered = source.lower()
     for token in forbidden:
         assert token not in lowered
+
+
+def test_step4_unqualified_player_keeps_expected_pra_and_na_market_fields():
+    card = _load_card_module()
+    summary = card.build_final_card(
+        {"player_id": 42, "player_name": "Test Player", "projected_pra": 31.7},
+        None,
+        "no_qualified_exact_pra_card",
+    )
+    assert summary["expected_pra"] == 31.7
+    assert summary["line"] is None
+    assert summary["direction"] == "N/A"
+    assert summary["probability"] is None
+    assert summary["market_ready"] is False
+
+
+def test_step4_qualified_player_reuses_exact_certified_market_values():
+    card = _load_card_module()
+    summary = card.build_final_card(
+        {"player_id": 42, "player_name": "Test Player", "projected_pra": 36.2},
+        {
+            "prop": {"stat": "pra", "pick": "OVER 34.5", "line": 34.5},
+            "model": {"resolved_fair_probability": 0.623},
+        },
+        "qualified_exact_pra_card",
+    )
+    assert summary["expected_pra"] == 36.2
+    assert summary["line"] == 34.5
+    assert summary["direction"] == "OVER"
+    assert summary["probability"] == 0.623
+    assert summary["market_ready"] is True
 
 
 def test_step4_overlay_reuses_frozen_player_payload_without_extra_model_work():
