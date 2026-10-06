@@ -8,11 +8,11 @@ from typing import Any
 from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt
 from .gate import publish_gate
 
-BASE_SHA = "897f0ce90b5105477592a92279a9055ef27afbf8"
-CANDIDATE_SHA = "ed5f064db1c731b6559e1695141fd35a349fc6b0"
-PR_NUMBER = 1418
+BASE_SHA = "5701d5a27482d3d4f82cc75b29e081fea733ada8"
+CANDIDATE_SHA = "9bb69a4cc3d4f50381c6f19679ae50290c0b7d6a"
+PR_NUMBER = 1420
 TARGET_FILE = "requirements.txt"
-EXPECTED_COMMENT = "# WNBA pushState Repair V1 Step 3 full Streamlit redeploy trigger 2026-10-06 R1"
+EXPECTED_COMMENT = "# WNBA pushState Repair V1 Step 3 final merged-runtime full Streamlit redeploy trigger 2026-10-06 R2"
 
 
 def _read_text(client, path: str, ref: str) -> str:
@@ -78,10 +78,10 @@ def publish_candidate_gate(client) -> dict[str, Any]:
     }
     receipt = build_runless_receipt(
         proof_id=f"wnba-pushstate-step3-redeploy-{CANDIDATE_SHA[:16]}",
-        task_id="wnba-pushstate-repair-v1-step3-streamlit-redeploy",
+        task_id="wnba-pushstate-repair-v1-step3-final-streamlit-redeploy",
         project="API2",
         workstream="api2-wnba-pushstate-repair-v1-step3",
-        step="3/4-deployment-candidate-certification",
+        step="3/4-final-deployment-candidate-certification",
         candidate_sha=CANDIDATE_SHA,
         artifact_map={TARGET_FILE: target_blob},
         dependency_map={
