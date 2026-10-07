@@ -1,8 +1,10 @@
 from __future__ import annotations
 import hashlib,subprocess,time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from devsystem.runless_proof_plan_v1 import validate_command
 from .models import FailureClass,SliceEvidence
+PARALLEL_PROOF_MAX_WORKERS=4
 def _digest(text):return hashlib.sha256(text.encode()).hexdigest()
 def execute_command(command,cwd:Path,timeout_seconds:int):
     cmd=list(validate_command(tuple(command)));start=time.monotonic()
@@ -11,4 +13,9 @@ def execute_command(command,cwd:Path,timeout_seconds:int):
         return SliceEvidence(name=" ".join(cmd),ok=cp.returncode==0,command=cmd,stdout_digest=_digest(cp.stdout),stderr_digest=_digest(cp.stderr),duration_seconds=time.monotonic()-start,failure_class=fc)
     except subprocess.TimeoutExpired as e:
         return SliceEvidence(name=" ".join(cmd),ok=False,command=cmd,stdout_digest=_digest((e.stdout or "") if isinstance(e.stdout,str) else ""),stderr_digest=_digest((e.stderr or "") if isinstance(e.stderr,str) else ""),duration_seconds=time.monotonic()-start,failure_class=FailureClass.INFRA)
-def execute_static_slice(plan,workspace):return [execute_command(c,workspace.path,plan.timeout_seconds) for c in plan.commands]
+def execute_static_slice(plan,workspace):
+    commands=tuple(plan.commands)
+    if not commands:return []
+    workers=min(PARALLEL_PROOF_MAX_WORKERS,len(commands))
+    with ThreadPoolExecutor(max_workers=workers,thread_name_prefix="runless-proof") as pool:
+        return list(pool.map(lambda c:execute_command(c,workspace.path,plan.timeout_seconds),commands))
