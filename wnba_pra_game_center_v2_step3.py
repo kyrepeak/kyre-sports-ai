@@ -4,10 +4,13 @@ The frozen Step-2 Slate remains the Page-1 owner. Heavy WNBA role/projection
 modules are imported lazily only after a matchup is selected. One cached batch
 call produces the existing frozen minutes/role PTS/REB/AST/PRA values for the
 selected game's two teams. When the direct player pool contains roster-only
-zero-production fallbacks, this page hydrates only those rows from the hosted
-Kyre Sports API official WNBA season/L10/L5 stats before the frozen role engine
-runs. This layer does not change model math and does not load sportsbook
-markets, H2H, ranking, qualification, Monte Carlo, or Page-3 intelligence.
+zero-production fallbacks, this page hydrates only those rows from observed
+WNBA production before the frozen role engine runs. The fast path is the hosted
+Kyre Sports API official season/L10/L5 endpoint; if that bulk transport is down,
+official WNBA team roster pages + WNBA.com player.latestGames provide a bounded
+first-party failover. This layer does not change model math and does not load
+sportsbook markets, H2H, ranking, qualification, Monte Carlo, or Page-3
+intelligence.
 
 Selecting a player writes only the frozen Step-1 player navigation state.
 """
@@ -27,6 +30,7 @@ import wnba_pra_slate_v2_step2 as slate
 MODEL_VERSION = "WNBA PRA NAVIGATION V2 • STEP 3 GAME CENTER"
 CACHE_TTL_SECONDS = 180
 HOSTED_STATS_CACHE_TTL_SECONDS = 90
+FIRST_PARTY_STATS_CACHE_TTL_SECONDS = 120
 PERF_KEY = "ks_wnba_pra_nav_v2_step3_perf"
 SESSION_SELECTED_PLAYER = "ks_wnba_pra_nav_v2_selected_player"
 
@@ -39,7 +43,9 @@ GAME_CENTER_CONTRACT = {
     "selected_game_projection_batch_calls_per_uncached_render": 1,
     "cache_ttl_seconds": CACHE_TTL_SECONDS,
     "hosted_stats_fallback_reads_max": 3,
+    "first_party_roster_pages_max": 2,
     "hosted_stats_fallback_only_for_zero_production": True,
+    "first_party_history_only_for_unresolved_zero_production": True,
     "fake_zero_production_allowed": False,
     "selected_game_output_only": True,
     "page3_prefetched": False,
@@ -173,34 +179,140 @@ def _hosted_stat_windows(season: int) -> dict[int, dict[str, Any]]:
     return result
 
 
+@st.cache_data(ttl=FIRST_PARTY_STATS_CACHE_TTL_SECONDS, show_spinner=False)
+def _first_party_stat_windows(
+    season: int,
+    candidate_keys: tuple[tuple[int, str], ...],
+) -> dict[int, dict[str, Any]]:
+    """Hydration failover using only selected-team WNBA roster/player pages."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    import requests
+    from wnba_pra_game_center_stats_hydration_v1 import (
+        build_first_party_recent_stat_payloads,
+        normalize_player_name,
+        parse_first_party_player_latest_games_html,
+        parse_first_party_roster_html,
+        roster_url_for_team,
+    )
+
+    wanted = {(int(team_id), str(name)) for team_id, name in candidate_keys}
+    team_ids = sorted({team_id for team_id, _ in wanted})
+    headers = {
+        "accept": "text/html,application/xhtml+xml",
+        "accept-language": "en-US,en;q=0.9",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36",
+    }
+
+    identities: list[dict[str, Any]] = []
+    for team_id in team_ids:
+        url = roster_url_for_team(team_id)
+        if not url:
+            continue
+        try:
+            response = requests.get(url, headers=headers, timeout=8, allow_redirects=True)
+            response.raise_for_status()
+            roster = parse_first_party_roster_html(response.text, team_id)
+        except Exception:
+            continue
+        for player in roster:
+            key = (team_id, normalize_player_name(player.get("player_name")))
+            if key in wanted:
+                identities.append(player)
+
+    def fetch_history(identity: Mapping[str, Any]) -> dict[str, Any] | None:
+        player_id = int(identity["player_id"])
+        try:
+            response = requests.get(
+                f"https://www.wnba.com/player/{player_id}",
+                headers=headers,
+                timeout=8,
+                allow_redirects=True,
+            )
+            response.raise_for_status()
+            games = parse_first_party_player_latest_games_html(
+                response.text,
+                expected_player_id=player_id,
+                season=int(season),
+            )
+        except Exception:
+            return None
+        if not games:
+            return None
+        return {
+            "player_id": player_id,
+            "player_name": str(identity.get("player_name") or ""),
+            "official_team_id": int(identity.get("official_team_id") or 0),
+            "team_abbreviation": str(identity.get("team_abbreviation") or ""),
+            "games": games,
+        }
+
+    histories: list[dict[str, Any]] = []
+    if identities:
+        with ThreadPoolExecutor(max_workers=min(8, len(identities))) as pool:
+            futures = {pool.submit(fetch_history, identity): identity for identity in identities}
+            for future in as_completed(futures):
+                try:
+                    history = future.result()
+                except Exception:
+                    history = None
+                if history:
+                    histories.append(history)
+
+    return build_first_party_recent_stat_payloads(histories, season=int(season))
+
+
 def _hydrate_stats_for_game(stats, *, game_date: str, away_id: int, home_id: int):
-    """Hydrate only known zero-only fallback rows and drop unresolved fake-zero rows."""
+    """Hydrate known zero-only rows from observed sources; block unresolved fakes."""
     import pandas as pd
     from wnba_pra_game_center_stats_hydration_v1 import (
         count_zero_production_candidates,
         hydrate_zero_production_rows,
         is_zero_production_candidate,
+        normalize_player_name,
     )
 
     allowed = {int(away_id), int(home_id)}
     records = stats.to_dict("records")
-    candidates = count_zero_production_candidates(records, allowed)
-    diag = {"candidates": candidates, "hydrated": 0, "unresolved": 0}
-    if candidates:
+    original_candidates = count_zero_production_candidates(records, allowed)
+    hosted_hydrated = first_party_hydrated = 0
+
+    if original_candidates:
         windows = _hosted_stat_windows(pd.to_datetime(game_date).year)
-        records, diag = hydrate_zero_production_rows(
+        records, hosted_diag = hydrate_zero_production_rows(
             records,
             season_payload=windows.get(0),
             l10_payload=windows.get(10),
             l5_payload=windows.get(5),
             allowed_team_ids=allowed,
         )
+        hosted_hydrated = int(hosted_diag.get("hydrated") or 0)
 
-    usable = [
-        row
-        for row in records
-        if not is_zero_production_candidate(row, allowed)
+    unresolved_rows = [
+        row for row in records if is_zero_production_candidate(row, allowed)
     ]
+    if unresolved_rows:
+        candidate_keys = tuple(sorted({
+            (int(row.get("TEAM_ID") or 0), normalize_player_name(row.get("PLAYER_NAME")))
+            for row in unresolved_rows
+            if int(row.get("TEAM_ID") or 0) in allowed and normalize_player_name(row.get("PLAYER_NAME"))
+        }))
+        first_party = _first_party_stat_windows(
+            pd.to_datetime(game_date).year,
+            candidate_keys,
+        )
+        records, first_diag = hydrate_zero_production_rows(
+            records,
+            season_payload=first_party.get(0),
+            l10_payload=first_party.get(10),
+            l5_payload=first_party.get(5),
+            allowed_team_ids=allowed,
+            data_source="WNBA.com First-Party • player.latestGames recent observed history",
+            player_id_source="WNBA.com First-Party roster identity",
+        )
+        first_party_hydrated = int(first_diag.get("hydrated") or 0)
+
+    unresolved = [row for row in records if is_zero_production_candidate(row, allowed)]
+    usable = [row for row in records if not is_zero_production_candidate(row, allowed)]
     out = pd.DataFrame(usable)
     if out.empty:
         raise WNBAGameCenterLoadError(
@@ -221,6 +333,13 @@ def _hydrate_stats_for_game(stats, *, game_date: str, away_id: int, home_id: int
                 f"Observed WNBA player minutes are unavailable for team {team_id}."
             )
 
+    diag = {
+        "candidates": int(original_candidates),
+        "hosted_hydrated": int(hosted_hydrated),
+        "first_party_hydrated": int(first_party_hydrated),
+        "hydrated": int(hosted_hydrated + first_party_hydrated),
+        "unresolved": int(len(unresolved)),
+    }
     return out.reset_index(drop=True), diag
 
 
@@ -233,11 +352,7 @@ def load_game_center(
     away_team: str,
     home_team: str,
 ) -> dict[str, Any]:
-    """Run one frozen selected-game role batch and return compact UI records.
-
-    Heavy imports intentionally live inside this function so the frozen Slate
-    route does not pay pandas/numpy/role-engine import cost.
-    """
+    """Run one frozen selected-game role batch and return compact UI records."""
     import pandas as pd
     import wnba_availability_v27 as availability
     import wnba_role_v28 as role
@@ -273,11 +388,10 @@ def load_game_center(
         if frame is None or not hasattr(frame, "iterrows"):
             teams[str(team_id)] = []
             continue
-        rows = [
+        teams[str(team_id)] = [
             _record_from_role_row(row, team_id)
             for _, row in frame.iterrows()
         ]
-        teams[str(team_id)] = rows
 
     return {
         "game_id": str(game_id),
@@ -290,6 +404,8 @@ def load_game_center(
         "players": sum(len(rows) for rows in teams.values()),
         "pool_state": _text((pool_diag or {}).get("state")),
         "stat_hydration_candidates": int(hydration_diag.get("candidates") or 0),
+        "stat_hydration_hosted": int(hydration_diag.get("hosted_hydrated") or 0),
+        "stat_hydration_first_party": int(hydration_diag.get("first_party_hydrated") or 0),
         "stat_hydration_hydrated": int(hydration_diag.get("hydrated") or 0),
         "stat_hydration_unresolved": int(hydration_diag.get("unresolved") or 0),
         "usage_source": _text(result.get("usage_source")) if isinstance(result, Mapping) else "",
@@ -468,6 +584,7 @@ def render_game_center(state: navigation.NavigationState) -> dict[str, Any]:
             try:
                 load_game_center.clear()
                 _hosted_stat_windows.clear()
+                _first_party_stat_windows.clear()
             except Exception:
                 pass
             st.rerun()
@@ -547,6 +664,7 @@ def render_step3_route() -> dict[str, Any]:
 
 __all__ = [
     "CACHE_TTL_SECONDS",
+    "FIRST_PARTY_STATS_CACHE_TTL_SECONDS",
     "GAME_CENTER_CONTRACT",
     "HOSTED_STATS_CACHE_TTL_SECONDS",
     "MODEL_VERSION",
