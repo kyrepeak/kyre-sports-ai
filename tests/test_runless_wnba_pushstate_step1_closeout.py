@@ -4,11 +4,12 @@ import json
 from urllib import request
 from urllib.error import HTTPError
 
-CANDIDATE = "26091bfa6b37116f0cf170cee407e279b7e8b6a9"
-MAIN = "219ed8367207538a909986841e66807e408feede"
+CANDIDATE = "a6570bfc5f8cdc4fb78f6d0ec385afd906b82791"
+MAIN = "42b9bcf3465af8aca41141a1d2713d5731ea6c00"
 LEASE = "SCOPE-LEASE-58276A81543E070B30D3D29C"
 WORKSTREAM = "api2-wnba-pra-history-v1-step1"
 TASK_ID = "wnba-pra-history-multisource-v1-step1"
+BRANCH = "api2-wnba-step1-final-public-profile-fix"
 PROOF_PLANE = "https://runless-proof-plane.onrender.com"
 
 
@@ -17,13 +18,9 @@ def _json_get(url: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def test_submit_final_wnba_history_step1_runless_proof():
-    # Fail closed on exact candidate/main identity. Lease authority is checked by
-    # Runless itself through its authenticated GitHub API reader; do not duplicate
-    # that check through cacheable raw.githubusercontent.com content.
+def test_submit_final_wnba_history_step1_profile_fix_runless_proof():
     branch = _json_get(
-        "https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/"
-        "api2-wnba-pra-history-v1-step1-multisource-r1"
+        "https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/" + BRANCH
     )
     assert branch["commit"]["sha"] == CANDIDATE
     main = _json_get("https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/main")
@@ -39,7 +36,7 @@ def test_submit_final_wnba_history_step1_runless_proof():
         "workstream": WORKSTREAM,
         "candidate_sha": CANDIDATE,
         "lease_id": LEASE,
-        "authorization_id": "kyre-authorized-wnba-step1-final-plan-proof-20261007-r2",
+        "authorization_id": "kyre-authorized-wnba-step1-final-public-profile-fix-20261007",
         "expected_main_sha": MAIN,
     }).encode("utf-8")
     req = request.Request(
