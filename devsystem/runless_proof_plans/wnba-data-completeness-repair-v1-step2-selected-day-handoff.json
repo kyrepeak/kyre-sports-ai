@@ -11,6 +11,7 @@
   ],
   "proof_files": [
     "tests/test_wnba_data_completeness_repair_v1_step2_selected_day_handoff.py",
+    "devsystem/wnba_data_completeness_repair_v1_step2_selected_day_handoff_cert.py",
     "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step2-selected-day-handoff.json",
     "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step2-selected-day-handoff.json"
   ],
@@ -31,6 +32,15 @@
     "hydrated_pts_reb_ast_pra_survive_availability_reconciliation": true,
     "current_roster_gate_preserved": true,
     "cross_sport_files_changed": 0
+  },
+  "tdd": {
+    "red_proof_service": "wnba-step9-gamecenter-seam-diagnostic",
+    "red_proof_deploy": "dep-db2r2bajnfac73fndf20",
+    "red_rc": 1,
+    "red_failure": "requested exact selected day was never handed to _build_selected_player_pool",
+    "green_proof_service": "wnba-step9-gamecenter-seam-diagnostic",
+    "green_proof_deploy": "dep-db2r48ijnfac73fnjm20",
+    "green_rc": 0
   },
   "runless_required": true,
   "github_actions_fallback": false,
