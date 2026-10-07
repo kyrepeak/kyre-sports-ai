@@ -45,11 +45,11 @@
       "files": {
         "requirements.txt": {
           "from_blob": "98b621afd372d472784850fed4b603c9989dcf7a",
-          "to_blob": "890ba18abaf02a53cba8929b87bce110e2599dbe"
+          "to_blob": "7f5cf407662a79cb4c56781195e7bbcaca38d315"
         }
       },
       "status": "ACTIVE",
-      "target_head_sha": "b6ab705d7de96b0c8d779abf1f8baa7ab46efbce",
+      "target_head_sha": "9bedbdd848985c42c691018a0952142714f3bf43",
       "thaw_id": "THAW-API2-WNBA-DATA-STEP2-STREAMLIT-REFRESH-R1"
     },
     {
@@ -2331,9 +2331,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 154,
+  "revision": 155,
   "schema_version": 1,
   "source_main_sha": "2800670d1b1e15f6a98cc7a5fc3ffab4fb9600e5",
-  "state_hash": "63d54f1a303062167e651073dd410dd79bbc3917d5e15c5c737ab7520404f55c",
+  "state_hash": "a6d78addded88918cb13c08055acd37a5afcd2808c08f402f2866a46170bf372",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
