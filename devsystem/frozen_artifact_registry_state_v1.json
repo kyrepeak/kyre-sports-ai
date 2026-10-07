@@ -2106,6 +2106,18 @@
       "source_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8",
       "status": "FROZEN"
     },
+    "RUNLESS_TASK17_STEP5_ATOMIC_CLOSEOUT_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/runless-task17-step5-atomic-closeout.json": "c4596c7f8a00825be7f60faa659c57f0bfcb0522",
+        "devsystem/runless_proof_plans/runless-task17-step5-atomic-closeout.json": "1e0e4f3864a3b37a7cbaf0cb580337bba399ab42",
+        "devsystem/task_ledgers/runless-task17-step5-atomic-closeout.json": "a5a4c9e7df08c9b500559051ed08b94bb29a3ad7",
+        "runless_proof_plane/atomic_closeout.py": "9b50a88b78998808879b71c11499f25777282ad4",
+        "tests/test_runless_task17_step5_atomic_closeout.py": "94a004fa419ced82ba27708a722eaa07a83f5e6d"
+      },
+      "checkpoint_id": "RUNLESS_TASK17_STEP5_ATOMIC_CLOSEOUT_FROZEN",
+      "source_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
+      "status": "FROZEN"
+    },
     "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN": {
       "artifacts": {
         "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step1-source-id-truth.json": "d065688995c5be46076a005d00d5068efbc0210c",
@@ -2372,9 +2384,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 174,
+  "revision": 175,
   "schema_version": 1,
-  "source_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8",
-  "state_hash": "a3713753b79cb88eae3eae5db5aca92648b90af5fbe468e1e504d9dc087f38bb",
+  "source_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
+  "state_hash": "14525c811b0dd1fcb3edd239f7bd16b382bad0382272d7c7dd9824effc2253ce",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
