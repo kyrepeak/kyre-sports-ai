@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 
-# MONSTER Task 17 Step 6 — reconcile registry after authorized WNBA merge.
+# MONSTER Task 17 Step 6 — exact GREEN candidate proof through Runless.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -12,10 +12,12 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from . import task17_step3_registry_reconcile as reconcile
+from . import task17_step3_candidate_prove as prove
 
-reconcile.OLD_MAIN_SHA = "74229f28ea7f2cca1063c2d6b689171646cd1bf8"
-reconcile.NEW_MAIN_SHA = "299cc72b502285a1fe714c2e513e363013ad3e90"
-reconcile.EXPECTED_REVISION = 176
-reconcile.EXPECTED_REGISTRY_HASH = "bd7b9276f05b426b3db8e10f4da0eb81016be11ee8e05c59890dd46c7c8e9c8f"
-reconcile.install_startup(app)
+prove.TASK_ID = "runless-task17-step6-tail-sla-telemetry"
+prove.WORKSTREAM = "runless-task17-step6"
+prove.CANDIDATE_SHA = "4a7bf1142de2d9f2527003395c643013ce67c243"
+prove.EXPECTED_MAIN_SHA = "299cc72b502285a1fe714c2e513e363013ad3e90"
+prove.LEASE_ID = "SCOPE-LEASE-C20C0E7167152850461F299C"
+prove.AUTHORIZATION_ID = "AUTH-RUNLESS-TASK17-STEP6-GREEN-R1"
+prove.install_startup(app)
