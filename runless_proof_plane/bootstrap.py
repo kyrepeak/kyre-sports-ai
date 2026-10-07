@@ -9,6 +9,8 @@ os.environ["RPP_FINAL_FREEZE_ON_START"] = "0"
 
 from .api import app
 from . import wnba_data_step3_streamlit_refresh_gate as gate
+from . import wnba_data_step3_final_closeout as final_closeout
 
 gate.REPAIR_RECEIPT = "67b46ded9a1a4fc9df56799e98bf10842a90310dccca67188270968cb0e48503"
 gate.install_startup(app)
+final_closeout.install_startup(app)
