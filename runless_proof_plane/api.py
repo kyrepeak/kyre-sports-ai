@@ -8,7 +8,9 @@ from .github_app import GithubAppAuth
 from .github_client import GithubClient
 from .models import ProofRequest
 from .orchestrator import ProofOrchestrator
+from .prove import RunlessProofFailure,execute_proof_request
 from .registry import freeze_task13
+from .step2a import Step2AError
 from .wnba_step9_activation import activate_from_env
 from .wnba_step9_freeze import freeze_from_env as freeze_step9_from_env
 
@@ -52,7 +54,11 @@ def create_app(settings=None):
     @app.post("/prove")
     def prove(req:ProofRequest):
         if settings.bootstrap:raise HTTPException(503,"RUNLESS_PROOF_AUTHORITY_DISABLED")
-        raise HTTPException(409,"RUNLESS_PLAN_REQUIRED")
+        try:
+            return execute_proof_request(req,settings=settings,github_client=app.state.github_client,orchestrator=app.state.orchestrator,receipts=app.state.receipts)
+        except FileNotFoundError:raise HTTPException(409,"RUNLESS_PLAN_REQUIRED")
+        except (Step2AError,RunlessProofFailure,ValueError,RuntimeError) as exc:raise HTTPException(409,str(exc))
+        except Exception as exc:raise HTTPException(503,f"RUNLESS_PROOF_EXECUTION_UNAVAILABLE:{type(exc).__name__}")
     @app.get("/status/{proof_id}")
     def status(proof_id):
         try:return app.state.orchestrator.status(proof_id)
