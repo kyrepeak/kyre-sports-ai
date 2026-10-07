@@ -8,12 +8,13 @@ from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, v
 from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt
 from .gate import publish_gate
 
-MAIN_SHA = "d908cdc3e8ea4b0224333268e7b02d0af3bd9063"
+MAIN_SHA = "51762ad9226b119626284655a90bd7ac7da80d5e"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
-CANDIDATE_SHA = "fb7584133e4e7d54cb958b3593d28b0a25d4aed7"
+CANDIDATE_SHA = "27fec905b022aaf819439c90496fb4d3b8c1452a"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 TEST_PATH = "tests/test_wnba_data_step3_player_shell_handoff.py"
-FROM_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
+MAIN_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
+FROZEN_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
 TO_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
 TEST_BLOB = "5195f99afdb638cae9f9068320610b3807ae781c"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
@@ -52,7 +53,7 @@ def execute(client):
 
     main_tree = client.tree_blobs(MAIN_SHA)
     candidate_tree = client.tree_blobs(CANDIDATE_SHA)
-    if str(main_tree.get(PATH) or "") != FROM_BLOB:
+    if str(main_tree.get(PATH) or "") != MAIN_BLOB:
         raise RuntimeError("WNBA_DATA_STEP3_GATE_MAIN_BLOB_DRIFT")
     if str(candidate_tree.get(PATH) or "") != TO_BLOB:
         raise RuntimeError("WNBA_DATA_STEP3_GATE_RUNTIME_BLOB_DRIFT")
@@ -61,38 +62,34 @@ def execute(client):
 
     runtime, _ = _read_text(client, PATH, CANDIDATE_SHA)
     test, _ = _read_text(client, TEST_PATH, CANDIDATE_SHA)
-    required_runtime = (
+    for token in (
         "def _emit_one_shot_wnba_pra_shell_handoff",
         "def _wrap_step7_player_open(delegate):",
         "final_transport._open_player_immediate = _wrap_step7_player_open(original_final_player_open)",
         "final_transport._open_player_immediate = original_final_player_open",
-    )
-    missing_runtime = [token for token in required_runtime if token not in runtime]
-    if missing_runtime:
-        raise RuntimeError("WNBA_DATA_STEP3_GATE_CALLBACK_HANDOFF_MISSING:" + ",".join(missing_runtime))
-    required_tests = (
+    ):
+        if token not in runtime:
+            raise RuntimeError("WNBA_DATA_STEP3_GATE_CALLBACK_HANDOFF_MISSING:" + token)
+    for token in (
         "test_explicit_player_transition_emits_one_shot_wnba_pra_shell_handoff",
         "test_passive_deep_rerender_does_not_reinject_one_shot_jump",
         "test_step7_player_callback_keeps_handoff_after_render_restores_module",
-    )
-    missing_tests = [token for token in required_tests if token not in test]
-    if missing_tests:
-        raise RuntimeError("WNBA_DATA_STEP3_GATE_REGRESSION_MISSING:" + ",".join(missing_tests))
+    ):
+        if token not in test:
+            raise RuntimeError("WNBA_DATA_STEP3_GATE_REGRESSION_MISSING:" + token)
 
     registry = _registry(client)
     exact = {
         "thaw_id": THAW_ID,
         "status": "ACTIVE",
         "target_head_sha": CANDIDATE_SHA,
-        "files": {PATH: {"from_blob": FROM_BLOB, "to_blob": TO_BLOB}},
+        "files": {PATH: {"from_blob": FROZEN_BLOB, "to_blob": TO_BLOB}},
     }
     matches = [grant for grant in registry.get("active_thaws", []) if grant.get("thaw_id") == THAW_ID]
     if matches != [exact]:
         raise RuntimeError("WNBA_DATA_STEP3_GATE_EXACT_THAW_MISSING")
     for grant in registry.get("active_thaws", []):
-        if grant.get("thaw_id") == THAW_ID:
-            continue
-        if PATH in (grant.get("files") or {}):
+        if grant.get("thaw_id") != THAW_ID and PATH in (grant.get("files") or {}):
             raise RuntimeError("WNBA_DATA_STEP3_GATE_CONFLICTING_THAW")
 
     artifacts = {PATH: TO_BLOB, TEST_PATH: TEST_BLOB}
@@ -103,7 +100,7 @@ def execute(client):
         "artifacts": artifacts,
         "thaw_id": THAW_ID,
         "red_public_proof_deploy": RED_PROOF_DEPLOY,
-        "red_result": "WNBA_STEP3_PUBLIC_PROOF_RC=1; real Game Center GREEN but Player page fell back to MLB shell",
+        "red_result": "WNBA_STEP3_PUBLIC_PROOF_RC=1; Game Center GREEN, Player shell fell back to MLB",
         "green_callback_proof_deploy": GREEN_PROOF_DEPLOY,
         "green_result": "WNBA_STEP3_HANDOFF_GREEN_RC=0",
         "callback_object_persistence_regression": "GREEN",
@@ -122,7 +119,7 @@ def execute(client):
         task_id="wnba-data-completeness-repair-v1-step3-recent-form-h2h",
         project="API2",
         workstream="api2-wnba-data-completeness-repair-v1-step3",
-        step="3/3-player-shell-callback-candidate",
+        step="3/3-player-shell-current-main-candidate",
         candidate_sha=CANDIDATE_SHA,
         artifact_map=artifacts,
         dependency_map={
