@@ -4,7 +4,7 @@ import json
 from urllib import request
 from urllib.error import HTTPError
 
-CANDIDATE = "778d7bf1eb29107e32bd49cacc1035954ac47db4"
+CANDIDATE = "1f15353bdaba0b955bf464df22923e5f28394266"
 MAIN = "aba567ca13d1a01d9ef783efcff47b784b414a5c"
 LEASE = "SCOPE-LEASE-58276A81543E070B30D3D29C"
 WORKSTREAM = "api2-wnba-pra-history-v1-step1"
@@ -18,7 +18,7 @@ def _json_get(url: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def test_submit_wnba_step1_bref_fallback_tdd_red():
+def test_submit_wnba_step1_bref_fallback_green():
     branch = _json_get("https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/" + BRANCH)
     assert branch["commit"]["sha"] == CANDIDATE
     main = _json_get("https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/main")
@@ -32,7 +32,7 @@ def test_submit_wnba_step1_bref_fallback_tdd_red():
         "workstream": WORKSTREAM,
         "candidate_sha": CANDIDATE,
         "lease_id": LEASE,
-        "authorization_id": "kyre-authorized-wnba-step1-bref-fallback-tdd-red-20261007",
+        "authorization_id": "kyre-authorized-wnba-step1-bref-fallback-green-20261007",
         "expected_main_sha": MAIN,
     }).encode("utf-8")
     req = request.Request(PROOF_PLANE + "/prove", data=payload, headers={"Content-Type": "application/json"}, method="POST")
@@ -42,5 +42,7 @@ def test_submit_wnba_step1_bref_fallback_tdd_red():
     except HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
         raise AssertionError(f"RUNLESS_HTTP_{exc.code}:{detail}") from exc
-    assert result.get("state") == "FAILED", json.dumps(result, sort_keys=True)
+    assert result.get("state") == "MERGE_AUTHORIZED", json.dumps(result, sort_keys=True)
     assert result.get("candidate_sha") == CANDIDATE, result
+    assert result.get("receipt_digest"), result
+    assert result.get("github_actions_enabled") is False, result
