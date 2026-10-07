@@ -93,7 +93,7 @@ def wnba_pra_detail_bundle(
 
 __all__ = [
     "DATA_TYPE",
- "DEFAULT_SEASON",
+    "DEFAULT_SEASON",
     "SCHEMA_VERSION",
     "build_pra_detail_bundle",
     "router",
