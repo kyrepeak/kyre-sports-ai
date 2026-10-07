@@ -10,12 +10,12 @@ from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, v
 MAIN_SHA = "3de31d95895fcc3e521e208456133dd13047b41a"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
 OLD_CANDIDATE_SHA = "bd0e7d80900b5f5a64330ee0e2aced4fa501aac1"
-NEW_CANDIDATE_SHA = "72fb0ca7eaad3827f7a9721c193cd59a5acb7f99"
+NEW_CANDIDATE_SHA = "20e6e6eb4de4dcb06f1ee4858f955bacbfaa5dc9"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 FROZEN_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
 MAIN_BLOB = "e058856a30fb29b6fa2af364b80ab5dbad695be8"
 OLD_TO_BLOB = "e058856a30fb29b6fa2af364b80ab5dbad695be8"
-NEW_BLOB = "a82a0d374c0fc1de9346e0d62f92831e39ddd9f7"
+NEW_BLOB = "a25c1cc5129adf223b7e8c7ab16c0a05fa4d274c"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
