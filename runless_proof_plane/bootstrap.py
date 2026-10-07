@@ -13,3 +13,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
+from .task17_step1_proof import install_startup
+
+install_startup(app)
