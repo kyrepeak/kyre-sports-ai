@@ -1,0 +1,64 @@
+{
+  "version": "RUNLESS_TASK17_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Runless Final-Mile Convergence Accelerator V1",
+  "task": "17",
+  "step": "4/6",
+  "mission": "Event-Driven Resume",
+  "base_main_sha": "7e8dfad79fb2745439ae1985de4d392b4e90f451",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "runless_proof_plane/event_resume.py",
+      "tests/test_runless_task17_step4_event_driven_resume.py",
+      "devsystem/runless_proof_plans/runless-task17-step4-event-driven-resume.json",
+      "devsystem/execution_plans/runless-task17-step4-event-driven-resume.json",
+      "devsystem/task_ledgers/runless-task17-step4-event-driven-resume.json"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "lease_id": "SCOPE-LEASE-C20C0E7167152850461F299C",
+    "event_resume_state_required": true,
+    "exact_head_thaw_required": false,
+    "rollback_main_sha": "7e8dfad79fb2745439ae1985de4d392b4e90f451"
+  },
+  "tdd": {
+    "red_head_first": "aea7f674e5a98a315802f5b6b519a85134710ee8",
+    "red_observed": true,
+    "red_reason": "Runless event-resume bridge missing; runless-final-gate failed on the RED candidate.",
+    "production_code_before_red": false,
+    "green_patch_commit": "d1ee6137bd403863c2bb4b72947afa2edb543814",
+    "green_observed": false,
+    "green_evidence": null
+  },
+  "acceptance": {
+    "runless_waits_resume_on_material_event_only": true,
+    "polling_required": false,
+    "duplicate_wake_blocked": true,
+    "continuation_hash_binding_required": true,
+    "continuation_drift_fails_closed": true,
+    "stale_cas_fails_closed": true,
+    "step2a_required_before_resume_consumption": true,
+    "event_never_grants_mutation_authority": true,
+    "ready_receipt_one_shot": true,
+    "github_actions_enabled": false,
+    "no_product_or_sports_model_change": true
+  },
+  "completion_contract": {
+    "after_freeze": "RUNLESS_TASK17_STEP5_ATOMIC_CLOSEOUT",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 66.7
+  }
+}
