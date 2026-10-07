@@ -6,7 +6,7 @@
   "step": "5/6",
   "mission": "Atomic Closeout",
   "base_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8",
-  "status": "TDD_RED_IN_PROGRESS",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
   "decision": "EXECUTE_COMPILED_PLAN",
   "scope": {
     "product_runtime": false,
@@ -32,6 +32,13 @@
     "lease_id": "SCOPE-LEASE-C20C0E7167152850461F299C",
     "exact_head_thaw_required": false,
     "rollback_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8"
+  },
+  "tdd": {
+    "red_head": "39eababb98b157fdb6046aa58f8f6ee88f3c053e",
+    "red_observed": true,
+    "red_proof_id": "runless-task17-step5-atomic-closeout-39eababb98b157fd-ee4ebf4fb2d74f22",
+    "red_result": "RUNLESS_STATIC_PROOF_FAILED",
+    "green_patch_commit": "3eee807c5a20a7793ea6be7f0ab0671f80a733aa"
   },
   "acceptance": {
     "one_call_closeout_decision": true,
