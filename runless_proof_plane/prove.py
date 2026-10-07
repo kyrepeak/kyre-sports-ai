@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-from devsystem.frozen_artifact_registry_v1 import evaluate_head
+from devsystem.frozen_artifact_registry_v1 import FrozenArtifactRegistryFailure, validate_registry
 from devsystem.runless_proof_plan_v1 import load_plan
 from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt
 from devsystem.scope_aware_execution_lease_v1 import validate_state as validate_scope_lease_state
@@ -54,13 +54,71 @@ def _repository_url(repository: str) -> str:
     return f"https://x-access-token@github.com/{repository}.git"
 
 
-def _verify_frozen_candidate(client, candidate_sha: str, tree: dict[str, str]) -> dict[str, Any]:
+def _verify_frozen_candidate(
+    client,
+    candidate_sha: str,
+    tree: dict[str, str],
+    *,
+    main_sha: str | None = None,
+    main_tree: dict[str, str] | None = None,
+) -> dict[str, Any]:
     registry = GithubRegistryBackend(client).read_registry()
-    evaluate_head(registry, tree, head_sha=candidate_sha)
+    validated = validate_registry(registry)
+
+    # Production verification must bind inherited frozen state to the exact
+    # authoritative main identity. Defaults preserve the private helper's
+    # focused exact-thaw unit contracts only.
+    effective_main_sha = main_sha or str(registry.get("source_main_sha") or "")
+    if main_sha is not None and str(registry.get("source_main_sha") or "") != main_sha:
+        raise Step2AError("RUNLESS_REGISTRY_MAIN_IDENTITY_DRIFT")
+    effective_main_tree = main_tree if main_tree is not None else validated["artifacts"]
+
+    inherited: list[str] = []
+    thawed: list[str] = []
+    for path, expected in sorted(validated["artifacts"].items()):
+        main_blob_raw = effective_main_tree.get(path)
+        candidate_blob_raw = tree.get(path)
+        main_blob = str(main_blob_raw).lower() if main_blob_raw else None
+        candidate_blob = str(candidate_blob_raw).lower() if candidate_blob_raw else None
+        if main_blob is None or candidate_blob is None:
+            raise FrozenArtifactRegistryFailure(f"frozen artifact missing: {path}")
+
+        if candidate_blob == main_blob:
+            if candidate_blob != expected:
+                inherited.append(path)
+            continue
+
+        if main_blob != expected:
+            raise FrozenArtifactRegistryFailure(
+                f"candidate modifies unreconciled inherited frozen state: {path}"
+            )
+
+        matches = []
+        for grant in registry.get("active_thaws", []):
+            if str(grant.get("target_head_sha") or "") != candidate_sha:
+                continue
+            pair = (grant.get("files") or {}).get(path)
+            if not isinstance(pair, dict):
+                continue
+            if (
+                str(pair.get("from_blob") or "").lower() == expected
+                and str(pair.get("to_blob") or "").lower() == candidate_blob
+            ):
+                matches.append(str(grant.get("thaw_id") or ""))
+        if len(matches) != 1:
+            raise FrozenArtifactRegistryFailure(
+                "candidate frozen delta without exact thaw grant: "
+                f"{path} expected={expected} main={main_blob} candidate={candidate_blob}"
+            )
+        thawed.append(path)
+
     return {
         "revision": int(registry["revision"]),
         "state_hash": str(registry["state_hash"]),
+        "source_main_sha": effective_main_sha,
         "active_thaws": [str(item["thaw_id"]) for item in registry.get("active_thaws", [])],
+        "inherited_frozen_paths": inherited,
+        "exact_thawed_paths": thawed,
     }
 
 
@@ -156,7 +214,14 @@ def execute_proof_request(request, *, settings, github_client, orchestrator, rec
             raise Step2AError("RUNLESS_PLAN_WORKSTREAM_MISMATCH")
 
         tree = github_client.tree_blobs(request.candidate_sha)
-        registry = _verify_frozen_candidate(github_client, request.candidate_sha, tree)
+        main_tree = github_client.tree_blobs(main_sha)
+        registry = _verify_frozen_candidate(
+            github_client,
+            request.candidate_sha,
+            tree,
+            main_sha=main_sha,
+            main_tree=main_tree,
+        )
         live_lease = _read_live_scope_lease(github_client, request.lease_id)
         snapshot = Step2ASnapshot(
             candidate_sha=request.candidate_sha,
@@ -296,5 +361,7 @@ def execute_proof_request(request, *, settings, github_client, orchestrator, rec
             "dependency_count": len(dependency_map),
             "static_evidence_count": len(static_evidence),
             "public_evidence_count": len(public_evidence),
+            "inherited_frozen_path_count": len(registry["inherited_frozen_paths"]),
+            "exact_thawed_path_count": len(registry["exact_thawed_paths"]),
             "github_actions_enabled": False,
         }
