@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 
-# MONSTER Task 17 Step 5 — authoritative RED proof through Runless.
+# MONSTER Task 17 Step 5 — exact GREEN candidate proof through Runless.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -16,8 +16,8 @@ from . import task17_step3_candidate_prove as prove
 
 prove.TASK_ID = "runless-task17-step5-atomic-closeout"
 prove.WORKSTREAM = "runless-task17-step5"
-prove.CANDIDATE_SHA = "39eababb98b157fdb6046aa58f8f6ee88f3c053e"
+prove.CANDIDATE_SHA = "c6128899118f4b5429b29f0f3d6c5eaa51b42d9b"
 prove.EXPECTED_MAIN_SHA = "0f54693bea39146747b98cbb7d15c0a4c778f0c8"
 prove.LEASE_ID = "SCOPE-LEASE-C20C0E7167152850461F299C"
-prove.AUTHORIZATION_ID = "AUTH-RUNLESS-TASK17-STEP5-RED-R1"
+prove.AUTHORIZATION_ID = "AUTH-RUNLESS-TASK17-STEP5-GREEN-R1"
 prove.install_startup(app)
