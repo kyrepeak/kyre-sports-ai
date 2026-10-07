@@ -1,0 +1,72 @@
+{
+  "version": "API2_FINALIZATION_AUTHORITY_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API 2 — Finalization Authority & 100% Convergence V1",
+  "task": "finalization-authority-v1",
+  "step": "2/6",
+  "mission": "Ledger Auto-Heal",
+  "base_main_sha": "f9908fb83de2e19d3ff1d47b728dac8ba3fef2e0",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "devsystem/canonical_completion_ledger_autoheal_v1.py",
+      "devsystem/execution_plans/api2-finalization-authority-v1-step2-ledger-auto-heal.json",
+      "devsystem/runless_proof_plans/api2-finalization-authority-v1-step2-ledger-auto-heal.json",
+      "devsystem/task_ledgers/api2-finalization-authority-v1-step2-ledger-auto-heal.json",
+      "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step2-ledger-auto-heal.md",
+      "tests/test_devsystem_canonical_completion_ledger_autoheal_v1.py"
+    ]
+  },
+  "contract": {
+    "canonical_authority": "FROZEN_REGISTRY_RUNLESS",
+    "canonical_resolver_required": true,
+    "ledger_can_manufacture_completion": false,
+    "stale_ledger_repair_is_idempotent": true,
+    "identity_mismatch_fails_closed": true,
+    "planner_auto_mutates": false,
+    "network_calls": false,
+    "already_aligned_ledger_requires_write": false
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "lease_id": "SCOPE-LEASE-F76133E0182DB1131C5431A1",
+    "lease_owner": "api2-finalization-authority-v1-step2",
+    "rollback_main_sha": "f9908fb83de2e19d3ff1d47b728dac8ba3fef2e0",
+    "unrelated_active_thaws_preserved": true
+  },
+  "tdd": {
+    "red_head": "25988d6e21a1fa2f5c9354f88049e118aa86794d",
+    "red_observed": true,
+    "red_result": "ImportError: canonical_completion_ledger_autoheal_v1 absent",
+    "green_patch_commit": "7185089ddd618a898ef560e7e59dc8d940b8c424",
+    "green_observed": false,
+    "green_result": null
+  },
+  "acceptance": {
+    "valid_canonical_completion_repairs_stale_ledger": true,
+    "invalid_canonical_chain_never_repairs_ledger": true,
+    "already_aligned_ledger_is_noop": true,
+    "task_or_freeze_identity_mismatch_fails_closed": true,
+    "input_ledger_not_mutated": true,
+    "second_pass_after_heal_is_noop": true,
+    "product_runtime_changed": false,
+    "sports_model_changed": false
+  },
+  "completion_contract": {
+    "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP2_FROZEN",
+    "after_freeze": "STEP2_GREEN_FROZEN",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 33.3
+  }
+}
