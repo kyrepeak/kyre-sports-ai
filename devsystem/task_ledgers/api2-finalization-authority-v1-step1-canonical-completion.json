@@ -1,0 +1,57 @@
+{
+  "version": "API2_FINALIZATION_AUTHORITY_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API 2 — Finalization Authority & 100% Convergence V1",
+  "task": "finalization-authority-v1",
+  "step": 1,
+  "total_steps": 6,
+  "mission": "Canonical Completion Resolver",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "base_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+  "problem": "Terminal completion can split between the mutable task ledger and durable frozen-registry/Runless evidence, leaving completed work stuck below 100%.",
+  "root_cause": "Some completion consumers still treat green_plus_frozen_claimed in a mutable ledger as authoritative even after the frozen registry and Runless proof chain have established terminal completion.",
+  "patch": "Add a pure canonical completion resolver that trusts a valid frozen registry entry plus immutable Runless receipt/final gate and exact merge provenance, while treating ledger disagreement as advisory stale state.",
+  "step2a": {
+    "single_authority": true,
+    "branch": "api2-finalization-authority-v1-step1-canonical-completion-r1",
+    "lease_id": "SCOPE-LEASE-6329DB546E53EEF330D5F429",
+    "lease_owner": "api2-finalization-authority-v1-step1",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "unrelated_active_thaws_preserved": true
+  },
+  "tdd": {
+    "red_head": "4b2dd2ad437128459f78ba9606061a8df5a05adb",
+    "red_observed": true,
+    "red_result": "REGRESSION_CONTRACT_COMMITTED_WITH_RESOLVER_MODULE_ABSENT",
+    "red_harness_infra_failure": "Render ephemeral test service disappeared before producing a code result; anti-loop rule prevented a third duplicate service",
+    "green_patch_commit": "6333d526c9eb46c71d0bd32244c2a219c3a160b9",
+    "green_observed": false,
+    "green_result": null
+  },
+  "acceptance": {
+    "stale_ledger_cannot_veto_canonical_completion": true,
+    "ledger_alone_cannot_create_completion": true,
+    "registry_validation_required": true,
+    "runless_receipt_validation_required": true,
+    "runless_final_gate_required": true,
+    "exact_merge_provenance_required": true,
+    "tamper_fails_closed": true,
+    "resolver_has_no_mutation_side_effects": true,
+    "product_runtime_changed": false,
+    "sports_model_changed": false
+  },
+  "green_plus_frozen_claimed": false,
+  "freeze_exit": {
+    "frozen_token": "API2_FINALIZATION_AUTHORITY_V1_STEP1_FROZEN",
+    "claimed": false
+  },
+  "closeout_required": [
+    "Runless exact-candidate static proof succeeds",
+    "runless-final-gate succeeds on exact candidate head",
+    "merge exact certified head only",
+    "post-merge proof identity is verified/reused",
+    "freeze API2_FINALIZATION_AUTHORITY_V1_STEP1_FROZEN in authoritative registry",
+    "canonical registry read-back proves terminal completion"
+  ]
+}

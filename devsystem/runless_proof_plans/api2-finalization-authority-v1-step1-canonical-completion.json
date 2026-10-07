@@ -1,0 +1,42 @@
+{
+  "task_id": "api2-finalization-authority-v1-step1-canonical-completion",
+  "workstream": "api2-finalization-authority-v1-step1",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_devsystem_canonical_completion_resolver_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_gate.py",
+      "tests/test_runless_step2a.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "devsystem/canonical_completion_resolver_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/canonical_completion_resolver_v1.py",
+    "tests/test_devsystem_canonical_completion_resolver_v1.py",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step1-canonical-completion.md"
+  ],
+  "dependencies": [
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/runless_terminal_proof_receipt_v1.py",
+    "runless_proof_plane/gate.py",
+    "runless_proof_plane/step2a.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP1_FROZEN"
+}
