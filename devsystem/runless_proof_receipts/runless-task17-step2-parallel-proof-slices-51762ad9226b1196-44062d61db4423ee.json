@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "runless_proof_plane/executor.py": "3bdbd770ddd3b4d62096f0b3bf72f25e9b38abdd",
+    "tests/test_runless_task17_step2_parallel_slices.py": "349e2d1f8841c7690a79e789e993451f6e3d654a"
+  },
+  "candidate_sha": "51762ad9226b119626284655a90bd7ac7da80d5e",
+  "created_at": "2026-10-07T06:04:08.480275+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "runless_proof_plane/models.py": "6aa5967ff73204a3a591c54172a8fc0e073d8e0c",
+    "runless_proof_plane/prove.py": "8ae595d75b369d4564bbe5fa746482626313c69d"
+  },
+  "deployment_identity": "8f9c43bb721cea21e29c0da6e7bdb0b0f8b18279",
+  "digest": "d29fbc8bc08665d8addc5d580bb15b87cf936aba60340981e9cf4c8cb7ea3f03",
+  "evidence_digests": [
+    "219e82bdf6843de043e5926e6693d7a1e0768e16783e062308e1414e3ebcdff6",
+    "92b8298cbb296afd07ffdf17632e110e8f57f519628568ecbd768b6826396d4e",
+    "7d8e082359e588e78ff285165ffe771311bb574b8743dd4c9c866a8101b239bd"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4f4bdbb150f3ebd64b930e54ab5b66c8f89f5909fadb585e0a4b3f5aa5c0ecd9",
+  "proof_id": "runless-task17-step2-parallel-proof-slices-51762ad9226b1196-44062d61db4423ee",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1",
+      "THAW-RUNLESS-TASK17-STEP2-PARALLEL-PROOF-SLICES-R1"
+    ],
+    "revision": 166,
+    "state_hash": "2f11b28974b78c3df3f172790f089a1428c2e6e4d1ab3cf6eb07b44916106121"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1",
+      "THAW-RUNLESS-TASK17-STEP2-PARALLEL-PROOF-SLICES-R1"
+    ],
+    "revision": 166,
+    "state_hash": "2f11b28974b78c3df3f172790f089a1428c2e6e4d1ab3cf6eb07b44916106121"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "runless-task17-step2-parallel-proof-slices",
+  "workstream": "runless-task17-step2"
+}
