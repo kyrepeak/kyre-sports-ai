@@ -2,10 +2,10 @@
 
 Player Intelligence previously depended on one per-game history provider even
 when the official WNBA player profile published the same completed-game stats.
-This module keeps ESPN as one verified provider and independently reads the
-official WNBA webview player profile in parallel. Official WNBA values backfill
-only missing MIN/PTS/REB/AST fields on the same date/opponent; an already-present
-provider value is never overwritten.
+This module keeps ESPN as one provider and independently reads the canonical
+WNBA player profile in parallel. Official WNBA values backfill only missing
+MIN/PTS/REB/AST fields on the same date/opponent; an already-present provider
+value is never overwritten.
 
 This is read-only display/history transport. It does not run or alter model,
 projection, probability, market, qualification, ranking, sportsbook, or wager
@@ -28,7 +28,7 @@ from sports_api.wnba_pra_speed_v3_step3_espn_history import (
 )
 
 
-WNBA_PROFILE_BASE = "https://www.wnba.com/webview/player"
+WNBA_PROFILE_BASE = "https://www.wnba.com/player"
 OFFICIAL_SOURCE = "WNBA.com Player Profile"
 OFFICIAL_SOURCE_URL = "https://www.wnba.com/"
 REQUEST_TIMEOUT_SECONDS = 3.5
@@ -181,6 +181,10 @@ def _find_recent_stats_table(html: str) -> tuple[list[str], list[list[str]]]:
     return [], []
 
 
+def _official_profile_url(player_id: int) -> str:
+    return f"{WNBA_PROFILE_BASE}/{int(player_id)}/profile"
+
+
 def normalize_official_wnba_profile_html(
     html: str,
     *,
@@ -229,17 +233,18 @@ def normalize_official_wnba_profile_html(
         raise WNBAMultiSourceHistoryError("OFFICIAL_WNBA_RECENT_GAME_ROWS_MISSING")
     return {
         "source": OFFICIAL_SOURCE,
-        "source_url": f"{WNBA_PROFILE_BASE}/{int(player_id)}",
-        "source_endpoint": "official_player_profile_recent_game_stats",
+        "source_url": _official_profile_url(int(player_id)),
+        "source_endpoint": "canonical_player_profile_recent_game_stats",
         "data_type": "official_player_game_log",
         "season": int(season),
-        "season_type": "Regular Season",
+        "season_type": "All completed games shown by official profile",
         "player_id": int(player_id),
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
         "game_count": len(games),
         "games": games,
         "verification": {
             "official_wnba_profile": True,
+            "canonical_profile_route": True,
             "recent_game_table_verified": True,
             "stats_are_observed_not_projected": True,
         },
@@ -251,7 +256,7 @@ def get_official_wnba_profile_history(player_id: int, season: int) -> dict[str, 
     year = int(season)
     if pid <= 0:
         raise ValueError("WNBA player_id must be positive.")
-    url = f"{WNBA_PROFILE_BASE}/{pid}"
+    url = _official_profile_url(pid)
     try:
         response = requests.get(
             url,
