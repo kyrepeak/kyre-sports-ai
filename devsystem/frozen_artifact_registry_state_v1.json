@@ -2129,6 +2129,18 @@
       "source_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
       "status": "FROZEN"
     },
+    "RUNLESS_TASK17_STEP6_TAIL_SLA_TELEMETRY_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/runless-task17-step6-tail-sla-telemetry.json": "392e22af723ac23809283d982d007344542cb319",
+        "devsystem/runless_proof_plans/runless-task17-step6-tail-sla-telemetry.json": "d7303bf40f8eb21bc3f5c445ef65b853e00978c2",
+        "devsystem/task_ledgers/runless-task17-step6-tail-sla-telemetry.json": "9938db4a389b08259350fefd4c3f725b51b19d80",
+        "runless_proof_plane/tail_sla_telemetry.py": "a81e6a0cc731d532d2b0dde176c0d68b0ccac444",
+        "tests/test_runless_task17_step6_tail_sla_telemetry.py": "02ecb76aece689f1a875a056b9d2e100807842b9"
+      },
+      "checkpoint_id": "RUNLESS_TASK17_STEP6_TAIL_SLA_TELEMETRY_FROZEN",
+      "source_main_sha": "3347f77f5b80f79e89a6bcbe675658b32ed52621",
+      "status": "FROZEN"
+    },
     "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN": {
       "artifacts": {
         "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step1-source-id-truth.json": "d065688995c5be46076a005d00d5068efbc0210c",
@@ -2395,9 +2407,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 177,
+  "revision": 178,
   "schema_version": 1,
-  "source_main_sha": "299cc72b502285a1fe714c2e513e363013ad3e90",
-  "state_hash": "73ce8f8b94ad086fe56de94ab9a420a37b99efbebab310d6206191fe81a267c1",
+  "source_main_sha": "3347f77f5b80f79e89a6bcbe675658b32ed52621",
+  "state_hash": "43bdf17123a7b0b0b967860d377298c2354711f9f8036417149be0f9913e616b",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
