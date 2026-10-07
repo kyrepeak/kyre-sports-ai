@@ -40,17 +40,6 @@
       "status": "ACTIVE",
       "target_head_sha": "27fec905b022aaf819439c90496fb4d3b8c1452a",
       "thaw_id": "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
-    },
-    {
-      "files": {
-        "runless_proof_plane/executor.py": {
-          "from_blob": "0532db39d948587165bacb90f4a4fe4af762dd1e",
-          "to_blob": "3bdbd770ddd3b4d62096f0b3bf72f25e9b38abdd"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "51762ad9226b119626284655a90bd7ac7da80d5e",
-      "thaw_id": "THAW-RUNLESS-TASK17-STEP2-PARALLEL-PROOF-SLICES-R1"
     }
   ],
   "entries": {
@@ -2031,7 +2020,6 @@
         "runless_proof_plane/bootstrap.py": "34ee856c5581388dc7834a55af465051a2ace7de",
         "runless_proof_plane/config.py": "458e33c635daea67937241e0b270fac0f9e101f9",
         "runless_proof_plane/dry_run.py": "5abafb0996a5f14f41b8f99afafeefa92847b5fb",
-        "runless_proof_plane/executor.py": "0532db39d948587165bacb90f4a4fe4af762dd1e",
         "runless_proof_plane/fingerprint.py": "4179138e6c27ddf416f176c83d7a23045a1acb55",
         "runless_proof_plane/gate.py": "66080c66ec41f0d20e2443374ef09dffeb5cf0de",
         "runless_proof_plane/github_app.py": "f5ec32171b5fc7eb9b15139b4629a1e5c04fd711",
@@ -2080,6 +2068,18 @@
       },
       "checkpoint_id": "RUNLESS_TASK17_STEP1_REAL_PROVE_FROZEN",
       "source_main_sha": "d908cdc3e8ea4b0224333268e7b02d0af3bd9063",
+      "status": "FROZEN"
+    },
+    "RUNLESS_TASK17_STEP2_PARALLEL_PROOF_SLICES_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/runless-task17-step2-parallel-proof-slices.json": "0531b0238a744a0fa494ef28957aa14ac62cabeb",
+        "devsystem/runless_proof_plans/runless-task17-step2-parallel-proof-slices.json": "1a06e28b89836d7786528163c814b09a816d78ae",
+        "devsystem/task_ledgers/runless-task17-step2-parallel-proof-slices.json": "9fb9f7e87c49d32a35c43706182fccd2ea337dcd",
+        "runless_proof_plane/executor.py": "3bdbd770ddd3b4d62096f0b3bf72f25e9b38abdd",
+        "tests/test_runless_task17_step2_parallel_slices.py": "349e2d1f8841c7690a79e789e993451f6e3d654a"
+      },
+      "checkpoint_id": "RUNLESS_TASK17_STEP2_PARALLEL_PROOF_SLICES_FROZEN",
+      "source_main_sha": "51762ad9226b119626284655a90bd7ac7da80d5e",
       "status": "FROZEN"
     },
     "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN": {
@@ -2348,9 +2348,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 167,
+  "revision": 168,
   "schema_version": 1,
   "source_main_sha": "51762ad9226b119626284655a90bd7ac7da80d5e",
-  "state_hash": "19df7268cb1d8f636be4e5e0ced2e69a5887a72c60cc846dd6ab049772fd4bd0",
+  "state_hash": "d0ff4e8c17bd4c290a2911f9236e7ef3261acc44402956a05120bc64ac5d5a3b",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
