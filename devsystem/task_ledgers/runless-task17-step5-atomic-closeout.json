@@ -6,7 +6,7 @@
   "step": 5,
   "total_steps": 6,
   "mission": "Atomic Closeout",
-  "status": "TDD_RED_IN_PROGRESS",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
   "base_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8",
   "problem": "Final closeout still spans multiple separately coordinated operations, leaving room for final-mile races, duplicate work, and long 82-99 percent tails.",
   "root_cause": "Runless has proof reuse, event-driven resume, gate publication, and registry freeze primitives, but no single fail-closed idempotent decision contract that binds them to one exact Step 2A identity.",
@@ -24,9 +24,11 @@
   },
   "tdd": {
     "red_head": "39eababb98b157fdb6046aa58f8f6ee88f3c053e",
-    "red_observed": false,
+    "red_observed": true,
+    "red_proof_id": "runless-task17-step5-atomic-closeout-39eababb98b157fd-ee4ebf4fb2d74f22",
+    "red_result": "RUNLESS_STATIC_PROOF_FAILED:python -m pytest -q tests/test_runless_task17_step5_atomic_closeout.py",
     "expected_failure": "Runless Task 17 Step 5 atomic closeout engine is missing",
-    "green_patch_commit": null,
+    "green_patch_commit": "3eee807c5a20a7793ea6be7f0ab0671f80a733aa",
     "green_observed": false,
     "green_result": null
   },
