@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "task_id": "wnba-data-completeness-repair-v1-step2-selected-day-handoff",
+  "title": "WNBA Data Completeness Repair V1 Step 2 — exact selected-day handoff",
+  "project": "API2",
+  "workstream": "api2-wnba-data-completeness-repair-v1-step2",
+  "step": "2/3",
+  "status": "TDD_RED",
+  "base_main_sha": "2800670d1b1e15f6a98cc7a5fc3ffab4fb9600e5",
+  "problem": "Fresh public WNBA Game Center still shows 13.3/14.3 MIN with 0.0 PTS/REB/AST/PRA even though the current-main exact-day player hydrator returns real production for 56 of 58 roster players.",
+  "root_cause": "wnba_availability_v27._verified_pool_for_day receives an exact selected day but discards it when it calls players.player_form_table(year). player_form_table ignores the year argument for day selection and instead reads Streamlit session date or today, allowing the verified availability pool to hydrate a different day and then zero-fill unmatched roster rows.",
+  "patch": "Hand the exact requested day_str directly to the already-proven players._build_selected_player_pool(day_str) and consume its returned frame; do not change navigation, role/model math, probability, market, sportsbook, or other sports.",
+  "protected": {
+    "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN": true,
+    "other_pages": true,
+    "other_sports": true
+  },
+  "mutation_scope": [
+    "wnba_availability_v27.py",
+    "tests/test_wnba_data_completeness_repair_v1_step2_selected_day_handoff.py",
+    "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step2-selected-day-handoff.json"
+  ],
+  "expected_product_files_changed": 1,
+  "expected_cross_sport_files_changed": 0,
+  "runless_required": true,
+  "github_actions_fallback": false,
+  "thaw_id": "THAW-API2-WNBA-DATA-STEP2-SELECTED-DAY-HANDOFF-R1",
+  "freeze_token": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP2_FROZEN"
+}
