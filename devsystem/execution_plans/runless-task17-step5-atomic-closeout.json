@@ -1,0 +1,61 @@
+{
+  "version": "RUNLESS_TASK17_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Runless Final-Mile Convergence Accelerator V1",
+  "task": "17",
+  "step": "5/6",
+  "mission": "Atomic Closeout",
+  "base_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "runless_proof_plane/atomic_closeout.py",
+      "tests/test_runless_task17_step5_atomic_closeout.py",
+      "devsystem/runless_proof_plans/runless-task17-step5-atomic-closeout.json",
+      "devsystem/execution_plans/runless-task17-step5-atomic-closeout.json",
+      "devsystem/task_ledgers/runless-task17-step5-atomic-closeout.json"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "lease_id": "SCOPE-LEASE-C20C0E7167152850461F299C",
+    "exact_head_thaw_required": false,
+    "rollback_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8"
+  },
+  "tdd": {
+    "red_head": "39eababb98b157fdb6046aa58f8f6ee88f3c053e",
+    "red_observed": true,
+    "red_proof_id": "runless-task17-step5-atomic-closeout-39eababb98b157fd-ee4ebf4fb2d74f22",
+    "red_result": "RUNLESS_STATIC_PROOF_FAILED",
+    "green_patch_commit": "3eee807c5a20a7793ea6be7f0ab0671f80a733aa"
+  },
+  "acceptance": {
+    "one_call_closeout_decision": true,
+    "merged_receipt_idempotent": true,
+    "runless_gate_idempotent": true,
+    "freeze_idempotent": true,
+    "canonical_readback_required": true,
+    "main_and_ancestry_bound": true,
+    "registry_cas_fail_closed": true,
+    "lease_identity_fail_closed": true,
+    "static_evidence_reexecuted": false,
+    "github_actions_enabled": false,
+    "no_product_or_sports_model_change": true
+  },
+  "completion_contract": {
+    "after_freeze": "RUNLESS_TASK17_STEP6_TAIL_SLA_TELEMETRY",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 83.3
+  }
+}

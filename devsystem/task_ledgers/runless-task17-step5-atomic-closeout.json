@@ -1,0 +1,56 @@
+{
+  "version": "RUNLESS_TASK17_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Runless Final-Mile Convergence Accelerator V1",
+  "task": 17,
+  "step": 5,
+  "total_steps": 6,
+  "mission": "Atomic Closeout",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "base_main_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8",
+  "problem": "Final closeout still spans multiple separately coordinated operations, leaving room for final-mile races, duplicate work, and long 82-99 percent tails.",
+  "root_cause": "Runless has proof reuse, event-driven resume, gate publication, and registry freeze primitives, but no single fail-closed idempotent decision contract that binds them to one exact Step 2A identity.",
+  "patch": "Add a side-effect-free atomic closeout decision engine that validates main, candidate ancestry, live lease identity, registry CAS, receipt/gate/freeze replay state, and returns one ordered idempotent closeout operation set without granting network or product mutation authority.",
+  "step2a": {
+    "single_authority": true,
+    "branch": "runless-task17-step5-atomic-closeout-r1",
+    "lease_id": "SCOPE-LEASE-C20C0E7167152850461F299C",
+    "lease_owner": "monster-v2-runless-task17-step5",
+    "registry_revision_at_start": 174,
+    "registry_state_hash_at_start": "a3713753b79cb88eae3eae5db5aca92648b90af5fbe468e1e504d9dc087f38bb",
+    "github_actions_fallback_authorized": false,
+    "frozen_parent_token": "RUNLESS_TASK17_STEP4_EVENT_DRIVEN_RESUME_FROZEN",
+    "exact_head_thaw_required_for": []
+  },
+  "tdd": {
+    "red_head": "39eababb98b157fdb6046aa58f8f6ee88f3c053e",
+    "red_observed": true,
+    "red_proof_id": "runless-task17-step5-atomic-closeout-39eababb98b157fd-ee4ebf4fb2d74f22",
+    "red_result": "RUNLESS_STATIC_PROOF_FAILED:python -m pytest -q tests/test_runless_task17_step5_atomic_closeout.py",
+    "expected_failure": "Runless Task 17 Step 5 atomic closeout engine is missing",
+    "green_patch_commit": "3eee807c5a20a7793ea6be7f0ab0671f80a733aa",
+    "green_observed": false,
+    "green_result": null
+  },
+  "acceptance": {
+    "atomic_ordered_closeout": true,
+    "exact_replay_idempotent": true,
+    "main_drift_fails_closed": true,
+    "candidate_ancestry_drift_fails_closed": true,
+    "registry_cas_drift_fails_closed": true,
+    "lease_identity_drift_fails_closed": true,
+    "duplicate_write_required": false,
+    "github_actions_fallback": 0,
+    "network_calls": false,
+    "auto_mutate": false,
+    "no_product_or_sports_model_change": true
+  },
+  "closeout_required": [
+    "exact-candidate Runless final gate SUCCESS",
+    "merge exact certified head only",
+    "post-merge static proof reuse when content identity is unchanged",
+    "runless-final-gate SUCCESS on merged main",
+    "freeze RUNLESS_TASK17_STEP5_ATOMIC_CLOSEOUT_FROZEN",
+    "canonical registry read-back"
+  ]
+}
