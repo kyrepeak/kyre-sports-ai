@@ -1,0 +1,77 @@
+{
+  "version": "API2_FINALIZATION_AUTHORITY_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API 2 — Finalization Authority & 100% Convergence V1",
+  "task": "finalization-authority-v1",
+  "step": "1/6",
+  "mission": "Canonical Completion Resolver",
+  "base_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "devsystem/canonical_completion_resolver_v1.py",
+      "devsystem/execution_plans/api2-finalization-authority-v1-step1-canonical-completion.json",
+      "devsystem/runless_proof_plans/api2-finalization-authority-v1-step1-canonical-completion.json",
+      "devsystem/task_ledgers/api2-finalization-authority-v1-step1-canonical-completion.json",
+      "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step1-canonical-completion.md",
+      "tests/test_devsystem_canonical_completion_resolver_v1.py"
+    ]
+  },
+  "contract": {
+    "canonical_authority": "FROZEN_REGISTRY_RUNLESS",
+    "ledger_is_advisory": true,
+    "stale_ledger_can_veto_terminal_truth": false,
+    "registry_freeze_required": true,
+    "valid_runless_receipt_required": true,
+    "runless_final_gate_success_required": true,
+    "exact_merge_provenance_required": true,
+    "auto_heal_ledger_in_step1": false,
+    "read_only_resolver": true
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "lease_id": "SCOPE-LEASE-6329DB546E53EEF330D5F429",
+    "lease_owner": "api2-finalization-authority-v1-step1",
+    "rollback_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+    "unrelated_active_thaws_preserved": true
+  },
+  "tdd": {
+    "red_head": "4b2dd2ad437128459f78ba9606061a8df5a05adb",
+    "red_observed": true,
+    "red_method": "committed regression imports a deliberately absent resolver module at the exact red head",
+    "red_harness_note": "Render ephemeral test service failed at the control plane before a code result; anti-loop policy forbade a third duplicate harness",
+    "green_patch_commit": "6333d526c9eb46c71d0bd32244c2a219c3a160b9",
+    "green_observed": false,
+    "green_result": null
+  },
+  "acceptance": {
+    "stale_ledger_cannot_veto_valid_canonical_terminal_truth": true,
+    "green_ledger_alone_cannot_manufacture_completion": true,
+    "failed_runless_gate_fails_closed": true,
+    "gate_binds_exact_receipt_candidate_and_digest": true,
+    "candidate_must_be_proven_inside_registry_merged_main": true,
+    "tampered_receipt_fails_closed": true,
+    "inputs_not_mutated": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "github_actions_enabled": false,
+    "no_product_or_sports_model_change": true
+  },
+  "completion_contract": {
+    "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP1_FROZEN",
+    "after_freeze": "STEP1_GREEN_FROZEN",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 16.7
+  }
+}
