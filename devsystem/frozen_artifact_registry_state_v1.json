@@ -29,6 +29,17 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    },
+    {
+      "files": {
+        "runless_proof_plane/api.py": {
+          "from_blob": "185c07cb05fb5dc4937011330c6da6b7d5e8d1c5",
+          "to_blob": "3734146408aefba224f3ceed7c9385fc91eca68a"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "97ac0eda464004c2debe45f84060b7830d2f8419",
+      "thaw_id": "THAW-RUNLESS-TASK17-STEP1-REAL-PROVE-R1"
     }
   ],
   "entries": {
@@ -2311,9 +2322,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 156,
+  "revision": 157,
   "schema_version": 1,
   "source_main_sha": "4036459c8c8cde0ac8f3034b560d7948ad9a5015",
-  "state_hash": "4c41f30b1440ddeac8d549191f54717a09b7507af272c00c44d4ada8ada31852",
+  "state_hash": "1a1bee408f285491f273502c73065554c30466ae95dd7cd65060098d10fcb30b",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
