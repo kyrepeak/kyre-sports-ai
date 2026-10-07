@@ -1,0 +1,27 @@
+{
+  "task_id": "api2-finalization-authority-v1-step3-terminal-completion-latch",
+  "workstream": "api2-finalization-authority-v1-step3",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_devsystem_terminal_completion_latch_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "tests/test_devsystem_terminal_completion_latch_v1.py"
+  ],
+  "dependencies": [
+    "devsystem/canonical_completion_resolver_v1.py",
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/runless_terminal_proof_receipt_v1.py",
+    "runless_proof_plane/gate.py",
+    "runless_proof_plane/step2a.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP3_FROZEN"
+}
