@@ -1,0 +1,60 @@
+{
+  "version": "RUNLESS_TASK17_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Runless Final-Mile Convergence Accelerator V1",
+  "task": "17",
+  "step": "1/6",
+  "mission": "Real /prove Execution",
+  "base_main_sha": "4036459c8c8cde0ac8f3034b560d7948ad9a5015",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "runless_proof_plane/api.py",
+      "runless_proof_plane/prove.py",
+      "tests/test_runless_task17_step1_real_prove.py",
+      "tests/test_runless_task17_step1_prove_runner.py",
+      "devsystem/runless_proof_plans/runless-task17-step1-real-prove.json",
+      "devsystem/execution_plans/runless-task17-step1-real-prove-execution.json",
+      "devsystem/task_ledgers/runless-task17-step1-real-prove-execution.json"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "exact_head_thaw_required_for_api_py": true,
+    "rollback_main_sha": "4036459c8c8cde0ac8f3034b560d7948ad9a5015"
+  },
+  "tdd": {
+    "red_head_first": "1211bbad3be6250a50f8793a9a6499a358fe8328",
+    "red_observed": true,
+    "red_reason": "full-mode POST /prove returns 409 RUNLESS_PLAN_REQUIRED instead of invoking real proof execution",
+    "production_code_before_red": false
+  },
+  "acceptance": {
+    "full_mode_prove_loads_candidate_plan": true,
+    "step2a_authorizes_exact_candidate_main_workstream_and_live_scope_lease": true,
+    "candidate_fingerprint_created": true,
+    "static_proof_executes_without_actions_fallback": true,
+    "public_probes_execute_when_plan_requires_them": true,
+    "immutable_terminal_receipt_created_or_reused_by_identity": true,
+    "runless_final_gate_published_on_exact_candidate": true,
+    "successful_premerge_exit_state": "MERGE_AUTHORIZED",
+    "bootstrap_mode_fails_closed": true,
+    "github_actions_enabled": false
+  },
+  "completion_contract": {
+    "after_freeze": "RUNLESS_TASK17_STEP2_PARALLEL_PROOF_SLICES",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 16.7
+  }
+}
