@@ -1,8 +1,8 @@
 from __future__ import annotations
 import os
 
-# WNBA Data Completeness Repair V1 Step 2 exact selected-day handoff thaw.
-# Runless authority only: grant one exact-head frozen-file thaw; no product/runtime mutation.
+# WNBA Data Completeness Repair V1 Step 2 selected-day exact-head candidate gate.
+# Runless authority only: verify exact candidate scope + thaw + TDD receipts, then publish required gate.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -13,6 +13,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .wnba_selected_day_handoff_thaw import install_startup
+from .wnba_selected_day_handoff_candidate_gate import install_startup
 
 install_startup(app)
