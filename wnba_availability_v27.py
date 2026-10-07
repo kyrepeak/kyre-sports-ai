@@ -101,7 +101,7 @@ def _verified_pool_for_day(day_str: str):
     if schedule is None or schedule.empty:
         return pd.DataFrame(), {"state":"NO_GAMES","players":0,"roster_players":0,"teams":0,"raw_rows":0}
     try:
-        raw = players.player_form_table(pd.to_datetime(day_str).year)
+        raw, _ = players._build_selected_player_pool(day_str)
     except Exception:
         raw = pd.DataFrame()
     roster = _rosters_for_schedule(schedule)
