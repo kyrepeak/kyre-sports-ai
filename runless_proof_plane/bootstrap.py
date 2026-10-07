@@ -17,3 +17,7 @@ from .api import app
 from .wnba_data_step2_closeout import install_startup_closeout
 
 install_startup_closeout(app)
+
+@app.get("/wnba-data-step2-closeout/status")
+def wnba_data_step2_closeout_status():
+    return app.state.wnba_data_step2_closeout
