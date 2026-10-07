@@ -40,6 +40,17 @@
       "status": "ACTIVE",
       "target_head_sha": "fb7584133e4e7d54cb958b3593d28b0a25d4aed7",
       "thaw_id": "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
+    },
+    {
+      "files": {
+        "runless_proof_plane/executor.py": {
+          "from_blob": "0532db39d948587165bacb90f4a4fe4af762dd1e",
+          "to_blob": "3bdbd770ddd3b4d62096f0b3bf72f25e9b38abdd"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "34b8bc596ac8c34aa6f0506a20f27e1a20fad9f5",
+      "thaw_id": "THAW-RUNLESS-TASK17-STEP2-PARALLEL-PROOF-SLICES-R1"
     }
   ],
   "entries": {
@@ -2337,9 +2348,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 164,
+  "revision": 165,
   "schema_version": 1,
   "source_main_sha": "d908cdc3e8ea4b0224333268e7b02d0af3bd9063",
-  "state_hash": "ef1e3a9dddaa8a724d90820b0c548e87473f5223b19fc6a6880c2e59014b550f",
+  "state_hash": "a0e0c63e222805fba546bcdcce73b96447a77d1af6c25f40aeef82d49284cc0a",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
