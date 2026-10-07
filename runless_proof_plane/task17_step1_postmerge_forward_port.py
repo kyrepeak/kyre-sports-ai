@@ -8,14 +8,15 @@ from devsystem.frozen_artifact_registry_v1 import validate_registry
 
 from .registry import GithubRegistryBackend, REGISTRY_PATH
 
-MAIN_SHA = "ef550e9bd9898a67cc54a25ffd7ee5fcb1c6b129"
+MAIN_SHA = "d908cdc3e8ea4b0224333268e7b02d0af3bd9063"
+STEP17_MERGE_SHA = "ef550e9bd9898a67cc54a25ffd7ee5fcb1c6b129"
 MERGED_CANDIDATE_SHA = "85e631a923b8433f3a7b86fbd4f0ad4a583a56df"
 PATH = "runless_proof_plane/api.py"
 FROM_BLOB = "185c07cb05fb5dc4937011330c6da6b7d5e8d1c5"
 TO_BLOB = "3734146408aefba224f3ceed7c9385fc91eca68a"
 THAW_ID = "THAW-RUNLESS-TASK17-STEP1-REAL-PROVE-R1"
-EXPECTED_REVISION = 159
-EXPECTED_HASH = "232407f3cfef74dd7eb133a79b81930f15ed5fb31ff5bd74f33d64c3e5839b01"
+EXPECTED_REVISION = 160
+EXPECTED_HASH = "72a3706c04672c424d44169c880506625ec8dee6b7663b569ed83fb459d5ff22"
 
 
 class Task17PostMergeForwardPortFailure(RuntimeError):
@@ -26,10 +27,14 @@ def execute(client):
     if client.branch_sha("main") != MAIN_SHA:
         raise Task17PostMergeForwardPortFailure("WAIT_MAIN_IDENTITY_MOVED")
 
-    merge_commit = client.commit(MAIN_SHA)
-    parent_shas = {str(item.get("sha") or "") for item in merge_commit.get("parents", [])}
-    if MERGED_CANDIDATE_SHA not in parent_shas:
-        raise Task17PostMergeForwardPortFailure("MERGED_CANDIDATE_NOT_PARENT_OF_MAIN")
+    step17_merge = client.commit(STEP17_MERGE_SHA)
+    merge_parents = {str(item.get("sha") or "") for item in step17_merge.get("parents", [])}
+    if MERGED_CANDIDATE_SHA not in merge_parents:
+        raise Task17PostMergeForwardPortFailure("STEP17_CANDIDATE_NOT_PARENT_OF_MERGE")
+
+    lineage = client.request("GET", f"/compare/{STEP17_MERGE_SHA}...{MAIN_SHA}")
+    if str(lineage.get("status") or "") not in {"ahead", "identical"}:
+        raise Task17PostMergeForwardPortFailure("STEP17_MERGE_NOT_ANCESTOR_OF_MAIN")
 
     main_tree = client.tree_blobs(MAIN_SHA)
     if str(main_tree.get(PATH) or "").lower() != TO_BLOB:
@@ -107,6 +112,7 @@ def execute(client):
         "status": "GREEN",
         "decision": "RUNLESS_TASK17_STEP1_POSTMERGE_FORWARD_PORT_GREEN",
         "merged_main_sha": MAIN_SHA,
+        "step17_merge_sha": STEP17_MERGE_SHA,
         "previous_revision": EXPECTED_REVISION,
         "revision": int(readback["revision"]),
         "state_hash": str(readback["state_hash"]),
