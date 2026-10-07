@@ -5,9 +5,10 @@
   "project": "API2",
   "workstream": "api2-wnba-pra-history-v1-step1",
   "step": "1/3",
-  "status": "RED_TEST_READY",
-  "base_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "base_main_sha": "f9908fb83de2e19d3ff1d47b728dac8ba3fef2e0",
   "branch": "api2-wnba-pra-history-v1-step1-multisource-r1",
+  "pr_number": 1450,
   "problem": "Player Intelligence shows verified Last-5 and H2H PRA aggregates while the individual recent-game cards render N/A PRA.",
   "root_cause": "The aggregate fallback survives into the Player Intelligence summary, but individual game rows depend on one history-provider normalization path; credible per-game WNBA PTS/REB/AST exist and must be preserved across the handoff.",
   "evidence": {
@@ -21,20 +22,29 @@
     "screenshot_atlanta_h2h_avg": 34.5,
     "data_missing_upstream": false
   },
-  "patch": "Add a bounded multi-source history adapter that reads ESPN and the official WNBA player profile in parallel, backfills only missing per-game MIN/PTS/REB/AST by exact date/opponent, and preserves existing provider values.",
+  "patch": "Add a bounded multi-source history adapter that reads ESPN and the official WNBA webview player profile in parallel, backfills only missing per-game MIN/PTS/REB/AST by exact date/opponent, and preserves existing provider values.",
   "step2a": {
     "single_authority": true,
-    "exact_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+    "exact_main_sha": "f9908fb83de2e19d3ff1d47b728dac8ba3fef2e0",
     "duplicate_open_wnba_prs": 0,
     "github_actions_fallback_authorized": false,
     "runless_required_check": "runless-final-gate",
-    "frozen_registry_thaw_required": false
+    "frozen_registry_thaw_required": false,
+    "main_drift_detected": true,
+    "main_drift_from": "7e1d91948caf36e45535259bb5547689f211ce9a",
+    "main_drift_to": "f9908fb83de2e19d3ff1d47b728dac8ba3fef2e0",
+    "main_drift_overlap_files": 0,
+    "reconciliation_merge_sha": "4e08ed297a0aca1bee97771f28755070877ccca7",
+    "external_branch_mutation_detected": "cfb6d3d40242d19fce96b3d310a94a878f9fa620",
+    "external_branch_mutation_policy": "removed; exact-date matching remains authoritative",
+    "external_branch_mutation_removed_by": "973c86ed9030b8a79675106114f97f43e550e3f2"
   },
   "tdd": {
-    "red_head": "eb35966ce04d466f41e93fb0c1f041aa08862ef0",
+    "test_first_head": "e238983863207bb6ca07fe97d295d836c5933710",
     "red_observed": false,
+    "red_not_observed_reason": "No authoritative Runless proof was executed on the intermediate test-only head; do not invent a RED receipt.",
     "expected_red_failure": "sports_api.wnba_pra_history_multisource_v1 does not exist",
-    "green_head": null,
+    "implementation_head_before_ledger_reconciliation": "973c86ed9030b8a79675106114f97f43e550e3f2",
     "green_observed": false
   },
   "mutation_scope": [
