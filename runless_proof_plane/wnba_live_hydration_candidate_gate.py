@@ -5,6 +5,8 @@ import hashlib
 import json
 from typing import Any
 
+import httpx
+
 from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, validate_registry
 from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt
 from .gate import publish_gate
@@ -16,11 +18,13 @@ RUNTIME_PATH = "wnba_players_v25.py"
 HELPER_PATH = "wnba_data_completeness_repair_v1_step2_live_history.py"
 TEST_PATH = "tests/test_wnba_data_completeness_repair_v1_step2_live_history.py"
 EXPECTED_RUNTIME_BLOB = "13055f7bc06a8af369daba47453e92fe7e6c8ea7"
-THAW_ID = "THAW-API2-WNBA-DATA-STEP2-LIVE-HYDRATION-R1"
-EXPECTED_REGISTRY_REVISION = 150
-EXPECTED_REGISTRY_HASH = "d96db7f9718aa2507a40f3a46bba3db5f705b690c6c9406de53fe668fa54752e"
+THAW_ID = "THAW-API2-WNBA-DATA-STEP2-LIVE-HYDRATION-R2"
+EXPECTED_REGISTRY_REVISION = 152
+EXPECTED_REGISTRY_HASH = "b9f957642985f34412f27c4ea9ef0c932787b059bef35bda80364de299a23ba0"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 EXPECTED_FILES = {RUNTIME_PATH, HELPER_PATH, TEST_PATH}
+ESPN_ROSTER = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/ny/roster"
+ESPN_GAMELOG_BASE = "https://site.web.api.espn.com/apis/common/v3/sports/basketball/wnba/athletes"
 
 
 def _read_text(client, path: str, ref: str) -> tuple[str, str]:
@@ -122,10 +126,70 @@ def _verify_behavior(client) -> dict[str, Any]:
     }
 
 
+def _flatten_athletes(payload: Any) -> list[dict[str, Any]]:
+    root = payload if isinstance(payload, dict) else {}
+    raw = root.get("athletes") or (root.get("team") or {}).get("athletes") or []
+    queue = list(raw) if isinstance(raw, list) else []
+    out = []
+    while queue:
+        item = queue.pop(0)
+        if not isinstance(item, dict):
+            continue
+        nested = item.get("items") or item.get("athletes")
+        if isinstance(nested, list):
+            queue[0:0] = nested
+            continue
+        athlete = item.get("athlete") if isinstance(item.get("athlete"), dict) else item
+        if athlete.get("id"):
+            out.append(athlete)
+    return out
+
+
+def _verify_live_espn_athlete_history() -> dict[str, Any]:
+    headers = {
+        "Accept": "application/json,text/plain,*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1",
+    }
+    with httpx.Client(timeout=10.0, follow_redirects=True, headers=headers) as http:
+        roster = http.get(ESPN_ROSTER)
+        roster.raise_for_status()
+        athletes = _flatten_athletes(roster.json())
+        if not athletes:
+            raise RuntimeError("CANDIDATE_GATE_ESPN_ROSTER_EMPTY")
+        attempts = []
+        for athlete in athletes[:8]:
+            pid = str(athlete.get("id") or "")
+            if not pid:
+                continue
+            response = http.get(f"{ESPN_GAMELOG_BASE}/{pid}/gamelog", params={"season": 2026})
+            attempts.append({"player_id": pid, "http": response.status_code})
+            if response.status_code != 200:
+                continue
+            body = response.json()
+            if not isinstance(body, dict):
+                continue
+            raw = json.dumps(body, separators=(",", ":")).lower()
+            if "events" not in raw or ("stats" not in raw and "statistics" not in raw):
+                continue
+            return {
+                "roster_http": roster.status_code,
+                "roster_players": len(athletes),
+                "sample_player_id": pid,
+                "sample_player_name": str(athlete.get("displayName") or athlete.get("fullName") or ""),
+                "gamelog_http": response.status_code,
+                "payload_has_events": True,
+                "payload_has_stats": True,
+                "attempts": attempts,
+            }
+    raise RuntimeError("CANDIDATE_GATE_ESPN_ATHLETE_GAMELOG_UNAVAILABLE:" + json.dumps(attempts))
+
+
 def execute(client):
     artifacts = _verify_scope(client)
     registry = _verify_registry(client)
     behavior = _verify_behavior(client)
+    live_espn = _verify_live_espn_athlete_history()
     evidence = {
         "base_sha": BASE_SHA,
         "candidate_sha": CANDIDATE_SHA,
@@ -133,6 +197,7 @@ def execute(client):
         "provider_diagnostic": "ESPN_HISTORY_AND_SUMMARY_HEALTHY",
         "provider_completed_games": 363,
         "provider_summary_rows": 25,
+        "live_espn_athlete_history": live_espn,
         "root_cause": "old Streamlit season-summary fanout can collapse healthy provider history into roster-only zero production",
         "patch": "reuse repository-established latency-safe ESPN WNBA athlete gamelog and summarize season/L10/L5 before role projection",
         "behavior": behavior,
@@ -156,6 +221,7 @@ def execute(client):
             "base_main_sha": BASE_SHA,
             "thaw_id": THAW_ID,
             "provider_diagnostic": "ESPN_HISTORY_AND_SUMMARY_HEALTHY",
+            "live_espn_athlete_history": live_espn,
             "github_actions_fallback": False,
         },
         registry_before={"revision": EXPECTED_REGISTRY_REVISION, "state_hash": EXPECTED_REGISTRY_HASH},
@@ -172,6 +238,7 @@ def execute(client):
         "artifacts": artifacts,
         "registry_revision": int(registry["revision"]),
         "behavior": behavior,
+        "live_espn": live_espn,
     }
 
 
