@@ -27,6 +27,7 @@ import streamlit as st
 import wnba_data_v22 as guarded
 import wnba_data_v232 as old_players
 import wnba_schedule_v24 as schedule_v24
+from wnba_data_completeness_repair_v1_step2_stats_gate import gate_primary_production
 
 ET = ZoneInfo("America/New_York")
 ESPN_SCOREBOARD = schedule_v24.ESPN_SCOREBOARD
@@ -403,17 +404,7 @@ def _build_selected_player_pool(day_str: str):
 
     if primary is not None and not primary.empty:
         primary = guarded._guard_stats(primary)
-        primary = primary[primary["TEAM_ID"].astype(int).isin(team_ids)].copy()
-        if not roster.empty:
-            allowed = set((int(r.TEAM_ID), int(r.PLAYER_ID)) for _, r in roster.iterrows())
-            # WNBA Stats IDs and ESPN IDs can differ. Only apply the ID gate when
-            # at least one primary id actually overlaps; otherwise use team gate
-            # and surface roster-match diagnostics rather than deleting everyone.
-            overlaps = sum((int(r.TEAM_ID), int(r.PLAYER_ID)) in allowed for _, r in primary.iterrows() if pd.notna(r.get("PLAYER_ID")))
-            if overlaps:
-                primary = primary[[
-                    (int(r.TEAM_ID), int(r.PLAYER_ID)) in allowed for _, r in primary.iterrows()
-                ]].copy()
+        primary = gate_primary_production(primary, roster, team_ids)
         if not primary.empty:
             for prefix in ("", "L10_", "L5_"):
                 for stat in ("PTS", "REB", "AST"):
