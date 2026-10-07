@@ -27,6 +27,7 @@ import streamlit as st
 import wnba_data_v22 as guarded
 import wnba_data_v232 as old_players
 import wnba_schedule_v24 as schedule_v24
+from wnba_data_completeness_repair_v1_step2_live_history import summarize_player_history
 from wnba_data_completeness_repair_v1_step2_stats_gate import gate_primary_production
 
 ET = ZoneInfo("America/New_York")
@@ -265,6 +266,84 @@ def _espn_game_summary(game_id: str, game_date: str = "") -> pd.DataFrame:
         return pd.DataFrame()
 
 
+
+def _aggregate_espn_athlete_gamelogs(roster: pd.DataFrame, team_meta: dict, day_str: str) -> pd.DataFrame:
+    """Hydrate current-roster production from the latency-safe ESPN athlete gamelog."""
+    if roster is None or roster.empty:
+        return _empty_players()
+    try:
+        from sports_api.wnba_pra_speed_v3_step3_espn_history import (
+            get_step3_espn_player_game_log_dataset,
+        )
+    except Exception:
+        return _empty_players()
+
+    current = roster.drop_duplicates(subset=["TEAM_ID", "PLAYER_ID"], keep="first").copy()
+    season = int(pd.to_datetime(day_str).year)
+    summaries = {}
+    jobs = {}
+    with ThreadPoolExecutor(max_workers=min(10, max(1, len(current)))) as pool:
+        for _, rr in current.iterrows():
+            try:
+                pid = int(rr.get("PLAYER_ID"))
+            except Exception:
+                continue
+            jobs[pool.submit(get_step3_espn_player_game_log_dataset, pid, season)] = pid
+        for future in as_completed(jobs):
+            pid = jobs[future]
+            try:
+                summaries[pid] = summarize_player_history(future.result(), day_str)
+            except Exception:
+                summaries[pid] = None
+
+    rows = []
+    for _, rr in current.iterrows():
+        try:
+            pid = int(rr.get("PLAYER_ID"))
+        except Exception:
+            continue
+        summary = summaries.get(pid)
+        has_history = isinstance(summary, dict) and int(summary.get("GP") or 0) > 0
+        base = {
+            "PLAYER_ID": pid,
+            "PLAYER_NAME": str(rr.get("PLAYER_NAME") or "Player"),
+            "TEAM_ID": int(rr.get("TEAM_ID") or 0),
+            "TEAM_NAME": str(rr.get("TEAM_NAME") or ""),
+            "TEAM_ABBREVIATION": str(rr.get("TEAM_ABBREVIATION") or ""),
+            "POSITION": str(rr.get("POSITION") or ""),
+            "ROSTER_STATUS": str(rr.get("ROSTER_STATUS") or "ROSTERED"),
+            "PLAYER_ID_SOURCE": "ESPN",
+        }
+        if has_history:
+            for col in (
+                "GP", "MIN", "PTS", "REB", "AST", "PRA",
+                "L10_GP", "L10_MIN", "L10_PTS", "L10_REB", "L10_AST", "L10_PRA",
+                "L5_GP", "L5_MIN", "L5_PTS", "L5_REB", "L5_AST", "L5_PRA",
+                "LAST_GAME_DATE",
+            ):
+                base[col] = summary.get(col)
+            base["DATA_SOURCE"] = "ESPN WNBA Athlete Gamelog"
+        else:
+            for col in (
+                "GP", "MIN", "PTS", "REB", "AST", "PRA",
+                "L10_GP", "L10_MIN", "L10_PTS", "L10_REB", "L10_AST", "L10_PRA",
+                "L5_GP", "L5_MIN", "L5_PTS", "L5_REB", "L5_AST", "L5_PRA",
+            ):
+                base[col] = 0.0
+            base["LAST_GAME_DATE"] = "—"
+            base["DATA_SOURCE"] = "ESPN WNBA current roster • athlete gamelog unavailable"
+        rows.append(base)
+
+    out = pd.DataFrame(rows)
+    if out.empty:
+        return _empty_players()
+    for col in PLAYER_COLUMNS:
+        if col not in out.columns:
+            out[col] = np.nan
+    return out.reindex(columns=PLAYER_COLUMNS).sort_values(
+        ["TEAM_ID", "MIN"], ascending=[True, False]
+    ).reset_index(drop=True)
+
 def _aggregate_games(games: pd.DataFrame, roster: pd.DataFrame, team_meta: dict) -> pd.DataFrame:
     if games is None or games.empty:
         # Still surface current roster players even before they have a game stat.
@@ -428,6 +507,23 @@ def _build_selected_player_pool(day_str: str):
                 "source": "WNBA Stats LeagueID=10", "roster_source": "ESPN WNBA current roster",
             }
             return primary.reset_index(drop=True), diag
+
+    # Fast Streamlit fallback: one bounded ESPN athlete-gamelog read per current player.
+    # This transport is already used by the hosted PRA detail API because the direct
+    # WNBA Stats hosts are not latency-safe in the live environment.
+    fast_players = _aggregate_espn_athlete_gamelogs(roster, team_meta, day_str)
+    if fast_players is not None and not fast_players.empty:
+        real_rows = pd.to_numeric(fast_players.get("GP"), errors="coerce").fillna(0).gt(0)
+        if bool(real_rows.any()):
+            diag = {
+                "state": "VERIFIED", "selected_date": day_str, "teams": len(team_ids),
+                "rosters_connected": len(roster_frames), "roster_players": len(roster),
+                "stat_rows": len(fast_players),
+                "completed_games_used": int(pd.to_numeric(fast_players.get("GP"), errors="coerce").fillna(0).sum()),
+                "source": "ESPN WNBA Athlete Gamelog",
+                "roster_source": "ESPN WNBA current roster" if len(roster_frames) else "unavailable",
+            }
+            return fast_players.reset_index(drop=True), diag
 
     # Streamlit fallback: reconstruct season averages from WNBA game summaries.
     try:
