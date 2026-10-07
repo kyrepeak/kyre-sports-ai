@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from copy import deepcopy
@@ -20,6 +21,7 @@ RETARGET = (
     "WNBA_PUSHSTATE_REPAIR_V1_STEP3_FROZEN",
     "WNBA_PUSHSTATE_REPAIR_V1_STEP4_FROZEN",
 )
+CHUNK = 6000
 
 
 def _canonical(value: object) -> str:
@@ -37,7 +39,6 @@ def _build_candidate(state: dict) -> dict:
     assert state["state_hash"] == EXPECTED_HASH, "REGISTRY_HASH_DRIFT"
     assert state["source_main_sha"] == EXPECTED_SOURCE, "SOURCE_MAIN_DRIFT"
     assert TOKEN not in state["entries"], "FREEZE_TOKEN_ALREADY_PRESENT"
-
     matching = [x for x in state["active_thaws"] if x.get("thaw_id") == THAW]
     assert len(matching) == 1, "HANDOFF_THAW_IDENTITY_DRIFT"
     thaw = matching[0]
@@ -51,10 +52,8 @@ def _build_candidate(state: dict) -> dict:
         entry = out["entries"][checkpoint]
         assert entry["artifacts"][HANDOFF_PATH] == HANDOFF_FROM, (checkpoint, "BASELINE_DRIFT")
         entry["artifacts"][HANDOFF_PATH] = HANDOFF_TO
-
     out["active_thaws"] = [x for x in out["active_thaws"] if x.get("thaw_id") != THAW]
     assert len(out["active_thaws"]) == len(state["active_thaws"]) - 1
-
     out["entries"][TOKEN] = {
         "artifacts": {
             "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py": "84ae2e8eacd785e29547cbc92b435c9483994417",
@@ -74,12 +73,19 @@ def _build_candidate(state: dict) -> dict:
 def pytest_sessionstart(session) -> None:  # pragma: no cover
     state = json.loads(INPUT.read_text(encoding="utf-8"))
     candidate = _build_candidate(state)
-
     from devsystem.frozen_artifact_registry_v1 import validate_registry
-
     validation = validate_registry(candidate)
     candidate_text = json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
-    Path("registry_candidate.json").write_text(candidate_text, encoding="utf-8")
+    candidate_bytes = candidate_text.encode("utf-8")
+    Path("registry_candidate.json").write_bytes(candidate_bytes)
+    encoded = base64.b64encode(candidate_bytes).decode("ascii")
+    total = (len(encoded) + CHUNK - 1) // CHUNK
+    print("WNBA_PRA_REPAIR_V1_STEP3_REGISTRY_CANDIDATE_GREEN", flush=True)
+    print(f"REGISTRY_CANDIDATE_FILE_SHA256={hashlib.sha256(candidate_bytes).hexdigest()}", flush=True)
+    print(f"REGISTRY_B64_TOTAL={total}", flush=True)
+    for index in range(total):
+        piece = encoded[index * CHUNK:(index + 1) * CHUNK]
+        print(f"REGISTRY_B64_{index:03d}_OF_{total:03d}={piece}", flush=True)
     meta = {
         "status": "GREEN",
         "revision": candidate["revision"],
@@ -89,8 +95,8 @@ def pytest_sessionstart(session) -> None:  # pragma: no cover
         "retired_thaw": THAW,
         "retargeted_checkpoints": list(RETARGET),
         "active_thaw_count": len(candidate["active_thaws"]),
-        "validator": validation,
+        "validator_status": validation["status"],
+        "entry_count": validation["entry_count"],
+        "artifact_count": validation["artifact_count"],
     }
-    Path("registry_meta.json").write_text(json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("WNBA_PRA_REPAIR_V1_STEP3_REGISTRY_CANDIDATE_GREEN", flush=True)
-    print(json.dumps(meta, sort_keys=True), flush=True)
+    print("REGISTRY_TRANSPORT_META=" + json.dumps(meta, sort_keys=True), flush=True)
