@@ -1,0 +1,25 @@
+{
+  "task_id": "runless-task17-step4-event-driven-resume",
+  "workstream": "runless-task17-step4",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_task17_step4_event_driven_resume.py"
+    ]
+  ],
+  "artifacts": [
+    "tests/test_runless_task17_step4_event_driven_resume.py"
+  ],
+  "dependencies": [
+    "devsystem/event_driven_resume_v1.py",
+    "devsystem/detached_execution_continuation_v1.py",
+    "runless_proof_plane/step2a.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_TASK17_STEP4_EVENT_DRIVEN_RESUME_FROZEN"
+}
