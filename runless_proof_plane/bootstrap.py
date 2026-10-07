@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 
-# MONSTER Task 17 Step 3 — post-merge registry retarget.
+# API 2 WNBA Data Completeness Repair — Step 3 actual Game Center Player click thaw retarget.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -12,6 +12,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .task17_step3_postmerge_retarget import install_startup
+from .wnba_data_step3_player_shell_retarget import install_startup
 
 install_startup(app)
