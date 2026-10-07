@@ -32,17 +32,6 @@
     },
     {
       "files": {
-        "runless_proof_plane/api.py": {
-          "from_blob": "185c07cb05fb5dc4937011330c6da6b7d5e8d1c5",
-          "to_blob": "3734146408aefba224f3ceed7c9385fc91eca68a"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "85e631a923b8433f3a7b86fbd4f0ad4a583a56df",
-      "thaw_id": "THAW-RUNLESS-TASK17-STEP1-REAL-PROVE-R1"
-    },
-    {
-      "files": {
         "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": {
           "from_blob": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7",
           "to_blob": "deeb6a9de5270d2d3745c620129895b90ef2b688"
@@ -2027,7 +2016,7 @@
         "devsystem/task_ledgers/runless-proof-plane-v1-task13.json": "9064e5da1082c023fc98c18215463afcae65b7b4",
         "docs/runless-proof-plane-operations.md": "dd08f981f041dad6d8cc51a086b76634f886ff8f",
         "runless_proof_plane/__init__.py": "cd54eae6210068ff28e74dad8de7897f4b402799",
-        "runless_proof_plane/api.py": "185c07cb05fb5dc4937011330c6da6b7d5e8d1c5",
+        "runless_proof_plane/api.py": "3734146408aefba224f3ceed7c9385fc91eca68a",
         "runless_proof_plane/bootstrap.py": "34ee856c5581388dc7834a55af465051a2ace7de",
         "runless_proof_plane/config.py": "458e33c635daea67937241e0b270fac0f9e101f9",
         "runless_proof_plane/dry_run.py": "5abafb0996a5f14f41b8f99afafeefa92847b5fb",
@@ -2333,9 +2322,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 160,
+  "revision": 161,
   "schema_version": 1,
-  "source_main_sha": "ef550e9bd9898a67cc54a25ffd7ee5fcb1c6b129",
-  "state_hash": "72a3706c04672c424d44169c880506625ec8dee6b7663b569ed83fb459d5ff22",
+  "source_main_sha": "d908cdc3e8ea4b0224333268e7b02d0af3bd9063",
+  "state_hash": "451aa491daa7f64854f33d179781d23e16f2f637714da894fd388ed493c9e52b",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
