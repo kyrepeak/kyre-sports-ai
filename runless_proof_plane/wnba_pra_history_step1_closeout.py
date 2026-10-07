@@ -9,13 +9,13 @@ from . import task17_step5_atomic_closeout as core
 TASK_ID = "wnba-pra-history-multisource-v1-step1"
 WORKSTREAM = "api2-wnba-pra-history-v1-step1"
 PLAN_PATH = "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json"
-SOURCE_MAIN_SHA = "219ed8367207538a909986841e66807e408feede"
-SOURCE_CANDIDATE_SHA = "26091bfa6b37116f0cf170cee407e279b7e8b6a9"
-MAIN_SHA = "42b9bcf3465af8aca41141a1d2713d5731ea6c00"
-PREMERGE_PROOF_ID = "wnba-pra-history-multisource-v1-step1-26091bfa6b37116f-7f1ddb592167a0fd"
-PREMERGE_DIGEST = "6c448379aa1a8c161aed8c724663ebe34a347defb95149a89cf74d9e14955e37"
-PREMERGE_CHECK_ID = 113031687571
-MERGED_PROOF_ID = "wnba-pra-history-multisource-v1-step1-42b9bcf3465af8ac-reused"
+SOURCE_MAIN_SHA = "42b9bcf3465af8aca41141a1d2713d5731ea6c00"
+SOURCE_CANDIDATE_SHA = "a6570bfc5f8cdc4fb78f6d0ec385afd906b82791"
+MAIN_SHA = "f84bf63f966a52ed3cd1d6275bedc2a0cf3b125b"
+PREMERGE_PROOF_ID = "wnba-pra-history-multisource-v1-step1-a6570bfc5f8cdc4f-9bf40a36a97ceb76"
+PREMERGE_DIGEST = "33776e3a7e37bc90647c686713bff88ee28122c910676304b78e4f75003f8c3b"
+PREMERGE_CHECK_ID = 113049559939
+MERGED_PROOF_ID = "wnba-pra-history-multisource-v1-step1-f84bf63f966a52ed-reused"
 FREEZE_TOKEN = "WNBA_PRA_HISTORY_MULTISOURCE_V1_STEP1_FROZEN"
 FREEZE_PATHS = (
     "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json",
@@ -27,8 +27,8 @@ FREEZE_PATHS = (
 )
 LEASE_ID = "SCOPE-LEASE-58276A81543E070B30D3D29C"
 LEASE_OWNER = "api2-wnba-pra-history-v1-step1"
-EXPECTED_REGISTRY_REVISION = 185
-EXPECTED_REGISTRY_HASH = "c724272b73372ececa74be33c8310b2fae7586ce9fae4e6bafe735918587bea3"
+EXPECTED_REGISTRY_REVISION = 186
+EXPECTED_REGISTRY_HASH = "21d594e5f52335bb2b5eba22a23da5e467856ee238f2730a3459c29c99f03f6f"
 EXPECTED_EVENT_HASH = "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789"
 PUBLIC_URL = "https://kyre-sports-api.onrender.com/api/v1/wnba/players/1627668/pra-detail?season=2026"
 
