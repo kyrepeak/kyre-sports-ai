@@ -9,14 +9,14 @@ from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, v
 
 MAIN_SHA = "4036459c8c8cde0ac8f3034b560d7948ad9a5015"
 BRANCH = "runless-task17-step1-real-prove-execution-r1"
-OLD_CANDIDATE_SHA = "97ac0eda464004c2debe45f84060b7830d2f8419"
-NEW_CANDIDATE_SHA = "1f5b522861f8f9d3024b528f480d80f35e4e3902"
+OLD_CANDIDATE_SHA = "1f5b522861f8f9d3024b528f480d80f35e4e3902"
+NEW_CANDIDATE_SHA = "85e631a923b8433f3a7b86fbd4f0ad4a583a56df"
 PATH = "runless_proof_plane/api.py"
 FROM_BLOB = "185c07cb05fb5dc4937011330c6da6b7d5e8d1c5"
 TO_BLOB = "3734146408aefba224f3ceed7c9385fc91eca68a"
 THAW_ID = "THAW-RUNLESS-TASK17-STEP1-REAL-PROVE-R1"
-EXPECTED_REVISION = 157
-EXPECTED_HASH = "1a1bee408f285491f273502c73065554c30466ae95dd7cd65060098d10fcb30b"
+EXPECTED_REVISION = 158
+EXPECTED_HASH = "0e7542cb895b9f0ed6e2ba2a1da53914df97d8eb39834ee288a12e46bcb81965"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
 
@@ -30,8 +30,11 @@ def _state_hash(payload):
 def execute(client):
     if client.branch_sha("main") != MAIN_SHA:
         raise RuntimeError("TASK17_STEP1_ROTATE_MAIN_DRIFT")
-    if client.branch_sha(BRANCH) != OLD_CANDIDATE_SHA:
+    if client.branch_sha(BRANCH) != NEW_CANDIDATE_SHA:
         raise RuntimeError("TASK17_STEP1_ROTATE_BRANCH_DRIFT")
+    old_commit = client.commit(OLD_CANDIDATE_SHA)
+    if str(old_commit.get("sha") or "") != OLD_CANDIDATE_SHA:
+        raise RuntimeError("TASK17_STEP1_ROTATE_OLD_CANDIDATE_MISSING")
     new_commit = client.commit(NEW_CANDIDATE_SHA)
     if str(new_commit.get("sha") or "") != NEW_CANDIDATE_SHA:
         raise RuntimeError("TASK17_STEP1_ROTATE_NEW_CANDIDATE_MISSING")
