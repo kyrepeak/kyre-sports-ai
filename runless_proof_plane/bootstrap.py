@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 
-# MONSTER Task 17 Step 3 — reconcile registry identity after authorized inherited-main movement.
+# MONSTER Task 17 Step 3 — exact candidate Runless proof.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -12,6 +12,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .task17_step3_registry_reconcile import install_startup
+from .task17_step3_candidate_prove import install_startup
 
 install_startup(app)
