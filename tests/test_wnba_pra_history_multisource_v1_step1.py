@@ -1,6 +1,24 @@
 from __future__ import annotations
 
 import importlib
+import sys
+from types import ModuleType
+
+
+# Runless proof workers intentionally install only the proof-plane dependency set.
+# The production app already pins requests in requirements.lock, but this focused
+# parser/merge test does not perform real HTTP. Keep the proof isolated from that
+# unrelated runtime package while preserving the production import contract.
+try:
+    import requests as _requests  # noqa: F401
+except ModuleNotFoundError:
+    requests_stub = ModuleType("requests")
+
+    class _RequestException(Exception):
+        pass
+
+    requests_stub.RequestException = _RequestException
+    sys.modules["requests"] = requests_stub
 
 
 OFFICIAL_HTML = """
