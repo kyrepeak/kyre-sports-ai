@@ -2,6 +2,7 @@
   "task_id": "wnba-pra-history-multisource-v1-step1",
   "workstream": "api2-wnba-pra-history-v1-step1",
   "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_history_bref_fallback_v1.py"],
     ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_history_multisource_v1_step1.py"],
     ["python", "-m", "py_compile", "sports_api/wnba_pra_history_multisource_v1.py", "sports_api/api/wnba_pra_detail_bundle.py"]
   ],
@@ -9,6 +10,7 @@
     "sports_api/wnba_pra_history_multisource_v1.py",
     "sports_api/api/wnba_pra_detail_bundle.py",
     "tests/test_wnba_pra_history_multisource_v1_step1.py",
+    "tests/test_wnba_pra_history_bref_fallback_v1.py",
     "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json",
     "devsystem/task_ledgers/wnba-pra-history-multisource-v1-step1.json",
     "docs/superpowers/plans/2026-10-07-wnba-pra-history-multisource-step1.md"
