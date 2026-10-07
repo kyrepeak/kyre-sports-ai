@@ -132,7 +132,12 @@ def render_app() -> Any:
     original_player_renderer = player_intelligence.render_player_intelligence
     original_final_card_renderer = step5_engine.render_step5_final_card
     original_deep_pin = deep_route._pin_deep_wnba_shell_route
+    original_go_to_game = navigation.go_to_game
     original_final_player_open = final_transport._open_player_immediate
+
+    def _go_to_game_with_shell_handoff(*args, **kwargs):
+        _emit_one_shot_wnba_pra_shell_handoff()
+        return original_go_to_game(*args, **kwargs)
 
     def guarded_game_renderer(state):
         game = _selected_game()
@@ -198,6 +203,7 @@ def render_app() -> Any:
         return original_final_card_renderer(summary)
 
     deep_route._pin_deep_wnba_shell_route = _pin_deep_wnba_session_route
+    navigation.go_to_game = _go_to_game_with_shell_handoff
     final_transport._open_player_immediate = _wrap_step7_player_open(original_final_player_open)
     game_center.render_game_center = guarded_game_renderer
     game_center._render_player_card = guarded_player_card
@@ -207,6 +213,7 @@ def render_app() -> Any:
         return frozen_parent.render_app()
     finally:
         deep_route._pin_deep_wnba_shell_route = original_deep_pin
+        navigation.go_to_game = original_go_to_game
         final_transport._open_player_immediate = original_final_player_open
         game_center.render_game_center = original_game_renderer
         game_center._render_player_card = original_player_card_renderer

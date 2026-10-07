@@ -114,3 +114,30 @@ def test_game_center_card_navigation_emits_shell_handoff(monkeypatch):
     assert fake_st.session_state[router.deep_route.SHELL_MARKET_SESSION_KEY] == "PRA"
     assert fake_st.query_params[router.deep_route.SHELL_SPORT_QUERY_KEY] == "WNBA"
     assert fake_st.query_params[router.deep_route.SHELL_MARKET_QUERY_KEY] == "PRA"
+
+
+def test_slate_game_navigation_emits_shell_handoff(monkeypatch):
+    """The actual Slate card calls navigation.go_to_game directly."""
+    fake_st = _fake_streamlit()
+    monkeypatch.setattr(router, "st", fake_st)
+    monkeypatch.setattr(router.deep_route, "st", fake_st)
+
+    calls = []
+
+    def original_go_to_game(game_id):
+        calls.append(game_id)
+        return "navigated"
+
+    def fake_parent_render():
+        return router.navigation.go_to_game("game-1")
+
+    monkeypatch.setattr(router.navigation, "go_to_game", original_go_to_game)
+    monkeypatch.setattr(router.frozen_parent, "render_app", fake_parent_render)
+
+    assert router.render_app() == "navigated"
+    assert router.navigation.go_to_game is original_go_to_game
+    assert calls == ["game-1"]
+    assert fake_st.session_state[router.deep_route.SHELL_SPORT_SESSION_KEY] == "WNBA"
+    assert fake_st.session_state[router.deep_route.SHELL_MARKET_SESSION_KEY] == "PRA"
+    assert fake_st.query_params[router.deep_route.SHELL_SPORT_QUERY_KEY] == "WNBA"
+    assert fake_st.query_params[router.deep_route.SHELL_MARKET_QUERY_KEY] == "PRA"
