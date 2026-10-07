@@ -1,0 +1,46 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json": "56fa62c3cc2119aac7c86dcf1cc3f2a6b1cd7189",
+    "devsystem/task_ledgers/wnba-pra-history-multisource-v1-step1.json": "4a4a1d8e91e5a593d3ee2b2dc02602bcc7d301e2",
+    "docs/superpowers/plans/2026-10-07-wnba-pra-history-multisource-step1.md": "30a1c5c0b5f94135ff39948da144e28e34849d63",
+    "sports_api/api/wnba_pra_detail_bundle.py": "f6bd07efd6c51aeb8b65490fb8278c4387b69761",
+    "sports_api/wnba_pra_history_multisource_v1.py": "be96e8d39306a05c96f7781a822f05c1f2885052",
+    "tests/test_wnba_pra_history_multisource_v1_step1.py": "b383d7fdce5f1e932ef64f5e68f2984a7d57c04a"
+  },
+  "candidate_sha": "26091bfa6b37116f0cf170cee407e279b7e8b6a9",
+  "created_at": "2026-10-07T21:42:06.755626+00:00",
+  "dependency_map": {
+    "sports_api/wnba_league.py": "1d410dfaf7040a604aaa29fe7e201fe3509e62b0",
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "385ebd3dea99516281d70179d7927aa1ae7042b6"
+  },
+  "deployment_identity": "6fb3935670912c9e52f9afb7b02e927e910088a0",
+  "digest": "6c448379aa1a8c161aed8c724663ebe34a347defb95149a89cf74d9e14955e37",
+  "evidence_digests": [
+    "255704f0f17d814720be15d6d56ed4a2f214fe8ada7bfc177b9535562c0745a3",
+    "3c3f40d740de649e7742de8182f7fb12f2e350fed5db548d19e6c402bdea1cb6"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f15a8f49a68e9c163a76dce450d5edbbbeea2cf1374b53873fc5723907b5fa35",
+  "proof_id": "wnba-pra-history-multisource-v1-step1-26091bfa6b37116f-7f1ddb592167a0fd",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 185,
+    "state_hash": "c724272b73372ececa74be33c8310b2fae7586ce9fae4e6bafe735918587bea3"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 185,
+    "state_hash": "c724272b73372ececa74be33c8310b2fae7586ce9fae4e6bafe735918587bea3"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "wnba-pra-history-multisource-v1-step1",
+  "workstream": "api2-wnba-pra-history-v1-step1"
+}
