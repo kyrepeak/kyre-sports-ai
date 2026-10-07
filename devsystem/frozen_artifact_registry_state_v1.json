@@ -29,6 +29,17 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    },
+    {
+      "files": {
+        "wnba_players_v25.py": {
+          "from_blob": "9960efb20d9e6f3791ed5c3228ca42abd884f828",
+          "to_blob": "13055f7bc06a8af369daba47453e92fe7e6c8ea7"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "54e3fe375cb22fc53c844ba50bb6dd04f45e7482",
+      "thaw_id": "THAW-API2-WNBA-DATA-STEP2-LIVE-HYDRATION-R2"
     }
   ],
   "entries": {
@@ -2298,9 +2309,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 151,
+  "revision": 152,
   "schema_version": 1,
   "source_main_sha": "c038037f0c7f9e1a6338c2ca29bdcae08e15fae7",
-  "state_hash": "90d57744cbc652e6175d25b8afa7aeefc2ab4453b6bb7b1b8ade324c93e14fc6",
+  "state_hash": "b9f957642985f34412f27c4ea9ef0c932787b059bef35bda80364de299a23ba0",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
