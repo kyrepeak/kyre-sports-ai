@@ -1,0 +1,70 @@
+{
+  "version": "RUNLESS_TASK17_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Runless Final-Mile Convergence Accelerator V1",
+  "task": "17",
+  "step": "6/6",
+  "mission": "Tail SLA Telemetry",
+  "base_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "runless_proof_plane/tail_sla_telemetry.py",
+      "tests/test_runless_task17_step6_tail_sla_telemetry.py",
+      "devsystem/runless_proof_plans/runless-task17-step6-tail-sla-telemetry.json",
+      "devsystem/execution_plans/runless-task17-step6-tail-sla-telemetry.json",
+      "devsystem/task_ledgers/runless-task17-step6-tail-sla-telemetry.json"
+    ]
+  },
+  "contract": {
+    "timestamp_every_state": true,
+    "required_fields": ["blocked_on", "tail_age_seconds", "next_event"],
+    "normal_tail_sla_seconds": 120,
+    "sla_origin": "first CERTIFIED_PROOF state",
+    "hosted_deployment_waits_event_driven": true,
+    "wake_on_meaningful_identity_change": true,
+    "polling_required": false
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "lease_id": "SCOPE-LEASE-C20C0E7167152850461F299C",
+    "exact_head_thaw_required": false,
+    "rollback_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8"
+  },
+  "tdd": {
+    "red_head": "38186c1a71d3ffbaf17b4c4babc69f98c8fd23c4",
+    "red_observed": true,
+    "red_proof_id": "runless-task17-step6-tail-sla-telemetry-38186c1a71d3ffba-13d9cf82d432ba7e",
+    "red_result": "RUNLESS_STATIC_PROOF_FAILED:python -m pytest -q tests/test_runless_task17_step6_tail_sla_telemetry.py",
+    "green_patch_commit": "16db35d13fdf6c1bca9577ddfdc1333c120d8e27"
+  },
+  "acceptance": {
+    "normal_tail_at_or_below_120_seconds_is_within_sla": true,
+    "normal_tail_above_120_seconds_is_explicit_breach": true,
+    "hosted_wait_excluded_from_normal_sla": true,
+    "hosted_wait_never_polls": true,
+    "meaningful_identity_change_requests_immediate_resume": true,
+    "missing_certified_proof_fails_closed": true,
+    "non_monotonic_timestamps_fail_closed": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "github_actions_enabled": false,
+    "no_product_or_sports_model_change": true
+  },
+  "completion_contract": {
+    "after_freeze": "RUNLESS_TASK17_COMPLETE",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 100.0
+  }
+}
