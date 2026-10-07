@@ -9,56 +9,23 @@
       "previous_lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
       "queue_key": "deploy:pickvault",
       "ticket_id": "WAIT-TICKET-DB41A76BECD74762595C40BD"
+    },
+    {
+      "handed_off_at_utc": "2026-10-07T23:45:23Z",
+      "lease_state_hash": "a37fe11631f784d6b3d6f5913fbfd590ea1264ebd2a70c8950a0eab5ada1f97e",
+      "new_lease_id": "SCOPE-LEASE-67048376F53B606480D75ECF",
+      "owner_id": "api2-finalization-authority-v1-step3",
+      "previous_lease_id": "SCOPE-LEASE-58276A81543E070B30D3D29C",
+      "queue_key": "runless-proof-plane-v1",
+      "ticket_id": "WAIT-TICKET-748127A71979A21A76B78EA6"
     }
   ],
   "queue_ref": "refs/heads/monster-lease-wait-queue",
   "queue_state_path": "devsystem/atomic_wait_queue_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 6,
+  "revision": 7,
   "schema_version": 1,
-  "state_hash": "e58dedbfed57e26a0c351129153ccc37b3b808af7a15c1556e9864ad91ea0859",
-  "tickets": [
-    {
-      "blocked_by_lease_id": "SCOPE-LEASE-58276A81543E070B30D3D29C",
-      "enqueued_at_utc": "2026-10-07T23:00:25Z",
-      "expires_at_utc": "2026-10-08T01:00:25Z",
-      "owner_id": "api2-finalization-authority-v1-step3",
-      "queue_key": "runless-proof-plane-v1",
-      "scope": {
-        "dependency_tokens": [
-          "canonical-completion",
-          "finalization-authority-step3",
-          "ledger-auto-heal",
-          "runless-final-gate",
-          "runless-proof-receipts",
-          "terminal-completion"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "queue:ticket": "WAIT-TICKET-748127A71979A21A76B78EA6"
-        },
-        "shared_resources": [
-          "monster-frozen-artifact-registry",
-          "runless-final-gate",
-          "runless-proof-plane-v1",
-          "runless-proof-receipts"
-        ],
-        "write_paths": [
-          "devsystem/execution_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
-          "devsystem/runless_proof_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
-          "devsystem/task_ledgers/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
-          "devsystem/terminal_completion_latch_v1.py",
-          "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step3-terminal-completion-latch.md",
-          "runless_proof_plane/api2_finalization_authority_step3_closeout.py",
-          "runless_proof_plane/api2_finalization_authority_step3_prove.py",
-          "runless_proof_plane/bootstrap.py",
-          "tests/test_devsystem_terminal_completion_latch_v1.py"
-        ]
-      },
-      "sequence": 4,
-      "status": "WAITING",
-      "ticket_id": "WAIT-TICKET-748127A71979A21A76B78EA6"
-    }
-  ],
+  "state_hash": "0a8adfaf8e2a3619edb0c3ea577530595b261cf536b8514025ba0fce030793ad",
+  "tickets": [],
   "version": "MONSTER_V7_ATOMIC_WAIT_QUEUE_LEASE_HANDOFF_V1"
 }
