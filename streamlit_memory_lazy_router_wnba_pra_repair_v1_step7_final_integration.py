@@ -93,6 +93,12 @@ def _emit_one_shot_wnba_pra_shell_handoff() -> None:
         st.query_params[deep_route.SHELL_MARKET_QUERY_KEY] = deep_route.SHELL_MARKET_VALUE
 
 
+def _pin_wnba_pra_shell_session() -> None:
+    """Keep an already-active WNBA/PRA shell pinned without a new jump/rerun."""
+    st.session_state[deep_route.SHELL_SPORT_SESSION_KEY] = deep_route.SHELL_SPORT_VALUE
+    st.session_state[deep_route.SHELL_MARKET_SESSION_KEY] = deep_route.SHELL_MARKET_VALUE
+
+
 def _wrap_step7_player_open(delegate):
     """Capture the shell handoff inside the callback object persisted by Streamlit."""
     def _wrapped(game_id: str, player: Mapping[str, Any]):
@@ -105,23 +111,15 @@ def _wrap_step7_player_open(delegate):
 def _pin_deep_wnba_session_route(
     state: navigation.NavigationState | None = None,
 ) -> navigation.NavigationState:
-    """Keep deep WNBA routes stable while explicit transitions hand off once.
-
-    The universal router intentionally consumes and deletes ``ks_jump_*`` query
-    keys, then reruns. Passive Game/Player rerenders therefore remain session-only
-    to avoid the old consume/rerun loop. An explicit navigation transition receives
-    one category-jump handoff so the universal shell follows that click before the
-    destination page renders.
-    """
+    """Keep deep WNBA routes stable after the universal jump has been consumed."""
     explicit_transition = state is not None
     resolved = state or navigation.current_state()
     if deep_route._protect_explicit_cfb_top_picks_route():
         return resolved
     if resolved.page not in {navigation.PAGE_GAME, navigation.PAGE_PLAYER}:
         return resolved
-    st.session_state[deep_route.SHELL_SPORT_SESSION_KEY] = deep_route.SHELL_SPORT_VALUE
-    st.session_state[deep_route.SHELL_MARKET_SESSION_KEY] = deep_route.SHELL_MARKET_VALUE
-    if explicit_transition:
+    _pin_wnba_pra_shell_session()
+    if explicit_transition and resolved.page == navigation.PAGE_PLAYER:
         _emit_one_shot_wnba_pra_shell_handoff()
     return resolved
 
@@ -136,7 +134,7 @@ def render_app() -> Any:
     original_final_player_open = final_transport._open_player_immediate
 
     def _go_to_game_with_shell_handoff(*args, **kwargs):
-        _emit_one_shot_wnba_pra_shell_handoff()
+        _pin_wnba_pra_shell_session()
         return original_go_to_game(*args, **kwargs)
 
     def guarded_game_renderer(state):
