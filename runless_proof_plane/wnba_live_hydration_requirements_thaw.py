@@ -63,7 +63,7 @@ def execute(client):
         "thaw_id": THAW_ID,
         "status": "ACTIVE",
         "target_head_sha": CANDIDATE_SHA,
-        "files": {PATH: {"from_blob": CURRENT_MAIN_BLOB, "to_blob": CANDIDATE_BLOB}},
+        "files": {PATH: {"from_blob": OWNER_HISTORICAL_BLOB, "to_blob": CANDIDATE_BLOB}},
     }
     updated = deepcopy(registry)
     updated.setdefault("active_thaws", []).append(grant)
