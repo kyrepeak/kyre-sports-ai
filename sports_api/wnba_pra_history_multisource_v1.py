@@ -3,11 +3,11 @@
 Player Intelligence previously depended on one per-game history provider even
 when the official WNBA player profile published the same completed-game stats.
 This module keeps ESPN as one verified provider and independently reads the
-official WNBA profile in parallel.  Official WNBA values backfill only missing
-MIN/PTS/REB/AST fields on the same date/opponent; an already-present provider
-value is never overwritten.
+official WNBA webview player profile in parallel. Official WNBA values backfill
+only missing MIN/PTS/REB/AST fields on the same date/opponent; an already-present
+provider value is never overwritten.
 
-This is read-only display/history transport.  It does not run or alter model,
+This is read-only display/history transport. It does not run or alter model,
 projection, probability, market, qualification, ranking, sportsbook, or wager
 logic.
 """
@@ -28,7 +28,7 @@ from sports_api.wnba_pra_speed_v3_step3_espn_history import (
 )
 
 
-WNBA_PROFILE_BASE = "https://www.wnba.com/player"
+WNBA_PROFILE_BASE = "https://www.wnba.com/webview/player"
 OFFICIAL_SOURCE = "WNBA.com Player Profile"
 OFFICIAL_SOURCE_URL = "https://www.wnba.com/"
 REQUEST_TIMEOUT_SECONDS = 3.5
@@ -229,7 +229,7 @@ def normalize_official_wnba_profile_html(
         raise WNBAMultiSourceHistoryError("OFFICIAL_WNBA_RECENT_GAME_ROWS_MISSING")
     return {
         "source": OFFICIAL_SOURCE,
-        "source_url": f"{WNBA_PROFILE_BASE}/{int(player_id)}/profile",
+        "source_url": f"{WNBA_PROFILE_BASE}/{int(player_id)}",
         "source_endpoint": "official_player_profile_recent_game_stats",
         "data_type": "official_player_game_log",
         "season": int(season),
@@ -251,7 +251,7 @@ def get_official_wnba_profile_history(player_id: int, season: int) -> dict[str, 
     year = int(season)
     if pid <= 0:
         raise ValueError("WNBA player_id must be positive.")
-    url = f"{WNBA_PROFILE_BASE}/{pid}/profile"
+    url = f"{WNBA_PROFILE_BASE}/{pid}"
     try:
         response = requests.get(
             url,
@@ -301,12 +301,14 @@ def merge_verified_histories(
         if not isinstance(verified, Mapping):
             continue
         matched_games += 1
+        game_backfilled = 0
         for field in BACKFILL_FIELDS:
             if game.get(field) is None and verified.get(field) is not None:
                 game[field] = verified.get(field)
                 backfilled += 1
-        if backfilled:
-            game.setdefault("history_backfill_source", OFFICIAL_SOURCE)
+                game_backfilled += 1
+        if game_backfilled:
+            game["history_backfill_source"] = OFFICIAL_SOURCE
 
     verification = result.get("verification")
     verification = dict(verification) if isinstance(verification, Mapping) else {}
@@ -412,6 +414,7 @@ __all__ = [
     "BACKFILL_FIELDS",
     "OFFICIAL_SOURCE",
     "REQUEST_TIMEOUT_SECONDS",
+    "WNBA_PROFILE_BASE",
     "WNBAMultiSourceHistoryError",
     "get_multisource_player_game_log_dataset",
     "get_official_wnba_profile_history",
