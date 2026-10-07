@@ -7,10 +7,17 @@
   "total_steps": 6,
   "mission": "Tail SLA Telemetry",
   "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
-  "base_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
+  "base_main_sha": "299cc72b502285a1fe714c2e513e363013ad3e90",
+  "original_red_base_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
   "problem": "Final-mile stalls can still be observed only after the fact; the control plane does not expose a canonical tail clock, current blocker, or next event for every closeout state.",
   "root_cause": "Runless has proof reuse, event-driven resume, and atomic closeout, but no side-effect-free telemetry contract that timestamps each tail state, enforces the 120-second normal-tail target, and distinguishes hosted deployment waits from ordinary closeout latency.",
   "patch": "Add pure Tail SLA Telemetry that records every state timestamp, exposes blocked_on/tail_age_seconds/next_event, classifies normal tails against the 120-second target, and keeps hosted deployment waits event-driven with immediate resume on meaningful identity change.",
+  "forward_port": {
+    "required": true,
+    "reason": "authorized WNBA deployment-only merge moved main after RED",
+    "content_preserved": true,
+    "forward_port_commit": "a19074f3f341aa38d5a9bc9104f5fda1b08dcc5d"
+  },
   "step2a": {
     "single_authority": true,
     "branch": "runless-task17-step6-tail-sla-telemetry-r1",
@@ -18,6 +25,8 @@
     "lease_owner": "monster-v2-runless-task17-step6",
     "registry_revision_at_start": 176,
     "registry_state_hash_at_start": "bd7b9276f05b426b3db8e10f4da0eb81016be11ee8e05c59890dd46c7c8e9c8f",
+    "registry_revision_current": 177,
+    "registry_state_hash_current": "73ce8f8b94ad086fe56de94ab9a420a37b99efbebab310d6206191fe81a267c1",
     "github_actions_fallback_authorized": false,
     "frozen_parent_token": "RUNLESS_TASK17_STEP5_ATOMIC_CLOSEOUT_FROZEN",
     "exact_head_thaw_required_for": []
