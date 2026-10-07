@@ -82,17 +82,26 @@ def _blocked(message: str, *, kind: str) -> dict[str, Any]:
     return {"state": "STEP7_INTEGRATION_BLOCKED", "kind": kind, "detail": message}
 
 
+def _emit_one_shot_wnba_pra_shell_handoff() -> None:
+    """Issue the universal-shell jump once for an explicit deep transition."""
+    if deep_route._query_value(deep_route.SHELL_SPORT_QUERY_KEY) != deep_route.SHELL_SPORT_VALUE:
+        st.query_params[deep_route.SHELL_SPORT_QUERY_KEY] = deep_route.SHELL_SPORT_VALUE
+    if deep_route._query_value(deep_route.SHELL_MARKET_QUERY_KEY) != deep_route.SHELL_MARKET_VALUE:
+        st.query_params[deep_route.SHELL_MARKET_QUERY_KEY] = deep_route.SHELL_MARKET_VALUE
+
+
 def _pin_deep_wnba_session_route(
     state: navigation.NavigationState | None = None,
 ) -> navigation.NavigationState:
-    """Keep deep WNBA routes owned by session after universal jump consumption.
+    """Keep deep WNBA routes stable while explicit transitions hand off once.
 
     The universal router intentionally consumes and deletes ``ks_jump_*`` query
-    keys, then reruns. Re-injecting those one-shot jump keys on every Game/Player
-    render causes another consume+rereun before the destination can render.
-    Deep navigation already owns ``wnba_pra_*`` query state, so after the first
-    category handoff the durable shell ownership is session-only.
+    keys, then reruns. Passive Game/Player rerenders therefore remain session-only
+    to avoid the old consume/rerun loop. An explicit navigation transition receives
+    one category-jump handoff so the universal shell follows that click before the
+    destination page renders.
     """
+    explicit_transition = state is not None
     resolved = state or navigation.current_state()
     if deep_route._protect_explicit_cfb_top_picks_route():
         return resolved
@@ -100,6 +109,8 @@ def _pin_deep_wnba_session_route(
         return resolved
     st.session_state[deep_route.SHELL_SPORT_SESSION_KEY] = deep_route.SHELL_SPORT_VALUE
     st.session_state[deep_route.SHELL_MARKET_SESSION_KEY] = deep_route.SHELL_MARKET_VALUE
+    if explicit_transition:
+        _emit_one_shot_wnba_pra_shell_handoff()
     return resolved
 
 
