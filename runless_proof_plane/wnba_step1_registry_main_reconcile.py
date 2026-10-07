@@ -6,11 +6,11 @@ from copy import deepcopy
 from devsystem.frozen_artifact_registry_v1 import validate_registry
 from .registry import GithubRegistryBackend, _state_hash
 
-EXPECTED_SOURCE_MAIN = "42b9bcf3465af8aca41141a1d2713d5731ea6c00"
-TARGET_MAIN = "f84bf63f966a52ed3cd1d6275bedc2a0cf3b125b"
-CANDIDATE = "206183bdbdd4e16ef1af4d0ad38d7a06876899e2"
-EXPECTED_REVISION = 186
-EXPECTED_HASH = "21d594e5f52335bb2b5eba22a23da5e467856ee238f2730a3459c29c99f03f6f"
+EXPECTED_SOURCE_MAIN = "f84bf63f966a52ed3cd1d6275bedc2a0cf3b125b"
+TARGET_MAIN = "aba567ca13d1a01d9ef783efcff47b784b414a5c"
+CANDIDATE = "3a177612513cb5ee33d310efeadedb2eb22723ec"
+EXPECTED_REVISION = 187
+EXPECTED_HASH = "16f49877b3df2502b3be4fa7b70f1e9dd54043588991ca3e36af4cdb7773300c"
 
 
 def execute(client):
@@ -50,7 +50,7 @@ def execute(client):
     if updated.get("active_thaws") != current.get("active_thaws"):
         raise RuntimeError("WNBA_STEP1_REGISTRY_RECONCILE_THAW_MUTATION")
     text = json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
-    client.update_content(backend.path, text, backend.branch, "registry: advance source main after WNBA profile merge", backend._blob_sha)
+    client.update_content(backend.path, text, backend.branch, "registry: advance source main after WNBA SSR profile merge", backend._blob_sha)
     readback = backend.read_registry()
     if (str(readback.get("source_main_sha") or "") != TARGET_MAIN or int(readback.get("revision") or -1) != EXPECTED_REVISION + 1 or str(readback.get("state_hash") or "") != str(updated["state_hash"]) or readback.get("entries") != current.get("entries") or readback.get("active_thaws") != current.get("active_thaws")):
         raise RuntimeError("WNBA_STEP1_REGISTRY_RECONCILE_READBACK_MISMATCH")
