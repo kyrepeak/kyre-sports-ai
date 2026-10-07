@@ -17,6 +17,7 @@
       "runless_proof_plane/prove.py",
       "tests/test_runless_task17_step1_real_prove.py",
       "tests/test_runless_task17_step1_prove_runner.py",
+      "tests/test_runless_task17_step1_inherited_frozen_main.py",
       "devsystem/runless_proof_plans/runless-task17-step1-real-prove.json",
       "devsystem/execution_plans/runless-task17-step1-real-prove-execution.json",
       "devsystem/task_ledgers/runless-task17-step1-real-prove-execution.json"
@@ -38,7 +39,9 @@
     "red_head_first": "1211bbad3be6250a50f8793a9a6499a358fe8328",
     "red_observed": true,
     "red_reason": "full-mode POST /prove returns 409 RUNLESS_PLAN_REQUIRED instead of invoking real proof execution",
-    "production_code_before_red": false
+    "production_code_before_red": false,
+    "inherited_frozen_red_commit": "580933fec4484c08a121765e744bf73d0bf583e5",
+    "inherited_frozen_red_evidence": "live Runless proof rejected candidate for unrelated frozen blobs already inherited from authoritative main"
   },
   "acceptance": {
     "full_mode_prove_loads_candidate_plan": true,
@@ -50,7 +53,10 @@
     "runless_final_gate_published_on_exact_candidate": true,
     "successful_premerge_exit_state": "MERGE_AUTHORIZED",
     "bootstrap_mode_fails_closed": true,
-    "github_actions_enabled": false
+    "github_actions_enabled": false,
+    "authoritative_main_inherited_frozen_state_not_blame_candidate": true,
+    "candidate_authored_frozen_delta_requires_exact_head_thaw": true,
+    "candidate_cannot_modify_unreconciled_inherited_frozen_state": true
   },
   "completion_contract": {
     "after_freeze": "RUNLESS_TASK17_STEP2_PARALLEL_PROOF_SLICES",

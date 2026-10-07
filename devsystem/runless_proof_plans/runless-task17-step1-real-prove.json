@@ -8,7 +8,8 @@
       "pytest",
       "-q",
       "tests/test_runless_task17_step1_real_prove.py",
-      "tests/test_runless_task17_step1_prove_runner.py"
+      "tests/test_runless_task17_step1_prove_runner.py",
+      "tests/test_runless_task17_step1_inherited_frozen_main.py"
     ],
     [
       "python",
@@ -32,7 +33,8 @@
     "runless_proof_plane/api.py",
     "runless_proof_plane/prove.py",
     "tests/test_runless_task17_step1_real_prove.py",
-    "tests/test_runless_task17_step1_prove_runner.py"
+    "tests/test_runless_task17_step1_prove_runner.py",
+    "tests/test_runless_task17_step1_inherited_frozen_main.py"
   ],
   "dependencies": [
     "devsystem/runless_proof_plan_v1.py",
