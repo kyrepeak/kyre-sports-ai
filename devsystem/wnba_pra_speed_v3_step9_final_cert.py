@@ -57,13 +57,21 @@ def run(production_url: str) -> int:
             page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
             deadline = time.monotonic() + 90.0
             marker = None
+            attempts = 0
             while time.monotonic() < deadline:
-                frame, _ = _find_app_frame(page, timeout_seconds=12.0)
+                attempts += 1
+                try:
+                    frame, _ = _find_app_frame(page, timeout_seconds=12.0)
+                except Exception as exc:
+                    print(f"LIVE_SHA_FRAME_WAIT attempt={attempts} error={type(exc).__name__}", flush=True)
+                    page.wait_for_timeout(1000)
+                    continue
                 candidate = frame.locator(DEPLOYMENT_SELECTOR).first
                 if candidate.count() > 0:
                     marker = candidate
                     break
-                page.wait_for_timeout(250)
+                print(f"LIVE_SHA_MARKER_WAIT attempt={attempts}", flush=True)
+                page.wait_for_timeout(1000)
             if marker is None:
                 print("LIVE_SHA_MARKER_MISSING", flush=True)
                 return 2
