@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "task_id": "wnba-data-completeness-repair-v1-step2-rebound-alias",
+  "title": "WNBA Data Completeness Repair V1 Step 2 — ESPN totalRebounds alias",
+  "project": "API2",
+  "workstream": "api2-wnba-data-completeness-repair-v1-step2",
+  "step": "2/3",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "c87f0f2ed07631a8e7e8c3c342a2f946230a9159",
+  "problem": "Public WNBA Game Center rebounds remain 0.0 for all players after selected-day hydration succeeds, so PRA omits real rebounds.",
+  "root_cause": "ESPN live gamelog maps REB to the normalized name totalRebounds, while the parser only accepts REB/rebounds.",
+  "patch": "Add totalRebounds to the existing rebound alias list only.",
+  "mutation_scope": [
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py",
+    "tests/test_wnba_data_completeness_repair_v1_step2_rebound_alias.py",
+    "devsystem/wnba_data_completeness_repair_v1_step2_rebound_alias_cert.py",
+    "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step2-rebound-alias.json",
+    "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step2-rebound-alias.json"
+  ],
+  "expected_product_files_changed": 1,
+  "expected_cross_sport_files_changed": 0,
+  "provider_shape_deploy": "dep-db2rdsid0e5s73e5ai60",
+  "red_proof_deploy": "dep-db2rf50m7kps73c1rld0",
+  "green_proof_deploy": "dep-db2ricp42hec73flbg4g",
+  "runless_required": true,
+  "github_actions_fallback": false,
+  "frozen_registry_thaw_required": false,
+  "freeze_token": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP2_FROZEN"
+}

@@ -1,0 +1,60 @@
+{
+  "project": "API2",
+  "workstream": "api2-wnba-data-completeness-repair-v1-step2",
+  "step": "2/3",
+  "base_main_sha": "c87f0f2ed07631a8e7e8c3c342a2f946230a9159",
+  "problem": "Public WNBA Game Center player cards have real MIN/PTS/AST after the selected-day repair but every REB value is 0.0, causing PRA to omit rebounds.",
+  "root_cause": "The live ESPN common/v3 athlete-gamelog payload names the rebound statistic totalRebounds. sports_api/wnba_pra_speed_v3_step3_espn_history.py accepts REB/rebounds but not totalRebounds, so live rebound values are normalized to None and downstream averages become 0.0.",
+  "patch": "Add totalRebounds as one additional alias in the existing rebound _pick call. No transport, projection, probability, market, router, navigation, sportsbook, ranking, or other-sport behavior changes.",
+  "authorized_product_files": [
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py"
+  ],
+  "proof_files": [
+    "tests/test_wnba_data_completeness_repair_v1_step2_rebound_alias.py",
+    "devsystem/wnba_data_completeness_repair_v1_step2_rebound_alias_cert.py",
+    "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step2-rebound-alias.json",
+    "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step2-rebound-alias.json"
+  ],
+  "forbidden_scope": [
+    "navigation",
+    "pushstate",
+    "router",
+    "role model math",
+    "projection math",
+    "probability",
+    "market",
+    "sportsbook",
+    "ranking",
+    "other sports"
+  ],
+  "proof_contract": {
+    "live_total_rebounds_alias_preserved": true,
+    "existing_reb_and_rebounds_aliases_preserved": true,
+    "provider_shape_verified_live": true,
+    "public_nonzero_rebound_values_required": true,
+    "public_pra_includes_rebounds_required": true,
+    "cross_sport_files_changed": 0
+  },
+  "evidence": {
+    "provider_shape_service": "runless-proof-plane",
+    "provider_shape_deploy": "dep-db2rdsid0e5s73e5ai60",
+    "provider_shape_http_status": 200,
+    "provider_name": "totalRebounds",
+    "provider_observed_rebound_values": [5, 7, 1],
+    "pre_patch_public_proof_service": "wnba-step9-gamecenter-seam-diagnostic",
+    "pre_patch_public_proof_deploy": "dep-db2rb9qjnfac73fob4m0"
+  },
+  "tdd": {
+    "red_proof_service": "wnba-step9-gamecenter-seam-diagnostic",
+    "red_proof_deploy": "dep-db2rf50m7kps73c1rld0",
+    "red_rc": 1,
+    "red_failure": "live ESPN totalRebounds alias normalized to no rebound value",
+    "green_proof_service": "wnba-step9-gamecenter-seam-diagnostic",
+    "green_proof_deploy": "dep-db2ricp42hec73flbg4g",
+    "green_rc": 0
+  },
+  "runless_required": true,
+  "github_actions_fallback": false,
+  "frozen_registry_thaw_required": false,
+  "freeze_token": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP2_FROZEN"
+}

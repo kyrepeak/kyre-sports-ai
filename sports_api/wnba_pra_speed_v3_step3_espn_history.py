@@ -472,7 +472,7 @@ def _normalize_game(
         "free_throw_percentage": _to_float(_pick(stats, "FT%", "FT_PCT", "freeThrowPct")),
         "offensive_rebounds": _to_int(_pick(stats, "OREB", "offensiveRebounds")),
         "defensive_rebounds": _to_int(_pick(stats, "DREB", "defensiveRebounds")),
-        "rebounds": _to_int(_pick(stats, "REB", "rebounds")),
+        "rebounds": _to_int(_pick(stats, "REB", "rebounds", "totalRebounds")),
         "assists": _to_int(_pick(stats, "AST", "assists")),
         "steals": _to_int(_pick(stats, "STL", "steals")),
         "blocks": _to_int(_pick(stats, "BLK", "blocks")),
