@@ -3,9 +3,11 @@
 The frozen Step-2 Slate remains the Page-1 owner. Heavy WNBA role/projection
 modules are imported lazily only after a matchup is selected. One cached batch
 call produces the existing frozen minutes/role PTS/REB/AST/PRA values for the
-selected game's two teams. This layer does not change model math and does not
-load sportsbook markets, H2H, ranking, qualification, Monte Carlo, or Page-3
-intelligence.
+selected game's two teams. When the direct player pool contains roster-only
+zero-production fallbacks, this page hydrates only those rows from the hosted
+Kyre Sports API official WNBA season/L10/L5 stats before the frozen role engine
+runs. This layer does not change model math and does not load sportsbook
+markets, H2H, ranking, qualification, Monte Carlo, or Page-3 intelligence.
 
 Selecting a player writes only the frozen Step-1 player navigation state.
 """
@@ -24,6 +26,7 @@ import wnba_pra_slate_v2_step2 as slate
 
 MODEL_VERSION = "WNBA PRA NAVIGATION V2 • STEP 3 GAME CENTER"
 CACHE_TTL_SECONDS = 180
+HOSTED_STATS_CACHE_TTL_SECONDS = 90
 PERF_KEY = "ks_wnba_pra_nav_v2_step3_perf"
 SESSION_SELECTED_PLAYER = "ks_wnba_pra_nav_v2_selected_player"
 
@@ -35,6 +38,9 @@ GAME_CENTER_CONTRACT = {
     "frozen_step2_slate_reused": True,
     "selected_game_projection_batch_calls_per_uncached_render": 1,
     "cache_ttl_seconds": CACHE_TTL_SECONDS,
+    "hosted_stats_fallback_reads_max": 3,
+    "hosted_stats_fallback_only_for_zero_production": True,
+    "fake_zero_production_allowed": False,
     "selected_game_output_only": True,
     "page3_prefetched": False,
     "sportsbook_markets_loaded": False,
@@ -134,6 +140,90 @@ def _record_from_role_row(row: Mapping[str, Any], team_id: int) -> dict[str, Any
     }
 
 
+@st.cache_data(ttl=HOSTED_STATS_CACHE_TTL_SECONDS, show_spinner=False)
+def _hosted_stat_windows(season: int) -> dict[int, dict[str, Any]]:
+    """Read official season/L10/L5 player stats from the hosted Kyre WNBA API."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from wnba_api_client_v1 import KyreWNBAAPIClient
+
+    client = KyreWNBAAPIClient(timeout_seconds=6.0, attempts=1)
+
+    def fetch(last_n: int) -> tuple[int, dict[str, Any]]:
+        payload = client.get_json(
+            "/api/v1/wnba/stats/players",
+            params={
+                "season": int(season),
+                "season_type": "Regular Season",
+                "last_n_games": int(last_n),
+                "per_mode": "PerGame",
+            },
+        )
+        return int(last_n), payload
+
+    result: dict[int, dict[str, Any]] = {}
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {pool.submit(fetch, n): n for n in (0, 10, 5)}
+        for future in as_completed(futures):
+            try:
+                n, payload = future.result()
+            except Exception:
+                continue
+            if isinstance(payload, dict):
+                result[int(n)] = payload
+    return result
+
+
+def _hydrate_stats_for_game(stats, *, game_date: str, away_id: int, home_id: int):
+    """Hydrate only known zero-only fallback rows and drop unresolved fake-zero rows."""
+    import pandas as pd
+    from wnba_pra_game_center_stats_hydration_v1 import (
+        count_zero_production_candidates,
+        hydrate_zero_production_rows,
+        is_zero_production_candidate,
+    )
+
+    allowed = {int(away_id), int(home_id)}
+    records = stats.to_dict("records")
+    candidates = count_zero_production_candidates(records, allowed)
+    diag = {"candidates": candidates, "hydrated": 0, "unresolved": 0}
+    if candidates:
+        windows = _hosted_stat_windows(pd.to_datetime(game_date).year)
+        records, diag = hydrate_zero_production_rows(
+            records,
+            season_payload=windows.get(0),
+            l10_payload=windows.get(10),
+            l5_payload=windows.get(5),
+            allowed_team_ids=allowed,
+        )
+
+    usable = [
+        row
+        for row in records
+        if not is_zero_production_candidate(row, allowed)
+    ]
+    out = pd.DataFrame(usable)
+    if out.empty:
+        raise WNBAGameCenterLoadError(
+            "Observed WNBA player production is unavailable; fake zero production was blocked."
+        )
+
+    for team_id in allowed:
+        if "TEAM_ID" not in out.columns:
+            raise WNBAGameCenterLoadError("Hydrated WNBA player pool is missing TEAM_ID.")
+        team = out[pd.to_numeric(out["TEAM_ID"], errors="coerce").eq(int(team_id))]
+        if team.empty:
+            raise WNBAGameCenterLoadError(
+                f"Observed WNBA player production is unavailable for team {team_id}."
+            )
+        minutes = pd.to_numeric(team.get("MIN"), errors="coerce").fillna(0.0)
+        if not bool(minutes.gt(0.0).any()):
+            raise WNBAGameCenterLoadError(
+                f"Observed WNBA player minutes are unavailable for team {team_id}."
+            )
+
+    return out.reset_index(drop=True), diag
+
+
 @st.cache_data(ttl=CACHE_TTL_SECONDS, show_spinner=False)
 def load_game_center(
     game_id: str,
@@ -165,6 +255,13 @@ def load_game_center(
     if stats is None or stats.empty:
         raise WNBAGameCenterLoadError("Date-correct WNBA player pool is unavailable.")
 
+    stats, hydration_diag = _hydrate_stats_for_game(
+        stats,
+        game_date=str(game_date),
+        away_id=int(away_id),
+        home_id=int(home_id),
+    )
+
     result = role.role_projection_for_game(selected, stats=stats)
     teams_obj = result.get("teams") if isinstance(result, Mapping) else None
     if not isinstance(teams_obj, Mapping):
@@ -192,6 +289,9 @@ def load_game_center(
         "teams": teams,
         "players": sum(len(rows) for rows in teams.values()),
         "pool_state": _text((pool_diag or {}).get("state")),
+        "stat_hydration_candidates": int(hydration_diag.get("candidates") or 0),
+        "stat_hydration_hydrated": int(hydration_diag.get("hydrated") or 0),
+        "stat_hydration_unresolved": int(hydration_diag.get("unresolved") or 0),
         "usage_source": _text(result.get("usage_source")) if isinstance(result, Mapping) else "",
         "availability_source": _text(result.get("availability_source")) if isinstance(result, Mapping) else "",
         "model_version": _text(getattr(role, "MODEL_VERSION", "WNBA frozen role engine")),
@@ -363,10 +463,11 @@ def render_game_center(state: navigation.NavigationState) -> dict[str, Any]:
     }
 
     if error_type:
-        st.error("Game Center projections are temporarily unavailable. No sportsbook or Page-3 fallback was loaded.")
+        st.error("Game Center projections are temporarily unavailable. Fake zero-production cards were not rendered.")
         if st.button("Retry Game Center", key="wnba_nav_v2_step3_retry", use_container_width=True):
             try:
                 load_game_center.clear()
+                _hosted_stat_windows.clear()
             except Exception:
                 pass
             st.rerun()
@@ -400,7 +501,7 @@ def render_game_center(state: navigation.NavigationState) -> dict[str, Any]:
         players=home_players,
         game_id=game_id,
     )
-    st.caption("Projected values are the existing frozen WNBA minutes/role model. Step 3 changes presentation only.")
+    st.caption("Projected values use the existing frozen WNBA minutes/role model with verified observed production hydration.")
     return payload
 
 
@@ -447,6 +548,7 @@ def render_step3_route() -> dict[str, Any]:
 __all__ = [
     "CACHE_TTL_SECONDS",
     "GAME_CENTER_CONTRACT",
+    "HOSTED_STATS_CACHE_TTL_SECONDS",
     "MODEL_VERSION",
     "PERF_KEY",
     "SESSION_SELECTED_PLAYER",
