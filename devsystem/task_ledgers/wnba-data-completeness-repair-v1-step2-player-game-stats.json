@@ -1,0 +1,17 @@
+{
+  "project": "API2",
+  "workstream": "api2-wnba-data-completeness-repair-v1-step2",
+  "step": "2/5",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "46d3dc27923ec65af7cdce5eb7b548e8b772e51c",
+  "problem": "Current WNBA players can lose verified production when ESPN and WNBA Stats IDs only partially overlap, producing false zero stat cards downstream.",
+  "root_cause": "The player-pool gate assumes provider ID overlap is globally safe once any one ID overlaps and then filters every WNBA Stats row by ESPN IDs.",
+  "patch": "Use a WNBA-only current-roster production gate that matches by exact ID or normalized name and preserves already league-guarded slate-team production when that team's roster feed is unavailable.",
+  "expected_product_files_changed": 2,
+  "expected_cross_sport_files_changed": 0,
+  "expected_navigation_files_changed": 0,
+  "expected_projection_probability_market_files_changed": 0,
+  "runless_required": true,
+  "github_actions_fallback": false,
+  "freeze_token": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP2_FROZEN"
+}
