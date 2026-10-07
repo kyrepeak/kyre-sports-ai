@@ -1,0 +1,58 @@
+{
+  "task_id": "runless-task17-step1-real-prove",
+  "workstream": "runless-task17-step1",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_task17_step1_real_prove.py",
+      "tests/test_runless_task17_step1_prove_runner.py",
+      "tests/test_runless_task17_step1_inherited_frozen_main.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_api.py",
+      "tests/test_runless_step2a.py",
+      "tests/test_runless_executor.py",
+      "tests/test_runless_gate.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "runless_proof_plane/api.py",
+      "runless_proof_plane/prove.py"
+    ]
+  ],
+  "artifacts": [
+    "runless_proof_plane/api.py",
+    "runless_proof_plane/prove.py",
+    "tests/test_runless_task17_step1_real_prove.py",
+    "tests/test_runless_task17_step1_prove_runner.py",
+    "tests/test_runless_task17_step1_inherited_frozen_main.py"
+  ],
+  "dependencies": [
+    "devsystem/runless_proof_plan_v1.py",
+    "devsystem/runless_terminal_proof_receipt_v1.py",
+    "devsystem/scope_aware_execution_lease_v1.py",
+    "runless_proof_plane/executor.py",
+    "runless_proof_plane/fingerprint.py",
+    "runless_proof_plane/gate.py",
+    "runless_proof_plane/github_client.py",
+    "runless_proof_plane/orchestrator.py",
+    "runless_proof_plane/public_probe.py",
+    "runless_proof_plane/receipts.py",
+    "runless_proof_plane/registry.py",
+    "runless_proof_plane/step2a.py",
+    "runless_proof_plane/workspace.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_TASK17_STEP1_REAL_PROVE_FROZEN"
+}

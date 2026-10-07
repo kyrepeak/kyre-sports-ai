@@ -1,0 +1,55 @@
+{
+  "version": "RUNLESS_TASK17_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "Runless Final-Mile Convergence Accelerator V1",
+  "task": 17,
+  "step": 1,
+  "total_steps": 6,
+  "mission": "Real /prove Execution",
+  "status": "DONE",
+  "base_main_sha": "4036459c8c8cde0ac8f3034b560d7948ad9a5015",
+  "problem": "Production full-mode POST /prove is a placeholder that always returns RUNLESS_PLAN_REQUIRED, forcing proof orchestration to happen outside the normal Runless API path and creating manual/serial final-mile handoffs.",
+  "root_cause": "The repository already contains the proof-plan loader, exact candidate workspace, Step 2A authorization, fingerprinting, static executor, public probe, immutable receipt store, and final-gate publisher, but api.py never composes them into the production /prove endpoint. The initial real proof also exposed that repository-wide frozen verification incorrectly blamed a candidate for frozen state already inherited unchanged from authoritative main.",
+  "patch": "Add a bounded real proof coordinator that validates repository/head/main/workstream/live scope lease/registry truth, loads the candidate-owned Runless plan, verifies frozen protection by candidate delta against exact authoritative main, fingerprints exact artifacts and dependencies, executes static and required public proof without GitHub Actions fallback, writes or reuses an immutable receipt, publishes runless-final-gate on the exact candidate, and exits at MERGE_AUTHORIZED. Wire full-mode /prove to that coordinator while preserving bootstrap fail-closed behavior.",
+  "step2a": {
+    "single_authority": true,
+    "branch": "runless-task17-step1-real-prove-execution-r1",
+    "pr": 1429,
+    "github_actions_fallback_authorized": false,
+    "runless_required_check": "runless-final-gate",
+    "frozen_parent_token": "RUNLESS_PROOF_PLANE_V1_TASK13",
+    "exact_head_thaw_required_for": [
+      "runless_proof_plane/api.py"
+    ]
+  },
+  "tdd": {
+    "red_head": "1211bbad3be6250a50f8793a9a6499a358fe8328",
+    "red_observed": true,
+    "expected_failure": "409 RUNLESS_PLAN_REQUIRED",
+    "bootstrap_negative_control_passed": true,
+    "inherited_frozen_red_commit": "580933fec4484c08a121765e744bf73d0bf583e5",
+    "inherited_frozen_live_failure_observed": true
+  },
+  "acceptance": {
+    "real_plan_loading": true,
+    "step2a_exact_identity": true,
+    "live_scope_lease_validation": true,
+    "proof_fingerprint": true,
+    "static_execution": true,
+    "required_public_probe_execution": true,
+    "immutable_receipt": true,
+    "runless_final_gate": true,
+    "merge_authorized_exit": true,
+    "bootstrap_fail_closed": true,
+    "no_actions_fallback": true,
+    "no_product_or_sports_model_change": true,
+    "authoritative_main_inherited_frozen_state_not_candidate_owned": true,
+    "candidate_authored_frozen_delta_exact_thaw_only": true,
+    "unreconciled_inherited_frozen_state_cannot_be_modified": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
