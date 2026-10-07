@@ -40,6 +40,17 @@
       "status": "ACTIVE",
       "target_head_sha": "54e3fe375cb22fc53c844ba50bb6dd04f45e7482",
       "thaw_id": "THAW-API2-WNBA-DATA-STEP2-LIVE-HYDRATION-R2"
+    },
+    {
+      "files": {
+        "requirements.txt": {
+          "from_blob": "98b621afd372d472784850fed4b603c9989dcf7a",
+          "to_blob": "890ba18abaf02a53cba8929b87bce110e2599dbe"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "b6ab705d7de96b0c8d779abf1f8baa7ab46efbce",
+      "thaw_id": "THAW-API2-WNBA-DATA-STEP2-STREAMLIT-REFRESH-R1"
     }
   ],
   "entries": {
@@ -2309,9 +2320,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 152,
+  "revision": 153,
   "schema_version": 1,
-  "source_main_sha": "c038037f0c7f9e1a6338c2ca29bdcae08e15fae7",
-  "state_hash": "b9f957642985f34412f27c4ea9ef0c932787b059bef35bda80364de299a23ba0",
+  "source_main_sha": "b5bda426136ea7ac8ed2d07308a077db0f8aee4f",
+  "state_hash": "8632c536568197f0b772fafe1bea8dacb871c087af7dcfd590537356073e9dec",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
