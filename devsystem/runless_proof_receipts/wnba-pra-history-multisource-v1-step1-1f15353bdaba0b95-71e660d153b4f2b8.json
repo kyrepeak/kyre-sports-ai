@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json": "00ab8d0a5d2a94965b72fb6fcb4cf968d6b5822a",
+    "devsystem/task_ledgers/wnba-pra-history-multisource-v1-step1.json": "4a4a1d8e91e5a593d3ee2b2dc02602bcc7d301e2",
+    "docs/superpowers/plans/2026-10-07-wnba-pra-history-multisource-step1.md": "30a1c5c0b5f94135ff39948da144e28e34849d63",
+    "sports_api/api/wnba_pra_detail_bundle.py": "f6bd07efd6c51aeb8b65490fb8278c4387b69761",
+    "sports_api/wnba_pra_history_multisource_v1.py": "7397f5cf537f6a5750b35177c96e9c7d92af9474",
+    "tests/test_wnba_pra_history_bref_fallback_v1.py": "b7521877702ac69ae5227e334cebc09aeefb0de5",
+    "tests/test_wnba_pra_history_multisource_v1_step1.py": "a76acb4857dcff73db2864369293ffd1fe8bae22"
+  },
+  "candidate_sha": "1f15353bdaba0b955bf464df22923e5f28394266",
+  "created_at": "2026-10-07T23:33:17.148583+00:00",
+  "dependency_map": {
+    "sports_api/wnba_league.py": "1d410dfaf7040a604aaa29fe7e201fe3509e62b0",
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "385ebd3dea99516281d70179d7927aa1ae7042b6"
+  },
+  "deployment_identity": "63d47e9cbe0616f18abe787c76ed96757a0e6720",
+  "digest": "565f12e0b5f621bcf358def8f437529726586084bccce811d925b7ebb1fa3847",
+  "evidence_digests": [
+    "f8194540a17e16b862571c2ce5e574591d7d1c0c41f1e046cce9ad349e9a957e",
+    "6ecc86b0d190f34ce910835add210dd04fa6014c5b5162d3a1f796f1b57ce906",
+    "45275654e460001cd2443d1c8212e200a39406b04fe58253b289638204211790"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "5d13e9b67a37791d71bd05eb6fe8a4e77b8e13fd008557c8c8983238c2029c3c",
+  "proof_id": "wnba-pra-history-multisource-v1-step1-1f15353bdaba0b95-71e660d153b4f2b8",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 188,
+    "state_hash": "de3a935ee3f9bc0b90bee22c65ee879ade4a58a4041dbf26d76a84bc8727179f"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 188,
+    "state_hash": "de3a935ee3f9bc0b90bee22c65ee879ade4a58a4041dbf26d76a84bc8727179f"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "wnba-pra-history-multisource-v1-step1",
+  "workstream": "api2-wnba-pra-history-v1-step1"
+}
