@@ -7,15 +7,15 @@ from copy import deepcopy
 
 from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, validate_registry
 
-MAIN_SHA = "51762ad9226b119626284655a90bd7ac7da80d5e"
+MAIN_SHA = "552f7b88b507f132a739900ce05adae96dc7fca1"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
-OLD_CANDIDATE_SHA = "fb7584133e4e7d54cb958b3593d28b0a25d4aed7"
-NEW_CANDIDATE_SHA = "27fec905b022aaf819439c90496fb4d3b8c1452a"
+OLD_CANDIDATE_SHA = "27fec905b022aaf819439c90496fb4d3b8c1452a"
+NEW_CANDIDATE_SHA = "a88d51e709ede3ecb1a2d355d665ad210225c539"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 FROZEN_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
-MAIN_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
+MAIN_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
 OLD_TO_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
-NEW_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
+NEW_BLOB = "205ae010d953440e3f0bfd50b3597f99d08bfc4c"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
