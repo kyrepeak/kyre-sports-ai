@@ -4,7 +4,7 @@
 
 **Goal:** Eliminate `N/A PRA` from Recent Form and same-opponent H2H cards when verified per-game WNBA statistics exist.
 
-**Architecture:** Add one read-only multi-source history adapter for Player Intelligence. ESPN remains one provider, while the official WNBA player profile runs in parallel as an independent verified source; missing PTS/REB/AST/MIN values are backfilled by exact game date/opponent without overwriting an already-present provider value. The existing single hosted Streamlit PRA-detail read remains unchanged and no model, projection, probability, ranking, sportsbook, or other-sport behavior changes.
+**Architecture:** Add one read-only multi-source history adapter for Player Intelligence. ESPN remains one provider, while the official WNBA webview player profile runs in parallel as an independent verified source; missing PTS/REB/AST/MIN values are backfilled by exact game date/opponent without overwriting an already-present provider value. The existing single hosted Streamlit PRA-detail read remains unchanged and no model, projection, probability, ranking, sportsbook, or other-sport behavior changes.
 
 **Tech Stack:** Python, requests, stdlib HTMLParser, existing WNBA registry helpers, pytest, Runless final gate.
 
@@ -13,7 +13,9 @@
 ## Global Constraints
 
 - Step 2A: one authoritative branch/PR/proof chain only.
-- Base main SHA: `7e1d91948caf36e45535259bb5547689f211ce9a`.
+- Authoritative base main SHA after reconciliation: `f9908fb83de2e19d3ff1d47b728dac8ba3fef2e0`.
+- Original base `7e1d91948caf36e45535259bb5547689f211ce9a` drifted while implementation was in progress; changed main files were disjoint and were merged once into the authoritative branch.
+- A foreign branch mutation proposing ±1-day history matching was removed; exact date + opponent identity remains mandatory.
 - Do not modify WNBA model/projection/market/probability/qualification/ranking/sportsbook behavior.
 - Do not modify non-WNBA sports.
 - Keep the Streamlit hosted-read count at one.
@@ -40,11 +42,11 @@
 - Consumes: `get_step3_espn_player_game_log_dataset(player_id: int, season: int) -> dict`
 - Produces: `get_multisource_player_game_log_dataset(player_id: int, season: int) -> dict`
 
-- [ ] Write failing tests for official WNBA recent-game parsing, exact-date/opponent backfill, provider-failure fallback, and no-overwrite behavior.
-- [ ] Observe the tests fail because the adapter does not yet exist.
-- [ ] Implement the minimal read-only adapter using bounded parallel ESPN + official WNBA profile reads.
-- [ ] Run the focused tests and require PASS.
-- [ ] Commit.
+- [x] Write tests for official WNBA recent-game parsing, exact-date/opponent backfill, provider-failure fallback, and no-overwrite behavior.
+- [ ] Observe the tests fail on the test-only head. Not claimed: no authoritative Runless proof was executed on that intermediate head.
+- [x] Implement the minimal read-only adapter using bounded parallel ESPN + official WNBA webview reads.
+- [ ] Run the focused tests through the authoritative Runless proof plane and require PASS.
+- [x] Commit implementation to the one authoritative PR.
 
 ### Task 2: Activate adapter behind existing PRA-detail contract
 
@@ -56,10 +58,10 @@
 - Consumes: `get_multisource_player_game_log_dataset(...)`
 - Produces: unchanged `/api/v1/wnba/players/{player_id}/pra-detail` payload contract.
 
-- [ ] Replace only the history-provider import with the multi-source adapter, aliased to the existing local callable name for compatibility.
-- [ ] Add explicit `history_source_policy` metadata while preserving the existing compatibility source marker.
-- [ ] Run focused regression tests and require PASS.
-- [ ] Commit.
+- [x] Replace only the history-provider import with the multi-source adapter, aliased to the existing local callable name for compatibility.
+- [x] Add explicit `history_source_policy` metadata while preserving the existing compatibility source marker.
+- [ ] Run focused regression tests through Runless and require PASS.
+- [x] Commit.
 
 ### Task 3: Runless closeout
 
