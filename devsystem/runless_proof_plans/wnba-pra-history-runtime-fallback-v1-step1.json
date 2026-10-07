@@ -1,0 +1,22 @@
+{
+  "task_id": "wnba-pra-history-runtime-fallback-v1-step1",
+  "workstream": "api2-wnba-pra-history-v1-step1",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_history_runtime_fallback_v1.py"],
+    ["python", "-m", "py_compile", "sports_api/wnba_pra_history_runtime_fallback_v1.py", "sports_api/api/wnba_pra_detail_bundle.py"]
+  ],
+  "artifacts": [
+    "sports_api/wnba_pra_history_runtime_fallback_v1.py",
+    "sports_api/api/wnba_pra_detail_bundle.py",
+    "tests/test_wnba_pra_history_runtime_fallback_v1.py",
+    "devsystem/runless_proof_plans/wnba-pra-history-runtime-fallback-v1-step1.json"
+  ],
+  "dependencies": [
+    "sports_api/wnba_pra_history_multisource_v1.py",
+    "sports_api/wnba_game_history.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "freeze_token": "WNBA_PRA_HISTORY_MULTISOURCE_V1_STEP1_FROZEN"
+}
