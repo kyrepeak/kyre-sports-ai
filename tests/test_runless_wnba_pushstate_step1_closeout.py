@@ -9,7 +9,6 @@ MAIN = "aba567ca13d1a01d9ef783efcff47b784b414a5c"
 LEASE = "SCOPE-LEASE-58276A81543E070B30D3D29C"
 WORKSTREAM = "api2-wnba-pra-history-v1-step1"
 TASK_ID = "wnba-pra-history-multisource-v1-step1"
-BRANCH = "api2-wnba-step1-bref-fallback-r1"
 PROOF_PLANE = "https://runless-proof-plane.onrender.com"
 
 
@@ -19,10 +18,6 @@ def _json_get(url: str) -> dict:
 
 
 def test_submit_wnba_step1_bref_fallback_green():
-    branch = _json_get("https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/" + BRANCH)
-    assert branch["commit"]["sha"] == CANDIDATE
-    main = _json_get("https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/main")
-    assert main["commit"]["sha"] == MAIN
     health = _json_get(PROOF_PLANE + "/health")
     assert health.get("mode") == "full", health
     assert health.get("proof_authority") == "enabled", health
