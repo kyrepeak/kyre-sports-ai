@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 from urllib import request
+from urllib.error import HTTPError
 
-CANDIDATE = "5b6c45559f1f7fb50145e97e71c295daa58494e5"
+CANDIDATE = "d6dcc11493fcb12f1fc45adcb6323699d1ead1ba"
 MAIN = "219ed8367207538a909986841e66807e408feede"
-LEASE = "SCOPE-LEASE-7A285464DFFA4D4BD9DDB632"
+LEASE = "SCOPE-LEASE-58276A81543E070B30D3D29C"
 WORKSTREAM = "api2-wnba-pra-history-v1-step1"
 TASK_ID = "wnba-pra-history-multisource-v1-step1"
 PROOF_PLANE = "https://runless-proof-plane.onrender.com"
@@ -56,7 +57,7 @@ def test_submit_one_exact_wnba_history_step1_runless_proof():
             "workstream": WORKSTREAM,
             "candidate_sha": CANDIDATE,
             "lease_id": LEASE,
-            "authorization_id": "kyre-authorized-wnba-step1-final-mile-20261007",
+            "authorization_id": "kyre-authorized-wnba-step1-final-mile-planfix-20261007",
             "expected_main_sha": MAIN,
         }
     ).encode("utf-8")
@@ -66,8 +67,12 @@ def test_submit_one_exact_wnba_history_step1_runless_proof():
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with request.urlopen(req, timeout=900) as response:
-        result = json.loads(response.read().decode("utf-8"))
+    try:
+        with request.urlopen(req, timeout=900) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")
+        raise AssertionError(f"RUNLESS_HTTP_{exc.code}:{detail}") from exc
     assert result.get("state") == "MERGE_AUTHORIZED", result
     assert result.get("candidate_sha") == CANDIDATE, result
     assert result.get("github_actions_enabled") is False, result
