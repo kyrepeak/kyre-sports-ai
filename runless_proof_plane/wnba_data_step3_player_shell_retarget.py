@@ -9,15 +9,16 @@ from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, v
 
 MAIN_SHA = "d908cdc3e8ea4b0224333268e7b02d0af3bd9063"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
-OLD_CANDIDATE_SHA = "e61a8b076672f30b8e39456b4455434092da0242"
-NEW_CANDIDATE_SHA = "212f63213b617f10a7247e70aef57e40a1112ff4"
+OLD_CANDIDATE_SHA = "212f63213b617f10a7247e70aef57e40a1112ff4"
+NEW_CANDIDATE_SHA = "fb7584133e4e7d54cb958b3593d28b0a25d4aed7"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 FROZEN_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
-CURRENT_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
-NEW_BLOB = "03e39d6c86f6cff93067417ed0c0a6788d04fff0"
+MAIN_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
+OLD_TO_BLOB = "03e39d6c86f6cff93067417ed0c0a6788d04fff0"
+NEW_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
-EXPECTED_REVISION = 162
-EXPECTED_HASH = "a89652e4e3fe2e44fa25051c3160050c072b20718ecbe272e2207706f2639a4d"
+EXPECTED_REVISION = 163
+EXPECTED_HASH = "1600f7d006c2e2ee52aa346afa595d687150885a33202136e6fea54e49db75a3"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
 
@@ -36,7 +37,7 @@ def execute(client):
 
     main_tree = client.tree_blobs(MAIN_SHA)
     new_tree = client.tree_blobs(NEW_CANDIDATE_SHA)
-    if str(main_tree.get(PATH) or "") != CURRENT_BLOB:
+    if str(main_tree.get(PATH) or "") != MAIN_BLOB:
         raise RuntimeError("WNBA_DATA_STEP3_RETARGET_MAIN_BLOB_DRIFT")
     if str(new_tree.get(PATH) or "") != NEW_BLOB:
         raise RuntimeError("WNBA_DATA_STEP3_RETARGET_NEW_BLOB_DRIFT")
@@ -68,7 +69,7 @@ def execute(client):
         "thaw_id": THAW_ID,
         "status": "ACTIVE",
         "target_head_sha": OLD_CANDIDATE_SHA,
-        "files": {PATH: {"from_blob": FROZEN_BLOB, "to_blob": CURRENT_BLOB}},
+        "files": {PATH: {"from_blob": FROZEN_BLOB, "to_blob": OLD_TO_BLOB}},
     }
     if old_grant != expected_old:
         raise RuntimeError("WNBA_DATA_STEP3_RETARGET_OLD_GRANT_DRIFT")
