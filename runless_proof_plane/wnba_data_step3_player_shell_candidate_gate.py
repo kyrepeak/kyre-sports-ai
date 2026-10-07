@@ -8,17 +8,17 @@ from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, v
 from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt
 from .gate import publish_gate
 
-MAIN_SHA = "ef550e9bd9898a67cc54a25ffd7ee5fcb1c6b129"
+MAIN_SHA = "d908cdc3e8ea4b0224333268e7b02d0af3bd9063"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
-CANDIDATE_SHA = "e61a8b076672f30b8e39456b4455434092da0242"
+CANDIDATE_SHA = "fb7584133e4e7d54cb958b3593d28b0a25d4aed7"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 TEST_PATH = "tests/test_wnba_data_step3_player_shell_handoff.py"
-FROM_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
-TO_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
-TEST_BLOB = "ce31559bb1e56f66af45baa224ad7a17f3249d7e"
+FROM_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
+TO_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
+TEST_BLOB = "5195f99afdb638cae9f9068320610b3807ae781c"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
-RED_PROOF_DEPLOY = "dep-db2sv4h42hec73fq1u0g"
-GREEN_PROOF_DEPLOY = "dep-db2t10ks728c73aicb80"
+RED_PROOF_DEPLOY = "dep-db2t7h8g6u5c73c7cgq0"
+GREEN_PROOF_DEPLOY = "dep-db2theflk1mc738moe9g"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 EXPECTED_CHANGED = tuple(sorted((PATH, TEST_PATH)))
 
@@ -61,14 +61,23 @@ def execute(client):
 
     runtime, _ = _read_text(client, PATH, CANDIDATE_SHA)
     test, _ = _read_text(client, TEST_PATH, CANDIDATE_SHA)
-    if "def _emit_one_shot_wnba_pra_shell_handoff" not in runtime:
-        raise RuntimeError("WNBA_DATA_STEP3_GATE_ONE_SHOT_HELPER_MISSING")
-    if "if explicit_transition:" not in runtime or "_emit_one_shot_wnba_pra_shell_handoff()" not in runtime:
-        raise RuntimeError("WNBA_DATA_STEP3_GATE_EXPLICIT_TRANSITION_MISSING")
-    if "test_explicit_player_transition_emits_one_shot_wnba_pra_shell_handoff" not in test:
-        raise RuntimeError("WNBA_DATA_STEP3_GATE_RED_CONTRACT_MISSING")
-    if "test_passive_deep_rerender_does_not_reinject_one_shot_jump" not in test:
-        raise RuntimeError("WNBA_DATA_STEP3_GATE_PASSIVE_REGRESSION_MISSING")
+    required_runtime = (
+        "def _emit_one_shot_wnba_pra_shell_handoff",
+        "def _wrap_step7_player_open(delegate):",
+        "final_transport._open_player_immediate = _wrap_step7_player_open(original_final_player_open)",
+        "final_transport._open_player_immediate = original_final_player_open",
+    )
+    missing_runtime = [token for token in required_runtime if token not in runtime]
+    if missing_runtime:
+        raise RuntimeError("WNBA_DATA_STEP3_GATE_CALLBACK_HANDOFF_MISSING:" + ",".join(missing_runtime))
+    required_tests = (
+        "test_explicit_player_transition_emits_one_shot_wnba_pra_shell_handoff",
+        "test_passive_deep_rerender_does_not_reinject_one_shot_jump",
+        "test_step7_player_callback_keeps_handoff_after_render_restores_module",
+    )
+    missing_tests = [token for token in required_tests if token not in test]
+    if missing_tests:
+        raise RuntimeError("WNBA_DATA_STEP3_GATE_REGRESSION_MISSING:" + ",".join(missing_tests))
 
     registry = _registry(client)
     exact = {
@@ -93,11 +102,12 @@ def execute(client):
         "changed_files": list(changed),
         "artifacts": artifacts,
         "thaw_id": THAW_ID,
-        "red_proof_deploy": RED_PROOF_DEPLOY,
-        "red_result": "1 failed, 1 passed; WNBA_STEP3_HANDOFF_RED_RC=1",
-        "green_proof_deploy": GREEN_PROOF_DEPLOY,
-        "green_result": "4 passed; WNBA_STEP3_HANDOFF_GREEN_RC=0",
-        "passive_rerender_pushstate_regression": "GREEN",
+        "red_public_proof_deploy": RED_PROOF_DEPLOY,
+        "red_result": "WNBA_STEP3_PUBLIC_PROOF_RC=1; real Game Center GREEN but Player page fell back to MLB shell",
+        "green_callback_proof_deploy": GREEN_PROOF_DEPLOY,
+        "green_result": "WNBA_STEP3_HANDOFF_GREEN_RC=0",
+        "callback_object_persistence_regression": "GREEN",
+        "passive_rerender_pushstate_regression": "PRESERVED",
         "projection_math_changed": False,
         "market_math_changed": False,
         "probability_changed": False,
@@ -112,15 +122,15 @@ def execute(client):
         task_id="wnba-data-completeness-repair-v1-step3-recent-form-h2h",
         project="API2",
         workstream="api2-wnba-data-completeness-repair-v1-step3",
-        step="3/3-player-shell-candidate",
+        step="3/3-player-shell-callback-candidate",
         candidate_sha=CANDIDATE_SHA,
         artifact_map=artifacts,
         dependency_map={
             "base_main_sha": MAIN_SHA,
             "thaw_id": THAW_ID,
             "github_actions_fallback": False,
-            "red_proof_deploy": RED_PROOF_DEPLOY,
-            "green_proof_deploy": GREEN_PROOF_DEPLOY,
+            "red_public_proof_deploy": RED_PROOF_DEPLOY,
+            "green_callback_proof_deploy": GREEN_PROOF_DEPLOY,
         },
         registry_before={
             "revision": int(registry["revision"]),
