@@ -1,0 +1,19 @@
+{
+  "task_id": "runless-task17-step5-atomic-closeout",
+  "workstream": "runless-task17-step5",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_runless_task17_step5_atomic_closeout.py"]
+  ],
+  "artifacts": [
+    "tests/test_runless_task17_step5_atomic_closeout.py"
+  ],
+  "dependencies": [
+    "runless_proof_plane/step2a.py",
+    "runless_proof_plane/postmerge_reuse.py",
+    "runless_proof_plane/gate.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_TASK17_STEP5_ATOMIC_CLOSEOUT_FROZEN"
+}
