@@ -12,7 +12,7 @@ from playwright.sync_api import sync_playwright
 
 from devsystem.browser_qa_v1 import _find_app_frame
 
-EXPECTED_PRODUCT_SHA = "b5bda426136ea7ac8ed2d07308a077db0f8aee4f"
+EXPECTED_PRODUCT_SHA = "2800670d1b1e15f6a98cc7a5fc3ffab4fb9600e5"
 DEPLOYMENT_SELECTOR = '[data-api2-exact-deployment="streamlit-runtime-v1"]'
 RUNTIME_ATTESTATION_PATHS = (
     "app.py",
