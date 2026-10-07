@@ -1,0 +1,46 @@
+{
+  "artifact_map": {
+    "runless_proof_plane/postmerge_reuse.py": "962cc9249659ce0c5542d91c061f984907cade87",
+    "tests/test_runless_task17_step3_postmerge_reuse.py": "66ffd781e07251a0721293df0b9f19c024a21354"
+  },
+  "candidate_sha": "87544f9ddced25a6c390709a4d3c039637a6e4b0",
+  "created_at": "2026-10-07T06:32:14.703184+00:00",
+  "dependency_map": {
+    "devsystem/content_addressed_proof_reuse_v1.py": "289179a3e00bdc9a9ef4cbe2eebe64029bba15a2",
+    "runless_proof_plane/gate.py": "66080c66ec41f0d20e2443374ef09dffeb5cf0de",
+    "runless_proof_plane/prove.py": "8ae595d75b369d4564bbe5fa746482626313c69d"
+  },
+  "deployment_identity": "f2655f66e6904d2f0508117337efbdb57cc36e57",
+  "digest": "b1de5e93030fcac46a3fed5a8ff3a3c366d93df57ede3b9d228fedd1033db974",
+  "evidence_digests": [
+    "3ec7297713c83937fb3976184806dd5e685c72c0b7d9e7ed0b9fbe457288973d",
+    "e90447104c4553b504b7554b0be5e85ca68e02e083532712d956092526f41f7d",
+    "39f07861bf3e70adca89acf5edab914da47f54e624cfb874a8fe768b6fdd7d76"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "b2f638b15c6879adb0c8a3ba6e635f3f46a7ba38c344845ad0d60e0611bb7c4a",
+  "proof_id": "runless-task17-step3-post-merge-proof-reuse-87544f9ddced25a6-01f3a292ec2fbbba",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
+    ],
+    "revision": 169,
+    "state_hash": "65089f6ea26017bdf74b1c41eecca03b506ecde752a315d816fb1313c2757b9c"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
+    ],
+    "revision": 169,
+    "state_hash": "65089f6ea26017bdf74b1c41eecca03b506ecde752a315d816fb1313c2757b9c"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "runless-task17-step3-post-merge-proof-reuse",
+  "workstream": "runless-task17-step3"
+}
