@@ -1,10 +1,8 @@
 from __future__ import annotations
-import json
 import os
 
-# WNBA Data Completeness Repair V1 Step 2 merged-main closeout.
-# Candidate gate has already passed. This startup verifies exact merged main,
-# publishes one Runless merged-main gate, and atomically freezes Step 2 only.
+# WNBA Data Completeness Repair V1 Step 2 live-stat provider diagnostic.
+# Diagnostic only: no product mutation, no merge, no freeze, no registry write.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -15,10 +13,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .wnba_data_step2_closeout import install_startup_closeout
+from .wnba_live_stats_provider_diag import install_startup_diagnostic
 
-install_startup_closeout(app)
-
-@app.on_event("startup")
-def _report_wnba_data_step2_closeout_status():
-    print("WNBA_DATA_STEP2_CLOSEOUT_STATUS=" + json.dumps(app.state.wnba_data_step2_closeout, sort_keys=True), flush=True)
+install_startup_diagnostic(app)
