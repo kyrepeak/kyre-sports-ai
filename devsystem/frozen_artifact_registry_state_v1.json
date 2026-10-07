@@ -2056,6 +2056,21 @@
       "source_main_sha": "fdcd1ef96e8bfd2588d3ad871bfa5049a6c0df0f",
       "status": "FROZEN"
     },
+    "RUNLESS_TASK17_STEP1_REAL_PROVE_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/runless-task17-step1-real-prove-execution.json": "541eec687a39a0911d6f34191818d43585f29992",
+        "devsystem/runless_proof_plans/runless-task17-step1-real-prove.json": "11288e4b57cb33ca1438e4c7827adfcad42b74fe",
+        "devsystem/task_ledgers/runless-task17-step1-real-prove-execution.json": "5d9bd0d78a8de918c36241b39d1b3ccdd48b5d40",
+        "runless_proof_plane/api.py": "3734146408aefba224f3ceed7c9385fc91eca68a",
+        "runless_proof_plane/prove.py": "8ae595d75b369d4564bbe5fa746482626313c69d",
+        "tests/test_runless_task17_step1_inherited_frozen_main.py": "d90bf68b57be15348407db43b36d75775bfb401a",
+        "tests/test_runless_task17_step1_prove_runner.py": "e9a5053146dfcf490d57931c168ef26e3fd8614f",
+        "tests/test_runless_task17_step1_real_prove.py": "872c7ee6d91a491cfc356c4db815e2db3a05b652"
+      },
+      "checkpoint_id": "RUNLESS_TASK17_STEP1_REAL_PROVE_FROZEN",
+      "source_main_sha": "d908cdc3e8ea4b0224333268e7b02d0af3bd9063",
+      "status": "FROZEN"
+    },
     "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN": {
       "artifacts": {
         "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step1-source-id-truth.json": "d065688995c5be46076a005d00d5068efbc0210c",
@@ -2322,9 +2337,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 161,
+  "revision": 162,
   "schema_version": 1,
   "source_main_sha": "d908cdc3e8ea4b0224333268e7b02d0af3bd9063",
-  "state_hash": "451aa491daa7f64854f33d179781d23e16f2f637714da894fd388ed493c9e52b",
+  "state_hash": "a89652e4e3fe2e44fa25051c3160050c072b20718ecbe272e2207706f2639a4d",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
