@@ -73,6 +73,11 @@ def test_official_wnba_profile_parser_recovers_real_recent_pra(monkeypatch):
     assert round(sum(game["points"] + game["rebounds"] + game["assists"] for game in atl) / 2, 1) == 34.5
 
 
+def test_official_profile_url_forces_server_rendered_recent_stats():
+    module = _module()
+    assert module._official_profile_url(1627668) == "https://www.wnba.com/player/1627668/profile?os=win"
+
+
 def test_merge_backfills_missing_stats_by_exact_date_and_opponent_without_overwrite():
     module = _module()
     espn = {
@@ -109,7 +114,7 @@ def test_merge_backfills_missing_stats_by_exact_date_and_opponent_without_overwr
     result = module.merge_verified_histories(espn, official)
     first, second = result["games"]
     assert (first["points"], first["rebounds"], first["assists"]) == (19, 2, 3)
-    assert second["points"] == 99  # existing provider truth is never overwritten
+    assert second["points"] == 99
     assert (second["rebounds"], second["assists"]) == (14, 4)
     assert result["verification"]["official_wnba_backfill_fields"] == 5
 
@@ -118,7 +123,7 @@ def test_multisource_returns_official_when_espn_provider_fails(monkeypatch):
     module = _module()
     official = {
         "source": "WNBA.com Player Profile",
-        "source_url": "https://www.wnba.com/player/1627668/profile",
+        "source_url": "https://www.wnba.com/player/1627668/profile?os=win",
         "game_count": 1,
         "games": [{"game_date": "2026-10-04", "points": 19, "rebounds": 2, "assists": 3, "minutes": 40.0, "matchup": {"opponent_team_key": "atlanta-dream"}}],
         "verification": {"official_wnba_profile": True},
