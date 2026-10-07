@@ -8,6 +8,7 @@ os.environ["RPP_DRY_RUN_ON_START"] = "0"
 os.environ["RPP_FINAL_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .wnba_data_step3_streamlit_refresh_gate import install_startup
+from . import wnba_data_step3_streamlit_refresh_gate as gate
 
-install_startup(app)
+gate.REPAIR_RECEIPT = "67b46ded9a1a4fc9df56799e98bf10842a90310dccca67188270968cb0e48503"
+gate.install_startup(app)
