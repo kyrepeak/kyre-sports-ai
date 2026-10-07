@@ -85,21 +85,28 @@ def _blocked(message: str, *, kind: str) -> dict[str, Any]:
 def _pin_deep_wnba_session_route(
     state: navigation.NavigationState | None = None,
 ) -> navigation.NavigationState:
-    """Keep deep WNBA routes owned by session after universal jump consumption.
+    """Keep deep WNBA routes owned while allowing one explicit shell handoff.
 
-    The universal router intentionally consumes and deletes ``ks_jump_*`` query
-    keys, then reruns. Re-injecting those one-shot jump keys on every Game/Player
-    render causes another consume+rereun before the destination can render.
-    Deep navigation already owns ``wnba_pra_*`` query state, so after the first
-    category handoff the durable shell ownership is session-only.
+    Passive Game/Player rerenders remain session-only after the universal router
+    consumes its one-shot ``ks_jump_*`` keys. An explicit navigation transition,
+    however, emits the WNBA/PRA jump once so the universal shell follows the
+    Game -> Player handoff instead of falling back to its default route.
     """
+    explicit_transition = state is not None
     resolved = state or navigation.current_state()
     if deep_route._protect_explicit_cfb_top_picks_route():
         return resolved
     if resolved.page not in {navigation.PAGE_GAME, navigation.PAGE_PLAYER}:
         return resolved
+
     st.session_state[deep_route.SHELL_SPORT_SESSION_KEY] = deep_route.SHELL_SPORT_VALUE
     st.session_state[deep_route.SHELL_MARKET_SESSION_KEY] = deep_route.SHELL_MARKET_VALUE
+
+    if explicit_transition:
+        if deep_route._query_value(deep_route.SHELL_SPORT_QUERY_KEY) != deep_route.SHELL_SPORT_VALUE:
+            st.query_params[deep_route.SHELL_SPORT_QUERY_KEY] = deep_route.SHELL_SPORT_VALUE
+        if deep_route._query_value(deep_route.SHELL_MARKET_QUERY_KEY) != deep_route.SHELL_MARKET_VALUE:
+            st.query_params[deep_route.SHELL_MARKET_QUERY_KEY] = deep_route.SHELL_MARKET_VALUE
     return resolved
 
 
