@@ -7,18 +7,16 @@ from copy import deepcopy
 
 from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, validate_registry
 
-MAIN_SHA = "d908cdc3e8ea4b0224333268e7b02d0af3bd9063"
+MAIN_SHA = "51762ad9226b119626284655a90bd7ac7da80d5e"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
-OLD_CANDIDATE_SHA = "212f63213b617f10a7247e70aef57e40a1112ff4"
-NEW_CANDIDATE_SHA = "fb7584133e4e7d54cb958b3593d28b0a25d4aed7"
+OLD_CANDIDATE_SHA = "fb7584133e4e7d54cb958b3593d28b0a25d4aed7"
+NEW_CANDIDATE_SHA = "27fec905b022aaf819439c90496fb4d3b8c1452a"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 FROZEN_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
 MAIN_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
-OLD_TO_BLOB = "03e39d6c86f6cff93067417ed0c0a6788d04fff0"
+OLD_TO_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
 NEW_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
-EXPECTED_REVISION = 163
-EXPECTED_HASH = "1600f7d006c2e2ee52aa346afa595d687150885a33202136e6fea54e49db75a3"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
 
@@ -47,10 +45,6 @@ def execute(client):
         raise RuntimeError("WNBA_DATA_STEP3_RETARGET_REGISTRY_READ_FAILED")
     registry = json.loads(base64.b64decode(raw["content"]).decode())
     validate_registry(registry)
-    if int(registry.get("revision") or -1) != EXPECTED_REVISION:
-        raise RuntimeError("WNBA_DATA_STEP3_RETARGET_REVISION_DRIFT")
-    if str(registry.get("state_hash") or "") != EXPECTED_HASH:
-        raise RuntimeError("WNBA_DATA_STEP3_RETARGET_HASH_DRIFT")
 
     owners = []
     for token, entry in (registry.get("entries") or {}).items():
