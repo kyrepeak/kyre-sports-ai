@@ -121,7 +121,12 @@ def test_execute_proof_request_runs_real_premerge_chain(monkeypatch, tmp_path):
             return "b" * 40
 
         def tree_blobs(self, sha):
-            assert sha == "a" * 40
+            if sha == "a" * 40:
+                return {
+                    "runless_proof_plane/api.py": "1" * 40,
+                    "runless_proof_plane/step2a.py": "2" * 40,
+                }
+            assert sha == "b" * 40
             return {
                 "runless_proof_plane/api.py": "1" * 40,
                 "runless_proof_plane/step2a.py": "2" * 40,
@@ -147,10 +152,12 @@ def test_execute_proof_request_runs_real_premerge_chain(monkeypatch, tmp_path):
     monkeypatch.setattr(
         prove,
         "_verify_frozen_candidate",
-        lambda client, candidate_sha, tree: {
+        lambda client, candidate_sha, tree, **kwargs: {
             "revision": 154,
             "state_hash": "3" * 64,
             "active_thaws": [],
+            "inherited_frozen_paths": [],
+            "exact_thawed_paths": [],
         },
     )
     monkeypatch.setattr(prove, "_read_live_scope_lease", lambda client, lease_id: lease_id)
@@ -185,6 +192,8 @@ def test_execute_proof_request_runs_real_premerge_chain(monkeypatch, tmp_path):
     assert published["sha"] == "a" * 40
     assert published["conclusion"] == "success"
     assert published["gate_name"] == "runless-final-gate"
+    assert result["inherited_frozen_path_count"] == 0
+    assert result["exact_thawed_path_count"] == 0
 
 
 def test_execute_proof_request_fails_closed_on_scope_lease_drift(monkeypatch, tmp_path):
@@ -219,6 +228,12 @@ def test_execute_proof_request_fails_closed_on_scope_lease_drift(monkeypatch, tm
             return "b" * 40
 
         def tree_blobs(self, sha):
+            if sha == "a" * 40:
+                return {
+                    "runless_proof_plane/api.py": "1" * 40,
+                    "runless_proof_plane/step2a.py": "2" * 40,
+                }
+            assert sha == "b" * 40
             return {
                 "runless_proof_plane/api.py": "1" * 40,
                 "runless_proof_plane/step2a.py": "2" * 40,
@@ -228,10 +243,12 @@ def test_execute_proof_request_fails_closed_on_scope_lease_drift(monkeypatch, tm
     monkeypatch.setattr(
         prove,
         "_verify_frozen_candidate",
-        lambda client, candidate_sha, tree: {
+        lambda client, candidate_sha, tree, **kwargs: {
             "revision": 154,
             "state_hash": "3" * 64,
             "active_thaws": [],
+            "inherited_frozen_paths": [],
+            "exact_thawed_paths": [],
         },
     )
     monkeypatch.setattr(prove, "_read_live_scope_lease", lambda client, lease_id: "different-lease")
@@ -258,7 +275,7 @@ def test_frozen_candidate_requires_exact_head_thaw():
                 "content": base64.b64encode(payload).decode(),
             }
 
-    with pytest.raises(FrozenArtifactRegistryFailure, match="without exact thaw grant"):
+    with pytest.raises(FrozenArtifactRegistryFailure, match="candidate frozen delta without exact thaw grant"):
         prove._verify_frozen_candidate(
             FakeClient(),
             "a" * 40,
@@ -286,3 +303,4 @@ def test_frozen_candidate_accepts_exact_head_thaw():
 
     assert result["revision"] == 154
     assert result["active_thaws"] == ["THAW-RUNLESS-TASK17-STEP1-API"]
+    assert result["exact_thawed_paths"] == ["runless_proof_plane/api.py"]
