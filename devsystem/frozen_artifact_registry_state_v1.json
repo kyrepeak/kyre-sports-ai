@@ -29,39 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "wnba_players_v25.py": {
-          "from_blob": "9960efb20d9e6f3791ed5c3228ca42abd884f828",
-          "to_blob": "13055f7bc06a8af369daba47453e92fe7e6c8ea7"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "54e3fe375cb22fc53c844ba50bb6dd04f45e7482",
-      "thaw_id": "THAW-API2-WNBA-DATA-STEP2-LIVE-HYDRATION-R2"
-    },
-    {
-      "files": {
-        "requirements.txt": {
-          "from_blob": "98b621afd372d472784850fed4b603c9989dcf7a",
-          "to_blob": "7f5cf407662a79cb4c56781195e7bbcaca38d315"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "9bedbdd848985c42c691018a0952142714f3bf43",
-      "thaw_id": "THAW-API2-WNBA-DATA-STEP2-STREAMLIT-REFRESH-R1"
-    },
-    {
-      "files": {
-        "wnba_availability_v27.py": {
-          "from_blob": "82468c9b603947c052e726cd8beb9ba1b05b2484",
-          "to_blob": "4cdb65b9fd7942865ad17e7b27e29fb815192de1"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "786d3042e5c3392edc3a40218520aff5d9e1a934",
-      "thaw_id": "THAW-API2-WNBA-DATA-STEP2-SELECTED-DAY-HANDOFF-R1"
     }
   ],
   "entries": {
@@ -2084,7 +2051,7 @@
         "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step1-source-id-truth.json": "8e1da9de13a7942031adf9987e58e91a6eb9e770",
         "devsystem/wnba_data_completeness_repair_v1_step1_source_id_truth_cert.py": "4d109fe648c59a556f5a830dc1f128669379f1d6",
         "tests/test_wnba_data_completeness_repair_v1_step1.py": "f267498b3869a4c3fad3915102ae1f2de8546e72",
-        "wnba_availability_v27.py": "82468c9b603947c052e726cd8beb9ba1b05b2484"
+        "wnba_availability_v27.py": "4cdb65b9fd7942865ad17e7b27e29fb815192de1"
       },
       "checkpoint_id": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN",
       "source_main_sha": "46d3dc27923ec65af7cdce5eb7b548e8b772e51c",
@@ -2093,14 +2060,27 @@
     "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP2_FROZEN": {
       "artifacts": {
         "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step2-player-game-stats.json": "b5d037dcbe6cd95aba9aa4321525a2398086f836",
+        "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step2-rebound-alias.json": "68c440e5b5a8ff3264fd615f20e81ba871ed6170",
+        "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step2-selected-day-handoff.json": "9bb8b3056fa450f2036b30a21713015eacedbc54",
         "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step2-player-game-stats.json": "02bb0e69cb5fa2def59d5999c2cc7bfe0ac81647",
+        "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step2-rebound-alias.json": "0dc0167d2868e9e2f308244367c21ca08ad031b4",
+        "devsystem/task_ledgers/wnba-data-completeness-repair-v1-step2-selected-day-handoff.json": "22ed643d6960cd2643a3332275464e16905d0b37",
         "devsystem/wnba_data_completeness_repair_v1_step2_player_game_stats_cert.py": "1480251de1bb8e9dd4668b5b3ea5fe8a91f2a6d6",
+        "devsystem/wnba_data_completeness_repair_v1_step2_rebound_alias_cert.py": "d2bdfcb1abc7e2392121bd2bbcd8e8b4122cb20b",
+        "devsystem/wnba_data_completeness_repair_v1_step2_selected_day_handoff_cert.py": "46046650380b4533f830252b33fddb5cf5afb088",
+        "requirements.txt": "7f5cf407662a79cb4c56781195e7bbcaca38d315",
+        "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "385ebd3dea99516281d70179d7927aa1ae7042b6",
         "tests/test_wnba_data_completeness_repair_v1_step2.py": "58dc6b2b402296ea8f175b1d20a3320fc3ce8b0c",
+        "tests/test_wnba_data_completeness_repair_v1_step2_live_history.py": "d7ed015c8ba71bc3b7378cbfc821c753e06a38c0",
+        "tests/test_wnba_data_completeness_repair_v1_step2_rebound_alias.py": "1728f99f904e08f6c909ff0b9ec8afb8f46a65b4",
+        "tests/test_wnba_data_completeness_repair_v1_step2_selected_day_handoff.py": "a83633be7e58002a16a550efb7b68708ef976e87",
+        "wnba_availability_v27.py": "4cdb65b9fd7942865ad17e7b27e29fb815192de1",
+        "wnba_data_completeness_repair_v1_step2_live_history.py": "f11451b1bfd1b95018eae287eaca09dd3ee6ae32",
         "wnba_data_completeness_repair_v1_step2_stats_gate.py": "86cd0e930c96356afe5e04dd6f030f633d855768",
-        "wnba_players_v25.py": "9960efb20d9e6f3791ed5c3228ca42abd884f828"
+        "wnba_players_v25.py": "13055f7bc06a8af369daba47453e92fe7e6c8ea7"
       },
       "checkpoint_id": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP2_FROZEN",
-      "source_main_sha": "c038037f0c7f9e1a6338c2ca29bdcae08e15fae7",
+      "source_main_sha": "4036459c8c8cde0ac8f3034b560d7948ad9a5015",
       "status": "FROZEN"
     },
     "WNBA_PRA_REPAIR_V1_STEP4_FROZEN": {
@@ -2162,7 +2142,7 @@
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step8-runtime-recovery.json": "5a92ebd90a14a55a874bff16a0acd3580805cde4",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step8-runtime-recovery.json": "c98909c6014fe6178a37d3fadba17165da287553",
         "devsystem/wnba_pra_repair_v1_step8_runtime_recovery_cert.py": "eec7e3d81d3194a02428b12babab5fad52b0d070",
-        "requirements.txt": "98b621afd372d472784850fed4b603c9989dcf7a",
+        "requirements.txt": "7f5cf407662a79cb4c56781195e7bbcaca38d315",
         "tests/test_wnba_pra_repair_v1_step8.py": "ae1ee8512f96f95672e6baa4ac7da758dcecebe3"
       },
       "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP8_FROZEN",
@@ -2331,9 +2311,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 155,
+  "revision": 156,
   "schema_version": 1,
-  "source_main_sha": "2800670d1b1e15f6a98cc7a5fc3ffab4fb9600e5",
-  "state_hash": "a6d78addded88918cb13c08055acd37a5afcd2808c08f402f2866a46170bf372",
+  "source_main_sha": "4036459c8c8cde0ac8f3034b560d7948ad9a5015",
+  "state_hash": "4c41f30b1440ddeac8d549191f54717a09b7507af272c00c44d4ada8ada31852",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
