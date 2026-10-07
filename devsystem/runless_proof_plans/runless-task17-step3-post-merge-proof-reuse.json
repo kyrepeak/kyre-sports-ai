@@ -1,0 +1,43 @@
+{
+  "task_id": "runless-task17-step3-post-merge-proof-reuse",
+  "workstream": "runless-task17-step3",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_task17_step3_postmerge_reuse.py",
+      "tests/test_devsystem_content_addressed_proof_reuse_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_step2a.py",
+      "tests/test_runless_gate.py",
+      "tests/test_runless_executor.py",
+      "tests/test_runless_task17_step2_parallel_slices.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "runless_proof_plane/postmerge_reuse.py"
+    ]
+  ],
+  "artifacts": [
+    "runless_proof_plane/postmerge_reuse.py",
+    "tests/test_runless_task17_step3_postmerge_reuse.py"
+  ],
+  "dependencies": [
+    "devsystem/content_addressed_proof_reuse_v1.py",
+    "runless_proof_plane/prove.py",
+    "runless_proof_plane/gate.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_TASK17_STEP3_POST_MERGE_PROOF_REUSE_FROZEN"
+}
