@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "task_id": "wnba-pra-history-multisource-v1-step1",
+  "title": "WNBA PRA History V1 Step 1 — multi-source per-game completeness",
+  "project": "API2",
+  "workstream": "api2-wnba-pra-history-v1-step1",
+  "step": "1/3",
+  "status": "RED_TEST_READY",
+  "base_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+  "branch": "api2-wnba-pra-history-v1-step1-multisource-r1",
+  "problem": "Player Intelligence shows verified Last-5 and H2H PRA aggregates while the individual recent-game cards render N/A PRA.",
+  "root_cause": "The aggregate fallback survives into the Player Intelligence summary, but individual game rows depend on one history-provider normalization path; credible per-game WNBA PTS/REB/AST exist and must be preserved across the handoff.",
+  "evidence": {
+    "official_provider": "WNBA.com Player Profile",
+    "official_player_id": 1627668,
+    "official_recent_pra": [24, 30, 52, 45, 39],
+    "official_last5_pra_avg": 38.0,
+    "official_recent_atlanta_pra": [24, 45],
+    "official_atlanta_h2h_avg": 34.5,
+    "screenshot_last5_pra_avg": 38.0,
+    "screenshot_atlanta_h2h_avg": 34.5,
+    "data_missing_upstream": false
+  },
+  "patch": "Add a bounded multi-source history adapter that reads ESPN and the official WNBA player profile in parallel, backfills only missing per-game MIN/PTS/REB/AST by exact date/opponent, and preserves existing provider values.",
+  "step2a": {
+    "single_authority": true,
+    "exact_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+    "duplicate_open_wnba_prs": 0,
+    "github_actions_fallback_authorized": false,
+    "runless_required_check": "runless-final-gate",
+    "frozen_registry_thaw_required": false
+  },
+  "tdd": {
+    "red_head": "eb35966ce04d466f41e93fb0c1f041aa08862ef0",
+    "red_observed": false,
+    "expected_red_failure": "sports_api.wnba_pra_history_multisource_v1 does not exist",
+    "green_head": null,
+    "green_observed": false
+  },
+  "mutation_scope": [
+    "sports_api/wnba_pra_history_multisource_v1.py",
+    "sports_api/api/wnba_pra_detail_bundle.py",
+    "tests/test_wnba_pra_history_multisource_v1_step1.py",
+    "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json",
+    "devsystem/task_ledgers/wnba-pra-history-multisource-v1-step1.json",
+    "docs/superpowers/plans/2026-10-07-wnba-pra-history-multisource-step1.md"
+  ],
+  "forbidden_scope": [
+    "navigation",
+    "pushstate",
+    "WNBA model math",
+    "projection math",
+    "probability",
+    "qualification",
+    "ranking",
+    "sportsbook",
+    "other sports"
+  ],
+  "freeze_token": "WNBA_PRA_HISTORY_MULTISOURCE_V1_STEP1_FROZEN"
+}
