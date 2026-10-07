@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration as router
@@ -47,3 +48,33 @@ def test_passive_deep_rerender_does_not_reinject_one_shot_jump(monkeypatch):
     assert fake_st.session_state[router.deep_route.SHELL_MARKET_SESSION_KEY] == "PRA"
     assert router.deep_route.SHELL_SPORT_QUERY_KEY not in fake_st.query_params
     assert router.deep_route.SHELL_MARKET_QUERY_KEY not in fake_st.query_params
+
+
+def test_explicit_shell_handoff_precedes_navigation_query_write(monkeypatch):
+    events: list[str] = []
+    state = router.navigation.NavigationState(
+        page=router.navigation.PAGE_PLAYER,
+        game_id="game-1",
+        player_id="player-1",
+    )
+
+    monkeypatch.setattr(
+        router,
+        "_pin_deep_wnba_session_route",
+        lambda supplied=None: events.append("pin") or supplied,
+    )
+
+    def writer(supplied):
+        events.append("write")
+        return supplied
+
+    result = router._write_deep_navigation_query(state, writer)
+    assert result == state
+    assert events == ["pin", "write"]
+
+
+def test_render_installs_and_restores_pre_navigation_writer():
+    source = Path(router.__file__).read_text(encoding="utf-8")
+    assert "original_nav_query_writer = navigation._write_query" in source
+    assert "navigation._write_query = guarded_nav_query_writer" in source
+    assert "navigation._write_query = original_nav_query_writer" in source
