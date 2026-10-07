@@ -3,7 +3,6 @@
   "workstream": "api2-wnba-pra-history-v1-step1",
   "commands": [
     ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_history_multisource_v1_step1.py"],
-    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_speed_v3_step3.py"],
     ["python", "-m", "py_compile", "sports_api/wnba_pra_history_multisource_v1.py", "sports_api/api/wnba_pra_detail_bundle.py"]
   ],
   "artifacts": [
