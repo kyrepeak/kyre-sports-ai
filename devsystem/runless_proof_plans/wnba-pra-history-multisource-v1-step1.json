@@ -1,0 +1,24 @@
+{
+  "task_id": "wnba-pra-history-multisource-v1-step1",
+  "workstream": "api2-wnba-pra-history-v1-step1",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_wnba_pra_history_multisource_v1_step1.py"],
+    ["python", "-m", "py_compile", "sports_api/wnba_pra_history_multisource_v1.py", "sports_api/api/wnba_pra_detail_bundle.py"]
+  ],
+  "artifacts": [
+    "sports_api/wnba_pra_history_multisource_v1.py",
+    "sports_api/api/wnba_pra_detail_bundle.py",
+    "tests/test_wnba_pra_history_multisource_v1_step1.py",
+    "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json",
+    "devsystem/task_ledgers/wnba-pra-history-multisource-v1-step1.json",
+    "docs/superpowers/plans/2026-10-07-wnba-pra-history-multisource-step1.md"
+  ],
+  "dependencies": [
+    "sports_api/wnba_pra_speed_v3_step3_espn_history.py",
+    "sports_api/wnba_league.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "freeze_token": "WNBA_PRA_HISTORY_MULTISOURCE_V1_STEP1_FROZEN"
+}
