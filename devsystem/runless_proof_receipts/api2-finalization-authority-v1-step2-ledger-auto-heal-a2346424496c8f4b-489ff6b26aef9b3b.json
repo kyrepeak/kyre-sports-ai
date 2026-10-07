@@ -1,0 +1,47 @@
+{
+  "artifact_map": {
+    "devsystem/canonical_completion_ledger_autoheal_v1.py": "57bf6f5a68b9fc1ce3ab05f8631ffe428747f7be",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step2-ledger-auto-heal.md": "51d98b720a1af52bc160a30b210617daa0eb3431",
+    "tests/test_devsystem_canonical_completion_ledger_autoheal_v1.py": "f9f8c424fdf902dc6ad8c9a2ddfba58a9cf8df58"
+  },
+  "candidate_sha": "a2346424496c8f4b307c6066028e47fd21b52c68",
+  "created_at": "2026-10-07T19:41:45.237880+00:00",
+  "dependency_map": {
+    "devsystem/canonical_completion_resolver_v1.py": "4170f4ca1403985c747bc5ace2154acfd4f0ff06",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
+    "runless_proof_plane/gate.py": "66080c66ec41f0d20e2443374ef09dffeb5cf0de",
+    "runless_proof_plane/step2a.py": "9fb8e21517601bdc31c18149c457d0583c9aa0d1"
+  },
+  "deployment_identity": "f4ec04ecc1e57e6c882e475940f48c649dde5def",
+  "digest": "03532c1eda454e43d7d9ae09d3d106d8fda8abb483e228a601a00464c5b3e4b0",
+  "evidence_digests": [
+    "105f87b434412e931ca4e5a7759f96399551540ef4b1231f11d4eb843d446c84",
+    "95a1a55b5e9d803c1e00c1c2a135aa6c00b0736cf5ae7c9fd30b76b7422f40d0",
+    "6fba8c5c710e54f0deec2a3f7fab6d06dfc285af07be5519e936049c2c8231dc"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f423b3d3dadea694939df80816e391d05292efe14052f6a5df169e2e3f058dea",
+  "proof_id": "api2-finalization-authority-v1-step2-ledger-auto-heal-a2346424496c8f4b-489ff6b26aef9b3b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 184,
+    "state_hash": "12b4c2cffe693c378c76e5c930538a43d312988c80f89e1d01546a72c04a0167"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 184,
+    "state_hash": "12b4c2cffe693c378c76e5c930538a43d312988c80f89e1d01546a72c04a0167"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "api2-finalization-authority-v1-step2-ledger-auto-heal",
+  "workstream": "api2-finalization-authority-v1-step2"
+}
