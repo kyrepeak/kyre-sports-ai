@@ -1,7 +1,8 @@
 from __future__ import annotations
 import os
 
-# WNBA Step 2 read-only provider shape diagnostic for rebound normalization.
+# WNBA Step 2 exact rebound-alias product patch.
+# Runless authority only: mutate one verified branch file after RED proof; no registry mutation.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -12,6 +13,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .wnba_rebound_provider_diag import install_startup
+from .wnba_rebound_alias_patch import install_startup
 
 install_startup(app)
