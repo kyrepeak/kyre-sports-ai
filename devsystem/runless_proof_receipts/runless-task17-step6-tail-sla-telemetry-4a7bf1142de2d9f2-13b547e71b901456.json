@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "runless_proof_plane/tail_sla_telemetry.py": "a81e6a0cc731d532d2b0dde176c0d68b0ccac444",
+    "tests/test_runless_task17_step6_tail_sla_telemetry.py": "02ecb76aece689f1a875a056b9d2e100807842b9"
+  },
+  "candidate_sha": "4a7bf1142de2d9f2527003395c643013ce67c243",
+  "created_at": "2026-10-07T07:55:51.061986+00:00",
+  "dependency_map": {
+    "runless_proof_plane/atomic_closeout.py": "9b50a88b78998808879b71c11499f25777282ad4",
+    "runless_proof_plane/event_resume.py": "590a8d4975fcabed2a5126d92691327be40d3e0f",
+    "runless_proof_plane/gate.py": "66080c66ec41f0d20e2443374ef09dffeb5cf0de",
+    "runless_proof_plane/postmerge_reuse.py": "962cc9249659ce0c5542d91c061f984907cade87",
+    "runless_proof_plane/step2a.py": "9fb8e21517601bdc31c18149c457d0583c9aa0d1"
+  },
+  "deployment_identity": "66bba5860a771ef956bf3470c9c5181d77f23677",
+  "digest": "d6f347ab13db2ef0768977c5a85aebac506e708d178d9db9b9511ba1344c6d02",
+  "evidence_digests": [
+    "d9644793627854babc65503b437ee0c9f497651f452c4fadf5f50c4146d98e04",
+    "886ee18f19ccdda918b765455d84d9b5c175c7c4749336f6b670460eba81aa40",
+    "80946823d21bcf3fa50a2cff6b99204ed4d77f96e9656ee653104b39d4b3cfff"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "d97da8534ec6f0550f0c33500a2f804abed50c640c2b55691c5674895b4af91a",
+  "proof_id": "runless-task17-step6-tail-sla-telemetry-4a7bf1142de2d9f2-13b547e71b901456",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1",
+      "THAW-API2-WNBA-DATA-STEP3-STREAMLIT-REFRESH-R1"
+    ],
+    "revision": 177,
+    "state_hash": "73ce8f8b94ad086fe56de94ab9a420a37b99efbebab310d6206191fe81a267c1"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1",
+      "THAW-API2-WNBA-DATA-STEP3-STREAMLIT-REFRESH-R1"
+    ],
+    "revision": 177,
+    "state_hash": "73ce8f8b94ad086fe56de94ab9a420a37b99efbebab310d6206191fe81a267c1"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "runless-task17-step6-tail-sla-telemetry",
+  "workstream": "runless-task17-step6"
+}
