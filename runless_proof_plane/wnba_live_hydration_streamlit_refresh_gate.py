@@ -8,17 +8,17 @@ from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, v
 from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt
 from .gate import publish_gate
 
-MAIN_SHA = "b5bda426136ea7ac8ed2d07308a077db0f8aee4f"
-CANDIDATE_SHA = "b6ab705d7de96b0c8d779abf1f8baa7ab46efbce"
-BRANCH = "api2-wnba-data-step2-live-hydration-streamlit-refresh-r1"
+MAIN_SHA = "c23faa12367275d19d140460a09d83164ab5de2a"
+CANDIDATE_SHA = "9bedbdd848985c42c691018a0952142714f3bf43"
+BRANCH = "api2-wnba-data-step2-rebound-streamlit-refresh-r1"
 PATH = "requirements.txt"
-MARKER = "# WNBA Data Completeness Repair V1 Step 2 live hydration full Streamlit redeploy trigger 2026-10-07 R1"
+MARKER = "# WNBA Data Completeness Repair V1 Step 2 rebound hydration full Streamlit redeploy trigger 2026-10-07 R2"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP2-STREAMLIT-REFRESH-R1"
 THAW_FROM_BLOB = "98b621afd372d472784850fed4b603c9989dcf7a"
-THAW_TO_BLOB = "890ba18abaf02a53cba8929b87bce110e2599dbe"
+THAW_TO_BLOB = "7f5cf407662a79cb4c56781195e7bbcaca38d315"
 OWNER_TOKEN = "WNBA_PRA_REPAIR_V1_STEP8_FROZEN"
-EXPECTED_REGISTRY_REVISION = 153
-EXPECTED_REGISTRY_HASH = "8632c536568197f0b772fafe1bea8dacb871c087af7dcfd590537356073e9dec"
+EXPECTED_REGISTRY_REVISION = 155
+EXPECTED_REGISTRY_HASH = "a6d78addded88918cb13c08055acd37a5afcd2808c08f402f2866a46170bf372"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
 
@@ -98,11 +98,11 @@ def execute(client):
     }
     evidence_digest = hashlib.sha256(json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     receipt = build_runless_receipt(
-        proof_id=f"wnba-step2-streamlit-refresh-{CANDIDATE_SHA[:16]}",
-        task_id="wnba-data-completeness-repair-v1-step2-live-hydration-streamlit-refresh",
+        proof_id=f"wnba-step2-rebound-streamlit-refresh-{CANDIDATE_SHA[:16]}",
+        task_id="wnba-data-completeness-repair-v1-step2-rebound-streamlit-refresh",
         project="API2",
         workstream=BRANCH,
-        step="2/5-deployment-only-refresh",
+        step="2/3-deployment-only-rebound-refresh",
         candidate_sha=CANDIDATE_SHA,
         artifact_map={PATH: after_blob},
         dependency_map={"base_main_sha": MAIN_SHA, "github_actions_fallback": False, "deployment_only": True, "thaw_id": THAW_ID},
@@ -126,7 +126,6 @@ def execute(client):
 
 def install_startup(app):
     app.state.wnba_live_hydration_streamlit_refresh_gate = {"status": "NOT_RUN"}
-
     @app.on_event("startup")
     def _run():
         try:
