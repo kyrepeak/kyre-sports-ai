@@ -16,8 +16,7 @@
   ],
   "dependencies": [
     "sports_api/wnba_pra_speed_v3_step3_espn_history.py",
-    "sports_api/wnba_league.py",
-    "monster-frozen-artifact-registry:devsystem/frozen_artifact_registry_state_v1.json"
+    "sports_api/wnba_league.py"
   ],
   "probes": [],
   "timeout_seconds": 600,
