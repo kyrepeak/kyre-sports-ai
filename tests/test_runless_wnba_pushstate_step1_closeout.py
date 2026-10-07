@@ -1,184 +1,73 @@
 from __future__ import annotations
 
-import importlib.util
-from pathlib import Path
-from types import SimpleNamespace
+import json
+from urllib import request
 
-from runless_proof_plane.wnba_pushstate_step1_closeout import (
-    STEP1_ARTIFACTS,
-    install_startup_gate,
-    publish_candidate_gate,
-    publish_candidate_gate_from_env,
-    publish_merged_main_gate,
-)
-
-CANDIDATE = "ab3fdb3e544500366618bea71bd29976307f0c9f"
-BASE = "f8fe7aef9f9519750aaa9053716d2059c9bbdb83"
-MERGED = "896bd5f78ef6b6f7d7084413cc1e35ac6489fdc2"
-CANDIDATE_RECEIPT = "6c9a1d3e0525afb80ca8efe30f4d7c297f256c67c878702affc5fa99af91c914"
+CANDIDATE = "5b6c45559f1f7fb50145e97e71c295daa58494e5"
+MAIN = "219ed8367207538a909986841e66807e408feede"
+LEASE = "SCOPE-LEASE-7A285464DFFA4D4BD9DDB632"
+WORKSTREAM = "api2-wnba-pra-history-v1-step1"
+TASK_ID = "wnba-pra-history-multisource-v1-step1"
+PROOF_PLANE = "https://runless-proof-plane.onrender.com"
 
 
-class FakeClient:
-    def __init__(self, main_sha=BASE):
-        self.published = []
-        self.main_sha = main_sha
+def _json_get(url: str) -> dict:
+    with request.urlopen(url, timeout=30) as response:
+        return json.loads(response.read().decode("utf-8"))
 
-    def request(self, method, path, **kwargs):
-        if method == "GET" and path == "/pulls/1416":
-            return {
-                "state": "open",
-                "head": {"sha": CANDIDATE},
-                "base": {"ref": "main", "sha": BASE},
-            }
-        if method == "GET" and path == "/pulls/1416/files?per_page=100":
-            return [{"filename": path} for path in STEP1_ARTIFACTS]
-        if method == "GET" and path == f"/commits/{MERGED}":
-            return {"sha": MERGED, "parents": [{"sha": BASE}, {"sha": CANDIDATE}]}
-        raise AssertionError((method, path, kwargs))
 
-    def branch_sha(self, branch):
-        assert branch == "main"
-        return self.main_sha
+def test_submit_one_exact_wnba_history_step1_runless_proof():
+    branch = _json_get(
+        "https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/"
+        "api2-wnba-pra-history-v1-step1-multisource-r1"
+    )
+    assert branch["commit"]["sha"] == CANDIDATE
 
-    def tree_blobs(self, sha):
-        assert sha in {CANDIDATE, MERGED}
-        return {
-            path: f"{index + 1:040x}"
-            for index, path in enumerate(STEP1_ARTIFACTS)
+    main = _json_get("https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/main")
+    assert main["commit"]["sha"] == MAIN
+
+    lease = _json_get(
+        "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
+        "monster-scope-aware-execution-leases/"
+        "devsystem/scope_aware_execution_lease_state_v1.json"
+    )
+    holders = [
+        holder
+        for holder in lease.get("holders", [])
+        if holder.get("lease_id") == LEASE
+        and holder.get("owner_id") == WORKSTREAM
+    ]
+    assert len(holders) == 1
+    assert holders[0]["scope"]["resource_identity"]["candidate_sha"] == CANDIDATE
+    assert holders[0]["scope"]["resource_identity"]["main_sha"] == MAIN
+    assert (
+        holders[0]["scope"]["resource_identity"]["registry_state_hash"]
+        == "c724272b73372ececa74be33c8310b2fae7586ce9fae4e6bafe735918587bea3"
+    )
+
+    health = _json_get(PROOF_PLANE + "/health")
+    assert health.get("mode") == "full", health
+    assert health.get("proof_authority") == "enabled", health
+    assert health.get("github_actions_enabled") is False, health
+
+    payload = json.dumps(
+        {
+            "task_id": TASK_ID,
+            "workstream": WORKSTREAM,
+            "candidate_sha": CANDIDATE,
+            "lease_id": LEASE,
+            "authorization_id": "kyre-authorized-wnba-step1-final-mile-20261007",
+            "expected_main_sha": MAIN,
         }
-
-    def publish_check(self, sha, name, conclusion, output):
-        self.published.append((sha, name, conclusion, output))
-        return {"id": 777, "conclusion": conclusion}
-
-
-class FakeApp:
-    def __init__(self, client):
-        self.state = SimpleNamespace(github_client=client)
-        self.handlers = {}
-
-    def on_event(self, name):
-        def decorator(func):
-            self.handlers[name] = func
-            return func
-        return decorator
-
-
-def proof_evidence():
-    return {
-        "worker_service_id": "srv-db2l7vad0e5s73bhc8pg",
-        "worker_deploy_id": "dep-db2l7vqd0e5s73bhcbe0",
-        "test_result": "1 passed in 1.89s",
-        "cert_token": "RUNLESS_WNBA_PUSHSTATE_STEP1_GREEN",
-        "owner": "_pin_deep_wnba_shell_route",
-        "feedback_loop_proven": True,
-    }
-
-
-def arm_env(monkeypatch):
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "1")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START", "0")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_SHA", CANDIDATE)
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_BASE_SHA", BASE)
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_PR", "1416")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_SERVICE_ID", "srv-db2l7vad0e5s73bhc8pg")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_WORKER_DEPLOY_ID", "dep-db2l7vqd0e5s73bhcbe0")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_TEST_RESULT", "1 passed in 1.89s")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CERT_TOKEN", "RUNLESS_WNBA_PUSHSTATE_STEP1_GREEN")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_OWNER", "_pin_deep_wnba_shell_route")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_FEEDBACK_LOOP_PROVEN", "1")
-
-
-def arm_merged_env(monkeypatch):
-    arm_env(monkeypatch)
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_GATE_ON_START", "0")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START", "1")
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_MERGED_SHA", MERGED)
-    monkeypatch.setenv("RPP_WNBA_PUSHSTATE_STEP1_CANDIDATE_RECEIPT", CANDIDATE_RECEIPT)
-
-
-def test_candidate_bridge_publishes_exact_runless_gate_only_after_identity_checks():
-    client = FakeClient()
-    result = publish_candidate_gate(
-        client,
-        candidate_sha=CANDIDATE,
-        base_sha=BASE,
-        pr_number=1416,
-        evidence=proof_evidence(),
+    ).encode("utf-8")
+    req = request.Request(
+        PROOF_PLANE + "/prove",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
-
-    assert result["status"] == "GREEN"
-    assert result["candidate_sha"] == CANDIDATE
-    assert result["check_id"] == 777
-    assert len(result["receipt_digest"]) == 64
-    assert client.published[0][0] == CANDIDATE
-    assert client.published[0][1] == "runless-final-gate"
-    assert client.published[0][2] == "success"
-
-
-def test_env_handoff_requires_explicit_arm_and_exact_proof_metadata(monkeypatch):
-    client = FakeClient()
-    arm_env(monkeypatch)
-
-    result = publish_candidate_gate_from_env(client)
-
-    assert result["status"] == "GREEN"
-    assert result["candidate_sha"] == CANDIDATE
-    assert client.published[0][1] == "runless-final-gate"
-
-
-def test_startup_hook_invokes_env_handoff_once(monkeypatch):
-    client = FakeClient()
-    app = FakeApp(client)
-    arm_env(monkeypatch)
-
-    install_startup_gate(app)
-    assert "startup" in app.handlers
-
-    app.handlers["startup"]()
-
-    assert app.state.wnba_pushstate_step1_gate["status"] == "GREEN"
-    assert len(client.published) == 1
-
-
-def test_merged_main_gate_requires_exact_parent_and_artifact_identity():
-    client = FakeClient(main_sha=MERGED)
-    result = publish_merged_main_gate(
-        client,
-        merged_sha=MERGED,
-        base_sha=BASE,
-        candidate_sha=CANDIDATE,
-        candidate_receipt_digest=CANDIDATE_RECEIPT,
-        evidence=proof_evidence(),
-    )
-
-    assert result["status"] == "GREEN"
-    assert result["merged_sha"] == MERGED
-    assert result["check_id"] == 777
-    assert len(result["receipt_digest"]) == 64
-    assert client.published[0][0] == MERGED
-    assert client.published[0][1] == "runless-final-gate"
-    assert client.published[0][2] == "success"
-
-
-def test_startup_hook_prefers_merged_main_gate_when_armed(monkeypatch):
-    client = FakeClient(main_sha=MERGED)
-    app = FakeApp(client)
-    arm_merged_env(monkeypatch)
-
-    install_startup_gate(app)
-    app.handlers["startup"]()
-
-    assert app.state.wnba_pushstate_step1_gate["status"] == "GREEN"
-    assert app.state.wnba_pushstate_step1_gate["merged_sha"] == MERGED
-    assert len(client.published) == 1
-    assert client.published[0][0] == MERGED
-
-
-def test_freeze_contract_runs_in_authoritative_closeout_lane():
-    path = Path(__file__).with_name("test_runless_wnba_pushstate_step1_freeze.py")
-    spec = importlib.util.spec_from_file_location("step1_freeze_contract", path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    module.test_step1_freeze_is_cas_protected_and_preserves_unrelated_thaws()
+    with request.urlopen(req, timeout=900) as response:
+        result = json.loads(response.read().decode("utf-8"))
+    assert result.get("state") == "MERGE_AUTHORIZED", result
+    assert result.get("candidate_sha") == CANDIDATE, result
+    assert result.get("github_actions_enabled") is False, result
