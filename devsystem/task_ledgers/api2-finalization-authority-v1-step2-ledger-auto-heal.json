@@ -1,0 +1,57 @@
+{
+  "version": "API2_FINALIZATION_AUTHORITY_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API 2 — Finalization Authority & 100% Convergence V1",
+  "task": "finalization-authority-v1",
+  "task_id": "api2-finalization-authority-v1-step2-ledger-auto-heal",
+  "step": 2,
+  "total_steps": 6,
+  "mission": "Ledger Auto-Heal",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "base_main_sha": "f9908fb83de2e19d3ff1d47b728dac8ba3fef2e0",
+  "problem": "Mutable task ledgers can remain stale after canonical frozen-registry and Runless evidence already prove terminal completion.",
+  "root_cause": "Completion consumers can observe green_plus_frozen_claimed=false even though Step 1 canonical authority is already GREEN_FROZEN, creating split-brain finalization and redundant re-proof loops.",
+  "patch": "Add a pure idempotent ledger auto-heal planner that first invokes the Step-1 canonical completion resolver. Only canonically complete tasks may receive a planned metadata repair; invalid evidence or identity mismatch fails closed.",
+  "step2a": {
+    "single_authority": true,
+    "branch": "api2-finalization-authority-v1-step2-ledger-auto-heal-r1",
+    "lease_id": "SCOPE-LEASE-F76133E0182DB1131C5431A1",
+    "lease_owner": "api2-finalization-authority-v1-step2",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "unrelated_active_thaws_preserved": true
+  },
+  "tdd": {
+    "red_head": "25988d6e21a1fa2f5c9354f88049e118aa86794d",
+    "red_observed": true,
+    "red_result": "ImportError: canonical_completion_ledger_autoheal_v1 absent",
+    "green_patch_commit": "7185089ddd618a898ef560e7e59dc8d940b8c424",
+    "green_observed": false,
+    "green_result": null
+  },
+  "acceptance": {
+    "canonical_resolver_is_only_completion_authority": true,
+    "stale_ledger_repair_planned_after_canonical_green_frozen": true,
+    "invalid_canonical_chain_cannot_repair": true,
+    "already_aligned_ledger_noop": true,
+    "identity_mismatch_fails_closed": true,
+    "input_not_mutated": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "product_runtime_changed": false,
+    "sports_model_changed": false
+  },
+  "green_plus_frozen_claimed": false,
+  "freeze_exit": {
+    "frozen_token": "API2_FINALIZATION_AUTHORITY_V1_STEP2_FROZEN",
+    "claimed": false
+  },
+  "closeout_required": [
+    "Runless exact-candidate proof succeeds",
+    "runless-final-gate succeeds on exact candidate head",
+    "merge exact certified head only",
+    "post-merge proof identity is verified/reused without static reexecution",
+    "freeze API2_FINALIZATION_AUTHORITY_V1_STEP2_FROZEN in authoritative registry",
+    "canonical registry read-back proves terminal completion"
+  ]
+}
