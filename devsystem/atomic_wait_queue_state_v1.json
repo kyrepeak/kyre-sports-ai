@@ -1,22 +1,64 @@
 {
-  "schema_version": 1,
-  "version": "MONSTER_V7_ATOMIC_WAIT_QUEUE_LEASE_HANDOFF_V1",
-  "repository": "kyrepeak/kyre-sports-ai",
-  "queue_ref": "refs/heads/monster-lease-wait-queue",
-  "queue_state_path": "devsystem/atomic_wait_queue_state_v1.json",
-  "revision": 5,
-  "generation": 3,
-  "tickets": [],
+  "generation": 4,
   "handoff_receipts": [
     {
-      "ticket_id": "WAIT-TICKET-DB41A76BECD74762595C40BD",
-      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
-      "queue_key": "deploy:pickvault",
-      "previous_lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
-      "new_lease_id": "SCOPE-LEASE-0C63EFB3DC243BADDE705D1D",
       "handed_off_at_utc": "2026-10-02T03:58:00Z",
-      "lease_state_hash": "7fd6d348cc371dbfb9a55d6e00d30cffbb8b06e99ff0a0102ca19126d246f71e"
+      "lease_state_hash": "7fd6d348cc371dbfb9a55d6e00d30cffbb8b06e99ff0a0102ca19126d246f71e",
+      "new_lease_id": "SCOPE-LEASE-0C63EFB3DC243BADDE705D1D",
+      "owner_id": "chatgpt:api2:wnba-pra-speed-v3-step9-v7-performance-r13",
+      "previous_lease_id": "SCOPE-LEASE-F73E3059799EE89008BAB6B1",
+      "queue_key": "deploy:pickvault",
+      "ticket_id": "WAIT-TICKET-DB41A76BECD74762595C40BD"
     }
   ],
-  "state_hash": "c52bee94254d23e20fc93951add463d1bdbff491a46cb282f584ce78338a3647"
+  "queue_ref": "refs/heads/monster-lease-wait-queue",
+  "queue_state_path": "devsystem/atomic_wait_queue_state_v1.json",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "revision": 6,
+  "schema_version": 1,
+  "state_hash": "e58dedbfed57e26a0c351129153ccc37b3b808af7a15c1556e9864ad91ea0859",
+  "tickets": [
+    {
+      "blocked_by_lease_id": "SCOPE-LEASE-58276A81543E070B30D3D29C",
+      "enqueued_at_utc": "2026-10-07T23:00:25Z",
+      "expires_at_utc": "2026-10-08T01:00:25Z",
+      "owner_id": "api2-finalization-authority-v1-step3",
+      "queue_key": "runless-proof-plane-v1",
+      "scope": {
+        "dependency_tokens": [
+          "canonical-completion",
+          "finalization-authority-step3",
+          "ledger-auto-heal",
+          "runless-final-gate",
+          "runless-proof-receipts",
+          "terminal-completion"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "queue:ticket": "WAIT-TICKET-748127A71979A21A76B78EA6"
+        },
+        "shared_resources": [
+          "monster-frozen-artifact-registry",
+          "runless-final-gate",
+          "runless-proof-plane-v1",
+          "runless-proof-receipts"
+        ],
+        "write_paths": [
+          "devsystem/execution_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+          "devsystem/runless_proof_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+          "devsystem/task_ledgers/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+          "devsystem/terminal_completion_latch_v1.py",
+          "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step3-terminal-completion-latch.md",
+          "runless_proof_plane/api2_finalization_authority_step3_closeout.py",
+          "runless_proof_plane/api2_finalization_authority_step3_prove.py",
+          "runless_proof_plane/bootstrap.py",
+          "tests/test_devsystem_terminal_completion_latch_v1.py"
+        ]
+      },
+      "sequence": 4,
+      "status": "WAITING",
+      "ticket_id": "WAIT-TICKET-748127A71979A21A76B78EA6"
+    }
+  ],
+  "version": "MONSTER_V7_ATOMIC_WAIT_QUEUE_LEASE_HANDOFF_V1"
 }
