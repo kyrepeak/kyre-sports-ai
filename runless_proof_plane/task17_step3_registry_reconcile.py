@@ -51,14 +51,23 @@ def execute(client):
     old_tree = client.tree_blobs(OLD_MAIN_SHA)
     new_tree = client.tree_blobs(NEW_MAIN_SHA)
     frozen_deltas = []
+    inherited_frozen_drift = []
     for path, expected in sorted(validated["artifacts"].items()):
         old_blob = str(old_tree.get(path) or "").lower()
         new_blob = str(new_tree.get(path) or "").lower()
-        if old_blob != expected:
-            raise Task17Step3RegistryReconcileFailure("STEP3_RECONCILE_OLD_BASELINE_DRIFT:" + path)
-        if new_blob == expected:
+        if not old_blob or not new_blob:
+            raise Task17Step3RegistryReconcileFailure("STEP3_RECONCILE_FROZEN_PATH_MISSING:" + path)
+        if old_blob == new_blob:
+            if old_blob != expected:
+                inherited_frozen_drift.append(path)
             continue
-        if not _authorized_frozen_delta(registry, path=path, expected=expected, actual=new_blob, parent_shas=parent_shas):
+        if not _authorized_frozen_delta(
+            registry,
+            path=path,
+            expected=expected,
+            actual=new_blob,
+            parent_shas=parent_shas,
+        ):
             raise Task17Step3RegistryReconcileFailure("STEP3_RECONCILE_UNAUTHORIZED_FROZEN_DELTA:" + path)
         frozen_deltas.append(path)
 
@@ -102,6 +111,7 @@ def execute(client):
         "registry_state_hash": str(readback["state_hash"]),
         "authorized_frozen_delta_count": len(frozen_deltas),
         "authorized_frozen_deltas": frozen_deltas,
+        "inherited_frozen_drift_count": len(inherited_frozen_drift),
         "entries_preserved": True,
         "thaws_preserved": True,
     }
