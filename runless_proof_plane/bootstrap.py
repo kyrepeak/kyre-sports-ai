@@ -13,6 +13,9 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .task17_step1_proof import install_startup
+from .task17_step1_registry_recovery import install_startup as install_registry_recovery
+from .task17_step1_proof import install_startup as install_proof
 
-install_startup(app)
+# Material state repair must happen before the one Runless proof attempt.
+install_registry_recovery(app)
+install_proof(app)
