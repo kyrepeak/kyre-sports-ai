@@ -182,7 +182,7 @@ def _find_recent_stats_table(html: str) -> tuple[list[str], list[list[str]]]:
 
 
 def _official_profile_url(player_id: int) -> str:
-    return f"{WNBA_PROFILE_BASE}/{int(player_id)}/profile"
+    return f"{WNBA_PROFILE_BASE}/{int(player_id)}/profile?os=win"
 
 
 def normalize_official_wnba_profile_html(
