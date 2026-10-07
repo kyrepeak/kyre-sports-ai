@@ -29,28 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": {
-          "from_blob": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7",
-          "to_blob": "a82a0d374c0fc1de9346e0d62f92831e39ddd9f7"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "72fb0ca7eaad3827f7a9721c193cd59a5acb7f99",
-      "thaw_id": "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
-    },
-    {
-      "files": {
-        "requirements.txt": {
-          "from_blob": "7f5cf407662a79cb4c56781195e7bbcaca38d315",
-          "to_blob": "2904ed539d5a2e8a195675b96b756fb6ba6a3c74"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "eae0f0d0839712f199f093c67873dc11c83e2416",
-      "thaw_id": "THAW-API2-WNBA-DATA-STEP3-STREAMLIT-REFRESH-R1"
     }
   ],
   "entries": {
@@ -2164,7 +2142,7 @@
         "devsystem/wnba_data_completeness_repair_v1_step2_player_game_stats_cert.py": "1480251de1bb8e9dd4668b5b3ea5fe8a91f2a6d6",
         "devsystem/wnba_data_completeness_repair_v1_step2_rebound_alias_cert.py": "d2bdfcb1abc7e2392121bd2bbcd8e8b4122cb20b",
         "devsystem/wnba_data_completeness_repair_v1_step2_selected_day_handoff_cert.py": "46046650380b4533f830252b33fddb5cf5afb088",
-        "requirements.txt": "7f5cf407662a79cb4c56781195e7bbcaca38d315",
+        "requirements.txt": "2904ed539d5a2e8a195675b96b756fb6ba6a3c74",
         "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "385ebd3dea99516281d70179d7927aa1ae7042b6",
         "tests/test_wnba_data_completeness_repair_v1_step2.py": "58dc6b2b402296ea8f175b1d20a3320fc3ce8b0c",
         "tests/test_wnba_data_completeness_repair_v1_step2_live_history.py": "d7ed015c8ba71bc3b7378cbfc821c753e06a38c0",
@@ -2177,6 +2155,16 @@
       },
       "checkpoint_id": "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP2_FROZEN",
       "source_main_sha": "4036459c8c8cde0ac8f3034b560d7948ad9a5015",
+      "status": "FROZEN"
+    },
+    "WNBA_PRA_REPAIR_V1_STEP3_FROZEN": {
+      "artifacts": {
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py": "84ae2e8eacd785e29547cbc92b435c9483994417",
+        "tests/test_wnba_pra_repair_v1_step3.py": "98b2809c31b6b012331c18dc977a54add259ab07",
+        "wnba_pra_repair_v1_step3_data.py": "d7c90bda07a5a32a53e14f87973ca6d1596fd1a5"
+      },
+      "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP3_FROZEN",
+      "source_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
       "status": "FROZEN"
     },
     "WNBA_PRA_REPAIR_V1_STEP4_FROZEN": {
@@ -2225,7 +2213,7 @@
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step7-final-integration.json": "e6b3c8956ae8c7d22e933b43905b322644343543",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step7-final-integration.json": "d28b7ba847af6424f80b2fb98dc1a9e2e4f40c2a",
         "devsystem/wnba_pra_repair_v1_step7_final_integration_cert.py": "3ea24534f781f51d8e0364f660dc40eb5c8fcf6a",
-        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "a82a0d374c0fc1de9346e0d62f92831e39ddd9f7",
         "tests/test_wnba_pra_repair_v1_step7.py": "ca0ba6837f1cd113701733b49ca7193e3b02a64a",
         "wnba_pra_repair_v1_step7_final_integration.py": "a170e5321dbe8a9ff6e63744581e8328d4d4971d"
       },
@@ -2238,7 +2226,7 @@
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step8-runtime-recovery.json": "5a92ebd90a14a55a874bff16a0acd3580805cde4",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step8-runtime-recovery.json": "c98909c6014fe6178a37d3fadba17165da287553",
         "devsystem/wnba_pra_repair_v1_step8_runtime_recovery_cert.py": "eec7e3d81d3194a02428b12babab5fad52b0d070",
-        "requirements.txt": "7f5cf407662a79cb4c56781195e7bbcaca38d315",
+        "requirements.txt": "2904ed539d5a2e8a195675b96b756fb6ba6a3c74",
         "tests/test_wnba_pra_repair_v1_step8.py": "ae1ee8512f96f95672e6baa4ac7da758dcecebe3"
       },
       "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP8_FROZEN",
@@ -2378,7 +2366,7 @@
     },
     "WNBA_PUSHSTATE_REPAIR_V1_STEP3_FROZEN": {
       "artifacts": {
-        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "a82a0d374c0fc1de9346e0d62f92831e39ddd9f7",
         "tests/test_wnba_pushstate_repair_v1_step3_game_handoff.py": "54f669061b71049c9c153db96ceada68983611b3"
       },
       "checkpoint_id": "WNBA_PUSHSTATE_REPAIR_V1_STEP3_FROZEN",
@@ -2394,7 +2382,7 @@
         "devsystem/wnba_pushstate_repair_v1_step1_root_cause_cert.py": "5e5de2b3c22598c6cc5c24694a4db65b485807ad",
         "devsystem/wnba_pushstate_repair_v1_step2_idempotent_query_cert.py": "3fa2b99368f6df06590d8d51ea64edd8cd632742",
         "streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness.py": "84ae2e8eacd785e29547cbc92b435c9483994417",
-        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "6aeb31c68c9e4637aa87d50a70e381e283fc08f7",
+        "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "a82a0d374c0fc1de9346e0d62f92831e39ddd9f7",
         "tests/test_wnba_pushstate_repair_v1_step1.py": "aeeba57e62b6cfef245c499108bdc95479205fd1",
         "tests/test_wnba_pushstate_repair_v1_step2.py": "40fc21af2299d3352ef886f81c93b369fc2f161f",
         "tests/test_wnba_pushstate_repair_v1_step3_game_handoff.py": "54f669061b71049c9c153db96ceada68983611b3"
@@ -2407,9 +2395,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 182,
+  "revision": 183,
   "schema_version": 1,
-  "source_main_sha": "14fb065eee664a798764a50a4dc2cfb124f273c8",
-  "state_hash": "d0fb9193ca76394e7537bf3779fc2476c61841db8af17d937c6d76601e279218",
+  "source_main_sha": "7e1d91948caf36e45535259bb5547689f211ce9a",
+  "state_hash": "2b16684c9addc8ab2da60aee80bdcfb20199bcabc2b425d519f8ae2bd8843c01",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
