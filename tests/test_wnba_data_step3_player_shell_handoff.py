@@ -74,5 +74,43 @@ def test_step7_player_callback_keeps_handoff_after_render_restores_module(monkey
     captured["callback"]("game-1", {"player_id": "player-1"})
 
     assert calls == [("game-1", {"player_id": "player-1"})]
+    assert fake_st.session_state[router.deep_route.SHELL_SPORT_SESSION_KEY] == "WNBA"
+    assert fake_st.session_state[router.deep_route.SHELL_MARKET_SESSION_KEY] == "PRA"
+    assert fake_st.query_params[router.deep_route.SHELL_SPORT_QUERY_KEY] == "WNBA"
+    assert fake_st.query_params[router.deep_route.SHELL_MARKET_QUERY_KEY] == "PRA"
+
+
+def test_game_center_card_navigation_emits_shell_handoff(monkeypatch):
+    """The actual Game Center card calls navigation.go_to_player directly."""
+    fake_st = _fake_streamlit()
+    monkeypatch.setattr(router, "st", fake_st)
+    monkeypatch.setattr(router.deep_route, "st", fake_st)
+
+    calls = []
+
+    def original_go_to_player(game_id, player_id):
+        calls.append((game_id, player_id))
+        return "navigated"
+
+    def fake_player_card(player, game_id):
+        return router.navigation.go_to_player(game_id, str(player["player_id"]))
+
+    def fake_parent_render():
+        return router.game_center._render_player_card({"player_id": "player-1"}, "game-1")
+
+    monkeypatch.setattr(router.navigation, "go_to_player", original_go_to_player)
+    monkeypatch.setattr(router.game_center, "_render_player_card", fake_player_card)
+    monkeypatch.setattr(
+        router.integration,
+        "audit_selected_player",
+        lambda *args, **kwargs: {"ready": True, "missing": ()},
+    )
+    monkeypatch.setattr(router.frozen_parent, "render_app", fake_parent_render)
+
+    assert router.render_app() == "navigated"
+    assert router.navigation.go_to_player is original_go_to_player
+    assert calls == [("game-1", "player-1")]
+    assert fake_st.session_state[router.deep_route.SHELL_SPORT_SESSION_KEY] == "WNBA"
+    assert fake_st.session_state[router.deep_route.SHELL_MARKET_SESSION_KEY] == "PRA"
     assert fake_st.query_params[router.deep_route.SHELL_SPORT_QUERY_KEY] == "WNBA"
     assert fake_st.query_params[router.deep_route.SHELL_MARKET_QUERY_KEY] == "PRA"

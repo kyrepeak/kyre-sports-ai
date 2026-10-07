@@ -84,7 +84,9 @@ def _blocked(message: str, *, kind: str) -> dict[str, Any]:
 
 
 def _emit_one_shot_wnba_pra_shell_handoff() -> None:
-    """Issue the universal-shell jump once for an explicit deep transition."""
+    """Pin durable WNBA/PRA ownership and issue one universal-shell jump."""
+    st.session_state[deep_route.SHELL_SPORT_SESSION_KEY] = deep_route.SHELL_SPORT_VALUE
+    st.session_state[deep_route.SHELL_MARKET_SESSION_KEY] = deep_route.SHELL_MARKET_VALUE
     if deep_route._query_value(deep_route.SHELL_SPORT_QUERY_KEY) != deep_route.SHELL_SPORT_VALUE:
         st.query_params[deep_route.SHELL_SPORT_QUERY_KEY] = deep_route.SHELL_SPORT_VALUE
     if deep_route._query_value(deep_route.SHELL_MARKET_QUERY_KEY) != deep_route.SHELL_MARKET_VALUE:
@@ -159,7 +161,18 @@ def render_app() -> Any:
         if not audit["ready"]:
             _proof_marker("player-card", False, ",".join(audit.get("missing") or ()))
             return None
-        return original_player_card_renderer(player, game_id)
+
+        original_go_to_player = navigation.go_to_player
+
+        def _go_to_player_with_shell_handoff(selected_game_id: str, player_id: str):
+            _emit_one_shot_wnba_pra_shell_handoff()
+            return original_go_to_player(selected_game_id, player_id)
+
+        navigation.go_to_player = _go_to_player_with_shell_handoff
+        try:
+            return original_player_card_renderer(player, game_id)
+        finally:
+            navigation.go_to_player = original_go_to_player
 
     def guarded_player_renderer(state):
         game = _selected_game()
