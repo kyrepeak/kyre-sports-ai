@@ -5,9 +5,16 @@
   "task": "17",
   "step": "6/6",
   "mission": "Tail SLA Telemetry",
-  "base_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
+  "base_main_sha": "299cc72b502285a1fe714c2e513e363013ad3e90",
+  "original_red_base_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
   "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
   "decision": "EXECUTE_COMPILED_PLAN",
+  "forward_port": {
+    "required": true,
+    "reason": "authorized WNBA deployment-only merge moved main after RED",
+    "content_preserved": true,
+    "forward_port_commit": "a19074f3f341aa38d5a9bc9104f5fda1b08dcc5d"
+  },
   "scope": {
     "product_runtime": false,
     "sports_model": false,
@@ -40,13 +47,14 @@
     "live_scope_lease_required": true,
     "lease_id": "SCOPE-LEASE-C20C0E7167152850461F299C",
     "exact_head_thaw_required": false,
-    "rollback_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8"
+    "rollback_main_sha": "299cc72b502285a1fe714c2e513e363013ad3e90",
+    "registry_revision": 177,
+    "registry_state_hash": "73ce8f8b94ad086fe56de94ab9a420a37b99efbebab310d6206191fe81a267c1"
   },
   "tdd": {
     "red_head": "38186c1a71d3ffbaf17b4c4babc69f98c8fd23c4",
     "red_observed": true,
     "red_proof_id": "runless-task17-step6-tail-sla-telemetry-38186c1a71d3ffba-13d9cf82d432ba7e",
-    "red_result": "RUNLESS_STATIC_PROOF_FAILED:python -m pytest -q tests/test_runless_task17_step6_tail_sla_telemetry.py",
     "green_patch_commit": "16db35d13fdf6c1bca9577ddfdc1333c120d8e27"
   },
   "acceptance": {
