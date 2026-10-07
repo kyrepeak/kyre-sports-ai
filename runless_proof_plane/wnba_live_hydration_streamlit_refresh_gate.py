@@ -13,6 +13,12 @@ CANDIDATE_SHA = "b6ab705d7de96b0c8d779abf1f8baa7ab46efbce"
 BRANCH = "api2-wnba-data-step2-live-hydration-streamlit-refresh-r1"
 PATH = "requirements.txt"
 MARKER = "# WNBA Data Completeness Repair V1 Step 2 live hydration full Streamlit redeploy trigger 2026-10-07 R1"
+THAW_ID = "THAW-API2-WNBA-DATA-STEP2-STREAMLIT-REFRESH-R1"
+THAW_FROM_BLOB = "98b621afd372d472784850fed4b603c9989dcf7a"
+THAW_TO_BLOB = "890ba18abaf02a53cba8929b87bce110e2599dbe"
+OWNER_TOKEN = "WNBA_PRA_REPAIR_V1_STEP8_FROZEN"
+EXPECTED_REGISTRY_REVISION = 153
+EXPECTED_REGISTRY_HASH = "8632c536568197f0b772fafe1bea8dacb871c087af7dcfd590537356073e9dec"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
 
@@ -33,12 +39,25 @@ def _verify_registry(client) -> tuple[int, str]:
         raise RuntimeError("STREAMLIT_REFRESH_REGISTRY_READ_FAILED")
     payload = json.loads(base64.b64decode(raw["content"]).decode())
     validate_registry(payload)
-    for grant in payload.get("active_thaws", []):
-        if PATH in (grant.get("files") or {}):
-            raise RuntimeError("STREAMLIT_REFRESH_REQUIREMENTS_ACTIVE_THAW_CONFLICT")
-    for token, entry in (payload.get("entries") or {}).items():
-        if PATH in (entry.get("artifacts") or {}):
-            raise RuntimeError("STREAMLIT_REFRESH_REQUIREMENTS_FROZEN_CONFLICT:" + str(token))
+    if int(payload.get("revision") or -1) != EXPECTED_REGISTRY_REVISION:
+        raise RuntimeError("STREAMLIT_REFRESH_REGISTRY_REVISION_DRIFT")
+    if str(payload.get("state_hash") or "") != EXPECTED_REGISTRY_HASH:
+        raise RuntimeError("STREAMLIT_REFRESH_REGISTRY_HASH_DRIFT")
+    owner = ((payload.get("entries") or {}).get(OWNER_TOKEN) or {}).get("artifacts") or {}
+    if str(owner.get(PATH) or "") != THAW_FROM_BLOB:
+        raise RuntimeError("STREAMLIT_REFRESH_OWNER_BASELINE_DRIFT")
+    matches = [item for item in payload.get("active_thaws", []) if item.get("thaw_id") == THAW_ID]
+    if len(matches) != 1:
+        raise RuntimeError("STREAMLIT_REFRESH_REQUIRED_THAW_MISSING")
+    grant = matches[0]
+    if str(grant.get("target_head_sha") or "") != CANDIDATE_SHA:
+        raise RuntimeError("STREAMLIT_REFRESH_THAW_HEAD_DRIFT")
+    pair = (grant.get("files") or {}).get(PATH) or {}
+    if str(pair.get("from_blob") or "") != THAW_FROM_BLOB or str(pair.get("to_blob") or "") != THAW_TO_BLOB:
+        raise RuntimeError("STREAMLIT_REFRESH_THAW_BLOB_DRIFT")
+    for item in payload.get("active_thaws", []):
+        if item.get("thaw_id") != THAW_ID and PATH in (item.get("files") or {}):
+            raise RuntimeError("STREAMLIT_REFRESH_COMPETING_THAW")
     return int(payload["revision"]), str(payload["state_hash"])
 
 
@@ -71,6 +90,7 @@ def execute(client):
         "before_blob": before_blob,
         "after_blob": after_blob,
         "marker": MARKER,
+        "thaw_id": THAW_ID,
         "dependency_versions_changed": False,
         "product_runtime_changed": False,
         "other_pages_changed": 0,
@@ -85,9 +105,9 @@ def execute(client):
         step="2/5-deployment-only-refresh",
         candidate_sha=CANDIDATE_SHA,
         artifact_map={PATH: after_blob},
-        dependency_map={"base_main_sha": MAIN_SHA, "github_actions_fallback": False, "deployment_only": True},
+        dependency_map={"base_main_sha": MAIN_SHA, "github_actions_fallback": False, "deployment_only": True, "thaw_id": THAW_ID},
         registry_before={"revision": revision, "state_hash": state_hash},
-        registry_after={"mode": "read_only"},
+        registry_after={"mode": "candidate_gate_only", "thaw_remains_active": True},
         evidence_digests=[evidence_digest],
         failure_class="NONE",
     )
@@ -99,6 +119,8 @@ def execute(client):
         "receipt": str(receipt["digest"]),
         "changed_files": changed,
         "dependency_versions_changed": False,
+        "registry_revision": revision,
+        "thaw_id": THAW_ID,
     }
 
 
