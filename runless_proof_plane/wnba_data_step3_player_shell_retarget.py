@@ -7,15 +7,15 @@ from copy import deepcopy
 
 from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, validate_registry
 
-MAIN_SHA = "d2e2b45398e4a22c1e020a5fb5aca7b10e1debbb"
+MAIN_SHA = "3347f77f5b80f79e89a6bcbe675658b32ed52621"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
-OLD_CANDIDATE_SHA = "27fec905b022aaf819439c90496fb4d3b8c1452a"
-NEW_CANDIDATE_SHA = "ef4669be366790af1056b884b29725446de18dfc"
+OLD_CANDIDATE_SHA = "ef4669be366790af1056b884b29725446de18dfc"
+NEW_CANDIDATE_SHA = "bd0e7d80900b5f5a64330ee0e2aced4fa501aac1"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 FROZEN_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
-MAIN_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
-OLD_TO_BLOB = "7c5c8bee3299dae7faebc3d22953a2a1b9fa2dcc"
-NEW_BLOB = "bfaadb26eda176a291f95d61845829cdffcdd938"
+MAIN_BLOB = "bfaadb26eda176a291f95d61845829cdffcdd938"
+OLD_TO_BLOB = "bfaadb26eda176a291f95d61845829cdffcdd938"
+NEW_BLOB = "e058856a30fb29b6fa2af364b80ab5dbad695be8"
 THAW_ID = "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
 REGISTRY_BRANCH = REGISTRY_REF.removeprefix("refs/heads/")
 
@@ -29,20 +29,20 @@ def _state_hash(payload):
 
 def execute(client):
     if client.branch_sha("main") != MAIN_SHA:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_MAIN_DRIFT")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_MAIN_DRIFT")
     if client.branch_sha(BRANCH) != OLD_CANDIDATE_SHA:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_BRANCH_DRIFT")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_BRANCH_DRIFT")
 
     main_tree = client.tree_blobs(MAIN_SHA)
     new_tree = client.tree_blobs(NEW_CANDIDATE_SHA)
     if str(main_tree.get(PATH) or "") != MAIN_BLOB:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_MAIN_BLOB_DRIFT")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_MAIN_BLOB_DRIFT")
     if str(new_tree.get(PATH) or "") != NEW_BLOB:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_NEW_BLOB_DRIFT")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_NEW_BLOB_DRIFT")
 
     raw = client.content(REGISTRY_PATH, ref=REGISTRY_BRANCH)
     if not raw or raw.get("encoding") != "base64":
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_REGISTRY_READ_FAILED")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_REGISTRY_READ_FAILED")
     registry = json.loads(base64.b64decode(raw["content"]).decode())
     validate_registry(registry)
 
@@ -52,12 +52,12 @@ def execute(client):
         if PATH in artifacts:
             owners.append((str(token), str(artifacts[PATH])))
     if not owners or any(blob != FROZEN_BLOB for _, blob in owners):
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_OWNER_DRIFT")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_OWNER_DRIFT")
 
     thaws = deepcopy(list(registry.get("active_thaws") or []))
     matches = [item for item in thaws if item.get("thaw_id") == THAW_ID]
     if len(matches) != 1:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_THAW_CARDINALITY")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_THAW_CARDINALITY")
     expected_old = {
         "thaw_id": THAW_ID,
         "status": "ACTIVE",
@@ -65,9 +65,9 @@ def execute(client):
         "files": {PATH: {"from_blob": FROZEN_BLOB, "to_blob": OLD_TO_BLOB}},
     }
     if matches[0] != expected_old:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_OLD_GRANT_DRIFT")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_OLD_GRANT_DRIFT")
     if any(PATH in (item.get("files") or {}) for item in thaws if item.get("thaw_id") != THAW_ID):
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_DUPLICATE_PATH")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_DUPLICATE_PATH")
 
     new_grant = {
         "thaw_id": THAW_ID,
@@ -87,7 +87,7 @@ def execute(client):
         REGISTRY_PATH,
         json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
         REGISTRY_BRANCH,
-        f"registry: retarget {THAW_ID} to actual Game Center click fix",
+        f"registry: retarget {THAW_ID} to Slate Game shell handoff fix",
         str(raw["sha"]),
     )
 
@@ -96,10 +96,10 @@ def execute(client):
     validate_registry(rb)
     rb_matches = [item for item in rb.get("active_thaws", []) if item.get("thaw_id") == THAW_ID]
     if rb_matches != [new_grant]:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_READBACK_FAILED")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_READBACK_FAILED")
     unrelated_after = [item for item in rb.get("active_thaws", []) if item.get("thaw_id") != THAW_ID]
     if unrelated_after != unrelated_before:
-        raise RuntimeError("WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET_UNRELATED_DRIFT")
+        raise RuntimeError("WNBA_DATA_STEP3_GAME_CLICK_RETARGET_UNRELATED_DRIFT")
 
     return {
         "status": "GREEN",
@@ -115,19 +115,19 @@ def execute(client):
 
 
 def install_startup(app):
-    app.state.wnba_data_step3_actual_click_retarget = {"status": "NOT_RUN"}
+    app.state.wnba_data_step3_game_click_retarget = {"status": "NOT_RUN"}
 
     @app.on_event("startup")
     def _run():
         try:
-            app.state.wnba_data_step3_actual_click_retarget = execute(app.state.github_client)
+            app.state.wnba_data_step3_game_click_retarget = execute(app.state.github_client)
         except Exception as exc:
-            app.state.wnba_data_step3_actual_click_retarget = {
+            app.state.wnba_data_step3_game_click_retarget = {
                 "status": "FAIL", "error": type(exc).__name__, "detail": str(exc)[:800]
             }
         print(
-            "WNBA_DATA_STEP3_ACTUAL_CLICK_RETARGET="
-            + json.dumps(app.state.wnba_data_step3_actual_click_retarget, sort_keys=True),
+            "WNBA_DATA_STEP3_GAME_CLICK_RETARGET="
+            + json.dumps(app.state.wnba_data_step3_game_click_retarget, sort_keys=True),
             flush=True,
         )
     return app
