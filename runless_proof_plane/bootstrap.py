@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import os
 
 # WNBA Data Completeness Repair V1 Step 2 merged-main closeout.
@@ -18,6 +19,6 @@ from .wnba_data_step2_closeout import install_startup_closeout
 
 install_startup_closeout(app)
 
-@app.get("/wnba-data-step2-closeout/status")
-def wnba_data_step2_closeout_status():
-    return app.state.wnba_data_step2_closeout
+@app.on_event("startup")
+def _report_wnba_data_step2_closeout_status():
+    print("WNBA_DATA_STEP2_CLOSEOUT_STATUS=" + json.dumps(app.state.wnba_data_step2_closeout, sort_keys=True), flush=True)
