@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 
-# WNBA Step 2 rebound-hydration deployment-only refresh candidate gate.
+# WNBA Data Completeness Repair V1 Step 2 final GREEN + FROZEN closeout.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -12,6 +12,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .wnba_live_hydration_streamlit_refresh_gate import install_startup
+from .wnba_data_step2_closeout import install_startup_closeout
 
-install_startup(app)
+install_startup_closeout(app)
