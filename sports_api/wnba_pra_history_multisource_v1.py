@@ -31,6 +31,9 @@ from sports_api.wnba_pra_speed_v3_step3_espn_history import (
 WNBA_PROFILE_BASE = "https://www.wnba.com/player"
 OFFICIAL_SOURCE = "WNBA.com Player Profile"
 OFFICIAL_SOURCE_URL = "https://www.wnba.com/"
+BREF_SOURCE = "Basketball-Reference WNBA Player Page"
+BREF_BASE_URL = "https://www.basketball-reference.com"
+BREF_PLAYERS_INDEX_URL = f"{BREF_BASE_URL}/wnba/players/"
 REQUEST_TIMEOUT_SECONDS = 3.5
 BACKFILL_FIELDS = ("minutes", "points", "rebounds", "assists")
 
@@ -130,6 +133,10 @@ def _date(value: Any) -> str | None:
 
 def _header(value: Any) -> str:
     return re.sub(r"[^A-Z0-9]+", "", _clean(value).upper())
+
+
+def _strip_tags(value: Any) -> str:
+    return _clean(re.sub(r"<[^>]+>", " ", str(value or "")))
 
 
 def _team_by_abbreviation(abbreviation: str | None, season: int) -> dict[str, Any] | None:
@@ -276,6 +283,168 @@ def get_official_wnba_profile_history(player_id: int, season: int) -> dict[str, 
     )
 
 
+def extract_official_wnba_player_name(html: str) -> str:
+    """Extract the visible player name from the official WNBA profile shell."""
+    match = re.search(r"<h1\b[^>]*>(.*?)</h1>", str(html or ""), flags=re.IGNORECASE | re.DOTALL)
+    if not match:
+        raise WNBAMultiSourceHistoryError("OFFICIAL_WNBA_PLAYER_NAME_MISSING")
+    name = _strip_tags(match.group(1))
+    if not name:
+        raise WNBAMultiSourceHistoryError("OFFICIAL_WNBA_PLAYER_NAME_MISSING")
+    return name
+
+
+def resolve_basketball_reference_player_href(index_html: str, player_name: str) -> str | None:
+    """Resolve one WNBA Basketball-Reference player link by exact visible name."""
+    wanted = _clean(player_name).casefold()
+    if not wanted:
+        return None
+    pattern = re.compile(
+        r"<a\b[^>]*href=[\"']([^\"']*/wnba/players/[^\"']+\.html)[\"'][^>]*>(.*?)</a>",
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    for href, label in pattern.findall(str(index_html or "")):
+        if _strip_tags(label).casefold() == wanted:
+            return href
+    return None
+
+
+def normalize_basketball_reference_player_html(
+    html: str,
+    *,
+    player_id: int,
+    player_name: str,
+    season: int,
+    source_url: str,
+) -> dict[str, Any]:
+    """Normalize observed WNBA game rows from a Basketball-Reference player page."""
+    parser = _HTMLTables()
+    parser.feed(str(html or ""))
+    required = {"DATE", "TEAM", "OPP", "MP", "TRB", "AST", "PTS"}
+    headers: list[str] = []
+    rows: list[list[str]] = []
+    for table in parser.tables:
+        if not table:
+            continue
+        for header_index, row in enumerate(table[:3]):
+            normalized = [_header(cell) for cell in row]
+            if required.issubset(set(normalized)):
+                headers = normalized
+                rows = table[header_index + 1 :]
+                break
+        if headers:
+            break
+    if not headers:
+        raise WNBAMultiSourceHistoryError("BREF_WNBA_GAME_TABLE_MISSING")
+
+    index = {name: position for position, name in enumerate(headers) if name}
+    team_index = index["TEAM"]
+    location_index = team_index + 1 if team_index + 1 < len(headers) else -1
+    games: list[dict[str, Any]] = []
+    for raw in rows:
+        if len(raw) < len(headers):
+            continue
+        game_date = _date(raw[index["DATE"]])
+        if game_date is None or not game_date.startswith(f"{int(season):04d}-"):
+            continue
+        team_abbr = _clean(raw[team_index]).upper()
+        opponent_abbr = _clean(raw[index["OPP"]]).upper()
+        marker = _clean(raw[location_index]) if location_index >= 0 else ""
+        matchup = _parse_matchup(
+            f"{team_abbr} {'@' if marker == '@' else 'vs'} {opponent_abbr}",
+            int(season),
+        )
+        minutes = _number(raw[index["MP"]])
+        points = _integer(raw[index["PTS"]])
+        rebounds = _integer(raw[index["TRB"]])
+        assists = _integer(raw[index["AST"]])
+        if all(value is None for value in (minutes, points, rebounds, assists)):
+            continue
+        games.append(
+            {
+                "season_id": f"2{int(season)}",
+                "player_id": int(player_id),
+                "game_id": None,
+                "game_id_valid": False,
+                "game_date_raw": raw[index["DATE"]],
+                "game_date": game_date,
+                "matchup": matchup,
+                "result": _clean(raw[index["RESULT"]]) if "RESULT" in index else None,
+                "minutes": minutes,
+                "points": points,
+                "rebounds": rebounds,
+                "assists": assists,
+                "verified_provider": BREF_SOURCE,
+            }
+        )
+    games.sort(key=lambda game: str(game.get("game_date") or ""), reverse=True)
+    if not games:
+        raise WNBAMultiSourceHistoryError("BREF_WNBA_GAME_ROWS_MISSING")
+    return {
+        "source": BREF_SOURCE,
+        "source_url": _clean(source_url),
+        "source_endpoint": "basketball_reference_wnba_player_page",
+        "data_type": "observed_player_game_log",
+        "season": int(season),
+        "season_type": "Completed games published on Basketball-Reference",
+        "player_id": int(player_id),
+        "player_name": _clean(player_name),
+        "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+        "game_count": len(games),
+        "games": games,
+        "verification": {
+            "basketball_reference": True,
+            "stats_are_observed_not_projected": True,
+        },
+    }
+
+
+def get_basketball_reference_player_history(player_id: int, season: int) -> dict[str, Any]:
+    """Resolve an official WNBA player name to a Basketball-Reference WNBA page."""
+    pid = int(player_id)
+    year = int(season)
+    try:
+        profile = requests.get(
+            _official_profile_url(pid),
+            headers=HTTP_HEADERS,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            allow_redirects=True,
+        )
+        profile.raise_for_status()
+        player_name = extract_official_wnba_player_name(profile.text)
+        index_response = requests.get(
+            BREF_PLAYERS_INDEX_URL,
+            headers=HTTP_HEADERS,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            allow_redirects=True,
+        )
+        index_response.raise_for_status()
+        href = resolve_basketball_reference_player_href(index_response.text, player_name)
+        if not href:
+            raise WNBAMultiSourceHistoryError("BREF_WNBA_PLAYER_LINK_MISSING")
+        source_url = href if href.startswith("http") else f"{BREF_BASE_URL}{href}"
+        player_response = requests.get(
+            source_url,
+            headers=HTTP_HEADERS,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+            allow_redirects=True,
+        )
+        player_response.raise_for_status()
+    except WNBAMultiSourceHistoryError:
+        raise
+    except requests.RequestException as exc:
+        raise WNBAMultiSourceHistoryError(
+            f"BREF_WNBA_READ_FAILED:{type(exc).__name__}"
+        ) from exc
+    return normalize_basketball_reference_player_html(
+        player_response.text,
+        player_id=pid,
+        player_name=player_name,
+        season=year,
+        source_url=source_url,
+    )
+
+
 def _match_key(game: Mapping[str, Any]) -> tuple[str, str]:
     matchup = game.get("matchup") if isinstance(game.get("matchup"), Mapping) else {}
     return (
@@ -368,11 +537,33 @@ def _mark_single_provider(
     return result
 
 
+def _mark_bref_fallback(
+    payload: Mapping[str, Any],
+    *,
+    espn_error: str,
+    official_error: str,
+) -> dict[str, Any]:
+    result = deepcopy(dict(payload))
+    verification = result.get("verification")
+    verification = dict(verification) if isinstance(verification, Mapping) else {}
+    verification.update(
+        {
+            "provider_policy": "multi_source",
+            "basketball_reference_fallback": True,
+            "espn_provider_error": espn_error,
+            "official_wnba_provider_error": official_error,
+            "credible_provider_count_available": 1,
+        }
+    )
+    result["verification"] = verification
+    return result
+
+
 def get_multisource_player_game_log_dataset(
     player_id: int,
     season: int,
 ) -> dict[str, Any]:
-    """Read ESPN + official WNBA concurrently and preserve whichever truth exists."""
+    """Read ESPN + official WNBA; use BRef only if both primary providers fail."""
     pid = int(player_id)
     year = int(season)
     if pid <= 0:
@@ -410,19 +601,34 @@ def get_multisource_player_game_log_dataset(
             espn_error=espn_error,
             official_error="",
         )
+
+    bref, bref_error = _provider_result(
+        type("_Immediate", (), {"result": staticmethod(lambda: get_basketball_reference_player_history(pid, year))})()
+    )
+    if bref is not None:
+        return _mark_bref_fallback(
+            bref,
+            espn_error=espn_error,
+            official_error=official_error,
+        )
     raise WNBAMultiSourceHistoryError(
-        f"WNBA_HISTORY_PROVIDERS_UNAVAILABLE:espn={espn_error or 'unknown'}:official={official_error or 'unknown'}"
+        f"WNBA_HISTORY_PROVIDERS_UNAVAILABLE:espn={espn_error or 'unknown'}:official={official_error or 'unknown'}:bref={bref_error or 'unknown'}"
     )
 
 
 __all__ = [
     "BACKFILL_FIELDS",
+    "BREF_SOURCE",
     "OFFICIAL_SOURCE",
     "REQUEST_TIMEOUT_SECONDS",
     "WNBA_PROFILE_BASE",
     "WNBAMultiSourceHistoryError",
+    "extract_official_wnba_player_name",
+    "get_basketball_reference_player_history",
     "get_multisource_player_game_log_dataset",
     "get_official_wnba_profile_history",
     "merge_verified_histories",
+    "normalize_basketball_reference_player_html",
     "normalize_official_wnba_profile_html",
+    "resolve_basketball_reference_player_href",
 ]
