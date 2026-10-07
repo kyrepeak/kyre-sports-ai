@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import gzip
 import hashlib
 import json
 from copy import deepcopy
@@ -78,14 +79,17 @@ def pytest_sessionstart(session) -> None:  # pragma: no cover
     candidate_text = json.dumps(candidate, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
     candidate_bytes = candidate_text.encode("utf-8")
     Path("registry_candidate.json").write_bytes(candidate_bytes)
-    encoded = base64.b64encode(candidate_bytes).decode("ascii")
+
+    compressed = gzip.compress(candidate_bytes, compresslevel=9, mtime=0)
+    encoded = base64.b64encode(compressed).decode("ascii")
     total = (len(encoded) + CHUNK - 1) // CHUNK
     print("WNBA_PRA_REPAIR_V1_STEP3_REGISTRY_CANDIDATE_GREEN", flush=True)
     print(f"REGISTRY_CANDIDATE_FILE_SHA256={hashlib.sha256(candidate_bytes).hexdigest()}", flush=True)
-    print(f"REGISTRY_B64_TOTAL={total}", flush=True)
+    print(f"REGISTRY_GZIP_SHA256={hashlib.sha256(compressed).hexdigest()}", flush=True)
+    print(f"REGISTRY_GZIP_B64_TOTAL={total}", flush=True)
     for index in range(total):
         piece = encoded[index * CHUNK:(index + 1) * CHUNK]
-        print(f"REGISTRY_B64_{index:03d}_OF_{total:03d}={piece}", flush=True)
+        print(f"REGISTRY_GZIP_B64_{index:03d}_OF_{total:03d}={piece}", flush=True)
     meta = {
         "status": "GREEN",
         "revision": candidate["revision"],
