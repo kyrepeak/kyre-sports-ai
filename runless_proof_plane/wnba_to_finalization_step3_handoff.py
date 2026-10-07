@@ -110,7 +110,8 @@ def execute(client):
     lease = validate_lease_state(lease)
     queue = validate_queue_state(queue)
 
-    registry = validate_registry(GithubRegistryBackend(client).read_registry())
+    registry = GithubRegistryBackend(client).read_registry()
+    validate_registry(registry)
     if FREEZE_TOKEN not in (registry.get("entries") or {}):
         raise WNBAFinalizationHandoffFailure("WNBA_FREEZE_TOKEN_MISSING")
     frozen_paths, thawed_paths = _frozen_and_thawed(registry)
