@@ -1,0 +1,82 @@
+{
+  "version": "API2_FINALIZATION_AUTHORITY_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API 2 — Finalization Authority & 100% Convergence V1",
+  "task": "finalization-authority-v1",
+  "step": "3/6",
+  "mission": "Terminal Completion Latch",
+  "base_main_sha": "e313222d0c4e55a6217f4aaf62d3afed7aeead13",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "devsystem/terminal_completion_latch_v1.py",
+      "devsystem/execution_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+      "devsystem/runless_proof_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+      "devsystem/task_ledgers/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+      "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step3-terminal-completion-latch.md",
+      "tests/test_devsystem_terminal_completion_latch_v1.py"
+    ]
+  },
+  "contract": {
+    "canonical_authority": "FROZEN_REGISTRY_RUNLESS",
+    "canonical_resolver_required": true,
+    "ledger_can_reopen_terminal_work": false,
+    "terminal_digest_is_deterministic": true,
+    "duplicate_finalization_short_circuits": true,
+    "explicit_thaw_and_new_task_required_to_reopen": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "github_actions_fallback": 0
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "lease_id": "SCOPE-LEASE-67048376F53B606480D75ECF",
+    "lease_owner": "api2-finalization-authority-v1-step3",
+    "rollback_main_sha": "e313222d0c4e55a6217f4aaf62d3afed7aeead13",
+    "registry_revision_at_start": 189,
+    "registry_state_hash_at_start": "e5853fb06d339c394f01bf9c7dd2decfbbe187c38c8a2629e6730d7353f5e563",
+    "unrelated_active_thaws_preserved": true
+  },
+  "tdd": {
+    "red_candidate_sha": "7deae8da3b554733cbc796a413bf32dd512270c5",
+    "red_observed": true,
+    "red_proof_id": "api2-finalization-authority-v1-step3-terminal-completion-latch-7deae8da3b554733-aa0d37b948c066ce",
+    "red_failure_class": "STATIC_PROOF",
+    "red_command": "python -m pytest -q tests/test_devsystem_terminal_completion_latch_v1.py",
+    "implementation_commit": "ed5df8a6056423a0cd7fcf1b3ed1f3e2b34cdab7",
+    "green_observed": false,
+    "green_result": null
+  },
+  "acceptance": {
+    "duplicate_prove_blocked_after_terminal": true,
+    "duplicate_recheck_blocked_after_terminal": true,
+    "duplicate_merge_blocked_after_terminal": true,
+    "duplicate_freeze_blocked_after_terminal": true,
+    "duplicate_deploy_blocked_after_terminal": true,
+    "duplicate_ledger_recheck_blocked_after_terminal": true,
+    "stale_ledger_cannot_reopen": true,
+    "incomplete_canonical_truth_keeps_latch_open": true,
+    "same_task_thaw_reopen_blocked": true,
+    "distinct_new_task_plus_explicit_thaw_allowed": true,
+    "read_only_terminal_query_allowed": true,
+    "product_runtime_changed": false,
+    "sports_model_changed": false
+  },
+  "completion_contract": {
+    "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP3_FROZEN",
+    "after_freeze": "STEP3_GREEN_FROZEN",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 50.0
+  }
+}
