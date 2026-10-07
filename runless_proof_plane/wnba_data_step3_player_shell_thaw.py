@@ -7,9 +7,9 @@ from copy import deepcopy
 
 from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, validate_registry
 
-MAIN_SHA = "4036459c8c8cde0ac8f3034b560d7948ad9a5015"
+MAIN_SHA = "ef550e9bd9898a67cc54a25ffd7ee5fcb1c6b129"
 BRANCH = "api2-wnba-data-step3-recent-form-h2h-r1"
-CANDIDATE_SHA = "9b21eaf9c648132d4a023cd50dcb30d46e9f962e"
+CANDIDATE_SHA = "e61a8b076672f30b8e39456b4455434092da0242"
 PATH = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
 FROM_BLOB = "6aeb31c68c9e4637aa87d50a70e381e283fc08f7"
 TO_BLOB = "deeb6a9de5270d2d3745c620129895b90ef2b688"
