@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 
-# MONSTER Task 17 Step 5 — one-shot atomic post-merge closeout.
+# API 2 WNBA Data Completeness Repair Step 3 — deployment-only refresh thaw.
 os.environ["RPP_FULL_APP_ENABLED"] = "1"
 os.environ["RPP_WNBA_STEP9_ACTIVATE_ON_START"] = "0"
 os.environ["RPP_WNBA_STEP9_FREEZE_ON_START"] = "0"
@@ -12,6 +12,6 @@ os.environ["RPP_WNBA_PUSHSTATE_STEP1_MERGED_GATE_ON_START"] = "0"
 os.environ["RPP_WNBA_PUSHSTATE_STEP1_FREEZE_ON_START"] = "0"
 
 from .api import app
-from . import task17_step5_atomic_closeout as closeout
+from .wnba_data_step3_streamlit_refresh_thaw import install_startup
 
-closeout.install_startup(app)
+install_startup(app)

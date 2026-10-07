@@ -7,8 +7,8 @@ from copy import deepcopy
 
 from devsystem.frozen_artifact_registry_v1 import REGISTRY_PATH, REGISTRY_REF, validate_registry
 
-MAIN_SHA = "0f54693bea39146747b98cbb7d15c0a4c778f0c8"
-CANDIDATE_SHA = "409182156503be0027abb88d0a2bc811bcfccd94"
+MAIN_SHA = "74229f28ea7f2cca1063c2d6b689171646cd1bf8"
+CANDIDATE_SHA = "7a3073a816608ded207f71a98e66cacc70d3bc10"
 PATH = "requirements.txt"
 FROM_BLOB = "7f5cf407662a79cb4c56781195e7bbcaca38d315"
 TO_BLOB = "1b433c1adc5f99f3b394a9aa040a9e1ff553d64c"
