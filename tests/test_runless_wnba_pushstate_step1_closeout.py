@@ -4,7 +4,7 @@ import json
 from urllib import request
 from urllib.error import HTTPError
 
-CANDIDATE = "53f5f11a8c13566b8578ebc8dba3aedeaedd59f7"
+CANDIDATE = "26091bfa6b37116f0cf170cee407e279b7e8b6a9"
 MAIN = "219ed8367207538a909986841e66807e408feede"
 LEASE = "SCOPE-LEASE-58276A81543E070B30D3D29C"
 WORKSTREAM = "api2-wnba-pra-history-v1-step1"
@@ -17,7 +17,7 @@ def _json_get(url: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def test_submit_exact_fixed_wnba_history_step1_runless_proof():
+def test_submit_final_wnba_history_step1_runless_proof():
     branch = _json_get(
         "https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/"
         "api2-wnba-pra-history-v1-step1-multisource-r1"
@@ -49,7 +49,7 @@ def test_submit_exact_fixed_wnba_history_step1_runless_proof():
         "workstream": WORKSTREAM,
         "candidate_sha": CANDIDATE,
         "lease_id": LEASE,
-        "authorization_id": "kyre-authorized-wnba-step1-final4-proof-20261007",
+        "authorization_id": "kyre-authorized-wnba-step1-final-plan-proof-20261007",
         "expected_main_sha": MAIN,
     }).encode("utf-8")
     req = request.Request(
