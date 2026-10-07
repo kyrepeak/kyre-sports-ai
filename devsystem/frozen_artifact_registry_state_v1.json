@@ -40,6 +40,17 @@
       "status": "ACTIVE",
       "target_head_sha": "ef4669be366790af1056b884b29725446de18dfc",
       "thaw_id": "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1"
+    },
+    {
+      "files": {
+        "requirements.txt": {
+          "from_blob": "7f5cf407662a79cb4c56781195e7bbcaca38d315",
+          "to_blob": "1b433c1adc5f99f3b394a9aa040a9e1ff553d64c"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "7a3073a816608ded207f71a98e66cacc70d3bc10",
+      "thaw_id": "THAW-API2-WNBA-DATA-STEP3-STREAMLIT-REFRESH-R1"
     }
   ],
   "entries": {
@@ -2384,9 +2395,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 175,
+  "revision": 176,
   "schema_version": 1,
   "source_main_sha": "74229f28ea7f2cca1063c2d6b689171646cd1bf8",
-  "state_hash": "14525c811b0dd1fcb3edd239f7bd16b382bad0382272d7c7dd9824effc2253ce",
+  "state_hash": "bd7b9276f05b426b3db8e10f4da0eb81016be11ee8e05c59890dd46c7c8e9c8f",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
