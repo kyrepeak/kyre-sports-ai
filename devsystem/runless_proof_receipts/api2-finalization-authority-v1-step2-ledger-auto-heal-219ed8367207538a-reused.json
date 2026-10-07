@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/canonical_completion_ledger_autoheal_v1.py": "57bf6f5a68b9fc1ce3ab05f8631ffe428747f7be",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step2-ledger-auto-heal.md": "51d98b720a1af52bc160a30b210617daa0eb3431",
+    "tests/test_devsystem_canonical_completion_ledger_autoheal_v1.py": "f9f8c424fdf902dc6ad8c9a2ddfba58a9cf8df58"
+  },
+  "candidate_sha": "219ed8367207538a909986841e66807e408feede",
+  "created_at": "2026-10-07T19:46:38.964472+00:00",
+  "dependency_map": {
+    "devsystem/canonical_completion_resolver_v1.py": "4170f4ca1403985c747bc5ace2154acfd4f0ff06",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
+    "runless_proof_plane/gate.py": "66080c66ec41f0d20e2443374ef09dffeb5cf0de",
+    "runless_proof_plane/step2a.py": "9fb8e21517601bdc31c18149c457d0583c9aa0d1"
+  },
+  "digest": "9a30fa54f1533487d57643357228077282b69b84b924964c3f7fedf0fd3d0981",
+  "evidence_digests": [
+    "105f87b434412e931ca4e5a7759f96399551540ef4b1231f11d4eb843d446c84",
+    "95a1a55b5e9d803c1e00c1c2a135aa6c00b0736cf5ae7c9fd30b76b7422f40d0",
+    "6fba8c5c710e54f0deec2a3f7fab6d06dfc285af07be5519e936049c2c8231dc"
+  ],
+  "failure_class": "NONE",
+  "github_actions_enabled": false,
+  "prior_digest": "03532c1eda454e43d7d9ae09d3d106d8fda8abb483e228a601a00464c5b3e4b0",
+  "project": "API2",
+  "proof_fingerprint": "f423b3d3dadea694939df80816e391d05292efe14052f6a5df169e2e3f058dea",
+  "proof_id": "api2-finalization-authority-v1-step2-ledger-auto-heal-219ed8367207538a-reused",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 184,
+    "state_hash": "12b4c2cffe693c378c76e5c930538a43d312988c80f89e1d01546a72c04a0167"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 184,
+    "state_hash": "12b4c2cffe693c378c76e5c930538a43d312988c80f89e1d01546a72c04a0167"
+  },
+  "reuse_content_fingerprint": "83bbbd87b8b5b1280a492c1dc97e218271129fcddceb7c5ff2503b1d5cd9592a",
+  "reused_from_proof_id": "api2-finalization-authority-v1-step2-ledger-auto-heal-a2346424496c8f4b-489ff6b26aef9b3b",
+  "reused_from_receipt_digest": "03532c1eda454e43d7d9ae09d3d106d8fda8abb483e228a601a00464c5b3e4b0",
+  "static_evidence_reexecuted": false,
+  "step": "api2-finalization-authority-v1-step2-ledger-auto-heal",
+  "task_id": "api2-finalization-authority-v1-step2-ledger-auto-heal",
+  "workstream": "api2-finalization-authority-v1-step2"
+}
