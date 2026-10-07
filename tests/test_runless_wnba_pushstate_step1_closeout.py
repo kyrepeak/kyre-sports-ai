@@ -18,6 +18,9 @@ def _json_get(url: str) -> dict:
 
 
 def test_submit_final_wnba_history_step1_runless_proof():
+    # Fail closed on exact candidate/main identity. Lease authority is checked by
+    # Runless itself through its authenticated GitHub API reader; do not duplicate
+    # that check through cacheable raw.githubusercontent.com content.
     branch = _json_get(
         "https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/"
         "api2-wnba-pra-history-v1-step1-multisource-r1"
@@ -25,19 +28,6 @@ def test_submit_final_wnba_history_step1_runless_proof():
     assert branch["commit"]["sha"] == CANDIDATE
     main = _json_get("https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/main")
     assert main["commit"]["sha"] == MAIN
-    lease = _json_get(
-        "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
-        "monster-scope-aware-execution-leases/"
-        "devsystem/scope_aware_execution_lease_state_v1.json"
-    )
-    holders = [
-        h for h in lease.get("holders", [])
-        if h.get("lease_id") == LEASE and h.get("owner_id") == WORKSTREAM
-    ]
-    assert len(holders) == 1
-    identity = holders[0]["scope"]["resource_identity"]
-    assert identity["candidate_sha"] == CANDIDATE
-    assert identity["main_sha"] == MAIN
 
     health = _json_get(PROOF_PLANE + "/health")
     assert health.get("mode") == "full", health
@@ -49,7 +39,7 @@ def test_submit_final_wnba_history_step1_runless_proof():
         "workstream": WORKSTREAM,
         "candidate_sha": CANDIDATE,
         "lease_id": LEASE,
-        "authorization_id": "kyre-authorized-wnba-step1-final-plan-proof-20261007",
+        "authorization_id": "kyre-authorized-wnba-step1-final-plan-proof-20261007-r2",
         "expected_main_sha": MAIN,
     }).encode("utf-8")
     req = request.Request(
