@@ -14,6 +14,7 @@ STEP17_THAW_ID = "THAW-RUNLESS-TASK17-STEP1-REAL-PROVE-R1"
 EXPECTED_API_FROM = "185c07cb05fb5dc4937011330c6da6b7d5e8d1c5"
 EXPECTED_API_TO = "3734146408aefba224f3ceed7c9385fc91eca68a"
 MIGRATION_NOT_BEFORE = "2026-10-05T00:00:00Z"
+MIGRATION_MARKERS = ("quarantine", "fallback", "manual", "retire", "disable")
 MAX_MISMATCHES = 30
 
 
@@ -51,10 +52,15 @@ def _latest_main_change(client, path: str) -> dict:
     row = rows[0]
     commit = row.get("commit") or {}
     message = str(commit.get("message") or "")
+    message_folded = message.casefold()
     authored = str((commit.get("author") or {}).get("date") or "")
-    if "runless" not in message.casefold():
+    if "runless" not in message_folded:
         raise Task17RegistryRecoveryFailure(
             f"NON_RUNLESS_DRIFT:{path}:{message[:120]}"
+        )
+    if not any(marker in message_folded for marker in MIGRATION_MARKERS):
+        raise Task17RegistryRecoveryFailure(
+            f"NON_MIGRATION_RUNLESS_DRIFT:{path}:{message[:120]}"
         )
     if authored and authored < MIGRATION_NOT_BEFORE:
         raise Task17RegistryRecoveryFailure(
@@ -94,8 +100,6 @@ def execute(client):
             continue
         if actual_blob is None:
             raise Task17RegistryRecoveryFailure(f"FROZEN_ARTIFACT_DELETED:{path}")
-        if not path.startswith(".github/workflows/"):
-            raise Task17RegistryRecoveryFailure(f"NON_WORKFLOW_FROZEN_DRIFT:{path}")
         history = _latest_main_change(client, path)
         lineage[path] = history
         mismatches.append(
@@ -140,7 +144,7 @@ def execute(client):
             REGISTRY_PATH,
             text,
             REGISTRY_BRANCH,
-            "registry: reconcile merged Runless workflow quarantine baselines",
+            "registry: reconcile merged Runless migration baselines",
             backend._blob_sha,
         )
     except Exception as exc:
