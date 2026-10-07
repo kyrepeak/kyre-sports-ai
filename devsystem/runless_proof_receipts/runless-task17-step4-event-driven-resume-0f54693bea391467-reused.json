@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "runless_proof_plane/event_resume.py": "590a8d4975fcabed2a5126d92691327be40d3e0f",
+    "tests/test_runless_task17_step4_event_driven_resume.py": "212829e5528ba26da8bc6cbcbf3f77e726f1ecc7"
+  },
+  "candidate_sha": "0f54693bea39146747b98cbb7d15c0a4c778f0c8",
+  "created_at": "2026-10-07T07:09:59.356724+00:00",
+  "dependency_map": {
+    "devsystem/detached_execution_continuation_v1.py": "4c6d1b4b10f65e344491dbb2e78c62e4444db927",
+    "devsystem/event_driven_resume_v1.py": "03dd1b84d5055c6ea4b9cdaa9be9bccdc12c9241",
+    "runless_proof_plane/step2a.py": "9fb8e21517601bdc31c18149c457d0583c9aa0d1"
+  },
+  "digest": "d499e7d9f1c21b3a207c07dd6c4e6da6e2c152724121e9a1112c46ab0c3303e6",
+  "evidence_digests": [
+    "c24e7fb03132bdb8a9a2acc132756a272ac883f5f160a0a1cb0972046cb7c9cc",
+    "fd3b8d2998b6c86500d08278359361666dcdcf0acb73d2e77aad683d112039df",
+    "623141edfb050ed83069b20003a093d5ecdfd8ca45fd07551d5345c9573f335e"
+  ],
+  "failure_class": "NONE",
+  "github_actions_enabled": false,
+  "prior_digest": "3ef058dfc4891674ac0bc605b72f9738b84d75252a5238e5dcc760f0296eadea",
+  "project": "API2",
+  "proof_fingerprint": "e73bd8f275f657e13a0c89cbaaea480f27f299fc59c9078770a19709acf8c48e",
+  "proof_id": "runless-task17-step4-event-driven-resume-0f54693bea391467-reused",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 173,
+    "state_hash": "af27f2d2395fcb4bc240b0c52a6b6dfdc863d5dc0b7fe6b3bafb3a0417dfa322"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-API2-WNBA-DATA-STEP3-PLAYER-SHELL-HANDOFF-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 173,
+    "state_hash": "af27f2d2395fcb4bc240b0c52a6b6dfdc863d5dc0b7fe6b3bafb3a0417dfa322"
+  },
+  "reuse_content_fingerprint": "bed31120a3bc0f2393111f208ce5fcd39fbd162421ac828c8d0fef36ea1aa8bb",
+  "reused_from_proof_id": "runless-task17-step4-event-driven-resume-dc75208f04ed7daa-cac4a5b3411a80e6",
+  "reused_from_receipt_digest": "3ef058dfc4891674ac0bc605b72f9738b84d75252a5238e5dcc760f0296eadea",
+  "static_evidence_reexecuted": false,
+  "step": "task17-step4-event-driven-resume",
+  "task_id": "runless-task17-step4-event-driven-resume",
+  "workstream": "runless-task17-step4"
+}
