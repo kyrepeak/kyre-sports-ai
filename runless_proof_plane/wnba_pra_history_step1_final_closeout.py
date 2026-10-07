@@ -4,15 +4,24 @@ import json
 
 from . import wnba_pra_history_step1_closeout as base
 
-SOURCE_MAIN_SHA = "f84bf63f966a52ed3cd1d6275bedc2a0cf3b125b"
-SOURCE_CANDIDATE_SHA = "3a177612513cb5ee33d310efeadedb2eb22723ec"
-MAIN_SHA = "aba567ca13d1a01d9ef783efcff47b784b414a5c"
-PREMERGE_PROOF_ID = "wnba-pra-history-multisource-v1-step1-3a177612513cb5ee-c1adc2163b06b63d"
-PREMERGE_DIGEST = "b2a154373402cb843aa2ce79ca51ed1b4ae31c62cfe4f254654486ab3ddc9881"
-PREMERGE_CHECK_ID = 113057967428
-MERGED_PROOF_ID = "wnba-pra-history-multisource-v1-step1-aba567ca13d1a01d-reused"
+SOURCE_MAIN_SHA = "aba567ca13d1a01d9ef783efcff47b784b414a5c"
+SOURCE_CANDIDATE_SHA = "1f15353bdaba0b955bf464df22923e5f28394266"
+MAIN_SHA = "e313222d0c4e55a6217f4aaf62d3afed7aeead13"
+PREMERGE_PROOF_ID = "wnba-pra-history-multisource-v1-step1-1f15353bdaba0b95-71e660d153b4f2b8"
+PREMERGE_DIGEST = "565f12e0b5f621bcf358def8f437529726586084bccce811d925b7ebb1fa3847"
+PREMERGE_CHECK_ID = 113070429806
+MERGED_PROOF_ID = "wnba-pra-history-multisource-v1-step1-e313222d0c4e55a6-reused"
 EXPECTED_REGISTRY_REVISION = 188
 EXPECTED_REGISTRY_HASH = "de3a935ee3f9bc0b90bee22c65ee879ade4a58a4041dbf26d76a84bc8727179f"
+FREEZE_PATHS = (
+    "devsystem/runless_proof_plans/wnba-pra-history-multisource-v1-step1.json",
+    "devsystem/task_ledgers/wnba-pra-history-multisource-v1-step1.json",
+    "docs/superpowers/plans/2026-10-07-wnba-pra-history-multisource-step1.md",
+    "sports_api/api/wnba_pra_detail_bundle.py",
+    "sports_api/wnba_pra_history_multisource_v1.py",
+    "tests/test_wnba_pra_history_multisource_v1_step1.py",
+    "tests/test_wnba_pra_history_bref_fallback_v1.py",
+)
 
 _OVERRIDES = {
     "SOURCE_MAIN_SHA": SOURCE_MAIN_SHA,
@@ -24,6 +33,7 @@ _OVERRIDES = {
     "MERGED_PROOF_ID": MERGED_PROOF_ID,
     "EXPECTED_REGISTRY_REVISION": EXPECTED_REGISTRY_REVISION,
     "EXPECTED_REGISTRY_HASH": EXPECTED_REGISTRY_HASH,
+    "FREEZE_PATHS": FREEZE_PATHS,
 }
 
 
