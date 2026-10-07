@@ -3,13 +3,9 @@
 Player Intelligence previously depended on one per-game history provider even
 when the official WNBA player profile published the same completed-game stats.
 This module keeps ESPN as one verified provider and independently reads the
-official WNBA profile in parallel. Official WNBA values backfill only missing
-MIN/PTS/REB/AST fields; an already-present provider value is never overwritten.
-
-Provider dates can differ by one calendar day because upstream feeds do not all
-stamp games in the same timezone. Matching therefore uses opponent + exact date
-first, then an unambiguous +/-1-day tolerance for the same opponent. Ambiguous
-matches fail closed.
+official WNBA webview player profile in parallel. Official WNBA values backfill
+only missing MIN/PTS/REB/AST fields on the same date/opponent; an already-present
+provider value is never overwritten.
 
 This is read-only display/history transport. It does not run or alter model,
 projection, probability, market, qualification, ranking, sportsbook, or wager
@@ -32,12 +28,11 @@ from sports_api.wnba_pra_speed_v3_step3_espn_history import (
 )
 
 
-WNBA_PROFILE_BASE = "https://www.wnba.com/player"
+WNBA_PROFILE_BASE = "https://www.wnba.com/webview/player"
 OFFICIAL_SOURCE = "WNBA.com Player Profile"
 OFFICIAL_SOURCE_URL = "https://www.wnba.com/"
 REQUEST_TIMEOUT_SECONDS = 3.5
 BACKFILL_FIELDS = ("minutes", "points", "rebounds", "assists")
-SOURCE_DATE_TOLERANCE_DAYS = 1
 
 HTTP_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -131,14 +126,6 @@ def _date(value: Any) -> str | None:
         except ValueError:
             continue
     return None
-
-
-def _iso_date(value: Any):
-    text = _clean(value)
-    try:
-        return datetime.strptime(text, "%Y-%m-%d").date()
-    except ValueError:
-        return None
 
 
 def _header(value: Any) -> str:
@@ -242,7 +229,7 @@ def normalize_official_wnba_profile_html(
         raise WNBAMultiSourceHistoryError("OFFICIAL_WNBA_RECENT_GAME_ROWS_MISSING")
     return {
         "source": OFFICIAL_SOURCE,
-        "source_url": f"{WNBA_PROFILE_BASE}/{int(player_id)}/profile",
+        "source_url": f"{WNBA_PROFILE_BASE}/{int(player_id)}",
         "source_endpoint": "official_player_profile_recent_game_stats",
         "data_type": "official_player_game_log",
         "season": int(season),
@@ -264,7 +251,7 @@ def get_official_wnba_profile_history(player_id: int, season: int) -> dict[str, 
     year = int(season)
     if pid <= 0:
         raise ValueError("WNBA player_id must be positive.")
-    url = f"{WNBA_PROFILE_BASE}/{pid}/profile"
+    url = f"{WNBA_PROFILE_BASE}/{pid}"
     try:
         response = requests.get(
             url,
@@ -277,87 +264,51 @@ def get_official_wnba_profile_history(player_id: int, season: int) -> dict[str, 
         raise WNBAMultiSourceHistoryError(
             f"OFFICIAL_WNBA_PROFILE_READ_FAILED:{type(exc).__name__}"
         ) from exc
-    return normalize_official_wnba_profile_html(response.text, player_id=pid, season=year)
-
-
-def _opponent_key(game: Mapping[str, Any]) -> str:
-    matchup = game.get("matchup") if isinstance(game.get("matchup"), Mapping) else {}
-    return _clean(matchup.get("opponent_team_key")).casefold()
+    return normalize_official_wnba_profile_html(
+        response.text,
+        player_id=pid,
+        season=year,
+    )
 
 
 def _match_key(game: Mapping[str, Any]) -> tuple[str, str]:
-    return (_clean(game.get("game_date")), _opponent_key(game))
-
-
-def _official_match(
-    primary_game: Mapping[str, Any],
-    official_games: list[Mapping[str, Any]],
-) -> tuple[Mapping[str, Any] | None, bool, bool]:
-    """Return (match, used_date_tolerance, ambiguity_blocked)."""
-    date_text, opponent = _match_key(primary_game)
-    if not date_text or not opponent:
-        return None, False, False
-    exact = [
-        game
-        for game in official_games
-        if _opponent_key(game) == opponent and _clean(game.get("game_date")) == date_text
-    ]
-    if len(exact) == 1:
-        return exact[0], False, False
-    if len(exact) > 1:
-        return None, False, True
-    primary_date = _iso_date(date_text)
-    if primary_date is None:
-        return None, False, False
-    nearby: list[Mapping[str, Any]] = []
-    for game in official_games:
-        if _opponent_key(game) != opponent:
-            continue
-        official_date = _iso_date(game.get("game_date"))
-        if official_date is None:
-            continue
-        if abs((primary_date - official_date).days) <= SOURCE_DATE_TOLERANCE_DAYS:
-            nearby.append(game)
-    if len(nearby) == 1:
-        return nearby[0], True, False
-    if len(nearby) > 1:
-        return None, False, True
-    return None, False, False
+    matchup = game.get("matchup") if isinstance(game.get("matchup"), Mapping) else {}
+    return (
+        _clean(game.get("game_date")),
+        _clean(matchup.get("opponent_team_key")).casefold(),
+    )
 
 
 def merge_verified_histories(
     primary: Mapping[str, Any],
     official: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Backfill missing row fields from a uniquely identified official game."""
+    """Backfill missing row fields only when date+opponent identity matches."""
     result = deepcopy(dict(primary))
     primary_games = result.get("games") if isinstance(result.get("games"), list) else []
-    official_raw = official.get("games") if isinstance(official.get("games"), list) else []
-    official_games = [game for game in official_raw if isinstance(game, Mapping)]
+    official_games = official.get("games") if isinstance(official.get("games"), list) else []
+    official_by_key = {
+        _match_key(game): game
+        for game in official_games
+        if isinstance(game, Mapping) and all(_match_key(game))
+    }
     backfilled = 0
     matched_games = 0
-    tolerance_matches = 0
-    ambiguity_blocked = 0
     for game in primary_games:
         if not isinstance(game, dict):
             continue
-        verified, used_tolerance, blocked = _official_match(game, official_games)
-        if blocked:
-            ambiguity_blocked += 1
+        verified = official_by_key.get(_match_key(game))
         if not isinstance(verified, Mapping):
             continue
         matched_games += 1
-        if used_tolerance:
-            tolerance_matches += 1
-        row_backfilled = 0
+        game_backfilled = 0
         for field in BACKFILL_FIELDS:
             if game.get(field) is None and verified.get(field) is not None:
                 game[field] = verified.get(field)
                 backfilled += 1
-                row_backfilled += 1
-        if row_backfilled:
+                game_backfilled += 1
+        if game_backfilled:
             game["history_backfill_source"] = OFFICIAL_SOURCE
-            game["history_backfill_official_date"] = verified.get("game_date")
 
     verification = result.get("verification")
     verification = dict(verification) if isinstance(verification, Mapping) else {}
@@ -368,10 +319,8 @@ def merge_verified_histories(
             "official_wnba_profile_rows": len(official_games),
             "official_wnba_matched_games": matched_games,
             "official_wnba_backfill_fields": backfilled,
-            "source_date_tolerance_matches": tolerance_matches,
-            "ambiguous_tolerance_matches_blocked": ambiguity_blocked,
             "existing_primary_values_overwritten": False,
-            "match_contract": "opponent_plus_exact_date_else_unambiguous_plus_or_minus_1_day",
+            "match_contract": "exact_game_date_and_opponent_team_key",
         }
     )
     result["verification"] = verification
@@ -394,7 +343,10 @@ def _provider_result(future) -> tuple[dict[str, Any] | None, str]:
 
 
 def _mark_single_provider(
-    payload: Mapping[str, Any], *, espn_error: str, official_error: str
+    payload: Mapping[str, Any],
+    *,
+    espn_error: str,
+    official_error: str,
 ) -> dict[str, Any]:
     result = deepcopy(dict(payload))
     verification = result.get("verification")
@@ -411,7 +363,10 @@ def _mark_single_provider(
     return result
 
 
-def get_multisource_player_game_log_dataset(player_id: int, season: int) -> dict[str, Any]:
+def get_multisource_player_game_log_dataset(
+    player_id: int,
+    season: int,
+) -> dict[str, Any]:
     """Read ESPN + official WNBA concurrently and preserve whichever truth exists."""
     pid = int(player_id)
     year = int(season)
@@ -419,11 +374,13 @@ def get_multisource_player_game_log_dataset(player_id: int, season: int) -> dict
         raise ValueError("WNBA player_id must be positive.")
     if year < 1997 or year > 2100:
         raise ValueError("WNBA season is outside the supported range.")
+
     with ThreadPoolExecutor(max_workers=2) as pool:
         espn_future = pool.submit(get_step3_espn_player_game_log_dataset, pid, year)
         official_future = pool.submit(get_official_wnba_profile_history, pid, year)
         espn, espn_error = _provider_result(espn_future)
         official, official_error = _provider_result(official_future)
+
     if espn is not None and official is not None:
         merged = merge_verified_histories(espn, official)
         verification = dict(merged.get("verification") or {})
@@ -437,9 +394,17 @@ def get_multisource_player_game_log_dataset(player_id: int, season: int) -> dict
         merged["verification"] = verification
         return merged
     if espn is not None:
-        return _mark_single_provider(espn, espn_error="", official_error=official_error)
+        return _mark_single_provider(
+            espn,
+            espn_error="",
+            official_error=official_error,
+        )
     if official is not None:
-        return _mark_single_provider(official, espn_error=espn_error, official_error="")
+        return _mark_single_provider(
+            official,
+            espn_error=espn_error,
+            official_error="",
+        )
     raise WNBAMultiSourceHistoryError(
         f"WNBA_HISTORY_PROVIDERS_UNAVAILABLE:espn={espn_error or 'unknown'}:official={official_error or 'unknown'}"
     )
@@ -449,7 +414,7 @@ __all__ = [
     "BACKFILL_FIELDS",
     "OFFICIAL_SOURCE",
     "REQUEST_TIMEOUT_SECONDS",
-    "SOURCE_DATE_TOLERANCE_DAYS",
+    "WNBA_PROFILE_BASE",
     "WNBAMultiSourceHistoryError",
     "get_multisource_player_game_log_dataset",
     "get_official_wnba_profile_history",
