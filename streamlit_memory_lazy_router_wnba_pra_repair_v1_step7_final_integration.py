@@ -13,6 +13,7 @@ import streamlit as st
 
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step5_decision_fallback as frozen_parent
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step3_data_completeness as deep_route
+import wnba_pra_final_v2_step7 as final_transport
 import wnba_pra_game_center_v2_step3 as game_center
 import wnba_pra_navigation_v2_step1 as navigation
 import wnba_pra_player_intelligence_v2_step4 as player_intelligence
@@ -90,6 +91,15 @@ def _emit_one_shot_wnba_pra_shell_handoff() -> None:
         st.query_params[deep_route.SHELL_MARKET_QUERY_KEY] = deep_route.SHELL_MARKET_VALUE
 
 
+def _wrap_step7_player_open(delegate):
+    """Capture the shell handoff inside the callback object persisted by Streamlit."""
+    def _wrapped(game_id: str, player: Mapping[str, Any]):
+        _emit_one_shot_wnba_pra_shell_handoff()
+        return delegate(game_id, player)
+
+    return _wrapped
+
+
 def _pin_deep_wnba_session_route(
     state: navigation.NavigationState | None = None,
 ) -> navigation.NavigationState:
@@ -120,6 +130,7 @@ def render_app() -> Any:
     original_player_renderer = player_intelligence.render_player_intelligence
     original_final_card_renderer = step5_engine.render_step5_final_card
     original_deep_pin = deep_route._pin_deep_wnba_shell_route
+    original_final_player_open = final_transport._open_player_immediate
 
     def guarded_game_renderer(state):
         game = _selected_game()
@@ -174,6 +185,7 @@ def render_app() -> Any:
         return original_final_card_renderer(summary)
 
     deep_route._pin_deep_wnba_shell_route = _pin_deep_wnba_session_route
+    final_transport._open_player_immediate = _wrap_step7_player_open(original_final_player_open)
     game_center.render_game_center = guarded_game_renderer
     game_center._render_player_card = guarded_player_card
     player_intelligence.render_player_intelligence = guarded_player_renderer
@@ -182,6 +194,7 @@ def render_app() -> Any:
         return frozen_parent.render_app()
     finally:
         deep_route._pin_deep_wnba_shell_route = original_deep_pin
+        final_transport._open_player_immediate = original_final_player_open
         game_center.render_game_center = original_game_renderer
         game_center._render_player_card = original_player_card_renderer
         player_intelligence.render_player_intelligence = original_player_renderer
