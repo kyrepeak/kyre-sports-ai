@@ -1,0 +1,43 @@
+{
+  "version": "CFB_GAME_TOTAL_PAGE1_V2_STEP2_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "CFB Game Total Page 1 V2",
+  "step": 2,
+  "total_steps": 9,
+  "mission": "Multi-Source Data Engine",
+  "status": "CANDIDATE",
+  "base_main_sha": "8563157c27fe3c13a3084e79230910cdb5e0841a",
+  "problem": "Visible Page-1 Third Down and History cards can terminate in generic DATA LIMITED because the display handoff lacks normalized fallback official_stats rows and a truthful non-empty verified-sample history object.",
+  "root_cause": "The repo already owns certified official/cfbstats fallback metrics, but V159 reads only official_stats rows for Step 7 and history/series_history/head_to_head for Step 10. That certified fallback was not normalized into those Page-1 display contracts.",
+  "patch": "Add a display-only multi-source normalizer, wrap V34 as V35 at the V24 reconciliation handoff, and advance only Router V190's CFB Game Total binding to V35.",
+  "step2a": {
+    "single_authority": true,
+    "branch": "cfb-game-total-page1-v2-step2-multisource-r1",
+    "pr": 1462,
+    "github_actions_fallback_authorized": false,
+    "frozen_step1_files_modified": [],
+    "wnba_files_modified": [],
+    "app_py_modified": false
+  },
+  "tdd": {
+    "red_observed": true,
+    "red_observation": "Focused RED failed: Step-2 multi-source Page-1 engine must exist",
+    "expected_failure": "Step-2 multi-source Page-1 engine must exist",
+    "production_code_before_red": false
+  },
+  "acceptance": {
+    "third_down_multisource_fill": true,
+    "truthful_history_context": true,
+    "existing_verified_rows_preserved": true,
+    "no_generic_data_limited_third_down": true,
+    "no_generic_data_limited_history": true,
+    "cfb_only_route_activation": true,
+    "projection_math_changed": false,
+    "runless_exact_head_green": false
+  },
+  "rulings": [
+    "Use Router V190's CFB-only page binding instead of thawing app.py or WNBA routers; narrower blast radius and no unrelated frozen artifacts are modified.",
+    "History is limited to verified completed-game samples; absence of a meeting is reported as sample truth, never inferred as all-time series history.",
+    "Kyre Sports API remains the existing primary identity/market transport; Step 2 reuses certified official/cfbstats sources only for display evidence fields that Kyre API does not currently expose."
+  ]
+}
