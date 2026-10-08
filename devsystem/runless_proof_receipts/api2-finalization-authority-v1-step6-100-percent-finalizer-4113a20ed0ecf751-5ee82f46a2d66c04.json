@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-finalization-authority-v1-step6-100-percent-finalizer.json": "3a5738d203f851550d1ffde909b28b289a4707f4",
+    "devsystem/finalization_100_percent_finalizer_v1.py": "b13446f86934111a2f0cc8149d6fe24be7bb7c4f",
+    "devsystem/runless_proof_plans/api2-finalization-authority-v1-step6-100-percent-finalizer.json": "173ad08de6af9e6d32d226289d748e5009b34766",
+    "devsystem/task_ledgers/api2-finalization-authority-v1-step6-100-percent-finalizer.json": "6f4c83cb1155a7ee0e857f37a84eedd32f8aafcf",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step6-100-percent-finalizer.md": "c74895bb0f8d31b5011529f1ba95baf2e0cbadc9",
+    "tests/test_devsystem_finalization_100_percent_finalizer_v1.py": "a5379ea92aaa49083d281093bc6e38491052c88d"
+  },
+  "candidate_sha": "4113a20ed0ecf75132b53f45beda6825cca5c8c3",
+  "created_at": "2026-10-08T02:21:18.703887+00:00",
+  "dependency_map": {
+    "devsystem/authority_garbage_collector_v1.py": "6bd8ec53d112e0814a43d7a112382ffc177b8146",
+    "devsystem/canonical_completion_resolver_v1.py": "4170f4ca1403985c747bc5ace2154acfd4f0ff06",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "devsystem/state_aware_proof_contract_v1.py": "733b5acfdb5835458cd90c087612908277d38da1",
+    "devsystem/terminal_completion_latch_v1.py": "a95224fce02d39880dd923b5ec1f1a4612672a27"
+  },
+  "deployment_identity": "4298167ceafb1683c43fc9b2ac73a320d0c8b23d",
+  "digest": "a4e32ba93dbb97e092d9e4b831f0efe183d35e79e97498651d472d0ca988136f",
+  "evidence_digests": [
+    "7e296970c275f4f213dd4a0fcc501dfa8d17fd4b6e6a8e50deda403e6d4f032d",
+    "bba206ba28c7a620054fb9b6a3af35f375ecf1908934f0e4e555ca1f5d41e1ed",
+    "53ed3f0a601b250fa86e69f8f4a481daa882d779e1c0d35b8e5e71764091a303"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c0fcf3416c4a9997e291f41b2c0de8d4e9475754cf9cd4a79268b5a3ae70a737",
+  "proof_id": "api2-finalization-authority-v1-step6-100-percent-finalizer-4113a20ed0ecf751-5ee82f46a2d66c04",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 192,
+    "state_hash": "3cc070a9e710fe3cbe1fee69448b05b1e3117e3b0454fb60ed6dfd2c675b103c"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 192,
+    "state_hash": "3cc070a9e710fe3cbe1fee69448b05b1e3117e3b0454fb60ed6dfd2c675b103c"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "api2-finalization-authority-v1-step6-100-percent-finalizer",
+  "workstream": "api2-finalization-authority-v1-step6"
+}
