@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json": "fff3c7bfd9d789794bbb9aff1ed58de2cf61cc99",
+    "devsystem/runless_proof_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json": "1417e0b5f251af3383650db0241ebb4b930059bc",
+    "devsystem/task_ledgers/api2-finalization-authority-v1-step3-terminal-completion-latch.json": "ce8080987e86a9d34e9f424708d314365a6be606",
+    "devsystem/terminal_completion_latch_v1.py": "a95224fce02d39880dd923b5ec1f1a4612672a27",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step3-terminal-completion-latch.md": "60187457aea466c683738f84f5777a88db96f341",
+    "tests/test_devsystem_terminal_completion_latch_v1.py": "1725ba1cbf165a200eb018a1d8f9815be13d7af2"
+  },
+  "candidate_sha": "85bfd1031b12318c64ca090be5fd5807f57a2f49",
+  "created_at": "2026-10-08T00:18:36.746985+00:00",
+  "dependency_map": {
+    "devsystem/canonical_completion_ledger_autoheal_v1.py": "57bf6f5a68b9fc1ce3ab05f8631ffe428747f7be",
+    "devsystem/canonical_completion_resolver_v1.py": "4170f4ca1403985c747bc5ace2154acfd4f0ff06",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
+    "runless_proof_plane/atomic_closeout.py": "9b50a88b78998808879b71c11499f25777282ad4",
+    "runless_proof_plane/gate.py": "66080c66ec41f0d20e2443374ef09dffeb5cf0de",
+    "runless_proof_plane/step2a.py": "9fb8e21517601bdc31c18149c457d0583c9aa0d1"
+  },
+  "digest": "d9075406b4cde53b86ae1a00f742c1bcaf1daf475a999403d940ac334068c145",
+  "evidence_digests": [
+    "7af986374683af9f6a9003d590099c3a3c82b6f95a60c2312eecdf40cceb43a8",
+    "80a29a974c6afe8bf0bca8ba0b78056a16ec19fc07adc3b14de9481592a9cfe9",
+    "b79bf43f6d276be882d09dcb912863dfc14d3901ee8244b83bde56eb23079614"
+  ],
+  "failure_class": "NONE",
+  "github_actions_enabled": false,
+  "prior_digest": "cb7960099518b8a82a92cb01037f8eb445674da2aa435c046c5a4b08b1d079b3",
+  "project": "API2",
+  "proof_fingerprint": "2fc58e2f828809912f495950d6bd39d4b28e04b9dbca0780483bf98b5d2a6968",
+  "proof_id": "api2-finalization-authority-v1-step3-terminal-completion-latch-85bfd1031b12318c-reused",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 189,
+    "state_hash": "e5853fb06d339c394f01bf9c7dd2decfbbe187c38c8a2629e6730d7353f5e563"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 189,
+    "state_hash": "e5853fb06d339c394f01bf9c7dd2decfbbe187c38c8a2629e6730d7353f5e563"
+  },
+  "reuse_content_fingerprint": "3183171298bf58e22e90be20316b3b9d763bf77a30ee201431344783a015512f",
+  "reused_from_proof_id": "api2-finalization-authority-v1-step3-terminal-completion-latch-9658e67e2512b398-d8bfe17706c1b41a",
+  "reused_from_receipt_digest": "cb7960099518b8a82a92cb01037f8eb445674da2aa435c046c5a4b08b1d079b3",
+  "static_evidence_reexecuted": false,
+  "step": "api2-finalization-authority-v1-step3-terminal-completion-latch",
+  "task_id": "api2-finalization-authority-v1-step3-terminal-completion-latch",
+  "workstream": "api2-finalization-authority-v1-step3"
+}
