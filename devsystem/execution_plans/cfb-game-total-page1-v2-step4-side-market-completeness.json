@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step4-side-market-completeness",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "4/9",
+  "source_main_sha": "40b3049f2089833dacafda8c24086b9ef11a2cbd",
+  "goal": "Populate exact verified Spread and Moneyline on the already-correct Step-4 Prediction + Market Comparison card by reusing the Kyre Sports API verified FanDuel provider_game_id, without fuzzy matching, hardcoded odds, projection changes, frozen Step-4 source edits, or other-sport changes.",
+  "write_paths": [
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
+    "kyre_remaining_pages_theme_v1.py",
+    "tests/test_cfb_game_total_page1_v2_step4_side_market_completeness.py",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step4-side-market-completeness.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-side-market-completeness.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-side-market-completeness.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_clean_page_v38.py",
+    "cfb_game_total_page1_step4_prediction_market_v1.py",
+    "cfb_game_total_page1_step4_side_market_v1.py",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py",
+    "cfb_over_under_market_adapter_v1.py",
+    "sports_api/collectors/cfb_fanduel_direct.py",
+    "streamlit_memory_lazy_router_v1.py",
+    "streamlit_memory_lazy_router_v160.py",
+    "streamlit_memory_lazy_router_v181.py",
+    "streamlit_memory_lazy_router_v190.py",
+    "streamlit_memory_lazy_router_v191.py",
+    "app.py"
+  ],
+  "identity_method": "official event ID -> Kyre identity-verified FanDuel provider_game_id -> exact FanDuel provider event",
+  "fuzzy_matching": false,
+  "hardcoded_market_values": false,
+  "projection_mutation_allowed": false,
+  "sportsbook_projection_influence": 0.0,
+  "frozen_source_mutations": 0,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
