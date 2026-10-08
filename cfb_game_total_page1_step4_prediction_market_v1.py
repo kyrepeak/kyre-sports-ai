@@ -1,8 +1,9 @@
 """Pure Step-4 prediction + market presentation helpers.
 
 This module is intentionally Streamlit-free and presentation-only. It reads the
-existing frozen projection output plus verified market fields already present on
-the display game. Missing market values fail closed as "Line not posted".
+existing frozen projection output plus explicitly verified market fields already
+present on the display game. Missing market values fail closed as "Line not posted".
+Generic nested odds are never treated as verified side-market evidence.
 """
 from __future__ import annotations
 
@@ -29,20 +30,11 @@ def _coerce_number(value: Any) -> float | None:
         return None
 
 
-def _sources(display_game: Mapping[str, Any]):
-    yield display_game
-    for key in ("odds", "market"):
-        nested = display_game.get(key)
-        if isinstance(nested, Mapping):
-            yield nested
-
-
 def _first_number(display_game: Mapping[str, Any], *keys: str) -> float | None:
-    for source in _sources(display_game):
-        for key in keys:
-            number = _coerce_number(source.get(key))
-            if number is not None:
-                return number
+    for key in keys:
+        number = _coerce_number(display_game.get(key))
+        if number is not None:
+            return number
     return None
 
 
@@ -70,18 +62,19 @@ def _confidence(value: Any) -> str:
 
 
 def _market_total(display_game: Mapping[str, Any]) -> float | None:
-    return _first_number(display_game, "total", "market_total", "total_line", "over_under", "ou")
+    # V11 injects market_total only after its exact-game freshness gate succeeds.
+    return _first_number(display_game, "market_total")
 
 
 def _paired_line(
     display_game: Mapping[str, Any],
-    away_keys: tuple[str, ...],
-    home_keys: tuple[str, ...],
+    away_key: str,
+    home_key: str,
     *,
     moneyline: bool = False,
 ) -> str:
-    away = _first_number(display_game, *away_keys)
-    home = _first_number(display_game, *home_keys)
+    away = _first_number(display_game, away_key)
+    home = _first_number(display_game, home_key)
     if away is None and home is None:
         return "Line not posted"
     away_name = _clean(display_game.get("away_team")) or "Away"
@@ -117,13 +110,13 @@ def build_prediction_market_html(
     market_text = "Line not posted" if market_total is None else _decimal(market_total)
     spread_text = _paired_line(
         display_game,
-        ("away_spread", "away_point_spread"),
-        ("home_spread", "home_point_spread"),
+        "verified_away_spread",
+        "verified_home_spread",
     )
     moneyline_text = _paired_line(
         display_game,
-        ("away_moneyline", "away_ml"),
-        ("home_moneyline", "home_ml"),
+        "verified_away_moneyline",
+        "verified_home_moneyline",
         moneyline=True,
     )
 
@@ -143,6 +136,12 @@ def build_prediction_market_html(
         else:
             lean = "Even 0.0"
             direction = "↔"
+
+    provider = _clean(display_game.get("verified_side_market_provider"))
+    if provider:
+        side_source = f"Side market {provider} • exact event ID"
+    else:
+        side_source = "Side market unavailable • no exact-event line"
 
     ready = max(0, min(12, int(ready_count)))
     return f"""
@@ -164,7 +163,7 @@ def build_prediction_market_html(
   <div class="gt237-foot">
     <span>{ready}/12 verified</span>
     <span>0.0% sportsbook projection influence</span>
-    <span>Verified lines only • missing markets never fabricated</span>
+    <span>{escape(side_source)}</span>
   </div>
 </div>"""
 
