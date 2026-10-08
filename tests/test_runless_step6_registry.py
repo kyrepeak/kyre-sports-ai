@@ -1,4 +1,4 @@
-"""One-shot Runless bridge for API2 CFB Page1 V2 Step5 certification."""
+"""One-shot Runless bridge for API2 CFB Page1 V2 Step5 certification R2."""
 from __future__ import annotations
 
 import json
@@ -6,13 +6,13 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 PROOF_URL = "https://runless-proof-plane.onrender.com/prove"
-CANDIDATE_SHA = "4d87a5baf6418cdab965401e87a43c6f0ff11b5c"
+CANDIDATE_SHA = "225add23efd6231a85fb4cc1f7d20eb66d51803e"
 EXPECTED_MAIN_SHA = "53c4bf0aa194befe56934d476f0f1a1a22d3d40d"
-LEASE_ID = "SCOPE-LEASE-80B7890A8991F25F861505A4"
-AUTHORIZATION_ID = "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP5-PACE-POSSESSIONS-R1"
+LEASE_ID = "SCOPE-LEASE-C52D38FE9D8B0EB537998E00"
+AUTHORIZATION_ID = "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP5-PACE-POSSESSIONS-R2"
 
 
-def test_cfb_step5_pace_exact_head_runless() -> None:
+def test_cfb_step5_pace_exact_head_runless_r2() -> None:
     payload = {
         "task_id": "cfb-game-total-page1-v2-step5-pace-possessions",
         "workstream": "cfb-game-total-page1-v2",
