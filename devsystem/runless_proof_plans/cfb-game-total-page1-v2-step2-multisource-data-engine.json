@@ -1,0 +1,27 @@
+{
+  "task_id": "cfb-game-total-page1-v2-step2-multisource-data-engine",
+  "workstream": "cfb-game-total-page1-v2",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_v2_step2_multisource_data_engine.py"]
+  ],
+  "artifacts": [
+    "cfb_game_total_page1_multisource_v1.py",
+    "cfb_game_total_clean_page_v35.py",
+    "streamlit_memory_lazy_router_v190.py",
+    "tests/test_cfb_game_total_page1_v2_step2_multisource_data_engine.py",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step2-multisource-data-engine.json",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step2-multisource-data-engine.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step2-multisource-data-engine.json",
+    "docs/superpowers/plans/2026-10-07-cfb-game-total-page1-v2-step2-multisource-data-engine.md"
+  ],
+  "dependencies": [
+    "cfb_game_total_step4_multisource_v1.py",
+    "cfb_game_total_clean_page_v9.py",
+    "cfb_game_total_clean_page_v24.py",
+    "cfb_game_total_clean_page_v34.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_V2_STEP2_MULTISOURCE_DATA_ENGINE_FROZEN"
+}
