@@ -4,12 +4,17 @@ Additive over frozen V190. Already-certified presentations remain untouched:
 NFL Passing Yards, NFL Moneyline, and CFB Game Total. Every other active route
 renders inside one scoped Streamlit container with the universal compatibility
 skin. Route/data/model owners remain V190 and its frozen delegates.
+
+CFB Game Total Step-4 public convergence is installed additively before V190
+renders. The repair wraps only V160's exact Game Total surface and changes no
+frozen source file, model, projection, probability, market, or other sport.
 """
 from __future__ import annotations
 
 import streamlit as st
 
 import streamlit_memory_lazy_router_v190 as prior
+from cfb_game_total_page1_v2_step4_public_repair_v1 import install_public_repair
 from kyre_remaining_pages_theme_v1 import (
     REMAINING_PAGES_CONTAINER_KEY,
     build_remaining_pages_theme_css,
@@ -40,6 +45,7 @@ def _active_route() -> tuple[str, str]:
     return sport, market
 
 def render_app() -> None:
+    install_public_repair()
     sport, market = _active_route()
     if not should_theme_route(sport, market):
         return prior.render_app()
