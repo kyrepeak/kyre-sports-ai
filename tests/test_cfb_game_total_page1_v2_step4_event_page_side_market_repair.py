@@ -94,7 +94,7 @@ def test_module_exists_and_declares_event_page_only_contract() -> None:
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
     assert "MAY_MODIFY_OTHER_SPORTS = False" in source
-    assert "fuzzy" not in source.casefold() or "no fuzzy" in source.casefold()
+    assert "No team-name or fuzzy matching is introduced." in source
 
 
 def test_exact_event_page_allows_missing_market_event_id_and_selects_canonical_markets() -> None:
