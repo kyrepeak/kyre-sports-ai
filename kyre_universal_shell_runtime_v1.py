@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from cfb_game_total_page1_v2_step4_activation import activate_step4_page
+from cfb_game_total_page1_v2_step3_activation import activate_step3_page
 from kyre_universal_components_v1 import build_components_css
 from kyre_universal_responsive_v1 import build_responsive_css
 from kyre_universal_theme_v1 import build_universal_theme_css
@@ -114,7 +114,7 @@ def build_sitewide_shell_css() -> str:
 
 def activate_universal_shell() -> None:
     """Mount the universal shell and the exact CFB Game Total presentation target."""
-    activate_step4_page()
+    activate_step3_page()
     st.markdown(build_sitewide_shell_css(), unsafe_allow_html=True)
     st.sidebar.markdown(
         '<div class="kyre-sitewide-sidebar-brand" data-kyre-sitewide-sidebar="v1">'
