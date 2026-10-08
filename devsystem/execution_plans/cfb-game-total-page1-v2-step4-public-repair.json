@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step4-public-repair",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "4/9",
+  "source_main_sha": "81eab31f78e65728a9b55a5ac578706fd6971bec",
+  "goal": "Repair the proven public Step-4 rendering failure at the post-purge ownership boundary so CFB Game Total renders the frozen V38 Prediction + Market Comparison block, without editing frozen V21/V38/V160 sources, changing model/projection math, or affecting other sports.",
+  "write_paths": [
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py",
+    "streamlit_memory_lazy_router_v191.py",
+    "tests/test_cfb_game_total_page1_v2_step4_public_repair.py",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step4-public-repair.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-public-repair.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-public-repair.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_clean_page_v21.py",
+    "cfb_game_total_clean_page_v38.py",
+    "cfb_game_total_clean_page_v37.py",
+    "cfb_game_total_page1_step4_prediction_market_v1.py",
+    "cfb_game_total_page1_step4_side_market_v1.py",
+    "cfb_game_total_page1_v2_step4_activation.py",
+    "streamlit_memory_lazy_router_v160.py",
+    "streamlit_memory_lazy_router_v181.py",
+    "streamlit_memory_lazy_router_v190.py",
+    "app.py"
+  ],
+  "projection_mutation_allowed": false,
+  "sportsbook_projection_influence": 0.0,
+  "frozen_source_mutations": 0,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
