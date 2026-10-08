@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step4-public-repair",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "4/9",
+  "source_main_sha": "81eab31f78e65728a9b55a5ac578706fd6971bec",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "problem": "After the final R2 live-owner convergence merge and a post-merge Streamlit reboot, the public CFB Game Total page still renders the legacy GAME TOTAL ANALYSIS card instead of the approved PREDICTION + MARKET COMPARISON block.",
+  "root_cause": "V38 is selected correctly, but V160 purges the CFB page-module graph immediately before importing V38. In the freshly imported V38 -> V36 -> V26 -> ... -> V21 -> V20 render chain, V21 rewrites V20._game_total_hero_html_v20 and V20 then rewrites the base V9 hero seam. That late V21/V20 ownership occurs after V38 installs its earlier V26/base hooks, so the V21 presentation wins publicly.",
+  "patch": "Keep all frozen V21/V38/V160/V181/V190 and Step-4 files unchanged. Unfrozen Router V191 installs one idempotent runtime wrapper on V160._render_exact_game_total_surface. The wrapper temporarily intercepts root._import during the exact Game Total render; after the V160 purge and fresh V38 import complete, it points the freshly imported V21 _game_total_hero_html_v21 symbol at V38._step4_prediction_market_html_v38, then restores root._import and lets the frozen render chain continue.",
+  "public_evidence": {
+    "post_r2_reboot_completed": true,
+    "screenshot_time_local": "04:50",
+    "legacy_header_still_visible": "GAME TOTAL ANALYSIS",
+    "projected_total_visible": 73.7,
+    "market_total_visible": "Not posted",
+    "over_under_visible": "Waiting on market",
+    "confidence_visible": "79.2%",
+    "spread_missing": true,
+    "moneyline_missing": true,
+    "data_check_visible": "10/12",
+    "public_proof_state": "FAILED"
+  },
+  "tdd": {
+    "red": "The repair regression contract was committed before implementation and required an unfrozen installer plus a post-purge V160 import-boundary repair; the required repair module/installer did not yet exist.",
+    "implementation": "The repair module and V191 installer are now present. Exact-head Runless remains the authority for GREEN.",
+    "green": "PENDING_RUNLESS"
+  },
+  "implementation": {
+    "presentation_only": true,
+    "installer_owner": "streamlit_memory_lazy_router_v191",
+    "exact_render_owner": "streamlit_memory_lazy_router_v160._render_exact_game_total_surface",
+    "target_page": "cfb_game_total_clean_page_v38",
+    "late_presentation_owner": "cfb_game_total_clean_page_v21._game_total_hero_html_v21",
+    "frozen_source_mutations": 0,
+    "steps_1_3_modified": false,
+    "projection_mutation": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0,
+    "duplicate_runs": 0,
+    "blind_retries": 0
+  },
+  "proof": "Exact-head Runless public-repair + original Step-4 + V38 runtime-repair + live-owner + V191 theme regression tests -> exact-head merge -> public card proof must show PREDICTION + MARKET COMPARISON with Market Total, Spread, and Moneyline -> freeze new public-repair checkpoint -> registry read-back -> authority release.",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1",
+  "github_actions_fallback": 0
+}
