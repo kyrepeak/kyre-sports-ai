@@ -8,6 +8,6 @@ os.environ["RPP_DRY_RUN_ON_START"] = "0"
 os.environ["RPP_FINAL_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .api2_finalization_authority_step5_prove import install_startup
+from .api2_finalization_authority_step5_closeout import install_startup
 
 install_startup(app)
