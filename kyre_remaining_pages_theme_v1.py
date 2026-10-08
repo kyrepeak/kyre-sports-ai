@@ -3,6 +3,11 @@
 Rollout Step 4. CSS is scoped to one keyed Streamlit container so already
 frozen Passing Yards, NFL Moneyline, and CFB Game Total presentations are not
 restyled by this layer.
+
+The route predicate is also the narrow unfrozen pre-V190 seam used to install
+CFB Game Total Step-4 side-market completeness only when that exact route is
+active. The installer is presentation/market-context only and leaves the
+excluded route unthemed.
 """
 from __future__ import annotations
 
@@ -23,6 +28,12 @@ EXCLUDED_FROZEN_ROUTES = frozenset({
 def should_theme_route(sport: str, market: str) -> bool:
     sport = str(sport or "").strip().upper()
     market = str(market or "").strip()
+    if (sport, market) == ("CFB", "Game Total"):
+        from cfb_game_total_page1_v2_step4_side_market_completeness_v1 import (
+            install_side_market_completeness,
+        )
+
+        install_side_market_completeness()
     return bool(sport and market and (sport, market) not in EXCLUDED_FROZEN_ROUTES)
 
 _COMPAT_CSS = f"""
@@ -121,7 +132,7 @@ _COMPAT_CSS = f"""
 @media(max-width:720px) {{
   .{REMAINING_PAGES_CONTAINER_CLASS} .stButton button,
   .{REMAINING_PAGES_CONTAINER_CLASS} .stDownloadButton button {{
-    min-height:44px;
+    min-height:44px!important;
   }}
   .{REMAINING_PAGES_CONTAINER_CLASS} [data-testid="stMetric"] {{
     padding:10px 11px;
