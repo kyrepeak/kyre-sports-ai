@@ -16,6 +16,16 @@ def test_v191_installs_public_repair_before_delegating() -> None:
     assert "return prior.render_app()" in router
 
 
+def test_v191_preserves_remaining_pages_theme_contract() -> None:
+    router = ROUTER.read_text(encoding="utf-8")
+    assert "import streamlit_memory_lazy_router_v190 as prior" in router
+    assert "should_theme_route(sport, market)" in router
+    assert "st.container(key=REMAINING_PAGES_CONTAINER_KEY)" in router
+    assert "PRESENTATION_ONLY = True" in router
+    assert "MAY_MODIFY_PROJECTION = False" in router
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in router
+
+
 def test_public_repair_owns_the_post_purge_import_boundary() -> None:
     assert REPAIR.exists(), "Step-4 public repair module is missing"
     source = REPAIR.read_text(encoding="utf-8")
