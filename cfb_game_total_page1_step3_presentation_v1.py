@@ -19,7 +19,7 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 
 def _clean(value: Any) -> str:
-    return str(value or "").strip()
+    return "" if value is None else str(value).strip()
 
 
 def _game_date(game: Mapping[str, Any]) -> date | None:
@@ -162,10 +162,10 @@ def build_matchup_hero_html(
     location = _clean(display_game.get("venue_location") or display_game.get("location") or display_game.get("city")) or "Location pending"
     temp = _clean(display_game.get("temperature"))
     temperature = (temp + "°") if temp else "—"
-    precipitation = _clean(display_game.get("precipitation") or display_game.get("precipitation_pct") or display_game.get("precip"))
+    precipitation = _clean(display_game.get("precipitation") if display_game.get("precipitation") is not None else display_game.get("precipitation_pct") if display_game.get("precipitation_pct") is not None else display_game.get("precip"))
     weather = _clean(display_game.get("weather") or display_game.get("forecast")) or "Forecast pending"
-    weather_sub = " • ".join(part for part in (f"{precip}% precipitation" if precipitation and "%" not in precipitation else precipitation, weather) if part)
-    wind = _clean(display_game.get("wind") or display_game.get("wind_mph")) or "Wind pending"
+    weather_sub = " • ".join(part for part in (f"{precipitation}% precipitation" if precipitation and "%" not in precipitation else precipitation, weather) if part)
+    wind = _clean(display_game.get("wind") if display_game.get("wind") is not None else display_game.get("wind_mph")) or "Wind pending"
 
     return f"""
 <div class="gt236-hero" data-testid="gt236-matchup-hero" data-timezone="{PHOENIX_TZ}">
