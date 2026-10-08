@@ -25,7 +25,7 @@ PLAN_PATH = "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-predict
 SOURCE_MAIN_SHA = "8ad570f765daf0884fe6f963f10982b05a414b60"
 SOURCE_CANDIDATE_SHA = "6ce49ccd5cee2a0b39af9404f6ed413e78e49f1b"
 MAIN_SHA = "091226472ad03d11d86fa2843fc37c3dc2830023"
-PREMERGE_PROOF_ID = "cfb-game-total-page1-v2-step4-prediction-market-6ce49ccd5cee2a0b-acf7c2a164830ffb"
+PREMERGE_PROOF_ID = "cfb-game-total-page1-v2-step4-prediction-market-6ce49ccd5cee2a0b39af9404f6ed413e78e49f1b"
 PREMERGE_DIGEST = "9829d7b5bcc735f42cccdf86ededcb09e6434435e8cf037f59533c4bcabc1710"
 PREMERGE_CHECK_ID = 113165457178
 MERGED_PROOF_ID = "cfb-game-total-page1-v2-step4-prediction-market-091226472ad03d11-reused"
@@ -305,6 +305,7 @@ def _execute_nfl_rb_wr_step1_closeout(app) -> dict:
     ):
         raise RuntimeError("NFL_RB_WR_STEP1_SQUASH_MERGE_PROVENANCE_DRIFT")
 
+    source_tree = client.tree_blobs(NFL_SOURCE_MAIN_SHA)
     main_tree = client.tree_blobs(NFL_MERGED_MAIN_SHA)
     candidate_tree = client.tree_blobs(NFL_CANDIDATE_SHA)
     for label, mapping in (
@@ -320,6 +321,7 @@ def _execute_nfl_rb_wr_step1_closeout(app) -> dict:
     validated = validate_registry(registry)
 
     existing_entry = (registry.get("entries") or {}).get(NFL_FREEZE_TOKEN)
+    inherited_frozen_paths = []
     if existing_entry is None:
         _validate_finalizer_lease(client)
         if (
@@ -330,8 +332,15 @@ def _execute_nfl_rb_wr_step1_closeout(app) -> dict:
             raise RuntimeError("NFL_RB_WR_STEP1_REGISTRY_BASELINE_DRIFT")
 
         for path, expected in validated["artifacts"].items():
-            if str(main_tree.get(path) or "") != str(expected):
-                raise RuntimeError("NFL_RB_WR_STEP1_EXISTING_FROZEN_DRIFT:" + path)
+            source_blob = str(source_tree.get(path) or "")
+            candidate_blob = str(candidate_tree.get(path) or "")
+            main_blob = str(main_tree.get(path) or "")
+            if not source_blob or not candidate_blob or not main_blob:
+                raise RuntimeError("NFL_RB_WR_STEP1_EXISTING_FROZEN_MISSING:" + path)
+            if not (source_blob == candidate_blob == main_blob):
+                raise RuntimeError("NFL_RB_WR_STEP1_EXISTING_FROZEN_DELTA:" + path)
+            if main_blob != str(expected):
+                inherited_frozen_paths.append(path)
 
         freeze_artifacts = dict(sorted((receipt.get("artifact_map") or {}).items()))
         if not freeze_artifacts:
@@ -444,6 +453,7 @@ def _execute_nfl_rb_wr_step1_closeout(app) -> dict:
         "registry_state_hash": str(readback["state_hash"]),
         "active_thaw_count": len(readback.get("active_thaws") or []),
         "frozen_artifact_count": len(frozen.get("artifacts") or {}),
+        "inherited_frozen_path_count": len(inherited_frozen_paths),
         "canonical_completion": canonical,
         "merge_evidence": merge_evidence,
         "authority_gc": authority_gc,
