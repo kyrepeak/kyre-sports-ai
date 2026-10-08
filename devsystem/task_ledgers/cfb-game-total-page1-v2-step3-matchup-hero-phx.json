@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step3-matchup-hero-phx",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "3/9",
+  "source_main_sha": "0244ed0b203ad2996cb6d79409f69ba151029008",
+  "state": "RED_EXPECTED",
+  "problem": "Live Page 1 still renders old matchup/date presentation and Eastern Time labels.",
+  "root_cause": "V11 owns past-inclusive day strip, V14 owns ET selector labels, V25 owns old hero; V35 intentionally leaves presentation frozen.",
+  "patch": "Add pure Phoenix/future presentation helper, Page V36 seam wrapper, and CFB-only runtime activation through the unfrozen universal shell.",
+  "proof": "Runless exact-head pytest, exact-head gate, merge, post-merge reuse, frozen-registry read-back.",
+  "github_actions_fallback": 0,
+  "projection_mutation": false,
+  "sportsbook_projection_influence": 0.0
+}
