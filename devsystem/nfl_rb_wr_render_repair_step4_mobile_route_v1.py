@@ -228,7 +228,8 @@ def _verify_route_viewport(page, base_url: str, market: str, viewport: tuple[int
     cfg = ROUTES[market]
     page.set_viewport_size({"width": width, "height": height})
     page.goto(route_url(base_url, market), wait_until="domcontentloaded", timeout=120_000)
-    frame, text = _wait_for_cards(page, market)
+    frame, _ = _wait_for_cards(page, market)
+    text = _all_frame_text(page)
 
     fatal = _fatal_marker(text)
     if fatal:
