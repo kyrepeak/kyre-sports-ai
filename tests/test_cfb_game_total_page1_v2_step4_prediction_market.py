@@ -120,16 +120,20 @@ def test_step4_v37_owns_only_analysis_seam_over_frozen_v36() -> None:
     assert "MAY_MODIFY_PROJECTION = False" in page
 
 
-def test_step4_activation_advances_only_cfb_game_total_target() -> None:
+def test_step4_activation_uses_unfrozen_component_seam_and_preserves_step3_shell() -> None:
     activation_path = ROOT / "cfb_game_total_page1_v2_step4_activation.py"
     assert activation_path.exists(), "Step-4 activation wrapper must exist"
     activation = activation_path.read_text()
     shell = (ROOT / "kyre_universal_shell_runtime_v1.py").read_text()
+    components = (ROOT / "kyre_universal_components_v1.py").read_text()
     assert 'BASE_PAGE = "cfb_game_total_clean_page_v36"' in activation
     assert 'STEP4_PAGE = "cfb_game_total_clean_page_v37"' in activation
     assert "cfb_router.GAME_TOTAL_PAGE = STEP4_PAGE" in activation
     assert "MAY_MODIFY_OTHER_SPORTS = False" in activation
     assert "MAY_MODIFY_PROJECTION = False" in activation
-    assert "from cfb_game_total_page1_v2_step4_activation import activate_step4_page" in shell
-    assert "activate_step4_page()" in shell
-    assert "activate_step3_page()" not in shell
+    assert "from cfb_game_total_page1_v2_step3_activation import activate_step3_page" in shell
+    assert "activate_step3_page()" in shell
+    assert "cfb_game_total_page1_v2_step4_activation" not in shell
+    assert "activate_step4_page" not in shell
+    assert "from cfb_game_total_page1_v2_step4_activation import activate_step4_page" in components
+    assert "activate_step4_page()" in components
