@@ -176,6 +176,19 @@
       "source_main_sha": "b42b320e69d4894ed2ec5bbd3a065824d35d6fff",
       "status": "FROZEN"
     },
+    "API2_FINALIZATION_AUTHORITY_V1_STEP5_FROZEN": {
+      "artifacts": {
+        "devsystem/authority_garbage_collector_v1.py": "6bd8ec53d112e0814a43d7a112382ffc177b8146",
+        "devsystem/execution_plans/api2-finalization-authority-v1-step5-authority-garbage-collector.json": "403267cab92959dba8137516dbe6e22b027c8d32",
+        "devsystem/runless_proof_plans/api2-finalization-authority-v1-step5-authority-garbage-collector.json": "77f14708de0ac21341212dd94381231830ff0a4c",
+        "devsystem/task_ledgers/api2-finalization-authority-v1-step5-authority-garbage-collector.json": "8f43904c78d0fde64871af40b1b124bd3cdd200e",
+        "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step5-authority-garbage-collector.md": "024a4d6df8c860b3d705b675e345713bfba1959a",
+        "tests/test_devsystem_authority_garbage_collector_v1.py": "8aaaecd041a5cab870f1fbe207bec301fac6b9d6"
+      },
+      "checkpoint_id": "API2_FINALIZATION_AUTHORITY_V1_STEP5_FROZEN",
+      "source_main_sha": "6c193bab72e6b55e1e39558d3322887643b78a87",
+      "status": "FROZEN"
+    },
     "API2_PROOF_ARCHITECTURE_V1_STEP1": {
       "artifacts": {
         ".github/workflows/api2-proof-architecture-v1-step1-exact-deployment-sha-gate.yml": "93d52d6973b01bfe054a710bfc17c7102128af1d",
@@ -2461,9 +2474,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 191,
+  "revision": 192,
   "schema_version": 1,
-  "source_main_sha": "b42b320e69d4894ed2ec5bbd3a065824d35d6fff",
-  "state_hash": "16fe54db6c99ab205d28225c967b87c2227b8a22e7e93dc5fe10f4e0593a7a5d",
+  "source_main_sha": "6c193bab72e6b55e1e39558d3322887643b78a87",
+  "state_hash": "3cc070a9e710fe3cbe1fee69448b05b1e3117e3b0454fb60ed6dfd2c675b103c",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
