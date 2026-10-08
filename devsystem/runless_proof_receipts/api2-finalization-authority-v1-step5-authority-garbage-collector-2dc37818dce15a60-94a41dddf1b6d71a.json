@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/authority_garbage_collector_v1.py": "6bd8ec53d112e0814a43d7a112382ffc177b8146",
+    "devsystem/execution_plans/api2-finalization-authority-v1-step5-authority-garbage-collector.json": "403267cab92959dba8137516dbe6e22b027c8d32",
+    "devsystem/runless_proof_plans/api2-finalization-authority-v1-step5-authority-garbage-collector.json": "77f14708de0ac21341212dd94381231830ff0a4c",
+    "devsystem/task_ledgers/api2-finalization-authority-v1-step5-authority-garbage-collector.json": "8f43904c78d0fde64871af40b1b124bd3cdd200e",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step5-authority-garbage-collector.md": "024a4d6df8c860b3d705b675e345713bfba1959a",
+    "tests/test_devsystem_authority_garbage_collector_v1.py": "8aaaecd041a5cab870f1fbe207bec301fac6b9d6"
+  },
+  "candidate_sha": "2dc37818dce15a606168a4cb74c6e322d4a2d630",
+  "created_at": "2026-10-08T01:32:07.212885+00:00",
+  "dependency_map": {
+    "devsystem/canonical_completion_resolver_v1.py": "4170f4ca1403985c747bc5ace2154acfd4f0ff06",
+    "devsystem/closeout_event_consumer_v1.py": "db3598d6b0a9b34c5becf772adefa935f532a0da",
+    "devsystem/event_driven_resume_v1.py": "03dd1b84d5055c6ea4b9cdaa9be9bccdc12c9241",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "devsystem/terminal_completion_latch_v1.py": "a95224fce02d39880dd923b5ec1f1a4612672a27"
+  },
+  "deployment_identity": "f2d211bda6947f8e516498e943a70a468442b3ce",
+  "digest": "17fc58f2dd755e8548279b76b1d2aa8a0ab6a2c73124fbe309a33fba3e9e2881",
+  "evidence_digests": [
+    "8e955829c2bd77e50db8f222c9b79ac0c4104c1252ba2887609e19377663c3bf",
+    "41ba12efd9bde10076eae0110e77a7e4fb235865599b1660c5f45fb68bb33cf1",
+    "5ca1cc4507814185608c061e06dc79dd45c3fac5668cf6c46c157b47b68b8c08"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c604a0e8e98a364bac1815f90ae46e1f3757548e7405a4a0be9cd25cae9f63f1",
+  "proof_id": "api2-finalization-authority-v1-step5-authority-garbage-collector-2dc37818dce15a60-94a41dddf1b6d71a",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 191,
+    "state_hash": "16fe54db6c99ab205d28225c967b87c2227b8a22e7e93dc5fe10f4e0593a7a5d"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 191,
+    "state_hash": "16fe54db6c99ab205d28225c967b87c2227b8a22e7e93dc5fe10f4e0593a7a5d"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "api2-finalization-authority-v1-step5-authority-garbage-collector",
+  "workstream": "api2-finalization-authority-v1-step5"
+}
