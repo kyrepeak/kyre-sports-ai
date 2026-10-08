@@ -10,6 +10,7 @@ import json
 import os
 import sys
 import threading
+import time
 import traceback
 
 SERVICE_ID = "srv-db23fee7bikc73ca8ua0"
@@ -103,6 +104,10 @@ def _run(mode: str, merged_sha: str) -> None:
 
 def _run_public_closeout() -> None:
     try:
+        # The frozen bootstrap runs legacy closeout hooks at startup. Wait once,
+        # without polling, so those temporary generic-core bindings are restored
+        # before this public-repair adapter binds and executes the same engine.
+        time.sleep(20)
         from runless_proof_plane.config import Settings
         from runless_proof_plane.github_app import GithubAppAuth
         from runless_proof_plane.github_client import GithubClient
