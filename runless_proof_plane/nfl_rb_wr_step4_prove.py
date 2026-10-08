@@ -1,24 +1,106 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
 import sys
+import time
 
-from .models import ProofRequest
+from devsystem.runless_proof_plan_v1 import validate_command
+
+from . import executor as runless_executor
+from .models import FailureClass, ProofRequest, SliceEvidence
 from .prove import execute_proof_request
 
 TASK_ID = "nfl-rb-wr-render-repair-step4-mobile-route"
 WORKSTREAM = "nfl-rb-wr-render-repair-v1"
 CANDIDATE_SHA = "77a65d770f2d09d8bcf357aa5c35d24397924496"
 LEASE_ID = "SCOPE-LEASE-NFL-RB-WR-STEP4-219"
-AUTHORIZATION_ID = "NFL-RB-WR-STEP4-R3B-77A65D77"
+AUTHORIZATION_ID = "NFL-RB-WR-STEP4-DIAG-77A65D77"
 EXPECTED_MAIN_SHA = "7854d5772333482947f9f2d4bda71cf73ded72b5"
 ENV_FLAG = "RPP_NFL_RB_WR_STEP4_SUBMIT_ON_START"
 
 
 def should_run() -> bool:
     return os.getenv(ENV_FLAG, "").strip() == "1"
+
+
+def _digest(text: str) -> str:
+    return hashlib.sha256(str(text or "").encode()).hexdigest()
+
+
+def _tail(value: object, limit: int = 6000) -> str:
+    if isinstance(value, bytes):
+        text = value.decode(errors="replace")
+    else:
+        text = str(value or "")
+    return text[-limit:]
+
+
+def _diagnostic_execute_command(command, cwd, timeout_seconds: int):
+    cmd = list(validate_command(tuple(command)))
+    start = time.monotonic()
+    try:
+        cp = subprocess.run(
+            cmd,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+        ok = cp.returncode == 0
+        if not ok:
+            print(
+                "NFL_RB_WR_STEP4_COMMAND_FAILURE="
+                + json.dumps(
+                    {
+                        "command": " ".join(cmd),
+                        "returncode": cp.returncode,
+                        "stdout_tail": _tail(cp.stdout),
+                        "stderr_tail": _tail(cp.stderr),
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
+        return SliceEvidence(
+            name=" ".join(cmd),
+            ok=ok,
+            command=cmd,
+            stdout_digest=_digest(cp.stdout),
+            stderr_digest=_digest(cp.stderr),
+            duration_seconds=time.monotonic() - start,
+            failure_class=FailureClass.NONE if ok else FailureClass.STATIC_PROOF,
+        )
+    except subprocess.TimeoutExpired as exc:
+        print(
+            "NFL_RB_WR_STEP4_COMMAND_TIMEOUT="
+            + json.dumps(
+                {
+                    "command": " ".join(cmd),
+                    "timeout_seconds": timeout_seconds,
+                    "stdout_tail": _tail(exc.stdout),
+                    "stderr_tail": _tail(exc.stderr),
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
+        return SliceEvidence(
+            name=" ".join(cmd),
+            ok=False,
+            command=cmd,
+            stdout_digest=_digest(_tail(exc.stdout, 100000)),
+            stderr_digest=_digest(_tail(exc.stderr, 100000)),
+            duration_seconds=time.monotonic() - start,
+            failure_class=FailureClass.INFRA,
+        )
+
+
+def _install_diagnostic_executor() -> None:
+    runless_executor.execute_command = _diagnostic_execute_command
 
 
 def _ensure_chromium() -> None:
@@ -37,6 +119,7 @@ def _ensure_chromium() -> None:
 
 def execute(app):
     _ensure_chromium()
+    _install_diagnostic_executor()
     request = ProofRequest(
         task_id=TASK_ID,
         workstream=WORKSTREAM,
