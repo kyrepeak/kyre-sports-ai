@@ -1,46 +1,11 @@
 {
   "generation": 189,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-08T14:54:05Z",
-      "expires_at_utc": "2026-10-08T15:24:05Z",
-      "generation": 189,
-      "heartbeat_at_utc": "2026-10-08T14:54:05Z",
-      "lease_id": "SCOPE-LEASE-64BB41AA3D37708875512558",
-      "owner_id": "api2-cfb-game-total-page1-v2-step4-public-repair",
-      "scope": {
-        "dependency_tokens": [
-          "domain:cfb-game-total-page1-v2-step4",
-          "runtime:v191-router"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "main": "81eab31f78e65728a9b55a5ac578706fd6971bec",
-          "step4_v38_blob": "556b1204da18858d68e48dcb44571fc8f5be2d70",
-          "v160_blob": "913cf8ac7478fdc105995238b254f28d1d411bc6",
-          "v191_blob": "52d08b87ebe1e3cc887a04022a696ca751cdf5e1",
-          "v21_blob": "913d21ed30bab5e0aded5fc96862a4913927199c"
-        },
-        "shared_resources": [
-          "cfb-game-total-page1-v2",
-          "router:v191"
-        ],
-        "write_paths": [
-          "cfb_game_total_page1_v2_step4_public_repair_v1.py",
-          "devsystem/execution_plans/cfb-game-total-page1-v2-step4-public-repair.json",
-          "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-public-repair.json",
-          "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-public-repair.json",
-          "streamlit_memory_lazy_router_v191.py",
-          "tests/test_cfb_game_total_page1_v2_step4_public_repair.py"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 317,
+  "revision": 318,
   "schema_version": 1,
-  "state_hash": "cd97273b12a0e3c39c1e5f4aaa41fd0226d00aa6eaf71321d750923810e90839",
+  "state_hash": "91388990e229f0415bc031d085fb57a686de5273ed193cb8d03a3ed7db87e6e3",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
