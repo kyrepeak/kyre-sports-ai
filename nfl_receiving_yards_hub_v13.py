@@ -215,3 +215,6 @@ __all__ = [
     "render_nfl_hub",
     "render_nfl_receiving_yards_hub",
 ]
+
+# Step 1 frozen root-cause signature retained as historical diagnostic evidence only.
+# st.markdown(_STEP13_CSS, unsafe_allow_html=True)
