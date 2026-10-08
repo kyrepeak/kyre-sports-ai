@@ -359,6 +359,19 @@
       "source_main_sha": "81eab31f78e65728a9b55a5ac578706fd6971bec",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PUBLIC_RUNTIME_REPAIR_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_page1_v2_step4_public_repair_v1.py": "6e969228a46d36a00737f941fb2bf6f7f2a2ab8c",
+        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-public-repair.json": "0417b7ed2f797cecd29cb51e6564d15445be0bca",
+        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-public-repair.json": "b4d932884c3417eb11306821273482974b9660b1",
+        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-public-repair.json": "9e0d278ee3a16dca6658df8238b5f8083cb4625b",
+        "streamlit_memory_lazy_router_v191.py": "1a4a2df127a060519d62ed96dd39f6c14bb79449",
+        "tests/test_cfb_game_total_page1_v2_step4_public_repair.py": "ab8c765dc259446442abb017b2d73d695bf3ce13"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PUBLIC_RUNTIME_REPAIR_FROZEN",
+      "source_main_sha": "40b3049f2089833dacafda8c24086b9ef11a2cbd",
+      "status": "FROZEN"
+    },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
       "artifacts": {
         "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
@@ -2549,9 +2562,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 201,
+  "revision": 202,
   "schema_version": 1,
-  "source_main_sha": "81eab31f78e65728a9b55a5ac578706fd6971bec",
-  "state_hash": "64b4a8211fdbe955a5a1435aacebbbf913ee5ce1f672fad5b9ce50cc5e01f873",
+  "source_main_sha": "40b3049f2089833dacafda8c24086b9ef11a2cbd",
+  "state_hash": "e01174fb37bae3a99f472952965c2b35c42c9eef7e1390f3913696c350c92cb0",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
