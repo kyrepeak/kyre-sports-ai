@@ -1,6 +1,34 @@
 {
-  "generation": 217,
+  "generation": 218,
   "holders": [
+    {
+      "acquired_at_utc": "2026-10-08T22:07:00Z",
+      "expires_at_utc": "2026-10-08T23:07:00Z",
+      "generation": 218,
+      "heartbeat_at_utc": "2026-10-08T22:07:00Z",
+      "lease_id": "SCOPE-LEASE-06F5FF2E2D7158C6570BD9B0",
+      "owner_id": "api2-nfl-rb-wr-render-repair-step3-finalizer",
+      "scope": {
+        "dependency_tokens": [
+          "nfl_rb_wr_render_repair_v1_step3_data_binding_merge_authorized"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "candidate_sha": "5edcacdc3beb73003cec2bfafb884097d039241f",
+          "merged_main_sha": "7854d5772333482947f9f2d4bda71cf73ded72b5",
+          "proof_digest": "2257d03dc8ffbe2dc15289f6ff9ab7cd2abd2e4ce6dd85f0cf83a6e37aeb112a",
+          "registry_revision": "208",
+          "registry_state_hash": "0a2262dec2bfd10d5b5a37821ec8c70f10e419830336965e58fa8275992c0885"
+        },
+        "shared_resources": [],
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/scope_aware_execution_lease_state_v1.json",
+          "runless_proof_plane/bootstrap.py",
+          "runless_proof_plane/nfl_rb_wr_step3_closeout.py"
+        ]
+      }
+    },
     {
       "acquired_at_utc": "2026-10-08T21:47:12Z",
       "expires_at_utc": "2026-10-08T22:47:12Z",
@@ -32,8 +60,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 371,
+  "revision": 372,
   "schema_version": 1,
-  "state_hash": "ce871c25efe70a7b773f70f583bbb9793ada85e5f097b87753b6b9ec71ba9c33",
+  "state_hash": "799ddd4a02d7ff424a7e7eaf59aea308a10586863ccbc0d97d08ee7656332680",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
