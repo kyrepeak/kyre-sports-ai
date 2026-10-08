@@ -29,6 +29,29 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    },
+    {
+      "files": {
+        "cfb_game_total_page1_v2_step4_activation.py": {
+          "from_blob": "9fc633200a38a7f0c560696f9a57cb2c0ed09c0f",
+          "to_blob": "4b347939afe92feea0365068265ecf8887da0360"
+        },
+        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": {
+          "from_blob": "35999cee728a22394c869622651e884effbb58b5",
+          "to_blob": "7b4e473dc700cbcee8f6fab08ade6c61db88dabe"
+        },
+        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": {
+          "from_blob": "a454afcbb0e77084c4d9628d3ba74dc8201a98b3",
+          "to_blob": "8de9a5c0a2d2865db08a3f4b3354a741c8020a81"
+        },
+        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": {
+          "from_blob": "62caa31ab79084df184896813dde4726bda04325",
+          "to_blob": "f52d1977494a822e923bfe6053e120e6447c1675"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "861d732878b5478364e5fc680a81ed165a08b944",
+      "thaw_id": "THAW-CFB-GAME-TOTAL-PAGE1-V2-STEP4-RUNTIME-REPAIR-R1"
     }
   ],
   "entries": {
@@ -2546,9 +2569,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 197,
+  "revision": 198,
   "schema_version": 1,
   "source_main_sha": "091226472ad03d11d86fa2843fc37c3dc2830023",
-  "state_hash": "a89c6e655b6d6145afe9be6ac9aa7020c5c222b4ca87e2095a6fde7091a0b90d",
+  "state_hash": "4bbf4dba17d1ef791c3971002179ef23f8ff276959c4bc77e6676cd1681fc8d5",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
