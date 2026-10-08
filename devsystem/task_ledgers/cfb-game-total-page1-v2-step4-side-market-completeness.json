@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step4-side-market-completeness",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "4/9",
+  "source_main_sha": "40b3049f2089833dacafda8c24086b9ef11a2cbd",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "problem": "The public Step-4 Prediction + Market Comparison card is live and the exact verified market total is populated, but Spread and Moneyline still display Line not posted.",
+  "root_cause": "The existing Step-4 side-market helper depends on ESPN exact-event market context, while the already-working Kyre Sports API / FanDuel total path has a stronger exact identity chain that exposes the verified FanDuel provider_game_id. Spread and Moneyline were not being read from that exact provider event.",
+  "patch": "Add an unfrozen CFB-only side-market completeness layer. Reuse the Kyre-verified official event -> exact FanDuel provider_game_id mapping, then read exactly one OPEN pregame FanDuel Spread market and one OPEN pregame FanDuel Moneyline market for that provider event. Fall back to the prior exact-event side-market enricher when direct FanDuel verification cannot be proven. Install through the unfrozen remaining-pages theme gate only for CFB / Game Total.",
+  "public_evidence": {
+    "prediction_market_layout_live": true,
+    "projected_total": 73.7,
+    "market_total": 59.5,
+    "over_under_lean": "Over +14.2",
+    "confidence": "79%",
+    "grade": "B",
+    "spread_visible": "Line not posted",
+    "moneyline_visible": "Line not posted",
+    "data_check": "10/12 verified",
+    "sportsbook_projection_influence": 0.0
+  },
+  "identity_contract": {
+    "official_event_identity_required": true,
+    "verified_fanduel_provider_game_id_required": true,
+    "fuzzy_matching": false,
+    "hardcoded_market_values": false,
+    "fail_closed": true,
+    "legacy_exact_event_fallback_preserved": true,
+    "projection_weight": 0.0,
+    "may_modify_projection": false
+  },
+  "tdd": {
+    "red": "The focused regression contract was committed first and required a side-market completeness module that did not yet exist.",
+    "implementation": "The new exact-provider FanDuel side-market helper and CFB-only installer are present; exact-head Runless is the GREEN authority.",
+    "green": "PENDING_RUNLESS"
+  },
+  "step2a": {
+    "lease_id": "SCOPE-LEASE-83D80ED6BEE45734F674A82C",
+    "owner_id": "api2-cfb-game-total-page1-v2-step4-side-market-completeness",
+    "source_main_sha": "40b3049f2089833dacafda8c24086b9ef11a2cbd",
+    "frozen_source_mutations": 0,
+    "steps_1_3_modified": false,
+    "other_sports_modified": false
+  },
+  "runless": {
+    "task_id": "cfb-game-total-page1-v2-step4-side-market-completeness",
+    "workstream": "cfb-game-total-page1-v2",
+    "github_actions_fallback": 0,
+    "duplicate_runs": 0,
+    "blind_retries": 0
+  },
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
