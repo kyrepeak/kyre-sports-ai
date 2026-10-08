@@ -10,7 +10,7 @@
       "owner_id": "api2-nfl-rb-wr-render-repair-step2-presentation-transport",
       "scope": {
         "dependency_tokens": [
-          "NFL_RB_WR_RENDER_REPAIR_V1_STEP1_ROOT_CAUSE_FROZEN"
+          "nfl_rb_wr_render_repair_v1_step1_root_cause_frozen"
         ],
         "exclusive": false,
         "resource_identity": {
@@ -20,12 +20,12 @@
         },
         "shared_resources": [],
         "write_paths": [
-          "nfl_rushing_yards_hub_v4.py",
-          "nfl_receiving_yards_hub_v13.py",
-          "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py",
           "devsystem/execution_plans/nfl-rb-wr-render-repair-step2-presentation-transport.json",
           "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step2-presentation-transport.json",
-          "devsystem/task_ledgers/nfl-rb-wr-render-repair-step2-presentation-transport.json"
+          "devsystem/task_ledgers/nfl-rb-wr-render-repair-step2-presentation-transport.json",
+          "nfl_receiving_yards_hub_v13.py",
+          "nfl_rushing_yards_hub_v4.py",
+          "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"
         ]
       }
     }
@@ -35,6 +35,6 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "revision": 367,
   "schema_version": 1,
-  "state_hash": "7cda4902251707e06b78324c97c2d637a189a1493f01a8eb60f6b33b72cd47fb",
+  "state_hash": "168c5509e54dab23759c6a2bf332fc67f2c10184dd02948dafd3571c0a6d5850",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
