@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "task_id": "nfl-rb-wr-render-repair-step4-mobile-route",
+  "project": "API2",
+  "workstream": "nfl-rb-wr-render-repair-v1",
+  "step": "4/5",
+  "source_main_sha": "7854d5772333482947f9f2d4bda71cf73ded72b5",
+  "authoritative_branch": "api2/nfl-rb-wr-render-repair-step4-mobile-route",
+  "state": "READY_FOR_RUNLESS_GREEN_R1",
+  "problem": "Durably prove the real public NFL Rushing Yards and Receiving Yards routes render styled cards at mobile, tablet, and desktop widths after Steps 1-3.",
+  "root_cause_class": "PUBLIC_RESPONSIVE_VERIFICATION_GAP_ONLY",
+  "patch": "Verification-only Playwright public-route certificate plus regression coverage; no product runtime mutation.",
+  "step2a": {
+    "registry_revision_at_lock": 209,
+    "registry_state_hash_at_lock": "3fe1d551aff93a78fe6f394ca77471d9b480f1efe6e7b75754c5c5c0d25de0bd",
+    "scope_lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP4-219",
+    "product_runtime_mutations": 0,
+    "frozen_source_mutations": 0,
+    "thaw_required": false
+  },
+  "tdd": {
+    "red_candidate_sha": "aa05f2ff1918272b3aee56ef6c0a41ddcb1a3a06",
+    "red_failure_class": "STATIC_PROOF",
+    "red_expected": true,
+    "green_unit_contract_passed": true,
+    "public_green_pending": true
+  },
+  "proof_contract": {
+    "public_target": "https://pickvault.streamlit.app",
+    "exact_route_query": true,
+    "rushing_card_selector": ".krush4-card",
+    "receiving_card_selector": ".krecv13-card",
+    "fresh_browser_contexts": 6,
+    "viewports": [[390, 844], [768, 1024], [1440, 1000]],
+    "computed_card_style_required": true,
+    "responsive_grid_required": true,
+    "raw_text_fallback_forbidden": true,
+    "fatal_render_forbidden": true,
+    "root_overflow_forbidden": true,
+    "step2_regression_recheck": true,
+    "step3_regression_recheck": true,
+    "product_runtime_mutations": 0
+  },
+  "runless": {
+    "next_proof_generation": 1,
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "duplicate_successful_runs": 0,
+    "blind_retries": 0
+  },
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP4_MOBILE_ROUTE_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
