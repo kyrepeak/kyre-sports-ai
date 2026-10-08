@@ -82,3 +82,47 @@ def test_computed_card_style_contract_rejects_unstyled_and_accepts_cards():
         "background_image": "none",
         "background_color": "rgba(0, 0, 0, 0)",
     }) is False
+
+
+def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
+    """A card may attach after _wait_for_cards captured its last text snapshot."""
+    mod = _load_module()
+    frame = object()
+    stale_text = "Expected YPC"
+    fresh_text = " | ".join(mod.ROUTES["Rushing Yards"]["labels"])
+
+    class FakePage:
+        def set_viewport_size(self, _viewport):
+            return None
+
+        def goto(self, _url, *, wait_until, timeout):
+            assert wait_until == "domcontentloaded"
+            assert timeout == 120_000
+            return None
+
+    monkeypatch.setattr(mod, "_wait_for_cards", lambda page, market: (frame, stale_text))
+    monkeypatch.setattr(mod, "_all_frame_text", lambda page: fresh_text)
+    monkeypatch.setattr(mod, "_card_style", lambda _frame, _selector: {
+        "count": 1,
+        "border_style": "solid",
+        "border_width": "1px",
+        "border_radius": "17px",
+        "background_image": "linear-gradient(rgb(11, 23, 18), rgb(10, 20, 17))",
+        "background_color": "rgba(0, 0, 0, 0)",
+    })
+    monkeypatch.setattr(mod, "_grid_style", lambda _frame, _selector: {
+        "count": 1,
+        "display": "grid",
+        "grid_template_columns": "360px",
+        "column_gap": "9px",
+        "row_gap": "9px",
+    })
+    monkeypatch.setattr(mod, "_root_overflow", lambda page: (False, "worst_delta=0"))
+
+    result = mod._verify_route_viewport(
+        FakePage(),
+        "https://pickvault.streamlit.app",
+        "Rushing Yards",
+        (390, 844),
+    )
+    assert result["status"] == "GREEN"
