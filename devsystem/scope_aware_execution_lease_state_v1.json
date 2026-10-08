@@ -32,31 +32,6 @@
       }
     },
     {
-      "acquired_at_utc": "2026-10-08T16:06:56Z",
-      "expires_at_utc": "2026-10-08T16:36:56Z",
-      "generation": 194,
-      "heartbeat_at_utc": "2026-10-08T16:06:56Z",
-      "lease_id": "SCOPE-LEASE-C417830430CC300A8318B8E7",
-      "owner_id": "api2-cfb-step4-side-market-runless-executor",
-      "scope": {
-        "dependency_tokens": [
-          "control:runless-proof-executor"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "candidate": "2e5c78f058384f6ba62cca6cd1ff07fc0ce72211",
-          "main": "40b3049f2089833dacafda8c24086b9ef11a2cbd",
-          "task": "cfb-game-total-page1-v2-step4-side-market-completeness"
-        },
-        "shared_resources": [
-          "executor:srv-db2hf5uk1f9s73afnjc0"
-        ],
-        "write_paths": [
-          "tests/test_runless_step6_registry.py"
-        ]
-      }
-    },
-    {
       "acquired_at_utc": "2026-10-08T16:14:20Z",
       "expires_at_utc": "2026-10-08T16:44:20Z",
       "generation": 196,
@@ -80,6 +55,31 @@
           "sitecustomize.py"
         ]
       }
+    },
+    {
+      "acquired_at_utc": "2026-10-08T16:06:56Z",
+      "expires_at_utc": "2026-10-08T16:36:56Z",
+      "generation": 194,
+      "heartbeat_at_utc": "2026-10-08T16:06:56Z",
+      "lease_id": "SCOPE-LEASE-C417830430CC300A8318B8E7",
+      "owner_id": "api2-cfb-step4-side-market-runless-executor",
+      "scope": {
+        "dependency_tokens": [
+          "control:runless-proof-executor"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "candidate": "2e5c78f058384f6ba62cca6cd1ff07fc0ce72211",
+          "main": "40b3049f2089833dacafda8c24086b9ef11a2cbd",
+          "task": "cfb-game-total-page1-v2-step4-side-market-completeness"
+        },
+        "shared_resources": [
+          "executor:srv-db2hf5uk1f9s73afnjc0"
+        ],
+        "write_paths": [
+          "tests/test_runless_step6_registry.py"
+        ]
+      }
     }
   ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
@@ -87,6 +87,6 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "revision": 329,
   "schema_version": 1,
-  "state_hash": "9114475ac11ce6a575c48b4f24cc933a01f7b3e4f7106cb4a5d44693cabbd2b2",
+  "state_hash": "f187a834d970ec940364f3c16e9b8acfd105b7f023e4e4490f31d1382c4fce28",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
