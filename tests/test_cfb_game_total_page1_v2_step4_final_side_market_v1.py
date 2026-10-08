@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "cfb_game_total_clean_page_v16.py"
+CERTIFIED_SOURCE = "Certified Runtime Snapshot V2 exact date + school identity"
 
 
 def _exact_market_loader(target_date: str):
@@ -67,7 +68,25 @@ def test_frozen_legacy_fallback_reproduces_verified_identity_alias_gap() -> None
     assert "verified_away_moneyline" not in out
 
 
-def test_v16_identity_bridge_promotes_exact_espn_id_to_generic_event_id(monkeypatch) -> None:
+def test_v16_identity_bridge_promotes_certified_espn_id_to_generic_event_id(monkeypatch) -> None:
+    import cfb_game_total_clean_page_v16 as page
+
+    def frozen_recover(game, selected_day):
+        out = dict(game or {})
+        out["espn_event_id"] = "401858254"
+        out["game_date"] = str(selected_day)
+        out["logo_identity_source"] = CERTIFIED_SOURCE
+        return out
+
+    monkeypatch.setattr(page, "_FROZEN_RECOVER_RUNTIME_EVENT", frozen_recover)
+    out = page._recover_exact_runtime_event_v165({}, "2026-10-09")
+
+    assert out["espn_event_id"] == "401858254"
+    assert out["event_id"] == "401858254"
+    assert out["game_date"] == "2026-10-09"
+
+
+def test_v16_identity_bridge_rejects_uncertified_alias(monkeypatch) -> None:
     import cfb_game_total_clean_page_v16 as page
 
     def frozen_recover(game, selected_day):
@@ -79,9 +98,7 @@ def test_v16_identity_bridge_promotes_exact_espn_id_to_generic_event_id(monkeypa
     monkeypatch.setattr(page, "_FROZEN_RECOVER_RUNTIME_EVENT", frozen_recover)
     out = page._recover_exact_runtime_event_v165({}, "2026-10-09")
 
-    assert out["espn_event_id"] == "401858254"
-    assert out["event_id"] == "401858254"
-    assert out["game_date"] == "2026-10-09"
+    assert "event_id" not in out
 
 
 def test_v16_identity_bridge_does_not_overwrite_existing_event_id(monkeypatch) -> None:
@@ -92,6 +109,7 @@ def test_v16_identity_bridge_does_not_overwrite_existing_event_id(monkeypatch) -
         out["espn_event_id"] = "401858254"
         out["event_id"] = "401000999"
         out["game_date"] = str(selected_day)
+        out["logo_identity_source"] = CERTIFIED_SOURCE
         return out
 
     monkeypatch.setattr(page, "_FROZEN_RECOVER_RUNTIME_EVENT", frozen_recover)
@@ -108,6 +126,7 @@ def test_identity_bridge_unlocks_existing_exact_event_fallback(monkeypatch) -> N
         out = dict(game or {})
         out["espn_event_id"] = "401858254"
         out["game_date"] = str(selected_day)
+        out["logo_identity_source"] = CERTIFIED_SOURCE
         return out
 
     monkeypatch.setattr(page, "_FROZEN_RECOVER_RUNTIME_EVENT", frozen_recover)
