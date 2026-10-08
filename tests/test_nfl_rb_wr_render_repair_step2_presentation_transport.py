@@ -1,8 +1,24 @@
+import ast
 from pathlib import Path
 
 
 def _src(path: str) -> str:
     return Path(path).read_text(encoding="utf-8")
+
+
+def _has_call(source: str, owner: str, method: str, first_arg: str) -> bool:
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+            continue
+        target = node.func.value
+        if not isinstance(target, ast.Name) or target.id != owner or node.func.attr != method:
+            continue
+        if not node.args or not isinstance(node.args[0], ast.Name):
+            continue
+        if node.args[0].id == first_arg:
+            return True
+    return False
 
 
 RUSH = _src("nfl_rushing_yards_hub_v4.py")
@@ -11,15 +27,15 @@ HARDENED = _src("nfl_prop_analytics_page2_responsive_polish_v1.py")
 
 
 def test_rushing_cards_use_hardened_html_transport() -> None:
-    assert "st.html(_COMPACT_CSS)" in RUSH
-    assert "st.markdown(_COMPACT_CSS, unsafe_allow_html=True)" not in RUSH
-    assert "compact_slot.html(board)" in RUSH
-    assert "compact_slot.markdown(board, unsafe_allow_html=True)" not in RUSH
+    assert _has_call(RUSH, "st", "html", "_COMPACT_CSS")
+    assert not _has_call(RUSH, "st", "markdown", "_COMPACT_CSS")
+    assert _has_call(RUSH, "compact_slot", "html", "board")
+    assert not _has_call(RUSH, "compact_slot", "markdown", "board")
 
 
 def test_receiving_step13_css_uses_hardened_html_transport() -> None:
-    assert "st.html(_STEP13_CSS)" in RECV
-    assert "st.markdown(_STEP13_CSS, unsafe_allow_html=True)" not in RECV
+    assert _has_call(RECV, "st", "html", "_STEP13_CSS")
+    assert not _has_call(RECV, "st", "markdown", "_STEP13_CSS")
 
 
 def test_hardened_transport_matches_existing_certified_precedent() -> None:
