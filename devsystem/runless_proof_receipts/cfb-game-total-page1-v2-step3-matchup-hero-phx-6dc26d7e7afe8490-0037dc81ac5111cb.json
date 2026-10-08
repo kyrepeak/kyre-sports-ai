@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "cfb_game_total_clean_page_v36.py": "3970337b170ccdc44870699a8a35cf800dea6867",
+    "cfb_game_total_page1_step3_presentation_v1.py": "13c0deabcacba311999447608eafd07eef778565",
+    "cfb_game_total_page1_v2_step3_activation.py": "2d5b79be2d93455e0cf612b4ca1901fe412cc0c9",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step3-matchup-hero-phx.json": "dc750359e26f3625bfa0e4815c684541023e2d35",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step3-matchup-hero-phx.json": "d1d0d6d95d358bb725cc83e9e9f8746b3a7863d8",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step3-matchup-hero-phx.json": "149bf0619f0aa69cc3b29ae6ab324a29dd767b64",
+    "docs/superpowers/plans/2026-10-07-cfb-game-total-page1-v2-step3-matchup-hero-phx.md": "550073aa287485e48424199cffe8d199f91226de",
+    "kyre_universal_shell_runtime_v1.py": "40a37ff350262256f590a430ea9494d52c0c5304",
+    "tests/test_cfb_game_total_page1_v2_step3_matchup_hero_phx.py": "c196f5b6154b2d125cc2ed7117f1c4caae25c23f"
+  },
+  "candidate_sha": "6dc26d7e7afe84905125766c68bbd2065dedb12d",
+  "created_at": "2026-10-08T04:31:32.002648+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v11.py": "5cd70939d93717d5b5d85cb66812605c0cceadb8",
+    "cfb_game_total_clean_page_v14.py": "030952d34178fb148c4d3ad7470f1bbc033bc8ff",
+    "cfb_game_total_clean_page_v25.py": "52826fab95436d01fef150c1711a8a42be6d2f28",
+    "cfb_game_total_clean_page_v35.py": "52c67f5e14502abda616b900a6c961441725d584",
+    "streamlit_memory_lazy_router_v190.py": "fca1442c144d8ff02868ed0371a92f72257d697e"
+  },
+  "deployment_identity": "f16b527ffaef900ad4e76488d6266ff33ca04709",
+  "digest": "00dfc3bbe3c4b51330a725ea193fc348408047091eaaa2ddc2cd3a8a146d67fd",
+  "evidence_digests": [
+    "8704ba5bacb6a309bc94596b86e439628aa336fcf0ad98f87afdee923277726e"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "d35ebd5009baa0d0f90d922f64c0c05e9752ac258cbed554390adffb1672f1f8",
+  "proof_id": "cfb-game-total-page1-v2-step3-matchup-hero-phx-6dc26d7e7afe8490-0037dc81ac5111cb",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 195,
+    "state_hash": "b204d0f26807f4a2087c449f4888b48fd5d261ce6e237114cfe6d08733f9b86b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 195,
+    "state_hash": "b204d0f26807f4a2087c449f4888b48fd5d261ce6e237114cfe6d08733f9b86b"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-page1-v2-step3-matchup-hero-phx",
+  "workstream": "cfb-game-total-page1-v2"
+}
