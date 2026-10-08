@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "task_id": "nfl-rb-wr-render-repair-step1-root-cause",
+  "project": "API2",
+  "workstream": "nfl-rb-wr-render-repair-v1",
+  "step": "1/5",
+  "source_main_sha": "a1dfac558c76253f99e2279dd7cb45e944d913a6",
+  "goal": "Certify and freeze the exact NFL Rushing/Receiving card presentation root cause without modifying product runtime.",
+  "write_paths": [
+    "docs/superpowers/plans/2026-10-08-nfl-rb-wr-render-repair-step1-root-cause.md",
+    "tests/test_nfl_rb_wr_render_repair_step1_root_cause.py",
+    "devsystem/execution_plans/nfl-rb-wr-render-repair-step1-root-cause.json",
+    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step1-root-cause.json",
+    "devsystem/task_ledgers/nfl-rb-wr-render-repair-step1-root-cause.json"
+  ],
+  "protected_dependencies": [
+    "app.py",
+    "nfl_rushing_yards_hub_v4.py",
+    "nfl_rushing_yards_hub_v15.py",
+    "nfl_receiving_yards_hub_v13.py",
+    "nfl_receiving_yards_hub_v16.py",
+    "streamlit_memory_lazy_router_v111.py",
+    "streamlit_memory_lazy_router_v147.py",
+    "streamlit_memory_lazy_router_v186.py",
+    "nfl_prop_analytics_page2_responsive_polish_v1.py",
+    "devsystem/nfl_rushing_yards_html_render_browser_v1.py"
+  ],
+  "diagnostic_classification": {
+    "primary_root_cause": "STREAMLIT_MARKDOWN_PRESENTATION_TRANSPORT",
+    "secondary_root_cause": "COMPUTED_STYLE_VERIFIER_GAP",
+    "data_api_failure": false,
+    "routing_failure": false,
+    "specific_streamlit_release_blame": "NOT_PROVEN"
+  },
+  "product_runtime_mutations": 0,
+  "frozen_source_mutations": 0,
+  "thaw_required": false,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless",
+  "proof_generation": 1,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "registry_revision_at_lock": 206,
+  "registry_state_hash_at_lock": "cca4b20727ef97ef8e720c2bd0b1905e85b3de383331fc862a6fda4b273b7cd6",
+  "scope_lease_id": "SCOPE-LEASE-28512CFB5B1FCAD2EF7399E6",
+  "scope_lease_owner": "api2-nfl-rb-wr-render-repair-step1-root-cause",
+  "scope_lease_revision": 361,
+  "scope_lease_state_hash": "03ae8d3bf552488346c8b4710932b0a8353c79b356b235b4b8e15b0ae9c2a279",
+  "scope_lease_expires_at_utc": "2026-10-08T21:46:03Z",
+  "authorization_id": "AUTH-NFL-RB-WR-RENDER-REPAIR-V1-STEP1-ROOT-CAUSE-R1",
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP1_ROOT_CAUSE_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
