@@ -7,12 +7,14 @@ hero, multi-source data, and frozen analytics to V36.
 from __future__ import annotations
 
 from threading import RLock
+from typing import Any, Mapping
 
 import streamlit as st
 
-import cfb_game_total_clean_page_v9 as analysis_owner
+import cfb_game_total_clean_page_v26 as analysis_owner
 import cfb_game_total_clean_page_v36 as prior
 import cfb_game_total_page1_step4_prediction_market_v1 as prediction
+import cfb_game_total_page1_step4_side_market_v1 as side_market
 
 MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V37 • PAGE1 V2 STEP4 PREDICTION MARKET"
 MARKET = prior.MARKET
@@ -36,14 +38,33 @@ STEP4_CSS = r"""
 """
 
 
+def _step4_prediction_market_html(
+    raw: Mapping[str, Any],
+    final: Mapping[str, Any],
+    display_game: Mapping[str, Any],
+    statuses: Mapping[int, str],
+    ready_count: int,
+) -> str:
+    enriched = side_market.enrich_verified_side_market(display_game)
+    return prediction.build_prediction_market_html(
+        raw,
+        final,
+        enriched,
+        statuses,
+        ready_count,
+    )
+
+
 def _render_with_step4_prediction_market(callback, *args, **kwargs):
+    # V26 is the last owner of this renderer in the frozen V36 -> V35 -> ... chain.
+    # Patching V9 directly is ineffective because V26 overwrites that seam later.
     with _LOCK:
-        original = analysis_owner._game_total_hero_html
-        analysis_owner._game_total_hero_html = prediction.build_prediction_market_html
+        original = analysis_owner._game_total_analysis_html_v26
+        analysis_owner._game_total_analysis_html_v26 = _step4_prediction_market_html
         try:
             return callback(*args, **kwargs)
         finally:
-            analysis_owner._game_total_hero_html = original
+            analysis_owner._game_total_analysis_html_v26 = original
 
 
 def render_step6_cert_surface() -> None:
@@ -79,6 +100,7 @@ __all__ = [
     "STEP4_CSS",
     "STEP4_MARKER",
     "_render_with_step4_prediction_market",
+    "_step4_prediction_market_html",
     "render_cfb_hub",
     "render_game_total_hub",
     "render_step6_cert_surface",
