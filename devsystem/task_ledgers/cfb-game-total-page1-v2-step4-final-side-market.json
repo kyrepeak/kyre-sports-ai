@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step4-final-side-market",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "4/9",
+  "source_main_sha": "2a8039a5f2dc9980711674e92b6d7ec35ab5df29",
+  "authoritative_branch": "api2/cfb-step4-final-side-market",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "problem": "Fresh public visual proof still shows Spread and Moneyline as Line not posted, 10/12 verified, while Market Total 59.5 remains live and sportsbook projection influence is 0.0%.",
+  "root_cause": "The frozen exact FanDuel event-page repair correctly tries the verified provider event first. When that read does not expose canonical side markets, the preserved legacy exact-event fallback requires a generic event_id/game_id/id. The active Game Total runtime has already recovered the exact official identity as espn_event_id (and market_official_game_id), so the fallback fails closed at its compatibility alias boundary before its exact-event market lookup can run.",
+  "patch": "Use the unfrozen Page V16 seam to wrap the existing certified V15 runtime-event recovery. Only when V15 proves the identity source is exactly Certified Runtime Snapshot V2 exact date + school identity, espn_event_id is numeric, and generic event_id is absent, copy that exact ID into event_id. Never overwrite an existing event_id. Restore the frozen recovery callable in finally. This unlocks the already-existing exact-event side-market fallback without changing odds, market math, projection math, total handling, or network ownership.",
+  "public_evidence": {
+    "screenshot_supplied": true,
+    "projected_total": 73.7,
+    "market_total": 59.5,
+    "over_under_lean": "Over +14.2",
+    "confidence": "79%",
+    "grade": "B",
+    "spread_visible": "Line not posted",
+    "moneyline_visible": "Line not posted",
+    "data_check": "10/12 verified",
+    "sportsbook_projection_influence": 0.0
+  },
+  "research_cross_check": {
+    "multiple_sources_confirm_side_markets_exist": true,
+    "representative_spread": "Louisville -3.5 / Florida State +3.5",
+    "moneyline_live_and_moving": true,
+    "hardcode_allowed": false,
+    "reason": "current public sportsbook/odds pages show the side markets but prices move, so runtime values must remain source-driven"
+  },
+  "identity_contract": {
+    "certified_identity_source_required": "Certified Runtime Snapshot V2 exact date + school identity",
+    "espn_event_id_must_be_numeric": true,
+    "generic_event_id_must_be_absent_before_bridge": true,
+    "overwrite_existing_event_id": false,
+    "fuzzy_matching": false,
+    "hardcoded_market_values": false,
+    "fail_closed": true,
+    "projection_weight": 0.0,
+    "may_modify_projection": false,
+    "may_modify_other_sports": false,
+    "new_network_calls": 0
+  },
+  "tdd": {
+    "test_first_commits": [
+      "1681e5e1cf913c7867b293ad2caa3d9e4bb7c775",
+      "21188cf77d42c09447fce89bf0ef0a0c096fecfb",
+      "59e04f427f0fe52b0a3cc1b6182a8ea026533e9c",
+      "96959759c934d854641598952b005e2fd300aad8"
+    ],
+    "production_commit": "487491c8365b5d334d6edc87fd6a8d32115f29d8",
+    "red_contract": "The test contract was committed before production and required a V16 certified identity bridge that did not exist in main. Exact remote pytest execution is delegated to the single authoritative Runless proof to avoid duplicate async proof fanout.",
+    "green": "PENDING_EXACT_HEAD_RUNLESS"
+  },
+  "step2a": {
+    "source_main_sha": "2a8039a5f2dc9980711674e92b6d7ec35ab5df29",
+    "registry_revision_at_lock": 204,
+    "registry_state_hash_at_lock": "e91a9cc37d0cda84b16a2d0376e313ee9ed1985369cb782a4ba5ccd0f0d10535",
+    "authoritative_branch": "api2/cfb-step4-final-side-market",
+    "duplicate_task_branches_at_lock": 0,
+    "active_problem_count": 1,
+    "write_seam": "cfb_game_total_clean_page_v16.py",
+    "write_seam_frozen": false,
+    "thaw_required": false,
+    "frozen_source_mutations": 0,
+    "app_modified": false,
+    "other_sports_modified": false,
+    "github_actions_fallback_authorized": false
+  },
+  "runless": {
+    "task_id": "cfb-game-total-page1-v2-step4-final-side-market",
+    "workstream": "cfb-game-total-page1-v2",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "duplicate_runs": 0,
+    "blind_retries": 0
+  },
+  "public_green_contract": {
+    "spread": "real verified exact-event value",
+    "moneyline": "real verified exact-event value",
+    "data_check": "12/12 verified",
+    "market_total": "live source value preserved",
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_V2_STEP4_FINAL_SIDE_MARKET_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
