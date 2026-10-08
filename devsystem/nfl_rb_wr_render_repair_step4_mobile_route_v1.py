@@ -253,7 +253,7 @@ def _first_frame_with(page, selector: str):
 
 def _card_text(frame, selector: str) -> str:
     try:
-        values = frame.locator(selector).all_inner_texts()
+        values = frame.locator(selector).all_text_contents()
     except Exception:
         return ""
     return "\n".join(str(value or "") for value in values if str(value or "").strip())
@@ -356,7 +356,7 @@ def _verify_route_viewport(page, base_url: str, market: str, viewport: tuple[int
     missing = [label for label in cfg["labels"] if label not in text]
     if missing:
         raise RuntimeError(f"LABELS_MISSING:{market}:{width}:{','.join(missing)}")
-    if raw_text_fallback_detected(text):
+    if raw_text_fallback_detected(page_text):
         raise RuntimeError(f"RAW_TEXT_FALLBACK:{market}:{width}")
 
     card = _card_style(frame, cfg["card_selector"])
