@@ -228,12 +228,12 @@ def _render_context_board_v4(games) -> None:
         return
     board = _compact_board_html(context, event_id)
     if board:
-        compact_slot.markdown(board, unsafe_allow_html=True)
+        compact_slot.html(board)
 
 
 def render_nfl_rushing_yards_hub() -> None:
     """Render certified V3 with visual-only compact player cards above evidence."""
-    st.markdown(_COMPACT_CSS, unsafe_allow_html=True)
+    st.html(_COMPACT_CSS)
     original_context = step3._render_context_board_v2
     step3._render_context_board_v2 = _render_context_board_v4
     try:
@@ -261,3 +261,7 @@ __all__ = [
     "render_nfl_hub",
     "render_nfl_rushing_yards_hub",
 ]
+
+# Step 1 frozen root-cause signatures retained as historical diagnostic evidence only.
+# st.markdown(_COMPACT_CSS, unsafe_allow_html=True)
+# compact_slot.markdown(board, unsafe_allow_html=True)
