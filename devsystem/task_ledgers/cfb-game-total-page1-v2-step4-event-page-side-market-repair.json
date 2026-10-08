@@ -5,10 +5,10 @@
   "workstream": "cfb-game-total-page1-v2",
   "step": "4/9",
   "source_main_sha": "38698b8ed33b96547af855780953b414a6d34131",
-  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R2",
   "problem": "The public Step-4 card still shows Spread and Moneyline as Line not posted and 10/12 verified even though Market Total 59.5 is live.",
   "root_cause": "The previous completeness repair reused the correct verified FanDuel provider_game_id but read FanDuel's NCAAF landing surface. That surface reliably exposes the total but not the canonical exact-event Spread and Moneyline. Certified side-market collectors use FanDuel /sbapi/event-page after provider-event identity is known.",
-  "patch": "Add a no-thaw CFB-only exact-event repair. Reuse the already-verified provider_game_id, request FanDuel /sbapi/event-page for that exact provider event, accept absent market-level eventId only because the event-page request scopes identity, reject any present mismatched eventId, choose canonical OPEN pregame Spread and Moneyline by certified market ordering, and fall back to the frozen fail-closed enrichment path on any ambiguity. Activate before the universal shell through unfrozen app.py.",
+  "patch": "Add a no-thaw CFB-only exact-event repair. Reuse the verified provider_game_id, request FanDuel /sbapi/event-page for that exact provider event, accept absent market-level eventId only because the event-page request scopes identity, reject any present mismatched eventId, choose canonical OPEN pregame Spread and Moneyline by certified market ordering, and fall back to the frozen fail-closed enrichment path on ambiguity. Activate from the unfrozen CFB market adapter while V38 imports; keep frozen app.py byte-identical.",
   "public_evidence": {
     "screenshot_supplied": true,
     "projected_total": 73.7,
@@ -34,18 +34,30 @@
     "may_modify_other_sports": false
   },
   "tdd": {
-    "red_commit": "3f8e1d4a602cfebd310b385e440b230f6f3ac603",
-    "red": "The regression contract was committed first and the required repair module was confirmed absent on the branch.",
-    "implementation": "The exact-event parser, event-page transport, frozen fallback, and pre-shell activation are implemented. Exact-head Runless is the GREEN authority.",
-    "green": "PENDING_RUNLESS"
+    "initial_red_commit": "3f8e1d4a602cfebd310b385e440b230f6f3ac603",
+    "recovery_red_commit": "230a7d76f1b1cfd7691abfed0cb89cd70786de6a",
+    "red": "Initial regression locked exact-event parsing first. After Runless rejected the frozen app.py activation seam, recovery TDD changed the contract first to require adapter activation and frozen app preservation.",
+    "implementation": "Exact-event parser and transport remain unchanged; activation is now two additive lines in the unfrozen CFB market adapter. Exact-head Runless is the GREEN authority.",
+    "green": "PENDING_RUNLESS_R2"
+  },
+  "retired_attempt": {
+    "candidate_sha": "70dc5d8b9aadea34aa670631c25f07549800fed9",
+    "result": "RUNLESS_HTTP_409",
+    "failure_class": "FROZEN_ACTIVATION_SEAM",
+    "detail": "app.py was frozen at b649282cd6fc771c6621cc09a655414f9422791a; candidate changed it without thaw",
+    "proof_request_count": 1,
+    "rerun": false,
+    "app_restored_blob": "b649282cd6fc771c6621cc09a655414f9422791a"
   },
   "step2a": {
-    "lease_id": "SCOPE-LEASE-2898A00729DE4AB707C5F23A",
-    "owner_id": "api2-cfb-step4-event-page-side-market-repair",
+    "lease_id": "SCOPE-LEASE-77ECCF25CBEC1C6437C81778",
+    "owner_id": "api2-cfb-step4-event-page-side-market-repair-r2",
     "source_main_sha": "38698b8ed33b96547af855780953b414a6d34131",
-    "lease_revision": 333,
-    "lease_state_hash": "7d0e119ed23b3f1c7509298713e5c80b5363e5005c9252f81f482713a514a2c9",
+    "lease_revision": 337,
+    "lease_state_hash": "fd6a3858c1ea02f3218f8fee11fad94b75b2967f38b03e27d076097fa1e0e0f1",
+    "activation_seam": "cfb_over_under_market_adapter_v1.py",
     "frozen_source_mutations": 0,
+    "app_modified": false,
     "steps_1_3_modified": false,
     "other_sports_modified": false
   },
@@ -54,7 +66,8 @@
     "workstream": "cfb-game-total-page1-v2",
     "github_actions_fallback": 0,
     "duplicate_runs": 0,
-    "blind_retries": 0
+    "blind_retries": 0,
+    "old_head_resubmitted": false
   },
   "public_green_contract": {
     "market_total_preserved": 59.5,
