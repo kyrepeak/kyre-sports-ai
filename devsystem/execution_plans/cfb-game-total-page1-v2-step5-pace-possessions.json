@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step5-pace-possessions",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "5/9",
+  "source_main_sha": "53c4bf0aa194befe56934d476f0f1a1a22d3d40d",
+  "goal": "Certify and freeze the already-live multi-source Step 5 Pace & Expected Possessions surface inherited by the current Page1 V2 V38 route, without product-runtime mutations or reopening Steps 1-4.",
+  "write_paths": [
+    "docs/superpowers/plans/2026-10-08-cfb-game-total-page1-v2-step5-pace-possessions.md",
+    "tests/test_cfb_game_total_page1_v2_step5_pace_possessions_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step5-pace-possessions.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step5-pace-possessions.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step5-pace-possessions.json"
+  ],
+  "protected_dependencies": [
+    "app.py",
+    "cfb_game_total_clean_page_v17.py",
+    "cfb_game_total_clean_page_v38.py",
+    "cfb_game_total_step5_pace_v1.py",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py",
+    "data/cfb_step5_pbp_snapshot_v1.json",
+    "streamlit_memory_lazy_router_v191.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
+  ],
+  "certification_method": "source-graph reachability V38 -> inherited V17 Step5 evidence owner + existing V168 Step5 behavioral suite + Step4 public-repair seam noninterference",
+  "data_sources": [
+    "NCAA Total Offense / Time of Possession evidence already carried by the Step5 engine",
+    "SportsDataverse/cfbfastR raw completed-game PBP",
+    "Punt & Rally drive-efficiency fallback",
+    "ESPN summary only as last-resort recovery"
+  ],
+  "product_runtime_mutations": 0,
+  "new_network_calls": 0,
+  "projection_mutation_allowed": false,
+  "sportsbook_projection_influence": 0.0,
+  "other_sports_mutation_allowed": false,
+  "frozen_source_mutations": 0,
+  "thaw_required": false,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "scope_lease_id": "SCOPE-LEASE-80B7890A8991F25F861505A4",
+  "scope_lease_owner": "api2-cfb-step5-pace-cert-r1",
+  "scope_lease_revision": 353,
+  "scope_lease_state_hash": "e8287c88317b67af09ac75d8dccd63642a174bd43e6383d0c9d50ec1152731e1",
+  "scope_lease_expires_at_utc": "2026-10-08T20:15:00Z",
+  "authorization_id": "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP5-PACE-POSSESSIONS-R1",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
