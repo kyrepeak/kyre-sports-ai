@@ -5,12 +5,24 @@
   "workstream": "cfb-game-total-page1-v2",
   "step": "3/9",
   "source_main_sha": "0244ed0b203ad2996cb6d79409f69ba151029008",
-  "state": "RED_EXPECTED",
+  "state": "CANDIDATE_READY",
   "problem": "Live Page 1 still renders old matchup/date presentation and Eastern Time labels.",
   "root_cause": "V11 owns past-inclusive day strip, V14 owns ET selector labels, V25 owns old hero; V35 intentionally leaves presentation frozen.",
   "patch": "Add pure Phoenix/future presentation helper, Page V36 seam wrapper, and CFB-only runtime activation through the unfrozen universal shell.",
+  "red_observed": true,
+  "red_detail": "Focused Step-3 test failed only because cfb_game_total_page1_step3_presentation_v1.py did not exist before implementation.",
+  "implementation": {
+    "phoenix_timezone": "America/Phoenix",
+    "future_only": true,
+    "example_conversion": "2026-10-08 7:00 PM ET -> 4:00 PM AZ",
+    "overview_active": true,
+    "full_analysis_reserved_for_page2": true,
+    "zero_values_preserved": true,
+    "frozen_v35_modified": false,
+    "frozen_router_v190_modified": false,
+    "projection_mutation": false,
+    "sportsbook_projection_influence": 0.0
+  },
   "proof": "Runless exact-head pytest, exact-head gate, merge, post-merge reuse, frozen-registry read-back.",
-  "github_actions_fallback": 0,
-  "projection_mutation": false,
-  "sportsbook_projection_influence": 0.0
+  "github_actions_fallback": 0
 }
