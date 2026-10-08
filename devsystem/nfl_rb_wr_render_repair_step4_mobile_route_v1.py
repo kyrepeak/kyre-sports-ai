@@ -142,6 +142,14 @@ def _first_frame_with(page, selector: str):
     return None
 
 
+def _card_text(frame, selector: str) -> str:
+    try:
+        values = frame.locator(selector).all_inner_texts()
+    except Exception:
+        return ""
+    return "\n".join(str(value or "") for value in values if str(value or "").strip())
+
+
 def _root_overflow(page) -> tuple[bool, str]:
     worst = 0
     samples: list[str] = []
@@ -229,9 +237,10 @@ def _verify_route_viewport(page, base_url: str, market: str, viewport: tuple[int
     page.set_viewport_size({"width": width, "height": height})
     page.goto(route_url(base_url, market), wait_until="domcontentloaded", timeout=120_000)
     frame, _ = _wait_for_cards(page, market)
-    text = _all_frame_text(page)
+    page_text = _all_frame_text(page)
+    text = _card_text(frame, cfg["card_selector"]) or page_text
 
-    fatal = _fatal_marker(text)
+    fatal = _fatal_marker(page_text)
     if fatal:
         raise RuntimeError(f"FATAL_RENDER:{market}:{width}:{fatal}")
     missing = [label for label in cfg["labels"] if label not in text]
