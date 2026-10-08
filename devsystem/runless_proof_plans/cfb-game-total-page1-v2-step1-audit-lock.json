@@ -1,0 +1,26 @@
+{
+  "task_id": "cfb-game-total-page1-v2-step1-audit-lock",
+  "workstream": "cfb-game-total-page1-v2",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_v2_step1_audit_lock.py"]
+  ],
+  "artifacts": [
+    "tests/test_cfb_game_total_page1_v2_step1_audit_lock.py",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step1-audit-lock.json",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step1-audit-lock.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step1-audit-lock.json"
+  ],
+  "dependencies": [
+    "app.py",
+    "cfb_game_total_clean_page_v11.py",
+    "cfb_game_total_clean_page_v14.py",
+    "cfb_game_total_clean_page_v34.py",
+    "cfb_game_total_game_evidence_v1.py",
+    "cfb_game_total_step4_multisource_v1.py",
+    "streamlit_memory_lazy_router_v190.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_V2_STEP1_AUDIT_LOCK_FROZEN"
+}

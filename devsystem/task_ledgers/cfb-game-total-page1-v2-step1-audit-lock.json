@@ -1,0 +1,49 @@
+{
+  "version": "CFB_GAME_TOTAL_PAGE1_V2_TASK_LEDGER_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "CFB Game Total Page 1 V2",
+  "task": 1,
+  "step": 1,
+  "total_steps": 9,
+  "mission": "Data + Page Audit / Step 2A Lock",
+  "status": "PATCHED_AWAITING_RUNLESS",
+  "base_main_sha": "371f05b940369c3378ceea8f12fb02e52e5f7f11",
+  "problem": "The new Page-1 mission adds requirements that conflict with the older frozen visual-redesign contract: future-only slates, Phoenix-time ownership, Kyre Sports API primary page data, multi-source enrichment, and no generic DATA LIMITED terminal UI.",
+  "root_cause": "The current Game Total day owner defaults to the current Phoenix date and renders a seven-day window beginning two days before the selection; the selector then loads that day's games and defaults to the first matchup. Existing Kyre API ownership is partial (verified identity and odds), while environment/team display recovery still spans certified ESPN/NCAA/cfbstats paths.",
+  "patch": "Create a new additive Page-1 V2 Step-1 audit contract above all frozen predecessors. Freeze the exact current owner chain, future-only date semantics, API/source policy, visual target, zero-generic-DATA-LIMITED requirement, and frozen analytical boundaries without mutating product runtime.",
+  "step2a": {
+    "single_authority": true,
+    "branch": "cfb-game-total-page1-v2-step1-audit-lock-r1",
+    "pr": 1461,
+    "github_actions_fallback_authorized": false,
+    "runless_required_check": "runless-final-gate",
+    "exact_head_merge_required": true,
+    "frozen_files_modified": []
+  },
+  "tdd": {
+    "red_observed": true,
+    "red_head": "58c16a6b3a9af20484ab8a31ed73d4d9f98f0c10",
+    "expected_failure": "Step-1 Page-1 audit contract must exist before GREEN/FROZEN",
+    "red_failure_observed_exactly": true,
+    "production_code_before_red": false
+  },
+  "acceptance": {
+    "owner_chain_audited": true,
+    "today_default_root_cause_audited": true,
+    "future_only_phoenix_contract": true,
+    "kyre_api_primary_contract": true,
+    "multi_source_contract": true,
+    "no_generic_data_limited_contract": true,
+    "frozen_analytics_preserved": true,
+    "product_runtime_changed": false,
+    "runless_exact_head_green": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [
+      "TDD_RED_OBSERVED_ON_58c16a6b3a9af20484ab8a31ed73d4d9f98f0c10",
+      "CONTRACT_PATCH_PREPARED"
+    ],
+    "consumed_receipts": []
+  }
+}
