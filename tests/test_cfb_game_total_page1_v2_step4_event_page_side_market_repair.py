@@ -6,6 +6,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE = ROOT / "cfb_game_total_page1_v2_step4_event_page_side_market_repair_v1.py"
+MARKET_ADAPTER = ROOT / "cfb_over_under_market_adapter_v1.py"
 APP = ROOT / "app.py"
 
 
@@ -181,14 +182,14 @@ def test_event_page_transport_failure_fails_closed_to_frozen_fallback() -> None:
     assert "verified_away_spread" not in out
 
 
-def test_app_installs_repair_before_universal_shell_and_render() -> None:
-    source = APP.read_text(encoding="utf-8")
+def test_no_thaw_adapter_installs_repair_and_app_stays_frozen() -> None:
+    adapter = MARKET_ADAPTER.read_text(encoding="utf-8")
+    app = APP.read_text(encoding="utf-8")
     import_line = (
         "from cfb_game_total_page1_v2_step4_event_page_side_market_repair_v1 "
         "import install_event_page_side_market_repair"
     )
-    assert import_line in source
-    install_at = source.index("install_event_page_side_market_repair()")
-    shell_at = source.index("activate_universal_shell()")
-    render_at = source.index("render_app()", shell_at)
-    assert install_at < shell_at < render_at
+    assert import_line in adapter
+    assert "install_event_page_side_market_repair()" in adapter
+    assert import_line not in app
+    assert "install_event_page_side_market_repair()" not in app
