@@ -6,10 +6,20 @@
   "step": "5/9",
   "source_main_sha": "53c4bf0aa194befe56934d476f0f1a1a22d3d40d",
   "authoritative_branch": "api2/cfb-game-total-page1-v2-step5-pace",
-  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R2",
   "problem": "Step 5 Pace & Expected Possessions must be made authoritative for the new Page1 V2 build without duplicating an existing mature implementation or regressing the frozen Step1-4 surface.",
-  "root_cause": "The repository already contains a mature multi-source Step5 pace/possession engine and V17 presentation owner. Current V38 retains that owner through its ancestor render graph; the missing work is current-workstream certification and freeze ownership, not product reimplementation.",
-  "patch": "No product patch. Add only source-graph certification plus Runless execution/proof/ledger metadata, then freeze the existing Step5 artifacts if the exact-head and existing V168 behavioral suite pass.",
+  "root_cause": "The repository already contains a mature multi-source Step5 pace/possession engine and V17 presentation owner. Current V38 retains that owner through its ancestor render graph; the missing product work is zero. The first proof request was rejected at scope-lease admission before static proof, so R2 changes only the proof lease/authorization identity.",
+  "patch": "No product patch. Add only source-graph certification plus Runless execution/proof/ledger metadata. After the R1 lease-admission miss, retire R1 and bind an exact new live R2 lease/authorization; do not retry the unchanged failed request.",
+  "failure_history": [
+    {
+      "generation": 1,
+      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
+      "detail": "RUNLESS_SCOPE_LEASE_NOT_LIVE",
+      "product_failure": false,
+      "product_patch": false,
+      "retry_same_request": false
+    }
+  ],
   "step2a": {
     "source_main_sha": "53c4bf0aa194befe56934d476f0f1a1a22d3d40d",
     "registry_revision_at_lock": 205,
@@ -18,11 +28,11 @@
     "product_runtime_mutations": 0,
     "frozen_source_mutations": 0,
     "thaw_required": false,
-    "scope_lease_id": "SCOPE-LEASE-80B7890A8991F25F861505A4",
-    "scope_lease_owner": "api2-cfb-step5-pace-cert-r1",
-    "scope_lease_revision": 353,
-    "scope_lease_state_hash": "e8287c88317b67af09ac75d8dccd63642a174bd43e6383d0c9d50ec1152731e1",
-    "scope_lease_expires_at_utc": "2026-10-08T20:15:00Z"
+    "scope_lease_id": "SCOPE-LEASE-C52D38FE9D8B0EB537998E00",
+    "scope_lease_owner": "api2-cfb-step5-pace-cert-r2",
+    "scope_lease_revision": 355,
+    "scope_lease_state_hash": "ab68dfb9f89646a990bbd7b8ba705312c670cc27fbdc2cbff4f20a73e7fb0db0",
+    "scope_lease_expires_at_utc": "2026-10-08T20:24:00Z"
   },
   "certification_contract": {
     "current_root_page": "cfb_game_total_clean_page_v38.py",
@@ -36,10 +46,11 @@
     "may_modify_projection": false
   },
   "runless": {
+    "proof_generation": 2,
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "duplicate_runs": 0,
+    "duplicate_successful_runs": 0,
     "blind_retries": 0
   },
   "freeze_token": "CFB_GAME_TOTAL_PAGE1_V2_STEP5_PACE_POSSESSIONS_FROZEN",
