@@ -5,7 +5,7 @@
   "project": "API2",
   "workstream": "api2-finalization-authority-v1-step5",
   "step": "5/6",
-  "status": "TDD_RED_PENDING",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
   "base_main_sha": "b42b320e69d4894ed2ec5bbd3a065824d35d6fff",
   "branch": "api2-finalization-authority-v1-step5-authority-garbage-collector-r1",
   "problem": "Terminal workstreams can remain blocked or appear active because stale mutation-capable authorities survive after canonical completion is already proven.",
@@ -44,8 +44,13 @@
   "tdd": {
     "test_first_commit": "5e5691e9eaf5f891817d0793ef8563547daa76a3",
     "red_stub_commit": "0c0fec6517e97db5453063df2ee2b3e0bd639a92",
-    "red_observed": false,
-    "green_observed": false
+    "red_observed": true,
+    "red_result": "1 passed, 8 failed in 0.11s",
+    "red_reason": "NotImplementedError: STEP5_AUTHORITY_GC_NOT_IMPLEMENTED",
+    "implementation_commit": "23e9aaa4afa0962e658af229a9bc664333736582",
+    "green_observed": true,
+    "green_result": "9 passed in 0.03s",
+    "py_compile": "PASS"
   },
   "acceptance": {
     "canonical_terminal_truth_required": true,
@@ -62,5 +67,5 @@
   },
   "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP5_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "RUNLESS_RED_THEN_IMPLEMENT_GREEN_THEN_EXACT_MERGE_THEN_POST_MERGE_REUSE_THEN_FREEZE_READBACK"
+  "next_legal_action": "RUNLESS_EXACT_HEAD_PROOF_THEN_EXACT_MERGE_THEN_POST_MERGE_REUSE_THEN_FREEZE_READBACK"
 }
