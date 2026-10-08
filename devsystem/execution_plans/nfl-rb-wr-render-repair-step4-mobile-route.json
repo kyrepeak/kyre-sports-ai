@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task_id": "nfl-rb-wr-render-repair-step4-mobile-route",
+  "project": "API2",
+  "workstream": "nfl-rb-wr-render-repair-v1",
+  "step": "4/5",
+  "source_main_sha": "7854d5772333482947f9f2d4bda71cf73ded72b5",
+  "authoritative_branch": "api2/nfl-rb-wr-render-repair-step4-mobile-route",
+  "problem": "Prove on the real public Streamlit surface that NFL Rushing Yards and Receiving Yards render as styled cards across mobile, tablet, and desktop routes rather than falling back to raw jammed text.",
+  "root_cause": "Steps 1-3 repaired and certified presentation ownership and exact data binding, but no current proof artifact certifies the deployed public DOM and responsive route behavior at the actual production URL.",
+  "patch": "Add a verification-only Playwright certificate plus regression tests for public RB/WR card selectors, computed card styling, responsive grid behavior, expected metric labels, raw-text fallback absence, fatal-render absence, and root-overflow absence.",
+  "write_paths": [
+    "devsystem/execution_plans/nfl-rb-wr-render-repair-step4-mobile-route.json",
+    "devsystem/nfl_rb_wr_render_repair_step4_mobile_route_v1.py",
+    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step4-mobile-route.json",
+    "devsystem/task_ledgers/nfl-rb-wr-render-repair-step4-mobile-route.json",
+    "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py"
+  ],
+  "public_target": "https://pickvault.streamlit.app",
+  "markets": ["Rushing Yards", "Receiving Yards"],
+  "viewports": [[390, 844], [768, 1024], [1440, 1000]],
+  "product_runtime_mutations": 0,
+  "router_mutations": 0,
+  "data_api_mutations": 0,
+  "sportsbook_logic_mutations": 0,
+  "projection_math_mutations": 0,
+  "frozen_source_mutations": 0,
+  "thaw_required": false,
+  "scope_lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP4-219",
+  "rollback_anchor": "7854d5772333482947f9f2d4bda71cf73ded72b5",
+  "proof": {
+    "tdd_red_candidate_sha": "aa05f2ff1918272b3aee56ef6c0a41ddcb1a3a06",
+    "tdd_red_failure_class": "STATIC_PROOF",
+    "required_green_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP4_MOBILE_ROUTE_FROZEN"
+}
