@@ -178,7 +178,8 @@ def _verify_merged_artifacts(client) -> dict[str, str]:
 def _freeze_once(client) -> dict:
     registry_head = client.branch_sha(REGISTRY_BRANCH)
     raw = client.content(REGISTRY_PATH, ref=registry_head)
-    current = validate_registry(_decode_json(raw, "NFL_RB_WR_STEP3_REGISTRY"))
+    current = _decode_json(raw, "NFL_RB_WR_STEP3_REGISTRY")
+    validate_registry(current)
     existing = (current.get("entries") or {}).get(FREEZE_TOKEN)
     if existing is not None:
         if (
