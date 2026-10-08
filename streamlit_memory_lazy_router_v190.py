@@ -1,17 +1,18 @@
-"""KYRE Streamlit Router V190 — CFB Game Total universal theme route.
+"""KYRE Streamlit Router V190 — CFB Game Total Page 1 active route.
 
 Additive over frozen V189. Moneyline remains owned by V189/V13, Passing Yards
 by V188/V45. Only the exact active CFB Game Total page advances V181's page
-binding from frozen V33 to presentation-only V34.
+binding to V35, which layers Page-1 multi-source display evidence above the
+preserved V34 presentation and frozen analytics.
 """
 from __future__ import annotations
 
 import streamlit_memory_lazy_router_v181 as game_total_router
 import streamlit_memory_lazy_router_v189 as prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V190 • CFB GAME TOTAL UNIVERSAL THEME"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V190 • CFB GAME TOTAL PAGE1 V2 STEP2"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v189"
-GAME_TOTAL_PAGE = "cfb_game_total_clean_page_v34"
+GAME_TOTAL_PAGE = "cfb_game_total_clean_page_v35"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
