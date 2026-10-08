@@ -4,46 +4,44 @@
   "project": "API2",
   "workstream": "cfb-game-total-page1-v2",
   "step": "4/9",
-  "source_main_sha": "091226472ad03d11d86fa2843fc37c3dc2830023",
-  "state": "RUNTIME_REPAIR_READY_FOR_RUNLESS",
-  "problem": "Production evidence after the original Step-4 freeze still renders the legacy GAME TOTAL ANALYSIS card even though the frozen Step-4 helper already contains the approved PREDICTION + MARKET COMPARISON block.",
-  "root_cause": "The live wrapper chain can still expose the V9/V26 legacy analysis ownership path, so V37 is not the effective visible owner on every production render. Step 4 also was not directly reusing the existing identity-verified Kyre Sports API / FanDuel total-market adapter even though that contract is already available in the repository.",
-  "patch": "Add additive Page V38 over frozen V37. During the render call V38 covers both the V9 base hero seam and V26 analysis seam, reuses the frozen Step-4 prediction/market helper, prefers identity-verified Kyre Sports API / FanDuel totals by exact official event ID, retains the existing exact-event side-market enrichment for spread/moneyline, and advances the Step-4 activation from frozen V37 to effective V38 in the same activation call.",
-  "runtime_repair": {
-    "production_screenshot_verified_mismatch": true,
-    "legacy_visible_owner": "V9/V26 analysis path",
-    "effective_repair_owner": "cfb_game_total_clean_page_v38",
-    "frozen_v37_preserved": true,
-    "frozen_steps_1_3_modified": false,
-    "duplicate_runs": 0,
-    "blind_retries": 0
+  "source_main_sha": "b814704b35aac99a3bfc2db05d84dcbc2d0b9c47",
+  "state": "LIVE_OWNER_REPAIR_READY_FOR_RUNLESS",
+  "problem": "After the V38 runtime-repair merge, exact Runless proof, re-freeze, and a real Streamlit reboot, production still renders the legacy GAME TOTAL ANALYSIS card with no Spread or Moneyline instead of the approved PREDICTION + MARKET COMPARISON block.",
+  "root_cause": "The Step-4 activation advances Router V190.GAME_TOTAL_PAGE only. The deployed router graph contains direct exact-Game-Total ownership at Router V181 and its V160 render owner; downstream wrappers can delegate into those live owners without consuming V190's mutable page target. Production therefore can retain the older V36/V26 presentation even though V38 itself is proven.",
+  "patch": "Keep V38 and all Step-4 model/market helpers unchanged. Extend the Step-4 activation transaction so the CFB-only target cfb_game_total_clean_page_v38 is bound in-memory to Router V190.GAME_TOTAL_PAGE, Router V181.ACTIVE_PAGE, and Router V160.ACTIVE_PAGE before rendering. No router source file, model math, projection math, or unrelated sport is modified.",
+  "public_evidence": {
+    "reboot_completed": true,
+    "legacy_header_still_visible": "GAME TOTAL ANALYSIS",
+    "projected_total_visible": 73.7,
+    "market_total_visible": "Not posted",
+    "over_under_visible": "Waiting on market",
+    "confidence_visible": "79.2%",
+    "spread_missing": true,
+    "moneyline_missing": true,
+    "data_check_visible": "6/12",
+    "public_proof_state": "FAILED"
   },
   "tdd": {
-    "runtime_repair_red": "Focused activation contract failed because the current effective target was V37 instead of V38.",
-    "runtime_repair_green_target": "Original Step-4 regression suite plus focused V38 runtime-repair suite through Runless exact-head proof."
+    "red": "Focused live-owner activation test failed because V181 and V160 were not imported or assigned the V38 target.",
+    "green": "Focused contract passes when V190, V181, and V160 all converge to cfb_game_total_clean_page_v38. Runless must also pass the original Step-4 and V38 regression suites."
   },
   "implementation": {
     "presentation_only": true,
-    "verified_market_total_sources": [
-      "Kyre Sports API / FanDuel exact official event ID",
-      "existing verified display-market fallback"
-    ],
-    "side_market_source": "existing ESPN exact-event market context",
-    "external_sanity_sources": [
-      "DraftKings",
-      "Covers"
-    ],
-    "exact_event_identity_required": true,
-    "generic_nested_odds_trusted": false,
-    "missing_market_copy": "Line not posted",
-    "spread_and_moneyline_always_rendered": true,
-    "activation_baseline": "cfb_game_total_clean_page_v37",
     "effective_activation_target": "cfb_game_total_clean_page_v38",
+    "live_owner_targets": [
+      "streamlit_memory_lazy_router_v190.GAME_TOTAL_PAGE",
+      "streamlit_memory_lazy_router_v181.ACTIVE_PAGE",
+      "streamlit_memory_lazy_router_v160.ACTIVE_PAGE"
+    ],
+    "v38_modified": false,
+    "steps_1_3_modified": false,
     "projection_mutation": false,
     "sportsbook_projection_influence": 0.0,
-    "github_actions_fallback": 0
+    "github_actions_fallback": 0,
+    "duplicate_runs": 0,
+    "blind_retries": 0
   },
-  "proof": "Exact-head Runless original Step-4 regression + runtime-repair tests -> exact-head merge -> merged-tree proof reuse when identical -> frozen-registry forward-port/read-back -> authority release.",
+  "proof": "Exact-head Runless original Step-4 + V38 runtime-repair + live-owner convergence tests -> exact-head merge -> merged-tree proof reuse when identical -> frozen-registry forward-port/read-back -> authority release -> public screenshot must show PREDICTION + MARKET COMPARISON before final 100% claim.",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1",
   "github_actions_fallback": 0
 }
