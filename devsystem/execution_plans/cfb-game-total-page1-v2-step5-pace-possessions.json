@@ -39,8 +39,11 @@
   "thaw_required": false,
   "github_actions_fallback": 0,
   "proof_mode": "runless",
-  "proof_generation": 2,
-  "prior_admission_failure": "RUNLESS_SCOPE_LEASE_NOT_LIVE",
+  "proof_generation": 3,
+  "prior_failures": [
+    "R1: RUNLESS_SCOPE_LEASE_NOT_LIVE before static proof",
+    "R2: certification test expected a split SportsDataverse URL as one contiguous source literal"
+  ],
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
   "scope_lease_id": "SCOPE-LEASE-C52D38FE9D8B0EB537998E00",
@@ -48,6 +51,6 @@
   "scope_lease_revision": 355,
   "scope_lease_state_hash": "ab68dfb9f89646a990bbd7b8ba705312c670cc27fbdc2cbff4f20a73e7fb0db0",
   "scope_lease_expires_at_utc": "2026-10-08T20:24:00Z",
-  "authorization_id": "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP5-PACE-POSSESSIONS-R2",
+  "authorization_id": "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP5-PACE-POSSESSIONS-R3",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
