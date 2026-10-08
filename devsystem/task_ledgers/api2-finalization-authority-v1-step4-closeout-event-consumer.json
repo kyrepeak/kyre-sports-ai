@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "task_id": "api2-finalization-authority-v1-step4-closeout-event-consumer",
+  "title": "API 2 Finalization Authority V1 Step 4 — Closeout Event Consumer",
+  "project": "API2",
+  "workstream": "api2-finalization-authority-v1-step4",
+  "step": "4/6",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "base_main_sha": "85bfd1031b12318c64ca090be5fd5807f57a2f49",
+  "branch": "api2-finalization-authority-v1-step4-closeout-event-consumer-r1",
+  "problem": "Tail-SLA/Event Resume can correctly detect and consume a material resume event while still stopping at a next-action report, leaving the final legal closeout action unconsumed.",
+  "root_cause": "The existing Runless event-resume bridge is intentionally detection/claim-only and grants no mutation authority. There is no single consumer above the closeout path that requires final Step 2A global authority, binds the resumed action to the same target, executes it once, and records a duplicate-resistant receipt.",
+  "patch": "Add a pure Closeout Event Consumer that checks canonical terminal truth first, accepts only RUNLESS_RESUME_CONSUMED, requires GLOBAL_EXECUTION_AUTHORIZED for the same action/target, executes one caller-supplied legal action, records a deterministic consumer receipt, blocks replay, and never treats Tail-SLA telemetry as authority.",
+  "mutation_scope": [
+    "devsystem/closeout_event_consumer_v1.py",
+    "tests/test_devsystem_closeout_event_consumer_v1.py",
+    "devsystem/runless_proof_plans/api2-finalization-authority-v1-step4-closeout-event-consumer.json",
+    "devsystem/execution_plans/api2-finalization-authority-v1-step4-closeout-event-consumer.json",
+    "devsystem/task_ledgers/api2-finalization-authority-v1-step4-closeout-event-consumer.json",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step4-closeout-event-consumer.md"
+  ],
+  "forbidden_scope": [
+    "sports product runtime",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "qualification",
+    "sportsbook",
+    "other sports",
+    "frozen Step 1 artifacts",
+    "frozen Step 2 artifacts",
+    "frozen Step 3 artifacts"
+  ],
+  "step2a": {
+    "single_authority": true,
+    "branch": "api2-finalization-authority-v1-step4-closeout-event-consumer-r1",
+    "lease_id": "SCOPE-LEASE-8D92DC5205FF91057401E702",
+    "lease_owner": "api2-finalization-authority-v1-step4",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "unrelated_active_thaws_preserved": true,
+    "step3_frozen_checkpoint_verified": true
+  },
+  "tdd": {
+    "red_candidate_sha": "90484a772afe12a94f543743d65629f157bc31c2",
+    "red_observed": true,
+    "red_failure_class": "STATIC_PROOF",
+    "red_reason": "ImportError: closeout_event_consumer_v1 did not exist",
+    "implementation_commit": "35a993e6b19660a6d77e4b22fbe0cc22c3ba35d7",
+    "local_green_result": "8 passed in 0.05s",
+    "local_py_compile": "PASS"
+  },
+  "acceptance": {
+    "terminal_truth_wins_before_executor": true,
+    "resume_ready_without_consumption_blocked": true,
+    "global_step2a_required": true,
+    "global_step2a_scope_binding_required": true,
+    "one_executor_call_max": 1,
+    "successful_action_receipt_deterministic": true,
+    "duplicate_consumer_key_blocked": true,
+    "failed_action_not_blind_retried": true,
+    "telemetry_detection_only": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP4_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RUNLESS_EXACT_HEAD_PROOF_THEN_EXACT_MERGE_THEN_POST_MERGE_REUSE_THEN_FREEZE_READBACK"
+}
