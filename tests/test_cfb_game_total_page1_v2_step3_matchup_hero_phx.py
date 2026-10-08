@@ -46,16 +46,17 @@ def test_step3_phoenix_time_and_future_only_contract() -> None:
 
 def test_step3_matchup_hero_visual_contract() -> None:
     page = _read(PAGE)
+    visual = page + "\n" + _read(PRESENTATION)
     assert "import cfb_game_total_clean_page_v35 as prior" in page
     assert "import cfb_game_total_clean_page_v11 as day_owner" in page
     assert "import cfb_game_total_clean_page_v14 as selector_owner" in page
     assert "import cfb_game_total_clean_page_v25 as hero_owner" in page
     assert "PAGE1 V2 STEP3 MATCHUP HERO PHOENIX" in page
-    assert "Overview" in page
-    assert "Full Analysis" in page
-    assert "data-testid=\"gt236-matchup-hero\"" in page
-    assert "data-testid=\"gt236-view-tabs\"" in page
-    assert "PHX" in page or "AZ" in page
+    assert "Overview" in visual
+    assert "Full Analysis" in visual
+    assert "data-testid=\"gt236-matchup-hero\"" in visual
+    assert "data-testid=\"gt236-view-tabs\"" in visual
+    assert "PHX" in visual or "AZ" in visual
     assert "MAY_MODIFY_PROJECTION = False" in page
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page
 
