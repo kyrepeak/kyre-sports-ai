@@ -29,29 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "cfb_game_total_page1_v2_step4_activation.py": {
-          "from_blob": "9fc633200a38a7f0c560696f9a57cb2c0ed09c0f",
-          "to_blob": "4b347939afe92feea0365068265ecf8887da0360"
-        },
-        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": {
-          "from_blob": "35999cee728a22394c869622651e884effbb58b5",
-          "to_blob": "7b4e473dc700cbcee8f6fab08ade6c61db88dabe"
-        },
-        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": {
-          "from_blob": "a454afcbb0e77084c4d9628d3ba74dc8201a98b3",
-          "to_blob": "8de9a5c0a2d2865db08a3f4b3354a741c8020a81"
-        },
-        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": {
-          "from_blob": "62caa31ab79084df184896813dde4726bda04325",
-          "to_blob": "f52d1977494a822e923bfe6053e120e6447c1675"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "861d732878b5478364e5fc680a81ed165a08b944",
-      "thaw_id": "THAW-CFB-GAME-TOTAL-PAGE1-V2-STEP4-RUNTIME-REPAIR-R1"
     }
   ],
   "entries": {
@@ -366,17 +343,19 @@
     "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PREDICTION_MARKET_FROZEN": {
       "artifacts": {
         "cfb_game_total_clean_page_v37.py": "6071b8437f25560996e4922705efc3400ad5ebdd",
+        "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
         "cfb_game_total_page1_step4_prediction_market_v1.py": "6665b304009fb047482151abe34713250c597a92",
         "cfb_game_total_page1_step4_side_market_v1.py": "249f123885e7a64c2ab7ef8d3fe50a8c03c3129f",
-        "cfb_game_total_page1_v2_step4_activation.py": "9fc633200a38a7f0c560696f9a57cb2c0ed09c0f",
-        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "35999cee728a22394c869622651e884effbb58b5",
-        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "a454afcbb0e77084c4d9628d3ba74dc8201a98b3",
-        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": "62caa31ab79084df184896813dde4726bda04325",
+        "cfb_game_total_page1_v2_step4_activation.py": "4b347939afe92feea0365068265ecf8887da0360",
+        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "7b4e473dc700cbcee8f6fab08ade6c61db88dabe",
+        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "8de9a5c0a2d2865db08a3f4b3354a741c8020a81",
+        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": "f52d1977494a822e923bfe6053e120e6447c1675",
         "kyre_universal_components_v1.py": "cd9062290c3916e453451f0d3cfd83b93b3510a3",
-        "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py": "78c0888dc0744f07a179d4cf6d5aefc18b9035a2"
+        "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py": "78c0888dc0744f07a179d4cf6d5aefc18b9035a2",
+        "tests/test_cfb_game_total_page1_v2_step4_runtime_repair.py": "489e2f7bc96931e2243d863b66475e15ce0aa5c8"
       },
       "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PREDICTION_MARKET_FROZEN",
-      "source_main_sha": "091226472ad03d11d86fa2843fc37c3dc2830023",
+      "source_main_sha": "b814704b35aac99a3bfc2db05d84dcbc2d0b9c47",
       "status": "FROZEN"
     },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
@@ -2569,9 +2548,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 198,
+  "revision": 199,
   "schema_version": 1,
-  "source_main_sha": "091226472ad03d11d86fa2843fc37c3dc2830023",
-  "state_hash": "4bbf4dba17d1ef791c3971002179ef23f8ff276959c4bc77e6676cd1681fc8d5",
+  "source_main_sha": "b814704b35aac99a3bfc2db05d84dcbc2d0b9c47",
+  "state_hash": "9c47807df0f8c0d06625339475c2c59a24627466d4b7f95cfcc5fcc6ef506c91",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
