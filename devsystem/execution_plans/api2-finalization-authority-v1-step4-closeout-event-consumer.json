@@ -1,0 +1,82 @@
+{
+  "version": "API2_FINALIZATION_AUTHORITY_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "API 2 — Finalization Authority & 100% Convergence V1",
+  "task": "finalization-authority-v1",
+  "step": "4/6",
+  "mission": "Closeout Event Consumer",
+  "base_main_sha": "85bfd1031b12318c64ca090be5fd5807f57a2f49",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "devsystem/closeout_event_consumer_v1.py",
+      "devsystem/execution_plans/api2-finalization-authority-v1-step4-closeout-event-consumer.json",
+      "devsystem/runless_proof_plans/api2-finalization-authority-v1-step4-closeout-event-consumer.json",
+      "devsystem/task_ledgers/api2-finalization-authority-v1-step4-closeout-event-consumer.json",
+      "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step4-closeout-event-consumer.md",
+      "tests/test_devsystem_closeout_event_consumer_v1.py"
+    ]
+  },
+  "contract": {
+    "canonical_terminal_truth_first": true,
+    "runless_resume_must_be_consumed": true,
+    "final_step2a_global_authority_required": true,
+    "step2a_action_target_binding_required": true,
+    "one_closeout_action_max": 1,
+    "duplicate_consumer_receipt_blocks_reexecution": true,
+    "tail_sla_telemetry_detection_only": true,
+    "blind_retry_forbidden": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "github_actions_fallback": 0
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "authoritative_registry_required": true,
+    "live_scope_lease_required": true,
+    "lease_id": "SCOPE-LEASE-236118E524AC04B3EE928E70",
+    "lease_owner": "api2-finalization-authority-v1-step4",
+    "rollback_main_sha": "85bfd1031b12318c64ca090be5fd5807f57a2f49",
+    "step3_frozen_checkpoint_required": "API2_FINALIZATION_AUTHORITY_V1_STEP3_FROZEN",
+    "unrelated_active_thaws_preserved": true
+  },
+  "tdd": {
+    "red_candidate_sha": "90484a772afe12a94f543743d65629f157bc31c2",
+    "red_observed": true,
+    "red_failure_class": "STATIC_PROOF",
+    "red_command": "python -m pytest -q tests/test_devsystem_closeout_event_consumer_v1.py",
+    "red_reason": "ImportError because devsystem.closeout_event_consumer_v1 did not exist",
+    "implementation_commit": "35a993e6b19660a6d77e4b22fbe0cc22c3ba35d7",
+    "green_observed_locally": true,
+    "green_result": "8 passed in 0.05s",
+    "py_compile": "PASS"
+  },
+  "acceptance": {
+    "canonical_terminal_short_circuit": true,
+    "resume_ready_without_consumption_cannot_execute": true,
+    "step2a_denial_cannot_execute": true,
+    "step2a_scope_mismatch_cannot_execute": true,
+    "valid_closeout_executes_exactly_once": true,
+    "deterministic_consumer_receipt_emitted": true,
+    "duplicate_closeout_consumption_blocked": true,
+    "executor_failure_is_single_attempt": true,
+    "telemetry_cannot_grant_authority": true,
+    "product_runtime_changed": false,
+    "sports_model_changed": false
+  },
+  "completion_contract": {
+    "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP4_FROZEN",
+    "after_freeze": "STEP4_GREEN_FROZEN",
+    "total_steps": 6,
+    "overall_progress_percent_after_step": 66.7
+  }
+}
