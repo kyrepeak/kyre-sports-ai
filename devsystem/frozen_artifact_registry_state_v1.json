@@ -2162,6 +2162,18 @@
       "sportsbook_mutation": false,
       "status": "FROZEN"
     },
+    "NFL_RB_WR_RENDER_REPAIR_V1_STEP1_ROOT_CAUSE_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/nfl-rb-wr-render-repair-step1-root-cause.json": "a1e57d4dac39999d063060338b055406644970a8",
+        "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step1-root-cause.json": "78d3fbd2d7187097f55e81a0140c6c720a817cdc",
+        "devsystem/task_ledgers/nfl-rb-wr-render-repair-step1-root-cause.json": "d3da30a3cd4fbdeafddbfad015b0dd5383f52fa1",
+        "docs/superpowers/plans/2026-10-08-nfl-rb-wr-render-repair-step1-root-cause.md": "dee721a304e69baa0d04f074008de228330180a0",
+        "tests/test_nfl_rb_wr_render_repair_step1_root_cause.py": "97cb759a29267cf394cb4501d3fc7ef449bc0d80"
+      },
+      "checkpoint_id": "NFL_RB_WR_RENDER_REPAIR_V1_STEP1_ROOT_CAUSE_FROZEN",
+      "source_main_sha": "32366f629fd7764d99a1f715da26a2305c9f4a18",
+      "status": "FROZEN"
+    },
     "REGISTRY_RACE_V1_STEP1": {
       "artifacts": {
         ".github/workflows/registry-race-v1-step1-reconciliation-barrier.yml": "ca4ca47c7fecece8adf672071b21d2d3e9fac663",
@@ -2614,9 +2626,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 206,
+  "revision": 207,
   "schema_version": 1,
-  "source_main_sha": "a1dfac558c76253f99e2279dd7cb45e944d913a6",
-  "state_hash": "cca4b20727ef97ef8e720c2bd0b1905e85b3de383331fc862a6fda4b273b7cd6",
+  "source_main_sha": "32366f629fd7764d99a1f715da26a2305c9f4a18",
+  "state_hash": "bc62d4ce566970b7da795af54926f85392ff06b9abf9ce05a074efcebccb5614",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
