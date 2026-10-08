@@ -4,7 +4,7 @@
   "source_main_sha": "7854d5772333482947f9f2d4bda71cf73ded72b5",
   "commands": [
     ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py"],
-    ["python", "devsystem/nfl_rb_wr_render_repair_step4_mobile_route_v1.py", "--public"],
+    ["python", "-m", "devsystem.nfl_rb_wr_render_repair_step4_mobile_route_v1", "--public"],
     ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"],
     ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"]
   ],
