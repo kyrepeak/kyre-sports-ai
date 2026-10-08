@@ -9,6 +9,7 @@ from __future__ import annotations
 from html import escape
 from typing import Iterable
 
+from cfb_game_total_page1_v2_step4_activation import activate_step4_page
 from kyre_universal_theme_v1 import THEME_VERSION
 
 COMPONENT_VERSION = "KYRE UNIVERSAL COMPONENTS V1 • BLACK + GLACIER BLUE"
@@ -106,6 +107,7 @@ _COMPONENT_CSS = r"""
 """
 
 def build_components_css() -> str:
+    activate_step4_page()
     return _COMPONENT_CSS
 
 def build_card(title: str, body: str, *, eyebrow: str = "") -> str:
