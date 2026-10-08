@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "task_id": "cfb-game-total-page1-v2-step3-matchup-hero-phx",
+  "project": "API2",
+  "workstream": "cfb-game-total-page1-v2",
+  "step": "3/9",
+  "source_main_sha": "0244ed0b203ad2996cb6d79409f69ba151029008",
+  "goal": "Replace the old CFB Game Total Page-1 matchup hero with the approved overview hero, normalize visible matchup times to America/Phoenix, and expose future-only day choices while preserving frozen Step 1/2 behavior and all model/projection math.",
+  "write_paths": [
+    "cfb_game_total_page1_step3_presentation_v1.py",
+    "cfb_game_total_clean_page_v36.py",
+    "cfb_game_total_page1_v2_step3_activation.py",
+    "kyre_universal_shell_runtime_v1.py",
+    "tests/test_cfb_game_total_page1_v2_step3_matchup_hero_phx.py",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step3-matchup-hero-phx.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step3-matchup-hero-phx.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step3-matchup-hero-phx.json",
+    "docs/superpowers/plans/2026-10-07-cfb-game-total-page1-v2-step3-matchup-hero-phx.md"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_clean_page_v35.py",
+    "cfb_game_total_page1_multisource_v1.py",
+    "streamlit_memory_lazy_router_v190.py"
+  ],
+  "projection_mutation_allowed": false,
+  "sportsbook_projection_influence": 0.0,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless"
+}
