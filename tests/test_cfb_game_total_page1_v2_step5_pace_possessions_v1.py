@@ -60,7 +60,8 @@ def test_step5_is_multisource_and_espn_is_last_resort_only() -> None:
     engine = read("cfb_game_total_step5_pace_v1.py")
     assert "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE" in engine
     assert "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE" in engine
-    assert "sportsdataverse/cfbfastR-cfb-raw" in engine
+    assert "raw.githubusercontent.com/sportsdataverse/" in engine
+    assert "cfbfastR-cfb-raw/main/cfb/json/final" in engine
     assert "Punt & Rally" in engine
     assert "ESPN summary is a last-resort recovery only" in engine
     assert 'row["delivery"] = "espn_summary_last_resort"' in engine
