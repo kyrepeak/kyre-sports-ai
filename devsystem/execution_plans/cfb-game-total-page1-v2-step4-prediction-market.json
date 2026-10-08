@@ -4,32 +4,34 @@
   "project": "API2",
   "workstream": "cfb-game-total-page1-v2",
   "step": "4/9",
-  "source_main_sha": "8ad570f765daf0884fe6f963f10982b05a414b60",
-  "goal": "Replace only the legacy Game Total Analysis summary with the approved compact Prediction + Market Comparison block while preserving frozen Step 1-3 presentation/data/model behavior.",
+  "source_main_sha": "091226472ad03d11d86fa2843fc37c3dc2830023",
+  "goal": "Repair Step 4 runtime ownership so production renders the approved Prediction + Market Comparison block, while adding identity-verified Kyre Sports API / FanDuel total context and preserving exact-event side markets, frozen Step 1-3 behavior, and 0.0% sportsbook projection influence.",
   "write_paths": [
-    "cfb_game_total_page1_step4_prediction_market_v1.py",
-    "cfb_game_total_page1_step4_side_market_v1.py",
-    "cfb_game_total_clean_page_v37.py",
+    "cfb_game_total_clean_page_v38.py",
     "cfb_game_total_page1_v2_step4_activation.py",
-    "kyre_universal_components_v1.py",
-    "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py",
+    "tests/test_cfb_game_total_page1_v2_step4_runtime_repair.py",
     "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json",
     "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json",
     "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json"
   ],
   "protected_dependencies": [
+    "cfb_game_total_page1_step4_prediction_market_v1.py",
+    "cfb_game_total_page1_step4_side_market_v1.py",
+    "cfb_game_total_clean_page_v37.py",
     "cfb_game_total_clean_page_v36.py",
-    "cfb_game_total_clean_page_v35.py",
     "cfb_game_total_clean_page_v26.py",
     "cfb_game_total_clean_page_v11.py",
+    "cfb_over_under_market_adapter_v1.py",
     "cfb_top_picks_market_context_v1.py",
     "cfb_game_total_page1_step3_presentation_v1.py",
     "cfb_game_total_page1_v2_step3_activation.py",
+    "kyre_universal_components_v1.py",
     "kyre_universal_shell_runtime_v1.py",
     "streamlit_memory_lazy_router_v190.py"
   ],
   "projection_mutation_allowed": false,
   "sportsbook_projection_influence": 0.0,
   "github_actions_fallback": 0,
-  "proof_mode": "runless"
+  "proof_mode": "runless",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
