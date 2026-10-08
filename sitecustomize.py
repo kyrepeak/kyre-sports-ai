@@ -1,8 +1,8 @@
-"""Guarded one-shot launcher for the CFB Step-4 live-owner repair.
+"""Guarded one-shot launchers for CFB Step-4 Runless control actions.
 
-Inert unless the exact Runless uvicorn service is explicitly armed with
-RPP_CFB_STEP4_REPAIR_MODE. The trigger is removed from this process environment
-before proof subprocesses start, preventing recursive/duplicate execution.
+All launchers are inert unless the exact Runless uvicorn service is explicitly
+armed. Triggers are removed from the process environment before worker threads
+start, preventing recursive/duplicate execution in child processes.
 """
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ import traceback
 SERVICE_ID = "srv-db23fee7bikc73ca8ua0"
 MODE_ENV = "RPP_CFB_STEP4_REPAIR_MODE"
 MERGED_ENV = "RPP_CFB_STEP4_REPAIR_MERGED_SHA"
+PUBLIC_CLOSEOUT_ENV = "RPP_CFB_STEP4_PUBLIC_REPAIR_CLOSEOUT_ON_START"
 
 
 def _configure_repair(repair) -> None:
@@ -100,6 +101,32 @@ def _run(mode: str, merged_sha: str) -> None:
         print("CFB_STEP4_REPAIR_CONTROL_RESULT=" + json.dumps(packet, sort_keys=True), flush=True)
 
 
+def _run_public_closeout() -> None:
+    try:
+        from runless_proof_plane.config import Settings
+        from runless_proof_plane.github_app import GithubAppAuth
+        from runless_proof_plane.github_client import GithubClient
+        from runless_proof_plane.cfb_game_total_page1_v2_step4_public_repair_closeout import run_and_print
+
+        settings = Settings.from_env()
+        if settings.bootstrap:
+            raise RuntimeError("CFB_STEP4_PUBLIC_CLOSEOUT_FULL_RUNLESS_MODE_REQUIRED")
+        client = GithubClient(GithubAppAuth(settings), settings.repository)
+        run_and_print(client)
+    except Exception as exc:
+        packet = {
+            "status": "FAIL",
+            "error": type(exc).__name__,
+            "detail": str(exc)[:700],
+            "traceback": traceback.format_exc(limit=8)[-2600:],
+        }
+        print(
+            "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PUBLIC_REPAIR_CLOSEOUT="
+            + json.dumps(packet, sort_keys=True),
+            flush=True,
+        )
+
+
 def _is_exact_uvicorn_service() -> bool:
     argv0 = os.path.basename(sys.argv[0] or "").lower()
     return (
@@ -111,10 +138,17 @@ def _is_exact_uvicorn_service() -> bool:
 if _is_exact_uvicorn_service():
     _mode = os.environ.pop(MODE_ENV, "").strip().lower()
     _merged = os.environ.pop(MERGED_ENV, "").strip().lower()
+    _public_closeout = os.environ.pop(PUBLIC_CLOSEOUT_ENV, "").strip()
     if _mode:
         threading.Thread(
             target=_run,
             args=(_mode, _merged),
             daemon=True,
             name="cfb-step4-runtime-repair-control",
+        ).start()
+    if _public_closeout == "1":
+        threading.Thread(
+            target=_run_public_closeout,
+            daemon=True,
+            name="cfb-step4-public-repair-closeout",
         ).start()
