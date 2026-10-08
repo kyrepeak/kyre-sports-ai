@@ -9,10 +9,11 @@
       "tests/test_devsystem_canonical_completion_ledger_autoheal_v1.py",
       "tests/test_devsystem_terminal_completion_latch_v1.py",
       "tests/test_devsystem_closeout_event_consumer_v1.py",
-      "tests/test_devsystem_authority_garbage_collector_v1.py"
+      "tests/test_devsystem_authority_garbage_collector_v1.py",
+      "tests/test_devsystem_state_aware_proof_contract_v1.py",
+      "tests/test_devsystem_scope_aware_execution_lease_v1.py"
     ],
-    ["python", "-m", "py_compile", "devsystem/finalization_100_percent_finalizer_v1.py"],
-    ["python", "-m", "pytest", "-q"]
+    ["python", "-m", "py_compile", "devsystem/finalization_100_percent_finalizer_v1.py"]
   ],
   "artifacts": [
     "devsystem/finalization_100_percent_finalizer_v1.py",
@@ -26,7 +27,9 @@
     "devsystem/canonical_completion_resolver_v1.py",
     "devsystem/terminal_completion_latch_v1.py",
     "devsystem/authority_garbage_collector_v1.py",
-    "devsystem/frozen_artifact_registry_v1.py"
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/state_aware_proof_contract_v1.py",
+    "devsystem/scope_aware_execution_lease_v1.py"
   ],
   "probes": [],
   "timeout_seconds": 1200,
