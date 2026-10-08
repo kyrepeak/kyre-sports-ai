@@ -17,7 +17,6 @@ SERVICE_ID = "srv-db23fee7bikc73ca8ua0"
 MODE_ENV = "RPP_CFB_STEP4_REPAIR_MODE"
 MERGED_ENV = "RPP_CFB_STEP4_REPAIR_MERGED_SHA"
 PUBLIC_CLOSEOUT_ENV = "RPP_CFB_STEP4_PUBLIC_REPAIR_CLOSEOUT_ON_START"
-SIDE_MARKET_CLOSEOUT_ENV = "RPP_CFB_STEP4_SIDE_MARKET_CLOSEOUT_ON_START"
 
 
 def _configure_repair(repair) -> None:
@@ -133,36 +132,6 @@ def _run_public_closeout() -> None:
         )
 
 
-def _run_side_market_closeout() -> None:
-    try:
-        # Serialize after all frozen startup closeout hooks. The shared Task-17
-        # closeout engine uses temporary module bindings, so simultaneous startup
-        # adapters must never overlap.
-        time.sleep(20)
-        from runless_proof_plane.config import Settings
-        from runless_proof_plane.github_app import GithubAppAuth
-        from runless_proof_plane.github_client import GithubClient
-        from runless_proof_plane.cfb_game_total_page1_v2_step4_side_market_completeness_closeout import run_and_print
-
-        settings = Settings.from_env()
-        if settings.bootstrap:
-            raise RuntimeError("CFB_STEP4_SIDE_MARKET_CLOSEOUT_FULL_RUNLESS_MODE_REQUIRED")
-        client = GithubClient(GithubAppAuth(settings), settings.repository)
-        run_and_print(client)
-    except Exception as exc:
-        packet = {
-            "status": "FAIL",
-            "error": type(exc).__name__,
-            "detail": str(exc)[:700],
-            "traceback": traceback.format_exc(limit=8)[-2600:],
-        }
-        print(
-            "CFB_GAME_TOTAL_PAGE1_V2_STEP4_SIDE_MARKET_COMPLETENESS_CLOSEOUT="
-            + json.dumps(packet, sort_keys=True),
-            flush=True,
-        )
-
-
 def _is_exact_uvicorn_service() -> bool:
     argv0 = os.path.basename(sys.argv[0] or "").lower()
     return (
@@ -175,7 +144,6 @@ if _is_exact_uvicorn_service():
     _mode = os.environ.pop(MODE_ENV, "").strip().lower()
     _merged = os.environ.pop(MERGED_ENV, "").strip().lower()
     _public_closeout = os.environ.pop(PUBLIC_CLOSEOUT_ENV, "").strip()
-    _side_market_closeout = os.environ.pop(SIDE_MARKET_CLOSEOUT_ENV, "").strip()
     if _mode:
         threading.Thread(
             target=_run,
@@ -188,10 +156,4 @@ if _is_exact_uvicorn_service():
             target=_run_public_closeout,
             daemon=True,
             name="cfb-step4-public-repair-closeout",
-        ).start()
-    if _side_market_closeout == "1":
-        threading.Thread(
-            target=_run_side_market_closeout,
-            daemon=True,
-            name="cfb-step4-side-market-closeout",
         ).start()
