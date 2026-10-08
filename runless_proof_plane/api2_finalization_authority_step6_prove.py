@@ -1,21 +1,15 @@
 from __future__ import annotations
 
-import contextlib
-import io
 import json
-import os
-
-import pytest
 
 from .models import ProofRequest
 from .prove import execute_proof_request
-from .workspace import CandidateWorkspace
 
 TASK_ID = "api2-finalization-authority-v1-step6-100-percent-finalizer"
 WORKSTREAM = "api2-finalization-authority-v1-step6"
-CANDIDATE_SHA = "cdd351dc9b7b0c27ce640d8c41aaee0279ea9684"
+CANDIDATE_SHA = "4113a20ed0ecf75132b53f45beda6825cca5c8c3"
 LEASE_ID = "SCOPE-LEASE-0B3BDBFBD1355D489BE0C914"
-AUTHORIZATION_ID = "API2-FINALIZATION-AUTHORITY-V1-STEP6-RUNLESS-GREEN-R4"
+AUTHORIZATION_ID = "API2-FINALIZATION-AUTHORITY-V1-STEP6-RUNLESS-GREEN-R5-SCOPE-AWARE"
 EXPECTED_MAIN_SHA = "6c193bab72e6b55e1e39558d3322887643b78a87"
 
 
@@ -35,30 +29,6 @@ def execute(app):
         orchestrator=app.state.orchestrator,
         receipts=app.state.receipts,
     )
-
-
-def diagnose(app):
-    client = app.state.github_client
-    token = client.auth.installation_token()
-    repository = app.state.settings.repository
-    repository_url = f"https://x-access-token@github.com/{repository}.git"
-    buffer = io.StringIO()
-    original_cwd = os.getcwd()
-    with CandidateWorkspace(repository_url, CANDIDATE_SHA, token=token) as workspace:
-        try:
-            os.chdir(workspace.path)
-            with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
-                returncode = pytest.main(["-q", "--maxfail=1"])
-        finally:
-            os.chdir(original_cwd)
-    output = buffer.getvalue()
-    return {
-        "status": "PASS" if int(returncode) == 0 else "FAIL",
-        "returncode": int(returncode),
-        "candidate_sha": CANDIDATE_SHA,
-        "command": "pytest -q --maxfail=1",
-        "output_tail": output[-12000:],
-    }
 
 
 def install_startup(app):
