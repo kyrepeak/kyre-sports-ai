@@ -1,39 +1,11 @@
 {
   "generation": 210,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-08T19:41:00Z",
-      "expires_at_utc": "2026-10-08T20:41:00Z",
-      "generation": 210,
-      "heartbeat_at_utc": "2026-10-08T19:41:00Z",
-      "lease_id": "SCOPE-LEASE-86D1BF4390BC3586AFFD01EA",
-      "owner_id": "api2-cfb-step5-pace-closeout-r2",
-      "scope": {
-        "dependency_tokens": [],
-        "exclusive": false,
-        "resource_identity": {
-          "event_resume_state_hash": "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789",
-          "main_sha": "a1dfac558c76253f99e2279dd7cb45e944d913a6",
-          "registry_state_hash": "5608b396896c3a1aa5c5f3eae815c8f22141a1d4110593baa1f02ee640a5189b"
-        },
-        "shared_resources": [],
-        "write_paths": [
-          "cfb_game_total_clean_page_v17.py",
-          "cfb_game_total_step5_pace_v1.py",
-          "data/cfb_step5_pbp_snapshot_v1.json",
-          "devsystem/execution_plans/cfb-game-total-page1-v2-step5-pace-possessions.json",
-          "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step5-pace-possessions.json",
-          "devsystem/task_ledgers/cfb-game-total-page1-v2-step5-pace-possessions.json",
-          "tests/test_cfb_game_total_page1_v2_step5_pace_possessions_v1.py"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 359,
+  "revision": 360,
   "schema_version": 1,
-  "state_hash": "7d3d4ece3953a54903f6ff547eccb77253234c42323cb9fbb3969785657be59b",
+  "state_hash": "daf4f9530feb53629b321d111ed555ed74b9953450ee833c60e3f34e92fa2030",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
