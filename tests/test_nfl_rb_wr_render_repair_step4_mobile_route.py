@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 import importlib.util
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -84,6 +85,58 @@ def test_computed_card_style_contract_rejects_unstyled_and_accepts_cards():
     }) is False
 
 
+def test_certification_slate_is_next_sunday():
+    mod = _load_module()
+    assert mod._next_sunday(date(2026, 10, 8)).isoformat() == "2026-10-11"
+    assert mod._next_sunday(date(2026, 10, 11)).isoformat() == "2026-10-11"
+
+
+def test_route_sets_cert_slate_before_waiting_for_cards(monkeypatch):
+    mod = _load_module()
+    frame = object()
+    full_text = " | ".join(mod.ROUTES["Rushing Yards"]["labels"])
+    calls: list[str] = []
+
+    class FakePage:
+        def set_viewport_size(self, _viewport):
+            return None
+
+        def goto(self, _url, *, wait_until, timeout):
+            assert wait_until == "domcontentloaded"
+            assert timeout == 120_000
+            return None
+
+    monkeypatch.setattr(mod, "_set_cert_slate_date", lambda page, market: calls.append("date") or "2026-10-11")
+    monkeypatch.setattr(mod, "_wait_for_cards", lambda page, market: (calls.append("cards") or frame, full_text))
+    monkeypatch.setattr(mod, "_all_frame_text", lambda page: full_text)
+    monkeypatch.setattr(mod, "_card_text", lambda _frame, _selector: full_text)
+    monkeypatch.setattr(mod, "_card_style", lambda _frame, _selector: {
+        "count": 1,
+        "border_style": "solid",
+        "border_width": "1px",
+        "border_radius": "17px",
+        "background_image": "linear-gradient(rgb(11, 23, 18), rgb(10, 20, 17))",
+        "background_color": "rgba(0, 0, 0, 0)",
+    })
+    monkeypatch.setattr(mod, "_grid_style", lambda _frame, _selector: {
+        "count": 1,
+        "display": "grid",
+        "grid_template_columns": "360px",
+        "column_gap": "9px",
+        "row_gap": "9px",
+    })
+    monkeypatch.setattr(mod, "_root_overflow", lambda page: (False, "worst_delta=0"))
+
+    result = mod._verify_route_viewport(
+        FakePage(),
+        "https://pickvault.streamlit.app",
+        "Rushing Yards",
+        (390, 844),
+    )
+    assert result["status"] == "GREEN"
+    assert calls[:2] == ["date", "cards"]
+
+
 def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
     """A card may attach after _wait_for_cards captured its last text snapshot."""
     mod = _load_module()
@@ -100,6 +153,7 @@ def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
             assert timeout == 120_000
             return None
 
+    monkeypatch.setattr(mod, "_set_cert_slate_date", lambda page, market: "2026-10-11")
     monkeypatch.setattr(mod, "_wait_for_cards", lambda page, market: (frame, stale_text))
     monkeypatch.setattr(mod, "_all_frame_text", lambda page: fresh_text)
     monkeypatch.setattr(mod, "_card_style", lambda _frame, _selector: {
