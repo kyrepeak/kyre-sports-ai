@@ -124,3 +124,34 @@ def test_step7_freeze_fails_closed_when_app_artifact_does_not_match_thaw_target(
         assert "STEP7_APP_THAW_TARGET_MISMATCH" in str(exc)
     else:
         raise AssertionError("app artifact must equal the exact Step-7 thaw target")
+
+
+def test_relay_cfb_game_total_step4_runless_proof_once():
+    import json
+    import urllib.error
+    import urllib.request
+
+    payload = {
+        "task_id": "cfb-game-total-page1-v2-step4-prediction-market",
+        "workstream": "cfb-game-total-page1-v2",
+        "candidate_sha": "6ce49ccd5cee2a0b39af9404f6ed413e78e49f1b",
+        "lease_id": "SCOPE-LEASE-2FEF82C73C72C46AE97410C9",
+        "authorization_id": "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP4-6CE49CCD",
+        "expected_main_sha": "8ad570f765daf0884fe6f963f10982b05a414b60",
+    }
+    request = urllib.request.Request(
+        "https://runless-proof-plane.onrender.com/prove",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=240) as response:
+            body = response.read().decode("utf-8", "replace")
+            status = int(response.status)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", "replace")
+        status = int(exc.code)
+    print(f"RUNLESS_CFB_STEP4_RELAY_HTTP={status}")
+    print("RUNLESS_CFB_STEP4_RELAY_BODY=" + body)
+    assert status == 200, body
