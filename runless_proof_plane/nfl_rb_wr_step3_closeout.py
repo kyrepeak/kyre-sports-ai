@@ -176,7 +176,8 @@ def _verify_merged_artifacts(client) -> dict[str, str]:
 
 
 def _freeze_once(client) -> dict:
-    raw = client.content(REGISTRY_PATH, ref=REGISTRY_BRANCH)
+    registry_head = client.branch_sha(REGISTRY_BRANCH)
+    raw = client.content(REGISTRY_PATH, ref=registry_head)
     current = validate_registry(_decode_json(raw, "NFL_RB_WR_STEP3_REGISTRY"))
     existing = (current.get("entries") or {}).get(FREEZE_TOKEN)
     if existing is not None:
@@ -198,7 +199,12 @@ def _freeze_once(client) -> dict:
         int(current.get("revision", -1)) != EXPECTED_REGISTRY_REVISION
         or str(current.get("state_hash") or "") != EXPECTED_REGISTRY_HASH
     ):
-        raise RuntimeError("NFL_RB_WR_STEP3_REGISTRY_BASELINE_DRIFT")
+        raise RuntimeError(
+            "NFL_RB_WR_STEP3_REGISTRY_BASELINE_DRIFT:"
+            f"observed_revision={current.get('revision')}:"
+            f"observed_hash={current.get('state_hash')}:"
+            f"registry_head={registry_head}"
+        )
 
     thaw_paths = {
         path
