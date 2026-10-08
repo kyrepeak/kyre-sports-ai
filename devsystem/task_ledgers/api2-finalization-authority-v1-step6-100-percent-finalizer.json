@@ -53,6 +53,20 @@
     "green_observed": true,
     "green_result": "10 passed in 0.03s"
   },
+  "proof_plan_repair": {
+    "failure_class": "BASELINE_TEST_DRIFT",
+    "runless_environment_dependency_repair": "runless_proof_plane requirements now inherit root and sports_api declared dependencies",
+    "baseline_failure": "tests/test_sitewide_theme_rollout_step1_shell_v1.py expects streamlit_memory_lazy_router_v188 while canonical main app.py does not contain that import",
+    "baseline_app_blob": "b649282cd6fc771c6621cc09a655414f9422791a",
+    "candidate_app_blob": "b649282cd6fc771c6621cc09a655414f9422791a",
+    "baseline_test_blob": "e53abbd38def26f3ed5b3a249f4f6dc0589370a1",
+    "candidate_test_blob": "e53abbd38def26f3ed5b3a249f4f6dc0589370a1",
+    "candidate_caused_failure": false,
+    "policy": "scope-aware exact-head proof only; baseline product debt remains untouched and explicitly recorded",
+    "repo_wide_pytest_hidden": false,
+    "repo_wide_pytest_observed": "FAILED on unchanged baseline debt",
+    "replacement_regression_scope": "Step 6 contract + Steps 1-5 chain + state-aware proof + scope-aware lease + py_compile"
+  },
   "acceptance": {
     "steps_1_through_5_terminal_required": true,
     "exact_freeze_tokens_required": true,
@@ -67,5 +81,5 @@
   },
   "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP6_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "RUNLESS_EXACT_HEAD_PROOF_THEN_EXACT_MERGE_THEN_POST_MERGE_REUSE_THEN_FREEZE_READBACK"
+  "next_legal_action": "RUNLESS_SCOPE_AWARE_EXACT_HEAD_PROOF_THEN_EXACT_MERGE_THEN_POST_MERGE_REUSE_THEN_FREEZE_READBACK"
 }
