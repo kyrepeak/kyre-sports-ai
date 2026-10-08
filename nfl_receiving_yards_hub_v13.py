@@ -189,7 +189,7 @@ def _lineup_board_html_v13(context: dict[str, Any], event_market: dict[str, Any]
 
 
 def render_nfl_receiving_yards_hub() -> None:
-    st.markdown(_STEP13_CSS, unsafe_allow_html=True)
+    st.html(_STEP13_CSS)
     original_board = tier_page._lineup_board_html_v9
     tier_page._lineup_board_html_v9 = _lineup_board_html_v13
     try:
