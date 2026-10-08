@@ -392,6 +392,7 @@ try:
     # Frozen Moneyline Step 2 V198 certification compatibility: from streamlit_memory_lazy_router_v198 import record_bootstrap_import_ms, render_app
     # Frozen Moneyline Step 1 V197 certification compatibility: from streamlit_memory_lazy_router_v197 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards V196 certification compatibility: from streamlit_memory_lazy_router_v196 import record_bootstrap_import_ms, render_app
+    from cfb_game_total_page1_v2_step4_event_page_side_market_repair_v1 import install_event_page_side_market_repair
     from kyre_universal_shell_runtime_v1 import activate_universal_shell
     # Frozen V187 delegate compatibility: from streamlit_memory_lazy_router_v187 import record_bootstrap_import_ms, render_app
     # Frozen V186 delegate compatibility: from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app
@@ -420,6 +421,7 @@ try:
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
+    install_event_page_side_market_repair()
     activate_universal_shell()
     render_app()
     _app_total_ms = (perf_counter() - _app_started) * 1000.0
