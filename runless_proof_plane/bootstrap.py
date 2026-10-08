@@ -8,6 +8,6 @@ os.environ["RPP_DRY_RUN_ON_START"] = "0"
 os.environ["RPP_FINAL_FREEZE_ON_START"] = "0"
 
 from .api import app
-from .cfb_game_total_page1_v2_step1_closeout import install_startup
+from .cfb_game_total_page1_v2_step2_prove import install_startup
 
 install_startup(app)
