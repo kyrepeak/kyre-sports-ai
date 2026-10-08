@@ -1,0 +1,61 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "b52cd7497388dbfe01a921014e13f9d99202cb84",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step4-side-market-completeness.json": "4649af85e1786c58c47f1e784cf446273a76aa68",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-side-market-completeness.json": "ae52b500b85c37bfbf6615092bd36e10954de90f",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-side-market-completeness.json": "eee1c29bff2d3b494a4fd2e8d0daa953e8564603",
+    "kyre_remaining_pages_theme_v1.py": "1695d5046107b22e22e2304e33adec622d083785",
+    "tests/test_cfb_game_total_page1_v2_step4_side_market_completeness.py": "295f9f3e16abf5208b1e362188de207f27e1c251"
+  },
+  "candidate_sha": "38698b8ed33b96547af855780953b414a6d34131",
+  "created_at": "2026-10-08T16:21:32.336477+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_page1_step4_prediction_market_v1.py": "6665b304009fb047482151abe34713250c597a92",
+    "cfb_game_total_page1_step4_side_market_v1.py": "249f123885e7a64c2ab7ef8d3fe50a8c03c3129f",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py": "6e969228a46d36a00737f941fb2bf6f7f2a2ab8c",
+    "cfb_over_under_market_adapter_v1.py": "526b4c4005ba82f24e25cd0e5b022ab6f48fb943",
+    "sports_api/collectors/cfb_fanduel_direct.py": "e9f747c793e80595070100724aa0ea802a08e252",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "streamlit_memory_lazy_router_v160.py": "913cf8ac7478fdc105995238b254f28d1d411bc6",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d",
+    "streamlit_memory_lazy_router_v190.py": "fca1442c144d8ff02868ed0371a92f72257d697e",
+    "streamlit_memory_lazy_router_v191.py": "1a4a2df127a060519d62ed96dd39f6c14bb79449"
+  },
+  "digest": "df2333ac1d2f30da64ffb1cf88e8e337ab93e0b3044b247da908d925edfd0421",
+  "evidence_digests": [
+    "c8453e82f653ffb5685ee84b2b847469aea5b41e6e4fa673bb91dae5d0f7d5a3",
+    "513e7d23d266771d37941ec1749104e3310660dc482d99d05915beba4a2c8c86",
+    "560392ad3946fc066ed10161de4b58f3cabd50559683b3a98258b6da31792c33",
+    "af9858d4cff2c9f1e90b273202f3015f33d72ddda5c19eb0bc34ddc53305011b"
+  ],
+  "failure_class": "NONE",
+  "github_actions_enabled": false,
+  "prior_digest": "ada04579446729758e2bc31b73ef3b17f82a9dd7c01f5bd3c661f2faa6e0367e",
+  "project": "API2",
+  "proof_fingerprint": "7a65b8c115a7fd134d28fd18c534096e11274ad3810efdc2ac7cbf7c10c95a51",
+  "proof_id": "cfb-game-total-page1-v2-step4-side-market-completeness-38698b8ed33b9654-reused",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 202,
+    "state_hash": "e01174fb37bae3a99f472952965c2b35c42c9eef7e1390f3913696c350c92cb0"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 202,
+    "state_hash": "e01174fb37bae3a99f472952965c2b35c42c9eef7e1390f3913696c350c92cb0"
+  },
+  "reuse_content_fingerprint": "d2bdec8d1ad7125e0f4a8ba01b1b21a0724d59dc665f1a744b0314f1432f7111",
+  "reused_from_proof_id": "cfb-game-total-page1-v2-step4-side-market-completeness-2e5c78f058384f6b-3bf7845392bbd865",
+  "reused_from_receipt_digest": "ada04579446729758e2bc31b73ef3b17f82a9dd7c01f5bd3c661f2faa6e0367e",
+  "static_evidence_reexecuted": false,
+  "step": "cfb-game-total-page1-v2-step4-side-market-completeness",
+  "task_id": "cfb-game-total-page1-v2-step4-side-market-completeness",
+  "workstream": "cfb-game-total-page1-v2"
+}
