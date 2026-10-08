@@ -1,0 +1,55 @@
+{
+  "artifact_map": {
+    "cfb_game_total_clean_page_v17.py": "c16ef69c7e7b49e0e5cb0ddf172589579c46efd8",
+    "cfb_game_total_step5_pace_v1.py": "28f1baed1eaef04486c4333a5a2df214a7a30939",
+    "data/cfb_step5_pbp_snapshot_v1.json": "4b43dbe6b51f33617758a5358fe53a99157760cc",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step5-pace-possessions.json": "659cbe07cb939928a23e1a56af32b9b952c795ad",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step5-pace-possessions.json": "bdb4018deb341fae7973aa0d3f46cf16a4a50277",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step5-pace-possessions.json": "6ee6075f876270d76160ccec2a7171e3afa572fb",
+    "tests/test_cfb_game_total_page1_v2_step5_pace_possessions_v1.py": "df45f773a40637ce081c0e9cb34292c779cfe196"
+  },
+  "candidate_sha": "a1dfac558c76253f99e2279dd7cb45e944d913a6",
+  "created_at": "2026-10-08T19:39:17.776167+00:00",
+  "dependency_map": {
+    "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py": "6e969228a46d36a00737f941fb2bf6f7f2a2ab8c",
+    "streamlit_memory_lazy_router_v191.py": "1a4a2df127a060519d62ed96dd39f6c14bb79449",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "a82a0d374c0fc1de9346e0d62f92831e39ddd9f7"
+  },
+  "digest": "18147cda5f027743888b5cf2a8661c6ad57914af7165bd32bffd5f0619e2b27c",
+  "evidence_digests": [
+    "33294583a442452802f5b0695ad28b89e80bcbbf87b6f36a0c94acb9b92d691e",
+    "c28a99e9658ddafc68e8def1447dd0b3bdeb368b006b1869215520f6eb354fa3",
+    "a7eadd6c4a7daf5fd4caae3c1653bc907a9f8a02825f7469d5aa2d3803525cc7"
+  ],
+  "failure_class": "NONE",
+  "github_actions_enabled": false,
+  "prior_digest": "cafbef6b56d39ff0157244097a62801efdccc61b62e0dc51d94014f7fb521215",
+  "project": "API2",
+  "proof_fingerprint": "527a105cea212996d638ed8a0f81c04d7dbc862bb3334f11e80fbdba2ddbf15f",
+  "proof_id": "cfb-game-total-page1-v2-step5-pace-possessions-a1dfac558c76253f-reused",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 205,
+    "state_hash": "5608b396896c3a1aa5c5f3eae815c8f22141a1d4110593baa1f02ee640a5189b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 205,
+    "state_hash": "5608b396896c3a1aa5c5f3eae815c8f22141a1d4110593baa1f02ee640a5189b"
+  },
+  "reuse_content_fingerprint": "b6aa37edff5079bf98358085e0d2e57dfe4ea6db7aa9a28a0074c8b84a7742e7",
+  "reused_from_proof_id": "cfb-game-total-page1-v2-step5-pace-possessions-0d5ec9bd4ec10562-acd7ef88fcd9aaac",
+  "reused_from_receipt_digest": "cafbef6b56d39ff0157244097a62801efdccc61b62e0dc51d94014f7fb521215",
+  "static_evidence_reexecuted": false,
+  "step": "cfb-game-total-page1-v2-step5-pace-possessions",
+  "task_id": "cfb-game-total-page1-v2-step5-pace-possessions",
+  "workstream": "cfb-game-total-page1-v2"
+}
