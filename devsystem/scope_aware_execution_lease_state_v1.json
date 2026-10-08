@@ -1,11 +1,39 @@
 {
-  "generation": 216,
-  "holders": [],
+  "generation": 217,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-08T21:47:12Z",
+      "expires_at_utc": "2026-10-08T22:47:12Z",
+      "generation": 217,
+      "heartbeat_at_utc": "2026-10-08T21:47:12Z",
+      "lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP3-217",
+      "owner_id": "api2-nfl-rb-wr-render-repair-step3-data-binding",
+      "scope": {
+        "dependency_tokens": [
+          "nfl_rb_wr_render_repair_v1_step2_presentation_transport_frozen"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "main_sha": "02f19b7ca4400e69d1c0b193e710e67e45184769",
+          "registry_revision": "208",
+          "registry_state_hash": "0a2262dec2bfd10d5b5a37821ec8c70f10e419830336965e58fa8275992c0885"
+        },
+        "shared_resources": [],
+        "write_paths": [
+          "devsystem/execution_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+          "devsystem/nfl_rb_wr_render_repair_step3_data_binding_v1.py",
+          "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+          "devsystem/task_ledgers/nfl-rb-wr-render-repair-step3-data-binding.json",
+          "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 370,
+  "revision": 371,
   "schema_version": 1,
-  "state_hash": "89da8356556675ddedb8241405a88d6299e902d870606a030d85a08c84716599",
+  "state_hash": "ce871c25efe70a7b773f70f583bbb9793ada85e5f097b87753b6b9ec71ba9c33",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
