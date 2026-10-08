@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 
 from . import task17_step5_atomic_closeout as core
+from .models import ProofRequest
+from .prove import execute_proof_request
 
 TASK_ID = "cfb-game-total-page1-v2-step4-prediction-market"
 WORKSTREAM = "cfb-game-total-page1-v2"
@@ -31,6 +34,8 @@ LEASE_OWNER = "cfb-game-total-page1-v2-step4-closeout"
 EXPECTED_REGISTRY_REVISION = 196
 EXPECTED_REGISTRY_HASH = "b6779f297868cae2388f18bc60bc43ae42ee181742bb5f55ff87f43d1668d8c1"
 EXPECTED_EVENT_HASH = "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789"
+
+NFL_RB_WR_SUBMIT_FLAG = "RPP_NFL_RB_WR_STEP1_SUBMIT_ON_START"
 
 
 def _bindings() -> dict[str, object]:
@@ -82,6 +87,39 @@ def execute(client):
     return result
 
 
+def _run_nfl_rb_wr_step1_submit(app) -> None:
+    app.state.nfl_rb_wr_step1_submit = {"status": "NOT_RUN"}
+    if os.getenv(NFL_RB_WR_SUBMIT_FLAG, "").strip() != "1":
+        return
+    try:
+        request = ProofRequest(
+            task_id=os.environ["RPP_NFL_RB_WR_STEP1_TASK_ID"],
+            workstream=os.environ["RPP_NFL_RB_WR_STEP1_WORKSTREAM"],
+            candidate_sha=os.environ["RPP_NFL_RB_WR_STEP1_CANDIDATE_SHA"],
+            lease_id=os.environ["RPP_NFL_RB_WR_STEP1_LEASE_ID"],
+            authorization_id=os.environ["RPP_NFL_RB_WR_STEP1_AUTHORIZATION_ID"],
+            expected_main_sha=os.environ["RPP_NFL_RB_WR_STEP1_EXPECTED_MAIN_SHA"],
+        )
+        app.state.nfl_rb_wr_step1_submit = execute_proof_request(
+            request,
+            settings=app.state.settings,
+            github_client=app.state.github_client,
+            orchestrator=app.state.orchestrator,
+            receipts=app.state.receipts,
+        )
+    except Exception as exc:
+        app.state.nfl_rb_wr_step1_submit = {
+            "status": "FAIL",
+            "error": type(exc).__name__,
+            "detail": str(exc)[:1800],
+        }
+    print(
+        "NFL_RB_WR_STEP1_RUNLESS_SUBMIT="
+        + json.dumps(app.state.nfl_rb_wr_step1_submit, sort_keys=True),
+        flush=True,
+    )
+
+
 def install_startup(app):
     app.state.cfb_game_total_page1_v2_step4_closeout = {"status": "NOT_RUN"}
 
@@ -100,5 +138,6 @@ def install_startup(app):
             + json.dumps(app.state.cfb_game_total_page1_v2_step4_closeout, sort_keys=True),
             flush=True,
         )
+        _run_nfl_rb_wr_step1_submit(app)
 
     return app
