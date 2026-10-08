@@ -6,15 +6,23 @@
   "step": "5/9",
   "source_main_sha": "53c4bf0aa194befe56934d476f0f1a1a22d3d40d",
   "authoritative_branch": "api2/cfb-game-total-page1-v2-step5-pace",
-  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R2",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R3",
   "problem": "Step 5 Pace & Expected Possessions must be made authoritative for the new Page1 V2 build without duplicating an existing mature implementation or regressing the frozen Step1-4 surface.",
-  "root_cause": "The repository already contains a mature multi-source Step5 pace/possession engine and V17 presentation owner. Current V38 retains that owner through its ancestor render graph; the missing product work is zero. The first proof request was rejected at scope-lease admission before static proof, so R2 changes only the proof lease/authorization identity.",
-  "patch": "No product patch. Add only source-graph certification plus Runless execution/proof/ledger metadata. After the R1 lease-admission miss, retire R1 and bind an exact new live R2 lease/authorization; do not retry the unchanged failed request.",
+  "root_cause": "The repository already contains a mature multi-source Step5 pace/possession engine and V17 presentation owner. Current V38 retains that owner through its ancestor render graph; the missing product work is zero. R1 failed at lease admission. R2 reached static proof and exposed one over-literal certification assertion against a SportsDataverse URL split across adjacent Python string literals.",
+  "patch": "No product patch. Keep the existing engine untouched. Replace only the brittle source assertion with two literal-fragment checks, preserve the same live R2 scope lease, and advance to a materially changed R3 candidate/authorization.",
   "failure_history": [
     {
       "generation": 1,
       "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
       "detail": "RUNLESS_SCOPE_LEASE_NOT_LIVE",
+      "product_failure": false,
+      "product_patch": false,
+      "retry_same_request": false
+    },
+    {
+      "generation": 2,
+      "failure_class": "STATIC_PROOF_CERTIFICATION_ASSERTION",
+      "detail": "SportsDataverse URL source was split across adjacent literals; the certification expected one contiguous raw-source substring",
       "product_failure": false,
       "product_patch": false,
       "retry_same_request": false
@@ -38,15 +46,16 @@
     "current_root_page": "cfb_game_total_clean_page_v38.py",
     "step5_presentation_owner": "cfb_game_total_clean_page_v17.py",
     "step5_engine": "cfb_game_total_step5_pace_v1.py",
-    "v38_reaches_v17": "PENDING_RUNLESS",
-    "step4_public_repair_preserves_step_evidence": "PENDING_RUNLESS",
-    "existing_v168_suite": "PENDING_RUNLESS",
+    "v38_reaches_v17": "PENDING_RUNLESS_R3",
+    "step4_public_repair_preserves_step_evidence": "PENDING_RUNLESS_R3",
+    "existing_v168_suite": "PENDING_RUNLESS_R3",
     "multisource": ["NCAA", "SportsDataverse/cfbfastR", "Punt & Rally", "ESPN last-resort only"],
     "sportsbook_projection_influence": 0.0,
     "may_modify_projection": false
   },
   "runless": {
-    "proof_generation": 2,
+    "proof_generation": 3,
+    "authorization_id": "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP5-PACE-POSSESSIONS-R3",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
