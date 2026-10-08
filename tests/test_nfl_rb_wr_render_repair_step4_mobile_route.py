@@ -138,7 +138,6 @@ def test_route_sets_cert_slate_before_waiting_for_cards(monkeypatch):
 
 
 def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
-    """A card may attach after _wait_for_cards captured its last text snapshot."""
     mod = _load_module()
     frame = object()
     stale_text = "Expected YPC"
@@ -156,6 +155,7 @@ def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
     monkeypatch.setattr(mod, "_set_cert_slate_date", lambda page, market: "2026-10-11")
     monkeypatch.setattr(mod, "_wait_for_cards", lambda page, market: (frame, stale_text))
     monkeypatch.setattr(mod, "_all_frame_text", lambda page: fresh_text)
+    monkeypatch.setattr(mod, "_card_text", lambda _frame, _selector: fresh_text)
     monkeypatch.setattr(mod, "_card_style", lambda _frame, _selector: {
         "count": 1,
         "border_style": "solid",
@@ -182,14 +182,14 @@ def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
     assert result["status"] == "GREEN"
 
 
-def test_card_text_reads_the_matched_card_nodes():
+def test_card_text_reads_text_content_from_matched_card_nodes():
     mod = _load_module()
 
     class FakeLocator:
-        def all_inner_texts(self):
+        def all_text_contents(self):
             return [
-                "Projected Rush Yards\nFanDuel Line\nProjection − Line",
-                "Expected Carries\nExpected YPC\nOver Price",
+                "Projected Rush Yards FanDuel Line Projection − Line",
+                "Expected Carries Expected YPC Over Price",
             ]
 
     class FakeFrame:
