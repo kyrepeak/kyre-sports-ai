@@ -1,0 +1,37 @@
+{
+  "task_id": "nfl-rb-wr-render-repair-step3-data-binding",
+  "workstream": "nfl-rb-wr-render-repair-v1",
+  "source_main_sha": "02f19b7ca4400e69d1c0b193e710e67e45184769",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"],
+    ["python", "-m", "devsystem.nfl_rb_wr_render_repair_step3_data_binding_v1"]
+  ],
+  "artifacts": [
+    "devsystem/execution_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "devsystem/nfl_rb_wr_render_repair_step3_data_binding_v1.py",
+    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "devsystem/task_ledgers/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"
+  ],
+  "dependencies": [
+    "streamlit_memory_lazy_router_v187.py",
+    "nfl_rushing_yards_hub_v16.py",
+    "nfl_rushing_yards_hub_v4.py",
+    "nfl_receiving_yards_hub_v17.py",
+    "nfl_receiving_yards_hub_v13.py",
+    "nfl_prop_app_eligibility_v1.py",
+    "nfl_rushing_yards_context_api_v1.py",
+    "nfl_receiving_yards_context_api_v1.py",
+    "nfl_rushing_yards_market_api_v1.py",
+    "nfl_receiving_yards_market_api_v1.py",
+    "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": false,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP3_DATA_BINDING_FROZEN"
+}

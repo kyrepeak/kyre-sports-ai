@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "task_id": "nfl-rb-wr-render-repair-step3-data-binding",
+  "project": "API2",
+  "workstream": "nfl-rb-wr-render-repair-v1",
+  "step": "3/5",
+  "source_main_sha": "02f19b7ca4400e69d1c0b193e710e67e45184769",
+  "authoritative_branch": "api2/nfl-rb-wr-render-repair-step3-data-binding",
+  "state": "READY_FOR_RUNLESS_GREEN_R2",
+  "problem": "Durably certify exact RB/WR data binding after the Step-2 presentation transport repair.",
+  "root_cause_class": "NO_RUNTIME_BINDING_DEFECT_VERIFICATION_GAP_ONLY",
+  "patch": "Verification-only exact-ID data-binding certificate plus regression coverage; no product runtime mutation.",
+  "step2a": {
+    "registry_revision_at_lock": 208,
+    "registry_state_hash_at_lock": "0a2262dec2bfd10d5b5a37821ec8c70f10e419830336965e58fa8275992c0885",
+    "scope_lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP3-217",
+    "product_runtime_mutations": 0,
+    "frozen_source_mutations": 0,
+    "thaw_required": false
+  },
+  "tdd": {
+    "red_candidate_sha": "0a89a0dea78446d5ffa3c217107a9b8c8069d1c1",
+    "red_proof_id": "nfl-rb-wr-render-repair-step3-data-binding-0a89a0dea78446d5-e9896bdc6d8f3869",
+    "red_failure_class": "STATIC_PROOF",
+    "red_expected": true,
+    "green_pending": true
+  },
+  "proof_contract": {
+    "exact_router_ownership": true,
+    "exact_event_team_athlete_identity": true,
+    "exact_market_athlete_team_join": true,
+    "projection_and_market_same_player": true,
+    "headshot_from_exact_athlete_id": true,
+    "logo_from_verified_team_identity": true,
+    "reciprocal_opponent_identity": true,
+    "names_are_display_only": true,
+    "fuzzy_matching": false,
+    "sportsbook_projection_influence": 0.0,
+    "product_runtime_mutations": 0
+  },
+  "runless": {
+    "next_proof_generation": 2,
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "duplicate_successful_runs": 0,
+    "blind_retries": 0
+  },
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP3_DATA_BINDING_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
