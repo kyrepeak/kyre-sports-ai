@@ -24,8 +24,8 @@ FREEZE_PATHS = (
     "devsystem/task_ledgers/cfb-game-total-page1-v2-step5-pace-possessions.json",
     "tests/test_cfb_game_total_page1_v2_step5_pace_possessions_v1.py",
 )
-LEASE_ID = "SCOPE-LEASE-774C3DAEDE5875241CA4C638"
-LEASE_OWNER = "api2-cfb-step5-pace-closeout-r1"
+LEASE_ID = "SCOPE-LEASE-86D1BF4390BC3586AFFD01EA"
+LEASE_OWNER = "api2-cfb-step5-pace-closeout-r2"
 EXPECTED_REGISTRY_REVISION = 205
 EXPECTED_REGISTRY_HASH = "5608b396896c3a1aa5c5f3eae815c8f22141a1d4110593baa1f02ee640a5189b"
 EXPECTED_EVENT_HASH = "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789"
