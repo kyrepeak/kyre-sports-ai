@@ -1,0 +1,204 @@
+from __future__ import annotations
+
+from datetime import date
+import importlib.util
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+MODULE_PATH = Path("devsystem/nfl_rb_wr_render_repair_step4_mobile_route_v1.py")
+
+
+def _load_module():
+    assert MODULE_PATH.exists(), "Step 4 mobile-route cert module is missing"
+    spec = importlib.util.spec_from_file_location("step4_mobile_route", MODULE_PATH)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_step4_contract_is_public_mobile_verification_only():
+    mod = _load_module()
+    assert mod.MISSION_STEP == "4/5"
+    assert mod.WORKSTREAM == "nfl-rb-wr-render-repair-v1"
+    assert mod.EXPECTED_PUBLIC_BASE_URL == "https://pickvault.streamlit.app"
+    assert mod.VIEWPORTS == ((390, 844), (768, 1024), (1440, 1000))
+    assert mod.MOBILE_VIEWPORT == (390, 844)
+    assert mod.AUTO_MUTATE is False
+    assert mod.MAY_MODIFY_PRODUCT_RUNTIME is False
+    assert mod.GITHUB_ACTIONS_FALLBACK is False
+
+
+def test_step4_routes_pin_rb_and_wr_styled_dom_contracts():
+    mod = _load_module()
+    assert set(mod.ROUTES) == {"Rushing Yards", "Receiving Yards"}
+    rushing = mod.ROUTES["Rushing Yards"]
+    receiving = mod.ROUTES["Receiving Yards"]
+    assert rushing["card_selector"] == ".krush4-card"
+    assert rushing["grid_selector"] == ".krush4-grid"
+    assert "Projected Rush Yards" in rushing["labels"]
+    assert "FanDuel Line" in rushing["labels"]
+    assert receiving["card_selector"] == ".krecv13-card"
+    assert receiving["grid_selector"] == ".krecv13-grid"
+    assert "Projected Rec Yds" in receiving["labels"]
+    assert "FanDuel Rec Yds" in receiving["labels"]
+
+
+def test_route_url_uses_exact_nfl_jump_contract():
+    mod = _load_module()
+    url = mod.route_url("https://pickvault.streamlit.app", "Receiving Yards")
+    parsed = urlparse(url)
+    assert parsed.scheme == "https"
+    assert parsed.netloc == "pickvault.streamlit.app"
+    assert parse_qs(parsed.query) == {
+        "ks_jump_sport": ["NFL"],
+        "ks_jump_market": ["Receiving Yards"],
+    }
+
+
+def test_raw_text_fallback_detection_catches_the_regression_signature():
+    mod = _load_module()
+    assert mod.raw_text_fallback_detected("62.5Projected Rush Yards") is True
+    assert mod.raw_text_fallback_detected("40.6Projected Rec Yds") is True
+    assert mod.raw_text_fallback_detected("62.5\nProjected Rush Yards") is False
+    assert mod.raw_text_fallback_detected("40.6 Projected Rec Yds") is False
+
+
+def test_computed_card_style_contract_rejects_unstyled_and_accepts_cards():
+    mod = _load_module()
+    styled = {
+        "count": 2,
+        "border_style": "solid",
+        "border_width": "1px",
+        "border_radius": "17px",
+        "background_image": "linear-gradient(rgb(11, 23, 18) 0%, rgb(10, 20, 17) 70%, rgb(13, 26, 20) 100%)",
+        "background_color": "rgba(0, 0, 0, 0)",
+    }
+    assert mod.card_style_is_styled(styled) is True
+    assert mod.card_style_is_styled({
+        "count": 1,
+        "border_style": "none",
+        "border_width": "0px",
+        "border_radius": "0px",
+        "background_image": "none",
+        "background_color": "rgba(0, 0, 0, 0)",
+    }) is False
+
+
+def test_certification_slate_is_next_sunday():
+    mod = _load_module()
+    assert mod._next_sunday(date(2026, 10, 8)).isoformat() == "2026-10-11"
+    assert mod._next_sunday(date(2026, 10, 11)).isoformat() == "2026-10-11"
+
+
+def test_route_sets_cert_slate_before_waiting_for_cards(monkeypatch):
+    mod = _load_module()
+    frame = object()
+    full_text = " | ".join(mod.ROUTES["Rushing Yards"]["labels"])
+    calls: list[str] = []
+
+    class FakePage:
+        def set_viewport_size(self, _viewport):
+            return None
+
+        def goto(self, _url, *, wait_until, timeout):
+            assert wait_until == "domcontentloaded"
+            assert timeout == 120_000
+            return None
+
+    monkeypatch.setattr(mod, "_set_cert_slate_date", lambda page, market: calls.append("date") or "2026-10-11")
+    monkeypatch.setattr(mod, "_wait_for_cards", lambda page, market: (calls.append("cards") or frame, full_text))
+    monkeypatch.setattr(mod, "_all_frame_text", lambda page: full_text)
+    monkeypatch.setattr(mod, "_card_text", lambda _frame, _selector: full_text)
+    monkeypatch.setattr(mod, "_card_style", lambda _frame, _selector: {
+        "count": 1,
+        "border_style": "solid",
+        "border_width": "1px",
+        "border_radius": "17px",
+        "background_image": "linear-gradient(rgb(11, 23, 18), rgb(10, 20, 17))",
+        "background_color": "rgba(0, 0, 0, 0)",
+    })
+    monkeypatch.setattr(mod, "_grid_style", lambda _frame, _selector: {
+        "count": 1,
+        "display": "grid",
+        "grid_template_columns": "360px",
+        "column_gap": "9px",
+        "row_gap": "9px",
+    })
+    monkeypatch.setattr(mod, "_root_overflow", lambda page: (False, "worst_delta=0"))
+
+    result = mod._verify_route_viewport(
+        FakePage(),
+        "https://pickvault.streamlit.app",
+        "Rushing Yards",
+        (390, 844),
+    )
+    assert result["status"] == "GREEN"
+    assert calls[:2] == ["date", "cards"]
+
+
+def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
+    mod = _load_module()
+    frame = object()
+    stale_text = "Expected YPC"
+    fresh_text = " | ".join(mod.ROUTES["Rushing Yards"]["labels"])
+
+    class FakePage:
+        def set_viewport_size(self, _viewport):
+            return None
+
+        def goto(self, _url, *, wait_until, timeout):
+            assert wait_until == "domcontentloaded"
+            assert timeout == 120_000
+            return None
+
+    monkeypatch.setattr(mod, "_set_cert_slate_date", lambda page, market: "2026-10-11")
+    monkeypatch.setattr(mod, "_wait_for_cards", lambda page, market: (frame, stale_text))
+    monkeypatch.setattr(mod, "_all_frame_text", lambda page: fresh_text)
+    monkeypatch.setattr(mod, "_card_text", lambda _frame, _selector: fresh_text)
+    monkeypatch.setattr(mod, "_card_style", lambda _frame, _selector: {
+        "count": 1,
+        "border_style": "solid",
+        "border_width": "1px",
+        "border_radius": "17px",
+        "background_image": "linear-gradient(rgb(11, 23, 18), rgb(10, 20, 17))",
+        "background_color": "rgba(0, 0, 0, 0)",
+    })
+    monkeypatch.setattr(mod, "_grid_style", lambda _frame, _selector: {
+        "count": 1,
+        "display": "grid",
+        "grid_template_columns": "360px",
+        "column_gap": "9px",
+        "row_gap": "9px",
+    })
+    monkeypatch.setattr(mod, "_root_overflow", lambda page: (False, "worst_delta=0"))
+
+    result = mod._verify_route_viewport(
+        FakePage(),
+        "https://pickvault.streamlit.app",
+        "Rushing Yards",
+        (390, 844),
+    )
+    assert result["status"] == "GREEN"
+
+
+def test_card_text_reads_text_content_from_matched_card_nodes():
+    mod = _load_module()
+
+    class FakeLocator:
+        def all_text_contents(self):
+            return [
+                "Projected Rush Yards FanDuel Line Projection − Line",
+                "Expected Carries Expected YPC Over Price",
+            ]
+
+    class FakeFrame:
+        def locator(self, selector):
+            assert selector == ".krush4-card"
+            return FakeLocator()
+
+    text = mod._card_text(FakeFrame(), ".krush4-card")
+    assert "Projected Rush Yards" in text
+    assert "FanDuel Line" in text
+    assert "Expected Carries" in text
+    assert "Over Price" in text
