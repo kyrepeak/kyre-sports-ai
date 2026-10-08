@@ -10,7 +10,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 PROOF_URL = "https://runless-proof-plane.onrender.com/prove"
-CANDIDATE_SHA = "69bb53654cea68501e6132a44ceffb16734f280c"
+CANDIDATE_SHA = "2063f0152861a0ebfb799837251cd973740eb812"
 EXPECTED_MAIN_SHA = "81eab31f78e65728a9b55a5ac578706fd6971bec"
 LEASE_ID = "SCOPE-LEASE-64BB41AA3D37708875512558"
 
