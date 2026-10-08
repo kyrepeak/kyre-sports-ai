@@ -5,16 +5,20 @@
     ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py"]
   ],
   "artifacts": [
+    "cfb_game_total_page1_step4_prediction_market_v1.py",
     "cfb_game_total_clean_page_v37.py",
     "cfb_game_total_page1_v2_step4_activation.py",
     "kyre_universal_shell_runtime_v1.py",
     "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json",
     "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json",
     "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json"
   ],
   "dependencies": [
     "cfb_game_total_clean_page_v36.py",
+    "cfb_game_total_clean_page_v35.py",
     "cfb_game_total_clean_page_v9.py",
+    "cfb_game_total_page1_step3_presentation_v1.py",
     "streamlit_memory_lazy_router_v190.py"
   ],
   "probes": [],
