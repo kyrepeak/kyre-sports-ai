@@ -1,5 +1,5 @@
 {
-  "generation": 221,
+  "generation": 222,
   "holders": [
     {
       "acquired_at_utc": "2026-10-08T22:21:00Z",
@@ -29,11 +29,11 @@
       }
     },
     {
-      "acquired_at_utc": "2026-10-08T22:34:00Z",
-      "expires_at_utc": "2026-10-08T23:34:00Z",
-      "generation": 221,
-      "heartbeat_at_utc": "2026-10-08T22:34:00Z",
-      "lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP4-RUNLESS-221",
+      "acquired_at_utc": "2026-10-08T22:38:00Z",
+      "expires_at_utc": "2026-10-08T23:38:00Z",
+      "generation": 222,
+      "heartbeat_at_utc": "2026-10-08T22:38:00Z",
+      "lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP4-RUNLESS-222",
       "owner_id": "api2-nfl-rb-wr-render-repair-step4-runless",
       "scope": {
         "dependency_tokens": [
@@ -43,8 +43,9 @@
         "resource_identity": {
           "candidate_sha": "412e5c02f851a760cc207cee518e1f19d4690ad5",
           "main_sha": "7854d5772333482947f9f2d4bda71cf73ded72b5",
-          "runless_head_sha": "4e285335599fceb53c7ae342d1ef21a78c925905",
-          "step3_closeout_blob": "ec9137f15b6c1eb999e6b84b1cfff43ea771f08d"
+          "runless_head_sha": "7f09517156859967dd6cfb9dcc56a1ce735171a3",
+          "step3_closeout_blob": "ec9137f15b6c1eb999e6b84b1cfff43ea771f08d",
+          "step4_wrapper_blob": "effc0109f0b7a5de2af644753a3e55c14a732c54"
         },
         "shared_resources": [],
         "write_paths": [
@@ -57,8 +58,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 376,
+  "revision": 377,
   "schema_version": 1,
-  "state_hash": "86decc0cd69dcdca00333c30cf832bddff9dc162073f3fd682af2f14643603df",
+  "state_hash": "3a8273dda48a378c1e586dd40868517d411ac996a2641d48679362ededd25142",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
