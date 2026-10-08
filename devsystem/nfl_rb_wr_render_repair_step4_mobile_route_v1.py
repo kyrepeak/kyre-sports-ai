@@ -5,6 +5,7 @@ Verification-only browser cert. It never mutates product/runtime state.
 from __future__ import annotations
 
 import argparse
+from datetime import date, datetime, timedelta
 import json
 import re
 import time
@@ -27,6 +28,7 @@ ROUTES: dict[str, dict[str, Any]] = {
     "Rushing Yards": {
         "card_selector": ".krush4-card",
         "grid_selector": ".krush4-grid",
+        "date_labels": ("📅 Choose NFL slate date",),
         "labels": (
             "Projected Rush Yards",
             "FanDuel Line",
@@ -39,6 +41,7 @@ ROUTES: dict[str, dict[str, Any]] = {
     "Receiving Yards": {
         "card_selector": ".krecv13-card",
         "grid_selector": ".krecv13-grid",
+        "date_labels": ("📅 NFL slate date",),
         "labels": (
             "CERTIFIED PROJECTION",
             "Projected Rec Yds",
@@ -68,6 +71,112 @@ _RAW_FALLBACK = re.compile(
 def route_url(base_url: str, market: str) -> str:
     return base_url.rstrip("/") + "/?" + urlencode(
         {"ks_jump_sport": "NFL", "ks_jump_market": market}
+    )
+
+
+def _next_sunday(day: date) -> date:
+    return day + timedelta(days=(6 - day.weekday()) % 7)
+
+
+def _calendar_value(value: str) -> str:
+    text = str(value or "").strip()
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%Y/%m/%d", "%m-%d-%Y", "%Y.%m.%d"):
+        try:
+            return datetime.strptime(text, fmt).date().isoformat()
+        except Exception:
+            pass
+    return ""
+
+
+def _find_date_input(page, market: str):
+    labels = tuple(ROUTES[market].get("date_labels") or ())
+    for frame in page.frames:
+        candidates = [frame.locator('[data-testid="stDateInput"] input')]
+        for label in labels:
+            candidates.extend(
+                [
+                    frame.locator(f'input[aria-label="{label}"]'),
+                    frame.get_by_label(label, exact=True),
+                ]
+            )
+        candidates.append(frame.locator('input[type="date"]'))
+        for locator in candidates:
+            try:
+                if locator.count() > 0:
+                    return locator.first
+            except Exception:
+                continue
+    return None
+
+
+def _set_cert_slate_date(page, market: str) -> str:
+    target = _next_sunday(date.today()).isoformat()
+    deadline = time.monotonic() + 20.0
+    locator = None
+    while time.monotonic() < deadline:
+        locator = _find_date_input(page, market)
+        if locator is not None:
+            break
+        page.wait_for_timeout(250)
+    if locator is None:
+        raise RuntimeError(f"CERT_SLATE_DATE_INPUT_NOT_FOUND:{market}:{target}")
+
+    try:
+        current_value = str(locator.input_value() or "").strip()
+    except Exception:
+        current_value = ""
+    if _calendar_value(current_value) == target:
+        return target
+
+    try:
+        input_type = str(locator.get_attribute("type") or "").strip().lower()
+    except Exception:
+        input_type = ""
+    day_obj = datetime.fromisoformat(target).date()
+    attempts = [target]
+    if input_type != "date":
+        attempts.extend(
+            [
+                day_obj.strftime("%m/%d/%Y"),
+                day_obj.strftime("%Y/%m/%d"),
+                day_obj.strftime("%m-%d-%Y"),
+            ]
+        )
+
+    observations: list[str] = []
+    seen: set[str] = set()
+    for fill_value in attempts:
+        if fill_value in seen:
+            continue
+        seen.add(fill_value)
+        try:
+            current = _find_date_input(page, market)
+            if current is None:
+                continue
+            current.fill(fill_value)
+            current.press("Enter")
+            page.keyboard.press("Tab")
+        except Exception as exc:
+            observations.append(f"{fill_value}:{type(exc).__name__}")
+            continue
+
+        settle = time.monotonic() + 10.0
+        last = ""
+        while time.monotonic() < settle:
+            page.wait_for_timeout(350)
+            try:
+                refreshed = _find_date_input(page, market)
+                if refreshed is None:
+                    continue
+                last = str(refreshed.input_value() or "").strip()
+                if _calendar_value(last) == target:
+                    return target
+            except Exception:
+                pass
+        observations.append(f"{fill_value}:{last}")
+
+    raise RuntimeError(
+        f"CERT_SLATE_DATE_NOT_SET:{market}:{target}:" + "|".join(observations[:6])
     )
 
 
@@ -236,6 +345,7 @@ def _verify_route_viewport(page, base_url: str, market: str, viewport: tuple[int
     cfg = ROUTES[market]
     page.set_viewport_size({"width": width, "height": height})
     page.goto(route_url(base_url, market), wait_until="domcontentloaded", timeout=120_000)
+    cert_slate_date = _set_cert_slate_date(page, market)
     frame, _ = _wait_for_cards(page, market)
     page_text = _all_frame_text(page)
     text = _card_text(frame, cfg["card_selector"]) or page_text
@@ -269,6 +379,7 @@ def _verify_route_viewport(page, base_url: str, market: str, viewport: tuple[int
     return {
         "market": market,
         "viewport": [width, height],
+        "cert_slate_date": cert_slate_date,
         "card_count": int(card["count"]),
         "card_style": card,
         "grid_style": grid,
