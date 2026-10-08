@@ -1,13 +1,15 @@
 """KYRE Sports AI site-wide universal shell runtime V1.
 
 Rollout Step 1. Presentation-only entrypoint activator over the frozen
-black + glacier-blue design system. It does not own routing, models, data,
-projections, markets, or page-specific controls.
+black + glacier-blue design system. It does not own models, data, projections,
+markets, or page-specific controls. The exact CFB Game Total page target may be
+advanced additively before routing while frozen router files stay unchanged.
 """
 from __future__ import annotations
 
 import streamlit as st
 
+from cfb_game_total_page1_v2_step3_activation import activate_step3_page
 from kyre_universal_components_v1 import build_components_css
 from kyre_universal_responsive_v1 import build_responsive_css
 from kyre_universal_theme_v1 import build_universal_theme_css
@@ -111,7 +113,8 @@ def build_sitewide_shell_css() -> str:
     )
 
 def activate_universal_shell() -> None:
-    """Mount the universal visual shell without altering route/page ownership."""
+    """Mount the universal shell and the exact CFB Game Total presentation target."""
+    activate_step3_page()
     st.markdown(build_sitewide_shell_css(), unsafe_allow_html=True)
     st.sidebar.markdown(
         '<div class="kyre-sitewide-sidebar-brand" data-kyre-sitewide-sidebar="v1">'
