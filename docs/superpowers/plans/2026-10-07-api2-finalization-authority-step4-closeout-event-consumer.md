@@ -43,8 +43,10 @@ No sports product runtime, model, projection, probability, ranking, qualificatio
 
 - authoritative branch: `api2-finalization-authority-v1-step4-closeout-event-consumer-r1`
 - rollback main: `85bfd1031b12318c64ca090be5fd5807f57a2f49`
-- lease: `SCOPE-LEASE-8D92DC5205FF91057401E702`
+- lease: `SCOPE-LEASE-236118E524AC04B3EE928E70`
 - lease owner: `api2-finalization-authority-v1-step4`
+- authoritative lease revision: `268`
+- authoritative lease generation: `154`
 - one active problem, one branch, one proof chain, one PR maximum
 - GitHub Actions fallback: not authorized
 - unrelated frozen-registry thaws preserved
