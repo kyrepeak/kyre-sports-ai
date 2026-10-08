@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "task_id": "nfl-rb-wr-render-repair-step3-data-binding",
+  "project": "API2",
+  "workstream": "nfl-rb-wr-render-repair-v1",
+  "step": "3/5",
+  "source_main_sha": "02f19b7ca4400e69d1c0b193e710e67e45184769",
+  "authoritative_branch": "api2/nfl-rb-wr-render-repair-step3-data-binding",
+  "problem": "Certify that restored NFL Rushing Yards and Receiving Yards cards bind the correct exact-ID player, team, opponent, market line, projection, stats, headshot, and logo data.",
+  "root_cause": "No current runtime binding defect was found. The active V187 -> Rushing V16 / Receiving V17 chains already fail closed on exact ESPN event/team/athlete identity. Step 3 therefore adds a durable verification layer rather than reopening frozen product runtime.",
+  "patch": "Add a verification-only certificate and regression tests for the exact RB/WR identity/data-binding chain.",
+  "write_paths": [
+    "devsystem/execution_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "devsystem/nfl_rb_wr_render_repair_step3_data_binding_v1.py",
+    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "devsystem/task_ledgers/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"
+  ],
+  "product_runtime_mutations": 0,
+  "router_mutations": 0,
+  "data_api_mutations": 0,
+  "sportsbook_logic_mutations": 0,
+  "projection_math_mutations": 0,
+  "frozen_source_mutations": 0,
+  "thaw_required": false,
+  "scope_lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP3-217",
+  "rollback_anchor": "02f19b7ca4400e69d1c0b193e710e67e45184769",
+  "proof": {
+    "tdd_red_proof_id": "nfl-rb-wr-render-repair-step3-data-binding-0a89a0dea78446d5-e9896bdc6d8f3869",
+    "tdd_red_failure_class": "STATIC_PROOF",
+    "required_green_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP3_DATA_BINDING_FROZEN"
+}
