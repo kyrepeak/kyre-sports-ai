@@ -10,9 +10,9 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 PROOF_URL = "https://runless-proof-plane.onrender.com/prove"
-CANDIDATE_SHA = "73a70ec8882e3e1229ee1d069e78e74735ec23c7"
+CANDIDATE_SHA = "69bb53654cea68501e6132a44ceffb16734f280c"
 EXPECTED_MAIN_SHA = "81eab31f78e65728a9b55a5ac578706fd6971bec"
-LEASE_ID = "SCOPE-LEASE-4B8F762C168F6B609CA466FC"
+LEASE_ID = "SCOPE-LEASE-64BB41AA3D37708875512558"
 
 
 def test_cfb_game_total_step4_public_repair_exact_head_runless() -> None:
