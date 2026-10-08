@@ -1,6 +1,23 @@
 {
-  "generation": 211,
+  "generation": 212,
   "holders": [
+    {
+      "acquired_at_utc": "2026-10-08T20:54:47Z",
+      "expires_at_utc": "2026-10-08T21:54:47Z",
+      "generation": 212,
+      "heartbeat_at_utc": "2026-10-08T20:54:47Z",
+      "lease_id": "SCOPE-LEASE-075B6B1B6FD0208D555467D0",
+      "owner_id": "api2-nfl-rb-wr-step1-runless-transport",
+      "scope": {
+        "dependency_tokens": [],
+        "exclusive": false,
+        "resource_identity": {},
+        "shared_resources": [],
+        "write_paths": [
+          "runless_proof_plane/cfb_game_total_page1_v2_step4_closeout.py"
+        ]
+      }
+    },
     {
       "acquired_at_utc": "2026-10-08T20:46:03Z",
       "expires_at_utc": "2026-10-08T21:46:03Z",
@@ -26,8 +43,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 361,
+  "revision": 362,
   "schema_version": 1,
-  "state_hash": "03ae8d3bf552488346c8b4710932b0a8353c79b356b235b4b8e15b0ae9c2a279",
+  "state_hash": "73d53ad49d3a616f83fcd30b183de77d6b71d6feabc5af014aca4b97a43c9d48",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
