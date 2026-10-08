@@ -16,11 +16,15 @@ from typing import Any, Mapping
 import requests
 import streamlit as st
 
+from cfb_game_total_page1_v2_step4_event_page_side_market_repair_v1 import install_event_page_side_market_repair
+
 MODEL_VERSION = "CFB O/U MARKET ADAPTER V1 • ODDS INTEGRATION STEP 4"
 API_BASE_ENV = "KYRE_SPORTS_API_BASE_URL"
 DEFAULT_API_BASE = "https://kyre-sports-api.onrender.com"
 API_PATH = "/api/v1/cfb/odds"
 REQUEST_TIMEOUT_SECONDS = 45.0
+
+install_event_page_side_market_repair()
 
 
 def _clean(value: Any) -> str:
