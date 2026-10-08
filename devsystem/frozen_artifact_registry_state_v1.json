@@ -340,6 +340,22 @@
       "source_main_sha": "8ad570f765daf0884fe6f963f10982b05a414b60",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PREDICTION_MARKET_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_clean_page_v37.py": "6071b8437f25560996e4922705efc3400ad5ebdd",
+        "cfb_game_total_page1_step4_prediction_market_v1.py": "6665b304009fb047482151abe34713250c597a92",
+        "cfb_game_total_page1_step4_side_market_v1.py": "249f123885e7a64c2ab7ef8d3fe50a8c03c3129f",
+        "cfb_game_total_page1_v2_step4_activation.py": "9fc633200a38a7f0c560696f9a57cb2c0ed09c0f",
+        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "35999cee728a22394c869622651e884effbb58b5",
+        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "a454afcbb0e77084c4d9628d3ba74dc8201a98b3",
+        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": "62caa31ab79084df184896813dde4726bda04325",
+        "kyre_universal_components_v1.py": "cd9062290c3916e453451f0d3cfd83b93b3510a3",
+        "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py": "78c0888dc0744f07a179d4cf6d5aefc18b9035a2"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PREDICTION_MARKET_FROZEN",
+      "source_main_sha": "091226472ad03d11d86fa2843fc37c3dc2830023",
+      "status": "FROZEN"
+    },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
       "artifacts": {
         "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
@@ -2530,9 +2546,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 196,
+  "revision": 197,
   "schema_version": 1,
-  "source_main_sha": "8ad570f765daf0884fe6f963f10982b05a414b60",
-  "state_hash": "b6779f297868cae2388f18bc60bc43ae42ee181742bb5f55ff87f43d1668d8c1",
+  "source_main_sha": "091226472ad03d11d86fa2843fc37c3dc2830023",
+  "state_hash": "a89c6e655b6d6145afe9be6ac9aa7020c5c222b4ca87e2095a6fde7091a0b90d",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
