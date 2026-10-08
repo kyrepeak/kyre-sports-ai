@@ -1,0 +1,33 @@
+{
+  "task_id": "cfb-game-total-page1-v2-step4-prediction-market",
+  "workstream": "cfb-game-total-page1-v2",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py"]
+  ],
+  "artifacts": [
+    "cfb_game_total_page1_step4_prediction_market_v1.py",
+    "cfb_game_total_page1_step4_side_market_v1.py",
+    "cfb_game_total_clean_page_v37.py",
+    "cfb_game_total_page1_v2_step4_activation.py",
+    "kyre_universal_components_v1.py",
+    "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json"
+  ],
+  "dependencies": [
+    "cfb_game_total_clean_page_v36.py",
+    "cfb_game_total_clean_page_v35.py",
+    "cfb_game_total_clean_page_v26.py",
+    "cfb_game_total_clean_page_v11.py",
+    "cfb_top_picks_market_context_v1.py",
+    "cfb_game_total_page1_step3_presentation_v1.py",
+    "cfb_game_total_page1_v2_step3_activation.py",
+    "kyre_universal_shell_runtime_v1.py",
+    "streamlit_memory_lazy_router_v190.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PREDICTION_MARKET_FROZEN"
+}
