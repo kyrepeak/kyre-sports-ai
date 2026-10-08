@@ -3,11 +3,16 @@
   "workstream": "nfl-rb-wr-render-repair-v1",
   "source_main_sha": "02f19b7ca4400e69d1c0b193e710e67e45184769",
   "commands": [
-    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"]
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"],
+    ["python", "-m", "devsystem.nfl_rb_wr_render_repair_step3_data_binding_v1"]
   ],
   "artifacts": [
-    "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py",
-    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step3-data-binding.json"
+    "devsystem/execution_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "devsystem/nfl_rb_wr_render_repair_step3_data_binding_v1.py",
+    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "devsystem/task_ledgers/nfl-rb-wr-render-repair-step3-data-binding.json",
+    "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"
   ],
   "dependencies": [
     "streamlit_memory_lazy_router_v187.py",
@@ -18,7 +23,9 @@
     "nfl_prop_app_eligibility_v1.py",
     "nfl_rushing_yards_context_api_v1.py",
     "nfl_receiving_yards_context_api_v1.py",
-    "nfl_receiving_yards_market_api_v1.py"
+    "nfl_rushing_yards_market_api_v1.py",
+    "nfl_receiving_yards_market_api_v1.py",
+    "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"
   ],
   "probes": [],
   "timeout_seconds": 300,
