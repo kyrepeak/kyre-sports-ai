@@ -56,6 +56,7 @@ def _receipt() -> dict:
         registry_after={"revision": 190},
         evidence_digests=["terminal-latch-evidence"],
         failure_class="NONE",
+        created_at="2026-10-07T00:00:00+00:00",
     )
 
 
