@@ -6,7 +6,7 @@
   "step": "5/6",
   "mission": "Authority Garbage Collector",
   "base_main_sha": "b42b320e69d4894ed2ec5bbd3a065824d35d6fff",
-  "status": "TDD_RED_PENDING",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
   "decision": "EXECUTE_COMPILED_PLAN",
   "scope": {
     "product_runtime": false,
@@ -33,6 +33,16 @@
     "network_calls": false,
     "auto_mutate": false,
     "github_actions_fallback": 0
+  },
+  "tdd": {
+    "test_first_commit": "5e5691e9eaf5f891817d0793ef8563547daa76a3",
+    "red_stub_commit": "0c0fec6517e97db5453063df2ee2b3e0bd639a92",
+    "red_observed": true,
+    "red_result": "1 passed, 8 failed in 0.11s",
+    "implementation_commit": "23e9aaa4afa0962e658af229a9bc664333736582",
+    "green_observed": true,
+    "green_result": "9 passed in 0.03s",
+    "py_compile": "PASS"
   },
   "completion_contract": {
     "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP5_FROZEN",
