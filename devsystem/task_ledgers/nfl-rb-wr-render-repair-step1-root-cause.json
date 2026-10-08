@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "task_id": "nfl-rb-wr-render-repair-step1-root-cause",
+  "project": "API2",
+  "workstream": "nfl-rb-wr-render-repair-v1",
+  "step": "1/5",
+  "source_main_sha": "a1dfac558c76253f99e2279dd7cb45e944d913a6",
+  "authoritative_branch": "api2/nfl-rb-wr-render-repair-step1-root-cause",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R1",
+  "problem": "NFL Rushing Yards and Receiving Yards data is present on the public mobile pages, but the intended card/grid presentation collapses into jammed browser-default text and oversized/unstructured content.",
+  "root_cause": "The exact screenshot labels are emitted by the current Rushing V4 and Receiving V13 presentation owners. Both surfaces depend on CSS injected through Streamlit Markdown HTML to convert metric b/span elements into block/grid card layout. The production symptom is exactly the browser-default inline fallback expected when that CSS presentation contract is not effectively applied. The repository already contains a certified same-class repair that uses st.html for presentation transport. Existing Rushing browser certification checks DOM/text presence but does not assert getComputedStyle, allowing this visual regression class to escape. A specific Streamlit release is not blamed because version causality is not proven.",
+  "root_cause_class": "STREAMLIT_MARKDOWN_PRESENTATION_TRANSPORT",
+  "secondary_root_cause_class": "COMPUTED_STYLE_VERIFIER_GAP",
+  "patch": "No product patch in Step 1. Freeze the diagnosis and verifier gap only. Step 2 will own any presentation-transport repair and computed-style proof under a fresh Step 2A authorization.",
+  "step2a": {
+    "source_main_sha": "a1dfac558c76253f99e2279dd7cb45e944d913a6",
+    "registry_revision_at_lock": 206,
+    "registry_state_hash_at_lock": "cca4b20727ef97ef8e720c2bd0b1905e85b3de383331fc862a6fda4b273b7cd6",
+    "active_problem_count": 1,
+    "product_runtime_mutations": 0,
+    "frozen_source_mutations": 0,
+    "thaw_required": false,
+    "scope_lease_id": "SCOPE-LEASE-28512CFB5B1FCAD2EF7399E6",
+    "scope_lease_owner": "api2-nfl-rb-wr-render-repair-step1-root-cause",
+    "scope_lease_revision": 361,
+    "scope_lease_state_hash": "03ae8d3bf552488346c8b4710932b0a8353c79b356b235b4b8e15b0ae9c2a279",
+    "scope_lease_expires_at_utc": "2026-10-08T21:46:03Z"
+  },
+  "proof_contract": {
+    "rushing_route": "streamlit_memory_lazy_router_v111 -> nfl_rushing_yards_hub_v15 -> inherited V4 compact cards",
+    "receiving_route": "streamlit_memory_lazy_router_v147 -> nfl_receiving_yards_hub_v16 -> V15 -> inherited V13 matchup cards",
+    "rushing_signature": ["Projected Rush Yards", "FanDuel Line", "Projection − Line", "Expected Carries", "Expected YPC", "Over Price"],
+    "receiving_signature": ["CERTIFIED PROJECTION", "Projected Rec Yds", "FanDuel Rec Yds", "frozen V9 matchup classification", "projection influence 0.0%"],
+    "hardened_transport_precedent": "nfl_prop_analytics_page2_responsive_polish_v1.py uses st.html",
+    "computed_style_assertion_present_in_existing_rushing_witness": false,
+    "data_api_failure": false,
+    "routing_failure": false,
+    "specific_streamlit_release_cause": "NOT_PROVEN"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-NFL-RB-WR-RENDER-REPAIR-V1-STEP1-ROOT-CAUSE-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "duplicate_successful_runs": 0,
+    "blind_retries": 0
+  },
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP1_ROOT_CAUSE_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
