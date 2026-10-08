@@ -102,7 +102,8 @@ def _certify_static_bindings(root: Path) -> list[dict[str, Any]]:
             'official_team_id',
             'official_athlete_id',
             'opponent_official_team_id',
-            'projection_weight',
+            '"projection_enabled": False',
+            '"sportsbook_influence": 0.0',
             label="RUSHING_CONTEXT_IDENTITY",
         ),
         _require(
@@ -111,7 +112,8 @@ def _certify_static_bindings(root: Path) -> list[dict[str, Any]]:
             'official_team_id',
             'official_athlete_id',
             'opponent_official_team_id',
-            'projection_weight',
+            '"projection_enabled": False',
+            '"sportsbook_influence": 0.0',
             label="RECEIVING_CONTEXT_IDENTITY",
         ),
         _require(
