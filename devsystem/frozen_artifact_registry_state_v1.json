@@ -29,29 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "cfb_game_total_page1_v2_step4_activation.py": {
-          "from_blob": "4b347939afe92feea0365068265ecf8887da0360",
-          "to_blob": "97679c0f375d6cf47b69997cec0ab943bb0ad285"
-        },
-        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": {
-          "from_blob": "7b4e473dc700cbcee8f6fab08ade6c61db88dabe",
-          "to_blob": "f5f598f08a61307aaace4f760de56a49fa9e06ce"
-        },
-        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": {
-          "from_blob": "8de9a5c0a2d2865db08a3f4b3354a741c8020a81",
-          "to_blob": "07c2daf34702bc1819160ddc367c7d89977a326d"
-        },
-        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": {
-          "from_blob": "f52d1977494a822e923bfe6053e120e6447c1675",
-          "to_blob": "b721db751dd2ce316555e04fb2f797f935a6f0d6"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "2a099dda3b535288fa48da46feec23329fc05056",
-      "thaw_id": "THAW-CFB-GAME-TOTAL-PAGE1-V2-STEP4-LIVE-OWNER-REPAIR-R2"
     }
   ],
   "entries": {
@@ -369,16 +346,17 @@
         "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
         "cfb_game_total_page1_step4_prediction_market_v1.py": "6665b304009fb047482151abe34713250c597a92",
         "cfb_game_total_page1_step4_side_market_v1.py": "249f123885e7a64c2ab7ef8d3fe50a8c03c3129f",
-        "cfb_game_total_page1_v2_step4_activation.py": "4b347939afe92feea0365068265ecf8887da0360",
-        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "7b4e473dc700cbcee8f6fab08ade6c61db88dabe",
-        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "8de9a5c0a2d2865db08a3f4b3354a741c8020a81",
-        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": "f52d1977494a822e923bfe6053e120e6447c1675",
+        "cfb_game_total_page1_v2_step4_activation.py": "97679c0f375d6cf47b69997cec0ab943bb0ad285",
+        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "f5f598f08a61307aaace4f760de56a49fa9e06ce",
+        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-prediction-market.json": "07c2daf34702bc1819160ddc367c7d89977a326d",
+        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-prediction-market.json": "b721db751dd2ce316555e04fb2f797f935a6f0d6",
         "kyre_universal_components_v1.py": "cd9062290c3916e453451f0d3cfd83b93b3510a3",
+        "tests/test_cfb_game_total_page1_v2_step4_live_owner_repair.py": "362797254a98481b71f1cda148c6361b884b8592",
         "tests/test_cfb_game_total_page1_v2_step4_prediction_market.py": "78c0888dc0744f07a179d4cf6d5aefc18b9035a2",
         "tests/test_cfb_game_total_page1_v2_step4_runtime_repair.py": "489e2f7bc96931e2243d863b66475e15ce0aa5c8"
       },
       "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PREDICTION_MARKET_FROZEN",
-      "source_main_sha": "b814704b35aac99a3bfc2db05d84dcbc2d0b9c47",
+      "source_main_sha": "81eab31f78e65728a9b55a5ac578706fd6971bec",
       "status": "FROZEN"
     },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
@@ -2571,9 +2549,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 200,
+  "revision": 201,
   "schema_version": 1,
-  "source_main_sha": "b814704b35aac99a3bfc2db05d84dcbc2d0b9c47",
-  "state_hash": "6141f45f737995ebdd892326e0e9f6456674b83b9217ae2a714b1fa86ef64890",
+  "source_main_sha": "81eab31f78e65728a9b55a5ac578706fd6971bec",
+  "state_hash": "64b4a8211fdbe955a5a1435aacebbbf913ee5ce1f672fad5b9ce50cc5e01f873",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
