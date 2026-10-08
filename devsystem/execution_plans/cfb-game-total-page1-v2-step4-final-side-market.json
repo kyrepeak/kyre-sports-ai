@@ -44,5 +44,11 @@
   "proof_mode": "runless",
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
+  "scope_lease_id": "SCOPE-LEASE-BDBD39318EEAC420E02FCB03",
+  "scope_lease_owner": "api2-cfb-step4-final-side-market-r1",
+  "scope_lease_revision": 347,
+  "scope_lease_state_hash": "c1886104fa5009a2ecd353de3a51aa0f1e53e251bc03c9e86ce94d9950c9594e",
+  "scope_lease_expires_at_utc": "2026-10-08T19:19:53Z",
+  "authorization_id": "AUTH-CFB-GAME-TOTAL-PAGE1-V2-STEP4-FINAL-SIDE-MARKET-R1",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
