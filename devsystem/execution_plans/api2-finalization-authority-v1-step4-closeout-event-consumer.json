@@ -43,7 +43,7 @@
     "exact_head_merge_required": true,
     "authoritative_registry_required": true,
     "live_scope_lease_required": true,
-    "lease_id": "SCOPE-LEASE-8D92DC5205FF91057401E702",
+    "lease_id": "SCOPE-LEASE-236118E524AC04B3EE928E70",
     "lease_owner": "api2-finalization-authority-v1-step4",
     "rollback_main_sha": "85bfd1031b12318c64ca090be5fd5807f57a2f49",
     "step3_frozen_checkpoint_required": "API2_FINALIZATION_AUTHORITY_V1_STEP3_FROZEN",
