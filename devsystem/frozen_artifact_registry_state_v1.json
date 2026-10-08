@@ -353,6 +353,18 @@
       "source_main_sha": "2a8039a5f2dc9980711674e92b6d7ec35ab5df29",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE1_V2_STEP4_FINAL_SIDE_MARKET_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_clean_page_v16.py": "22713f48d0716bd5b676302b2271c4daf717b3d4",
+        "devsystem/execution_plans/cfb-game-total-page1-v2-step4-final-side-market.json": "92ada29737b58696eba2c337ba477378f591d285",
+        "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-final-side-market.json": "a46b2e8f1c887d73da9eb479cc437df6c32c2680",
+        "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-final-side-market.json": "e3b03e017e553de0d8a95350d6f51b0ac395503f",
+        "tests/test_cfb_game_total_page1_v2_step4_final_side_market_v1.py": "aca074b823f4910e75de6ec3dc0810a83e7f8313"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_V2_STEP4_FINAL_SIDE_MARKET_FROZEN",
+      "source_main_sha": "53c4bf0aa194befe56934d476f0f1a1a22d3d40d",
+      "status": "FROZEN"
+    },
     "CFB_GAME_TOTAL_PAGE1_V2_STEP4_PREDICTION_MARKET_FROZEN": {
       "artifacts": {
         "cfb_game_total_clean_page_v37.py": "6071b8437f25560996e4922705efc3400ad5ebdd",
@@ -2588,9 +2600,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 204,
+  "revision": 205,
   "schema_version": 1,
-  "source_main_sha": "2a8039a5f2dc9980711674e92b6d7ec35ab5df29",
-  "state_hash": "e91a9cc37d0cda84b16a2d0376e313ee9ed1985369cb782a4ba5ccd0f0d10535",
+  "source_main_sha": "53c4bf0aa194befe56934d476f0f1a1a22d3d40d",
+  "state_hash": "5608b396896c3a1aa5c5f3eae815c8f22141a1d4110593baa1f02ee640a5189b",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
