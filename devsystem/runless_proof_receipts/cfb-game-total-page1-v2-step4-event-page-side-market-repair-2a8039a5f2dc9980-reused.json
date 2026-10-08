@@ -1,0 +1,65 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page1_v2_step4_event_page_side_market_repair_v1.py": "9159998f736aa51af51571142b7af4a7aa8736ae",
+    "cfb_over_under_market_adapter_v1.py": "e2853f8aeee972a3652d2a6fffbbdd1beeacadd8",
+    "devsystem/execution_plans/cfb-game-total-page1-v2-step4-event-page-side-market-repair.json": "7a3a2cf6d64537d9f7a860f30c8299148f889e38",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-event-page-side-market-repair.json": "7187286cedd533a8e1cbc380673b09ccf43780fe",
+    "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-event-page-side-market-repair.json": "cf9401dce2cff4458b2d26bf4f6ff7fc5e4f57e7",
+    "tests/test_cfb_game_total_page1_v2_step4_event_page_side_market_repair.py": "109169f4bf547b08ff6a0ece955c4a87c1f73efb"
+  },
+  "candidate_sha": "2a8039a5f2dc9980711674e92b6d7ec35ab5df29",
+  "created_at": "2026-10-08T17:40:35.241297+00:00",
+  "dependency_map": {
+    "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_page1_step4_prediction_market_v1.py": "6665b304009fb047482151abe34713250c597a92",
+    "cfb_game_total_page1_step4_side_market_v1.py": "249f123885e7a64c2ab7ef8d3fe50a8c03c3129f",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py": "6e969228a46d36a00737f941fb2bf6f7f2a2ab8c",
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "b52cd7497388dbfe01a921014e13f9d99202cb84",
+    "kyre_remaining_pages_theme_v1.py": "1695d5046107b22e22e2304e33adec622d083785",
+    "kyre_universal_shell_runtime_v1.py": "40a37ff350262256f590a430ea9494d52c0c5304",
+    "sports_api/collectors/nfl_fanduel_passing_yards.py": "a9722359ba7b213b7e85b74a58854dc9239b6c13",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "streamlit_memory_lazy_router_v160.py": "913cf8ac7478fdc105995238b254f28d1d411bc6",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d",
+    "streamlit_memory_lazy_router_v190.py": "fca1442c144d8ff02868ed0371a92f72257d697e",
+    "streamlit_memory_lazy_router_v191.py": "1a4a2df127a060519d62ed96dd39f6c14bb79449"
+  },
+  "digest": "917a7fc69065ee1ec7409dd2d3b143a0eff9097cfe77e1ae225b859d349ac0fd",
+  "evidence_digests": [
+    "2ef50fabcb5f28823c261669d6392a768e6f6e42a7a48f26595a2dd9be2d21fa",
+    "d1c2a2fd0ea34f0e9dd01a61f1e2bef825c4597385fe82c89419bb8ac3bc7ba4",
+    "61e3605562629accea83d675198e88c3348d780a321ce16938ba670850d57d81",
+    "ca93fda98d4ca98403993d00db484c96c6121c14d060d1046cc8f8373d95d27e",
+    "6e83be839f9a76502f8fbfde9d3f8978cdb33271837300061efcc3bb7b8b4d54"
+  ],
+  "failure_class": "NONE",
+  "github_actions_enabled": false,
+  "prior_digest": "42cfacabfe2296bcc49d7618c0921139d818e80f66d4ba351ebd6a18edae1364",
+  "project": "API2",
+  "proof_fingerprint": "e331fc09d4f47034f1bb6f93a8c8b572cf337f63a4b15f5f78bb5618c8516bf2",
+  "proof_id": "cfb-game-total-page1-v2-step4-event-page-side-market-repair-2a8039a5f2dc9980-reused",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 203,
+    "state_hash": "6878008b2e08d1cd2d7bc53bd16aca0ec0b18c075dca9a443f1e48d60fbd2f59"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 203,
+    "state_hash": "6878008b2e08d1cd2d7bc53bd16aca0ec0b18c075dca9a443f1e48d60fbd2f59"
+  },
+  "reuse_content_fingerprint": "15da2517ac150ee79940409808b6fc3c464ea306ca54c6d5b75a161a31a6786d",
+  "reused_from_proof_id": "cfb-game-total-page1-v2-step4-event-page-side-market-repair-be3e23d0fdc54096-b27a9b716bd27f44",
+  "reused_from_receipt_digest": "42cfacabfe2296bcc49d7618c0921139d818e80f66d4ba351ebd6a18edae1364",
+  "static_evidence_reexecuted": false,
+  "step": "cfb-game-total-page1-v2-step4-event-page-side-market-repair",
+  "task_id": "cfb-game-total-page1-v2-step4-event-page-side-market-repair",
+  "workstream": "cfb-game-total-page1-v2"
+}
