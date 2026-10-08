@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "task_id": "api2-finalization-authority-v1-step5-authority-garbage-collector",
+  "title": "API 2 Finalization Authority V1 Step 5 — Authority Garbage Collector",
+  "project": "API2",
+  "workstream": "api2-finalization-authority-v1-step5",
+  "step": "5/6",
+  "status": "TDD_RED_PENDING",
+  "base_main_sha": "b42b320e69d4894ed2ec5bbd3a065824d35d6fff",
+  "branch": "api2-finalization-authority-v1-step5-authority-garbage-collector-r1",
+  "problem": "Terminal workstreams can remain blocked or appear active because stale mutation-capable authorities survive after canonical completion is already proven.",
+  "root_cause": "Completion, proof, leases, owners, and resume authority are intentionally separated. After terminal completion there is no single deterministic collector that retires mutation-capable authority for completed workstreams while preserving unrelated/current authority and immutable evidence.",
+  "patch": "Add a pure Authority Garbage Collector that requires canonical terminal truth, retires mutation-capable authority for completed target workstreams, preserves unrelated/current authority and immutable evidence, fails closed on protected target authority, rejects duplicate authority identities, emits a deterministic receipt, and is idempotent.",
+  "mutation_scope": [
+    "devsystem/authority_garbage_collector_v1.py",
+    "tests/test_devsystem_authority_garbage_collector_v1.py",
+    "devsystem/runless_proof_plans/api2-finalization-authority-v1-step5-authority-garbage-collector.json",
+    "devsystem/execution_plans/api2-finalization-authority-v1-step5-authority-garbage-collector.json",
+    "devsystem/task_ledgers/api2-finalization-authority-v1-step5-authority-garbage-collector.json",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step5-authority-garbage-collector.md"
+  ],
+  "forbidden_scope": [
+    "sports product runtime",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "qualification",
+    "sportsbook",
+    "other sports",
+    "frozen Step 1 artifacts",
+    "frozen Step 2 artifacts",
+    "frozen Step 3 artifacts",
+    "frozen Step 4 artifacts"
+  ],
+  "step2a": {
+    "single_authority": true,
+    "branch": "api2-finalization-authority-v1-step5-authority-garbage-collector-r1",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "unrelated_active_thaws_preserved": true,
+    "step4_frozen_checkpoint_verified": true
+  },
+  "tdd": {
+    "test_first_commit": "5e5691e9eaf5f891817d0793ef8563547daa76a3",
+    "red_stub_commit": "0c0fec6517e97db5453063df2ee2b3e0bd639a92",
+    "red_observed": false,
+    "green_observed": false
+  },
+  "acceptance": {
+    "canonical_terminal_truth_required": true,
+    "target_mutation_authority_zero_after_collection": true,
+    "unrelated_authority_preserved": true,
+    "immutable_evidence_preserved": true,
+    "protected_target_authority_fail_closed": true,
+    "duplicate_authority_ids_rejected": true,
+    "idempotent": true,
+    "deterministic_receipt": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP5_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RUNLESS_RED_THEN_IMPLEMENT_GREEN_THEN_EXACT_MERGE_THEN_POST_MERGE_REUSE_THEN_FREEZE_READBACK"
+}
