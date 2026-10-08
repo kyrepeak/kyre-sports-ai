@@ -126,3 +126,25 @@ def test_route_re_reads_dom_text_after_card_readiness(monkeypatch):
         (390, 844),
     )
     assert result["status"] == "GREEN"
+
+
+def test_card_text_reads_the_matched_card_nodes():
+    mod = _load_module()
+
+    class FakeLocator:
+        def all_inner_texts(self):
+            return [
+                "Projected Rush Yards\nFanDuel Line\nProjection − Line",
+                "Expected Carries\nExpected YPC\nOver Price",
+            ]
+
+    class FakeFrame:
+        def locator(self, selector):
+            assert selector == ".krush4-card"
+            return FakeLocator()
+
+    text = mod._card_text(FakeFrame(), ".krush4-card")
+    assert "Projected Rush Yards" in text
+    assert "FanDuel Line" in text
+    assert "Expected Carries" in text
+    assert "Over Price" in text
