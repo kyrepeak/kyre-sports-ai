@@ -1,0 +1,55 @@
+{
+  "version": "CFB_GAME_TOTAL_PAGE1_V2_STEP2_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "CFB Game Total Page 1 V2",
+  "step": "2/9",
+  "mission": "Multi-Source Data Engine",
+  "base_main_sha": "8563157c27fe3c13a3084e79230910cdb5e0841a",
+  "status": "COMPILED",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": true,
+    "sports_model": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "cfb_game_total_page1_multisource_v1.py",
+      "cfb_game_total_clean_page_v35.py",
+      "streamlit_memory_lazy_router_v190.py",
+      "tests/test_cfb_game_total_page1_v2_step2_multisource_data_engine.py",
+      "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step2-multisource-data-engine.json",
+      "devsystem/execution_plans/cfb-game-total-page1-v2-step2-multisource-data-engine.json",
+      "devsystem/task_ledgers/cfb-game-total-page1-v2-step2-multisource-data-engine.json",
+      "docs/superpowers/plans/2026-10-07-cfb-game-total-page1-v2-step2-multisource-data-engine.md"
+    ]
+  },
+  "step_2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_retry_forbidden": true,
+    "exact_head_merge_required": true,
+    "frozen_step1_mutation": false,
+    "wnba_mutation": false,
+    "app_py_mutation": false,
+    "rollback_main_sha": "8563157c27fe3c13a3084e79230910cdb5e0841a"
+  },
+  "acceptance": {
+    "third_down_multisource_fill": true,
+    "truthful_history_context": true,
+    "existing_verified_rows_preserved": true,
+    "generic_data_limited_third_down_removed": true,
+    "generic_data_limited_history_removed": true,
+    "cfb_only_route_activation": true,
+    "projection_math_unchanged": true,
+    "sportsbook_projection_influence": 0.0,
+    "runless_final_gate_required": true,
+    "github_actions_fallback": 0
+  },
+  "completion_contract": {
+    "freeze_token": "CFB_GAME_TOTAL_PAGE1_V2_STEP2_MULTISOURCE_DATA_ENGINE_FROZEN",
+    "after_freeze": "CFB_GAME_TOTAL_PAGE1_V2_STEP3_MATCHUP_HERO",
+    "total_steps": 9,
+    "overall_progress_percent_after_step": 22.2
+  }
+}
