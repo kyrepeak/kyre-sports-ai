@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "task_id": "api2-finalization-authority-v1-step3-terminal-completion-latch",
+  "title": "API 2 Finalization Authority V1 Step 3 — Terminal Completion Latch",
+  "project": "API2",
+  "workstream": "api2-finalization-authority-v1-step3",
+  "step": "3/6",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "base_main_sha": "e313222d0c4e55a6217f4aaf62d3afed7aeead13",
+  "branch": "api2-finalization-authority-v1-step3-terminal-latch-r1",
+  "problem": "Canonical terminal work can still be re-entered by upstream proof/recheck/merge/freeze/deploy entry points even after Step 1 proves completion.",
+  "root_cause": "ALREADY_COMPLETE protection exists inside atomic closeout but not as an early workflow latch above all finalization entry points.",
+  "patch": "Add a pure terminal completion latch over the canonical completion resolver. Bind the exact terminal tuple to a deterministic digest and short-circuit duplicate finalization work unless an explicit thaw plus distinct new task id is supplied.",
+  "mutation_scope": [
+    "devsystem/terminal_completion_latch_v1.py",
+    "tests/test_devsystem_terminal_completion_latch_v1.py",
+    "devsystem/runless_proof_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+    "devsystem/execution_plans/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+    "devsystem/task_ledgers/api2-finalization-authority-v1-step3-terminal-completion-latch.json",
+    "docs/superpowers/plans/2026-10-07-api2-finalization-authority-step3-terminal-completion-latch.md"
+  ],
+  "forbidden_scope": [
+    "sports product runtime",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "qualification",
+    "sportsbook",
+    "other sports"
+  ],
+  "step2a": {
+    "single_authority": true,
+    "branch": "api2-finalization-authority-v1-step3-terminal-latch-r1",
+    "lease_id": "SCOPE-LEASE-67048376F53B606480D75ECF",
+    "lease_owner": "api2-finalization-authority-v1-step3",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "unrelated_active_thaws_preserved": true
+  },
+  "tdd": {
+    "red_candidate_sha": "7deae8da3b554733cbc796a413bf32dd512270c5",
+    "red_observed": true,
+    "red_proof_id": "api2-finalization-authority-v1-step3-terminal-completion-latch-7deae8da3b554733-aa0d37b948c066ce",
+    "red_failure_class": "STATIC_PROOF",
+    "implementation_commit": "ed5df8a6056423a0cd7fcf1b3ed1f3e2b34cdab7"
+  },
+  "acceptance": {
+    "terminal_tuple_blocks_duplicate_finalization": true,
+    "stale_ledger_cannot_reopen": true,
+    "terminal_digest_stable": true,
+    "incomplete_canonical_truth_keeps_latch_open": true,
+    "same_task_reopen_blocked": true,
+    "explicit_thaw_plus_distinct_new_task_required": true,
+    "read_only_query_does_not_reopen": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "API2_FINALIZATION_AUTHORITY_V1_STEP3_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RUNLESS_EXACT_HEAD_PROOF_THEN_EXACT_MERGE_THEN_POST_MERGE_REUSE_THEN_FREEZE_READBACK"
+}
