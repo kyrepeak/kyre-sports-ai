@@ -25,6 +25,9 @@ import sys
 from devsystem import browser_qa_v1 as browser_base
 from devsystem import cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 as cert
 
+EXPECTED_DEPLOYMENT_SHA = "5c155c494cf4e10148ebb3d6133d83a0ef42172c"
+DEPLOYMENT_SELECTOR = '[data-api2-exact-deployment="streamlit-runtime-v1"]'
+
 def canonical_prime(page, base_url=cert.PRODUCTION_URL):
     page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
     frame, initial_scan = browser_base._find_app_frame(page)
@@ -35,6 +38,15 @@ def canonical_prime(page, base_url=cert.PRODUCTION_URL):
     browser_base._choose(page, frame, 1, cert.GAME_TOTAL_MARKET)
     frame, market_scan = browser_base._find_app_frame(page)
     cert._visible(frame, "gtvc2-matchup-hero")
+    marker = frame.locator(DEPLOYMENT_SELECTOR).first
+    marker.wait_for(state="attached", timeout=45000)
+    observed_sha = str(marker.get_attribute("data-production-sha") or "").strip().lower()
+    print("CFB_GT_VISUAL_CLEANUP_STEP5_PRODUCTION_SHA=" + observed_sha, flush=True)
+    if observed_sha != EXPECTED_DEPLOYMENT_SHA:
+        raise RuntimeError(
+            "STEP5_PRODUCTION_SHA_DRIFT:expected=" + EXPECTED_DEPLOYMENT_SHA + ":observed=" + observed_sha
+        )
+    print("CFB_GT_VISUAL_CLEANUP_STEP5_EXACT_DEPLOYMENT_GREEN", flush=True)
     return frame, {"initial": initial_scan, "sport_selected": sport_scan, "market_selected": market_scan}
 
 cert._prime_route = canonical_prime
