@@ -501,6 +501,17 @@
       "source_main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE2_V1_STEP3_INTEGRATED_FLOW_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_page2_step3_integrated_flow_v1.py": "6d9c930095bf46c424235bc6704e5509f946193c",
+        "devsystem/execution_plans/cfb-game-total-page2-step3-integrated-flow.json": "5879e326916fd2c153cc19c3ce7b0472af7a511b",
+        "devsystem/runless_proof_plans/cfb-game-total-page2-step3-integrated-flow.json": "318380bed513f67185fd800140a91b6d6e2b0aa6",
+        "tests/test_cfb_game_total_page2_step3_integrated_flow_v1.py": "f7e90807c76cb58c35a9cb2893b287305d9ff63e"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP3_INTEGRATED_FLOW_FROZEN",
+      "source_main_sha": "c304d28f2dd99f42d1f0bb98930afde8b65e047c",
+      "status": "FROZEN"
+    },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
       "artifacts": {
         "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
@@ -2752,9 +2763,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 223,
+  "revision": 224,
   "schema_version": 1,
-  "source_main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
-  "state_hash": "29522eaefef0ca0e27b30834099db7bc0880eac5c1fdb5624b2dd49864c7ed28",
+  "source_main_sha": "c304d28f2dd99f42d1f0bb98930afde8b65e047c",
+  "state_hash": "f468a1085769f6b9fe0adcd48d1036a7ca155fa16c1d12b8521a070b75e0d18f",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
