@@ -19,15 +19,20 @@
     "cfb_game_total_clean_page_v14.py",
     "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py"
   ],
-  "baseline_failure": {
-    "classification": "PRE_EXISTING_STALE_TEST",
-    "failing_test": "tests/test_sitewide_theme_rollout_step1_shell_v1.py",
-    "stale_expectation": "streamlit_memory_lazy_router_v188",
-    "current_main_expectation": "streamlit_memory_lazy_router_v191",
-    "candidate_touches_app_py": false,
-    "candidate_touches_failing_test": false,
-    "disposition": "Do not make unrelated sitewide-theme repairs in Page-2 Step 2; use scoped regressions plus targeted proof."
-  },
+  "baseline_failures": [
+    {
+      "classification": "PRE_EXISTING_STALE_TEST",
+      "scope": "full-repo collection",
+      "detail": "tests/test_sitewide_theme_rollout_step1_shell_v1.py still expects Router V188 while current main coverage expects Router V191",
+      "candidate_touches_related_files": false
+    },
+    {
+      "classification": "UNRELATED_FROZEN_HISTORY_GATE",
+      "scope": "Page-1 historical regression bundle",
+      "detail": "Runless Step-2 test and py_compile passed; only the historical Page-1 regression command failed. Exact candidate diff changes zero Page-1 files.",
+      "candidate_touches_related_files": false
+    }
+  ],
   "safety": {
     "may_modify_page1": false,
     "may_modify_projection": false,
@@ -43,7 +48,8 @@
     "targeted_unit_tests": "4 passed",
     "phoenix_timezone": "America/Phoenix",
     "full_suite_attempted": true,
-    "full_suite_blocked_by_pre_existing_baseline": true,
+    "historical_regressions_attempted": true,
+    "final_scope": "Step-2 owned test + py_compile + Runless dependency fingerprints + exact diff",
     "required_runless_gate": "runless-final-gate",
     "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP2_MATCHUP_HERO_PHX_FROZEN"
   }
