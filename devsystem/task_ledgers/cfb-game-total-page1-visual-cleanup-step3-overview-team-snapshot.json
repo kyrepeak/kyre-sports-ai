@@ -1,0 +1,48 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step3-overview-team-snapshot",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "3/5",
+  "state": "IMPLEMENTATION_STAGED_AWAITING_EXACT_THAW",
+  "source_main_sha": "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4",
+  "authoritative_branch": "api2/cfb-game-total-page1-visual-cleanup-step3-overview-team-snapshot",
+  "scope_lease_id": "SCOPE-LEASE-14E64B2CE077A25B96E08FC0",
+  "rollback_point": "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4",
+  "tdd": {
+    "red_commit": "8cd46d623ae37bb6185d2ae375438170099b8e17",
+    "red_failure_class": "STATIC_PROOF",
+    "red_reason": "Step-3 Overview module absent before implementation",
+    "green_local_tests": "4 passed",
+    "green_compile": true
+  },
+  "product_scope": {
+    "friday_games": true,
+    "phoenix_today_inclusive": true,
+    "overview_edges": ["FAVORABLE_FOR", "KEY_EDGE", "TOUGHNESS_FOR"],
+    "team_snapshot": true,
+    "dynamic_selected_game_only": true,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0,
+    "projection_mutation": false,
+    "market_ownership_mutation": false,
+    "other_sports_mutation": false
+  },
+  "thaw": {
+    "required": true,
+    "path": "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
+    "from_blob": "b52cd7497388dbfe01a921014e13f9d99202cb84",
+    "strategy": "Register one exact from/to thaw before advancing the authoritative branch; retire it atomically by frozen-baseline forward-port during Step-3 closeout."
+  },
+  "registry_baseline": {
+    "revision": 213,
+    "state_hash": "93203b2222ef86db1880b97b3be3a26a442b8e582a5a379ce58cb39e1176f068",
+    "unrelated_active_thaws": 2,
+    "preserve_unrelated_thaws": true
+  },
+  "runless": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "proof_submissions": 0,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP3_OVERVIEW_TEAM_SNAPSHOT_FROZEN"
+}
