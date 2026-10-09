@@ -1,0 +1,30 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "2/5",
+  "source_main_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
+  "authoritative_branch": "api2/cfb-game-total-page1-visual-cleanup-step2-top-shell",
+  "scope_lease_id": "SCOPE-LEASE-CFB-GT-P1-VISUAL-CLEANUP-STEP2-001",
+  "step2a": {
+    "exact_main_verified": true,
+    "duplicate_step2_pr_found": false,
+    "duplicate_async_run_started": false,
+    "step1_freeze_verified": true,
+    "rollback_point": "e43e244328fae9c55e10b66d7d86ed752edfe518"
+  },
+  "tdd_red_candidate_sha": null,
+  "tdd_red_failure_class": null,
+  "green_candidate_sha": null,
+  "runless_proof_id": null,
+  "merged_main_sha": null,
+  "timezone": "America/Phoenix",
+  "presentation_only": true,
+  "may_modify_projection": false,
+  "may_modify_market_ownership": false,
+  "may_modify_other_sports": false,
+  "sportsbook_projection_influence": 0.0,
+  "github_actions_fallback": 0,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP2_TOP_SHELL_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
