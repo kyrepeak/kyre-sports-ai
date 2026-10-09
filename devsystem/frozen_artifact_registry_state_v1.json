@@ -2199,6 +2199,18 @@
       "source_main_sha": "7854d5772333482947f9f2d4bda71cf73ded72b5",
       "status": "FROZEN"
     },
+    "NFL_RB_WR_RENDER_REPAIR_V1_STEP4_MOBILE_ROUTE_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/nfl-rb-wr-render-repair-step4-mobile-route.json": "5d2d4f737fc2e6405ac9d9b50465285a1727531d",
+        "devsystem/nfl_rb_wr_render_repair_step4_mobile_route_v1.py": "ba25ac2bd8725677f6646e32b8ddfaa5c59d20c7",
+        "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step4-mobile-route.json": "31addf17f44f5a0a79d1fc2191c182cb7c266365",
+        "devsystem/task_ledgers/nfl-rb-wr-render-repair-step4-mobile-route.json": "5e949385235505d0618c46f5ee1d5e8cda1c065f",
+        "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py": "9fc021b1e55d5cc456b15ad7eb2dac4c9104a4ef"
+      },
+      "checkpoint_id": "NFL_RB_WR_RENDER_REPAIR_V1_STEP4_MOBILE_ROUTE_FROZEN",
+      "source_main_sha": "76dde02ccd468447422710051ce2cb145aff2ebe",
+      "status": "FROZEN"
+    },
     "REGISTRY_RACE_V1_STEP1": {
       "artifacts": {
         ".github/workflows/registry-race-v1-step1-reconciliation-barrier.yml": "ca4ca47c7fecece8adf672071b21d2d3e9fac663",
@@ -2651,9 +2663,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 209,
+  "revision": 210,
   "schema_version": 1,
-  "source_main_sha": "7854d5772333482947f9f2d4bda71cf73ded72b5",
-  "state_hash": "3fe1d551aff93a78fe6f394ca77471d9b480f1efe6e7b75754c5c5c0d25de0bd",
+  "source_main_sha": "76dde02ccd468447422710051ce2cb145aff2ebe",
+  "state_hash": "9d11310bc96136b1d5e70e7b85c42ba3b62f4c0226075d9c711bbbcb001a1b3b",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
