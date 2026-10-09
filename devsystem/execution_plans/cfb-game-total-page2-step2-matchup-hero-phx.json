@@ -1,0 +1,39 @@
+{
+  "task_id": "cfb-game-total-page2-step2-matchup-hero-phx",
+  "workstream": "cfb-game-total-page2-v1",
+  "project": "API2",
+  "step": "2/8",
+  "source_main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
+  "scope_lease_id": "SCOPE-LEASE-3C34C342A60F9CAD5091D9A2",
+  "problem": "Page 2 needs a premium dynamic matchup hero with exact America/Phoenix kickoff labeling without reopening frozen Page 1 or model ownership.",
+  "root_cause": "The new Page-2 presentation component did not exist; existing selected-game routing already supplies the verified matchup identity.",
+  "patch": "Add one presentation-only Page-2 hero builder and its regression test. Reuse existing selected-game event routing as a dependency; do not alter Page 1 or routing ownership.",
+  "write_paths": [
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "tests/test_cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step2-matchup-hero-phx.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step2-matchup-hero-phx.json"
+  ],
+  "protected_dependencies": [
+    "streamlit_memory_lazy_router_v191.py",
+    "cfb_game_total_clean_page_v14.py",
+    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py"
+  ],
+  "safety": {
+    "may_modify_page1": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_model": false,
+    "may_modify_market_ownership": false,
+    "may_add_network_calls": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "proof": {
+    "tdd_red_observed": true,
+    "targeted_unit_tests": "4 passed",
+    "phoenix_timezone": "America/Phoenix",
+    "required_runless_gate": "runless-final-gate",
+    "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP2_MATCHUP_HERO_PHX_FROZEN"
+  }
+}
