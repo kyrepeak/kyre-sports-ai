@@ -1,32 +1,38 @@
 {
-  "generation": 270,
+  "generation": 271,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-09T19:52:02Z",
-      "expires_at_utc": "2026-10-09T20:52:02Z",
-      "generation": 270,
-      "heartbeat_at_utc": "2026-10-09T19:52:02Z",
-      "lease_id": "SCOPE-LEASE-7A3965013CBB874B141FEB78",
+      "acquired_at_utc": "2026-10-09T19:54:10Z",
+      "expires_at_utc": "2026-10-09T20:54:10Z",
+      "generation": 271,
+      "heartbeat_at_utc": "2026-10-09T19:54:10Z",
+      "lease_id": "SCOPE-LEASE-FD85167BA69BE6013E8CEFD9",
       "owner_id": "api2-cfb-game-total-page1-visual-cleanup-step5-deployment-convergence",
       "scope": {
         "dependency_tokens": [
           "cfb-game-total-page1-visual-cleanup-v1",
-          "cfb-game-total-step5-deployment-convergence"
+          "cfb-game-total-step5-deployment-convergence",
+          "runless-step5-deployment-marker-proof"
         ],
         "exclusive": false,
         "resource_identity": {
+          "candidate_sha": "37654ccba369fca46476af0845b3887e325db71c",
           "main_sha": "5c155c494cf4e10148ebb3d6133d83a0ef42172c",
-          "phase": "deployment-convergence",
+          "phase": "deployment-convergence-premerge-proof",
+          "pr_number": "1484",
           "production_sha_observed": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
           "registry_state_hash": "acbe369a22b2dd4703be0344eb4838862fccc33b71aeeaaca0190385f5698763",
           "repository": "kyrepeak/kyre-sports-ai",
           "workstream": "cfb-game-total-page1-visual-cleanup-v1"
         },
         "shared_resources": [
-          "production:pickvault-streamlit"
+          "production:pickvault-streamlit",
+          "render:runless-proof-plane"
         ],
         "write_paths": [
-          "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt"
+          "devsystem/deployment_markers/monster-speed-v3-streamlit-redeploy-epoch-v1.txt",
+          "runless_proof_plane/cfb_game_total_page1_visual_cleanup_step5_deployment_convergence.py",
+          "runless_proof_plane/nfl_rb_wr_step3_closeout.py"
         ]
       }
     }
@@ -34,8 +40,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 450,
+  "revision": 452,
   "schema_version": 1,
-  "state_hash": "4d13e6b885d1bae0b4aab192da4c59842b78d6113afec01e6b28b1c03418f382",
+  "state_hash": "8892a07b7dd652ef46427e68b0c669a5ff2649907a0c46d224af72ea31221e80",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
