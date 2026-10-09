@@ -29,6 +29,17 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    },
+    {
+      "files": {
+        "streamlit_memory_lazy_router_v191.py": {
+          "from_blob": "1a4a2df127a060519d62ed96dd39f6c14bb79449",
+          "to_blob": "6f3b7132c75c360fd4d74c06e5e5b435435950f7"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "121873d7ee02bde2d0e75ce10b5eb13c8327d4b9",
+      "thaw_id": "THAW-CFB-GT-P1-VISUAL-CLEANUP-STEP5-V191-ACTIVATION"
     }
   ],
   "entries": {
@@ -2730,9 +2741,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 218,
+  "revision": 219,
   "schema_version": 1,
   "source_main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
-  "state_hash": "08aa5a9ff7fccdd030621d895083e57445634b0cb657d7f4cd3d199c1ed80b04",
+  "state_hash": "7889ed5f5bffcde54416abaa5a2f820402505940193c03868fe68b7c2f473d39",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
