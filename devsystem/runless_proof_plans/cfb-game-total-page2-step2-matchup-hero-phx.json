@@ -19,7 +19,11 @@
       "python",
       "-m",
       "pytest",
-      "-q"
+      "-q",
+      "tests/test_cfb_game_total_page1_visual_cleanup_step2_top_shell.py",
+      "tests/test_cfb_game_total_page1_v2_step3_matchup_hero_phx.py",
+      "tests/test_cfb_game_total_page1_visual_cleanup_step5_v191_idempotence.py",
+      "tests/test_sitewide_theme_rollout_step4_remaining_pages_v1.py"
     ]
   ],
   "artifacts": [
@@ -43,7 +47,9 @@
     "runless_proof_plane/workspace.py",
     "streamlit_memory_lazy_router_v191.py",
     "cfb_game_total_clean_page_v14.py",
-    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py"
+    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py",
+    "tests/test_sitewide_theme_rollout_step1_shell_v1.py",
+    "tests/test_sitewide_theme_rollout_step4_remaining_pages_v1.py"
   ],
   "probes": [],
   "timeout_seconds": 900,
