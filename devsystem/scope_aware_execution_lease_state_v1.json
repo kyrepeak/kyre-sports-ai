@@ -1,12 +1,12 @@
 {
-  "generation": 266,
+  "generation": 267,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-09T17:34:27Z",
-      "expires_at_utc": "2026-10-09T18:34:27Z",
-      "generation": 266,
-      "heartbeat_at_utc": "2026-10-09T17:34:27Z",
-      "lease_id": "SCOPE-LEASE-18DADD9AE670961A06862080",
+      "acquired_at_utc": "2026-10-09T17:39:30Z",
+      "expires_at_utc": "2026-10-09T18:39:30Z",
+      "generation": 267,
+      "heartbeat_at_utc": "2026-10-09T17:39:30Z",
+      "lease_id": "SCOPE-LEASE-6B447CE36970CCC251A1A1CA",
       "owner_id": "api2-cfb-game-total-page1-visual-cleanup-step5-convergence",
       "scope": {
         "dependency_tokens": [
@@ -18,10 +18,10 @@
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "121873d7ee02bde2d0e75ce10b5eb13c8327d4b9",
+          "candidate_sha": "c0cdf13130e56e97f195356ad81b2d386806eaf7",
           "main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
-          "phase": "activation-repair-convergence",
-          "registry_state_hash": "08aa5a9ff7fccdd030621d895083e57445634b0cb657d7f4cd3d199c1ed80b04",
+          "phase": "activation-repair-proof",
+          "registry_state_hash": "7889ed5f5bffcde54416abaa5a2f820402505940193c03868fe68b7c2f473d39",
           "repository": "kyrepeak/kyre-sports-ai",
           "workstream": "cfb-game-total-page1-visual-cleanup-v1"
         },
@@ -53,8 +53,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 443,
+  "revision": 444,
   "schema_version": 1,
-  "state_hash": "32acc4612efe5104f4eb874a0ce6b64c5185e9527711a6bb78846f0d1dfde398",
+  "state_hash": "c7c3573f1053ffed256074cb0c05cbed5623e615779d37735e1c9a18b7be59bc",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
