@@ -1,0 +1,41 @@
+{
+  "task_id": "cfb-game-total-page2-step6-trends-scoring-breakdown",
+  "workstream": "cfb-game-total-page2-v1",
+  "project": "API2",
+  "step": "6/8",
+  "source_main_sha": "be487d7de97d807c7bd02b25a0d206d4d28f94ec",
+  "scope_lease_id": "SCOPE-LEASE-1E81E6BC3D6A9F8C54D20A71",
+  "problem": "Page 2 has frozen Outlook and Team Snapshot stages but no owned Trends stage for recent game totals, half/quarter scoring shape, explosive scoring, scoring opportunities, and red-zone finishing.",
+  "root_cause": "Steps 1-5 established navigation, projection summary, and team drivers only; the reserved gtp2-trends stage has no isolated presentation component.",
+  "patch": "Add one presentation-only Trends + Scoring Breakdown component at gtp2-trends. Consume already-owned recent totals, market reference, scoring breakdown, explosive scoring, scoring opportunities, and red-zone finishing values without fetching or recomputing sports/model meaning.",
+  "write_paths": [
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py",
+    "tests/test_cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step6-trends-scoring-breakdown.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step6-trends-scoring-breakdown.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py",
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py"
+  ],
+  "safety": {
+    "may_modify_page1": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_model": false,
+    "may_modify_market_ownership": false,
+    "may_add_network_calls": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "proof": {
+    "tdd_red_observed": true,
+    "red_candidate_sha": "3f45355158f12416e2d6741bc3933b8f32363f5f",
+    "red_failure_class": "STATIC_PROOF",
+    "red_failure": "Page-2 Step-6 trends/scoring module absent under targeted pytest",
+    "targeted_unit_tests": "pending exact-head GREEN Runless",
+    "required_runless_gate": "runless-final-gate",
+    "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP6_TRENDS_SCORING_BREAKDOWN_FROZEN"
+  }
+}
