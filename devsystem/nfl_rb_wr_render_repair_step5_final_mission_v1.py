@@ -15,6 +15,9 @@ AUTO_MUTATE = False
 MAY_MODIFY_PRODUCT_RUNTIME = False
 GITHUB_ACTIONS_FALLBACK = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+STEP4_PUBLIC_PROOF_REUSED = True
+STEP4_PUBLIC_PROOF_ID = "nfl-rb-wr-render-repair-step4-mobile-route-f503fcc4f1ead82e-5025754ac04ac692"
+STEP4_PUBLIC_RECEIPT_DIGEST = "01aa378412eeecece65d5e9f44fd9f914e96ecc9869e42d6d8e3db4ed19da2a5"
 
 REQUIRED_FREEZE_TOKENS = (
     "NFL_RB_WR_RENDER_REPAIR_V1_STEP1_ROOT_CAUSE_FROZEN",
@@ -106,6 +109,9 @@ def execute(root: Path = Path(".")) -> dict[str, Any]:
         "registry_state_hash": EXPECTED_REGISTRY_HASH,
         "required_freeze_tokens": list(REQUIRED_FREEZE_TOKENS),
         "verified_prior_artifact_count": artifacts["artifact_count"],
+        "step4_public_proof_reused": STEP4_PUBLIC_PROOF_REUSED,
+        "step4_public_proof_id": STEP4_PUBLIC_PROOF_ID,
+        "step4_public_receipt_digest": STEP4_PUBLIC_RECEIPT_DIGEST,
         "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         "product_runtime_mutations": 0,
         "github_actions_fallback": 0,

@@ -7,45 +7,11 @@
     "tests/test_nfl_rb_wr_render_repair_step5_final_mission.py"
   ],
   "commands": [
-    [
-      "python",
-      "-m",
-      "pytest",
-      "-q",
-      "tests/test_nfl_rb_wr_render_repair_step5_final_mission.py"
-    ],
-    [
-      "python",
-      "-m",
-      "devsystem.nfl_rb_wr_render_repair_step5_final_mission_v1"
-    ],
-    [
-      "python",
-      "-m",
-      "pytest",
-      "-q",
-      "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"
-    ],
-    [
-      "python",
-      "-m",
-      "pytest",
-      "-q",
-      "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"
-    ],
-    [
-      "python",
-      "-m",
-      "pytest",
-      "-q",
-      "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py"
-    ],
-    [
-      "python",
-      "-m",
-      "devsystem.nfl_rb_wr_render_repair_step4_mobile_route_v1",
-      "--public"
-    ]
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step5_final_mission.py"],
+    ["python", "-m", "devsystem.nfl_rb_wr_render_repair_step5_final_mission_v1"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py"]
   ],
   "dependencies": [
     "devsystem/production_targets_v1.json",
@@ -66,7 +32,10 @@
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
   "source_main_sha": "76dde02ccd468447422710051ce2cb145aff2ebe",
+  "step4_public_proof_id": "nfl-rb-wr-render-repair-step4-mobile-route-f503fcc4f1ead82e-5025754ac04ac692",
+  "step4_public_receipt_digest": "01aa378412eeecece65d5e9f44fd9f914e96ecc9869e42d6d8e3db4ed19da2a5",
+  "step4_public_proof_reused": true,
   "task_id": "nfl-rb-wr-render-repair-step5-final-mission",
-  "timeout_seconds": 600,
+  "timeout_seconds": 300,
   "workstream": "nfl-rb-wr-render-repair-v1"
 }

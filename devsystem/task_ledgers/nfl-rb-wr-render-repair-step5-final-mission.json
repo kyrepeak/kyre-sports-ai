@@ -10,24 +10,28 @@
     "sportsbook_projection_influence": 0.0,
     "step2_regression_recheck": true,
     "step3_regression_recheck": true,
-    "step4_public_browser_recheck": true,
+    "step4_frozen_public_proof_reused": true,
+    "step4_public_browser_recheck": false,
     "step4_regression_recheck": true
   },
-  "patch": "Verification-only final mission certificate plus cumulative regression and public-route replay; no product runtime mutation.",
-  "problem": "Bind the complete Step 1-4 repair chain into one terminal Runless proof and final mission freeze.",
+  "patch": "Verification-only final mission certificate plus cumulative regression replay and immutable Step-4 public-proof reuse; no product runtime mutation.",
+  "problem": "Bind the complete Step 1-4 repair chain into one terminal Runless proof and final mission freeze without re-gating completion on volatile live market availability.",
   "project": "API2",
-  "root_cause_class": "FINAL_MISSION_CONVERGENCE_GAP_ONLY",
+  "root_cause_class": "FINAL_MISSION_VOLATILE_PUBLIC_REPLAY_ONLY",
   "runless": {
     "blind_retries": 0,
     "duplicate_successful_runs": 0,
     "github_actions_fallback": 0,
-    "next_proof_generation": 1,
+    "next_proof_generation": 2,
+    "r1_failure_class": "STATIC_PROOF",
+    "r1_failure_command": "python -m devsystem.nfl_rb_wr_render_repair_step4_mobile_route_v1 --public",
+    "r1_failure_reason": "CARD_NOT_READY:Rushing Yards on a live fail-closed slate",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253
   },
   "schema_version": 1,
   "source_main_sha": "76dde02ccd468447422710051ce2cb145aff2ebe",
-  "state": "READY_FOR_RUNLESS_FINAL_GREEN_R1",
+  "state": "READY_FOR_RUNLESS_FINAL_GREEN_R2",
   "step": "5/5",
   "step2a": {
     "frozen_source_mutations": 0,
@@ -37,15 +41,20 @@
     "scope_lease_id": "SCOPE-LEASE-B5441A5FDEF4CE4BD47A538D",
     "thaw_required": false
   },
+  "step4_public_proof": {
+    "proof_id": "nfl-rb-wr-render-repair-step4-mobile-route-f503fcc4f1ead82e-5025754ac04ac692",
+    "receipt_digest": "01aa378412eeecece65d5e9f44fd9f914e96ecc9869e42d6d8e3db4ed19da2a5",
+    "reused_from_frozen_checkpoint": true
+  },
   "task_id": "nfl-rb-wr-render-repair-step5-final-mission",
   "tdd": {
     "final_runless_green_pending": true,
-    "green_unit_contract_count": 6,
+    "green_unit_contract_count": 7,
     "green_unit_contract_passed": true,
-    "red_candidate_sha": "9edce23b60e343c90b37f29e2fbd82dd42b58243",
+    "red_candidate_sha": "696ea5e7f97f6ef76a6b789e254d5a3f03103457",
     "red_expected": true,
     "red_failure_class": "STATIC_PROOF",
-    "red_failure_count": 6
+    "red_failure_reason": "Step4 frozen public proof reuse constants absent"
   },
   "workstream": "nfl-rb-wr-render-repair-v1"
 }

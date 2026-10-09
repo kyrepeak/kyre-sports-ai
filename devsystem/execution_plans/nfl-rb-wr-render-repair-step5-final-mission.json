@@ -1,10 +1,10 @@
 {
   "authoritative_branch": "api2/nfl-rb-wr-render-repair-step5-final-mission",
   "data_api_mutations": 0,
-  "final_public_recheck": true,
+  "final_public_recheck": false,
   "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP5_FINAL_MISSION_FROZEN",
   "frozen_source_mutations": 0,
-  "patch": "Add a verification-only final mission cert and Runless plan that revalidates all prior frozen artifact blobs, replays Steps 2-4 regression tests, and reruns the Step-4 public browser certificate before final mission freeze.",
+  "patch": "Add a verification-only final mission cert and Runless plan that revalidates all prior frozen artifact blobs, replays Steps 2-4 regression tests, and consumes the canonically frozen Step-4 public-browser proof instead of re-gating completion on volatile live market availability.",
   "prior_artifact_count": 21,
   "problem": "Provide one final proof that the complete NFL RB/WR render-repair chain remains intact end-to-end after Steps 1-4, then freeze the mission.",
   "product_runtime_mutations": 0,
@@ -14,6 +14,11 @@
     "github_actions_fallback": 0,
     "required_check_app_id": 5204253,
     "required_green_check": "runless-final-gate",
+    "r1_failure_class": "STATIC_PROOF",
+    "r1_failure_domain": "VOLATILE_PUBLIC_MARKET_AVAILABILITY_REPLAY",
+    "step4_public_proof_id": "nfl-rb-wr-render-repair-step4-mobile-route-f503fcc4f1ead82e-5025754ac04ac692",
+    "step4_public_receipt_digest": "01aa378412eeecece65d5e9f44fd9f914e96ecc9869e42d6d8e3db4ed19da2a5",
+    "step4_public_proof_reused": true,
     "tdd_red_candidate_sha": "9edce23b60e343c90b37f29e2fbd82dd42b58243",
     "tdd_red_failure_class": "STATIC_PROOF"
   },
@@ -24,7 +29,7 @@
     "NFL_RB_WR_RENDER_REPAIR_V1_STEP4_MOBILE_ROUTE_FROZEN"
   ],
   "rollback_anchor": "76dde02ccd468447422710051ce2cb145aff2ebe",
-  "root_cause": "Steps 1-4 are individually GREEN + FROZEN, but no single terminal certificate yet binds all four frozen checkpoints, their exact artifact blobs, the regression suites, and a fresh public RB/WR route proof into one final mission receipt.",
+  "root_cause": "Steps 1-4 are individually GREEN + FROZEN. R1 showed that repeating the Step-4 live browser proof in Step 5 can fail solely because a current slate has no card, even while the previously certified public proof remains canonically frozen. Final convergence therefore reuses the immutable Step-4 proof and rechecks its frozen artifacts instead of making live market availability a second completion gate.",
   "router_mutations": 0,
   "schema_version": 1,
   "scope_lease_id": "SCOPE-LEASE-B5441A5FDEF4CE4BD47A538D",
