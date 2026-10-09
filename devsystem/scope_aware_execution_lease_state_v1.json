@@ -6,8 +6,8 @@
       "lease_id": "SCOPE-LEASE-3C34C342A60F9CAD5091D9A2",
       "generation": 275,
       "acquired_at_utc": "2026-10-09T21:27:47Z",
-      "heartbeat_at_utc": "2026-10-09T21:27:47Z",
-      "expires_at_utc": "2026-10-09T22:27:47Z",
+      "heartbeat_at_utc": "2026-10-09T21:54:00Z",
+      "expires_at_utc": "2026-10-09T22:54:00Z",
       "scope": {
         "write_paths": [
           "cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
@@ -30,7 +30,7 @@
           "runless-proof-plane"
         ],
         "resource_identity": {
-          "main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
+          "main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
           "project": "API2",
           "workstream": "cfb-game-total-page2-v1",
           "step": "2/8"
@@ -42,8 +42,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 460,
+  "revision": 461,
   "schema_version": 1,
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
-  "state_hash": "4cad3b389bfed893570e60592b3271cd09755bb8ae8cbdf47fa4902218974856"
+  "state_hash": "0725c5ca9afff7b51d9057a292def5c518336c73e4322bcce9bd5153e590b012"
 }
