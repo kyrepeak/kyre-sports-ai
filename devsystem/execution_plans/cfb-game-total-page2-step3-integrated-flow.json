@@ -1,0 +1,42 @@
+{
+  "task_id": "cfb-game-total-page2-step3-integrated-flow",
+  "workstream": "cfb-game-total-page2-v1",
+  "project": "API2",
+  "step": "3/8",
+  "source_main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
+  "scope_lease_id": "SCOPE-LEASE-113125EEE9134FC49E1F055B",
+  "problem": "Page 2 needs the approved compact 1-5 integrated Game Total flow so users can jump cleanly between the major analysis stages.",
+  "root_cause": "Step 2 established the frozen matchup hero, but Page 2 did not yet have an owned, responsive, accessible stage-navigation component.",
+  "patch": "Add one presentation-only five-stage anchor tracker for Outlook, Team Snapshot, Trends, Line Lab, and Best Bet. Keep Page 1 and the frozen Step-2 hero untouched.",
+  "write_paths": [
+    "cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "tests/test_cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step3-integrated-flow.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step3-integrated-flow.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "streamlit_memory_lazy_router_v191.py",
+    "cfb_game_total_clean_page_v14.py"
+  ],
+  "safety": {
+    "may_modify_page1": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_model": false,
+    "may_modify_market_ownership": false,
+    "may_add_network_calls": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "proof": {
+    "tdd_red_observed": true,
+    "red_candidate_sha": "9d08cd71de72d670d9d47d7412b0e62814b8f0fd",
+    "red_failure_class": "STATIC_PROOF",
+    "red_failure": "RUNLESS_STATIC_PROOF_FAILED:python -m pytest -q tests/test_cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "targeted_unit_tests": "pending exact-head Runless",
+    "final_scope": "Step-3 owned test + py_compile + Runless frozen-registry dependency fingerprints + exact diff",
+    "required_runless_gate": "runless-final-gate",
+    "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP3_INTEGRATED_FLOW_FROZEN"
+  }
+}
