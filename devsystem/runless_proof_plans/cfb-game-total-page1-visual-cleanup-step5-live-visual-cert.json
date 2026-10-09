@@ -13,7 +13,6 @@
     "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py",
     "tests/test_cfb_game_total_page1_visual_cleanup_step5_visual_cert.py",
     "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
-    "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
     "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
     "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json"
   ],
