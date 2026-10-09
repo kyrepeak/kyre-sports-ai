@@ -1,0 +1,30 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step1-target-lock",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "1/5",
+  "source_main_sha": "1eb550e58964ace5f9551a484d1c65cd49f8fc20",
+  "authoritative_branch": "api2/cfb-game-total-page1-visual-cleanup-step1-target-lock",
+  "problem": "The live CFB Game Total Page 1 remains evidence-wall-first and does not match the approved summary-first mockup hierarchy.",
+  "root_cause": "The prior visual contract preserved the legacy Steps 1-12 evidence wall as a primary page surface. The new target requires hierarchy convergence while preserving all existing data/model truth.",
+  "patch": "Lock the new eight-section Overview hierarchy as a verification-only contract. Move Steps 1-12 evidence, Final Model Summary and Top-5 Slate Scanner to Full Analysis/secondary evidence in later implementation steps.",
+  "product_runtime_mutations": 0,
+  "projection_math_mutations": 0,
+  "sportsbook_logic_mutations": 0,
+  "router_mutations": 0,
+  "data_api_mutations": 0,
+  "sportsbook_projection_influence": 0.0,
+  "timezone": "America/Phoenix",
+  "reference_mockup_data_is_illustrative": true,
+  "github_actions_fallback": 0,
+  "thaw_required": false,
+  "scope_lease_id": "SCOPE-LEASE-CFB-GT-P1-VISUAL-CLEANUP-STEP1-240",
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP1_TARGET_LOCK_FROZEN",
+  "write_paths": [
+    "devsystem/cfb_game_total_page1_visual_cleanup_step1_target_lock_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step1-target-lock.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step1-target-lock.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step1-target-lock.json",
+    "docs/superpowers/plans/2026-10-09-cfb-game-total-page1-visual-cleanup-step1-target-lock.md",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step1_target_lock.py"
+  ]
+}
