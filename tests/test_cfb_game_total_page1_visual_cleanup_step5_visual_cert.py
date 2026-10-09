@@ -15,6 +15,7 @@ from devsystem.cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json"
+CERT = ROOT / "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py"
 
 
 def test_step5_viewport_and_safety_contract() -> None:
@@ -41,6 +42,14 @@ def test_step5_required_live_markers_cover_steps2_through4() -> None:
         "gtvc4-games-on-day",
         "gtvc4-data-footer",
     }.issubset(required)
+
+
+def test_step5_browser_primes_canonical_user_route_before_asserting_visuals() -> None:
+    source = CERT.read_text(encoding="utf-8")
+    assert 'page.goto(base_url.rstrip("/") + "/"' in source
+    assert 'base._choose(page, frame, 0, CFB_SPORT)' in source
+    assert 'base._choose(page, frame, 1, GAME_TOTAL_MARKET)' in source
+    assert 'page.goto(production_route()' not in source
 
 
 def test_step5_terminal_live_evidence() -> None:
