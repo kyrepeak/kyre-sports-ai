@@ -47,21 +47,13 @@ def phoenix_day_window_including_today(
     now: datetime | None = None,
     count: int = 7,
 ) -> list[date]:
+    """Always show Phoenix today through the next six days, regardless of selected day."""
     reference = now or datetime.now(ZoneInfo(PHOENIX_TZ))
     if reference.tzinfo is None or reference.utcoffset() is None:
         reference = reference.replace(tzinfo=ZoneInfo(PHOENIX_TZ))
     else:
         reference = reference.astimezone(ZoneInfo(PHOENIX_TZ))
-    floor = reference.date()
-    parsed: date | None = None
-    if isinstance(selected, date):
-        parsed = selected
-    elif selected:
-        try:
-            parsed = date.fromisoformat(str(selected)[:10])
-        except ValueError:
-            parsed = None
-    anchor = max(parsed or floor, floor)
+    anchor = reference.date()
     return [anchor + timedelta(days=index) for index in range(max(1, int(count)))]
 
 
