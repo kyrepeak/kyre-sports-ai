@@ -67,6 +67,22 @@ def test_step6_renders_scoring_driver_cards() -> None:
     assert "Red-Zone Finishing" in html and "72% TD rate" in html
 
 
+def test_step6_nonfinite_recent_totals_fail_soft() -> None:
+    step6 = _load_module()
+    html = step6.build_trends_scoring_breakdown_html(
+        recent_totals=[float("nan"), float("inf"), float("-inf")],
+        market_line=58.5,
+        scoring_breakdown={},
+        explosive_scoring=None,
+        scoring_opportunities=None,
+        red_zone_finishing=None,
+    )
+    assert html.count("—") >= 3
+    assert ">nan<" not in html.lower()
+    assert ">inf<" not in html.lower()
+    assert ">-inf<" not in html.lower()
+
+
 def test_step6_is_display_only_and_preserves_frozen_predecessors() -> None:
     step6 = _load_module()
     assert step6.STEP3_FREEZE_TOKEN == "CFB_GAME_TOTAL_PAGE2_V1_STEP3_INTEGRATED_FLOW_FROZEN"
