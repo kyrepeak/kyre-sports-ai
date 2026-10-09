@@ -8,10 +8,18 @@
       "pytest",
       "-q",
       "tests/test_cfb_game_total_page2_step3_integrated_flow_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "cfb_game_total_page2_step3_integrated_flow_v1.py"
     ]
   ],
   "artifacts": [
+    "cfb_game_total_page2_step3_integrated_flow_v1.py",
     "tests/test_cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step3-integrated-flow.json",
     "devsystem/runless_proof_plans/cfb-game-total-page2-step3-integrated-flow.json"
   ],
   "dependencies": [
