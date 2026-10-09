@@ -78,24 +78,21 @@ def _visible(frame: Any, testid: str) -> None:
     locator.wait_for(state="visible", timeout=90000)
 
 
-def _prime_route(page: Any) -> tuple[Any, Any]:
-    page.goto(production_route(), wait_until="domcontentloaded", timeout=120000)
+def _prime_route(page: Any, base_url: str = PRODUCTION_URL) -> tuple[Any, Any]:
+    """Enter CFB Game Total through the canonical user navigation path."""
+    page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
     frame, scans = base._find_app_frame(page)
-    try:
-        _visible(frame, "gtvc2-matchup-hero")
-        return frame, scans
-    except Exception:
-        sports = base._read_sport_options(page, frame)
-        if CFB_SPORT not in sports:
-            raise Step5VisualCertFailure(f"College Football route missing: {sports!r}")
-        base._choose(page, frame, 0, CFB_SPORT)
-        frame, _ = base._find_app_frame(page)
-        market = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
-        market.wait_for(state="visible", timeout=45000)
-        base._choose(page, frame, 1, GAME_TOTAL_MARKET)
-        frame, scans = base._find_app_frame(page)
-        _visible(frame, "gtvc2-matchup-hero")
-        return frame, scans
+    sports = base._read_sport_options(page, frame)
+    if CFB_SPORT not in sports:
+        raise Step5VisualCertFailure(f"College Football route missing: {sports!r}")
+    base._choose(page, frame, 0, CFB_SPORT)
+    frame, _ = base._find_app_frame(page)
+    market = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
+    market.wait_for(state="visible", timeout=45000)
+    base._choose(page, frame, 1, GAME_TOTAL_MARKET)
+    frame, scans = base._find_app_frame(page)
+    _visible(frame, "gtvc2-matchup-hero")
+    return frame, scans
 
 
 def _forbidden_visible_text(body: str) -> list[str]:
@@ -210,7 +207,7 @@ def run(*, base_url: str = PRODUCTION_URL, artifact_dir: str | Path = "artifacts
             for name, viewport in VIEWPORTS.items():
                 page = browser.new_page(viewport=viewport)
                 try:
-                    frame, scans = _prime_route(page)
+                    frame, scans = _prime_route(page, base_url)
                     results[name] = _viewport_result(page, frame, name, scans, artifacts)
                 finally:
                     page.close()
