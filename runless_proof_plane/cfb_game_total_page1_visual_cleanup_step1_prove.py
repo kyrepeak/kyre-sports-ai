@@ -7,9 +7,9 @@ from .prove import execute_proof_request
 
 TASK_ID = "cfb-game-total-page1-visual-cleanup-step1-target-lock"
 WORKSTREAM = "cfb-game-total-page1-visual-cleanup-v1"
-CANDIDATE_SHA = "3236f455437e8e2a83eaa669d1d9d913b408bae2"
+CANDIDATE_SHA = "f314be11cd775e23f4d4490f0a2b22edcc2409b5"
 LEASE_ID = "SCOPE-LEASE-CFB-GT-P1-VISUAL-CLEANUP-STEP1-240"
-AUTHORIZATION_ID = "CFB-GT-P1-VISUAL-CLEANUP-STEP1-RED-R1"
+AUTHORIZATION_ID = "CFB-GT-P1-VISUAL-CLEANUP-STEP1-GREEN-R2"
 EXPECTED_MAIN_SHA = "1eb550e58964ace5f9551a484d1c65cd49f8fc20"
 
 
