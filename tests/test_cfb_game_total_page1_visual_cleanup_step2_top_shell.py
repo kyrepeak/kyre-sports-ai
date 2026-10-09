@@ -80,17 +80,22 @@ def test_step2_top_shell_is_dynamic_phoenix_summary_first() -> None:
     assert helper.MAY_MODIFY_MARKET_OWNERSHIP is False
 
 
-def test_step2_router_is_exact_route_overlay_and_app_activation_is_additive() -> None:
+def test_step2_router_survives_v160_module_purge_and_app_activation_is_additive() -> None:
     router = ROUTER.read_text(encoding="utf-8")
     app = APP.read_text(encoding="utf-8")
 
     assert "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration as prior" in router
+    assert "streamlit_memory_lazy_router_v1 as root" in router
     assert "streamlit_memory_lazy_router_v181 as route_owner" in router
-    assert "cfb_game_total_page1_step3_presentation_v1 as presentation" in router
+    assert 'TARGET_PAGE = "cfb_game_total_clean_page_v38"' in router
+    assert 'PRESENTATION_MODULE = "cfb_game_total_page1_step3_presentation_v1"' in router
     assert "if not route_owner._game_total_route_active():" in router
     assert "return prior.render_app()" in router
+    assert "presentation = importlib.import_module(PRESENTATION_MODULE)" in router
     assert "presentation.build_matchup_hero_html = build_top_shell_html" in router
-    assert "presentation.build_matchup_hero_html = original" in router
+    assert "presentation.build_matchup_hero_html = original_builder" in router
+    assert "root._import = import_with_step2_overlay" in router
+    assert "root._import = original_import" in router
     assert "MAY_MODIFY_OTHER_SPORTS = False" in router
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in router
 
