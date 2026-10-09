@@ -1,5 +1,5 @@
 {
-  "generation": 250,
+  "generation": 251,
   "holders": [
     {
       "acquired_at_utc": "2026-10-09T06:33:59Z",
@@ -25,13 +25,43 @@
           "devsystem/runless_proof_receipts"
         ]
       }
+    },
+    {
+      "acquired_at_utc": "2026-10-09T06:59:07Z",
+      "expires_at_utc": "2026-10-09T07:14:07Z",
+      "generation": 251,
+      "heartbeat_at_utc": "2026-10-09T06:59:07Z",
+      "lease_id": "SCOPE-LEASE-5787BC13DE6454EC252055FA",
+      "owner_id": "api2-cfb-game-total-page1-visual-cleanup-step2-control-plane-finalizer",
+      "scope": {
+        "dependency_tokens": [
+          "runless-proof-plane-step2-closeout"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "candidate_sha": "fedf0fbb530ece2b600b0b54b3c7d446c96b3539",
+          "main_sha": "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4",
+          "postmerge_receipt_digest": "cd283a7ab539ecc358b475fee181d6ffb59665b3adf10948f7005e9be26fe632",
+          "registry_state_hash": "379aca9256a2333dbfeb6d5a4d1411682430c010e9e15b84560f3c3029c5bcea",
+          "repository": "kyrepeak/kyre-sports-ai",
+          "runless_branch_head": "f0a1e232a906eafae4d1d4698c13af9ffb435179",
+          "workstream": "cfb-game-total-page1-visual-cleanup-v1"
+        },
+        "shared_resources": [
+          "render:runless-proof-plane"
+        ],
+        "write_paths": [
+          "runless_proof_plane/cfb_game_total_page1_visual_cleanup_step2_closeout.py",
+          "runless_proof_plane/nfl_rb_wr_step3_closeout.py"
+        ]
+      }
     }
   ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 420,
+  "revision": 421,
   "schema_version": 1,
-  "state_hash": "650df6870afb8d3534ebb476688091ef5bc3d0a82fab6118a8f2b776af5ec651",
+  "state_hash": "e9e3edeea991078cc78b4eae6fa699f625bb272db39ac572bd1576812ae2a916",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
