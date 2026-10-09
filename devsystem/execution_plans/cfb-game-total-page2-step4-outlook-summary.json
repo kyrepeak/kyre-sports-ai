@@ -1,0 +1,43 @@
+{
+  "task_id": "cfb-game-total-page2-step4-outlook-summary",
+  "workstream": "cfb-game-total-page2-v1",
+  "project": "API2",
+  "step": "4/8",
+  "source_main_sha": "c304d28f2dd99f42d1f0bb98930afde8b65e047c",
+  "scope_lease_id": "SCOPE-LEASE-5268B6CF2E57E5086857DE91",
+  "problem": "Page 2 has the frozen route, matchup hero, and integrated flow, but the Outlook stage does not yet own a compact summary for the existing Over/Under probabilities, projected total, market line, edge, and confidence.",
+  "root_cause": "Steps 1-3 established navigation and presentation structure only; there is no isolated Step-4 Outlook summary component consuming the already-owned model and market values.",
+  "patch": "Add one presentation-only Outlook + Projection Summary section anchored at gtp2-outlook. Consume precomputed probability, projection, market-line, edge, and confidence inputs without recomputing or changing any model, probability, projection, market ownership, sportsbook influence, Page 1, or frozen Page-2 predecessor.",
+  "write_paths": [
+    "cfb_game_total_page2_step4_outlook_summary_v1.py",
+    "tests/test_cfb_game_total_page2_step4_outlook_summary_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step4-outlook-summary.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step4-outlook-summary.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "streamlit_memory_lazy_router_v191.py",
+    "cfb_game_total_clean_page_v14.py"
+  ],
+  "safety": {
+    "may_modify_page1": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_model": false,
+    "may_modify_market_ownership": false,
+    "may_add_network_calls": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "proof": {
+    "tdd_red_observed": true,
+    "red_candidate_sha": "82a114fdcf2b58e41edb165263441428ed048cff",
+    "red_failure_class": "STATIC_PROOF",
+    "red_failure": "Page-2 Step-4 outlook-summary module must exist before GREEN",
+    "targeted_unit_tests": "pending exact-head Runless",
+    "final_scope": "Step-4 owned test + py_compile + frozen Step-2/3 dependency fingerprints + exact diff",
+    "required_runless_gate": "runless-final-gate",
+    "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP4_OUTLOOK_SUMMARY_FROZEN"
+  }
+}
