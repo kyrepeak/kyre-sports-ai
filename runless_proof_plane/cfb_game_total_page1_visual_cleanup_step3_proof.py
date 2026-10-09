@@ -13,7 +13,6 @@ WORKSTREAM = "cfb-game-total-page1-visual-cleanup-v1"
 CANDIDATE_SHA = "188b065e404141373c3f1157b7729243ef948e16"
 EXPECTED_MAIN_SHA = "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4"
 PR_NUMBER = 1481
-LEASE_ID = "SCOPE-LEASE-4749DC3A8ECE90EEB91DF1A4"
 LEASE_OWNER = "api2-cfb-game-total-page1-visual-cleanup-step3-convergence"
 AUTHORIZATION_ID = "AUTH-CFB-GT-P1-VISUAL-CLEANUP-STEP3-1481"
 GATE_NAME = "runless-final-gate"
@@ -44,17 +43,14 @@ def _live_lease(client) -> dict | None:
         _decode_json(client.content(LEASE_PATH, ref=LEASE_BRANCH), "CFB_GT_STEP3_PROOF_LEASE")
     )
     now = datetime.now(timezone.utc)
-    holder = next(
-        (
-            item for item in state.get("holders", [])
-            if item.get("lease_id") == LEASE_ID
-            and item.get("owner_id") == LEASE_OWNER
-            and now < _utc(item["expires_at_utc"])
-        ),
-        None,
-    )
-    if holder is None:
+    matches = [
+        item for item in state.get("holders", [])
+        if item.get("owner_id") == LEASE_OWNER
+        and now < _utc(item["expires_at_utc"])
+    ]
+    if len(matches) != 1:
         return None
+    holder = matches[0]
     identity = (holder.get("scope") or {}).get("resource_identity") or {}
     if (
         str(identity.get("candidate_sha") or "") != CANDIDATE_SHA
@@ -125,7 +121,7 @@ def execute(app) -> dict:
         task_id=TASK_ID,
         workstream=WORKSTREAM,
         candidate_sha=CANDIDATE_SHA,
-        lease_id=LEASE_ID,
+        lease_id=str(holder["lease_id"]),
         authorization_id=AUTHORIZATION_ID,
         expected_main_sha=EXPECTED_MAIN_SHA,
     )
@@ -145,6 +141,7 @@ def execute(app) -> dict:
         "status": "GREEN",
         "decision": "CFB_GT_STEP3_EXACT_HEAD_PROVEN",
         "candidate_sha": CANDIDATE_SHA,
+        "lease_id": str(holder["lease_id"]),
         "proof_id": result.get("proof_id"),
         "receipt_digest": result.get("receipt_digest"),
         "failure_class": "NONE",
