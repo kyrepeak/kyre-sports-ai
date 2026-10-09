@@ -30,8 +30,11 @@
     "github_actions_fallback": 0
   },
   "proof": {
-    "tdd_red_observed": false,
-    "targeted_unit_tests": "pending RED Runless",
+    "tdd_red_observed": true,
+    "red_candidate_sha": "3f45355158f12416e2d6741bc3933b8f32363f5f",
+    "red_failure_class": "STATIC_PROOF",
+    "red_failure": "Page-2 Step-6 trends/scoring module absent under targeted pytest",
+    "targeted_unit_tests": "pending exact-head GREEN Runless",
     "required_runless_gate": "runless-final-gate",
     "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP6_TRENDS_SCORING_BREAKDOWN_FROZEN"
   }
