@@ -7,6 +7,7 @@ from .cfb_game_total_page1_visual_cleanup_step3_proof import install_startup as 
 from .cfb_game_total_page1_visual_cleanup_step3_closeout import install_startup as install_cfb_visual_cleanup_step3_closeout
 from .cfb_game_total_page1_visual_cleanup_step4_thaw import install_startup as install_cfb_visual_cleanup_step4_thaw
 from .cfb_game_total_page1_visual_cleanup_step4_proof import install_startup as install_cfb_visual_cleanup_step4_proof
+from .cfb_game_total_page1_visual_cleanup_step4_closeout import install_startup as install_cfb_visual_cleanup_step4_closeout
 
 
 def install_startup(app):
@@ -22,4 +23,5 @@ def install_startup(app):
     install_cfb_visual_cleanup_step3_closeout(app)
     install_cfb_visual_cleanup_step4_thaw(app)
     install_cfb_visual_cleanup_step4_proof(app)
+    install_cfb_visual_cleanup_step4_closeout(app)
     return app
