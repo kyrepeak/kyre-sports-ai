@@ -32,6 +32,8 @@ def record_bootstrap_import_ms(value: float) -> None:
 
 def _active_route() -> tuple[str, str]:
     sport = str(st.session_state.get("ks_sport_touch") or "").strip().upper()
+    if sport == "COLLEGE FOOTBALL":
+        sport = "CFB"
     if sport == "NFL":
         market = str(st.session_state.get("ks_nfl_market_touch") or "").strip()
     elif sport == "CFB":
