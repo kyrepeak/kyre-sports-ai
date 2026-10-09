@@ -490,6 +490,17 @@
       "source_main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE2_V1_STEP2_MATCHUP_HERO_PHX_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_page2_step2_matchup_hero_phx_v1.py": "838564a373c10c2c8ee3639db04d04036baad6a5",
+        "devsystem/execution_plans/cfb-game-total-page2-step2-matchup-hero-phx.json": "eb8bb77ce7b5e048ff6fb67c246d61ecc6d2505e",
+        "devsystem/runless_proof_plans/cfb-game-total-page2-step2-matchup-hero-phx.json": "c3e71b4c8bdd7085154e920b9976007306d65121",
+        "tests/test_cfb_game_total_page2_step2_matchup_hero_phx_v1.py": "2e0b7e379d6fd00a8d62f99a9b57e1bb6adf1ea2"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP2_MATCHUP_HERO_PHX_FROZEN",
+      "source_main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
+      "status": "FROZEN"
+    },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
       "artifacts": {
         "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
@@ -2741,9 +2752,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 222,
+  "revision": 223,
   "schema_version": 1,
-  "source_main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
-  "state_hash": "98c9ae2c0c5a19e24bb043cda4250f8ccdc8f8e2a97418e658fd5e615eede175",
+  "source_main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
+  "state_hash": "29522eaefef0ca0e27b30834099db7bc0880eac5c1fdb5624b2dd49864c7ed28",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
