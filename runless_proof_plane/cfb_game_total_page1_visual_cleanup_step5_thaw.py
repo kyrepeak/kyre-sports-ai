@@ -10,7 +10,7 @@ from devsystem.scope_aware_execution_lease_v1 import validate_state as validate_
 
 TASK_ID = "cfb-game-total-page1-visual-cleanup-step5-live-visual-cert"
 WORKSTREAM = "cfb-game-total-page1-visual-cleanup-v1"
-CANDIDATE_SHA = "c0cdf13130e56e97f195356ad81b2d386806eaf7"
+CANDIDATE_SHA = "f93fc641e50643f9b657bc2248b8254c8467dac2"
 MAIN_SHA = "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9"
 THAW_ID = "THAW-CFB-GT-P1-VISUAL-CLEANUP-STEP5-V191-ACTIVATION"
 THAW_PATH = "streamlit_memory_lazy_router_v191.py"
@@ -18,11 +18,11 @@ FROM_BLOB = "1a4a2df127a060519d62ed96dd39f6c14bb79449"
 TO_BLOB = "6f3b7132c75c360fd4d74c06e5e5b435435950f7"
 REGISTRY_BRANCH = "monster-frozen-artifact-registry"
 REGISTRY_PATH = "devsystem/frozen_artifact_registry_state_v1.json"
-EXPECTED_REGISTRY_REVISION = 219
-EXPECTED_REGISTRY_HASH = "7889ed5f5bffcde54416abaa5a2f820402505940193c03868fe68b7c2f473d39"
+EXPECTED_REGISTRY_REVISION = 220
+EXPECTED_REGISTRY_HASH = "6c4d200535b7ba09912f2c7f312fa4baaa98c390d934c5e699aeb05a1dbb1502"
 LEASE_BRANCH = "monster-scope-aware-execution-leases"
 LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
-LEASE_ID = "SCOPE-LEASE-6B447CE36970CCC251A1A1CA"
+LEASE_ID = "SCOPE-LEASE-2836103216F789BB274BA491"
 LEASE_OWNER = "api2-cfb-game-total-page1-visual-cleanup-step5-convergence"
 
 
@@ -109,7 +109,7 @@ def execute(app):
         REGISTRY_PATH,
         json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
         REGISTRY_BRANCH,
-        "registry: retarget exact CFB Game Total Step5 V191 thaw",
+        "registry: retarget exact CFB Game Total Step5 V191 thaw to proof candidate",
         raw["sha"],
     )
     reread = _decode(client.content(REGISTRY_PATH, ref=REGISTRY_BRANCH), "STEP5_THAW_READBACK")
