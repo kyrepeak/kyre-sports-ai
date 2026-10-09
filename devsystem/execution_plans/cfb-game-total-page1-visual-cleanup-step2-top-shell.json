@@ -1,0 +1,40 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "2/5",
+  "source_main_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
+  "authoritative_branch": "api2/cfb-game-total-page1-visual-cleanup-step2-top-shell",
+  "problem": "The live CFB Game Total Page 1 still uses the older matchup hero/top shell and does not converge to the Step-1-approved summary-first mockup hierarchy.",
+  "root_cause": "Step 1 intentionally froze hierarchy only and made zero runtime mutations. The current V38 chain still delegates its hero/top shell through the older V36 presentation helper.",
+  "patch": "Add a presentation-only Step-2 top-shell renderer and an exact-CFB-Game-Total router overlay above the current active parent. Preserve V38 and all frozen analytics/data/model owners; update only the app entrypoint to the additive router.",
+  "scope_lease_id": "SCOPE-LEASE-CFB-GT-P1-VISUAL-CLEANUP-STEP2-001",
+  "rollback_point": "e43e244328fae9c55e10b66d7d86ed752edfe518",
+  "step1_freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP1_TARGET_LOCK_FROZEN",
+  "write_paths": [
+    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_visual_cleanup_step2.py",
+    "app.py",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step2_top_shell.py",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step2-top-shell.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step2-top-shell.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step2-top-shell.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_clean_page_v38.py",
+    "cfb_game_total_clean_page_v36.py",
+    "cfb_game_total_page1_step3_presentation_v1.py",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py",
+    "streamlit_memory_lazy_router_v160.py",
+    "streamlit_memory_lazy_router_v181.py",
+    "streamlit_memory_lazy_router_v190.py",
+    "streamlit_memory_lazy_router_v191.py",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py"
+  ],
+  "timezone": "America/Phoenix",
+  "may_modify_projection": false,
+  "may_modify_market_ownership": false,
+  "may_modify_other_sports": false,
+  "sportsbook_projection_influence": 0.0,
+  "github_actions_fallback": 0,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP2_TOP_SHELL_FROZEN"
+}
