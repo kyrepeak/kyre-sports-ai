@@ -1,62 +1,11 @@
 {
   "generation": 274,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-09T20:37:20Z",
-      "expires_at_utc": "2026-10-09T21:37:20Z",
-      "generation": 274,
-      "heartbeat_at_utc": "2026-10-09T20:37:20Z",
-      "lease_id": "SCOPE-LEASE-1363371DFE615B06589A63D4",
-      "owner_id": "api2-cfb-game-total-page1-visual-cleanup-step5-convergence",
-      "scope": {
-        "dependency_tokens": [
-          "cfb-game-total-page1-visual-cleanup-v1",
-          "cfb-game-total-step5-live-visual-cert",
-          "frozen-step4-protected",
-          "runless-step5-postmerge-closeout",
-          "runless-step5-static-proof-reuse",
-          "streamlit-v191-live-repair"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "candidate_sha": "f93fc641e50643f9b657bc2248b8254c8467dac2",
-          "certified_product_main_sha": "5c155c494cf4e10148ebb3d6133d83a0ef42172c",
-          "deployment_marker_pr": "1484",
-          "live_repair": "v191-once-per-process-installer-guard",
-          "main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
-          "phase": "postmerge-live-cert-closeout",
-          "registry_state_hash": "acbe369a22b2dd4703be0344eb4838862fccc33b71aeeaaca0190385f5698763",
-          "repair_candidate_sha": "ba1caf4f1383e5169a1661cab1f5b78ed5c4c757",
-          "repair_merged_main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
-          "repository": "kyrepeak/kyre-sports-ai",
-          "workstream": "cfb-game-total-page1-visual-cleanup-v1"
-        },
-        "shared_resources": [
-          "control:frozen-artifact-registry",
-          "production:pickvault-streamlit",
-          "render:runless-proof-plane"
-        ],
-        "write_paths": [
-          "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
-          "devsystem/frozen_artifact_registry_state_v1.json",
-          "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
-          "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
-          "devsystem/runless_proof_receipts",
-          "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
-          "runless_proof_plane/cfb_game_total_page1_visual_cleanup_step5_cert.py",
-          "runless_proof_plane/cfb_game_total_page1_visual_cleanup_step5_closeout.py",
-          "runless_proof_plane/nfl_rb_wr_step3_closeout.py",
-          "streamlit_memory_lazy_router_v191.py",
-          "tests/test_cfb_game_total_page1_visual_cleanup_step5_v191_idempotence.py"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 458,
+  "revision": 459,
   "schema_version": 1,
-  "state_hash": "37ad38f4ea4bbc8fc9a8cc59c21aa200029496c382b04eb2bf5b462129867023",
+  "state_hash": "45061c5ee9211f231c7921bfc6de036051eeeb0ddb47116ef5295b7c15414d22",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
