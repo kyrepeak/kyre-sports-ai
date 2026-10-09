@@ -1,26 +1,26 @@
 {
-  "generation": 243,
+  "generation": 244,
   "holders": [
     {
-      "owner_id": "api2-cfb-game-total-page1-visual-cleanup-step1-runless-red",
-      "lease_id": "SCOPE-LEASE-8CC47532BA29F17056419F5A",
-      "generation": 243,
-      "acquired_at_utc": "2026-10-09T04:01:00Z",
-      "heartbeat_at_utc": "2026-10-09T04:01:00Z",
-      "expires_at_utc": "2026-10-09T05:01:00Z",
+      "owner_id": "api2-cfb-game-total-page1-visual-cleanup-step1-runless-green",
+      "lease_id": "SCOPE-LEASE-3056A633DDB6A55343A1E063",
+      "generation": 244,
+      "acquired_at_utc": "2026-10-09T04:05:00Z",
+      "heartbeat_at_utc": "2026-10-09T04:05:00Z",
+      "expires_at_utc": "2026-10-09T05:05:00Z",
       "scope": {
         "write_paths": [
           "runless_proof_plane/cfb_game_total_page1_visual_cleanup_step1_prove.py",
           "runless_proof_plane/nfl_rb_wr_step3_closeout.py"
         ],
         "dependency_tokens": [
-          "cfb_game_total_page1_visual_cleanup_step1_red_3236f455"
+          "cfb_game_total_page1_visual_cleanup_step1_green_f314be11"
         ],
         "shared_resources": [
           "render:service:srv-db23fee7bikc73ca8ua0"
         ],
         "resource_identity": {
-          "candidate_sha": "3236f455437e8e2a83eaa669d1d9d913b408bae2",
+          "candidate_sha": "f314be11cd775e23f4d4490f0a2b22edcc2409b5",
           "main_sha": "1eb550e58964ace5f9551a484d1c65cd49f8fc20",
           "product_lease_id": "SCOPE-LEASE-CFB-GT-P1-VISUAL-CLEANUP-STEP1-240",
           "render_service_id": "srv-db23fee7bikc73ca8ua0",
@@ -65,8 +65,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 409,
+  "revision": 410,
   "schema_version": 1,
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
-  "state_hash": "2209d39aff07ad6c529890ea3ec758893cee1afc661319565fe0fa3ddf4e2c87"
+  "state_hash": "dc818952fd4f11613be8d2f63bd6c7813565e77066861680e66f27e1e953ca5b"
 }
