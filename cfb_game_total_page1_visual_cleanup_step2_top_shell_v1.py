@@ -102,7 +102,7 @@ def build_top_shell_html(
     weather_detail = " • ".join(part for part in (precipitation, weather) if part)
     wind = _clean(display_game.get("wind") or display_game.get("wind_mph")) or "Wind pending"
 
-    return f"""
+    shell = f"""
 <div class="gtvc2-shell" data-step2="{STEP2_MARKER}" data-timezone="{PHOENIX_TZ}">
   <section class="gtvc2-hero" data-testid="gtvc2-matchup-hero" aria-label="Selected college football matchup">
     <div class="gtvc2-field"></div>
@@ -131,6 +131,7 @@ def build_top_shell_html(
   </nav>
 </div>
 """
+    return STEP2_TOP_SHELL_CSS + shell
 
 
 __all__ = [
