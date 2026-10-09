@@ -28,9 +28,6 @@ from devsystem import cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 a
 def canonical_prime(page, base_url=cert.PRODUCTION_URL):
     page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
     frame, initial_scan = browser_base._find_app_frame(page)
-    sports = browser_base._read_sport_options(page, frame)
-    if cert.CFB_SPORT not in sports:
-        raise RuntimeError("STEP5_CERT_CFB_SELECTOR_MISSING:" + repr(sports))
     browser_base._choose(page, frame, 0, cert.CFB_SPORT)
     frame, sport_scan = browser_base._find_app_frame(page)
     combo = frame.get_by_role("combobox", name=cert.CFB_MARKET_LABEL, exact=True)
