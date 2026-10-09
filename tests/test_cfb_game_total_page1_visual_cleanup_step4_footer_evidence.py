@@ -77,7 +77,9 @@ def test_activation_is_exact_route_post_purge_and_restores_hooks() -> None:
     source = (ROOT / "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py").read_text(encoding="utf-8")
     assert 'TARGET_PAGE = "cfb_game_total_clean_page_v38"' in source
     assert 'importlib.import_module("cfb_game_total_clean_page_v9")' in source
+    assert 'importlib.import_module("cfb_game_total_clean_page_v14")' in source
     assert "_combined_flow_html" in source
+    assert "_render_game_strip" in source
     assert "load_with_diagnostics" in source
     assert "render_cfb_hub" in source
     assert "_game_total_route_active()" in source
