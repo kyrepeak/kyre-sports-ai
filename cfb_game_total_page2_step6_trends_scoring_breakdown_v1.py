@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from html import escape
+from math import isfinite
 from typing import Any
 
 STEP3_FREEZE_TOKEN = "CFB_GAME_TOTAL_PAGE2_V1_STEP3_INTEGRATED_FLOW_FROZEN"
@@ -56,6 +57,8 @@ PAGE2_STEP6_CSS = r"""
 
 
 def _display(value: Any) -> str:
+    if isinstance(value, float) and not isfinite(value):
+        return "—"
     text = "" if value is None else str(value).strip()
     return escape(text) if text else "—"
 
@@ -65,6 +68,8 @@ def _bar_height(value: Any) -> int:
     try:
         numeric = float(value)
     except (TypeError, ValueError):
+        return 12
+    if not isfinite(numeric):
         return 12
     return max(12, min(86, int(round(numeric))))
 
