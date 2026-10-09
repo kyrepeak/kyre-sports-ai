@@ -1,0 +1,33 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step1-target-lock",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "source_main_sha": "1eb550e58964ace5f9551a484d1c65cd49f8fc20",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_visual_cleanup_step1_target_lock.py"],
+    ["python", "-m", "devsystem.cfb_game_total_page1_visual_cleanup_step1_target_lock_v1"]
+  ],
+  "artifacts": [
+    "devsystem/cfb_game_total_page1_visual_cleanup_step1_target_lock_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step1-target-lock.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step1-target-lock.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step1-target-lock.json",
+    "docs/superpowers/plans/2026-10-09-cfb-game-total-page1-visual-cleanup-step1-target-lock.md",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step1_target_lock.py"
+  ],
+  "dependencies": [
+    "docs/CFB_GAME_TOTAL_VISUAL_REDESIGN_V1_CONTRACT.md",
+    "cfb_game_total_clean_page_v38.py",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py",
+    "streamlit_memory_lazy_router_v160.py",
+    "streamlit_memory_lazy_router_v181.py",
+    "streamlit_memory_lazy_router_v190.py",
+    "streamlit_memory_lazy_router_v191.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": false,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP1_TARGET_LOCK_FROZEN"
+}
