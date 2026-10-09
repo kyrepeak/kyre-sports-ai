@@ -1,0 +1,44 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step5-live-visual-cert",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": 5,
+  "step_total": 5,
+  "source_main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
+  "objective": "Certify the frozen CFB Game Total Page 1 presentation on live production at mobile, tablet, and desktop widths and close the five-step visual-cleanup mission without changing product/runtime behavior.",
+  "write_paths": [
+    "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
+    "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step5_visual_cert.py"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py",
+    "cfb_game_total_page1_visual_cleanup_step3_overview_v1.py",
+    "cfb_game_total_page1_visual_cleanup_step3_activation_v1.py",
+    "cfb_game_total_page1_visual_cleanup_step4_footer_evidence_v1.py",
+    "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py",
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
+    "streamlit_memory_lazy_router_v191.py",
+    "app.py"
+  ],
+  "live_contract": {
+    "production_url": "https://pickvault.streamlit.app",
+    "viewports": ["390x844", "768x1024", "1440x1200"],
+    "phoenix_timezone": "America/Phoenix",
+    "friday_current_day_required": true,
+    "single_games_on_day_surface": true,
+    "horizontal_overflow_allowed": false,
+    "missing_data_copy_allowed": false
+  },
+  "safety": {
+    "may_modify_product_runtime": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_ranking": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP5_LIVE_VISUAL_CERT_FROZEN"
+}
