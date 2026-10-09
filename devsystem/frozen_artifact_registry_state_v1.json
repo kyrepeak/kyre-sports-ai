@@ -534,6 +534,17 @@
       "source_main_sha": "be487d7de97d807c7bd02b25a0d206d4d28f94ec",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE2_V1_STEP6_TRENDS_SCORING_BREAKDOWN_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py": "c39bb9a5df699f367e87b8f10328f7e3f5a1a8bc",
+        "devsystem/execution_plans/cfb-game-total-page2-step6-trends-scoring-breakdown.json": "f1ad45e4a41a9acbcc960e89da42e601654590dd",
+        "devsystem/runless_proof_plans/cfb-game-total-page2-step6-trends-scoring-breakdown.json": "ab0bc5852e910efdf26ee508ca2414fadd547b0c",
+        "tests/test_cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py": "2d956b006ca8c6efd82070391013965bf7bba334"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP6_TRENDS_SCORING_BREAKDOWN_FROZEN",
+      "source_main_sha": "bc0ff47ef5771998275456cba454256f6a9ae047",
+      "status": "FROZEN"
+    },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
       "artifacts": {
         "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
@@ -2785,9 +2796,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 226,
+  "revision": 227,
   "schema_version": 1,
-  "source_main_sha": "be487d7de97d807c7bd02b25a0d206d4d28f94ec",
-  "state_hash": "46cd346eb1ed09f21bf2d12f2b9850bf89b79c6a27e1aab8cdadef9eb11ee86a",
+  "source_main_sha": "bc0ff47ef5771998275456cba454256f6a9ae047",
+  "state_hash": "d49d46a1d7d45b0e030679a9a9cdebd736bbe17ca95c8b9df9f11983f025550c",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
