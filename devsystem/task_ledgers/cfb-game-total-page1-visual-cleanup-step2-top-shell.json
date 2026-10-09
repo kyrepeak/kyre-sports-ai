@@ -4,14 +4,14 @@
   "step": "2/5",
   "source_main_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
   "authoritative_branch": "api2/cfb-game-total-page1-visual-cleanup-step2-top-shell",
-  "scope_lease_id": "SCOPE-LEASE-A370D1B2059B961594A3674F",
+  "scope_lease_id": "SCOPE-LEASE-CBDEB41F080076DFE7FBBFEB",
   "step2a": {
     "exact_main_verified": true,
     "duplicate_step2_pr_found": false,
     "duplicate_async_run_started": false,
     "step1_freeze_verified": true,
-    "lease_revision": 416,
-    "lease_state_hash": "b9783e4cc8e40e873a472d5815a7ddd59370db7f01fb1ec7289f7a5f4d11a44d",
+    "lease_revision": 418,
+    "lease_state_hash": "afc1812be7e52ec1afe55315a25673be03ad6d8313ee6c2b618be27c33f0f9ca",
     "rollback_point": "e43e244328fae9c55e10b66d7d86ed752edfe518"
   },
   "tdd_red_candidate_sha": "1769fcd82b148f6d73f88b2db7115d3bec61968e",
@@ -28,6 +28,8 @@
   },
   "recovery": {
     "strategy": "Restore frozen universal shell byte-for-byte and activate Step 2 through unfrozen CFB-only kyre_game_total_theme_v1.py before frozen V36 consumes presentation.build_matchup_hero_html.",
+    "old_scope_lease_released": "SCOPE-LEASE-A370D1B2059B961594A3674F",
+    "narrowed_scope_lease": "SCOPE-LEASE-CBDEB41F080076DFE7FBBFEB",
     "thaw_required": false,
     "frozen_source_mutations": 0,
     "github_actions_fallback": 0
