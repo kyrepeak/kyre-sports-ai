@@ -16,6 +16,7 @@ from devsystem.cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 import (
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json"
 CERT = ROOT / "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py"
+ROUTER_V191 = ROOT / "streamlit_memory_lazy_router_v191.py"
 
 
 def test_step5_viewport_and_safety_contract() -> None:
@@ -51,6 +52,12 @@ def test_step5_browser_uses_current_category_handoff_before_asserting_visuals() 
     assert 'page.goto(route_handoff(base_url)' in source
     assert 'base._read_sport_options' not in source
     assert 'base._choose(page, frame, 0, CFB_SPORT)' not in source
+
+
+def test_step5_v191_normalizes_college_football_touch_to_cfb() -> None:
+    source = ROUTER_V191.read_text(encoding="utf-8")
+    assert 'if sport == "COLLEGE FOOTBALL":' in source
+    assert 'sport = "CFB"' in source
 
 
 def test_step5_terminal_live_evidence() -> None:
