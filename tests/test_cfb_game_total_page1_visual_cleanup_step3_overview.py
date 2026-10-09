@@ -70,3 +70,10 @@ def test_step3_source_does_not_hardcode_reference_matchup() -> None:
     assert "ucf" not in lowered
     assert "oklahoma st" not in lowered
     assert "america/phoenix" in lowered
+
+
+def test_frozen_side_market_seam_activates_step3_without_wrapper_stacking() -> None:
+    source = (ROOT / "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py").read_text(encoding="utf-8")
+    assert "install_step3_overview" in source
+    assert "_cfb_game_total_visual_cleanup_step3_installed" in source
+    assert source.count("install_step3_overview()") == 2
