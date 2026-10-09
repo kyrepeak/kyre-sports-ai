@@ -16,7 +16,23 @@
   },
   "tdd_red_candidate_sha": "1769fcd82b148f6d73f88b2db7115d3bec61968e",
   "tdd_red_failure_class": "STATIC_PROOF",
-  "tdd_red_evidence": "Final purge-safe Step-2 test required cfb_game_total_page1_visual_cleanup_step2_activation_v1.py; exact RED candidate returned GitHub 404 before the activation implementation was added.",
+  "tdd_red_evidence": "Final Step-2 test required the additive activation helper; exact RED candidate returned GitHub 404 before the activation implementation was added.",
+  "first_runless_attempt": {
+    "candidate_sha": "cfc3e50dd49adb22875963884f869bb51a6bd7dc",
+    "proof_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell-cfc3e50dd49adb22-054cb8d6eed7ff12",
+    "receipt_created": false,
+    "failure_class": "FROZEN_ARTIFACT_REGISTRY",
+    "root_cause": "Candidate modified kyre_universal_shell_runtime_v1.py, frozen at blob 40a37ff350262256f590a430ea9494d52c0c5304 by CFB_GAME_TOTAL_PAGE1_V2_STEP3_MATCHUP_HERO_PHX_FROZEN, without an exact thaw grant.",
+    "blind_retry": false,
+    "duplicate_proof_submission": false
+  },
+  "recovery": {
+    "strategy": "Restore frozen universal shell byte-for-byte and activate Step 2 through unfrozen CFB-only kyre_game_total_theme_v1.py before frozen V36 consumes presentation.build_matchup_hero_html.",
+    "thaw_required": false,
+    "frozen_source_mutations": 0,
+    "github_actions_fallback": 0
+  },
+  "green_candidate_sha": null,
   "runless_proof_id": null,
   "merged_main_sha": null,
   "timezone": "America/Phoenix",
