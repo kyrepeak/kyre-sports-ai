@@ -1,33 +1,35 @@
 {
-  "generation": 238,
+  "generation": 239,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-09T00:13:00Z",
-      "expires_at_utc": "2026-10-09T01:13:00Z",
-      "generation": 238,
-      "heartbeat_at_utc": "2026-10-09T00:24:00Z",
-      "lease_id": "SCOPE-LEASE-3C525B83EBBC2BAC7B5E0C4C",
-      "owner_id": "api2-nfl-rb-wr-render-repair-step5-runless",
+      "acquired_at_utc": "2026-10-09T00:29:00Z",
+      "expires_at_utc": "2026-10-09T01:29:00Z",
+      "generation": 239,
+      "heartbeat_at_utc": "2026-10-09T00:29:00Z",
+      "lease_id": "SCOPE-LEASE-NFL-RB-WR-STEP5-FINALIZER-239",
+      "owner_id": "api2-nfl-rb-wr-render-repair-step5-finalizer",
       "scope": {
         "dependency_tokens": [
-          "nfl_rb_wr_render_repair_v1_step5_candidate_059f2e96"
+          "nfl_rb_wr_render_repair_v1_step5_final_mission_frozen"
         ],
         "exclusive": false,
         "resource_identity": {
           "candidate_sha": "059f2e964c7321954ed800daabb9b62b495304f8",
-          "main_sha": "76dde02ccd468447422710051ce2cb145aff2ebe",
-          "product_lease_id": "SCOPE-LEASE-B5441A5FDEF4CE4BD47A538D",
+          "main_sha": "1eb550e58964ace5f9551a484d1c65cd49f8fc20",
+          "receipt_digest": "984f90c27382638a50657c12534e5c7db17129301219355f8b433879749996ef",
+          "registry_revision": "210",
+          "registry_state_hash": "9d11310bc96136b1d5e70e7b85c42ba3b62f4c0226075d9c711bbbcb001a1b3b",
           "render_service_id": "srv-db23fee7bikc73ca8ua0",
-          "runless_head_sha": "e6c5ebb80c674362e23219939d5fe7fed6d77c9c",
-          "step3_shim_blob": "68b0b4bde55bdb21d22e34e1b49a6725ac4b6aa0",
-          "step5_wrapper_blob": "90eba119ffa19c7c7e8a9ac8558b27aeecdeba56"
+          "runless_head_sha": "e6c5ebb80c674362e23219939d5fe7fed6d77c9c"
         },
         "shared_resources": [
           "render:service:srv-db23fee7bikc73ca8ua0"
         ],
         "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/scope_aware_execution_lease_state_v1.json",
           "runless_proof_plane/nfl_rb_wr_step3_closeout.py",
-          "runless_proof_plane/nfl_rb_wr_step5_prove.py"
+          "runless_proof_plane/nfl_rb_wr_step5_closeout.py"
         ]
       }
     },
@@ -62,8 +64,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 400,
+  "revision": 401,
   "schema_version": 1,
-  "state_hash": "180eb369170ddec84c153e0ed1c74ee110c2702d219858e30efe7f1b68dc8d87",
+  "state_hash": "4c4f49a26b5ecea0977dc93189de38cb58f75279400584271d8bb25fc65546c7",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
