@@ -1,34 +1,31 @@
 {
-  "generation": 278,
+  "generation": 279,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-09T22:12:00Z",
-      "expires_at_utc": "2026-10-09T23:12:00Z",
-      "generation": 277,
-      "heartbeat_at_utc": "2026-10-09T22:12:00Z",
-      "lease_id": "SCOPE-LEASE-AF98765B18BABD820ED977CD",
-      "owner_id": "universal-live-status-board-v1-step1-implementation",
+      "acquired_at_utc": "2026-10-09T23:12:30Z",
+      "expires_at_utc": "2026-10-10T00:12:30Z",
+      "generation": 279,
+      "heartbeat_at_utc": "2026-10-09T23:12:30Z",
+      "lease_id": "SCOPE-LEASE-10324E9533725D1757F3BF30",
+      "owner_id": "api2-cfb-game-total-page2-step5-team-snapshot-key-drivers",
       "scope": {
         "dependency_tokens": [
-          "mandatory-status-schema",
-          "universal-live-status-board-v1-step1"
+          "cfb-game-total-page2-step5-team-snapshot-key-drivers",
+          "cfb-game-total-page2-v1"
         ],
         "exclusive": false,
         "resource_identity": {
-          "main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
+          "main_sha": "2717651c5b8a5fb08ef4bbc5d7402fa5d6c3fc1f",
           "phase": "implementation",
-          "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
-          "step": "1/4"
+          "project": "API2",
+          "step": "5/8"
         },
         "shared_resources": [],
         "write_paths": [
-          "devsystem/execution_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
-          "devsystem/runless_proof_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
-          "devsystem/task_ledgers/universal-live-status-board-v1-step1-mandatory-status-schema.json",
-          "devsystem/universal_live_status_board_v1.py",
-          "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step1-mandatory-status-schema.md",
-          "docs/superpowers/specs/2026-10-09-universal-live-status-board-v1-design.md",
-          "tests/test_devsystem_universal_live_status_board_v1.py"
+          "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py",
+          "devsystem/execution_plans/cfb-game-total-page2-step5-team-snapshot-key-drivers.json",
+          "devsystem/runless_proof_plans/cfb-game-total-page2-step5-team-snapshot-key-drivers.json",
+          "tests/test_cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py"
         ]
       }
     }
@@ -36,8 +33,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 467,
+  "revision": 468,
   "schema_version": 1,
-  "state_hash": "d9948e6d681d3dc909a6783b72713c7aab3369b8b088b24c5be7297dd888326f",
+  "state_hash": "73bb275e180bdb64ba50cfdfae29b6140f59527785c6b418a8fb5396e0b4ebfc",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
