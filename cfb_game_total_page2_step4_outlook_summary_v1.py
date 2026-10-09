@@ -69,6 +69,8 @@ def _format_numeric(value: Any, *, percent: bool = False, signed: bool = False) 
                 pass
         return escape(text)
     if percent:
+        if 0.0 <= numeric <= 1.0:
+            numeric *= 100.0
         return f"{numeric:.1f}%"
     if signed:
         return f"{numeric:+.1f}"
