@@ -2,15 +2,15 @@
 
 Installs presentation-only hooks after the exact CFB Game Total post-purge V38
 module is imported. The dense legacy Overview evidence wall is replaced during
-that render only; existing sidebar analysis controls remain untouched. Already
-loaded schedule rows are captured and reused for Games on This Day, so Step 4
-adds zero network calls.
+that render only; existing secondary analysis controls remain untouched. Already
+loaded schedule rows are captured and reused for one polished Games on This Day
+surface, so Step 4 adds zero network calls.
 """
 from __future__ import annotations
 
 import importlib
 from threading import RLock
-from typing import Any, Mapping
+from typing import Any
 
 from cfb_game_total_page1_visual_cleanup_step4_footer_evidence_v1 import (
     MAY_MODIFY_MARKET_OWNERSHIP,
@@ -53,6 +53,7 @@ def _install_fresh_page_hook(page: Any, restores: list[tuple[Any, str, Any]]) ->
     import streamlit as st
 
     base = importlib.import_module("cfb_game_total_clean_page_v9")
+    games_owner = importlib.import_module("cfb_game_total_clean_page_v14")
     schedule_owner = base.frozen_page.frozen_v2.frozen_v1.schedule
     original_render = page.render_cfb_hub
 
@@ -60,14 +61,20 @@ def _install_fresh_page_hook(page: Any, restores: list[tuple[Any, str, Any]]) ->
         captured: dict[str, Any] = {}
         original_combined = base._combined_flow_html
         original_loader = schedule_owner.load_with_diagnostics
+        original_game_strip = games_owner._render_game_strip
+
+        # Keep V14's selected-game state/schedule behavior but suppress its old
+        # visual strip so Step 4 owns exactly one Games on This Day surface.
         base._combined_flow_html = build_relocated_analysis_html
         schedule_owner.load_with_diagnostics = _capture_schedule_loader(original_loader, captured)
+        games_owner._render_game_strip = lambda *_args, **_kwargs: None
         st.markdown(STEP4_CSS, unsafe_allow_html=True)
         try:
             result = original_render(*args, **kwargs)
         finally:
             base._combined_flow_html = original_combined
             schedule_owner.load_with_diagnostics = original_loader
+            games_owner._render_game_strip = original_game_strip
 
         games_html = build_games_on_day_html(
             captured.get("games") or [],
