@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page2_step4_outlook_summary_v1.py": "655193d21ceaacad15d73a28d947fc1a1ed6d95e",
+    "devsystem/execution_plans/cfb-game-total-page2-step4-outlook-summary.json": "a1e4dae2485500502bdf0a6b7c594b025bc0a057",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step4-outlook-summary.json": "ea799a57adca1c52e078843a0576b51d3a927d37",
+    "tests/test_cfb_game_total_page2_step4_outlook_summary_v1.py": "28412da64dbfae93a0520f65244f8898a12f6a3e"
+  },
+  "candidate_sha": "1a83d81a0b14e30327f5fe67b3907f8ef309a17f",
+  "created_at": "2026-10-09T22:39:11.237335+00:00",
+  "dependency_map": {
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py": "838564a373c10c2c8ee3639db04d04036baad6a5",
+    "cfb_game_total_page2_step3_integrated_flow_v1.py": "6d9c930095bf46c424235bc6704e5509f946193c",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "runless_proof_plane/executor.py": "3bdbd770ddd3b4d62096f0b3bf72f25e9b38abdd",
+    "runless_proof_plane/fingerprint.py": "4179138e6c27ddf416f176c83d7a23045a1acb55",
+    "runless_proof_plane/gate.py": "66080c66ec41f0d20e2443374ef09dffeb5cf0de",
+    "runless_proof_plane/github_client.py": "8ee3f3b1f4e6ef73472e0f66dbb47baa9989ecc9",
+    "runless_proof_plane/orchestrator.py": "2fcbb952b0288c45b6a04c5bf80f10ff988059c0",
+    "runless_proof_plane/receipts.py": "5e6445d07ae1ea79dea18c1dd67c7fa76e554c50",
+    "runless_proof_plane/registry.py": "cd15acc5e1221d303425933b902d7a2d478b11a9",
+    "runless_proof_plane/step2a.py": "9fb8e21517601bdc31c18149c457d0583c9aa0d1",
+    "runless_proof_plane/workspace.py": "c1f410085a1a0da72d92168311d17e6c36a9151a"
+  },
+  "deployment_identity": "09105eeb8d3005c965d5c66715353e8b23cd032a",
+  "digest": "77c7cef23eced5cc5c3763f9cfc6aabc120b4bcfaa7ec8d85bb262a9c3fb0f77",
+  "evidence_digests": [
+    "39d896b20fd49ee1490cc1e99f18d1aea9e1761f3597acbd2f44fd3113f9aa75",
+    "6fc6a5b7fea345ece66b421edd6d73b312fffed0709b3db4d30e86a5972a1d88"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "e44e108222659fc01878d094eae7cfe56e1148b4ff1b7e899c8e0768abc7afb0",
+  "proof_id": "cfb-game-total-page2-step4-outlook-summary-1a83d81a0b14e303-c00b6af43a334a88",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 224,
+    "state_hash": "f468a1085769f6b9fe0adcd48d1036a7ca155fa16c1d12b8521a070b75e0d18f"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 224,
+    "state_hash": "f468a1085769f6b9fe0adcd48d1036a7ca155fa16c1d12b8521a070b75e0d18f"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-page2-step4-outlook-summary",
+  "workstream": "cfb-game-total-page2-v1"
+}
