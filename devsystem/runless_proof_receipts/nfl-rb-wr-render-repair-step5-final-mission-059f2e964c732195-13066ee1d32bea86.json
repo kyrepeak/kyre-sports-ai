@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/nfl-rb-wr-render-repair-step5-final-mission.json": "4e620391f7a36e57e3ca246528afd4383af4d6f1",
+    "devsystem/nfl_rb_wr_render_repair_step5_final_mission_v1.py": "7d38698a8c8295119a6ceed98f5465e4f8f0801b",
+    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step5-final-mission.json": "88c021bf67de2192d542b1ad230eccc627d49c77",
+    "devsystem/task_ledgers/nfl-rb-wr-render-repair-step5-final-mission.json": "ee99251c698cede847107028ad77f34339715b8d",
+    "tests/test_nfl_rb_wr_render_repair_step5_final_mission.py": "003a75167e0aca65dca8cc71b34c72e6703e4754"
+  },
+  "candidate_sha": "059f2e964c7321954ed800daabb9b62b495304f8",
+  "created_at": "2026-10-09T00:28:00.446576+00:00",
+  "dependency_map": {
+    "devsystem/nfl_rb_wr_render_repair_step3_data_binding_v1.py": "916df46771ff75fba4a0edc6f90468a45e5cea49",
+    "devsystem/nfl_rb_wr_render_repair_step4_mobile_route_v1.py": "ba25ac2bd8725677f6646e32b8ddfaa5c59d20c7",
+    "devsystem/production_targets_v1.json": "23a2863dfe6a50b9d0b1869f617aa481245abca8",
+    "nfl_receiving_yards_hub_v13.py": "202d5852414197170c910c96bae2fefa41fcb398",
+    "nfl_rushing_yards_hub_v4.py": "5a6e10f5efe5ac27df7c9691d289ae5698e8e3cf",
+    "streamlit_memory_lazy_router_v187.py": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6",
+    "tests/test_nfl_rb_wr_render_repair_step1_root_cause.py": "97cb759a29267cf394cb4501d3fc7ef449bc0d80",
+    "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py": "f80fa1b9b395b7552ee16330c79554262000530c",
+    "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py": "4a6f19dba4c9587dbfdbccc23fda902016efcabf",
+    "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py": "9fc021b1e55d5cc456b15ad7eb2dac4c9104a4ef"
+  },
+  "deployment_identity": "e6c5ebb80c674362e23219939d5fe7fed6d77c9c",
+  "digest": "984f90c27382638a50657c12534e5c7db17129301219355f8b433879749996ef",
+  "evidence_digests": [
+    "3b59feabfea7dbf24aa0d8a95905b0538c24d4cfc0a5c61c79d8de730cc054ae",
+    "c7b983f70b16aa8957acd60f3e78b456e7cf1dd74d29d332d1f9f31f2e84096f",
+    "10f83eb1c00533925400e8db103a6413db0a9fc21f4a32a822dafceeb6b94e65",
+    "64ed16191e8d6ddbfede1b2f5ebed4ab5f89b017d213485f53ff807d89ea6780",
+    "5bd115d89191c80738e9804577f86f519f34f63c0379e7a9d148c6b0d97bb407"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "dfe42574fbbc1e8da08253ee6b00fb3d079be3d1dc584085624911b2e8838e1f",
+  "proof_id": "nfl-rb-wr-render-repair-step5-final-mission-059f2e964c732195-13066ee1d32bea86",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 210,
+    "state_hash": "9d11310bc96136b1d5e70e7b85c42ba3b62f4c0226075d9c711bbbcb001a1b3b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 210,
+    "state_hash": "9d11310bc96136b1d5e70e7b85c42ba3b62f4c0226075d9c711bbbcb001a1b3b"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "nfl-rb-wr-render-repair-step5-final-mission",
+  "workstream": "nfl-rb-wr-render-repair-v1"
+}
