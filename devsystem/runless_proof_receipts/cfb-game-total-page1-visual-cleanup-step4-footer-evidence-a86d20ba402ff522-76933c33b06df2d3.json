@@ -1,0 +1,61 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "e48996d53a7a51a102c57e7b822ee269cd750899",
+    "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py": "44e4faf5498d545ecba2513999b977b68c2ff18e",
+    "cfb_game_total_page1_visual_cleanup_step4_footer_evidence_v1.py": "7124e4ab9a5af1bf68176e5c383e2b47ff2119f9",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json": "eb456c4531a2cd03ee06e26917c1e9e1ecb4689e",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json": "c2e788f13b3ff6562f900577621c80c24952a25a",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json": "62e26ddc4684e6848cb129f0c0117b8aeaec455e",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step4_footer_evidence.py": "539749e13320a33b086edfb5cfe65ea914b7b941"
+  },
+  "candidate_sha": "a86d20ba402ff52286b8e5431098ca0bb849bc39",
+  "created_at": "2026-10-09T16:29:06.645193+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v14.py": "030952d34178fb148c4d3ad7470f1bbc033bc8ff",
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_clean_page_v9.py": "6895c95f079acb231f01421f2f887f488c558b1b",
+    "cfb_game_total_page1_visual_cleanup_step2_activation_v1.py": "113f4075d1de69dd87e19877b7b398132225e072",
+    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py": "978595051a1cda0ed31694fcb177928877a897c4",
+    "cfb_game_total_page1_visual_cleanup_step3_activation_v1.py": "30c94f309e0f4d12a4c12036ddd4f67d30de3161",
+    "cfb_game_total_page1_visual_cleanup_step3_overview_v1.py": "55a7d59d23919acf960bd0fbefeab2d04550b28f",
+    "streamlit_memory_lazy_router_v160.py": "913cf8ac7478fdc105995238b254f28d1d411bc6",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d",
+    "streamlit_memory_lazy_router_v191.py": "1a4a2df127a060519d62ed96dd39f6c14bb79449"
+  },
+  "deployment_identity": "e1638c6787667d552889cfad7a1ab2ab74a40a78",
+  "digest": "04813cca4e04c74d3650388adf8c106546ea06645269f046e02309e6af7d519a",
+  "evidence_digests": [
+    "a86201bee9ae1cc1c25091c56fdbbabc63b0bf0ebe1bda4ec37c5fe8a4432b01",
+    "7ba3e428a48be9c54a1bb186facc25cd008cd7a03ac31598a52c12693658b58b",
+    "9c557eba821a72c2a63608ae60d550870cc36e1d76eeec8a501405b271a49a46",
+    "e25c1a32b1690cdd11919fb38757d24f2bc941cb1df83ef6f6e1cf6db0231f83",
+    "906ef101dd13bc49e23b007b5e521a857c7b0e93013962d1c20be297f5b744d9",
+    "a0c08f08ff0243d9dfea924bd7036f6d5badb04dbecebc45258ed80351177761"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c61d22571a8b5419fecdf1438a2088539e5fec098c3dd91c370753d5bfe8c0f0",
+  "proof_id": "cfb-game-total-page1-visual-cleanup-step4-footer-evidence-a86d20ba402ff522-76933c33b06df2d3",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-CFB-GT-P1-VISUAL-CLEANUP-STEP4-FOOTER-EVIDENCE"
+    ],
+    "revision": 217,
+    "state_hash": "a4c78478653003225878a8f8c214f2920c4686b345a65f145b5d94ac2de9e970"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-CFB-GT-P1-VISUAL-CLEANUP-STEP4-FOOTER-EVIDENCE"
+    ],
+    "revision": 217,
+    "state_hash": "a4c78478653003225878a8f8c214f2920c4686b345a65f145b5d94ac2de9e970"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-page1-visual-cleanup-step4-footer-evidence",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1"
+}
