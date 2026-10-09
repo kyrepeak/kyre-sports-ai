@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from .nfl_rb_wr_step4_closeout import install_startup as install_step4_closeout
+from .nfl_rb_wr_step5_prove import install_startup as install_step5_prove
 
 
 def install_startup(app):
-    """One-shot bridge for the Step-4 canonical freeze closeout.
+    """One-shot bridge for the Step-5 final mission proof.
 
-    Step 3 is already canonically frozen. This unfrozen bridge intentionally
-    installs only the Step-4 closeout; it does not submit another Step-4 proof.
+    Steps 1-4 are already canonically frozen. This unfrozen bridge installs
+    only the Step-5 proof wrapper and does not reopen any prior product scope.
     """
     app.state.nfl_rb_wr_step3_closeout = {
         "status": "NOT_RUN",
-        "decision": "STEP3_FROZEN_NO_FINALIZER",
+        "decision": "STEPS_1_4_FROZEN_STEP5_PROOF_BRIDGE",
     }
-    install_step4_closeout(app)
+    install_step5_prove(app)
     return app
