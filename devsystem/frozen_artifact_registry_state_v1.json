@@ -29,17 +29,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": {
-          "from_blob": "f8ec957d95a8ebc152996195b97f366da41beb59",
-          "to_blob": "e48996d53a7a51a102c57e7b822ee269cd750899"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "a86d20ba402ff52286b8e5431098ca0bb849bc39",
-      "thaw_id": "THAW-CFB-GT-P1-VISUAL-CLEANUP-STEP4-FOOTER-EVIDENCE"
     }
   ],
   "entries": {
@@ -410,7 +399,7 @@
     },
     "CFB_GAME_TOTAL_PAGE1_V2_STEP4_SIDE_MARKET_COMPLETENESS_FROZEN": {
       "artifacts": {
-        "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "f8ec957d95a8ebc152996195b97f366da41beb59",
+        "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "e48996d53a7a51a102c57e7b822ee269cd750899",
         "devsystem/execution_plans/cfb-game-total-page1-v2-step4-side-market-completeness.json": "4649af85e1786c58c47f1e784cf446273a76aa68",
         "devsystem/runless_proof_plans/cfb-game-total-page1-v2-step4-side-market-completeness.json": "ae52b500b85c37bfbf6615092bd36e10954de90f",
         "devsystem/task_ledgers/cfb-game-total-page1-v2-step4-side-market-completeness.json": "eee1c29bff2d3b494a4fd2e8d0daa953e8564603",
@@ -464,7 +453,7 @@
     },
     "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP3_OVERVIEW_TEAM_SNAPSHOT_FROZEN": {
       "artifacts": {
-        "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "f8ec957d95a8ebc152996195b97f366da41beb59",
+        "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "e48996d53a7a51a102c57e7b822ee269cd750899",
         "cfb_game_total_page1_visual_cleanup_step3_activation_v1.py": "30c94f309e0f4d12a4c12036ddd4f67d30de3161",
         "cfb_game_total_page1_visual_cleanup_step3_overview_v1.py": "55a7d59d23919acf960bd0fbefeab2d04550b28f",
         "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step3-overview-team-snapshot.json": "8dc6361b217b35ee5d098aff4d139e9cf256ccd2",
@@ -474,6 +463,20 @@
       },
       "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP3_OVERVIEW_TEAM_SNAPSHOT_FROZEN",
       "source_main_sha": "5c7373ecb1c5c042db0909cc9f7d9e6c64ba43ff",
+      "status": "FROZEN"
+    },
+    "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP4_FOOTER_EVIDENCE_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "e48996d53a7a51a102c57e7b822ee269cd750899",
+        "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py": "44e4faf5498d545ecba2513999b977b68c2ff18e",
+        "cfb_game_total_page1_visual_cleanup_step4_footer_evidence_v1.py": "7124e4ab9a5af1bf68176e5c383e2b47ff2119f9",
+        "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json": "eb456c4531a2cd03ee06e26917c1e9e1ecb4689e",
+        "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json": "c2e788f13b3ff6562f900577621c80c24952a25a",
+        "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json": "62e26ddc4684e6848cb129f0c0117b8aeaec455e",
+        "tests/test_cfb_game_total_page1_visual_cleanup_step4_footer_evidence.py": "539749e13320a33b086edfb5cfe65ea914b7b941"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP4_FOOTER_EVIDENCE_FROZEN",
+      "source_main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
       "status": "FROZEN"
     },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
@@ -2727,9 +2730,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 217,
+  "revision": 218,
   "schema_version": 1,
-  "source_main_sha": "5c7373ecb1c5c042db0909cc9f7d9e6c64ba43ff",
-  "state_hash": "a4c78478653003225878a8f8c214f2920c4686b345a65f145b5d94ac2de9e970",
+  "source_main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
+  "state_hash": "08aa5a9ff7fccdd030621d895083e57445634b0cb657d7f4cd3d199c1ed80b04",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
