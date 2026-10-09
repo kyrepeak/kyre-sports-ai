@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "task_id": "universal-live-status-board-v1-step1-mandatory-status-schema",
+  "title": "Universal Live Status Board V1 Step 1 — Mandatory Status Schema",
+  "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
+  "workstream": "universal-live-status-board-v1",
+  "step": "1/4",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "base_main_sha": "b7f54cd695b05674ed7d1947167196bb75d28969",
+  "branch": "universal-live-status-board-v1-spec",
+  "problem": "Execution updates can omit or contradict completion percentage, RED/YELLOW/GREEN state, or live active chat identity.",
+  "root_cause": "No shared machine-checkable status schema exists across this chat, MONSTER, and API 2.",
+  "patch": "Add a pure validator and deterministic renderer for mandatory completion_percent, status, and live_active_chat fields with strict terminal invariants and no ownership mutation.",
+  "mutation_scope": [
+    "devsystem/universal_live_status_board_v1.py",
+    "tests/test_devsystem_universal_live_status_board_v1.py",
+    "devsystem/execution_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+    "devsystem/runless_proof_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+    "devsystem/task_ledgers/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+    "docs/superpowers/specs/2026-10-09-universal-live-status-board-v1-design.md",
+    "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step1-mandatory-status-schema.md"
+  ],
+  "forbidden_scope": [
+    "sports product runtime",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "qualification",
+    "sportsbook",
+    "parallel ownership registry",
+    "API 2 workstream mutation"
+  ],
+  "step2a": {
+    "single_authority": true,
+    "lease_id": "SCOPE-LEASE-AF98765B18BABD820ED977CD",
+    "lease_owner": "universal-live-status-board-v1-step1-implementation",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "api2_active_lease_preserved": true,
+    "ruling": "Implementation scope is disjoint and may proceed while API 2 owns frozen-registry and runless-proof-plane. Final Runless/freeze waits for those shared resources to become available."
+  },
+  "tdd": {
+    "test_first_commit": "a5a69f94a646240aa613429de455766f3a588564",
+    "red_observed": true,
+    "red_result": "ModuleNotFoundError: No module named devsystem.universal_live_status_board_v1",
+    "red_reason": "production module intentionally absent",
+    "implementation_commit": "cdf200f2f3b61ab0ad2b00193c5d8984f041b7bb",
+    "green_observed": true,
+    "green_result": "26 passed in 0.06s",
+    "compile_result": "PY_COMPILE_OK"
+  },
+  "acceptance": {
+    "mandatory_completion_percent": true,
+    "mandatory_red_yellow_green": true,
+    "mandatory_live_active_chat": true,
+    "bool_percent_rejected": true,
+    "nonfinite_percent_rejected": true,
+    "whitespace_red_blocker_rejected": true,
+    "deterministic_renderer": true,
+    "terminal_active_chat_must_be_none_terminal": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "may_modify_product_runtime": false,
+    "mutation_authority_granted": false,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP1_MANDATORY_STATUS_SCHEMA_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "WAIT_FOR_SHARED_RUNLESS_AND_FROZEN_REGISTRY_RESOURCES_THEN_EXACT_HEAD_RUNLESS_PROOF"
+}
