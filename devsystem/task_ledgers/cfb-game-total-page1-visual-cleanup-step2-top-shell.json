@@ -1,0 +1,52 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "2/5",
+  "source_main_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
+  "authoritative_branch": "api2/cfb-game-total-page1-visual-cleanup-step2-top-shell",
+  "scope_lease_id": "SCOPE-LEASE-CBDEB41F080076DFE7FBBFEB",
+  "step2a": {
+    "exact_main_verified": true,
+    "duplicate_step2_pr_found": false,
+    "duplicate_async_run_started": false,
+    "step1_freeze_verified": true,
+    "lease_revision": 418,
+    "lease_state_hash": "afc1812be7e52ec1afe55315a25673be03ad6d8313ee6c2b618be27c33f0f9ca",
+    "rollback_point": "e43e244328fae9c55e10b66d7d86ed752edfe518"
+  },
+  "tdd_red_candidate_sha": "1769fcd82b148f6d73f88b2db7115d3bec61968e",
+  "tdd_red_failure_class": "STATIC_PROOF",
+  "tdd_red_evidence": "Final Step-2 test required the additive activation helper; exact RED candidate returned GitHub 404 before the activation implementation was added.",
+  "first_runless_attempt": {
+    "candidate_sha": "cfc3e50dd49adb22875963884f869bb51a6bd7dc",
+    "proof_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell-cfc3e50dd49adb22-054cb8d6eed7ff12",
+    "receipt_created": false,
+    "failure_class": "FROZEN_ARTIFACT_REGISTRY",
+    "root_cause": "Candidate modified kyre_universal_shell_runtime_v1.py, frozen at blob 40a37ff350262256f590a430ea9494d52c0c5304 by CFB_GAME_TOTAL_PAGE1_V2_STEP3_MATCHUP_HERO_PHX_FROZEN, without an exact thaw grant.",
+    "blind_retry": false,
+    "duplicate_proof_submission": false
+  },
+  "recovery": {
+    "strategy": "Restore frozen universal shell byte-for-byte and activate Step 2 through unfrozen CFB-only kyre_game_total_theme_v1.py before frozen V36 consumes presentation.build_matchup_hero_html.",
+    "old_scope_lease_released": "SCOPE-LEASE-A370D1B2059B961594A3674F",
+    "narrowed_scope_lease": "SCOPE-LEASE-CBDEB41F080076DFE7FBBFEB",
+    "thaw_required": false,
+    "frozen_source_mutations": 0,
+    "github_actions_fallback": 0
+  },
+  "green_candidate_sha": null,
+  "runless_proof_id": null,
+  "merged_main_sha": null,
+  "timezone": "America/Phoenix",
+  "presentation_only": true,
+  "purge_safe_activation": true,
+  "preserve_dynamic_selected_game_data": true,
+  "may_modify_projection": false,
+  "may_modify_market_ownership": false,
+  "may_modify_other_sports": false,
+  "sportsbook_projection_influence": 0.0,
+  "github_actions_fallback": 0,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP2_TOP_SHELL_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}

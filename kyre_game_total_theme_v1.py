@@ -5,6 +5,7 @@ surface. No data, model, grading, market, or step logic is owned here.
 """
 from __future__ import annotations
 
+from cfb_game_total_page1_visual_cleanup_step2_activation_v1 import install_step2_top_shell
 from kyre_universal_components_v1 import build_components_css
 from kyre_universal_responsive_v1 import build_responsive_css
 from kyre_universal_theme_v1 import build_universal_theme_css
@@ -133,6 +134,9 @@ _OVERRIDES = r"""
 """
 
 def build_game_total_theme_css() -> str:
+    # CFB-only additive activation. The fresh Step-3 presentation module has
+    # already loaded by this point, while its hero has not rendered yet.
+    install_step2_top_shell()
     return (
         build_universal_theme_css()
         + build_components_css()
