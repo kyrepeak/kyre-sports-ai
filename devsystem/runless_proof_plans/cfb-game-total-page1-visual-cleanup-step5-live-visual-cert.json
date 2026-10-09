@@ -1,16 +1,19 @@
 {
   "task_id": "cfb-game-total-page1-visual-cleanup-step5-live-visual-cert",
   "workstream": "cfb-game-total-page1-visual-cleanup-v1",
-  "source_main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
+  "source_main_sha": "443bd71d4ee956a0b26539a900771b30b90a77fe",
   "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_visual_cleanup_step5_v191_idempotence.py"],
     ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_visual_cleanup_step5_visual_cert.py"],
     ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_visual_cleanup_step4_footer_evidence.py"],
     ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_visual_cleanup_step3_overview.py"],
     ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_page1_visual_cleanup_step2_top_shell.py"],
-    ["python", "-m", "py_compile", "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py"]
+    ["python", "-m", "py_compile", "streamlit_memory_lazy_router_v191.py", "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py"]
   ],
   "artifacts": [
+    "streamlit_memory_lazy_router_v191.py",
     "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step5_v191_idempotence.py",
     "tests/test_cfb_game_total_page1_visual_cleanup_step5_visual_cert.py",
     "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
     "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
@@ -24,7 +27,7 @@
     "cfb_game_total_page1_visual_cleanup_step4_footer_evidence_v1.py",
     "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py",
     "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
-    "streamlit_memory_lazy_router_v191.py"
+    "kyre_remaining_pages_theme_v1.py"
   ],
   "probes": [],
   "timeout_seconds": 300,
@@ -32,5 +35,6 @@
   "github_actions_fallback": false,
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
+  "scope_lease": "SCOPE-LEASE-228D3523AABA8F66D855690A",
   "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP5_LIVE_VISUAL_CERT_FROZEN"
 }

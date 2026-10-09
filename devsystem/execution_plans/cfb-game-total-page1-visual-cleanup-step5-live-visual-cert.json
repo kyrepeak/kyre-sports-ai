@@ -3,15 +3,17 @@
   "workstream": "cfb-game-total-page1-visual-cleanup-v1",
   "step": 5,
   "step_total": 5,
-  "source_main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
-  "objective": "Certify the frozen CFB Game Total Page 1 presentation on live production at mobile, tablet, and desktop widths and close the five-step visual-cleanup mission without changing product/runtime behavior.",
+  "source_main_sha": "443bd71d4ee956a0b26539a900771b30b90a77fe",
+  "objective": "Certify the CFB Game Total Page 1 presentation on live production at mobile, tablet, and desktop widths and close the five-step visual-cleanup mission. A live Step-5 failure proved repeated Streamlit reruns were stacking frozen compatibility wrappers, so one narrow V191 presentation-only idempotence repair is authorized; frozen Step-3/Step-4 product owners remain immutable.",
   "write_paths": [
     "devsystem/cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1.py",
     "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
     "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
     "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
     "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json",
-    "tests/test_cfb_game_total_page1_visual_cleanup_step5_visual_cert.py"
+    "streamlit_memory_lazy_router_v191.py",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step5_visual_cert.py",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step5_v191_idempotence.py"
   ],
   "protected_dependencies": [
     "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py",
@@ -20,9 +22,17 @@
     "cfb_game_total_page1_visual_cleanup_step4_footer_evidence_v1.py",
     "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py",
     "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
-    "streamlit_memory_lazy_router_v191.py",
+    "kyre_remaining_pages_theme_v1.py",
     "app.py"
   ],
+  "live_repair_exception": {
+    "failure_class": "PRESENTATION_WRAPPER_STACKING",
+    "live_failure": "mobile visible gtvc4-games-on-day count was 3; contract requires exactly 1",
+    "authorized_runtime_path": "streamlit_memory_lazy_router_v191.py",
+    "repair": "Guard the CFB public-repair and compatibility installer calls once per Python process so Streamlit reruns reuse one frozen wrapper chain.",
+    "frozen_step3_step4_source_mutations": 0,
+    "scope_lease": "SCOPE-LEASE-228D3523AABA8F66D855690A"
+  },
   "live_contract": {
     "production_url": "https://pickvault.streamlit.app",
     "viewports": ["390x844", "768x1024", "1440x1200"],
@@ -33,10 +43,12 @@
     "missing_data_copy_allowed": false
   },
   "safety": {
-    "may_modify_product_runtime": false,
+    "may_modify_product_runtime": true,
+    "runtime_change_scope": "V191 presentation-only installer idempotence",
     "may_modify_projection": false,
     "may_modify_probability": false,
     "may_modify_ranking": false,
+    "may_modify_frozen_step3_step4": false,
     "sportsbook_projection_influence": 0.0,
     "github_actions_fallback": 0
   },
