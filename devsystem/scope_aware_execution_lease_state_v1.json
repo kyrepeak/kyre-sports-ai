@@ -5,7 +5,7 @@
       "acquired_at_utc": "2026-10-09T00:13:00Z",
       "expires_at_utc": "2026-10-09T01:13:00Z",
       "generation": 238,
-      "heartbeat_at_utc": "2026-10-09T00:13:00Z",
+      "heartbeat_at_utc": "2026-10-09T00:15:00Z",
       "lease_id": "SCOPE-LEASE-3C525B83EBBC2BAC7B5E0C4C",
       "owner_id": "api2-nfl-rb-wr-render-repair-step5-runless",
       "scope": {
@@ -18,8 +18,9 @@
           "main_sha": "76dde02ccd468447422710051ce2cb145aff2ebe",
           "product_lease_id": "SCOPE-LEASE-B5441A5FDEF4CE4BD47A538D",
           "render_service_id": "srv-db23fee7bikc73ca8ua0",
-          "runless_head_sha": "a98f36748dc0acda75a5b0334a56f8dca8ad8755",
-          "step3_shim_blob": "787494b56fdde1073cd6c8337d2644f3cb234e84"
+          "runless_head_sha": "14a8092adf747378d913281f2cd129118bd2e312",
+          "step3_shim_blob": "787494b56fdde1073cd6c8337d2644f3cb234e84",
+          "step5_wrapper_blob": "5be979b1f237bfe08e44d6a4d17bde15948be2a7"
         },
         "shared_resources": [
           "render:service:srv-db23fee7bikc73ca8ua0"
@@ -61,8 +62,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 396,
+  "revision": 397,
   "schema_version": 1,
-  "state_hash": "402d4b357494804eb07d3c98f3551a70a42458da7932850568f491519086a195",
+  "state_hash": "b2c361fd9e5a98a7cd1a8f30d54047d4c29979bda14797e7d95194204e95b0ba",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
