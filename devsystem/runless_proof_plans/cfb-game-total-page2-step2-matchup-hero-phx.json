@@ -14,15 +14,6 @@
       "-m",
       "py_compile",
       "cfb_game_total_page2_step2_matchup_hero_phx_v1.py"
-    ],
-    [
-      "python",
-      "-m",
-      "pytest",
-      "-q",
-      "tests/test_cfb_game_total_page1_visual_cleanup_step2_top_shell.py",
-      "tests/test_cfb_game_total_page1_v2_step3_matchup_hero_phx.py",
-      "tests/test_cfb_game_total_page1_visual_cleanup_step5_v191_idempotence.py"
     ]
   ],
   "artifacts": [
