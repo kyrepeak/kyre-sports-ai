@@ -1,0 +1,41 @@
+{
+  "artifacts": [
+    "devsystem/execution_plans/nfl-rb-wr-render-repair-step5-final-mission.json",
+    "devsystem/nfl_rb_wr_render_repair_step5_final_mission_v1.py",
+    "devsystem/runless_proof_plans/nfl-rb-wr-render-repair-step5-final-mission.json",
+    "devsystem/task_ledgers/nfl-rb-wr-render-repair-step5-final-mission.json",
+    "tests/test_nfl_rb_wr_render_repair_step5_final_mission.py"
+  ],
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step5_final_mission.py"],
+    ["python", "-m", "devsystem.nfl_rb_wr_render_repair_step5_final_mission_v1"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py"]
+  ],
+  "dependencies": [
+    "devsystem/production_targets_v1.json",
+    "streamlit_memory_lazy_router_v187.py",
+    "nfl_rushing_yards_hub_v4.py",
+    "nfl_receiving_yards_hub_v13.py",
+    "tests/test_nfl_rb_wr_render_repair_step1_root_cause.py",
+    "tests/test_nfl_rb_wr_render_repair_step2_presentation_transport.py",
+    "devsystem/nfl_rb_wr_render_repair_step3_data_binding_v1.py",
+    "tests/test_nfl_rb_wr_render_repair_step3_data_binding.py",
+    "devsystem/nfl_rb_wr_render_repair_step4_mobile_route_v1.py",
+    "tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py"
+  ],
+  "freeze_token": "NFL_RB_WR_RENDER_REPAIR_V1_STEP5_FINAL_MISSION_FROZEN",
+  "github_actions_fallback": false,
+  "live_ttl_seconds": 900,
+  "probes": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "source_main_sha": "76dde02ccd468447422710051ce2cb145aff2ebe",
+  "step4_public_proof_id": "nfl-rb-wr-render-repair-step4-mobile-route-f503fcc4f1ead82e-5025754ac04ac692",
+  "step4_public_receipt_digest": "01aa378412eeecece65d5e9f44fd9f914e96ecc9869e42d6d8e3db4ed19da2a5",
+  "step4_public_proof_reused": true,
+  "task_id": "nfl-rb-wr-render-repair-step5-final-mission",
+  "timeout_seconds": 300,
+  "workstream": "nfl-rb-wr-render-repair-v1"
+}
