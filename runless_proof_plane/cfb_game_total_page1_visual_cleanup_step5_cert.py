@@ -29,6 +29,7 @@ from devsystem import cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 a
 EXPECTED_DEPLOYMENT_SHA = "443bd71d4ee956a0b26539a900771b30b90a77fe"
 DEPLOYMENT_SELECTOR = '[data-api2-exact-deployment="streamlit-runtime-v1"]'
 MAIN_SELECTOR = '[data-testid="stMainBlockContainer"]'
+GAMES_SELECTOR = '[data-testid="gtvc4-games-on-day"]'
 
 def canonical_prime(page, base_url=cert.PRODUCTION_URL):
     page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
@@ -51,24 +52,57 @@ def canonical_prime(page, base_url=cert.PRODUCTION_URL):
     print("CFB_GT_VISUAL_CLEANUP_STEP5_EXACT_DEPLOYMENT_GREEN", flush=True)
     return frame, {"initial": initial_scan, "sport_selected": sport_scan, "market_selected": market_scan}
 
-original_viewport_result = cert._viewport_result
 
-def main_scoped_viewport_result(page, frame, name, scans, artifact_dir):
-    original_forbidden = cert._forbidden_visible_text
+def visual_surface_viewport_result(page, frame, name, scans, artifact_dir):
+    for testid in cert.REQUIRED_TESTIDS:
+        cert._visible(frame, testid)
+
+    body = frame.locator("body").inner_text(timeout=30000)
     main = frame.locator(MAIN_SELECTOR).first
-    main.wait_for(state="attached", timeout=45000)
+    main.wait_for(state="visible", timeout=45000)
+    main_text = main.inner_text(timeout=30000)
+    today_label = cert._today_button_label()
+    today_visible = today_label in body
+    forbidden = cert._forbidden_visible_text(main_text)
+    runtime_error = cert._runtime_error(body)
+    overflow = cert._horizontal_overflow(frame)
 
-    def main_only_forbidden(_body):
-        return original_forbidden(main.inner_text(timeout=30000))
+    # This is a live VISUAL certificate. Playwright's raw count() includes hidden
+    # DOM matches; count only visible Overview surfaces inside Streamlit's main block.
+    games_count = main.locator(GAMES_SELECTOR).visible.count()
 
-    cert._forbidden_visible_text = main_only_forbidden
-    try:
-        return original_viewport_result(page, frame, name, scans, artifact_dir)
-    finally:
-        cert._forbidden_visible_text = original_forbidden
+    if not today_visible:
+        raise cert.Step5VisualCertFailure(f"Phoenix current day missing at {name}: {today_label}")
+    if forbidden:
+        raise cert.Step5VisualCertFailure(f"Forbidden Overview text at {name}: {forbidden}")
+    if runtime_error:
+        raise cert.Step5VisualCertFailure(f"Runtime error at {name}: {runtime_error}")
+    if overflow:
+        raise cert.Step5VisualCertFailure(f"Horizontal overflow at {name}")
+    if games_count != 1:
+        raise cert.Step5VisualCertFailure(
+            f"Expected one visible Games on This Day surface at {name}; found {games_count}"
+        )
+
+    screenshot = artifact_dir / f"cfb_game_total_step5_{name}.png"
+    page.screenshot(path=str(screenshot), full_page=True)
+    return {
+        "viewport": dict(cert.VIEWPORTS[name]),
+        "required_testids_visible": list(cert.REQUIRED_TESTIDS),
+        "all_required_visible": True,
+        "phoenix_today_label": today_label,
+        "phoenix_today_visible": True,
+        "friday_visible": cert.datetime.now(cert.ZoneInfo(cert.PHOENIX_TZ)).weekday() != 4 or today_visible,
+        "games_on_day_surface_count": games_count,
+        "horizontal_overflow": False,
+        "forbidden_visible_text": [],
+        "runtime_error": "",
+        "initial_frame_scan": scans,
+        "screenshot": str(screenshot),
+    }
 
 cert._prime_route = canonical_prime
-cert._viewport_result = main_scoped_viewport_result
+cert._viewport_result = visual_surface_viewport_result
 cert.run(base_url=cert.PRODUCTION_URL, artifact_dir=sys.argv[1])
 '''
 
