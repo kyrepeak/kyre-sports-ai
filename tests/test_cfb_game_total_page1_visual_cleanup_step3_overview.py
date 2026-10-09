@@ -16,6 +16,9 @@ def test_phoenix_day_window_includes_today_and_friday() -> None:
     assert days[0].isoformat() == "2026-10-09"
     assert days[0].strftime("%A") == "Friday"
     assert days[-1].isoformat() == "2026-10-15"
+    selected_saturday = overview.phoenix_day_window_including_today("2026-10-10", now=now, count=7)
+    assert selected_saturday[0].isoformat() == "2026-10-09"
+    assert selected_saturday[0].strftime("%A") == "Friday"
 
 
 def test_overview_and_snapshot_use_dynamic_team_evidence_without_pending_copy() -> None:
