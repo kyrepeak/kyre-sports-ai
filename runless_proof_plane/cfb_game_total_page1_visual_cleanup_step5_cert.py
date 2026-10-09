@@ -11,13 +11,14 @@ from devsystem.scope_aware_execution_lease_v1 import validate_state as validate_
 
 SOURCE_MAIN_SHA = "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9"
 CERTIFIED_PRODUCT_MAIN_SHA = "5c155c494cf4e10148ebb3d6133d83a0ef42172c"
-MERGED_MAIN_SHA = "443bd71d4ee956a0b26539a900771b30b90a77fe"
+MERGED_MAIN_SHA = "337e9f2429aee703e821b226cc46ea3b52567986"
+REPAIR_CANDIDATE_SHA = "ba1caf4f1383e5169a1661cab1f5b78ed5c4c757"
 STEP5_BRANCH = "api2/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert"
 EVIDENCE_PATH = "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json"
 LEASE_BRANCH = "monster-scope-aware-execution-leases"
 LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
 LEASE_OWNER = "api2-cfb-game-total-page1-visual-cleanup-step5-convergence"
-LEASE_ID = "SCOPE-LEASE-FADB448ED17923F50A5CAA33"
+LEASE_ID = "SCOPE-LEASE-1363371DFE615B06589A63D4"
 ARTIFACT_DIR = Path("/tmp/cfb-game-total-step5")
 LOCAL_EVIDENCE = ARTIFACT_DIR / "cfb_game_total_page1_visual_cleanup_step5_live_visual_cert.json"
 
@@ -26,7 +27,7 @@ import sys
 from devsystem import browser_qa_v1 as browser_base
 from devsystem import cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 as cert
 
-EXPECTED_DEPLOYMENT_SHA = "443bd71d4ee956a0b26539a900771b30b90a77fe"
+EXPECTED_DEPLOYMENT_SHA = "337e9f2429aee703e821b226cc46ea3b52567986"
 DEPLOYMENT_SELECTOR = '[data-api2-exact-deployment="streamlit-runtime-v1"]'
 MAIN_SELECTOR = '[data-testid="stMainBlockContainer"]'
 GAMES_SELECTOR = '[data-testid="gtvc4-games-on-day"]'
@@ -135,6 +136,8 @@ def _holder(client):
     identity = (holder.get("scope") or {}).get("resource_identity") or {}
     if (
         str(identity.get("main_sha") or "") != MERGED_MAIN_SHA
+        or str(identity.get("repair_merged_main_sha") or "") != MERGED_MAIN_SHA
+        or str(identity.get("repair_candidate_sha") or "") != REPAIR_CANDIDATE_SHA
         or str(identity.get("certified_product_main_sha") or "") != CERTIFIED_PRODUCT_MAIN_SHA
         or str(identity.get("workstream") or "") != "cfb-game-total-page1-visual-cleanup-v1"
         or str(identity.get("phase") or "") != "postmerge-live-cert-closeout"
@@ -202,6 +205,7 @@ def execute(app):
         raise RuntimeError("STEP5_CERT_NOT_GREEN")
     evidence["certified_product_main_sha"] = CERTIFIED_PRODUCT_MAIN_SHA
     evidence["certified_merged_main_sha"] = MERGED_MAIN_SHA
+    evidence["repair_candidate_sha"] = REPAIR_CANDIDATE_SHA
     evidence["cert_route_method"] = "canonical-ui-selection"
     evidence["route_url"] = "https://pickvault.streamlit.app/"
     _persist_evidence(client, evidence)
