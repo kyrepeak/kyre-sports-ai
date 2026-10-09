@@ -14,7 +14,7 @@ from devsystem.scope_aware_execution_lease_v1 import validate_state as validate_
 
 TASK_ID = "cfb-game-total-page1-visual-cleanup-step3-overview-team-snapshot"
 WORKSTREAM = "cfb-game-total-page1-visual-cleanup-v1"
-CANDIDATE_SHA = "9d35faee70bfc72772645ac18e0cb3cf08363c21"
+CANDIDATE_SHA = "188b065e404141373c3f1157b7729243ef948e16"
 MAIN_SHA = "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4"
 THAW_ID = "THAW-CFB-GT-P1-VISUAL-CLEANUP-STEP3-OVERVIEW"
 THAW_PATH = "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py"
@@ -23,12 +23,12 @@ TO_BLOB = "f8ec957d95a8ebc152996195b97f366da41beb59"
 
 REGISTRY_BRANCH = "monster-frozen-artifact-registry"
 REGISTRY_PATH = "devsystem/frozen_artifact_registry_state_v1.json"
-EXPECTED_REGISTRY_REVISION = 213
-EXPECTED_REGISTRY_HASH = "93203b2222ef86db1880b97b3be3a26a442b8e582a5a379ce58cb39e1176f068"
+EXPECTED_REGISTRY_REVISION = 214
+EXPECTED_REGISTRY_HASH = "b7dd28a4cc314d0962bb02a05eb7c27e892472f991382ceaa7936115da96f11c"
 
 LEASE_BRANCH = "monster-scope-aware-execution-leases"
 LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
-LEASE_ID = "SCOPE-LEASE-63FBA29B2CEA5873A1774B0E"
+LEASE_ID = "SCOPE-LEASE-89A222D14A560722C1727D14"
 LEASE_OWNER = "api2-cfb-game-total-page1-visual-cleanup-step3-thaw-finalizer"
 
 
@@ -110,16 +110,20 @@ def _grant() -> dict:
     }
 
 
-def _validate_existing_thaw(registry: dict) -> dict | None:
-    existing = next(
+def _existing_thaw(registry: dict) -> dict | None:
+    return next(
         (grant for grant in registry.get("active_thaws", []) if grant.get("thaw_id") == THAW_ID),
         None,
     )
-    if existing is None:
-        return None
-    if existing != _grant():
-        raise RuntimeError("CFB_GT_STEP3_THAW_CONFLICT")
-    return existing
+
+
+def _same_blob_pair(grant: dict) -> bool:
+    pair = (grant.get("files") or {}).get(THAW_PATH) or {}
+    return (
+        str(pair.get("from_blob") or "") == FROM_BLOB
+        and str(pair.get("to_blob") or "") == TO_BLOB
+        and set(grant.get("files") or {}) == {THAW_PATH}
+    )
 
 
 def _readback(client, expected_revision: int, expected_hash: str) -> dict:
@@ -132,8 +136,8 @@ def _readback(client, expected_revision: int, expected_hash: str) -> dict:
         raise RuntimeError("CFB_GT_STEP3_THAW_REVISION_READBACK_DRIFT")
     if str(registry.get("state_hash") or "") != expected_hash:
         raise RuntimeError("CFB_GT_STEP3_THAW_HASH_READBACK_DRIFT")
-    if _validate_existing_thaw(registry) is None:
-        raise RuntimeError("CFB_GT_STEP3_THAW_READBACK_MISSING")
+    if _existing_thaw(registry) != _grant():
+        raise RuntimeError("CFB_GT_STEP3_THAW_READBACK_MISMATCH")
     return {
         "revision": expected_revision,
         "state_hash": validated["state_hash"],
@@ -150,11 +154,11 @@ def execute(app) -> dict:
     current = _decode_json(raw, "CFB_GT_STEP3_THAW_REGISTRY")
     validated = validate_registry(current)
 
-    existing = _validate_existing_thaw(current)
-    if existing is not None:
+    existing = _existing_thaw(current)
+    if existing == _grant():
         return {
             "status": "GREEN",
-            "decision": "CFB_GT_STEP3_THAW_ALREADY_ACTIVE",
+            "decision": "CFB_GT_STEP3_THAW_ALREADY_CORRECT",
             "task_id": TASK_ID,
             "candidate_sha": CANDIDATE_SHA,
             "thaw_id": THAW_ID,
@@ -170,10 +174,17 @@ def execute(app) -> dict:
         raise RuntimeError("CFB_GT_STEP3_THAW_REGISTRY_HASH_DRIFT")
     if validated["artifacts"].get(THAW_PATH) != FROM_BLOB:
         raise RuntimeError("CFB_GT_STEP3_THAW_BASELINE_DRIFT")
-    if any(THAW_PATH in (grant.get("files") or {}) for grant in current.get("active_thaws", [])):
-        raise RuntimeError("CFB_GT_STEP3_THAW_PATH_ALREADY_THAWED")
+    if existing is None or not _same_blob_pair(existing):
+        raise RuntimeError("CFB_GT_STEP3_THAW_STALE_GRANT_SHAPE_DRIFT")
 
-    unrelated = deepcopy(current.get("active_thaws") or [])
+    unrelated = [
+        deepcopy(grant)
+        for grant in current.get("active_thaws", [])
+        if grant.get("thaw_id") != THAW_ID
+    ]
+    if any(THAW_PATH in (grant.get("files") or {}) for grant in unrelated):
+        raise RuntimeError("CFB_GT_STEP3_THAW_PATH_CONFLICT")
+
     updated = deepcopy(current)
     updated["revision"] = EXPECTED_REGISTRY_REVISION + 1
     updated["source_main_sha"] = MAIN_SHA
@@ -185,7 +196,7 @@ def execute(app) -> dict:
         REGISTRY_PATH,
         json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
         REGISTRY_BRANCH,
-        "registry: authorize exact CFB Game Total visual cleanup Step3 thaw",
+        "registry: retarget exact CFB Game Total visual cleanup Step3 thaw",
         raw["sha"],
     )
     readback = _readback(client, int(updated["revision"]), str(updated["state_hash"]))
@@ -194,7 +205,7 @@ def execute(app) -> dict:
 
     return {
         "status": "GREEN",
-        "decision": "CFB_GT_STEP3_EXACT_THAW_ACTIVE",
+        "decision": "CFB_GT_STEP3_THAW_TARGET_REPLACED",
         "task_id": TASK_ID,
         "candidate_sha": CANDIDATE_SHA,
         "thaw_id": THAW_ID,
