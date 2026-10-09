@@ -1,0 +1,21 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step1-target-lock",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "1/5",
+  "source_main_sha": "1eb550e58964ace5f9551a484d1c65cd49f8fc20",
+  "authoritative_branch": "api2/cfb-game-total-page1-visual-cleanup-step1-target-lock",
+  "scope_lease_id": "SCOPE-LEASE-CFB-GT-P1-VISUAL-CLEANUP-STEP1-240",
+  "tdd_red_candidate_sha": "3236f455437e8e2a83eaa669d1d9d913b408bae2",
+  "tdd_red_proof_id": "cfb-game-total-page1-visual-cleanup-step1-target-lock-3236f455437e8e2a-ad659ba3bf09b0aa",
+  "tdd_red_failure_class": "STATIC_PROOF",
+  "target_hierarchy_locked": true,
+  "reference_mockup_data_is_illustrative": true,
+  "timezone": "America/Phoenix",
+  "product_runtime_mutations": 0,
+  "github_actions_fallback": 0,
+  "duplicate_successful_runs": 0,
+  "blind_retries": 0,
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP1_TARGET_LOCK_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
