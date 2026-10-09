@@ -94,3 +94,10 @@ def test_final_artifact_contract_pins_key_step2_step3_step4_blobs():
     assert mod.REQUIRED_ARTIFACTS["devsystem/nfl_rb_wr_render_repair_step3_data_binding_v1.py"] == "916df46771ff75fba4a0edc6f90468a45e5cea49"
     assert mod.REQUIRED_ARTIFACTS["devsystem/nfl_rb_wr_render_repair_step4_mobile_route_v1.py"] == "ba25ac2bd8725677f6646e32b8ddfaa5c59d20c7"
     assert mod.REQUIRED_ARTIFACTS["tests/test_nfl_rb_wr_render_repair_step4_mobile_route.py"] == "9fc021b1e55d5cc456b15ad7eb2dac4c9104a4ef"
+
+
+def test_step5_reuses_frozen_step4_public_proof_instead_of_live_market_replay():
+    mod = _load_module()
+    assert mod.STEP4_PUBLIC_PROOF_REUSED is True
+    assert mod.STEP4_PUBLIC_PROOF_ID == "nfl-rb-wr-render-repair-step4-mobile-route-f503fcc4f1ead82e-5025754ac04ac692"
+    assert mod.STEP4_PUBLIC_RECEIPT_DIGEST == "01aa378412eeecece65d5e9f44fd9f914e96ecc9869e42d6d8e3db4ed19da2a5"
