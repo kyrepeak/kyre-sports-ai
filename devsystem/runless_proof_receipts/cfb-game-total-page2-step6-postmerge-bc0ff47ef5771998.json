@@ -1,0 +1,39 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py": "c39bb9a5df699f367e87b8f10328f7e3f5a1a8bc",
+    "devsystem/execution_plans/cfb-game-total-page2-step6-trends-scoring-breakdown.json": "f1ad45e4a41a9acbcc960e89da42e601654590dd",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step6-trends-scoring-breakdown.json": "ab0bc5852e910efdf26ee508ca2414fadd547b0c",
+    "tests/test_cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py": "2d956b006ca8c6efd82070391013965bf7bba334"
+  },
+  "candidate_sha": "bc0ff47ef5771998275456cba454256f6a9ae047",
+  "created_at": "2026-10-09T23:52:42.985216+00:00",
+  "dependency_map": {
+    "cfb_game_total_page2_step3_integrated_flow_v1.py": "6d9c930095bf46c424235bc6704e5509f946193c",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py": "f0dde67fac3cfca511a27bee74275bf0ae809819",
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py": "bca6b5afa14a5e7747c76dfbb7fd7b670819464a"
+  },
+  "deployment_identity": "fcdde5e211fd5cca981ae19ebf51868fef0272bb",
+  "digest": "cf8c2ef0a6b92096e9bde9b88ec784c83467561c77cf8736ca85f0f4a5930931",
+  "evidence_digests": [
+    "120d15f2d7dbfb00e709a0173ce2312b995ae42f3c9df1911a9e06c077bdb742",
+    "d49d46a1d7d45b0e030679a9a9cdebd736bbe17ca95c8b9df9f11983f025550c"
+  ],
+  "failure_class": "NONE",
+  "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP6_TRENDS_SCORING_BREAKDOWN_FROZEN",
+  "github_actions_fallback": 0,
+  "premerge_candidate_sha": "13109465e4b0df504d46fade4f3846d18222a43b",
+  "prior_digest": "120d15f2d7dbfb00e709a0173ce2312b995ae42f3c9df1911a9e06c077bdb742",
+  "project": "API2",
+  "proof_id": "cfb-game-total-page2-step6-postmerge-bc0ff47ef5771998",
+  "registry_after": {
+    "revision": 227,
+    "state_hash": "d49d46a1d7d45b0e030679a9a9cdebd736bbe17ca95c8b9df9f11983f025550c"
+  },
+  "registry_before": {
+    "revision": 226,
+    "state_hash": "46cd346eb1ed09f21bf2d12f2b9850bf89b79c6a27e1aab8cdadef9eb11ee86a"
+  },
+  "step": "6/8-postmerge-freeze",
+  "task_id": "cfb-game-total-page2-step6-trends-scoring-breakdown",
+  "workstream": "cfb-game-total-page2-v1"
+}
