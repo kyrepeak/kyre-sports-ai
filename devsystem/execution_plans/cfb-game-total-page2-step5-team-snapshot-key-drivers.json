@@ -1,0 +1,38 @@
+{
+  "task_id": "cfb-game-total-page2-step5-team-snapshot-key-drivers",
+  "workstream": "cfb-game-total-page2-v1",
+  "project": "API2",
+  "step": "5/8",
+  "source_main_sha": "2717651c5b8a5fb08ef4bbc5d7402fa5d6c3fc1f",
+  "scope_lease_id": "SCOPE-LEASE-10324E9533725D1757F3BF30",
+  "problem": "Page 2 has frozen navigation and Outlook, but the Team Snapshot stage has no owned comparison component for pace, explosive plays, red-zone rate, defense, and explicit favorable-side context.",
+  "root_cause": "Steps 1-4 established route, hero, stage navigation, and Outlook only; there is no isolated Step-5 presentation layer for already-owned team-driver values.",
+  "patch": "Add one presentation-only Team Snapshot + Key Drivers component anchored at gtp2-team-snapshot. Render away/home values for pace, explosive plays, red-zone rate, and defense, with explicit favorable-side badges supplied by existing analysis ownership. Do not derive sports meaning, fetch data, or recompute model outputs.",
+  "write_paths": [
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py",
+    "tests/test_cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step5-team-snapshot-key-drivers.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step5-team-snapshot-key-drivers.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py"
+  ],
+  "safety": {
+    "may_modify_page1": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_model": false,
+    "may_modify_market_ownership": false,
+    "may_add_network_calls": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "proof": {
+    "tdd_red_observed": false,
+    "targeted_unit_tests": "pending RED Runless",
+    "required_runless_gate": "runless-final-gate",
+    "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP5_TEAM_SNAPSHOT_KEY_DRIVERS_FROZEN"
+  }
+}
