@@ -1,0 +1,61 @@
+{
+  "all_artifact_blobs_identical": true,
+  "all_dependency_blobs_identical": true,
+  "artifact_count": 7,
+  "artifact_map": {
+    "cfb_game_total_page1_visual_cleanup_step2_activation_v1.py": "113f4075d1de69dd87e19877b7b398132225e072",
+    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py": "978595051a1cda0ed31694fcb177928877a897c4",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step2-top-shell.json": "c1bdbcbc61c4b13a2cfcb303a642d46441c71b04",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step2-top-shell.json": "8af8ccac3ceac0ac35e106d5145baa499ce35bec",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step2-top-shell.json": "6082b887bf036af2caef082f6ee5dca950d55787",
+    "kyre_game_total_theme_v1.py": "e7156c7f0d5e09cd42fcb811286c8e4e2437ead2",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step2_top_shell.py": "fd9a024e78e5de3c40f3677a05f868006adf2314"
+  },
+  "dependency_count": 11,
+  "dependency_map": {
+    "cfb_game_total_clean_page_v34.py": "d130880220b749bcfde38b4949780313a3609fb7",
+    "cfb_game_total_clean_page_v36.py": "3970337b170ccdc44870699a8a35cf800dea6867",
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_page1_step3_presentation_v1.py": "13c0deabcacba311999447608eafd07eef778565",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py": "6e969228a46d36a00737f941fb2bf6f7f2a2ab8c",
+    "devsystem/cfb_game_total_page1_visual_cleanup_step1_target_lock_v1.py": "aaa6a84f93c22ab8023b1483059567b9fc922a5a",
+    "kyre_universal_shell_runtime_v1.py": "40a37ff350262256f590a430ea9494d52c0c5304",
+    "streamlit_memory_lazy_router_v160.py": "913cf8ac7478fdc105995238b254f28d1d411bc6",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d",
+    "streamlit_memory_lazy_router_v190.py": "fca1442c144d8ff02868ed0371a92f72257d697e",
+    "streamlit_memory_lazy_router_v191.py": "1a4a2df127a060519d62ed96dd39f6c14bb79449"
+  },
+  "digest": "cd283a7ab539ecc358b475fee181d6ffb59665b3adf10948f7005e9be26fe632",
+  "failure_class": "NONE",
+  "finalizer_lease_id": "SCOPE-LEASE-84E188A1B95AE6FD0D8C7DCC",
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP2_TOP_SHELL_FROZEN",
+  "github_actions_fallback": 0,
+  "may_modify_market_ownership": false,
+  "may_modify_other_sports": false,
+  "may_modify_projection": false,
+  "merge_commit_signature_verified": true,
+  "merge_parent_base_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
+  "merge_parent_candidate_sha": "fedf0fbb530ece2b600b0b54b3c7d446c96b3539",
+  "merged_main_sha": "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4",
+  "premerge_proof_fingerprint": "96451ea47dc938b8450a81d3df0de5393575d576a7f28c4b4812559e2027e20b",
+  "premerge_runless_proof_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell-fedf0fbb530ece2b-24ffc3aefb77e103",
+  "premerge_runless_receipt_digest": "0e5ef2e5241c42aae505421a39f843142af5c2a458d9056ba86ba796c6dbd589",
+  "project": "API2",
+  "proof_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell-036dbb2ab3a0e24c-postmerge-reuse",
+  "proof_reuse_decision": "REUSE_APPROVED",
+  "public_probe_count": 0,
+  "receipt_kind": "POST_MERGE_CONTENT_ADDRESSED_REUSE",
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 212,
+    "source_main_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
+    "state_hash": "379aca9256a2333dbfeb6d5a4d1411682430c010e9e15b84560f3c3029c5bcea"
+  },
+  "source_candidate_sha": "fedf0fbb530ece2b600b0b54b3c7d446c96b3539",
+  "sportsbook_projection_influence": 0.0,
+  "task_id": "cfb-game-total-page1-visual-cleanup-step2-top-shell",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1"
+}
