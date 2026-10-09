@@ -18,6 +18,31 @@ LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
 LEASE_OWNER = "api2-cfb-game-total-page1-visual-cleanup-step5-convergence"
 LEASE_ID = "SCOPE-LEASE-B255E6B5C7A6A1D05F969372"
 ARTIFACT_DIR = Path("/tmp/cfb-game-total-step5")
+LOCAL_EVIDENCE = ARTIFACT_DIR / "cfb_game_total_page1_visual_cleanup_step5_live_visual_cert.json"
+
+DRIVER = r'''
+import sys
+from devsystem import browser_qa_v1 as browser_base
+from devsystem import cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 as cert
+
+def canonical_prime(page, base_url=cert.PRODUCTION_URL):
+    page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
+    frame, initial_scan = browser_base._find_app_frame(page)
+    sports = browser_base._read_sport_options(page, frame)
+    if cert.CFB_SPORT not in sports:
+        raise RuntimeError("STEP5_CERT_CFB_SELECTOR_MISSING:" + repr(sports))
+    browser_base._choose(page, frame, 0, cert.CFB_SPORT)
+    frame, sport_scan = browser_base._find_app_frame(page)
+    combo = frame.get_by_role("combobox", name=cert.CFB_MARKET_LABEL, exact=True)
+    combo.wait_for(state="visible", timeout=45000)
+    browser_base._choose(page, frame, 1, cert.GAME_TOTAL_MARKET)
+    frame, market_scan = browser_base._find_app_frame(page)
+    cert._visible(frame, "gtvc2-matchup-hero")
+    return frame, {"initial": initial_scan, "sport_selected": sport_scan, "market_selected": market_scan}
+
+cert._prime_route = canonical_prime
+cert.run(base_url=cert.PRODUCTION_URL, artifact_dir=sys.argv[1])
+'''
 
 
 def _decode(raw, label):
@@ -79,33 +104,6 @@ def _persist_evidence(client, evidence):
         raise RuntimeError("STEP5_CERT_EVIDENCE_CONFLICT")
 
 
-def _canonical_ui_cert():
-    from devsystem import browser_qa_v1 as browser_base
-    from devsystem import cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 as cert
-
-    def canonical_prime(page, base_url=cert.PRODUCTION_URL):
-        page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
-        frame, initial_scan = browser_base._find_app_frame(page)
-        sports = browser_base._read_sport_options(page, frame)
-        if cert.CFB_SPORT not in sports:
-            raise RuntimeError("STEP5_CERT_CFB_SELECTOR_MISSING:" + repr(sports))
-        browser_base._choose(page, frame, 0, cert.CFB_SPORT)
-        frame, sport_scan = browser_base._find_app_frame(page)
-        combo = frame.get_by_role("combobox", name=cert.CFB_MARKET_LABEL, exact=True)
-        combo.wait_for(state="visible", timeout=45000)
-        browser_base._choose(page, frame, 1, cert.GAME_TOTAL_MARKET)
-        frame, market_scan = browser_base._find_app_frame(page)
-        cert._visible(frame, "gtvc2-matchup-hero")
-        return frame, {"initial": initial_scan, "sport_selected": sport_scan, "market_selected": market_scan}
-
-    cert._prime_route = canonical_prime
-    evidence = cert.run(base_url=cert.PRODUCTION_URL, artifact_dir=ARTIFACT_DIR)
-    evidence["certified_merged_main_sha"] = MERGED_MAIN_SHA
-    evidence["cert_route_method"] = "canonical-ui-selection"
-    evidence["route_url"] = cert.PRODUCTION_URL.rstrip("/") + "/"
-    return evidence
-
-
 def execute(app):
     client = app.state.github_client
     if _holder(client) is None:
@@ -118,9 +116,29 @@ def execute(app):
 
     subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True, timeout=300)
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-    evidence = _canonical_ui_cert()
+    if LOCAL_EVIDENCE.exists():
+        LOCAL_EVIDENCE.unlink()
+    completed = subprocess.run(
+        [sys.executable, "-c", DRIVER, str(ARTIFACT_DIR)],
+        check=False,
+        text=True,
+        capture_output=True,
+        timeout=900,
+    )
+    if completed.stdout:
+        print(completed.stdout[-16000:], flush=True)
+    if completed.stderr:
+        print(completed.stderr[-16000:], file=sys.stderr, flush=True)
+    if completed.returncode != 0:
+        raise RuntimeError("STEP5_CERT_SUBPROCESS_FAILED:" + str(completed.returncode))
+    if not LOCAL_EVIDENCE.exists():
+        raise RuntimeError("STEP5_CERT_LOCAL_EVIDENCE_MISSING")
+    evidence = json.loads(LOCAL_EVIDENCE.read_text(encoding="utf-8"))
     if evidence.get("status") != "GREEN" or int(evidence.get("github_actions_fallback", -1)) != 0:
         raise RuntimeError("STEP5_CERT_NOT_GREEN")
+    evidence["certified_merged_main_sha"] = MERGED_MAIN_SHA
+    evidence["cert_route_method"] = "canonical-ui-selection"
+    evidence["route_url"] = "https://pickvault.streamlit.app/"
     _persist_evidence(client, evidence)
     return {
         "status": "GREEN",
