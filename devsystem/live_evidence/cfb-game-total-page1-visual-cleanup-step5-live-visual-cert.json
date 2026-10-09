@@ -1,0 +1,282 @@
+{
+  "cert_route_method": "canonical-ui-selection",
+  "certified_merged_main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
+  "certified_product_main_sha": "5c155c494cf4e10148ebb3d6133d83a0ef42172c",
+  "github_actions_fallback": 0,
+  "health": {
+    "health_http": 200,
+    "root_http": 200
+  },
+  "may_modify_product_runtime": false,
+  "phoenix_date": "2026-10-09",
+  "phoenix_timezone": "America/Phoenix",
+  "production_url": "https://pickvault.streamlit.app",
+  "repair_candidate_sha": "ba1caf4f1383e5169a1661cab1f5b78ed5c4c757",
+  "route_url": "https://pickvault.streamlit.app/",
+  "source_main_sha": "337e9f2429aee703e821b226cc46ea3b52567986",
+  "sportsbook_projection_influence": 0.0,
+  "status": "GREEN",
+  "viewports": {
+    "desktop": {
+      "all_required_visible": true,
+      "forbidden_visible_text": [],
+      "friday_visible": true,
+      "games_on_day_surface_count": 1,
+      "horizontal_overflow": false,
+      "initial_frame_scan": {
+        "initial": [
+          {
+            "body_start": "Hosted with Streamlit\n\nCreated by kyrepeak",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed correctly\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame"
+          },
+          {
+            "body_start": "keyboard_double_arrow_left\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\n\n\u26be MLB Live Odds\n\nkeyboard_arrow_right\n\n\ud83d\udee0\ufe0f Developer Diagnostics\n\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf MLB Market\n\n\ud83d\udcc5 MLB slate date\n\n2026\n/\n10\n/\n09\nTODAY \u2022 Friday, October 09, 2026 \u2022 Schedule is date-verified from official MLB data. Probable pitchers and lineups appe",
+            "comboboxes": 3,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ],
+        "market_selected": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed correctly\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame"
+          },
+          {
+            "body_start": "4 options available.\n1 option available.\n4 options available.\n1 option available.\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\nkeyboard_arrow_right\n\n\ud83d\udee0\ufe0f Developer Diagnostics\n\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf CFB Market\n\n\ud83c\udfc1 COLLEGE FOOTBALL \u2022 MONEYLINE \u2022 Step 6 final synthesis ACTIVE \u2022 sportsbook probability weight 0%\n\nCFB STEP 6 \u2022 MON",
+            "comboboxes": 3,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ],
+        "sport_selected": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed correctly\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame"
+          },
+          {
+            "body_start": "4 options available.\n1 option available.\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\n\n\u26be MLB Live Odds\n\nkeyboard_arrow_right\n\n\ud83d\udee0\ufe0f Developer Diagnostics\n\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf MLB Market\n\n\ud83d\udcc5 MLB slate date\n\n2026\n/\n10\n/\n09\nTODAY \u2022 Friday, October 09, 2026 \u2022 Schedule is date-verified from official MLB data. Probable pitchers an",
+            "comboboxes": 3,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ]
+      },
+      "phoenix_today_label": "Fri \u2022 Oct 9",
+      "phoenix_today_visible": true,
+      "required_testids_visible": [
+        "gtvc2-matchup-hero",
+        "gtvc2-context-strip",
+        "gtvc2-view-tabs",
+        "gtvc3-future-day-strip",
+        "gtvc3-overview-edge",
+        "gtvc3-team-snapshot",
+        "gtvc4-games-on-day",
+        "gtvc4-data-footer"
+      ],
+      "runtime_error": "",
+      "screenshot": "/tmp/cfb-game-total-step5/cfb_game_total_step5_desktop.png",
+      "viewport": {
+        "height": 1200,
+        "width": 1440
+      }
+    },
+    "mobile": {
+      "all_required_visible": true,
+      "forbidden_visible_text": [],
+      "friday_visible": true,
+      "games_on_day_surface_count": 1,
+      "horizontal_overflow": false,
+      "initial_frame_scan": {
+        "initial": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed...\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame?mobile=true"
+          },
+          {
+            "body_start": "keyboard_double_arrow_left\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\n\n\u26be MLB Live Odds\n\nkeyboard_double_arrow_right\nStop\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf MLB Market\n\n\ud83d\udcc5 MLB slate date\n\n2026\n/\n10\n/\n09\nTODAY \u2022 Friday, October 09, 2026 \u2022 Schedule is date-verified from official MLB data. Probable pitchers and lineups appear as MLB publi",
+            "comboboxes": 2,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ],
+        "market_selected": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed...\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame?mobile=true"
+          },
+          {
+            "body_start": "1 option available.\n4 options available.\n4 options available.\n1 option available.\nkeyboard_double_arrow_left\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\n\n\u26be MLB Live Odds\n\nkeyboard_double_arrow_right\nStop\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf CFB Market\n\n\ud83c\udfc1 COLLEGE FOOTBALL \u2022 MONEYLINE \u2022 Step 6 final synthesis ACTIVE \u2022 sportsbook probabili",
+            "comboboxes": 2,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ],
+        "sport_selected": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed...\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame?mobile=true"
+          },
+          {
+            "body_start": "1 option available.\n4 options available.\nkeyboard_double_arrow_left\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\n\n\u26be MLB Live Odds\n\nkeyboard_double_arrow_right\nStop\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf MLB Market\n\n\ud83d\udcc5 MLB slate date\n\n2026\n/\n10\n/\n09\nTODAY \u2022 Friday, October 09, 2026 \u2022 Schedule is date-verified from official MLB data. Probable",
+            "comboboxes": 2,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ]
+      },
+      "phoenix_today_label": "Fri \u2022 Oct 9",
+      "phoenix_today_visible": true,
+      "required_testids_visible": [
+        "gtvc2-matchup-hero",
+        "gtvc2-context-strip",
+        "gtvc2-view-tabs",
+        "gtvc3-future-day-strip",
+        "gtvc3-overview-edge",
+        "gtvc3-team-snapshot",
+        "gtvc4-games-on-day",
+        "gtvc4-data-footer"
+      ],
+      "runtime_error": "",
+      "screenshot": "/tmp/cfb-game-total-step5/cfb_game_total_step5_mobile.png",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    "tablet": {
+      "all_required_visible": true,
+      "forbidden_visible_text": [],
+      "friday_visible": true,
+      "games_on_day_surface_count": 1,
+      "horizontal_overflow": false,
+      "initial_frame_scan": {
+        "initial": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed correctly\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame"
+          },
+          {
+            "body_start": "app\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\n\n\u26be MLB Live Odds\n\nkeyboard_arrow_right\n\n\ud83d\udee0\ufe0f Developer Diagnostics\n\nkeyboard_double_arrow_right\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf MLB Market\n\n\ud83d\udcc5 MLB slate date\n\n2026\n/\n10\n/\n09\nTODAY \u2022 Friday, October 09, 2026 \u2022 Schedule is date-verified from official MLB data. Probable pitchers and lineups appe",
+            "comboboxes": 3,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ],
+        "market_selected": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed correctly\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame"
+          },
+          {
+            "body_start": "1 option available.\n4 options available.\n4 options available.\n1 option available.\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\nkeyboard_arrow_right\n\n\ud83d\udee0\ufe0f Developer Diagnostics\n\nkeyboard_double_arrow_right\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nCFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE \u2022 CFB_GAME_TOTAL_V168_STEP5_PACE_POSSESSIONS_ACTIVE \u2022 CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE \u2022 CFB_GAME_TOTAL_V184_STEP6_SCORING_CREATION_ACTIVE \u2022 CFB_GAME_TOTAL_V185_STEP6_VISUAL_PA",
+            "comboboxes": 1,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/?ks_sport=College+Football&ks_cfb_market=Game+Total&ks_cfb_game_total_date=2026-10-09&ks_cfb_game_total_event_id=401858254"
+          }
+        ],
+        "sport_selected": [
+          {
+            "body_start": "",
+            "comboboxes": 0,
+            "index": 0,
+            "url": "https://pickvault.streamlit.app/"
+          },
+          {
+            "body_start": "Status embed installed correctly\n\nThis will be shown if an incident or maintenance is posted on your status page.\nView latest updates",
+            "comboboxes": 0,
+            "index": 1,
+            "url": "https://qjmnz4vd2y07.statuspage.io/embed/frame"
+          },
+          {
+            "body_start": "1 option available.\n4 options available.\n\napp\n\nMLB Live Odds\n\nRun Line\n\nKYRE SPORTS AI\nPROJECTION INTELLIGENCE\n\n\u26be MLB Live Odds\n\nkeyboard_arrow_right\n\n\ud83d\udee0\ufe0f Developer Diagnostics\n\nkeyboard_double_arrow_right\nFork\nKYRE SPORTS AI\n\u25cf UNIVERSAL THEME LIVE\nSPORTS PROJECTION INTELLIGENCE\n\ud83e\udde0 KYRE SPORTS AI\nMemory-safe lazy loading \u2022 one sport and one market stack at a time.\n\n\ud83c\udfdf\ufe0f Sport\n\n\ud83c\udfaf MLB Market\n\n\ud83d\udcc5 MLB slate date\n\n2026\n/\n10\n/\n09\nTODAY \u2022 Friday, October 09, 2026 \u2022 Schedule is date-verified from official ML",
+            "comboboxes": 3,
+            "index": 2,
+            "url": "https://pickvault.streamlit.app/~/+/"
+          }
+        ]
+      },
+      "phoenix_today_label": "Fri \u2022 Oct 9",
+      "phoenix_today_visible": true,
+      "required_testids_visible": [
+        "gtvc2-matchup-hero",
+        "gtvc2-context-strip",
+        "gtvc2-view-tabs",
+        "gtvc3-future-day-strip",
+        "gtvc3-overview-edge",
+        "gtvc3-team-snapshot",
+        "gtvc4-games-on-day",
+        "gtvc4-data-footer"
+      ],
+      "runtime_error": "",
+      "screenshot": "/tmp/cfb-game-total-step5/cfb_game_total_step5_tablet.png",
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      }
+    }
+  }
+}
