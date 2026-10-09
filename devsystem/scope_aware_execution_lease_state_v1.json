@@ -1,12 +1,12 @@
 {
-  "generation": 268,
+  "generation": 269,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-09T17:45:58Z",
-      "expires_at_utc": "2026-10-09T18:45:58Z",
-      "generation": 268,
-      "heartbeat_at_utc": "2026-10-09T17:45:58Z",
-      "lease_id": "SCOPE-LEASE-2836103216F789BB274BA491",
+      "acquired_at_utc": "2026-10-09T17:49:21Z",
+      "expires_at_utc": "2026-10-09T18:49:21Z",
+      "generation": 269,
+      "heartbeat_at_utc": "2026-10-09T17:49:21Z",
+      "lease_id": "SCOPE-LEASE-B255E6B5C7A6A1D05F969372",
       "owner_id": "api2-cfb-game-total-page1-visual-cleanup-step5-convergence",
       "scope": {
         "dependency_tokens": [
@@ -21,7 +21,7 @@
           "candidate_sha": "f93fc641e50643f9b657bc2248b8254c8467dac2",
           "main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
           "phase": "premerge-proof",
-          "registry_state_hash": "6c4d200535b7ba09912f2c7f312fa4baaa98c390d934c5e699aeb05a1dbb1502",
+          "registry_state_hash": "acbe369a22b2dd4703be0344eb4838862fccc33b71aeeaaca0190385f5698763",
           "repository": "kyrepeak/kyre-sports-ai",
           "workstream": "cfb-game-total-page1-visual-cleanup-v1"
         },
@@ -53,8 +53,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 445,
+  "revision": 446,
   "schema_version": 1,
-  "state_hash": "c9be25d31c56ad98122dedd0a4520b2b99dd8e61003793aef6af793c8efa3f4b",
+  "state_hash": "9a314d09e09faacdfb297ff1d32975ea1afd2fc87c464340e32e32ce12da005e",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
