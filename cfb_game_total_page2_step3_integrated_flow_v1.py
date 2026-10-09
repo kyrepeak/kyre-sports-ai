@@ -34,9 +34,9 @@ PAGE2_STEP3_CSS = r"""
 .gtp2s3-flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:9px;border:1px solid rgba(72,197,255,.32);border-radius:18px;background:linear-gradient(180deg,rgba(8,28,42,.96),rgba(4,15,25,.98));box-shadow:0 14px 34px rgba(0,0,0,.24),0 0 28px rgba(41,185,255,.05)}
 .gtp2s3-step{min-width:0;display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid rgba(87,157,190,.20);border-radius:13px;background:rgba(11,34,50,.70);color:#a9bfd0;text-decoration:none;transition:border-color .16s ease,background .16s ease,transform .16s ease}
 .gtp2s3-step:hover{border-color:rgba(84,207,255,.58);background:rgba(19,65,91,.70);transform:translateY(-1px)}
-.gtp2s3-step[aria-current="step"]{border-color:rgba(76,218,255,.90);background:linear-gradient(135deg,rgba(10,144,211,.40),rgba(16,71,122,.54));box-shadow:inset 0 0 0 1px rgba(90,226,255,.14),0 0 22px rgba(41,190,255,.13);color:#fff}
+.gtp2s3-step.is-active{border-color:rgba(76,218,255,.90);background:linear-gradient(135deg,rgba(10,144,211,.40),rgba(16,71,122,.54));box-shadow:inset 0 0 0 1px rgba(90,226,255,.14),0 0 22px rgba(41,190,255,.13);color:#fff}
 .gtp2s3-num{width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border:1px solid rgba(82,204,246,.34);border-radius:9px;background:rgba(20,91,126,.23);color:#61d8ff;font-size:10px;font-weight:1000}
-.gtp2s3-step[aria-current="step"] .gtp2s3-num{border-color:#6de5ff;background:rgba(26,181,235,.22);color:#eaffff}
+.gtp2s3-step.is-active .gtp2s3-num{border-color:#6de5ff;background:rgba(26,181,235,.22);color:#eaffff}
 .gtp2s3-label{min-width:0;display:block;color:inherit;font-size:10px;font-weight:950;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:760px){.gtp2s3-title{align-items:start;flex-direction:column;gap:4px}.gtp2s3-flow{display:flex;overflow-x:auto;scroll-snap-type:x proximity;padding:8px}.gtp2s3-step{min-width:150px;scroll-snap-align:start}.gtp2s3-flow::-webkit-scrollbar{height:4px}.gtp2s3-flow::-webkit-scrollbar-thumb{background:rgba(82,205,247,.32);border-radius:999px}}
 @media(max-width:480px){.gtp2s3-step{min-width:132px;padding:9px}.gtp2s3-label{font-size:9px}.gtp2s3-num{width:25px;height:25px;flex-basis:25px}}
