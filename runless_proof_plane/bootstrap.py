@@ -15,8 +15,10 @@ from .cfb_game_total_page1_v2_step3_closeout import install_startup as install_s
 from .cfb_game_total_page1_v2_step4_closeout import install_startup as install_step4_startup
 from .nfl_rb_wr_step2_closeout import install_startup as install_step2_closeout
 from .nfl_rb_wr_step3_closeout import install_startup as install_step3_closeout
+from .cfb_game_total_page2_step2_prove import install_startup as install_cfb_page2_step2_proof
 
 install_step3_startup(app)
 install_step4_startup(app)
 install_step2_closeout(app)
 install_step3_closeout(app)
+install_cfb_page2_step2_proof(app)
