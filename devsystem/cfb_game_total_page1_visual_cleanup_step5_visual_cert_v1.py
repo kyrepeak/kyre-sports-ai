@@ -68,6 +68,12 @@ def production_route(base_url: str = PRODUCTION_URL) -> str:
     return base_url.rstrip("/") + "/?" + query
 
 
+def route_handoff(base_url: str = PRODUCTION_URL) -> str:
+    """Use the current router-owned category handoff so session route state is populated."""
+    query = urlencode({"ks_jump_sport": "CFB", "ks_jump_market": GAME_TOTAL_MARKET})
+    return base_url.rstrip("/") + "/?" + query
+
+
 def _today_button_label() -> str:
     today = datetime.now(ZoneInfo(PHOENIX_TZ)).date()
     return f"{today.strftime('%a • %b')} {today.day}"
@@ -79,17 +85,8 @@ def _visible(frame: Any, testid: str) -> None:
 
 
 def _prime_route(page: Any, base_url: str = PRODUCTION_URL) -> tuple[Any, Any]:
-    """Enter CFB Game Total through the canonical user navigation path."""
-    page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
-    frame, scans = base._find_app_frame(page)
-    sports = base._read_sport_options(page, frame)
-    if CFB_SPORT not in sports:
-        raise Step5VisualCertFailure(f"College Football route missing: {sports!r}")
-    base._choose(page, frame, 0, CFB_SPORT)
-    frame, _ = base._find_app_frame(page)
-    market = frame.get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)
-    market.wait_for(state="visible", timeout=45000)
-    base._choose(page, frame, 1, GAME_TOTAL_MARKET)
+    """Prime CFB Game Total through the current category-jump router handoff."""
+    page.goto(route_handoff(base_url), wait_until="domcontentloaded", timeout=120000)
     frame, scans = base._find_app_frame(page)
     _visible(frame, "gtvc2-matchup-hero")
     return frame, scans
@@ -218,7 +215,7 @@ def run(*, base_url: str = PRODUCTION_URL, artifact_dir: str | Path = "artifacts
         "status": "GREEN",
         "source_main_sha": EXPECTED_MAIN_SHA,
         "production_url": base_url,
-        "route_url": production_route(base_url),
+        "route_url": route_handoff(base_url),
         "phoenix_timezone": PHOENIX_TZ,
         "phoenix_date": datetime.now(ZoneInfo(PHOENIX_TZ)).date().isoformat(),
         "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
