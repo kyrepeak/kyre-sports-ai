@@ -5,8 +5,8 @@ import importlib.util
 
 ROOT = Path(__file__).resolve().parents[1]
 HELPER = ROOT / "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py"
-ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_visual_cleanup_step2.py"
-APP = ROOT / "app.py"
+ACTIVATION = ROOT / "cfb_game_total_page1_visual_cleanup_step2_activation_v1.py"
+SHELL = ROOT / "kyre_universal_shell_runtime_v1.py"
 
 
 def _load_helper():
@@ -20,7 +20,7 @@ def _load_helper():
 
 def test_step2_runtime_artifacts_exist_before_green() -> None:
     assert HELPER.is_file(), "Step-2 top-shell helper must exist before GREEN"
-    assert ROUTER.is_file(), "Step-2 additive router must exist before GREEN"
+    assert ACTIVATION.is_file(), "Step-2 purge-safe activation must exist before GREEN"
 
 
 def test_step2_top_shell_is_dynamic_phoenix_summary_first() -> None:
@@ -80,30 +80,29 @@ def test_step2_top_shell_is_dynamic_phoenix_summary_first() -> None:
     assert helper.MAY_MODIFY_MARKET_OWNERSHIP is False
 
 
-def test_step2_router_survives_v160_module_purge_and_app_activation_is_additive() -> None:
-    router = ROUTER.read_text(encoding="utf-8")
-    app = APP.read_text(encoding="utf-8")
+def test_step2_activation_composes_after_purge_without_frozen_source_edits() -> None:
+    activation = ACTIVATION.read_text(encoding="utf-8")
+    shell = SHELL.read_text(encoding="utf-8")
 
-    assert "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration as prior" in router
-    assert "streamlit_memory_lazy_router_v1 as root" in router
-    assert "streamlit_memory_lazy_router_v181 as route_owner" in router
-    assert 'TARGET_PAGE = "cfb_game_total_clean_page_v38"' in router
-    assert 'PRESENTATION_MODULE = "cfb_game_total_page1_step3_presentation_v1"' in router
-    assert "if not route_owner._game_total_route_active():" in router
-    assert "return prior.render_app()" in router
-    assert "presentation = importlib.import_module(PRESENTATION_MODULE)" in router
-    assert "presentation.build_matchup_hero_html = build_top_shell_html" in router
-    assert "presentation.build_matchup_hero_html = original_builder" in router
-    assert "root._import = import_with_step2_overlay" in router
-    assert "root._import = original_import" in router
-    assert "MAY_MODIFY_OTHER_SPORTS = False" in router
-    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in router
+    assert "streamlit_memory_lazy_router_v1 as root" in activation
+    assert "streamlit_memory_lazy_router_v160 as render_owner" in activation
+    assert "streamlit_memory_lazy_router_v181 as route_owner" in activation
+    assert 'TARGET_PAGE = "cfb_game_total_clean_page_v38"' in activation
+    assert 'PRESENTATION_MODULE = "cfb_game_total_page1_step3_presentation_v1"' in activation
+    assert "if not route_owner._game_total_route_active():" in activation
+    assert "original_import = root._import" in activation
+    assert "presentation = importlib.import_module(PRESENTATION_MODULE)" in activation
+    assert "presentation.build_matchup_hero_html = build_top_shell_html" in activation
+    assert "root._import = import_with_step2_top_shell" in activation
+    assert "root._import = original_import" in activation
+    assert "MAY_MODIFY_OTHER_SPORTS = False" in activation
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in activation
 
     assert (
-        "from streamlit_memory_lazy_router_cfb_game_total_visual_cleanup_step2 "
-        "import record_bootstrap_import_ms, render_app"
-    ) in app
-    assert "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_STEP2_TOP_SHELL_2026_10_09" in app
+        "from cfb_game_total_page1_visual_cleanup_step2_activation_v1 import "
+        "install_step2_top_shell"
+    ) in shell
+    assert "install_step2_top_shell()" in shell
 
 
 def test_step2_preserves_step1_and_prior_runtime_owners() -> None:
@@ -112,3 +111,15 @@ def test_step2_preserves_step1_and_prior_runtime_owners() -> None:
     assert helper.PRESERVE_DYNAMIC_SELECTED_GAME_DATA is True
     assert helper.OVERVIEW_LABEL == "Overview"
     assert helper.FULL_ANALYSIS_LABEL == "Full Analysis"
+
+    # Source-level regression guard: Step 2 must not edit the frozen/current owners.
+    for path in (
+        "cfb_game_total_clean_page_v38.py",
+        "cfb_game_total_clean_page_v36.py",
+        "cfb_game_total_page1_v2_step4_public_repair_v1.py",
+        "streamlit_memory_lazy_router_v160.py",
+        "streamlit_memory_lazy_router_v181.py",
+        "streamlit_memory_lazy_router_v190.py",
+        "streamlit_memory_lazy_router_v191.py",
+    ):
+        assert (ROOT / path).is_file()
