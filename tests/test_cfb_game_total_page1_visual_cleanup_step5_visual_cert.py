@@ -44,12 +44,13 @@ def test_step5_required_live_markers_cover_steps2_through4() -> None:
     }.issubset(required)
 
 
-def test_step5_browser_primes_canonical_user_route_before_asserting_visuals() -> None:
+def test_step5_browser_uses_current_category_handoff_before_asserting_visuals() -> None:
     source = CERT.read_text(encoding="utf-8")
-    assert 'page.goto(base_url.rstrip("/") + "/"' in source
-    assert 'base._choose(page, frame, 0, CFB_SPORT)' in source
-    assert 'base._choose(page, frame, 1, GAME_TOTAL_MARKET)' in source
-    assert 'page.goto(production_route()' not in source
+    assert '"ks_jump_sport": "CFB"' in source
+    assert '"ks_jump_market": GAME_TOTAL_MARKET' in source
+    assert 'page.goto(route_handoff(base_url)' in source
+    assert 'base._read_sport_options' not in source
+    assert 'base._choose(page, frame, 0, CFB_SPORT)' not in source
 
 
 def test_step5_terminal_live_evidence() -> None:
