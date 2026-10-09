@@ -1,0 +1,45 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step4-footer-evidence",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "4/5",
+  "status": "IN_PROGRESS",
+  "source_main_sha": "5c7373ecb1c5c042db0909cc9f7d9e6c64ba43ff",
+  "scope_lease_id": "SCOPE-LEASE-3D91A47081F62CC3297383F4",
+  "step2a": {
+    "exact_main_verified": true,
+    "duplicate_pr": false,
+    "duplicate_async_run": false,
+    "registry_revision": 216,
+    "registry_state_hash": "ba1aadd2a9f83589f0363535fadd573be0d1904bf98cb42f2644b5e96438b08d",
+    "unrelated_active_thaws": 2,
+    "rollback_sha": "5c7373ecb1c5c042db0909cc9f7d9e6c64ba43ff"
+  },
+  "tdd": {
+    "red": true,
+    "red_failure": "Step-4 helper/activation absent or frozen-seam activation contract unsatisfied before implementation",
+    "failure_class": "PRODUCT_PRESENTATION_CONTRACT",
+    "green_candidate_sha": null
+  },
+  "repair": {
+    "problem": "Overview still exposes the dense evidence wall and legacy games strip.",
+    "root_cause": "Frozen V9/V14 presentation owners remain in the live V38 chain.",
+    "patch": "Presentation-only post-purge hooks relocate dense evidence, own one polished Games on This Day surface, and append the Phoenix source/update/calculation footer.",
+    "proof": "Runless exact-head focused/regression commands with failure_class NONE before merge."
+  },
+  "frozen_seam": {
+    "path": "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
+    "baseline_blob": "f8ec957d95a8ebc152996195b97f366da41beb59",
+    "candidate_blob": null,
+    "thaw_id": "THAW-CFB-GT-P1-VISUAL-CLEANUP-STEP4-FOOTER-EVIDENCE",
+    "target_head_sha": null
+  },
+  "runless": {
+    "proof_id": null,
+    "receipt_digest": null,
+    "failure_class": null,
+    "gate_check_id": null,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP4_FOOTER_EVIDENCE_FROZEN",
+  "green_plus_frozen_claimed": false
+}

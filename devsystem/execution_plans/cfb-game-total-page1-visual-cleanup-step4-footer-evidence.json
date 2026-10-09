@@ -1,0 +1,36 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step4-footer-evidence",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "4/5",
+  "source_main_sha": "5c7373ecb1c5c042db0909cc9f7d9e6c64ba43ff",
+  "objective": "Polish Games on This Day, relocate dense evidence out of the default Overview, and add Data Sources / Updated / How We Calculate footer without changing model truth.",
+  "problem": "The Step-3 Overview still inherits the dense Steps 1-12/final-summary/Top-5 wall and the legacy V14 games strip, so the page is not yet summary-first.",
+  "root_cause": "The dense evidence HTML is owned by frozen V9 and the games strip by frozen V14, while the live exact-route import path is post-purge and frozen. Step 4 must compose presentation hooks without mutating model owners.",
+  "patch": "Add a presentation-only runtime wrapper that replaces V9 combined-flow HTML with a compact Full Analysis handoff, suppresses only the old V14 game-strip presentation, reuses already-loaded schedule rows for one polished Games on This Day section, and appends the Phoenix-time data footer.",
+  "proof": "Focused Step-4 contract plus Step-3, Step-2, side-market, and public-repair regressions through Runless exact-head proof.",
+  "write_paths": [
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
+    "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py",
+    "cfb_game_total_page1_visual_cleanup_step4_footer_evidence_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step4-footer-evidence.json",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step4_footer_evidence.py"
+  ],
+  "protected_invariants": {
+    "phoenix_timezone": "America/Phoenix",
+    "sportsbook_projection_influence": 0.0,
+    "may_modify_projection": false,
+    "may_modify_market_ownership": false,
+    "may_modify_other_sports": false,
+    "github_actions_fallback": 0,
+    "step1_step2_step3_reopen": false
+  },
+  "rollback_main_sha": "5c7373ecb1c5c042db0909cc9f7d9e6c64ba43ff",
+  "scope_lease_id": "SCOPE-LEASE-3D91A47081F62CC3297383F4",
+  "frozen_seam": {
+    "path": "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
+    "baseline_blob": "f8ec957d95a8ebc152996195b97f366da41beb59",
+    "requires_exact_head_thaw": true
+  }
+}

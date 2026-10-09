@@ -25,6 +25,7 @@ from cfb_game_total_page1_step4_side_market_v1 import (
     enrich_verified_side_market as _legacy_side_market_enricher,
 )
 from cfb_game_total_page1_visual_cleanup_step3_activation_v1 import install_step3_overview
+from cfb_game_total_page1_visual_cleanup_step4_activation_v1 import install_step4_footer_evidence
 
 MODEL_VERSION = "CFB GAME TOTAL PAGE1 V2 STEP4 • FANDUEL SIDE MARKET COMPLETENESS V1"
 TARGET_PAGE = "cfb_game_total_clean_page_v38"
@@ -292,9 +293,11 @@ def install_side_market_completeness() -> bool:
     with _LOCK:
         current = render_owner._render_exact_game_total_surface
         if getattr(current, "_cfb_game_total_visual_cleanup_step3_installed", False):
+            install_step4_footer_evidence()
             return True
         if getattr(current, _INSTALL_ATTR, False):
             install_step3_overview()
+            install_step4_footer_evidence()
             return True
         original = current
 
@@ -327,6 +330,7 @@ def install_side_market_completeness() -> bool:
         )
         render_owner._render_exact_game_total_surface = repaired_render_exact_game_total_surface
         install_step3_overview()
+        install_step4_footer_evidence()
         return True
 
 
