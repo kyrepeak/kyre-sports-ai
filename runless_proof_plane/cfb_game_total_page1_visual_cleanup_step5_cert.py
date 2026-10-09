@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from devsystem.scope_aware_execution_lease_v1 import validate_state as validate_scope_lease_state
 
@@ -15,6 +16,8 @@ LEASE_BRANCH = "monster-scope-aware-execution-leases"
 LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
 LEASE_OWNER = "api2-cfb-game-total-page1-visual-cleanup-step5-convergence"
 LEASE_ID = "SCOPE-LEASE-938E9D61B43172D8D61F9CDA"
+ARTIFACT_DIR = Path("/tmp/cfb-game-total-step5")
+LOCAL_EVIDENCE = ARTIFACT_DIR / "cfb_game_total_page1_visual_cleanup_step5_live_visual_cert.json"
 
 
 def _decode(raw, label):
@@ -80,12 +83,31 @@ def execute(app):
         check=True,
         timeout=300,
     )
-    from devsystem.cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 import run
-
-    evidence = run(
-        base_url="https://pickvault.streamlit.app",
-        artifact_dir="/tmp/cfb-game-total-step5",
+    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "devsystem.cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1",
+            "--base-url",
+            "https://pickvault.streamlit.app",
+            "--artifact-dir",
+            str(ARTIFACT_DIR),
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+        timeout=600,
     )
+    if completed.stdout:
+        print(completed.stdout[-12000:], flush=True)
+    if completed.stderr:
+        print(completed.stderr[-12000:], file=sys.stderr, flush=True)
+    if completed.returncode != 0:
+        raise RuntimeError("STEP5_CERT_SUBPROCESS_FAILED:" + str(completed.returncode))
+    if not LOCAL_EVIDENCE.exists():
+        raise RuntimeError("STEP5_CERT_LOCAL_EVIDENCE_MISSING")
+    evidence = json.loads(LOCAL_EVIDENCE.read_text(encoding="utf-8"))
     if evidence.get("status") != "GREEN":
         raise RuntimeError("STEP5_CERT_NOT_GREEN")
     return {
