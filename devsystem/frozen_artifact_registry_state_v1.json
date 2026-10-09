@@ -437,6 +437,20 @@
       "source_main_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP2_TOP_SHELL_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_page1_visual_cleanup_step2_activation_v1.py": "113f4075d1de69dd87e19877b7b398132225e072",
+        "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py": "978595051a1cda0ed31694fcb177928877a897c4",
+        "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step2-top-shell.json": "c1bdbcbc61c4b13a2cfcb303a642d46441c71b04",
+        "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step2-top-shell.json": "8af8ccac3ceac0ac35e106d5145baa499ce35bec",
+        "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step2-top-shell.json": "6082b887bf036af2caef082f6ee5dca950d55787",
+        "kyre_game_total_theme_v1.py": "e7156c7f0d5e09cd42fcb811286c8e4e2437ead2",
+        "tests/test_cfb_game_total_page1_visual_cleanup_step2_top_shell.py": "fd9a024e78e5de3c40f3677a05f868006adf2314"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP2_TOP_SHELL_FROZEN",
+      "source_main_sha": "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4",
+      "status": "FROZEN"
+    },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
       "artifacts": {
         "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
@@ -2688,9 +2702,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 212,
+  "revision": 213,
   "schema_version": 1,
-  "source_main_sha": "e43e244328fae9c55e10b66d7d86ed752edfe518",
-  "state_hash": "379aca9256a2333dbfeb6d5a4d1411682430c010e9e15b84560f3c3029c5bcea",
+  "source_main_sha": "036dbb2ab3a0e24ce3e1cb16c1b2f9469cfce2f4",
+  "state_hash": "93203b2222ef86db1880b97b3be3a26a442b8e582a5a379ce58cb39e1176f068",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
