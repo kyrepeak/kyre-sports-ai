@@ -8,17 +8,45 @@
       "pytest",
       "-q",
       "tests/test_cfb_game_total_page2_step2_matchup_hero_phx_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "cfb_game_total_page2_step2_matchup_hero_phx_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q"
     ]
   ],
   "artifacts": [
-    "tests/test_cfb_game_total_page2_step2_matchup_hero_phx_v1.py"
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "tests/test_cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step2-matchup-hero-phx.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step2-matchup-hero-phx.json"
   ],
   "dependencies": [
     "devsystem/runless_proof_plan_v1.py",
-    "runless_proof_plane/executor.py"
+    "devsystem/runless_terminal_proof_receipt_v1.py",
+    "devsystem/scope_aware_execution_lease_v1.py",
+    "runless_proof_plane/executor.py",
+    "runless_proof_plane/fingerprint.py",
+    "runless_proof_plane/gate.py",
+    "runless_proof_plane/github_client.py",
+    "runless_proof_plane/orchestrator.py",
+    "runless_proof_plane/receipts.py",
+    "runless_proof_plane/registry.py",
+    "runless_proof_plane/step2a.py",
+    "runless_proof_plane/workspace.py",
+    "streamlit_memory_lazy_router_v191.py",
+    "cfb_game_total_clean_page_v14.py",
+    "cfb_game_total_page1_visual_cleanup_step2_top_shell_v1.py"
   ],
   "probes": [],
-  "timeout_seconds": 300,
+  "timeout_seconds": 900,
   "live_ttl_seconds": 900,
   "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP2_MATCHUP_HERO_PHX_FROZEN"
 }
