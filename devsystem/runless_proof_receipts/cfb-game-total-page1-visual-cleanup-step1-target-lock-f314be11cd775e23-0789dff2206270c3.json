@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/cfb_game_total_page1_visual_cleanup_step1_target_lock_v1.py": "aaa6a84f93c22ab8023b1483059567b9fc922a5a",
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step1-target-lock.json": "a63796325e2fc48a4d312269c4c42ba058d5bd21",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step1-target-lock.json": "fa21822e966a7762e6891046e68bcbc9af49279f",
+    "devsystem/task_ledgers/cfb-game-total-page1-visual-cleanup-step1-target-lock.json": "71368283f11127f10f6dc461f47deea9e2237db6",
+    "docs/superpowers/plans/2026-10-09-cfb-game-total-page1-visual-cleanup-step1-target-lock.md": "1ecf5fa700c7518e7e4d6a1d3fcbd8167c7139cf",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step1_target_lock.py": "65809d25c11f3af029c9cd64fb1cbbefc553e1a8"
+  },
+  "candidate_sha": "f314be11cd775e23f4d4490f0a2b22edcc2409b5",
+  "created_at": "2026-10-09T04:07:35.370665+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_page1_v2_step4_public_repair_v1.py": "6e969228a46d36a00737f941fb2bf6f7f2a2ab8c",
+    "docs/CFB_GAME_TOTAL_VISUAL_REDESIGN_V1_CONTRACT.md": "872bb8121d9a725173ae9d7770d92509fa46e36c",
+    "streamlit_memory_lazy_router_v160.py": "913cf8ac7478fdc105995238b254f28d1d411bc6",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d",
+    "streamlit_memory_lazy_router_v190.py": "fca1442c144d8ff02868ed0371a92f72257d697e",
+    "streamlit_memory_lazy_router_v191.py": "1a4a2df127a060519d62ed96dd39f6c14bb79449"
+  },
+  "deployment_identity": "09fdea7fab549d5a01384cd4e9707adbc00780cc",
+  "digest": "2836224fe804bd9828d4a4b970511d7061e41a7c5f9dfaa1607e2cf63eee0ee5",
+  "evidence_digests": [
+    "51a0e4ff2a32a649dd01276cb2fd9b03958224a4471d3cbb7ff84a47b1956859",
+    "35db1e87ae84f5849ae5d56cc78b712a897ae7df8a41b955f523d96ce8b00cc5"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "62258b3c2b627fedd1bb1a0c49828793a08ad808a0a94672e6ceda89951fb61b",
+  "proof_id": "cfb-game-total-page1-visual-cleanup-step1-target-lock-f314be11cd775e23-0789dff2206270c3",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 211,
+    "state_hash": "a3e4f9346dcf790804ed33526776dd6a02722886b5d04aafb2a310e8d1d6b3a1"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 211,
+    "state_hash": "a3e4f9346dcf790804ed33526776dd6a02722886b5d04aafb2a310e8d1d6b3a1"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-page1-visual-cleanup-step1-target-lock",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1"
+}
