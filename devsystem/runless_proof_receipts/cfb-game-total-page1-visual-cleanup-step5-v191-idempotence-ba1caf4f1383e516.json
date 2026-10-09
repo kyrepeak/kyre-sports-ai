@@ -1,0 +1,38 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json": "cf028c76a2b48b05bf765932d99c783767aa9b41",
+    "devsystem/runless_proof_plans/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json": "7bd8aedd7d7bbfdee2dff658ae6753db7b61fecf",
+    "streamlit_memory_lazy_router_v191.py": "f256c6e2533c27b4710de63721a019f49db253f9",
+    "tests/test_cfb_game_total_page1_visual_cleanup_step5_v191_idempotence.py": "a976ae6661c5f0cd5c631a27f2b0096321d0d38f"
+  },
+  "authorization_id": "AUTH-CFB-GT-P1-STEP5-V191-IDEMPOTENCE-1485",
+  "candidate_sha": "ba1caf4f1383e5169a1661cab1f5b78ed5c4c757",
+  "created_at": "2026-10-09T20:36:36.498281+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "e48996d53a7a51a102c57e7b822ee269cd750899",
+    "cfb_game_total_page1_visual_cleanup_step3_activation_v1.py": "30c94f309e0f4d12a4c12036ddd4f67d30de3161",
+    "cfb_game_total_page1_visual_cleanup_step4_activation_v1.py": "44e4faf5498d545ecba2513999b977b68c2ff18e",
+    "kyre_remaining_pages_theme_v1.py": "1695d5046107b22e22e2304e33adec622d083785"
+  },
+  "digest": "c256b2857f851695de03ec0190dcdeb9bf241ba06ce05dc408781dfba1041322",
+  "evidence_digests": {
+    "v191_once_per_process_repair": "45272fba23909f2a77d2a336909c4baac5caa190d9ed14ab9b69d04df8526c15"
+  },
+  "failure_class": "NONE",
+  "github_actions_fallback": 0,
+  "prior_digest": null,
+  "project": "API2",
+  "proof_id": "cfb-game-total-page1-visual-cleanup-step5-v191-idempotence-ba1caf4f1383e516",
+  "registry_after": {
+    "revision": 221,
+    "state_hash": "acbe369a22b2dd4703be0344eb4838862fccc33b71aeeaaca0190385f5698763"
+  },
+  "registry_before": {
+    "revision": 221,
+    "state_hash": "acbe369a22b2dd4703be0344eb4838862fccc33b71aeeaaca0190385f5698763"
+  },
+  "scope_lease_id": "SCOPE-LEASE-228D3523AABA8F66D855690A",
+  "step": "5/5-live-repair",
+  "task_id": "cfb-game-total-page1-visual-cleanup-step5-v191-idempotence",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1"
+}
