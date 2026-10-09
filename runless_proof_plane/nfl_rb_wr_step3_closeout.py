@@ -8,6 +8,7 @@ from .cfb_game_total_page1_visual_cleanup_step3_closeout import install_startup 
 from .cfb_game_total_page1_visual_cleanup_step4_thaw import install_startup as install_cfb_visual_cleanup_step4_thaw
 from .cfb_game_total_page1_visual_cleanup_step4_proof import install_startup as install_cfb_visual_cleanup_step4_proof
 from .cfb_game_total_page1_visual_cleanup_step4_closeout import install_startup as install_cfb_visual_cleanup_step4_closeout
+from .cfb_game_total_page1_visual_cleanup_step5_deployment_convergence import install_startup as install_cfb_visual_cleanup_step5_deployment_convergence
 from .cfb_game_total_page1_visual_cleanup_step5_thaw import install_startup as install_cfb_visual_cleanup_step5_thaw
 from .cfb_game_total_page1_visual_cleanup_step5_proof import install_startup as install_cfb_visual_cleanup_step5_proof
 from .cfb_game_total_page1_visual_cleanup_step5_cert import install_startup as install_cfb_visual_cleanup_step5_cert
@@ -49,6 +50,7 @@ def install_startup(app):
     install_cfb_visual_cleanup_step4_thaw(app)
     install_cfb_visual_cleanup_step4_proof(app)
     install_cfb_visual_cleanup_step4_closeout(app)
+    install_cfb_visual_cleanup_step5_deployment_convergence(app)
     install_cfb_visual_cleanup_step5_thaw(app)
     install_cfb_visual_cleanup_step5_proof(app)
     install_cfb_visual_cleanup_step5_cert(app)
