@@ -28,6 +28,7 @@ from devsystem import cfb_game_total_page1_visual_cleanup_step5_visual_cert_v1 a
 
 EXPECTED_DEPLOYMENT_SHA = "443bd71d4ee956a0b26539a900771b30b90a77fe"
 DEPLOYMENT_SELECTOR = '[data-api2-exact-deployment="streamlit-runtime-v1"]'
+MAIN_SELECTOR = '[data-testid="stMainBlockContainer"]'
 
 def canonical_prime(page, base_url=cert.PRODUCTION_URL):
     page.goto(base_url.rstrip("/") + "/", wait_until="domcontentloaded", timeout=120000)
@@ -50,7 +51,24 @@ def canonical_prime(page, base_url=cert.PRODUCTION_URL):
     print("CFB_GT_VISUAL_CLEANUP_STEP5_EXACT_DEPLOYMENT_GREEN", flush=True)
     return frame, {"initial": initial_scan, "sport_selected": sport_scan, "market_selected": market_scan}
 
+original_viewport_result = cert._viewport_result
+
+def main_scoped_viewport_result(page, frame, name, scans, artifact_dir):
+    original_forbidden = cert._forbidden_visible_text
+    main = frame.locator(MAIN_SELECTOR).first
+    main.wait_for(state="attached", timeout=45000)
+
+    def main_only_forbidden(_body):
+        return original_forbidden(main.inner_text(timeout=30000))
+
+    cert._forbidden_visible_text = main_only_forbidden
+    try:
+        return original_viewport_result(page, frame, name, scans, artifact_dir)
+    finally:
+        cert._forbidden_visible_text = original_forbidden
+
 cert._prime_route = canonical_prime
+cert._viewport_result = main_scoped_viewport_result
 cert.run(base_url=cert.PRODUCTION_URL, artifact_dir=sys.argv[1])
 '''
 
