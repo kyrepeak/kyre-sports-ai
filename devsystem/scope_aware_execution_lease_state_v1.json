@@ -1,6 +1,34 @@
 {
-  "generation": 277,
+  "generation": 278,
   "holders": [
+    {
+      "acquired_at_utc": "2026-10-09T22:36:00Z",
+      "expires_at_utc": "2026-10-09T23:36:00Z",
+      "generation": 278,
+      "heartbeat_at_utc": "2026-10-09T22:36:00Z",
+      "lease_id": "SCOPE-LEASE-9BB28E7012E82B794572C497",
+      "owner_id": "api2-cfb-game-total-page2-step4-outlook-summary",
+      "scope": {
+        "dependency_tokens": [
+          "cfb-game-total-page2-step4-outlook-summary",
+          "cfb-game-total-page2-v1"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "main_sha": "c304d28f2dd99f42d1f0bb98930afde8b65e047c",
+          "phase": "implementation",
+          "project": "API2",
+          "step": "4/8"
+        },
+        "shared_resources": [],
+        "write_paths": [
+          "cfb_game_total_page2_step4_outlook_summary_v1.py",
+          "devsystem/execution_plans/cfb-game-total-page2-step4-outlook-summary.json",
+          "devsystem/runless_proof_plans/cfb-game-total-page2-step4-outlook-summary.json",
+          "tests/test_cfb_game_total_page2_step4_outlook_summary_v1.py"
+        ]
+      }
+    },
     {
       "acquired_at_utc": "2026-10-09T22:12:00Z",
       "expires_at_utc": "2026-10-09T23:12:00Z",
@@ -36,8 +64,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 465,
+  "revision": 466,
   "schema_version": 1,
-  "state_hash": "ba6208bb3bca72105b8fc083a49a0fafbf14fce5c6e37f5804d2ce19d99f01a7",
+  "state_hash": "d7c8ec6157e8f9949410a16d9fa7a2127e03dcd244518c979af542a5babb83c9",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
