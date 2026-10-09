@@ -12,9 +12,9 @@
     "step1_freeze_verified": true,
     "rollback_point": "e43e244328fae9c55e10b66d7d86ed752edfe518"
   },
-  "tdd_red_candidate_sha": "0aa00e3107c0eb7622021de52ae8c080bbc92c15",
+  "tdd_red_candidate_sha": "4d9f7d73d5337dda54cf9b48061acd01c7f62383",
   "tdd_red_failure_class": "STATIC_PROOF",
-  "tdd_red_evidence": "Step-2 test requires helper/router; exact RED candidate resolves helper path as GitHub 404 before implementation.",
+  "tdd_red_evidence": "Purge-safe Step-2 test requires helper/router; exact RED candidate resolves helper path as GitHub 404 before implementation.",
   "green_candidate_sha": null,
   "runless_proof_id": null,
   "merged_main_sha": null,
