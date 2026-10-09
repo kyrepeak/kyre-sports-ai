@@ -1,0 +1,44 @@
+{
+  "task_id": "cfb-game-total-page1-visual-cleanup-step5-live-visual-cert",
+  "workstream": "cfb-game-total-page1-visual-cleanup-v1",
+  "step": "5/5",
+  "status": "IN_PROGRESS",
+  "source_main_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9",
+  "scope_lease_id": "SCOPE-LEASE-938E9D61B43172D8D61F9CDA",
+  "step2a": {
+    "exact_main_verified": true,
+    "duplicate_pr": false,
+    "duplicate_async_run": false,
+    "registry_revision": 218,
+    "registry_state_hash": "08aa5a9ff7fccdd030621d895083e57445634b0cb657d7f4cd3d199c1ed80b04",
+    "unrelated_active_thaws": 2,
+    "rollback_sha": "0e2c11f03c1d3f6cb94756057ccb95e8ae74b2f9"
+  },
+  "tdd": {
+    "red": true,
+    "red_failure": "Step-5 verifier short-circuited on direct-query Step-2 hero before canonical UI navigation established Step-3/4 session-touch activation.",
+    "failure_class": "PROOF_VERIFIER",
+    "green_candidate_sha": null
+  },
+  "repair": {
+    "problem": "Live responsive cert timed out waiting for gtvc3-future-day-strip after directly entering by query URL.",
+    "root_cause": "The Step-5 verifier returned as soon as the Step-2 hero was visible, bypassing the established root -> College Football -> Game Total browser-cert navigation contract.",
+    "patch": "Certification-only change: always prime the live route through the canonical sport and market selectors before checking Step-2 through Step-4 markers.",
+    "proof": "Fresh 390/768/1440 production browser evidence followed by exact-head Runless static/regression proof and transactional freeze."
+  },
+  "live_visual": {
+    "mobile": null,
+    "tablet": null,
+    "desktop": null,
+    "evidence_path": "devsystem/live_evidence/cfb-game-total-page1-visual-cleanup-step5-live-visual-cert.json"
+  },
+  "runless": {
+    "proof_id": null,
+    "receipt_digest": null,
+    "failure_class": null,
+    "gate_check_id": null,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP5_LIVE_VISUAL_CERT_FROZEN",
+  "green_plus_frozen_claimed": false
+}
