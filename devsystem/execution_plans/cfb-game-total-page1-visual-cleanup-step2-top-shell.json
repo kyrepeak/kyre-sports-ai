@@ -7,7 +7,7 @@
   "problem": "The live CFB Game Total Page 1 still uses the older matchup hero/top shell and does not converge to the Step-1-approved summary-first mockup hierarchy.",
   "root_cause": "Step 1 intentionally froze hierarchy only and made zero runtime mutations. The active V160 exact Game Total surface also purges and reimports CFB modules at render time, so a preloaded presentation patch would be discarded before V38 renders.",
   "patch": "Add a presentation-only Step-2 top-shell renderer and a purge-safe exact-CFB-Game-Total activation wrapper through the existing universal-shell activation seam. The wrapper composes around V160's exact surface and patches only the freshly imported Step-3 presentation builder after V38 loads. Preserve V38 and all frozen analytics/data/model/router owners.",
-  "scope_lease_id": "SCOPE-LEASE-CFB-GT-P1-VISUAL-CLEANUP-STEP2-001",
+  "scope_lease_id": "SCOPE-LEASE-A370D1B2059B961594A3674F",
   "rollback_point": "e43e244328fae9c55e10b66d7d86ed752edfe518",
   "step1_freeze_token": "CFB_GAME_TOTAL_PAGE1_VISUAL_CLEANUP_V1_STEP1_TARGET_LOCK_FROZEN",
   "write_paths": [
