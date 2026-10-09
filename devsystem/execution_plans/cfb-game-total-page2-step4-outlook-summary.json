@@ -4,7 +4,7 @@
   "project": "API2",
   "step": "4/8",
   "source_main_sha": "c304d28f2dd99f42d1f0bb98930afde8b65e047c",
-  "scope_lease_id": "SCOPE-LEASE-5268B6CF2E57E5086857DE91",
+  "scope_lease_id": "SCOPE-LEASE-9BB28E7012E82B794572C497",
   "problem": "Page 2 has the frozen route, matchup hero, and integrated flow, but the Outlook stage does not yet own a compact summary for the existing Over/Under probabilities, projected total, market line, edge, and confidence.",
   "root_cause": "Steps 1-3 established navigation and presentation structure only; there is no isolated Step-4 Outlook summary component consuming the already-owned model and market values.",
   "patch": "Add one presentation-only Outlook + Projection Summary section anchored at gtp2-outlook. Consume precomputed probability, projection, market-line, edge, and confidence inputs without recomputing or changing any model, probability, projection, market ownership, sportsbook influence, Page 1, or frozen Page-2 predecessor.",
