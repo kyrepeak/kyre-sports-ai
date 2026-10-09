@@ -42,6 +42,23 @@ def test_step4_renders_owned_projection_probability_market_edge_and_confidence()
     assert "Confidence" in html and "79% • Grade B" in html
 
 
+def test_step4_scales_fractional_probability_model_outputs() -> None:
+    step4 = _load_module()
+    html = step4.build_outlook_projection_summary_html(
+        over_probability=0.612,
+        under_probability=0.388,
+        projected_total=64.7,
+        market_line=59.5,
+        edge=5.2,
+        confidence_label="79% • Grade B",
+    )
+
+    assert "61.2%" in html
+    assert "38.8%" in html
+    assert "0.6%" not in html
+    assert "0.4%" not in html
+
+
 def test_step4_is_display_only_and_preserves_all_frozen_predecessors() -> None:
     step4 = _load_module()
     assert step4.STEP2_FREEZE_TOKEN == "CFB_GAME_TOTAL_PAGE2_V1_STEP2_MATCHUP_HERO_PHX_FROZEN"
