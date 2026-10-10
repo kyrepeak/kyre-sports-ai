@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-phoenix-day-selector-step4-v1",
+  "title": "CFB Game Total — Phoenix-time day selector Step 4",
+  "project": "API2",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "step": "4/8",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "ac8c6fbec4d97d3e130a8c4f581f495456ad443c",
+  "branch": "cfb-game-total-phoenix-day-selector-step4-v1",
+  "problem": "The native Page-1 shell is frozen, but the rebuild still lacks one authoritative day selector whose default and persisted date ownership are explicitly Phoenix, Arizona time.",
+  "root_cause": "The frozen body still contains the legacy V161 day strip. Step 3 intentionally deferred date ownership, so a rebuild-scoped selector has not yet been installed between the V40 shell and the frozen Game Total body.",
+  "patch": "Add V41 as an additive presentation-only successor to V40. Reuse the frozen V40 shell, render a seven-day America/Phoenix selector using the existing ks_cfb_game_total_date query key, feed that selected day into the frozen body while suppressing the duplicate legacy V161 strip for the render, and advance only the final Page-1 router pointer from V40 to V41.",
+  "mutation_scope": [
+    "cfb_game_total_clean_page_v41.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_phoenix_day_selector_step4_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-phoenix-day-selector-step4-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-phoenix-day-selector-step4-v1.json"
+  ],
+  "protected_scope": [
+    "cfb_game_total_clean_page_v40.py",
+    "cfb_game_total_clean_page_v39.py",
+    "Step 2 frozen backend artifacts",
+    "Game Total model/projection/probability math",
+    "sportsbook projection influence",
+    "schedule/provider behavior",
+    "event identity",
+    "selected-event Page 2 runtime",
+    "other sports and markets"
+  ],
+  "deferred_scope": [
+    "Step 5 games-on-day data rebuild",
+    "Step 6 interactive matchup cards",
+    "Step 7 Page 1 to Page 2 handoff redesign",
+    "Step 8 mobile and production certification"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_requires_exact_head_thaw": true
+  },
+  "tdd": {
+    "test_first_commit": "f51b8eec143778830ef0887c91315d4c06821510",
+    "red_observed": true,
+    "red_result": "The test-first checkpoint requires cfb_game_total_clean_page_v41.py while that file is absent and requires PAGE1_NATIVE_ROUTE to equal V41 while the base router still equals V40.",
+    "implementation_head_before_proof_plan": "0d332bd797fd797cf0a75a5f8e718214e57fa952"
+  },
+  "presentation_contract": {
+    "timezone": "America/Phoenix",
+    "timezone_label": "PHOENIX TIME • MST",
+    "date_query_key": "ks_cfb_game_total_date",
+    "window_days": 7,
+    "selected_day_offset_before": 2,
+    "native_shell_owner": "cfb_game_total_clean_page_v40",
+    "legacy_day_owner": "cfb_game_total_clean_page_v11",
+    "sportsbook_projection_influence": 0.0,
+    "network_calls_added": 0,
+    "game_loading_owned_by_step4": false,
+    "page2_modified": false
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-PHOENIX-DAY-SELECTOR-STEP4-R1",
+    "thaw_id": "THAW-CFB-GT-PHOENIX-DAY-SELECTOR-STEP4-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP4_PHOENIX_DAY_SELECTOR_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "AUTHORIZE_EXACT_ROUTER_THAW_ACQUIRE_SCOPE_LEASE_AND_RUN_EXACT_HEAD_RUNLESS_PROOF"
+}
