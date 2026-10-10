@@ -1,0 +1,55 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/universal-live-status-board-v1-step4-enforcement-gate.json": "44ae7b25286f9c64b9bd85eb584770f281b50397",
+    "devsystem/runless_proof_plans/universal-live-status-board-v1-step4-enforcement-gate.json": "1c275ab9b4ec205398ac3933f93a2c16bc99d197",
+    "devsystem/task_ledgers/universal-live-status-board-v1-step4-enforcement-gate.json": "9f9f5e1b25df6eeecdd936d841cbaef92104ac43",
+    "devsystem/universal_live_status_board_enforcement_v1.py": "61e7a0e0267a13692286bad3ec3640a596a91114",
+    "tests/test_devsystem_universal_live_status_board_enforcement_v1.py": "0055a95af7600330337d7b8fefe840871e4bc1b7"
+  },
+  "candidate_sha": "3f2281c91332afeb2a8d7d8ac6a3d23792b3f200",
+  "created_at": "2026-10-10T04:55:21.367516+00:00",
+  "dependency_map": {
+    "devsystem/execution_heartbeat_deadman_recovery_v1.py": "a8be77d18e0ba7bcc8bbba4ef45451d18c2bf469",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "devsystem/universal_live_status_board_ownership_v1.py": "8e632b9be8395e0255dfc6406147cc40258c44ed",
+    "devsystem/universal_live_status_board_recovery_v1.py": "6a82f44d89384a80a502ea6376c51e63e99f7321",
+    "devsystem/universal_live_status_board_v1.py": "052ee9b52d57bc83e54a42124c4c8903bcae6b27"
+  },
+  "deployment_identity": "8f86b3d28061ad83e417db6c66781e89d201c8f3",
+  "digest": "99c47c0a866693c45ee933be982a0196ea3839830f26b1dc16b7686cb3c73d7b",
+  "evidence_digests": [
+    "07e2afcdf9986cdbaec76e7c7c6e257f412ab515ddbcb685095b2831ffdfdc7d",
+    "2aac7368e9db7a46b6d64070d02d5bbb04a4b1f5bf07c61615ff355b5c82bac5"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6d198da01f140fcd17d26cd53cfca03fe8b89112d2e91844e7fffa7572f590d7",
+  "proof_id": "universal-live-status-board-v1-step4-enforcement-gate-3f2281c91332afeb-60655232a2b8457c",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
+    ],
+    "revision": 237,
+    "state_hash": "f092e6d5515920d09e3674446c5e320b9def59adbc5b8ebf084d0d54d7785743"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
+    ],
+    "revision": 237,
+    "state_hash": "f092e6d5515920d09e3674446c5e320b9def59adbc5b8ebf084d0d54d7785743"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "universal-live-status-board-v1-step4-enforcement-gate",
+  "workstream": "universal-live-status-board-v1"
+}
