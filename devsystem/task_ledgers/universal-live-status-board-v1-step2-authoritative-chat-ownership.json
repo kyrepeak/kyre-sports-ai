@@ -5,20 +5,24 @@
   "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
   "workstream": "universal-live-status-board-v1",
   "step": "2/4",
-  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "status": "IDENTITY_REPAIRED_READY_FOR_RUNLESS",
   "base_main_sha": "20f23cae36b70ba702657546296560c5432203dc",
   "branch": "universal-live-status-board-v1-step2-r1",
   "problem": "The Step-1 board accepts a live_active_chat label but does not yet prove that label from authoritative lease ownership.",
-  "root_cause": "Step 1 intentionally provided a pure schema only; lease ownership truth is not yet bound into the packet.",
-  "patch": "Read and validate the existing scope-aware execution lease state, resolve exactly one live owner to THIS_CHAT/MONSTER/API_2, fail closed on missing or ambiguous active ownership, and bind active packets to that truth without acquiring or mutating leases.",
+  "root_cause": "Step 1 intentionally provided a pure frozen schema; Step 2 must layer ownership truth without modifying that frozen checkpoint.",
+  "patch": "Add a dedicated read-only ownership module that validates the existing scope-aware execution lease, resolves exactly one live owner to THIS_CHAT/MONSTER/API_2, fails closed on missing or ambiguous active ownership, and binds packets to that truth.",
   "mutation_scope": [
-    "devsystem/universal_live_status_board_v1.py",
-    "tests/test_devsystem_universal_live_status_board_v1.py",
+    "devsystem/universal_live_status_board_ownership_v1.py",
+    "tests/test_devsystem_universal_live_status_board_ownership_v1.py",
     "devsystem/execution_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
     "devsystem/runless_proof_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
     "devsystem/task_ledgers/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
     "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step2-authoritative-chat-ownership.md"
   ],
+  "frozen_step1_preserved": {
+    "devsystem/universal_live_status_board_v1.py": "052ee9b52d57bc83e54a42124c4c8903bcae6b27",
+    "tests/test_devsystem_universal_live_status_board_v1.py": "8ab0ff4a6d5e49426ec388349640615e96165c00220eaf07bffeb1dee35fa069"
+  },
   "forbidden_scope": [
     "sports product runtime",
     "model math",
@@ -30,7 +34,8 @@
     "parallel ownership registry",
     "lease acquisition inside product code",
     "lease renewal inside product code",
-    "lease release inside product code"
+    "lease release inside product code",
+    "mutation of frozen Step-1 implementation or tests"
   ],
   "step2a": {
     "one_active_problem": true,
@@ -40,29 +45,30 @@
     "github_actions_fallback_authorized": false,
     "authoritative_lease_state_reused": true,
     "cross_workstream_state_separation_required": true,
-    "scope_lease_id": "SCOPE-LEASE-E273870B78DF7BEB9029E929",
-    "scope_lease_revision": 489,
-    "scope_lease_state_hash": "939cadf9c80f98cc50e3ac9b7587dab81909c994a91fed328544aa5a60bc0c0c",
-    "scope_lease_expires_at_utc": "2026-10-10T04:22:46Z"
+    "scope_lease_id": "SCOPE-LEASE-E5C0D43F1ACD5F3F0E9E522E",
+    "scope_lease_revision": 491,
+    "scope_lease_state_hash": "e266c421a000b83699dfe3539866a77f78f04291fbfc162ed508645e187977f4",
+    "scope_lease_expires_at_utc": "2026-10-10T04:33:30Z"
   },
   "tdd": {
-    "test_first_commit": "043b51a4860c24890405efbb4ba6244a69a459f5",
     "red_observed": true,
-    "red_result": "EXPECTED_RED: Step-2 ownership symbols absent before implementation",
-    "implementation_commit": "a69b597f5930309cc0e3dcb75e8689cfbe3a7e3b",
+    "red_result": "EXPECTED_RED: Step-2 ownership behavior absent before implementation",
     "green_observed": true,
-    "green_result": "FUNCTIONAL_GREEN: 10 deterministic ownership-resolution/binding cases passed",
+    "green_result": "FUNCTIONAL_GREEN: deterministic ownership-resolution/binding matrix passed",
+    "isolation_repair": "Step-1 blobs restored exactly and Step-2 tests moved to a dedicated file",
     "compile_result": "PENDING_EXACT_HEAD_RUNLESS"
   },
   "runless": {
-    "proof_generation": 1,
-    "authorization_id": "AUTH-UNIVERSAL-LIVE-STATUS-BOARD-V1-STEP2-R1",
+    "proof_generation": 2,
+    "authorization_id": "AUTH-UNIVERSAL-LIVE-STATUS-BOARD-V1-STEP2-R2",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_request_status": "NOT_SUBMITTED"
+    "generation_1_result": "INFRA_IDENTITY_FAILURE",
+    "generation_1_root_cause": "nonexistent candidate SHA submitted",
+    "proof_request_status": "READY_FOR_ONE_REPAIRED_RETRY"
   },
   "freeze_token": "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP2_AUTHORITATIVE_CHAT_OWNERSHIP_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "SUBMIT_ONE_EXACT_HEAD_RUNLESS_PROOF"
+  "next_legal_action": "SUBMIT_ONE_REPAIRED_EXACT_HEAD_RUNLESS_PROOF"
 }
