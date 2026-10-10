@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "task_id": "universal-live-status-board-v1-step4-enforcement-gate",
+  "title": "Universal Live Status Board V1 Step 4 — Enforcement Gate",
+  "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
+  "workstream": "universal-live-status-board-v1",
+  "step": "4/4",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "77b6cfb53b5bbb09c88269d366ea0ea075acc91e",
+  "branch": "universal-live-status-board-v1-step4-enforcement-gate",
+  "problem": "Execution updates can still be presented without proving the canonical live status board is visible and bound to authoritative ownership/liveness truth.",
+  "root_cause": "Steps 1 through 3 provide schema, ownership, and recovery primitives, but no final gate composes them before an update is treated as authoritative.",
+  "patch": "Add a pure enforcement gate that requires the Step-1 board and exact visible rendering, binds Step-2 lease ownership, requires Step-3 live heartbeat for active work, and fails closed on stale, ambiguous, tampered, or terminal-with-live-owner states.",
+  "mutation_scope": [
+    "devsystem/universal_live_status_board_enforcement_v1.py",
+    "tests/test_devsystem_universal_live_status_board_enforcement_v1.py",
+    "devsystem/execution_plans/universal-live-status-board-v1-step4-enforcement-gate.json",
+    "devsystem/runless_proof_plans/universal-live-status-board-v1-step4-enforcement-gate.json",
+    "devsystem/task_ledgers/universal-live-status-board-v1-step4-enforcement-gate.json"
+  ],
+  "forbidden_scope": [
+    "sports product runtime",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "qualification",
+    "sportsbook",
+    "parallel ownership registry",
+    "mutation authority from the status gate",
+    "GitHub Actions fallback",
+    "reopening frozen Steps 1-3"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "scope_lease_id": "SCOPE-LEASE-31F00A2F706E92B02F98E1A2",
+    "scope_lease_revision": 500,
+    "scope_lease_state_hash": "d3e6b436ecc8adbcad8e3bb60011c2e7c47dad7b1ec5a585f1883ad0c5bcd827",
+    "cross_workstream_state_separation_required": true
+  },
+  "tdd": {
+    "test_first_commit": "70fa00f702a5bf86ab4c481e023a3006010c2dc4",
+    "red_observed": true,
+    "red_result": "EXPECTED_RED: Step-4 enforcement module absent before implementation",
+    "implementation_commit": "dc29c289ae0ce225331bdae6b9cd51c8f215c14e"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-UNIVERSAL-LIVE-STATUS-BOARD-V1-STEP4-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP4_ENFORCEMENT_GATE_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "SUBMIT_ONE_EXACT_HEAD_RUNLESS_PROOF"
+}
