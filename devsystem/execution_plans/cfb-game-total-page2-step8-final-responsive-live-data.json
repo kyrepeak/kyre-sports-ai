@@ -1,0 +1,48 @@
+{
+  "task_id": "cfb-game-total-page2-step8-final-responsive-live-data",
+  "workstream": "cfb-game-total-page2-v1",
+  "project": "API2",
+  "step": "8/8",
+  "source_main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
+  "scope_lease_id": "SCOPE-LEASE-49C270AAD437F764D45964F1",
+  "problem": "Frozen Page-2 presentation modules exist for Steps 2-7 but are not yet activated as one selected-game production Page-2 runtime and have no final live responsive certification.",
+  "root_cause": "The existing exact ESPN selected-game route remains owned by the frozen Page-1 chain; Steps 2-7 were deliberately built as isolated presentation modules and Step 8 must compose them without changing their sports/model ownership.",
+  "patch": "Add one selected-event-only Page-2 runtime compositor, one top-level CFB-only router overlay, activate it from app.py, and add a certification-only Playwright probe for 390/430/768/1440 viewports. Preserve Page 1 when no event is selected and preserve frozen Steps 2-7 byte-for-byte.",
+  "write_paths": [
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "devsystem/cfb_game_total_page2_step8_live_cert_v1.py",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step8-final-responsive-live-data.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step8-final-responsive-live-data.json",
+    "app.py"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py",
+    "cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py",
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py",
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py",
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+    "streamlit_memory_lazy_router_v190.py",
+    "cfb_game_total_clean_page_v38.py"
+  ],
+  "safety": {
+    "may_modify_page1": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_model": false,
+    "may_modify_market_ownership": false,
+    "may_modify_other_sports": false,
+    "may_add_network_calls_to_product_runtime": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "proof": {
+    "tdd_red_required": true,
+    "required_runless_gate": "runless-final-gate",
+    "required_live_viewports": [390, 430, 768, 1440],
+    "forbidden_visible_copy": ["data limited", "mock data", "pending"],
+    "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP8_FINAL_RESPONSIVE_LIVE_DATA_FROZEN"
+  }
+}
