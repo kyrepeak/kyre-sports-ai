@@ -6,7 +6,7 @@ Game-Total route owners at the frozen Step-8 Page-2 runtime. All pointers are
 restored after the render call; other sports/markets continue through the frozen
 parent router unchanged.
 
-Games on This Day Steps 2-3 are additive Page-1-only presentation installers.
+Games on This Day Steps 2-4 are additive Page-1-only presentation installers.
 They are activated before the frozen Page-1 parent render and are bypassed
 whenever Page 2 owns an exact selected event.
 """
@@ -22,6 +22,7 @@ import streamlit_memory_lazy_router_v181 as live_owner
 import streamlit_memory_lazy_router_v190 as cfb_router
 from cfb_game_total_games_on_day_step2_visual_v1 import install_games_on_day_step2_visual
 from cfb_game_total_games_on_day_step3_details_v1 import install_games_on_day_step3_details
+from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_games_on_day_step4_interaction_mobile
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP8 FINAL V1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration"
@@ -65,6 +66,7 @@ def render_app() -> Any:
     if not _selected_game_total():
         install_games_on_day_step2_visual()
         install_games_on_day_step3_details()
+        install_games_on_day_step4_interaction_mobile()
         return frozen_parent.render_app()
 
     original_cfb_page = cfb_router.GAME_TOTAL_PAGE
