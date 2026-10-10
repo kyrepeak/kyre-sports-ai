@@ -1,11 +1,40 @@
 {
-  "generation": 280,
-  "holders": [],
+  "generation": 281,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-10T00:06:23Z",
+      "expires_at_utc": "2026-10-10T01:06:23Z",
+      "generation": 281,
+      "heartbeat_at_utc": "2026-10-10T00:06:23Z",
+      "lease_id": "SCOPE-LEASE-FF93328D58902FCDF0143D00",
+      "owner_id": "api2-cfb-game-total-page2-step7-line-lab-best-bet",
+      "scope": {
+        "dependency_tokens": [
+          "cfb-game-total-page2-step7-line-lab-best-bet",
+          "cfb-game-total-page2-v1"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "main_sha": "bc0ff47ef5771998275456cba454256f6a9ae047",
+          "phase": "implementation",
+          "project": "API2",
+          "step": "7/8"
+        },
+        "shared_resources": [],
+        "write_paths": [
+          "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+          "devsystem/execution_plans/cfb-game-total-page2-step7-line-lab-best-bet.json",
+          "devsystem/runless_proof_plans/cfb-game-total-page2-step7-line-lab-best-bet.json",
+          "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 471,
+  "revision": 472,
   "schema_version": 1,
-  "state_hash": "b7361c6581db87853b81451e4f5276333f0f772e75ab8d58460dd5b185c61459",
+  "state_hash": "baea9f43b0fac401ab0f5c56a93671eb36efa82f7eb2e4af83e3b08727512c7b",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
