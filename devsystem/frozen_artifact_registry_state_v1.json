@@ -55,17 +55,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f93e7364a3592224eec787ad7574fd94131945a6",
       "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
-    },
-    {
-      "files": {
-        "app.py": {
-          "from_blob": "b649282cd6fc771c6621cc09a655414f9422791a",
-          "to_blob": "426a53efd90b6e15149f78d1cb61acfb1e1195c3"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "09a5efc543e5f8c57f3ac6686bd34e5932ba3685",
-      "thaw_id": "THAW-CFB-GT-PAGE2-STEP8-APP-R1"
     }
   ],
   "entries": {
@@ -591,6 +580,20 @@
       },
       "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP7_LINE_LAB_BEST_BET_FROZEN",
       "source_main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
+      "status": "FROZEN"
+    },
+    "CFB_GAME_TOTAL_PAGE2_V1_STEP8_FINAL_RESPONSIVE_LIVE_DATA_FROZEN": {
+      "artifacts": {
+        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
+        "devsystem/cfb_game_total_page2_step8_live_cert_v1.py": "422b54320df359732499344794b4e1887cb14daa",
+        "devsystem/execution_plans/cfb-game-total-page2-step8-final-responsive-live-data.json": "e1b3bb8bbca106e3520af8fa585871fd89398eec",
+        "devsystem/runless_proof_plans/cfb-game-total-page2-step8-final-responsive-live-data.json": "22c7bb6e7731cf72e5e24ec36645bd0cd72b9451",
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "154760d34b4f33aed1efafdf2b026262eb0e332b",
+        "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP8_FINAL_RESPONSIVE_LIVE_DATA_FROZEN",
+      "source_main_sha": "3065e960d3363bf6f3d70252c906b9590e7293e9",
       "status": "FROZEN"
     },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
@@ -2618,7 +2621,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP4_FROZEN": {
       "artifacts": {
-        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
+        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step4-universal-card.json": "880fb49921c230e9df7b6dbf390191c83d84c85d",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step4-universal-card.json": "464d6e7e903add6c6e583839dedd467761c1a46f",
         "devsystem/wnba_pra_repair_v1_step4_universal_card_cert.py": "a71713915f0ac532fee0b926feba34004eaef14f",
@@ -2632,7 +2635,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP5_FROZEN": {
       "artifacts": {
-        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
+        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step5-decision-fallback.json": "65c5caa0bc8eaa98ae34605bd07cfd7cb33af277",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step5-decision-fallback.json": "29acc8ee4ffd3a5fd2ba646214a3145fbf73bb65",
         "devsystem/wnba_pra_repair_v1_step5_decision_fallback_cert.py": "f9bd0ab5110fe10914d009d0c4e7aaac0b74d67a",
@@ -2658,7 +2661,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP7_FROZEN": {
       "artifacts": {
-        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
+        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step7-final-integration.json": "e6b3c8956ae8c7d22e933b43905b322644343543",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step7-final-integration.json": "d28b7ba847af6424f80b2fb98dc1a9e2e4f40c2a",
         "devsystem/wnba_pra_repair_v1_step7_final_integration_cert.py": "3ea24534f781f51d8e0364f660dc40eb5c8fcf6a",
@@ -2729,7 +2732,7 @@
     "WNBA_PRA_SPEED_V3_STEP9": {
       "artifacts": {
         ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml": "0fe38d0bed64fe15d52deb30b7d92cc012bf6e68",
-        "app.py": "b649282cd6fc771c6621cc09a655414f9422791a",
+        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
         "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json": "eac68bf9b00be8ce743f78e0ae64a4f513c457e4",
         "devsystem/wnba_pra_speed_v3_step9_final_cert.py": "587269cd587fb29fb4ba07879f5b472b817b2d46",
         "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py": "51eef1fe2526801a467f155d1c0b32d516ef8a35",
@@ -2844,9 +2847,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 233,
+  "revision": 234,
   "schema_version": 1,
-  "source_main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
-  "state_hash": "30bf66377a1d73cae2cf8c14be9449ae8df09fdb3d50a8a1ba39ae643aa2e984",
+  "source_main_sha": "3065e960d3363bf6f3d70252c906b9590e7293e9",
+  "state_hash": "36c4a0b32ef15ae2548a38b4de5ef96fa38dd10139cd2f81f720fc22b1c1a161",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
