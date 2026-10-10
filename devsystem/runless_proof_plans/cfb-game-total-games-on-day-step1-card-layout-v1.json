@@ -1,0 +1,26 @@
+{
+  "task_id": "cfb-game-total-games-on-day-step1-card-layout-v1",
+  "workstream": "cfb-game-total-games-on-day-v1",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_cfb_game_total_games_on_day_step1_layout_v1.py", "tests/test_cfb_game_total_page1_v2_step4_side_market_completeness.py"],
+    ["python", "-m", "py_compile", "cfb_game_total_games_on_day_step1_layout_v1.py", "kyre_remaining_pages_theme_v1.py"]
+  ],
+  "artifacts": [
+    "cfb_game_total_games_on_day_step1_layout_v1.py",
+    "kyre_remaining_pages_theme_v1.py",
+    "tests/test_cfb_game_total_games_on_day_step1_layout_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step1-card-layout-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-card-layout-v1.json"
+  ],
+  "dependencies": [
+    "cfb_game_total_clean_page_v14.py",
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py",
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/scope_aware_execution_lease_v1.py",
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "freeze_token": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP1_CARD_LAYOUT_V1_FROZEN"
+}

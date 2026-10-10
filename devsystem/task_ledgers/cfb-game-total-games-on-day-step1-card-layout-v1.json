@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-games-on-day-step1-card-layout-v1",
+  "title": "CFB Game Total — Games on This Day Step 1 Card Layout",
+  "project": "API2",
+  "workstream": "cfb-game-total-games-on-day-v1",
+  "step": "1/4",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "3876d4cbe7fe541c94cf3d8e71cc0103b1a6ec66",
+  "branch": "cfb-game-total-games-on-day-step1-card-layout-v1",
+  "problem": "The mobile Games on This Day selector renders matchup cards in a cramped horizontal row that clips the next card.",
+  "root_cause": "The frozen V163 selector keeps desktop-style flex scrolling and fixed minimum card widths on mobile.",
+  "patch": "Append a CFB-only presentation CSS override that stacks the existing selector cards full-width on <=760px while preserving event links and selected-state ownership.",
+  "mutation_scope": [
+    "cfb_game_total_games_on_day_step1_layout_v1.py",
+    "kyre_remaining_pages_theme_v1.py",
+    "tests/test_cfb_game_total_games_on_day_step1_layout_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step1-card-layout-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-card-layout-v1.json"
+  ],
+  "forbidden_scope": [
+    "model math",
+    "projection",
+    "probability",
+    "API behavior",
+    "sportsbook influence",
+    "schedule identity",
+    "event selection behavior",
+    "other sports",
+    "Steps 2-4",
+    "GitHub Actions fallback"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_theme_exact_thaw_required": true
+  },
+  "tdd": {
+    "test_first_commit": "8b06b79db80514f9ae2029466afd491b78a16853",
+    "red_observed": true,
+    "red_result": "EXPECTED_RED: Step-1 additive layout owner absent before implementation",
+    "implementation_commits": [
+      "65e25be8158aa95fd1e04dfe4de4893923544f9b",
+      "775179cba8058c3f29e5ea7b4d0db05d30ec2609"
+    ]
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-GAMES-ON-DAY-STEP1-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP1_CARD_LAYOUT_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "GRANT_EXACT_HEAD_THAW_AND_SUBMIT_ONE_RUNLESS_PROOF"
+}
