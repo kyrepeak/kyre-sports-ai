@@ -1,0 +1,41 @@
+{
+  "task_id": "cfb-game-total-backend-preservation-step2-v1",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py",
+      "tests/test_cfb_step11_game_total_model_v1.py",
+      "tests/test_cfb_step12_game_total_final_v1.py",
+      "tests/test_cfb_step12_game_total_slate_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "devsystem/cfb_game_total_backend_preservation_step2_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/cfb_game_total_backend_preservation_step2_v1.py",
+    "tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-backend-preservation-step2-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-backend-preservation-step2-v1.json"
+  ],
+  "dependencies": [
+    "cfb_freeze_manifest_v12.json",
+    "cfb_game_total_model_v1.py",
+    "cfb_game_total_final_v1.py",
+    "cfb_game_total_slate_v1.py",
+    "cfb_game_total_model_input_v1.py",
+    "cfb_game_total_slate_v2.py",
+    "cfb_game_total_step3_form_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP2_BACKEND_PRESERVATION_V1_FROZEN"
+}

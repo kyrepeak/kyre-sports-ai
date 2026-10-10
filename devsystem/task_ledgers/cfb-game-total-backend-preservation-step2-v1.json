@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-backend-preservation-step2-v1",
+  "title": "CFB Game Total — Preserve Frozen Backend Step 2",
+  "project": "API2",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "step": "2/8",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "21b6d7a0dad7edd7f6768a3f98a121572fc859fa",
+  "branch": "cfb-game-total-backend-preservation-step2-v1",
+  "problem": "The native website rebuild needs an explicit immutable boundary around the already-certified CFB Game Total backend so later presentation steps cannot silently alter model math, final synthesis, normalized model-input routing, sportsbook influence, market inputs, or Monte Carlo policy.",
+  "root_cause": "Step 1 correctly changed only Page-1 presentation routing, but the rebuild did not yet have a dedicated rebuild-scoped proof that pins the certified Step 11/12 Game Total backend and the active normalized-input adapters to exact blobs and contract values.",
+  "patch": "Add a devsystem-only backend preservation guard and regression tests. The guard pins seven existing Game Total backend artifacts to exact Git blob SHAs, validates the permanent CFB V12 Step 11/12 contracts, and verifies the active normalized-input adapter still delegates raw/final math to the frozen V1 owners with zero sportsbook influence. No product runtime module is modified.",
+  "mutation_scope": [
+    "devsystem/cfb_game_total_backend_preservation_step2_v1.py",
+    "tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-backend-preservation-step2-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-backend-preservation-step2-v1.json"
+  ],
+  "protected_backend_artifacts": [
+    "cfb_freeze_manifest_v12.json",
+    "cfb_game_total_model_v1.py",
+    "cfb_game_total_final_v1.py",
+    "cfb_game_total_slate_v1.py",
+    "cfb_game_total_model_input_v1.py",
+    "cfb_game_total_slate_v2.py",
+    "cfb_game_total_step3_form_v1.py"
+  ],
+  "forbidden_scope": [
+    "Game Total model math",
+    "Game Total probability/distribution math",
+    "Game Total final synthesis/ranking math",
+    "sportsbook projection influence",
+    "market price or implied probability inputs",
+    "Monte Carlo behavior",
+    "schedule/event identity semantics",
+    "selected-event Page 2 behavior",
+    "Page 1 visual redesign",
+    "other sports",
+    "GitHub Actions fallback"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "backend_product_mutation_allowed": false
+  },
+  "tdd": {
+    "test_first_commit": "57fdf6ce3e4f8be3923c155fe7397d20a9c6fb22",
+    "red_observed": true,
+    "red_result": "The test-first contract imported devsystem.cfb_game_total_backend_preservation_step2_v1 before that module existed, so the contract was structurally RED until the guard implementation was added.",
+    "implementation_commit": "31805e68e1c5cabbf3d9eea79813874136c49dfa"
+  },
+  "backend_contract": {
+    "protected_artifact_count": 7,
+    "sportsbook_projection_influence": 0.0,
+    "sportsbook_input_used": false,
+    "market_price_used": false,
+    "market_probability_used": false,
+    "monte_carlo_used": false,
+    "product_runtime_mutated": false
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-BACKEND-PRESERVATION-STEP2-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP2_BACKEND_PRESERVATION_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "ACQUIRE_SCOPE_LEASE_AND_RUN_EXACT_HEAD_RUNLESS_PROOF"
+}
