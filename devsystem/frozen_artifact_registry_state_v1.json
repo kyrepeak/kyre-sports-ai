@@ -55,6 +55,17 @@
       "status": "ACTIVE",
       "target_head_sha": "f93e7364a3592224eec787ad7574fd94131945a6",
       "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
+    },
+    {
+      "files": {
+        "app.py": {
+          "from_blob": "b649282cd6fc771c6621cc09a655414f9422791a",
+          "to_blob": "426a53efd90b6e15149f78d1cb61acfb1e1195c3"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "2743ec3197d881279260d2ab407d0bb2f49d2ed2",
+      "thaw_id": "THAW-CFB-GT-PAGE2-STEP8-APP-R1"
     }
   ],
   "entries": {
@@ -2833,9 +2844,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 230,
+  "revision": 231,
   "schema_version": 1,
   "source_main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
-  "state_hash": "5585e96b58069f42095a919601a4ad8af215a7861ec1716e56b3702d24b8551f",
+  "state_hash": "8e5ac9252e4d84117484296a1be95a7ff02fad5f9d83f1bad812e171aa818f71",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
