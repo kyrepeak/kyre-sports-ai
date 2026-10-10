@@ -16,11 +16,27 @@ from devsystem import browser_qa_v1 as base
 PRODUCTION_URL = "https://pickvault.streamlit.app"
 API_BASE = "https://kyre-sports-api.onrender.com"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
+REQUIRED_TESTIDS = (
+    "gtp2s2-matchup-hero",
+    "gtp2s3-flow",
+    "gtp2s4-outlook",
+    "gtp2s5-team-snapshot",
+    "gtp2s6-trends",
+    "gtp2s7-line-lab",
+    "gtp2s7-best-bet",
+    "gtp2s8-back-to-slate",
+    "gtp2s8-final",
+)
 
 
 def _date_candidates() -> list[str]:
     today = datetime.now(ZoneInfo("America/Phoenix")).date()
     return [(today + timedelta(days=i)).isoformat() for i in range(0, 15)]
+
+
+def _next_saturday() -> str:
+    today = datetime.now(ZoneInfo("America/Phoenix")).date()
+    return (today + timedelta(days=(5 - today.weekday()) % 7)).isoformat()
 
 
 def _api_games(game_date: str) -> dict:
@@ -55,7 +71,10 @@ def execute() -> dict:
         raise RuntimeError("CHROMIUM_INSTALL_FAILED:" + (install.stderr or install.stdout or "")[-2000:])
 
     api_rows = [_api_games(day) for day in _date_candidates()]
-    chosen = next((row for row in api_rows if int(row.get("game_count") or 0) > 0), None)
+    saturday = _next_saturday()
+    chosen = next((row for row in api_rows if row.get("date") == saturday and int(row.get("game_count") or 0) > 0), None)
+    if chosen is None:
+        chosen = next((row for row in api_rows if int(row.get("game_count") or 0) > 0), None)
     if chosen is None:
         return {"status": "NO_LIVE_SLATE", "api_rows": api_rows}
 
@@ -67,21 +86,61 @@ def execute() -> dict:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
         try:
-            page = browser.new_page(viewport={"width": 430, "height": 932})
+            page = browser.new_page(viewport={"width": 390, "height": 844})
             page.goto(route, wait_until="domcontentloaded", timeout=120000)
             frame, scans = base._find_app_frame(page)
+            try:
+                frame.locator('[data-testid="gtp2s8-final"]').first.wait_for(state="visible", timeout=90000)
+            except Exception:
+                pass
             body = frame.locator("body").inner_text(timeout=30000)
-            strip_count = frame.locator('[data-testid="gt163-game-strip"]').count()
-            link_count = frame.locator(f'a[href*="{EVENT_QUERY_KEY}="]').count()
+            body_lower = body.casefold()
+            pending_contexts = []
+            start = 0
+            while True:
+                index = body_lower.find("pending", start)
+                if index < 0 or len(pending_contexts) >= 20:
+                    break
+                pending_contexts.append(body[max(0, index - 160): min(len(body), index + 220)])
+                start = index + 7
+            pending_elements = frame.evaluate("""() => {
+                const visible = (el) => {
+                    const s = getComputedStyle(el);
+                    const r = el.getBoundingClientRect();
+                    return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity || 1) !== 0 && r.width > 0 && r.height > 0;
+                };
+                const out = [];
+                for (const el of document.querySelectorAll('body *')) {
+                    const text = (el.innerText || '').trim();
+                    if (!text || !text.toLowerCase().includes('pending') || !visible(el)) continue;
+                    const childrenWithPending = [...el.children].some(c => ((c.innerText || '').toLowerCase().includes('pending')) && visible(c));
+                    if (childrenWithPending) continue;
+                    let owner = el;
+                    while (owner && owner !== document.body && !owner.getAttribute('data-testid')) owner = owner.parentElement;
+                    out.push({
+                        tag: el.tagName,
+                        text: text.slice(0, 500),
+                        class_name: String(el.className || '').slice(0, 300),
+                        testid: el.getAttribute('data-testid') || '',
+                        owner_testid: owner && owner.getAttribute ? (owner.getAttribute('data-testid') || '') : '',
+                        owner_class: owner ? String(owner.className || '').slice(0, 300) : '',
+                    });
+                    if (out.length >= 20) break;
+                }
+                return out;
+            }""")
+            required_counts = {testid: frame.locator(f'[data-testid="{testid}"]').count() for testid in REQUIRED_TESTIDS}
             return {
                 "status": "GREEN",
                 "chosen": chosen,
                 "route": route,
                 "page_url": page.url,
                 "frame_scans": scans,
-                "strip_count": strip_count,
-                "event_link_count": link_count,
-                "body_start": body[:3500],
+                "required_testid_counts": required_counts,
+                "pending_count": body_lower.count("pending"),
+                "pending_contexts": pending_contexts,
+                "pending_elements": pending_elements,
+                "body_start": body[:1500],
                 "api_rows": api_rows,
             }
         finally:
