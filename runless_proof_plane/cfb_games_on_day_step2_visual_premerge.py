@@ -13,6 +13,7 @@ from devsystem.frozen_artifact_registry_v1 import (
 from devsystem.scope_aware_execution_lease_v1 import (
     build_scope,
     claim_scope,
+    release_scope,
     validate_state as validate_scope_lease_state,
 )
 
@@ -23,7 +24,7 @@ from .registry import GithubRegistryBackend, REGISTRY_PATH
 TASK_ID = "cfb-game-total-games-on-day-step2-visual-v1"
 WORKSTREAM = "cfb-game-total-games-on-day-v1"
 BRANCH = "cfb-game-total-games-on-day-step2-visual-v1"
-CANDIDATE_SHA = "570a7205fe1b79ebff3b4635f1cd3b30cd32fab5"
+CANDIDATE_SHA = "4a389cb2c4ff301379899efe835ab686813264f9"
 MAIN_SHA = "403e3cb9d7b0e11c4bfc15de512fb1a862e88549"
 AUTHORIZATION_ID = "AUTH-CFB-GT-GAMES-ON-DAY-STEP2-VISUAL-R1"
 THAW_ID = "THAW-CFB-GT-GAMES-ON-DAY-STEP2-VISUAL-R1"
@@ -87,10 +88,6 @@ def _ensure_exact_thaw(client) -> dict:
     if str(registry.get("source_main_sha") or "") != MAIN_SHA:
         raise Step2VisualPremergeFailure("REGISTRY_SOURCE_MAIN_DRIFT")
 
-    matches = [
-        grant for grant in registry.get("active_thaws", [])
-        if str(grant.get("thaw_id") or "") == THAW_ID
-    ]
     exact = {
         "thaw_id": THAW_ID,
         "status": "ACTIVE",
@@ -102,41 +99,54 @@ def _ensure_exact_thaw(client) -> dict:
             }
         },
     }
-    if matches:
-        if len(matches) != 1 or matches[0] != exact:
-            raise Step2VisualPremergeFailure("THAW_ID_COLLISION")
+    matches = [g for g in registry.get("active_thaws", []) if str(g.get("thaw_id") or "") == THAW_ID]
+    if len(matches) > 1:
+        raise Step2VisualPremergeFailure("THAW_DUPLICATE")
+    if matches == [exact]:
         return {
             "created": False,
+            "retargeted": False,
             "revision": int(registry["revision"]),
             "state_hash": str(registry["state_hash"]),
             "active_thaw_count": len(registry.get("active_thaws", [])),
         }
 
+    unrelated_before = [deepcopy(g) for g in registry.get("active_thaws", []) if str(g.get("thaw_id") or "") != THAW_ID]
+    if matches:
+        stale = matches[0]
+        if stale.get("status") != "ACTIVE" or stale.get("files") != exact["files"]:
+            raise Step2VisualPremergeFailure("THAW_ID_COLLISION")
+
     updated = deepcopy(registry)
-    updated["active_thaws"].append(exact)
+    updated["active_thaws"] = unrelated_before + [exact]
     updated["active_thaws"] = sorted(updated["active_thaws"], key=lambda row: str(row.get("thaw_id") or ""))
     updated["revision"] = int(updated["revision"]) + 1
     updated.pop("state_hash", None)
     updated["state_hash"] = registry_hash(_payload_without_hash(updated))
     validate_registry(updated)
+    if [g for g in updated["active_thaws"] if str(g.get("thaw_id") or "") != THAW_ID] != sorted(
+        unrelated_before, key=lambda row: str(row.get("thaw_id") or "")
+    ):
+        raise Step2VisualPremergeFailure("UNRELATED_THAW_DRIFT")
 
     client.update_content(
         REGISTRY_PATH,
         _json_text(updated),
         backend.branch,
-        "registry: authorize CFB Games on This Day Step 2 exact-head thaw",
+        "registry: retarget CFB Games on This Day Step 2 exact-head thaw",
         backend._blob_sha,
     )
     readback = backend.read_registry()
     validate_registry(readback)
-    found = [
-        grant for grant in readback.get("active_thaws", [])
-        if str(grant.get("thaw_id") or "") == THAW_ID
-    ]
+    found = [g for g in readback.get("active_thaws", []) if str(g.get("thaw_id") or "") == THAW_ID]
     if found != [exact]:
         raise Step2VisualPremergeFailure("THAW_READBACK_MISMATCH")
+    unrelated_after = [g for g in readback.get("active_thaws", []) if str(g.get("thaw_id") or "") != THAW_ID]
+    if unrelated_after != sorted(unrelated_before, key=lambda row: str(row.get("thaw_id") or "")):
+        raise Step2VisualPremergeFailure("UNRELATED_THAW_READBACK_DRIFT")
     return {
-        "created": True,
+        "created": not bool(matches),
+        "retargeted": bool(matches),
         "revision": int(readback["revision"]),
         "state_hash": str(readback["state_hash"]),
         "active_thaw_count": len(readback.get("active_thaws", [])),
@@ -146,38 +156,54 @@ def _ensure_exact_thaw(client) -> dict:
 def _ensure_scope_lease(client) -> dict:
     raw = client.content(LEASE_PATH, ref=LEASE_BRANCH)
     state = validate_scope_lease_state(_decode_json(raw, "LEASE"))
-    existing = [
-        holder for holder in state.get("holders", [])
-        if str(holder.get("owner_id") or "") == LEASE_OWNER
-        and str((holder.get("scope") or {}).get("resource_identity", {}).get("candidate_sha") or "") == CANDIDATE_SHA
+    owner_holders = [h for h in state.get("holders", []) if str(h.get("owner_id") or "") == LEASE_OWNER]
+    exact = [
+        h for h in owner_holders
+        if str((h.get("scope") or {}).get("resource_identity", {}).get("candidate_sha") or "") == CANDIDATE_SHA
     ]
-    if existing:
-        if len(existing) != 1:
+    if exact:
+        if len(owner_holders) != 1 or len(exact) != 1:
             raise Step2VisualPremergeFailure("LEASE_DUPLICATE")
         return {
             "created": False,
-            "lease_id": str(existing[0]["lease_id"]),
+            "replaced": False,
+            "lease_id": str(exact[0]["lease_id"]),
             "revision": int(state["revision"]),
             "state_hash": str(state["state_hash"]),
         }
+    if len(owner_holders) > 1:
+        raise Step2VisualPremergeFailure("LEASE_DUPLICATE")
+
+    working = state
+    released_lease_id = ""
+    if owner_holders:
+        stale = owner_holders[0]
+        released_lease_id = str(stale["lease_id"])
+        released = release_scope(
+            working,
+            owner_id=LEASE_OWNER,
+            lease_id=released_lease_id,
+            expected_revision=int(working["revision"]),
+            expected_state_hash=str(working["state_hash"]),
+        )
+        if released["result"].get("allowed") is not True:
+            raise Step2VisualPremergeFailure("STALE_LEASE_RELEASE_BLOCKED:" + str(released["result"].get("decision") or "UNKNOWN"))
+        working = released["state"]
 
     scope = build_scope(
         write_paths=WRITE_PATHS,
         dependency_tokens=("cfb:game-total:games-on-day:step2-visual",),
         shared_resources=("route:cfb:game-total",),
-        resource_identity={
-            "candidate_sha": CANDIDATE_SHA,
-            "main_sha": MAIN_SHA,
-        },
+        resource_identity={"candidate_sha": CANDIDATE_SHA, "main_sha": MAIN_SHA},
         exclusive=False,
     )
     claimed = claim_scope(
-        state,
+        working,
         owner_id=LEASE_OWNER,
         now_utc=_now(),
         scope=scope,
-        expected_revision=int(state["revision"]),
-        expected_state_hash=str(state["state_hash"]),
+        expected_revision=int(working["revision"]),
+        expected_state_hash=str(working["state_hash"]),
         ttl_seconds=1800,
         frozen_paths=(ROUTER_PATH,),
         thawed_paths=(ROUTER_PATH,),
@@ -197,15 +223,22 @@ def _ensure_scope_lease(client) -> dict:
         LEASE_PATH,
         _json_text(updated),
         LEASE_BRANCH,
-        "lease: claim CFB Games on This Day Step 2 visual scope",
+        "lease: replace CFB Games on This Day Step 2 visual scope",
         raw["sha"],
     )
     readback = validate_scope_lease_state(_decode_json(client.content(LEASE_PATH, ref=LEASE_BRANCH), "LEASE_READBACK"))
     holders = [h for h in readback.get("holders", []) if h.get("lease_id") == lease_id]
     if len(holders) != 1 or holders[0].get("owner_id") != LEASE_OWNER:
         raise Step2VisualPremergeFailure("LEASE_READBACK_MISMATCH")
+    if released_lease_id and any(h.get("lease_id") == released_lease_id for h in readback.get("holders", [])):
+        raise Step2VisualPremergeFailure("STALE_LEASE_SURVIVED")
+    identity = (holders[0].get("scope") or {}).get("resource_identity", {})
+    if identity.get("candidate_sha") != CANDIDATE_SHA or identity.get("main_sha") != MAIN_SHA:
+        raise Step2VisualPremergeFailure("LEASE_IDENTITY_READBACK_MISMATCH")
     return {
         "created": True,
+        "replaced": bool(released_lease_id),
+        "released_lease_id": released_lease_id,
         "lease_id": lease_id,
         "revision": int(readback["revision"]),
         "state_hash": str(readback["state_hash"]),
@@ -228,7 +261,6 @@ def execute(app):
     _verify_heads(client)
     thaw = _ensure_exact_thaw(client)
     lease = _ensure_scope_lease(client)
-
     existing = _existing_green_gate(client)
     if existing:
         return {
