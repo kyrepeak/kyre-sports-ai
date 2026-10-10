@@ -60,7 +60,7 @@ PAGE2_STEP8_CSS = r"""
 .gtp2s8-back span{min-width:0;color:#7f9eb0;font-size:8px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gtp2s8-cert{margin:0 auto 18px;padding:9px 11px;border:1px solid rgba(71,224,174,.24);border-radius:12px;background:rgba(8,56,47,.22);color:#80efc3;font-size:8px;font-weight:900;letter-spacing:.04em;text-align:center}
 /* Selected-event Page 2 replaces the old compact Page-1 lower sections only. */
-.gtp2s8-live .gt159-shell>.gt159-section,.gtp2s8-live .gt159-shell>.gt159-final,.gtp2s8-live .gt159-shell>.gt159-top5{display:none!important}
+.gt159-shell>.gtp2s8-live~.gt159-section,.gt159-shell>.gtp2s8-live~.gt159-final,.gt159-shell>.gtp2s8-live~.gt159-top5{display:none!important}
 @media(max-width:760px){.gtp2s8-final{width:100%;max-width:100%;overflow-x:hidden}.gtp2s8-back{align-items:flex-start;flex-direction:column}.gtp2s8-back a{min-height:44px}.gtp2s8-back span{max-width:100%}}
 @media(max-width:480px){.gtp2s8-back{margin-bottom:8px;padding:7px}.gtp2s8-cert{font-size:7px;padding:8px}.gtp2s8-final *{max-width:100%;box-sizing:border-box}}
 </style>
@@ -120,6 +120,35 @@ def _event_id(display_game: Mapping[str, Any]) -> str:
     return str(value or "").strip()
 
 
+def _distribution_line_probabilities(raw: Mapping[str, Any], line: Any) -> tuple[float | None, float | None]:
+    """Read Over/Under probability from the frozen model distribution at a supplied line."""
+    threshold = _number(line)
+    values = raw.get("distribution")
+    if threshold is None or raw.get("distribution_ready") is not True:
+        return None, None
+    if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
+        return None, None
+
+    over = 0.0
+    under = 0.0
+    valid = False
+    for row in values:
+        if not isinstance(row, Mapping):
+            continue
+        total = _number(row.get("total"))
+        probability = _number(row.get("probability"))
+        if total is None or probability is None or probability < 0.0:
+            continue
+        valid = True
+        if total > threshold:
+            over += probability
+        elif total < threshold:
+            under += probability
+    if not valid:
+        return None, None
+    return over, under
+
+
 def _line_scenarios(raw: Mapping[str, Any], display_game: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     supplied = raw.get("line_scenarios")
     if isinstance(supplied, Sequence) and not isinstance(supplied, (str, bytes)):
@@ -129,36 +158,40 @@ def _line_scenarios(raw: Mapping[str, Any], display_game: Mapping[str, Any]) -> 
     line = _market_line(raw, display_game)
     if line in (None, ""):
         return []
+    over, under = _distribution_line_probabilities(raw, line)
     return [{
         "line": line,
-        "over_probability": _percent(raw.get("over_probability")),
-        "under_probability": _percent(raw.get("under_probability")),
+        "over_probability": _percent(over),
+        "under_probability": _percent(under),
     }]
 
 
-def _team_value(raw: Mapping[str, Any], side: str, *suffixes: str) -> Any:
-    nested = _mapping(raw.get(side))
-    for suffix in suffixes:
-        value = _first(raw, f"{side}_{suffix}")
-        if value not in (None, ""):
-            return value
-        value = nested.get(suffix)
-        if value not in (None, ""):
-            return value
-    return None
+def _team_profile_value(profile: Mapping[str, Any], *keys: str) -> Any:
+    return _first(profile, *keys)
 
 
 def _recommendation(raw: Mapping[str, Any], final: Mapping[str, Any], display_game: Mapping[str, Any]) -> dict[str, Any]:
     projected = _projected(raw, final)
     market = _market_line(raw, display_game)
+    active = final.get("betting_pick_active") is True
+    if not active:
+        return {
+            "side": "NO BET",
+            "line": market,
+            "probability": None,
+            "expected_total": projected,
+            "edge": _display_edge(projected, market),
+            "confidence": _first(final, "grade", "confidence_label", "confidence"),
+            "rationale": _first(final, "rationale", "reason", "summary", "explanation") or "Independent Game Total forecast",
+        }
     return {
         "side": _first(final, "recommendation", "pick", "lean", "side"),
         "line": market,
-        "probability": _first(final, "forecast_strength", "probability", "confidence"),
+        "probability": _first(final, "bet_probability", "probability", "win_probability"),
         "expected_total": projected,
         "edge": _display_edge(projected, market),
         "confidence": _first(final, "grade", "confidence_label", "confidence"),
-        "rationale": _first(final, "rationale", "reason", "summary", "explanation"),
+        "rationale": _first(final, "rationale", "reason", "summary", "explanation") or "Independent Game Total forecast",
     }
 
 
@@ -170,7 +203,6 @@ def build_page2_header_html(payload: Mapping[str, Any]) -> str:
     raw = _mapping(payload.get("raw"))
     final = _mapping(payload.get("final"))
     event_id = _event_id(display_game)
-    projected = _projected(raw, final)
     market = _market_line(raw, display_game)
     confidence = _percent(_first(final, "forecast_strength", "confidence"))
     hero = step2.build_page2_matchup_hero_html(
@@ -203,8 +235,10 @@ def build_page2_body_html(payload: Mapping[str, Any]) -> str:
     final = _mapping(payload.get("final"))
     projected = _projected(raw, final)
     market = _market_line(raw, display_game)
-    over = raw.get("over_probability")
-    under = raw.get("under_probability")
+    over, under = _distribution_line_probabilities(raw, market)
+    if over is None and under is None:
+        over = raw.get("over_probability")
+        under = raw.get("under_probability")
     edge = _display_edge(projected, market)
     confidence = _first(final, "grade", "confidence_label") or _percent(_first(final, "forecast_strength", "confidence"))
 
@@ -223,14 +257,14 @@ def build_page2_body_html(payload: Mapping[str, Any]) -> str:
     snapshot = step5.build_team_snapshot_key_drivers_html(
         away_team=away_name,
         home_team=home_name,
-        away_pace=_team_value(raw, "away", "pace", "pace_label", "expected_plays"),
-        home_pace=_team_value(raw, "home", "pace", "pace_label", "expected_plays"),
-        away_explosive=_team_value(raw, "away", "explosive", "explosive_rate", "explosive_efficiency"),
-        home_explosive=_team_value(raw, "home", "explosive", "explosive_rate", "explosive_efficiency"),
-        away_red_zone=_team_value(raw, "away", "red_zone", "red_zone_rate", "red_zone_td_rate"),
-        home_red_zone=_team_value(raw, "home", "red_zone", "red_zone_rate", "red_zone_td_rate"),
-        away_defense=_team_value(raw, "away", "defense", "defensive_efficiency", "points_allowed"),
-        home_defense=_team_value(raw, "home", "defense", "defensive_efficiency", "points_allowed"),
+        away_pace=_team_profile_value(away, "plays_per_game", "expected_plays", "pace", "pace_label"),
+        home_pace=_team_profile_value(home, "plays_per_game", "expected_plays", "pace", "pace_label"),
+        away_explosive=_team_profile_value(away, "yards_per_play", "explosive_rate", "explosive_efficiency", "explosive"),
+        home_explosive=_team_profile_value(home, "yards_per_play", "explosive_rate", "explosive_efficiency", "explosive"),
+        away_red_zone=_percent(_team_profile_value(away, "red_zone_td_rate", "red_zone_rate", "red_zone")),
+        home_red_zone=_percent(_team_profile_value(home, "red_zone_td_rate", "red_zone_rate", "red_zone")),
+        away_defense=_team_profile_value(away, "points_allowed_pg", "points_allowed", "defensive_efficiency", "defense"),
+        home_defense=_team_profile_value(home, "points_allowed_pg", "points_allowed", "defensive_efficiency", "defense"),
         favorable_for=favorable,
     )
 
