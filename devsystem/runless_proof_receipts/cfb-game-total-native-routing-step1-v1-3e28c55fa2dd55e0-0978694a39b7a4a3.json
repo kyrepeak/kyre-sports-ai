@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "cfb_game_total_clean_page_v39.py": "0135dc520dfaa0c2c878cbb17618f17188dfff1a",
+    "devsystem/runless_proof_plans/cfb-game-total-native-routing-step1-v1.json": "663490985e6e8b9d004810b127f48fcd311956da",
+    "devsystem/task_ledgers/cfb-game-total-native-routing-step1-v1.json": "0479212eb8029b51b69ee26fd208e046e74bbb48",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
+    "tests/test_cfb_game_total_native_routing_step1_v1.py": "79d0ffc63e9b2509313e5c5befa83ae3e5adba9b"
+  },
+  "candidate_sha": "3e28c55fa2dd55e0f9d0238a775c3e12edc1412c",
+  "created_at": "2026-10-10T18:58:37.731619+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v28.py": "c154a3ccdd85717bee65f78a53e7da88eba7ead8",
+    "cfb_game_total_clean_page_v33.py": "d1fe3f5a281e7b4ff552116e391278a705789917",
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_page1_v2_step4_activation.py": "97679c0f375d6cf47b69997cec0ab943bb0ad285",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf"
+  },
+  "deployment_identity": "c27419bc1c97f3ab6edc2e508f35da6c1d06c772",
+  "digest": "9181f9f1b022b4fe747dbd3a5c600d38874e5526dede645ec485fc374802b392",
+  "evidence_digests": [
+    "786f9e883829bb937cfb260773776630f9be8c6d6fb428935e62d6bc26eb9361",
+    "5fe67cf0b528c63bf041bb6f8f28b6801c1f059c9236063d171d056655e5faba"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "ebab91634c06e24dd52c4f1d31d6429603e53ef180efdb206ad0a61147a72996",
+  "proof_id": "cfb-game-total-native-routing-step1-v1-3e28c55fa2dd55e0-0978694a39b7a4a3",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-NATIVE-ROUTING-STEP1-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 252,
+    "state_hash": "de6e18c986e3061ec25a2d08620420f477c1bad0251f5284b56727e288f8586c"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-NATIVE-ROUTING-STEP1-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 252,
+    "state_hash": "de6e18c986e3061ec25a2d08620420f477c1bad0251f5284b56727e288f8586c"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-native-routing-step1-v1",
+  "workstream": "cfb-game-total-native-website-rebuild-v1"
+}
