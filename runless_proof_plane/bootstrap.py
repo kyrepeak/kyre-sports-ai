@@ -10,6 +10,6 @@ os.environ["RPP_NFL_RB_WR_STEP1_SUBMIT_ON_START"] = "0"
 os.environ["RPP_NFL_RB_WR_STEP1_CLOSEOUT_ON_START"] = "0"
 
 from .api import app
-from . import universal_live_status_board_step1_prove as prove
+from . import universal_live_status_board_step1_closeout as closeout
 
-prove.install_startup(app)
+closeout.install_startup(app)
