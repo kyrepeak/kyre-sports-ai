@@ -25,6 +25,9 @@ PRIOR_REGISTRY_MAIN_SHA = "3876d4cbe7fe541c94cf3d8e71cc0103b1a6ec66"
 AUTHORIZATION_ID = "AUTH-CFB-GT-GAMES-ON-DAY-STEP1-OWNER-REPAIR-R1"
 OWNER_ID = "api2-cfb-games-on-day-step1"
 OLD_LEASE_ID = "SCOPE-LEASE-C314CE5BCC31A3DD4CF3B305"
+SUPERSEDED_OWNER_ID = "api2-cfb-games-on-day-step1-runtime-refresh"
+SUPERSEDED_BRANCH = "cfb-game-total-games-on-day-step1-runtime-refresh-r1"
+SUPERSEDED_LEDGER = "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-runtime-refresh-r1.json"
 THAW_ID = "THAW-CFB-GT-GAMES-ON-DAY-STEP1-LAYOUT-R1"
 FROZEN_PATH = "kyre_remaining_pages_theme_v1.py"
 FROM_BLOB = "1695d5046107b22e22e2304e33adec622d083785"
@@ -127,6 +130,56 @@ def _reconcile_registry_to_merged_main(client) -> dict:
     return readback
 
 
+def _release_superseded_runtime_refresh(client, state: dict) -> dict:
+    holders = [
+        h for h in state.get("holders", [])
+        if h.get("owner_id") == SUPERSEDED_OWNER_ID
+    ]
+    if not holders:
+        return state
+    if len(holders) != 1:
+        raise OwnerRepairProofFailure("OWNER_REPAIR_DUPLICATE_SUPERSEDED_LEASE")
+
+    ref = client.get_ref(SUPERSEDED_BRANCH)
+    if not ref:
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_BRANCH_MISSING")
+    head = str((ref.get("object") or {}).get("sha") or "")
+    if not head:
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_HEAD_MISSING")
+
+    runs = client.request("GET", f"/commits/{head}/check-runs?per_page=100") or {}
+    if runs.get("check_runs"):
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_HAS_PROOF_ACTIVITY")
+    prs = client.request(
+        "GET",
+        f"/pulls?state=open&head=kyrepeak:{SUPERSEDED_BRANCH}&per_page=10",
+    ) or []
+    if prs:
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_HAS_OPEN_PR")
+
+    ledger = _decode_json(client.content(SUPERSEDED_LEDGER, ref=SUPERSEDED_BRANCH), "SUPERSEDED_LEDGER")
+    runless = ledger.get("runless") if isinstance(ledger.get("runless"), dict) else {}
+    if ledger.get("status") != "CANDIDATE_ASSEMBLY" or runless.get("proof_request_status") != "NOT_SUBMITTED":
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_NOT_IDLE")
+
+    candidate_tree = client.tree_blobs(head)
+    main_tree = client.tree_blobs(EXPECTED_MAIN_SHA)
+    if candidate_tree.get("requirements.txt") != main_tree.get("requirements.txt"):
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_RUNTIME_MUTATION_PRESENT")
+
+    holder = holders[0]
+    released = release_scope(
+        state,
+        owner_id=SUPERSEDED_OWNER_ID,
+        lease_id=str(holder["lease_id"]),
+        expected_revision=int(state["revision"]),
+        expected_state_hash=str(state["state_hash"]),
+    )
+    if released["result"].get("allowed") is not True:
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_RELEASE_BLOCKED")
+    return released["state"]
+
+
 def _rotate_scope_lease(client, registry: dict) -> str:
     raw = client.content(LEASE_PATH, ref=LEASE_BRANCH)
     state = validate_scope_lease_state(_decode_json(raw, "LEASE"))
@@ -150,6 +203,8 @@ def _rotate_scope_lease(client, registry: dict) -> str:
         if released["result"].get("allowed") is not True:
             raise OwnerRepairProofFailure("OWNER_REPAIR_OLD_LEASE_RELEASE_BLOCKED")
         current = released["state"]
+
+    current = _release_superseded_runtime_refresh(client, current)
 
     matching = []
     for holder in current.get("holders", []):
@@ -193,7 +248,7 @@ def _rotate_scope_lease(client, registry: dict) -> str:
         LEASE_PATH,
         _json_text(final_state),
         LEASE_BRANCH,
-        "lease: rotate CFB Step 1 owner repair exact scope",
+        "lease: retire superseded refresh and claim CFB Step 1 owner repair scope",
         raw["sha"],
     )
     lease_id = str(claimed["result"]["lease_id"])
@@ -201,6 +256,8 @@ def _rotate_scope_lease(client, registry: dict) -> str:
     matches = [h for h in readback.get("holders", []) if h.get("lease_id") == lease_id]
     if len(matches) != 1:
         raise OwnerRepairProofFailure("OWNER_REPAIR_LEASE_READBACK_MISMATCH")
+    if any(h.get("owner_id") == SUPERSEDED_OWNER_ID for h in readback.get("holders", [])):
+        raise OwnerRepairProofFailure("OWNER_REPAIR_SUPERSEDED_RELEASE_READBACK_MISMATCH")
     return lease_id
 
 
