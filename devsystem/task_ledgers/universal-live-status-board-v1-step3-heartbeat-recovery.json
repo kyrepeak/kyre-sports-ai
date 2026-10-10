@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "task_id": "universal-live-status-board-v1-step3-heartbeat-recovery",
+  "title": "Universal Live Status Board V1 Step 3 — Heartbeat + Stale-Owner Recovery",
+  "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
+  "workstream": "universal-live-status-board-v1",
+  "step": "3/4",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "e80be10496112f6b43f4652a64ddecbfc921b87a",
+  "branch": "universal-live-status-board-v1-step3-heartbeat-recovery",
+  "problem": "A board owner can appear authoritative after its worker heartbeat has gone stale, leaving a ghost owner that can block safe continuation.",
+  "root_cause": "Step 2 binds board ownership to the authoritative scope lease, but it does not yet reconcile that lease with worker heartbeat liveness and authoritative run terminality.",
+  "patch": "Compose Step-2 lease ownership with the existing MONSTER V5 heartbeat/dead-man engine. Permit recovery only after heartbeat expiry, authoritative-run terminal proof, and old scope-lease expiry. Preserve Step 2A and require a new scope lease before mutation.",
+  "mutation_scope": [
+    "devsystem/universal_live_status_board_recovery_v1.py",
+    "tests/test_devsystem_universal_live_status_board_recovery_v1.py",
+    "devsystem/execution_plans/universal-live-status-board-v1-step3-heartbeat-recovery.json",
+    "devsystem/runless_proof_plans/universal-live-status-board-v1-step3-heartbeat-recovery.json",
+    "devsystem/task_ledgers/universal-live-status-board-v1-step3-heartbeat-recovery.json",
+    "docs/superpowers/plans/2026-10-10-universal-live-status-board-v1-step3-heartbeat-recovery.md"
+  ],
+  "forbidden_scope": [
+    "sports product runtime",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "qualification",
+    "sportsbook",
+    "parallel ownership registry",
+    "mutation authority from recovery receipt",
+    "GitHub Actions fallback"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "scope_lease_id": "SCOPE-LEASE-C9E38A0EC95B6454261D5E0E",
+    "scope_lease_revision": 496,
+    "scope_lease_state_hash": "17e2dcdec789652d023fb92ebb9e04a51a3c1052646c6508bf2251f49bc90a49",
+    "scope_lease_expires_at_utc": "2026-10-10T05:06:30Z",
+    "cross_workstream_state_separation_required": true
+  },
+  "tdd": {
+    "test_first_commit": "769bd123e75f013dd2ddeeae8772642c30d2ed55",
+    "red_observed": true,
+    "red_result": "EXPECTED_RED: Step-3 recovery module absent before implementation",
+    "implementation_commit": "0afde7e971c03f84c03ddb8e19bf8a1627cc0763",
+    "green_observed": false,
+    "green_result": null,
+    "compile_result": null
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-UNIVERSAL-LIVE-STATUS-BOARD-V1-STEP3-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP3_HEARTBEAT_STALE_OWNER_RECOVERY_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RUN_EXACT_STEP3_TEST_MATRIX_THEN_SUBMIT_ONE_EXACT_HEAD_RUNLESS_PROOF"
+}
