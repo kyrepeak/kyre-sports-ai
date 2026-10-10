@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py": "384616375610b6940eee161f545d1cd9ff841531",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step4-interaction-mobile-v1.json": "6bb8c80f3a6a7e15ad44e297d291e75c729c5021",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step4-interaction-mobile-v1.json": "e6fa8b757b787d5e5704f87c809197098d3548df",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "e5d23b77d628d17744c6249f6c87d3b6935bb9b0",
+    "tests/test_cfb_game_total_games_on_day_step4_interaction_mobile_v1.py": "e7b173f32741bdb10aae64a76388dad9d0e72c62"
+  },
+  "candidate_sha": "c2de3f273528dea86c640658875c75d71ad7f22a",
+  "created_at": "2026-10-10T16:32:19.594630+00:00",
+  "dependency_map": {
+    "cfb_game_total_games_on_day_step1_layout_v1.py": "8c2697143484ac42769da3274169355eac101438",
+    "cfb_game_total_games_on_day_step2_visual_v1.py": "0c9cd7abfc7ac5df49081cfa02fb741518da392b",
+    "cfb_game_total_games_on_day_step3_details_v1.py": "8bda1053e79a78f3992e900b738139a9c9b4e9e7",
+    "cfb_schedule_v1.py": "30379330a7f2f38f922c7083c1109c95eaf01b11",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf"
+  },
+  "deployment_identity": "3497379760a2e76b72d5076294b7a2141df548b3",
+  "digest": "b0e7e0431d1f2bc888435f758240d2333a25b97154371a76bbda0f8a73ad704e",
+  "evidence_digests": [
+    "4f003b7b9dfee06df08d0f341ca7457a759700fe21106aa806924f2e3955ae7b",
+    "d4c871ee3083f859c65d8aa57ed6bbc58bf44cf34c1779202c95d028774d983a"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "44d3ce65033253a3bb3fade6c3a4274c45f12aa5939de4ff6664ca243f61c251",
+  "proof_id": "cfb-game-total-games-on-day-step4-interaction-mobile-v1-c2de3f273528dea8-098aed8a17504eaa",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-GAMES-ON-DAY-STEP4-INTERACTION-MOBILE-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 250,
+    "state_hash": "81a1c805736a984353c52bffdb1e1e349f05c587b78e6e40f0dd83bd7743da66"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-GAMES-ON-DAY-STEP4-INTERACTION-MOBILE-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 250,
+    "state_hash": "81a1c805736a984353c52bffdb1e1e349f05c587b78e6e40f0dd83bd7743da66"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-games-on-day-step4-interaction-mobile-v1",
+  "workstream": "cfb-game-total-games-on-day-v1"
+}
