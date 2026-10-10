@@ -2,6 +2,43 @@
   "active_thaws": [
     {
       "files": {
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": {
+          "from_blob": "154760d34b4f33aed1efafdf2b026262eb0e332b",
+          "to_blob": "7bcb675379ef63f21fd0e6400c9076e746a69b9a"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "570a7205fe1b79ebff3b4635f1cd3b30cd32fab5",
+      "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-STEP2-VISUAL-R1"
+    },
+    {
+      "files": {
+        "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
+          "from_blob": "6cfdb7303062780415428df33780bbce31f8b3e5",
+          "to_blob": "92b4467e7e45e5ba551a5734e162001bda26e725"
+        },
+        "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
+          "from_blob": "2ee62ee7094670d33fe631a6408e3f0911d950fb",
+          "to_blob": "3f4fe587aee08ca26f88ecba46ee2c010f6a56ab"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "f93e7364a3592224eec787ad7574fd94131945a6",
+      "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
+    },
+    {
+      "files": {
+        "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
+          "from_blob": "2ee62ee7094670d33fe631a6408e3f0911d950fb",
+          "to_blob": "3f4fe587aee08ca26f88ecba46ee2c010f6a56ab"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "5bbe40b203f1e7879cae631cb199a744b97fcf69",
+      "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1"
+    },
+    {
+      "files": {
         "devsystem/change_classifier_v1.py": {
           "from_blob": "352074abc9d5f807ef6bfad593743c19cef49e00",
           "to_blob": "845651ca33ac69bf1d4efba945dd3824ad2d63c2"
@@ -29,32 +66,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
       "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
-    },
-    {
-      "files": {
-        "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
-          "from_blob": "2ee62ee7094670d33fe631a6408e3f0911d950fb",
-          "to_blob": "3f4fe587aee08ca26f88ecba46ee2c010f6a56ab"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "5bbe40b203f1e7879cae631cb199a744b97fcf69",
-      "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1"
-    },
-    {
-      "files": {
-        "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
-          "from_blob": "6cfdb7303062780415428df33780bbce31f8b3e5",
-          "to_blob": "92b4467e7e45e5ba551a5734e162001bda26e725"
-        },
-        "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
-          "from_blob": "2ee62ee7094670d33fe631a6408e3f0911d950fb",
-          "to_blob": "3f4fe587aee08ca26f88ecba46ee2c010f6a56ab"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "f93e7364a3592224eec787ad7574fd94131945a6",
-      "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
     }
   ],
   "entries": {
@@ -2911,9 +2922,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 243,
+  "revision": 244,
   "schema_version": 1,
   "source_main_sha": "403e3cb9d7b0e11c4bfc15de512fb1a862e88549",
-  "state_hash": "ed39a4d6e18eea0cfbc2d5445c66ba09208d7588b3c9320a511ba7920ed19781",
+  "state_hash": "fccf2944f55a2126af357783c8124220ea53aa3d3711058695723408ef2d91f7",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
