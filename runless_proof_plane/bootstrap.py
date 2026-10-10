@@ -10,6 +10,6 @@ os.environ["RPP_NFL_RB_WR_STEP1_SUBMIT_ON_START"] = "0"
 os.environ["RPP_NFL_RB_WR_STEP1_CLOSEOUT_ON_START"] = "0"
 
 from .api import app
-from .cfb_game_total_page2_step8_app_thaw import install_startup as install_cfb_page2_step8_app_thaw
+from .cfb_game_total_page2_step8_prove import install_startup as install_cfb_page2_step8_proof
 
-install_cfb_page2_step8_app_thaw(app)
+install_cfb_page2_step8_proof(app)
