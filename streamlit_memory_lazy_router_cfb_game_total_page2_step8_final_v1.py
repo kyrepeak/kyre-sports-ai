@@ -47,7 +47,11 @@ def _query_value(key: str) -> str:
 
 
 def _selected_game_total() -> bool:
-    """Activate Page 2 only after the frozen exact Game-Total route owns a real event."""
+    """Activate Page 2 once a valid Game-Total query owns an exact event."""
+    if not _query_value(EVENT_QUERY_KEY):
+        return False
+    if not live_owner._game_total_route_active():
+        live_owner._restore_game_total_route_from_query()
     return bool(live_owner._game_total_route_active() and _query_value(EVENT_QUERY_KEY))
 
 

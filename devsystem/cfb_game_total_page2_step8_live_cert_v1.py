@@ -55,7 +55,7 @@ class Step8LiveCertFailure(RuntimeError):
 
 
 def route_handoff(base_url: str = PRODUCTION_URL) -> str:
-    return base_url.rstrip("/") + "/?ks_jump_sport=CFB&ks_jump_market=Game+Total"
+    return base_url.rstrip("/") + "/?ks_sport=College+Football&ks_cfb_market=Game+Total"
 
 
 def _visible(frame: Any, testid: str) -> None:
@@ -89,10 +89,18 @@ def _exact_event_id(url: str) -> str:
 def _discover_exact_event(page: Any, base_url: str) -> tuple[str, str, Any]:
     page.goto(route_handoff(base_url), wait_until="domcontentloaded", timeout=120000)
     frame, scans = base._find_app_frame(page)
+
+    # V163 synchronizes the selected official ESPN event into the Streamlit
+    # wrapper URL. When Step 8 sees that exact identity it immediately activates
+    # Page 2, so the Page-1 selector link may no longer exist in the mounted DOM.
+    current_event_id = _exact_event_id(page.url)
+    if current_event_id:
+        return page.url, current_event_id, scans
+
     frame.locator(f'a[href*="{EVENT_QUERY_KEY}="]').first.wait_for(state="attached", timeout=90000)
     href = frame.locator(f'a[href*="{EVENT_QUERY_KEY}="]').first.get_attribute("href") or ""
     if not href:
-        raise Step8LiveCertFailure("No exact CFB Game Total selected-event link was discoverable")
+        raise Step8LiveCertFailure("No exact CFB Game Total selected-event identity was discoverable")
     selected_url = urljoin(page.url, href)
     event_id = _exact_event_id(selected_url)
     if not event_id:

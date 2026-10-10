@@ -226,3 +226,10 @@ def test_review_regression_forecast_strength_is_not_bet_probability() -> None:
     assert "NO BET" in best
     assert "Independent Game Total forecast" in best
     assert "<article><span>Probability</span><strong>—</strong></article>" in best
+
+
+def test_step8_router_restores_query_route_before_selected_event_activation() -> None:
+    body = _read(ROUTER)
+    assert "live_owner._restore_game_total_route_from_query()" in body
+    assert "if not live_owner._game_total_route_active():" in body
+    assert "return bool(live_owner._game_total_route_active() and _query_value(EVENT_QUERY_KEY))" in body
