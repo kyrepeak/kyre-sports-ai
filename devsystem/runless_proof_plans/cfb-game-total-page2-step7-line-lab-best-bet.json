@@ -8,9 +8,16 @@
       "pytest",
       "-q",
       "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "cfb_game_total_page2_step7_line_lab_best_bet_v1.py"
     ]
   ],
   "artifacts": [
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
     "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
     "devsystem/execution_plans/cfb-game-total-page2-step7-line-lab-best-bet.json",
     "devsystem/runless_proof_plans/cfb-game-total-page2-step7-line-lab-best-bet.json"
