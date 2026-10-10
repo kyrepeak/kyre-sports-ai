@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "cfb_game_total_games_on_day_step1_layout_v1.py": "4c5639f2d4f62273309780974880cb02614e80dc",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step1-card-layout-v1.json": "e2d00c3115cf906a7bd9bc50686632aacc1cd843",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-card-layout-v1.json": "fce5bd6c6138a0a8c09f773695873d8ab4c3faff",
+    "kyre_remaining_pages_theme_v1.py": "97d735edd788c554051ea7864e2cad50cdec82bc",
+    "tests/test_cfb_game_total_games_on_day_step1_layout_v1.py": "ef3b52d7860c290a8de7efa143757b76ea11088c"
+  },
+  "candidate_sha": "b8b3e77e9106a6240c6abddfbb6f4f22ea2d5d07",
+  "created_at": "2026-10-10T05:51:23.963647+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v14.py": "030952d34178fb148c4d3ad7470f1bbc033bc8ff",
+    "cfb_game_total_page1_v2_step4_side_market_completeness_v1.py": "e48996d53a7a51a102c57e7b822ee269cd750899",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf"
+  },
+  "deployment_identity": "c0108330e42bbc7f8c2fd4f31d01a16d5d51b3e4",
+  "digest": "6879c15961b5d721dd13fb7c90cd3788f46fdae53ff422b85c1052cdd4e21381",
+  "evidence_digests": [
+    "1596bdcbdcd27bf098d18de8bb4835633210040f6657fbc0be40dd6f201c05e0",
+    "39b8036792af779314cae4182ab37d4cb3d6f175a84fa59e3552f04efdc29388"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "bc583d71308ca40ee2fa80ff9b1e4249040b3e6362e2a4d57810c4f39457f601",
+  "proof_id": "cfb-game-total-games-on-day-step1-card-layout-v1-b8b3e77e9106a624-c92ebff73db7ee4b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-GAMES-ON-DAY-STEP1-LAYOUT-R1"
+    ],
+    "revision": 239,
+    "state_hash": "010fa18d2dfa3d2c1026d1c0a5bf25925fb6624169ccda4f9e3bd76e3e115c93"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-GAMES-ON-DAY-STEP1-LAYOUT-R1"
+    ],
+    "revision": 239,
+    "state_hash": "010fa18d2dfa3d2c1026d1c0a5bf25925fb6624169ccda4f9e3bd76e3e115c93"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-games-on-day-step1-card-layout-v1",
+  "workstream": "cfb-game-total-games-on-day-v1"
+}
