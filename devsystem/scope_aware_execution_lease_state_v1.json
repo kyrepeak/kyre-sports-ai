@@ -1,37 +1,11 @@
 {
   "generation": 301,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-10T06:44:51Z",
-      "expires_at_utc": "2026-10-10T07:44:51Z",
-      "generation": 301,
-      "heartbeat_at_utc": "2026-10-10T06:44:51Z",
-      "lease_id": "SCOPE-LEASE-1E6EB6A9E37AEFB89F845E21",
-      "owner_id": "api2-cfb-games-on-day-step1-post-purge",
-      "scope": {
-        "dependency_tokens": [
-          "cfb_game_total_v163_post_purge_activation"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "candidate_sha": "58f237846007e2a0d036471d238b6c6fd9edcdc7",
-          "main_sha": "f15fe559fdaab801deb77c43c6451bc811159fed"
-        },
-        "shared_resources": [
-          "route:cfb:game-total"
-        ],
-        "write_paths": [
-          "cfb_game_total_games_on_day_step1_layout_v1.py",
-          "tests/test_cfb_game_total_games_on_day_step1_layout_v1.py"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 514,
+  "revision": 515,
   "schema_version": 1,
-  "state_hash": "5245fadf6c36829563359a34e58c8a794124a9e5bfa9f83781a70fb87c592791",
+  "state_hash": "8d41aeac9e45aa70ffae9f87740265084dd814c19901bfa6039b0ec2565410eb",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
