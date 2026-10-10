@@ -1,0 +1,40 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "6cfdb7303062780415428df33780bbce31f8b3e5",
+    "devsystem/execution_plans/cfb-game-total-page2-step7-line-lab-best-bet.json": "410636ca4877a94d8f6106f7f2a3ee222b67d642",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step7-line-lab-best-bet.json": "6ed20ab38cae1ca4d73098ddd2dcbc600270ad4d",
+    "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "2ee62ee7094670d33fe631a6408e3f0911d950fb"
+  },
+  "candidate_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
+  "created_at": "2026-10-10T00:22:28.892389+00:00",
+  "dependency_map": {
+    "cfb_game_total_page2_step3_integrated_flow_v1.py": "6d9c930095bf46c424235bc6704e5509f946193c",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py": "f0dde67fac3cfca511a27bee74275bf0ae809819",
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py": "bca6b5afa14a5e7747c76dfbb7fd7b670819464a",
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py": "c39bb9a5df699f367e87b8f10328f7e3f5a1a8bc"
+  },
+  "deployment_identity": "1e373ce92d7e2b45f4854094b382c031cf438b0a",
+  "digest": "4c0d5d82dfc742e4c9f27c3142a1c2ab1d72d5e2287e4ff00479237ad6292b9c",
+  "evidence_digests": [
+    "e42747236daf5d4f289af7fe72eeb543ae39634c3ea08ddcdc2e8310c02c4b00",
+    "2c374252e1e95850460cf4fb9ac93b4bd5ddde79b262c29a9852b6786ecd9cb1"
+  ],
+  "failure_class": "NONE",
+  "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP7_LINE_LAB_BEST_BET_FROZEN",
+  "github_actions_fallback": 0,
+  "premerge_candidate_sha": "54d950f75b6dfebc49c36840b6eb3ab5ec75e5bd",
+  "prior_digest": "e42747236daf5d4f289af7fe72eeb543ae39634c3ea08ddcdc2e8310c02c4b00",
+  "project": "API2",
+  "proof_id": "cfb-game-total-page2-step7-postmerge-c7bb9383c510c79d",
+  "registry_after": {
+    "revision": 228,
+    "state_hash": "2c374252e1e95850460cf4fb9ac93b4bd5ddde79b262c29a9852b6786ecd9cb1"
+  },
+  "registry_before": {
+    "revision": 227,
+    "state_hash": "d49d46a1d7d45b0e030679a9a9cdebd736bbe17ca95c8b9df9f11983f025550c"
+  },
+  "step": "7/8-postmerge-freeze",
+  "task_id": "cfb-game-total-page2-step7-line-lab-best-bet",
+  "workstream": "cfb-game-total-page2-v1"
+}
