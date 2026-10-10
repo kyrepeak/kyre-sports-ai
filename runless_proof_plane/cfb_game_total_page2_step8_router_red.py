@@ -6,9 +6,9 @@ from threading import Thread
 
 from .workspace import CandidateWorkspace
 
-CANDIDATE_SHA = "4e292b2f1dd325e17cca63505a26f225fe4b9905"
+CANDIDATE_SHA = "e8b5546a973f3d91b4d62ad1463ae7d736688863"
 TEST = "tests/test_cfb_game_total_page2_step8_final_v1.py"
-TEST_NAME = "test_step8_router_restores_query_route_before_selected_event_activation"
+TEST_NAME = "test_step8_restores_frozen_v38_verified_total_before_page2_analysis"
 
 
 def execute(app) -> dict:
@@ -26,9 +26,9 @@ def execute(app) -> dict:
         )
     output = ((completed.stdout or "") + "\n" + (completed.stderr or ""))[-6000:]
     if completed.returncode == 0:
-        raise RuntimeError("STEP8_ROUTER_RED_UNEXPECTED_PASS")
+        raise RuntimeError("STEP8_MARKET_ENRICHMENT_RED_UNEXPECTED_PASS")
     if TEST_NAME not in output or "AssertionError" not in output:
-        raise RuntimeError("STEP8_ROUTER_RED_WRONG_FAILURE:" + output)
+        raise RuntimeError("STEP8_MARKET_ENRICHMENT_RED_WRONG_FAILURE:" + output)
     return {
         "status": "RED_EXPECTED",
         "candidate_sha": CANDIDATE_SHA,
@@ -51,6 +51,6 @@ def install_startup(app):
 
     @app.on_event("startup")
     def _start():
-        Thread(target=_run, name="cfb-gt-page2-step8-router-red", daemon=True).start()
+        Thread(target=_run, name="cfb-gt-page2-step8-market-enrichment-red", daemon=True).start()
 
     return app
