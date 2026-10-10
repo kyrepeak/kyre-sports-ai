@@ -5,7 +5,7 @@ import subprocess
 import sys
 from datetime import datetime, timedelta
 from threading import Thread
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 from zoneinfo import ZoneInfo
 
 import requests
@@ -60,6 +60,11 @@ def _api_games(game_date: str) -> dict:
         return {"date": game_date, "error": type(exc).__name__, "detail": str(exc)[:500], "game_count": 0}
 
 
+def _event_id(url: str) -> str:
+    values = parse_qs(urlparse(url).query).get(EVENT_QUERY_KEY) or []
+    return str(values[-1] if values else "").strip()
+
+
 def execute() -> dict:
     install = subprocess.run(
         [sys.executable, "-m", "playwright", "install", "chromium"],
@@ -88,7 +93,12 @@ def execute() -> dict:
         try:
             page = browser.new_page(viewport={"width": 390, "height": 844})
             page.goto(route, wait_until="domcontentloaded", timeout=120000)
-            frame, scans = base._find_app_frame(page)
+            first_frame, first_scans = base._find_app_frame(page)
+            selected_url = page.url
+            selected_event_id = _event_id(selected_url)
+            if selected_event_id:
+                page.goto(selected_url, wait_until="domcontentloaded", timeout=120000)
+            frame, selected_scans = base._find_app_frame(page)
             try:
                 frame.locator('[data-testid="gtp2s8-final"]').first.wait_for(state="visible", timeout=90000)
             except Exception:
@@ -134,8 +144,11 @@ def execute() -> dict:
                 "status": "GREEN",
                 "chosen": chosen,
                 "route": route,
+                "selected_url": selected_url,
+                "selected_event_id": selected_event_id,
                 "page_url": page.url,
-                "frame_scans": scans,
+                "first_frame_scans": first_scans,
+                "selected_frame_scans": selected_scans,
                 "required_testid_counts": required_counts,
                 "pending_count": body_lower.count("pending"),
                 "pending_contexts": pending_contexts,
