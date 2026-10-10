@@ -2,8 +2,9 @@
 
 Presentation-only additive successor for the frozen V163 visible game selector.
 The existing selector continues to own event identity, links, selected state,
-and matchup behavior. This layer only appends a narrowly scoped CSS override so
-mobile matchup cards stack full-width instead of clipping in a horizontal row.
+and matchup behavior. This layer appends one narrowly scoped mobile CSS override
+and rebinds that override to the freshly imported V163 owner after the exact CFB
+Game Total route performs its module purge/reimport cycle.
 
 No model, projection, probability, API, sportsbook, schedule, or other-sport
 behavior is changed.
@@ -12,14 +13,17 @@ from __future__ import annotations
 
 import importlib
 from threading import RLock
+from typing import Any
 
 MODEL_VERSION = "CFB GAME TOTAL • GAMES ON THIS DAY • STEP 1 CARD LAYOUT V1"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 MAY_MODIFY_OTHER_SPORTS = False
 NETWORK_CALLS_ADDED = 0
+TARGET_PAGE = "cfb_game_total_clean_page_v38"
 
 _INSTALL_MARKER = "data-kyre-cfb-games-on-day-step1-layout=\"v1\""
+_INSTALL_ATTR = "_cfb_games_on_day_step1_post_purge_installed"
 _LOCK = RLock()
 
 STEP1_CSS = r"""
@@ -67,16 +71,61 @@ STEP1_CSS = r"""
 """
 
 
+def _append_step1_css(owner: Any) -> bool:
+    current_css = str(getattr(owner, "_V163_CSS", ""))
+    if not current_css:
+        raise RuntimeError("CFB Game Total V163 selector CSS owner unavailable")
+    if _INSTALL_MARKER in current_css:
+        return False
+    owner._V163_CSS = current_css + STEP1_CSS
+    return True
+
+
 def install_games_on_day_step1_layout() -> bool:
-    """Append one idempotent CSS override to the frozen selector owner."""
+    """Install Step-1 CSS now and rebind it after each exact-route purge."""
     with _LOCK:
+        # Immediate compatibility for a V14 owner that is already imported.
         owner = importlib.import_module("cfb_game_total_clean_page_v14")
-        current_css = str(getattr(owner, "_V163_CSS", ""))
-        if _INSTALL_MARKER in current_css:
+        _append_step1_css(owner)
+
+        root = importlib.import_module("streamlit_memory_lazy_router_v1")
+        render_owner = importlib.import_module("streamlit_memory_lazy_router_v160")
+        route_owner = importlib.import_module("streamlit_memory_lazy_router_v181")
+        current = render_owner._render_exact_game_total_surface
+        if getattr(current, _INSTALL_ATTR, False):
             return True
-        if not current_css:
-            raise RuntimeError("CFB Game Total V163 selector CSS owner unavailable")
-        owner._V163_CSS = current_css + STEP1_CSS
+        original = current
+
+        def repaired_render_exact_game_total_surface(*args: Any, **kwargs: Any):
+            if not route_owner._game_total_route_active():
+                return original(*args, **kwargs)
+
+            original_import = root._import
+            restores: list[tuple[Any, str]] = []
+
+            def import_with_step1(name: str):
+                page = original_import(name)
+                if str(name) == TARGET_PAGE:
+                    fresh_owner = importlib.import_module("cfb_game_total_clean_page_v14")
+                    current_css = str(getattr(fresh_owner, "_V163_CSS", ""))
+                    if not current_css:
+                        raise RuntimeError("Fresh CFB Game Total V163 selector CSS owner unavailable")
+                    if _INSTALL_MARKER not in current_css:
+                        fresh_owner._V163_CSS = current_css + STEP1_CSS
+                        restores.append((fresh_owner, current_css))
+                return page
+
+            root._import = import_with_step1
+            try:
+                return original(*args, **kwargs)
+            finally:
+                root._import = original_import
+                for fresh_owner, original_css in reversed(restores):
+                    fresh_owner._V163_CSS = original_css
+
+        setattr(repaired_render_exact_game_total_surface, _INSTALL_ATTR, True)
+        setattr(repaired_render_exact_game_total_surface, "_cfb_games_on_day_step1_original", original)
+        render_owner._render_exact_game_total_surface = repaired_render_exact_game_total_surface
         return True
 
 
@@ -87,5 +136,6 @@ __all__ = [
     "NETWORK_CALLS_ADDED",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP1_CSS",
+    "TARGET_PAGE",
     "install_games_on_day_step1_layout",
 ]
