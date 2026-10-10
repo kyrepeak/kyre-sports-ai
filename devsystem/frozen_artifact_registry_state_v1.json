@@ -55,17 +55,6 @@
       "status": "ACTIVE",
       "target_head_sha": "f93e7364a3592224eec787ad7574fd94131945a6",
       "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
-    },
-    {
-      "files": {
-        "requirements.txt": {
-          "from_blob": "2904ed539d5a2e8a195675b96b756fb6ba6a3c74",
-          "to_blob": "1022d95a71b3c04aa5310b5057de74978e4cffa4"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "b4ff5f9271e5e3f65dc8446ef62495ed1240502c",
-      "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-STEP1-RUNTIME-REFRESH-R1"
     }
   ],
   "entries": {
@@ -2643,7 +2632,7 @@
         "devsystem/wnba_data_completeness_repair_v1_step2_player_game_stats_cert.py": "1480251de1bb8e9dd4668b5b3ea5fe8a91f2a6d6",
         "devsystem/wnba_data_completeness_repair_v1_step2_rebound_alias_cert.py": "d2bdfcb1abc7e2392121bd2bbcd8e8b4122cb20b",
         "devsystem/wnba_data_completeness_repair_v1_step2_selected_day_handoff_cert.py": "46046650380b4533f830252b33fddb5cf5afb088",
-        "requirements.txt": "2904ed539d5a2e8a195675b96b756fb6ba6a3c74",
+        "requirements.txt": "1022d95a71b3c04aa5310b5057de74978e4cffa4",
         "sports_api/wnba_pra_speed_v3_step3_espn_history.py": "385ebd3dea99516281d70179d7927aa1ae7042b6",
         "tests/test_wnba_data_completeness_repair_v1_step2.py": "58dc6b2b402296ea8f175b1d20a3320fc3ce8b0c",
         "tests/test_wnba_data_completeness_repair_v1_step2_live_history.py": "d7ed015c8ba71bc3b7378cbfc821c753e06a38c0",
@@ -2741,7 +2730,7 @@
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step8-runtime-recovery.json": "5a92ebd90a14a55a874bff16a0acd3580805cde4",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step8-runtime-recovery.json": "c98909c6014fe6178a37d3fadba17165da287553",
         "devsystem/wnba_pra_repair_v1_step8_runtime_recovery_cert.py": "eec7e3d81d3194a02428b12babab5fad52b0d070",
-        "requirements.txt": "2904ed539d5a2e8a195675b96b756fb6ba6a3c74",
+        "requirements.txt": "1022d95a71b3c04aa5310b5057de74978e4cffa4",
         "tests/test_wnba_pra_repair_v1_step8.py": "ae1ee8512f96f95672e6baa4ac7da758dcecebe3"
       },
       "checkpoint_id": "WNBA_PRA_REPAIR_V1_STEP8_FROZEN",
@@ -2910,9 +2899,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 241,
+  "revision": 242,
   "schema_version": 1,
-  "source_main_sha": "60da7cbd5cf05413f2c9d8ce3e8921adb2f58648",
-  "state_hash": "5398fd7e534d8d626175486fe30f0d39c9c6639106e0f9e606484bb6977426eb",
+  "source_main_sha": "f15fe559fdaab801deb77c43c6451bc811159fed",
+  "state_hash": "f218d7954d81b2d476c2acda2b9b53d18c72d1d88290d62c2499ab8220f4e56e",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
