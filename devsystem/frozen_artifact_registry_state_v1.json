@@ -2571,6 +2571,19 @@
       "source_main_sha": "20f23cae36b70ba702657546296560c5432203dc",
       "status": "FROZEN"
     },
+    "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP2_AUTHORITATIVE_CHAT_OWNERSHIP_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json": "a75ba5bf372ea0561c538db6646cb32a9bfe91cd",
+        "devsystem/runless_proof_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json": "a46cf7b36f31c5ff2d7fba965918b4ec499b0265",
+        "devsystem/task_ledgers/universal-live-status-board-v1-step2-authoritative-chat-ownership.json": "9d297fa0d934d41ca7ebc1baedf1cfea7ccf6ede",
+        "devsystem/universal_live_status_board_ownership_v1.py": "8e632b9be8395e0255dfc6406147cc40258c44ed",
+        "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step2-authoritative-chat-ownership.md": "46b87ae0721c65d55092f0659d95104e24a8d80f",
+        "tests/test_devsystem_universal_live_status_board_ownership_v1.py": "c0a6b26d191f3a544b1de639daa171a2ef1cac38"
+      },
+      "checkpoint_id": "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP2_AUTHORITATIVE_CHAT_OWNERSHIP_FROZEN",
+      "source_main_sha": "e80be10496112f6b43f4652a64ddecbfc921b87a",
+      "status": "FROZEN"
+    },
     "WNBA_DATA_COMPLETENESS_REPAIR_V1_STEP1_FROZEN": {
       "artifacts": {
         "devsystem/runless_proof_plans/wnba-data-completeness-repair-v1-step1-source-id-truth.json": "d065688995c5be46076a005d00d5068efbc0210c",
@@ -2861,9 +2874,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 235,
+  "revision": 236,
   "schema_version": 1,
-  "source_main_sha": "20f23cae36b70ba702657546296560c5432203dc",
-  "state_hash": "5ffe9963a665cc0ed7688862d4aa51cc5b39487268ba44640ef4971b25d445dc",
+  "source_main_sha": "e80be10496112f6b43f4652a64ddecbfc921b87a",
+  "state_hash": "115ce53d9a0a3ab82786feb31b760d2f4e92bbb9ced1a76349268d826edf581e",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
