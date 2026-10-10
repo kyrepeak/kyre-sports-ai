@@ -55,6 +55,17 @@
       "status": "ACTIVE",
       "target_head_sha": "f93e7364a3592224eec787ad7574fd94131945a6",
       "thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1"
+    },
+    {
+      "files": {
+        "requirements.txt": {
+          "from_blob": "2904ed539d5a2e8a195675b96b756fb6ba6a3c74",
+          "to_blob": "1022d95a71b3c04aa5310b5057de74978e4cffa4"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "b4ff5f9271e5e3f65dc8446ef62495ed1240502c",
+      "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-STEP1-RUNTIME-REFRESH-R1"
     }
   ],
   "entries": {
@@ -2899,9 +2910,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 240,
+  "revision": 241,
   "schema_version": 1,
   "source_main_sha": "60da7cbd5cf05413f2c9d8ce3e8921adb2f58648",
-  "state_hash": "3a0a6bbf587cc725c172af261cab58bc949648f52a99c881d109b422ca5fe6ac",
+  "state_hash": "5398fd7e534d8d626175486fe30f0d39c9c6639106e0f9e606484bb6977426eb",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
