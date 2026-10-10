@@ -1,11 +1,52 @@
 {
-  "generation": 286,
-  "holders": [],
+  "generation": 287,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-10T03:38:00Z",
+      "expires_at_utc": "2026-10-10T04:38:00Z",
+      "generation": 287,
+      "heartbeat_at_utc": "2026-10-10T03:38:00Z",
+      "lease_id": "SCOPE-LEASE-02767A5C851989556C4788B3",
+      "owner_id": "universal-live-status-board-v1-step1-finalization",
+      "scope": {
+        "dependency_tokens": [
+          "mandatory-status-schema",
+          "runless-final-gate",
+          "universal-live-status-board-v1-step1"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "main_sha": "3065e960d3363bf6f3d70252c906b9590e7293e9",
+          "phase": "finalization",
+          "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
+          "step": "1/4"
+        },
+        "shared_resources": [
+          "frozen-registry",
+          "runless-proof-plane"
+        ],
+        "write_paths": [
+          "devsystem/execution_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/runless_proof_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+          "devsystem/runless_proof_receipts",
+          "devsystem/task_ledgers/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+          "devsystem/universal_live_status_board_v1.py",
+          "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step1-mandatory-status-schema.md",
+          "docs/superpowers/specs/2026-10-09-universal-live-status-board-v1-design.md",
+          "runless_proof_plane/bootstrap.py",
+          "runless_proof_plane/universal_live_status_board_step1_closeout.py",
+          "runless_proof_plane/universal_live_status_board_step1_prove.py",
+          "tests/test_devsystem_universal_live_status_board_v1.py"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 484,
+  "revision": 485,
   "schema_version": 1,
-  "state_hash": "a12d83514a27231ed3666f9e552ccaccc25bafde588d83adf9d237263e64f003",
+  "state_hash": "6acca5f91b13ea1ab5f7441b0e33fdfbea4223bb97a33bea3472df15c536fdf5",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
