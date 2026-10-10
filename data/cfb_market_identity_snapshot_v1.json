@@ -1,0 +1,1712 @@
+{
+  "date_counts": {
+    "2026-10-10": 94,
+    "2026-10-13": 2,
+    "2026-10-15": 3
+  },
+  "games": [
+    {
+      "away_team": "Georgia Bulldogs",
+      "away_team_id": "61",
+      "broadcast": "ABC",
+      "event_id": "401856712",
+      "game_date": "2026-10-10",
+      "home_team": "Alabama Crimson Tide",
+      "home_team_id": "333",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Bryant-Denny Stadium"
+    },
+    {
+      "away_team": "Tennessee Volunteers",
+      "away_team_id": "2633",
+      "broadcast": "SEC Network",
+      "event_id": "401856713",
+      "game_date": "2026-10-10",
+      "home_team": "Arkansas Razorbacks",
+      "home_team_id": "8",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Donald W. Reynolds Razorback Stadium"
+    },
+    {
+      "away_team": "South Carolina Gamecocks",
+      "away_team_id": "2579",
+      "broadcast": "SEC Network",
+      "event_id": "401856714",
+      "game_date": "2026-10-10",
+      "home_team": "Florida Gators",
+      "home_team_id": "57",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Ben Hill Griffin Stadium"
+    },
+    {
+      "away_team": "LSU Tigers",
+      "away_team_id": "99",
+      "broadcast": "ESPN",
+      "event_id": "401856715",
+      "game_date": "2026-10-10",
+      "home_team": "Kentucky Wildcats",
+      "home_team_id": "96",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Kroger Field"
+    },
+    {
+      "away_team": "Texas A&M Aggies",
+      "away_team_id": "245",
+      "broadcast": "ABC, Disney+",
+      "event_id": "401856716",
+      "game_date": "2026-10-10",
+      "home_team": "Missouri Tigers",
+      "home_team_id": "142",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Memorial Stadium"
+    },
+    {
+      "away_team": "Texas Longhorns",
+      "away_team_id": "251",
+      "broadcast": "ABC",
+      "event_id": "401856717",
+      "game_date": "2026-10-10",
+      "home_team": "Oklahoma Sooners",
+      "home_team_id": "201",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Cotton Bowl"
+    },
+    {
+      "away_team": "Ole Miss Rebels",
+      "away_team_id": "145",
+      "broadcast": "ESPN, Disney+",
+      "event_id": "401856718",
+      "game_date": "2026-10-10",
+      "home_team": "Vanderbilt Commodores",
+      "home_team_id": "238",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "FirstBank Stadium"
+    },
+    {
+      "away_team": "Hawai'i Rainbow Warriors",
+      "away_team_id": "62",
+      "broadcast": "FS1",
+      "event_id": "401856808",
+      "game_date": "2026-10-10",
+      "home_team": "Arizona State Sun Devils",
+      "home_team_id": "9",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Mountain America Stadium"
+    },
+    {
+      "away_team": "Arizona Wildcats",
+      "away_team_id": "12",
+      "broadcast": "TNT",
+      "event_id": "401856823",
+      "game_date": "2026-10-10",
+      "home_team": "West Virginia Mountaineers",
+      "home_team_id": "277",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Milan Puskar Stadium"
+    },
+    {
+      "away_team": "UCF Knights",
+      "away_team_id": "2116",
+      "broadcast": "ESPN2",
+      "event_id": "401856824",
+      "game_date": "2026-10-10",
+      "home_team": "Oklahoma State Cowboys",
+      "home_team_id": "197",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Boone Pickens Stadium"
+    },
+    {
+      "away_team": "Houston Cougars",
+      "away_team_id": "248",
+      "broadcast": "Fox",
+      "event_id": "401856825",
+      "game_date": "2026-10-10",
+      "home_team": "Kansas State Wildcats",
+      "home_team_id": "2306",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Bill Snyder Family Stadium"
+    },
+    {
+      "away_team": "Kansas Jayhawks",
+      "away_team_id": "2305",
+      "broadcast": "ESPNEWS",
+      "event_id": "401856827",
+      "game_date": "2026-10-10",
+      "home_team": "Utah Utes",
+      "home_team_id": "254",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Rice-Eccles Stadium"
+    },
+    {
+      "away_team": "Duke Blue Devils",
+      "away_team_id": "150",
+      "broadcast": "ESPN2",
+      "event_id": "401858255",
+      "game_date": "2026-10-10",
+      "home_team": "Georgia Tech Yellow Jackets",
+      "home_team_id": "59",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Bobby Dodd Stadium"
+    },
+    {
+      "away_team": "North Carolina Tar Heels",
+      "away_team_id": "153",
+      "broadcast": "ESPN",
+      "event_id": "401858256",
+      "game_date": "2026-10-10",
+      "home_team": "Pittsburgh Panthers",
+      "home_team_id": "221",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Acrisure Stadium"
+    },
+    {
+      "away_team": "Stanford Cardinal",
+      "away_team_id": "24",
+      "broadcast": "NBC",
+      "event_id": "401858257",
+      "game_date": "2026-10-10",
+      "home_team": "Notre Dame Fighting Irish",
+      "home_team_id": "87",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Notre Dame Stadium"
+    },
+    {
+      "away_team": "Syracuse Orange",
+      "away_team_id": "183",
+      "broadcast": "ACC Network",
+      "event_id": "401858258",
+      "game_date": "2026-10-10",
+      "home_team": "Virginia Cavaliers",
+      "home_team_id": "258",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Scott Stadium"
+    },
+    {
+      "away_team": "Virginia Tech Hokies",
+      "away_team_id": "259",
+      "broadcast": "ACC Network",
+      "event_id": "401858259",
+      "game_date": "2026-10-10",
+      "home_team": "California Golden Bears",
+      "home_team_id": "25",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "California Memorial Stadium"
+    },
+    {
+      "away_team": "Wake Forest Demon Deacons",
+      "away_team_id": "154",
+      "broadcast": "CW",
+      "event_id": "401858260",
+      "game_date": "2026-10-10",
+      "home_team": "NC State Wolfpack",
+      "home_team_id": "152",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Carter-Finley Stadium"
+    },
+    {
+      "away_team": "Illinois Fighting Illini",
+      "away_team_id": "356",
+      "broadcast": "FS1",
+      "event_id": "401858480",
+      "game_date": "2026-10-10",
+      "home_team": "Michigan State Spartans",
+      "home_team_id": "127",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Spartan Stadium"
+    },
+    {
+      "away_team": "Indiana Hoosiers",
+      "away_team_id": "84",
+      "broadcast": "Fox",
+      "event_id": "401858481",
+      "game_date": "2026-10-10",
+      "home_team": "Nebraska Cornhuskers",
+      "home_team_id": "158",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Memorial Stadium (Lincoln, NE)"
+    },
+    {
+      "away_team": "Ball State Cardinals",
+      "away_team_id": "2050",
+      "broadcast": "BTN",
+      "event_id": "401858482",
+      "game_date": "2026-10-10",
+      "home_team": "Northwestern Wildcats",
+      "home_team_id": "77",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Ryan Field"
+    },
+    {
+      "away_team": "Maryland Terrapins",
+      "away_team_id": "120",
+      "broadcast": "BTN",
+      "event_id": "401858483",
+      "game_date": "2026-10-10",
+      "home_team": "Ohio State Buckeyes",
+      "home_team_id": "194",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Ohio Stadium"
+    },
+    {
+      "away_team": "UCLA Bruins",
+      "away_team_id": "26",
+      "broadcast": "CBS",
+      "event_id": "401858484",
+      "game_date": "2026-10-10",
+      "home_team": "Oregon Ducks",
+      "home_team_id": "2483",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Autzen Stadium"
+    },
+    {
+      "away_team": "USC Trojans",
+      "away_team_id": "30",
+      "broadcast": "NBC",
+      "event_id": "401858485",
+      "game_date": "2026-10-10",
+      "home_team": "Penn State Nittany Lions",
+      "home_team_id": "213",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Beaver Stadium"
+    },
+    {
+      "away_team": "Minnesota Golden Gophers",
+      "away_team_id": "135",
+      "broadcast": "BTN",
+      "event_id": "401858486",
+      "game_date": "2026-10-10",
+      "home_team": "Purdue Boilermakers",
+      "home_team_id": "2509",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Ross-Ade Stadium"
+    },
+    {
+      "away_team": "Boise State Broncos",
+      "away_team_id": "68",
+      "broadcast": "CW",
+      "event_id": "401860901",
+      "game_date": "2026-10-10",
+      "home_team": "Fresno State Bulldogs",
+      "home_team_id": "278",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Valley Children's Stadium"
+    },
+    {
+      "away_team": "San Diego State Aztecs",
+      "away_team_id": "21",
+      "broadcast": "USA Net",
+      "event_id": "401860902",
+      "game_date": "2026-10-10",
+      "home_team": "Oregon State Beavers",
+      "home_team_id": "204",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Reser Stadium"
+    },
+    {
+      "away_team": "UConn Huskies",
+      "away_team_id": "41",
+      "broadcast": "ESPNU",
+      "event_id": "401861964",
+      "game_date": "2026-10-10",
+      "home_team": "Temple Owls",
+      "home_team_id": "218",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Lincoln Financial Field"
+    },
+    {
+      "away_team": "Tulane Green Wave",
+      "away_team_id": "2655",
+      "broadcast": "CBSSN",
+      "event_id": "401862795",
+      "game_date": "2026-10-10",
+      "home_team": "Army Black Knights",
+      "home_team_id": "349",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Michie Stadium"
+    },
+    {
+      "away_team": "Charlotte 49ers",
+      "away_team_id": "2429",
+      "broadcast": "ESPN+",
+      "event_id": "401862796",
+      "game_date": "2026-10-10",
+      "home_team": "North Texas Mean Green",
+      "home_team_id": "249",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "DATCU Stadium"
+    },
+    {
+      "away_team": "Rice Owls",
+      "away_team_id": "242",
+      "broadcast": "ESPN+",
+      "event_id": "401862797",
+      "game_date": "2026-10-10",
+      "home_team": "East Carolina Pirates",
+      "home_team_id": "151",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Dowdy-Ficklen Stadium"
+    },
+    {
+      "away_team": "UAB Blazers",
+      "away_team_id": "5",
+      "broadcast": "ESPN2",
+      "event_id": "401862798",
+      "game_date": "2026-10-10",
+      "home_team": "Memphis Tigers",
+      "home_team_id": "235",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Simmons Bank Liberty Stadium"
+    },
+    {
+      "away_team": "Tulsa Golden Hurricane",
+      "away_team_id": "202",
+      "broadcast": "CBSSN",
+      "event_id": "401862799",
+      "game_date": "2026-10-10",
+      "home_team": "Navy Midshipmen",
+      "home_team_id": "2426",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Navy-Marine Corps Memorial Stadium"
+    },
+    {
+      "away_team": "Air Force Falcons",
+      "away_team_id": "2005",
+      "broadcast": "CBSSN",
+      "event_id": "401864516",
+      "game_date": "2026-10-10",
+      "home_team": "Northern Illinois Huskies",
+      "home_team_id": "2459",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Huskie Stadium"
+    },
+    {
+      "away_team": "Nevada Wolf Pack",
+      "away_team_id": "2440",
+      "broadcast": "FS1",
+      "event_id": "401864517",
+      "game_date": "2026-10-10",
+      "home_team": "UTEP Miners",
+      "home_team_id": "2638",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Sun Bowl"
+    },
+    {
+      "away_team": "North Dakota State Bison",
+      "away_team_id": "2449",
+      "broadcast": "CW",
+      "event_id": "401864518",
+      "game_date": "2026-10-10",
+      "home_team": "UNLV Rebels",
+      "home_team_id": "2439",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Allegiant Stadium"
+    },
+    {
+      "away_team": "Eastern Michigan Eagles",
+      "away_team_id": "2199",
+      "broadcast": "ESPN+",
+      "event_id": "401866435",
+      "game_date": "2026-10-10",
+      "home_team": "Akron Zips",
+      "home_team_id": "2006",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "InfoCision Stadium"
+    },
+    {
+      "away_team": "Sacramento State Hornets",
+      "away_team_id": "16",
+      "broadcast": "ESPN+",
+      "event_id": "401866436",
+      "game_date": "2026-10-10",
+      "home_team": "Bowling Green Falcons",
+      "home_team_id": "189",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Doyt L. Perry Stadium"
+    },
+    {
+      "away_team": "Buffalo Bulls",
+      "away_team_id": "2084",
+      "broadcast": "ESPN+",
+      "event_id": "401866437",
+      "game_date": "2026-10-10",
+      "home_team": "Toledo Rockets",
+      "home_team_id": "2649",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Glass Bowl"
+    },
+    {
+      "away_team": "Central Michigan Chippewas",
+      "away_team_id": "2117",
+      "broadcast": "ESPN+",
+      "event_id": "401866438",
+      "game_date": "2026-10-10",
+      "home_team": "Ohio Bobcats",
+      "home_team_id": "195",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Peden Stadium"
+    },
+    {
+      "away_team": "Kent State Golden Flashes",
+      "away_team_id": "2309",
+      "broadcast": "ESPN+",
+      "event_id": "401866439",
+      "game_date": "2026-10-10",
+      "home_team": "Western Michigan Broncos",
+      "home_team_id": "2711",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Waldo Stadium"
+    },
+    {
+      "away_team": "Miami (OH) RedHawks",
+      "away_team_id": "193",
+      "broadcast": "ESPN+",
+      "event_id": "401866440",
+      "game_date": "2026-10-10",
+      "home_team": "Massachusetts Minutemen",
+      "home_team_id": "113",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Warren McGuirk Alumni Stadium"
+    },
+    {
+      "away_team": "New Hampshire Wildcats",
+      "away_team_id": "160",
+      "broadcast": "FloSports",
+      "event_id": "401866658",
+      "game_date": "2026-10-10",
+      "home_team": "North Carolina A&T Aggies",
+      "home_team_id": "2448",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Truist Stadium"
+    },
+    {
+      "away_team": "Stony Brook Seawolves",
+      "away_team_id": "2619",
+      "broadcast": "MNMT, FloSports",
+      "event_id": "401866659",
+      "game_date": "2026-10-10",
+      "home_team": "Towson Tigers",
+      "home_team_id": "119",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Johnny Unitas Stadium"
+    },
+    {
+      "away_team": "Stonehill Skyhawks",
+      "away_team_id": "284",
+      "broadcast": "FloSports",
+      "event_id": "401866660",
+      "game_date": "2026-10-10",
+      "home_team": "Sacred Heart Pioneers",
+      "home_team_id": "2529",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Campus Field"
+    },
+    {
+      "away_team": "Wofford Terriers",
+      "away_team_id": "2747",
+      "broadcast": "FloSports",
+      "event_id": "401866661",
+      "game_date": "2026-10-10",
+      "home_team": "Elon Phoenix",
+      "home_team_id": "2210",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Rhodes Stadium"
+    },
+    {
+      "away_team": "Bryant Bulldogs",
+      "away_team_id": "2803",
+      "broadcast": "ESPN+, NESN+",
+      "event_id": "401866662",
+      "game_date": "2026-10-10",
+      "home_team": "Brown Bears",
+      "home_team_id": "225",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Brown Stadium (RI)"
+    },
+    {
+      "away_team": "Harvard Crimson",
+      "away_team_id": "108",
+      "broadcast": "ESPN+",
+      "event_id": "401867829",
+      "game_date": "2026-10-10",
+      "home_team": "Cornell Big Red",
+      "home_team_id": "172",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Schoellkopf Field"
+    },
+    {
+      "away_team": "Dartmouth Big Green",
+      "away_team_id": "159",
+      "broadcast": "ESPNU",
+      "event_id": "401867836",
+      "game_date": "2026-10-10",
+      "home_team": "Yale Bulldogs",
+      "home_team_id": "43",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Yale Bowl"
+    },
+    {
+      "away_team": "Youngstown State Penguins",
+      "away_team_id": "2754",
+      "broadcast": "ESPN+",
+      "event_id": "401867860",
+      "game_date": "2026-10-10",
+      "home_team": "Indiana State Sycamores",
+      "home_team_id": "282",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Memorial Stadium (Terre Haute, IN)"
+    },
+    {
+      "away_team": "North Dakota Fighting Hawks",
+      "away_team_id": "155",
+      "broadcast": "ESPN+",
+      "event_id": "401867877",
+      "game_date": "2026-10-10",
+      "home_team": "Northern Iowa Panthers",
+      "home_team_id": "2460",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "UNI-Dome"
+    },
+    {
+      "away_team": "Southern Illinois Salukis",
+      "away_team_id": "79",
+      "broadcast": "ESPN+, Midco Sports Net",
+      "event_id": "401867886",
+      "game_date": "2026-10-10",
+      "home_team": "South Dakota Coyotes",
+      "home_team_id": "233",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "The DakotaDome"
+    },
+    {
+      "away_team": "American International Yellow Jackets",
+      "away_team_id": "2022",
+      "broadcast": "",
+      "event_id": "401867907",
+      "game_date": "2026-10-10",
+      "home_team": "Central Connecticut Blue Devils",
+      "home_team_id": "2115",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Arute Field"
+    },
+    {
+      "away_team": "Long Island University Sharks",
+      "away_team_id": "2341",
+      "broadcast": "NEC Front Row, SportsNet PIT",
+      "event_id": "401867911",
+      "game_date": "2026-10-10",
+      "home_team": "Duquesne Dukes",
+      "home_team_id": "2184",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Arthur J. Rooney Athletic Field"
+    },
+    {
+      "away_team": "Robert Morris Colonials",
+      "away_team_id": "2523",
+      "broadcast": "ESPN+",
+      "event_id": "401867919",
+      "game_date": "2026-10-10",
+      "home_team": "Morgan State Bears",
+      "home_team_id": "2415",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Hughes Stadium (MD)"
+    },
+    {
+      "away_team": "Princeton Tigers",
+      "away_team_id": "163",
+      "broadcast": "",
+      "event_id": "401867930",
+      "game_date": "2026-10-10",
+      "home_team": "Wagner Seahawks",
+      "home_team_id": "2681",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Hameline Field at Wagner College Stadium"
+    },
+    {
+      "away_team": "Franklin Pierce Ravens",
+      "away_team_id": "112334",
+      "broadcast": "",
+      "event_id": "401867954",
+      "game_date": "2026-10-10",
+      "home_team": "Delaware State Hornets",
+      "home_team_id": "2169",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Alumni Stadium (DE)"
+    },
+    {
+      "away_team": "Howard Bison",
+      "away_team_id": "47",
+      "broadcast": "ESPN+",
+      "event_id": "401867960",
+      "game_date": "2026-10-10",
+      "home_team": "Pennsylvania Quakers",
+      "home_team_id": "219",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Franklin Field"
+    },
+    {
+      "away_team": "Virginia Lynchburg Dragons",
+      "away_team_id": "2355",
+      "broadcast": "",
+      "event_id": "401867974",
+      "game_date": "2026-10-10",
+      "home_team": "Norfolk State Spartans",
+      "home_team_id": "2450",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "William \"Dick\" Price Stadium"
+    },
+    {
+      "away_team": "William & Mary Tribe",
+      "away_team_id": "2729",
+      "broadcast": "ESPN+",
+      "event_id": "401867980",
+      "game_date": "2026-10-10",
+      "home_team": "North Carolina Central Eagles",
+      "home_team_id": "2428",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "O'Kelly-Riddick Stadium"
+    },
+    {
+      "away_team": "South Carolina State Bulldogs",
+      "away_team_id": "2569",
+      "broadcast": "ESPN+",
+      "event_id": "401867987",
+      "game_date": "2026-10-10",
+      "home_team": "Charleston Southern Buccaneers",
+      "home_team_id": "2127",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Buccaneer Field"
+    },
+    {
+      "away_team": "Bucknell Bison",
+      "away_team_id": "2083",
+      "broadcast": "ESPN+",
+      "event_id": "401867992",
+      "game_date": "2026-10-10",
+      "home_team": "Georgetown Hoyas",
+      "home_team_id": "46",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Cooper Field"
+    },
+    {
+      "away_team": "Richmond Spiders",
+      "away_team_id": "257",
+      "broadcast": "ESPN+",
+      "event_id": "401868011",
+      "game_date": "2026-10-10",
+      "home_team": "Fordham Rams",
+      "home_team_id": "2230",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Moglia Stadium at Jack Coffey Field"
+    },
+    {
+      "away_team": "Central Arkansas Bears",
+      "away_team_id": "2110",
+      "broadcast": "ESPN+",
+      "event_id": "401868054",
+      "game_date": "2026-10-10",
+      "home_team": "Abilene Christian Wildcats",
+      "home_team_id": "2000",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Wildcat Stadium (TX)"
+    },
+    {
+      "away_team": "Tarleton State Texans",
+      "away_team_id": "2627",
+      "broadcast": "ESPN+",
+      "event_id": "401868065",
+      "game_date": "2026-10-10",
+      "home_team": "Austin Peay Governors",
+      "home_team_id": "2046",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Fortera Stadium"
+    },
+    {
+      "away_team": "Cal Poly Mustangs",
+      "away_team_id": "13",
+      "broadcast": "ESPN+",
+      "event_id": "401868078",
+      "game_date": "2026-10-10",
+      "home_team": "Idaho State Bengals",
+      "home_team_id": "304",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "ICCU Dome"
+    },
+    {
+      "away_team": "Northern Colorado Bears",
+      "away_team_id": "2458",
+      "broadcast": "ESPN+",
+      "event_id": "401868087",
+      "game_date": "2026-10-10",
+      "home_team": "Eastern Washington Eagles",
+      "home_team_id": "331",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Roos Field"
+    },
+    {
+      "away_team": "Idaho Vandals",
+      "away_team_id": "70",
+      "broadcast": "ESPN+",
+      "event_id": "401868095",
+      "game_date": "2026-10-10",
+      "home_team": "Weber State Wildcats",
+      "home_team_id": "2692",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Stewart Stadium"
+    },
+    {
+      "away_team": "Montana Grizzlies",
+      "away_team_id": "149",
+      "broadcast": "ESPN+, Scripps Sports",
+      "event_id": "401868115",
+      "game_date": "2026-10-10",
+      "home_team": "Northern Arizona Lumberjacks",
+      "home_team_id": "2464",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "J. Lawrence Walkup Skydome"
+    },
+    {
+      "away_team": "West Georgia Wolves",
+      "away_team_id": "2698",
+      "broadcast": "ESPN+",
+      "event_id": "401868144",
+      "game_date": "2026-10-10",
+      "home_team": "Eastern Kentucky Colonels",
+      "home_team_id": "2198",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Roy Kidd Stadium"
+    },
+    {
+      "away_team": "Utah Tech Trailblazers",
+      "away_team_id": "3101",
+      "broadcast": "ESPN+, Rose City Sports Net",
+      "event_id": "401868156",
+      "game_date": "2026-10-10",
+      "home_team": "Portland State Vikings",
+      "home_team_id": "2502",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Hillsboro Stadium"
+    },
+    {
+      "away_team": "Eastern Illinois Panthers",
+      "away_team_id": "2197",
+      "broadcast": "ESPN+",
+      "event_id": "401868180",
+      "game_date": "2026-10-10",
+      "home_team": "Gardner-Webb Runnin' Bulldogs",
+      "home_team_id": "2241",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Ernest W. Spangler Stadium"
+    },
+    {
+      "away_team": "UT Martin Skyhawks",
+      "away_team_id": "2630",
+      "broadcast": "ESPN+",
+      "event_id": "401868198",
+      "game_date": "2026-10-10",
+      "home_team": "Tennessee State Tigers",
+      "home_team_id": "2634",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Nissan Stadium"
+    },
+    {
+      "away_team": "San Diego Toreros",
+      "away_team_id": "301",
+      "broadcast": "ESPN+",
+      "event_id": "401868212",
+      "game_date": "2026-10-10",
+      "home_team": "Butler Bulldogs",
+      "home_team_id": "2086",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Bud and Jackie Sellick Bowl"
+    },
+    {
+      "away_team": "Davidson Wildcats",
+      "away_team_id": "2166",
+      "broadcast": "ESPN+",
+      "event_id": "401868221",
+      "game_date": "2026-10-10",
+      "home_team": "Presbyterian Blue Hose",
+      "home_team_id": "2506",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Bailey Memorial Stadium"
+    },
+    {
+      "away_team": "Morehead State Eagles",
+      "away_team_id": "2413",
+      "broadcast": "YouTube",
+      "event_id": "401868229",
+      "game_date": "2026-10-10",
+      "home_team": "Dayton Flyers",
+      "home_team_id": "2168",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Welcome Stadium"
+    },
+    {
+      "away_team": "SE Louisiana Lions",
+      "away_team_id": "2545",
+      "broadcast": "ESPN+",
+      "event_id": "401868249",
+      "game_date": "2026-10-10",
+      "home_team": "UT Rio Grande Valley Vaqueros",
+      "home_team_id": "292",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Robert and Janet Vackar Stadium"
+    },
+    {
+      "away_team": "Drake Bulldogs",
+      "away_team_id": "2181",
+      "broadcast": "ESPN+",
+      "event_id": "401868256",
+      "game_date": "2026-10-10",
+      "home_team": "Valparaiso Beacons",
+      "home_team_id": "2674",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Brown Field"
+    },
+    {
+      "away_team": "Stetson Hatters",
+      "away_team_id": "56",
+      "broadcast": "Midco Sports Plus",
+      "event_id": "401868282",
+      "game_date": "2026-10-10",
+      "home_team": "St. Thomas Tommies",
+      "home_team_id": "2900",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "O'Shaughnessy Stadium"
+    },
+    {
+      "away_team": "Bethune-Cookman Wildcats",
+      "away_team_id": "2065",
+      "broadcast": "",
+      "event_id": "401868300",
+      "game_date": "2026-10-10",
+      "home_team": "Alabama A&M Bulldogs",
+      "home_team_id": "2010",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Louis Crews Stadium"
+    },
+    {
+      "away_team": "Samford Bulldogs",
+      "away_team_id": "2535",
+      "broadcast": "ESPN+",
+      "event_id": "401868340",
+      "game_date": "2026-10-10",
+      "home_team": "Chattanooga Mocs",
+      "home_team_id": "236",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Finley Stadium"
+    },
+    {
+      "away_team": "East Tennessee State Buccaneers",
+      "away_team_id": "2193",
+      "broadcast": "ESPN+",
+      "event_id": "401868347",
+      "game_date": "2026-10-10",
+      "home_team": "The Citadel Bulldogs",
+      "home_team_id": "2643",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Johnson Hagood Stadium"
+    },
+    {
+      "away_team": "Arkansas Baptist Buffaloes",
+      "away_team_id": "124386",
+      "broadcast": "",
+      "event_id": "401868360",
+      "game_date": "2026-10-10",
+      "home_team": "Alcorn State Braves",
+      "home_team_id": "2016",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Spinks-Casem Stadium"
+    },
+    {
+      "away_team": "Furman Paladins",
+      "away_team_id": "231",
+      "broadcast": "ESPN+",
+      "event_id": "401868376",
+      "game_date": "2026-10-10",
+      "home_team": "Tennessee Tech Golden Eagles",
+      "home_team_id": "2635",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Tucker Stadium"
+    },
+    {
+      "away_team": "Western Carolina Catamounts",
+      "away_team_id": "2717",
+      "broadcast": "ESPN+",
+      "event_id": "401868382",
+      "game_date": "2026-10-10",
+      "home_team": "Mercer Bears",
+      "home_team_id": "2382",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Five Star Stadium"
+    },
+    {
+      "away_team": "Jackson State Tigers",
+      "away_team_id": "2296",
+      "broadcast": "",
+      "event_id": "401868955",
+      "game_date": "2026-10-10",
+      "home_team": "Grambling Tigers",
+      "home_team_id": "2755",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Eddie G. Robinson Memorial Stadium"
+    },
+    {
+      "away_team": "Mississippi Valley State Delta Devils",
+      "away_team_id": "2400",
+      "broadcast": "",
+      "event_id": "401868966",
+      "game_date": "2026-10-10",
+      "home_team": "Texas Southern Tigers",
+      "home_team_id": "2640",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Shell Energy Stadium"
+    },
+    {
+      "away_team": "Southern Jaguars",
+      "away_team_id": "2582",
+      "broadcast": "",
+      "event_id": "401868968",
+      "game_date": "2026-10-10",
+      "home_team": "Prairie View A&M Panthers",
+      "home_team_id": "2504",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Panther Stadium"
+    },
+    {
+      "away_team": "Incarnate Word Cardinals",
+      "away_team_id": "2916",
+      "broadcast": "ESPN+",
+      "event_id": "401869144",
+      "game_date": "2026-10-10",
+      "home_team": "Lamar Cardinals",
+      "home_team_id": "2320",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "In Progress",
+      "venue": "Provost Umphrey Stadium"
+    },
+    {
+      "away_team": "Old Dominion Monarchs",
+      "away_team_id": "295",
+      "broadcast": "ESPN+",
+      "event_id": "401869843",
+      "game_date": "2026-10-10",
+      "home_team": "App State Mountaineers",
+      "home_team_id": "2026",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Kidd Brewer Stadium"
+    },
+    {
+      "away_team": "Coastal Carolina Chanticleers",
+      "away_team_id": "324",
+      "broadcast": "ESPN+",
+      "event_id": "401869943",
+      "game_date": "2026-10-10",
+      "home_team": "Marshall Thundering Herd",
+      "home_team_id": "276",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Joan C. Edwards Stadium"
+    },
+    {
+      "away_team": "James Madison Dukes",
+      "away_team_id": "256",
+      "broadcast": "ESPNU",
+      "event_id": "401869949",
+      "game_date": "2026-10-10",
+      "home_team": "Georgia Southern Eagles",
+      "home_team_id": "290",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Allen E. Paulson Stadium"
+    },
+    {
+      "away_team": "Louisiana Ragin' Cajuns",
+      "away_team_id": "309",
+      "broadcast": "ESPN+",
+      "event_id": "401869965",
+      "game_date": "2026-10-10",
+      "home_team": "Louisiana Tech Bulldogs",
+      "home_team_id": "2348",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Joe Aillet Stadium"
+    },
+    {
+      "away_team": "Southeast Missouri State Redhawks",
+      "away_team_id": "2546",
+      "broadcast": "ESPN+",
+      "event_id": "401871473",
+      "game_date": "2026-10-10",
+      "home_team": "Lindenwood Lions",
+      "home_team_id": "2815",
+      "source_divisions": [
+        "FCS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Final",
+      "venue": "Hunter Stadium"
+    },
+    {
+      "away_team": "Florida International Panthers",
+      "away_team_id": "2229",
+      "broadcast": "ESPNU",
+      "event_id": "401871053",
+      "game_date": "2026-10-13",
+      "home_team": "Jacksonville State Gamecocks",
+      "home_team_id": "55",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "AmFirst Stadium"
+    },
+    {
+      "away_team": "Delaware Blue Hens",
+      "away_team_id": "48",
+      "broadcast": "CBSSN",
+      "event_id": "401871067",
+      "game_date": "2026-10-13",
+      "home_team": "Middle Tennessee Blue Raiders",
+      "home_team_id": "2393",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Johnny \"Red\" Floyd Stadium"
+    },
+    {
+      "away_team": "Colorado State Rams",
+      "away_team_id": "36",
+      "broadcast": "CBSSN",
+      "event_id": "401860923",
+      "game_date": "2026-10-15",
+      "home_team": "Texas State Bobcats",
+      "home_team_id": "326",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "UFCU Stadium"
+    },
+    {
+      "away_team": "East Carolina Pirates",
+      "away_team_id": "151",
+      "broadcast": "ESPN",
+      "event_id": "401862800",
+      "game_date": "2026-10-15",
+      "home_team": "UAB Blazers",
+      "home_team_id": "5",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "Protective Stadium"
+    },
+    {
+      "away_team": "Georgia Southern Eagles",
+      "away_team_id": "290",
+      "broadcast": "ESPN2",
+      "event_id": "401869950",
+      "game_date": "2026-10-15",
+      "home_team": "Old Dominion Monarchs",
+      "home_team_id": "295",
+      "source_divisions": [
+        "FBS"
+      ],
+      "sources": [
+        "ESPN college-football FBS/FCS scoreboards"
+      ],
+      "status": "Scheduled",
+      "venue": "S.B. Ballard Stadium"
+    }
+  ],
+  "generated_at": "2026-10-10T22:27:16Z",
+  "identity_policy": {
+    "authority": "ESPN",
+    "fuzzy_matching": false,
+    "official_event_ids_only": true,
+    "sportsbook_projection_weight": 0.0,
+    "synthetic_ids": false
+  },
+  "market_dates": [
+    "2026-10-10",
+    "2026-10-13",
+    "2026-10-15"
+  ],
+  "provider_future_matchups": 21,
+  "purpose": "Official ESPN identity coverage for the complete live FanDuel NCAAF market-date horizon; market data never enters projection math.",
+  "version": 1,
+  "window": {
+    "end": "2026-10-15",
+    "start": "2026-10-10"
+  }
+}
