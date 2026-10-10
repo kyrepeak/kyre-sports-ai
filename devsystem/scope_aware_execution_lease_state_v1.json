@@ -1,11 +1,54 @@
 {
-  "generation": 287,
-  "holders": [],
+  "generation": 288,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-10T03:42:00Z",
+      "expires_at_utc": "2026-10-10T04:42:00Z",
+      "generation": 288,
+      "heartbeat_at_utc": "2026-10-10T03:42:00Z",
+      "lease_id": "SCOPE-LEASE-81EB8ACBF4A76544A5BEC9AA",
+      "owner_id": "universal-live-status-board-v1-step1-closeout",
+      "scope": {
+        "dependency_tokens": [
+          "mandatory-status-schema",
+          "runless-final-gate",
+          "universal-live-status-board-v1-step1"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "event_resume_state_hash": "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789",
+          "main_sha": "20f23cae36b70ba702657546296560c5432203dc",
+          "phase": "closeout",
+          "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
+          "registry_state_hash": "36c4a0b32ef15ae2548a38b4de5ef96fa38dd10139cd2f81f720fc22b1c1a161",
+          "step": "1/4"
+        },
+        "shared_resources": [
+          "frozen-registry",
+          "runless-proof-plane"
+        ],
+        "write_paths": [
+          "devsystem/execution_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/runless_proof_plans/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+          "devsystem/runless_proof_receipts",
+          "devsystem/task_ledgers/universal-live-status-board-v1-step1-mandatory-status-schema.json",
+          "devsystem/universal_live_status_board_v1.py",
+          "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step1-mandatory-status-schema.md",
+          "docs/superpowers/specs/2026-10-09-universal-live-status-board-v1-design.md",
+          "runless_proof_plane/bootstrap.py",
+          "runless_proof_plane/universal_live_status_board_step1_closeout.py",
+          "runless_proof_plane/universal_live_status_board_step1_prove.py",
+          "tests/test_devsystem_universal_live_status_board_v1.py"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 486,
+  "revision": 487,
   "schema_version": 1,
-  "state_hash": "d1cfc0075f13ce7a1eb328cb8673ceacb157125df6bcb4f47d11762945ab1d51",
+  "state_hash": "6d4152b64cc22c06e412db1bc7072a114437b7d77e087af09b63d0686b13374b",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
