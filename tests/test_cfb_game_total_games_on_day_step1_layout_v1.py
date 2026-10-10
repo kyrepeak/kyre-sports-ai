@@ -43,3 +43,12 @@ def test_step1_activation_is_exactly_scoped_to_cfb_game_total() -> None:
     assert '(sport, market) == ("CFB", "Game Total")' in theme
     assert "cfb_game_total_games_on_day_step1_layout_v1" in theme
     assert "install_games_on_day_step1_layout" in theme
+
+
+def test_step1_binds_layout_to_the_live_step4_games_owner() -> None:
+    text = SUBJECT.read_text(encoding="utf-8")
+    assert "cfb_game_total_page1_visual_cleanup_step4_activation_v1" in text
+    assert ".gtvc4-daygrid" in text
+    assert ".gtvc4-game" in text
+    assert "active_owner.STEP4_CSS" in text
+    assert 'data-kyre-cfb-games-on-day-step1-layout="v1"' in text
