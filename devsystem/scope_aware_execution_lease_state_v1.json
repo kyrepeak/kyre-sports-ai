@@ -1,27 +1,27 @@
 {
-  "generation": 290,
+  "generation": 291,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-10T04:18:30Z",
-      "expires_at_utc": "2026-10-10T04:36:15Z",
-      "generation": 290,
-      "heartbeat_at_utc": "2026-10-10T04:21:15Z",
-      "lease_id": "SCOPE-LEASE-E5C0D43F1ACD5F3F0E9E522E",
-      "owner_id": "universal-live-status-board-v1-step2",
+      "acquired_at_utc": "2026-10-10T04:24:30Z",
+      "expires_at_utc": "2026-10-10T04:44:30Z",
+      "generation": 291,
+      "heartbeat_at_utc": "2026-10-10T04:24:30Z",
+      "lease_id": "SCOPE-LEASE-C075387DF04F9897C32FBCB3",
+      "owner_id": "universal-live-status-board-v1-step2-closeout",
       "scope": {
         "dependency_tokens": [],
         "exclusive": false,
-        "resource_identity": {},
+        "resource_identity": {
+          "event_resume_state_hash": "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789",
+          "main_sha": "e80be10496112f6b43f4652a64ddecbfc921b87a",
+          "registry_state_hash": "5ffe9963a665cc0ed7688862d4aa51cc5b39487268ba44640ef4971b25d445dc"
+        },
         "shared_resources": [],
         "write_paths": [
-          "devsystem/execution_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
-          "devsystem/runless_proof_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
-          "devsystem/task_ledgers/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
-          "devsystem/universal_live_status_board_ownership_v1.py",
-          "devsystem/universal_live_status_board_v1.py",
-          "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step2-authoritative-chat-ownership.md",
-          "tests/test_devsystem_universal_live_status_board_ownership_v1.py",
-          "tests/test_devsystem_universal_live_status_board_v1.py"
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/runless_proof_receipts",
+          "runless_proof_plane/bootstrap.py",
+          "runless_proof_plane/universal_live_status_board_step2_closeout.py"
         ]
       }
     }
@@ -29,8 +29,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 492,
+  "revision": 494,
   "schema_version": 1,
-  "state_hash": "d1f9ef5250893c2d661ce4d6b465661f7c80e3ba4108206c4031d476689ec870",
+  "state_hash": "d5f7cafe44e202cfac226a1e4a6b9e447fc159f8b606ea8b9775021b7886a8b0",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
