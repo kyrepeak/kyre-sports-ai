@@ -7,7 +7,7 @@ from devsystem.frozen_artifact_registry_v1 import validate_registry
 from .registry import GithubRegistryBackend, _state_hash
 
 MAIN_SHA = "c7bb9383c510c79dcca88f5e33d533a18085ee40"
-TARGET_SHA = "2743ec3197d881279260d2ab407d0bb2f49d2ed2"
+TARGET_SHA = "0e57b012f6807327e07e93cb358a92fd0f3a4c30"
 THAW_ID = "THAW-CFB-GT-PAGE2-STEP8-APP-R1"
 FILES = {
     "app.py": {
@@ -38,14 +38,16 @@ def execute(app) -> dict:
         "files": deepcopy(FILES),
     }
     existing = next((g for g in before.get("active_thaws", []) if g.get("thaw_id") == THAW_ID), None)
-    if existing is not None:
-        if existing != expected_grant:
-            raise RuntimeError("STEP8_APP_THAW_ID_CONFLICT")
+    if existing == expected_grant:
         after = before
     else:
+        if existing is not None and existing.get("files") != FILES:
+            raise RuntimeError("STEP8_APP_THAW_FILE_SCOPE_DRIFT")
         updated = deepcopy(before)
         updated["revision"] = int(before["revision"]) + 1
-        updated["active_thaws"] = deepcopy(before.get("active_thaws", [])) + [expected_grant]
+        grants = [g for g in deepcopy(before.get("active_thaws", [])) if g.get("thaw_id") != THAW_ID]
+        grants.append(expected_grant)
+        updated["active_thaws"] = grants
         updated["state_hash"] = _state_hash(updated)
         validate_registry(updated)
         if not backend._blob_sha:
@@ -54,7 +56,7 @@ def execute(app) -> dict:
             backend.path,
             json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
             backend.branch,
-            f"registry: grant {THAW_ID}",
+            f"registry: retarget {THAW_ID}",
             backend._blob_sha,
         )
         after = backend.read_registry()
