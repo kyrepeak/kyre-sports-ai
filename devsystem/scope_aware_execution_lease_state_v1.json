@@ -1,11 +1,38 @@
 {
-  "generation": 292,
-  "holders": [],
+  "generation": 293,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-10T04:44:00Z",
+      "expires_at_utc": "2026-10-10T05:14:00Z",
+      "generation": 293,
+      "heartbeat_at_utc": "2026-10-10T04:44:00Z",
+      "lease_id": "SCOPE-LEASE-17C2C49A9B6F67294461196C",
+      "owner_id": "universal-live-status-board-v1-step3-closeout",
+      "scope": {
+        "dependency_tokens": [],
+        "exclusive": false,
+        "resource_identity": {
+          "event_resume_state_hash": "6127af782bb3bdf62793e077d4ed5282b2fce5df7324860ee1f224d595e1f789",
+          "main_sha": "77b6cfb53b5bbb09c88269d366ea0ea075acc91e",
+          "registry_state_hash": "115ce53d9a0a3ab82786feb31b760d2f4e92bbb9ced1a76349268d826edf581e"
+        },
+        "shared_resources": [
+          "check:runless-final-gate",
+          "ref:monster-frozen-artifact-registry",
+          "ref:runless-proof-receipts"
+        ],
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/runless_proof_receipts/universal-live-status-board-v1-step3-heartbeat-recovery-77b6cfb53b5bbb09-reused.json"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 497,
+  "revision": 498,
   "schema_version": 1,
-  "state_hash": "47f33cd15521d95e06091605a8fe8dbae4d35b7900e699c1082f9c00bb5efbdf",
+  "state_hash": "5753b6cd3771a56cdd54311e9ed17455cd04f3bc6370b3a024351aa70814cb09",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
