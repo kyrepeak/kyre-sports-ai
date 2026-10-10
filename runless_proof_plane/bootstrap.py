@@ -10,3 +10,8 @@ os.environ["RPP_NFL_RB_WR_STEP1_SUBMIT_ON_START"] = "0"
 os.environ["RPP_NFL_RB_WR_STEP1_CLOSEOUT_ON_START"] = "0"
 
 from .api import app
+
+if str(os.getenv("RPP_CFB_GAMES_ON_DAY_STEP1_PREMERGE_ON_START", "")).strip() == "1":
+    from .cfb_games_on_day_step1_premerge import install_startup
+
+    install_startup(app)
