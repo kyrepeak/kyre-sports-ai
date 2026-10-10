@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-native-page1-shell-step3-v1",
+  "title": "CFB Game Total — Native Page 1 Website Shell Step 3",
+  "project": "API2",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "step": "3/8",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "a3166e7d980d85b6adb6a064b8ac225befd9b9e3",
+  "branch": "cfb-game-total-native-page1-shell-step3-v1",
+  "problem": "The rebuild has native routing and a frozen backend, but Page 1 still lacks a rebuild-scoped native visual shell owner that cleanly introduces College Football / Game Total inside the existing KYRE SPORTS AI site chrome.",
+  "root_cause": "Step 1 intentionally stopped at route ownership and preserved the V38 presentation. The approved rebuild separates routing from the Page-1 shell, so no Step-3 shell owner or freeze checkpoint exists yet.",
+  "patch": "Add V40 as an additive presentation-only wrapper over frozen V39. V40 renders the native College Football / Game Total hero shell and capability tiles, then delegates to V39. Advance only the Page-1 route pointer in the final router from V39 to V40; preserve selected-event Page 2 exactly.",
+  "mutation_scope": [
+    "cfb_game_total_clean_page_v40.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_native_page1_shell_step3_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-native-page1-shell-step3-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-native-page1-shell-step3-v1.json",
+    "docs/superpowers/plans/2026-10-10-cfb-game-total-native-page1-shell-step3-v1.md"
+  ],
+  "protected_scope": [
+    "cfb_game_total_clean_page_v39.py",
+    "tests/test_cfb_game_total_native_routing_step1_v1.py",
+    "Step 2 frozen backend artifacts",
+    "Game Total model/projection/probability math",
+    "sportsbook projection influence",
+    "schedule and event identity",
+    "selected-event Page 2 runtime",
+    "other sports and markets"
+  ],
+  "deferred_scope": [
+    "Step 4 Phoenix-time day selector",
+    "Step 5 games-on-day data rebuild",
+    "Step 6 interactive matchup cards",
+    "Step 7 Page 1 to Page 2 handoff redesign",
+    "Step 8 mobile and production certification"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_requires_exact_head_thaw": true
+  },
+  "tdd": {
+    "test_first_commit": "57d08f3b754cac34f96ef3c500ac35ed7f78ef89",
+    "red_observed": true,
+    "red_result": "The test-first checkpoint requires cfb_game_total_clean_page_v40.py while that file is absent and requires PAGE1_NATIVE_ROUTE to equal V40 while the base router still equals V39.",
+    "implementation_commit": "dda9f4d8bc4bbb432567468cfec56b6cc6bb1f19"
+  },
+  "presentation_contract": {
+    "native_shell_marker": "CFB_GAME_TOTAL_NATIVE_PAGE1_SHELL_STEP3_ACTIVE",
+    "native_shell_testid": "gt240-native-page1-shell",
+    "prior_page_owner": "cfb_game_total_clean_page_v39",
+    "sportsbook_projection_influence": 0.0,
+    "network_calls_added": 0,
+    "page2_modified": false,
+    "phoenix_selector_owned_by_step3": false
+  },
+  "runless": {
+    "proof_generation": 2,
+    "authorization_id": "AUTH-CFB-GT-NATIVE-PAGE1-SHELL-STEP3-R1",
+    "thaw_id": "THAW-CFB-GT-NATIVE-PAGE1-SHELL-STEP3-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "READY_AFTER_STATIC_SLICE_REPAIR",
+    "prior_failed_candidate": "091ec7abc840119705e7f98d895c1346871ed2f8",
+    "prior_failed_proof_id": "cfb-game-total-native-page1-shell-step3-v1-091ec7abc8401197-384173c344a47191",
+    "prior_failure_class": "STATIC_PROOF",
+    "prior_failure_root_cause": "The Step-3 Runless slice executed the frozen Step-1 test whose historical contract intentionally pins PAGE1_NATIVE_ROUTE to V39. Step 3 is the authorized forward-port to V40, so that historical literal cannot remain an executable Step-3 assertion. The frozen Step-1 test remains unchanged and is pinned as a dependency; Step-3 preservation is proved by V40-to-V39 delegation and exact blob guards."
+  },
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP3_PAGE1_SHELL_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RETARGET_EXACT_ROUTER_THAW_REPLACE_EXACT_SCOPE_LEASE_AND_RUN_ONE_RECOVERY_PROOF"
+}
