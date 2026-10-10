@@ -3,9 +3,9 @@
   "holders": [
     {
       "acquired_at_utc": "2026-10-10T02:33:27Z",
-      "expires_at_utc": "2026-10-10T02:48:27Z",
+      "expires_at_utc": "2026-10-10T02:58:40Z",
       "generation": 285,
-      "heartbeat_at_utc": "2026-10-10T02:33:27Z",
+      "heartbeat_at_utc": "2026-10-10T02:43:40Z",
       "lease_id": "SCOPE-LEASE-779AF9201DBFD42F72EF29FC",
       "owner_id": "api2-cfb-game-total-page2-step8-final-responsive-live-data",
       "scope": {
@@ -31,8 +31,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 478,
+  "revision": 479,
   "schema_version": 1,
-  "state_hash": "9a12864f04395858719d84f3ebfbe65bf011776e9afcf41ed810799b8f14cdbf",
+  "state_hash": "d502fc9915c7b5e5975ed34eb1962e1178a6343637e7968de76a55f6d43c62f7",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
