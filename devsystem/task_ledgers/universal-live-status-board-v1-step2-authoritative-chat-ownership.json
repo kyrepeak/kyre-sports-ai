@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "task_id": "universal-live-status-board-v1-step2-authoritative-chat-ownership",
+  "title": "Universal Live Status Board V1 Step 2 — Authoritative Chat Ownership Registry",
+  "project": "UNIVERSAL_LIVE_STATUS_BOARD_V1",
+  "workstream": "universal-live-status-board-v1",
+  "step": "2/4",
+  "status": "TESTS_DEFINED_AWAITING_RED_PROOF",
+  "base_main_sha": "20f23cae36b70ba702657546296560c5432203dc",
+  "branch": "universal-live-status-board-v1-step2-r1",
+  "problem": "The Step-1 board accepts a live_active_chat label but does not yet prove that label from authoritative lease ownership.",
+  "root_cause": "Step 1 intentionally provided a pure schema only; lease ownership truth is not yet bound into the packet.",
+  "patch": "Read and validate the existing scope-aware execution lease state, resolve exactly one live owner to THIS_CHAT/MONSTER/API_2, fail closed on missing or ambiguous active ownership, and bind active packets to that truth without acquiring or mutating leases.",
+  "mutation_scope": [
+    "devsystem/universal_live_status_board_v1.py",
+    "tests/test_devsystem_universal_live_status_board_v1.py",
+    "devsystem/execution_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
+    "devsystem/runless_proof_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
+    "devsystem/task_ledgers/universal-live-status-board-v1-step2-authoritative-chat-ownership.json",
+    "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step2-authoritative-chat-ownership.md"
+  ],
+  "forbidden_scope": [
+    "sports product runtime",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "qualification",
+    "sportsbook",
+    "parallel ownership registry",
+    "lease acquisition",
+    "lease renewal",
+    "lease release"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "authoritative_lease_state_reused": true,
+    "cross_workstream_state_separation_required": true
+  },
+  "tdd": {
+    "test_first_commit": "043b51a4860c24890405efbb4ba6244a69a459f5",
+    "red_observed": false,
+    "red_result": null,
+    "implementation_commit": null,
+    "green_observed": false,
+    "green_result": null,
+    "compile_result": null
+  },
+  "freeze_token": "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP2_AUTHORITATIVE_CHAT_OWNERSHIP_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OBSERVE_TDD_RED_THEN_IMPLEMENT_MINIMAL_OWNERSHIP_BINDING"
+}
