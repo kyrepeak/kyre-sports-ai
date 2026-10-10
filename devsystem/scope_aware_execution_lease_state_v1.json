@@ -1,36 +1,11 @@
 {
   "generation": 294,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-10T04:49:30Z",
-      "expires_at_utc": "2026-10-10T05:19:30Z",
-      "generation": 294,
-      "heartbeat_at_utc": "2026-10-10T04:49:30Z",
-      "lease_id": "SCOPE-LEASE-31F00A2F706E92B02F98E1A2",
-      "owner_id": "universal-live-status-board-v1-step4",
-      "scope": {
-        "dependency_tokens": [],
-        "exclusive": false,
-        "resource_identity": {
-          "main_sha": "77b6cfb53b5bbb09c88269d366ea0ea075acc91e"
-        },
-        "shared_resources": [],
-        "write_paths": [
-          "devsystem/execution_plans/universal-live-status-board-v1-step4-enforcement-gate.json",
-          "devsystem/runless_proof_plans/universal-live-status-board-v1-step4-enforcement-gate.json",
-          "devsystem/task_ledgers/universal-live-status-board-v1-step4-enforcement-gate.json",
-          "devsystem/universal_live_status_board_enforcement_v1.py",
-          "docs/superpowers/plans/2026-10-10-universal-live-status-board-v1-step4-enforcement-gate.md",
-          "tests/test_devsystem_universal_live_status_board_enforcement_v1.py"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 500,
+  "revision": 501,
   "schema_version": 1,
-  "state_hash": "d3e6b436ecc8adbcad8e3bb60011c2e7c47dad7b1ec5a585f1883ad0c5bcd827",
+  "state_hash": "12c7997089daec34217e3714c3e4d1ba8f0fdc1e865bc71b02e25622e360247e",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
