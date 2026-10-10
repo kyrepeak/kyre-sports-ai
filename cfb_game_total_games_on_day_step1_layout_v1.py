@@ -122,7 +122,11 @@ def install_games_on_day_step1_layout() -> bool:
         _append_css(legacy_owner, "_V163_CSS", STEP1_CSS, "CFB Game Total V163 selector")
 
         active_owner = importlib.import_module(_ACTIVE_OWNER_MODULE)
-        _append_css(active_owner, "STEP4_CSS", ACTIVE_OWNER_CSS, "CFB Game Total Step-4 Games-on-This-Day")
+        active_css = str(getattr(active_owner, "STEP4_CSS", ""))
+        if not active_css:
+            raise RuntimeError("CFB Game Total Step-4 Games-on-This-Day CSS owner unavailable")
+        if _INSTALL_MARKER not in active_css:
+            active_owner.STEP4_CSS = active_css + ACTIVE_OWNER_CSS
         return True
 
 
