@@ -7,7 +7,7 @@ from devsystem.frozen_artifact_registry_v1 import validate_registry
 from .registry import GithubRegistryBackend, _state_hash
 
 MAIN_SHA = "c7bb9383c510c79dcca88f5e33d533a18085ee40"
-TARGET_SHA = "0e57b012f6807327e07e93cb358a92fd0f3a4c30"
+TARGET_SHA = "09a5efc543e5f8c57f3ac6686bd34e5932ba3685"
 THAW_ID = "THAW-CFB-GT-PAGE2-STEP8-APP-R1"
 FILES = {
     "app.py": {
