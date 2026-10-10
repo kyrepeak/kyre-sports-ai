@@ -1,0 +1,50 @@
+name: NBA Over Under Step 2 Data Foundation V1
+
+on:
+  pull_request:
+    paths:
+      - 'nba_data_foundation_v1.py'
+      - 'sports_api/nba_over_under_data_v1.py'
+      - 'sports_api/api/nba_over_under_v1.py'
+      - 'sports_api/main.py'
+      - 'tests/test_nba_data_foundation_v1.py'
+      - 'tests/test_nba_kyre_api_bridge_v1.py'
+      - 'devsystem/devsystem_manifest_v1.json'
+      - 'devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json'
+      - '.github/workflows/nba-over-under-step2-data-foundation-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'nba_data_foundation_v1.py'
+      - 'sports_api/nba_over_under_data_v1.py'
+      - 'sports_api/api/nba_over_under_v1.py'
+      - 'sports_api/main.py'
+      - 'tests/test_nba_data_foundation_v1.py'
+      - 'tests/test_nba_kyre_api_bridge_v1.py'
+      - 'devsystem/devsystem_manifest_v1.json'
+      - 'devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json'
+      - '.github/workflows/nba-over-under-step2-data-foundation-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nba-ou-step2-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nba-step2-data-foundation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install proof dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Run NBA Step 2 data + Kyre API contracts
+        run: >-
+          python -m pytest -q
+          tests/test_nba_data_foundation_v1.py
+          tests/test_nba_kyre_api_bridge_v1.py
