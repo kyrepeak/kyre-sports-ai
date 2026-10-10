@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import pytest
+
 from runless_proof_plane import cfb_game_total_backend_preservation_step2_closeout as closeout
 
 
@@ -41,7 +43,44 @@ def test_execute_is_one_pass_and_never_reruns_static_proof(monkeypatch):
 
 
 def test_additive_closeout_has_no_fake_thaw_contract():
-    source = closeout.__file__
-    assert source
     assert not hasattr(closeout, "THAW_ID")
     assert not hasattr(closeout, "ROUTER_PATH")
+
+
+def test_additive_closeout_allows_historical_registry_baseline_when_merge_did_not_change_path():
+    registry = {
+        "entries": {
+            "OLD_FREEZE": {
+                "artifacts": {"historical.yml": "a" * 40}
+            }
+        }
+    }
+    source_tree = {"historical.yml": "b" * 40}
+    merged_tree = {"historical.yml": "b" * 40}
+
+    result = closeout._verify_existing_frozen_paths_unchanged(
+        registry,
+        source_tree=source_tree,
+        merged_tree=merged_tree,
+    )
+
+    assert result["verified_path_count"] == 1
+
+
+def test_additive_closeout_blocks_any_existing_frozen_path_changed_by_this_merge():
+    registry = {
+        "entries": {
+            "OLD_FREEZE": {
+                "artifacts": {"historical.yml": "a" * 40}
+            }
+        }
+    }
+    source_tree = {"historical.yml": "b" * 40}
+    merged_tree = {"historical.yml": "c" * 40}
+
+    with pytest.raises(closeout.BackendPreservationStep2CloseoutFailure, match="EXISTING_FROZEN_PATH_CHANGED_BY_STEP2"):
+        closeout._verify_existing_frozen_paths_unchanged(
+            registry,
+            source_tree=source_tree,
+            merged_tree=merged_tree,
+        )
