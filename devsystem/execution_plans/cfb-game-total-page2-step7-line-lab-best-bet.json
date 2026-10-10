@@ -1,0 +1,40 @@
+{
+  "task_id": "cfb-game-total-page2-step7-line-lab-best-bet",
+  "workstream": "cfb-game-total-page2-v1",
+  "project": "API2",
+  "step": "7/8",
+  "source_main_sha": "bc0ff47ef5771998275456cba454256f6a9ae047",
+  "scope_lease_id": "SCOPE-LEASE-FF93328D58902FCDF0143D00",
+  "problem": "Page 2 has frozen Outlook, Team Snapshot, and Trends stages but no owned Line Lab or Best Bet surface for examining already-computed probabilities at alternate total lines and showing the final recommendation.",
+  "root_cause": "Steps 1-6 reserved gtp2-line-lab and gtp2-best-bet but did not add an isolated presentation component for precomputed line scenarios and the precomputed recommendation.",
+  "patch": "Add one presentation-only Line Lab + Best Bet component at the reserved anchors. Consume caller-owned line scenarios and recommendation values without fetching, projection changes, probability math, recommendation logic, or sportsbook influence.",
+  "write_paths": [
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+    "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+    "devsystem/execution_plans/cfb-game-total-page2-step7-line-lab-best-bet.json",
+    "devsystem/runless_proof_plans/cfb-game-total-page2-step7-line-lab-best-bet.json"
+  ],
+  "protected_dependencies": [
+    "cfb_game_total_page2_step3_integrated_flow_v1.py",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py",
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py",
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py"
+  ],
+  "safety": {
+    "may_modify_page1": false,
+    "may_modify_projection": false,
+    "may_modify_probability": false,
+    "may_modify_model": false,
+    "may_modify_market_ownership": false,
+    "may_add_recommendation_logic": false,
+    "may_add_network_calls": false,
+    "sportsbook_projection_influence": 0.0,
+    "github_actions_fallback": 0
+  },
+  "proof": {
+    "tdd_red_observed": false,
+    "targeted_unit_tests": "pending RED Runless",
+    "required_runless_gate": "runless-final-gate",
+    "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP7_LINE_LAB_BEST_BET_FROZEN"
+  }
+}
