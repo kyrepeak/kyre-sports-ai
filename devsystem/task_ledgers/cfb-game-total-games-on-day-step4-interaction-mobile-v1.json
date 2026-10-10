@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-games-on-day-step4-interaction-mobile-v1",
+  "title": "CFB Game Total — Games on This Day Step 4 Interaction + Mobile Proof",
+  "project": "API2",
+  "workstream": "cfb-game-total-games-on-day-v1",
+  "step": "4/4",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "94b8112ec28954ca2e20cab036f6a284cd22e78e",
+  "branch": "cfb-game-total-games-on-day-step4-interaction-mobile-v1",
+  "problem": "The Games on This Day cards are visually complete through Step 3 but need final interaction ergonomics, mobile overflow protection, selected-link preservation proof, and accessible names that expose the Step-3 status/rank/conference context.",
+  "root_cause": "The frozen Step-2 root card label contains kickoff and team names only, while mobile interaction/focus/overflow behavior has not yet been explicitly certified by a final additive layer.",
+  "patch": "Add a Step-4-only wrapper around Step-3 card augmentation, preserving href/event-id/aria-current while appending Step-3 details to the accessible name and adding touch, focus-visible, width, and horizontal-overflow guards without reopening Step-1 layout ownership.",
+  "mutation_scope": [
+    "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_games_on_day_step4_interaction_mobile_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step4-interaction-mobile-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step4-interaction-mobile-v1.json"
+  ],
+  "forbidden_scope": [
+    "Step 1 layout owner source",
+    "Step 2 visual owner source",
+    "Step 3 details owner source",
+    "new data providers",
+    "model math",
+    "projection",
+    "probability",
+    "sportsbook influence",
+    "schedule identity semantics",
+    "Page 2 product behavior",
+    "other sports",
+    "GitHub Actions fallback"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_exact_thaw_required": true,
+    "steps1_3_frozen_artifacts_immutable": true
+  },
+  "tdd": {
+    "test_first_commit": "babb748fe35e8a97a3a49f39ed3f67f9e126f269",
+    "red_observed": true,
+    "red_result": "5 failed; expected missing Step-4 owner/activation",
+    "red_executor": "Runless proof-plane CandidateWorkspace",
+    "implementation_commits": [
+      "9655c17a7efac7ddfaffc393695c951cb1a955b7",
+      "d7a5464f05cfb615e1996ee9b867e468c284a212"
+    ]
+  },
+  "frozen_router_change": {
+    "path": "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "from_blob": "f192c278fe8d8975642fd2eb918f2829cfb68699",
+    "to_blob": "e5d23b77d628d17744c6249f6c87d3b6935bb9b0",
+    "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-STEP4-INTERACTION-MOBILE-R1"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-GAMES-ON-DAY-STEP4-INTERACTION-MOBILE-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP4_INTERACTION_MOBILE_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "ACQUIRE_SCOPE_LEASE_AND_GRANT_EXACT_HEAD_THAW"
+}
