@@ -43,3 +43,20 @@ def test_step1_activation_is_exactly_scoped_to_cfb_game_total() -> None:
     assert '(sport, market) == ("CFB", "Game Total")' in theme
     assert "cfb_game_total_games_on_day_step1_layout_v1" in theme
     assert "install_games_on_day_step1_layout" in theme
+
+
+def test_step1_rebinds_css_to_fresh_v14_after_exact_route_module_purge() -> None:
+    text = SUBJECT.read_text(encoding="utf-8")
+    assert 'TARGET_PAGE = "cfb_game_total_clean_page_v38"' in text
+    assert 'importlib.import_module("streamlit_memory_lazy_router_v1")' in text
+    assert 'importlib.import_module("streamlit_memory_lazy_router_v160")' in text
+    assert 'importlib.import_module("streamlit_memory_lazy_router_v181")' in text
+    assert "_render_exact_game_total_surface" in text
+    assert "original_import = root._import" in text
+    assert "root._import = import_with_step1" in text
+    assert "root._import = original_import" in text
+    assert 'str(name) == TARGET_PAGE' in text
+    assert 'fresh_owner = importlib.import_module("cfb_game_total_clean_page_v14")' in text
+    assert "fresh_owner._V163_CSS = current_css + STEP1_CSS" in text
+    assert "restores.append((fresh_owner, current_css))" in text
+    assert "fresh_owner._V163_CSS = original_css" in text
