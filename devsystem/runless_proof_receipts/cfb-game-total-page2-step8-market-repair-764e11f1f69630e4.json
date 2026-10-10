@@ -1,0 +1,44 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1"
+  },
+  "base_main_sha": "5d20d527467edf046b7b1705d44b815242565e60",
+  "candidate_sha": "764e11f1f69630e4326ddfbbbc070e0840001780",
+  "created_at": "2026-10-10T02:47:13.624994+00:00",
+  "dependency_map": {
+    "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+    "cfb_game_total_clean_page_v38.py": "556b1204da18858d68e48dcb44571fc8f5be2d70",
+    "cfb_game_total_page2_step2_matchup_hero_phx_v1.py": "838564a373c10c2c8ee3639db04d04036baad6a5",
+    "cfb_game_total_page2_step3_integrated_flow_v1.py": "6d9c930095bf46c424235bc6704e5509f946193c",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py": "f0dde67fac3cfca511a27bee74275bf0ae809819",
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py": "bca6b5afa14a5e7747c76dfbb7fd7b670819464a",
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py": "c39bb9a5df699f367e87b8f10328f7e3f5a1a8bc",
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "6cfdb7303062780415428df33780bbce31f8b3e5",
+    "devsystem/cfb_game_total_page2_step8_live_cert_v1.py": "422b54320df359732499344794b4e1887cb14daa",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "154760d34b4f33aed1efafdf2b026262eb0e332b",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d"
+  },
+  "deployment_identity": "e39e46f30a0febb374da706d9b54d06d6c86bfbb",
+  "digest": "f12323f16847973965bf6e380e70f12cda1d68ca99af8c24e754380eb457c46e",
+  "evidence_digests": [
+    "190717e41e27467febdb4c1054acf1214d40c971bc6452a0ebadf22e7f8585b8",
+    "00a2f49cc51943e2b96d51f82774cde45b1c3eeea372a251c390dce8cf7411f6"
+  ],
+  "failure_class": "NONE",
+  "github_actions_fallback": 0,
+  "prior_digest": null,
+  "project": "API2",
+  "proof_id": "cfb-game-total-page2-step8-market-repair-764e11f1f69630e4",
+  "registry_after": {
+    "revision": 233,
+    "state_hash": "30bf66377a1d73cae2cf8c14be9449ae8df09fdb3d50a8a1ba39ae643aa2e984"
+  },
+  "registry_before": {
+    "revision": 233,
+    "state_hash": "30bf66377a1d73cae2cf8c14be9449ae8df09fdb3d50a8a1ba39ae643aa2e984"
+  },
+  "step": "8/8-postmerge-market-enrichment-repair-premerge",
+  "task_id": "cfb-game-total-page2-step8-final-responsive-live-data",
+  "workstream": "cfb-game-total-page2-v1"
+}
