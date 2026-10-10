@@ -5,6 +5,10 @@ is selected. Only then does this wrapper temporarily point the known exact
 Game-Total route owners at the frozen Step-8 Page-2 runtime. All pointers are
 restored after the render call; other sports/markets continue through the frozen
 parent router unchanged.
+
+Games on This Day Step 2 is an additive Page-1-only visual installer. It is
+activated before the frozen Page-1 parent render and is bypassed whenever Page 2
+owns an exact selected event.
 """
 from __future__ import annotations
 
@@ -16,6 +20,7 @@ import streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration a
 import streamlit_memory_lazy_router_v160 as render_owner
 import streamlit_memory_lazy_router_v181 as live_owner
 import streamlit_memory_lazy_router_v190 as cfb_router
+from cfb_game_total_games_on_day_step2_visual_v1 import install_games_on_day_step2_visual
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP8 FINAL V1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration"
@@ -57,6 +62,7 @@ def _selected_game_total() -> bool:
 
 def render_app() -> Any:
     if not _selected_game_total():
+        install_games_on_day_step2_visual()
         return frozen_parent.render_app()
 
     original_cfb_page = cfb_router.GAME_TOTAL_PAGE
