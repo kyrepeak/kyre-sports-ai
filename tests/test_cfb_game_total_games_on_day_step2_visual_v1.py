@@ -5,6 +5,16 @@ SUBJECT = ROOT / "cfb_game_total_games_on_day_step2_visual_v1.py"
 ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py"
 
 
+def _load_subject():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("games_on_day_step2", SUBJECT)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_step2_additive_visual_owner_exists_and_is_presentation_only() -> None:
     assert SUBJECT.exists(), "Step-2 game-card visual owner is not implemented yet"
     text = SUBJECT.read_text(encoding="utf-8")
@@ -19,12 +29,7 @@ def test_step2_additive_visual_owner_exists_and_is_presentation_only() -> None:
 
 def test_step2_card_html_has_exact_team_logos_phoenix_time_and_selected_state() -> None:
     assert SUBJECT.exists(), "Step-2 game-card visual owner is not implemented yet"
-    import importlib.util
-
-    spec = importlib.util.spec_from_file_location("games_on_day_step2", SUBJECT)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    module = _load_subject()
 
     game = {
         "espn_event_id": "401760001",
@@ -73,6 +78,26 @@ def test_step2_rebinds_visual_renderer_after_exact_route_purge() -> None:
     assert 'fresh_owner = importlib.import_module("cfb_game_total_clean_page_v14")' in text
     assert "fresh_owner._render_game_strip = enhanced_render_game_strip" in text
     assert "fresh_owner._render_game_strip = original_strip" in text
+
+
+def test_step2_installer_does_not_stack_when_step1_wraps_step2() -> None:
+    module = _load_subject()
+    assert hasattr(module, "_render_chain_has_step2"), "Step-2 installer has no chain-aware idempotence guard"
+
+    def base():
+        return None
+
+    def step2_wrapper():
+        return None
+
+    setattr(step2_wrapper, "_cfb_games_on_day_step2_original", base)
+
+    def step1_wrapper():
+        return None
+
+    setattr(step1_wrapper, "_cfb_games_on_day_step1_original", step2_wrapper)
+    assert module._render_chain_has_step2(step1_wrapper) is True
+    assert module._render_chain_has_step2(base) is False
 
 
 def test_step2_active_router_installs_visual_upgrade_only_for_page1_path() -> None:
