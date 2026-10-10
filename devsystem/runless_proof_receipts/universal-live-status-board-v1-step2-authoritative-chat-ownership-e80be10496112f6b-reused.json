@@ -1,0 +1,58 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json": "a75ba5bf372ea0561c538db6646cb32a9bfe91cd",
+    "devsystem/runless_proof_plans/universal-live-status-board-v1-step2-authoritative-chat-ownership.json": "a46cf7b36f31c5ff2d7fba965918b4ec499b0265",
+    "devsystem/task_ledgers/universal-live-status-board-v1-step2-authoritative-chat-ownership.json": "9d297fa0d934d41ca7ebc1baedf1cfea7ccf6ede",
+    "devsystem/universal_live_status_board_ownership_v1.py": "8e632b9be8395e0255dfc6406147cc40258c44ed",
+    "docs/superpowers/plans/2026-10-09-universal-live-status-board-v1-step2-authoritative-chat-ownership.md": "46b87ae0721c65d55092f0659d95104e24a8d80f",
+    "tests/test_devsystem_universal_live_status_board_ownership_v1.py": "c0a6b26d191f3a544b1de639daa171a2ef1cac38"
+  },
+  "candidate_sha": "e80be10496112f6b43f4652a64ddecbfc921b87a",
+  "created_at": "2026-10-10T04:29:10.772588+00:00",
+  "dependency_map": {
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "devsystem/universal_live_status_board_v1.py": "052ee9b52d57bc83e54a42124c4c8903bcae6b27",
+    "tests/test_devsystem_universal_live_status_board_v1.py": "8ab0ff4a6d5e494d62b0a5a3835e2b405137b0b2"
+  },
+  "digest": "387cbd74dc8fba11817cdebb2ed3188b8fce6535e96a494de89d9dbf5daecede",
+  "evidence_digests": [
+    "c859e756d6ebc1715d2936ca58040bc3e8216f28c6feaca891f1a47c490aa1aa",
+    "881237b165e663bbc29d08056012ff2dd438ccf125be0a0055965858d2f8cd88"
+  ],
+  "failure_class": "NONE",
+  "github_actions_enabled": false,
+  "prior_digest": "d945e6c3cb6b4457ab9cf01b74e78a16c7123105277797c9306691ccf5085807",
+  "project": "API2",
+  "proof_fingerprint": "463bef7ad212b3aaafd4069131a4a929d81b472f866b82940a11b7d006c6cf1b",
+  "proof_id": "universal-live-status-board-v1-step2-authoritative-chat-ownership-e80be10496112f6b-reused",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 235,
+    "state_hash": "5ffe9963a665cc0ed7688862d4aa51cc5b39487268ba44640ef4971b25d445dc"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 235,
+    "state_hash": "5ffe9963a665cc0ed7688862d4aa51cc5b39487268ba44640ef4971b25d445dc"
+  },
+  "reuse_content_fingerprint": "b21b184444f96021636f661b02a7d03110067d374281e46514f6bc2b5853dcb3",
+  "reused_from_proof_id": "universal-live-status-board-v1-step2-authoritative-chat-ownership-374dbb2a4702a6a5-54c88c195c92e0ee",
+  "reused_from_receipt_digest": "d945e6c3cb6b4457ab9cf01b74e78a16c7123105277797c9306691ccf5085807",
+  "static_evidence_reexecuted": false,
+  "step": "universal-live-status-board-v1-step2-authoritative-chat-ownership",
+  "task_id": "universal-live-status-board-v1-step2-authoritative-chat-ownership",
+  "workstream": "universal-live-status-board-v1"
+}
