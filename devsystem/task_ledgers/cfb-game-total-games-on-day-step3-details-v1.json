@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-games-on-day-step3-details-v1",
+  "title": "CFB Game Total — Games on This Day Step 3 Useful Details",
+  "project": "API2",
+  "workstream": "cfb-game-total-games-on-day-v1",
+  "step": "3/4",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "911f8727f7826eeb6e5cc434d6fb3e24af9df09a",
+  "branch": "cfb-game-total-games-on-day-step3-details-v1",
+  "problem": "Step-2 matchup cards are visually clear but do not expose game state, team ranking, or conference context directly in the Games on This Day selector.",
+  "root_cause": "The frozen Step-2 card composer intentionally owns only logos, team-color accents, Phoenix kickoff time, and selected state; schedule-provided status/rank/conference fields remain unused by the card markup.",
+  "patch": "Add a Step-3-only presentation wrapper around the frozen Step-2 card composer to surface normalized LIVE/UPCOMING/FINAL state, numeric Top-25 rank when present, and conference labels when present, using only already-loaded schedule identity.",
+  "mutation_scope": [
+    "cfb_game_total_games_on_day_step3_details_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_games_on_day_step3_details_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step3-details-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step3-details-v1.json"
+  ],
+  "forbidden_scope": [
+    "Step 1 layout artifacts",
+    "Step 2 visual owner source",
+    "Step 4 interaction/mobile proof",
+    "new data providers",
+    "model math",
+    "projection",
+    "probability",
+    "sportsbook influence",
+    "schedule identity semantics",
+    "event selection semantics",
+    "Page 2 product behavior",
+    "other sports",
+    "GitHub Actions fallback"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_exact_thaw_required": true,
+    "step1_step2_frozen_artifacts_immutable": true
+  },
+  "tdd": {
+    "test_first_commit": "5ba37d28f04b85d3589899d2e3f4c47b8976b985",
+    "red_observed": true,
+    "red_result": "EXPECTED_RED: Step-3 details owner is not implemented yet",
+    "red_executor": "Runless proof plane",
+    "implementation_commits": [
+      "cdd40a18dfb13cc4d6443a29dce18b8ccdd289a1",
+      "4f579e9648892b152cca3b5bda9867f9397824a5"
+    ]
+  },
+  "frozen_router_change": {
+    "path": "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "from_blob": "7bcb675379ef63f21fd0e6400c9076e746a69b9a",
+    "to_blob": "f192c278fe8d8975642fd2eb918f2829cfb68699",
+    "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-STEP3-DETAILS-R1"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-GAMES-ON-DAY-STEP3-DETAILS-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP3_DETAILS_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "ACQUIRE_SCOPE_LEASE_AND_GRANT_EXACT_HEAD_THAW"
+}
