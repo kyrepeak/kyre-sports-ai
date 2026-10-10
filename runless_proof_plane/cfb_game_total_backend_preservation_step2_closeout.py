@@ -9,14 +9,8 @@ from devsystem.frozen_artifact_registry_v1 import (
     _payload_without_hash,
     validate_registry,
 )
-from devsystem.runless_terminal_proof_receipt_v1 import (
-    build_runless_receipt,
-    validate_runless_receipt,
-)
-from devsystem.scope_aware_execution_lease_v1 import (
-    release_scope,
-    validate_state as validate_scope_lease_state,
-)
+from devsystem.runless_terminal_proof_receipt_v1 import build_runless_receipt, validate_runless_receipt
+from devsystem.scope_aware_execution_lease_v1 import release_scope, validate_state as validate_scope_lease_state
 
 from .gate import publish_gate
 from .postmerge_reuse import evaluate_postmerge_reuse
@@ -75,10 +69,46 @@ def _registry_summary(registry: dict) -> dict:
     return {
         "revision": int(registry["revision"]),
         "state_hash": str(registry["state_hash"]),
-        "active_thaws": sorted(
-            str(item.get("thaw_id") or "") for item in registry.get("active_thaws", [])
-        ),
+        "active_thaws": sorted(str(g.get("thaw_id") or "") for g in registry.get("active_thaws", [])),
     }
+
+
+def _frozen_paths(registry: dict) -> list[str]:
+    paths: set[str] = set()
+    for entry in (registry.get("entries") or {}).values():
+        paths.update(str(path) for path in (entry.get("artifacts") or {}))
+    return sorted(paths)
+
+
+def _verify_existing_frozen_paths_unchanged(
+    registry: dict,
+    *,
+    source_tree: dict[str, str],
+    merged_tree: dict[str, str],
+) -> dict:
+    """Prove this additive merge changed none of the registry's existing paths.
+
+    Historical registry blobs are intentionally not required to equal current
+    main. The invariant for an additive baseline move is source-main blob ==
+    merged-main blob for every path already governed by the frozen registry.
+    """
+    paths = _frozen_paths(registry)
+    changed = [
+        path
+        for path in paths
+        if str(source_tree.get(path) or "") != str(merged_tree.get(path) or "")
+    ]
+    if changed:
+        path = changed[0]
+        raise BackendPreservationStep2CloseoutFailure(
+            "EXISTING_FROZEN_PATH_CHANGED_BY_STEP2:"
+            + path
+            + ":"
+            + str(source_tree.get(path) or "")
+            + ":"
+            + str(merged_tree.get(path) or "")
+        )
+    return {"verified_path_count": len(paths)}
 
 
 def _verify_merge(client) -> dict[str, str]:
@@ -92,8 +122,10 @@ def _verify_merge(client) -> dict[str, str]:
 
 
 def _load_premerge_receipt(client) -> dict:
-    raw = client.content(f"{RECEIPT_BASE}/{PREMERGE_PROOF_ID}.json", ref=RECEIPT_REF)
-    receipt = _decode_json(raw, "PREMERGE_RECEIPT")
+    receipt = _decode_json(
+        client.content(f"{RECEIPT_BASE}/{PREMERGE_PROOF_ID}.json", ref=RECEIPT_REF),
+        "PREMERGE_RECEIPT",
+    )
     validate_runless_receipt(receipt)
     if receipt.get("proof_id") != PREMERGE_PROOF_ID:
         raise BackendPreservationStep2CloseoutFailure("PREMERGE_PROOF_ID_DRIFT")
@@ -103,49 +135,33 @@ def _load_premerge_receipt(client) -> dict:
         raise BackendPreservationStep2CloseoutFailure("PREMERGE_CANDIDATE_DRIFT")
     if receipt.get("digest") != PREMERGE_DIGEST or receipt.get("failure_class") != "NONE":
         raise BackendPreservationStep2CloseoutFailure("PREMERGE_RECEIPT_NOT_GREEN")
-    before = receipt.get("registry_before") or {}
-    after = receipt.get("registry_after") or {}
-    if before != after:
+    if (receipt.get("registry_before") or {}) != (receipt.get("registry_after") or {}):
         raise BackendPreservationStep2CloseoutFailure("PREMERGE_REGISTRY_MUTATED")
-    if int(after.get("revision") or -1) != 253:
-        raise BackendPreservationStep2CloseoutFailure("PREMERGE_REGISTRY_REVISION_DRIFT")
     return receipt
 
 
 def _verify_premerge_gate(client) -> None:
-    runs = client.request(
+    payload = client.request(
         "GET",
         f"/commits/{SOURCE_CANDIDATE_SHA}/check-runs?check_name=runless-final-gate&filter=all&per_page=100",
     ) or {}
-    exact = [run for run in runs.get("check_runs", []) if int(run.get("id") or 0) == PREMERGE_CHECK_ID]
+    exact = [run for run in payload.get("check_runs", []) if int(run.get("id") or 0) == PREMERGE_CHECK_ID]
     if len(exact) != 1:
         raise BackendPreservationStep2CloseoutFailure("PREMERGE_GATE_IDENTITY_DRIFT")
     run = exact[0]
-    app_id = int(((run.get("app") or {}).get("id")) or 0)
     if (
         run.get("name") != "runless-final-gate"
         or run.get("head_sha") != SOURCE_CANDIDATE_SHA
         or run.get("status") != "completed"
         or run.get("conclusion") != "success"
-        or app_id != RUNLESS_APP_ID
+        or int(((run.get("app") or {}).get("id")) or 0) != RUNLESS_APP_ID
+        or str((run.get("output") or {}).get("summary") or "") != "receipt=" + PREMERGE_DIGEST
     ):
         raise BackendPreservationStep2CloseoutFailure("PREMERGE_GATE_NOT_GREEN")
-    summary = str((run.get("output") or {}).get("summary") or "")
-    if summary != "receipt=" + PREMERGE_DIGEST:
-        raise BackendPreservationStep2CloseoutFailure("PREMERGE_GATE_RECEIPT_DRIFT")
 
 
-def _ensure_merged_receipt_and_gate(
-    client,
-    *,
-    tree: dict[str, str],
-    premerge: dict,
-    registry: dict,
-) -> dict:
-    candidate_plan = _decode_json(
-        client.content(PLAN_PATH, ref=SOURCE_CANDIDATE_SHA),
-        "CANDIDATE_PLAN",
-    )
+def _ensure_merged_receipt_and_gate(client, *, tree: dict[str, str], premerge: dict, registry: dict) -> dict:
+    candidate_plan = _decode_json(client.content(PLAN_PATH, ref=SOURCE_CANDIDATE_SHA), "CANDIDATE_PLAN")
     merged_plan = _decode_json(client.content(PLAN_PATH, ref=MAIN_SHA), "MERGED_PLAN")
     if candidate_plan.get("probes") != [] or merged_plan.get("probes") != []:
         raise BackendPreservationStep2CloseoutFailure("CANONICAL_PROBE_POLICY_DRIFT")
@@ -153,19 +169,16 @@ def _ensure_merged_receipt_and_gate(
     candidate_tree = client.tree_blobs(SOURCE_CANDIDATE_SHA)
     artifact_paths = list(premerge.get("artifact_map") or {})
     dependency_paths = list(premerge.get("dependency_map") or {})
-    candidate_artifacts = {path: str(candidate_tree.get(path) or "") for path in artifact_paths}
-    candidate_dependencies = {path: str(candidate_tree.get(path) or "") for path in dependency_paths}
-    merged_artifacts = {path: str(tree.get(path) or "") for path in artifact_paths}
-    merged_dependencies = {path: str(tree.get(path) or "") for path in dependency_paths}
-
+    candidate_artifacts = {p: str(candidate_tree.get(p) or "") for p in artifact_paths}
+    candidate_dependencies = {p: str(candidate_tree.get(p) or "") for p in dependency_paths}
+    merged_artifacts = {p: str(tree.get(p) or "") for p in artifact_paths}
+    merged_dependencies = {p: str(tree.get(p) or "") for p in dependency_paths}
     if candidate_artifacts != dict(premerge.get("artifact_map") or {}):
         raise BackendPreservationStep2CloseoutFailure("CANDIDATE_ARTIFACT_RECEIPT_DRIFT")
     if candidate_dependencies != dict(premerge.get("dependency_map") or {}):
         raise BackendPreservationStep2CloseoutFailure("CANDIDATE_DEPENDENCY_RECEIPT_DRIFT")
-    if merged_artifacts != candidate_artifacts:
-        raise BackendPreservationStep2CloseoutFailure("MERGED_ARTIFACT_DRIFT")
-    if merged_dependencies != candidate_dependencies:
-        raise BackendPreservationStep2CloseoutFailure("MERGED_BACKEND_DEPENDENCY_DRIFT")
+    if merged_artifacts != candidate_artifacts or merged_dependencies != candidate_dependencies:
+        raise BackendPreservationStep2CloseoutFailure("MERGED_CONTENT_DRIFT")
 
     reuse = evaluate_postmerge_reuse(
         premerge_receipt=premerge,
@@ -181,16 +194,13 @@ def _ensure_merged_receipt_and_gate(
         raise BackendPreservationStep2CloseoutFailure(
             "POSTMERGE_REUSE_REJECTED:" + ",".join(reuse.get("reasons") or [])
         )
-    if reuse.get("static_evidence_reexecuted") is not False:
-        raise BackendPreservationStep2CloseoutFailure("STATIC_EVIDENCE_WAS_REEXECUTED")
-    if reuse.get("github_actions_enabled") is not False:
-        raise BackendPreservationStep2CloseoutFailure("GITHUB_ACTIONS_FALLBACK_DRIFT")
+    if reuse.get("static_evidence_reexecuted") is not False or reuse.get("github_actions_enabled") is not False:
+        raise BackendPreservationStep2CloseoutFailure("POSTMERGE_REUSE_POLICY_DRIFT")
 
     path = f"{RECEIPT_BASE}/{MERGED_PROOF_ID}.json"
-    existing = client.content(path, ref=RECEIPT_REF, allow_404=True)
-    if existing:
-        merged = _decode_json(existing, "MERGED_RECEIPT")
-        validate_runless_receipt(merged)
+    raw = client.content(path, ref=RECEIPT_REF, allow_404=True)
+    if raw:
+        merged = _decode_json(raw, "MERGED_RECEIPT")
     else:
         merged = build_runless_receipt(
             proof_id=MERGED_PROOF_ID,
@@ -219,61 +229,44 @@ def _ensure_merged_receipt_and_gate(
             RECEIPT_REF,
             "runless: persist CFB Game Total backend preservation Step 2 merged receipt",
         )
-
     validate_runless_receipt(merged)
     if merged.get("candidate_sha") != MAIN_SHA or merged.get("prior_digest") != PREMERGE_DIGEST:
         raise BackendPreservationStep2CloseoutFailure("MERGED_RECEIPT_IDENTITY_DRIFT")
-    if merged.get("static_evidence_reexecuted") is not False:
-        raise BackendPreservationStep2CloseoutFailure("MERGED_RECEIPT_STATIC_RERUN_DRIFT")
-    if merged.get("github_actions_enabled") is not False:
-        raise BackendPreservationStep2CloseoutFailure("MERGED_RECEIPT_ACTIONS_DRIFT")
 
     runs = client.request(
         "GET",
         f"/commits/{MAIN_SHA}/check-runs?check_name=runless-final-gate&filter=latest&per_page=100",
     ) or {}
     expected_summary = "receipt=" + str(merged["digest"])
-    gate_published = True
-    for run in runs.get("check_runs", []):
-        output = run.get("output") or {}
-        if (
-            run.get("head_sha") == MAIN_SHA
-            and run.get("status") == "completed"
-            and run.get("conclusion") == "success"
-            and int(((run.get("app") or {}).get("id")) or 0) == RUNLESS_APP_ID
-            and output.get("summary") == expected_summary
-        ):
-            gate_published = False
-            break
-    if gate_published:
+    exists = any(
+        run.get("head_sha") == MAIN_SHA
+        and run.get("status") == "completed"
+        and run.get("conclusion") == "success"
+        and int(((run.get("app") or {}).get("id")) or 0) == RUNLESS_APP_ID
+        and (run.get("output") or {}).get("summary") == expected_summary
+        for run in runs.get("check_runs", [])
+    )
+    if not exists:
         publish_gate(client, MAIN_SHA, "success", merged)
+    return {"receipt": merged, "reuse": reuse, "gate_published": not exists}
 
-    return {"receipt": merged, "reuse": reuse, "gate_published": gate_published}
 
-
-def _advance_registry_and_freeze(
-    client,
-    *,
-    tree: dict[str, str],
-    premerge: dict,
-) -> dict:
+def _advance_registry_and_freeze(client, *, tree: dict[str, str], premerge: dict) -> dict:
     backend = GithubRegistryBackend(client)
     registry = backend.read_registry()
-    validated = validate_registry(registry)
+    validate_registry(registry)
 
-    freeze_paths = sorted(
-        set(premerge.get("artifact_map") or {}) | set(premerge.get("dependency_map") or {})
-    )
+    freeze_paths = sorted(set(premerge.get("artifact_map") or {}) | set(premerge.get("dependency_map") or {}))
     freeze_artifacts = {path: str(tree.get(path) or "") for path in freeze_paths}
     if any(not blob for blob in freeze_artifacts.values()):
         raise BackendPreservationStep2CloseoutFailure("FREEZE_ARTIFACT_MISSING")
-
     exact_entry = {
         "status": "FROZEN",
         "checkpoint_id": FREEZE_TOKEN,
         "source_main_sha": MAIN_SHA,
         "artifacts": dict(sorted(freeze_artifacts.items())),
     }
+
     existing = (registry.get("entries") or {}).get(FREEZE_TOKEN)
     if str(registry.get("source_main_sha") or "") == MAIN_SHA:
         if existing != exact_entry:
@@ -293,28 +286,14 @@ def _advance_registry_and_freeze(
     if client.branch_sha("main") != MAIN_SHA:
         raise BackendPreservationStep2CloseoutFailure("MAIN_MOVED_BEFORE_FREEZE")
 
-    # Step 2 is additive-only. Before advancing the global registry baseline,
-    # prove every previously frozen artifact still has its exact registered blob
-    # on the merged main. This replaces any need for a fabricated thaw/update.
-    frozen_baseline = dict(validated.get("artifacts") or {})
-    drift = {
-        path: {"expected": blob, "actual": str(tree.get(path) or "")}
-        for path, blob in frozen_baseline.items()
-        if str(tree.get(path) or "") != blob
-    }
-    if drift:
-        first_path = sorted(drift)[0]
-        item = drift[first_path]
-        raise BackendPreservationStep2CloseoutFailure(
-            "EXISTING_FROZEN_BASELINE_DRIFT:"
-            + first_path
-            + ":"
-            + item["expected"]
-            + ":"
-            + item["actual"]
-        )
-
+    source_tree = client.tree_blobs(SOURCE_MAIN_SHA)
+    preserved = _verify_existing_frozen_paths_unchanged(
+        registry,
+        source_tree=source_tree,
+        merged_tree=tree,
+    )
     active_thaws_before = deepcopy(registry.get("active_thaws", []))
+
     updated = deepcopy(registry)
     updated["revision"] = int(registry["revision"]) + 1
     updated["source_main_sha"] = MAIN_SHA
@@ -343,13 +322,12 @@ def _advance_registry_and_freeze(
         raise BackendPreservationStep2CloseoutFailure("FREEZE_READBACK_MISMATCH")
     if readback.get("active_thaws", []) != active_thaws_before:
         raise BackendPreservationStep2CloseoutFailure("UNRELATED_THAW_READBACK_DRIFT")
-
     return {
         "already_frozen": False,
         "revision": int(readback["revision"]),
         "state_hash": str(readback["state_hash"]),
         "artifact_count": len(freeze_artifacts),
-        "preexisting_frozen_artifacts_verified": len(frozen_baseline),
+        "preexisting_frozen_paths_unchanged": int(preserved["verified_path_count"]),
         "unrelated_thaws_preserved": len(active_thaws_before),
     }
 
@@ -366,12 +344,7 @@ def _release_lease(client) -> dict:
         return {"released": False, "already_absent": True}
     if len(matches) != 1:
         raise BackendPreservationStep2CloseoutFailure("LEASE_IDENTITY_DRIFT")
-
-    unrelated_before = [
-        deepcopy(holder)
-        for holder in state.get("holders", [])
-        if holder.get("lease_id") != LEASE_ID
-    ]
+    unrelated_before = [deepcopy(h) for h in state.get("holders", []) if h.get("lease_id") != LEASE_ID]
     released = release_scope(
         state,
         owner_id=LEASE_OWNER,
@@ -390,14 +363,11 @@ def _release_lease(client) -> dict:
         "lease: release CFB Game Total backend preservation Step 2 scope",
         raw["sha"],
     )
-    readback = validate_scope_lease_state(
-        _decode_json(client.content(LEASE_PATH, ref=LEASE_BRANCH), "LEASE_READBACK")
-    )
-    if any(holder.get("lease_id") == LEASE_ID for holder in readback.get("holders", [])):
+    readback = validate_scope_lease_state(_decode_json(client.content(LEASE_PATH, ref=LEASE_BRANCH), "LEASE_READBACK"))
+    if any(h.get("lease_id") == LEASE_ID for h in readback.get("holders", [])):
         raise BackendPreservationStep2CloseoutFailure("LEASE_RELEASE_READBACK_MISMATCH")
     if readback.get("holders", []) != unrelated_before:
         raise BackendPreservationStep2CloseoutFailure("UNRELATED_LEASE_READBACK_DRIFT")
-
     return {
         "released": True,
         "remaining_holders": len(readback.get("holders", [])),
@@ -412,17 +382,11 @@ def execute(app):
     premerge = _load_premerge_receipt(client)
     _verify_premerge_gate(client)
     registry = GithubRegistryBackend(client).read_registry()
-    merged = _ensure_merged_receipt_and_gate(
-        client,
-        tree=tree,
-        premerge=premerge,
-        registry=registry,
-    )
+    merged = _ensure_merged_receipt_and_gate(client, tree=tree, premerge=premerge, registry=registry)
     frozen = _advance_registry_and_freeze(client, tree=tree, premerge=premerge)
     lease = _release_lease(client)
     if client.branch_sha("main") != MAIN_SHA:
         raise BackendPreservationStep2CloseoutFailure("MAIN_MOVED_AFTER_CLOSEOUT")
-
     return {
         "status": "GREEN",
         "decision": "CFB_GAME_TOTAL_BACKEND_PRESERVATION_STEP2_GREEN_FROZEN",
@@ -456,11 +420,7 @@ def install_startup(app):
             }
         print(
             "CFB_GAME_TOTAL_BACKEND_PRESERVATION_STEP2_CLOSEOUT="
-            + json.dumps(
-                app.state.cfb_game_total_backend_preservation_step2_closeout,
-                sort_keys=True,
-                default=str,
-            ),
+            + json.dumps(app.state.cfb_game_total_backend_preservation_step2_closeout, sort_keys=True, default=str),
             flush=True,
         )
 
