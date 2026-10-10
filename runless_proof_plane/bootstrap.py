@@ -159,7 +159,7 @@ print("CFB_GT_PAGE2_STEP8_FAST_LIVE_GREEN", flush=True)
         evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
         if evidence.get("status") != "GREEN" or evidence.get("source_main_sha") != finalizer.MAIN_SHA:
             raise RuntimeError("PAGE2_STEP8_FAST_LIVE_CERT_IDENTITY_MISMATCH")
-        if set(evidence.get("viewports") or {{}}) != {{"mobile390", "mobile430", "tablet", "desktop"}}:
+        if set(evidence.get("viewports") or {}) != {"mobile390", "mobile430", "tablet", "desktop"}:
             raise RuntimeError("PAGE2_STEP8_FAST_LIVE_CERT_VIEWPORT_MISMATCH")
         return evidence
 
