@@ -1,12 +1,12 @@
 {
-  "generation": 309,
+  "generation": 310,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-10T23:16:18Z",
-      "expires_at_utc": "2026-10-11T00:16:18Z",
-      "generation": 309,
-      "heartbeat_at_utc": "2026-10-10T23:16:18Z",
-      "lease_id": "SCOPE-LEASE-46BEECB80207973131A5BF34",
+      "acquired_at_utc": "2026-10-10T23:20:18Z",
+      "expires_at_utc": "2026-10-11T00:20:18Z",
+      "generation": 310,
+      "heartbeat_at_utc": "2026-10-10T23:20:18Z",
+      "lease_id": "SCOPE-LEASE-D22E83F4CD40ACCD431DD801",
       "owner_id": "api2-cfb-game-total-native-page1-shell-step3",
       "scope": {
         "dependency_tokens": [
@@ -14,7 +14,7 @@
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "091ec7abc840119705e7f98d895c1346871ed2f8",
+          "candidate_sha": "9afe37ec19d2b02aa204dd6158d55f2eae6dd726",
           "main_sha": "a3166e7d980d85b6adb6a064b8ac225befd9b9e3"
         },
         "shared_resources": [
@@ -35,8 +35,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 530,
+  "revision": 532,
   "schema_version": 1,
-  "state_hash": "3742583e92e8c6a7ee0ef7481bd0789e7a2a21dce9310dfa92ba774bdd224641",
+  "state_hash": "a2729e5f0821175b1da3dd4bb55b8639a2e1edd8bfb41b481180ddc29446d953",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
