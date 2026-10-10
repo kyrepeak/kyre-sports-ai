@@ -23,6 +23,15 @@ def _load_runtime():
     return module
 
 
+def _distribution() -> list[dict[str, float | int]]:
+    return [
+        {"total": 57, "probability": 0.20},
+        {"total": 58, "probability": 0.30},
+        {"total": 59, "probability": 0.35},
+        {"total": 60, "probability": 0.15},
+    ]
+
+
 def _payload() -> dict:
     return {
         "identity": {
@@ -31,8 +40,22 @@ def _payload() -> dict:
             "venue": "Jones AT&T Stadium",
             "kickoff_iso": "2026-10-10T23:00:00Z",
         },
-        "away": {"team": "Arizona State", "record": "5-1"},
-        "home": {"team": "Texas Tech", "record": "6-0"},
+        "away": {
+            "team": "Arizona State",
+            "record": "5-1",
+            "plays_per_game": 71.2,
+            "yards_per_play": 6.4,
+            "red_zone_td_rate": 0.68,
+            "points_allowed_pg": 19.8,
+        },
+        "home": {
+            "team": "Texas Tech",
+            "record": "6-0",
+            "plays_per_game": 74.6,
+            "yards_per_play": 6.9,
+            "red_zone_td_rate": 0.72,
+            "points_allowed_pg": 17.4,
+        },
         "display_game": {
             "espn_event_id": "401999999",
             "game_date": "2026-10-10",
@@ -42,25 +65,20 @@ def _payload() -> dict:
             "market_total": 58.5,
         },
         "raw": {
+            "ready": True,
             "projected_combined_total": 63.8,
-            "over_probability": 0.61,
-            "under_probability": 0.39,
             "analysis_line": 58.5,
-            "projected_away_points": 30.1,
-            "projected_home_points": 33.7,
+            "distribution_ready": True,
+            "distribution": _distribution(),
             "recent_totals": [55, 62, 60, 66, 59],
-            "line_scenarios": [
-                {"line": 55.5, "over_probability": "67%", "under_probability": "33%"},
-                {"line": 58.5, "over_probability": "61%", "under_probability": "39%"},
-                {"line": 61.5, "over_probability": "54%", "under_probability": "46%"},
-            ],
         },
         "final": {
             "ready": True,
             "projected_combined_total": 63.8,
             "forecast_strength": 0.61,
             "grade": "B",
-            "recommendation": "OVER",
+            "betting_pick_active": False,
+            "confidence": "MEDIUM",
         },
         "statuses": {1: "READY"},
         "ready_count": 12,
@@ -166,3 +184,45 @@ def test_step8_sample_has_no_limited_mock_or_pending_copy() -> None:
     assert "horizontal-scroll" not in html
     assert "@media(max-width:760px)" in html
     assert "@media(max-width:480px)" in html
+
+
+def test_review_regression_hides_legacy_page1_siblings() -> None:
+    body = _read(RUNTIME)
+    assert ".gt159-shell>.gtp2s8-live~.gt159-section" in body
+    assert ".gt159-shell>.gtp2s8-live~.gt159-final" in body
+    assert ".gt159-shell>.gtp2s8-live~.gt159-top5" in body
+    assert ".gtp2s8-live .gt159-shell>.gt159-section" not in body
+
+
+def test_review_regression_uses_frozen_distribution_for_line_probabilities() -> None:
+    step8 = _load_runtime()
+    over, under = step8._distribution_line_probabilities(
+        {"distribution_ready": True, "distribution": _distribution()},
+        58.5,
+    )
+    assert round(float(over), 6) == 0.50
+    assert round(float(under), 6) == 0.50
+    html = step8.build_page2_body_html(_payload())
+    assert "50.0%" in html
+    assert "Over Probability" in html
+    assert "Under Probability" in html
+
+
+def test_review_regression_team_snapshot_uses_captured_team_profiles() -> None:
+    step8 = _load_runtime()
+    html = step8.build_page2_body_html(_payload())
+    for value in ("71.2", "74.6", "6.4", "6.9", "19.8", "17.4"):
+        assert value in html
+    assert "68.0%" in html
+    assert "72.0%" in html
+
+
+def test_review_regression_forecast_strength_is_not_bet_probability() -> None:
+    step8 = _load_runtime()
+    payload = _payload()
+    assert payload["final"]["betting_pick_active"] is False
+    html = step8.build_page2_body_html(payload)
+    best = html.split('data-testid="gtp2s7-best-bet"', 1)[1]
+    assert "NO BET" in best
+    assert "Independent Game Total forecast" in best
+    assert "<article><span>Probability</span><strong>—</strong></article>" in best
