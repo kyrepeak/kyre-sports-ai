@@ -32,8 +32,10 @@
     "github_actions_fallback": 0
   },
   "proof": {
-    "tdd_red_observed": false,
-    "targeted_unit_tests": "pending RED Runless",
+    "tdd_red_observed": true,
+    "tdd_red_candidate_sha": "a01c3341f2a5d6446e69d5b7da3482d488ed4b6c",
+    "tdd_red_failure_class": "STATIC_PROOF",
+    "targeted_unit_tests": "required by Runless proof plan",
     "required_runless_gate": "runless-final-gate",
     "freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP7_LINE_LAB_BEST_BET_FROZEN"
   }
