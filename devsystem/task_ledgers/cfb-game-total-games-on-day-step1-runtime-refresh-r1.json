@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-games-on-day-step1-runtime-refresh-r1",
+  "title": "CFB Game Total — Games on This Day Step 1 Runtime Refresh",
+  "project": "API2",
+  "workstream": "cfb-game-total-games-on-day-v1",
+  "step": "1/4 final-mile repair",
+  "status": "CANDIDATE_ASSEMBLY",
+  "base_main_sha": "60da7cbd5cf05413f2c9d8ce3e8921adb2f58648",
+  "branch": "cfb-game-total-games-on-day-step1-runtime-refresh-r1",
+  "problem": "The certified Step-1 layout code is merged but Streamlit production retained the pre-change imported kyre_remaining_pages_theme_v1 module, so the live Saturday selector still renders flex/overflow-x:auto.",
+  "root_cause": "Imported-module-only convergence did not restart the Streamlit process; the repository already uses requirements.txt no-op markers to force full process redeploys for this exact cache class.",
+  "patch": "Append one no-op requirements.txt redeploy marker. No product behavior, model, API, projection, event identity, selection logic, or visual design changes.",
+  "authoritative_lease": "SCOPE-LEASE-CE9FDE29B716004089C59117",
+  "mutation_scope": [
+    "requirements.txt",
+    "tests/test_cfb_game_total_games_on_day_step1_runtime_refresh_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step1-runtime-refresh-r1.json",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-runtime-refresh-r1.json"
+  ],
+  "forbidden_scope": [
+    "Step-1 layout redesign",
+    "model math",
+    "projection",
+    "probability",
+    "API behavior",
+    "sportsbook influence",
+    "schedule identity",
+    "event selection behavior",
+    "other sports",
+    "Steps 2-4",
+    "GitHub Actions fallback"
+  ],
+  "tdd": {
+    "test_first_commit": "e44c862f9ad01e8a346c4ef4dd42d1bcb9aa5d7f",
+    "red_observed": true,
+    "red_result": "EXPECTED_RED: refresh marker absent"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-GAMES-ON-DAY-STEP1-REFRESH-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP1_CARD_LAYOUT_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "CREATE_EXACT_REQUIREMENTS_BLOB_TREE_COMMIT_THEN_BIND_THAW"
+}
