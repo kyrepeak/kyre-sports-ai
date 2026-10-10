@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "cfb_game_total_clean_page_v41.py": "25de75bf3b55b6e7001763c8170807c5fac139d2",
+    "devsystem/runless_proof_plans/cfb-game-total-phoenix-day-selector-step4-v1.json": "7bb78c98b75ce90e39b201387090d2c23c7d0ede",
+    "devsystem/task_ledgers/cfb-game-total-phoenix-day-selector-step4-v1.json": "758162f830ca6c2db7db24552313c01f15ce79b3",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "cfbdc3767e8cddc3b80babe464baeead15ac7146",
+    "tests/test_cfb_game_total_phoenix_day_selector_step4_v1.py": "dcb5ce040a4bffb056145b88176574f76668e22d"
+  },
+  "candidate_sha": "5d832f4c5ab62dfb375c313a7fed9d0d8341610c",
+  "created_at": "2026-10-10T23:36:41.067234+00:00",
+  "dependency_map": {
+    "cfb_freeze_manifest_v12.json": "3ff2a727967e80dddbe03f747d9f32090cc39539",
+    "cfb_game_total_clean_page_v11.py": "5cd70939d93717d5b5d85cb66812605c0cceadb8",
+    "cfb_game_total_clean_page_v39.py": "0135dc520dfaa0c2c878cbb17618f17188dfff1a",
+    "cfb_game_total_clean_page_v40.py": "895c590d9c67d11e65463b1c59d7bf4d161255a3",
+    "cfb_game_total_final_v1.py": "78fbeaeb77e3101cc83c579b15f9cd6d485df952",
+    "cfb_game_total_model_input_v1.py": "0d270126b6265ec22c29ea0a73faaf57235f4b8e",
+    "cfb_game_total_model_v1.py": "88e98c2b78c689e48f81f049cb1a64c0e958e964",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
+    "cfb_game_total_slate_v1.py": "777beb82b1dc3dd7df76f8f4d8d37f87eeb9b872",
+    "cfb_game_total_slate_v2.py": "1acc2859bc1666b968e8ea54fb7fadc905781d81",
+    "cfb_game_total_step3_form_v1.py": "ea7bad697064625588ec31971fe642446d2f8b34"
+  },
+  "deployment_identity": "57a3bfaee9dca40f682b823caf0d101eec92a763",
+  "digest": "7e324bfdea41001c3322541daf399b7713b849ce65e79f6eac0bf5f1243629bc",
+  "evidence_digests": [
+    "b9d8353963d4687fdf66c406d3ab369c7a20db55e313cfce497884734b50d3de",
+    "75df7a9646832d35318f48233fd0f8cc8e48f2d2fbf23a9a1177d3c87ef81780"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4875235148c264447d0a1d910d7a1fc001455489d9fc7da667c670b17b0e23d5",
+  "proof_id": "cfb-game-total-phoenix-day-selector-step4-v1-5d832f4c5ab62dfb-c73639d54b3c71d4",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-PHOENIX-DAY-SELECTOR-STEP4-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 258,
+    "state_hash": "2141c51f191c803f4f63f13c65146a2df06391286e5c0c2f0268663bb24756fe"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-PHOENIX-DAY-SELECTOR-STEP4-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 258,
+    "state_hash": "2141c51f191c803f4f63f13c65146a2df06391286e5c0c2f0268663bb24756fe"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-phoenix-day-selector-step4-v1",
+  "workstream": "cfb-game-total-native-website-rebuild-v1"
+}
