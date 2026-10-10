@@ -6,7 +6,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 
 from devsystem.frozen_artifact_registry_v1 import _hash as registry_hash, _payload_without_hash, validate_registry
-from devsystem.scope_aware_execution_lease_v1 import build_scope, claim_scope, validate_state as validate_scope_state
+from devsystem.scope_aware_execution_lease_v1 import build_scope, claim_scope, release_scope, validate_state as validate_scope_state
 
 from .models import ProofRequest
 from .prove import execute_proof_request
@@ -15,7 +15,7 @@ from .registry import GithubRegistryBackend, REGISTRY_PATH
 TASK_ID = "cfb-game-total-games-on-day-step3-details-v1"
 WORKSTREAM = "cfb-game-total-games-on-day-v1"
 BRANCH = "cfb-game-total-games-on-day-step3-details-v1"
-CANDIDATE_SHA = "701c4f098e894191090e6604b8a4d133d3d2097e"
+CANDIDATE_SHA = "3ede28ac236ca36d15270bf6fc1df3605becb702"
 MAIN_SHA = "911f8727f7826eeb6e5cc434d6fb3e24af9df09a"
 AUTHORIZATION_ID = "AUTH-CFB-GT-GAMES-ON-DAY-STEP3-DETAILS-R1"
 THAW_ID = "THAW-CFB-GT-GAMES-ON-DAY-STEP3-DETAILS-R1"
@@ -82,12 +82,17 @@ def _ensure_thaw(client) -> dict:
         "files": {ROUTER_PATH: {"from_blob": FROM_BLOB, "to_blob": TO_BLOB}},
     }
     matches = [g for g in registry.get("active_thaws", []) if g.get("thaw_id") == THAW_ID]
-    if matches:
-        if matches != [exact]:
-            raise Step3PremergeFailure("THAW_ID_COLLISION")
-        return {"created": False, "revision": int(registry["revision"]), "state_hash": str(registry["state_hash"])}
+    if len(matches) > 1:
+        raise Step3PremergeFailure("THAW_DUPLICATE")
+    if matches == [exact]:
+        return {"created": False, "retargeted": False, "revision": int(registry["revision"]), "state_hash": str(registry["state_hash"])}
 
-    unrelated = [deepcopy(g) for g in registry.get("active_thaws", [])]
+    unrelated = [deepcopy(g) for g in registry.get("active_thaws", []) if g.get("thaw_id") != THAW_ID]
+    if matches:
+        stale = matches[0]
+        if stale.get("status") != "ACTIVE" or stale.get("files") != exact["files"]:
+            raise Step3PremergeFailure("THAW_ID_COLLISION")
+
     updated = deepcopy(registry)
     updated["active_thaws"] = sorted(unrelated + [exact], key=lambda row: str(row.get("thaw_id") or ""))
     updated["revision"] = int(updated["revision"]) + 1
@@ -98,7 +103,7 @@ def _ensure_thaw(client) -> dict:
         REGISTRY_PATH,
         _json_text(updated),
         backend.branch,
-        "registry: authorize CFB Games on This Day Step 3 exact-head thaw",
+        "registry: retarget CFB Games on This Day Step 3 exact-head thaw",
         backend._blob_sha,
     )
     readback = backend.read_registry()
@@ -109,20 +114,45 @@ def _ensure_thaw(client) -> dict:
     unrelated_after = [g for g in readback.get("active_thaws", []) if g.get("thaw_id") != THAW_ID]
     if unrelated_after != unrelated:
         raise Step3PremergeFailure("UNRELATED_THAW_DRIFT")
-    return {"created": True, "revision": int(readback["revision"]), "state_hash": str(readback["state_hash"]), "active_thaw_count": len(readback.get("active_thaws", []))}
+    return {
+        "created": not bool(matches),
+        "retargeted": bool(matches),
+        "revision": int(readback["revision"]),
+        "state_hash": str(readback["state_hash"]),
+        "active_thaw_count": len(readback.get("active_thaws", [])),
+    }
 
 
 def _ensure_lease(client) -> dict:
     raw = client.content(LEASE_PATH, ref=LEASE_BRANCH)
     state = validate_scope_state(_decode_json(raw, "LEASE"))
     owned = [h for h in state.get("holders", []) if h.get("owner_id") == LEASE_OWNER]
-    if owned:
-        if len(owned) != 1:
+    exact = [
+        h for h in owned
+        if (h.get("scope") or {}).get("resource_identity", {}).get("candidate_sha") == CANDIDATE_SHA
+        and (h.get("scope") or {}).get("resource_identity", {}).get("main_sha") == MAIN_SHA
+    ]
+    if exact:
+        if len(owned) != 1 or len(exact) != 1:
             raise Step3PremergeFailure("LEASE_DUPLICATE")
-        identity = (owned[0].get("scope") or {}).get("resource_identity", {})
-        if identity.get("candidate_sha") != CANDIDATE_SHA or identity.get("main_sha") != MAIN_SHA:
-            raise Step3PremergeFailure("LEASE_IDENTITY_DRIFT")
-        return {"created": False, "lease_id": str(owned[0]["lease_id"]), "revision": int(state["revision"]), "state_hash": str(state["state_hash"])}
+        return {"created": False, "replaced": False, "lease_id": str(exact[0]["lease_id"]), "revision": int(state["revision"]), "state_hash": str(state["state_hash"])}
+    if len(owned) > 1:
+        raise Step3PremergeFailure("LEASE_DUPLICATE")
+
+    working = state
+    released_lease_id = ""
+    if owned:
+        released_lease_id = str(owned[0]["lease_id"])
+        released = release_scope(
+            working,
+            owner_id=LEASE_OWNER,
+            lease_id=released_lease_id,
+            expected_revision=int(working["revision"]),
+            expected_state_hash=str(working["state_hash"]),
+        )
+        if released["result"].get("allowed") is not True:
+            raise Step3PremergeFailure("STALE_LEASE_RELEASE_BLOCKED:" + str(released["result"].get("decision") or "UNKNOWN"))
+        working = released["state"]
 
     scope = build_scope(
         write_paths=WRITE_PATHS,
@@ -132,12 +162,12 @@ def _ensure_lease(client) -> dict:
         exclusive=False,
     )
     claimed = claim_scope(
-        state,
+        working,
         owner_id=LEASE_OWNER,
         now_utc=_now(),
         scope=scope,
-        expected_revision=int(state["revision"]),
-        expected_state_hash=str(state["state_hash"]),
+        expected_revision=int(working["revision"]),
+        expected_state_hash=str(working["state_hash"]),
         ttl_seconds=3600,
         frozen_paths=(ROUTER_PATH,),
         thawed_paths=(ROUTER_PATH,),
@@ -154,14 +184,23 @@ def _ensure_lease(client) -> dict:
         LEASE_PATH,
         _json_text(updated),
         LEASE_BRANCH,
-        "lease: claim CFB Games on This Day Step 3 details scope",
+        "lease: replace CFB Games on This Day Step 3 details scope",
         raw["sha"],
     )
     readback = validate_scope_state(_decode_json(client.content(LEASE_PATH, ref=LEASE_BRANCH), "LEASE_READBACK"))
     holders = [h for h in readback.get("holders", []) if h.get("lease_id") == lease_id and h.get("owner_id") == LEASE_OWNER]
     if len(holders) != 1:
         raise Step3PremergeFailure("LEASE_READBACK_MISMATCH")
-    return {"created": True, "lease_id": lease_id, "revision": int(readback["revision"]), "state_hash": str(readback["state_hash"])}
+    if released_lease_id and any(h.get("lease_id") == released_lease_id for h in readback.get("holders", [])):
+        raise Step3PremergeFailure("STALE_LEASE_SURVIVED")
+    return {
+        "created": True,
+        "replaced": bool(released_lease_id),
+        "released_lease_id": released_lease_id,
+        "lease_id": lease_id,
+        "revision": int(readback["revision"]),
+        "state_hash": str(readback["state_hash"]),
+    }
 
 
 def _existing_gate(client) -> dict | None:
