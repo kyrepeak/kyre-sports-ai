@@ -21,6 +21,7 @@
   ],
   "protected_scope": [
     "cfb_game_total_clean_page_v39.py",
+    "tests/test_cfb_game_total_native_routing_step1_v1.py",
     "Step 2 frozen backend artifacts",
     "Game Total model/projection/probability math",
     "sportsbook projection influence",
@@ -61,15 +62,19 @@
     "phoenix_selector_owned_by_step3": false
   },
   "runless": {
-    "proof_generation": 1,
+    "proof_generation": 2,
     "authorization_id": "AUTH-CFB-GT-NATIVE-PAGE1-SHELL-STEP3-R1",
     "thaw_id": "THAW-CFB-GT-NATIVE-PAGE1-SHELL-STEP3-R1",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_request_status": "NOT_SUBMITTED"
+    "proof_request_status": "READY_AFTER_STATIC_SLICE_REPAIR",
+    "prior_failed_candidate": "091ec7abc840119705e7f98d895c1346871ed2f8",
+    "prior_failed_proof_id": "cfb-game-total-native-page1-shell-step3-v1-091ec7abc8401197-384173c344a47191",
+    "prior_failure_class": "STATIC_PROOF",
+    "prior_failure_root_cause": "The Step-3 Runless slice executed the frozen Step-1 test whose historical contract intentionally pins PAGE1_NATIVE_ROUTE to V39. Step 3 is the authorized forward-port to V40, so that historical literal cannot remain an executable Step-3 assertion. The frozen Step-1 test remains unchanged and is pinned as a dependency; Step-3 preservation is proved by V40-to-V39 delegation and exact blob guards."
   },
   "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP3_PAGE1_SHELL_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "AUTHORIZE_EXACT_ROUTER_THAW_ACQUIRE_SCOPE_LEASE_AND_RUN_EXACT_HEAD_RUNLESS_PROOF"
+  "next_legal_action": "RETARGET_EXACT_ROUTER_THAW_REPLACE_EXACT_SCOPE_LEASE_AND_RUN_ONE_RECOVERY_PROOF"
 }

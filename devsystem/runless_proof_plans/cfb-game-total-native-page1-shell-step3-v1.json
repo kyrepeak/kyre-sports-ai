@@ -8,7 +8,6 @@
       "pytest",
       "-q",
       "tests/test_cfb_game_total_native_page1_shell_step3_v1.py",
-      "tests/test_cfb_game_total_native_routing_step1_v1.py",
       "tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py",
       "tests/test_cfb_game_total_page2_step8_final_v1.py"
     ],
@@ -30,6 +29,7 @@
   ],
   "dependencies": [
     "cfb_game_total_clean_page_v39.py",
+    "tests/test_cfb_game_total_native_routing_step1_v1.py",
     "cfb_freeze_manifest_v12.json",
     "cfb_game_total_model_v1.py",
     "cfb_game_total_final_v1.py",

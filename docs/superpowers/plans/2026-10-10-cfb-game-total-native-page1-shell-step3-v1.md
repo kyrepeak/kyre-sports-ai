@@ -31,18 +31,19 @@ Add `cfb_game_total_clean_page_v40.py` as an additive wrapper over V39. Render o
 
 ## Task 3 — Exact-head certification
 
-Run:
+Run the Step-3 contract plus backend and selected-event Page-2 regression suites:
 
 ```bash
 python -m pytest -q \
   tests/test_cfb_game_total_native_page1_shell_step3_v1.py \
-  tests/test_cfb_game_total_native_routing_step1_v1.py \
   tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py \
   tests/test_cfb_game_total_page2_step8_final_v1.py
 python -m py_compile \
   cfb_game_total_clean_page_v40.py \
   streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py
 ```
+
+The frozen Step-1 test remains unchanged and is pinned as a dependency rather than executed in Step 3, because its historical contract intentionally asserts the Step-1 endpoint `PAGE1_NATIVE_ROUTE = V39`. Step 3 is the authorized forward-port to V40; preservation of Step 1 is instead proved by V40 delegating to exact frozen V39 plus the exact router thaw/blob guard.
 
 Use Runless `runless-final-gate` app id `5204253`. Before proof, authorize one exact-head thaw for the frozen final router from blob `7f27ead880acdbe6a272e6d34dfcd55d84a926d0` to the candidate router blob. Merge only the exact certified candidate.
 
