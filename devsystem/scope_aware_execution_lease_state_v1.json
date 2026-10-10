@@ -1,12 +1,12 @@
 {
-  "generation": 283,
+  "generation": 284,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-10T00:35:15Z",
-      "expires_at_utc": "2026-10-10T02:08:40Z",
-      "generation": 283,
-      "heartbeat_at_utc": "2026-10-10T01:08:40Z",
-      "lease_id": "SCOPE-LEASE-49C270AAD437F764D45964F1",
+      "acquired_at_utc": "2026-10-10T02:12:30Z",
+      "expires_at_utc": "2026-10-10T02:27:30Z",
+      "generation": 284,
+      "heartbeat_at_utc": "2026-10-10T02:12:30Z",
+      "lease_id": "SCOPE-LEASE-3C0C0D0741EFC4A4ADB77D64",
       "owner_id": "api2-cfb-game-total-page2-step8-final-responsive-live-data",
       "scope": {
         "dependency_tokens": [
@@ -15,48 +15,16 @@
         ],
         "exclusive": false,
         "resource_identity": {
-          "main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
-          "phase": "implementation",
+          "main_sha": "77934437d905295b7a21f324a3755999241c6b72",
+          "phase": "final-repair",
           "project": "API2",
           "step": "8/8"
         },
         "shared_resources": [],
         "write_paths": [
-          "app.py",
-          "cfb_game_total_page2_step8_final_runtime_v1.py",
           "devsystem/cfb_game_total_page2_step8_live_cert_v1.py",
-          "devsystem/execution_plans/cfb-game-total-page2-step8-final-responsive-live-data.json",
-          "devsystem/runless_proof_plans/cfb-game-total-page2-step8-final-responsive-live-data.json",
           "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
           "tests/test_cfb_game_total_page2_step8_final_v1.py"
-        ]
-      }
-    },
-    {
-      "acquired_at_utc": "2026-10-10T00:23:22Z",
-      "expires_at_utc": "2026-10-10T01:23:22Z",
-      "generation": 282,
-      "heartbeat_at_utc": "2026-10-10T00:23:22Z",
-      "lease_id": "SCOPE-LEASE-8551AF7C8DAD5563D85C4F75",
-      "owner_id": "api2-cfb-game-total-page2-step7-line-lab-best-bet-repair",
-      "scope": {
-        "dependency_tokens": [
-          "cfb-game-total-page2-step7-line-lab-best-bet",
-          "cfb-game-total-page2-v1"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
-          "phase": "review-repair",
-          "project": "API2",
-          "step": "7/8"
-        },
-        "shared_resources": [],
-        "write_paths": [
-          "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
-          "devsystem/execution_plans/cfb-game-total-page2-step7-line-lab-best-bet.json",
-          "devsystem/runless_proof_plans/cfb-game-total-page2-step7-line-lab-best-bet.json",
-          "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py"
         ]
       }
     }
@@ -64,8 +32,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 476,
+  "revision": 477,
   "schema_version": 1,
-  "state_hash": "b63d2e0b17797c565f007f05792acb25d49e2319ac51f16ccb257823badffd2c",
+  "state_hash": "59a6342991375a2254e8176ce53b9d0583bac4ab9ccffe12e585f0b5cbe0bda7",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
