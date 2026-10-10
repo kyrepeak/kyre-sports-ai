@@ -120,6 +120,19 @@ def _event_id(display_game: Mapping[str, Any]) -> str:
     return str(value or "").strip()
 
 
+def _enrich_page2_market_context(display_game: Mapping[str, Any]) -> dict[str, Any]:
+    """Restore frozen V38 verified total-market context before Step-8 composition."""
+    incoming = dict(_mapping(display_game))
+    current = _mapping((_LIVE_CONTEXT.get() or {}).get("display_game"))
+    if _event_id(current) and _event_id(current) == _event_id(incoming):
+        current_line = _market_line({}, current)
+        current_weight = _number(current.get("market_projection_weight"))
+        if current_line not in (None, "") and current.get("market_identity_verified") is True and current_weight == 0.0:
+            return dict(current)
+    enriched = frozen_page._enrich_verified_total_market(incoming)
+    return dict(enriched) if isinstance(enriched, Mapping) else incoming
+
+
 def _distribution_line_probabilities(raw: Mapping[str, Any], line: Any) -> tuple[float | None, float | None]:
     """Read Over/Under probability from the frozen model distribution at a supplied line."""
     threshold = _number(line)
@@ -316,11 +329,12 @@ def _render_selected_page(callback, *args: Any, **kwargs: Any):
         original_late_analysis = late_analysis_owner._game_total_hero_html_v21
 
         def page2_matchup(identity, away, home, display_game):
+            enriched_display_game = _enrich_page2_market_context(display_game)
             captured.update({
                 "identity": identity,
                 "away": away,
                 "home": home,
-                "display_game": display_game,
+                "display_game": enriched_display_game,
                 "away_logo_html": hero_runtime_owner.hero_owner._logo(_mapping(_mapping(identity).get("away"))),
                 "home_logo_html": hero_runtime_owner.hero_owner._logo(_mapping(_mapping(identity).get("home"))),
             })
@@ -328,7 +342,8 @@ def _render_selected_page(callback, *args: Any, **kwargs: Any):
             return build_page2_header_html(captured)
 
         def page2_analysis(raw, final, display_game, statuses, ready_count):
-            return build_page2_body_html(_live_payload(raw, final, display_game, statuses, ready_count))
+            enriched_display_game = _enrich_page2_market_context(display_game)
+            return build_page2_body_html(_live_payload(raw, final, enriched_display_game, statuses, ready_count))
 
         hero_runtime_owner._matchup_header_html_v36 = page2_matchup
         frozen_page._step4_prediction_market_html_v38 = page2_analysis

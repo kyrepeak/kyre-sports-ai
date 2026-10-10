@@ -233,3 +233,31 @@ def test_step8_router_restores_query_route_before_selected_event_activation() ->
     assert "live_owner._restore_game_total_route_from_query()" in body
     assert "if not live_owner._game_total_route_active():" in body
     assert "return bool(live_owner._game_total_route_active() and _query_value(EVENT_QUERY_KEY))" in body
+
+
+def test_step8_restores_frozen_v38_verified_total_before_page2_analysis() -> None:
+    step8 = _load_runtime()
+    assert hasattr(step8, "_enrich_page2_market_context"), "Step8 must restore V38 verified total-market enrichment"
+
+    original = step8.frozen_page._enrich_verified_total_market
+    try:
+        step8.frozen_page._enrich_verified_total_market = lambda game: {
+            **dict(game),
+            "market_total": 54.5,
+            "market_identity_verified": True,
+            "market_projection_weight": 0.0,
+        }
+        enriched = step8._enrich_page2_market_context({
+            "espn_event_id": "401856824",
+            "game_date": "2026-10-10",
+        })
+    finally:
+        step8.frozen_page._enrich_verified_total_market = original
+
+    assert enriched["market_total"] == 54.5
+    assert enriched["market_identity_verified"] is True
+    assert enriched["market_projection_weight"] == 0.0
+
+    source = _read(RUNTIME)
+    assert "enriched_display_game = _enrich_page2_market_context(display_game)" in source
+    assert "_live_payload(raw, final, enriched_display_game, statuses, ready_count)" in source
