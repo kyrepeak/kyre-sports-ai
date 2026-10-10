@@ -55,7 +55,7 @@ class Step8LiveCertFailure(RuntimeError):
 
 
 def route_handoff(base_url: str = PRODUCTION_URL) -> str:
-    return base_url.rstrip("/") + "/?ks_jump_sport=CFB&ks_jump_market=Game+Total"
+    return base_url.rstrip("/") + "/?ks_sport=College+Football&ks_cfb_market=Game+Total"
 
 
 def _visible(frame: Any, testid: str) -> None:
