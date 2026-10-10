@@ -1,28 +1,33 @@
 {
-  "generation": 298,
+  "generation": 299,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-10T06:27:34Z",
-      "expires_at_utc": "2026-10-10T07:27:34Z",
-      "generation": 298,
-      "heartbeat_at_utc": "2026-10-10T06:27:34Z",
-      "lease_id": "SCOPE-LEASE-AF67B93EB6B292B4553C4F0A",
-      "owner_id": "api2-cfb-games-on-day-step1",
+      "acquired_at_utc": "2026-10-10T06:30:20Z",
+      "expires_at_utc": "2026-10-10T07:30:20Z",
+      "generation": 299,
+      "heartbeat_at_utc": "2026-10-10T06:30:20Z",
+      "lease_id": "SCOPE-LEASE-AE8CAF232C64417062797456",
+      "owner_id": "api2-cfb-games-on-day-step1-runtime-refresh",
       "scope": {
         "dependency_tokens": [
-          "cfb_game_total_step4_games_owner"
+          "cfb_game_total_theme_activation",
+          "cfb_game_total_v163_selector",
+          "streamlit_full_redeploy"
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "3cec8dd71aeb7337e9eb0c508e564ffafb48bad3",
+          "candidate_sha": "b4ff5f9271e5e3f65dc8446ef62495ed1240502c",
           "main_sha": "60da7cbd5cf05413f2c9d8ce3e8921adb2f58648"
         },
         "shared_resources": [
+          "deployment:streamlit:pickvault",
           "route:cfb:game-total"
         ],
         "write_paths": [
-          "cfb_game_total_games_on_day_step1_layout_v1.py",
-          "tests/test_cfb_game_total_games_on_day_step1_layout_v1.py"
+          "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step1-runtime-refresh-r1.json",
+          "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-runtime-refresh-r1.json",
+          "requirements.txt",
+          "tests/test_cfb_game_total_games_on_day_step1_runtime_refresh_v1.py"
         ]
       }
     }
@@ -30,8 +35,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 508,
+  "revision": 510,
   "schema_version": 1,
-  "state_hash": "7acdac24c0be86d3b8710c569863cf4c6bcc109ad43aa0079cd2e2de124681bb",
+  "state_hash": "0915d4dcc50ad0f75fe936a523c7464e2549095b86688f670eef1f540ba9034f",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
