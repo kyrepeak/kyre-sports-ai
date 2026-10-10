@@ -32,8 +32,12 @@ def should_theme_route(sport: str, market: str) -> bool:
         from cfb_game_total_page1_v2_step4_side_market_completeness_v1 import (
             install_side_market_completeness,
         )
+        from cfb_game_total_games_on_day_step1_layout_v1 import (
+            install_games_on_day_step1_layout,
+        )
 
         install_side_market_completeness()
+        install_games_on_day_step1_layout()
     return bool(sport and market and (sport, market) not in EXCLUDED_FROZEN_ROUTES)
 
 _COMPAT_CSS = f"""
