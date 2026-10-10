@@ -545,6 +545,17 @@
       "source_main_sha": "bc0ff47ef5771998275456cba454256f6a9ae047",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_PAGE2_V1_STEP7_LINE_LAB_BEST_BET_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "6cfdb7303062780415428df33780bbce31f8b3e5",
+        "devsystem/execution_plans/cfb-game-total-page2-step7-line-lab-best-bet.json": "410636ca4877a94d8f6106f7f2a3ee222b67d642",
+        "devsystem/runless_proof_plans/cfb-game-total-page2-step7-line-lab-best-bet.json": "6ed20ab38cae1ca4d73098ddd2dcbc600270ad4d",
+        "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "2ee62ee7094670d33fe631a6408e3f0911d950fb"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP7_LINE_LAB_BEST_BET_FROZEN",
+      "source_main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
+      "status": "FROZEN"
+    },
     "CFB_TOP_PICKS_REPAIR_STEP1_HISTORY_ROUTER": {
       "artifacts": {
         "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
@@ -2796,9 +2807,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 227,
+  "revision": 228,
   "schema_version": 1,
-  "source_main_sha": "bc0ff47ef5771998275456cba454256f6a9ae047",
-  "state_hash": "d49d46a1d7d45b0e030679a9a9cdebd736bbe17ca95c8b9df9f11983f025550c",
+  "source_main_sha": "c7bb9383c510c79dcca88f5e33d533a18085ee40",
+  "state_hash": "2c374252e1e95850460cf4fb9ac93b4bd5ddde79b262c29a9852b6786ecd9cb1",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
