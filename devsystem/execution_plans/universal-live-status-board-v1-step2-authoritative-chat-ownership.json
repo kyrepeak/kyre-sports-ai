@@ -6,7 +6,7 @@
   "step": "2/4",
   "mission": "Authoritative Chat Ownership Registry",
   "base_main_sha": "20f23cae36b70ba702657546296560c5432203dc",
-  "status": "TESTS_DEFINED_AWAITING_RED_PROOF",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
   "decision": "EXECUTE_COMPILED_PLAN",
   "scope": {
     "product_runtime": false,
@@ -27,7 +27,12 @@
     "github_actions_fallback_authorized": false,
     "reuse_scope_aware_execution_lease": true,
     "parallel_ownership_registry_forbidden": true,
-    "cross_workstream_state_separation_required": true
+    "cross_workstream_state_separation_required": true,
+    "scope_lease_id": "SCOPE-LEASE-E273870B78DF7BEB9029E929",
+    "scope_lease_revision": 489,
+    "scope_lease_state_hash": "939cadf9c80f98cc50e3ac9b7587dab81909c994a91fed328544aa5a60bc0c0c",
+    "scope_lease_expires_at_utc": "2026-10-10T04:22:46Z",
+    "authorization_id": "AUTH-UNIVERSAL-LIVE-STATUS-BOARD-V1-STEP2-R1"
   },
   "contract": {
     "source_of_truth": "monster-scope-aware-execution-leases/devsystem/scope_aware_execution_lease_state_v1.json",
@@ -43,12 +48,20 @@
   },
   "tdd": {
     "test_first_commit": "043b51a4860c24890405efbb4ba6244a69a459f5",
-    "red_observed": false,
-    "red_result": null,
-    "implementation_commit": null,
-    "green_observed": false,
-    "green_result": null,
-    "compile_result": null
+    "red_observed": true,
+    "red_result": "EXPECTED_RED: OwnershipResolutionFailure, resolve_authoritative_chat_ownership, and bind_status_packet_to_authoritative_ownership absent before implementation",
+    "implementation_commit": "a69b597f5930309cc0e3dcb75e8689cfbe3a7e3b",
+    "green_observed": true,
+    "green_result": "FUNCTIONAL_GREEN: 10 ownership-resolution/binding cases passed in deterministic local harness",
+    "compile_result": "PENDING_EXACT_HEAD_RUNLESS"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-UNIVERSAL-LIVE-STATUS-BOARD-V1-STEP2-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
   },
   "completion_contract": {
     "freeze_token": "UNIVERSAL_LIVE_STATUS_BOARD_V1_STEP2_AUTHORITATIVE_CHAT_OWNERSHIP_FROZEN",
