@@ -21,7 +21,7 @@
   ],
   "frozen_step1_preserved": {
     "devsystem/universal_live_status_board_v1.py": "052ee9b52d57bc83e54a42124c4c8903bcae6b27",
-    "tests/test_devsystem_universal_live_status_board_v1.py": "8ab0ff4a6d5e49426ec388349640615e96165c00220eaf07bffeb1dee35fa069"
+    "tests/test_devsystem_universal_live_status_board_v1.py": "8ab0ff4a6d5e494d62b0a5a3835e2b405137b0b2"
   },
   "forbidden_scope": [
     "sports product runtime",
