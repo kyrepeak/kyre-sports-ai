@@ -5,7 +5,7 @@ import subprocess
 
 from .workspace import CandidateWorkspace
 
-CANDIDATE_SHA = "701c4f098e894191090e6604b8a4d133d3d2097e"
+CANDIDATE_SHA = "911f8727f7826eeb6e5cc434d6fb3e24af9df09a"
 
 
 def execute(app):
