@@ -87,8 +87,7 @@ def _run_live_cert_on_next_slate(app) -> dict:
                 "    raise RuntimeError('PAGE2_STEP8_FAST_FRAME_TIMEOUT:'+json.dumps(last))",
                 "def wait_terminal_surface(frame, timeout=45):",
                 "    deadline=time.monotonic()+timeout",
-                "    last=''
-",
+                "    last=''",
                 "    while time.monotonic()<deadline:",
                 "        try:",
                 "            body=frame.locator('body').inner_text(timeout=3000)",
