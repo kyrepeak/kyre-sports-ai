@@ -7,9 +7,9 @@ restored after the render call; other sports/markets continue through the frozen
 parent router unchanged.
 
 Games on This Day Steps 2-4 are additive Page-1-only presentation installers.
-Native Website Routing Step 1 temporarily advances only the Page-1 route to V39,
-which preserves V38 while bypassing the legacy in-page sport-jump navigator.
-All Page-1 additions are bypassed whenever Page 2 owns an exact selected event.
+Native Website Routing Step 1 established the V39 native route and native Page-1
+Shell Step 3 advances only that Page-1 owner to V40. All Page-1 additions are
+bypassed whenever Page 2 owns an exact selected event.
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_game
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP8 FINAL V1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration"
-PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v39"
+PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v40"
 PAGE2_RUNTIME = "cfb_game_total_page2_step8_final_runtime_v1"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 GAME_TOTAL_MARKET = "Game Total"
