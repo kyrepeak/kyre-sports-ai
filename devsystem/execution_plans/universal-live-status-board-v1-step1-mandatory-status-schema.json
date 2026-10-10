@@ -23,13 +23,14 @@
     ]
   },
   "step2a": {
-    "lease_id": "SCOPE-LEASE-AEB07629F04D7207BE50E755",
+    "lease_id": "SCOPE-LEASE-02767A5C851989556C4788B3",
     "lease_owner": "universal-live-status-board-v1-step1-finalization",
     "single_authority": true,
     "exact_head_merge_required": true,
     "github_actions_fallback_authorized": false,
     "api2_parallel_scope_preserved": true,
-    "runless_and_registry_resources_acquired": true
+    "runless_and_registry_resources_acquired": true,
+    "proof_transport_paths_authorized": true
   },
   "contract": {
     "mandatory_fields": ["completion_percent", "status", "live_active_chat"],
