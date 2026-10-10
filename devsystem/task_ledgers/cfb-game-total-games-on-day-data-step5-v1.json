@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-games-on-day-data-step5-v1",
+  "title": "CFB Game Total — games-on-day data Step 5",
+  "project": "API2",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "step": "5/8",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "e28ad8458aa1ee4b4fdaa2215fc638c6215ecd02",
+  "branch": "cfb-game-total-games-on-day-data-step5-v1",
+  "problem": "The Phoenix day selector is frozen, but Page 1 still lacks one authoritative games-on-day data snapshot owned by that selected Phoenix date for the entire render.",
+  "root_cause": "The frozen V14 chain can load the selected-day slate during downstream rendering, but Step 4 intentionally deferred game loading. Without a rebuild-scoped data owner, downstream code can independently resolve the loader rather than consuming one exact selected-day snapshot.",
+  "patch": "Add V42 as an additive data-ownership successor to V41. Read the frozen V41 Phoenix-selected date, invoke the existing frozen V14 _load_games path exactly once, serve copies of that exact snapshot for all downstream same-day loads, reject a different requested date, restore the original loader in finally, and advance only the final Page-1 router pointer from V41 to V42.",
+  "mutation_scope": [
+    "cfb_game_total_clean_page_v42.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_games_on_day_data_step5_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-data-step5-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-data-step5-v1.json"
+  ],
+  "protected_scope": [
+    "cfb_game_total_clean_page_v41.py",
+    "cfb_game_total_clean_page_v14.py",
+    "cfb_game_total_clean_page_v40.py",
+    "cfb_game_total_clean_page_v39.py",
+    "Step 2 frozen backend artifacts",
+    "Game Total model/projection/probability math",
+    "sportsbook projection influence",
+    "schedule/provider behavior",
+    "event identity rules",
+    "interactive matchup-card presentation",
+    "selected-event Page 2 runtime",
+    "other sports and markets"
+  ],
+  "deferred_scope": [
+    "Step 6 interactive matchup cards",
+    "Step 7 Page 1 to Page 2 handoff redesign",
+    "Step 8 mobile and production certification"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_requires_exact_head_thaw": true
+  },
+  "tdd": {
+    "test_first_commit": "fd6885325e3ae87f1e2e53c60c734f972a4e17f0",
+    "red_observed": true,
+    "red_result": "The test-first checkpoint requires cfb_game_total_clean_page_v42.py while that file is absent and requires PAGE1_NATIVE_ROUTE to equal V42 while the base router still equals V41.",
+    "implementation_head_before_proof_plan": "370d8f57faa5ffef96ac3e93af3109f8e8e17073"
+  },
+  "data_contract": {
+    "day_owner": "cfb_game_total_clean_page_v41",
+    "loader_owner": "cfb_game_total_clean_page_v14",
+    "selected_day_timezone": "America/Phoenix",
+    "selected_day_query_key": "ks_cfb_game_total_date",
+    "single_snapshot_per_render": true,
+    "new_provider_paths_added": 0,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0,
+    "card_ui_modified": false,
+    "page2_modified": false
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-GAMES-ON-DAY-DATA-STEP5-R1",
+    "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-DATA-STEP5-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP5_GAMES_ON_DAY_DATA_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "AUTHORIZE_EXACT_ROUTER_THAW_ACQUIRE_SCOPE_LEASE_AND_RUN_EXACT_HEAD_RUNLESS_PROOF"
+}
