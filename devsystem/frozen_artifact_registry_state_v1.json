@@ -2,17 +2,6 @@
   "active_thaws": [
     {
       "files": {
-        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": {
-          "from_blob": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
-          "to_blob": "7e38d5b3cac89e0ea30fa01d972d8fce85abe66e"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "9afe37ec19d2b02aa204dd6158d55f2eae6dd726",
-      "thaw_id": "THAW-CFB-GT-NATIVE-PAGE1-SHELL-STEP3-R1"
-    },
-    {
-      "files": {
         "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
           "from_blob": "6cfdb7303062780415428df33780bbce31f8b3e5",
           "to_blob": "92b4467e7e45e5ba551a5734e162001bda26e725"
@@ -351,7 +340,7 @@
         "cfb_game_total_games_on_day_step2_visual_v1.py": "0c9cd7abfc7ac5df49081cfa02fb741518da392b",
         "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step2-visual-v1.json": "9d06b59607ef35318853e6a4b8dfe5f5468165e7",
         "devsystem/task_ledgers/cfb-game-total-games-on-day-step2-visual-v1.json": "a85b3a602060ed1e7b36e2236662ed579b016f6c",
-        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7e38d5b3cac89e0ea30fa01d972d8fce85abe66e",
         "tests/test_cfb_game_total_games_on_day_step2_visual_v1.py": "2dfb6aef2e09b4d25176c40772e0d9498be4b04f"
       },
       "checkpoint_id": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP2_VISUAL_V1_FROZEN",
@@ -363,7 +352,7 @@
         "cfb_game_total_games_on_day_step3_details_v1.py": "8bda1053e79a78f3992e900b738139a9c9b4e9e7",
         "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step3-details-v1.json": "3bb863f1c43a2b4e19388bbf4ec2de812bd9e07f",
         "devsystem/task_ledgers/cfb-game-total-games-on-day-step3-details-v1.json": "aa8e2786526c4f5663f14eced5fc6e8b0ebe37d3",
-        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7e38d5b3cac89e0ea30fa01d972d8fce85abe66e",
         "tests/test_cfb_game_total_games_on_day_step3_details_v1.py": "4363a2cc4385fd18aabad79d91b1966f337c5aad"
       },
       "checkpoint_id": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP3_DETAILS_V1_FROZEN",
@@ -375,7 +364,7 @@
         "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py": "384616375610b6940eee161f545d1cd9ff841531",
         "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step4-interaction-mobile-v1.json": "6bb8c80f3a6a7e15ad44e297d291e75c729c5021",
         "devsystem/task_ledgers/cfb-game-total-games-on-day-step4-interaction-mobile-v1.json": "e6fa8b757b787d5e5704f87c809197098d3548df",
-        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7e38d5b3cac89e0ea30fa01d972d8fce85abe66e",
         "tests/test_cfb_game_total_games_on_day_step4_interaction_mobile_v1.py": "e7b173f32741bdb10aae64a76388dad9d0e72c62"
       },
       "checkpoint_id": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP4_INTERACTION_MOBILE_V1_FROZEN",
@@ -400,12 +389,25 @@
       "source_main_sha": "a3166e7d980d85b6adb6a064b8ac225befd9b9e3",
       "status": "FROZEN"
     },
+    "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP3_PAGE1_SHELL_V1_FROZEN": {
+      "artifacts": {
+        "cfb_game_total_clean_page_v40.py": "895c590d9c67d11e65463b1c59d7bf4d161255a3",
+        "devsystem/runless_proof_plans/cfb-game-total-native-page1-shell-step3-v1.json": "34e202c4f8f47f436ce7bb44e1b2d46aed92cf00",
+        "devsystem/task_ledgers/cfb-game-total-native-page1-shell-step3-v1.json": "c391ea9f129b58f71938ef33e7c8eb72c9421914",
+        "docs/superpowers/plans/2026-10-10-cfb-game-total-native-page1-shell-step3-v1.md": "21576bc0d3deed64a71d40b938bc0ae7cb6fc3a3",
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7e38d5b3cac89e0ea30fa01d972d8fce85abe66e",
+        "tests/test_cfb_game_total_native_page1_shell_step3_v1.py": "1446678d929f9bc2d14546f82a587106391e0a9c"
+      },
+      "checkpoint_id": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP3_PAGE1_SHELL_V1_FROZEN",
+      "source_main_sha": "ac8c6fbec4d97d3e130a8c4f581f495456ad443c",
+      "status": "FROZEN"
+    },
     "CFB_GAME_TOTAL_NATIVE_WEBSITE_ROUTING_STEP1_V1_FROZEN": {
       "artifacts": {
         "cfb_game_total_clean_page_v39.py": "0135dc520dfaa0c2c878cbb17618f17188dfff1a",
         "devsystem/runless_proof_plans/cfb-game-total-native-routing-step1-v1.json": "663490985e6e8b9d004810b127f48fcd311956da",
         "devsystem/task_ledgers/cfb-game-total-native-routing-step1-v1.json": "0479212eb8029b51b69ee26fd208e046e74bbb48",
-        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7e38d5b3cac89e0ea30fa01d972d8fce85abe66e",
         "tests/test_cfb_game_total_native_routing_step1_v1.py": "79d0ffc63e9b2509313e5c5befa83ae3e5adba9b"
       },
       "checkpoint_id": "CFB_GAME_TOTAL_NATIVE_WEBSITE_ROUTING_STEP1_V1_FROZEN",
@@ -678,7 +680,7 @@
         "devsystem/cfb_game_total_page2_step8_live_cert_v1.py": "422b54320df359732499344794b4e1887cb14daa",
         "devsystem/execution_plans/cfb-game-total-page2-step8-final-responsive-live-data.json": "e1b3bb8bbca106e3520af8fa585871fd89398eec",
         "devsystem/runless_proof_plans/cfb-game-total-page2-step8-final-responsive-live-data.json": "22c7bb6e7731cf72e5e24ec36645bd0cd72b9451",
-        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "7e38d5b3cac89e0ea30fa01d972d8fce85abe66e",
         "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1"
       },
       "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP8_FINAL_RESPONSIVE_LIVE_DATA_FROZEN",
@@ -2988,9 +2990,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 256,
+  "revision": 257,
   "schema_version": 1,
-  "source_main_sha": "a3166e7d980d85b6adb6a064b8ac225befd9b9e3",
-  "state_hash": "1ae5326469f7a14c983bf343b9909b5c81c2b8433094cc4f59e175603b7a874e",
+  "source_main_sha": "ac8c6fbec4d97d3e130a8c4f581f495456ad443c",
+  "state_hash": "fe9be0e2621298f3aab0342ec32a7b3e908663471f0b57257842ef7374727278",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
