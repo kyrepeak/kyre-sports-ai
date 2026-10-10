@@ -1,32 +1,33 @@
 {
-  "generation": 296,
+  "generation": 297,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-10T05:51:06Z",
-      "expires_at_utc": "2026-10-10T06:51:06Z",
-      "generation": 296,
-      "heartbeat_at_utc": "2026-10-10T05:51:06Z",
-      "lease_id": "SCOPE-LEASE-C314CE5BCC31A3DD4CF3B305",
-      "owner_id": "api2-cfb-games-on-day-step1",
+      "acquired_at_utc": "2026-10-10T06:19:00Z",
+      "expires_at_utc": "2026-10-10T07:19:00Z",
+      "generation": 297,
+      "heartbeat_at_utc": "2026-10-10T06:19:00Z",
+      "lease_id": "SCOPE-LEASE-CE9FDE29B716004089C59117",
+      "owner_id": "api2-cfb-games-on-day-step1-runtime-refresh",
       "scope": {
         "dependency_tokens": [
           "cfb_game_total_theme_activation",
-          "cfb_game_total_v163_selector"
+          "cfb_game_total_v163_selector",
+          "streamlit_full_redeploy"
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "b8b3e77e9106a6240c6abddfbb6f4f22ea2d5d07",
-          "main_sha": "3876d4cbe7fe541c94cf3d8e71cc0103b1a6ec66"
+          "main_sha": "60da7cbd5cf05413f2c9d8ce3e8921adb2f58648",
+          "repair_branch": "cfb-game-total-games-on-day-step1-runtime-refresh-r1"
         },
         "shared_resources": [
+          "deployment:streamlit:pickvault",
           "route:cfb:game-total"
         ],
         "write_paths": [
-          "cfb_game_total_games_on_day_step1_layout_v1.py",
-          "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step1-card-layout-v1.json",
-          "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-card-layout-v1.json",
-          "kyre_remaining_pages_theme_v1.py",
-          "tests/test_cfb_game_total_games_on_day_step1_layout_v1.py"
+          "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step1-runtime-refresh-r1.json",
+          "devsystem/task_ledgers/cfb-game-total-games-on-day-step1-runtime-refresh-r1.json",
+          "requirements.txt",
+          "tests/test_cfb_game_total_games_on_day_step1_runtime_refresh_v1.py"
         ]
       }
     }
@@ -34,8 +35,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 504,
+  "revision": 506,
   "schema_version": 1,
-  "state_hash": "fb7778069cdef8faadac9331036a6406fbc95474e22a5885fd6d24309891fd6d",
+  "state_hash": "eb3065e3e21a2eca702ace0e305ac8ce7dbd6c5e7cff85d9677e180abde20486",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
