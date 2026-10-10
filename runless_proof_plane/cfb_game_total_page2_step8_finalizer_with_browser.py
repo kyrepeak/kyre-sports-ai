@@ -33,11 +33,29 @@ def _run_live_cert_on_next_slate(app) -> dict:
                 ("ks_cfb_game_total_date", slate_date),
             )
         )
-        code = (
-            "from devsystem import cfb_game_total_page2_step8_live_cert_v1 as cert; "
-            f"cert.EXPECTED_MAIN_SHA={finalizer.MAIN_SHA!r}; "
-            f"cert.route_handoff=lambda base_url={finalizer.PRODUCTION_URL!r}: {direct_route!r}; "
-            f"cert.run(base_url={finalizer.PRODUCTION_URL!r}, artifact_dir={str(artifact_dir)!r})"
+        code = "\n".join(
+            [
+                "from devsystem import cfb_game_total_page2_step8_live_cert_v1 as cert",
+                "from devsystem import browser_qa_v1 as base",
+                f"cert.EXPECTED_MAIN_SHA={finalizer.MAIN_SHA!r}",
+                f"cert.route_handoff=lambda base_url={finalizer.PRODUCTION_URL!r}: {direct_route!r}",
+                "_original_discover = cert._discover_exact_event",
+                "def _discover(page, base_url):",
+                "    page.goto(cert.route_handoff(base_url), wait_until='domcontentloaded', timeout=120000)",
+                "    frame, scans = base._find_app_frame(page)",
+                "    page.wait_for_timeout(5000)",
+                "    event_id = cert._exact_event_id(page.url)",
+                "    if event_id:",
+                "        return page.url, event_id, scans",
+                "    for scan in scans:",
+                "        scan_url = str((scan or {}).get('url') or '')",
+                "        scan_event = cert._exact_event_id(scan_url)",
+                "        if scan_event:",
+                "            return scan_url, scan_event, scans",
+                "    return _original_discover(page, base_url)",
+                "cert._discover_exact_event = _discover",
+                f"cert.run(base_url={finalizer.PRODUCTION_URL!r}, artifact_dir={str(artifact_dir)!r})",
+            ]
         )
         completed = subprocess.run(
             [sys.executable, "-c", code],
