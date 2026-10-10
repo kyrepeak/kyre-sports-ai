@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-games-on-day-step2-visual-v1",
+  "title": "CFB Game Total — Games on This Day Step 2 Visual Upgrade",
+  "project": "API2",
+  "workstream": "cfb-game-total-games-on-day-v1",
+  "step": "2/4",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "403e3cb9d7b0e11c4bfc15de512fb1a862e88549",
+  "branch": "cfb-game-total-games-on-day-step2-visual-v1",
+  "problem": "Games on This Day cards are structurally fixed by Step 1 but still visually plain and do not surface team identity or Phoenix-local kickoff information clearly.",
+  "root_cause": "The frozen V163 selector renders each matchup as one text label, so exact logos, team-color accents, and selected-state hierarchy are not represented in the card markup.",
+  "patch": "Add a Step-2-only presentation renderer that preserves exact event links/state, reuses existing exact ESPN team-ID identity, renders team logos and color accents, formats kickoff in America/Phoenix, and strengthens the selected state without changing Step-1 layout ownership.",
+  "mutation_scope": [
+    "cfb_game_total_games_on_day_step2_visual_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_games_on_day_step2_visual_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-games-on-day-step2-visual-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-games-on-day-step2-visual-v1.json"
+  ],
+  "forbidden_scope": [
+    "Step 1 layout artifacts",
+    "Steps 3-4",
+    "model math",
+    "projection",
+    "probability",
+    "ranking",
+    "schedule identity",
+    "event selection semantics",
+    "Page 2 product behavior",
+    "other sports",
+    "GitHub Actions fallback"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_exact_thaw_required": true,
+    "step1_frozen_artifacts_immutable": true
+  },
+  "tdd": {
+    "test_first_commit": "c019404aaca9ec632d7458e9f9c0c21861f28822",
+    "red_observed": true,
+    "red_result": "EXPECTED_RED: Step-2 game-card visual owner absent before implementation",
+    "implementation_commits": [
+      "eedae348905bd6b1d2ad1b2dce1be6539a31f889",
+      "847581756f510fda8c739fff89905f19646f52da"
+    ]
+  },
+  "frozen_router_change": {
+    "path": "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "from_blob": "154760d34b4f33aed1efafdf2b026262eb0e332b",
+    "to_blob": "7bcb675379ef63f21fd0e6400c9076e746a69b9a",
+    "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-STEP2-VISUAL-R1"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-GAMES-ON-DAY-STEP2-VISUAL-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP2_VISUAL_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "ACQUIRE_SCOPE_LEASE_AND_GRANT_EXACT_HEAD_THAW"
+}
