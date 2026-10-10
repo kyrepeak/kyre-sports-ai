@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from pathlib import Path
 import importlib.util
 
@@ -65,15 +66,27 @@ def test_step7_line_lab_uses_only_precomputed_scenarios() -> None:
         assert line in html
     for probability in ("67%", "33%", "61%", "39%", "54%", "46%"):
         assert probability in html
-    assert 'type="range"' in html
-    assert 'min="0"' in html
-    assert 'max="2"' in html
-    assert 'step="1"' in html
-    assert 'value="1"' in html
     assert 'data-line-option-count="3"' in html
     assert 'data-selected-line="58.5"' in html
     assert 'data-selected-over="61%"' in html
     assert 'data-selected-under="39%"' in html
+
+
+def test_step7_line_choices_switch_visible_precomputed_scenario_without_script() -> None:
+    html = _sample_html()
+    assert html.count('type="radio" name="gtp2s7-line-choice"') == 3
+    for index, line in enumerate(("55.5", "58.5", "61.5")):
+        assert f'id="gtp2s7-line-{index}"' in html
+        assert f'for="gtp2s7-line-{index}"' in html
+        assert f'class="gtp2s7-scenario gtp2s7-scenario-{index}"' in html
+        assert f'data-scenario-line="{line}"' in html
+        selector = (
+            f'#gtp2s7-line-{index}:checked~.gtp2s7-scenario-stage '
+            f'.gtp2s7-scenario-{index}' + '{display:grid}'
+        )
+        assert selector in html
+    assert 'id="gtp2s7-line-1" type="radio" name="gtp2s7-line-choice" checked' in html
+    assert "<script" not in html.lower()
 
 
 def test_step7_best_bet_renders_owned_recommendation_values() -> None:
@@ -118,23 +131,27 @@ def test_step7_missing_and_nonfinite_values_fail_soft() -> None:
     step7 = _load_module()
     html = step7.build_line_lab_best_bet_html(
         line_scenarios=[
-            {"line": float("nan"), "over_probability": float("inf"), "under_probability": None},
+            {
+                "line": Decimal("NaN"),
+                "over_probability": Decimal("Infinity"),
+                "under_probability": Decimal("-Infinity"),
+            },
         ],
-        selected_line=float("nan"),
+        selected_line=Decimal("NaN"),
         recommendation={
             "side": None,
-            "line": float("inf"),
-            "probability": float("nan"),
+            "line": Decimal("Infinity"),
+            "probability": Decimal("NaN"),
             "expected_total": None,
-            "edge": None,
+            "edge": Decimal("-Infinity"),
             "confidence": None,
             "rationale": None,
         },
     )
     assert html.count("—") >= 10
     lowered = html.lower()
-    assert ">nan<" not in lowered
-    assert ">inf<" not in lowered
+    assert "nan" not in lowered
+    assert "infinity" not in lowered
     assert "data limited" not in lowered
     assert "mock data" not in lowered
     assert "pending" not in lowered
