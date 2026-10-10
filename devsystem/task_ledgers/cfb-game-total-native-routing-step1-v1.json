@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-native-routing-step1-v1",
+  "title": "CFB Game Total — Native Website Routing Step 1",
+  "project": "API2",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "step": "1/8",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "11b1dc8fcf071be46afd099268849fa9be4770af",
+  "branch": "cfb-game-total-native-routing-step1-v1",
+  "problem": "The exact CFB -> Game Total Page-1 route still renders the legacy in-page 'Jump to a Sport Page' navigator even though KYRE SPORTS AI already owns site-wide navigation, making Game Total feel like a separate page instead of a native CFB website section.",
+  "root_cause": "The current V38 Page-1 chain descends through V36 -> V35 -> V34 -> V33, and V33 injects the legacy sport/category jump shell before delegating to the frozen V28 Game Total body. The global KYRE universal shell already supplies site-level navigation, so V33 duplicates navigation inside the product page.",
+  "patch": "Add additive Page V39 above V38. During the exact Page-1 render only, V39 temporarily redirects V33's render_game_total_hub seam to the frozen V28 content owner, then restores V33 in finally. The final Page-2 router temporarily points only the Page-1 cfb_router.GAME_TOTAL_PAGE at V39. Selected-event Page 2 keeps its existing Step-8 ownership unchanged.",
+  "mutation_scope": [
+    "cfb_game_total_clean_page_v39.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_native_routing_step1_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-native-routing-step1-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-native-routing-step1-v1.json"
+  ],
+  "forbidden_scope": [
+    "cfb_game_total_clean_page_v28.py",
+    "cfb_game_total_clean_page_v33.py",
+    "cfb_game_total_clean_page_v38.py",
+    "model math",
+    "projection math",
+    "probability math",
+    "new data providers",
+    "sportsbook projection influence",
+    "schedule or event identity semantics",
+    "selected-event Page 2 product behavior",
+    "other sports",
+    "GitHub Actions fallback"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_exact_thaw_required": true,
+    "legacy_page_owners_immutable": true,
+    "page2_behavior_immutable": true
+  },
+  "tdd": {
+    "test_first_commit": "45af16fa1767968da26f9ccd4b43db6f89b8b6c0",
+    "initial_test_commit": "9dcac5f4ce6e7f72a33e59f5b2c38c5a343cb4f3",
+    "red_observed": true,
+    "red_result": "Test-first contract was structurally unmet before implementation: additive V39 did not exist and the final router had no PAGE1_NATIVE_ROUTE or _render_native_page1 handoff. An initial V36 target was rejected by Step 2A after reconciling that V36 was already a frozen owner; the corrected V39 test-only head preceded all production implementation.",
+    "red_executor": "Step2A repository-state proof; exact executable GREEN delegated to Runless CandidateWorkspace",
+    "implementation_commits": [
+      "ee0d224587e2508b8d3197f4fda072558dcfd5ec",
+      "850d9820ed5251eaacf26735e62e5569c4400191"
+    ],
+    "ruling": "V36/V37/V38 are pre-existing frozen Page-1 owners. V39 is the first free additive page owner and therefore the only legal target for this Step-1 patch."
+  },
+  "frozen_router_change": {
+    "path": "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "from_blob": "e5d23b77d628d17744c6249f6c87d3b6935bb9b0",
+    "to_blob": "7f27ead880acdbe6a272e6d34dfcd55d84a926d0",
+    "thaw_id": "THAW-CFB-GT-NATIVE-ROUTING-STEP1-R1"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-NATIVE-ROUTING-STEP1-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_ROUTING_STEP1_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "ACQUIRE_SCOPE_LEASE_AND_GRANT_EXACT_HEAD_THAW"
+}

@@ -7,8 +7,9 @@ restored after the render call; other sports/markets continue through the frozen
 parent router unchanged.
 
 Games on This Day Steps 2-4 are additive Page-1-only presentation installers.
-They are activated before the frozen Page-1 parent render and are bypassed
-whenever Page 2 owns an exact selected event.
+Native Website Routing Step 1 temporarily advances only the Page-1 route to V39,
+which preserves V38 while bypassing the legacy in-page sport-jump navigator.
+All Page-1 additions are bypassed whenever Page 2 owns an exact selected event.
 """
 from __future__ import annotations
 
@@ -26,6 +27,7 @@ from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_game
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP8 FINAL V1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration"
+PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v39"
 PAGE2_RUNTIME = "cfb_game_total_page2_step8_final_runtime_v1"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 GAME_TOTAL_MARKET = "Game Total"
@@ -62,12 +64,22 @@ def _selected_game_total() -> bool:
     return bool(live_owner._game_total_route_active() and _query_value(EVENT_QUERY_KEY))
 
 
+def _render_native_page1() -> Any:
+    """Advance only the exact Page-1 owner for one render, then restore it."""
+    original_page1 = cfb_router.GAME_TOTAL_PAGE
+    cfb_router.GAME_TOTAL_PAGE = PAGE1_NATIVE_ROUTE
+    try:
+        return frozen_parent.render_app()
+    finally:
+        cfb_router.GAME_TOTAL_PAGE = original_page1
+
+
 def render_app() -> Any:
     if not _selected_game_total():
         install_games_on_day_step2_visual()
         install_games_on_day_step3_details()
         install_games_on_day_step4_interaction_mobile()
-        return frozen_parent.render_app()
+        return _render_native_page1()
 
     original_cfb_page = cfb_router.GAME_TOTAL_PAGE
     original_live_page = live_owner.ACTIVE_PAGE
@@ -96,8 +108,10 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "NETWORK_CALLS_ADDED",
+    "PAGE1_NATIVE_ROUTE",
     "PAGE2_RUNTIME",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_render_native_page1",
     "record_bootstrap_import_ms",
     "render_app",
 ]
