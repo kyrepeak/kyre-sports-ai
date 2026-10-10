@@ -51,7 +51,22 @@
     "implementation_commits": [
       "cdd40a18dfb13cc4d6443a29dce18b8ccdd289a1",
       "4f579e9648892b152cca3b5bda9867f9397824a5"
-    ]
+    ],
+    "full_suite_diagnostic": {
+      "candidate_result": "6 collection errors, returncode 2",
+      "main_baseline_result": "same 6 collection errors, returncode 2",
+      "classification": "PRE_EXISTING_BASELINE_COLLECTION_FAILURES",
+      "errors": [
+        "tests/test_sitewide_theme_rollout_step1_shell_v1.py",
+        "tests/test_sitewide_theme_rollout_step2_moneyline_v1.py",
+        "tests/test_sitewide_theme_rollout_step3_game_total_v1.py",
+        "tests/test_sitewide_theme_rollout_step4_remaining_pages_v1.py",
+        "tests/test_universal_theme_passing_yards_step4_v1.py",
+        "tests/test_wnba_rotation_context.py"
+      ],
+      "step3_regression": false,
+      "forbidden_scope_not_reopened": true
+    }
   },
   "frozen_router_change": {
     "path": "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
@@ -60,14 +75,14 @@
     "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-STEP3-DETAILS-R1"
   },
   "runless": {
-    "proof_generation": 1,
+    "proof_generation": 2,
     "authorization_id": "AUTH-CFB-GT-GAMES-ON-DAY-STEP3-DETAILS-R1",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_request_status": "NOT_SUBMITTED"
+    "proof_request_status": "READY_TO_RESUBMIT_AFTER_BASELINE_CLASSIFICATION"
   },
   "freeze_token": "CFB_GAME_TOTAL_GAMES_ON_DAY_STEP3_DETAILS_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "ACQUIRE_SCOPE_LEASE_AND_GRANT_EXACT_HEAD_THAW"
+  "next_legal_action": "RETARGET_EXACT_HEAD_THAW_AND_SCOPE_LEASE_THEN_SUBMIT_ONE_REPLACEMENT_RUNLESS_PROOF"
 }
