@@ -7,7 +7,7 @@ from .prove import execute_proof_request
 
 TASK_ID = "cfb-game-total-mobile-production-step8-deploy-refresh-v1"
 WORKSTREAM = "cfb-game-total-native-website-rebuild-v1"
-CANDIDATE_SHA = "546336237be3232d6b59ef51c3b37072b4daa646"
+CANDIDATE_SHA = "d0131ada28bc82c76d572b57a359d6de338fc4d0"
 LEASE_ID = "SCOPE-LEASE-9B4A1E83A76D45D7B21F6E30"
 AUTHORIZATION_ID = "AUTH-CFB-GT-STEP8-DEPLOY-REFRESH-R1"
 EXPECTED_MAIN_SHA = "1b0169a8a6e644ae6971685fb50b9bd96d510106"
