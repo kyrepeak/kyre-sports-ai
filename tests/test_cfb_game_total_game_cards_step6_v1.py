@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 V43 = ROOT / "cfb_game_total_clean_page_v43.py"
 V42 = ROOT / "cfb_game_total_clean_page_v42.py"
 ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py"
+PROOF_PLAN = ROOT / "devsystem/runless_proof_plans/cfb-game-total-game-cards-step6-v1.json"
 
 
 def test_step6_adds_native_game_card_owner_without_reopening_step5_data():
@@ -19,10 +20,17 @@ def test_step6_adds_native_game_card_owner_without_reopening_step5_data():
     assert "NEW_PROVIDER_PATHS_ADDED = 0" in source
     assert "return prior.render_game_total_hub(" in source
 
-    # Step 6 must not create a second slate loader or new provider path.
     assert "_load_games(" not in source
     assert "requests." not in source
     assert "load_with_diagnostics(" not in source
+
+
+def test_step6_rebinds_card_chain_after_clean_page_module_purge():
+    source = V43.read_text()
+    assert "from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_games_on_day_step4_interaction_mobile" in source
+    assert "POST_PURGE_CARD_REBIND = True" in source
+    assert "install_games_on_day_step4_interaction_mobile()" in source
+    assert source.index("install_games_on_day_step4_interaction_mobile()") < source.index("return prior.render_game_total_hub(")
 
 
 def test_step6_promotes_existing_frozen_game_card_chain_only_on_page1():
@@ -36,6 +44,12 @@ def test_step6_promotes_existing_frozen_game_card_chain_only_on_page1():
     assert router.count("install_games_on_day_step4_interaction_mobile()") == 1
     assert "if not _selected_game_total():" in router
 
-    # Frozen Step 5 remains the only selected-day data owner.
     assert "SELECTED_DAY_SNAPSHOT_OWNS_GAME_LOADING = True" in v42
     assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v42"' in V43.read_text()
+
+
+def test_step6_runless_plan_uses_forward_compatible_preservation_proof():
+    plan = PROOF_PLAN.read_text()
+    assert '"tests/test_cfb_game_total_game_cards_step6_v1.py"' in plan
+    assert '"tests/test_cfb_game_total_games_on_day_data_step5_v1.py"' not in plan
+    assert '"tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py"' in plan
