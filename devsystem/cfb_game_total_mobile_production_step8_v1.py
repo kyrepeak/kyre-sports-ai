@@ -78,8 +78,19 @@ class Step8MobileProductionFailure(RuntimeError):
     pass
 
 
+def authoritative_phoenix_day() -> str:
+    """Return the one authoritative current calendar day for the native slate."""
+    return datetime.now(ZoneInfo(PHOENIX_TZ)).date().isoformat()
+
+
 def page1_route(base_url: str = PRODUCTION_URL) -> str:
-    query = urlencode({"ks_jump_sport": "CFB", "ks_jump_market": "Game Total"})
+    query = urlencode(
+        {
+            "ks_sport": "College Football",
+            "ks_cfb_market": "Game Total",
+            "ks_cfb_game_total_date": authoritative_phoenix_day(),
+        }
+    )
     return base_url.rstrip("/") + "/?" + query
 
 
