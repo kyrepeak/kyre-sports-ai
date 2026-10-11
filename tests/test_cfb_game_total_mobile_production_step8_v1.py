@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from datetime import datetime
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 CERT = ROOT / "devsystem/cfb_game_total_mobile_production_step8_v1.py"
@@ -72,6 +75,17 @@ def test_step8_native_frame_detection_does_not_require_obsolete_combobox():
     assert module.PAGE1_FRAME_MARKERS == ("PHOENIX TIME", "GAMES ON THIS DAY")
     assert "combo_count >= 1" not in source
     assert "base._find_app_frame(page" not in source
+
+
+def test_step8_page1_route_pins_authoritative_phoenix_day():
+    module = _load_cert()
+    query = parse_qs(urlparse(module.page1_route()).query)
+    expected_day = datetime.now(ZoneInfo("America/Phoenix")).date().isoformat()
+    assert "ks_jump_sport" not in query
+    assert "ks_jump_market" not in query
+    assert query["ks_sport"] == ["College Football"]
+    assert query["ks_cfb_market"] == ["Game Total"]
+    assert query["ks_cfb_game_total_date"] == [expected_day]
 
 
 def test_step8_runless_plan_and_ledger_are_finalization_scoped():
