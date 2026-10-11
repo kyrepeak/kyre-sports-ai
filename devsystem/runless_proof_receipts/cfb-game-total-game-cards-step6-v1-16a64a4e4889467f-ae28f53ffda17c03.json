@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "cfb_game_total_clean_page_v43.py": "ebb7bfa20489598a62891ec4e5e868fe350c8712",
+    "devsystem/runless_proof_plans/cfb-game-total-game-cards-step6-v1.json": "97d3ca216c5cb91eb5f8194735f45ae299b539a1",
+    "devsystem/task_ledgers/cfb-game-total-game-cards-step6-v1.json": "ee8eac6d625f90aa5188b36b47a4fc736d776789",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "811b0cec681aa1b1b0fddc4c3d4170dd3770dd50",
+    "tests/test_cfb_game_total_game_cards_step6_v1.py": "2f3d378e6420816d506a2de8c7f266df4909eb2c"
+  },
+  "candidate_sha": "16a64a4e4889467fc60685e7343871556bf245cb",
+  "created_at": "2026-10-11T00:46:15.800467+00:00",
+  "dependency_map": {
+    "cfb_freeze_manifest_v12.json": "3ff2a727967e80dddbe03f747d9f32090cc39539",
+    "cfb_game_total_clean_page_v14.py": "030952d34178fb148c4d3ad7470f1bbc033bc8ff",
+    "cfb_game_total_clean_page_v41.py": "25de75bf3b55b6e7001763c8170807c5fac139d2",
+    "cfb_game_total_clean_page_v42.py": "fe73bde95befe9582a19c25c58fe564d79f0c707",
+    "cfb_game_total_final_v1.py": "78fbeaeb77e3101cc83c579b15f9cd6d485df952",
+    "cfb_game_total_games_on_day_step1_layout_v1.py": "8c2697143484ac42769da3274169355eac101438",
+    "cfb_game_total_games_on_day_step2_visual_v1.py": "0c9cd7abfc7ac5df49081cfa02fb741518da392b",
+    "cfb_game_total_games_on_day_step3_details_v1.py": "8bda1053e79a78f3992e900b738139a9c9b4e9e7",
+    "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py": "384616375610b6940eee161f545d1cd9ff841531",
+    "cfb_game_total_model_v1.py": "88e98c2b78c689e48f81f049cb1a64c0e958e964",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29"
+  },
+  "deployment_identity": "1e1b9178430316741b57c883daac140620f22a62",
+  "digest": "2d4276b22a1badb74770c3d4912c0962101f607e8ecfd36782a3f11412bb6596",
+  "evidence_digests": [
+    "6083f9321d45acf33cb6a9aa59e637d572d4ed229e46a568bb34ca773f90e27f",
+    "e54b560dca6685fc75b27cded66aae14e4c7e9a44986b8add991510b4c8444db"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f9254f45235a661bd690060fa747c97a4e3707076a0f05fb8bbd4f2a01f3a72f",
+  "proof_id": "cfb-game-total-game-cards-step6-v1-16a64a4e4889467f-ae28f53ffda17c03",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-GAME-CARDS-STEP6-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 263,
+    "state_hash": "66ea877cd5d9db59e2a0586d40c1a956d7f46b2fc378be59bc692ac2af3e9a21"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-GAME-CARDS-STEP6-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+    ],
+    "revision": 263,
+    "state_hash": "66ea877cd5d9db59e2a0586d40c1a956d7f46b2fc378be59bc692ac2af3e9a21"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-game-cards-step6-v1",
+  "workstream": "cfb-game-total-native-website-rebuild-v1"
+}
