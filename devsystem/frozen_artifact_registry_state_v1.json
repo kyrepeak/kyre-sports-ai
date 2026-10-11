@@ -34,7 +34,7 @@
         }
       },
       "status": "ACTIVE",
-      "target_head_sha": "db8eabcfdb924384edffda0788ff72f23f1bbe81",
+      "target_head_sha": "1e6e4f51a8dc9a5cf0efca3b893ed4321eb9785a",
       "thaw_id": "THAW-CFB-GT-STEP8-PAGE1-EVENT-GUARD-R2"
     },
     {
@@ -3033,9 +3033,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 276,
+  "revision": 277,
   "schema_version": 1,
   "source_main_sha": "c102a55985dbe2c3ab2ece3d24a7c82206989173",
-  "state_hash": "d05976c54e76757cf705163924102e8d33f25d909348bbfd59f9beb124969abe",
+  "state_hash": "481050d117e0b4e991475f4ebe692a5ff5766a37c32bc6b4d7ce41b20b06a078",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
