@@ -12,6 +12,11 @@ advanced the Page-1 owner to V40, Phoenix Day Selector Step 4 advanced it to
 V41, Games-on-Day Data Step 5 advanced it to V42, and Game Cards Step 6 advances
 only that Page-1 owner to V43. All Page-1 additions are bypassed whenever Page 2
 owns an exact selected event.
+
+Step-8 finalization guard: Page 1 must never publish an exact-event query merely
+because the frozen selector internally defaults to the first game. A real card
+tap carries SELECTOR_SYNC_QUERY_KEY and is preserved for Page-2 activation; an
+auto-published event without that tap marker is removed after the Page-1 render.
 """
 from __future__ import annotations
 
@@ -32,6 +37,7 @@ FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_int
 PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v43"
 PAGE2_RUNTIME = "cfb_game_total_page2_step8_final_runtime_v1"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
+SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"
 GAME_TOTAL_MARKET = "Game Total"
 CFB_SPORT = "CFB"
 MAY_MODIFY_OTHER_SPORTS = False
@@ -76,12 +82,27 @@ def _render_native_page1() -> Any:
         cfb_router.GAME_TOTAL_PAGE = original_page1
 
 
+def _clear_auto_event_after_page1() -> bool:
+    """Remove only a selector-created event; preserve a real card-tap handoff."""
+    if _query_value(SELECTOR_SYNC_QUERY_KEY):
+        return False
+    if not _query_value(EVENT_QUERY_KEY):
+        return False
+    try:
+        del st.query_params[EVENT_QUERY_KEY]
+    except Exception:
+        return False
+    return True
+
+
 def render_app() -> Any:
     if not _selected_game_total():
         install_games_on_day_step2_visual()
         install_games_on_day_step3_details()
         install_games_on_day_step4_interaction_mobile()
-        return _render_native_page1()
+        rendered = _render_native_page1()
+        _clear_auto_event_after_page1()
+        return rendered
 
     original_cfb_page = cfb_router.GAME_TOTAL_PAGE
     original_live_page = live_owner.ACTIVE_PAGE
@@ -101,6 +122,7 @@ def render_app() -> Any:
 __all__ = [
     "CFB_SPORT",
     "EVENT_QUERY_KEY",
+    "SELECTOR_SYNC_QUERY_KEY",
     "FROZEN_ROUTER",
     "GAME_TOTAL_MARKET",
     "MAY_MODIFY_MARKET_OWNERSHIP",
@@ -113,6 +135,7 @@ __all__ = [
     "PAGE1_NATIVE_ROUTE",
     "PAGE2_RUNTIME",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_clear_auto_event_after_page1",
     "_render_native_page1",
     "record_bootstrap_import_ms",
     "render_app",
