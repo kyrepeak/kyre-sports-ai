@@ -6,12 +6,14 @@ chain as the native Page-1 game-card surface without creating a second loader,
 provider path, model path, projection path, probability path, or Page-2 path.
 
 The exact-route renderer purges clean-page modules before importing V43, so V43
-rebinds the frozen Step-2/3/4 card chain after that purge and then consumes the
-unchanged V42 selected-day snapshot through the prior render path.
+rebinds the full frozen Step-2/3/4 card chain after that purge and then consumes
+the unchanged V42 selected-day snapshot through the prior render path.
 """
 from __future__ import annotations
 
 import cfb_game_total_clean_page_v42 as prior
+from cfb_game_total_games_on_day_step2_visual_v1 import install_games_on_day_step2_visual
+from cfb_game_total_games_on_day_step3_details_v1 import install_games_on_day_step3_details
 from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_games_on_day_step4_interaction_mobile
 
 MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V43 • GAME CARDS STEP 6"
@@ -44,7 +46,9 @@ def render_step6_cert_surface() -> None:
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None):
-    """Rebind the frozen cards after purge, then render the V42-owned snapshot."""
+    """Rebind the full frozen card chain after purge, then render V42 data."""
+    install_games_on_day_step2_visual()
+    install_games_on_day_step3_details()
     install_games_on_day_step4_interaction_mobile()
     return prior.render_game_total_hub(
         section_header,
