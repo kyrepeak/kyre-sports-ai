@@ -36,75 +36,32 @@ def _verified_premerge_authority(client):
     }
 
 
-def _activated_cert_script():
+def _jump_route_cert_script():
     return f'''
 import json
-import time
-from devsystem import browser_qa_v1 as nav
+from urllib.parse import urlencode
 from devsystem import cfb_game_total_mobile_production_step8_v1 as cert
 
 cert.SOURCE_MAIN_SHA = "{terminal.PRODUCT_MAIN_SHA}"
 cert.HANDOFF_CERT_DAY = "{terminal.HANDOFF_CERT_DAY}"
-_original_find = cert._find_cfb_frame
 
 
-def _activate_game_total(page):
-    frame, _ = nav._find_app_frame(page)
-    sports = nav._read_sport_options(page, frame)
-    if "College Football" not in sports:
-        raise cert.Step8MobileProductionFailure(
-            "CFB_SPORT_SELECTOR_OPTION_MISSING:" + json.dumps(sports, ensure_ascii=False)
-        )
-    nav._choose(page, frame, 0, "College Football")
-    market = frame.get_by_role("combobox", name="🎯 CFB Market", exact=True)
-    market.wait_for(state="visible", timeout=45000)
-    nav._choose(page, frame, 1, "Game Total")
-    deadline = time.monotonic() + 90.0
-    last_body = ""
-    while time.monotonic() < deadline:
-        try:
-            last_body = frame.locator("body").inner_text(timeout=5000)
-        except Exception:
-            last_body = ""
-        if "PHOENIX TIME" in last_body and (
-            "GAMES ON THIS DAY" in last_body or "GAME DAY" in last_body
-        ):
-            return
-        page.wait_for_timeout(500)
-    raise cert.Step8MobileProductionFailure(
-        "CFB_GAME_TOTAL_UI_ACTIVATION_TIMEOUT:" + last_body[:1200]
-    )
+def _jump_route_for_day(base_url, selected_day):
+    query = urlencode({{
+        "ks_jump_sport": "CFB",
+        "ks_jump_market": "Game Total",
+        "ks_cfb_game_total_date": str(selected_day),
+    }})
+    return base_url.rstrip("/") + "/?" + query
 
 
-def _activated_find(
-    page,
-    *,
-    required_markers=(),
-    required_testids=(),
-    timeout_seconds=120.0,
-):
-    page1_or_day = (
-        cert.PHOENIX_DAY_TESTID in required_testids
-        or cert.PAGE1_TESTID in required_testids
-        or "PHOENIX TIME" in required_markers
-    )
-    if page1_or_day:
-        _activate_game_total(page)
-    return _original_find(
-        page,
-        required_markers=required_markers,
-        required_testids=required_testids,
-        timeout_seconds=timeout_seconds,
-    )
-
-
-cert._find_cfb_frame = _activated_find
+cert._route_for_day = _jump_route_for_day
 _original_page1 = cert._page1_result
 
 
 def _guarded_page1(page, name, artifact_dir, base_url):
     row, selected_url, event_id = _original_page1(page, name, artifact_dir, base_url)
-    frame, _ = _original_find(
+    frame, _ = cert._find_cfb_frame(
         page,
         required_markers=cert.PAGE1_FRAME_MARKERS,
         required_testids=(cert.PHOENIX_DAY_TESTID, cert.PAGE1_TESTID),
@@ -197,6 +154,6 @@ def _resume_or_claim(client, registry_hash):
 
 
 terminal._ensure_authority = _verified_premerge_authority
-terminal._cert_script = _activated_cert_script
+terminal._cert_script = _jump_route_cert_script
 terminal._claim = _resume_or_claim
 terminal.install_startup(app)
