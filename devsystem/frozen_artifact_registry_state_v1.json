@@ -2,6 +2,17 @@
   "active_thaws": [
     {
       "files": {
+        "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": {
+          "from_blob": "cfbdc3767e8cddc3b80babe464baeead15ac7146",
+          "to_blob": "49982eeb8c6f2eca7f765fd07afa851cda519d74"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "1ca44039051369129a42c7e5db4a7a7825d15010",
+      "thaw_id": "THAW-CFB-GT-GAMES-ON-DAY-DATA-STEP5-R1"
+    },
+    {
+      "files": {
         "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
           "from_blob": "6cfdb7303062780415428df33780bbce31f8b3e5",
           "to_blob": "92b4467e7e45e5ba551a5734e162001bda26e725"
@@ -3002,9 +3013,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 259,
+  "revision": 260,
   "schema_version": 1,
   "source_main_sha": "e28ad8458aa1ee4b4fdaa2215fc638c6215ecd02",
-  "state_hash": "168032ef06f47baf86153df8a7e90b6e57ddeaa4ef942dcbe96bd162a4693ace",
+  "state_hash": "95dea80fb002baa7deccc865f4b904ff257dc70f44ac2c491ebf03abcf0211dc",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
