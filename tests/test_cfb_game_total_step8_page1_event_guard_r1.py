@@ -80,3 +80,68 @@ def test_step8_page1_event_guard_preserves_real_card_tap_marker():
     exec(_function_source(source, "_clear_auto_event_after_page1"), namespace)
     assert namespace["_clear_auto_event_after_page1"]() is False
     assert st.query_params["ks_cfb_game_total_event_id"] == "401858490"
+
+
+def test_step8_page2_rejects_auto_event_without_matching_tap_marker():
+    source = ROUTER.read_text(encoding="utf-8")
+    st = SimpleNamespace(query_params={
+        "ks_cfb_game_total_event_id": "401858490",
+    })
+    live_owner = SimpleNamespace(
+        _game_total_route_active=lambda: True,
+        _restore_game_total_route_from_query=lambda: True,
+    )
+    namespace: dict[str, Any] = {
+        "Any": Any,
+        "st": st,
+        "live_owner": live_owner,
+        "EVENT_QUERY_KEY": "ks_cfb_game_total_event_id",
+        "SELECTOR_SYNC_QUERY_KEY": "ks_cfb_game_total_selector_sync",
+    }
+    exec(_function_source(source, "_query_value"), namespace)
+    exec(_function_source(source, "_selected_game_total"), namespace)
+    assert namespace["_selected_game_total"]() is False
+
+
+def test_step8_page2_accepts_exact_event_only_with_matching_tap_marker():
+    source = ROUTER.read_text(encoding="utf-8")
+    st = SimpleNamespace(query_params={
+        "ks_cfb_game_total_event_id": "401858490",
+        "ks_cfb_game_total_selector_sync": "401858490",
+    })
+    live_owner = SimpleNamespace(
+        _game_total_route_active=lambda: True,
+        _restore_game_total_route_from_query=lambda: True,
+    )
+    namespace: dict[str, Any] = {
+        "Any": Any,
+        "st": st,
+        "live_owner": live_owner,
+        "EVENT_QUERY_KEY": "ks_cfb_game_total_event_id",
+        "SELECTOR_SYNC_QUERY_KEY": "ks_cfb_game_total_selector_sync",
+    }
+    exec(_function_source(source, "_query_value"), namespace)
+    exec(_function_source(source, "_selected_game_total"), namespace)
+    assert namespace["_selected_game_total"]() is True
+
+
+def test_step8_page2_rejects_mismatched_tap_marker():
+    source = ROUTER.read_text(encoding="utf-8")
+    st = SimpleNamespace(query_params={
+        "ks_cfb_game_total_event_id": "401858490",
+        "ks_cfb_game_total_selector_sync": "401858491",
+    })
+    live_owner = SimpleNamespace(
+        _game_total_route_active=lambda: True,
+        _restore_game_total_route_from_query=lambda: True,
+    )
+    namespace: dict[str, Any] = {
+        "Any": Any,
+        "st": st,
+        "live_owner": live_owner,
+        "EVENT_QUERY_KEY": "ks_cfb_game_total_event_id",
+        "SELECTOR_SYNC_QUERY_KEY": "ks_cfb_game_total_selector_sync",
+    }
+    exec(_function_source(source, "_query_value"), namespace)
+    exec(_function_source(source, "_selected_game_total"), namespace)
+    assert namespace["_selected_game_total"]() is False
