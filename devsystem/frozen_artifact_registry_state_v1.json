@@ -34,7 +34,7 @@
         }
       },
       "status": "ACTIVE",
-      "target_head_sha": "892798332abfd1b696a9e4809d51861302c6c3b3",
+      "target_head_sha": "4049b40d90a325928dd8d142ff6827ab7af97294",
       "thaw_id": "THAW-CFB-GT-STEP8-ROUTE-POINTER-LOCK-R1"
     },
     {
@@ -3033,9 +3033,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 280,
+  "revision": 281,
   "schema_version": 1,
   "source_main_sha": "f1f0ccd80ea717623f38be49237e4943e9d43ad6",
-  "state_hash": "f74350b8c898b0f280249a640d55dbbe799e958d632c373345658efb49e69bb1",
+  "state_hash": "2409bb87afcce34ffd6ac9c3c9b6b03344f7fe5fd94ea2941aa195e5db41171e",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
