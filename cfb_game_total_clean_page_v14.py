@@ -295,9 +295,12 @@ def _sync_frozen_matchup_state(selected_day: date, games: Sequence[Mapping[str, 
     if not games:
         return 0
     sync_event_id = _selector_sync_event_id()
-    selected_index = _selected_game_index(games, _query_event_id())
+    query_event_id = _query_event_id()
+    selected_index = _selected_game_index(games, query_event_id)
     event_id = _game_id(games[selected_index])
-    if event_id:
+    # Only a real card href carries both the exact event and selector-sync marker.
+    # The initial internal default must never publish an event query by itself.
+    if sync_event_id and sync_event_id == event_id and query_event_id == event_id:
         _set_query_event_id(event_id)
     # The transient marker guarantees one real st.query_params mutation after
     # frame-local navigation. Deleting it makes Streamlit synchronize the full
