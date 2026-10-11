@@ -5,6 +5,7 @@ CERT = ROOT / "devsystem/cfb_game_total_page1_page2_handoff_step7_v1.py"
 ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py"
 V43 = ROOT / "cfb_game_total_clean_page_v43.py"
 V14 = ROOT / "cfb_game_total_clean_page_v14.py"
+V11 = ROOT / "cfb_game_total_clean_page_v11.py"
 PAGE2 = ROOT / "cfb_game_total_page2_step8_final_runtime_v1.py"
 PLAN = ROOT / "devsystem/runless_proof_plans/cfb-game-total-page1-page2-handoff-step7-v1.json"
 
@@ -41,6 +42,7 @@ def test_step7_certifies_exact_card_query_to_frozen_page2_runtime():
     assert result["page2_runtime"] == "cfb_game_total_page2_step8_final_runtime_v1"
     assert result["event_query_key"] == "ks_cfb_game_total_event_id"
     assert result["selector_sync_query_key"] == "ks_cfb_game_total_selector_sync"
+    assert result["date_query_key"] == "ks_cfb_game_total_date"
     assert result["selected_day"] == "2026-10-10"
     assert result["event_id"] == "401760001"
     assert result["handoff_query"] == {
@@ -51,7 +53,37 @@ def test_step7_certifies_exact_card_query_to_frozen_page2_runtime():
         "ks_sport": "College Football",
     }
     assert result["page2_selected_event_activation"] is True
+    assert result["router_observed_page2_owners"] == {
+        "cfb": "cfb_game_total_page2_step8_final_runtime_v1",
+        "live": "cfb_game_total_page2_step8_final_runtime_v1",
+        "render": "cfb_game_total_page2_step8_final_runtime_v1",
+    }
+    assert result["router_restored_after_render"] is True
     assert result["phoenix_timezone"] == "America/Phoenix"
+
+
+def test_step7_resolves_actual_v11_date_query_binding():
+    module = _load_cert()
+    source = V11.read_text(encoding="utf-8")
+    assert module._resolve_v11_date_query_key(source) == "ks_cfb_game_total_date"
+    alternate = source.replace(
+        'DATE_QUERY_KEY = "ks_cfb_game_total_date"',
+        'DATE_QUERY_KEY = "ks_cfb_game_total_date_v2"',
+        1,
+    )
+    assert module._resolve_v11_date_query_key(alternate) == "ks_cfb_game_total_date_v2"
+
+
+def test_step7_exercises_selected_event_router_runtime_path():
+    module = _load_cert()
+    result = module._exercise_selected_event_router()
+    assert result["selected"] is True
+    assert result["observed_page2_owners"] == {
+        "cfb": "cfb_game_total_page2_step8_final_runtime_v1",
+        "live": "cfb_game_total_page2_step8_final_runtime_v1",
+        "render": "cfb_game_total_page2_step8_final_runtime_v1",
+    }
+    assert result["restored"] is True
 
 
 def test_step7_preserves_frozen_step6_and_page2_contracts():
@@ -81,5 +113,6 @@ def test_step7_runless_plan_is_integration_only_and_has_no_public_probe():
     assert '"tests/test_cfb_game_total_page1_page2_handoff_step7_v1.py"' in text
     assert '"probes": []' in text
     assert '"cfb_game_total_clean_page_v43.py"' in text
+    assert '"cfb_game_total_clean_page_v11.py"' in text
     assert '"streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py"' in text
     assert '"cfb_game_total_page2_step8_final_runtime_v1.py"' in text
