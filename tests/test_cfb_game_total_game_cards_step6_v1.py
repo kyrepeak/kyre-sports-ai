@@ -27,19 +27,22 @@ def test_step6_adds_native_game_card_owner_without_reopening_step5_data():
 
 def test_step6_rebinds_entire_card_chain_after_clean_page_module_purge():
     source = V43.read_text()
+    step1_import = "from cfb_game_total_games_on_day_step1_layout_v1 import install_games_on_day_step1_layout"
     step2_import = "from cfb_game_total_games_on_day_step2_visual_v1 import install_games_on_day_step2_visual"
     step3_import = "from cfb_game_total_games_on_day_step3_details_v1 import install_games_on_day_step3_details"
     step4_import = "from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_games_on_day_step4_interaction_mobile"
+    assert step1_import in source
     assert step2_import in source
     assert step3_import in source
     assert step4_import in source
     assert "POST_PURGE_CARD_REBIND = True" in source
 
+    step1_call = source.index("install_games_on_day_step1_layout()")
     step2_call = source.index("install_games_on_day_step2_visual()")
     step3_call = source.index("install_games_on_day_step3_details()")
     step4_call = source.index("install_games_on_day_step4_interaction_mobile()")
     render_call = source.index("return prior.render_game_total_hub(")
-    assert step2_call < step3_call < step4_call < render_call
+    assert step1_call < step2_call < step3_call < step4_call < render_call
 
 
 def test_step6_promotes_existing_frozen_game_card_chain_only_on_page1():
@@ -61,4 +64,5 @@ def test_step6_runless_plan_uses_forward_compatible_preservation_proof():
     plan = PROOF_PLAN.read_text()
     assert '"tests/test_cfb_game_total_game_cards_step6_v1.py"' in plan
     assert '"tests/test_cfb_game_total_games_on_day_data_step5_v1.py"' not in plan
+    assert '"tests/test_cfb_game_total_games_on_day_step1_layout_v1.py"' in plan
     assert '"tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py"' in plan
