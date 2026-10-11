@@ -13,7 +13,7 @@ from .registry import GithubRegistryBackend, REGISTRY_PATH
 TASK_ID = "cfb-game-total-mobile-production-step8-premerge-v1"
 WORKSTREAM = "cfb-game-total-native-website-rebuild-v1"
 BRANCH = "cfb-game-total-mobile-production-step8-v1"
-CANDIDATE_SHA = "b7c5bb3c1f7a00a3f2836a62d832c269e2bd4369"
+CANDIDATE_SHA = "c3b80e23631ce7e4042c88e3df9be4bb4e279a94"
 MAIN_SHA = "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb"
 THAW_ID = "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1"
 FROZEN_PATH = "cfb_game_total_clean_page_v43.py"
@@ -25,6 +25,7 @@ LEASE_OWNER = "api2/cfb-game-total-native-website-rebuild-v1/step8"
 WRITE_PATHS = (
     FROZEN_PATH,
     "devsystem/cfb_game_total_mobile_production_step8_v1.py",
+    "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py",
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
     "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
