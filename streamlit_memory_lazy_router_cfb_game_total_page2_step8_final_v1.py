@@ -9,8 +9,9 @@ parent router unchanged.
 Games on This Day Steps 2-4 are additive Page-1-only presentation installers.
 Native Website Routing Step 1 established V39, native Page-1 Shell Step 3
 advanced the Page-1 owner to V40, Phoenix Day Selector Step 4 advanced it to
-V41, and Games-on-Day Data Step 5 advances only that Page-1 owner to V42. All
-Page-1 additions are bypassed whenever Page 2 owns an exact selected event.
+V41, Games-on-Day Data Step 5 advanced it to V42, and Game Cards Step 6 advances
+only that Page-1 owner to V43. All Page-1 additions are bypassed whenever Page 2
+owns an exact selected event.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_game
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP8 FINAL V1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration"
-PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v42"
+PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v43"
 PAGE2_RUNTIME = "cfb_game_total_page2_step8_final_runtime_v1"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 GAME_TOTAL_MARKET = "Game Total"
