@@ -1,11 +1,42 @@
 {
-  "generation": 311,
-  "holders": [],
+  "generation": 312,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-11T00:11:49Z",
+      "expires_at_utc": "2026-10-11T01:11:49Z",
+      "generation": 312,
+      "heartbeat_at_utc": "2026-10-11T00:11:49Z",
+      "lease_id": "SCOPE-LEASE-1B64A0231819EF84CC5E8B2F",
+      "owner_id": "api2-cfb-game-total-games-on-day-data-step5",
+      "scope": {
+        "dependency_tokens": [
+          "cfb:game-total:games-on-day-data:step5"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "candidate_sha": "1ca44039051369129a42c7e5db4a7a7825d15010",
+          "main_sha": "e28ad8458aa1ee4b4fdaa2215fc638c6215ecd02"
+        },
+        "shared_resources": [
+          "data:cfb:game-total:selected-day",
+          "presentation:cfb:game-total:page1",
+          "route:cfb:game-total"
+        ],
+        "write_paths": [
+          "cfb_game_total_clean_page_v42.py",
+          "devsystem/runless_proof_plans/cfb-game-total-games-on-day-data-step5-v1.json",
+          "devsystem/task_ledgers/cfb-game-total-games-on-day-data-step5-v1.json",
+          "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+          "tests/test_cfb_game_total_games_on_day_data_step5_v1.py"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 535,
+  "revision": 536,
   "schema_version": 1,
-  "state_hash": "2737455b12345bfb7abc50cb4c5ec65f4844df039e52b2b53071c193c8971140",
+  "state_hash": "d356a2223edc5d08c2aed947ac4ec3c569b4ec22d8f61ad29d55a3657a2501de",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
