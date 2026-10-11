@@ -1,0 +1,47 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/cfb-game-total-step8-page1-event-guard-r1.json": "17848e3e08f551ef47ddfd3722c3aebe97cec775",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "2a73aba9b5a746a4e5ab8ab7040210df3e705666",
+    "tests/test_cfb_game_total_step8_page1_event_guard_r1.py": "b64ce6ca3ea941e7d650345067233532ebae7591"
+  },
+  "candidate_sha": "d265eb22cc2919a603c75534373393d8a6c5c9f5",
+  "created_at": "2026-10-11T04:29:32.394895+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v14.py": "030952d34178fb148c4d3ad7470f1bbc033bc8ff",
+    "cfb_game_total_clean_page_v43.py": "3a05f8f3f9d434a462da702d429e7db990c9b528",
+    "devsystem/cfb_game_total_mobile_production_step8_v1.py": "76bdab33e6b0ab76da3b2c96141afdeb63e0a653"
+  },
+  "deployment_identity": "6844d236d6f23f9546adc4e822a54267ad4b9f85",
+  "digest": "61b42dd843fe5bbcf73f478ab30e0dcb0149042952a59357b06bfea549bfafb7",
+  "evidence_digests": [
+    "35e9c95385fb9b82c4ba72b43f56f05e34428cfc6e01c61389a5610b12b2ee38"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "3530286f5291ebad20d688cb6cce735cbb170d23d805cb07aa0881a32b65cbf1",
+  "proof_id": "cfb-game-total-step8-page1-event-guard-r1-d265eb22cc2919a6-349c7bc9d383a519",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-STEP8-PAGE1-EVENT-GUARD-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 273,
+    "state_hash": "b98ad5672dc87553016b0824fa388331914a9a32105ce5fab76f8e145f6c3472"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-STEP8-PAGE1-EVENT-GUARD-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 273,
+    "state_hash": "b98ad5672dc87553016b0824fa388331914a9a32105ce5fab76f8e145f6c3472"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-step8-page1-event-guard-r1",
+  "workstream": "cfb-game-total-native-website-rebuild-v1"
+}
