@@ -13,6 +13,6 @@ os.environ["RPP_CFB_GAMES_ON_DAY_STEP1_CLOSEOUT_ON_START"] = "0"
 os.environ["RPP_CFB_GAMES_ON_DAY_STEP1_DIAGNOSTIC_ON_START"] = "0"
 
 from .api import app
-from .cfb_game_total_game_cards_step6_premerge_r3 import install_startup
+from .cfb_game_total_game_cards_step6_premerge_r4 import install_startup
 
 install_startup(app)
