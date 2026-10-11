@@ -28,6 +28,17 @@
     },
     {
       "files": {
+        "requirements.txt": {
+          "from_blob": "1022d95a71b3c04aa5310b5057de74978e4cffa4",
+          "to_blob": "7b2e379fc2f519c9bb8700a14b33b70d4eb0f581"
+        }
+      },
+      "status": "ACTIVE",
+      "target_head_sha": "b8a693bdce3f0e17a602e67fe89a60f63457b15a",
+      "thaw_id": "THAW-CFB-GT-STEP8-STREAMLIT-REDEPLOY-R1"
+    },
+    {
+      "files": {
         "devsystem/change_classifier_v1.py": {
           "from_blob": "352074abc9d5f807ef6bfad593743c19cef49e00",
           "to_blob": "845651ca33ac69bf1d4efba945dd3824ad2d63c2"
@@ -3022,9 +3033,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 271,
+  "revision": 272,
   "schema_version": 1,
   "source_main_sha": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
-  "state_hash": "715f190c2ef77cca82e11c4d4fc50620a2a2fdcfe75b92a94274bb5ed435cd30",
+  "state_hash": "546007dd1d31ff2130a7f3bb53a631116cfa35b6f0178f112c6bb284b0e3a350",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
