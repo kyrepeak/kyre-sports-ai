@@ -17,6 +17,22 @@
       "py_compile",
       "devsystem/cfb_game_total_mobile_production_step8_v1.py",
       "devsystem/production_identity_verify_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "playwright",
+      "install",
+      "chromium"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.cfb_game_total_mobile_production_step8_v1",
+      "--base-url",
+      "https://pickvault.streamlit.app",
+      "--artifact-dir",
+      "artifacts/cfb-game-total-step8-runless"
     ]
   ],
   "artifacts": [
@@ -45,7 +61,7 @@
     "cfb_game_total_final_v1.py"
   ],
   "probes": [],
-  "timeout_seconds": 600,
-  "live_ttl_seconds": 900,
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1500,
   "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP8_MOBILE_PRODUCTION_V1_FROZEN"
 }
