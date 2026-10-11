@@ -5,13 +5,14 @@ owner. Step 6 promotes the already-certified Games on This Day presentation
 chain as the native Page-1 game-card surface without creating a second loader,
 provider path, model path, projection path, probability path, or Page-2 path.
 
-The final router installs the frozen card presentation chain once on Page 1
-before entering this owner. V43 then consumes the exact V42 selected-day
-snapshot through the unchanged prior render path.
+The exact-route renderer purges clean-page modules before importing V43, so V43
+rebinds the frozen Step-2/3/4 card chain after that purge and then consumes the
+unchanged V42 selected-day snapshot through the prior render path.
 """
 from __future__ import annotations
 
 import cfb_game_total_clean_page_v42 as prior
+from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_games_on_day_step4_interaction_mobile
 
 MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V43 • GAME CARDS STEP 6"
 MARKET = prior.MARKET
@@ -30,6 +31,7 @@ NETWORK_CALLS_ADDED = 0
 NEW_PROVIDER_PATHS_ADDED = 0
 CARDS_CONSUME_SELECTED_DAY_SNAPSHOT = True
 FROZEN_CARD_PRESENTATION_REUSED = True
+POST_PURGE_CARD_REBIND = True
 FROZEN_CARD_CHAIN = (
     "cfb_game_total_games_on_day_step2_visual_v1",
     "cfb_game_total_games_on_day_step3_details_v1",
@@ -42,7 +44,8 @@ def render_step6_cert_surface() -> None:
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None):
-    """Render the frozen V42 snapshot through the certified card presentation chain."""
+    """Rebind the frozen cards after purge, then render the V42-owned snapshot."""
+    install_games_on_day_step4_interaction_mobile()
     return prior.render_game_total_hub(
         section_header,
         status_info,
@@ -81,6 +84,7 @@ __all__ = [
     "MODEL_VERSION",
     "NETWORK_CALLS_ADDED",
     "NEW_PROVIDER_PATHS_ADDED",
+    "POST_PURGE_CARD_REBIND",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "render_cfb_hub",
     "render_game_total_hub",
