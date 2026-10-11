@@ -5,15 +5,16 @@
   "project": "API2",
   "workstream": "cfb-game-total-native-website-rebuild-v1",
   "step": "8/8",
-  "status": "PREMERGE_RUNLESS_REQUIRED_THEN_POSTMERGE_PUBLIC_CERT",
+  "status": "FINAL_CANDIDATE_AWAITING_EXACT_HEAD_REVIEW_AND_PREMERGE_RUNLESS",
   "base_main_sha": "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb",
   "branch": "cfb-game-total-mobile-production-step8-v1",
-  "problem": "Finish the native CFB Game Total rebuild by proving the candidate repair, merging that exact head, certifying the repaired flow on public production at all required widths, then freezing the merged artifacts.",
-  "root_cause": "The public browser proof proved a real Page-1 defect: V43 inherited V14 default-selection sync and published the first game's event ID before a user card tap. The repair exists only on the PR candidate until merge, so premerge requests to pickvault.streamlit.app necessarily execute the old frozen main and cannot validate candidate behavior. Repeating that production request premerge is an environment-staleness loop, not a candidate failure.",
-  "patch": "Use a two-gate finalization path. Gate A is candidate-only Runless regression authorization: exact frozen blob thaw, exact lease, Step-8 regression tests, Step-6/Step-7 preservation tests, compile checks, and frozen handoff execution. After exact-head merge, Gate B executes the full Step-8 public production cert on the deployed merged code at 390/430/768/1440 and only then freezes/read-backs the registry. The product repair keeps the first game as internal Page-1 default but suppresses automatic event-query publication; user-tapped card hrefs remain the sole Page-1 source of selected-event navigation.",
+  "problem": "Finish the native CFB Game Total rebuild by proving the exact candidate repair, merging that exact head, certifying the repaired flow on public production at all required widths, then freezing the merged artifacts.",
+  "root_cause": "The public browser proof proved a real Page-1 defect: V43 inherited V14 default-selection sync and published the first game's event ID before a user card tap. After that product repair, exact-head review found one final proof-plane race: Runless executes plan commands concurrently, so a standalone Playwright install could race the public browser certificate on a cold worker.",
+  "patch": "Keep the first game as the internal Page-1 default while suppressing automatic event-query publication. User-tapped game-card hrefs remain the sole selected-event navigation source. Split finalization into candidate-only premerge Runless followed by postmerge public production certification. The final production plan now invokes one sequential wrapper that installs Chromium with check=True and only then calls run_public(), eliminating the cold-worker browser-install race.",
   "mutation_scope": [
     "cfb_game_total_clean_page_v43.py",
     "devsystem/cfb_game_total_mobile_production_step8_v1.py",
+    "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py",
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
     "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
@@ -58,11 +59,16 @@
     "native_frame_regression_test_commit": "0b8502fad71184feaca1e54884dd11c25f0a4318",
     "native_frame_red_execution_verified": true,
     "review_repair_red_commit": "68f4938fe3f5af12c4429a9cbca86900d681eb5d",
-    "review_repair_red_result": "5 failed / 4 passed on the Codex review gaps",
+    "review_repair_red_result": "5 failed / 4 passed on the first exact-head Codex review gaps",
     "product_regression_test_commit": "baa790f110d0ff24b88e2aab000739789977c04b",
     "product_regression_red_verified_by_public_proof": true,
     "product_regression_failure": "Initial Page-1 render published an event ID and selected-event routing advanced to Page 2 before a user card tap",
     "product_patch_commit": "bbc105bda2bd0aa30e425ab35ab0914e6c727b8d",
+    "sequential_browser_test_first_commit": "4a5db16fb7aa9628a0dd131c6d394ea41644ba77",
+    "sequential_browser_red_verified": true,
+    "sequential_browser_red_result": "1 failed / 8 passed: final Runless plan had no sequential Chromium-install/public-cert wrapper",
+    "sequential_browser_green_commit": "c3b80e23631ce7e4042c88e3df9be4bb4e279a94",
+    "sequential_browser_green_result": "9 passed",
     "green_terminal_verification_claimed": false
   },
   "production_identity": {
@@ -97,10 +103,11 @@
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
     "premerge_proof_request_status": "NOT_SUBMITTED",
-    "postmerge_public_proof_status": "NOT_SUBMITTED"
+    "postmerge_public_proof_status": "NOT_SUBMITTED",
+    "sequential_public_wrapper": "devsystem.cfb_game_total_mobile_production_step8_runless_v1.py"
   },
   "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP8_MOBILE_PRODUCTION_V1_FROZEN",
   "green_plus_frozen_claimed": false,
   "step9_started": false,
-  "next_legal_action": "REFRESH_EXACT_THAW_AND_LEASE_TO_FINAL_HEAD_THEN_RUN_PREMERGE_RUNLESS"
+  "next_legal_action": "REFRESH_EXACT_THAW_AND_LEASE_TO_THIS_FINAL_HEAD_THEN_REQUEST EXACT-HEAD REREVIEW AND RUN PREMERGE RUNLESS"
 }
