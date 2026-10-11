@@ -1,0 +1,52 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/cfb-game-total-step8-route-pointer-lock-r1.json": "01627f4ebca14d0e40c5443ce5bb014ea0c0f509",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "23e63bb1d87a9081a0b969f92922e5d5da7e9358",
+    "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py": "41344c9d238a39338fb2f875c60065beac53fb79"
+  },
+  "candidate_sha": "8ffbe91246f5022bcaca7a326cfaaf9a62976633",
+  "created_at": "2026-10-11T22:06:49.370062+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v43.py": "3a05f8f3f9d434a462da702d429e7db990c9b528",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
+    "devsystem/cfb_game_total_mobile_production_step8_v1.py": "76bdab33e6b0ab76da3b2c96141afdeb63e0a653",
+    "tests/test_cfb_game_total_page1_default_selection_step8_v1.py": "7a94f7da2ce3aa8e3f50a0220a7b8c06129dd904",
+    "tests/test_cfb_game_total_page1_page2_handoff_step7_v1.py": "5db8809d2db208812221fab4f2000b9d51926b08",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1",
+    "tests/test_cfb_game_total_step8_page1_event_guard_r1.py": "2802dae1983fcfedd0f4e50d7a65dcfe410f81d4"
+  },
+  "deployment_identity": "c680282dcea41e30b9ee74def6d25eed39df22a7",
+  "digest": "12e18db7a900e2c646dd6615e85b90292058aa0573956cb34574fb3dcc59fda3",
+  "evidence_digests": [
+    "aee645e3ffeb76d21cd3096df1393a17f87cd59a344f544c5a77f4ff70ec5947",
+    "df3d0140a05d2e5bfcdf38c76074374fa042464dd6b79f94800cb62fd57082ce"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7d10f3c374f413e22c258a6f6e30bba9238ec619d62fff189dfab70c550a1556",
+  "proof_id": "cfb-game-total-step8-route-pointer-lock-r1-8ffbe91246f5022b-bde3098b39d6952e",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-STEP8-ROUTE-POINTER-LOCK-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 283,
+    "state_hash": "f5c2e83453267cb58b5493bb0ac5a6a53ea9b254ccc3ce23eae855c4b579d127"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-STEP8-ROUTE-POINTER-LOCK-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 283,
+    "state_hash": "f5c2e83453267cb58b5493bb0ac5a6a53ea9b254ccc3ce23eae855c4b579d127"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-step8-route-pointer-lock-r1",
+  "workstream": "cfb-game-total-native-website-rebuild-v1"
+}
