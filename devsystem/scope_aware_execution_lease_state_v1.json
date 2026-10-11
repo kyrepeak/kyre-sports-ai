@@ -1,12 +1,12 @@
 {
-  "generation": 318,
+  "generation": 319,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-11T02:18:30Z",
-      "expires_at_utc": "2026-10-11T03:18:30Z",
-      "generation": 318,
-      "heartbeat_at_utc": "2026-10-11T02:18:30Z",
-      "lease_id": "SCOPE-LEASE-44F4E675915EB9B517EAD5A0",
+      "acquired_at_utc": "2026-10-11T02:26:41Z",
+      "expires_at_utc": "2026-10-11T03:26:41Z",
+      "generation": 319,
+      "heartbeat_at_utc": "2026-10-11T02:26:41Z",
+      "lease_id": "SCOPE-LEASE-2FF2BFD46B1A4D1C01FF8308",
       "owner_id": "api2/cfb-game-total-native-website-rebuild-v1/step8",
       "scope": {
         "dependency_tokens": [
@@ -15,7 +15,7 @@
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "b7c5bb3c1f7a00a3f2836a62d832c269e2bd4369",
+          "candidate_sha": "c3b80e23631ce7e4042c88e3df9be4bb4e279a94",
           "main_sha": "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb"
         },
         "shared_resources": [
@@ -25,6 +25,7 @@
         ],
         "write_paths": [
           "cfb_game_total_clean_page_v43.py",
+          "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py",
           "devsystem/cfb_game_total_mobile_production_step8_v1.py",
           "devsystem/production_targets_v1.json",
           "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-premerge-v1.json",
@@ -39,8 +40,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 548,
+  "revision": 550,
   "schema_version": 1,
-  "state_hash": "3ca881ad962b5ed808d37c12fd327e9499262b2c0f31dd17ab769ef2b3d71f66",
+  "state_hash": "dc970dbd4a02377a32bb62b52f5ae479d42584a2408d836edc0707d1aa605c33",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
