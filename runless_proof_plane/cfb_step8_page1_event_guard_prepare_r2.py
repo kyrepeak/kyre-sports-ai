@@ -5,6 +5,7 @@ import json
 from copy import deepcopy
 from datetime import datetime, timezone
 
+from devsystem.api2_frozen_registry_lifecycle_v1 import plan_baseline_forward_port
 from devsystem.frozen_artifact_registry_v1 import _hash, _payload_without_hash, validate_registry
 from devsystem.scope_aware_execution_lease_v1 import build_scope, claim_scope, release_scope, validate_state as validate_scope_state
 
@@ -22,7 +23,8 @@ ROUTER = "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py"
 ROUTER_FROM = "811b0cec681aa1b1b0fddc4c3d4170dd3770dd50"
 ROUTER_R1 = "2a73aba9b5a746a4e5ab8ab7040210df3e705666"
 ROUTER_R2 = "f6ac3a2a79f8ff1fde6013b399d24d2ffb0ed744"
-THAW_ID = "THAW-CFB-GT-STEP8-PAGE1-EVENT-GUARD-R1"
+OLD_THAW_ID = "THAW-CFB-GT-STEP8-PAGE1-EVENT-GUARD-R1"
+NEW_THAW_ID = "THAW-CFB-GT-STEP8-PAGE1-EVENT-GUARD-R2"
 LEASE_BRANCH = "monster-scope-aware-execution-leases"
 LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
 OWNER = "api2/cfb-game-total-native-website-rebuild-v1/step8-page1-event-guard-r2"
@@ -90,40 +92,51 @@ def _release(client, lease_id: str):
         client.update_content(LEASE_PATH, _text(released["state"]), LEASE_BRANCH, "lease: release CFB Step8 real-tap repair", raw["sha"])
 
 
-def _retarget_thaw(client):
+def _prepare_registry(client):
     raw = client.content(REGISTRY_PATH, ref="monster-frozen-artifact-registry")
     registry = _decode(raw)
     validated = validate_registry(registry)
-    if validated["artifacts"].get(ROUTER) != ROUTER_FROM:
-        raise PrepareFailure("ROUTER_FROZEN_BASELINE_DRIFT")
     main_tree = client.tree_blobs(MAIN_SHA)
     candidate_tree = client.tree_blobs(CANDIDATE_SHA)
     if main_tree.get(ROUTER) != ROUTER_R1 or candidate_tree.get(ROUTER) != ROUTER_R2:
         raise PrepareFailure("ROUTER_BLOB_IDENTITY_DRIFT")
-    matches = [g for g in registry.get("active_thaws", []) if g.get("thaw_id") == THAW_ID]
-    if len(matches) != 1:
-        raise PrepareFailure("EVENT_GUARD_THAW_NOT_UNIQUE")
-    current = matches[0]
-    expected = {
-        "thaw_id": THAW_ID,
-        "status": "ACTIVE",
-        "target_head_sha": "d265eb22cc2919a603c75534373393d8a6c5c9f5",
-        "files": {ROUTER: {"from_blob": ROUTER_FROM, "to_blob": ROUTER_R1}},
-    }
-    if current != expected:
-        raise PrepareFailure("EVENT_GUARD_THAW_DRIFT")
-    updated = deepcopy(registry)
-    replacement = {
-        "thaw_id": THAW_ID,
+
+    exact_new = {
+        "thaw_id": NEW_THAW_ID,
         "status": "ACTIVE",
         "target_head_sha": CANDIDATE_SHA,
-        "files": {ROUTER: {"from_blob": ROUTER_FROM, "to_blob": ROUTER_R2}},
+        "files": {ROUTER: {"from_blob": ROUTER_R1, "to_blob": ROUTER_R2}},
     }
-    updated["active_thaws"] = [replacement if g.get("thaw_id") == THAW_ID else g for g in updated.get("active_thaws", [])]
-    updated["revision"] = int(updated.get("revision", 0)) + 1
+
+    # Idempotent read-back path: a restarted service must not create another state transition.
+    if validated["artifacts"].get(ROUTER) == ROUTER_R1:
+        matches = [g for g in registry.get("active_thaws", []) if g.get("thaw_id") == NEW_THAW_ID]
+        if str(registry.get("source_main_sha") or "") != MAIN_SHA or matches != [exact_new]:
+            raise PrepareFailure("R2_REGISTRY_PREPARED_STATE_DRIFT")
+        return registry
+
+    if validated["artifacts"].get(ROUTER) != ROUTER_FROM:
+        raise PrepareFailure("ROUTER_FROZEN_BASELINE_DRIFT")
+
+    # PR #1514 is already merged on main. Make its router the authoritative baseline,
+    # retire the old thaw atomically, then open exactly one new thaw for the R2 candidate.
+    planned = plan_baseline_forward_port(
+        registry,
+        updates={ROUTER: {"from_blob": ROUTER_FROM, "to_blob": ROUTER_R1}},
+        source_main_sha=MAIN_SHA,
+    )
+    if OLD_THAW_ID not in set(planned.get("retired_empty_thaw_grants") or []):
+        raise PrepareFailure("OLD_EVENT_GUARD_THAW_NOT_RETIRED")
+
+    updated = deepcopy(planned["registry"])
+    if any(g.get("thaw_id") == NEW_THAW_ID for g in updated.get("active_thaws", [])):
+        raise PrepareFailure("R2_THAW_ALREADY_PRESENT_UNEXPECTEDLY")
+    updated["active_thaws"].append(exact_new)
+    updated["active_thaws"] = sorted(updated["active_thaws"], key=lambda row: str(row.get("thaw_id") or ""))
+    updated["revision"] = int(updated["revision"]) + 1
     updated["state_hash"] = _hash(_payload_without_hash(updated))
     validate_registry(updated)
-    client.update_content(REGISTRY_PATH, _text(updated), "monster-frozen-artifact-registry", "registry: retarget Step8 event guard to real-tap repair", raw["sha"])
+    client.update_content(REGISTRY_PATH, _text(updated), "monster-frozen-artifact-registry", "registry: baseline Step8 R1 and authorize real-tap R2", raw["sha"])
     readback = _decode(client.content(REGISTRY_PATH, ref="monster-frozen-artifact-registry"))
     validate_registry(readback)
     if readback != updated:
@@ -141,7 +154,7 @@ def execute(app):
     validate_registry(registry)
     lease_id = _claim(client, str(registry["state_hash"]))
     try:
-        updated = _retarget_thaw(client)
+        updated = _prepare_registry(client)
         request = ProofRequest(
             task_id=TASK_ID,
             workstream=WORKSTREAM,
@@ -163,7 +176,7 @@ def execute(app):
             "lease_id": lease_id,
             "registry_revision": updated["revision"],
             "registry_state_hash": updated["state_hash"],
-            "thaw_id": THAW_ID,
+            "thaw_id": NEW_THAW_ID,
             "proof": proof,
             "github_actions_fallback": 0,
         }
