@@ -20,6 +20,7 @@ auto-published event without that tap marker is removed after the Page-1 render.
 """
 from __future__ import annotations
 
+from threading import RLock
 from typing import Any
 
 import streamlit as st
@@ -47,6 +48,7 @@ MAY_MODIFY_MODEL = False
 MAY_MODIFY_MARKET_OWNERSHIP = False
 NETWORK_CALLS_ADDED = 0
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+_ROUTE_POINTER_LOCK = RLock()
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -80,12 +82,13 @@ def _selected_game_total() -> bool:
 
 def _render_native_page1() -> Any:
     """Advance only the exact Page-1 owner for one render, then restore it."""
-    original_page1 = cfb_router.GAME_TOTAL_PAGE
-    cfb_router.GAME_TOTAL_PAGE = PAGE1_NATIVE_ROUTE
-    try:
-        return frozen_parent.render_app()
-    finally:
-        cfb_router.GAME_TOTAL_PAGE = original_page1
+    with _ROUTE_POINTER_LOCK:
+        original_page1 = cfb_router.GAME_TOTAL_PAGE
+        cfb_router.GAME_TOTAL_PAGE = PAGE1_NATIVE_ROUTE
+        try:
+            return frozen_parent.render_app()
+        finally:
+            cfb_router.GAME_TOTAL_PAGE = original_page1
 
 
 def _clear_auto_event_after_page1() -> bool:
@@ -110,19 +113,20 @@ def render_app() -> Any:
         _clear_auto_event_after_page1()
         return rendered
 
-    original_cfb_page = cfb_router.GAME_TOTAL_PAGE
-    original_live_page = live_owner.ACTIVE_PAGE
-    original_render_page = render_owner.ACTIVE_PAGE
+    with _ROUTE_POINTER_LOCK:
+        original_cfb_page = cfb_router.GAME_TOTAL_PAGE
+        original_live_page = live_owner.ACTIVE_PAGE
+        original_render_page = render_owner.ACTIVE_PAGE
 
-    cfb_router.GAME_TOTAL_PAGE = PAGE2_RUNTIME
-    live_owner.ACTIVE_PAGE = PAGE2_RUNTIME
-    render_owner.ACTIVE_PAGE = PAGE2_RUNTIME
-    try:
-        return frozen_parent.render_app()
-    finally:
-        cfb_router.GAME_TOTAL_PAGE = original_cfb_page
-        live_owner.ACTIVE_PAGE = original_live_page
-        render_owner.ACTIVE_PAGE = original_render_page
+        cfb_router.GAME_TOTAL_PAGE = PAGE2_RUNTIME
+        live_owner.ACTIVE_PAGE = PAGE2_RUNTIME
+        render_owner.ACTIVE_PAGE = PAGE2_RUNTIME
+        try:
+            return frozen_parent.render_app()
+        finally:
+            cfb_router.GAME_TOTAL_PAGE = original_cfb_page
+            live_owner.ACTIVE_PAGE = original_live_page
+            render_owner.ACTIVE_PAGE = original_render_page
 
 
 __all__ = [
