@@ -31,3 +31,9 @@ def test_r11_preserves_anchor_rerender_and_terminal_contract() -> None:
     assert "_rerender_safe_visible" in source
     assert '"step8-route-pointer-lock-postmerge-r11"' in source
     assert '"CFB_STEP8_R5_PUBLIC_PAYLOAD="' in source
+
+
+def test_r11_rerender_selector_is_well_formed() -> None:
+    assert TARGET.exists(), "R11 single-pass cert harness not implemented"
+    source = TARGET.read_text(encoding="utf-8")
+    assert "frame.locator(f'[data-testid=\"{{testid}}\"]')" in source
