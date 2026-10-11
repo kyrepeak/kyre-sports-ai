@@ -8,6 +8,8 @@
       "pytest",
       "-q",
       "tests/test_cfb_game_total_mobile_production_step8_v1.py",
+      "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
+      "tests/test_cfb_game_total_game_cards_step6_v1.py",
       "tests/test_cfb_game_total_page1_page2_handoff_step7_v1.py",
       "tests/test_devsystem_cfb_game_total_backend_preservation_step2_v1.py"
     ],
@@ -15,6 +17,7 @@
       "python",
       "-m",
       "py_compile",
+      "cfb_game_total_clean_page_v43.py",
       "devsystem/cfb_game_total_mobile_production_step8_v1.py",
       "devsystem/production_identity_verify_v1.py"
     ],
@@ -36,14 +39,15 @@
     ]
   ],
   "artifacts": [
+    "cfb_game_total_clean_page_v43.py",
     "devsystem/cfb_game_total_mobile_production_step8_v1.py",
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
+    "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
     "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-v1.json",
     "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json"
   ],
   "dependencies": [
-    "cfb_game_total_clean_page_v43.py",
     "cfb_game_total_clean_page_v42.py",
     "cfb_game_total_clean_page_v41.py",
     "cfb_game_total_clean_page_v14.py",
