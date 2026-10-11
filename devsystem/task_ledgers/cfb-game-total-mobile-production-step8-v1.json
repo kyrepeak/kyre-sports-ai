@@ -5,18 +5,19 @@
   "project": "API2",
   "workstream": "cfb-game-total-native-website-rebuild-v1",
   "step": "8/8",
-  "status": "PRODUCT_REPAIR_IMPLEMENTED_AWAITING_EXACT_HEAD_PUBLIC_PROOF",
+  "status": "PREMERGE_RUNLESS_REQUIRED_THEN_POSTMERGE_PUBLIC_CERT",
   "base_main_sha": "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb",
   "branch": "cfb-game-total-mobile-production-step8-v1",
-  "problem": "The final rebuild step must certify the Page-1 to Page-2 CFB Game Total flow on public production across mobile/tablet/desktop, close production identity drift, and repair only defects proven by the Step-8 public browser proof.",
-  "root_cause": "Production verification first failed on stale Render certification metadata. After certifier-only repairs and memory-safe proof infrastructure, the authoritative public browser proof established one real product defect: frozen Page-1 owner V43 inherited V14 default-selection sync, which published the first game's ESPN event ID during initial Page-1 render. The Step-7 selected-event router then correctly advanced to Page 2 before the user tapped a card.",
-  "patch": "Keep the first game as the internal Page-1 default selection but suppress automatic event-query publication during initial Page-1 render. User-tapped game-card hrefs remain the sole Page-1 source of exact-event navigation. Also keep the Step-8 certifier fixes: current Phoenix day is verified separately, handoff uses the deterministic game-bearing 2026-10-10 slate, requested base_url is threaded through navigation, Page 2 must observably preserve the event ID, and Runless executes the production cert.",
+  "problem": "Finish the native CFB Game Total rebuild by proving the candidate repair, merging that exact head, certifying the repaired flow on public production at all required widths, then freezing the merged artifacts.",
+  "root_cause": "The public browser proof proved a real Page-1 defect: V43 inherited V14 default-selection sync and published the first game's event ID before a user card tap. The repair exists only on the PR candidate until merge, so premerge requests to pickvault.streamlit.app necessarily execute the old frozen main and cannot validate candidate behavior. Repeating that production request premerge is an environment-staleness loop, not a candidate failure.",
+  "patch": "Use a two-gate finalization path. Gate A is candidate-only Runless regression authorization: exact frozen blob thaw, exact lease, Step-8 regression tests, Step-6/Step-7 preservation tests, compile checks, and frozen handoff execution. After exact-head merge, Gate B executes the full Step-8 public production cert on the deployed merged code at 390/430/768/1440 and only then freezes/read-backs the registry. The product repair keeps the first game as internal Page-1 default but suppresses automatic event-query publication; user-tapped card hrefs remain the sole Page-1 source of selected-event navigation.",
   "mutation_scope": [
     "cfb_game_total_clean_page_v43.py",
     "devsystem/cfb_game_total_mobile_production_step8_v1.py",
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
     "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-premerge-v1.json",
     "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-v1.json",
     "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json"
   ],
@@ -60,7 +61,7 @@
     "review_repair_red_result": "5 failed / 4 passed on the Codex review gaps",
     "product_regression_test_commit": "baa790f110d0ff24b88e2aab000739789977c04b",
     "product_regression_red_verified_by_public_proof": true,
-    "product_regression_failure": "Initial Page-1 render published event_id=401856824 and selected-event routing advanced to Page 2 before a user card tap",
+    "product_regression_failure": "Initial Page-1 render published an event ID and selected-event routing advanced to Page 2 before a user card tap",
     "product_patch_commit": "bbc105bda2bd0aa30e425ab35ab0914e6c727b8d",
     "green_terminal_verification_claimed": false
   },
@@ -73,7 +74,9 @@
     "auto_deploy": false
   },
   "public_proof": {
-    "status": "RERUN_REQUIRED_AFTER_PRODUCT_REPAIR",
+    "status": "POSTMERGE_REQUIRED",
+    "premerge_latest_result": "EXPECTED_STALE_PRODUCTION_MAIN",
+    "premerge_environment_classification": "PUBLIC_PRODUCTION_DOES_NOT_CONTAIN_UNMERGED_CANDIDATE_REPAIR",
     "production_url": "https://pickvault.streamlit.app",
     "viewports": [390, 430, 768, 1440],
     "current_phoenix_day_proof_separate": true,
@@ -85,17 +88,19 @@
     "product_defect_path": "cfb_game_total_clean_page_v43.py"
   },
   "runless": {
-    "proof_generation": 1,
+    "premerge_task_id": "cfb-game-total-mobile-production-step8-premerge-v1",
+    "final_task_id": "cfb-game-total-mobile-production-step8-v1",
     "authorization_id": "AUTH-CFB-GT-MOBILE-PRODUCTION-STEP8-R1",
     "thaw_required": true,
     "thaw_id": "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_request_status": "NOT_SUBMITTED"
+    "premerge_proof_request_status": "NOT_SUBMITTED",
+    "postmerge_public_proof_status": "NOT_SUBMITTED"
   },
   "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP8_MOBILE_PRODUCTION_V1_FROZEN",
   "green_plus_frozen_claimed": false,
   "step9_started": false,
-  "next_legal_action": "CLAIM_EXACT_STEP8_THAW_AND_SCOPE_LEASE_THEN_RUN_ONE_EXACT_HEAD_PUBLIC_PROOF"
+  "next_legal_action": "REFRESH_EXACT_THAW_AND_LEASE_TO_FINAL_HEAD_THEN_RUN_PREMERGE_RUNLESS"
 }
