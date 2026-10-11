@@ -1,12 +1,12 @@
 {
-  "generation": 317,
+  "generation": 318,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-11T02:10:12Z",
-      "expires_at_utc": "2026-10-11T03:10:12Z",
-      "generation": 317,
-      "heartbeat_at_utc": "2026-10-11T02:10:12Z",
-      "lease_id": "SCOPE-LEASE-5AE5B6418E03BF256B438504",
+      "acquired_at_utc": "2026-10-11T02:18:30Z",
+      "expires_at_utc": "2026-10-11T03:18:30Z",
+      "generation": 318,
+      "heartbeat_at_utc": "2026-10-11T02:18:30Z",
+      "lease_id": "SCOPE-LEASE-44F4E675915EB9B517EAD5A0",
       "owner_id": "api2/cfb-game-total-native-website-rebuild-v1/step8",
       "scope": {
         "dependency_tokens": [
@@ -15,7 +15,7 @@
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "76074d4d7c2768a86d8c1655cb857c9cab40fa68",
+          "candidate_sha": "b7c5bb3c1f7a00a3f2836a62d832c269e2bd4369",
           "main_sha": "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb"
         },
         "shared_resources": [
@@ -27,6 +27,7 @@
           "cfb_game_total_clean_page_v43.py",
           "devsystem/cfb_game_total_mobile_production_step8_v1.py",
           "devsystem/production_targets_v1.json",
+          "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-premerge-v1.json",
           "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-v1.json",
           "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json",
           "tests/test_cfb_game_total_mobile_production_step8_v1.py",
@@ -38,8 +39,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 546,
+  "revision": 548,
   "schema_version": 1,
-  "state_hash": "401394c96e19e59a35efb1c736c5d64282f567cee716121c0983534943716394",
+  "state_hash": "3ca881ad962b5ed808d37c12fd327e9499262b2c0f31dd17ab769ef2b3d71f66",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
