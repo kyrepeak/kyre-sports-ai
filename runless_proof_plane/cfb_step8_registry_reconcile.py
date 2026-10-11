@@ -163,7 +163,19 @@ def execute(app):
         merged_authority_heads=[STEP8_THAW_TARGET, TASK14_FINAL_TARGET],
     )
     if planned.get("decision") != "AUTO_RECONCILIATION_PLANNED" or planned.get("apply_allowed") is not True:
-        raise Step8RegistryReconcileFailure("AUTO_RECONCILIATION_NOT_AUTHORIZED:" + str(planned.get("decision")))
+        raise Step8RegistryReconcileFailure(
+            "AUTO_RECONCILIATION_NOT_AUTHORIZED:"
+            + json.dumps(
+                {
+                    "decision": planned.get("decision"),
+                    "mismatch_count": planned.get("mismatch_count"),
+                    "authorized_mismatch_count": planned.get("authorized_mismatch_count"),
+                    "blocked_mismatches": planned.get("blocked_mismatches") or [],
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
     if int(planned.get("authorized_mismatch_count") or -1) != 3:
         raise Step8RegistryReconcileFailure("AUTHORIZED_MISMATCH_COUNT_DRIFT")
     authorities = {str(row.get("thaw_id") or "") for row in (planned.get("authorized_thaws") or [])}
@@ -221,7 +233,7 @@ def install_startup(app):
             app.state.cfb_step8_registry_reconcile = {
                 "status": "FAIL",
                 "error": type(exc).__name__,
-                "detail": str(exc)[:5000],
+                "detail": str(exc)[:12000],
             }
         print("CFB_STEP8_REGISTRY_RECONCILE=" + json.dumps(app.state.cfb_step8_registry_reconcile, sort_keys=True, default=str), flush=True)
 
