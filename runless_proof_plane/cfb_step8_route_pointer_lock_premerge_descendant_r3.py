@@ -125,32 +125,5 @@ def _verify_frozen_candidate_descendant(
     }
 
 
-def _release_owned_leases(client) -> None:
-    raw = client.content(r1.LEASE_PATH, ref=r1.LEASE_BRANCH)
-    state = r1.validate_scope_state(r1._decode(raw))
-    lease_ids = [
-        str(holder.get("lease_id") or "")
-        for holder in state.get("holders", [])
-        if holder.get("owner_id") == r1.OWNER_ID
-    ]
-    for lease_id in lease_ids:
-        if lease_id:
-            r1._release(client, lease_id)
-
-
-_original_execute = r1.execute
-
-
-def _execute_with_dead_lease_recovery(app):
-    client = app.state.github_client
-    _release_owned_leases(client)
-    try:
-        return _original_execute(app)
-    except Exception:
-        _release_owned_leases(client)
-        raise
-
-
 prove._verify_frozen_candidate = _verify_frozen_candidate_descendant
-r1.execute = _execute_with_dead_lease_recovery
 install_startup = r1.install_startup
