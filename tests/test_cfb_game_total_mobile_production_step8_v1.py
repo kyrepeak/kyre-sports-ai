@@ -65,6 +65,15 @@ def test_step8_public_contract_covers_page1_page2_and_all_viewports():
     assert "gtp2s8-final" in module.PAGE2_REQUIRED_TESTIDS
 
 
+def test_step8_native_frame_detection_does_not_require_obsolete_combobox():
+    module = _load_cert()
+    source = CERT.read_text(encoding="utf-8")
+    assert callable(module._find_cfb_frame)
+    assert module.PAGE1_FRAME_MARKERS == ("PHOENIX TIME", "GAMES ON THIS DAY")
+    assert "combo_count >= 1" not in source
+    assert "base._find_app_frame(page" not in source
+
+
 def test_step8_runless_plan_and_ledger_are_finalization_scoped():
     assert PLAN.exists(), "Step 8 Runless proof plan is not implemented yet"
     assert LEDGER.exists(), "Step 8 task ledger is not implemented yet"
