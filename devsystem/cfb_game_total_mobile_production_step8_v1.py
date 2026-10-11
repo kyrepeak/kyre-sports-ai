@@ -31,6 +31,7 @@ RENDER_CERTIFIED_COMMIT = "879c28265efde1810a5e30352fa2dcb269c1052a"
 RENDER_OBSERVABILITY_VERSION = "KYRE_OBSERVABILITY_V1"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 PHOENIX_TZ = "America/Phoenix"
+HANDOFF_CERT_DAY = "2026-10-10"
 PAGE1_TESTID = "gt163-game-strip"
 PHOENIX_DAY_TESTID = "gt241-phoenix-day-selector"
 PAGE1_FRAME_MARKERS = ("PHOENIX TIME", "GAMES ON THIS DAY")
@@ -83,15 +84,25 @@ def authoritative_phoenix_day() -> str:
     return datetime.now(ZoneInfo(PHOENIX_TZ)).date().isoformat()
 
 
-def page1_route(base_url: str = PRODUCTION_URL) -> str:
+def _route_for_day(base_url: str, selected_day: str) -> str:
     query = urlencode(
         {
             "ks_sport": "College Football",
             "ks_cfb_market": "Game Total",
-            "ks_cfb_game_total_date": authoritative_phoenix_day(),
+            "ks_cfb_game_total_date": str(selected_day),
         }
     )
     return base_url.rstrip("/") + "/?" + query
+
+
+def current_day_route(base_url: str = PRODUCTION_URL) -> str:
+    """Route used only to certify that the visible selector owns Phoenix today."""
+    return _route_for_day(base_url, authoritative_phoenix_day())
+
+
+def page1_route(base_url: str = PRODUCTION_URL) -> str:
+    """Route used for deterministic Page-1 -> Page-2 handoff certification."""
+    return _route_for_day(base_url, HANDOFF_CERT_DAY)
 
 
 def _event_from_url(url: str) -> str:
@@ -138,7 +149,7 @@ def _find_cfb_frame(
                 except Exception:
                     pass
 
-            marker_hits = [m for m in required_markers if m.casefold() in lower]
+            marker_hits = [marker for marker in required_markers if marker.casefold() in lower]
             testid_hits: list[str] = []
             for testid in required_testids:
                 try:
@@ -166,8 +177,7 @@ def _find_cfb_frame(
         page.wait_for_timeout(750)
 
     raise Step8MobileProductionFailure(
-        "CFB_NATIVE_FRAME_NOT_FOUND:"
-        + json.dumps(last_scans, ensure_ascii=False)
+        "CFB_NATIVE_FRAME_NOT_FOUND:" + json.dumps(last_scans, ensure_ascii=False)
     )
 
 
@@ -229,12 +239,51 @@ def verify_render_identity() -> dict[str, Any]:
     return {"status": "GREEN", **observed}
 
 
+def _current_day_result(
+    page: Any,
+    name: str,
+    artifact_dir: Path,
+    base_url: str,
+) -> dict[str, Any]:
+    page.goto(current_day_route(base_url), wait_until="domcontentloaded", timeout=120000)
+    frame, scans = _find_cfb_frame(
+        page,
+        required_markers=("PHOENIX TIME",),
+        required_testids=(PHOENIX_DAY_TESTID,),
+        timeout_seconds=120.0,
+    )
+    _visible(frame, PHOENIX_DAY_TESTID)
+    body = frame.locator("body").inner_text(timeout=30000)
+    runtime_error = _runtime_error(body)
+    overflow = _horizontal_overflow(frame)
+    phoenix_today = "TODAY" in body and "PHOENIX TIME" in body
+    if runtime_error:
+        raise Step8MobileProductionFailure(f"CURRENT_DAY_RUNTIME_ERROR:{name}:{runtime_error}")
+    if overflow:
+        raise Step8MobileProductionFailure(f"CURRENT_DAY_HORIZONTAL_OVERFLOW:{name}")
+    if not phoenix_today:
+        raise Step8MobileProductionFailure(f"CURRENT_DAY_PHOENIX_TODAY_MISSING:{name}")
+
+    screenshot = artifact_dir / f"cfb_game_total_step8_{name}_current_day.png"
+    page.screenshot(path=str(screenshot), full_page=True)
+    return {
+        "phoenix_day_selector_visible": True,
+        "phoenix_today_visible": True,
+        "authoritative_phoenix_day": authoritative_phoenix_day(),
+        "horizontal_overflow": False,
+        "runtime_error": "",
+        "frame_scan": scans,
+        "screenshot": str(screenshot),
+    }
+
+
 def _page1_result(
     page: Any,
     name: str,
     artifact_dir: Path,
+    base_url: str,
 ) -> tuple[dict[str, Any], str, str]:
-    page.goto(page1_route(), wait_until="domcontentloaded", timeout=120000)
+    page.goto(page1_route(base_url), wait_until="domcontentloaded", timeout=120000)
     frame, scans = _find_cfb_frame(
         page,
         required_markers=PAGE1_FRAME_MARKERS,
@@ -248,8 +297,6 @@ def _page1_result(
     forbidden = _forbidden(body, PAGE1_FORBIDDEN_VISIBLE_TEXT)
     runtime_error = _runtime_error(body)
     overflow = _horizontal_overflow(frame)
-    phoenix_today = "TODAY" in body and "PHOENIX TIME" in body
-
     links = frame.locator(
         f'[data-testid="{PAGE1_TESTID}"] '
         f'a.gt163-game-link[href*="{EVENT_QUERY_KEY}="]'
@@ -267,8 +314,6 @@ def _page1_result(
         raise Step8MobileProductionFailure(f"PAGE1_RUNTIME_ERROR:{name}:{runtime_error}")
     if overflow:
         raise Step8MobileProductionFailure(f"PAGE1_HORIZONTAL_OVERFLOW:{name}")
-    if not phoenix_today:
-        raise Step8MobileProductionFailure(f"PAGE1_PHOENIX_TODAY_MISSING:{name}")
 
     screenshot = artifact_dir / f"cfb_game_total_step8_{name}_page1.png"
     page.screenshot(path=str(screenshot), full_page=True)
@@ -276,7 +321,7 @@ def _page1_result(
         {
             "game_strip_visible": True,
             "phoenix_day_selector_visible": True,
-            "phoenix_today_visible": True,
+            "handoff_cert_day": HANDOFF_CERT_DAY,
             "exact_event_id": event_id,
             "exact_event_href": href,
             "horizontal_overflow": False,
@@ -313,7 +358,7 @@ def _page2_result(
     wrapper_event = _event_from_url(page.url)
     frame_event = _event_from_url(str(getattr(frame, "url", "") or ""))
     observed_events = {value for value in (wrapper_event, frame_event) if value}
-    if observed_events and observed_events != {event_id}:
+    if observed_events != {event_id}:
         raise Step8MobileProductionFailure(
             f"PAGE2_EVENT_ID_DRIFT:{name}:expected={event_id}:"
             f"observed={sorted(observed_events)}"
@@ -333,6 +378,7 @@ def _page2_result(
         "exact_event_id": event_id,
         "wrapper_event_id": wrapper_event,
         "frame_event_id": frame_event,
+        "observed_event_ids": sorted(observed_events),
         "horizontal_overflow": False,
         "forbidden_visible_text": [],
         "runtime_error": "",
@@ -348,6 +394,8 @@ def evidence_is_terminal_green(payload: dict[str, Any]) -> bool:
         return False
     if payload.get("phoenix_timezone") != PHOENIX_TZ:
         return False
+    if payload.get("handoff_cert_day") != HANDOFF_CERT_DAY:
+        return False
     if float(payload.get("sportsbook_projection_influence", -1)) != 0.0:
         return False
     if int(payload.get("github_actions_fallback", -1)) != 0:
@@ -360,15 +408,18 @@ def evidence_is_terminal_green(payload: dict[str, Any]) -> bool:
         return False
     for name in VIEWPORTS:
         row = viewports.get(name) or {}
+        current_day = row.get("current_day") or {}
         page1 = row.get("page1") or {}
         page2 = row.get("page2") or {}
-        if (
-            page1.get("game_strip_visible") is not True
-            or page1.get("phoenix_today_visible") is not True
-        ):
+        if current_day.get("phoenix_today_visible") is not True:
+            return False
+        if current_day.get("phoenix_day_selector_visible") is not True:
+            return False
+        if page1.get("game_strip_visible") is not True:
             return False
         if (
-            page1.get("horizontal_overflow") is not False
+            current_day.get("horizontal_overflow") is not False
+            or page1.get("horizontal_overflow") is not False
             or page2.get("horizontal_overflow") is not False
         ):
             return False
@@ -377,11 +428,17 @@ def evidence_is_terminal_green(payload: dict[str, Any]) -> bool:
             or page2.get("forbidden_visible_text") not in ([], None)
         ):
             return False
-        if str(page1.get("runtime_error") or "") or str(page2.get("runtime_error") or ""):
+        if (
+            str(current_day.get("runtime_error") or "")
+            or str(page1.get("runtime_error") or "")
+            or str(page2.get("runtime_error") or "")
+        ):
             return False
         event1 = str(page1.get("exact_event_id") or "")
         event2 = str(page2.get("exact_event_id") or "")
         if not event1 or event1 != event2:
+            return False
+        if set(page2.get("observed_event_ids") or []) != {event1}:
             return False
         if page2.get("all_required_visible") is not True:
             return False
@@ -408,10 +465,17 @@ def run_public(
             for name, viewport in VIEWPORTS.items():
                 page = browser.new_page(viewport=viewport)
                 try:
+                    current_day = _current_day_result(
+                        page,
+                        name,
+                        artifacts,
+                        base_url,
+                    )
                     page1, selected_url, event_id = _page1_result(
                         page,
                         name,
                         artifacts,
+                        base_url,
                     )
                     page2 = _page2_result(
                         page,
@@ -422,6 +486,7 @@ def run_public(
                     )
                     rows[name] = {
                         "viewport": dict(viewport),
+                        "current_day": current_day,
                         "page1": page1,
                         "page2": page2,
                     }
@@ -435,9 +500,11 @@ def run_public(
         "model_version": MODEL_VERSION,
         "source_main_sha": SOURCE_MAIN_SHA,
         "production_url": base_url,
+        "current_day_route": current_day_route(base_url),
         "page1_route": page1_route(base_url),
         "phoenix_timezone": PHOENIX_TZ,
-        "phoenix_date": datetime.now(ZoneInfo(PHOENIX_TZ)).date().isoformat(),
+        "phoenix_date": authoritative_phoenix_day(),
+        "handoff_cert_day": HANDOFF_CERT_DAY,
         "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         "github_actions_fallback": GITHUB_ACTIONS_FALLBACK,
         "render_identity": render_identity,
