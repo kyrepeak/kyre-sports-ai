@@ -15,7 +15,7 @@ owns an exact selected event.
 
 Step-8 finalization guard: Page 1 must never publish an exact-event query merely
 because the frozen selector internally defaults to the first game. A real card
-tap carries SELECTOR_SYNC_QUERY_KEY and is preserved for Page-2 activation; an
+tap carries SELECTOR_SYNC_QUERY_KEY and is required for Page-2 activation; an
 auto-published event without that tap marker is removed after the Page-1 render.
 """
 from __future__ import annotations
@@ -64,12 +64,18 @@ def _query_value(key: str) -> str:
 
 
 def _selected_game_total() -> bool:
-    """Activate Page 2 once a valid Game-Total query owns an exact event."""
-    if not _query_value(EVENT_QUERY_KEY):
+    """Activate Page 2 only for an exact event produced by a real card tap."""
+    event_id = _query_value(EVENT_QUERY_KEY)
+    sync_id = _query_value(SELECTOR_SYNC_QUERY_KEY)
+    if not event_id or sync_id != event_id:
         return False
     if not live_owner._game_total_route_active():
         live_owner._restore_game_total_route_from_query()
-    return bool(live_owner._game_total_route_active() and _query_value(EVENT_QUERY_KEY))
+    return bool(
+        live_owner._game_total_route_active()
+        and _query_value(EVENT_QUERY_KEY) == event_id
+        and _query_value(SELECTOR_SYNC_QUERY_KEY) == event_id
+    )
 
 
 def _render_native_page1() -> Any:
