@@ -74,10 +74,12 @@ def _ensure_thaw(client):
     raw = client.content(REGISTRY_PATH, ref=REGISTRY_BRANCH)
     reg = _decode(raw)
     checked = validate_registry(reg)
-    if str(reg.get("source_main_sha") or "") != MAIN_SHA:
-        raise RoutePointerPremergeFailure(
-            "REGISTRY_MAIN_DRIFT:" + str(reg.get("source_main_sha") or "")
-        )
+    main_tree = client.tree_blobs(MAIN_SHA)
+    frozen_mismatches = [
+        {"path": path, "expected": expected, "actual": main_tree.get(path)}
+        for path, expected in sorted(checked["artifacts"].items())
+        if main_tree.get(path) != expected
+    ]
 
     expected = {
         "thaw_id": THAW_ID,
@@ -86,44 +88,61 @@ def _ensure_thaw(client):
         "files": {ROUTER_PATH: {"from_blob": FROM_BLOB, "to_blob": TO_BLOB}},
     }
     same_id = [x for x in reg.get("active_thaws", []) if x.get("thaw_id") == THAW_ID]
-    if same_id:
-        if len(same_id) != 1 or same_id[0] != expected:
-            raise RoutePointerPremergeFailure("THAW_IDENTITY_DRIFT")
-        return {
-            "revision": int(reg["revision"]),
-            "state_hash": str(reg["state_hash"]),
-            "reused": True,
-        }
-
+    if same_id and (len(same_id) != 1 or same_id[0] != expected):
+        raise RoutePointerPremergeFailure("THAW_IDENTITY_DRIFT")
     duplicates = [
         x for x in reg.get("active_thaws", [])
-        if x.get("target_head_sha") == CANDIDATE_SHA and ROUTER_PATH in (x.get("files") or {})
+        if x.get("target_head_sha") == CANDIDATE_SHA
+        and ROUTER_PATH in (x.get("files") or {})
+        and x.get("thaw_id") != THAW_ID
     ]
     if duplicates:
         raise RoutePointerPremergeFailure("DUPLICATE_EXACT_HEAD_THAW")
 
     updated = deepcopy(reg)
-    updated["active_thaws"].append(expected)
-    updated["active_thaws"] = sorted(updated["active_thaws"], key=lambda x: str(x.get("thaw_id") or ""))
-    updated["revision"] = int(updated["revision"]) + 1
-    updated["state_hash"] = registry_hash(_payload_without_hash(updated))
-    validate_registry(updated)
-    client.update_content(
-        REGISTRY_PATH,
-        _text(updated),
-        REGISTRY_BRANCH,
-        "registry: thaw CFB Step8 route-pointer lock candidate",
-        raw["sha"],
-    )
+    changed = False
+    identity_reconciled = False
+    if str(updated.get("source_main_sha") or "") != MAIN_SHA:
+        if frozen_mismatches:
+            raise RoutePointerPremergeFailure(
+                "REGISTRY_BASELINE_RECONCILIATION_REQUIRED:"
+                + json.dumps(frozen_mismatches[:20], sort_keys=True)
+            )
+        updated["source_main_sha"] = MAIN_SHA
+        changed = True
+        identity_reconciled = True
+
+    if not same_id:
+        updated["active_thaws"].append(expected)
+        updated["active_thaws"] = sorted(
+            updated["active_thaws"], key=lambda x: str(x.get("thaw_id") or "")
+        )
+        changed = True
+
+    if changed:
+        updated["revision"] = int(reg["revision"]) + 1
+        updated["state_hash"] = registry_hash(_payload_without_hash(updated))
+        validate_registry(updated)
+        client.update_content(
+            REGISTRY_PATH,
+            _text(updated),
+            REGISTRY_BRANCH,
+            "registry: reconcile main and thaw CFB Step8 route-pointer lock",
+            raw["sha"],
+        )
+
     rb = _decode(client.content(REGISTRY_PATH, ref=REGISTRY_BRANCH))
     validate_registry(rb)
+    if str(rb.get("source_main_sha") or "") != MAIN_SHA:
+        raise RoutePointerPremergeFailure("REGISTRY_MAIN_READBACK_FAILED")
     match = [x for x in rb.get("active_thaws", []) if x.get("thaw_id") == THAW_ID]
     if len(match) != 1 or match[0] != expected:
         raise RoutePointerPremergeFailure("THAW_READBACK_FAILED")
     return {
         "revision": int(rb["revision"]),
         "state_hash": str(rb["state_hash"]),
-        "reused": False,
+        "identity_reconciled": identity_reconciled,
+        "frozen_mismatch_count": len(frozen_mismatches),
     }
 
 
@@ -132,12 +151,7 @@ def _claim(client, reg_state_hash):
     state = validate_scope_state(_decode(raw))
     owned = [h for h in state.get("holders", []) if h.get("owner_id") == OWNER_ID]
     if owned:
-        if len(owned) != 1:
-            raise RoutePointerPremergeFailure("LEASE_OWNER_NOT_UNIQUE")
-        holder = owned[0]
-        if holder.get("scope", {}).get("resource_identity", {}).get("main_sha") != MAIN_SHA:
-            raise RoutePointerPremergeFailure("LEASE_MAIN_DRIFT")
-        return str(holder["lease_id"])
+        raise RoutePointerPremergeFailure("PREMERGE_ALREADY_ACTIVE")
 
     scope = build_scope(
         write_paths=[ROUTER_PATH, TEST_PATH, PLAN_PATH],
@@ -226,7 +240,9 @@ def execute(app):
     )
     if result.get("status") != "MERGE_AUTHORIZED":
         _release(client, lease_id)
-        raise RoutePointerPremergeFailure("RUNLESS_PREMERGE_FAILED:" + json.dumps(result, sort_keys=True, default=str))
+        raise RoutePointerPremergeFailure(
+            "RUNLESS_PREMERGE_FAILED:" + json.dumps(result, sort_keys=True, default=str)
+        )
     return {
         "status": "MERGE_AUTHORIZED",
         "candidate_sha": CANDIDATE_SHA,
@@ -236,6 +252,8 @@ def execute(app):
         "thaw_id": THAW_ID,
         "registry_revision": thaw["revision"],
         "registry_state_hash": thaw["state_hash"],
+        "identity_reconciled": thaw["identity_reconciled"],
+        "frozen_mismatch_count": thaw["frozen_mismatch_count"],
         "proof_id": result.get("proof_id"),
         "receipt_digest": result.get("receipt_digest"),
         "github_actions_fallback": 0,
