@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 PHOENIX_TZ = "America/Phoenix"
 PAGE1_TESTID = "gt163-game-strip"
 PHOENIX_DAY_TESTID = "gt241-phoenix-day-selector"
+PAGE1_FRAME_MARKERS = ("PHOENIX TIME", "GAMES ON THIS DAY")
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PAGE1 = False
 MAY_MODIFY_PAGE2 = False
@@ -87,17 +89,89 @@ def _event_from_url(url: str) -> str:
 
 
 def _visible(frame: Any, testid: str, timeout_ms: int = 90000) -> None:
-    frame.locator(f'[data-testid="{testid}"]').first.wait_for(state="visible", timeout=timeout_ms)
+    frame.locator(f'[data-testid="{testid}"]').first.wait_for(
+        state="visible",
+        timeout=timeout_ms,
+    )
+
+
+def _find_cfb_frame(
+    page: Any,
+    *,
+    required_markers: tuple[str, ...] = (),
+    required_testids: tuple[str, ...] = (),
+    timeout_seconds: float = 120.0,
+) -> tuple[Any, list[dict[str, Any]]]:
+    """Find the native CFB frame without relying on legacy selector controls."""
+    if not required_markers and not required_testids:
+        raise Step8MobileProductionFailure("CFB_FRAME_MATCH_CRITERIA_REQUIRED")
+
+    deadline = time.monotonic() + timeout_seconds
+    last_scans: list[dict[str, Any]] = []
+    while time.monotonic() < deadline:
+        scans: list[dict[str, Any]] = []
+        for index, frame in enumerate(page.frames):
+            try:
+                body = frame.locator("body").inner_text(timeout=5000)
+            except Exception:
+                body = ""
+            lower = body.casefold()
+
+            if "get this app back up" in lower:
+                try:
+                    wake = frame.get_by_text("Yes, get this app back up!", exact=False)
+                    if wake.count() > 0:
+                        wake.first.click()
+                        page.wait_for_timeout(3000)
+                        continue
+                except Exception:
+                    pass
+
+            marker_hits = [m for m in required_markers if m.casefold() in lower]
+            testid_hits: list[str] = []
+            for testid in required_testids:
+                try:
+                    if frame.locator(f'[data-testid="{testid}"]').count() > 0:
+                        testid_hits.append(testid)
+                except Exception:
+                    pass
+
+            scans.append(
+                {
+                    "index": index,
+                    "url": str(getattr(frame, "url", "") or ""),
+                    "marker_hits": marker_hits,
+                    "testid_hits": testid_hits,
+                    "body_start": body[:600],
+                }
+            )
+            if (
+                len(marker_hits) == len(required_markers)
+                and len(testid_hits) == len(required_testids)
+            ):
+                return frame, scans
+
+        last_scans = scans
+        page.wait_for_timeout(750)
+
+    raise Step8MobileProductionFailure(
+        "CFB_NATIVE_FRAME_NOT_FOUND:"
+        + json.dumps(last_scans, ensure_ascii=False)
+    )
 
 
 def _horizontal_overflow(frame: Any) -> bool:
-    return bool(frame.evaluate("""() => {
-        const de = document.documentElement;
-        const body = document.body;
-        const width = Math.max(de ? de.scrollWidth : 0, body ? body.scrollWidth : 0);
-        const client = de ? de.clientWidth : window.innerWidth;
-        return width > client + 3;
-    }"""))
+    return bool(
+        frame.evaluate(
+            """() => {
+                const de = document.documentElement;
+                const body = document.body;
+                const width = Math.max(de ? de.scrollWidth : 0, body ? body.scrollWidth : 0);
+                const client = de ? de.clientWidth : window.innerWidth;
+                return width > client + 3;
+            }"""
+        )
+    )
 
 
 def _forbidden(body: str, values: tuple[str, ...]) -> list[str]:
@@ -144,9 +218,18 @@ def verify_render_identity() -> dict[str, Any]:
     return {"status": "GREEN", **observed}
 
 
-def _page1_result(page: Any, name: str, artifact_dir: Path) -> tuple[dict[str, Any], str, str]:
+def _page1_result(
+    page: Any,
+    name: str,
+    artifact_dir: Path,
+) -> tuple[dict[str, Any], str, str]:
     page.goto(page1_route(), wait_until="domcontentloaded", timeout=120000)
-    frame, scans = base._find_app_frame(page, timeout_seconds=120.0)
+    frame, scans = _find_cfb_frame(
+        page,
+        required_markers=PAGE1_FRAME_MARKERS,
+        required_testids=(PHOENIX_DAY_TESTID, PAGE1_TESTID),
+        timeout_seconds=120.0,
+    )
     _visible(frame, PHOENIX_DAY_TESTID)
     _visible(frame, PAGE1_TESTID)
 
@@ -157,7 +240,8 @@ def _page1_result(page: Any, name: str, artifact_dir: Path) -> tuple[dict[str, A
     phoenix_today = "TODAY" in body and "PHOENIX TIME" in body
 
     links = frame.locator(
-        f'[data-testid="{PAGE1_TESTID}"] a.gt163-game-link[href*="{EVENT_QUERY_KEY}="]'
+        f'[data-testid="{PAGE1_TESTID}"] '
+        f'a.gt163-game-link[href*="{EVENT_QUERY_KEY}="]'
     )
     if links.count() < 1:
         raise Step8MobileProductionFailure(f"PAGE1_NO_EXACT_EVENT_LINK:{name}")
@@ -195,9 +279,19 @@ def _page1_result(page: Any, name: str, artifact_dir: Path) -> tuple[dict[str, A
     )
 
 
-def _page2_result(page: Any, name: str, selected_url: str, event_id: str, artifact_dir: Path) -> dict[str, Any]:
+def _page2_result(
+    page: Any,
+    name: str,
+    selected_url: str,
+    event_id: str,
+    artifact_dir: Path,
+) -> dict[str, Any]:
     page.goto(selected_url, wait_until="domcontentloaded", timeout=120000)
-    frame, scans = base._find_app_frame(page, timeout_seconds=120.0)
+    frame, scans = _find_cfb_frame(
+        page,
+        required_testids=PAGE2_REQUIRED_TESTIDS,
+        timeout_seconds=120.0,
+    )
     for testid in PAGE2_REQUIRED_TESTIDS:
         _visible(frame, testid)
 
@@ -210,7 +304,8 @@ def _page2_result(page: Any, name: str, selected_url: str, event_id: str, artifa
     observed_events = {value for value in (wrapper_event, frame_event) if value}
     if observed_events and observed_events != {event_id}:
         raise Step8MobileProductionFailure(
-            f"PAGE2_EVENT_ID_DRIFT:{name}:expected={event_id}:observed={sorted(observed_events)}"
+            f"PAGE2_EVENT_ID_DRIFT:{name}:expected={event_id}:"
+            f"observed={sorted(observed_events)}"
         )
     if forbidden:
         raise Step8MobileProductionFailure(f"PAGE2_FORBIDDEN_COPY:{name}:{forbidden}")
@@ -256,11 +351,20 @@ def evidence_is_terminal_green(payload: dict[str, Any]) -> bool:
         row = viewports.get(name) or {}
         page1 = row.get("page1") or {}
         page2 = row.get("page2") or {}
-        if page1.get("game_strip_visible") is not True or page1.get("phoenix_today_visible") is not True:
+        if (
+            page1.get("game_strip_visible") is not True
+            or page1.get("phoenix_today_visible") is not True
+        ):
             return False
-        if page1.get("horizontal_overflow") is not False or page2.get("horizontal_overflow") is not False:
+        if (
+            page1.get("horizontal_overflow") is not False
+            or page2.get("horizontal_overflow") is not False
+        ):
             return False
-        if page1.get("forbidden_visible_text") not in ([], None) or page2.get("forbidden_visible_text") not in ([], None):
+        if (
+            page1.get("forbidden_visible_text") not in ([], None)
+            or page2.get("forbidden_visible_text") not in ([], None)
+        ):
             return False
         if str(page1.get("runtime_error") or "") or str(page2.get("runtime_error") or ""):
             return False
@@ -273,7 +377,11 @@ def evidence_is_terminal_green(payload: dict[str, Any]) -> bool:
     return True
 
 
-def run_public(*, base_url: str = PRODUCTION_URL, artifact_dir: str | Path = "artifacts/cfb-game-total-step8") -> dict[str, Any]:
+def run_public(
+    *,
+    base_url: str = PRODUCTION_URL,
+    artifact_dir: str | Path = "artifacts/cfb-game-total-step8",
+) -> dict[str, Any]:
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
     health = base._wait_for_health(base_url)
@@ -281,14 +389,31 @@ def run_public(*, base_url: str = PRODUCTION_URL, artifact_dir: str | Path = "ar
     rows: dict[str, Any] = {}
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-dev-shm-usage", "--no-sandbox"],
+        )
         try:
             for name, viewport in VIEWPORTS.items():
                 page = browser.new_page(viewport=viewport)
                 try:
-                    page1, selected_url, event_id = _page1_result(page, name, artifacts)
-                    page2 = _page2_result(page, name, selected_url, event_id, artifacts)
-                    rows[name] = {"viewport": dict(viewport), "page1": page1, "page2": page2}
+                    page1, selected_url, event_id = _page1_result(
+                        page,
+                        name,
+                        artifacts,
+                    )
+                    page2 = _page2_result(
+                        page,
+                        name,
+                        selected_url,
+                        event_id,
+                        artifacts,
+                    )
+                    rows[name] = {
+                        "viewport": dict(viewport),
+                        "page1": page1,
+                        "page2": page2,
+                    }
                 finally:
                     page.close()
         finally:
@@ -311,9 +436,16 @@ def run_public(*, base_url: str = PRODUCTION_URL, artifact_dir: str | Path = "ar
     if not evidence_is_terminal_green(payload):
         raise Step8MobileProductionFailure("STEP8_TERMINAL_EVIDENCE_REJECTED")
     evidence = artifacts / "cfb_game_total_mobile_production_step8_v1.json"
-    evidence.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    evidence.write_text(
+        json.dumps(payload, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
     print("CFB_GAME_TOTAL_STEP8_PUBLIC_GREEN", flush=True)
-    print("CFB_GAME_TOTAL_STEP8_PUBLIC_EVIDENCE=" + json.dumps(payload, sort_keys=True), flush=True)
+    print(
+        "CFB_GAME_TOTAL_STEP8_PUBLIC_EVIDENCE="
+        + json.dumps(payload, sort_keys=True),
+        flush=True,
+    )
     return payload
 
 
