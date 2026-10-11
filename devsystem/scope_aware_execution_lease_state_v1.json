@@ -1,11 +1,43 @@
 {
-  "generation": 356,
-  "holders": [],
+  "generation": 357,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-11T23:02:57Z",
+      "expires_at_utc": "2026-10-11T23:42:57Z",
+      "generation": 357,
+      "heartbeat_at_utc": "2026-10-11T23:02:57Z",
+      "lease_id": "SCOPE-LEASE-3ADF94E3198AFC7D982E45F4",
+      "owner_id": "api2/cfb-game-total-native-website-rebuild-v1/step8-route-pointer-lock-postmerge-r10",
+      "scope": {
+        "dependency_tokens": [
+          "candidate:8ffbe91246f5022bcaca7a326cfaaf9a62976633",
+          "cfb:game-total:step8",
+          "product-main:b21de479595277fc77fb06e632afe8d35d4b4c29"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "main_sha": "b21de479595277fc77fb06e632afe8d35d4b4c29",
+          "registry_state_hash": "2fa2f04162e64e099d2444652affe9a7b1058f2d3530c9659cc10288aabc7f55"
+        },
+        "shared_resources": [
+          "ref:monster-frozen-artifact-registry",
+          "ref:runless-proof-receipts",
+          "route:cfb-game-total",
+          "runless-proof-plane"
+        ],
+        "write_paths": [
+          "devsystem/frozen_artifact_registry_state_v1.json",
+          "devsystem/runless_proof_receipts/cfb-game-total-step8-terminal-r5-b21de479595277fc.json",
+          "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 626,
+  "revision": 627,
   "schema_version": 1,
-  "state_hash": "30f43ef6d7747b6f9e9ddafc46652d7281efa8e0ec9ec4442f24a724c92135e6",
+  "state_hash": "2fad7cdf74e518d8d33c6ee5d4865770ba83dde6b934e93fbbf4e794e03ac40b",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
