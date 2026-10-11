@@ -14,7 +14,8 @@ from .prove import execute_proof_request
 from .registry import REGISTRY_PATH
 
 MAIN_SHA = "c102a55985dbe2c3ab2ece3d24a7c82206989173"
-CANDIDATE_SHA = "db8eabcfdb924384edffda0788ff72f23f1bbe81"
+PREVIOUS_CANDIDATE_SHA = "db8eabcfdb924384edffda0788ff72f23f1bbe81"
+CANDIDATE_SHA = "1e6e4f51a8dc9a5cf0efca3b893ed4321eb9785a"
 CANDIDATE_BRANCH = "cfb-step8-final-routing-fix-r2"
 TASK_ID = "cfb-game-total-step8-page1-event-guard-r1"
 WORKSTREAM = "cfb-game-total-native-website-rebuild-v1"
@@ -54,7 +55,7 @@ def _claim(client, registry_hash: str):
     if state.get("holders"):
         raise PrepareFailure("STEP2A_ACTIVE_HOLDER_BLOCK")
     scope = build_scope(
-        write_paths=[ROUTER, "tests/test_cfb_game_total_step8_page1_event_guard_r1.py", REGISTRY_PATH],
+        write_paths=[ROUTER, "tests/test_cfb_game_total_step8_page1_event_guard_r1.py", "devsystem/runless_proof_plans/cfb-game-total-step8-page1-event-guard-r1.json", REGISTRY_PATH],
         dependency_tokens=["cfb:game-total:step8", "router:cfb-game-total"],
         shared_resources=["ref:monster-frozen-artifact-registry", "route:cfb-game-total"],
         resource_identity={"main_sha": MAIN_SHA, "candidate_sha": CANDIDATE_SHA, "registry_state_hash": registry_hash},
@@ -107,19 +108,36 @@ def _prepare_registry(client):
         "target_head_sha": CANDIDATE_SHA,
         "files": {ROUTER: {"from_blob": ROUTER_R1, "to_blob": ROUTER_R2}},
     }
+    previous_new = {
+        "thaw_id": NEW_THAW_ID,
+        "status": "ACTIVE",
+        "target_head_sha": PREVIOUS_CANDIDATE_SHA,
+        "files": {ROUTER: {"from_blob": ROUTER_R1, "to_blob": ROUTER_R2}},
+    }
 
-    # Idempotent read-back path: a restarted service must not create another state transition.
     if validated["artifacts"].get(ROUTER) == ROUTER_R1:
         matches = [g for g in registry.get("active_thaws", []) if g.get("thaw_id") == NEW_THAW_ID]
-        if str(registry.get("source_main_sha") or "") != MAIN_SHA or matches != [exact_new]:
+        if str(registry.get("source_main_sha") or "") != MAIN_SHA or len(matches) != 1:
             raise PrepareFailure("R2_REGISTRY_PREPARED_STATE_DRIFT")
-        return registry
+        if matches[0] == exact_new:
+            return registry
+        if matches[0] != previous_new:
+            raise PrepareFailure("R2_THAW_TARGET_DRIFT")
+        updated = deepcopy(registry)
+        updated["active_thaws"] = [exact_new if g.get("thaw_id") == NEW_THAW_ID else g for g in updated.get("active_thaws", [])]
+        updated["revision"] = int(updated["revision"]) + 1
+        updated["state_hash"] = _hash(_payload_without_hash(updated))
+        validate_registry(updated)
+        client.update_content(REGISTRY_PATH, _text(updated), "monster-frozen-artifact-registry", "registry: retarget Step8 R2 thaw to corrected proof head", raw["sha"])
+        readback = _decode(client.content(REGISTRY_PATH, ref="monster-frozen-artifact-registry"))
+        validate_registry(readback)
+        if readback != updated:
+            raise PrepareFailure("REGISTRY_READBACK_MISMATCH")
+        return readback
 
     if validated["artifacts"].get(ROUTER) != ROUTER_FROM:
         raise PrepareFailure("ROUTER_FROZEN_BASELINE_DRIFT")
 
-    # PR #1514 is already merged on main. Make its router the authoritative baseline,
-    # retire the old thaw atomically, then open exactly one new thaw for the R2 candidate.
     planned = plan_baseline_forward_port(
         registry,
         updates={ROUTER: {"from_blob": ROUTER_FROM, "to_blob": ROUTER_R1}},
