@@ -19,6 +19,7 @@
       "py_compile",
       "cfb_game_total_clean_page_v43.py",
       "devsystem/cfb_game_total_mobile_production_step8_v1.py",
+      "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py",
       "devsystem/cfb_game_total_page1_page2_handoff_step7_v1.py"
     ],
     [
@@ -30,6 +31,7 @@
   "artifacts": [
     "cfb_game_total_clean_page_v43.py",
     "devsystem/cfb_game_total_mobile_production_step8_v1.py",
+    "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py",
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
     "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
