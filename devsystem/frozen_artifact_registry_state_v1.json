@@ -2,17 +2,6 @@
   "active_thaws": [
     {
       "files": {
-        "cfb_game_total_clean_page_v43.py": {
-          "from_blob": "ebb7bfa20489598a62891ec4e5e868fe350c8712",
-          "to_blob": "3a05f8f3f9d434a462da702d429e7db990c9b528"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "a1fbecbb5d5dd96d71ad21d4961bf8407c80be9e",
-      "thaw_id": "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1"
-    },
-    {
-      "files": {
         "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": {
           "from_blob": "6cfdb7303062780415428df33780bbce31f8b3e5",
           "to_blob": "92b4467e7e45e5ba551a5734e162001bda26e725"
@@ -51,37 +40,22 @@
       "status": "ACTIVE",
       "target_head_sha": "fc36cb22b244219fce4ae237c39e53b36955bcb1",
       "thaw_id": "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
-    },
-    {
-      "files": {
-        ".github/workflows/devsystem-targeted-ci.yml": {
-          "from_blob": "eaf314176069a90ab4de25a9f73933b708951768",
-          "to_blob": "f1e4fffb1ce04e45669b328cb52d4542fa9082de"
-        },
-        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": {
-          "from_blob": "bd73f14edb2ce84db7c8e3a8a70774bf50e37ef7",
-          "to_blob": "a67253ff737091b6f7316518aceb89d1742681f0"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "f60ee5216275a6d89241fcafa916c02b190f1745",
-      "thaw_id": "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
     }
   ],
   "entries": {
     "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1": {
       "artifacts": {
-        ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml": "0ab2d1d0a4c0f527bac4e3b32899b838914a4a08",
-        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "1daa66a7e9421916c06a9e9338305784102462b7",
+        ".github/workflows/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.yml": "030c70853cdc38af709435e70465e94d1b18c7e3",
+        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "832e66008f601690cb6e094f3c762ce372a88b63",
         ".github/workflows/devsystem-failure-packet-v1.yml": "c7b251b61c126e99ae912fd82157b7c9c29e107f",
-        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
-        ".github/workflows/wnba-nav-step6-fast-cert.yml": "ae0dffbae828a97ca7409a808475892902eb5857",
-        ".github/workflows/wnba-nav-step6-responsive-cert.yml": "50cede7754cc19ea60d305a49986be66d645be6a",
+        ".github/workflows/devsystem-targeted-ci.yml": "25dd53cf1722f2f44319335e2f909b08c440ee69",
+        ".github/workflows/wnba-nav-step6-fast-cert.yml": "5194e53b25e542d0ab5b7b222e2195495b55351e",
+        ".github/workflows/wnba-nav-step6-responsive-cert.yml": "aa5ac4170966ca75f8d576e43fcced4c85b59abc",
         "devsystem/execution_plans/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json": "e964975da513e33d33c3d7cd03c2b07abab07158",
         "devsystem/task_ledgers/api2-control-plane-efficiency-v1-step1-workflow-fanout-governor.json": "c5f23e14fed539532cf9e879e40ff89714cdce39",
-        "devsystem/workflow_fanout_governor_v1.py": "6b1562c2118e1e6b3fbd679659ef4cb0440e6f2e",
-        "devsystem/workflow_fanout_policy_v1.json": "5fb31429a40ae1bdd8e54a9e80102978df0da13f",
-        "tests/test_devsystem_workflow_fanout_governor_v1.py": "1989b7a12396059ed2140de7fe1b1a88f286112e"
+        "devsystem/workflow_fanout_governor_v1.py": "c8019b2ddf5b1d80221d7bced592c76a07d6ec4a",
+        "devsystem/workflow_fanout_policy_v1.json": "97a4c20794032448985ab94650917f9d6017c0af",
+        "tests/test_devsystem_workflow_fanout_governor_v1.py": "cb154996775a10a303695b0cad9d8899f13ca3c3"
       },
       "checkpoint_id": "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP1",
       "source_main_sha": "6a70bdd7e760aa689dfab6c8e541ba09e6a45317",
@@ -253,8 +227,8 @@
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP2": {
       "artifacts": {
-        ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml": "be8d0b985f9c2e96fbf89abf2b07c2a1e1433595",
-        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
+        ".github/workflows/api2-proof-architecture-v1-step2-required-integration-lanes.yml": "dd45ac094207379e6f195e8215582209937155e7",
+        ".github/workflows/devsystem-targeted-ci.yml": "25dd53cf1722f2f44319335e2f909b08c440ee69",
         "devsystem/change_classifier_v1.py": "352074abc9d5f807ef6bfad593743c19cef49e00",
         "devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json": "a71491357bb2c1985fd103fa41f245abcac633b3",
         "devsystem/monster_speed_v3_step3_lane_split_v1.py": "5ddb14e2d8881a0213baf56e289d04eb60a688b9",
@@ -270,8 +244,8 @@
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP3": {
       "artifacts": {
-        ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml": "afe4388538dfd4e3cfb7cea48faa5308f9ee956d",
-        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": "bd73f14edb2ce84db7c8e3a8a70774bf50e37ef7",
+        ".github/workflows/api2-proof-architecture-v1-step3-dependency-auto-refresh.yml": "98349881f7b48f3400f0e885a87d861bb5b1147b",
+        ".github/workflows/wnba-pra-repair-v1-step3-data-completeness.yml": "153a63b725abbb3bd68af5c47cb06a9d7ec7af3d",
         "devsystem/dependency_chain_auto_refresh_v1.py": "7391884ffe696403e0a60cb0b6f880fea02b273b",
         "devsystem/dependency_chain_registry_v1.json": "8ba3eeb0ef69761d30362bbcc6db07facc0ccc41",
         "devsystem/execution_plans/api2-proof-architecture-v1-step3-dependency-auto-refresh.json": "c9b9a416aeee4ccd099c331fc2e2eedb93ee5a55",
@@ -298,8 +272,8 @@
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP5": {
       "artifacts": {
-        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": "fa12ddbb637f92afb6e75f7526021607c446c8f1",
-        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
+        ".github/workflows/api2-proof-architecture-v1-step5-failure-domain-separation.yml": "d8ef13953b5fec632d8ab38dca6fdc9220f0f45e",
+        ".github/workflows/devsystem-targeted-ci.yml": "25dd53cf1722f2f44319335e2f909b08c440ee69",
         "devsystem/api2_failure_domain_router_v1.py": "0ccf296bac93f1034f0168f71a1f69994114ca93",
         "devsystem/execution_plans/api2-proof-architecture-v1-step5-failure-domain-separation.json": "89e68da1fc3b2af1dcd1e1a3cf0ecefdabf67577",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step5-failure-domain-separation.json": "5403ca83fea3dc90ea74f17a7d3c6da9f718bd9f",
@@ -311,8 +285,8 @@
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP6": {
       "artifacts": {
-        ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml": "657d4095083891b528c3dbd7ffa67bb50408f224",
-        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
+        ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml": "e160da4b261c4ebf60e4686c906023a3ce1aa685",
+        ".github/workflows/devsystem-targeted-ci.yml": "25dd53cf1722f2f44319335e2f909b08c440ee69",
         "devsystem/api2_frozen_registry_lifecycle_v1.py": "0810a07e178c9fb64077d32b7ed5c4f8a0ba9695",
         "devsystem/execution_plans/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json": "5f638b44d02ef8fc6fab6af0ea4ae350706649e2",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.json": "87ce5594fee40dee81063bc52478ce92e3584b2c",
@@ -324,7 +298,7 @@
     },
     "API2_PROOF_ARCHITECTURE_V1_STEP7": {
       "artifacts": {
-        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "1daa66a7e9421916c06a9e9338305784102462b7",
+        ".github/workflows/api2-proof-architecture-v1-step7-end-to-end-convergence.yml": "832e66008f601690cb6e094f3c762ce372a88b63",
         "devsystem/api2_proof_convergence_v1.py": "7b131a44b8eeeddc61350c7e581b37fb56fa71d0",
         "devsystem/execution_plans/api2-proof-architecture-v1-step7-end-to-end-convergence.json": "4b76cb80e77341a41b6ad8bf6cb4800c853a28ff",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step7-end-to-end-convergence.json": "62a3a73efcf8f3a728f92762d6b32829dfac9db2",
@@ -439,7 +413,7 @@
     },
     "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP6_GAME_CARDS_V1_FROZEN": {
       "artifacts": {
-        "cfb_game_total_clean_page_v43.py": "ebb7bfa20489598a62891ec4e5e868fe350c8712",
+        "cfb_game_total_clean_page_v43.py": "3a05f8f3f9d434a462da702d429e7db990c9b528",
         "devsystem/runless_proof_plans/cfb-game-total-game-cards-step6-v1.json": "97d3ca216c5cb91eb5f8194735f45ae299b539a1",
         "devsystem/task_ledgers/cfb-game-total-game-cards-step6-v1.json": "ee8eac6d625f90aa5188b36b47a4fc736d776789",
         "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "811b0cec681aa1b1b0fddc4c3d4170dd3770dd50",
@@ -2570,8 +2544,8 @@
     },
     "REGISTRY_RACE_V1_STEP3": {
       "artifacts": {
-        ".github/workflows/devsystem-targeted-ci.yml": "eaf314176069a90ab4de25a9f73933b708951768",
-        ".github/workflows/registry-race-v1-step3-wait-one-resume.yml": "68a23e37a5d4f4e2766d4ef73bbb209b2b4ac650",
+        ".github/workflows/devsystem-targeted-ci.yml": "25dd53cf1722f2f44319335e2f909b08c440ee69",
+        ".github/workflows/registry-race-v1-step3-wait-one-resume.yml": "e6853ff19a3b7f643eba6e597296be8b94972eb2",
         "devsystem/execution_plans/registry-race-v1-step3-wait-one-resume.json": "051fad6da307da5cd895c694e4271bf641c1dc66",
         "devsystem/registry_wait_resume_gate_v1.sh": "cc7a8f209d8297fccd70897f5e268f6043b595ac",
         "devsystem/registry_wait_resume_v1.py": "1c1afb990418fc7896db0e73799a66e98fc0e777",
@@ -2585,7 +2559,7 @@
     "RUNLESS_PROOF_PLANE_V1_TASK13": {
       "artifacts": {
         "devsystem/runless_actions_fallback_policy_v1.py": "0307725916f31dc79169e267cdebc7bd3252591a",
-        "devsystem/runless_legacy_proof_workflows_v1.txt": "bab729f2f843d39b63060428751eb60d27c09fa8",
+        "devsystem/runless_legacy_proof_workflows_v1.txt": "023bc6af036a1ef757fa2c669be8d664829ec535",
         "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step3-data-completeness.json": "c3b9d9d636aedd1ff0c8fcf44dfcbe1b5b7d0312",
         "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
@@ -2901,7 +2875,7 @@
     },
     "WNBA_PRA_SPEED_V3_STEP7": {
       "artifacts": {
-        ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml": "56ff291abf9d92a18e2978ae4213381efbcd78fb",
+        ".github/workflows/wnba-pra-speed-v3-step7-precompute.yml": "ac04cf236450dddddec05930e655214afd65f567",
         "devsystem/task_ledgers/wnba-pra-speed-v3-step7-precompute.json": "d954bb7f1e81c8eb52b8f0697bdc7b6ec85b0309",
         "devsystem/wnba_pra_speed_v3_step7_public_profile.py": "ff1b597be14b1a370b6da2b0528065041061367e",
         "streamlit_memory_lazy_router_wnba_pra_speed_v3_step7.py": "013aedd14a669c57aa09368ba7ecd9d5ef699f7f",
@@ -2914,7 +2888,7 @@
     },
     "WNBA_PRA_SPEED_V3_STEP8": {
       "artifacts": {
-        ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml": "9166a39d5d4638d71938049eedb8470d440a4701",
+        ".github/workflows/wnba-pra-speed-v3-step8-visible-first.yml": "1b8647e8ecfdf87516d7cbdd9057cb84d5684415",
         "devsystem/task_ledgers/wnba-pra-speed-v3-step8-visible-first.json": "be1b8380ac67c7761b760ab2cf7f2df4cfc6daa8",
         "devsystem/wnba_pra_speed_v3_step8_public_profile.py": "27572c504160517c7cdeba2318ac498d4e983d35",
         "streamlit_memory_lazy_router_wnba_pra_speed_v3_step8.py": "c8924855468878416589326c6a0b57922a505606",
@@ -3048,9 +3022,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 269,
+  "revision": 271,
   "schema_version": 1,
-  "source_main_sha": "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb",
-  "state_hash": "8165c8a50fd2c524b9d23ec512e64e3308f0addb43135d9a18a6ae8d5f89396c",
+  "source_main_sha": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
+  "state_hash": "715f190c2ef77cca82e11c4d4fc50620a2a2fdcfe75b92a94274bb5ed435cd30",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
