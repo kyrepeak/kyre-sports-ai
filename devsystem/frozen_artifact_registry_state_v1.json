@@ -3033,9 +3033,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 279,
+  "revision": 280,
   "schema_version": 1,
-  "source_main_sha": "283151c3792a73520a37b54bb8f480910004b6d6",
-  "state_hash": "6f4ba6ca382a58fcb34deb57d9a619d8d268f8c13af1b079eac135846f1db53c",
+  "source_main_sha": "f1f0ccd80ea717623f38be49237e4943e9d43ad6",
+  "state_hash": "f74350b8c898b0f280249a640d55dbbe799e958d632c373345658efb49e69bb1",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
