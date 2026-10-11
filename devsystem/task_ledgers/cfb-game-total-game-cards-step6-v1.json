@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-game-cards-step6-v1",
+  "title": "CFB Game Total — native game cards Step 6",
+  "project": "API2",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "step": "6/8",
+  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "base_main_sha": "90683fb9affefbe960b37590ff02303f94fd8d3d",
+  "branch": "cfb-game-total-game-cards-step6-v1",
+  "problem": "The native rebuild has frozen routing, shell, Phoenix day selection, and selected-day data ownership, but it does not yet have a rebuild-owned Page-1 game-card contract above V42.",
+  "root_cause": "The certified Games on This Day presentation chain already exists and is installed only on Page 1 by the final router, while Step 5 intentionally stopped at data ownership and explicitly left card UI deferred. The rebuild therefore needs one additive owner that promotes that frozen presentation chain without creating a second loader or reopening the card components.",
+  "patch": "Add V43 as an additive successor to V42, declare the existing certified card chain as the reused presentation owner, consume the unchanged V42 selected-day snapshot through prior.render_game_total_hub, and advance only PAGE1_NATIVE_ROUTE from V42 to V43. Keep the existing exactly-once Page-1 installer calls and preserve Page 2 unchanged.",
+  "mutation_scope": [
+    "cfb_game_total_clean_page_v43.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_game_cards_step6_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-game-cards-step6-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-game-cards-step6-v1.json"
+  ],
+  "protected_scope": [
+    "cfb_game_total_clean_page_v42.py",
+    "cfb_game_total_clean_page_v41.py",
+    "cfb_game_total_clean_page_v14.py",
+    "cfb_game_total_games_on_day_step2_visual_v1.py",
+    "cfb_game_total_games_on_day_step3_details_v1.py",
+    "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py",
+    "Steps 1-5 frozen artifacts",
+    "Game Total model/projection/probability math",
+    "sportsbook projection influence",
+    "schedule/provider behavior",
+    "event identity rules",
+    "selected-event Page 2 runtime",
+    "other sports and markets"
+  ],
+  "deferred_scope": [
+    "Step 7 Page 1 to Page 2 handoff",
+    "Step 8 mobile and production certification"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_requires_exact_head_thaw": true,
+    "authoritative_main_sha": "90683fb9affefbe960b37590ff02303f94fd8d3d",
+    "authoritative_test_first_head": "e431542207a8c5e33a71dc1c4d5e0578ce689b6d",
+    "implementation_head_before_proof_plan": "c41bf9b653e8b51c6431b5cf9efab28cd253246b"
+  },
+  "tdd": {
+    "test_first_commit": "e431542207a8c5e33a71dc1c4d5e0578ce689b6d",
+    "red_observed": true,
+    "red_result": "The Step-6 contract failed because V43 did not exist and PAGE1_NATIVE_ROUTE still pointed at V42.",
+    "green_local_contract": "2 passed"
+  },
+  "card_contract": {
+    "data_owner": "cfb_game_total_clean_page_v42",
+    "card_chain": [
+      "cfb_game_total_games_on_day_step2_visual_v1",
+      "cfb_game_total_games_on_day_step3_details_v1",
+      "cfb_game_total_games_on_day_step4_interaction_mobile_v1"
+    ],
+    "selected_day_snapshot_reused": true,
+    "new_loader_added": false,
+    "new_provider_paths_added": 0,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0,
+    "page2_modified": false
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-CFB-GT-GAME-CARDS-STEP6-R1",
+    "thaw_id": "THAW-CFB-GT-GAME-CARDS-STEP6-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP6_GAME_CARDS_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OPEN_ONE_AUTHORITATIVE_PR_AND_WAIT_FOR_EXACT_HEAD_RUNLESS_TERMINAL_RESULT"
+}
