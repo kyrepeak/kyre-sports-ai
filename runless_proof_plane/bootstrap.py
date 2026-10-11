@@ -14,6 +14,6 @@ os.environ["RPP_CFB_GAMES_ON_DAY_STEP1_CLOSEOUT_ON_START"] = "0"
 os.environ["RPP_CFB_GAMES_ON_DAY_STEP1_DIAGNOSTIC_ON_START"] = "0"
 
 from .api import app
-from .cfb_step8_terminal_route_lock_oom_recovery_r7 import install_startup
+from .cfb_step8_terminal_route_lock_progressive_page2_r8 import install_startup
 
 install_startup(app)
