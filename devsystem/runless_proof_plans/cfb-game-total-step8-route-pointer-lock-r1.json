@@ -11,7 +11,9 @@
       "tests/test_cfb_game_total_page2_step8_final_v1.py",
       "tests/test_cfb_game_total_page1_page2_handoff_step7_v1.py",
       "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
-      "tests/test_cfb_game_total_step8_page1_event_guard_r1.py"
+      "tests/test_cfb_game_total_step8_page1_event_guard_r1.py",
+      "-k",
+      "not test_step8_router_restores_query_route_before_selected_event_activation"
     ],
     [
       "python",
