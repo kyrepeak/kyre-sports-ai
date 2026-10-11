@@ -5,22 +5,23 @@
   "project": "API2",
   "workstream": "cfb-game-total-native-website-rebuild-v1",
   "step": "8/8",
-  "status": "CANDIDATE_IMPLEMENTED_AWAITING_PUBLIC_PROOF",
+  "status": "PRODUCT_REPAIR_IMPLEMENTED_AWAITING_EXACT_HEAD_PUBLIC_PROOF",
   "base_main_sha": "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb",
   "branch": "cfb-game-total-mobile-production-step8-v1",
-  "problem": "The final rebuild step must certify the frozen Page-1 to Page-2 CFB Game Total flow on public production across mobile/tablet/desktop and close the known production identity drift without reopening Steps 1-7.",
-  "root_cause": "DevSystem production verification V5 failed before browser verification because devsystem/production_targets_v1.json still certified Render commit c62c17b74704101bd5ddf05f32476d9fe4e14126 while the configured immutable service and branch were live on 879c28265efde1810a5e30352fa2dcb269c1052a. The first Step-8 public proof then exposed a certification-only compatibility bug: browser_qa_v1._find_app_frame requires at least one combobox, while the rebuilt native CFB Game Total frame correctly renders with zero comboboxes. Production frame evidence showed the CFB Game Total body was present; no product runtime defect was established.",
-  "patch": "Update only the certified Render commit pointer and add a non-mutating final Step-8 public certification owner, test, Runless plan, and ledger. The cert uses native CFB frame markers/testids rather than the obsolete combobox gate, verifies Render /health/details identity, Page-1 Phoenix day + exact-event cards, exact-event Page-2 activation, required Page-2 surfaces, no runtime-error/data-limited copy, and no horizontal overflow at 390/430/768/1440. Product runtime remains byte-for-byte frozen.",
+  "problem": "The final rebuild step must certify the Page-1 to Page-2 CFB Game Total flow on public production across mobile/tablet/desktop, close production identity drift, and repair only defects proven by the Step-8 public browser proof.",
+  "root_cause": "Production verification first failed on stale Render certification metadata. After certifier-only repairs and memory-safe proof infrastructure, the authoritative public browser proof established one real product defect: frozen Page-1 owner V43 inherited V14 default-selection sync, which published the first game's ESPN event ID during initial Page-1 render. The Step-7 selected-event router then correctly advanced to Page 2 before the user tapped a card.",
+  "patch": "Keep the first game as the internal Page-1 default selection but suppress automatic event-query publication during initial Page-1 render. User-tapped game-card hrefs remain the sole Page-1 source of exact-event navigation. Also keep the Step-8 certifier fixes: current Phoenix day is verified separately, handoff uses the deterministic game-bearing 2026-10-10 slate, requested base_url is threaded through navigation, Page 2 must observably preserve the event ID, and Runless executes the production cert.",
   "mutation_scope": [
+    "cfb_game_total_clean_page_v43.py",
     "devsystem/cfb_game_total_mobile_production_step8_v1.py",
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
+    "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
     "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-v1.json",
     "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json"
   ],
   "protected_scope": [
-    "CFB Game Total Steps 1-7 frozen artifacts",
-    "cfb_game_total_clean_page_v43.py",
+    "All Step-1 through Step-7 frozen artifacts except the single explicitly thawed cfb_game_total_clean_page_v43.py blob",
     "cfb_game_total_clean_page_v42.py",
     "cfb_game_total_clean_page_v41.py",
     "cfb_game_total_clean_page_v14.py",
@@ -44,18 +45,23 @@
     "exact_head_merge_required": true,
     "github_actions_fallback_authorized": false,
     "cross_workstream_state_separation_required": true,
-    "frozen_product_mutation_required": false,
+    "frozen_product_mutation_required": true,
     "authoritative_main_sha": "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb",
-    "authoritative_test_first_head": "f20202d43017f95ca002e6bba408b0d8bfa6d49b"
+    "frozen_mutation_path": "cfb_game_total_clean_page_v43.py",
+    "frozen_from_blob": "ebb7bfa20489598a62891ec4e5e868fe350c8712",
+    "frozen_to_blob": "33b032014ddb8d9316e9282510d896ec61df603a"
   },
   "tdd": {
-    "test_first_commit": "f20202d43017f95ca002e6bba408b0d8bfa6d49b",
+    "initial_test_first_commit": "f20202d43017f95ca002e6bba408b0d8bfa6d49b",
     "initial_red_execution_verified": true,
-    "initial_red_result": "4 failed: missing Step-8 cert owner, stale Render certified commit c62c17b... vs live 879c282..., missing Runless plan, missing ledger",
     "native_frame_regression_test_commit": "0b8502fad71184feaca1e54884dd11c25f0a4318",
     "native_frame_red_execution_verified": true,
-    "native_frame_red_result": "1 failed / 4 passed: _find_cfb_frame missing while native production frame rendered with zero comboboxes",
-    "native_frame_patch_commit": "7b4344dafd0db04656bd1526b97974fa5c04df21",
+    "review_repair_red_commit": "68f4938fe3f5af12c4429a9cbca86900d681eb5d",
+    "review_repair_red_result": "5 failed / 4 passed on the Codex review gaps",
+    "product_regression_test_commit": "baa790f110d0ff24b88e2aab000739789977c04b",
+    "product_regression_red_verified_by_public_proof": true,
+    "product_regression_failure": "Initial Page-1 render published event_id=401856824 and selected-event routing advanced to Page 2 before a user card tap",
+    "product_patch_commit": "bbc105bda2bd0aa30e425ab35ab0914e6c727b8d",
     "green_terminal_verification_claimed": false
   },
   "production_identity": {
@@ -64,27 +70,25 @@
     "previous_certified_commit": "c62c17b74704101bd5ddf05f32476d9fe4e14126",
     "observed_live_commit": "879c28265efde1810a5e30352fa2dcb269c1052a",
     "observed_deploy_status": "live",
-    "auto_deploy": false,
-    "identity_fix_scope": "certification metadata only"
+    "auto_deploy": false
   },
   "public_proof": {
-    "status": "RERUN_REQUIRED_AFTER_CERTIFIER_FIX",
-    "first_candidate_sha": "69d7a750f224ab73fbb41755d2dc01a639b5693d",
-    "first_result": "FAIL_CERTIFIER_ONLY",
-    "first_failure": "generic browser frame finder required combo_count >= 1 even though the native CFB Game Total iframe rendered correctly with zero comboboxes",
-    "product_defect_established": false,
+    "status": "RERUN_REQUIRED_AFTER_PRODUCT_REPAIR",
     "production_url": "https://pickvault.streamlit.app",
     "viewports": [390, 430, 768, 1440],
-    "page1_required": ["gt241-phoenix-day-selector", "gt163-game-strip"],
-    "page2_required": ["gtp2s2-matchup-hero", "gtp2s3-flow", "gtp2s4-outlook", "gtp2s5-team-snapshot", "gtp2s6-trends", "gtp2s7-line-lab", "gtp2s7-best-bet", "gtp2s8-back-to-slate", "gtp2s8-final"],
+    "current_phoenix_day_proof_separate": true,
+    "handoff_cert_day": "2026-10-10",
     "exact_event_identity_required": true,
     "horizontal_overflow_allowed": false,
-    "data_limited_visible_allowed": false
+    "data_limited_visible_allowed": false,
+    "product_defect_established": true,
+    "product_defect_path": "cfb_game_total_clean_page_v43.py"
   },
   "runless": {
     "proof_generation": 1,
     "authorization_id": "AUTH-CFB-GT-MOBILE-PRODUCTION-STEP8-R1",
-    "thaw_required": false,
+    "thaw_required": true,
+    "thaw_id": "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
@@ -93,5 +97,5 @@
   "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP8_MOBILE_PRODUCTION_V1_FROZEN",
   "green_plus_frozen_claimed": false,
   "step9_started": false,
-  "next_legal_action": "RUN_EXACT_HEAD_STATIC_AND_PUBLIC_PROOF_THEN_REQUEST_EXACT_HEAD_REVIEW_AND_ONE_RUNLESS_PROOF"
+  "next_legal_action": "CLAIM_EXACT_STEP8_THAW_AND_SCOPE_LEASE_THEN_RUN_ONE_EXACT_HEAD_PUBLIC_PROOF"
 }
