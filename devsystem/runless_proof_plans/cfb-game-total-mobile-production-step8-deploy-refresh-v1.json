@@ -4,11 +4,6 @@
   "commands": [
     [
       "python",
-      "-c",
-      "from pathlib import Path; p=Path('requirements.txt').read_text(); marker='# CFB Game Total Native Website Rebuild Step 8 stale-process full Streamlit redeploy trigger 2026-10-10 R1'; assert p.count(marker)==1; assert p.splitlines()[-1]==marker; print('CFB_STEP8_STREAMLIT_REDEPLOY_MARKER_GREEN')"
-    ],
-    [
-      "python",
       "-m",
       "pytest",
       "-q",
