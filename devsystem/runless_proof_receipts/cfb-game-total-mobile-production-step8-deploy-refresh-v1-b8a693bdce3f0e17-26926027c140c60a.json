@@ -1,0 +1,47 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-deploy-refresh-v1.json": "90331be54943b78011f3dd11765f790517c66b76",
+    "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-deploy-refresh-v1.json": "5ee9f077ac855083480f55fef9fb848f98febaf7",
+    "requirements.txt": "7b2e379fc2f519c9bb8700a14b33b70d4eb0f581"
+  },
+  "candidate_sha": "b8a693bdce3f0e17a602e67fe89a60f63457b15a",
+  "created_at": "2026-10-11T03:51:18.814798+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v43.py": "3a05f8f3f9d434a462da702d429e7db990c9b528",
+    "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py": "e66ede13c99bd100bcbd7a2cace412a2b712cf64",
+    "devsystem/cfb_game_total_mobile_production_step8_v1.py": "76bdab33e6b0ab76da3b2c96141afdeb63e0a653"
+  },
+  "deployment_identity": "d7fd6b050897200da609d425faa1f38b32ec3650",
+  "digest": "dbfa2d117d141d1e112f70455713f04a26b9bf6e792347101f5cb83582340216",
+  "evidence_digests": [
+    "2f15411c542af206ab9e7bcea50ebf863cc84285bab4448fcd436430831542c8"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "ec9dc5ff7f4231233db3bfced6a482b29c136af35c4087a195b61610b61fd6ba",
+  "proof_id": "cfb-game-total-mobile-production-step8-deploy-refresh-v1-b8a693bdce3f0e17-26926027c140c60a",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-STEP8-STREAMLIT-REDEPLOY-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 272,
+    "state_hash": "546007dd1d31ff2130a7f3bb53a631116cfa35b6f0178f112c6bb284b0e3a350"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-CFB-GT-STEP8-STREAMLIT-REDEPLOY-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 272,
+    "state_hash": "546007dd1d31ff2130a7f3bb53a631116cfa35b6f0178f112c6bb284b0e3a350"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "cfb-game-total-mobile-production-step8-deploy-refresh-v1",
+  "workstream": "cfb-game-total-native-website-rebuild-v1"
+}
