@@ -44,6 +44,7 @@
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
     "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-premerge-v1.json",
     "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-v1.json",
     "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json"
   ],
