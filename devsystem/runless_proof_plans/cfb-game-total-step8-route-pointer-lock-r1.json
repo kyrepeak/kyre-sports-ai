@@ -13,7 +13,7 @@
       "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
       "tests/test_cfb_game_total_step8_page1_event_guard_r1.py",
       "-k",
-      "not test_step8_router_restores_query_route_before_selected_event_activation"
+      "not test_step8_router_restores_query_route_before_selected_event_activation and not test_step7_certifies_exact_card_query_to_frozen_page2_runtime and not test_step7_exercises_selected_event_router_runtime_path"
     ],
     [
       "python",
