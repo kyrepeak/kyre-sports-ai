@@ -10,10 +10,10 @@ from .models import ProofRequest
 from .prove import execute_proof_request
 from .registry import GithubRegistryBackend
 
-TASK_ID = "cfb-game-total-mobile-production-step8-v1"
+TASK_ID = "cfb-game-total-mobile-production-step8-premerge-v1"
 WORKSTREAM = "cfb-game-total-native-website-rebuild-v1"
 BRANCH = "cfb-game-total-mobile-production-step8-v1"
-CANDIDATE_SHA = "76074d4d7c2768a86d8c1655cb857c9cab40fa68"
+CANDIDATE_SHA = "b7c5bb3c1f7a00a3f2836a62d832c269e2bd4369"
 MAIN_SHA = "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb"
 AUTHORIZATION_ID = "AUTH-CFB-GT-MOBILE-PRODUCTION-STEP8-R1"
 THAW_ID = "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1"
