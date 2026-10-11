@@ -1,39 +1,11 @@
 {
   "generation": 323,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-11T03:31:00Z",
-      "expires_at_utc": "2026-10-11T04:31:00Z",
-      "generation": 323,
-      "heartbeat_at_utc": "2026-10-11T03:31:00Z",
-      "lease_id": "SCOPE-LEASE-A19E4C7B8D2F60513C9A77E4",
-      "owner_id": "api2/cfb-game-total-native-website-rebuild-v1/step8-registry-repair",
-      "scope": {
-        "dependency_tokens": [
-          "cfb:game-total:step8",
-          "registry:cfb-game-total:step8",
-          "runless:task14:manual-fallback",
-          "runless:task15:fanout-quarantine"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "main_sha": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
-          "registry_state_hash": "8165c8a50fd2c524b9d23ec512e64e3308f0addb43135d9a18a6ae8d5f89396c"
-        },
-        "shared_resources": [
-          "ref:monster-frozen-artifact-registry"
-        ],
-        "write_paths": [
-          "devsystem/frozen_artifact_registry_state_v1.json"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 558,
+  "revision": 559,
   "schema_version": 1,
-  "state_hash": "53b059d340cabefd67dbfba780872389feb3ad102410e429deb364c3a2a78f7a",
+  "state_hash": "de60c61c33ac735184c807c46cf53f5126c6afe9593a9643d803aea32ba45246",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
