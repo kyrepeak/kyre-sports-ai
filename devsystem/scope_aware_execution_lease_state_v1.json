@@ -1,13 +1,13 @@
 {
-  "generation": 327,
+  "generation": 328,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-11T04:29:18Z",
-      "expires_at_utc": "2026-10-11T04:59:18Z",
-      "generation": 327,
-      "heartbeat_at_utc": "2026-10-11T04:29:18Z",
-      "lease_id": "SCOPE-LEASE-D8516BB3E28C7B847496A881",
-      "owner_id": "api2/cfb-game-total-native-website-rebuild-v1/step8-page1-event-guard-r1",
+      "acquired_at_utc": "2026-10-11T04:33:02Z",
+      "expires_at_utc": "2026-10-11T04:53:02Z",
+      "generation": 328,
+      "heartbeat_at_utc": "2026-10-11T04:33:02Z",
+      "lease_id": "SCOPE-LEASE-6D79EB5553C74B255B22196C",
+      "owner_id": "api2/cfb-game-total-native-website-rebuild-v1/step8-terminal-freeze-event-guard-r1",
       "scope": {
         "dependency_tokens": [
           "cfb:game-total:step8",
@@ -15,19 +15,15 @@
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "d265eb22cc2919a603c75534373393d8a6c5c9f5",
-          "main_sha": "e6490b5e52a32c16b283cd676fb0c51c02e2b7df",
-          "registry_state_hash": "546007dd1d31ff2130a7f3bb53a631116cfa35b6f0178f112c6bb284b0e3a350"
+          "main_sha": "c102a55985dbe2c3ab2ece3d24a7c82206989173",
+          "registry_state_hash": "b98ad5672dc87553016b0824fa388331914a9a32105ce5fab76f8e145f6c3472"
         },
         "shared_resources": [
           "ref:monster-frozen-artifact-registry",
           "route:cfb-game-total"
         ],
         "write_paths": [
-          "devsystem/frozen_artifact_registry_state_v1.json",
-          "devsystem/runless_proof_plans/cfb-game-total-step8-page1-event-guard-r1.json",
-          "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
-          "tests/test_cfb_game_total_step8_page1_event_guard_r1.py"
+          "devsystem/frozen_artifact_registry_state_v1.json"
         ]
       }
     }
@@ -35,8 +31,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 566,
+  "revision": 568,
   "schema_version": 1,
-  "state_hash": "4fce2f2b08ca2ec72269598106c9dd695ca63bb55dbfbbabfdc51eccd0c4ac4f",
+  "state_hash": "83b96859b6daccc674f25ad8771cfafb4104a4c5c4a05cc0a95e34b4cbc8578c",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
