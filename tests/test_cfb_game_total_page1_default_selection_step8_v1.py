@@ -36,7 +36,6 @@ def test_step8_page1_default_selection_does_not_publish_event_query():
     namespace = {"selector_owner": owner}
     exec(helper_source, namespace)
     selected_day = SimpleNamespace(__str__=lambda self: "2026-10-10")
-    # Use a real isoformat callable because the production key is date-based.
     selected_day.isoformat = lambda: "2026-10-10"
     result = namespace["_sync_page1_matchup_without_auto_event"](
         selected_day,
@@ -53,3 +52,17 @@ def test_step8_page1_owner_scopes_sync_override_to_one_render():
     assert "original_sync = selector_owner._sync_frozen_matchup_state" in render_source
     assert "selector_owner._sync_frozen_matchup_state = _sync_page1_matchup_without_auto_event" in render_source
     assert "selector_owner._sync_frozen_matchup_state = original_sync" in render_source
+
+
+def test_step8_page1_selector_override_is_serialized_across_sessions():
+    source = PAGE1.read_text(encoding="utf-8")
+    render_source = _function_source(source, "render_game_total_hub")
+    assert "from threading import RLock" in source
+    assert "_PAGE1_SYNC_LOCK = RLock()" in source
+    assert "with _PAGE1_SYNC_LOCK:" in render_source
+
+    lock_pos = render_source.index("with _PAGE1_SYNC_LOCK:")
+    capture_pos = render_source.index("original_sync = selector_owner._sync_frozen_matchup_state")
+    swap_pos = render_source.index("selector_owner._sync_frozen_matchup_state = _sync_page1_matchup_without_auto_event")
+    restore_pos = render_source.index("selector_owner._sync_frozen_matchup_state = original_sync")
+    assert lock_pos < capture_pos < swap_pos < restore_pos
