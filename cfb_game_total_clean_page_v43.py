@@ -5,13 +5,20 @@ owner. Step 6 promotes the already-certified Games on This Day presentation
 chain as the native Page-1 game-card surface without creating a second loader,
 provider path, model path, projection path, probability path, or Page-2 path.
 
-The exact-route renderer purges clean-page modules before importing V43, so V43
-rebinds the full frozen Step-1/2/3/4 presentation chain after that purge and
-then consumes the unchanged V42 selected-day snapshot through the prior render
-path.
+Step 8 production certification proved that V14's historical default-selection
+sync published the first game's event ID during the initial Page-1 render. That
+made the selected-event router advance to Page 2 before a user tapped a card.
+This owner now scopes one compatibility override to the Page-1 render: the
+first game may remain the internal default selection, but Page 1 never writes
+an event query on its own. User-tapped card hrefs remain the sole Page-1 source
+of exact-event navigation. The temporary selector override is serialized so
+concurrent Streamlit sessions cannot observe or restore the wrong function.
 """
 from __future__ import annotations
 
+from threading import RLock
+
+import cfb_game_total_clean_page_v14 as selector_owner
 import cfb_game_total_clean_page_v42 as prior
 from cfb_game_total_games_on_day_step1_layout_v1 import install_games_on_day_step1_layout
 from cfb_game_total_games_on_day_step2_visual_v1 import install_games_on_day_step2_visual
@@ -36,6 +43,8 @@ NEW_PROVIDER_PATHS_ADDED = 0
 CARDS_CONSUME_SELECTED_DAY_SNAPSHOT = True
 FROZEN_CARD_PRESENTATION_REUSED = True
 POST_PURGE_CARD_REBIND = True
+PAGE1_AUTO_EVENT_QUERY_WRITE = False
+_PAGE1_SYNC_LOCK = RLock()
 FROZEN_CARD_CHAIN = (
     "cfb_game_total_games_on_day_step1_layout_v1",
     "cfb_game_total_games_on_day_step2_visual_v1",
@@ -44,22 +53,42 @@ FROZEN_CARD_CHAIN = (
 )
 
 
+def _sync_page1_matchup_without_auto_event(selected_day, games):
+    """Keep the frozen default index without publishing a selected event URL."""
+    if not games:
+        return 0
+    query_event_id = selector_owner._query_event_id()
+    selected_index = selector_owner._selected_game_index(games, query_event_id)
+    if selector_owner._selector_sync_event_id():
+        selector_owner._clear_selector_sync()
+    selector_owner.st.session_state[
+        f"{selector_owner.MATCHUP_STATE_KEY_PREFIX}{selected_day.isoformat()}"
+    ] = selected_index
+    return selected_index
+
+
 def render_step6_cert_surface() -> None:
     return prior.render_step6_cert_surface()
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None):
-    """Rebind the full frozen card chain after purge, then render V42 data."""
-    install_games_on_day_step1_layout()
-    install_games_on_day_step2_visual()
-    install_games_on_day_step3_details()
-    install_games_on_day_step4_interaction_mobile()
-    return prior.render_game_total_hub(
-        section_header,
-        status_info,
-        team_logo,
-        h,
-    )
+    """Rebind frozen cards and prevent initial Page-1 selection from becoming navigation."""
+    with _PAGE1_SYNC_LOCK:
+        original_sync = selector_owner._sync_frozen_matchup_state
+        selector_owner._sync_frozen_matchup_state = _sync_page1_matchup_without_auto_event
+        try:
+            install_games_on_day_step1_layout()
+            install_games_on_day_step2_visual()
+            install_games_on_day_step3_details()
+            install_games_on_day_step4_interaction_mobile()
+            return prior.render_game_total_hub(
+                section_header,
+                status_info,
+                team_logo,
+                h,
+            )
+        finally:
+            selector_owner._sync_frozen_matchup_state = original_sync
 
 
 def render_cfb_hub(
@@ -92,8 +121,10 @@ __all__ = [
     "MODEL_VERSION",
     "NETWORK_CALLS_ADDED",
     "NEW_PROVIDER_PATHS_ADDED",
+    "PAGE1_AUTO_EVENT_QUERY_WRITE",
     "POST_PURGE_CARD_REBIND",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_sync_page1_matchup_without_auto_event",
     "render_cfb_hub",
     "render_game_total_hub",
     "render_step6_cert_surface",
