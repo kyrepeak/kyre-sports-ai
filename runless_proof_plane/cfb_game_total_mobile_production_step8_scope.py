@@ -10,10 +10,10 @@ from devsystem.scope_aware_execution_lease_v1 import build_scope, claim_scope, r
 
 from .registry import GithubRegistryBackend, REGISTRY_PATH
 
-TASK_ID = "cfb-game-total-mobile-production-step8-v1"
+TASK_ID = "cfb-game-total-mobile-production-step8-premerge-v1"
 WORKSTREAM = "cfb-game-total-native-website-rebuild-v1"
 BRANCH = "cfb-game-total-mobile-production-step8-v1"
-CANDIDATE_SHA = "76074d4d7c2768a86d8c1655cb857c9cab40fa68"
+CANDIDATE_SHA = "b7c5bb3c1f7a00a3f2836a62d832c269e2bd4369"
 MAIN_SHA = "36e0d3ee8de1a72bdeeb5e007334df1e8c5a3adb"
 THAW_ID = "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1"
 FROZEN_PATH = "cfb_game_total_clean_page_v43.py"
@@ -28,6 +28,7 @@ WRITE_PATHS = (
     "devsystem/production_targets_v1.json",
     "tests/test_cfb_game_total_mobile_production_step8_v1.py",
     "tests/test_cfb_game_total_page1_default_selection_step8_v1.py",
+    "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-premerge-v1.json",
     "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-v1.json",
     "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json",
 )
@@ -80,16 +81,21 @@ def _ensure_thaw(client) -> dict:
         "files": {FROZEN_PATH: {"from_blob": FROM_BLOB, "to_blob": TO_BLOB}},
     }
     matches = [g for g in registry.get("active_thaws", []) if g.get("thaw_id") == THAW_ID]
+    if len(matches) > 1:
+        raise Step8ScopeFailure("THAW_DUPLICATE")
     if matches == [exact]:
         return {
             "created": False,
+            "refreshed": False,
             "revision": int(registry["revision"]),
             "state_hash": str(registry["state_hash"]),
             "active_thaw_count": len(registry.get("active_thaws", [])),
         }
+    before_unrelated = [deepcopy(g) for g in registry.get("active_thaws", []) if g.get("thaw_id") != THAW_ID]
     if matches:
-        raise Step8ScopeFailure("THAW_ID_COLLISION")
-    before_unrelated = [deepcopy(g) for g in registry.get("active_thaws", [])]
+        stale = matches[0]
+        if stale.get("status") != "ACTIVE" or stale.get("files") != exact["files"]:
+            raise Step8ScopeFailure("THAW_ID_COLLISION")
     updated = deepcopy(registry)
     updated["active_thaws"] = sorted(before_unrelated + [exact], key=lambda row: str(row.get("thaw_id") or ""))
     updated["revision"] = int(updated["revision"]) + 1
@@ -100,7 +106,7 @@ def _ensure_thaw(client) -> dict:
         REGISTRY_PATH,
         _json_text(updated),
         backend.branch,
-        "registry: authorize CFB Game Total Step 8 Page1 exact thaw",
+        "registry: refresh CFB Game Total Step 8 Page1 exact thaw target",
         backend._blob_sha,
     )
     readback = backend.read_registry()
@@ -112,7 +118,8 @@ def _ensure_thaw(client) -> dict:
     if unrelated_after != before_unrelated:
         raise Step8ScopeFailure("UNRELATED_THAW_DRIFT")
     return {
-        "created": True,
+        "created": not bool(matches),
+        "refreshed": bool(matches),
         "revision": int(readback["revision"]),
         "state_hash": str(readback["state_hash"]),
         "active_thaw_count": len(readback.get("active_thaws", [])),
@@ -134,13 +141,15 @@ def _ensure_lease(client) -> dict:
             "state_hash": str(state["state_hash"]),
         }
     working = state
+    released_id = ""
     if owned:
         if len(owned) != 1:
             raise Step8ScopeFailure("LEASE_DUPLICATE")
+        released_id = str(owned[0]["lease_id"])
         released = release_scope(
             working,
             owner_id=LEASE_OWNER,
-            lease_id=str(owned[0]["lease_id"]),
+            lease_id=released_id,
             expected_revision=int(working["revision"]),
             expected_state_hash=str(working["state_hash"]),
         )
@@ -176,7 +185,7 @@ def _ensure_lease(client) -> dict:
         LEASE_PATH,
         _json_text(updated),
         LEASE_BRANCH,
-        "lease: claim CFB Game Total Step 8 exact scope",
+        "lease: refresh CFB Game Total Step 8 exact scope",
         raw["sha"],
     )
     readback = validate_scope_state(_decode_json(client.content(LEASE_PATH, ref=LEASE_BRANCH), "LEASE_READBACK"))
@@ -185,6 +194,8 @@ def _ensure_lease(client) -> dict:
         raise Step8ScopeFailure("LEASE_READBACK_MISMATCH")
     return {
         "created": True,
+        "replaced": bool(released_id),
+        "released_lease_id": released_id,
         "lease_id": lease_id,
         "revision": int(readback["revision"]),
         "state_hash": str(readback["state_hash"]),
