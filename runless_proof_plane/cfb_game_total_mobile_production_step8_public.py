@@ -8,7 +8,7 @@ import threading
 from pathlib import Path
 
 BRANCH = "cfb-game-total-mobile-production-step8-v1"
-EXPECTED_HEAD = "f9e3adf23ccf003e16c0a36ee0b9f5245632780a"
+EXPECTED_HEAD = "0e0e9966e5780711238da92cd1ec412e74c4cd59"
 REPO = "https://github.com/kyrepeak/kyre-sports-ai.git"
 TEST = "tests/test_cfb_game_total_mobile_production_step8_v1.py"
 EVIDENCE_REL = "artifacts/cfb-game-total-step8/cfb_game_total_mobile_production_step8_v1.json"
