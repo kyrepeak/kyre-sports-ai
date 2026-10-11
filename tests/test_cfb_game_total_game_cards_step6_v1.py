@@ -25,12 +25,21 @@ def test_step6_adds_native_game_card_owner_without_reopening_step5_data():
     assert "load_with_diagnostics(" not in source
 
 
-def test_step6_rebinds_card_chain_after_clean_page_module_purge():
+def test_step6_rebinds_entire_card_chain_after_clean_page_module_purge():
     source = V43.read_text()
-    assert "from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_games_on_day_step4_interaction_mobile" in source
+    step2_import = "from cfb_game_total_games_on_day_step2_visual_v1 import install_games_on_day_step2_visual"
+    step3_import = "from cfb_game_total_games_on_day_step3_details_v1 import install_games_on_day_step3_details"
+    step4_import = "from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_games_on_day_step4_interaction_mobile"
+    assert step2_import in source
+    assert step3_import in source
+    assert step4_import in source
     assert "POST_PURGE_CARD_REBIND = True" in source
-    assert "install_games_on_day_step4_interaction_mobile()" in source
-    assert source.index("install_games_on_day_step4_interaction_mobile()") < source.index("return prior.render_game_total_hub(")
+
+    step2_call = source.index("install_games_on_day_step2_visual()")
+    step3_call = source.index("install_games_on_day_step3_details()")
+    step4_call = source.index("install_games_on_day_step4_interaction_mobile()")
+    render_call = source.index("return prior.render_game_total_hub(")
+    assert step2_call < step3_call < step4_call < render_call
 
 
 def test_step6_promotes_existing_frozen_game_card_chain_only_on_page1():
