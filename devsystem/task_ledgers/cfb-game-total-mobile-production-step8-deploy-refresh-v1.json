@@ -16,9 +16,25 @@
     "v4_identical_stale_event_attempts": 17,
     "merged_main_verified": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
     "premerge_receipt_reuse_green": true,
-    "stale_signal": "Page-1 Phoenix frame still publishes ks_cfb_game_total_event_id before user tap"
+    "stale_signal": "Page-1 Phoenix frame still publishes ks_cfb_game_total_event_id before user tap",
+    "registry_reconciliation": {
+      "status": "GREEN",
+      "previous_revision": 269,
+      "baseline_repair_revision": 270,
+      "revision": 271,
+      "state_hash": "715f190c2ef77cca82e11c4d4fc50620a2a2fdcfe75b92a94274bb5ed435cd30",
+      "source_main_sha": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
+      "stale_baseline_path_count": 17,
+      "step8_forward_port_path_count": 1,
+      "retired_thaws": [
+        "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1",
+        "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+      ],
+      "unrelated_thaws_preserved": 3,
+      "product_runtime_mutation": false
+    }
   },
-  "root_cause": "The exact Step-8 repair is merged on protected main, but PickVault Community Cloud continues executing the pre-repair Streamlit process beyond the bounded postmerge convergence window. Repository precedent classifies this exact state as stale hosted Streamlit process and uses a comment-only requirements.txt touch to force a full rebuild.",
+  "root_cause": "The exact Step-8 repair is merged on protected main, but PickVault Community Cloud continued executing the pre-repair Streamlit process beyond the bounded postmerge convergence window. Before the deployment-refresh proof could run, Runless also exposed a stale frozen-registry baseline inherited from older manual-fallback/fanout quarantine work. That baseline has now been reconciled to its own recorded source main, and the genuine Step-8 thaw has been forward-ported to merged main.",
   "patch": "Append one comment-only requirements.txt full-redeploy marker. Dependency versions, product/runtime/router/model/projection/probability/data semantics, Page 1/Page 2 code, Phoenix-time behavior and sportsbook influence remain unchanged.",
   "mutation_scope": [
     "requirements.txt",
@@ -42,9 +58,11 @@
     "no_duplicate_async_runs": true,
     "no_unchanged_failed_reruns": true,
     "exact_head_merge_required": true,
-    "scope_lease_id": "SCOPE-LEASE-9B4A1E83A76D45D7B21F6E30",
-    "scope_lease_revision": 554,
-    "scope_lease_state_hash": "beecfadc12a5746061fd9d2bccdc3d6e339c90c18dbb6b7ca9baec8347ccd949",
+    "scope_lease_id": "SCOPE-LEASE-45D7C8A9130FB2E6A7441C5D",
+    "scope_lease_revision": 560,
+    "scope_lease_state_hash": "3c24e387f24167f6d0a5f60e38db720dce7c7a8734f18549260f07bdee4eb34e",
+    "registry_revision": 271,
+    "registry_state_hash": "715f190c2ef77cca82e11c4d4fc50620a2a2fdcfe75b92a94274bb5ed435cd30",
     "github_actions_fallback_authorized": false
   },
   "tdd": {
