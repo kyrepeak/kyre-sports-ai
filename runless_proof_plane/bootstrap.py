@@ -128,6 +128,40 @@ print("CFB_STEP8_R4_PUBLIC_PAYLOAD=" + json.dumps(payload, sort_keys=True), flus
 '''
 
 
+_original_claim = terminal._claim
+
+
+def _resume_or_claim(client, registry_hash):
+    raw = client.content(terminal.LEASE_PATH, ref=terminal.LEASE_BRANCH)
+    state = terminal.validate_scope_state(terminal._decode(raw))
+    owned = [
+        h for h in state.get("holders", [])
+        if h.get("owner_id") == terminal.FINAL_OWNER
+    ]
+    if owned:
+        if len(owned) != 1:
+            raise terminal.TerminalFreezeFailure("R4_RESUME_LEASE_NOT_UNIQUE")
+        holder = owned[0]
+        scope = holder.get("scope") or {}
+        identity = scope.get("resource_identity") or {}
+        expected_writes = {
+            terminal.REGISTRY_PATH,
+            terminal.LEDGER_PATH,
+            terminal.TERMINAL_RECEIPT_PATH,
+        }
+        if (
+            identity.get("main_sha") != terminal.PRODUCT_MAIN_SHA
+            or identity.get("registry_state_hash") != registry_hash
+            or not expected_writes.issubset(set(scope.get("write_paths") or []))
+            or f"candidate:{terminal.CANDIDATE_SHA}" not in set(scope.get("dependency_tokens") or [])
+            or "cfb:game-total:step8" not in set(scope.get("dependency_tokens") or [])
+        ):
+            raise terminal.TerminalFreezeFailure("R4_RESUME_LEASE_IDENTITY_DRIFT")
+        return str(holder.get("lease_id") or "")
+    return _original_claim(client, registry_hash)
+
+
 terminal._ensure_authority = _verified_premerge_authority
 terminal._cert_script = _activated_cert_script
+terminal._claim = _resume_or_claim
 terminal.install_startup(app)
