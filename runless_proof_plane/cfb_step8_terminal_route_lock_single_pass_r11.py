@@ -75,7 +75,7 @@ def _rerender_safe_visible(frame, testid, timeout_ms=90000):
     last_error = ""
     while time.monotonic() < deadline:
         try:
-            locator = frame.locator(f'[data-testid="{{testid}}"').first
+            locator = frame.locator(f'[data-testid="{{testid}}"]') .first
             if locator.count() > 0 and locator.is_visible(timeout=1500):
                 return None
         except Exception as exc:
