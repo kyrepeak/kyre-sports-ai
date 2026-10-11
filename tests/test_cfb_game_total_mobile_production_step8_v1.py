@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 CERT = ROOT / "devsystem/cfb_game_total_mobile_production_step8_v1.py"
+RUNLESS_WRAPPER = ROOT / "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py"
 TARGETS = ROOT / "devsystem/production_targets_v1.json"
 PLAN = ROOT / "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-v1.json"
 LEDGER = ROOT / "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-v1.json"
@@ -114,7 +115,7 @@ def test_step8_page2_requires_observed_event_identity_not_inherited_identity():
     assert "if observed_events and observed_events != {event_id}:" not in source
 
 
-def test_step8_runless_plan_executes_public_cert_and_ledger_is_finalization_scoped():
+def test_step8_runless_plan_executes_public_cert_sequentially_after_browser_install():
     assert PLAN.exists(), "Step 8 Runless proof plan is not implemented yet"
     assert LEDGER.exists(), "Step 8 task ledger is not implemented yet"
     plan = json.loads(PLAN.read_text(encoding="utf-8"))
@@ -125,16 +126,35 @@ def test_step8_runless_plan_executes_public_cert_and_ledger_is_finalization_scop
     assert plan["probes"] == []
     assert "devsystem/production_targets_v1.json" in plan["artifacts"]
     assert "devsystem/cfb_game_total_mobile_production_step8_v1.py" in plan["artifacts"]
-    public_commands = [
+    assert "devsystem/cfb_game_total_mobile_production_step8_runless_v1.py" in plan["artifacts"]
+    assert RUNLESS_WRAPPER.exists(), "sequential Step 8 Runless wrapper is missing"
+
+    direct_installs = [
+        command for command in plan["commands"]
+        if len(command) >= 4
+        and command[0] == "python"
+        and command[1:4] == ["-m", "playwright", "install"]
+    ]
+    direct_public = [
         command for command in plan["commands"]
         if len(command) >= 3
         and command[0] == "python"
         and command[1] == "-m"
         and command[2] == "devsystem.cfb_game_total_mobile_production_step8_v1"
     ]
-    assert len(public_commands) == 1
-    assert "--base-url" in public_commands[0]
-    assert "https://pickvault.streamlit.app" in public_commands[0]
+    wrapper_commands = [
+        command for command in plan["commands"]
+        if command == ["python", "-m", "devsystem.cfb_game_total_mobile_production_step8_runless_v1"]
+    ]
+    assert direct_installs == []
+    assert direct_public == []
+    assert len(wrapper_commands) == 1
+
+    wrapper_source = RUNLESS_WRAPPER.read_text(encoding="utf-8")
+    install_pos = wrapper_source.index('"playwright", "install", "chromium"')
+    cert_pos = wrapper_source.index("run_public(")
+    assert install_pos < cert_pos
+    assert "check=True" in wrapper_source
     assert ledger["step"] == "8/8"
     assert ledger["step9_started"] is False
     assert ledger["green_plus_frozen_claimed"] is False
