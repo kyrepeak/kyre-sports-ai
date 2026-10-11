@@ -5,12 +5,12 @@
   "project": "API2",
   "workstream": "cfb-game-total-native-website-rebuild-v1",
   "step": "6/8",
-  "status": "CANDIDATE_READY_FOR_RUNLESS",
+  "status": "REVIEW_REPAIR_IMPLEMENTED_AWAITING_EXACT_HEAD_REVIEW",
   "base_main_sha": "90683fb9affefbe960b37590ff02303f94fd8d3d",
   "branch": "cfb-game-total-game-cards-step6-v1",
-  "problem": "The native rebuild has frozen routing, shell, Phoenix day selection, and selected-day data ownership, but it does not yet have a rebuild-owned Page-1 game-card contract above V42.",
-  "root_cause": "The certified Games on This Day presentation chain already exists and is installed only on Page 1 by the final router, while Step 5 intentionally stopped at data ownership and explicitly left card UI deferred. The rebuild therefore needs one additive owner that promotes that frozen presentation chain without creating a second loader or reopening the card components.",
-  "patch": "Add V43 as an additive successor to V42, declare the existing certified card chain as the reused presentation owner, consume the unchanged V42 selected-day snapshot through prior.render_game_total_hub, and advance only PAGE1_NATIVE_ROUTE from V42 to V43. Keep the existing exactly-once Page-1 installer calls and preserve Page 2 unchanged.",
+  "problem": "The native rebuild has frozen routing, shell, Phoenix day selection, and selected-day data ownership, but the exact-route purge can discard the already-certified Games on This Day presentation bindings before Page 1 renders.",
+  "root_cause": "V160 purges CFB clean-page modules before importing the active Page-1 owner. The pre-render Step-1/2/3/4 installers therefore lose bindings tied to the purged V14 owner. Step 2 must be rebound to the fresh V14 renderer, Step 1 must restore the mobile layout CSS, and Steps 3-4 must then decorate the fresh Step-2 composition in order.",
+  "patch": "Add V43 as an additive successor to V42. After the purge has occurred and V43 is imported, reinstall the frozen Step-1 layout, Step-2 visual renderer, Step-3 details, and Step-4 interaction/mobile chain in order, then consume the unchanged V42 selected-day snapshot through prior.render_game_total_hub. Advance only PAGE1_NATIVE_ROUTE from V42 to V43 and preserve Page 2 unchanged.",
   "mutation_scope": [
     "cfb_game_total_clean_page_v43.py",
     "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
@@ -22,6 +22,7 @@
     "cfb_game_total_clean_page_v42.py",
     "cfb_game_total_clean_page_v41.py",
     "cfb_game_total_clean_page_v14.py",
+    "cfb_game_total_games_on_day_step1_layout_v1.py",
     "cfb_game_total_games_on_day_step2_visual_v1.py",
     "cfb_game_total_games_on_day_step3_details_v1.py",
     "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py",
@@ -48,21 +49,27 @@
     "frozen_router_requires_exact_head_thaw": true,
     "authoritative_main_sha": "90683fb9affefbe960b37590ff02303f94fd8d3d",
     "authoritative_test_first_head": "e431542207a8c5e33a71dc1c4d5e0578ce689b6d",
-    "implementation_head_before_proof_plan": "c41bf9b653e8b51c6431b5cf9efab28cd253246b"
+    "initial_implementation_head": "c41bf9b653e8b51c6431b5cf9efab28cd253246b"
   },
   "tdd": {
     "test_first_commit": "e431542207a8c5e33a71dc1c4d5e0578ce689b6d",
-    "red_observed": true,
-    "red_result": "The Step-6 contract failed because V43 did not exist and PAGE1_NATIVE_ROUTE still pointed at V42.",
-    "green_local_contract": "2 passed"
+    "initial_red_observed": true,
+    "initial_red_result": "V43 did not exist and PAGE1_NATIVE_ROUTE still pointed at V42.",
+    "review_regression_red_commits": [
+      "d86dc63089726cecda80f8cad2e372256931bda4",
+      "ba3d34ff0a3dee4666ebad0186b2e4a840ba3785"
+    ],
+    "fresh_terminal_verification_claimed": false
   },
   "card_contract": {
     "data_owner": "cfb_game_total_clean_page_v42",
     "card_chain": [
+      "cfb_game_total_games_on_day_step1_layout_v1",
       "cfb_game_total_games_on_day_step2_visual_v1",
       "cfb_game_total_games_on_day_step3_details_v1",
       "cfb_game_total_games_on_day_step4_interaction_mobile_v1"
     ],
+    "post_purge_rebind_required": true,
     "selected_day_snapshot_reused": true,
     "new_loader_added": false,
     "new_provider_paths_added": 0,
@@ -81,5 +88,5 @@
   },
   "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP6_GAME_CARDS_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "OPEN_ONE_AUTHORITATIVE_PR_AND_WAIT_FOR_EXACT_HEAD_RUNLESS_TERMINAL_RESULT"
+  "next_legal_action": "WAIT_FOR_EXACT_HEAD_REVIEW_THEN_AUTHORIZE_THAW_AND_SUBMIT_ONE_RUNLESS_PROOF"
 }
