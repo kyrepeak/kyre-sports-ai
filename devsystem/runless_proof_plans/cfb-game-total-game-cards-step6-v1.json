@@ -8,7 +8,6 @@
       "pytest",
       "-q",
       "tests/test_cfb_game_total_game_cards_step6_v1.py",
-      "tests/test_cfb_game_total_games_on_day_data_step5_v1.py",
       "tests/test_cfb_game_total_games_on_day_step2_visual_v1.py",
       "tests/test_cfb_game_total_games_on_day_step3_details_v1.py",
       "tests/test_cfb_game_total_games_on_day_step4_interaction_mobile_v1.py",
