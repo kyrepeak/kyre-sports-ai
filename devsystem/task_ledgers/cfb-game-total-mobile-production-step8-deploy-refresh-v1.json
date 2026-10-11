@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "task_id": "cfb-game-total-mobile-production-step8-deploy-refresh-v1",
+  "title": "CFB Game Total Step 8 — stale Streamlit deployment recovery",
+  "project": "API2",
+  "workstream": "cfb-game-total-native-website-rebuild-v1",
+  "step": "8/8",
+  "status": "RECOVERY_CANDIDATE_READY_FOR_RUNLESS",
+  "source_main_sha": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
+  "branch": "cfb-game-total-step8-streamlit-redeploy-recovery-v1",
+  "failure_owner": "DEPLOYMENT",
+  "failure_class": "PICKVAULT_PUBLIC_DEPLOYMENT_STALE_PRE_REPAIR_PROCESS",
+  "evidence": {
+    "postmerge_closeout_v3_result": "PUBLIC_PRODUCTION_DID_NOT_CONVERGE",
+    "postmerge_closeout_v4_result": "PUBLIC_PRODUCTION_DID_NOT_CONVERGE",
+    "v4_identical_stale_event_attempts": 17,
+    "merged_main_verified": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
+    "premerge_receipt_reuse_green": true,
+    "stale_signal": "Page-1 Phoenix frame still publishes ks_cfb_game_total_event_id before user tap",
+    "registry_reconciliation": {
+      "status": "GREEN",
+      "previous_revision": 269,
+      "baseline_repair_revision": 270,
+      "revision": 271,
+      "state_hash": "715f190c2ef77cca82e11c4d4fc50620a2a2fdcfe75b92a94274bb5ed435cd30",
+      "source_main_sha": "1b0169a8a6e644ae6971685fb50b9bd96d510106",
+      "stale_baseline_path_count": 17,
+      "step8_forward_port_path_count": 1,
+      "retired_thaws": [
+        "THAW-CFB-GT-MOBILE-PRODUCTION-STEP8-R1",
+        "THAW-RUNLESS-TASK14-MANUAL-FALLBACK"
+      ],
+      "unrelated_thaws_preserved": 3,
+      "product_runtime_mutation": false
+    }
+  },
+  "root_cause": "The exact Step-8 repair is merged on protected main, but PickVault Community Cloud continued executing the pre-repair Streamlit process beyond the bounded postmerge convergence window. Before the deployment-refresh proof could run, Runless also exposed a stale frozen-registry baseline inherited from older manual-fallback/fanout quarantine work. That baseline has now been reconciled to its own recorded source main, and the genuine Step-8 thaw has been forward-ported to merged main.",
+  "patch": "Append one comment-only requirements.txt full-redeploy marker. Dependency versions, product/runtime/router/model/projection/probability/data semantics, Page 1/Page 2 code, Phoenix-time behavior and sportsbook influence remain unchanged.",
+  "mutation_scope": [
+    "requirements.txt",
+    "devsystem/runless_proof_plans/cfb-game-total-mobile-production-step8-deploy-refresh-v1.json",
+    "devsystem/task_ledgers/cfb-game-total-mobile-production-step8-deploy-refresh-v1.json"
+  ],
+  "protected_scope": [
+    "all Step-1 through Step-8 product/runtime artifacts",
+    "cfb_game_total_clean_page_v43.py",
+    "Page 1 and Page 2 behavior",
+    "model/projection/probability math",
+    "schedule/provider behavior",
+    "sportsbook projection influence",
+    "other sports"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "no_duplicate_async_runs": true,
+    "no_unchanged_failed_reruns": true,
+    "exact_head_merge_required": true,
+    "scope_lease_id": "SCOPE-LEASE-45D7C8A9130FB2E6A7441C5D",
+    "scope_lease_revision": 560,
+    "scope_lease_state_hash": "3c24e387f24167f6d0a5f60e38db720dce7c7a8734f18549260f07bdee4eb34e",
+    "registry_revision": 271,
+    "registry_state_hash": "715f190c2ef77cca82e11c4d4fc50620a2a2fdcfe75b92a94274bb5ed435cd30",
+    "github_actions_fallback_authorized": false
+  },
+  "tdd": {
+    "failing_production_proof_is_regression_test": true,
+    "failure_observed": "V4 postmerge closeout failed after 17 identical stale_event=true observations",
+    "product_code_change_required": false
+  },
+  "runless": {
+    "task_id": "cfb-game-total-mobile-production-step8-deploy-refresh-v1",
+    "authorization_id": "AUTH-CFB-GT-STEP8-DEPLOY-REFRESH-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "next_legal_action": "ONE_EXACT_HEAD_RUNLESS_PROOF_THEN_MERGE_AND_ONE_FRESH_PUBLIC_PRODUCTION_CERTIFICATION"
+}
