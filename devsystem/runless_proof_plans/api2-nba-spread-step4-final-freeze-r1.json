@@ -1,0 +1,39 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nba-spread-step4-final-freeze-r1",
+  "workstream": "nba-spread-step4-final-freeze-r1",
+  "source_main_sha": "38954c48c35534428cdd09442ba28a58cd8536bd",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_api2_nba_spread_step4_final_freeze_r1.py"],
+    ["python", "-m", "devsystem.api2_nba_spread_step4_final_freeze_r1"]
+  ],
+  "artifacts": [
+    "devsystem/api2_nba_spread_step4_final_freeze_r1.py",
+    "devsystem/finalization_evidence/nba-spread-step4-most-bet-feature-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-spread-step4-final-freeze-r1.json",
+    "tests/test_api2_nba_spread_step4_final_freeze_r1.py"
+  ],
+  "dependencies": [
+    "devsystem/api2_frozen_registry_lifecycle_v1.py",
+    "devsystem/canonical_completion_resolver_v1.py",
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/runless_terminal_proof_receipt_v1.py",
+    "devsystem/task_ledgers/nba-spread-step4-most-bet-feature-v1.json",
+    "runless_proof_plane/config.py",
+    "runless_proof_plane/github_app.py",
+    "runless_proof_plane/github_client.py"
+  ],
+  "probes": [
+    {
+      "url": "https://pickvault.streamlit.app/~/+/_stcore/health",
+      "kind": "http",
+      "timeout_seconds": 30
+    }
+  ],
+  "timeout_seconds": 180,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NBA_SPREAD_STEP4_FINAL_FREEZE_R1"
+}
