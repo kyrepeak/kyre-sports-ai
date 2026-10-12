@@ -22,7 +22,7 @@ TASK_ID = "nba-spread-step2-site-activation-v1"
 WORKSTREAM = "nba-spread-two-page-v1"
 BRANCH = "nba-spread-step2-site-activation-r1"
 CANDIDATE_SHA = "21c31d5971c74ce1ff0ca0a22c2adffc6467d1c7"
-PRIOR_CANDIDATE_SHA = "19c366d03e8f2196ff277eb17e9abb496fcb64c1"
+PRIOR_CANDIDATE_SHA = "19c366d03e8f219fce4ae237c39e53b36955bcb1"
 SOURCE_MAIN_SHA = "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1"
 PR = "1521"
 THAW_ID = "THAW-NBA-SPREAD-STEP2-SITE-ACTIVATION-R1"
@@ -30,6 +30,16 @@ OWNER_ID = "chatgpt:api2:nba-spread-step2-site-activation-v1"
 LEASE_REF = "monster-scope-aware-execution-leases"
 LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
 THAW_FILES = {
+    "app.py": {
+        "from_blob": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "to_blob": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
+    },
+    "tests/test_devsystem_change_classifier_v1.py": {
+        "from_blob": "265129d2ce89da49426b36059294fcba381cfb7b",
+        "to_blob": "d02df05feaab1ac0cfb7b88968807a5090e09010",
+    },
+}
+PRIOR_THAW_FILES = {
     "app.py": {
         "from_blob": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
         "to_blob": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
@@ -107,7 +117,7 @@ def _prepare_thaw(client) -> dict:
             return current
         if (
             str(existing.get("target_head_sha") or "") != PRIOR_CANDIDATE_SHA
-            or existing.get("files") != THAW_FILES
+            or existing.get("files") != PRIOR_THAW_FILES
             or existing.get("status") != "ACTIVE"
         ):
             raise NBASpreadStep2AuthorityFailure("NBA_STEP2_THAW_ID_COLLISION")
@@ -143,8 +153,6 @@ def _prepare_lease(client, registry: dict) -> dict:
     state = validate_state(_decode(raw, "NBA_STEP2_SCOPE_LEASE"))
     now = datetime.now(timezone.utc)
 
-    # Release any live generation-1 authority owned by this exact Step-2 workstream
-    # before claiming the generation-2 head. Unrelated holders are preserved.
     working = state
     stale_ids = [
         str(h["lease_id"])
