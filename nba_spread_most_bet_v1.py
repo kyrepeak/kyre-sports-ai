@@ -144,10 +144,10 @@ def parse_action_network_html(html: str) -> list[dict]:
     for frame in tables:
         columns = _flat_columns(frame)
         scheduled_col = next((raw for key, raw in columns.items() if key == "scheduled"), None)
-        bets_pct_col = next((raw for key, raw in columns.items() if "% of bets" in key), None)
-        money_pct_col = next((raw for key, raw in columns.items() if "% of money" in key), None)
+        bets_pct_col = next((raw for key, raw in columns.items() if key == "of bets"), None)
+        money_pct_col = next((raw for key, raw in columns.items() if key == "of money"), None)
         bet_count_col = next((raw for key, raw in columns.items() if key == "bets"), None)
-        if None in (scheduled_col, bets_pct_col, money_pct_col, bet_count_col):
+        if any(value is None for value in (scheduled_col, bets_pct_col, money_pct_col, bet_count_col)):
             continue
 
         for _, row in frame.iterrows():
