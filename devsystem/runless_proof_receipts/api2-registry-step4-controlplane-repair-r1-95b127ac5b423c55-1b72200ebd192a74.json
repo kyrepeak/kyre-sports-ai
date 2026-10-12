@@ -1,0 +1,39 @@
+{
+  "artifact_map": {
+    "devsystem/api2_registry_step4_controlplane_repair_r1.py": "e6361fa6dc16adce96c9b80cc181f949484a8fa3",
+    "devsystem/runless_proof_plans/api2-registry-step4-controlplane-repair-r1.json": "773b6c7b3a483e08c3c76e19c28103635a1979b3",
+    "tests/test_api2_registry_step4_controlplane_repair_r1.py": "9c77d66b4c177bc480de31f7491c6795f3b13de5"
+  },
+  "candidate_sha": "95b127ac5b423c551093241c9af94783d0c2a6c2",
+  "created_at": "2026-10-12T22:22:40.536086+00:00",
+  "dependency_map": {
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "runless_proof_plane/config.py": "458e33c635daea67937241e0b270fac0f9e101f9",
+    "runless_proof_plane/github_app.py": "f5ec32171b5fc7eb9b15139b4629a1e5c04fd711",
+    "runless_proof_plane/github_client.py": "8ee3f3b1f4e6ef73472e0f66dbb47baa9989ecc9"
+  },
+  "deployment_identity": "95c2eb3c0cbf98d9d8c4c422822c007bcf99c380",
+  "digest": "bb6cbf09cd30d2ce83e612b9d5cf5e65a6649659053a369b58250e1cd5cb3b18",
+  "evidence_digests": [
+    "3a321dc63af5d173bf33117377d4ca026b61bc1391a4710aa5869f512fd91128",
+    "71ecbb8d596cbafd9f7ef0cf413370f496999392f466ca8a26ddefd1c114f8fd"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "68fc129db9c48c76d1218b6a8bad6d4cf7a1d4a0c7c290e150bded799666010a",
+  "proof_id": "api2-registry-step4-controlplane-repair-r1-95b127ac5b423c55-1b72200ebd192a74",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 296,
+    "state_hash": "ab1cf49c69e6bcdff218c55556f1655eff74fca4b0af367601a36b27338bb32d"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 296,
+    "state_hash": "ab1cf49c69e6bcdff218c55556f1655eff74fca4b0af367601a36b27338bb32d"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "api2-registry-step4-controlplane-repair-r1",
+  "workstream": "nba-spread-step4-controlplane-repair-r1"
+}
