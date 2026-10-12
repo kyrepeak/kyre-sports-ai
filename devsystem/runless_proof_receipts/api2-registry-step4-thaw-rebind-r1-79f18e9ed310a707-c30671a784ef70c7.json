@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/api2_registry_step4_thaw_rebind_r1.py": "ebabd07b9d95ab0612038e51cc230ba8707c250d",
+    "devsystem/runless_proof_plans/api2-registry-step4-thaw-rebind-r1.json": "441eab2f3130bd7af8df3e62aa8783f6bc26caac",
+    "tests/test_api2_registry_step4_thaw_rebind_r1.py": "7d46026cadc36ea50052643b40594b0b03fef5a7"
+  },
+  "candidate_sha": "79f18e9ed310a70764db3d7094fa467185ee28e6",
+  "created_at": "2026-10-12T22:28:35.335872+00:00",
+  "dependency_map": {
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "runless_proof_plane/config.py": "458e33c635daea67937241e0b270fac0f9e101f9",
+    "runless_proof_plane/github_app.py": "f5ec32171b5fc7eb9b15139b4629a1e5c04fd711",
+    "runless_proof_plane/github_client.py": "8ee3f3b1f4e6ef73472e0f66dbb47baa9989ecc9"
+  },
+  "deployment_identity": "95c2eb3c0cbf98d9d8c4c422822c007bcf99c380",
+  "digest": "59793f9c4e8b4e8ff4aea296fbca55f46ad9dedb103ead81f947e88b81c9ca91",
+  "evidence_digests": [
+    "e46ff7c890555fda4e711842742ceb3bfda1640f782a92ef2913365093e278fc",
+    "343f6844034f6ffe10e3933089ab4117314331b6fb18a0ca3d4503817d0f5593"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4fd74edfffc7ec02deac6e1b8e520fb7bba2907d4bf4f9133eb7e411dd7e576b",
+  "proof_id": "api2-registry-step4-thaw-rebind-r1-79f18e9ed310a707-c30671a784ef70c7",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1"
+    ],
+    "revision": 297,
+    "state_hash": "cd805a3acb3d6c1ab083a753bf943ac7f596950f8995675bc969597af3a09905"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1"
+    ],
+    "revision": 297,
+    "state_hash": "cd805a3acb3d6c1ab083a753bf943ac7f596950f8995675bc969597af3a09905"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "api2-registry-step4-thaw-rebind-r1",
+  "workstream": "nba-spread-step4-thaw-rebind-r1"
+}
