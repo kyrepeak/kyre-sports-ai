@@ -100,3 +100,10 @@ def test_step2_runless_plan_uses_only_approved_command_shapes():
     payload = json.loads(RUNLESS_PLAN.read_text(encoding="utf-8"))
     for command in payload["commands"]:
         assert validator.validate_command(command) == tuple(command)
+
+
+def test_step2_runless_plan_does_not_gate_on_unrelated_cfb_regression():
+    payload = json.loads(RUNLESS_PLAN.read_text(encoding="utf-8"))
+    pytest_commands = [command for command in payload["commands"] if command[:3] == ["python", "-m", "pytest"]]
+    assert len(pytest_commands) == 1
+    assert "tests/test_cfb_game_total_page2_step8_final_v1.py" not in pytest_commands[0]
