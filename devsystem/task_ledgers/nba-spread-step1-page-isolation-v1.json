@@ -1,3 +1,24 @@
 {
-  "schema_version": 1
+  "schema_version": 1,
+  "task_id": "nba-spread-step1-page-isolation-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "1/TBD",
+  "source_main_sha": "d4d5b5d4a0a2f376bf17eb7db0ec39d2a5adaee8",
+  "authoritative_branch": "nba-spread-step1-isolation-r1",
+  "state": "DONE",
+  "status": "DONE",
+  "problem": "The new NBA Spread two-page build needs its own fail-closed mutation boundary before implementation so it cannot inherit or overwrite state, files, routes, APIs, models, or authority from the existing NBA Over/Under workstream or any other sport.",
+  "root_cause": "NBA Spread is a new workstream inside a planned NBA domain. Step 1 needs a repository-local exact-path isolation boundary, but the shared DevSystem classifier and its test are already frozen control-plane artifacts and do not need to be mutated to establish that boundary.",
+  "root_cause_class": "NEW_WORKSTREAM_SCOPE_ISOLATION_REQUIRED",
+  "patch": "Add a standalone NBA Spread Step-1 fail-closed exact-path isolation guard plus its execution, Runless proof, and ledger contracts. Keep the shared classifier, its tests, existing NBA Over/Under files, app entrypoint, shared routers, shared APIs, product runtime, models, sportsbooks, public/sharp feeds, injuries, and every other sport unchanged.",
+  "runless": {
+    "proof_id": "nba-spread-step1-page-isolation-v1-649027cd36412d93-4cc8f1a645bec65e",
+    "receipt_digest": "f5d407bbed53faf144dff4efc76c302a36f9afaf30354b23fdbf784ec5ebbc8e",
+    "github_actions_fallback": 0
+  },
+  "next_legal_action": "NONE_TERMINAL",
+  "freeze_token": "NBA_SPREAD_STEP1_PAGE_ISOLATION_FROZEN",
+  "green_plus_frozen_claimed": true,
+  "finalization_authority": "FROZEN_REGISTRY_RUNLESS"
 }
