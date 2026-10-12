@@ -33,7 +33,7 @@
           "to_blob": "845651ca33ac69bf1d4efba945dd3824ad2d63c2"
         },
         "tests/test_devsystem_change_classifier_v1.py": {
-          "from_blob": "265129d2ce89da49426b36059294fcba381cfb7b",
+          "from_blob": "6b064453b2d79ab933ce58f9d2a504e34f6fbd21",
           "to_blob": "0229d207cc7e4169cbd12740b38c76fb26ee3fd0"
         }
       },
@@ -51,21 +51,6 @@
       "status": "ACTIVE",
       "target_head_sha": "7b5f39eb22802b836788955bc1229e68474914bb",
       "thaw_id": "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
-    },
-    {
-      "files": {
-        "app.py": {
-          "from_blob": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
-          "to_blob": "a8802aa8e32b430e5c33378ab1105ca877b934c1"
-        },
-        "tests/test_devsystem_change_classifier_v1.py": {
-          "from_blob": "265129d2ce89da49426b36059294fcba381cfb7b",
-          "to_blob": "6b064453b2d79ab933ce58f9d2a504e34f6fbd21"
-        }
-      },
-      "status": "ACTIVE",
-      "target_head_sha": "bfae122c36ea29d18a64a9e7ff4c40b06e24640f",
-      "thaw_id": "THAW-NBA-SPREAD-STEP2-SITE-ACTIVATION-R1"
     }
   ],
   "entries": {
@@ -259,7 +244,7 @@
         "devsystem/execution_plans/api2-proof-architecture-v1-step2-required-integration-lanes.json": "a71491357bb2c1985fd103fa41f245abcac633b3",
         "devsystem/monster_speed_v3_step3_lane_split_v1.py": "5ddb14e2d8881a0213baf56e289d04eb60a688b9",
         "devsystem/task_ledgers/api2-proof-architecture-v1-step2-required-integration-lanes.json": "89498162e680635ab807332e16c0ba0193f7e174",
-        "tests/test_devsystem_change_classifier_v1.py": "265129d2ce89da49426b36059294fcba381cfb7b",
+        "tests/test_devsystem_change_classifier_v1.py": "6b064453b2d79ab933ce58f9d2a504e34f6fbd21",
         "tests/test_devsystem_required_integration_lanes_v1.py": "22f55626341a009076e3604fad7682f168bc4e2f",
         "tests/test_devsystem_workflow_parallelism_v1.py": "d2ff729d095c3008157f675e34440c4ae9b1cfe0",
         "tests/test_monster_speed_v3_step3_lane_split_v1.py": "aed7b9d0bb8315b919839409f92041638349792e"
@@ -462,7 +447,7 @@
     },
     "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP8_MOBILE_PRODUCTION_V1_FROZEN": {
       "artifacts": {
-        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
         "cfb_game_total_clean_page_v14.py": "7112f5c78e385cc18d148f7e81350788c2666c53",
         "cfb_game_total_clean_page_v43.py": "3a05f8f3f9d434a462da702d429e7db990c9b528",
         "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
@@ -756,7 +741,7 @@
     },
     "CFB_GAME_TOTAL_PAGE2_V1_STEP8_FINAL_RESPONSIVE_LIVE_DATA_FROZEN": {
       "artifacts": {
-        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
         "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
         "devsystem/cfb_game_total_page2_step8_live_cert_v1.py": "422b54320df359732499344794b4e1887cb14daa",
         "devsystem/execution_plans/cfb-game-total-page2-step8-final-responsive-live-data.json": "e1b3bb8bbca106e3520af8fa585871fd89398eec",
@@ -2299,7 +2284,7 @@
         "devsystem/change_classifier_v1.py": "352074abc9d5f807ef6bfad593743c19cef49e00",
         "devsystem/task_ledgers/nba-over-under-step1-page-isolation-v1.json": "541541587796d79987aec918977b47ad9f9062d2",
         "nba_page_isolation_v1.py": "c5b133017bc6449409474972669b0defb34723f7",
-        "tests/test_devsystem_change_classifier_v1.py": "265129d2ce89da49426b36059294fcba381cfb7b",
+        "tests/test_devsystem_change_classifier_v1.py": "6b064453b2d79ab933ce58f9d2a504e34f6fbd21",
         "tests/test_nba_page_isolation_v1.py": "094e7f60c781a2fd789b9212e845f0ae44be7cb1"
       },
       "checkpoint_id": "NBA_OVER_UNDER_STEP1_PAGE_ISOLATION",
@@ -2316,6 +2301,23 @@
       },
       "checkpoint_id": "NBA_SPREAD_STEP1_PAGE_ISOLATION_FROZEN",
       "source_main_sha": "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1",
+      "status": "FROZEN"
+    },
+    "NBA_SPREAD_STEP2_SITE_ACTIVATION_FROZEN": {
+      "artifacts": {
+        "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
+        "devsystem/devsystem_manifest_v1.json": "a365f076e436206000d074db5cf87fb629f3b783",
+        "devsystem/execution_plans/nba-spread-step2-site-activation-v1.json": "a1e37d8762cacc6ce5d93de16a7354c0ee5904b9",
+        "devsystem/runless_proof_plans/nba-spread-step2-site-activation-v1.json": "9d51ce87e14a684b1bc8a32b838347fb2e2cefe5",
+        "devsystem/task_ledgers/nba-spread-step2-site-activation-v1.json": "d8566bb47f7b002e26efc1e6a278c114dc551965",
+        "nba_spread_page_v1.py": "8becdc6be21e8956e8f8101ebb3a930897f61cf6",
+        "nba_spread_step2_activation_v1.py": "9a122781f33e7c383be3090150c130b7b34d75dd",
+        "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": "33f6f638f57d02cef58fb9996e8e0c54c3b917a3",
+        "tests/test_devsystem_change_classifier_v1.py": "6b064453b2d79ab933ce58f9d2a504e34f6fbd21",
+        "tests/test_nba_spread_step2_site_activation_v1.py": "51a82403aa91a69a8c74b5c47f6f5ed69af92365"
+      },
+      "checkpoint_id": "NBA_SPREAD_STEP2_SITE_ACTIVATION_FROZEN",
+      "source_main_sha": "30e803ea943091d07e760d9d4e003e110cbc29ed",
       "status": "FROZEN"
     },
     "NFL_LIVE_GAME_REPAIR_STEP1_ROOT_CAUSE": {
@@ -2857,7 +2859,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP4_FROZEN": {
       "artifacts": {
-        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step4-universal-card.json": "880fb49921c230e9df7b6dbf390191c83d84c85d",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step4-universal-card.json": "464d6e7e903add6c6e583839dedd467761c1a46f",
         "devsystem/wnba_pra_repair_v1_step4_universal_card_cert.py": "a71713915f0ac532fee0b926feba34004eaef14f",
@@ -2871,7 +2873,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP5_FROZEN": {
       "artifacts": {
-        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step5-decision-fallback.json": "65c5caa0bc8eaa98ae34605bd07cfd7cb33af277",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step5-decision-fallback.json": "29acc8ee4ffd3a5fd2ba646214a3145fbf73bb65",
         "devsystem/wnba_pra_repair_v1_step5_decision_fallback_cert.py": "f9bd0ab5110fe10914d009d0c4e7aaac0b74d67a",
@@ -2897,7 +2899,7 @@
     },
     "WNBA_PRA_REPAIR_V1_STEP7_FROZEN": {
       "artifacts": {
-        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
         "devsystem/runless_proof_plans/wnba-pra-repair-v1-step7-final-integration.json": "e6b3c8956ae8c7d22e933b43905b322644343543",
         "devsystem/task_ledgers/wnba-pra-repair-v1-step7-final-integration.json": "d28b7ba847af6424f80b2fb98dc1a9e2e4f40c2a",
         "devsystem/wnba_pra_repair_v1_step7_final_integration_cert.py": "3ea24534f781f51d8e0364f660dc40eb5c8fcf6a",
@@ -2968,7 +2970,7 @@
     "WNBA_PRA_SPEED_V3_STEP9": {
       "artifacts": {
         ".github/workflows/wnba-pra-speed-v3-step9-final-cert.yml": "0fe38d0bed64fe15d52deb30b7d92cc012bf6e68",
-        "app.py": "426a53efd90b6e15149f78d1cb61acfb1e1195c3",
+        "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
         "devsystem/task_ledgers/wnba-pra-speed-v3-step9-final-cert.json": "eac68bf9b00be8ce743f78e0ae64a4f513c457e4",
         "devsystem/wnba_pra_speed_v3_step9_final_cert.py": "587269cd587fb29fb4ba07879f5b472b817b2d46",
         "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py": "51eef1fe2526801a467f155d1c0b32d516ef8a35",
@@ -3083,9 +3085,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 293,
+  "revision": 294,
   "schema_version": 1,
-  "source_main_sha": "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1",
-  "state_hash": "fb1bcdefd9efac5ee7b571f1dd47a000c2e17d6ff5bd2dcbc2c8f0c3324e21e3",
+  "source_main_sha": "30e803ea943091d07e760d9d4e003e110cbc29ed",
+  "state_hash": "2fc86992d03cb6957244bad11003c4243ba311a925afa533bcdeb068dc6c9d58",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
