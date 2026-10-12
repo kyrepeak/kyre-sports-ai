@@ -1,5 +1,7 @@
 from devsystem.api2_registry_step4_controlplane_repair_r1 import (
+    BRIDGE_ENTRY_COUNT,
     BRIDGE_HASH,
+    BRIDGE_THAW_COUNT,
     REGISTRY_BRANCH,
     REGISTRY_PATH,
     STEP4_CANDIDATE_SHA,
@@ -42,7 +44,9 @@ def _payload():
 def test_repair_identity_is_pinned():
     assert REGISTRY_BRANCH == "monster-frozen-artifact-registry"
     assert REGISTRY_PATH == "devsystem/frozen_artifact_registry_state_v1.json"
-    assert BRIDGE_HASH == "e48fabb3601919a07b8b15eb93f832867a593ccadddefa056d3c4fb61a5553ff"
+    assert BRIDGE_HASH == "ab1cf49c69e6bcdff218c55556f1655eff74fca4b0af367601a36b27338bb32d"
+    assert BRIDGE_ENTRY_COUNT == 1
+    assert BRIDGE_THAW_COUNT == 0
     assert TARGET_REVISION == 297
     assert TARGET_HASH == "cd805a3acb3d6c1ab083a753bf943ac7f596950f8995675bc969597af3a09905"
 
