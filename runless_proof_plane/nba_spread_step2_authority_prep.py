@@ -8,7 +8,12 @@ from datetime import datetime, timezone
 
 from devsystem.frozen_artifact_registry_v1 import _hash as registry_hash
 from devsystem.frozen_artifact_registry_v1 import _payload_without_hash, validate_registry
-from devsystem.scope_aware_execution_lease_v1 import build_scope, claim_scope, validate_state
+from devsystem.scope_aware_execution_lease_v1 import (
+    build_scope,
+    claim_scope,
+    release_scope,
+    validate_state,
+)
 
 from .registry import GithubRegistryBackend, REGISTRY_PATH
 
@@ -16,7 +21,8 @@ ENV = "RPP_NBA_SPREAD_STEP2_AUTHORITY_PREP_ON_START"
 TASK_ID = "nba-spread-step2-site-activation-v1"
 WORKSTREAM = "nba-spread-two-page-v1"
 BRANCH = "nba-spread-step2-site-activation-r1"
-CANDIDATE_SHA = "19c366d03e8f2196ff277eb17e9abb496fcb64c1"
+CANDIDATE_SHA = "21c31d5971c74ce1ff0ca0a22c2adffc6467d1c7"
+PRIOR_CANDIDATE_SHA = "19c366d03e8f2196ff277eb17e9abb496fcb64c1"
 SOURCE_MAIN_SHA = "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1"
 PR = "1521"
 THAW_ID = "THAW-NBA-SPREAD-STEP2-SITE-ACTIVATION-R1"
@@ -89,14 +95,30 @@ def _prepare_thaw(client) -> dict:
         "target_head_sha": CANDIDATE_SHA,
         "files": deepcopy(THAW_FILES),
     }
-    existing = [item for item in current.get("active_thaws", []) if item.get("thaw_id") == THAW_ID]
-    if existing:
-        if existing != [exact_grant]:
+    existing_indexes = [
+        index for index, item in enumerate(current.get("active_thaws", []))
+        if item.get("thaw_id") == THAW_ID
+    ]
+    if len(existing_indexes) > 1:
+        raise NBASpreadStep2AuthorityFailure("NBA_STEP2_DUPLICATE_THAW_ID")
+    if existing_indexes:
+        existing = current["active_thaws"][existing_indexes[0]]
+        if existing == exact_grant:
+            return current
+        if (
+            str(existing.get("target_head_sha") or "") != PRIOR_CANDIDATE_SHA
+            or existing.get("files") != THAW_FILES
+            or existing.get("status") != "ACTIVE"
+        ):
             raise NBASpreadStep2AuthorityFailure("NBA_STEP2_THAW_ID_COLLISION")
-        return current
+        updated = deepcopy(current)
+        updated["active_thaws"][existing_indexes[0]] = exact_grant
+        message = "registry: rebind NBA Spread Step2 thaw to generation 2"
+    else:
+        updated = deepcopy(current)
+        updated["active_thaws"].append(exact_grant)
+        message = "registry: authorize NBA Spread Step2 exact-head thaw"
 
-    updated = deepcopy(current)
-    updated["active_thaws"].append(exact_grant)
     updated["revision"] = int(current["revision"]) + 1
     updated.pop("state_hash", None)
     updated["state_hash"] = registry_hash(_payload_without_hash(updated))
@@ -105,7 +127,7 @@ def _prepare_thaw(client) -> dict:
         REGISTRY_PATH,
         json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
         backend.branch,
-        "registry: authorize NBA Spread Step2 exact-head thaw",
+        message,
         backend._blob_sha,
     )
     readback = backend.read_registry()
@@ -120,8 +142,30 @@ def _prepare_lease(client, registry: dict) -> dict:
     raw = client.content(LEASE_PATH, ref=LEASE_REF)
     state = validate_state(_decode(raw, "NBA_STEP2_SCOPE_LEASE"))
     now = datetime.now(timezone.utc)
+
+    # Release any live generation-1 authority owned by this exact Step-2 workstream
+    # before claiming the generation-2 head. Unrelated holders are preserved.
+    working = state
+    stale_ids = [
+        str(h["lease_id"])
+        for h in working.get("holders", [])
+        if h.get("owner_id") == OWNER_ID
+        and str((h.get("scope") or {}).get("resource_identity", {}).get("candidate_sha") or "") != CANDIDATE_SHA
+    ]
+    for stale_id in stale_ids:
+        released = release_scope(
+            working,
+            owner_id=OWNER_ID,
+            lease_id=stale_id,
+            expected_revision=int(working["revision"]),
+            expected_state_hash=str(working["state_hash"]),
+        )
+        if released["result"].get("allowed") is not True:
+            raise NBASpreadStep2AuthorityFailure("NBA_STEP2_STALE_LEASE_RELEASE_FAILED")
+        working = released["state"]
+
     live = [
-        h for h in state.get("holders", [])
+        h for h in working.get("holders", [])
         if now < datetime.fromisoformat(str(h["expires_at_utc"]).replace("Z", "+00:00"))
     ]
     matches = [
@@ -131,12 +175,13 @@ def _prepare_lease(client, registry: dict) -> dict:
     ]
     if len(matches) > 1:
         raise NBASpreadStep2AuthorityFailure("NBA_STEP2_DUPLICATE_LIVE_LEASE")
-    if matches:
+    if matches and not stale_ids:
         return {
             "lease_id": str(matches[0]["lease_id"]),
-            "lease_revision": int(state["revision"]),
-            "lease_state_hash": str(state["state_hash"]),
+            "lease_revision": int(working["revision"]),
+            "lease_state_hash": str(working["state_hash"]),
             "reused": True,
+            "released_stale_lease_ids": [],
         }
 
     scope = build_scope(
@@ -151,12 +196,12 @@ def _prepare_lease(client, registry: dict) -> dict:
         },
     )
     claimed = claim_scope(
-        state,
+        working,
         owner_id=OWNER_ID,
         now_utc=now.isoformat().replace("+00:00", "Z"),
         scope=scope,
-        expected_revision=int(state["revision"]),
-        expected_state_hash=str(state["state_hash"]),
+        expected_revision=int(working["revision"]),
+        expected_state_hash=str(working["state_hash"]),
         ttl_seconds=900,
         frozen_paths=tuple(validate_registry(registry)["artifacts"].keys()),
         thawed_paths=tuple(THAW_FILES.keys()),
@@ -171,7 +216,7 @@ def _prepare_lease(client, registry: dict) -> dict:
         LEASE_PATH,
         json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
         LEASE_REF,
-        "lease: acquire NBA Spread Step2 exact scope",
+        "lease: rebind NBA Spread Step2 generation 2 exact scope",
         str(raw.get("sha") or ""),
     )
     rb_raw = client.content(LEASE_PATH, ref=LEASE_REF)
@@ -180,11 +225,15 @@ def _prepare_lease(client, registry: dict) -> dict:
     holders = [h for h in readback.get("holders", []) if h.get("lease_id") == lease_id]
     if len(holders) != 1:
         raise NBASpreadStep2AuthorityFailure("NBA_STEP2_SCOPE_LEASE_READBACK_MISMATCH")
+    old_remaining = [h for h in readback.get("holders", []) if str(h.get("lease_id") or "") in stale_ids]
+    if old_remaining:
+        raise NBASpreadStep2AuthorityFailure("NBA_STEP2_STALE_LEASE_STILL_PRESENT")
     return {
         "lease_id": lease_id,
         "lease_revision": int(readback["revision"]),
         "lease_state_hash": str(readback["state_hash"]),
         "reused": False,
+        "released_stale_lease_ids": stale_ids,
     }
 
 
