@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    "devsystem/nba_spread_step3_controlplane_prepare_v1.py": "24c904d327a1e1a9472592b00d9adf872aedc1c2",
+    "devsystem/runless_proof_plans/nba-spread-step3-controlplane-prep-v1.json": "7c3c9b727098aaa1a35ffae98c79a6c5486372ca"
+  },
+  "candidate_sha": "b7e1a0cd9fc912a609b22710e1d5a6bc69e95955",
+  "created_at": "2026-10-12T15:36:12.483243+00:00",
+  "dependency_map": {
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "runless_proof_plane/config.py": "458e33c635daea67937241e0b270fac0f9e101f9",
+    "runless_proof_plane/github_app.py": "f5ec32171b5fc7eb9b15139b4629a1e5c04fd711",
+    "runless_proof_plane/github_client.py": "8ee3f3b1f4e6ef73472e0f66dbb47baa9989ecc9",
+    "runless_proof_plane/registry.py": "cd15acc5e1221d303425933b902d7a2d478b11a9"
+  },
+  "deployment_identity": "95c2eb3c0cbf98d9d8c4c422822c007bcf99c380",
+  "digest": "cb34a6cbf2b716de34f0422ea4ad0cbee8d177f372d6879bbfff7f56a88780b1",
+  "evidence_digests": [
+    "3a9d141e4b8794f343b05340e5f78689e8652f928bab1e34b8bda100a82ce028"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "cb92dbf471cb6cd6c6942ec2b58e3bb213f305f154a93d865d56dfcfb6d79148",
+  "proof_id": "nba-spread-step3-controlplane-prep-v1-b7e1a0cd9fc912a6-d0ba1cdf797a592a",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 294,
+    "state_hash": "2fc86992d03cb6957244bad11003c4243ba311a925afa533bcdeb068dc6c9d58"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 294,
+    "state_hash": "2fc86992d03cb6957244bad11003c4243ba311a925afa533bcdeb068dc6c9d58"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "nba-spread-step3-controlplane-prep-v1",
+  "workstream": "nba-spread-two-page-v1-controlplane-prep"
+}
