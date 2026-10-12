@@ -1,11 +1,43 @@
 {
-  "generation": 382,
-  "holders": [],
+  "generation": 383,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-12T22:25:10Z",
+      "expires_at_utc": "2026-10-12T22:55:10Z",
+      "generation": 383,
+      "heartbeat_at_utc": "2026-10-12T22:25:10Z",
+      "lease_id": "SCOPE-LEASE-B015312CB846FC0BFF1279DE",
+      "owner_id": "chatgpt:api2:nba-spread-step4-most-bet-feature-v1",
+      "scope": {
+        "dependency_tokens": [
+          "workstream:nba-spread-step4-most-bet-feature-v1",
+          "workstream:nba-spread-two-page-v1"
+        ],
+        "exclusive": true,
+        "resource_identity": {
+          "candidate_sha": "dd1ecbbe24299b453aab8dea290061b8613d5e8b",
+          "registry_state_hash": "cd805a3acb3d6c1ab083a753bf943ac7f596950f8995675bc969597af3a09905",
+          "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22"
+        },
+        "shared_resources": [
+          "surface:nba-spread-page1"
+        ],
+        "write_paths": [
+          "devsystem/execution_plans/nba-spread-step4-most-bet-feature-v1.json",
+          "devsystem/runless_proof_plans/nba-spread-step4-most-bet-feature-v1.json",
+          "devsystem/task_ledgers/nba-spread-step4-most-bet-feature-v1.json",
+          "nba_spread_most_bet_v1.py",
+          "nba_spread_page_v1.py",
+          "tests/test_nba_spread_step4_most_bet_v1.py"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 675,
+  "revision": 676,
   "schema_version": 1,
-  "state_hash": "e142ad7aa31a67387912bc1461cd7b03e238fe729b62658d1f669dd0f2478080",
+  "state_hash": "e8207aed70e3c9c5362761e6559696083ef81d73f8edee403bdb950ecaa3ce7c",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
