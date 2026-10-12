@@ -8,6 +8,7 @@ from runless_proof_plane.cfb_step8_terminal_immutable_finalization_v1 import (
     ROUTER_BLOB,
     ROUTER_PATH,
     ImmutableFinalizationFailure,
+    build_terminal_ledger,
     verify_immutable_public_authority,
 )
 
@@ -52,3 +53,33 @@ def test_immutable_public_authority_fails_closed_when_checkpoint_not_frozen():
             _registry(status="THAWED"),
             {ROUTER_PATH: ROUTER_BLOB},
         )
+
+
+def test_terminal_ledger_builder_closes_step8_without_browser_recheck():
+    ledger = {
+        "workstream": "cfb-game-total-native-website-rebuild-v1",
+        "step": "8/8",
+        "status": "STALE",
+        "public_proof": {},
+        "runless": {},
+        "tdd": {},
+        "step2a": {},
+    }
+    receipt = {"digest": "receipt-digest"}
+    public = {
+        "attempt": 0,
+        "immutable_public_authority": {
+            "checkpoint_id": IMMUTABLE_PUBLIC_CHECKPOINT,
+            "source_main_sha": IMMUTABLE_PUBLIC_SOURCE_MAIN_SHA,
+            "router_blob": ROUTER_BLOB,
+        },
+    }
+    result = build_terminal_ledger(ledger, public, receipt)
+    assert result["status"] == "GREEN_PLUS_FROZEN"
+    assert result["green_plus_frozen_claimed"] is True
+    assert result["next_legal_action"] == "NONE_TERMINAL"
+    assert result["public_proof"]["proof_mode"] == "IMMUTABLE_FROZEN_PUBLIC_PROOF_REUSE"
+    assert result["public_proof"]["public_browser_recheck"] is False
+    assert result["runless"]["immutable_public_proof_reused"] is True
+    assert result["runless"]["github_actions_fallback"] == 0
+    assert result["public_proof"]["terminal_receipt_digest"] == "receipt-digest"
