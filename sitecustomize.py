@@ -1,4 +1,4 @@
-"""Guarded one-shot launchers for CFB Runless control actions.
+"""Guarded one-shot launchers for CFB and NBA Runless control actions.
 
 All launchers are inert unless the exact Runless uvicorn service is explicitly
 armed. Triggers are removed from the process environment before worker threads
@@ -19,6 +19,7 @@ MERGED_ENV = "RPP_CFB_STEP4_REPAIR_MERGED_SHA"
 PUBLIC_CLOSEOUT_ENV = "RPP_CFB_STEP4_PUBLIC_REPAIR_CLOSEOUT_ON_START"
 FINAL_SIDE_MARKET_CLOSEOUT_ENV = "RPP_CFB_STEP4_FINAL_SIDE_MARKET_CLOSEOUT_ON_START"
 STEP5_PACE_CLOSEOUT_ENV = "RPP_CFB_STEP5_PACE_POSSESSIONS_CLOSEOUT_ON_START"
+NBA_SPREAD_STEP1_CLOSEOUT_ENV = "RPP_NBA_SPREAD_STEP1_CLOSEOUT_ON_START"
 
 
 def _configure_repair(repair) -> None:
@@ -185,6 +186,32 @@ def _run_step5_pace_closeout() -> None:
         )
 
 
+def _run_nba_spread_step1_closeout() -> None:
+    try:
+        time.sleep(8)
+        from runless_proof_plane.config import Settings
+        from runless_proof_plane.github_app import GithubAppAuth
+        from runless_proof_plane.github_client import GithubClient
+        from runless_proof_plane.nba_spread_step1_closeout import run_and_print
+
+        settings = Settings.from_env()
+        if settings.bootstrap:
+            raise RuntimeError("NBA_SPREAD_STEP1_CLOSEOUT_FULL_RUNLESS_MODE_REQUIRED")
+        client = GithubClient(GithubAppAuth(settings), settings.repository)
+        run_and_print(client)
+    except Exception as exc:
+        packet = {
+            "status": "FAIL",
+            "error": type(exc).__name__,
+            "detail": str(exc)[:700],
+            "traceback": traceback.format_exc(limit=8)[-2600:],
+        }
+        print(
+            "NBA_SPREAD_STEP1_CLOSEOUT=" + json.dumps(packet, sort_keys=True),
+            flush=True,
+        )
+
+
 def _is_exact_uvicorn_service() -> bool:
     argv0 = os.path.basename(sys.argv[0] or "").lower()
     return (
@@ -199,6 +226,7 @@ if _is_exact_uvicorn_service():
     _public_closeout = os.environ.pop(PUBLIC_CLOSEOUT_ENV, "").strip()
     _final_side_market_closeout = os.environ.pop(FINAL_SIDE_MARKET_CLOSEOUT_ENV, "").strip()
     _step5_pace_closeout = os.environ.pop(STEP5_PACE_CLOSEOUT_ENV, "").strip()
+    _nba_spread_step1_closeout = os.environ.pop(NBA_SPREAD_STEP1_CLOSEOUT_ENV, "").strip()
     if _mode:
         threading.Thread(
             target=_run,
@@ -223,4 +251,10 @@ if _is_exact_uvicorn_service():
             target=_run_step5_pace_closeout,
             daemon=True,
             name="cfb-step5-pace-possessions-closeout",
+        ).start()
+    if _nba_spread_step1_closeout == "1":
+        threading.Thread(
+            target=_run_nba_spread_step1_closeout,
+            daemon=True,
+            name="nba-spread-step1-atomic-closeout",
         ).start()
