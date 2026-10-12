@@ -1,7 +1,7 @@
 {
   "mode": "runless",
   "task_id": "api2-registry-step4-controlplane-repair-r1",
-  "workstream": "nba-spread-two-page-v1",
+  "workstream": "nba-spread-step4-controlplane-repair-r1",
   "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
   "commands": [
     ["python", "-m", "pytest", "-q", "tests/test_api2_registry_step4_controlplane_repair_r1.py"],
