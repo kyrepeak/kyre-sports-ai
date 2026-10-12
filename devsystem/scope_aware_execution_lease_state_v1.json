@@ -1,20 +1,21 @@
 {
-  "generation": 381,
+  "generation": 382,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-12T22:17:00Z",
-      "expires_at_utc": "2026-10-12T22:47:00Z",
-      "generation": 381,
-      "heartbeat_at_utc": "2026-10-12T22:17:00Z",
-      "lease_id": "SCOPE-LEASE-BA72FFCE96BB6D2C58E1BDD6",
+      "acquired_at_utc": "2026-10-12T22:21:51Z",
+      "expires_at_utc": "2026-10-12T22:51:51Z",
+      "generation": 382,
+      "heartbeat_at_utc": "2026-10-12T22:21:51Z",
+      "lease_id": "SCOPE-LEASE-90FCB164AEF974C74002CBBA",
       "owner_id": "chatgpt:api2:nba-spread-step4-registry-repair-r1",
       "scope": {
         "dependency_tokens": [
+          "workstream:nba-spread-step4-controlplane-repair-r1",
           "workstream:nba-spread-two-page-v1"
         ],
         "exclusive": true,
         "resource_identity": {
-          "candidate_sha": "4c57311272c26c3f0cdd4162bc5dd0b5d42d1c90",
+          "candidate_sha": "95b127ac5b423c551093241c9af94783d0c2a6c2",
           "registry_state_hash": "ab1cf49c69e6bcdff218c55556f1655eff74fca4b0af367601a36b27338bb32d",
           "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22"
         },
@@ -34,8 +35,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 672,
+  "revision": 674,
   "schema_version": 1,
-  "state_hash": "e3a106e257eeb08da7831875d66bca4b5a968a7a28f6d15e2ab35dd689dc53ee",
+  "state_hash": "d561e2ca397919bf8b13793a76e8f153952479835652877e22f569cd3681b0dc",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
