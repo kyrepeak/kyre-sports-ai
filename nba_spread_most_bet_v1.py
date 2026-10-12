@@ -275,7 +275,6 @@ def parse_action_network_html(html: str) -> list[dict]:
                     "home_bet_pct": bet_pair[1],
                     "away_money_pct": money_pair[0],
                     "home_money_pct": money_pair[1],
-                    "activity_kind": "tracked_bets",
                 }
             )
         if parsed:
