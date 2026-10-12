@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step1-page-isolation-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "1/TBD",
+  "source_main_sha": "d4d5b5d4a0a2f376bf17eb7db0ec39d2a5adaee8",
+  "authoritative_branch": "nba-spread-step1-isolation-r1",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R1",
+  "problem": "The new NBA Spread two-page build needs its own mutation boundary before implementation so it cannot inherit or overwrite state, files, routes, APIs, models, or control-plane authority from the existing NBA Over/Under workstream or any other sport.",
+  "root_cause": "The DevSystem NBA domain is intentionally planned and fail-closed, and its only existing planned-domain bootstrap is scoped to the older NBA Over/Under Step 1. NBA Spread therefore has no authorized exact-path Step-1 bootstrap until this change.",
+  "root_cause_class": "CONTROL_PLANE_UNPROTECTED_NEW_NBA_WORKSTREAM",
+  "patch": "Add a separate exact-path NBA Spread Step-1 bootstrap and a fail-closed isolation guard. Preserve the older NBA Over/Under bootstrap separately; mixed NBA workstream paths remain blocked. Do not activate product runtime, routes, shared APIs, models, sportsbooks, public/sharp feeds, injuries, or other sports.",
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "nba-spread-step1-isolation-r1",
+    "authoritative_pr_max": 1,
+    "active_authoritative_pr": null,
+    "duplicate_async_runs": 0,
+    "blind_retries": 0,
+    "stale_nba_over_under_pr_1398_quarantined": true,
+    "stale_pr_mutated": false,
+    "existing_nba_workstreams_modified": false,
+    "other_sports_modified": false,
+    "shared_router_modified": false,
+    "app_entrypoint_modified": false,
+    "shared_apis_modified": false
+  },
+  "tdd": {
+    "isolation_red_commit": "2244a0911e4be9d7c9ed4dd40875b0c227e4ee83",
+    "isolation_red_result": "NBA Spread Step-1 isolation guard must exist",
+    "isolation_green_commit": "182992d09c9ec0d37cd18e5e22a5ad8c57888abc",
+    "classifier_red_commit": "4f3dfb6f0de2958832616b1a2e23141b8f798b6c",
+    "classifier_red_result": "planned NBA domain remained blocked for the new Spread file set",
+    "classifier_green_commit": "41fba3f480c1de91547139a97fb51d6e2bb8896e",
+    "focused_green_result": "6 passed in 0.05s",
+    "exact_head_runless_result": null
+  },
+  "scope": {
+    "owned_paths": [
+      "devsystem/change_classifier_v1.py",
+      "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json",
+      "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json",
+      "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json",
+      "nba_spread_page_isolation_v1.py",
+      "tests/test_devsystem_change_classifier_v1.py",
+      "tests/test_nba_spread_page_isolation_v1.py"
+    ],
+    "product_runtime_mutations": 0,
+    "route_activation": false,
+    "shared_api_activation": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-NBA-SPREAD-STEP1-PAGE-ISOLATION-V1-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "duplicate_successful_runs": 0,
+    "blind_retries": 0,
+    "proof_id": null,
+    "receipt_digest": null
+  },
+  "acceptance": {
+    "nba_spread_only_contract": true,
+    "existing_nba_workstreams_locked": true,
+    "other_sports_locked": true,
+    "shared_router_locked": true,
+    "app_entrypoint_locked": true,
+    "shared_apis_locked": true,
+    "future_nba_spread_files_require_explicit_scope_expansion": true,
+    "nba_domain_remains_planned": true,
+    "exact_head_runless_green": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP1_PAGE_ISOLATION_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
