@@ -1,0 +1,23 @@
+{
+  "mode": "runless",
+  "task_id": "api2-runless-pandas-read-html-probe-r1",
+  "workstream": "nba-spread-step4-pandas-read-html-probe-r1",
+  "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
+  "commands": [
+    ["python", "-m", "devsystem.api2_runless_pandas_read_html_probe_r1"]
+  ],
+  "artifacts": [
+    "devsystem/api2_runless_pandas_read_html_probe_r1.py",
+    "devsystem/runless_proof_plans/api2-runless-pandas-read-html-probe-r1.json"
+  ],
+  "dependencies": [
+    "requirements.txt"
+  ],
+  "probes": [],
+  "timeout_seconds": 60,
+  "live_ttl_seconds": 300,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_RUNLESS_PANDAS_READ_HTML_PROBE_R1"
+}
