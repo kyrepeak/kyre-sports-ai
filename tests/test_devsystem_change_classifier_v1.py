@@ -61,6 +61,34 @@ def test_nba_step1_bootstrap_scope_is_allowed_while_domain_remains_planned():
     assert result["risk_tier"] == "high"
 
 
+def test_nba_spread_step1_bootstrap_scope_is_allowed_while_domain_remains_planned():
+    module = _load()
+    result = module.classify([
+        "devsystem/change_classifier_v1.py",
+        "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json",
+        "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json",
+        "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json",
+        "nba_spread_page_isolation_v1.py",
+        "tests/test_devsystem_change_classifier_v1.py",
+        "tests/test_nba_spread_page_isolation_v1.py",
+    ])
+    assert result["nba"] is True
+    assert result["core"] is True
+    assert result["unprotected_domains"] == []
+    assert result["risk_tier"] == "high"
+
+
+def test_nba_planned_bootstrap_scopes_cannot_be_mixed_between_workstreams():
+    module = _load()
+    result = module.classify([
+        "nba_page_isolation_v1.py",
+        "nba_spread_page_isolation_v1.py",
+    ])
+    assert result["nba"] is True
+    assert result["unprotected_domains"] == ["nba"]
+    assert result["risk_tier"] == "blocked"
+
+
 def test_future_domains_are_reserved_and_fail_closed():
     module = _load()
     result = module.classify(["nba_model_v1.py", "soccer_moneyline_v1.py"])
