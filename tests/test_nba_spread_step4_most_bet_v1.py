@@ -45,6 +45,20 @@ def _verified_schedule():
     ]
 
 
+def _valid_lakers_rows(count: int = 12500):
+    return [
+        {
+            "away": "Los Angeles Lakers",
+            "home": "Phoenix Suns",
+            "bet_count": count,
+            "away_bet_pct": 67,
+            "home_bet_pct": 33,
+            "away_money_pct": 62,
+            "home_money_pct": 38,
+        }
+    ]
+
+
 def test_parses_action_network_documented_public_table_shape():
     module = _module()
     html = """
@@ -177,6 +191,106 @@ def test_equal_top_volume_is_ambiguous_and_fails_closed_instead_of_guessing():
     feature = module.select_most_bet_game(rows, _verified_schedule())
     assert feature["verification"] == "UNAVAILABLE"
     assert feature["diagnostic_state"] == "AMBIGUOUS_MOST_BET_GAME"
+
+
+def test_multisource_contract_is_explicit_and_never_treats_percentages_as_raw_volume():
+    module = _module()
+    ownership = module.source_ownership_manifest()
+    sources = ownership["betting_volume"]["sources"]
+    assert [source["role"] for source in sources] == ["PRIMARY", "SECONDARY", "TERTIARY"]
+    assert sources[0]["name"] == "Action Network"
+    assert module.REQUIRED_VOLUME_METRIC in sources[0]["capabilities"]
+    assert sources[0]["selection_capable"] is True
+    assert sources[1]["name"] == "SportsDataIO"
+    assert sources[2]["name"] == "VSiN / DraftKings"
+    for source in sources[1:]:
+        assert module.REQUIRED_VOLUME_METRIC not in source["capabilities"]
+        assert source["selection_capable"] is False
+        assert source["incompatibility"] == "ABSOLUTE_GAME_BET_COUNT_NOT_EXPOSED"
+
+
+def test_equivalent_secondary_is_used_when_primary_fails_without_duplicate_work():
+    module = _module()
+    calls = []
+
+    def primary():
+        calls.append("primary")
+        raise RuntimeError("primary unavailable")
+
+    def secondary():
+        calls.append("secondary")
+        return _valid_lakers_rows(13000)
+
+    contracts = (
+        {
+            "role": "PRIMARY",
+            "name": "Primary Count Feed",
+            "url": "https://primary.invalid",
+            "capabilities": (module.REQUIRED_VOLUME_METRIC, "spread_bet_pct", "spread_money_pct"),
+            "selection_capable": True,
+            "incompatibility": None,
+        },
+        {
+            "role": "SECONDARY",
+            "name": "Secondary Count Feed",
+            "url": "https://secondary.invalid",
+            "capabilities": (module.REQUIRED_VOLUME_METRIC, "spread_bet_pct", "spread_money_pct"),
+            "selection_capable": True,
+            "incompatibility": None,
+        },
+        {
+            "role": "TERTIARY",
+            "name": "Split Only Feed",
+            "url": "https://tertiary.invalid",
+            "capabilities": ("spread_bet_pct", "spread_money_pct"),
+            "selection_capable": False,
+            "incompatibility": "ABSOLUTE_GAME_BET_COUNT_NOT_EXPOSED",
+        },
+    )
+    feature = module.load_most_bet_feature(
+        _verified_schedule(),
+        provider_contracts=contracts,
+        provider_fetchers={
+            "Primary Count Feed": primary,
+            "Secondary Count Feed": secondary,
+        },
+    )
+    assert calls == ["primary", "secondary"]
+    assert feature["verification"] == "VERIFIED"
+    assert feature["source"] == "Secondary Count Feed"
+    assert feature["bet_count"] == 13000
+    assert feature["provider_health"]["Primary Count Feed"] == "DEGRADED"
+    assert feature["provider_health"]["Secondary Count Feed"] == "HEALTHY"
+
+
+def test_exhausted_incompatible_fallbacks_degrade_feature_not_page(monkeypatch):
+    module = _module()
+
+    def unavailable(*, timeout_seconds=12.0):
+        del timeout_seconds
+        raise RuntimeError("source unavailable")
+
+    monkeypatch.setattr(module, "fetch_action_network_rows", unavailable)
+    feature = module.load_most_bet_feature(_verified_schedule())
+    assert feature["verification"] == "UNAVAILABLE"
+    assert feature["diagnostic_state"] == "NO_COMPARABLE_VOLUME_FALLBACK"
+    assert feature["page_impact"] == "FEATURE_ONLY"
+    assert feature["provider_health"]["Action Network"] == "DEGRADED"
+    assert feature["provider_health"]["SportsDataIO"] == "NOT_QUERIED_CAPABILITY_MISMATCH"
+    assert feature["provider_health"]["VSiN / DraftKings"] == "NOT_QUERIED_CAPABILITY_MISMATCH"
+    assert feature["consensus_status"] == "FALLBACKS_EXHAUSTED_NO_FALSE_SUBSTITUTION"
+
+
+def test_verified_feature_carries_canonical_ids_and_truthful_provenance():
+    module = _module()
+    feature = module.select_most_bet_game(_valid_lakers_rows(), _verified_schedule())
+    assert feature["verification"] == "VERIFIED"
+    assert feature["kyre_game_id"] == "KYRE:NBA:GAME:LAL@PHX:2026-10-14"
+    assert feature["kyre_away_team_id"] == "KYRE:NBA:TEAM:LAL"
+    assert feature["kyre_home_team_id"] == "KYRE:NBA:TEAM:PHX"
+    assert feature["source_metric"] == module.REQUIRED_VOLUME_METRIC
+    assert feature["source_timestamp_status"] == "NOT_EXPOSED"
+    assert feature["source_observed_at_utc"] == ""
 
 
 def test_step4_keeps_later_decision_layers_disabled():
