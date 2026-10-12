@@ -1,0 +1,25 @@
+{
+  "mode": "runless",
+  "task_id": "nba-spread-step3-schedule-phoenix-v1",
+  "workstream": "nba-spread-two-page-v1",
+  "source_main_sha": "30e803ea943091d07e760d9d4e003e110cbc29ed",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_nba_spread_step3_schedule_phoenix_v1.py"]
+  ],
+  "artifacts": [
+    "devsystem/execution_plans/nba-spread-step3-schedule-phoenix-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step3-schedule-phoenix-v1.json",
+    "tests/test_nba_spread_step3_schedule_phoenix_v1.py"
+  ],
+  "dependencies": [
+    "nba_spread_page_v1.py",
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_FROZEN"
+}
