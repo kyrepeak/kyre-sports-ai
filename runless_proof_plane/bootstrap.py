@@ -22,6 +22,7 @@ from .nba_spread_step2_postmerge_closeout_r3 import install_startup as install_n
 from .nba_spread_step2_static_diagnostic_g3 import install_startup as install_nba_spread_step2_static_diagnostic
 from .nba_spread_step2_static_diagnostic_route_g3 import install as install_nba_spread_step2_static_diagnostic_route
 from .nba_spread_step3_authority_prove import install_startup as install_nba_spread_step3_authority_prove
+from .nba_spread_step3_finalize_startup import install_startup as install_nba_spread_step3_finalize
 
 # CFB Step-8 terminal postmerge rebind is intentionally not installed here.
 # It is terminal, targets an old main SHA, and its unconditional startup thread
@@ -31,3 +32,4 @@ install_nba_spread_step2_postmerge_closeout(app)
 install_nba_spread_step2_static_diagnostic(app)
 install_nba_spread_step2_static_diagnostic_route(app)
 install_nba_spread_step3_authority_prove(app)
+install_nba_spread_step3_finalize(app)
