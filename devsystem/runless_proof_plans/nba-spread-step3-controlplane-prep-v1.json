@@ -1,0 +1,28 @@
+{
+  "mode": "runless",
+  "task_id": "nba-spread-step3-controlplane-prep-v1",
+  "workstream": "nba-spread-two-page-v1-controlplane-prep",
+  "source_main_sha": "30e803ea943091d07e760d9d4e003e110cbc29ed",
+  "commands": [
+    ["python", "-m", "devsystem.nba_spread_step3_controlplane_prepare_v1"]
+  ],
+  "artifacts": [
+    "devsystem/nba_spread_step3_controlplane_prepare_v1.py",
+    "devsystem/runless_proof_plans/nba-spread-step3-controlplane-prep-v1.json"
+  ],
+  "dependencies": [
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/scope_aware_execution_lease_v1.py",
+    "runless_proof_plane/config.py",
+    "runless_proof_plane/github_app.py",
+    "runless_proof_plane/github_client.py",
+    "runless_proof_plane/registry.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 180,
+  "live_ttl_seconds": 300,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP3_CONTROLPLANE_PREP_EPHEMERAL"
+}
