@@ -6,7 +6,7 @@
   "step": "2/TBD",
   "source_main_sha": "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1",
   "authoritative_branch": "nba-spread-step2-site-activation-r1",
-  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R2",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS_R3",
   "problem": "The canonical Step-1 NBA Spread foundation is frozen, but production still exposes only MLB, WNBA, NFL and College Football because the shared website entrypoint does not yet activate an NBA route.",
   "root_cause": "The root memory-safe shell predates NBA and hard-codes MLB/WNBA/NFL while College Football is added by frozen additive wrappers. NBA needs its own additive wrapper above the current production owner plus an active protected DevSystem lane.",
   "root_cause_class": "NBA_PRODUCTION_ROUTE_NOT_ACTIVATED",
@@ -36,9 +36,9 @@
     "manifest_activation_green_commit": "931a6764d75550e367ecb01728af48ab24eb82f8",
     "classifier_compatibility_commit": "e72c3a2a10b8fd3351d1b3d1661292b596aa7051",
     "runless_command_policy_red_commit": "07ceda318a40babf8bda4dc5ac69c330fd23b532",
-    "runless_command_policy_red_result": "RUNLESS_COMMAND_REJECTED for direct classifier script invocation",
     "runless_command_policy_green_commit": "43cf320949679e50aaa3a5fc0cc268f4b445289f",
-    "runless_command_policy_green_result": "python -m devsystem.change_classifier_v1 accepted by Runless validator",
+    "runless_test_loader_green_commit": "422c704f59035c10540ca9c131410a4c8f58091e",
+    "runless_test_loader_root_cause": "dynamic dataclass module was executed before registration in sys.modules",
     "exact_head_runless_result": null
   },
   "scope": {
@@ -48,13 +48,10 @@
     "model_activation": false,
     "shared_api_activation": false,
     "sportsbook_projection_influence": 0.0,
-    "frozen_mutation_paths": [
-      "app.py",
-      "tests/test_devsystem_change_classifier_v1.py"
-    ]
+    "frozen_mutation_paths": ["app.py", "tests/test_devsystem_change_classifier_v1.py"]
   },
   "runless": {
-    "proof_generation": 2,
+    "proof_generation": 3,
     "authorization_id": "AUTH-NBA-SPREAD-STEP2-SITE-ACTIVATION-V1-R1",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
@@ -67,6 +64,15 @@
       "result": "RUNLESS_COMMAND_REJECTED",
       "failure_class": "CONTROL_PLANE_COMMAND_POLICY",
       "product_tests_executed": false,
+      "blind_retry_performed": false
+    },
+    "generation_2": {
+      "candidate_sha": "21c31d5971c74ce1ff0ca0a22c2adffc6467d1c7",
+      "http_status": 200,
+      "proof_id": "nba-spread-step2-site-activation-v1-21c31d5971c74ce1-708d22d5800a6a71",
+      "result": "FAILED",
+      "failure_class": "STATIC_PROOF",
+      "root_cause": "Step-2 regression test loader failed before command-policy assertion because postponed-annotation dataclass module was not registered in sys.modules",
       "blind_retry_performed": false
     }
   },
@@ -90,7 +96,7 @@
     "public_production_verified": false,
     "frozen_verified": false
   },
-  "next_legal_action": "REBIND_EXACT_THAW_AND_SCOPE_LEASE_TO_GENERATION_2_HEAD_THEN_SUBMIT_ONE_NEW_EXACT_HEAD_RUNLESS_PROOF",
+  "next_legal_action": "REBIND_EXACT_THAW_AND_SCOPE_LEASE_TO_GENERATION_3_HEAD_THEN_SUBMIT_ONE_NEW_EXACT_HEAD_RUNLESS_PROOF",
   "freeze_token": "NBA_SPREAD_STEP2_SITE_ACTIVATION_FROZEN",
   "green_plus_frozen_claimed": false,
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
