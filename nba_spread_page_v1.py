@@ -73,7 +73,10 @@ def _render_game_group(title: str, games: list[dict], empty_text: str) -> None:
 
 
 def render_nba_spread_page() -> None:
+    # Preserve the Step-2 route-activation heartbeat as a compatibility marker
+    # while Step 3 adds its own exact schedule heartbeat.
     st.markdown(
+        f'<div data-testid="nba-spread-step2-active" style="display:none!important"></div>'
         f'<div data-testid="nba-spread-step3-schedule-active" '
         f'data-heartbeat="{PAGE_HEARTBEAT}" style="display:none!important"></div>',
         unsafe_allow_html=True,
