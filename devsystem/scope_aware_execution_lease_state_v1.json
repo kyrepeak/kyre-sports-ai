@@ -1,12 +1,12 @@
 {
-  "generation": 371,
+  "generation": 372,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-12T02:12:45Z",
-      "expires_at_utc": "2026-10-12T02:27:45Z",
-      "generation": 371,
-      "heartbeat_at_utc": "2026-10-12T02:12:45Z",
-      "lease_id": "SCOPE-LEASE-7AC55DB03445F146BE4DD384",
+      "acquired_at_utc": "2026-10-12T02:19:44Z",
+      "expires_at_utc": "2026-10-12T02:34:44Z",
+      "generation": 372,
+      "heartbeat_at_utc": "2026-10-12T02:19:44Z",
+      "lease_id": "SCOPE-LEASE-AEB587D7F28F6786804C04DA",
       "owner_id": "chatgpt:api2:nba-spread-step2-site-activation-v1",
       "scope": {
         "dependency_tokens": [
@@ -14,9 +14,9 @@
         ],
         "exclusive": false,
         "resource_identity": {
-          "candidate_sha": "19c366d03e8f2196ff277eb17e9abb496fcb64c1",
+          "candidate_sha": "21c31d5971c74ce1ff0ca0a22c2adffc6467d1c7",
           "pr": "1521",
-          "registry_state_hash": "9fa7e800dcc0ff223dd82a76a73d6c341f5a71db8dff17b84121b3e41b30dc92",
+          "registry_state_hash": "1e0cfde765b6d6514c9039a9b0875f87d9570f51c05b4103f22dff363041341b",
           "source_main_sha": "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1"
         },
         "shared_resources": [
@@ -40,8 +40,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 653,
+  "revision": 655,
   "schema_version": 1,
-  "state_hash": "3f47ebf1ac05ec52057c40434f1b4654a06e027db99cafd7dab8911551177efe",
+  "state_hash": "a34801867eee5dcae2a18506dc4a15fc669d928a8274ac4fa4d934e004d6ee7d",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
