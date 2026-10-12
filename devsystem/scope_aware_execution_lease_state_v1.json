@@ -1,11 +1,42 @@
 {
-  "generation": 388,
-  "holders": [],
+  "generation": 389,
+  "holders": [
+    {
+      "owner_id": "chatgpt:api2:nba-spread-step4-most-bet-feature-v1",
+      "lease_id": "SCOPE-LEASE-B0D6D526922BD7D414128A2D",
+      "generation": 389,
+      "acquired_at_utc": "2026-10-12T22:46:00Z",
+      "heartbeat_at_utc": "2026-10-12T22:46:00Z",
+      "expires_at_utc": "2026-10-12T23:16:00Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/execution_plans/nba-spread-step4-most-bet-feature-v1.json",
+          "devsystem/runless_proof_plans/nba-spread-step4-most-bet-feature-v1.json",
+          "devsystem/task_ledgers/nba-spread-step4-most-bet-feature-v1.json",
+          "nba_spread_most_bet_v1.py",
+          "nba_spread_page_v1.py",
+          "tests/test_nba_spread_step4_most_bet_v1.py"
+        ],
+        "dependency_tokens": [
+          "workstream:nba-spread-step4-most-bet-feature-v1"
+        ],
+        "shared_resources": [
+          "surface:nba-spread-page1"
+        ],
+        "resource_identity": {
+          "candidate_sha": "cc9bbaaebdcda522965456beafbe4dedc3ed66e5",
+          "registry_state_hash": "855f9e2950252812f235033dc53af5b0c80a94cf378a2f30753e6ac7d1354d54",
+          "source_main_sha": "38954c48c35534428cdd09442ba28a58cd8536bd"
+        },
+        "exclusive": true
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 687,
+  "revision": 688,
   "schema_version": 1,
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
-  "state_hash": "54ac1b29167463174e67022d03f5a4d7f8726e286909c8e00df07e2f020a89dd"
+  "state_hash": "9e2469084dae7958515bd80ef4b6df4e01f9459906d9f10866589f7fe5450096"
 }
