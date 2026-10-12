@@ -17,7 +17,9 @@ from .api import app
 from .cfb_step8_terminal_postmerge_registry_rebind_v1 import install_startup
 from .nba_spread_step2_authority_prep_g3 import install_startup as install_nba_spread_step2_authority_prep
 from .nba_spread_step2_static_diagnostic_g3 import install_startup as install_nba_spread_step2_static_diagnostic
+from .nba_spread_step2_static_diagnostic_route_g3 import install as install_nba_spread_step2_static_diagnostic_route
 
 install_startup(app)
 install_nba_spread_step2_authority_prep(app)
 install_nba_spread_step2_static_diagnostic(app)
+install_nba_spread_step2_static_diagnostic_route(app)
