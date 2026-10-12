@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step4-most-bet-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "4/TBD",
+  "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
+  "authoritative_branch": "nba-spread-step4-most-bet-r1",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "status": "IN_PROGRESS",
+  "problem": "NBA Spread Page 1 has the verified Step-3 schedule but no truthful featured Most Bet Game card.",
+  "root_cause": "Step 3 intentionally deferred market-popularity data. Step 4 needs one independently sourced bet-volume layer that binds back to the verified schedule before rendering.",
+  "root_cause_class": "MOST_BET_FEATURE_NOT_IMPLEMENTED",
+  "patch": "Read Action Network NBA spread rows, select the highest tracked bet count, require valid bet/money split pairs, bind exactly one verified Step-3 matchup, and render one Phoenix-time featured card.",
+  "step2a": {
+    "one_active_problem": true,
+    "one_authoritative_proof_chain": true,
+    "duplicate_async_runs": 0,
+    "blind_retries": 0,
+    "active_authoritative_pr": null,
+    "github_actions_fallback": 0,
+    "product_rebuild": false,
+    "step3_reopened": false
+  },
+  "development_tdd": {
+    "red_result": "ModuleNotFoundError:nba_spread_most_bet_v1",
+    "red_expected_reason_verified": true,
+    "green_result": "5 passed",
+    "local_green_verified": true
+  },
+  "runless": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "candidate_sha": null,
+    "proof_id": null,
+    "receipt_digest": null,
+    "conclusion": null
+  },
+  "acceptance": {
+    "highest_tracked_bet_count_selected": true,
+    "verified_schedule_binding_required": true,
+    "phoenix_time_preserved": true,
+    "missing_data_fails_closed": true,
+    "step3_markers_preserved": true,
+    "step5_plus_layers_deferred": true,
+    "exact_head_runless_green": false,
+    "merged_main_verified": false,
+    "public_production_verified": false,
+    "frozen_verified": false
+  },
+  "next_legal_action": "OBTAIN_EXACT_STEP4_THAW_AND_SCOPE_LEASE_THEN_SUBMIT_ONE_EXACT_HEAD_RUNLESS_PROOF",
+  "freeze_token": "NBA_SPREAD_STEP4_MOST_BET_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}

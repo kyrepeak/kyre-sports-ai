@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step4-most-bet-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "4/TBD",
+  "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
+  "goal": "Add one fail-closed Most Bet Game featured card to NBA Spread Page 1 using Action Network tracked NBA spread bet counts matched back to the verified Step-3 Phoenix schedule, without activating later sharp-money, injury, projection, probability, edge, or ranking layers.",
+  "write_paths": [
+    "devsystem/execution_plans/nba-spread-step4-most-bet-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step4-most-bet-v1.json",
+    "devsystem/task_ledgers/nba-spread-step4-most-bet-v1.json",
+    "nba_spread_most_bet_v1.py",
+    "nba_spread_page_v1.py",
+    "tests/test_nba_spread_step4_most_bet_v1.py"
+  ],
+  "protected_dependencies": [
+    "nba_spread_schedule_v1.py",
+    "nba_spread_step2_activation_v1.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_step3_schedule_phoenix_v1.py",
+    "tests/test_nba_spread_step2_site_activation_v1.py",
+    "app.py"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "nba-spread-step4-most-bet-r1",
+    "authoritative_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "github_actions_fallback": 0,
+    "step3_may_be_reopened": false,
+    "other_sports_may_be_modified": false,
+    "existing_nba_workstreams_may_be_modified": false,
+    "app_entrypoint_may_be_modified": false
+  },
+  "data_scope": {
+    "source": "Action Network NBA public betting",
+    "source_url": "https://www.actionnetwork.com/nba/public-betting",
+    "market": "spread",
+    "ranking_key": "tracked_bets",
+    "match_identity": "away_tricode+home_tricode bound to verified Step-3 schedule",
+    "missing_source_policy": "FAIL_CLOSED",
+    "unbound_highest_volume_policy": "FAIL_CLOSED",
+    "missing_split_policy": "FAIL_CLOSED",
+    "timezone": "America/Phoenix"
+  },
+  "sharp_money_activation": false,
+  "injury_activation": false,
+  "model_activation": false,
+  "projection_activation": false,
+  "probability_activation": false,
+  "edge_activation": false,
+  "ranking_activation": false,
+  "sportsbook_projection_influence": 0.0,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP4_MOST_BET_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
