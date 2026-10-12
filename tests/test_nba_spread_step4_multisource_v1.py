@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import requests
 
 import nba_spread_most_bet_v1 as step4
+
+
+PAGE_PATH = Path("nba_spread_page_v1.py")
 
 
 def _schedule():
@@ -133,3 +138,11 @@ def test_chain_exhaustion_fails_closed_without_manufacturing_data():
         "VSiN Betting Splits": "DEGRADED",
     }
     assert "bet_count" not in feature
+
+
+def test_page_does_not_fabricate_missing_fallback_money_percentages():
+    page = PAGE_PATH.read_text(encoding="utf-8")
+    assert 'feature.get("source")' in page
+    assert 'feature.get("activity_label")' in page
+    assert "Unavailable from source" in page
+    assert "🔥 Most Bet Game" in page
