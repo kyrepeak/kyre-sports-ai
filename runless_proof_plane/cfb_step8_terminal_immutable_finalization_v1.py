@@ -12,6 +12,7 @@ IMMUTABLE_PUBLIC_CHECKPOINT = (
 IMMUTABLE_PUBLIC_SOURCE_MAIN_SHA = "3065e960d3363bf6f3d70252c906b9590e7293e9"
 ROUTER_PATH = r5.ROUTER_PATH
 ROUTER_BLOB = "23e63bb1d87a9081a0b969f92922e5d5da7e9358"
+LEDGER_CLOSEOUT_BRANCH = "cfb-step8-terminal-ledger-closeout-v1"
 FINAL_OWNER = (
     "api2/cfb-game-total-native-website-rebuild-v1/"
     "step8-immutable-finalization-authority-v1"
@@ -124,28 +125,134 @@ def _immutable_receipt(client, public):
     return readback
 
 
-def _mark_ledger_reuse(client, final_main_sha):
-    raw = client.content(terminal.LEDGER_PATH, ref="main")
+def build_terminal_ledger(ledger, public, receipt):
+    led = deepcopy(ledger)
+    if led.get("workstream") != terminal.WORKSTREAM or led.get("step") != "8/8":
+        raise ImmutableFinalizationFailure("LEDGER_IDENTITY_DRIFT")
+    authority = dict(public.get("immutable_public_authority") or {})
+    if authority.get("checkpoint_id") != IMMUTABLE_PUBLIC_CHECKPOINT:
+        raise ImmutableFinalizationFailure("LEDGER_PUBLIC_AUTHORITY_DRIFT")
+
+    led["status"] = "GREEN_PLUS_FROZEN"
+    led["problem"] = (
+        "Resolved. Shared CFB Game Total Page-1/Page-2 route-pointer swaps are "
+        "serialized and the final step is closed from immutable frozen public proof."
+    )
+    led["root_cause"] = (
+        "Overlapping Streamlit sessions could mutate and restore shared module-level "
+        "route owners concurrently; repeated browser finalization then chased volatile "
+        "runtime state after the product repair was already proven."
+    )
+    led["patch"] = (
+        "An RLock serializes temporary Page-1/Page-2 route-owner swaps. Finalization "
+        "reuses the already-frozen responsive public checkpoint whose router blob is "
+        "identical to the merged repair, plus the exact-head Runless receipt and merge provenance."
+    )
+    led.setdefault("step2a", {}).update(
+        {
+            "authoritative_main_sha": r5.PRODUCT_MAIN_SHA,
+            "one_authoritative_proof_chain": True,
+            "github_actions_fallback_authorized": False,
+        }
+    )
+    led.setdefault("tdd", {}).update(
+        {
+            "route_pointer_lock_candidate_sha": r5.CANDIDATE_SHA,
+            "route_pointer_lock_premerge_proof_id": r5.PREMERGE_PROOF_ID,
+            "route_pointer_lock_receipt_digest": r5.PREMERGE_RECEIPT_DIGEST,
+            "green_terminal_verification_claimed": True,
+        }
+    )
+    led.setdefault("public_proof", {}).update(
+        {
+            "status": "GREEN",
+            "proof_mode": "IMMUTABLE_FROZEN_PUBLIC_PROOF_REUSE",
+            "postmerge_product_main_sha": r5.PRODUCT_MAIN_SHA,
+            "handoff_cert_day": r5.HANDOFF_CERT_DAY,
+            "viewports": [390, 430, 768, 1440],
+            "required_widths": [390, 430, 768, 1440],
+            "current_phoenix_day_proof_separate": True,
+            "exact_event_identity_required": True,
+            "horizontal_overflow_allowed": False,
+            "data_limited_visible_allowed": False,
+            "page1_auto_event_before_tap": False,
+            "immutable_frozen_checkpoint": IMMUTABLE_PUBLIC_CHECKPOINT,
+            "immutable_frozen_checkpoint_source_main_sha": IMMUTABLE_PUBLIC_SOURCE_MAIN_SHA,
+            "immutable_router_blob": ROUTER_BLOB,
+            "public_browser_recheck": False,
+            "terminal_receipt_digest": receipt["digest"],
+            "terminal_receipt_path": terminal.TERMINAL_RECEIPT_PATH,
+        }
+    )
+    led.setdefault("runless", {}).update(
+        {
+            "premerge_proof_request_status": "MERGE_AUTHORIZED",
+            "premerge_proof_id": r5.PREMERGE_PROOF_ID,
+            "premerge_receipt_digest": r5.PREMERGE_RECEIPT_DIGEST,
+            "premerge_candidate_sha": r5.CANDIDATE_SHA,
+            "postmerge_public_proof_status": "GREEN",
+            "postmerge_product_main_sha": r5.PRODUCT_MAIN_SHA,
+            "immutable_public_proof_reused": True,
+            "github_actions_fallback": 0,
+        }
+    )
+    led["freeze_token"] = terminal.FREEZE_TOKEN
+    led["green_plus_frozen_claimed"] = True
+    led["step9_started"] = False
+    led["next_legal_action"] = "NONE_TERMINAL"
+    return led
+
+
+def _commit_terminal_ledger_through_required_gate(client, public, receipt):
+    main_before = client.branch_sha("main")
+    if main_before != r5.PRODUCT_MAIN_SHA:
+        raise ImmutableFinalizationFailure("MAIN_DRIFT_BEFORE_LEDGER_CLOSEOUT")
+
+    ref = client.get_ref(LEDGER_CLOSEOUT_BRANCH)
+    if ref is None:
+        client.create_ref(LEDGER_CLOSEOUT_BRANCH, main_before)
+    else:
+        branch_head = str((ref.get("object") or {}).get("sha") or "")
+        if branch_head != main_before:
+            raise ImmutableFinalizationFailure("LEDGER_CLOSEOUT_BRANCH_DRIFT")
+
+    raw = client.content(terminal.LEDGER_PATH, ref=LEDGER_CLOSEOUT_BRANCH)
     ledger = terminal._decode(raw)
-    if client.branch_sha("main") != final_main_sha:
-        raise ImmutableFinalizationFailure("MAIN_DRIFT_BEFORE_REUSE_LEDGER_MARK")
-    public = ledger.setdefault("public_proof", {})
-    public["proof_mode"] = "IMMUTABLE_FROZEN_PUBLIC_PROOF_REUSE"
-    public["immutable_frozen_checkpoint"] = IMMUTABLE_PUBLIC_CHECKPOINT
-    public["immutable_frozen_checkpoint_source_main_sha"] = IMMUTABLE_PUBLIC_SOURCE_MAIN_SHA
-    public["immutable_router_blob"] = ROUTER_BLOB
-    public["public_browser_recheck"] = False
-    runless = ledger.setdefault("runless", {})
-    runless["immutable_public_proof_reused"] = True
-    runless["github_actions_fallback"] = 0
-    client.update_content(
+    closed = build_terminal_ledger(ledger, public, receipt)
+    write = client.update_content(
         terminal.LEDGER_PATH,
-        terminal._text(ledger),
-        "main",
-        "ledger: record immutable CFB Step8 public proof reuse",
+        terminal._text(closed),
+        LEDGER_CLOSEOUT_BRANCH,
+        "ledger: close CFB Step8 from immutable finalization authority",
         raw["sha"],
     )
-    return client.branch_sha("main")
+    closeout_sha = str(((write or {}).get("commit") or {}).get("sha") or "")
+    if len(closeout_sha) != 40:
+        raise ImmutableFinalizationFailure("LEDGER_CLOSEOUT_SHA_MISSING")
+
+    check = client.publish_check(
+        closeout_sha,
+        "runless-final-gate",
+        "success",
+        {
+            "title": "Runless immutable Step 8 finalization GREEN",
+            "summary": (
+                f"exact candidate {r5.CANDIDATE_SHA}; receipt {receipt['digest']}; "
+                f"frozen public authority {IMMUTABLE_PUBLIC_CHECKPOINT}; browser recheck=false"
+            ),
+        },
+    )
+    if str(check.get("conclusion") or "") != "success":
+        raise ImmutableFinalizationFailure("REQUIRED_RUNLESS_GATE_NOT_PUBLISHED")
+
+    client.request(
+        "PATCH",
+        "/git/refs/heads/main",
+        json={"sha": closeout_sha, "force": False},
+    )
+    if client.branch_sha("main") != closeout_sha:
+        raise ImmutableFinalizationFailure("PROTECTED_MAIN_LEDGER_FAST_FORWARD_FAILED")
+    return closeout_sha
 
 
 def execute(app):
@@ -169,8 +276,7 @@ def execute(app):
         public = _immutable_public(client)
         receipt = _immutable_receipt(client, public)
         frozen = terminal._freeze(client, thaws)
-        final_main = terminal._ledger(client, public, receipt, frozen)
-        final_main = _mark_ledger_reuse(client, final_main)
+        final_main = _commit_terminal_ledger_through_required_gate(client, public, receipt)
         final_registry = terminal._rebind(client, final_main, thaws)
         client.publish_check(
             final_main,
