@@ -45,6 +45,35 @@ def _verified_schedule():
     ]
 
 
+def test_parses_action_network_documented_public_table_shape():
+    module = _module()
+    html = """
+    <table>
+      <thead><tr>
+        <th>Scheduled</th><th>Open</th><th>Best Odds</th><th>% of Bets</th>
+        <th>% of Money</th><th>Diff</th><th>Bets</th>
+      </tr></thead>
+      <tbody><tr>
+        <td>7:00 PM Lakers LAL 1 Suns PHX 2</td><td>-1.5 +1.5</td><td>-2.5 -110 +2.5 -110</td>
+        <td>67%33%</td><td>62%38%</td><td>+5%</td><td>12,500</td>
+      </tr></tbody>
+    </table>
+    """
+    assert module.parse_action_network_html(html) == [
+        {
+            "away": "Los Angeles Lakers",
+            "home": "Phoenix Suns",
+            "away_tricode": "LAL",
+            "home_tricode": "PHX",
+            "bet_count": 12500,
+            "away_bet_pct": 67,
+            "home_bet_pct": 33,
+            "away_money_pct": 62,
+            "home_money_pct": 38,
+        }
+    ]
+
+
 def test_selects_highest_tracked_bet_count_only_from_verified_upcoming_schedule():
     module = _module()
     rows = [
