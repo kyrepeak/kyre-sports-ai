@@ -6,7 +6,7 @@
   "step": "4/TBD",
   "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
   "authoritative_branch": "nba-spread-step4-most-bet-feature-r1",
-  "state": "TDD_RED_READY",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
   "status": "IN_PROGRESS",
   "problem": "NBA Spread Page 1 has a certified Phoenix schedule but no certified betting-volume layer, so it cannot truthfully identify the Most Bet Game.",
   "root_cause": "Step 3 intentionally deferred betting-market data. Step 4 needs an independent public betting-volume source reconciled to the frozen schedule identity.",
@@ -21,19 +21,26 @@
     "blind_retries": 0,
     "github_actions_fallback": 0,
     "step3_reopened": false,
-    "product_rebuild": false
+    "step3_product_mutated": false,
+    "browser_reruns": 0,
+    "render_rebuild_attempts": 0
   },
   "tdd": {
-    "phase": "RED",
+    "phase": "GREEN_CANDIDATE_READY",
     "test_file": "tests/test_nba_spread_step4_most_bet_v1.py",
-    "expected_failure": "nba_spread_most_bet_v1.py is not implemented",
-    "red_verified": false,
+    "red_verified": true,
+    "red_expected_reason": "nba_spread_most_bet_v1.py did not exist before implementation",
+    "parser_regression_test_added": true,
+    "parser_regression_fixed": true,
     "green_verified": false
   },
   "scope": {
     "betting_volume_source": "Action Network NBA public betting",
     "timezone": "America/Phoenix",
     "most_bet_definition": "highest tracked spread bet count among Step-3 verified UPCOMING/DELAYED games",
+    "identity_policy": "EXACT_VERIFIED_SCHEDULE_MATCH_REQUIRED",
+    "invalid_split_policy": "FAIL_CLOSED",
+    "ambiguous_top_volume_policy": "FAIL_CLOSED",
     "sharp_money_activation": false,
     "injury_activation": false,
     "model_activation": false,
@@ -48,16 +55,17 @@
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
     "proof_id": null,
-    "receipt_digest": null
+    "receipt_digest": null,
+    "public_source_probe": "https://www.actionnetwork.com/nba/public-betting"
   },
   "acceptance": {
-    "verified_schedule_identity_preserved": false,
-    "highest_tracked_bet_volume_selected": false,
-    "phoenix_tip_time_preserved": false,
-    "invalid_split_fail_closed": false,
-    "unmatched_identity_fail_closed": false,
-    "ambiguous_top_volume_fail_closed": false,
-    "later_layers_deferred": false,
+    "verified_schedule_identity_preserved": true,
+    "highest_tracked_bet_volume_selected": true,
+    "phoenix_tip_time_preserved": true,
+    "invalid_split_fail_closed": true,
+    "unmatched_identity_fail_closed": true,
+    "ambiguous_top_volume_fail_closed": true,
+    "later_layers_deferred": true,
     "exact_head_runless_green": false,
     "merged_main_verified": false,
     "public_production_verified": false,
@@ -66,6 +74,6 @@
   "freeze_token": "NBA_SPREAD_STEP4_MOST_BET_FEATURE_FROZEN",
   "thaw_token": "THAW-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "VERIFY_TDD_RED_THEN_IMPLEMENT_MINIMAL_GREEN",
+  "next_legal_action": "BIND_EXACT_THAW_AND_SCOPE_LEASE_THEN_SUBMIT_ONE_EXACT_HEAD_RUNLESS_PROOF",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
