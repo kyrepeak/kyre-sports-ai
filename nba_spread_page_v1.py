@@ -1,24 +1,83 @@
-"""NBA Spread Page 1 — Step 2 reachable production shell.
+"""NBA Spread Page 1 — Step 3 verified schedule foundation.
 
-This step activates only the website surface. Data sourcing, schedule assembly,
-market consensus, injuries, model projection, cover probability and ranking are
-owned by later certified steps.
+Step 3 renders only canonical matchup identity, Phoenix-local tip time and game
+state from the fail-closed two-source schedule engine. Betting, injury and
+decision layers remain owned by later certified steps.
 """
 from __future__ import annotations
 
+from html import escape
+
 import streamlit as st
 
-MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP2_SITE_ACTIVATION"
-PAGE_HEARTBEAT = "NBA_SPREAD_STEP2_SITE_ACTIVATION_ACTIVE"
+from nba_spread_schedule_v1 import load_verified_nba_schedule
+
+MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP3_SCHEDULE_PHOENIX"
+PAGE_HEARTBEAT = "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_ACTIVE"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_MODEL = False
 MAY_MODIFY_PROJECTION = False
 MAY_MODIFY_PROBABILITY = False
 
 
-def render_nba_spread_page() -> None:
+@st.cache_data(ttl=90, show_spinner=False)
+def _load_verified_schedule() -> dict:
+    return load_verified_nba_schedule()
+
+
+def _game_card(game: dict) -> str:
+    away = escape(str(game.get("away_tricode") or "—"))
+    home = escape(str(game.get("home_tricode") or "—"))
+    away_name = escape(str(game.get("away_name") or away))
+    home_name = escape(str(game.get("home_name") or home))
+    tip = escape(str(game.get("tip_phoenix") or "Time unavailable"))
+    date = escape(str(game.get("game_date_phoenix") or "Date unavailable"))
+    status = escape(str(game.get("status") or "UPCOMING"))
+    venue = escape(str(game.get("venue") or ""))
+    venue_line = f'<div style="font-size:.72rem;color:#70849a;margin-top:5px">{venue}</div>' if venue else ""
+    return f"""
+<div data-testid="nba-spread-step3-game-card" style="border:1px solid rgba(103,216,255,.18);border-radius:18px;
+background:linear-gradient(145deg,#0a121e,#0e1b2b);padding:15px 16px;margin:0 0 10px">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+    <div>
+      <div style="font-size:.7rem;font-weight:900;letter-spacing:.1em;color:#67d8ff">{status}</div>
+      <div style="font-size:1rem;font-weight:900;color:#f8fafc;margin-top:4px">{away} @ {home}</div>
+      <div style="font-size:.76rem;color:#91a4b8;margin-top:3px">{away_name} at {home_name}</div>
+      {venue_line}
+    </div>
+    <div style="text-align:right;white-space:nowrap">
+      <div style="font-size:.88rem;font-weight:900;color:#f8fafc">{tip}</div>
+      <div style="font-size:.7rem;color:#7f93a8;margin-top:3px">{date} • Phoenix</div>
+    </div>
+  </div>
+  <div style="font-size:.68rem;color:#688197;margin-top:10px">Verified: NBA Official + ESPN NBA</div>
+</div>
+"""
+
+
+def _render_game_group(title: str, games: list[dict], empty_text: str) -> None:
     st.markdown(
-        f'<div data-testid="nba-spread-step2-active" '
+        f'<div style="font-size:.78rem;font-weight:950;letter-spacing:.08em;text-transform:uppercase;'
+        f'color:#cbd5e1;margin:18px 0 9px">{escape(title)}</div>',
+        unsafe_allow_html=True,
+    )
+    if not games:
+        st.markdown(
+            f'<div style="border:1px dashed rgba(148,163,184,.18);border-radius:15px;padding:13px 15px;'
+            f'color:#7f93a8;font-size:.78rem">{escape(empty_text)}</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    for game in games:
+        st.markdown(_game_card(game), unsafe_allow_html=True)
+
+
+def render_nba_spread_page() -> None:
+    # Preserve the Step-2 route-activation heartbeat as a compatibility marker
+    # while Step 3 adds its own exact schedule heartbeat.
+    st.markdown(
+        f'<div data-testid="nba-spread-step2-active" style="display:none!important"></div>'
+        f'<div data-testid="nba-spread-step3-schedule-active" '
         f'data-heartbeat="{PAGE_HEARTBEAT}" style="display:none!important"></div>',
         unsafe_allow_html=True,
     )
@@ -33,23 +92,50 @@ background:linear-gradient(135deg,rgba(8,13,22,.98),rgba(15,36,60,.96));margin:8
     🏀 NBA Spread
   </div>
   <div style="font-size:.88rem;color:#a9b8c8;margin-top:7px">
-    Phoenix, Arizona time • two-page spread intelligence experience
+    Rolling 7-day schedule • Phoenix, Arizona time
   </div>
 </div>
 """,
         unsafe_allow_html=True,
     )
+
+    schedule = _load_verified_schedule()
+    if schedule.get("verification") != "VERIFIED":
+        diagnostic = escape(str(schedule.get("diagnostic_state") or "SOURCE_UNAVAILABLE"))
+        st.markdown(
+            f"""
+<div data-testid="nba-spread-step3-schedule-unavailable" style="border:1px solid rgba(248,113,113,.28);
+border-radius:18px;padding:16px 18px;background:#160e14">
+  <div style="font-weight:900;color:#fecaca">Schedule verification unavailable</div>
+  <div style="font-size:.78rem;color:#b9a1aa;margin-top:5px">
+    NBA Official and ESPN NBA must agree before this page publishes a slate. Nothing is guessed.
+  </div>
+  <div style="font-size:.68rem;color:#846b75;margin-top:8px">{diagnostic}</div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        return
+
+    games = list(schedule.get("games") or [])
+    upcoming = [game for game in games if game.get("status") in {"UPCOMING", "DELAYED"}]
+    live_final = [game for game in games if game.get("status") in {"LIVE", "FINAL", "CANCELLED"}]
+
+    window = list(schedule.get("window_dates") or [])
+    window_text = " → ".join((window[0], window[-1])) if window else "Rolling Phoenix window"
     st.markdown(
-        """
-<div style="border:1px solid rgba(148,163,184,.18);border-radius:18px;padding:16px 18px;background:#0b1422">
-  <div style="font-weight:850;color:#f8fafc">NBA Spread foundation is active.</div>
-  <div style="font-size:.8rem;color:#94a3b8;margin-top:5px">
-    The protected Page 1 data, market-intelligence and model layers are added in the next certified build steps.
-  </div>
+        f"""
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid rgba(148,163,184,.13);
+border-radius:16px;padding:11px 14px;background:#0a1320">
+  <div style="font-size:.76rem;font-weight:850;color:#d7e2ec">Verified 7-Day NBA Slate</div>
+  <div style="font-size:.68rem;color:#71869a">{escape(window_text)}</div>
 </div>
 """,
         unsafe_allow_html=True,
     )
+
+    _render_game_group("Upcoming", upcoming, "No verified upcoming NBA games in this Phoenix-time window.")
+    _render_game_group("Live / Final", live_final, "No verified live or completed NBA games in this window yet.")
 
 
 __all__ = [

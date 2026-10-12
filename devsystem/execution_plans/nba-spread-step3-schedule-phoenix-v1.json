@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step3-schedule-phoenix-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "3/TBD",
+  "source_main_sha": "30e803ea943091d07e760d9d4e003e110cbc29ed",
+  "goal": "Build a fail-closed rolling 7-day NBA schedule and canonical game-identity layer in Phoenix, Arizona time, verified by independent NBA Official and ESPN NBA sources, then render that verified schedule on NBA Spread Page 1 without activating betting, injury, projection, probability, or ranking layers.",
+  "write_paths": [
+    "devsystem/execution_plans/nba-spread-step3-schedule-phoenix-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step3-schedule-phoenix-v1.json",
+    "devsystem/task_ledgers/nba-spread-step3-schedule-phoenix-v1.json",
+    "nba_spread_schedule_v1.py",
+    "nba_spread_page_v1.py",
+    "tests/test_nba_spread_step3_schedule_phoenix_v1.py"
+  ],
+  "protected_dependencies": [
+    "app.py",
+    "nba_spread_step2_activation_v1.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "nba_spread_page_isolation_v1.py",
+    "tests/test_nba_spread_page_isolation_v1.py",
+    "nba_page_isolation_v1.py",
+    "tests/test_nba_page_isolation_v1.py",
+    "sports_api/main.py"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "nba-spread-step3-schedule-phoenix-r1",
+    "authoritative_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "stale_nba_over_under_pr_1398_quarantined": true,
+    "existing_nba_workstreams_may_be_modified": false,
+    "other_sports_may_be_modified": false,
+    "shared_apis_may_be_modified": false,
+    "app_entrypoint_may_be_modified": false,
+    "step2_route_activation_may_be_modified": false
+  },
+  "data_scope": {
+    "providers": ["NBA Official", "ESPN NBA"],
+    "rolling_days": 7,
+    "timezone": "America/Phoenix",
+    "canonical_states": ["UPCOMING", "LIVE", "FINAL", "DELAYED", "CANCELLED"],
+    "provider_conflict_policy": "FAIL_CLOSED",
+    "missing_provider_policy": "FAIL_CLOSED",
+    "dedupe_key": "away_tricode@home_tricode:phoenix_game_date"
+  },
+  "route_activation": false,
+  "market_activation": false,
+  "injury_activation": false,
+  "model_activation": false,
+  "probability_activation": false,
+  "ranking_activation": false,
+  "sportsbook_projection_influence": 0.0,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
