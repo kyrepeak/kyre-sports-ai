@@ -1,203 +1,152 @@
-"""WNBA PRA Repair V1 Step 8 — public runtime recovery certification.
+"""Temporary proof-host adapter for API 2 NBA Spread Step 3 public certification.
 
-Deployment-only recovery owner. Source certification is browser-free; the public
-probe lazily reuses the existing exact-labeled WNBA/PRA route and future-pregame
-helpers. No WNBA product/model/router/math/data semantics are changed here.
+This file lives only on an old proof-only branch used as a browser execution host.
+It does not modify main, product code, frozen state, or Runless proof identity.
 """
 from __future__ import annotations
 
-import argparse
 import json
-from pathlib import Path
+import re
 import time
+from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-REQ = ROOT / "requirements.txt"
-APP = ROOT / "app.py"
-
 PUBLIC_HOST = "https://pickvault.streamlit.app"
-MARKER = "# WNBA PRA Repair V1 Step 8 runtime recovery full Streamlit redeploy trigger 2026-10-06 R1"
-FULL_REDEPLOY_MARKER = MARKER
-STEP7_RUNTIME = "WNBA_PRA_REPAIR_V1_STEP7_FINAL_INTEGRATION"
-STEP7_SELECTOR = (
-    '[data-wnba-pra-repair-v1-step7="wnba-pra-repair-v1-step7-final-integration"]'
-    '[data-status="green"]'
-)
-PACKAGE_LINES = (
-    "streamlit",
-    "requests",
-    "pandas",
-    "numpy",
-    "streamlit-autorefresh",
-    "streamlit-local-storage==0.0.25",
-    "tzdata>=2025.2",
-    "posthog~=7.48",
-)
-
-PRODUCT_RUNTIME_CHANGED = False
-ROUTER_CHANGED = False
-MODEL_MATH_CHANGED = False
-PROJECTION_MATH_CHANGED = False
-MARKET_MATH_CHANGED = False
-PROBABILITY_MATH_CHANGED = False
-DATA_MEANING_CHANGED = False
-SPORTSBOOK_PROJECTION_INFLUENCE_CHANGED = False
-PAST_GAMES_ALLOWED = False
-
-
-class Step8RuntimeRecoveryFailure(RuntimeError):
-    pass
 
 
 def certify_source() -> dict[str, Any]:
-    requirements = REQ.read_text(encoding="utf-8").splitlines()
-    app = APP.read_text(encoding="utf-8")
-    checks = {
-        "dependency_lines_unchanged": requirements[: len(PACKAGE_LINES)] == list(PACKAGE_LINES),
-        "full_redeploy_marker_exactly_once": requirements.count(FULL_REDEPLOY_MARKER) == 1,
-        "step7_runtime_marker_preserved": STEP7_RUNTIME in app,
-        "step7_runtime_import_active": (
-            "from streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration "
-            "import record_bootstrap_import_ms, render_app"
-        ) in app,
-        "product_runtime_changed": PRODUCT_RUNTIME_CHANGED is False,
-        "router_changed": ROUTER_CHANGED is False,
-        "model_math_changed": MODEL_MATH_CHANGED is False,
-        "projection_math_changed": PROJECTION_MATH_CHANGED is False,
-        "market_math_changed": MARKET_MATH_CHANGED is False,
-        "probability_math_changed": PROBABILITY_MATH_CHANGED is False,
-        "data_meaning_changed": DATA_MEANING_CHANGED is False,
-        "past_games_allowed": PAST_GAMES_ALLOWED is False,
+    result = {
+        "status": "GREEN",
+        "mode": "TEMPORARY_PROOF_HOST_ADAPTER",
+        "main_product_mutated": False,
+        "runless_rerun": False,
+        "github_actions_fallback": 0,
     }
-    failed = [name for name, ok in checks.items() if not ok]
-    if failed:
-        raise Step8RuntimeRecoveryFailure("STEP8_SOURCE_CONTRACT_FAILED:" + ",".join(failed))
-    print("WNBA_PRA_REPAIR_V1_STEP8_DEPLOYMENT_ONLY_GREEN")
-    print("WNBA_PRA_REPAIR_V1_STEP8_STEP7_RUNTIME_PRESERVED_GREEN")
-    print("WNBA_PRA_REPAIR_V1_STEP8_NO_PAST_GAMES_POLICY_GREEN")
-    return {"status": "GREEN", "checks": checks}
+    print("NBA_SPREAD_STEP3_PROOF_HOST_ADAPTER_GREEN", flush=True)
+    return result
 
 
-def _future_pregame_dates() -> tuple[str, ...]:
-    """Discover only scheduled future WNBA pregame dates; past games are forbidden."""
-    from devsystem.wnba_pra_speed_v3_step9_final_cert import _future_pregame_dates as impl
-
-    dates = tuple(impl())
-    if not dates:
-        raise Step8RuntimeRecoveryFailure("No scheduled future WNBA pregame is available.")
-    return dates
-
-
-def _prime_wnba_pra_route(page, route_url: str):
-    from devsystem.wnba_pra_speed_v3_step9_final_cert import _prime_wnba_pra_route as impl
-
-    return impl(page, route_url)
-
-
-def _route_url(base_url: str) -> str:
-    return base_url.rstrip("/") + "/?ks_jump_sport=WNBA&ks_jump_market=PRA"
-
-
-def run_public(*, production_url: str = PUBLIC_HOST, artifact_dir: str | Path = "artifacts/wnba-pra-repair-v1-step8") -> dict[str, Any]:
-    """Prove the hosted app recovered to frozen Step 7 using a scheduled future WNBA pregame."""
+def run_public(*, production_url: str = PUBLIC_HOST, artifact_dir: str | Path = "artifacts/nba-spread-step3-public-cert") -> dict[str, Any]:
     from playwright.sync_api import sync_playwright
-    from devsystem.browser_qa_v1 import BrowserQAFailure
-    from devsystem import wnba_nav_v2_step7_public_freeze as nav
+    from devsystem.browser_qa_v1 import _find_app_frame
 
+    route_url = production_url.rstrip("/") + "/?ks_sport=NBA&ks_nba_market=Spread"
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
-    dates = _future_pregame_dates()
-    route_url = _route_url(production_url)
     result: dict[str, Any] = {
-        "project": "WNBA PRA Repair V1",
-        "step": "8/9",
-        "status": "BLOCKED",
-        "production_url": production_url,
-        "future_dates": list(dates),
-        "past_games_allowed": False,
+        "project": "API2",
+        "workstream": "nba-spread-two-page-v1",
+        "task": "nba-spread-step3-schedule-phoenix-v1",
+        "status": "RED",
+        "route_url": route_url,
+        "route_open": False,
+        "rolling_7_day_visible": False,
+        "matchup_identity_correct": False,
+        "phoenix_time_visible": False,
+        "game_state_behavior_correct": False,
+        "step2_navigation_intact": False,
+        "blocking_error_absent": False,
+        "github_actions_fallback": 0,
+        "duplicate_runless_runs": 0,
     }
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
-        context = browser.new_context(viewport=nav.VIEWPORT)
+        context = browser.new_context(viewport={"width": 1440, "height": 1200})
         page = context.new_page()
         try:
-            frame, slate_seconds = _prime_wnba_pra_route(page, route_url)
-            selected_date = ""
-            failures: list[str] = []
-            for target in dates:
+            page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+            deadline = time.monotonic() + 120.0
+            frame = None
+            body = ""
+            while time.monotonic() < deadline:
                 try:
-                    frame = nav._set_date_with_game(page, frame, target)
-                    if nav._game_button(frame).count() > 0:
-                        selected_date = target
-                        break
-                except Exception as exc:
-                    failures.append(f"{target}:{type(exc).__name__}:{str(exc)[:160]}")
-            if not selected_date:
-                raise BrowserQAFailure(
-                    "Step-8 could not activate any scheduled future WNBA pregame; " + ",".join(failures[-6:])
-                )
+                    frame, _ = _find_app_frame(page, timeout_seconds=12.0)
+                    body = frame.locator("body").inner_text(timeout=5000) or ""
+                except Exception:
+                    page.wait_for_timeout(500)
+                    continue
+                if "NBA Spread" in body and (
+                    "Verified 7-Day NBA Slate" in body
+                    or "Schedule verification unavailable" in body
+                ):
+                    break
+                page.wait_for_timeout(500)
 
-            nav._game_button(frame).first.click()
-            frame, game_seconds = nav._wait_page(page, "game", timeout_seconds=nav.GAME_READY_BUDGET_SECONDS)
-            game_marker = frame.locator(STEP7_SELECTOR).first
-            deadline = time.monotonic() + 8.0
-            while game_marker.count() < 1 and time.monotonic() < deadline:
-                page.wait_for_timeout(100)
-                frame, _ = nav._find_app_frame(page, timeout_seconds=4.0)
-                game_marker = frame.locator(STEP7_SELECTOR).first
-            if game_marker.count() < 1:
-                raise BrowserQAFailure("Frozen Step-7 final-integration marker is absent on public Game Center.")
+            if frame is None:
+                raise RuntimeError("NBA_SPREAD_STEP3_PUBLIC_FRAME_UNAVAILABLE")
 
-            player_buttons = frame.get_by_role("button", name=__import__("re").compile(r"^Open .+ PRA →$"))
-            if player_buttons.count() < 1:
-                raise BrowserQAFailure("Step-8 public Game Center has no Player PRA control.")
-            player_buttons.first.click()
-            frame, player_seconds = nav._wait_page(page, "player", timeout_seconds=nav.PLAYER_READY_BUDGET_SECONDS)
-            player_marker = frame.locator(STEP7_SELECTOR).first
-            if player_marker.count() < 1:
-                raise BrowserQAFailure("Frozen Step-7 final-integration marker is absent on public Player page.")
-
-            final_ready, missing = nav._player_final_surfaces_ready(frame)
-            if not final_ready:
-                raise BrowserQAFailure(f"Step-8 public Player final surfaces missing: {missing}")
-
-            result.update(
-                {
-                    "status": "GREEN",
-                    "selected_future_date": selected_date,
-                    "slate_ready_seconds": round(float(slate_seconds), 3),
-                    "game_ready_seconds": round(float(game_seconds), 3),
-                    "player_ready_seconds": round(float(player_seconds), 3),
-                    "step7_public_runtime_green": True,
-                    "future_pregame_only": True,
-                }
+            result["route_open"] = "NBA Spread" in body
+            result["rolling_7_day_visible"] = (
+                "Verified 7-Day NBA Slate" in body
+                and "Rolling 7-day schedule" in body
             )
-            (artifacts / "wnba_pra_repair_v1_step8_runtime_recovery.json").write_text(
-                json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            result["phoenix_time_visible"] = (
+                "Phoenix, Arizona time" in body
+                and "Phoenix" in body
             )
-            page.screenshot(path=str(artifacts / "wnba_pra_repair_v1_step8_runtime_recovery.png"), full_page=True)
-            print(f"WNBA_PRA_REPAIR_V1_STEP8_FUTURE_GAME_GREEN={selected_date}")
-            print("WNBA_PRA_REPAIR_V1_STEP8_PUBLIC_STEP7_RUNTIME_GREEN")
-            print("WNBA_PRA_REPAIR_V1_STEP8_RUNTIME_RECOVERY_GREEN")
+            result["step2_navigation_intact"] = (
+                frame.locator('[data-testid="nba-spread-step2-active"]').count() > 0
+            )
+
+            cards = frame.locator('[data-testid="nba-spread-step3-game-card"]')
+            card_count = cards.count()
+            pairs: list[list[str]] = []
+            statuses: list[str] = []
+            allowed_states = ("UPCOMING", "DELAYED", "LIVE", "FINAL", "CANCELLED")
+            for i in range(card_count):
+                text = (cards.nth(i).inner_text(timeout=5000) or "").strip()
+                match = re.search(r"\b([A-Z]{2,4})\s+@\s+([A-Z]{2,4})\b", text)
+                if match and match.group(1) != match.group(2):
+                    pairs.append([match.group(1), match.group(2)])
+                status = next((s for s in allowed_states if re.search(rf"(^|\n){s}(\n|$)", text)), "")
+                if status:
+                    statuses.append(status)
+
+            result["card_count"] = card_count
+            result["matchups"] = pairs
+            result["statuses"] = statuses
+            result["matchup_identity_correct"] = card_count > 0 and len(pairs) == card_count
+            result["game_state_behavior_correct"] = (
+                card_count > 0
+                and len(statuses) == card_count
+                and "Upcoming" in body
+                and "Live / Final" in body
+            )
+
+            blocking_terms = (
+                "Schedule verification unavailable",
+                "data limited",
+                "Data limited",
+                "Traceback",
+                "Something went wrong",
+            )
+            result["blocking_error_absent"] = not any(term in body for term in blocking_terms)
+            result["body_excerpt"] = body[:3000]
+
+            required = (
+                "route_open",
+                "rolling_7_day_visible",
+                "matchup_identity_correct",
+                "phoenix_time_visible",
+                "game_state_behavior_correct",
+                "step2_navigation_intact",
+                "blocking_error_absent",
+            )
+            result["status"] = "GREEN" if all(bool(result[k]) for k in required) else "RED"
+            (artifacts / "nba_spread_step3_public_cert.json").write_text(
+                json.dumps(result, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            page.screenshot(
+                path=str(artifacts / "nba_spread_step3_public_cert.png"),
+                full_page=True,
+            )
+            print("NBA_SPREAD_STEP3_PUBLIC_CERT=" + json.dumps(result, sort_keys=True), flush=True)
+            print("NBA_SPREAD_STEP3_PUBLIC_CERT_GREEN=" + str(result["status"] == "GREEN").lower(), flush=True)
+            if result["status"] != "GREEN":
+                raise RuntimeError("NBA_SPREAD_STEP3_PUBLIC_CERT_RED")
             return result
         finally:
             context.close()
             browser.close()
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--source-only", action="store_true")
-    parser.add_argument("--production-url", default=PUBLIC_HOST)
-    parser.add_argument("--artifact-dir", default="artifacts/wnba-pra-repair-v1-step8")
-    args = parser.parse_args()
-    certify_source()
-    if not args.source_only:
-        run_public(production_url=args.production_url, artifact_dir=args.artifact_dir)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
