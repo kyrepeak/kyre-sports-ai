@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step4-most-bet-feature-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "4/TBD",
+  "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
+  "authoritative_branch": "nba-spread-step4-most-bet-feature-r1",
+  "state": "TDD_RED_READY",
+  "status": "IN_PROGRESS",
+  "problem": "NBA Spread Page 1 has a certified Phoenix schedule but no certified betting-volume layer, so it cannot truthfully identify the Most Bet Game.",
+  "root_cause": "Step 3 intentionally deferred betting-market data. Step 4 needs an independent public betting-volume source reconciled to the frozen schedule identity.",
+  "root_cause_class": "MOST_BET_VOLUME_LAYER_NOT_IMPLEMENTED",
+  "patch": "Add an Action Network betting-volume adapter, select only the unique highest-volume verified upcoming/delayed matchup, fail closed on malformed/missing/ambiguous data, and render one featured Most Bet Game card before the Step-3 slate.",
+  "step2a": {
+    "one_active_problem": true,
+    "one_authoritative_proof_chain": true,
+    "authoritative_branch": "nba-spread-step4-most-bet-feature-r1",
+    "active_authoritative_pr": null,
+    "duplicate_async_runs": 0,
+    "blind_retries": 0,
+    "github_actions_fallback": 0,
+    "step3_reopened": false,
+    "product_rebuild": false
+  },
+  "tdd": {
+    "phase": "RED",
+    "test_file": "tests/test_nba_spread_step4_most_bet_v1.py",
+    "expected_failure": "nba_spread_most_bet_v1.py is not implemented",
+    "red_verified": false,
+    "green_verified": false
+  },
+  "scope": {
+    "betting_volume_source": "Action Network NBA public betting",
+    "timezone": "America/Phoenix",
+    "most_bet_definition": "highest tracked spread bet count among Step-3 verified UPCOMING/DELAYED games",
+    "sharp_money_activation": false,
+    "injury_activation": false,
+    "model_activation": false,
+    "projection_activation": false,
+    "probability_activation": false,
+    "ranking_activation": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "runless": {
+    "authorization_id": "AUTH-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_id": null,
+    "receipt_digest": null
+  },
+  "acceptance": {
+    "verified_schedule_identity_preserved": false,
+    "highest_tracked_bet_volume_selected": false,
+    "phoenix_tip_time_preserved": false,
+    "invalid_split_fail_closed": false,
+    "unmatched_identity_fail_closed": false,
+    "ambiguous_top_volume_fail_closed": false,
+    "later_layers_deferred": false,
+    "exact_head_runless_green": false,
+    "merged_main_verified": false,
+    "public_production_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP4_MOST_BET_FEATURE_FROZEN",
+  "thaw_token": "THAW-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "VERIFY_TDD_RED_THEN_IMPLEMENT_MINIMAL_GREEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
