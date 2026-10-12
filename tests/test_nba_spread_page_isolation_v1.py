@@ -32,12 +32,10 @@ def test_nba_spread_isolation_contract_locks_shared_and_other_sport_surfaces():
 def test_nba_spread_isolation_allows_only_step1_owned_paths():
     mod = _load_module()
     expected = [
-        "devsystem/change_classifier_v1.py",
         "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json",
         "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json",
         "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json",
         "nba_spread_page_isolation_v1.py",
-        "tests/test_devsystem_change_classifier_v1.py",
         "tests/test_nba_spread_page_isolation_v1.py",
     ]
     result = mod.assert_nba_spread_only_change(expected)
@@ -51,6 +49,8 @@ def test_nba_spread_isolation_allows_only_step1_owned_paths():
 @pytest.mark.parametrize(
     "forbidden_path",
     [
+        "devsystem/change_classifier_v1.py",
+        "tests/test_devsystem_change_classifier_v1.py",
         "app.py",
         "streamlit_memory_lazy_router_v1.py",
         "nba_page_isolation_v1.py",
