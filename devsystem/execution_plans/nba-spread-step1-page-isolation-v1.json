@@ -7,15 +7,15 @@
   "source_main_sha": "d4d5b5d4a0a2f376bf17eb7db0ec39d2a5adaee8",
   "goal": "Establish and freeze a fail-closed NBA Spread-only mutation boundary before any NBA Spread data, API, UI, model, route, sportsbook, public/sharp, injury, or production activation work.",
   "write_paths": [
-    "devsystem/change_classifier_v1.py",
     "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json",
     "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json",
     "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json",
     "nba_spread_page_isolation_v1.py",
-    "tests/test_devsystem_change_classifier_v1.py",
     "tests/test_nba_spread_page_isolation_v1.py"
   ],
   "protected_dependencies": [
+    "devsystem/change_classifier_v1.py",
+    "tests/test_devsystem_change_classifier_v1.py",
     "app.py",
     "devsystem/devsystem_manifest_v1.json",
     "nba_page_isolation_v1.py",
@@ -34,7 +34,15 @@
     "other_sports_may_be_modified": false,
     "shared_router_may_be_modified": false,
     "app_entrypoint_may_be_modified": false,
-    "shared_apis_may_be_modified": false
+    "shared_apis_may_be_modified": false,
+    "shared_control_plane_may_be_modified": false
+  },
+  "runless_final_mile": {
+    "classifier_experiment_removed_from_final_diff": true,
+    "final_owned_path_count": 5,
+    "frozen_source_mutations": 0,
+    "thaw_required": false,
+    "shared_control_plane_mutations": 0
   },
   "product_runtime_mutations": 0,
   "route_activation": false,
