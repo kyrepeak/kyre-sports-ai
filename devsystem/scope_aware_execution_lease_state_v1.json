@@ -1,38 +1,11 @@
 {
   "generation": 378,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-12T15:34:45Z",
-      "expires_at_utc": "2026-10-12T16:04:45Z",
-      "generation": 377,
-      "heartbeat_at_utc": "2026-10-12T15:34:45Z",
-      "lease_id": "SCOPE-LEASE-AB2D48AD5187944024E5F8C2",
-      "owner_id": "chatgpt:api2:nba-spread-step3-controlplane-prep-v1",
-      "scope": {
-        "dependency_tokens": [
-          "workstream:nba-spread-two-page-v1-controlplane-prep"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "candidate_sha": "b7e1a0cd9fc912a609b22710e1d5a6bc69e95955",
-          "registry_state_hash": "2fc86992d03cb6957244bad11003c4243ba311a925afa533bcdeb068dc6c9d58",
-          "source_main_sha": "30e803ea943091d07e760d9d4e003e110cbc29ed"
-        },
-        "shared_resources": [
-          "controlplane:nba-spread-step3-prep"
-        ],
-        "write_paths": [
-          "devsystem/nba_spread_step3_controlplane_prepare_v1.py",
-          "devsystem/runless_proof_plans/nba-spread-step3-controlplane-prep-v1.json"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 666,
+  "revision": 667,
   "schema_version": 1,
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
-  "state_hash": "41fbdd69724f9a1a273322adcf2d0045ecc8c2408c828e2ea01117cabad93b70"
+  "state_hash": "7a8aacfadbf09e43c229fcd10a7f48c76ae17dbdc524051ac22443648978c7b0"
 }
