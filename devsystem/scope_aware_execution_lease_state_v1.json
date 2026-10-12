@@ -26,43 +26,13 @@
           "devsystem/runless_proof_plans/nba-spread-step3-controlplane-prep-v1.json"
         ]
       }
-    },
-    {
-      "acquired_at_utc": "2026-10-12T15:36:09Z",
-      "expires_at_utc": "2026-10-12T17:36:09Z",
-      "generation": 378,
-      "heartbeat_at_utc": "2026-10-12T15:36:09Z",
-      "lease_id": "SCOPE-LEASE-D93F7CC6EEB68AB8A8F1B0E9",
-      "owner_id": "chatgpt:api2:nba-spread-step3-schedule-phoenix-v1",
-      "scope": {
-        "dependency_tokens": [
-          "workstream:nba-spread-two-page-v1"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "candidate_sha": "196295abd07610b47af30ae8542683f0143b6b25",
-          "registry_state_hash": "0389b304ab6cd1fe955d331de90671680ebbb3369297db66ccbef1faa678d6bc",
-          "source_main_sha": "30e803ea943091d07e760d9d4e003e110cbc29ed"
-        },
-        "shared_resources": [
-          "surface:nba-spread-page1"
-        ],
-        "write_paths": [
-          "devsystem/execution_plans/nba-spread-step3-schedule-phoenix-v1.json",
-          "devsystem/runless_proof_plans/nba-spread-step3-schedule-phoenix-v1.json",
-          "devsystem/task_ledgers/nba-spread-step3-schedule-phoenix-v1.json",
-          "nba_spread_page_v1.py",
-          "nba_spread_schedule_v1.py",
-          "tests/test_nba_spread_step3_schedule_phoenix_v1.py"
-        ]
-      }
     }
   ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 665,
+  "revision": 666,
   "schema_version": 1,
-  "state_hash": "21c11510c223b4f5ce69a0c43485a9be128dbaaf8e6e93030e353b6af2b08852",
-  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
+  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
+  "state_hash": "41fbdd69724f9a1a273322adcf2d0045ecc8c2408c828e2ea01117cabad93b70"
 }
