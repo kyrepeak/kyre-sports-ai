@@ -10,12 +10,22 @@ CONTRACT = ROOT / "nba_spread_step2_activation_v1.py"
 PAGE = ROOT / "nba_spread_page_v1.py"
 APP = ROOT / "app.py"
 MANIFEST = ROOT / "devsystem" / "devsystem_manifest_v1.json"
+RUNLESS_PLAN = ROOT / "devsystem" / "runless_proof_plans" / "nba-spread-step2-site-activation-v1.json"
 
 
 def _load_contract():
     spec = importlib.util.spec_from_file_location("nba_spread_step2_activation_v1", CONTRACT)
     if spec is None or spec.loader is None:
         raise AssertionError("NBA Spread Step-2 activation contract must be importable")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_runless_plan_contract():
+    path = ROOT / "devsystem" / "runless_proof_plan_v1.py"
+    spec = importlib.util.spec_from_file_location("runless_proof_plan_v1", path)
+    assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -81,3 +91,10 @@ def test_nba_domain_becomes_active_only_with_step2_critical_test_and_browser_con
     assert "tests/test_nba_spread_step2_site_activation_v1.py" in nba["critical_tests"]
     assert "NBA -> Spread" in nba["browser_coverage"]
     assert "Streamlit NBA Spread" in nba["production_probe"]
+
+
+def test_step2_runless_plan_uses_only_approved_command_shapes():
+    validator = _load_runless_plan_contract()
+    payload = json.loads(RUNLESS_PLAN.read_text(encoding="utf-8"))
+    for command in payload["commands"]:
+        assert validator.validate_command(command) == tuple(command)
