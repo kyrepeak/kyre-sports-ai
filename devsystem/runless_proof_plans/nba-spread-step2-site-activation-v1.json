@@ -5,7 +5,7 @@
   "commands": [
     ["python", "-m", "pytest", "-q", "tests/test_nba_spread_step2_site_activation_v1.py", "tests/test_nba_spread_page_isolation_v1.py", "tests/test_devsystem_change_classifier_v1.py", "tests/test_cfb_game_total_page2_step8_final_v1.py"],
     ["python", "-m", "py_compile", "app.py", "nba_spread_page_v1.py", "nba_spread_step2_activation_v1.py", "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py"],
-    ["python", "devsystem/change_classifier_v1.py", "--base", "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1", "--head", "HEAD"]
+    ["python", "-m", "devsystem.change_classifier_v1", "--base", "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1", "--head", "HEAD"]
   ],
   "artifacts": [
     "app.py",
