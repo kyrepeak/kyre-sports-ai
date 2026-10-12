@@ -7,14 +7,14 @@
   "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
   "authoritative_branch": "nba-spread-step3-schedule-phoenix-r1",
   "terminal_ledger_branch": "nba-spread-step3-terminal-ledger-r1",
-  "state": "SKIPPED_FINAL_CLOSEOUT",
-  "status": "SKIPPED_FINAL_CLOSEOUT",
+  "state": "DEFERRED_FINAL_CLOSEOUT",
+  "status": "DEFERRED_FINAL_CLOSEOUT",
   "product_status": "BUILT_MERGED_PROVEN",
-  "skip_reason": "ANTI_LOOP_FINALIZATION_SKIP",
-  "problem": "Step 3 product and proof work are complete, but terminal frozen-registry bookkeeping remained stuck in a repeated closeout loop.",
+  "defer_reason": "ANTI_LOOP_FINALIZATION_DEFER",
+  "problem": "Step 3 product and proof work are complete, but terminal frozen-registry bookkeeping entered a repeated closeout loop.",
   "root_cause": "Terminal bookkeeping remained stale after merge, and the first registry freeze attempt truncated the registry payload before the full registry was restored.",
   "root_cause_class": "TERMINAL_CLOSEOUT_STATE_STALE",
-  "resolution": "Preserve immutable Step-3 product/proof evidence, stop all Step-3 closeout retries, do not claim Green+Frozen, and advance the workstream to the next NBA Spread build checkpoint.",
+  "resolution": "Preserve immutable Step-3 product/proof evidence, stop immediate repeat closeout attempts, continue the NBA Spread build, and require Step-3 frozen-registry closeout before the overall NBA Spread workstream may be declared terminally complete.",
   "step2a": {
     "one_active_problem": true,
     "one_authoritative_proof_chain": true,
@@ -25,13 +25,13 @@
     "product_rebuild": false,
     "runless_rerun": false,
     "browser_rerun": false,
-    "closeout_retry_forbidden": true
+    "immediate_repeat_closeout_retry_forbidden": true,
+    "deferred_reentry_required": true
   },
   "tdd": {
     "red_test_commit": "cf71a63a4c91a1bfc56414b85ec00034301352ca",
     "red_candidate_sha": "d564017193b4506b30cdb46a56037782b85719df",
     "red_runless_check_id": 114688621963,
-    "red_proof_id": "nba-spread-step3-schedule-phoenix-v1-d564017193b4506b30cdb46a56037782b85719df",
     "red_result": "RUNLESS_STATIC_PROOF_FAILED",
     "schedule_engine_commit": "305eae6f8d2d9d8d2fd9f0d3dfb5067810dbfa2d",
     "page_schedule_commit": "0068c0062507f557798151ef12386a76e757739d",
@@ -82,9 +82,11 @@
   "freeze_exit": {
     "frozen_token": "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_FROZEN",
     "claimed": false,
-    "skipped": true
+    "deferred": true,
+    "must_complete_before_workstream_terminal": true
   },
-  "next_legal_action": "START_NEXT_NBA_SPREAD_BUILD_CHECKPOINT",
+  "next_legal_action": "START_NEXT_NBA_SPREAD_BUILD_CHECKPOINT_WITH_STEP3_CLOSEOUT_DEBT_PRESERVED",
+  "reentry_gate": "RETURN_TO_STEP3_CLOSEOUT_BEFORE_WORKSTREAM_FINAL_COMPLETION",
   "freeze_token": "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_FROZEN",
   "green_plus_frozen_claimed": false,
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
