@@ -2280,6 +2280,18 @@
       "source_main_sha": "eb4ed13666055cd426d57f154641064ad73e535e",
       "status": "FROZEN"
     },
+    "NBA_SPREAD_STEP1_PAGE_ISOLATION_FROZEN": {
+      "artifacts": {
+        "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json": "a32706bf7084af9b59f5ac178e34bac89902a8f7",
+        "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json": "b3fc1be0502a756f2290e9e39ba20ce90c86883f",
+        "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json": "32a435d8a7aa5268a92eb5b282df07ed5787b30a",
+        "nba_spread_page_isolation_v1.py": "2204e40efb2cf3202d346a3e1ff1cd33f99ce79b",
+        "tests/test_nba_spread_page_isolation_v1.py": "77780af37775f7b867ea4facc7ea5cc4163bb6bc"
+      },
+      "checkpoint_id": "NBA_SPREAD_STEP1_PAGE_ISOLATION_FROZEN",
+      "source_main_sha": "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1",
+      "status": "FROZEN"
+    },
     "NFL_LIVE_GAME_REPAIR_STEP1_ROOT_CAUSE": {
       "api2_used": false,
       "artifacts": {
@@ -3045,9 +3057,9 @@
   "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
   "registry_ref": "refs/heads/monster-frozen-artifact-registry",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 287,
+  "revision": 288,
   "schema_version": 1,
-  "source_main_sha": "d4d5b5d4a0a2f376bf17eb7db0ec39d2a5adaee8",
-  "state_hash": "40406157e600d7145b47c878d634084d26d918c25ab894c71004262212d20e4f",
+  "source_main_sha": "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1",
+  "state_hash": "e61869eba218f2bf19e1df58611bda2f685e9fa4a34d6f7dfc23908bac616541",
   "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1"
 }
