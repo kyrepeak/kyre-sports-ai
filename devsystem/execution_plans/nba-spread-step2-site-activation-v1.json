@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step2-site-activation-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "2/TBD",
+  "source_main_sha": "9a7afa1fe19d62eed444088a8e77ca6c45e0bfb1",
+  "goal": "Activate NBA -> Spread in the existing production website shell and land on a fail-closed NBA Spread page shell while preserving all existing sport routes and deferring data/model implementation.",
+  "write_paths": [
+    "app.py",
+    "devsystem/devsystem_manifest_v1.json",
+    "devsystem/execution_plans/nba-spread-step2-site-activation-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step2-site-activation-v1.json",
+    "devsystem/task_ledgers/nba-spread-step2-site-activation-v1.json",
+    "nba_spread_page_v1.py",
+    "nba_spread_step2_activation_v1.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_devsystem_change_classifier_v1.py",
+    "tests/test_nba_spread_step2_site_activation_v1.py"
+  ],
+  "protected_dependencies": [
+    "devsystem/change_classifier_v1.py",
+    "nba_spread_page_isolation_v1.py",
+    "tests/test_nba_spread_page_isolation_v1.py",
+    "nba_page_isolation_v1.py",
+    "tests/test_nba_page_isolation_v1.py",
+    "streamlit_memory_lazy_router_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "sports_api/main.py"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "nba-spread-step2-site-activation-r1",
+    "authoritative_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "stale_nba_over_under_pr_1398_quarantined": true,
+    "existing_nba_workstreams_may_be_modified": false,
+    "other_sports_may_be_modified": false,
+    "existing_shared_router_files_may_be_modified": false,
+    "app_entrypoint_may_be_modified": true,
+    "manifest_nba_lane_may_be_modified": true,
+    "shared_apis_may_be_modified": false,
+    "classifier_code_may_be_modified": false
+  },
+  "runless_final_mile": {
+    "product_scope": "NBA_SELECTOR_PLUS_SPREAD_SHELL_ONLY",
+    "frozen_source_mutations": 2,
+    "thaw_required": true,
+    "frozen_mutation_paths": [
+      "app.py",
+      "tests/test_devsystem_change_classifier_v1.py"
+    ],
+    "public_proof_required_postmerge": true,
+    "production_url": "https://pickvault.streamlit.app"
+  },
+  "route_activation": true,
+  "data_activation": false,
+  "model_activation": false,
+  "shared_api_activation": false,
+  "sportsbook_projection_influence": 0.0,
+  "github_actions_fallback": 0,
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "authorization_id": "AUTH-NBA-SPREAD-STEP2-SITE-ACTIVATION-V1-R1",
+  "freeze_token": "NBA_SPREAD_STEP2_SITE_ACTIVATION_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
