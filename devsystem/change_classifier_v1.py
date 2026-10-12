@@ -24,21 +24,6 @@ NBA_STEP1_BOOTSTRAP_PATHS = frozenset(
         "tests/test_nba_page_isolation_v1.py",
     }
 )
-NBA_SPREAD_STEP1_BOOTSTRAP_PATHS = frozenset(
-    {
-        "devsystem/change_classifier_v1.py",
-        "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json",
-        "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json",
-        "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json",
-        "nba_spread_page_isolation_v1.py",
-        "tests/test_devsystem_change_classifier_v1.py",
-        "tests/test_nba_spread_page_isolation_v1.py",
-    }
-)
-NBA_PLANNED_BOOTSTRAP_SCOPES = (
-    NBA_STEP1_BOOTSTRAP_PATHS,
-    NBA_SPREAD_STEP1_BOOTSTRAP_PATHS,
-)
 
 
 def _load_manifest(path: Path = MANIFEST_PATH) -> dict:
@@ -141,11 +126,12 @@ def _risk_flags(paths: Iterable[str]) -> dict[str, bool]:
 
 def _planned_domain_bootstrap_allowed(domain: str, paths: Iterable[str]) -> bool:
     normalized = {str(p).strip().replace("\\", "/") for p in paths if str(p).strip()}
-    if domain != "nba" or not normalized:
-        return False
-    if not any(_domain_match(path, "nba") for path in normalized):
-        return False
-    return any(normalized.issubset(scope) for scope in NBA_PLANNED_BOOTSTRAP_SCOPES)
+    return (
+        domain == "nba"
+        and bool(normalized)
+        and normalized.issubset(NBA_STEP1_BOOTSTRAP_PATHS)
+        and any(_domain_match(path, "nba") for path in normalized)
+    )
 
 
 def classify(paths: Iterable[str], manifest: dict | None = None) -> dict:
