@@ -7,11 +7,10 @@ probability, edge, picks, or rankings.
 """
 from __future__ import annotations
 
-from io import StringIO
+from html.parser import HTMLParser
 import re
 from typing import Iterable, Mapping, Sequence
 
-import pandas as pd
 import requests
 
 MODEL_VERSION = "NBA_SPREAD_STEP4_MOST_BET_FEATURE_V1"
@@ -116,15 +115,58 @@ def _bet_count(value: object) -> int | None:
     return count if count > 0 else None
 
 
-def _flat_columns(frame: pd.DataFrame) -> dict[str, object]:
-    out: dict[str, object] = {}
-    for column in frame.columns:
-        if isinstance(column, tuple):
-            label = " ".join(str(part) for part in column if str(part).lower() != "nan")
-        else:
-            label = str(column)
-        out[_clean(label)] = column
-    return out
+class _TableParser(HTMLParser):
+    """Small dependency-free HTML table reader for the public betting page."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.tables: list[list[list[str]]] = []
+        self._table: list[list[str]] | None = None
+        self._row: list[str] | None = None
+        self._cell_parts: list[str] | None = None
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        del attrs
+        if tag == "table" and self._table is None:
+            self._table = []
+        elif self._table is not None and tag == "tr":
+            self._row = []
+        elif self._row is not None and tag in {"th", "td"}:
+            self._cell_parts = []
+
+    def handle_data(self, data: str) -> None:
+        if self._cell_parts is not None:
+            text = re.sub(r"\s+", " ", data).strip()
+            if text:
+                self._cell_parts.append(text)
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._cell_parts is not None and tag in {"th", "td"}:
+            assert self._row is not None
+            self._row.append(" ".join(self._cell_parts).strip())
+            self._cell_parts = None
+        elif self._row is not None and tag == "tr":
+            if any(cell for cell in self._row):
+                assert self._table is not None
+                self._table.append(self._row)
+            self._row = None
+            self._cell_parts = None
+        elif self._table is not None and tag == "table":
+            if self._table:
+                self.tables.append(self._table)
+            self._table = None
+            self._row = None
+            self._cell_parts = None
+
+
+def _table_rows(html: str) -> list[list[list[str]]]:
+    parser = _TableParser()
+    try:
+        parser.feed(html)
+        parser.close()
+    except Exception:
+        return []
+    return parser.tables
 
 
 def parse_action_network_html(html: str) -> list[dict]:
@@ -135,23 +177,31 @@ def parse_action_network_html(html: str) -> list[dict]:
     """
     if not str(html or "").strip():
         return []
-    try:
-        tables = pd.read_html(StringIO(html))
-    except (ValueError, ImportError):
-        return []
 
     parsed: list[dict] = []
-    for frame in tables:
-        columns = _flat_columns(frame)
-        scheduled_col = next((raw for key, raw in columns.items() if key == "scheduled"), None)
-        bets_pct_col = next((raw for key, raw in columns.items() if key == "of bets"), None)
-        money_pct_col = next((raw for key, raw in columns.items() if key == "of money"), None)
-        bet_count_col = next((raw for key, raw in columns.items() if key == "bets"), None)
-        if any(value is None for value in (scheduled_col, bets_pct_col, money_pct_col, bet_count_col)):
+    for table in _table_rows(str(html)):
+        header_index = None
+        column_indexes: dict[str, int] = {}
+        for index, row in enumerate(table):
+            normalized = [_clean(cell) for cell in row]
+            candidate = {label: pos for pos, label in enumerate(normalized)}
+            if all(label in candidate for label in ("scheduled", "of bets", "of money", "bets")):
+                header_index = index
+                column_indexes = candidate
+                break
+        if header_index is None:
             continue
 
-        for _, row in frame.iterrows():
-            scheduled = str(row.get(scheduled_col) or "")
+        required_max = max(
+            column_indexes["scheduled"],
+            column_indexes["of bets"],
+            column_indexes["of money"],
+            column_indexes["bets"],
+        )
+        for row in table[header_index + 1 :]:
+            if len(row) <= required_max:
+                continue
+            scheduled = row[column_indexes["scheduled"]]
             tricodes = [
                 token
                 for token in re.findall(r"\b[A-Z]{2,4}\b", scheduled.upper())
@@ -159,9 +209,9 @@ def parse_action_network_html(html: str) -> list[dict]:
             ]
             if len(tricodes) < 2:
                 continue
-            bet_pair = _split_pair(row.get(bets_pct_col))
-            money_pair = _split_pair(row.get(money_pct_col))
-            count = _bet_count(row.get(bet_count_col))
+            bet_pair = _split_pair(row[column_indexes["of bets"]])
+            money_pair = _split_pair(row[column_indexes["of money"]])
+            count = _bet_count(row[column_indexes["bets"]])
             if bet_pair is None or money_pair is None or count is None:
                 continue
             away_code, home_code = tricodes[0], tricodes[1]
