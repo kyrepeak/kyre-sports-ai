@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json": "a32706bf7084af9b59f5ac178e34bac89902a8f7",
+    "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json": "b3fc1be0502a756f2290e9e39ba20ce90c86883f",
+    "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json": "32a435d8a7aa5268a92eb5b282df07ed5787b30a",
+    "nba_spread_page_isolation_v1.py": "2204e40efb2cf3202d346a3e1ff1cd33f99ce79b",
+    "tests/test_nba_spread_page_isolation_v1.py": "77780af37775f7b867ea4facc7ea5cc4163bb6bc"
+  },
+  "candidate_sha": "649027cd36412d93857a483f4aee47ddac3c02b4",
+  "created_at": "2026-10-12T01:34:14.016337+00:00",
+  "dependency_map": {
+    "devsystem/change_classifier_v1.py": "352074abc9d5f807ef6bfad593743c19cef49e00",
+    "devsystem/devsystem_manifest_v1.json": "23f635ef513c436916b8f795c7f2016676996898",
+    "nba_page_isolation_v1.py": "c5b133017bc6449409474972669b0defb34723f7",
+    "tests/test_devsystem_change_classifier_v1.py": "265129d2ce89da49426b36059294fcba381cfb7b",
+    "tests/test_nba_page_isolation_v1.py": "094e7f60c781a2fd789b9212e845f0ae44be7cb1"
+  },
+  "deployment_identity": "1713f6eab63ff257f2af9f4e85dcf512b4db6c7f",
+  "digest": "f5d407bbed53faf144dff4efc76c302a36f9afaf30354b23fdbf784ec5ebbc8e",
+  "evidence_digests": [
+    "c6e504265a813fc753c6ccd3e34cd2468516e89ac3cff284d0603ce08d9502a0",
+    "19702ddacc35bcbad873662cf4b9b9acad2fa946e12024cfeb9693193978cb29"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6178182b32fe20ff00a41a78fdad8e271a2a1a152f5f61a270583843a9ab0736",
+  "proof_id": "nba-spread-step1-page-isolation-v1-649027cd36412d93-4cc8f1a645bec65e",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 287,
+    "state_hash": "40406157e600d7145b47c878d634084d26d918c25ab894c71004262212d20e4f"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3"
+    ],
+    "revision": 287,
+    "state_hash": "40406157e600d7145b47c878d634084d26d918c25ab894c71004262212d20e4f"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "nba-spread-step1-page-isolation-v1",
+  "workstream": "nba-spread-two-page-v1"
+}
