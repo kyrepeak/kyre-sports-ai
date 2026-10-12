@@ -18,7 +18,7 @@ os.environ["RPP_NBA_SPREAD_STEP2_G4_AUTHORITY_PREP_ON_START"] = "0"
 from .api import app
 from .cfb_step8_terminal_postmerge_registry_rebind_v1 import install_startup
 from .nba_spread_step2_authority_prep_g4 import install_startup as install_nba_spread_step2_authority_prep
-from .nba_spread_step2_postmerge_closeout import install_startup as install_nba_spread_step2_postmerge_closeout
+from .nba_spread_step2_postmerge_closeout_r2 import install_startup as install_nba_spread_step2_postmerge_closeout
 from .nba_spread_step2_static_diagnostic_g3 import install_startup as install_nba_spread_step2_static_diagnostic
 from .nba_spread_step2_static_diagnostic_route_g3 import install as install_nba_spread_step2_static_diagnostic_route
 
