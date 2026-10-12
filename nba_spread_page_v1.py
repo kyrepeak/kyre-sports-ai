@@ -69,7 +69,6 @@ def _most_bet_card(feature: dict) -> str:
     home_name = escape(str(feature.get("home_name") or home))
     tip = escape(str(feature.get("tip_phoenix") or "Time unavailable"))
     date = escape(str(feature.get("game_date_phoenix") or "Date unavailable"))
-    source = escape(str(feature.get("source") or "Verified betting-volume source"))
     bet_count = int(feature.get("bet_count") or 0)
     away_bets = int(feature.get("away_bet_pct") or 0)
     home_bets = int(feature.get("home_bet_pct") or 0)
@@ -104,7 +103,7 @@ box-shadow:0 14px 34px rgba(0,0,0,.22)">
       <div style="font-size:.82rem;color:#f8fafc;font-weight:900;margin-top:3px">{away} {away_money}% • {home} {home_money}%</div>
     </div>
   </div>
-  <div style="font-size:.66rem;color:#688197;margin-top:11px">Volume/splits: {source} • Matchup/time: verified Step-3 NBA schedule</div>
+  <div style="font-size:.66rem;color:#688197;margin-top:11px">Volume/splits: Action Network • Matchup/time: verified Step-3 NBA schedule</div>
 </div>
 """
 
@@ -119,7 +118,7 @@ def _render_most_bet(feature: dict) -> None:
 <div data-testid="nba-spread-step4-most-bet-unavailable" style="border:1px dashed rgba(103,216,255,.22);border-radius:16px;
 padding:13px 15px;background:#09131f;margin:14px 0 12px">
   <div style="font-size:.78rem;font-weight:900;color:#b9dceb">🔥 Most Bet Game data unavailable</div>
-  <div style="font-size:.72rem;color:#7890a5;margin-top:4px">No matchup is promoted unless tracked volume and both betting splits match a verified Step-3 game; incompatible fallback metrics are never substituted.</div>
+  <div style="font-size:.72rem;color:#7890a5;margin-top:4px">No matchup is promoted unless tracked volume and both betting splits match a verified Step-3 game.</div>
   <div style="font-size:.64rem;color:#61778b;margin-top:6px">{diagnostic}</div>
 </div>
 """,
