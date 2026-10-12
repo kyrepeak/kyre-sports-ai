@@ -61,6 +61,27 @@ def test_nba_step1_bootstrap_scope_is_allowed_while_domain_remains_planned():
     assert result["risk_tier"] == "high"
 
 
+def test_nba_step2_bootstrap_scope_is_allowed_while_domain_remains_planned():
+    module = _load()
+    result = module.classify([
+        ".github/workflows/nba-over-under-step2-data-foundation-v1.yml",
+        "devsystem/change_classifier_v1.py",
+        "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json",
+        "nba_data_foundation_v1.py",
+        "sports_api/api/nba_over_under_v1.py",
+        "sports_api/main.py",
+        "sports_api/nba_over_under_data_v1.py",
+        "tests/test_devsystem_change_classifier_v1.py",
+        "tests/test_nba_data_foundation_v1.py",
+        "tests/test_nba_kyre_api_bridge_v1.py",
+    ])
+    assert result["nba"] is True
+    assert result["core"] is True
+    assert result["api"] is True
+    assert result["unprotected_domains"] == []
+    assert result["risk_tier"] == "high"
+
+
 def test_future_domains_are_reserved_and_fail_closed():
     module = _load()
     result = module.classify(["nba_model_v1.py", "soccer_moneyline_v1.py"])
@@ -73,6 +94,17 @@ def test_unapproved_nba_file_cannot_hide_inside_step1_bootstrap_diff():
     module = _load()
     result = module.classify([
         "nba_page_isolation_v1.py",
+        "nba_over_under_page_v1.py",
+    ])
+    assert result["nba"] is True
+    assert result["unprotected_domains"] == ["nba"]
+    assert result["risk_tier"] == "blocked"
+
+
+def test_unapproved_nba_file_cannot_hide_inside_step2_bootstrap_diff():
+    module = _load()
+    result = module.classify([
+        "nba_data_foundation_v1.py",
         "nba_over_under_page_v1.py",
     ])
     assert result["nba"] is True

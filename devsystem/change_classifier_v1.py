@@ -24,6 +24,20 @@ NBA_STEP1_BOOTSTRAP_PATHS = frozenset(
         "tests/test_nba_page_isolation_v1.py",
     }
 )
+NBA_STEP2_BOOTSTRAP_PATHS = frozenset(
+    {
+        ".github/workflows/nba-over-under-step2-data-foundation-v1.yml",
+        "devsystem/change_classifier_v1.py",
+        "devsystem/task_ledgers/nba-over-under-step2-data-foundation-v1.json",
+        "nba_data_foundation_v1.py",
+        "sports_api/api/nba_over_under_v1.py",
+        "sports_api/main.py",
+        "sports_api/nba_over_under_data_v1.py",
+        "tests/test_devsystem_change_classifier_v1.py",
+        "tests/test_nba_data_foundation_v1.py",
+        "tests/test_nba_kyre_api_bridge_v1.py",
+    }
+)
 
 
 def _load_manifest(path: Path = MANIFEST_PATH) -> dict:
@@ -126,10 +140,14 @@ def _risk_flags(paths: Iterable[str]) -> dict[str, bool]:
 
 def _planned_domain_bootstrap_allowed(domain: str, paths: Iterable[str]) -> bool:
     normalized = {str(p).strip().replace("\\", "/") for p in paths if str(p).strip()}
+    nba_bootstrap_allowed = any(
+        normalized.issubset(allowed)
+        for allowed in (NBA_STEP1_BOOTSTRAP_PATHS, NBA_STEP2_BOOTSTRAP_PATHS)
+    )
     return (
         domain == "nba"
         and bool(normalized)
-        and normalized.issubset(NBA_STEP1_BOOTSTRAP_PATHS)
+        and nba_bootstrap_allowed
         and any(_domain_match(path, "nba") for path in normalized)
     )
 
