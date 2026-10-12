@@ -1,0 +1,28 @@
+{
+  "mode": "runless",
+  "task_id": "api2-registry-step4-thaw-rebind-r1",
+  "workstream": "nba-spread-step4-thaw-rebind-r1",
+  "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_api2_registry_step4_thaw_rebind_r1.py"],
+    ["python", "-m", "devsystem.api2_registry_step4_thaw_rebind_r1"]
+  ],
+  "artifacts": [
+    "devsystem/api2_registry_step4_thaw_rebind_r1.py",
+    "devsystem/runless_proof_plans/api2-registry-step4-thaw-rebind-r1.json",
+    "tests/test_api2_registry_step4_thaw_rebind_r1.py"
+  ],
+  "dependencies": [
+    "devsystem/frozen_artifact_registry_v1.py",
+    "runless_proof_plane/config.py",
+    "runless_proof_plane/github_app.py",
+    "runless_proof_plane/github_client.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 180,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_REGISTRY_STEP4_THAW_REBIND_R1"
+}
