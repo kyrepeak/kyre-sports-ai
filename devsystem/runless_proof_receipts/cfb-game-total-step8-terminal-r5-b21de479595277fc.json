@@ -1,0 +1,29 @@
+{
+  "candidate_sha": "8ffbe91246f5022bcaca7a326cfaaf9a62976633",
+  "created_at": "2026-10-12T00:14:49Z",
+  "digest": "60dc3939b565280a76d28ca706aa193674103f57a1662a46d0abe98f3a48cc65",
+  "freeze_token": "CFB_GAME_TOTAL_NATIVE_WEBSITE_REBUILD_STEP8_MOBILE_PRODUCTION_V1_FROZEN",
+  "github_actions_fallback": 0,
+  "kind": "CFB_STEP8_TERMINAL_IMMUTABLE_PROOF_RECEIPT",
+  "premerge_proof_id": "cfb-game-total-step8-route-pointer-lock-r1-8ffbe91246f5022b-bde3098b39d6952e",
+  "premerge_receipt_digest": "12e18db7a900e2c646dd6615e85b90292058aa0573956cb34574fb3dcc59fda3",
+  "product_main_sha": "b21de479595277fc77fb06e632afe8d35d4b4c29",
+  "project": "API2",
+  "public_proof": {
+    "checkpoint_id": "CFB_GAME_TOTAL_PAGE2_V1_STEP8_FINAL_RESPONSIVE_LIVE_DATA_FROZEN",
+    "checkpoint_source_main_sha": "3065e960d3363bf6f3d70252c906b9590e7293e9",
+    "proof_mode": "IMMUTABLE_FROZEN_PUBLIC_PROOF_REUSE",
+    "public_browser_recheck": false,
+    "required_widths": [
+      390,
+      430,
+      768,
+      1440
+    ],
+    "router_blob": "23e63bb1d87a9081a0b969f92922e5d5da7e9358",
+    "status": "GREEN"
+  },
+  "schema_version": 1,
+  "step": "8/8",
+  "workstream": "cfb-game-total-native-website-rebuild-v1"
+}
