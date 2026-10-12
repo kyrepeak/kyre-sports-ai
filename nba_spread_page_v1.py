@@ -1,8 +1,8 @@
-"""NBA Spread Page 1 — Step 3 verified schedule foundation.
+"""NBA Spread Page 1 — Step 4 Most Bet Game feature.
 
-Step 3 renders only canonical matchup identity, Phoenix-local tip time and game
-state from the fail-closed two-source schedule engine. Betting, injury and
-decision layers remain owned by later certified steps.
+Preserves the Step-3 verified Phoenix schedule and adds exactly one fail-closed
+featured betting-volume card. Later decision, injury, projection, probability,
+and ranking layers remain deferred.
 """
 from __future__ import annotations
 
@@ -10,10 +10,12 @@ from html import escape
 
 import streamlit as st
 
+from nba_spread_most_bet_v1 import load_most_bet_feature
 from nba_spread_schedule_v1 import load_verified_nba_schedule
 
-MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP3_SCHEDULE_PHOENIX"
-PAGE_HEARTBEAT = "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_ACTIVE"
+MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP4_MOST_BET_FEATURE"
+PAGE_HEARTBEAT = "NBA_SPREAD_STEP4_MOST_BET_FEATURE_ACTIVE"
+STEP3_HEARTBEAT = "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_ACTIVE"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_MODEL = False
 MAY_MODIFY_PROJECTION = False
@@ -23,6 +25,11 @@ MAY_MODIFY_PROBABILITY = False
 @st.cache_data(ttl=90, show_spinner=False)
 def _load_verified_schedule() -> dict:
     return load_verified_nba_schedule()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _load_most_bet(games: list[dict]) -> dict:
+    return load_most_bet_feature(games)
 
 
 def _game_card(game: dict) -> str:
@@ -55,6 +62,70 @@ background:linear-gradient(145deg,#0a121e,#0e1b2b);padding:15px 16px;margin:0 0 
 """
 
 
+def _most_bet_card(feature: dict) -> str:
+    away = escape(str(feature.get("away_tricode") or "—"))
+    home = escape(str(feature.get("home_tricode") or "—"))
+    away_name = escape(str(feature.get("away_name") or away))
+    home_name = escape(str(feature.get("home_name") or home))
+    tip = escape(str(feature.get("tip_phoenix") or "Time unavailable"))
+    date = escape(str(feature.get("game_date_phoenix") or "Date unavailable"))
+    bet_count = int(feature.get("bet_count") or 0)
+    away_bets = int(feature.get("away_bet_pct") or 0)
+    home_bets = int(feature.get("home_bet_pct") or 0)
+    away_money = int(feature.get("away_money_pct") or 0)
+    home_money = int(feature.get("home_money_pct") or 0)
+    return f"""
+<div data-testid="nba-spread-step4-most-bet-card" style="border:1px solid rgba(103,216,255,.42);border-radius:22px;
+background:linear-gradient(140deg,rgba(8,18,31,.99),rgba(12,42,67,.97));padding:18px 18px 16px;margin:14px 0 12px;
+box-shadow:0 14px 34px rgba(0,0,0,.22)">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+    <div>
+      <div style="font-size:.72rem;font-weight:950;letter-spacing:.1em;text-transform:uppercase;color:#67d8ff">🔥 Most Bet Game</div>
+      <div style="font-size:1.25rem;font-weight:950;color:#f8fafc;margin-top:6px">{away} @ {home}</div>
+      <div style="font-size:.77rem;color:#91a4b8;margin-top:3px">{away_name} at {home_name}</div>
+    </div>
+    <div style="text-align:right;white-space:nowrap">
+      <div style="font-size:.9rem;font-weight:900;color:#f8fafc">{tip}</div>
+      <div style="font-size:.69rem;color:#7f93a8;margin-top:3px">{date} • Phoenix</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px">
+    <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
+      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">Tracked Bets</div>
+      <div style="font-size:1.02rem;color:#f8fafc;font-weight:950;margin-top:3px">{bet_count:,}</div>
+    </div>
+    <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
+      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">% of Bets</div>
+      <div style="font-size:.82rem;color:#f8fafc;font-weight:900;margin-top:3px">{away} {away_bets}% • {home} {home_bets}%</div>
+    </div>
+    <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
+      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">% of Money</div>
+      <div style="font-size:.82rem;color:#f8fafc;font-weight:900;margin-top:3px">{away} {away_money}% • {home} {home_money}%</div>
+    </div>
+  </div>
+  <div style="font-size:.66rem;color:#688197;margin-top:11px">Volume/splits: Action Network • Matchup/time: verified Step-3 NBA schedule</div>
+</div>
+"""
+
+
+def _render_most_bet(feature: dict) -> None:
+    if feature.get("verification") == "VERIFIED":
+        st.markdown(_most_bet_card(feature), unsafe_allow_html=True)
+        return
+    diagnostic = escape(str(feature.get("diagnostic_state") or "SOURCE_UNAVAILABLE"))
+    st.markdown(
+        f"""
+<div data-testid="nba-spread-step4-most-bet-unavailable" style="border:1px dashed rgba(103,216,255,.22);border-radius:16px;
+padding:13px 15px;background:#09131f;margin:14px 0 12px">
+  <div style="font-size:.78rem;font-weight:900;color:#b9dceb">🔥 Most Bet Game data unavailable</div>
+  <div style="font-size:.72rem;color:#7890a5;margin-top:4px">No matchup is promoted unless tracked volume and both betting splits match a verified Step-3 game.</div>
+  <div style="font-size:.64rem;color:#61778b;margin-top:6px">{diagnostic}</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
 def _render_game_group(title: str, games: list[dict], empty_text: str) -> None:
     st.markdown(
         f'<div style="font-size:.78rem;font-weight:950;letter-spacing:.08em;text-transform:uppercase;'
@@ -73,27 +144,19 @@ def _render_game_group(title: str, games: list[dict], empty_text: str) -> None:
 
 
 def render_nba_spread_page() -> None:
-    # Preserve the Step-2 route-activation heartbeat as a compatibility marker
-    # while Step 3 adds its own exact schedule heartbeat.
     st.markdown(
-        f'<div data-testid="nba-spread-step2-active" style="display:none!important"></div>'
-        f'<div data-testid="nba-spread-step3-schedule-active" '
-        f'data-heartbeat="{PAGE_HEARTBEAT}" style="display:none!important"></div>',
+        '<div data-testid="nba-spread-step2-active" style="display:none!important"></div>'
+        f'<div data-testid="nba-spread-step3-schedule-active" data-heartbeat="{STEP3_HEARTBEAT}" style="display:none!important"></div>'
+        f'<div data-testid="nba-spread-step4-most-bet-active" data-heartbeat="{PAGE_HEARTBEAT}" style="display:none!important"></div>',
         unsafe_allow_html=True,
     )
     st.markdown(
         """
 <div style="border:1px solid rgba(56,189,248,.32);border-radius:24px;padding:22px 24px;
 background:linear-gradient(135deg,rgba(8,13,22,.98),rgba(15,36,60,.96));margin:8px 0 16px">
-  <div style="font-size:.72rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#67d8ff">
-    KYRE SPORTS AI • NBA
-  </div>
-  <div style="font-size:clamp(2rem,6vw,3.1rem);font-weight:950;letter-spacing:-.045em;color:#f8fafc;margin-top:5px">
-    🏀 NBA Spread
-  </div>
-  <div style="font-size:.88rem;color:#a9b8c8;margin-top:7px">
-    Rolling 7-day schedule • Phoenix, Arizona time
-  </div>
+  <div style="font-size:.72rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#67d8ff">KYRE SPORTS AI • NBA</div>
+  <div style="font-size:clamp(2rem,6vw,3.1rem);font-weight:950;letter-spacing:-.045em;color:#f8fafc;margin-top:5px">🏀 NBA Spread</div>
+  <div style="font-size:.88rem;color:#a9b8c8;margin-top:7px">Rolling 7-day schedule • Phoenix, Arizona time</div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -107,9 +170,7 @@ background:linear-gradient(135deg,rgba(8,13,22,.98),rgba(15,36,60,.96));margin:8
 <div data-testid="nba-spread-step3-schedule-unavailable" style="border:1px solid rgba(248,113,113,.28);
 border-radius:18px;padding:16px 18px;background:#160e14">
   <div style="font-weight:900;color:#fecaca">Schedule verification unavailable</div>
-  <div style="font-size:.78rem;color:#b9a1aa;margin-top:5px">
-    NBA Official and ESPN NBA must agree before this page publishes a slate. Nothing is guessed.
-  </div>
+  <div style="font-size:.78rem;color:#b9a1aa;margin-top:5px">NBA Official and ESPN NBA must agree before this page publishes a slate. Nothing is guessed.</div>
   <div style="font-size:.68rem;color:#846b75;margin-top:8px">{diagnostic}</div>
 </div>
 """,
@@ -134,6 +195,7 @@ border-radius:16px;padding:11px 14px;background:#0a1320">
         unsafe_allow_html=True,
     )
 
+    _render_most_bet(_load_most_bet(games))
     _render_game_group("Upcoming", upcoming, "No verified upcoming NBA games in this Phoenix-time window.")
     _render_game_group("Live / Final", live_final, "No verified live or completed NBA games in this window yet.")
 
@@ -141,6 +203,7 @@ border-radius:16px;padding:11px 14px;background:#0a1320">
 __all__ = [
     "MODEL_VERSION",
     "PAGE_HEARTBEAT",
+    "STEP3_HEARTBEAT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "MAY_MODIFY_MODEL",
     "MAY_MODIFY_PROJECTION",
