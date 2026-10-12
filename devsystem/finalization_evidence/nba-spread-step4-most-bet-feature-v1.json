@@ -1,0 +1,101 @@
+{
+  "task_id": "nba-spread-step4-most-bet-feature-v1",
+  "freeze_token": "NBA_SPREAD_STEP4_MOST_BET_FEATURE_FROZEN",
+  "candidate_sha": "89a3ba98da2cc611093e32f8af20eab05f6faebc",
+  "merged_main_sha": "38954c48c35534428cdd09442ba28a58cd8536bd",
+  "pr_number": 1523,
+  "github_actions_fallback": 0,
+  "runless_gate": {
+    "name": "runless-final-gate",
+    "check_id": 115038124842,
+    "head_sha": "89a3ba98da2cc611093e32f8af20eab05f6faebc",
+    "conclusion": "success",
+    "app_id": 5204253,
+    "receipt_digest": "9d6b96e76f0aab41874ad9eeabd4820005b6ad3d3a31e7e3124005bc305962fa"
+  },
+  "merge_evidence": {
+    "contains_candidate": true,
+    "candidate_sha": "89a3ba98da2cc611093e32f8af20eab05f6faebc",
+    "merged_main_sha": "38954c48c35534428cdd09442ba28a58cd8536bd",
+    "merge_parent_candidate": true
+  },
+  "public_production": {
+    "url": "https://pickvault.streamlit.app",
+    "route_query": "ks_sport=NBA&ks_nba_market=Spread",
+    "backend_health_url": "https://pickvault.streamlit.app/~/+/_stcore/health",
+    "backend_health_status": 200,
+    "backend_health_content": "ok",
+    "websocket_url": "wss://pickvault.streamlit.app/~/+/_stcore/stream",
+    "websocket_opened": true,
+    "websocket_frame_count": 22,
+    "found": {
+      "nba-spread-step4-most-bet-active": true,
+      "NBA Spread": true,
+      "Phoenix, Arizona": true,
+      "nba-spread-step3-schedule-active": true
+    },
+    "forbidden": {
+      "Sharp Money Game": false,
+      "Kyre Fair Spread": false,
+      "Cover Probability": false
+    },
+    "decision": "PUBLIC_PRODUCTION_GREEN"
+  },
+  "runless_receipt": {
+    "step": "task17-step1-real-prove-execution",
+    "digest": "9d6b96e76f0aab41874ad9eeabd4820005b6ad3d3a31e7e3124005bc305962fa",
+    "project": "API2",
+    "task_id": "nba-spread-step4-most-bet-feature-v1",
+    "proof_id": "nba-spread-step4-most-bet-feature-v1-89a3ba98da2cc611-5c6979b33d435464",
+    "created_at": "2026-10-12T22:37:07.483027+00:00",
+    "workstream": "nba-spread-step4-most-bet-feature-v1",
+    "artifact_map": {
+      "nba_spread_page_v1.py": "0ad62af70010051c3ac8f4477d63263a228eb76b",
+      "nba_spread_most_bet_v1.py": "7366bdcce48c0ba251c2b297cdbe0eb4d02b71e1",
+      "tests/test_nba_spread_step4_most_bet_v1.py": "2c82d25fae5664281f82820a518b1f7804e984f1",
+      "devsystem/task_ledgers/nba-spread-step4-most-bet-feature-v1.json": "a733ad2bd6bb0e4a1810845085b2c9dabe29c6ec",
+      "devsystem/execution_plans/nba-spread-step4-most-bet-feature-v1.json": "583c411a1205a69fc93d48a53709f9a21ae7d172",
+      "devsystem/runless_proof_plans/nba-spread-step4-most-bet-feature-v1.json": "786cd3794964754467e71bc81da1af1bcc6b19d0"
+    },
+    "prior_digest": null,
+    "candidate_sha": "89a3ba98da2cc611093e32f8af20eab05f6faebc",
+    "failure_class": "NONE",
+    "dependency_map": {
+      "nba_spread_schedule_v1.py": "143c366f935776b2f8ce77c0947b1fcf23013fa7",
+      "nba_spread_step2_activation_v1.py": "9a122781f33e7c383be3090150c130b7b34d75dd",
+      "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+      "tests/test_nba_spread_step2_site_activation_v1.py": "51a82403aa91a69a8c74b5c47f6f5ed69af92365",
+      "tests/test_nba_spread_step3_schedule_phoenix_v1.py": "de424b332587f061678cfcffe58c8f340cdfd3a0",
+      "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": "33f6f638f57d02cef58fb9996e8e0c54c3b917a3"
+    },
+    "registry_after": {
+      "revision": 299,
+      "state_hash": "855f9e2950252812f235033dc53af5b0c80a94cf378a2f30753e6ac7d1354d54",
+      "active_thaws": [
+        "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+        "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+        "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+        "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+        "THAW-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1"
+      ]
+    },
+    "registry_before": {
+      "revision": 299,
+      "state_hash": "855f9e2950252812f235033dc53af5b0c80a94cf378a2f30753e6ac7d1354d54",
+      "active_thaws": [
+        "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+        "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+        "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+        "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+        "THAW-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1"
+      ]
+    },
+    "evidence_digests": [
+      "e3df70398b0b9f984913489a8c57f7edc5deb3746bc72f7cb83a7bd31841c419",
+      "044cdc6e356355a92d7e4e77bb7f867b7128b01cc3e1f148ec15e0966a552997",
+      "31335d1a6ef825a2626c7b00b6906fc61a8ec68f1e87456e9b384de4686f4d54"
+    ],
+    "proof_fingerprint": "140f583035528f26271eb416224c21639a9ca3840e5bfa087c47f78e2aa1ba9e",
+    "deployment_identity": "95c2eb3c0cbf98d9d8c4c422822c007bcf99c380"
+  }
+}
