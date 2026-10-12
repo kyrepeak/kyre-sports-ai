@@ -2,8 +2,8 @@
 
 This module owns only the NBA Spread Step-1 mutation boundary. It does not
 activate a Streamlit route, import another NBA workstream, touch another sport,
-or authorize shared-site/API mutation. Later NBA Spread steps must expand their
-own scope explicitly.
+or authorize shared-site/API/control-plane mutation. Later NBA Spread steps
+must expand their own scope explicitly.
 """
 from __future__ import annotations
 
@@ -21,12 +21,10 @@ MAY_MODIFY_EXISTING_NBA_WORKSTREAMS = False
 
 STEP1_OWNED_PATHS = frozenset(
     {
-        "devsystem/change_classifier_v1.py",
         "devsystem/execution_plans/nba-spread-step1-page-isolation-v1.json",
         "devsystem/runless_proof_plans/nba-spread-step1-page-isolation-v1.json",
         "devsystem/task_ledgers/nba-spread-step1-page-isolation-v1.json",
         "nba_spread_page_isolation_v1.py",
-        "tests/test_devsystem_change_classifier_v1.py",
         "tests/test_nba_spread_page_isolation_v1.py",
     }
 )
