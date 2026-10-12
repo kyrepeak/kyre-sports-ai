@@ -1,0 +1,62 @@
+{
+  "artifact_map": {
+    "app.py": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
+    "devsystem/devsystem_manifest_v1.json": "a365f076e436206000d074db5cf87fb629f3b783",
+    "devsystem/execution_plans/nba-spread-step2-site-activation-v1.json": "a1e37d8762cacc6ce5d93de16a7354c0ee5904b9",
+    "devsystem/runless_proof_plans/nba-spread-step2-site-activation-v1.json": "9d51ce87e14a684b1bc8a32b838347fb2e2cefe5",
+    "devsystem/task_ledgers/nba-spread-step2-site-activation-v1.json": "d8566bb47f7b002e26efc1e6a278c114dc551965",
+    "nba_spread_page_v1.py": "8becdc6be21e8956e8f8101ebb3a930897f61cf6",
+    "nba_spread_step2_activation_v1.py": "9a122781f33e7c383be3090150c130b7b34d75dd",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": "33f6f638f57d02cef58fb9996e8e0c54c3b917a3",
+    "tests/test_devsystem_change_classifier_v1.py": "6b064453b2d79ab933ce58f9d2a504e34f6fbd21",
+    "tests/test_nba_spread_step2_site_activation_v1.py": "51a82403aa91a69a8c74b5c47f6f5ed69af92365"
+  },
+  "candidate_sha": "bfae122c36ea29d18a64a9e7ff4c40b06e24640f",
+  "created_at": "2026-10-12T02:41:27.022248+00:00",
+  "dependency_map": {
+    "devsystem/change_classifier_v1.py": "352074abc9d5f807ef6bfad593743c19cef49e00",
+    "nba_page_isolation_v1.py": "c5b133017bc6449409474972669b0defb34723f7",
+    "nba_spread_page_isolation_v1.py": "2204e40efb2cf3202d346a3e1ff1cd33f99ce79b",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "23e63bb1d87a9081a0b969f92922e5d5da7e9358",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "tests/test_nba_page_isolation_v1.py": "094e7f60c781a2fd789b9212e845f0ae44be7cb1",
+    "tests/test_nba_spread_page_isolation_v1.py": "77780af37775f7b867ea4facc7ea5cc4163bb6bc"
+  },
+  "deployment_identity": "7ebf216961478890499542f722112ad606549e48",
+  "digest": "bf1f123a63a6043321de5f85e221d0061aa37f99c8eef0fea25126145cd247ef",
+  "evidence_digests": [
+    "52199e9c840c991e8d2d6a2c0102f8511b59d30b757c295ead6b5cfa934b9ecb",
+    "c335b39dd1a6246d5b647832fdbd45e336e2dc5db0d5bb8a6a56756980d26ac5",
+    "d5af34751b5e7769989ccc39248993ab3e19020fec72814dee43f06f4d6754a6"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "749beddfdbc70051aafbe413b0889b511b17a204becc8dee41be594f846cb2e3",
+  "proof_id": "nba-spread-step2-site-activation-v1-bfae122c36ea29d1-07bc04e363d26069",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP2-SITE-ACTIVATION-R1"
+    ],
+    "revision": 293,
+    "state_hash": "fb1bcdefd9efac5ee7b571f1dd47a000c2e17d6ff5bd2dcbc2c8f0c3324e21e3"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP2-SITE-ACTIVATION-R1"
+    ],
+    "revision": 293,
+    "state_hash": "fb1bcdefd9efac5ee7b571f1dd47a000c2e17d6ff5bd2dcbc2c8f0c3324e21e3"
+  },
+  "step": "task17-step1-real-prove-execution",
+  "task_id": "nba-spread-step2-site-activation-v1",
+  "workstream": "nba-spread-two-page-v1"
+}
