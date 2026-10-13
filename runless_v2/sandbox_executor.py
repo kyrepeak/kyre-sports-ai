@@ -1,0 +1,292 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from dataclasses import dataclass
+from typing import Any, Protocol
+
+from pydantic import BaseModel, Field
+
+from .models import FailureClass
+
+_BAD_SHELL = re.compile(r"[;&|><`$\n\r]")
+_APPROVED_MODULE_PREFIXES = ("devsystem.",)
+_MAX_SANDBOX_SECONDS = 1800
+_MIN_BOOTSTRAP_PACKAGES = ("pytest", "fastapi", "httpx", "PyJWT", "cryptography")
+_REPOSITORY_URL = "https://github.com/kyrepeak/kyre-sports-ai.git"
+
+
+class SandboxExecutionError(RuntimeError):
+    pass
+
+
+def validate_command(command: tuple[str, ...] | list[str]) -> tuple[str, ...]:
+    cmd = tuple(str(part) for part in command)
+    text = " ".join(cmd)
+    if _BAD_SHELL.search(text):
+        raise ValueError("RUNLESS_V2_COMMAND_REJECTED")
+    if len(cmd) >= 3 and cmd[:3] == ("python", "-m", "pytest"):
+        return cmd
+    if len(cmd) >= 3 and cmd[:2] == ("python", "-m") and (
+        cmd[2].startswith(_APPROVED_MODULE_PREFIXES) or cmd[2] == "py_compile"
+    ):
+        return cmd
+    raise ValueError("RUNLESS_V2_COMMAND_REJECTED")
+
+
+class SandboxEvidence(BaseModel):
+    name: str
+    ok: bool
+    command: list[str] | None = None
+    stdout_digest: str | None = None
+    stderr_digest: str | None = None
+    failure_class: FailureClass = FailureClass.NONE
+    detail: str = ""
+
+
+class SandboxProofResult(BaseModel):
+    ok: bool
+    candidate_sha: str
+    task_id: str
+    plan: dict[str, Any]
+    evidence: list[SandboxEvidence] = Field(default_factory=list)
+
+
+class SandboxBackend(Protocol):
+    async def create(self, **kwargs: Any) -> str: ...
+    async def run(
+        self,
+        session_id: str,
+        command: str,
+        args: tuple[str, ...] | list[str] = (),
+        *,
+        cwd: str | None = None,
+        env: dict[str, str] | None = None,
+        timeout_ms: int | None = None,
+    ) -> dict[str, Any]: ...
+    async def stop(self, session_id: str) -> None: ...
+
+
+@dataclass
+class VercelSandboxBackend:
+    repository_url: str = _REPOSITORY_URL
+
+    def __post_init__(self) -> None:
+        self._boxes: dict[str, Any] = {}
+
+    async def create(
+        self,
+        *,
+        candidate_sha: str,
+        github_token: str,
+        runtime: str,
+        persistent: bool,
+        timeout_ms: int,
+    ) -> str:
+        if runtime != "python3.13":
+            raise SandboxExecutionError("RUNLESS_V2_SANDBOX_RUNTIME_UNSUPPORTED")
+        try:
+            from vercel import sandbox
+            from vercel.sandbox import GitSource
+        except Exception as exc:
+            raise SandboxExecutionError("RUNLESS_V2_VERCEL_SDK_UNAVAILABLE") from exc
+        box = await sandbox.create_sandbox(
+            image="vercel/sandbox/python:3.13",
+            source=GitSource(
+                url=self.repository_url,
+                revision=candidate_sha,
+                depth=1,
+                username="x-access-token",
+                password=github_token,
+            ),
+            persistent=persistent,
+            execution_time_limit=timeout_ms / 1000,
+            destroy=True,
+        )
+        session_id = str(getattr(box, "session_id", None) or getattr(box, "name", None) or id(box))
+        self._boxes[session_id] = box
+        try:
+            version = await box.run_process(
+                "python", ["--version"], capture_output=True, check=False, kill_after=30
+            )
+            version_text = f"{getattr(version, 'stdout', '')}{getattr(version, 'stderr', '')}"
+            if not version_text.strip().startswith("Python 3.13"):
+                raise SandboxExecutionError("RUNLESS_V2_SANDBOX_RUNTIME_MISMATCH")
+            bootstrap = await box.run_process(
+                "python",
+                ["-m", "pip", "install", "--disable-pip-version-check", "--quiet", *_MIN_BOOTSTRAP_PACKAGES],
+                capture_output=True,
+                check=False,
+                kill_after=min(300, timeout_ms / 1000),
+            )
+            if int(getattr(bootstrap, "returncode", 1)) != 0:
+                raise SandboxExecutionError("RUNLESS_V2_SANDBOX_BOOTSTRAP_FAILED")
+        except Exception:
+            await self.stop(session_id)
+            raise
+        return session_id
+
+    async def run(
+        self,
+        session_id: str,
+        command: str,
+        args: tuple[str, ...] | list[str] = (),
+        *,
+        cwd: str | None = None,
+        env: dict[str, str] | None = None,
+        timeout_ms: int | None = None,
+    ) -> dict[str, Any]:
+        box = self._boxes.get(session_id)
+        if box is None:
+            raise SandboxExecutionError("RUNLESS_V2_SANDBOX_SESSION_NOT_FOUND")
+        result = await box.run_process(
+            command,
+            list(args),
+            cwd=cwd,
+            env=env,
+            capture_output=True,
+            check=False,
+            kill_after=(timeout_ms / 1000) if timeout_ms else None,
+        )
+        return {
+            "exit_code": int(getattr(result, "returncode", 1)),
+            "stdout": str(getattr(result, "stdout", "") or ""),
+            "stderr": str(getattr(result, "stderr", "") or ""),
+        }
+
+    async def stop(self, session_id: str) -> None:
+        box = self._boxes.pop(session_id, None)
+        if box is not None:
+            try:
+                await box.stop()
+            finally:
+                destroy = getattr(box, "destroy", None)
+                if callable(destroy):
+                    await destroy()
+
+
+class SandboxExecutor:
+    def __init__(self, *, backend: SandboxBackend | None = None):
+        self.backend = backend or VercelSandboxBackend()
+
+    @staticmethod
+    def _digest(text: str) -> str:
+        return hashlib.sha256(text.encode()).hexdigest()
+
+    @staticmethod
+    def _effective_timeout(requested_seconds: int, plan_seconds: int | None = None) -> int:
+        values = [max(1, int(requested_seconds)), _MAX_SANDBOX_SECONDS]
+        if plan_seconds is not None:
+            values.append(max(1, int(plan_seconds)))
+        return min(values)
+
+    async def _load_plan(self, session_id: str, task_id: str, timeout_ms: int) -> dict[str, Any]:
+        code = (
+            "import json,sys;from pathlib import Path;"
+            "p=Path('devsystem/runless_proof_plans')/(sys.argv[1]+'.json');"
+            "print(json.dumps(json.loads(p.read_text()),sort_keys=True,separators=(',',':')))"
+        )
+        result = await self.backend.run(
+            session_id, "python", ["-c", code, task_id], cwd=None, timeout_ms=timeout_ms
+        )
+        if int(result.get("exit_code", 1)) != 0:
+            raise SandboxExecutionError("RUNLESS_V2_PLAN_LOAD_FAILED")
+        try:
+            plan = json.loads(str(result.get("stdout") or ""))
+        except Exception as exc:
+            raise SandboxExecutionError("RUNLESS_V2_PLAN_DECODE_FAILED") from exc
+        if plan.get("task_id") != task_id:
+            raise SandboxExecutionError("RUNLESS_V2_PLAN_ID_MISMATCH")
+        if not plan.get("freeze_token"):
+            raise SandboxExecutionError("RUNLESS_V2_PLAN_REQUIRED_FIELDS")
+        return plan
+
+    async def execute(
+        self,
+        *,
+        candidate_sha: str,
+        task_id: str,
+        github_token: str,
+        timeout_seconds: int,
+    ) -> SandboxProofResult:
+        session_id: str | None = None
+        create_timeout = self._effective_timeout(timeout_seconds)
+        try:
+            try:
+                session_id = await self.backend.create(
+                    candidate_sha=candidate_sha,
+                    github_token=github_token,
+                    runtime="python3.13",
+                    persistent=False,
+                    timeout_ms=create_timeout * 1000,
+                )
+            except SandboxExecutionError:
+                raise
+            except Exception as exc:
+                raise SandboxExecutionError("RUNLESS_V2_SANDBOX_CREATE_FAILED") from exc
+
+            head = await self.backend.run(
+                session_id, "git", ["rev-parse", "HEAD"], timeout_ms=30_000
+            )
+            if int(head.get("exit_code", 1)) != 0 or str(head.get("stdout") or "").strip() != candidate_sha:
+                raise SandboxExecutionError("RUNLESS_V2_SANDBOX_HEAD_MISMATCH")
+
+            plan = await self._load_plan(session_id, task_id, 30_000)
+            plan_timeout = self._effective_timeout(timeout_seconds, int(plan.get("timeout_seconds", timeout_seconds)))
+            commands: list[tuple[str, ...]] = []
+            for raw in plan.get("commands", []):
+                try:
+                    commands.append(validate_command(tuple(raw)))
+                except ValueError as exc:
+                    raise SandboxExecutionError("RUNLESS_V2_COMMAND_REJECTED") from exc
+
+            evidence: list[SandboxEvidence] = []
+            for command in commands:
+                try:
+                    result = await self.backend.run(
+                        session_id,
+                        command[0],
+                        list(command[1:]),
+                        timeout_ms=plan_timeout * 1000,
+                    )
+                    stdout = str(result.get("stdout") or "")
+                    stderr = str(result.get("stderr") or "")
+                    ok = int(result.get("exit_code", 1)) == 0
+                    evidence.append(
+                        SandboxEvidence(
+                            name=" ".join(command),
+                            ok=ok,
+                            command=list(command),
+                            stdout_digest=self._digest(stdout),
+                            stderr_digest=self._digest(stderr),
+                            failure_class=FailureClass.NONE if ok else FailureClass.STATIC_PROOF,
+                            detail="" if ok else "RUNLESS_V2_STATIC_PROOF_FAILED",
+                        )
+                    )
+                    if not ok:
+                        break
+                except TimeoutError:
+                    evidence.append(
+                        SandboxEvidence(
+                            name=" ".join(command),
+                            ok=False,
+                            command=list(command),
+                            stdout_digest=self._digest(""),
+                            stderr_digest=self._digest(""),
+                            failure_class=FailureClass.INFRA,
+                            detail="RUNLESS_V2_SANDBOX_COMMAND_TIMEOUT",
+                        )
+                    )
+                    break
+
+            return SandboxProofResult(
+                ok=bool(evidence) and all(item.ok for item in evidence),
+                candidate_sha=candidate_sha,
+                task_id=task_id,
+                plan=plan,
+                evidence=evidence,
+            )
+        finally:
+            if session_id is not None:
+                await self.backend.stop(session_id)
