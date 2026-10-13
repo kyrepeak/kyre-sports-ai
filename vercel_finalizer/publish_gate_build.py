@@ -51,7 +51,14 @@ def _run_exact_proof() -> list[list[str]]:
             "devsystem/universal_sports_source_finalization_step1_contract_v1.py",
             "devsystem/universal_sports_finalization_bootstrap_v1.py",
         ],
-        [sys.executable, "-m", "pytest", "-q", "vercel_finalizer/test_app.py"],
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "vercel_finalizer/test_app.py",
+            "vercel_finalizer/test_publish_gate_build.py",
+        ],
     ]
     for command in commands:
         subprocess.run(command, cwd=ROOT, check=True)
