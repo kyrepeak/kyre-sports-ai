@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 710,
-  "generation": 405,
+  "revision": 712,
+  "generation": 406,
   "holders": [
     {
       "owner_id": "universal-sports-source-finalization-v1-step6",
@@ -37,11 +37,11 @@
     },
     {
       "owner_id": "runless-vercel-supabase-v2-cutover",
-      "lease_id": "SCOPE-LEASE-9464F2B21037E20982CAD8B4",
-      "generation": 405,
-      "acquired_at_utc": "2026-10-13T21:30:00Z",
-      "heartbeat_at_utc": "2026-10-13T21:30:00Z",
-      "expires_at_utc": "2026-10-13T22:30:00Z",
+      "lease_id": "SCOPE-LEASE-D63DA906716899642DC6A664",
+      "generation": 406,
+      "acquired_at_utc": "2026-10-13T21:47:00Z",
+      "heartbeat_at_utc": "2026-10-13T21:47:00Z",
+      "expires_at_utc": "2026-10-13T22:47:00Z",
       "scope": {
         "write_paths": [
           "devsystem/contracts/runless-vercel-supabase-v2.json",
@@ -72,7 +72,7 @@
           "vercel-project:kyre-runless-proof"
         ],
         "resource_identity": {
-          "candidate-sha": "8958008c804e3e2f101f3be319c51f86d12ca720",
+          "candidate-sha": "e72b92d633be4c6e4f8354c09fc4928d04b74787",
           "vercel-project": "kyre-runless-proof",
           "supabase-project": "jqajcdckalsfizbvngiu"
         },
@@ -80,5 +80,5 @@
       }
     }
   ],
-  "state_hash": "e67c235c59978494da37783d788b577336b68b770c12f696a411bb591fd26189"
+  "state_hash": "5d5eda82b3a3643d19dc964ee7d0e2cf8aa61627a5d3d9c009e78151ec0b5345"
 }
