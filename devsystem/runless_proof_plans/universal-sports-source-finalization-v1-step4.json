@@ -1,0 +1,57 @@
+{
+  "artifacts": [
+    "devsystem/contracts/universal-sports-provider-registry-v1.json",
+    "devsystem/universal_sports_provider_registry_v1.py",
+    "devsystem/contracts/universal-sports-field-router-v1.json",
+    "devsystem/universal_sports_field_router_v1.py",
+    "devsystem/contracts/universal-sports-trust-quorum-v1.json",
+    "devsystem/universal_sports_trust_quorum_v1.py",
+    "tests/test_devsystem_universal_sports_provider_registry_step2_v1.py",
+    "tests/test_devsystem_universal_sports_field_router_step3_v1.py",
+    "tests/test_devsystem_universal_sports_trust_quorum_step4_v1.py",
+    "docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md",
+    "docs/superpowers/plans/2026-10-12-universal-sports-source-finalization-v1-step4.md",
+    "devsystem/execution_plans/universal-sports-source-finalization-v1-step4.json",
+    "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step4.json",
+    "devsystem/task_ledgers/universal-sports-source-finalization-v1-step4.json",
+    "devsystem/universal_sports_finalization_bootstrap_v1.py"
+  ],
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_devsystem_universal_sports_trust_quorum_step4_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_devsystem_universal_sports_provider_registry_step2_v1.py",
+      "tests/test_devsystem_universal_sports_field_router_step3_v1.py",
+      "tests/test_devsystem_universal_sports_trust_quorum_step4_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "devsystem/universal_sports_trust_quorum_v1.py"
+    ]
+  ],
+  "dependencies": [
+    "devsystem/runless_proof_plan_v1.py",
+    "devsystem/universal_sports_provider_registry_v1.py",
+    "devsystem/universal_sports_field_router_v1.py",
+    "devsystem/universal_sports_finalization_bootstrap_v1.py",
+    "vercel_finalizer/app.py"
+  ],
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP4_TRUST_QUORUM_ENGINE_FROZEN",
+  "github_actions_fallback": 0,
+  "live_ttl_seconds": 900,
+  "probes": [],
+  "task_id": "universal-sports-source-finalization-v1-step4",
+  "timeout_seconds": 600,
+  "workstream": "universal-sports-source-finalization-v1"
+}
