@@ -1,13 +1,13 @@
 {
   "github_actions_fallback": 0,
-  "latest_freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_ARCHITECTURE_CONTRACT_FROZEN",
-  "latest_merged_main_sha": "6a1e4b739cf500ff42765016950a5dce13d2c81c",
-  "latest_record_blob_sha": "cdaef4599a3cecd48d90bc1ee24a47caf64823f7",
-  "latest_record_path": "devsystem/finalization_ledger_v2/records/UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_ARCHITECTURE_CONTRACT_FROZEN.json",
+  "latest_freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP2_CREDIBLE_PROVIDER_REGISTRY_FROZEN",
+  "latest_merged_main_sha": "15afb568bc18b03d0c21f804d43fbd045c699ddc",
+  "latest_record_blob_sha": "ad15e1b6f0def24ef56953263205b65bb4893308",
+  "latest_record_path": "devsystem/finalization_ledger_v2/records/UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP2_CREDIBLE_PROVIDER_REGISTRY_FROZEN.json",
   "legacy_registry_mutation": false,
-  "previous_state_hash": null,
+  "previous_state_hash": "cec759ce09e71a889746d15fce996208c544967ee73849b3bc2b7527d6a07835",
   "render_dependency": false,
-  "revision": 1,
-  "state_hash": "cec759ce09e71a889746d15fce996208c544967ee73849b3bc2b7527d6a07835",
+  "revision": 2,
+  "state_hash": "c63e8825b3d288dc07022142dc97a68ee74f13ecf8861b7891d79ea76098652f",
   "version": "UNIVERSAL_SPORTS_FINALIZATION_LEDGER_V2_MANIFEST"
 }
