@@ -45,15 +45,25 @@ class DurableStateStore:
     @property
     def _headers(self) -> dict[str, str]:
         key = self.settings.supabase_service_role_key
-        return {
-            "Authorization": f"Bearer {key}",
+        headers = {
             "apikey": key,
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
+        if not key.startswith(("sb_secret_", "sb_publishable_")):
+            headers["Authorization"] = f"Bearer {key}"
+        return headers
 
     def _url(self, path: str) -> str:
         return self.settings.supabase_url.rstrip("/") + path
+
+    def health(self) -> bool:
+        response = self.client.get(
+            self._url("/rest/v1/proof_runs"),
+            headers=self._headers,
+            params={"select": "proof_id", "limit": "1"},
+        )
+        return response.status_code < 400
 
     def _raise(self, response: httpx.Response) -> None:
         try:
