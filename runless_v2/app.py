@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 from urllib.parse import quote
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 # Vercel imports this file as standalone /var/task/app.py when runless_v2 is
@@ -111,7 +112,14 @@ def create_app(
     app.state.github = gh
     app.state.sandbox = sandbox
 
-    def authenticated(authorization: str | None = Header(default=None)) -> None:
+    bearer = HTTPBearer(auto_error=False)
+
+    def authenticated(
+        credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+    ) -> None:
+        authorization = None
+        if credentials is not None:
+            authorization = f"{credentials.scheme} {credentials.credentials}"
         require_bearer(authorization, cfg.proof_auth_token)
 
     @app.get("/health")
