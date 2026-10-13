@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -22,7 +23,14 @@ from app import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-PROOF_PLAN = ROOT / "devsystem" / "runless_proof_plans" / "universal-sports-source-finalization-v1-step1.json"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from devsystem.runless_proof_plan_v1 import load_plan
+
+DEFAULT_PR_NUMBER = 1526
+DEFAULT_TASK_ID = "universal-sports-source-finalization-v1-step1"
+_TASK_ID = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 
 PHASE_CANDIDATE = 11
 PHASE_PROOF = 12
@@ -34,54 +42,69 @@ PHASE_PUBLISH_CHECK = 17
 PHASE_READBACK = 18
 
 
+def _target_branch() -> str:
+    branch = os.getenv("FINALIZER_ALLOWED_BRANCH", ALLOWED_BRANCH).strip()
+    if not branch:
+        raise RuntimeError("FINALIZER_ALLOWED_BRANCH_REQUIRED")
+    return branch
+
+
+def _target_pr_number() -> int:
+    raw = os.getenv("FINALIZER_PR_NUMBER", str(DEFAULT_PR_NUMBER)).strip()
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise RuntimeError("FINALIZER_PR_NUMBER_INVALID") from exc
+    if value <= 0:
+        raise RuntimeError("FINALIZER_PR_NUMBER_INVALID")
+    return value
+
+
+def _target_task_id() -> str:
+    task_id = os.getenv("FINALIZER_TASK_ID", DEFAULT_TASK_ID).strip()
+    if not _TASK_ID.fullmatch(task_id):
+        raise RuntimeError("FINALIZER_TASK_ID_INVALID")
+    return task_id
+
+
+def _proof_plan_path() -> Path:
+    return ROOT / "devsystem" / "runless_proof_plans" / f"{_target_task_id()}.json"
+
+
 def _require_candidate() -> tuple[str, str]:
     sha = os.getenv("VERCEL_GIT_COMMIT_SHA", "").strip().lower()
     ref = os.getenv("VERCEL_GIT_COMMIT_REF", "").strip()
     if len(sha) != 40 or any(ch not in "0123456789abcdef" for ch in sha):
         raise RuntimeError("FINALIZER_VERCEL_SHA_REQUIRED")
-    if ref and ref != ALLOWED_BRANCH:
+    allowed_branch = _target_branch()
+    if ref and ref != allowed_branch:
         raise RuntimeError("FINALIZER_VERCEL_REF_MISMATCH")
     return sha, ref
 
 
 def _run_exact_proof() -> list[list[str]]:
-    commands = [
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            "-q",
-            "tests/test_devsystem_universal_sports_source_finalization_step1_v1.py",
-        ],
-        [
-            sys.executable,
-            "-m",
-            "py_compile",
-            "devsystem/universal_sports_source_finalization_step1_contract_v1.py",
-            "devsystem/universal_sports_finalization_bootstrap_v1.py",
-        ],
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            "-q",
-            "vercel_finalizer/test_app.py",
-            "vercel_finalizer/test_publish_gate_build.py",
-        ],
-    ]
-    for command in commands:
+    plan = load_plan(_target_task_id(), ROOT)
+    commands: list[list[str]] = []
+    for raw in plan.commands:
+        command = list(raw)
+        if command and command[0] == "python":
+            command[0] = sys.executable
         subprocess.run(command, cwd=ROOT, check=True)
+        commands.append(command)
     return commands
 
 
 def _proof_digest(candidate_sha: str, commands: list[list[str]]) -> str:
-    proof_plan_bytes = PROOF_PLAN.read_bytes()
+    proof_plan_bytes = _proof_plan_path().read_bytes()
     payload = {
         "candidate_sha": candidate_sha,
         "commands": commands,
         "proof_plan_sha256": hashlib.sha256(proof_plan_bytes).hexdigest(),
         "gate": GATE_NAME,
         "github_app_id": APP_ID_EXPECTED,
+        "pr_number": _target_pr_number(),
+        "target_branch": _target_branch(),
+        "task_id": _target_task_id(),
     }
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return "sha256:" + hashlib.sha256(raw).hexdigest()
@@ -89,14 +112,14 @@ def _proof_digest(candidate_sha: str, commands: list[list[str]]) -> str:
 
 def _verify_pr_head(client: httpx.Client, token: str, candidate_sha: str) -> None:
     response = client.get(
-        f"https://api.github.com/repos/{REPOSITORY}/pulls/1526",
+        f"https://api.github.com/repos/{REPOSITORY}/pulls/{_target_pr_number()}",
         headers=_headers(token),
     )
     response.raise_for_status()
     payload = response.json()
     head_sha = str(payload["head"]["sha"]).lower()
     head_ref = str(payload["head"]["ref"])
-    if head_ref != ALLOWED_BRANCH or head_sha != candidate_sha:
+    if head_ref != _target_branch() or head_sha != candidate_sha:
         raise RuntimeError("FINALIZER_PR_HEAD_MISMATCH")
 
 
