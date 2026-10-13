@@ -95,14 +95,14 @@ def test_official_league_sources_are_sport_scoped_not_universal():
     registry = _registry()
     by_id = {row["provider_id"]: row for row in registry["providers"]}
     official = {
-        "nba_official": "nba",
-        "wnba_official": "wnba",
-        "nfl_official": "nfl",
-        "ncaa_official": "ncaaf",
-        "mlb_official": "mlb",
+        "nba_official": ["nba"],
+        "wnba_official": ["wnba"],
+        "nfl_official": ["nfl"],
+        "ncaa_official": ["ncaab", "ncaaf"],
+        "mlb_official": ["mlb"],
     }
-    for provider_id, sport in official.items():
-        assert by_id[provider_id]["sports"] == [sport]
+    for provider_id, sports in official.items():
+        assert by_id[provider_id]["sports"] == sports
         assert by_id[provider_id]["page_wide_authority"] is False
 
 
