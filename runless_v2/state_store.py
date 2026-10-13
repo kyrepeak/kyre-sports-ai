@@ -54,13 +54,21 @@ class DurableStateStore:
             headers["Authorization"] = f"Bearer {key}"
         return headers
 
+    @property
+    def _read_headers(self) -> dict[str, str]:
+        return {**self._headers, "Accept-Profile": "runless_v2"}
+
+    @property
+    def _write_headers(self) -> dict[str, str]:
+        return {**self._headers, "Content-Profile": "runless_v2"}
+
     def _url(self, path: str) -> str:
         return self.settings.supabase_url.rstrip("/") + path
 
     def health(self) -> bool:
         response = self.client.get(
             self._url("/rest/v1/proof_runs"),
-            headers=self._headers,
+            headers=self._read_headers,
             params={"select": "proof_id", "limit": "1"},
         )
         return response.status_code < 400
@@ -78,7 +86,7 @@ class DurableStateStore:
 
     def _rpc(self, name: str, payload: dict[str, Any]) -> Any:
         response = self.client.post(
-            self._url(f"/rest/v1/rpc/{name}"), headers=self._headers, json=payload
+            self._url(f"/rest/v1/rpc/{name}"), headers=self._write_headers, json=payload
         )
         if response.status_code >= 400:
             self._raise(response)
@@ -229,7 +237,7 @@ class DurableStateStore:
     def status(self, proof_id: str) -> ProofStatus:
         response = self.client.get(
             self._url("/rest/v1/proof_runs"),
-            headers=self._headers,
+            headers=self._read_headers,
             params={"select": "*", "proof_id": f"eq.{proof_id}", "limit": "1"},
         )
         if response.status_code >= 400:
@@ -239,7 +247,7 @@ class DurableStateStore:
     def receipt_mirror(self, proof_id: str) -> dict[str, Any]:
         response = self.client.get(
             self._url("/rest/v1/receipt_mirrors"),
-            headers=self._headers,
+            headers=self._read_headers,
             params={"select": "*", "proof_id": f"eq.{proof_id}", "limit": "1"},
         )
         if response.status_code >= 400:
