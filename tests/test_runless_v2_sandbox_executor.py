@@ -1,5 +1,8 @@
 import hashlib
 import json
+import sys
+import types
+from pathlib import Path
 
 import pytest
 
@@ -7,6 +10,7 @@ from runless_v2.models import FailureClass
 from runless_v2.sandbox_executor import (
     SandboxExecutor,
     SandboxExecutionError,
+    VercelSandboxBackend,
     validate_command,
 )
 
@@ -61,6 +65,76 @@ class FakeBackend:
 
     async def stop(self, session_id):
         self.stopped.append(session_id)
+
+
+def test_vercel_sdk_is_pinned_to_runtime_capable_version():
+    requirements = (Path(__file__).resolve().parents[1] / "runless_v2" / "requirements.txt").read_text()
+    assert "vercel==0.7.2" in requirements.splitlines()
+
+
+@pytest.mark.asyncio
+async def test_vercel_backend_uses_supported_python313_runtime_without_removed_image(monkeypatch):
+    calls = {"create": None, "commands": [], "stopped": 0}
+
+    class FakeGitSource:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeCommand:
+        def __init__(self, *, exit_code=0, stdout="", stderr=""):
+            self.exit_code = exit_code
+            self._stdout = stdout
+            self._stderr = stderr
+
+        async def stdout(self):
+            return self._stdout
+
+        async def stderr(self):
+            return self._stderr
+
+    class FakeBox:
+        sandbox_id = "sandbox-1"
+
+        async def run_command(self, command, args=None, *, cwd=None, env=None, sudo=False):
+            args = list(args or [])
+            calls["commands"].append((command, args, cwd, dict(env or {})))
+            if command == "python" and args == ["--version"]:
+                return FakeCommand(stdout="Python 3.13.1\n")
+            return FakeCommand()
+
+        async def stop(self):
+            calls["stopped"] += 1
+
+    class FakeAsyncSandbox:
+        @staticmethod
+        async def create(**kwargs):
+            calls["create"] = kwargs
+            return FakeBox()
+
+    fake_sandbox = types.ModuleType("vercel.sandbox")
+    fake_sandbox.AsyncSandbox = FakeAsyncSandbox
+    fake_sandbox.GitSource = FakeGitSource
+    fake_vercel = types.ModuleType("vercel")
+    fake_vercel.sandbox = fake_sandbox
+    monkeypatch.setitem(sys.modules, "vercel", fake_vercel)
+    monkeypatch.setitem(sys.modules, "vercel.sandbox", fake_sandbox)
+
+    backend = VercelSandboxBackend()
+    session_id = await backend.create(
+        candidate_sha=SHA, github_token="gh-token", runtime="python3.13",
+        persistent=False, timeout_ms=300000,
+    )
+
+    assert session_id == "sandbox-1"
+    assert calls["create"]["runtime"] == "python3.13"
+    assert "image" not in calls["create"]
+    source = calls["create"]["source"]
+    assert source.kwargs["revision"] == SHA
+    assert source.kwargs["username"] == "x-access-token"
+    assert source.kwargs["password"] == "gh-token"
+    assert calls["commands"][0][:2] == ("python", ["--version"])
+    assert calls["commands"][1][0] == "python"
+    assert calls["commands"][1][1][:4] == ["-m", "pip", "install", "--disable-pip-version-check"]
 
 
 @pytest.mark.asyncio
