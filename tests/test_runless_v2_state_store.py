@@ -250,3 +250,36 @@ def test_health_accepts_successful_supabase_read():
         settings(supabase_service_role_key="sb_secret_test"), client=client
     )
     assert s.health() is True
+
+
+def test_rpc_targets_runless_v2_schema_with_content_profile():
+    seen = {}
+
+    def handler(req):
+        seen["content_profile"] = req.headers.get("content-profile")
+        return json_response(req, 200, [{
+            "proof_id": "proof-1",
+            "lease_token": "11111111-1111-1111-1111-111111111111",
+            "fencing_generation": 7,
+            "expires_at": "2026-10-13T20:00:00+00:00",
+            "state": "IDENTIFY",
+            "reused": True,
+        }])
+
+    store(handler).claim(request(), "fp-1", 900, proof_id="proof-1")
+    assert seen["content_profile"] == "runless_v2"
+
+
+def test_health_targets_runless_v2_schema_with_accept_profile():
+    seen = {}
+
+    def handler(req):
+        seen["accept_profile"] = req.headers.get("accept-profile")
+        return json_response(req, 200, [])
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    s = DurableStateStore(
+        settings(supabase_service_role_key="sb_secret_test"), client=client
+    )
+    assert s.health() is True
+    assert seen["accept_profile"] == "runless_v2"
