@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -165,6 +166,13 @@ def validate_trust_policy(policy: Mapping[str, Any]) -> dict[str, Any]:
 def _validate_route(route: Mapping[str, Any]) -> None:
     if not isinstance(route, Mapping):
         raise ValueError("ROUTE_NOT_OBJECT")
+
+    raw = deepcopy(dict(route))
+    supplied_route_id = str(raw.pop("route_id", "") or "").strip().upper()
+    expected_route_id = f"ROUTE-{_sha256(raw)[:24]}"
+    if supplied_route_id != expected_route_id:
+        raise ValueError("ROUTE_FINGERPRINT_MISMATCH")
+
     if route.get("routing_unit") != ROUTING_UNIT:
         raise ValueError("ROUTE_ROUTING_UNIT_MISMATCH")
     if route.get("page_wide_source_authority") is not False:
@@ -192,7 +200,6 @@ def _observation_map(
     observations: Sequence[Mapping[str, Any]],
     *,
     eligible: Sequence[str],
-    semantic_metric_id: str,
 ) -> dict[str, dict[str, Any]]:
     if isinstance(observations, (str, bytes)) or not isinstance(observations, Sequence):
         raise ValueError("OBSERVATIONS_NOT_SEQUENCE")
@@ -206,19 +213,39 @@ def _observation_map(
             raise ValueError(f"OFF_ROUTE_PROVIDER:{provider_id}")
         if provider_id in by_provider:
             raise ValueError(f"DUPLICATE_PROVIDER_OBSERVATION:{provider_id}")
-        metric = str(row.get("semantic_metric_id") or "").strip().upper()
-        if metric != semantic_metric_id:
-            raise ValueError(f"SEMANTIC_METRIC_MISMATCH:{provider_id}")
-        age = row.get("age_seconds")
-        quality = row.get("quality_score")
-        if not isinstance(age, (int, float)) or isinstance(age, bool) or float(age) < 0:
-            raise ValueError(f"OBSERVATION_AGE_INVALID:{provider_id}")
-        if not isinstance(quality, (int, float)) or isinstance(quality, bool) or not 0 <= float(quality) <= 1:
-            raise ValueError(f"OBSERVATION_QUALITY_INVALID:{provider_id}")
-        if "normalized_value" not in row:
-            raise ValueError(f"OBSERVATION_VALUE_REQUIRED:{provider_id}")
         by_provider[provider_id] = deepcopy(dict(row))
     return by_provider
+
+
+def _validate_observation(
+    row: Mapping[str, Any],
+    *,
+    provider_id: str,
+    semantic_metric_id: str,
+) -> dict[str, Any]:
+    metric = str(row.get("semantic_metric_id") or "").strip().upper()
+    if metric != semantic_metric_id:
+        raise ValueError(f"SEMANTIC_METRIC_MISMATCH:{provider_id}")
+
+    age = row.get("age_seconds")
+    quality = row.get("quality_score")
+    if (
+        not isinstance(age, (int, float))
+        or isinstance(age, bool)
+        or not math.isfinite(float(age))
+        or float(age) < 0
+    ):
+        raise ValueError(f"OBSERVATION_AGE_INVALID:{provider_id}")
+    if (
+        not isinstance(quality, (int, float))
+        or isinstance(quality, bool)
+        or not math.isfinite(float(quality))
+        or not 0 <= float(quality) <= 1
+    ):
+        raise ValueError(f"OBSERVATION_QUALITY_INVALID:{provider_id}")
+    if "normalized_value" not in row:
+        raise ValueError(f"OBSERVATION_VALUE_REQUIRED:{provider_id}")
+    return deepcopy(dict(row))
 
 
 def _agrees(left: Any, right: Any, tolerance: float) -> bool:
@@ -295,7 +322,7 @@ def evaluate_quorum(
     if route.get("status") != "ROUTE_READY" or not eligible:
         return _finalize_decision({**common, "status": "UNAVAILABLE_AFTER_COMPATIBLE_SOURCE_EXHAUSTION"})
 
-    by_provider = _observation_map(observations, eligible=eligible, semantic_metric_id=metric)
+    by_provider = _observation_map(observations, eligible=eligible)
     active: list[str] = []
     rejected: list[dict[str, str]] = []
     valid: list[dict[str, Any]] = []
@@ -309,6 +336,7 @@ def evaluate_quorum(
         row = by_provider.get(provider_id)
         if row is None:
             continue
+        row = _validate_observation(row, provider_id=provider_id, semantic_metric_id=metric)
         active.append(provider_id)
         if float(row["age_seconds"]) > max_age:
             rejected.append({"provider_id": provider_id, "reason": "STALE_DATA"})
