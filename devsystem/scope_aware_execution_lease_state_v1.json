@@ -1,5 +1,5 @@
 {
-  "generation": 400,
+  "generation": 401,
   "holders": [
     {
       "acquired_at_utc": "2026-10-12T23:54:00Z",
@@ -28,13 +28,41 @@
           "tests/test_devsystem_monster_coding_intelligence_case_contract_v1.py"
         ]
       }
+    },
+    {
+      "acquired_at_utc": "2026-10-13T03:29:13Z",
+      "expires_at_utc": "2026-10-13T07:29:13Z",
+      "generation": 401,
+      "heartbeat_at_utc": "2026-10-13T03:29:13Z",
+      "lease_id": "SCOPE-LEASE-F15EF9A9F278CE5756A9BA4C",
+      "owner_id": "universal-sports-source-finalization-v1-step4",
+      "scope": {
+        "dependency_tokens": [
+          "main-base:20b765584023a21c5fbce089f1ea4ec214767299",
+          "spec:docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md"
+        ],
+        "exclusive": false,
+        "resource_identity": {},
+        "shared_resources": [
+          "branch:api2-universal-sports-source-finalization-v1-step4-trust-quorum"
+        ],
+        "write_paths": [
+          "devsystem/contracts/universal-sports-trust-quorum-v1.json",
+          "devsystem/execution_plans/universal-sports-source-finalization-v1-step4.json",
+          "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step4.json",
+          "devsystem/task_ledgers/universal-sports-source-finalization-v1-step4.json",
+          "devsystem/universal_sports_trust_quorum_v1.py",
+          "docs/superpowers/plans/2026-10-12-universal-sports-source-finalization-v1-step4.md",
+          "tests/test_devsystem_universal_sports_trust_quorum_step4_v1.py"
+        ]
+      }
     }
   ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 704,
+  "revision": 705,
   "schema_version": 1,
-  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
-  "state_hash": "e15229555998a2b770fc28e049685a87f47f795ca0d0a3d235c416caed437713"
+  "state_hash": "1f07bde3d7e698c5ddf608e57469c61c7fb3a34168047c8ae9973279034c6af2",
+  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
