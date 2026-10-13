@@ -4,44 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 714,
-  "generation": 407,
+  "revision": 716,
+  "generation": 408,
   "holders": [
     {
-      "owner_id": "universal-sports-source-finalization-v1-step6",
-      "lease_id": "SCOPE-LEASE-42D33258AD60DA3C850BAC4D",
-      "generation": 404,
-      "acquired_at_utc": "2026-10-13T18:09:10Z",
-      "heartbeat_at_utc": "2026-10-13T18:09:10Z",
-      "expires_at_utc": "2026-10-13T22:09:10Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/contracts/universal-sports-source-receipt-v1.json",
-          "devsystem/execution_plans/universal-sports-source-finalization-v1-step6.json",
-          "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step6.json",
-          "devsystem/task_ledgers/universal-sports-source-finalization-v1-step6.json",
-          "devsystem/universal_sports_source_receipt_v1.py",
-          "docs/superpowers/plans/2026-10-13-universal-sports-source-finalization-v1-step6.md",
-          "tests/test_devsystem_universal_sports_source_receipt_step6_v1.py"
-        ],
-        "dependency_tokens": [
-          "main-base:246d7d92485fdc93b220f53b14df95402d9aadc6",
-          "spec:docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md"
-        ],
-        "shared_resources": [
-          "branch:api2-universal-sports-source-finalization-v1-step6-source-receipt"
-        ],
-        "resource_identity": {},
-        "exclusive": false
-      }
-    },
-    {
       "owner_id": "runless-vercel-supabase-v2-cutover",
-      "lease_id": "SCOPE-LEASE-D096A2EAB35B2F48D8192004",
-      "generation": 407,
-      "acquired_at_utc": "2026-10-13T22:07:42Z",
-      "heartbeat_at_utc": "2026-10-13T22:07:42Z",
-      "expires_at_utc": "2026-10-13T23:07:42Z",
+      "lease_id": "SCOPE-LEASE-A74A15C002AAC8836F49049B",
+      "generation": 408,
+      "acquired_at_utc": "2026-10-13T22:55:44Z",
+      "heartbeat_at_utc": "2026-10-13T22:55:44Z",
+      "expires_at_utc": "2026-10-13T23:55:44Z",
       "scope": {
         "write_paths": [
           "devsystem/contracts/runless-vercel-supabase-v2.json",
@@ -72,13 +44,41 @@
           "vercel-project:kyre-runless-proof"
         ],
         "resource_identity": {
-          "candidate-sha": "c04ba190f69617ff2401144259f353c246d445eb",
+          "candidate-sha": "daf86621f36aad1a7973c17f28e7114d2b826e8d",
           "vercel-project": "kyre-runless-proof",
           "supabase-project": "jqajcdckalsfizbvngiu"
         },
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "universal-sports-source-finalization-v1-step6",
+      "lease_id": "SCOPE-LEASE-42D33258AD60DA3C850BAC4D",
+      "generation": 404,
+      "acquired_at_utc": "2026-10-13T18:09:10Z",
+      "heartbeat_at_utc": "2026-10-13T18:09:10Z",
+      "expires_at_utc": "2026-10-13T22:09:10Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/contracts/universal-sports-source-receipt-v1.json",
+          "devsystem/execution_plans/universal-sports-source-finalization-v1-step6.json",
+          "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step6.json",
+          "devsystem/task_ledgers/universal-sports-source-finalization-v1-step6.json",
+          "devsystem/universal_sports_source_receipt_v1.py",
+          "docs/superpowers/plans/2026-10-13-universal-sports-source-finalization-v1-step6.md",
+          "tests/test_devsystem_universal_sports_source_receipt_step6_v1.py"
+        ],
+        "dependency_tokens": [
+          "main-base:246d7d92485fdc93b220f53b14df95402d9aadc6",
+          "spec:docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md"
+        ],
+        "shared_resources": [
+          "branch:api2-universal-sports-source-finalization-v1-step6-source-receipt"
+        ],
+        "resource_identity": {},
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "233c7dfc229538a365556bebf9088f155382a724f3f975355d0952a74e449809"
+  "state_hash": "f37ca5f0dfd8f00f49ace5a40779a2a07bdb38dd0218124f58359f2cf466e64e"
 }
