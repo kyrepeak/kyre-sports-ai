@@ -2,22 +2,24 @@
 
 ## Purpose
 
-Create one provider-independent sports data and finalization architecture for API 2 / MONSTER that routes every sports field through credible capability-specific sources, preserves canonical identity and provenance, uses minimum trustworthy quorum, and removes Render from the critical path for final frozen-registry persistence.
+Create one provider-independent sports data and finalization architecture for API 2 / MONSTER that routes every sports field through credible capability-specific sources, preserves canonical identity and provenance, uses minimum trustworthy quorum, and removes Render from the critical path for final frozen-state persistence.
+
+The architecture must make future sports-page work faster by reducing provider hunting, preventing page-wide source loyalty, expanding source checks only when needed, and giving every step a deterministic path to GREEN + FROZEN.
 
 ## Scope
 
 Eight serial steps:
 
-1. Architecture + Contract Lock
+1. Architecture + Contract Lock + Finalization Bootstrap
 2. Credible Provider Registry
 3. Field-Level Source Router
 4. Trust + Quorum Engine
 5. Provider Health + Canonical Identity
 6. Source Receipt + Provenance
-7. MONSTER Finalization Worker
+7. Finalization Worker Hardening + Legacy Bridge
 8. Full Integration + Certification
 
-Step 1 locks architecture only. It does not mutate sports product code or reopen NBA Spread Step 4.
+Step 1 locks the architecture and introduces only the minimum finalization foundation required for this new workstream to reach an independently verifiable FROZEN state without Render. It does not reopen or mutate NBA Spread Step 4 product code.
 
 ## Existing Systems Reused
 
@@ -30,11 +32,11 @@ This architecture extends rather than replaces:
 - Step 2A
 - scope-aware leases
 - parallel workstream isolation
-- Runless exact-head proof
+- Runless exact-head proof semantics
 - terminal receipts
-- frozen registry
+- frozen-registry protection
 - anti-loop protection
-- Finalization Authority
+- Finalization Authority / 100% Convergence V1
 
 No duplicate mutation-ownership system may be introduced.
 
@@ -60,9 +62,9 @@ This is the primary speed mechanism.
 
 The architecture distinguishes:
 
-- Approved Provider Pool: sources permitted for one or more capabilities.
-- Active Providers: sources actually consulted for the current field/request.
-- Category Owners: provider(s) selected for a specific field.
+- **Approved Provider Pool** — sources permitted for one or more capabilities.
+- **Active Providers** — sources actually consulted for the current field/request.
+- **Category Owners** — provider(s) selected for a specific field.
 
 The live board may never label an unused source as active.
 
@@ -123,7 +125,7 @@ The quorum engine may terminate with:
 - `AMBIGUOUS_IDENTITY_FAIL_CLOSED`
 - `STALE_DATA_FAIL_CLOSED`
 
-It may not blend incompatible metrics just to force agreement.
+It may not blend incompatible metrics merely to force agreement.
 
 ## Source Receipt Contract
 
@@ -143,31 +145,89 @@ Every accepted field decision must eventually emit a deterministic source receip
 - quorum policy ID
 - rejected attempts with reason
 - aliases used
-- fabrication=false
+- `fabrication=false`
 - receipt digest
+
+## Step 1 Finalization Bootstrap Contract
+
+The existing monolithic frozen-registry file has become a transport bottleneck because each finalization rewrites a large shared document. Step 1 therefore introduces a small, append-oriented finalization ledger for this new architecture workstream. It is not allowed to rewrite or reinterpret legacy frozen entries.
+
+The bootstrap consists of:
+
+1. a deterministic contract certifier for this Step-1 architecture,
+2. a small immutable freeze record for the Step-1 exact merged SHA and proof digest,
+3. a compact manifest that points to the latest valid freeze record and carries its own canonical hash,
+4. exact compare-and-swap preconditions for manifest updates,
+5. independent GitHub readback before any GREEN + FROZEN claim.
+
+### Bootstrap authority boundary
+
+The bootstrap is authoritative only for checkpoints created by `UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1` until Step 7 completes the explicit legacy bridge. It must not mutate, supersede, or claim ownership of the legacy monolithic registry.
+
+That means:
+
+- legacy frozen state remains frozen and untouched,
+- current NBA Spread Step 4 legacy closeout remains a separate workstream,
+- this new program can freeze its own checkpoints without Render,
+- Step 7 must either bridge the new ledger into the global finalization model or prove a safe migration path before wider adoption.
+
+### Freeze record requirements
+
+Every Step-1 freeze record must contain:
+
+- version
+- workstream ID
+- checkpoint/freeze token
+- exact merged-main SHA
+- exact certified candidate SHA when different
+- proof kind
+- proof digest
+- artifact path → blob SHA map
+- Step 2A single-authority assertion
+- GitHub Actions fallback = 0
+- Render dependency = false
+- unrelated legacy-registry mutation = false
+- canonical record hash
+
+### Manifest requirements
+
+The manifest must contain:
+
+- version
+- repository
+- workstream
+- revision
+- current freeze token
+- freeze-record path
+- freeze-record blob SHA
+- merged-main SHA
+- previous manifest hash or `GENESIS`
+- canonical state hash
+
+The manifest update must fail closed if the expected prior blob/revision/hash has changed.
 
 ## Finalization Worker Contract
 
-Step 7 introduces a narrow provider-independent mutation worker. It acts only after product/proof gates are already satisfied.
+Step 7 hardens and generalizes the bootstrap into the reusable MONSTER Finalization Worker. It acts only after product/proof gates are already satisfied.
 
-The worker must:
+The hardened worker must:
 
 1. consume an already-certified finalization packet,
 2. verify repository/workstream identity,
-3. verify expected registry ref/head/blob/revision/state hash,
+3. verify the relevant registry/ledger expected ref/head/blob/revision/state hash,
 4. verify certified candidate/merged-main identity,
 5. verify authorized freeze/thaw scope,
-6. construct the deterministic target registry,
-7. recompute canonical state hash,
+6. construct the deterministic target state,
+7. recompute canonical hashes,
 8. verify target before write,
-9. perform one atomic GitHub compare-and-swap / force-with-lease write,
-10. independently read back the registry,
+9. perform one atomic GitHub compare-and-swap / force-with-lease write path,
+10. independently read back final state,
 11. verify exact revision/hash/token/thaw retirement and unrelated-state preservation,
 12. emit GREEN + FROZEN only after successful readback.
 
 Hard protections:
 
-- Render is not required for registry persistence.
+- Render is not required for final-state persistence.
 - GitHub Actions fallback remains disabled unless explicitly authorized.
 - No product/runtime mutation.
 - No model/projection mutation.
@@ -179,7 +239,7 @@ Hard protections:
 
 ## Step 2A / Parallel Isolation
 
-Finalization remains one authoritative workstream with one active problem, one target registry mutation, one expected registry head, one write attempt per unchanged evidence state, and one readback proof. Cross-workstream freeze/thaw mutation is forbidden.
+Finalization remains one authoritative workstream with one active problem, one target finalization mutation, one expected state head, one write attempt per unchanged evidence state, and one readback proof. Cross-workstream freeze/thaw mutation is forbidden.
 
 ## Performance Contract
 
@@ -194,9 +254,11 @@ Adding providers must not create linear fan-out. The system must support:
 - reusable source receipts while freshness policy permits
 - immediate fail-closed classification for semantic incompatibility
 
+Finalization must also avoid rewriting unrelated frozen state merely to add one checkpoint.
+
 ## Step 1 Acceptance Criteria
 
-Step 1 is design-complete only when these are locked:
+Step 1 is complete only when these are locked and proven:
 
 1. no page-wide universal source authority,
 2. `DATA_FIELD` remains the routing unit,
@@ -207,23 +269,23 @@ Step 1 is design-complete only when these are locked:
 7. source receipts are deterministic and provenance-complete,
 8. canonical identity remains internal,
 9. provider health is field-aware,
-10. finalization is independent of Render,
-11. GitHub registry writes require exact preconditions and readback,
-12. Step 2A and workstream isolation remain mandatory,
-13. GitHub Actions fallback is not introduced,
-14. frozen sports product code is not reopened by Step 1,
-15. implementation remains blocked until written-spec review and implementation-plan approval.
+10. Render is not required for this workstream's Step-1 freeze,
+11. the bootstrap ledger is isolated from the legacy monolithic registry,
+12. exact preconditions and independent readback are mandatory,
+13. Step 2A and workstream isolation remain mandatory,
+14. GitHub Actions fallback is not introduced,
+15. frozen sports product code is not reopened by Step 1,
+16. exact-head proof binds the architecture spec and bootstrap artifacts,
+17. the Step-1 freeze record and manifest read back exactly from GitHub.
 
-## Proposed Step 1 Freeze Token
+## Step 1 Freeze Token
 
 `UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_ARCHITECTURE_CONTRACT_FROZEN`
 
-The token becomes authoritative only after the written spec is reviewed, the implementation plan is approved, and Step 1 receives its required exact-head/frozen-registry closeout.
-
 ## Non-Goals
 
-Step 1 does not reopen NBA Spread Step 4, mutate existing NBA Spread frozen artifacts, change projection math/probabilities, claim paid-provider access not actually configured, fabricate data to satisfy quorum, create duplicate canonical IDs, replace existing control-plane systems, create a paid Render workaround, or label every approved provider as active.
+Step 1 does not reopen NBA Spread Step 4, mutate legacy frozen-registry entries, change projection math/probabilities, claim paid-provider access not actually configured, fabricate data to satisfy quorum, create duplicate canonical team/player/game identities, create a paid Render workaround, or label every approved provider as active.
 
 ## Program Success Criteria
 
-The eight-step program is complete only when API 2 / MONSTER can choose credible providers per field, resolve canonical identities, stop after minimum trustworthy evidence, expand fallbacks only when needed, explain accepted values through source receipts, fail closed on exhaustion/mismatch, finalize without Render build capacity, and verify frozen-registry state by independent readback before claiming GREEN + FROZEN.
+The eight-step program is complete only when API 2 / MONSTER can choose credible providers per field, resolve canonical identities, stop after minimum trustworthy evidence, expand fallbacks only when needed, explain accepted values through source receipts, fail closed on exhaustion/mismatch, finalize without Render build capacity, and verify final frozen state by independent readback before claiming GREEN + FROZEN.
