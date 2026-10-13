@@ -4,8 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 709,
-  "generation": 404,
+  "revision": 710,
+  "generation": 405,
   "holders": [
     {
       "owner_id": "universal-sports-source-finalization-v1-step6",
@@ -34,7 +34,51 @@
         "resource_identity": {},
         "exclusive": false
       }
+    },
+    {
+      "owner_id": "runless-vercel-supabase-v2-cutover",
+      "lease_id": "SCOPE-LEASE-9464F2B21037E20982CAD8B4",
+      "generation": 405,
+      "acquired_at_utc": "2026-10-13T21:30:00Z",
+      "heartbeat_at_utc": "2026-10-13T21:30:00Z",
+      "expires_at_utc": "2026-10-13T22:30:00Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/contracts/runless-vercel-supabase-v2.json",
+          "devsystem/runless_proof_plans/runless-vercel-supabase-v2-cutover.json",
+          "docs/runless-proof-plane-v2-operations.md",
+          "docs/superpowers/plans/2026-10-13-runless-vercel-supabase-v2.md",
+          "docs/superpowers/specs/2026-10-13-runless-vercel-supabase-v2-design.md",
+          "runless_v2",
+          "supabase/migrations/20261013_runless_v2_durable_state.sql",
+          "supabase/migrations/20261013_runless_v2_fk_index_hardening.sql",
+          "supabase/migrations/20261013_runless_v2_search_path_hardening.sql",
+          "tests/test_runless_v2_api.py",
+          "tests/test_runless_v2_cutover_contract.py",
+          "tests/test_runless_v2_finalization_readback.py",
+          "tests/test_runless_v2_github_authority.py",
+          "tests/test_runless_v2_live_hardening.py",
+          "tests/test_runless_v2_proof_service.py",
+          "tests/test_runless_v2_sandbox_executor.py",
+          "tests/test_runless_v2_schema_contract.py",
+          "tests/test_runless_v2_state_store.py"
+        ],
+        "dependency_tokens": [
+          "spec:docs/superpowers/specs/2026-10-13-runless-vercel-supabase-v2-design.md"
+        ],
+        "shared_resources": [
+          "branch:api2-runless-vercel-supabase-v2-impl",
+          "supabase-schema:runless_v2",
+          "vercel-project:kyre-runless-proof"
+        ],
+        "resource_identity": {
+          "candidate-sha": "8958008c804e3e2f101f3be319c51f86d12ca720",
+          "vercel-project": "kyre-runless-proof",
+          "supabase-project": "jqajcdckalsfizbvngiu"
+        },
+        "exclusive": false
+      }
     }
   ],
-  "state_hash": "20c8fb9b7c53b940894984f10c3d7b88741e7a839a81794f1d46f1451baabf3a"
+  "state_hash": "e67c235c59978494da37783d788b577336b68b770c12f696a411bb591fd26189"
 }
