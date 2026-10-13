@@ -1,0 +1,25 @@
+{
+  "artifacts": {
+    "devsystem/contracts/universal-sports-field-router-v1.json": "6857355bd0666cb4a511941ffe74bb0326d756ed",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json": "6839c3b6569ed3ab16b09530c6bc8acf3e4e7daa",
+    "devsystem/execution_plans/universal-sports-source-finalization-v1-step3.json": "96a88b445e42f548f116972b3424587fdecc566a",
+    "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step3.json": "6a42a40b9142bf0064f24e5264865ddf979540c4",
+    "devsystem/task_ledgers/universal-sports-source-finalization-v1-step3.json": "2b000474dcbfd1f1d43056e8c2608f2d83a16231",
+    "devsystem/universal_sports_field_router_v1.py": "871e86d2978809ec96d1f0924118fb80e78b9d85",
+    "devsystem/universal_sports_finalization_bootstrap_v1.py": "acc2726d9b2b4dfa3f0a893a02d646c4eaa4e2d4",
+    "devsystem/universal_sports_provider_registry_v1.py": "017c9f5a81a7373cb1a0d4d414fb76d03f93e113",
+    "docs/superpowers/plans/2026-10-12-universal-sports-source-finalization-v1-step3.md": "8cb33e9919a483d6141d4d832cfd0d1fd522a546",
+    "docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md": "0e87685c8a37023b3696e5907253381ceec69e49",
+    "tests/test_devsystem_universal_sports_field_router_step3_v1.py": "e91b657989ad88170f2ccb003eca8b394324ac9b"
+  },
+  "candidate_sha": "6496dabd0e322a077a2e7ec9fdfe242666832f55",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP3_FIELD_LEVEL_SOURCE_ROUTER_FROZEN",
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "merged_main_sha": "20b765584023a21c5fbce089f1ea4ec214767299",
+  "proof_digest": "sha256:414a3e0e4b6fe182b0f4ec128dc6d7d2a1988d26d6caa0c8d52c2aaa378b870e",
+  "record_hash": "d6edfb7040f406c400d87e7cb6f54b6b73d1e8f628cd73b06362a1b079ef78c1",
+  "render_dependency": false,
+  "version": "UNIVERSAL_SPORTS_FINALIZATION_BOOTSTRAP_V1",
+  "workstream": "universal-sports-source-finalization-v1"
+}
