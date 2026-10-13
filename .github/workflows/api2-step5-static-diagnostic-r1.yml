@@ -1,0 +1,32 @@
+name: API2 Step5 Static Diagnostic R1
+
+on:
+  push:
+    branches:
+      - api2-step5-static-diagnostic-r1
+    paths:
+      - .github/workflows/api2-step5-static-diagnostic-r1.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api2-step5-static-diagnostic-r1
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 63c5c14993901128934400c284fde8bc576341cb
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest only
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Run exact failed focused command with traceback
+        run: python -m pytest -vv tests/test_devsystem_universal_sports_identity_health_step5_v1.py
