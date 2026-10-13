@@ -1,0 +1,29 @@
+{
+  "artifacts": {
+    "devsystem/contracts/universal-sports-field-router-v1.json": "6857355bd0666cb4a511941ffe74bb0326d756ed",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json": "6839c3b6569ed3ab16b09530c6bc8acf3e4e7daa",
+    "devsystem/contracts/universal-sports-trust-quorum-v1.json": "6a244576ecd18f253f4d0cd2175cf5beb6205e81",
+    "devsystem/execution_plans/universal-sports-source-finalization-v1-step4.json": "6d0793d62ff676941c83e54aa293c1bc8cd5ae8d",
+    "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step4.json": "e964b52877dd921efeade4c616f7995387d4e64b",
+    "devsystem/task_ledgers/universal-sports-source-finalization-v1-step4.json": "638ca6f6acbd85f685f71afdc26f3b330dbdf3a7",
+    "devsystem/universal_sports_field_router_v1.py": "871e86d2978809ec96d1f0924118fb80e78b9d85",
+    "devsystem/universal_sports_finalization_bootstrap_v1.py": "acc2726d9b2b4dfa3f0a893a02d646c4eaa4e2d4",
+    "devsystem/universal_sports_provider_registry_v1.py": "017c9f5a81a7373cb1a0d4d414fb76d03f93e113",
+    "devsystem/universal_sports_trust_quorum_v1.py": "5b433eb46f5433e66a05af1a4b0d76b572422de4",
+    "docs/superpowers/plans/2026-10-12-universal-sports-source-finalization-v1-step4.md": "fcd60f9fa3086a6dc50c75a4749a8c78f87f5275",
+    "docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md": "0e87685c8a37023b3696e5907253381ceec69e49",
+    "tests/test_devsystem_universal_sports_field_router_step3_v1.py": "e91b657989ad88170f2ccb003eca8b394324ac9b",
+    "tests/test_devsystem_universal_sports_provider_registry_step2_v1.py": "e66ecd528ba4166f86d3abba1917fa6a4c8a4082",
+    "tests/test_devsystem_universal_sports_trust_quorum_step4_v1.py": "54ea45dc14b9785fb2ece5458ff709927ff7d426"
+  },
+  "candidate_sha": "d06b4e39a12ae5772020a987a5e3a1767982602b",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP4_TRUST_QUORUM_ENGINE_FROZEN",
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "merged_main_sha": "64b1d5835bf8354801bbc354d0ef180813ed0cf2",
+  "proof_digest": "sha256:d194250c05d28ac94b1884b1dd85ce15d8cbbe4af814ddcdc29687c0bdd9a218",
+  "record_hash": "f864af13b7c1fcd7db642648ee92029b5233a47757b0de7819265eaced8827b0",
+  "render_dependency": false,
+  "version": "UNIVERSAL_SPORTS_FINALIZATION_BOOTSTRAP_V1",
+  "workstream": "universal-sports-source-finalization-v1"
+}
