@@ -401,7 +401,7 @@ def build_identity_health_context(
     validated_contract = validate_identity_health_contract(contract)
     validated_route = _validate_route(route)
     identity = resolve_canonical_identity(
-        validated_contract,
+        contract,
         snapshot,
         entity_type=entity_type,
         value=value,
