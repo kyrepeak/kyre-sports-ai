@@ -123,6 +123,7 @@ def test_every_policy_route_matches_registry_semantic_metric_exactly():
 def test_tampered_policy_fingerprint_fails_closed():
     policy = _policy()
     broken = copy.deepcopy(policy)
-    broken["routes"]["schedule"]["preferred_source_types"].append("NEWS_WIRE")
+    preferred = broken["routes"]["schedule"]["preferred_source_types"]
+    preferred[0], preferred[1] = preferred[1], preferred[0]
     with pytest.raises(ValueError, match="ROUTER_FINGERPRINT"):
         validate_router_policy(broken, _registry())
