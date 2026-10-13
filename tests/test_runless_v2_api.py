@@ -151,6 +151,15 @@ def test_health_is_public_safe_and_reports_authority_disabled():
     assert "private-key" not in response.text
 
 
+def test_openapi_declares_http_bearer_security_for_prove():
+    c, _ = client(enabled=True)
+    schema = c.get("/openapi.json").json()
+    scheme = schema["components"]["securitySchemes"]["HTTPBearer"]
+    assert scheme["type"] == "http"
+    assert scheme["scheme"] == "bearer"
+    assert {"HTTPBearer": []} in schema["paths"]["/prove"]["post"]["security"]
+
+
 def test_missing_or_invalid_auth_fails_before_proof_mutation():
     calls = {"proof": 0}
 
