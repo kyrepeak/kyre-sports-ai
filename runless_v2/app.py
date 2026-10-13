@@ -1,10 +1,30 @@
 from __future__ import annotations
 
+import importlib.util
+import sys
+from pathlib import Path
 from typing import Any, Awaitable, Callable
 from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
+
+# Vercel imports this file as standalone /var/task/app.py when runless_v2 is
+# configured as the project root. Recreate the package context so the existing
+# relative imports keep working without rewriting the Runless V2 modules.
+if not __package__:
+    _package_dir = Path(__file__).resolve().parent
+    _package_spec = importlib.util.spec_from_file_location(
+        "runless_v2",
+        _package_dir / "__init__.py",
+        submodule_search_locations=[str(_package_dir)],
+    )
+    if _package_spec is None or _package_spec.loader is None:
+        raise ImportError("RUNLESS_V2_PACKAGE_BOOTSTRAP_FAILED")
+    _package_module = importlib.util.module_from_spec(_package_spec)
+    sys.modules["runless_v2"] = _package_module
+    _package_spec.loader.exec_module(_package_module)
+    __package__ = "runless_v2"
 
 from . import VERSION
 from .auth import require_bearer
