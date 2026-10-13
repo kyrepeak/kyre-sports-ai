@@ -78,9 +78,10 @@ def validate_registry(registry: Mapping[str, Any]) -> dict[str, Any]:
         if raw.get(key) != expected:
             raise ValueError(f"REGISTRY_CONTRACT_DRIFT:{key}")
 
+    # Structural failures are classified before integrity drift so callers get
+    # the actual contract violation (for example a duplicate provider ID).
+    # The fingerprint remains the final fail-closed integrity gate.
     expected_registry_id = _registry_id(raw)
-    if supplied_registry_id != expected_registry_id:
-        raise ValueError("REGISTRY_FINGERPRINT_MISMATCH")
 
     supported_sports = raw.get("supported_sports")
     if not isinstance(supported_sports, list) or set(supported_sports) != _SUPPORTED_SPORTS:
@@ -168,6 +169,9 @@ def validate_registry(registry: Mapping[str, Any]) -> dict[str, Any]:
     uncovered = sorted(capability for capability, count in capability_coverage.items() if count == 0)
     if uncovered:
         raise ValueError(f"CAPABILITY_WITHOUT_PROVIDER:{','.join(uncovered)}")
+
+    if supplied_registry_id != expected_registry_id:
+        raise ValueError("REGISTRY_FINGERPRINT_MISMATCH")
 
     return {
         "status": "GREEN",
