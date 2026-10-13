@@ -1,67 +1,40 @@
 {
-  "generation": 402,
+  "schema_version": 1,
+  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
+  "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
+  "revision": 707,
+  "generation": 403,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-13T04:10:00Z",
-      "expires_at_utc": "2026-10-13T05:10:00Z",
-      "generation": 402,
-      "heartbeat_at_utc": "2026-10-13T04:10:00Z",
-      "lease_id": "SCOPE-LEASE-8BF0328AD0C2F1B230E70936",
-      "owner_id": "universal-sports-source-finalization-v1-step4-runless-compat",
+      "owner_id": "universal-sports-source-finalization-v1-step5",
+      "lease_id": "SCOPE-LEASE-C98CF30A6FD7F404E0794C4D",
+      "generation": 403,
+      "acquired_at_utc": "2026-10-13T15:47:20Z",
+      "heartbeat_at_utc": "2026-10-13T15:47:20Z",
+      "expires_at_utc": "2026-10-13T19:47:20Z",
       "scope": {
-        "dependency_tokens": [
-          "main-base:20b765584023a21c5fbce089f1ea4ec214767299",
-          "spec:docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "branch:runless-proof-plane-v1": "23879a98370b490c44ea3c6b35045eaf6ddf7bf0",
-          "render-service:runless-proof-plane": "srv-db23fee7bikc73ca8ua0"
-        },
-        "shared_resources": [
-          "branch:runless-proof-plane-v1",
-          "render-service:srv-db23fee7bikc73ca8ua0"
-        ],
         "write_paths": [
-          "runless_proof_plane/prove.py",
-          "tests/test_runless_universal_sports_sidecar_registry_compat.py"
-        ]
-      }
-    },
-    {
-      "acquired_at_utc": "2026-10-13T03:29:13Z",
-      "expires_at_utc": "2026-10-13T07:29:13Z",
-      "generation": 401,
-      "heartbeat_at_utc": "2026-10-13T03:29:13Z",
-      "lease_id": "SCOPE-LEASE-F15EF9A9F278CE5756A9BA4C",
-      "owner_id": "universal-sports-source-finalization-v1-step4",
-      "scope": {
+          "devsystem/contracts/universal-sports-identity-health-v1.json",
+          "devsystem/execution_plans/universal-sports-source-finalization-v1-step5.json",
+          "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step5.json",
+          "devsystem/task_ledgers/universal-sports-source-finalization-v1-step5.json",
+          "devsystem/universal_sports_identity_health_v1.py",
+          "docs/superpowers/plans/2026-10-13-universal-sports-source-finalization-v1-step5.md",
+          "tests/test_devsystem_universal_sports_identity_health_step5_v1.py"
+        ],
         "dependency_tokens": [
-          "main-base:20b765584023a21c5fbce089f1ea4ec214767299",
+          "main-base:64b1d5835bf8354801bbc354d0ef180813ed0cf2",
           "spec:docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md"
         ],
-        "exclusive": false,
+        "shared_resources": [
+          "branch:api2-universal-sports-source-finalization-v1-step5-health-identity"
+        ],
         "resource_identity": {},
-        "shared_resources": [
-          "branch:api2-universal-sports-source-finalization-v1-step4-trust-quorum"
-        ],
-        "write_paths": [
-          "devsystem/contracts/universal-sports-trust-quorum-v1.json",
-          "devsystem/execution_plans/universal-sports-source-finalization-v1-step4.json",
-          "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step4.json",
-          "devsystem/task_ledgers/universal-sports-source-finalization-v1-step4.json",
-          "devsystem/universal_sports_trust_quorum_v1.py",
-          "docs/superpowers/plans/2026-10-12-universal-sports-source-finalization-v1-step4.md",
-          "tests/test_devsystem_universal_sports_trust_quorum_step4_v1.py"
-        ]
+        "exclusive": false
       }
     }
   ],
-  "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
-  "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 706,
-  "schema_version": 1,
-  "state_hash": "17b43eeeba036deee06f90d9b5ec2a24af4101b9dffd85dbdab7b385ebeb7f3c",
-  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
+  "state_hash": "8dc397e378a5356d5e850589632ded9be739235f09ca240b67a52c75a41c58f5"
 }
