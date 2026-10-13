@@ -1,31 +1,30 @@
 {
-  "generation": 401,
+  "generation": 402,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-12T23:54:00Z",
-      "expires_at_utc": "2026-10-13T03:54:00Z",
-      "generation": 397,
-      "heartbeat_at_utc": "2026-10-12T23:54:00Z",
-      "lease_id": "SCOPE-LEASE-3F78E702EB46D85D4A2954A1",
-      "owner_id": "monster-coding-intelligence-v1-step1",
+      "acquired_at_utc": "2026-10-13T04:10:00Z",
+      "expires_at_utc": "2026-10-13T05:10:00Z",
+      "generation": 402,
+      "heartbeat_at_utc": "2026-10-13T04:10:00Z",
+      "lease_id": "SCOPE-LEASE-8BF0328AD0C2F1B230E70936",
+      "owner_id": "universal-sports-source-finalization-v1-step4-runless-compat",
       "scope": {
         "dependency_tokens": [
-          "main-base:38954c48c35534428cdd09442ba28a58cd8536bd",
-          "spec:docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md"
+          "main-base:20b765584023a21c5fbce089f1ea4ec214767299",
+          "spec:docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md"
         ],
         "exclusive": false,
-        "resource_identity": {},
+        "resource_identity": {
+          "branch:runless-proof-plane-v1": "23879a98370b490c44ea3c6b35045eaf6ddf7bf0",
+          "render-service:runless-proof-plane": "srv-db23fee7bikc73ca8ua0"
+        },
         "shared_resources": [
-          "branch:monster/coding-intelligence-v1-design"
+          "branch:runless-proof-plane-v1",
+          "render-service:srv-db23fee7bikc73ca8ua0"
         ],
         "write_paths": [
-          "devsystem/execution_plans/monster-coding-intelligence-v1-step1-case-contract.json",
-          "devsystem/monster_coding_intelligence_case_contract_v1.py",
-          "devsystem/runless_proof_plans/monster-coding-intelligence-v1-step1-case-contract.json",
-          "devsystem/task_ledgers/monster-coding-intelligence-v1-step1-case-contract.json",
-          "docs/superpowers/plans/2026-10-12-monster-coding-intelligence-v1-step1-intelligence-case-contract.md",
-          "docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md",
-          "tests/test_devsystem_monster_coding_intelligence_case_contract_v1.py"
+          "runless_proof_plane/prove.py",
+          "tests/test_runless_universal_sports_sidecar_registry_compat.py"
         ]
       }
     },
@@ -61,8 +60,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 705,
+  "revision": 706,
   "schema_version": 1,
-  "state_hash": "1f07bde3d7e698c5ddf608e57469c61c7fb3a34168047c8ae9973279034c6af2",
+  "state_hash": "17b43eeeba036deee06f90d9b5ec2a24af4101b9dffd85dbdab7b385ebeb7f3c",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
