@@ -1,4 +1,5 @@
 import copy
+import json
 from pathlib import Path
 
 import pytest
@@ -190,3 +191,40 @@ def test_manifest_stale_precondition_fails_closed():
 
 def test_canonical_hash_is_stable_across_key_order():
     assert canonical_hash({"b": 2, "a": 1}) == canonical_hash({"a": 1, "b": 2})
+
+
+def test_runless_metadata_contract_is_static_and_isolated():
+    execution = json.loads((ROOT / "devsystem" / "execution_plans" / "universal-sports-source-finalization-v1-step1.json").read_text())
+    proof = json.loads((ROOT / "devsystem" / "runless_proof_plans" / "universal-sports-source-finalization-v1-step1.json").read_text())
+    ledger = json.loads((ROOT / "devsystem" / "task_ledgers" / "universal-sports-source-finalization-v1-step1.json").read_text())
+    assert execution["workstream"] == "universal-sports-source-finalization-v1"
+    assert execution["step"] == "1/8"
+    assert execution["scope"]["product_runtime"] is False
+    assert execution["scope"]["sports_model"] is False
+    assert execution["scope"]["legacy_registry_mutation"] is False
+    assert execution["github_actions_fallback"] == 0
+    assert proof["task_id"] == "universal-sports-source-finalization-v1-step1"
+    assert proof["workstream"] == "universal-sports-source-finalization-v1"
+    assert proof["freeze_token"] == TOKEN
+    assert proof["probes"] == []
+    assert ["python", "-m", "pytest", "-q", "tests/test_devsystem_universal_sports_source_finalization_step1_v1.py"] in proof["commands"]
+    assert proof["github_actions_fallback"] == 0
+    assert ledger["status"] == "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+    assert ledger["render_dependency"] is False
+    assert ledger["legacy_registry_mutation"] is False
+
+
+def test_runless_metadata_artifacts_cover_step1_contract():
+    proof = json.loads((ROOT / "devsystem" / "runless_proof_plans" / "universal-sports-source-finalization-v1-step1.json").read_text())
+    required = {
+        "devsystem/contracts/universal-sports-source-finalization-v1-step1.json",
+        "devsystem/universal_sports_source_finalization_step1_contract_v1.py",
+        "devsystem/universal_sports_finalization_bootstrap_v1.py",
+        "tests/test_devsystem_universal_sports_source_finalization_step1_v1.py",
+        "docs/superpowers/specs/2026-10-12-universal-sports-source-finalization-v1-design.md",
+        "docs/superpowers/plans/2026-10-12-universal-sports-source-finalization-v1-step1.md",
+        "devsystem/execution_plans/universal-sports-source-finalization-v1-step1.json",
+        "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step1.json",
+        "devsystem/task_ledgers/universal-sports-source-finalization-v1-step1.json",
+    }
+    assert required <= set(proof["artifacts"])
