@@ -1,11 +1,11 @@
 {
-  "version": 1,
+  "version": 2,
   "task_id": "monster-coding-intelligence-v1-step1-case-contract",
   "title": "MONSTER Coding Intelligence V1 Step 1 — Intelligence Case Contract",
   "project": "MONSTER_CODING_INTELLIGENCE_V1",
   "workstream": "monster-coding-intelligence-v1",
   "step": "1/10",
-  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "status": "DONE",
   "base_main_sha": "38954c48c35534428cdd09442ba28a58cd8536bd",
   "branch": "monster/coding-intelligence-v1-design",
   "problem": "Engineering failures are not yet normalized into one deterministic pre-diagnosis case contract containing goal, symptom, success, constraints, unknowns, and affected systems.",
@@ -17,6 +17,7 @@
     "devsystem/execution_plans/monster-coding-intelligence-v1-step1-case-contract.json",
     "devsystem/runless_proof_plans/monster-coding-intelligence-v1-step1-case-contract.json",
     "devsystem/task_ledgers/monster-coding-intelligence-v1-step1-case-contract.json",
+    "docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md",
     "docs/superpowers/plans/2026-10-12-monster-coding-intelligence-v1-step1-intelligence-case-contract.md"
   ],
   "forbidden_scope": [
@@ -39,7 +40,7 @@
     "no_duplicate_async_runs": true,
     "no_blind_polling": true,
     "exact_head_merge_required": true,
-    "scope_lease_id": "SCOPE-LEASE-AD48D11A16B32C3919D0A65A",
+    "scope_lease_id": "SCOPE-LEASE-3F78E702EB46D85D4A2954A1",
     "parallel_workstream_state_import_forbidden": true
   },
   "tdd": {
@@ -71,8 +72,14 @@
     "github_actions_fallback": 0
   },
   "rulings": [
-    "The local execution sandbox cannot clone the repository because outbound DNS/network access is unavailable. Focused TDD was executed against the exact committed test/module contents; repository-level regression authority remains the existing protected Runless/final-gate path rather than a new GitHub Actions fallback."
+    "The local execution sandbox cannot clone the repository because outbound DNS/network access is unavailable. Focused TDD was executed against the exact committed test/module contents; repository-level regression authority remains the existing protected Runless/final-gate path rather than a new GitHub Actions fallback.",
+    "The first exact-head preflight failed deterministically because this ledger was version 1 and the original scope lease lacked branch-aware coverage. Root-cause inspection established the repository-required repair before this metadata-only patch."
   ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
   "freeze_token": "MONSTER_CODING_INTELLIGENCE_V1_STEP1_INTELLIGENCE_CASE_CONTRACT_FROZEN",
   "green_plus_frozen_claimed": false,
   "next_legal_action": "RUNLESS_EXACT_HEAD_PROOF_THEN_ONE_PR_EXACT_MERGE_THEN_POSTMERGE_REUSE_THEN_FREEZE_READBACK"
