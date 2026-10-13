@@ -20,11 +20,10 @@
       "devsystem/execution_plans/monster-coding-intelligence-v1-step1-case-contract.json",
       "devsystem/runless_proof_plans/monster-coding-intelligence-v1-step1-case-contract.json",
       "devsystem/task_ledgers/monster-coding-intelligence-v1-step1-case-contract.json",
+      "docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md",
       "docs/superpowers/plans/2026-10-12-monster-coding-intelligence-v1-step1-intelligence-case-contract.md"
     ],
-    "read_only_dependencies": [
-      "docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md"
-    ]
+    "read_only_dependencies": []
   },
   "step2a": {
     "single_authoritative_problem": true,
@@ -33,7 +32,7 @@
     "duplicate_async_runs_forbidden": true,
     "blind_polling_forbidden": true,
     "exact_head_merge_required": true,
-    "scope_lease_id": "SCOPE-LEASE-AD48D11A16B32C3919D0A65A",
+    "scope_lease_id": "SCOPE-LEASE-3F78E702EB46D85D4A2954A1",
     "parallel_workstream_state_import_forbidden": true
   },
   "contract": {
@@ -54,7 +53,8 @@
     "compile_result": "PY_COMPILE_OK"
   },
   "rulings": [
-    "Repository-wide bare pytest cannot be executed in the local sandbox because the repository cannot be cloned from the network; authoritative repository-level regression proof is delegated to the existing protected Runless/final-gate path instead of creating GitHub Actions fallback work."
+    "Repository-wide bare pytest cannot be executed in the local sandbox because the repository cannot be cloned from the network; authoritative repository-level regression proof is delegated to the existing protected Runless/final-gate path instead of creating GitHub Actions fallback work.",
+    "The authoritative scope was legally widened through release/reclaim after the first preflight proved the original lease did not carry branch-aware coverage for all seven changed paths."
   ],
   "completion_contract": {
     "freeze_token": "MONSTER_CODING_INTELLIGENCE_V1_STEP1_INTELLIGENCE_CASE_CONTRACT_FROZEN",
