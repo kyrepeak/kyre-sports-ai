@@ -2,6 +2,8 @@
 
 ## Purpose
 
+**Workstream ID:** `universal-sports-source-finalization-v1`
+
 Create one provider-independent sports data and finalization architecture for API 2 / MONSTER that routes every sports field through credible capability-specific sources, preserves canonical identity and provenance, uses minimum trustworthy quorum, and removes Render from the critical path for final frozen-state persistence.
 
 The architecture must make future sports-page work faster by reducing provider hunting, preventing page-wide source loyalty, expanding source checks only when needed, and giving every step a deterministic path to GREEN + FROZEN.
