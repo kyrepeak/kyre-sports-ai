@@ -1,4 +1,6 @@
 import copy
+import hashlib
+import json
 from pathlib import Path
 
 import pytest
@@ -22,9 +24,8 @@ def _policy():
 
 def _route(*, field="schedule", metric="SCHEDULE", eligible=None, primary=None, status="ROUTE_READY"):
     eligible = list(eligible or ["nba_official", "espn", "cbs_sports"])
-    return {
+    base = {
         "status": status,
-        "route_id": f"ROUTE-{field.upper()}",
         "sport": "nba",
         "field": field,
         "semantic_metric_id": metric,
@@ -40,6 +41,8 @@ def _route(*, field="schedule", metric="SCHEDULE", eligible=None, primary=None, 
         "router_id": "USFR-TEST",
         "registry_id": "USPR-TEST",
     }
+    canonical = json.dumps(base, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return {**base, "route_id": "ROUTE-" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:24].upper()}
 
 
 def _obs(provider, metric, value, *, age=10, quality=1.0):
@@ -189,6 +192,34 @@ def test_decision_id_is_deterministic_and_value_sensitive():
     changed = evaluate_quorum(_policy(), route, [_obs("nba_official", "SCHEDULE", {"games": [2]})])
     assert first["decision_id"] == second["decision_id"]
     assert first["decision_id"] != changed["decision_id"]
+
+
+def test_tampered_step3_route_fingerprint_fails_closed_before_provider_acceptance():
+    route = _route()
+    route["eligible_provider_ids"] = ["action_network", "espn", "cbs_sports"]
+    route["primary_provider_id"] = "action_network"
+    route["fallback_provider_ids"] = ["espn", "cbs_sports"]
+    with pytest.raises(ValueError, match="ROUTE_FINGERPRINT_MISMATCH"):
+        evaluate_quorum(_policy(), route, [_obs("action_network", "SCHEDULE", {"games": []})])
+
+
+def test_unused_malformed_fallback_does_not_break_valid_primary_early_stop():
+    decision = evaluate_quorum(
+        _policy(),
+        _route(),
+        [
+            _obs("nba_official", "SCHEDULE", {"games": [1]}),
+            _obs("espn", "PUBLIC_BET_PERCENTAGE", 51.0),
+        ],
+    )
+    assert decision["status"] == "ACCEPTED_SINGLE_AUTHORITY"
+    assert decision["active_provider_ids"] == ["nba_official"]
+    assert decision["selected_provider_ids"] == ["nba_official"]
+
+
+def test_nan_observation_age_is_rejected():
+    with pytest.raises(ValueError, match="OBSERVATION_AGE_INVALID"):
+        evaluate_quorum(_policy(), _route(), [_obs("nba_official", "SCHEDULE", {"games": []}, age=float("nan"))])
 
 
 def test_tampered_policy_fingerprint_fails_closed():
