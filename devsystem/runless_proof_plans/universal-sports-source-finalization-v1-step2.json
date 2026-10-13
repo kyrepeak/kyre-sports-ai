@@ -8,7 +8,9 @@
     "devsystem/execution_plans/universal-sports-source-finalization-v1-step2.json",
     "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step2.json",
     "devsystem/task_ledgers/universal-sports-source-finalization-v1-step2.json",
-    "devsystem/universal_sports_finalization_bootstrap_v1.py"
+    "devsystem/universal_sports_finalization_bootstrap_v1.py",
+    "vercel_finalizer/publish_gate_build.py",
+    "vercel_finalizer/test_publish_gate_build.py"
   ],
   "commands": [
     [
@@ -22,12 +24,22 @@
       "python",
       "-m",
       "py_compile",
-      "devsystem/universal_sports_provider_registry_v1.py"
+      "devsystem/universal_sports_provider_registry_v1.py",
+      "vercel_finalizer/publish_gate_build.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "vercel_finalizer/test_app.py",
+      "vercel_finalizer/test_publish_gate_build.py"
     ]
   ],
   "dependencies": [
     "devsystem/runless_proof_plan_v1.py",
-    "devsystem/universal_sports_finalization_bootstrap_v1.py"
+    "devsystem/universal_sports_finalization_bootstrap_v1.py",
+    "vercel_finalizer/app.py"
   ],
   "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP2_CREDIBLE_PROVIDER_REGISTRY_FROZEN",
   "github_actions_fallback": 0,
