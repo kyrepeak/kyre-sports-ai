@@ -199,6 +199,10 @@ def _unconfigured_app(error: BaseException) -> FastAPI:
     return fallback
 
 
+# Vercel's FastAPI preset requires a directly detectable top-level instance.
+# The real configured app replaces this sentinel immediately at import time.
+app = FastAPI(title="Runless V2 Proof Authority", version="2")
+
 try:
     app = create_app()
 except Exception as _bootstrap_error:
