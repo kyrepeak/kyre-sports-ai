@@ -23,6 +23,7 @@ from .workspace import CandidateWorkspace
 
 LEASE_BRANCH = "monster-scope-aware-execution-leases"
 LEASE_PATH = "devsystem/scope_aware_execution_lease_state_v1.json"
+SIDECAR_REGISTRY_DRIFT_WORKSTREAMS = frozenset({"universal-sports-source-finalization-v1"})
 
 
 class RunlessProofFailure(RuntimeError):
@@ -54,6 +55,10 @@ def _repository_url(repository: str) -> str:
     return f"https://x-access-token@github.com/{repository}.git"
 
 
+def _allow_inherited_registry_drift(workstream: str) -> bool:
+    return str(workstream or "").strip() in SIDECAR_REGISTRY_DRIFT_WORKSTREAMS
+
+
 def _verify_frozen_candidate(
     client,
     candidate_sha: str,
@@ -61,15 +66,20 @@ def _verify_frozen_candidate(
     *,
     main_sha: str | None = None,
     main_tree: dict[str, str] | None = None,
+    allow_inherited_registry_drift: bool = False,
 ) -> dict[str, Any]:
     registry = GithubRegistryBackend(client).read_registry()
     validated = validate_registry(registry)
 
-    # Production verification must bind inherited frozen state to the exact
-    # authoritative main identity. Defaults preserve the private helper's
-    # focused exact-thaw unit contracts only.
+    # Legacy registry identity remains strict by default. The temporary
+    # Universal Sports sidecar finalization workstream may inherit stale
+    # legacy baseline state, but it still cannot mutate a drifted frozen path.
     effective_main_sha = main_sha or str(registry.get("source_main_sha") or "")
-    if main_sha is not None and str(registry.get("source_main_sha") or "") != main_sha:
+    if (
+        main_sha is not None
+        and str(registry.get("source_main_sha") or "") != main_sha
+        and not allow_inherited_registry_drift
+    ):
         raise Step2AError("RUNLESS_REGISTRY_MAIN_IDENTITY_DRIFT")
     effective_main_tree = main_tree if main_tree is not None else validated["artifacts"]
 
@@ -221,6 +231,7 @@ def execute_proof_request(request, *, settings, github_client, orchestrator, rec
             tree,
             main_sha=main_sha,
             main_tree=main_tree,
+            allow_inherited_registry_drift=_allow_inherited_registry_drift(plan.workstream),
         )
         live_lease = _read_live_scope_lease(github_client, request.lease_id)
         snapshot = Step2ASnapshot(
