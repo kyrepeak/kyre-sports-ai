@@ -24,6 +24,15 @@ from app import (
 ROOT = Path(__file__).resolve().parents[1]
 PROOF_PLAN = ROOT / "devsystem" / "runless_proof_plans" / "universal-sports-source-finalization-v1-step1.json"
 
+PHASE_CANDIDATE = 11
+PHASE_PROOF = 12
+PHASE_CONFIG = 13
+PHASE_INSTALLATION_TOKEN = 14
+PHASE_PR_HEAD = 15
+PHASE_EXISTING_CHECK = 16
+PHASE_PUBLISH_CHECK = 17
+PHASE_READBACK = 18
+
 
 def _require_candidate() -> tuple[str, str]:
     sha = os.getenv("VERCEL_GIT_COMMIT_SHA", "").strip().lower()
@@ -91,26 +100,63 @@ def _verify_pr_head(client: httpx.Client, token: str, candidate_sha: str) -> Non
         raise RuntimeError("FINALIZER_PR_HEAD_MISMATCH")
 
 
+def _phase_failure(code: int, phase: str, exc: BaseException) -> int:
+    print(f"FINALIZER_PHASE_FAILED={phase}", flush=True)
+    print(f"FINALIZER_PHASE_EXCEPTION={type(exc).__name__}", flush=True)
+    return code
+
+
 def main() -> int:
-    candidate_sha, _ = _require_candidate()
-    commands = _run_exact_proof()
-    digest = _proof_digest(candidate_sha, commands)
-    settings = Settings.from_env()
+    try:
+        candidate_sha, _ = _require_candidate()
+    except Exception as exc:
+        return _phase_failure(PHASE_CANDIDATE, "CANDIDATE_IDENTITY", exc)
+
+    try:
+        commands = _run_exact_proof()
+        digest = _proof_digest(candidate_sha, commands)
+    except Exception as exc:
+        return _phase_failure(PHASE_PROOF, "EXACT_PROOF", exc)
+
+    try:
+        settings = Settings.from_env()
+    except Exception as exc:
+        return _phase_failure(PHASE_CONFIG, "GITHUB_APP_CONFIG", exc)
 
     with httpx.Client(timeout=15) as client:
-        token = _installation_token(settings, client)
-        _verify_pr_head(client, token, candidate_sha)
-        if _existing_success(client, token, candidate_sha):
-            print(f"RUNLESS_FINAL_GATE_REUSED={candidate_sha}")
-            print(f"RUNLESS_FINAL_GATE_PROOF_DIGEST={digest}")
+        try:
+            token = _installation_token(settings, client)
+        except Exception as exc:
+            return _phase_failure(PHASE_INSTALLATION_TOKEN, "INSTALLATION_TOKEN", exc)
+
+        try:
+            _verify_pr_head(client, token, candidate_sha)
+        except Exception as exc:
+            return _phase_failure(PHASE_PR_HEAD, "PR_HEAD", exc)
+
+        try:
+            existing = _existing_success(client, token, candidate_sha)
+        except Exception as exc:
+            return _phase_failure(PHASE_EXISTING_CHECK, "EXISTING_CHECK", exc)
+
+        if existing:
+            print(f"RUNLESS_FINAL_GATE_REUSED={candidate_sha}", flush=True)
+            print(f"RUNLESS_FINAL_GATE_PROOF_DIGEST={digest}", flush=True)
             return 0
 
-        _publish_success(client, token, candidate_sha, digest)
-        if not _existing_success(client, token, candidate_sha):
-            raise RuntimeError("FINALIZER_CHECK_READBACK_FAILED")
+        try:
+            _publish_success(client, token, candidate_sha, digest)
+        except Exception as exc:
+            return _phase_failure(PHASE_PUBLISH_CHECK, "PUBLISH_CHECK", exc)
 
-    print(f"RUNLESS_FINAL_GATE_SUCCESS={candidate_sha}")
-    print(f"RUNLESS_FINAL_GATE_PROOF_DIGEST={digest}")
+        try:
+            if not _existing_success(client, token, candidate_sha):
+                raise RuntimeError("FINALIZER_CHECK_READBACK_FAILED")
+        except Exception as exc:
+            return _phase_failure(PHASE_READBACK, "CHECK_READBACK", exc)
+
+    print(f"RUNLESS_FINAL_GATE_SUCCESS={candidate_sha}", flush=True)
+    print(f"RUNLESS_FINAL_GATE_PROOF_DIGEST={digest}", flush=True)
     return 0
 
 
