@@ -30,22 +30,7 @@ jobs:
           set -euo pipefail
           EXPECTED_OLD_HEAD="63c5c14993901128934400c284fde8bc576341cb"
           test "$(git rev-parse HEAD)" = "$EXPECTED_OLD_HEAD"
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('devsystem/universal_sports_identity_health_v1.py')
-          text = path.read_text(encoding='utf-8')
-          old = '''    identity = resolve_canonical_identity(
-              validated_contract,
-              snapshot,
-'''
-          new = '''    identity = resolve_canonical_identity(
-              contract,
-              snapshot,
-'''
-          if text.count(old) != 1:
-              raise SystemExit(f'expected exactly one root-cause site, found {text.count(old)}')
-          path.write_text(text.replace(old, new), encoding='utf-8')
-          PY
+          python -c "from pathlib import Path; p=Path('devsystem/universal_sports_identity_health_v1.py'); t=p.read_text(encoding='utf-8'); old='        validated_contract,\\n        snapshot,'; new='        contract,\\n        snapshot,'; assert t.count(old)==1, t.count(old); p.write_text(t.replace(old,new), encoding='utf-8')"
           test "$(git diff --name-only)" = "devsystem/universal_sports_identity_health_v1.py"
           git diff --check
       - uses: actions/setup-python@v5
