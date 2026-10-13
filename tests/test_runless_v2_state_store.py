@@ -222,3 +222,31 @@ def test_status_and_receipt_mirror_are_durable_reads():
     assert s.receipt_mirror("proof-1")["receipt_digest"] == "abc"
     assert any("/rest/v1/proof_runs" in url for url in calls)
     assert any("/rest/v1/receipt_mirrors" in url for url in calls)
+
+
+def test_new_supabase_secret_uses_apikey_without_bearer():
+    s = DurableStateStore(settings(supabase_service_role_key="sb_secret_test"))
+    assert s._headers["apikey"] == "sb_secret_test"
+    assert "Authorization" not in s._headers
+
+
+def test_health_rejects_supabase_auth_error():
+    def handler(req):
+        return json_response(req, 401, {"message": "Invalid API key"})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    s = DurableStateStore(
+        settings(supabase_service_role_key="sb_secret_test"), client=client
+    )
+    assert s.health() is False
+
+
+def test_health_accepts_successful_supabase_read():
+    def handler(req):
+        return json_response(req, 200, [])
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    s = DurableStateStore(
+        settings(supabase_service_role_key="sb_secret_test"), client=client
+    )
+    assert s.health() is True
