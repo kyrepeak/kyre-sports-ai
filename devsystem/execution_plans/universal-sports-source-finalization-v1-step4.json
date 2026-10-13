@@ -14,7 +14,7 @@
   "step": "4/8",
   "step2a": {
     "authoritative_branch": "api2-universal-sports-source-finalization-v1-step4-trust-quorum",
-    "authoritative_pr_binding": "THIS_STEP4_PULL_REQUEST",
+    "authoritative_pr": 1529,
     "duplicate_proof_paths_forbidden": true,
     "single_authority": true,
     "source_main_sha": "20b765584023a21c5fbce089f1ea4ec214767299"
