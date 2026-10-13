@@ -1,0 +1,36 @@
+{
+  "active_provider_semantics": "ACTUALLY_CONSULTED_ONLY",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_ARCHITECTURE_CONTRACT_FROZEN",
+  "github_actions_fallback": 0,
+  "incompatible_metric_substitution": false,
+  "legacy_registry_mutation": false,
+  "minimum_quorum_early_stop": true,
+  "page_wide_source_authority": false,
+  "program_steps": 8,
+  "provider_semantics": {
+    "active_means_consulted": true,
+    "approved_pool_is_active_pool": false,
+    "category_ownership_required": true
+  },
+  "render_dependency": false,
+  "routing_unit": "DATA_FIELD",
+  "semantic_compatibility": {
+    "forbidden_substitutions": {
+      "money_percentage": [
+        "public_bet_count",
+        "public_bet_percentage"
+      ],
+      "public_bet_count": [
+        "public_bet_percentage",
+        "money_percentage"
+      ],
+      "public_bet_percentage": [
+        "public_bet_count",
+        "money_percentage"
+      ]
+    }
+  },
+  "step": "1/8",
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_CONTRACT",
+  "workstream": "universal-sports-source-finalization-v1"
+}
