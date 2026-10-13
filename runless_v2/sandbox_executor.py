@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import re
@@ -87,12 +88,11 @@ class VercelSandboxBackend:
         if runtime != "python3.13":
             raise SandboxExecutionError("RUNLESS_V2_SANDBOX_RUNTIME_UNSUPPORTED")
         try:
-            from vercel import sandbox
-            from vercel.sandbox import GitSource
+            from vercel.sandbox import AsyncSandbox, GitSource
         except Exception as exc:
             raise SandboxExecutionError("RUNLESS_V2_VERCEL_SDK_UNAVAILABLE") from exc
-        box = await sandbox.create_sandbox(
-            image="vercel/sandbox/python:3.13",
+        box = await AsyncSandbox.create(
+            runtime="python3.13",
             source=GitSource(
                 url=self.repository_url,
                 revision=candidate_sha,
@@ -100,27 +100,25 @@ class VercelSandboxBackend:
                 username="x-access-token",
                 password=github_token,
             ),
-            persistent=persistent,
-            execution_time_limit=timeout_ms / 1000,
-            destroy=True,
+            timeout=timeout_ms,
         )
-        session_id = str(getattr(box, "session_id", None) or getattr(box, "name", None) or id(box))
+        session_id = str(getattr(box, "sandbox_id", None) or id(box))
         self._boxes[session_id] = box
         try:
-            version = await box.run_process(
-                "python", ["--version"], capture_output=True, check=False, kill_after=30
+            version = await asyncio.wait_for(
+                box.run_command("python", ["--version"]), timeout=30
             )
-            version_text = f"{getattr(version, 'stdout', '')}{getattr(version, 'stderr', '')}"
+            version_text = f"{await version.stdout()}{await version.stderr()}"
             if not version_text.strip().startswith("Python 3.13"):
                 raise SandboxExecutionError("RUNLESS_V2_SANDBOX_RUNTIME_MISMATCH")
-            bootstrap = await box.run_process(
-                "python",
-                ["-m", "pip", "install", "--disable-pip-version-check", "--quiet", *_MIN_BOOTSTRAP_PACKAGES],
-                capture_output=True,
-                check=False,
-                kill_after=min(300, timeout_ms / 1000),
+            bootstrap = await asyncio.wait_for(
+                box.run_command(
+                    "python",
+                    ["-m", "pip", "install", "--disable-pip-version-check", "--quiet", *_MIN_BOOTSTRAP_PACKAGES],
+                ),
+                timeout=min(300, timeout_ms / 1000),
             )
-            if int(getattr(bootstrap, "returncode", 1)) != 0:
+            if int(getattr(bootstrap, "exit_code", 1)) != 0:
                 raise SandboxExecutionError("RUNLESS_V2_SANDBOX_BOOTSTRAP_FAILED")
         except Exception:
             await self.stop(session_id)
@@ -140,30 +138,24 @@ class VercelSandboxBackend:
         box = self._boxes.get(session_id)
         if box is None:
             raise SandboxExecutionError("RUNLESS_V2_SANDBOX_SESSION_NOT_FOUND")
-        result = await box.run_process(
-            command,
-            list(args),
-            cwd=cwd,
-            env=env,
-            capture_output=True,
-            check=False,
-            kill_after=(timeout_ms / 1000) if timeout_ms else None,
+        operation = box.run_command(
+            command, list(args), cwd=cwd, env=env
+        )
+        result = (
+            await asyncio.wait_for(operation, timeout=timeout_ms / 1000)
+            if timeout_ms
+            else await operation
         )
         return {
-            "exit_code": int(getattr(result, "returncode", 1)),
-            "stdout": str(getattr(result, "stdout", "") or ""),
-            "stderr": str(getattr(result, "stderr", "") or ""),
+            "exit_code": int(getattr(result, "exit_code", 1)),
+            "stdout": str(await result.stdout() or ""),
+            "stderr": str(await result.stderr() or ""),
         }
 
     async def stop(self, session_id: str) -> None:
         box = self._boxes.pop(session_id, None)
         if box is not None:
-            try:
-                await box.stop()
-            finally:
-                destroy = getattr(box, "destroy", None)
-                if callable(destroy):
-                    await destroy()
+            await box.stop()
 
 
 class SandboxExecutor:
