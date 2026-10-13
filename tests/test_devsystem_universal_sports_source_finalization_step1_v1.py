@@ -61,3 +61,132 @@ def test_raw_bet_count_cannot_fallback_to_percentage_metrics():
     forbidden = contract["semantic_compatibility"]["forbidden_substitutions"]["public_bet_count"]
     assert "public_bet_percentage" in forbidden
     assert "money_percentage" in forbidden
+
+
+from devsystem.universal_sports_finalization_bootstrap_v1 import (
+    build_freeze_record,
+    build_manifest,
+    canonical_hash,
+    validate_freeze_record,
+    validate_manifest_transition,
+)
+
+SHA_A = "a" * 40
+SHA_B = "b" * 40
+SHA_C = "c" * 40
+PROOF = "sha256:" + ("1" * 64)
+TOKEN = "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_ARCHITECTURE_CONTRACT_FROZEN"
+
+
+def _record():
+    return build_freeze_record(
+        workstream="universal-sports-source-finalization-v1",
+        freeze_token=TOKEN,
+        merged_main_sha=SHA_A,
+        candidate_sha=SHA_B,
+        proof_digest=PROOF,
+        artifacts={
+            "devsystem/contracts/universal-sports-source-finalization-v1-step1.json": SHA_C,
+            "devsystem/universal_sports_source_finalization_step1_contract_v1.py": SHA_A,
+        },
+    )
+
+
+def test_freeze_record_is_deterministic_and_portable():
+    first = _record()
+    second = _record()
+    assert first == second
+    assert first["record_hash"] == second["record_hash"]
+    assert first["render_dependency"] is False
+    assert first["github_actions_fallback"] == 0
+    assert first["legacy_registry_mutation"] is False
+    assert validate_freeze_record(first) == first
+
+
+def test_freeze_record_tamper_fails_closed():
+    record = _record()
+    record["artifacts"]["devsystem/universal_sports_source_finalization_step1_contract_v1.py"] = SHA_B
+    with pytest.raises(ValueError):
+        validate_freeze_record(record)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("merged_main_sha", "bad"),
+    ("candidate_sha", "bad"),
+    ("proof_digest", "bad"),
+])
+def test_freeze_record_rejects_invalid_identity(field, value):
+    kwargs = dict(
+        workstream="universal-sports-source-finalization-v1",
+        freeze_token=TOKEN,
+        merged_main_sha=SHA_A,
+        candidate_sha=SHA_B,
+        proof_digest=PROOF,
+        artifacts={"a.py": SHA_C},
+    )
+    kwargs[field] = value
+    with pytest.raises(ValueError):
+        build_freeze_record(**kwargs)
+
+
+def test_genesis_manifest_is_revision_one():
+    manifest = build_manifest(
+        previous=None,
+        freeze_token=TOKEN,
+        record_path=f"devsystem/finalization_ledger_v2/records/{TOKEN}.json",
+        record_blob_sha=SHA_C,
+        merged_main_sha=SHA_A,
+    )
+    assert manifest["revision"] == 1
+    assert manifest["previous_state_hash"] is None
+    assert manifest["latest_freeze_token"] == TOKEN
+    assert manifest["latest_record_blob_sha"] == SHA_C
+    assert manifest["latest_merged_main_sha"] == SHA_A
+    assert manifest["render_dependency"] is False
+    assert manifest["legacy_registry_mutation"] is False
+    assert validate_manifest_transition(None, manifest) == manifest
+
+
+def test_manifest_transition_is_monotonic_and_chained():
+    first = build_manifest(
+        previous=None,
+        freeze_token=TOKEN,
+        record_path=f"devsystem/finalization_ledger_v2/records/{TOKEN}.json",
+        record_blob_sha=SHA_C,
+        merged_main_sha=SHA_A,
+    )
+    second = build_manifest(
+        previous=first,
+        freeze_token="NEXT_FREEZE",
+        record_path="devsystem/finalization_ledger_v2/records/NEXT_FREEZE.json",
+        record_blob_sha=SHA_B,
+        merged_main_sha=SHA_C,
+    )
+    assert second["revision"] == 2
+    assert second["previous_state_hash"] == first["state_hash"]
+    assert validate_manifest_transition(first, second) == second
+
+
+def test_manifest_stale_precondition_fails_closed():
+    first = build_manifest(
+        previous=None,
+        freeze_token=TOKEN,
+        record_path=f"devsystem/finalization_ledger_v2/records/{TOKEN}.json",
+        record_blob_sha=SHA_C,
+        merged_main_sha=SHA_A,
+    )
+    second = build_manifest(
+        previous=first,
+        freeze_token="NEXT_FREEZE",
+        record_path="devsystem/finalization_ledger_v2/records/NEXT_FREEZE.json",
+        record_blob_sha=SHA_B,
+        merged_main_sha=SHA_C,
+    )
+    stale = copy.deepcopy(first)
+    stale["state_hash"] = "0" * 64
+    with pytest.raises(ValueError):
+        validate_manifest_transition(stale, second)
+
+
+def test_canonical_hash_is_stable_across_key_order():
+    assert canonical_hash({"b": 2, "a": 1}) == canonical_hash({"a": 1, "b": 2})
