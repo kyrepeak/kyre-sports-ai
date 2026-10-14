@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/runless-v2-registry-main-drift-repair-v1.json": "d5075500daa91fa9e3f77183f47438de4a4d63d5",
+    "runless_v2/github_authority.py": "479df8f7d6d474b4f1cd461a7b5711179a9c0a7a",
+    "tests/test_runless_v2_github_authority.py": "3aa427e9a77a38a49d8a39edb8d055a64af82050"
+  },
+  "candidate_sha": "804d6b5dea828f88156426491f1a0e12d98a4a92",
+  "created_at": "2026-10-14T01:17:10.397708+00:00",
+  "dependency_map": {
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "devsystem/universal_sports_finalization_bootstrap_v1.py": "acc2726d9b2b4dfa3f0a893a02d646c4eaa4e2d4",
+    "runless_v2/proof_service.py": "938c6efcf845471ca73a6338f5b43bae1dcf7562"
+  },
+  "digest": "a9105111545719b4d65b543bde4fb2caba511765d23e3fcfd2c001621c904632",
+  "evidence_digests": [
+    "ae998d27170504625954d007fd6dde12288ca4973f58b9deac0ce68ab606375b",
+    "c9caa8b47770e0202ee12a0c741a67d384ce19de5aa155a2e78582c25c56b8fa"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6b1784245b459c3953ee20d928b819099e78e4db120081bfcbc7deb99c774681",
+  "proof_id": "runless-v2-registry-main-drift-repair-v1-804d6b5dea828f88-75e9663d7f92816d",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 302,
+    "state_hash": "dc758bddc4e674c1a9e759fefe8b2f2ecde1e37205ee6f694b573bc43e2a8ebe"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 302,
+    "state_hash": "dc758bddc4e674c1a9e759fefe8b2f2ecde1e37205ee6f694b573bc43e2a8ebe"
+  },
+  "request_fingerprint": "87f18f8cdbff7ef61aa587253b919759a53204964122f71b82adcfceeabd9fa7",
+  "step": "runless-v2-premerge",
+  "task_id": "runless-v2-registry-main-drift-repair-v1",
+  "workstream": "runless-v2-registry-main-drift-repair-v1"
+}
