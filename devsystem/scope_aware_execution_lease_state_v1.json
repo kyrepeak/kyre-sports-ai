@@ -4,9 +4,39 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 726,
-  "generation": 413,
+  "revision": 727,
+  "generation": 414,
   "holders": [
+    {
+      "owner_id": "universal-sports-source-finalization-v1-step7",
+      "lease_id": "SCOPE-LEASE-20935AD757B54DE5915FB281",
+      "generation": 414,
+      "acquired_at_utc": "2026-10-14T01:28:29Z",
+      "heartbeat_at_utc": "2026-10-14T01:28:29Z",
+      "expires_at_utc": "2026-10-14T02:28:29Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/contracts/universal-sports-finalization-worker-v1.json",
+          "devsystem/execution_plans/universal-sports-source-finalization-v1-step7.json",
+          "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step7.json",
+          "devsystem/task_ledgers/universal-sports-source-finalization-v1-step7.json",
+          "devsystem/universal_sports_finalization_worker_v1.py",
+          "docs/superpowers/plans/2026-10-14-universal-sports-source-finalization-v1-step7.md",
+          "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py"
+        ],
+        "dependency_tokens": [
+          "main-base:244b603ce32351dc0926b899a4e7d5018f97e4a0",
+          "step6-freeze:63fbdadfaba0170f9b8ad612be62e1e9891dd04b1a26cc240385e55e6a41f263"
+        ],
+        "shared_resources": [
+          "branch:api2-universal-sports-source-finalization-v1-step7-finalization-worker"
+        ],
+        "resource_identity": {
+          "candidate-sha": "244b603ce32351dc0926b899a4e7d5018f97e4a0"
+        },
+        "exclusive": false
+      }
+    },
     {
       "owner_id": "runless-v2-registry-main-drift-repair-v1",
       "lease_id": "SCOPE-LEASE-B3EA62744D9F554043B451B2",
@@ -34,5 +64,5 @@
       }
     }
   ],
-  "state_hash": "6ae3a1953ed754ee35b8173003ecfb04fda406600b757b02f1a13c85ee63fad9"
+  "state_hash": "72246739b7204229c8972c6d5dbc35ec887527479eea98b89719132df4f8c519"
 }
