@@ -1,0 +1,73 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step5-sharp-money-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "5/10",
+  "source_main_sha": "7bce42ee33e9db53549e4bb1e0b98f2c51847d77",
+  "goal": "Add the separate NBA Spread Sharp Money Game layer. Rank only exact Step-3 upcoming/delayed schedule matches by the unique largest positive money-percentage minus public-bet-percentage divergence, require positive authoritative bet volume without inventing an arbitrary threshold, and fail closed whenever exact semantic routes or observations are unavailable or ambiguous.",
+  "write_paths": [
+    "devsystem/execution_plans/nba-spread-step5-sharp-money-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step5-sharp-money-v1.json",
+    "devsystem/task_ledgers/nba-spread-step5-sharp-money-v1.json",
+    "nba_spread_page_v1.py",
+    "nba_spread_sharp_money_v1.py",
+    "tests/test_nba_spread_step5_sharp_money_v1.py"
+  ],
+  "protected_dependencies": [
+    "nba_spread_most_bet_v1.py",
+    "nba_spread_schedule_v1.py",
+    "nba_spread_step2_activation_v1.py",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json",
+    "devsystem/contracts/universal-sports-field-router-v1.json",
+    "devsystem/contracts/universal-sports-trust-quorum-v1.json",
+    "devsystem/universal_sports_provider_registry_v1.py",
+    "devsystem/universal_sports_field_router_v1.py",
+    "devsystem/universal_sports_trust_quorum_v1.py"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "nba-spread-step5-sharp-money-r1",
+    "scope_lease_id": "SCOPE-LEASE-C4FF2BF33BD3EB72EDF2B820",
+    "authoritative_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "github_actions_fallback": 0
+  },
+  "architecture": {
+    "routing_unit": "DATA_FIELD",
+    "required_fields": [
+      "public_bet_percentage",
+      "money_percentage",
+      "public_bet_count"
+    ],
+    "semantic_metric_ids": [
+      "PUBLIC_BET_PERCENTAGE",
+      "MONEY_PERCENTAGE",
+      "PUBLIC_BET_COUNT"
+    ],
+    "compatible_substitutes": [],
+    "page_wide_source_authority": false,
+    "metric_substitution_allowed": false,
+    "fail_closed_on_source_exhaustion": true,
+    "active_provider_semantics": "ACTUALLY_CONSULTED_ONLY",
+    "positive_volume_required": true,
+    "arbitrary_volume_threshold": false,
+    "arbitrary_divergence_threshold": false,
+    "legacy_registry_mutation": false
+  },
+  "product_scope": {
+    "feature": "Sharp Money Game",
+    "schedule_authority": "frozen NBA Spread Step 3 Phoenix schedule",
+    "step4_most_bet_preserved": true,
+    "timezone": "America/Phoenix",
+    "later_layers_deferred": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP5_SHARP_MONEY_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}

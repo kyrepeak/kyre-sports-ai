@@ -1,0 +1,53 @@
+{
+  "mode": "runless",
+  "task_id": "nba-spread-step5-sharp-money-v1",
+  "workstream": "nba-spread-two-page-v1",
+  "source_main_sha": "7bce42ee33e9db53549e4bb1e0b98f2c51847d77",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "nba_spread_sharp_money_v1.py",
+      "nba_spread_page_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_nba_spread_step5_sharp_money_v1.py",
+      "tests/test_devsystem_universal_sports_provider_registry_step2_v1.py",
+      "tests/test_devsystem_universal_sports_field_router_step3_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/execution_plans/nba-spread-step5-sharp-money-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step5-sharp-money-v1.json",
+    "devsystem/task_ledgers/nba-spread-step5-sharp-money-v1.json",
+    "nba_spread_page_v1.py",
+    "nba_spread_sharp_money_v1.py",
+    "tests/test_nba_spread_step5_sharp_money_v1.py"
+  ],
+  "dependencies": [
+    "nba_spread_most_bet_v1.py",
+    "nba_spread_schedule_v1.py",
+    "nba_spread_step2_activation_v1.py",
+    "devsystem/runless_proof_plan_v1.py",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json",
+    "devsystem/contracts/universal-sports-field-router-v1.json",
+    "devsystem/universal_sports_provider_registry_v1.py",
+    "devsystem/universal_sports_field_router_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [
+    "NBA Spread Step 3 Phoenix schedule",
+    "NBA Spread Step 4 Most Bet Game"
+  ],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP5_SHARP_MONEY_FROZEN"
+}
