@@ -1,13 +1,1 @@
-{
-  "version": "UNIVERSAL_SPORTS_FINALIZATION_LEDGER_V2_MANIFEST",
-  "revision": 7,
-  "previous_state_hash": "1d9232bac3d8ea4801fe69684984efeaa33efa79f0f6a1fc914eee2dcb2a3837",
-  "latest_freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP6_SOURCE_RECEIPT_PROVENANCE_FROZEN",
-  "latest_record_path": "devsystem/finalization_ledger_v2/records/UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP6_SOURCE_RECEIPT_PROVENANCE_FROZEN.json",
-  "latest_record_blob_sha": "b73cf06f3ce00b7e7935394290e53964f8197d9c",
-  "latest_merged_main_sha": "244b603ce32351dc0926b899a4e7d5018f97e4a0",
-  "render_dependency": false,
-  "github_actions_fallback": 0,
-  "legacy_registry_mutation": false,
-  "state_hash": "63fbdadfaba0170f9b8ad612be62e1e9891dd04b1a26cc240385e55e6a41f263"
-}
+{"github_actions_fallback":0,"latest_freeze_token":"UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_FROZEN","latest_merged_main_sha":"07e101981f201c87e4bca6b0b58e57c6acede22e","latest_record_blob_sha":"4b747ed59eb195cadf1014a09b8affacd01234da","latest_record_path":"devsystem/finalization_ledger_v2/records/UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_FROZEN.json","legacy_registry_mutation":false,"previous_state_hash":"63fbdadfaba0170f9b8ad612be62e1e9891dd04b1a26cc240385e55e6a41f263","render_dependency":false,"revision":8,"state_hash":"7c67e8f30808945118c56330e60b7406980fe62ed8039561ceb9a6b404187f0a","version":"UNIVERSAL_SPORTS_FINALIZATION_LEDGER_V2_MANIFEST"}
