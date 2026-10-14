@@ -135,6 +135,7 @@ async def test_vercel_backend_uses_supported_python313_runtime_without_removed_i
     assert calls["commands"][0][:2] == ("python", ["--version"])
     assert calls["commands"][1][0] == "python"
     assert calls["commands"][1][1][:4] == ["-m", "pip", "install", "--disable-pip-version-check"]
+    assert "pytest-asyncio" in calls["commands"][1][1]
 
 
 @pytest.mark.asyncio
