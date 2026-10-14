@@ -1,8 +1,8 @@
-"""NBA Spread Page 1 — Step 5 Sharp Money feature.
+"""NBA Spread Page 1 — Step 6 verified market spread context.
 
-Preserves the frozen Step-3 Phoenix schedule and Step-4 Most Bet feature, then
-adds one fail-closed Sharp Money layer. Injury, projection, probability, and
-ranking layers remain deferred.
+Preserves frozen Steps 1–5, then adds one fail-closed sportsbook spread market
+layer with consensus and best-available context. Injury, projection, probability,
+and ranking layers remain deferred.
 """
 from __future__ import annotations
 
@@ -13,11 +13,13 @@ import streamlit as st
 from nba_spread_most_bet_v1 import load_most_bet_feature
 from nba_spread_schedule_v1 import load_verified_nba_schedule
 from nba_spread_sharp_money_v1 import SHARP_MONEY_LABEL, load_sharp_money_feature
+from nba_spread_market_lines_v1 import MARKET_SECTION_LABEL, load_spread_market_features
 
-MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP5_SHARP_MONEY"
+MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP6_MARKET_LINES"
 PAGE_HEARTBEAT = "NBA_SPREAD_STEP4_MOST_BET_FEATURE_ACTIVE"
 STEP3_HEARTBEAT = "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_ACTIVE"
 STEP5_HEARTBEAT = "NBA_SPREAD_STEP5_SHARP_MONEY_ACTIVE"
+STEP6_HEARTBEAT = "NBA_SPREAD_STEP6_MARKET_LINES_ACTIVE"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_MODEL = False
 MAY_MODIFY_PROJECTION = False
@@ -37,6 +39,11 @@ def _load_most_bet(games: list[dict]) -> dict:
 @st.cache_data(ttl=300, show_spinner=False)
 def _load_sharp_money(games: list[dict]) -> dict:
     return load_sharp_money_feature(games)
+
+
+@st.cache_data(ttl=90, show_spinner=False)
+def _load_market_lines(games: list[dict]) -> dict:
+    return load_spread_market_features(games)
 
 
 def _game_card(game: dict) -> str:
@@ -159,6 +166,42 @@ box-shadow:0 14px 34px rgba(0,0,0,.2)">
 """
 
 
+def _market_lines_card(feature: dict) -> str:
+    away = escape(str(feature.get("away_tricode") or "—"))
+    home = escape(str(feature.get("home_tricode") or "—"))
+    tip = escape(str(feature.get("tip_phoenix") or "Time unavailable"))
+    date = escape(str(feature.get("game_date_phoenix") or "Date unavailable"))
+    ca = float(feature.get("consensus_away_spread") or 0.0)
+    ch = float(feature.get("consensus_home_spread") or 0.0)
+    ba = dict(feature.get("best_away") or {})
+    bh = dict(feature.get("best_home") or {})
+    books = int(feature.get("sportsbook_count") or 0)
+    return f"""
+<div data-testid="nba-spread-step6-market-lines-card" style="border:1px solid rgba(103,216,255,.30);border-radius:22px;
+background:linear-gradient(140deg,rgba(8,18,31,.99),rgba(10,31,49,.97));padding:18px;margin:12px 0">
+  <div style="display:flex;justify-content:space-between;gap:12px">
+    <div>
+      <div style="font-size:.72rem;font-weight:950;letter-spacing:.1em;text-transform:uppercase;color:#67d8ff">{MARKET_SECTION_LABEL}</div>
+      <div style="font-size:1.16rem;font-weight:950;color:#f8fafc;margin-top:6px">{away} @ {home}</div>
+    </div>
+    <div style="text-align:right"><div style="font-size:.9rem;font-weight:900;color:#f8fafc">{tip}</div><div style="font-size:.69rem;color:#7f93a8">{date} • Phoenix</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px">
+    <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
+      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">Consensus Spread</div>
+      <div style="font-size:.86rem;color:#f8fafc;font-weight:950;margin-top:3px">{away} {ca:+g} • {home} {ch:+g}</div>
+      <div style="font-size:.62rem;color:#688197;margin-top:3px">{books} independent books</div>
+    </div>
+    <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
+      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">Best Available</div>
+      <div style="font-size:.78rem;color:#f8fafc;font-weight:900;margin-top:3px">{away} {float(ba.get('spread') or 0.0):+g} • {escape(str(ba.get('sportsbook') or '—'))}</div>
+      <div style="font-size:.78rem;color:#f8fafc;font-weight:900;margin-top:2px">{home} {float(bh.get('spread') or 0.0):+g} • {escape(str(bh.get('sportsbook') or '—'))}</div>
+    </div>
+  </div>
+</div>
+"""
+
+
 def _render_most_bet(feature: dict) -> None:
     if feature.get("verification") == "VERIFIED":
         st.markdown(_most_bet_card(feature), unsafe_allow_html=True)
@@ -195,6 +238,24 @@ padding:13px 15px;background:#09131f;margin:12px 0">
     )
 
 
+def _render_market_lines(feature: dict) -> None:
+    if feature.get("verification") == "VERIFIED":
+        st.markdown(_market_lines_card(feature), unsafe_allow_html=True)
+        return
+    diagnostic = escape(str(feature.get("diagnostic_state") or "SOURCE_UNAVAILABLE"))
+    st.markdown(
+        f"""
+<div data-testid="nba-spread-step6-market-lines-unavailable" style="border:1px dashed rgba(103,216,255,.22);border-radius:16px;
+padding:13px 15px;background:#09131f;margin:12px 0">
+  <div style="font-size:.78rem;font-weight:900;color:#b9dceb">{MARKET_SECTION_LABEL} data unavailable</div>
+  <div style="font-size:.72rem;color:#7890a5;margin-top:4px">Consensus Spread and Best Available require exact verified sportsbook observations from at least two independent books. Nothing is guessed.</div>
+  <div style="font-size:.64rem;color:#61778b;margin-top:6px">{diagnostic}</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
 def _render_game_group(title: str, games: list[dict], empty_text: str) -> None:
     st.markdown(
         f'<div style="font-size:.78rem;font-weight:950;letter-spacing:.08em;text-transform:uppercase;'
@@ -217,7 +278,8 @@ def render_nba_spread_page() -> None:
         '<div data-testid="nba-spread-step2-active" style="display:none!important"></div>'
         f'<div data-testid="nba-spread-step3-schedule-active" data-heartbeat="{STEP3_HEARTBEAT}" style="display:none!important"></div>'
         f'<div data-testid="nba-spread-step4-most-bet-active" data-heartbeat="{PAGE_HEARTBEAT}" style="display:none!important"></div>'
-        f'<div data-testid="nba-spread-step5-sharp-money-active" data-heartbeat="{STEP5_HEARTBEAT}" style="display:none!important"></div>',
+        f'<div data-testid="nba-spread-step5-sharp-money-active" data-heartbeat="{STEP5_HEARTBEAT}" style="display:none!important"></div>'
+        f'<div data-testid="nba-spread-step6-market-lines-active" data-heartbeat="{STEP6_HEARTBEAT}" style="display:none!important"></div>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -267,6 +329,7 @@ border-radius:16px;padding:11px 14px;background:#0a1320">
 
     _render_most_bet(_load_most_bet(games))
     _render_sharp_money(_load_sharp_money(games))
+    _render_market_lines(_load_market_lines(games))
     _render_game_group("Upcoming", upcoming, "No verified upcoming NBA games in this Phoenix-time window.")
     _render_game_group("Live / Final", live_final, "No verified live or completed NBA games in this window yet.")
 
@@ -276,6 +339,7 @@ __all__ = [
     "PAGE_HEARTBEAT",
     "STEP3_HEARTBEAT",
     "STEP5_HEARTBEAT",
+    "STEP6_HEARTBEAT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "MAY_MODIFY_MODEL",
     "MAY_MODIFY_PROJECTION",

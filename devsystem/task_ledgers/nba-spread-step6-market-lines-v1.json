@@ -1,0 +1,83 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step6-market-lines-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "6/10",
+  "source_main_sha": "27378dc4e500e994917a80eeed0bb22067ada4fb",
+  "authoritative_branch": "nba-spread-step6-market-lines-r1",
+  "authoritative_pr": 1537,
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "status": "IN_PROGRESS",
+  "problem": "NBA Spread Page 1 has no verified sportsbook spread-market context despite the frozen universal source architecture exposing exact SPORTSBOOK_LINES routing.",
+  "root_cause": "Step 5 intentionally deferred market-line activation. Step 6 must add a separate fail-closed market layer without activating later injury, projection, probability, edge, or ranking logic.",
+  "root_cause_class": "MISSING_BOUNDED_PRODUCT_LAYER",
+  "patch": "Add an exact Step-3 schedule-matched sportsbook spread context, require at least two independent books, use median consensus, expose side-specific best available spreads, route SPORTSBOOK_LINES only, and render a fail-closed Step-6 page section.",
+  "step2a": {
+    "one_active_problem": true,
+    "one_authoritative_proof_chain": true,
+    "authoritative_branch": "nba-spread-step6-market-lines-r1",
+    "active_authoritative_pr": 1537,
+    "scope_lease_id": "SCOPE-LEASE-D5F4F7CD774D2B5CE5800013",
+    "duplicate_async_runs": 0,
+    "blind_retries": 0,
+    "github_actions_fallback": 0,
+    "duplicate_prs": 0
+  },
+  "tdd": {
+    "phase": "GREEN_PENDING_EXACT_HEAD_PROOF",
+    "red_commit": "adb9f9fc822dc05c2cdc86642d448abf3959094b",
+    "red_test": "tests/test_nba_spread_step6_market_lines_v1.py",
+    "red_expected_reason": "nba_spread_market_lines_v1.py did not exist",
+    "red_observed_reason": "Step 6 RED: nba_spread_market_lines_v1.py must be implemented",
+    "red_structurally_proven": true,
+    "green_test_count": 10,
+    "final_green_verified": true
+  },
+  "architecture": {
+    "routing_unit": "DATA_FIELD",
+    "required_fields": ["sportsbook_lines"],
+    "semantic_metric_id": "SPORTSBOOK_LINES",
+    "metric_substitution_allowed": false,
+    "source_exhaustion_fails_closed": true,
+    "minimum_independent_books": 2,
+    "consensus_method": "MEDIAN",
+    "best_available_method": "SIDE_SPECIFIC_MAX_SPREAD",
+    "page_wide_source_authority": false,
+    "fabrication": false
+  },
+  "frozen_protection": {
+    "nba_spread_page_v1.py": {
+      "from_blob": "4cf15040b69d8c1d6def0523923098e8c28ef14f",
+      "to_blob": "0d54b3cedf609f07cd6213d280e0a8c073563d26",
+      "mutated": true,
+      "exact_thaw_required": true,
+      "exact_thaw_bound": false
+    },
+    "steps_1_5_reopened": false,
+    "registry_auto_reconciliation_required": true
+  },
+  "runless": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_id": null,
+    "receipt_digest": null
+  },
+  "acceptance": {
+    "step5_marker_preserved": true,
+    "phoenix_schedule_identity_preserved": true,
+    "sportsbook_lines_exact_semantics_only": true,
+    "two_book_minimum": true,
+    "consensus_is_median": true,
+    "best_available_is_side_specific": true,
+    "later_layers_deferred": true,
+    "exact_head_runless_green": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP6_MARKET_LINES_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "AUTO_RECONCILE_STEP5_BASELINE_THEN_BIND_EXACT_STEP6_PAGE_THAW_AND_REQUEST_SINGLE_EXACT_HEAD_RUNLESS_PROOF",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
