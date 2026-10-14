@@ -1,0 +1,24 @@
+{
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_EXECUTION_PLAN",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "8/8",
+  "mission": "Full Integration + Certification",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_FULL_INTEGRATION_CERTIFICATION_FROZEN",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "step2a": {
+    "single_authority": true,
+    "authoritative_branch": "api2-universal-sports-source-finalization-v1-step8-full-integration-certification",
+    "source_main_sha": "07e101981f201c87e4bca6b0b58e57c6acede22e",
+    "scope_lease_id": "SCOPE-LEASE-96FEB9FD3CEE05E020604597",
+    "duplicate_proof_paths_forbidden": true
+  },
+  "scope": {
+    "prior_steps_1_through_7_mutation": false,
+    "legacy_registry_mutation": false,
+    "product_runtime": false,
+    "sports_model": false,
+    "render_deployment": false
+  },
+  "github_actions_fallback": 0
+}
