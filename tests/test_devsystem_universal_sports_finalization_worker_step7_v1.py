@@ -104,8 +104,17 @@ class FakeBackend:
         self.manifest = deepcopy(manifest)
         self.registry = deepcopy(registry)
         self.files = {}
+        self.file_texts = {}
         self.write_attempts = 0
         self.tamper = tamper
+
+    def trusted_certification(self):
+        return {
+            "freeze_token": TOKEN,
+            "candidate_sha": A,
+            "merged_main_sha": B,
+            "proof_digest": "sha256:" + H,
+        }
 
     def snapshot(self):
         return {
@@ -122,6 +131,7 @@ class FakeBackend:
         assert ref == worker.LEDGER_REF
         assert expected_head_sha == self.ledger_head
         assert expected_manifest_blob_sha == self.manifest_blob
+        self.file_texts = dict(files)
         self.files = {path: json.loads(text) for path, text in files.items()}
         self.ledger_head = "9" * 40
         self.manifest = deepcopy(self.files[worker.MANIFEST_PATH])
@@ -138,6 +148,14 @@ class FakeBackend:
         if self.tamper and path == worker.MANIFEST_PATH:
             value["revision"] += 1
         return value
+
+    def read_blob_sha(self, ref, path):
+        assert ref == worker.LEDGER_REF
+        text = self.file_texts.get(path)
+        if text is None:
+            return None
+        data = text.encode("utf-8")
+        return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
 
 
 def test_worker_writes_once_reads_back_and_preserves_legacy_state():
