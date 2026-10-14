@@ -14,7 +14,7 @@ GATE_NAME = "runless-final-gate"
 PR_NUMBER = 1534
 MAIN_SHA = "67dad9d7711c39e2dd640d72ab7f5d28946d2d3e"
 CANDIDATE_SHA = "6e2d917d6603b0cb207ab35f9da72e20edc9fab7"
-MERGE_SHA = "a742664faffdc2f6b24ac25c7c1eececde112703"
+MERGE_SHA = "07e101981f201c87e4bca6b0b58e57c6acede22e"
 MERGE_TREE = "381881e5557a0d6e97ae2894b05e6f1d966078b3"
 PROOF_ID = "universal-sports-source-finalization-v1-step7-6e2d917d6603b0cb-ae25032319d8f787"
 RECEIPT_DIGEST = "b88838f4a00b775420487627dbc9356a9b268fc09b4406c25344e0145e73c5a8"
@@ -211,7 +211,7 @@ def _integration_gate():
         }
 
 
-app = FastAPI(title="Step 7 Tested Merge Gate", version="1")
+app = FastAPI(title="Step 7 Tested Merge Gate", version="2")
 
 
 @app.get("/step7-final-proof-transport/health")
