@@ -1,19 +1,22 @@
 """NBA Spread Step 4 — fail-closed Most Bet Game feature layer.
 
-This module does one thing: identify the unique highest tracked-bet NBA spread
-matchup from Action Network and reconcile it to the already-verified Step-3
-Phoenix schedule. It does not infer sharp money, injuries, projections,
-probability, edge, picks, or rankings.
+The page may publish a "Most Bet Game" only when the frozen Universal Sports
+Source + Finalization architecture produces a legitimate PUBLIC_BET_COUNT
+route. Public bet percentages and money percentages are never substituted for
+absolute bet count. The legacy Action Network parser/selector remains available
+for regression compatibility, but it is not a source-authority bypass.
 """
 from __future__ import annotations
 
 from html.parser import HTMLParser
+from pathlib import Path
 import re
-from typing import Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
-import requests
+from devsystem.universal_sports_field_router_v1 import load_router_policy, route_field
+from devsystem.universal_sports_provider_registry_v1 import load_registry
 
-MODEL_VERSION = "NBA_SPREAD_STEP4_MOST_BET_FEATURE_V1"
+MODEL_VERSION = "NBA_SPREAD_STEP4_MOST_BET_FEATURE_V2_UNIVERSAL_ROUTE"
 SOURCE_NAME = "Action Network"
 SOURCE_URL = "https://www.actionnetwork.com/nba/public-betting"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -24,6 +27,12 @@ MAY_ACTIVATE_SHARP_MONEY = False
 MAY_ACTIVATE_INJURIES = False
 MAY_ACTIVATE_RANKING = False
 ELIGIBLE_STATES = {"UPCOMING", "DELAYED"}
+
+_ROOT = Path(__file__).resolve().parent
+_PROVIDER_REGISTRY_PATH = _ROOT / "devsystem" / "contracts" / "universal-sports-provider-registry-v1.json"
+_FIELD_ROUTER_PATH = _ROOT / "devsystem" / "contracts" / "universal-sports-field-router-v1.json"
+PUBLIC_BET_COUNT_FIELD = "public_bet_count"
+PUBLIC_BET_COUNT_METRIC = "PUBLIC_BET_COUNT"
 
 _TEAM_NAMES = {
     "ATL": "Atlanta Hawks",
@@ -116,7 +125,7 @@ def _bet_count(value: object) -> int | None:
 
 
 class _TableParser(HTMLParser):
-    """Small dependency-free HTML table reader for the public betting page."""
+    """Small dependency-free HTML table reader used by the legacy parser."""
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -170,11 +179,7 @@ def _table_rows(html: str) -> list[list[list[str]]]:
 
 
 def parse_action_network_html(html: str) -> list[dict]:
-    """Parse Action Network's public NBA spread table into neutral rows.
-
-    The parser intentionally requires the documented public-table columns and
-    returns no rows when the page shape is incomplete. It never invents splits.
-    """
+    """Parse the historical Action public-table shape without granting authority."""
     if not str(html or "").strip():
         return []
 
@@ -234,7 +239,10 @@ def parse_action_network_html(html: str) -> list[dict]:
 
 
 def fetch_action_network_rows(*, timeout_seconds: float = 12.0) -> list[dict]:
-    response = requests.get(
+    """Legacy fetch helper retained for parser regression coverage only."""
+    import requests as _requests
+
+    response = _requests.get(
         SOURCE_URL,
         headers={
             "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAI/1.0; +public-data-verification)",
@@ -264,7 +272,9 @@ def _valid_splits(row: Mapping[str, object]) -> bool:
     )
 
 
-def _schedule_index(schedule_games: Sequence[Mapping[str, object]]) -> dict[tuple[str, str], Mapping[str, object]]:
+def _schedule_index(
+    schedule_games: Sequence[Mapping[str, object]],
+) -> dict[tuple[str, str], Mapping[str, object]]:
     out: dict[tuple[str, str], Mapping[str, object]] = {}
     for game in schedule_games:
         if str(game.get("status") or "").upper() not in ELIGIBLE_STATES:
@@ -277,15 +287,15 @@ def _schedule_index(schedule_games: Sequence[Mapping[str, object]]) -> dict[tupl
 
 
 def select_most_bet_game(
-    action_rows: Iterable[Mapping[str, object]],
+    rows: Iterable[Mapping[str, object]],
     schedule_games: Sequence[Mapping[str, object]],
 ) -> dict:
-    """Return the unique highest-volume Action matchup bound to Step-3 identity."""
+    """Pure selector for already-authorized absolute-count observations."""
     schedule = _schedule_index(schedule_games)
     matched: list[tuple[int, Mapping[str, object], Mapping[str, object]]] = []
     invalid_match = False
 
-    for row in action_rows:
+    for row in rows:
         away = _team_code(row.get("away_tricode") or row.get("away"))
         home = _team_code(row.get("home_tricode") or row.get("home"))
         if not away or not home:
@@ -332,20 +342,82 @@ def select_most_bet_game(
     }
 
 
+def resolve_public_bet_count_route(
+    *,
+    registry: Mapping[str, Any] | None = None,
+    router_policy: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Return the frozen universal DATA_FIELD route for absolute public bet count."""
+    resolved_registry = (
+        dict(registry)
+        if registry is not None
+        else load_registry(_PROVIDER_REGISTRY_PATH)
+    )
+    resolved_policy = (
+        dict(router_policy)
+        if router_policy is not None
+        else load_router_policy(_FIELD_ROUTER_PATH)
+    )
+    return route_field(
+        resolved_registry,
+        resolved_policy,
+        sport="nba",
+        field=PUBLIC_BET_COUNT_FIELD,
+    )
+
+
+def _unavailable_from_route(route: Mapping[str, Any], diagnostic: str) -> dict:
+    return {
+        "verification": "UNAVAILABLE",
+        "diagnostic_state": diagnostic,
+        "semantic_metric_id": str(route.get("semantic_metric_id") or PUBLIC_BET_COUNT_METRIC),
+        "route_id": route.get("route_id"),
+        "eligible_provider_ids": list(route.get("eligible_provider_ids") or []),
+        "blocked_providers": list(route.get("blocked_providers") or []),
+        "active_provider_ids": list(route.get("active_provider_ids") or []),
+        "page_wide_source_authority": bool(route.get("page_wide_source_authority", False)),
+        "fabrication": False,
+    }
+
+
 def load_most_bet_feature(schedule_games: Sequence[Mapping[str, object]]) -> dict:
+    """Load Step 4 through the universal PUBLIC_BET_COUNT route.
+
+    The current frozen registry has no configured provider that can legally
+    supply absolute public bet count for NBA. Therefore the correct current
+    behavior is fail-closed. The legacy Action parser is intentionally not
+    consulted because public split percentages are not compatible substitutes.
+    """
+    del schedule_games
     try:
-        rows = fetch_action_network_rows()
-    except (requests.RequestException, ValueError, TypeError):
-        return {"verification": "UNAVAILABLE", "diagnostic_state": "SOURCE_UNAVAILABLE"}
-    if not rows:
-        return {"verification": "UNAVAILABLE", "diagnostic_state": "SOURCE_DATA_UNAVAILABLE"}
-    return select_most_bet_game(rows, schedule_games)
+        route = resolve_public_bet_count_route()
+    except (OSError, ValueError, TypeError):
+        return {
+            "verification": "UNAVAILABLE",
+            "diagnostic_state": "PUBLIC_BET_COUNT_ROUTE_INVALID",
+            "semantic_metric_id": PUBLIC_BET_COUNT_METRIC,
+            "eligible_provider_ids": [],
+            "blocked_providers": [],
+            "active_provider_ids": [],
+            "page_wide_source_authority": False,
+            "fabrication": False,
+        }
+
+    if route.get("status") != "ROUTE_READY":
+        return _unavailable_from_route(route, "PUBLIC_BET_COUNT_ROUTE_UNAVAILABLE")
+
+    # A route becoming READY is not permission to invent a provider adapter.
+    # Until an eligible absolute-count adapter is explicitly implemented and
+    # certified, fail closed rather than falling back to percentage sources.
+    return _unavailable_from_route(route, "PUBLIC_BET_COUNT_ADAPTER_UNAVAILABLE")
 
 
 __all__ = [
     "MODEL_VERSION",
     "SOURCE_NAME",
     "SOURCE_URL",
+    "PUBLIC_BET_COUNT_FIELD",
+    "PUBLIC_BET_COUNT_METRIC",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "MAY_MODIFY_MODEL",
     "MAY_MODIFY_PROJECTION",
@@ -356,5 +428,6 @@ __all__ = [
     "parse_action_network_html",
     "fetch_action_network_rows",
     "select_most_bet_game",
+    "resolve_public_bet_count_route",
     "load_most_bet_feature",
 ]

@@ -1,56 +1,64 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "task_id": "nba-spread-step4-most-bet-feature-v1",
   "project": "API2",
   "workstream": "nba-spread-two-page-v1",
-  "step": "4/TBD",
-  "source_main_sha": "6b3a37891fc2938736e8f371d29c3337682a4a22",
-  "goal": "Add exactly one fail-closed Most Bet Game featured card to NBA Spread Page 1 by reconciling Action Network tracked NBA spread bet volume and betting splits to the frozen Step-3 verified Phoenix schedule identity.",
+  "step": "4/10",
+  "source_main_sha": "5aae6cfb46aabfa360b6aadff87f85385fb31946",
+  "goal": "Finalize NBA Spread Step 4 Most Bet Game against the frozen Universal Sports Source + Finalization V1 contract. PUBLIC_BET_COUNT must route by exact semantic metric; incompatible percentage sources never substitute; the frozen page remains byte-identical and fails closed when no legitimate count route exists.",
   "write_paths": [
     "devsystem/execution_plans/nba-spread-step4-most-bet-feature-v1.json",
     "devsystem/runless_proof_plans/nba-spread-step4-most-bet-feature-v1.json",
     "devsystem/task_ledgers/nba-spread-step4-most-bet-feature-v1.json",
     "nba_spread_most_bet_v1.py",
-    "nba_spread_page_v1.py",
-    "tests/test_nba_spread_step4_most_bet_v1.py"
+    "tests/test_nba_spread_step4_multisource_v1.py"
   ],
   "protected_dependencies": [
+    "nba_spread_page_v1.py",
     "nba_spread_schedule_v1.py",
     "nba_spread_step2_activation_v1.py",
-    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
-    "app.py"
+    "devsystem/contracts/universal-sports-provider-registry-v1.json",
+    "devsystem/contracts/universal-sports-field-router-v1.json",
+    "devsystem/universal_sports_provider_registry_v1.py",
+    "devsystem/universal_sports_field_router_v1.py",
+    "devsystem/universal_sports_trust_quorum_v1.py",
+    "devsystem/universal_sports_identity_health_v1.py",
+    "devsystem/universal_sports_source_receipt_v1.py"
   ],
   "step2a": {
     "one_active_problem": true,
-    "authoritative_branch": "nba-spread-step4-most-bet-feature-r1",
+    "authoritative_branch": "nba-spread-step4-multisource-v1-finalize",
+    "authoritative_pr": 1524,
+    "scope_lease_id": "SCOPE-LEASE-EADEC1FD7033345BC5EAE73F",
     "authoritative_pr_max": 1,
     "one_authoritative_proof_chain": true,
     "duplicate_async_runs_allowed": false,
     "blind_retries_allowed": false,
-    "github_actions_fallback": 0,
-    "step3_reopen_allowed": false,
-    "other_sports_may_be_modified": false,
-    "sharp_money_activation": false,
-    "injury_activation": false,
-    "model_activation": false,
-    "projection_activation": false,
-    "probability_activation": false,
-    "ranking_activation": false
+    "github_actions_fallback": 0
   },
-  "data_scope": {
-    "schedule_authority": "NBA Spread Step 3 verified NBA Official + ESPN NBA schedule",
-    "betting_volume_source": "Action Network NBA public betting",
-    "most_bet_definition": "highest total tracked spread bet count among verified UPCOMING or DELAYED games",
+  "architecture": {
+    "routing_unit": "DATA_FIELD",
+    "selection_field": "public_bet_count",
+    "semantic_metric_id": "PUBLIC_BET_COUNT",
+    "compatible_substitutes": [],
+    "page_wide_source_authority": false,
+    "metric_substitution_allowed": false,
+    "fail_closed_on_source_exhaustion": true,
+    "active_provider_semantics": "ACTUALLY_CONSULTED_ONLY",
+    "frozen_page_mutation": false,
+    "legacy_registry_mutation": false,
+    "thaw_required": false
+  },
+  "product_scope": {
+    "feature": "Most Bet Game",
+    "schedule_authority": "frozen NBA Spread Step 3 Phoenix schedule",
     "timezone": "America/Phoenix",
-    "identity_policy": "EXACT_VERIFIED_SCHEDULE_MATCH_REQUIRED",
-    "split_policy": "FAIL_CLOSED",
-    "tie_policy": "FAIL_CLOSED"
+    "later_layers_deferred": true,
+    "sportsbook_projection_influence": 0.0
   },
-  "sportsbook_projection_influence": 0.0,
   "proof_mode": "runless",
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
   "freeze_token": "NBA_SPREAD_STEP4_MOST_BET_FEATURE_FROZEN",
-  "thaw_token": "THAW-NBA-SPREAD-STEP4-MOST-BET-FEATURE-R1",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
