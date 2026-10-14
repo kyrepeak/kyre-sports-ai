@@ -13,8 +13,6 @@ from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping, Sequence
 
-import requests
-
 from devsystem.universal_sports_field_router_v1 import load_router_policy, route_field
 from devsystem.universal_sports_provider_registry_v1 import load_registry
 
@@ -242,7 +240,9 @@ def parse_action_network_html(html: str) -> list[dict]:
 
 def fetch_action_network_rows(*, timeout_seconds: float = 12.0) -> list[dict]:
     """Legacy fetch helper retained for parser regression coverage only."""
-    response = requests.get(
+    import requests as _requests
+
+    response = _requests.get(
         SOURCE_URL,
         headers={
             "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAI/1.0; +public-data-verification)",

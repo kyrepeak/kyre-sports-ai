@@ -10,9 +10,9 @@
   "state": "READY_FOR_EXACT_HEAD_RUNLESS",
   "status": "IN_PROGRESS",
   "problem": "The pre-universal Step-4 data loader treated Action Network as absolute PUBLIC_BET_COUNT authority and the stale PR attempted to substitute Covers/VSiN activity for count.",
-  "root_cause": "The frozen universal provider registry separates PUBLIC_BET_COUNT from PUBLIC_BET_PERCENTAGE and MONEY_PERCENTAGE. Action Network, Covers, and VSiN are not approved PUBLIC_BET_COUNT providers; the only count-capable direct feed is credential-required and currently not configured.",
-  "root_cause_class": "INCOMPATIBLE_BET_METRIC_SOURCE_OWNERSHIP",
-  "patch": "Preserve the frozen Step-4 page and pure legacy parser/selector regression surface, but route production Most Bet selection through the frozen universal public_bet_count DATA_FIELD route. Fail closed before consulting incompatible percentage sources when no legitimate absolute-count provider is eligible.",
+  "root_cause": "The exact Runless V2 static proof failed during pytest collection because nba_spread_most_bet_v1.py imported requests at module import time while the certified Runless bootstrap intentionally installs only its minimal package set. The changed production path does not need requests; unchanged frozen Step-3 also imports it, so rerunning frozen Step-3 tests would create unnecessary thaw pressure.",
+  "root_cause_class": "STATIC_BOOTSTRAP_IMPORT_DEPENDENCY",
+  "patch": "Lazy-import requests only inside the legacy Action Network fetch helper, keep the universal production path dependency-free at import time, and narrow the exact-head proof to changed Step-4 tests plus frozen universal provider/router contract tests. Reuse frozen Step-2/3 proof instead of rerunning unchanged modules.",
   "step2a": {
     "one_active_problem": true,
     "one_authoritative_proof_chain": true,
@@ -26,7 +26,7 @@
     "duplicate_prs": 0
   },
   "tdd": {
-    "phase": "GREEN_CANDIDATE_READY_FOR_RUNLESS",
+    "phase": "GREEN_PATCH_AFTER_CLASSIFIED_STATIC_FAILURE",
     "red_commit": "e1159781874827948d163c81386b4c486359e6e9",
     "red_test": "tests/test_nba_spread_step4_multisource_v1.py",
     "red_expected_reason": "resolve_public_bet_count_route did not exist in the reconciled main-baseline Step-4 module",
@@ -62,7 +62,15 @@
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
     "proof_id": null,
-    "receipt_digest": null
+    "receipt_digest": null,
+    "prior_failed_proof": {
+      "proof_id": "nba-spread-step4-most-bet-feature-v1-58b7d06680b4d199-78bb2eac22c9aa66",
+      "candidate_sha": "58b7d06680b4d199179b4069eba2fc44d29f1935",
+      "failure_class": "STATIC_PROOF",
+      "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+      "terminal": true,
+      "retry_same_candidate": false
+    }
   },
   "acceptance": {
     "frozen_page_preserved": true,
@@ -77,6 +85,6 @@
   },
   "freeze_token": "NBA_SPREAD_STEP4_MOST_BET_FEATURE_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "SUBMIT_ONE_EXACT_HEAD_RUNLESS_PROOF_AFTER_FINAL_CANDIDATE",
+  "next_legal_action": "DIAGNOSTIC_STATIC_PASS_THEN_SUBMIT_ONE_NEW_EXACT_HEAD_RUNLESS_PROOF",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }

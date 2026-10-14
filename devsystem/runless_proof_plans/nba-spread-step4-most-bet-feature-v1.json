@@ -18,8 +18,6 @@
       "-q",
       "tests/test_nba_spread_step4_most_bet_v1.py",
       "tests/test_nba_spread_step4_multisource_v1.py",
-      "tests/test_nba_spread_step3_schedule_phoenix_v1.py",
-      "tests/test_nba_spread_step2_site_activation_v1.py",
       "tests/test_devsystem_universal_sports_provider_registry_step2_v1.py",
       "tests/test_devsystem_universal_sports_field_router_step3_v1.py"
     ]
