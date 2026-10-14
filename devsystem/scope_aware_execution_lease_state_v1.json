@@ -4,39 +4,8 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 732,
+  "revision": 733,
   "generation": 418,
-  "holders": [
-    {
-      "owner_id": "universal-sports-source-finalization-v1-step7",
-      "lease_id": "SCOPE-LEASE-6B1AD33D679509D2DA65A0A2",
-      "generation": 418,
-      "acquired_at_utc": "2026-10-14T04:56:01Z",
-      "heartbeat_at_utc": "2026-10-14T04:56:01Z",
-      "expires_at_utc": "2026-10-14T05:56:01Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/contracts/universal-sports-finalization-worker-v1.json",
-          "devsystem/execution_plans/universal-sports-source-finalization-v1-step7.json",
-          "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step7.json",
-          "devsystem/task_ledgers/universal-sports-source-finalization-v1-step7.json",
-          "devsystem/universal_sports_finalization_worker_v1.py",
-          "docs/superpowers/plans/2026-10-14-universal-sports-source-finalization-v1-step7.md",
-          "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py"
-        ],
-        "dependency_tokens": [
-          "main-base:67dad9d7711c39e2dd640d72ab7f5d28946d2d3e",
-          "step6-freeze:63fbdadfaba0170f9b8ad612be62e1e9891dd04b1a26cc240385e55e6a41f263"
-        ],
-        "shared_resources": [
-          "branch:api2-universal-sports-source-finalization-v1-step7-finalization-worker"
-        ],
-        "resource_identity": {
-          "candidate-sha": "6e2d917d6603b0cb207ab35f9da72e20edc9fab7"
-        },
-        "exclusive": false
-      }
-    }
-  ],
-  "state_hash": "20214b47f1013bd9413a869704ad670c89dd8f5b30dbaa77f78c396264de2be7"
+  "holders": [],
+  "state_hash": "63abca6ac1cb2b76d1254308f504bc8eb30ea79790ff111a94976c03ae6de268"
 }
