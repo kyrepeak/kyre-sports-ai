@@ -4,8 +4,43 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 754,
-  "generation": 429,
-  "holders": [],
-  "state_hash": "8f02d7eebf807fbf2f32252d673e0d967011526ffacaa00f76da8d47959bbe89"
+  "revision": 755,
+  "generation": 430,
+  "holders": [
+    {
+      "owner_id": "api2:nba-spread-two-page-v1:step7",
+      "lease_id": "SCOPE-LEASE-5D9BDF3D3FC91A0825124389",
+      "generation": 430,
+      "acquired_at_utc": "2026-10-14T20:34:08Z",
+      "heartbeat_at_utc": "2026-10-14T20:34:08Z",
+      "expires_at_utc": "2026-10-14T22:34:08Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/execution_plans/nba-spread-step7-injury-availability-v1.json",
+          "devsystem/runless_proof_plans/nba-spread-step7-injury-availability-v1.json",
+          "devsystem/task_ledgers/nba-spread-step7-injury-availability-v1.json",
+          "nba_spread_injury_availability_v1.py",
+          "nba_spread_page_v2.py",
+          "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+          "tests/test_nba_spread_step7_injury_availability_v1.py"
+        ],
+        "dependency_tokens": [
+          "dependency:nba-spread-step6-frozen",
+          "dependency:universal-sports-source-finalization-v1",
+          "step:7",
+          "workstream:nba-spread-two-page-v1"
+        ],
+        "shared_resources": [
+          "entrypoint:nba-spread-page1",
+          "router:nba-spread"
+        ],
+        "resource_identity": {
+          "branch": "nba-spread-step7-injury-availability-r1",
+          "source_main": "cb06281c3ebba1e690761d617372d11042499af1"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "94b0f007056722ca9ed79c77223fcb56301189234fa30c9a7d2f52bf7dcdc1a5"
 }
