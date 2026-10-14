@@ -1,0 +1,30 @@
+{
+  "version": "RUNLESS_PROOF_PLAN_V1",
+  "task_id": "universal-sports-source-finalization-v1-step7-freeze-integrity-r1",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "7/8",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_R1_FROZEN",
+  "artifacts": [
+    "devsystem/universal_sports_finalization_worker_v1.py",
+    "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py",
+    "tests/test_devsystem_universal_sports_finalization_worker_step7_freeze_integrity_r1.py",
+    "devsystem/contracts/universal-sports-finalization-worker-step7-freeze-integrity-r1.json",
+    "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step7-freeze-integrity-r1.json",
+    "devsystem/task_ledgers/universal-sports-source-finalization-v1-step7-freeze-integrity-r1.json",
+    "docs/superpowers/plans/2026-10-14-universal-sports-source-finalization-v1-step7-freeze-integrity-r1.md"
+  ],
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py", "tests/test_devsystem_universal_sports_finalization_worker_step7_freeze_integrity_r1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_devsystem_finalization_100_percent_finalizer_v1.py", "tests/test_devsystem_universal_sports_source_finalization_step1_v1.py", "tests/test_runless_v2_finalization_readback.py", "tests/test_devsystem_api2_frozen_registry_lifecycle_v1.py", "tests/test_devsystem_frozen_artifact_registry_v1.py", "tests/test_devsystem_frozen_registry_auto_reconciler_v1.py"],
+    ["python", "-m", "py_compile", "devsystem/universal_sports_finalization_worker_v1.py"]
+  ],
+  "trusted_certification_required": true,
+  "immutable_path_absence_required": true,
+  "exact_blob_readback_required": true,
+  "original_step7_record_rewrite": false,
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "product_runtime_mutation": false,
+  "model_projection_mutation": false
+}
