@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 756,
-  "generation": 431,
+  "revision": 757,
+  "generation": 432,
   "holders": [
     {
       "owner_id": "api2:universal-sports-source-finalization-v1:step7-r1",
-      "lease_id": "SCOPE-LEASE-9EB4261B50CDA1761E650FF3",
-      "generation": 431,
-      "acquired_at_utc": "2026-10-14T22:53:30Z",
-      "heartbeat_at_utc": "2026-10-14T22:53:30Z",
-      "expires_at_utc": "2026-10-14T23:08:30Z",
+      "lease_id": "SCOPE-LEASE-227C9329C8A08BD9EF22B172",
+      "generation": 432,
+      "acquired_at_utc": "2026-10-14T23:13:43Z",
+      "heartbeat_at_utc": "2026-10-14T23:13:43Z",
+      "expires_at_utc": "2026-10-14T23:28:43Z",
       "scope": {
         "write_paths": [
           "devsystem/contracts/universal-sports-finalization-worker-step7-freeze-integrity-r1.json",
@@ -38,5 +38,5 @@
       }
     }
   ],
-  "state_hash": "c4a31cd21c921455b12c6e3e19fd6bf1f3021b7dfc44de7a62c594a5ac90c96a"
+  "state_hash": "65412e473829b2c8e919cc3aa3dabbf902b02c911b4fb4aed5fc83e04c4d509d"
 }
