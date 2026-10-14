@@ -36,9 +36,6 @@ from devsystem.universal_sports_source_receipt_v1 import (
     validate_source_receipt,
     validate_source_receipt_contract,
 )
-from devsystem.universal_sports_finalization_worker_v1 import (
-    FREEZE_TOKEN as STEP7_FREEZE_TOKEN,
-)
 
 VERSION = "UNIVERSAL_SPORTS_FULL_INTEGRATION_CERTIFIER_V1"
 WORKSTREAM = "universal-sports-source-finalization-v1"
@@ -46,6 +43,7 @@ STEP = "8/8"
 PROGRAM_STEPS = 8
 ROUTING_UNIT = "DATA_FIELD"
 FREEZE_TOKEN = "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_FULL_INTEGRATION_CERTIFICATION_FROZEN"
+STEP7_FREEZE_TOKEN = "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_FROZEN"
 
 _ACCEPTED = {
     "ACCEPTED_SINGLE_AUTHORITY",
