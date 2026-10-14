@@ -1,0 +1,86 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step5-sharp-money-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "5/10",
+  "source_main_sha": "7bce42ee33e9db53549e4bb1e0b98f2c51847d77",
+  "authoritative_branch": "nba-spread-step5-sharp-money-r1",
+  "authoritative_pr": null,
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "status": "IN_PROGRESS",
+  "problem": "NBA Spread Page 1 has no separate Sharp Money Game layer even though the frozen universal source architecture exposes exact public-bet percentage and money-percentage fields.",
+  "root_cause": "Step 4 intentionally deferred sharp-money activation. Step 5 must add a dedicated fail-closed selector and page surface without substituting percentage data for authoritative volume or inventing arbitrary thresholds.",
+  "root_cause_class": "MISSING_BOUNDED_PRODUCT_LAYER",
+  "patch": "Add an exact Step-3 schedule-matched Sharp Money selector, require positive authoritative bet volume, rank the unique largest positive money-minus-ticket divergence, route each semantic field independently, and render a separate Step-5 card/unavailable state while preserving Step 4.",
+  "step2a": {
+    "one_active_problem": true,
+    "one_authoritative_proof_chain": true,
+    "authoritative_branch": "nba-spread-step5-sharp-money-r1",
+    "active_authoritative_pr": null,
+    "scope_lease_id": "SCOPE-LEASE-C4FF2BF33BD3EB72EDF2B820",
+    "duplicate_async_runs": 0,
+    "blind_retries": 0,
+    "github_actions_fallback": 0,
+    "duplicate_prs": 0
+  },
+  "tdd": {
+    "phase": "GREEN_PENDING_EXACT_HEAD_PROOF",
+    "red_commit": "ecb9e0953c67d4605a1ae64d758bab3c0f92e90b",
+    "red_test": "tests/test_nba_spread_step5_sharp_money_v1.py",
+    "red_expected_reason": "nba_spread_sharp_money_v1.py did not exist",
+    "red_observed_reason": "Step 5 RED: nba_spread_sharp_money_v1.py must be implemented",
+    "red_structurally_proven": true,
+    "final_green_verified": false
+  },
+  "architecture": {
+    "routing_unit": "DATA_FIELD",
+    "required_fields": [
+      "public_bet_percentage",
+      "money_percentage",
+      "public_bet_count"
+    ],
+    "metric_substitution_allowed": false,
+    "source_exhaustion_fails_closed": true,
+    "positive_authoritative_volume_required": true,
+    "arbitrary_volume_threshold": false,
+    "arbitrary_divergence_threshold": false,
+    "page_wide_source_authority": false,
+    "fabrication": false
+  },
+  "frozen_protection": {
+    "nba_spread_page_v1.py": {
+      "from_blob": "0ad62af70010051c3ac8f4477d63263a228eb76b",
+      "to_blob": "4cf15040b69d8c1d6def0523923098e8c28ef14f",
+      "mutated": true,
+      "exact_thaw_required": true,
+      "exact_thaw_bound": false
+    },
+    "steps_1_4_reopened": false,
+    "legacy_registry_baselines_preserved": true
+  },
+  "runless": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_id": null,
+    "receipt_digest": null
+  },
+  "acceptance": {
+    "step4_marker_preserved": true,
+    "phoenix_schedule_identity_preserved": true,
+    "sharp_money_separate_from_most_bet": true,
+    "exact_percentage_metrics_only": true,
+    "positive_authoritative_volume_required": true,
+    "no_invented_threshold": true,
+    "current_unconfigured_count_route_fails_closed": true,
+    "later_layers_deferred": true,
+    "exact_head_runless_green": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP5_SHARP_MONEY_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "BIND_EXACT_PAGE_THAW_THEN_OPEN_SINGLE_PR_AND_REQUEST_EXACT_HEAD_RUNLESS",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
