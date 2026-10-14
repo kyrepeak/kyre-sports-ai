@@ -10,7 +10,7 @@
     "single_authority": true,
     "authoritative_branch": "api2-universal-sports-source-finalization-v1-step8-full-integration-certification",
     "source_main_sha": "07e101981f201c87e4bca6b0b58e57c6acede22e",
-    "scope_lease_id": "SCOPE-LEASE-71D7F2037214E4FB61062B70",
+    "scope_lease_id": "SCOPE-LEASE-BF74A9DA76E8620374013601",
     "duplicate_proof_paths_forbidden": true
   },
   "scope": {
