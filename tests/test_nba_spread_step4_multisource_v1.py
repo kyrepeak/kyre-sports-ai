@@ -27,7 +27,7 @@ def test_public_bet_count_route_comes_from_frozen_universal_router():
     assert route["semantic_metric_id"] == "PUBLIC_BET_COUNT"
     assert route["status"] == "UNAVAILABLE_AFTER_COMPATIBLE_SOURCE_EXHAUSTION"
     assert route["eligible_provider_ids"] == []
-    assert route["primary_provider_id"] is None
+    assert route["primary_provider_id"] == ""
     blocked = {row["provider_id"] for row in route["blocked_providers"]}
     assert blocked == {"direct_sportsbook_feed"}
     assert route["active_provider_ids"] == []
