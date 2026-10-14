@@ -1,79 +1,51 @@
+import base64
+import json
 import os
 import time
 
+import httpx
+import jwt
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-PROVE_URL = "https://kyre-runless-proof.vercel.app/prove"
 REPOSITORY = "kyrepeak/kyre-sports-ai"
-GATE_RUN_ID = 115673200240
-TASK_ID = "universal-sports-source-finalization-v1-step7"
-WORKSTREAM = "universal-sports-source-finalization-v1"
+APP_ID = 5204253
+GATE_NAME = "runless-final-gate"
+PR_NUMBER = 1534
+MAIN_SHA = "67dad9d7711c39e2dd640d72ab7f5d28946d2d3e"
 CANDIDATE_SHA = "6e2d917d6603b0cb207ab35f9da72e20edc9fab7"
-LEASE_ID = "SCOPE-LEASE-A70614DFEA642E4A5501A845"
-AUTHORIZATION_ID = "universal-sports-source-finalization-v1-step7-final-authorization"
-EXPECTED_MAIN_SHA = "67dad9d7711c39e2dd640d72ab7f5d28946d2d3e"
-STEP6_SHAS = {
-    "candidate": "1f270dcd8a76c4ac6f1576ded02a1b4c048286a4",
-    "forward_port": "b6bc880f6fce6f2f63bcbe8c76fc3c217467a90f",
-    "intermediate_merge": "80506585f8e567cfcf072841e9edcdf3d095aa42",
-    "final_merge": "244b603ce32351dc0926b899a4e7d5018f97e4a0",
-}
+MERGE_SHA = "a742664faffdc2f6b24ac25c7c1eececde112703"
+MERGE_TREE = "381881e5557a0d6e97ae2894b05e6f1d966078b3"
+PROOF_ID = "universal-sports-source-finalization-v1-step7-6e2d917d6603b0cb-ae25032319d8f787"
+RECEIPT_DIGEST = "b88838f4a00b775420487627dbc9356a9b268fc09b4406c25344e0145e73c5a8"
+CANDIDATE_GATE_RUN_ID = 115673200240
+RECEIPT_REF = "runless-proof-receipts"
+RECEIPT_PATH = f"devsystem/runless_proof_receipts/{PROOF_ID}.json"
 
 
-def build_payload():
-    return {
-        "task_id": TASK_ID,
-        "workstream": WORKSTREAM,
-        "candidate_sha": CANDIDATE_SHA,
-        "lease_id": LEASE_ID,
-        "authorization_id": AUTHORIZATION_ID,
-        "expected_main_sha": EXPECTED_MAIN_SHA,
-    }
+def _need(condition, code):
+    if not condition:
+        raise RuntimeError(code)
 
 
-def submit_proof(token, *, post=None):
-    if not token:
-        raise RuntimeError("RUNLESS_PROOF_AUTH_TOKEN_REQUIRED")
-    if post is None:
-        import httpx
-        post = httpx.post
-    response = post(
-        PROVE_URL,
-        headers={"Authorization": f"Bearer {token}"},
-        json=build_payload(),
-        timeout=240,
-    )
-    try:
-        body = response.json()
-    except Exception:
-        body = {"detail": "NON_JSON_RESPONSE"}
-    return {"status_code": int(response.status_code), "body": body}
-
-
-def _installation_headers():
-    import httpx
-    import jwt
-
+def _github_headers():
     app_id = os.environ.get("GITHUB_APP_ID", "")
     installation_id = os.environ.get("GITHUB_APP_INSTALLATION_ID", "")
     private_key = os.environ.get("GITHUB_APP_PRIVATE_KEY", "").replace("\\n", "\n")
-    if not app_id or not installation_id or not private_key:
-        raise RuntimeError("GITHUB_APP_CONFIG_REQUIRED")
+    _need(app_id == str(APP_ID) and installation_id and private_key, "GITHUB_APP_CONFIG_DRIFT")
     now = int(time.time())
     app_jwt = jwt.encode(
         {"iat": now - 30, "exp": now + 540, "iss": app_id},
         private_key,
         algorithm="RS256",
     )
-    app_headers = {
-        "Authorization": f"Bearer {app_jwt}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
     response = httpx.post(
         f"https://api.github.com/app/installations/{installation_id}/access_tokens",
-        headers=app_headers,
+        headers={
+            "Authorization": f"Bearer {app_jwt}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
         timeout=30,
     )
     response.raise_for_status()
@@ -84,138 +56,186 @@ def _installation_headers():
     }
 
 
-def _gate_rows(items):
-    return [
-        {
-            "id": item.get("id"),
-            "name": item.get("name"),
-            "head_sha": item.get("head_sha"),
-            "status": item.get("status"),
-            "conclusion": item.get("conclusion"),
-            "app_id": (item.get("app") or {}).get("id"),
-            "app_slug": (item.get("app") or {}).get("slug"),
-            "pull_requests": [pr.get("number") for pr in (item.get("pull_requests") or [])],
-            "summary": str((item.get("output") or {}).get("summary") or "")[:500],
-        }
-        for item in items
-        if item.get("name") == "runless-final-gate"
-    ]
+def _proof_row():
+    base = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    _need(base and key, "SUPABASE_CONFIG_MISSING")
+    response = httpx.get(
+        f"{base}/rest/v1/proof_runs",
+        params={
+            "proof_id": f"eq.{PROOF_ID}",
+            "select": "proof_id,state,candidate_sha,expected_main_sha,receipt_digest",
+        },
+        headers={
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Accept-Profile": "runless_v2",
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    rows = response.json()
+    _need(isinstance(rows, list) and len(rows) == 1, "PROOF_ROW_CARDINALITY_DRIFT")
+    return rows[0]
 
 
-def github_gate_snapshot():
-    import httpx
+def _summary():
+    return (
+        f"runless-v2 receipt={RECEIPT_DIGEST} proof={PROOF_ID} "
+        f"candidate={CANDIDATE_SHA} expected_main={MAIN_SHA}"
+    )
 
-    headers = _installation_headers()
+
+def _is_exact_gate(run):
+    summary = str((run.get("output") or {}).get("summary") or "")
+    return (
+        run.get("name") == GATE_NAME
+        and run.get("head_sha") == MERGE_SHA
+        and run.get("status") == "completed"
+        and run.get("conclusion") == "success"
+        and (run.get("app") or {}).get("id") == APP_ID
+        and RECEIPT_DIGEST in summary
+        and PROOF_ID in summary
+        and CANDIDATE_SHA in summary
+        and MAIN_SHA in summary
+    )
+
+
+def _validate_snapshot(*, proof, main, pr, merge, candidate_gate, receipt):
+    _need(proof.get("proof_id") == PROOF_ID, "PROOF_ID_DRIFT")
+    _need(proof.get("state") == "MERGE_AUTHORIZED", "PROOF_STATE_DRIFT")
+    _need(proof.get("candidate_sha") == CANDIDATE_SHA, "PROOF_CANDIDATE_DRIFT")
+    _need(proof.get("expected_main_sha") == MAIN_SHA, "PROOF_MAIN_DRIFT")
+    _need(proof.get("receipt_digest") == RECEIPT_DIGEST, "PROOF_RECEIPT_DRIFT")
+    _need((main.get("commit") or {}).get("sha") == MAIN_SHA, "MAIN_DRIFT")
+    _need(pr.get("number") == PR_NUMBER and pr.get("state") == "open", "PR_STATE_DRIFT")
+    _need((pr.get("head") or {}).get("sha") == CANDIDATE_SHA, "PR_HEAD_DRIFT")
+    _need((pr.get("base") or {}).get("ref") == "main", "PR_BASE_DRIFT")
+    _need(pr.get("merge_commit_sha") == MERGE_SHA, "PR_MERGE_SHA_DRIFT")
+    _need(merge.get("sha") == MERGE_SHA, "MERGE_SHA_DRIFT")
+    _need((merge.get("tree") or {}).get("sha") == MERGE_TREE, "MERGE_TREE_DRIFT")
+    _need([p.get("sha") for p in (merge.get("parents") or [])] == [MAIN_SHA, CANDIDATE_SHA], "MERGE_PARENT_DRIFT")
+    candidate_summary = str((candidate_gate.get("output") or {}).get("summary") or "")
+    _need(
+        candidate_gate.get("name") == GATE_NAME
+        and candidate_gate.get("head_sha") == CANDIDATE_SHA
+        and candidate_gate.get("status") == "completed"
+        and candidate_gate.get("conclusion") == "success"
+        and (candidate_gate.get("app") or {}).get("id") == APP_ID,
+        "CANDIDATE_GATE_DRIFT",
+    )
+    _need(RECEIPT_DIGEST in candidate_summary and PROOF_ID in candidate_summary, "CANDIDATE_GATE_EVIDENCE_DRIFT")
+    _need(
+        receipt.get("proof_id") == PROOF_ID
+        and receipt.get("candidate_sha") == CANDIDATE_SHA
+        and receipt.get("digest") == RECEIPT_DIGEST,
+        "RECEIPT_DRIFT",
+    )
+    _need(receipt.get("registry_before") == receipt.get("registry_after"), "RECEIPT_REGISTRY_MUTATION_DRIFT")
+
+
+def _integration_gate():
+    headers = _github_headers()
+    proof = _proof_row()
     with httpx.Client(timeout=30) as client:
-        check_response = client.get(
-            f"https://api.github.com/repos/{REPOSITORY}/check-runs/{GATE_RUN_ID}",
-            headers=headers,
+        def get(path, **kwargs):
+            response = client.get(f"https://api.github.com/repos/{REPOSITORY}{path}", headers=headers, **kwargs)
+            response.raise_for_status()
+            return response.json()
+
+        main = get("/branches/main")
+        pr = get(f"/pulls/{PR_NUMBER}")
+        merge = get(f"/git/commits/{MERGE_SHA}")
+        candidate_gate = get(f"/check-runs/{CANDIDATE_GATE_RUN_ID}")
+        receipt_blob = get(f"/contents/{RECEIPT_PATH}", params={"ref": RECEIPT_REF})
+        receipt = json.loads(base64.b64decode(receipt_blob["content"]).decode("utf-8"))
+        runs = get(f"/commits/{MERGE_SHA}/check-runs", params={"filter": "all", "per_page": 100}).get("check_runs", [])
+
+        _validate_snapshot(
+            proof=proof,
+            main=main,
+            pr=pr,
+            merge=merge,
+            candidate_gate=candidate_gate,
+            receipt=receipt,
         )
-        check_response.raise_for_status()
-        runs_response = client.get(
-            f"https://api.github.com/repos/{REPOSITORY}/commits/{CANDIDATE_SHA}/check-runs?filter=all&per_page=100",
+
+        for run in runs:
+            if _is_exact_gate(run):
+                return {
+                    "status": "REUSED_EXISTING_GATE",
+                    "check_run_id": run.get("id"),
+                    "merge_sha": MERGE_SHA,
+                    "merge_tree": MERGE_TREE,
+                    "proof_id": PROOF_ID,
+                    "receipt_digest": RECEIPT_DIGEST,
+                }
+
+        create = client.post(
+            f"https://api.github.com/repos/{REPOSITORY}/check-runs",
             headers=headers,
-        )
-        runs_response.raise_for_status()
-        check = check_response.json()
-        return {
-            "check_run": {
-                "id": check.get("id"),
-                "name": check.get("name"),
-                "head_sha": check.get("head_sha"),
-                "status": check.get("status"),
-                "conclusion": check.get("conclusion"),
-                "app": {
-                    "id": (check.get("app") or {}).get("id"),
-                    "slug": (check.get("app") or {}).get("slug"),
+            json={
+                "name": GATE_NAME,
+                "head_sha": MERGE_SHA,
+                "status": "completed",
+                "conclusion": "success",
+                "output": {
+                    "title": "Runless V2 tested merge gate",
+                    "summary": _summary(),
                 },
-                "pull_requests": [
-                    {
-                        "number": item.get("number"),
-                        "head_sha": (item.get("head") or {}).get("sha"),
-                        "base_sha": (item.get("base") or {}).get("sha"),
-                    }
-                    for item in (check.get("pull_requests") or [])
-                ],
             },
-            "matching_commit_runs": _gate_rows(runs_response.json().get("check_runs", [])),
+        )
+        create.raise_for_status()
+        created = create.json()
+        _need(_is_exact_gate(created), "CREATED_GATE_READBACK_DRIFT")
+
+        pr_after = get(f"/pulls/{PR_NUMBER}")
+        if pr_after.get("merge_commit_sha") != MERGE_SHA:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "status": "GITHUB_RECOMPUTED_MERGE_SHA",
+                    "published_check_run_id": created.get("id"),
+                    "previous_merge_sha": MERGE_SHA,
+                    "current_merge_sha": pr_after.get("merge_commit_sha"),
+                },
+            )
+
+        return {
+            "status": "PUBLISHED_AND_VERIFIED",
+            "check_run_id": created.get("id"),
+            "merge_sha": MERGE_SHA,
+            "merge_tree": MERGE_TREE,
+            "proof_id": PROOF_ID,
+            "receipt_digest": RECEIPT_DIGEST,
         }
 
 
-def step6_gate_history():
-    import httpx
-
-    headers = _installation_headers()
-    output = {}
-    with httpx.Client(timeout=30) as client:
-        for label, sha in STEP6_SHAS.items():
-            commit = client.get(
-                f"https://api.github.com/repos/{REPOSITORY}/git/commits/{sha}",
-                headers=headers,
-            )
-            commit.raise_for_status()
-            commit_json = commit.json()
-            runs = client.get(
-                f"https://api.github.com/repos/{REPOSITORY}/commits/{sha}/check-runs?filter=all&per_page=100",
-                headers=headers,
-            )
-            runs.raise_for_status()
-            output[label] = {
-                "sha": sha,
-                "tree_sha": (commit_json.get("tree") or {}).get("sha"),
-                "parents": [p.get("sha") for p in (commit_json.get("parents") or [])],
-                "gates": _gate_rows(runs.json().get("check_runs", [])),
-            }
-    return output
-
-
-app = FastAPI(title="Step 7 Runless Proof Transport", version="4")
+app = FastAPI(title="Step 7 Tested Merge Gate", version="1")
 
 
 @app.get("/step7-final-proof-transport/health")
-def step7_final_proof_transport_health():
+def health():
     return {
         "status": "ready",
-        "task_id": TASK_ID,
         "candidate_sha": CANDIDATE_SHA,
-        "lease_id": LEASE_ID,
-        "authorization_id": AUTHORIZATION_ID,
-        "expected_main_sha": EXPECTED_MAIN_SHA,
+        "expected_main_sha": MAIN_SHA,
+        "tested_merge_sha": MERGE_SHA,
+        "tested_merge_tree": MERGE_TREE,
+        "proof_id": PROOF_ID,
+        "receipt_digest": RECEIPT_DIGEST,
+        "proof_submission_route": False,
     }
 
 
-@app.get("/step7-final-proof-transport/gate")
-def step7_final_proof_transport_gate():
+@app.post("/step7-final-proof-transport/integration-gate")
+def integration_gate():
     try:
-        return github_gate_snapshot()
+        return _integration_gate()
+    except RuntimeError as exc:
+        return JSONResponse(status_code=409, content={"status": "BLOCKED", "detail": str(exc)})
     except Exception as exc:
         return JSONResponse(
             status_code=503,
-            content={"detail": f"GATE_INSPECTION_UNAVAILABLE:{type(exc).__name__}"},
+            content={"status": "UNAVAILABLE", "detail": f"{type(exc).__name__}"},
         )
-
-
-@app.get("/step7-final-proof-transport/step6-history")
-def step7_final_proof_transport_step6_history():
-    try:
-        return step6_gate_history()
-    except Exception as exc:
-        return JSONResponse(
-            status_code=503,
-            content={"detail": f"STEP6_HISTORY_UNAVAILABLE:{type(exc).__name__}"},
-        )
-
-
-@app.post("/step7-final-proof-transport")
-def step7_final_proof_transport():
-    try:
-        result = submit_proof(os.environ.get("RUNLESS_PROOF_AUTH_TOKEN", ""))
-    except RuntimeError:
-        return JSONResponse(
-            status_code=503,
-            content={"status_code": 503, "body": {"detail": "TRANSPORT_CONFIGURATION_MISSING"}},
-        )
-    status_code = result["status_code"]
-    if status_code < 100 or status_code > 599:
-        status_code = 502
-    return JSONResponse(status_code=status_code, content=result)
