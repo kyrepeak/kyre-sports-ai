@@ -1,0 +1,73 @@
+{
+  "artifact_map": {
+    "devsystem/contracts/runless-vercel-supabase-v2.json": "cba5b0ef57d56e5f9def694ad8045e7902bd0354",
+    "devsystem/runless_proof_plans/runless-vercel-supabase-v2-cutover.json": "825f90dd4f1f00377dec04230af8eb20b2ac0c52",
+    "docs/runless-proof-plane-v2-operations.md": "9d5b117206669edc3f848356ecaa35819c449467",
+    "runless_v2/.python-version": "24ee5b1be9961e38a503c8e764b7385dbb6ba124",
+    "runless_v2/app.py": "fb9a59a0c0d52953d45e49385ca978c85914ae4b",
+    "runless_v2/auth.py": "80aa57a1b446887909cae3870c224771bb08466b",
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/finalization_readback.py": "11c58d1e1c3a284c488c15986f457525d9408ebd",
+    "runless_v2/github_authority.py": "c46e07c60e53ef4957c2cd3bc268065768b04bac",
+    "runless_v2/models.py": "1b17786118f215921a40f31287cb6ba0d982239f",
+    "runless_v2/proof_service.py": "938c6efcf845471ca73a6338f5b43bae1dcf7562",
+    "runless_v2/public_probe.py": "d1f98af2f86044c6564ac2037d3236df5525a269",
+    "runless_v2/receipt_contract.py": "8ff66c09746e54aa52f5aaecb3b28ead020679e3",
+    "runless_v2/requirements.txt": "19eb7674901270fce997ee8bbf597457c570f691",
+    "runless_v2/sandbox_executor.py": "202bf59429664ce0da64198da4ffb7253c3f230d",
+    "runless_v2/state_store.py": "1580999a90f8406ad0caf8b86a42fa81176e6b6d",
+    "runless_v2/vercel.json": "20fc77e7e7cfe269f473bba59884e6ba05afe1af",
+    "supabase/migrations/20261013_runless_v2_durable_state.sql": "f35a4783cdf8fde978693d34d5bccbfc11876013",
+    "tests/test_runless_v2_api.py": "a836a3aef220486e94c762e8c897fab519d9702a",
+    "tests/test_runless_v2_cutover_contract.py": "d37c13241c335fb20170a90cd539a1d0cb885470",
+    "tests/test_runless_v2_finalization_readback.py": "02ad52673e48caf5f08f0cef1228fd035e251b3b",
+    "tests/test_runless_v2_github_authority.py": "bd057574391c7a3329b058dc2b066437b3af4edd",
+    "tests/test_runless_v2_proof_service.py": "ed1855085fdfc46a44f7de7a744936fd01ea3724",
+    "tests/test_runless_v2_sandbox_executor.py": "84199aac1b75c51d9518c16e26032d1589ad5a7b",
+    "tests/test_runless_v2_schema_contract.py": "23e83ad7fa6a67d1d6fb55db5ede6cc9b802f25f",
+    "tests/test_runless_v2_state_store.py": "bda226054dc189f4f3f0a78ddb6118fddbbc78bd"
+  },
+  "candidate_sha": "235daa9ce0eb67534e9d5f21baf135a8469b3f4e",
+  "created_at": "2026-10-14T00:12:48.078348+00:00",
+  "dependency_map": {
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/runless_terminal_proof_receipt_v1.py": "46bb51c1d65454efea871622ff0d1cb006de44ce",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "devsystem/universal_sports_finalization_bootstrap_v1.py": "acc2726d9b2b4dfa3f0a893a02d646c4eaa4e2d4"
+  },
+  "digest": "561ef77f4f56fd8d52009e245fb8f54cc49f3ac6793f34dea9835d5f22d04e15",
+  "evidence_digests": [
+    "bde3f77f466cdbb94d8f9f4d4ef11723640137642b3ccfe955e73cc029829645",
+    "456ad18951a51626174c226d3edf0213e4a9b305912e9531efe37939d4d3d767"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7b90c8ee9801691cf785992b2c5e94f97e7d26ea17be84eb3cf49d444ef72002",
+  "proof_id": "runless-vercel-supabase-v2-cutover-235daa9ce0eb6753-da3a9573955cb008",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 301,
+    "state_hash": "4889c944c0d386d7275ba698d42e0f8ee53b2076a2f6c8b68488cd17ffcd68c2"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 301,
+    "state_hash": "4889c944c0d386d7275ba698d42e0f8ee53b2076a2f6c8b68488cd17ffcd68c2"
+  },
+  "request_fingerprint": "fe3e2ce7b3bf71c921b6e773d45c4b071b442bc4b9ba973acb21e96a8ad96d88",
+  "step": "runless-v2-premerge",
+  "task_id": "runless-vercel-supabase-v2-cutover",
+  "workstream": "runless-vercel-supabase-v2"
+}
