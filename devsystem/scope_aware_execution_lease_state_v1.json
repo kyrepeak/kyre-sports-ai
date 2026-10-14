@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 729,
-  "generation": 415,
+  "revision": 730,
+  "generation": 416,
   "holders": [
     {
       "owner_id": "universal-sports-source-finalization-v1-step7",
-      "lease_id": "SCOPE-LEASE-7865A34EC8A9E178C89B997F",
-      "generation": 415,
-      "acquired_at_utc": "2026-10-14T01:34:31Z",
-      "heartbeat_at_utc": "2026-10-14T01:34:31Z",
-      "expires_at_utc": "2026-10-14T02:34:31Z",
+      "lease_id": "SCOPE-LEASE-34BAA03E10769ACE383516A0",
+      "generation": 416,
+      "acquired_at_utc": "2026-10-14T02:44:44Z",
+      "heartbeat_at_utc": "2026-10-14T02:44:44Z",
+      "expires_at_utc": "2026-10-14T03:44:44Z",
       "scope": {
         "write_paths": [
           "devsystem/contracts/universal-sports-finalization-worker-v1.json",
@@ -25,7 +25,7 @@
           "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py"
         ],
         "dependency_tokens": [
-          "main-base:244b603ce32351dc0926b899a4e7d5018f97e4a0",
+          "main-base:67dad9d7711c39e2dd640d72ab7f5d28946d2d3e",
           "step6-freeze:63fbdadfaba0170f9b8ad612be62e1e9891dd04b1a26cc240385e55e6a41f263"
         ],
         "shared_resources": [
@@ -36,33 +36,7 @@
         },
         "exclusive": false
       }
-    },
-    {
-      "owner_id": "runless-v2-registry-main-drift-repair-v1",
-      "lease_id": "SCOPE-LEASE-B3EA62744D9F554043B451B2",
-      "generation": 413,
-      "acquired_at_utc": "2026-10-14T01:13:21Z",
-      "heartbeat_at_utc": "2026-10-14T01:13:21Z",
-      "expires_at_utc": "2026-10-14T02:13:21Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/runless_proof_plans/runless-v2-registry-main-drift-repair-v1.json",
-          "runless_v2/github_authority.py",
-          "tests/test_runless_v2_github_authority.py"
-        ],
-        "dependency_tokens": [
-          "ledger-base:1d9232bac3d8ea4801fe69684984efeaa33efa79f0f6a1fc914eee2dcb2a3837",
-          "main-base:3c9f083e56d49a01abf9ce13c1d0b82995fe98c2"
-        ],
-        "shared_resources": [
-          "branch:api2-runless-v2-registry-main-drift-repair-v1"
-        ],
-        "resource_identity": {
-          "candidate-sha": "804d6b5dea828f88156426491f1a0e12d98a4a92"
-        },
-        "exclusive": false
-      }
     }
   ],
-  "state_hash": "84b9429621a0c320f9fa4226a20021c52500db0cc2bf1d38354aeeb67e5acbf7"
+  "state_hash": "2920f7d75d8b01c105e2f5d107683866f5d924bcc678d5a779533dfbbc620a5a"
 }
