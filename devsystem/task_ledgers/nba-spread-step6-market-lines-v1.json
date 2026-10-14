@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step6-market-lines-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "6/10",
+  "status": "IN_PROGRESS",
+  "problem": "NBA Spread Page 1 has no verified sportsbook spread-market context despite the frozen universal source architecture exposing exact SPORTSBOOK_LINES routing.",
+  "root_cause": "Step 5 intentionally deferred market-line activation. Step 6 must add a separate fail-closed market layer without activating later injury, projection, probability, edge, or ranking logic.",
+  "root_cause_class": "NEW_BOUNDED_PRODUCT_LAYER",
+  "patch": "Add an exact Step-3 schedule-matched sportsbook spread context, require at least two independent books, use median consensus, expose side-specific best available spreads, route SPORTSBOOK_LINES only, and render a fail-closed Step-6 page section.",
+  "authoritative_branch": "nba-spread-step6-market-lines-r1",
+  "scope_lease_id": "SCOPE-LEASE-D5F4F7CD774D2B5CE5800013",
+  "source_main_sha": "27378dc4e500e994917a80eeed0bb22067ada4fb",
+  "authoritative_pr": null,
+  "candidate_sha": null,
+  "proof_id": null,
+  "merged_main_sha": null,
+  "freeze_token": "NBA_SPREAD_STEP6_MARKET_LINES_FROZEN",
+  "green": false,
+  "frozen": false
+}
