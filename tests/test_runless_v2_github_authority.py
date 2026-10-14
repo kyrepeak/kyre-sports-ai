@@ -94,6 +94,32 @@ def test_step2a_rejects_main_drift():
         authority.verify_step2a(request(), plan(), {"artifact.py": BLOB, "dependency.py": BLOB, "frozen.py": BLOB}, {"frozen.py": BLOB})
 
 
+def test_step2a_allows_registry_source_main_lag_when_frozen_blobs_match():
+    authority = make_authority()
+    stale_registry = registry()
+    stale_registry["source_main_sha"] = "9" * 40
+    authority.read_frozen_registry = lambda: stale_registry
+    candidate_tree = {"artifact.py": BLOB, "dependency.py": BLOB, "frozen.py": BLOB}
+    main_tree = {"frozen.py": BLOB}
+
+    result = authority.verify_step2a(request(), plan(), candidate_tree, main_tree)
+
+    assert result["main_sha"] == MAIN
+    assert result["registry"]["revision"] == 1
+
+
+def test_step2a_stale_registry_identity_still_rejects_frozen_baseline_drift():
+    authority = make_authority()
+    stale_registry = registry()
+    stale_registry["source_main_sha"] = "9" * 40
+    authority.read_frozen_registry = lambda: stale_registry
+    candidate_tree = {"artifact.py": BLOB, "dependency.py": BLOB, "frozen.py": BLOB}
+    main_tree = {"frozen.py": "8" * 40}
+
+    with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_FROZEN_BASELINE_DRIFT:frozen.py"):
+        authority.verify_step2a(request(), plan(), candidate_tree, main_tree)
+
+
 def test_dead_scope_lease_fails_closed():
     authority = make_authority()
     authority.read_live_scope_lease = lambda lease_id: (_ for _ in ()).throw(GithubAuthorityError("RUNLESS_V2_SCOPE_LEASE_NOT_LIVE"))
