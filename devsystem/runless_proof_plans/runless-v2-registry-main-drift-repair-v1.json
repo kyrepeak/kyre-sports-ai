@@ -1,0 +1,44 @@
+{
+  "task_id": "runless-v2-registry-main-drift-repair-v1",
+  "workstream": "runless-v2-registry-main-drift-repair-v1",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_v2_api.py",
+      "tests/test_runless_v2_cutover_contract.py",
+      "tests/test_runless_v2_finalization_readback.py",
+      "tests/test_runless_v2_github_authority.py",
+      "tests/test_runless_v2_live_hardening.py",
+      "tests/test_runless_v2_proof_service.py",
+      "tests/test_runless_v2_sandbox_executor.py",
+      "tests/test_runless_v2_schema_contract.py",
+      "tests/test_runless_v2_state_store.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "runless_v2/github_authority.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/runless-v2-registry-main-drift-repair-v1.json",
+    "runless_v2/github_authority.py",
+    "tests/test_runless_v2_github_authority.py"
+  ],
+  "dependencies": [
+    "runless_v2/proof_service.py",
+    "devsystem/universal_sports_finalization_bootstrap_v1.py",
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/scope_aware_execution_lease_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_V2_REGISTRY_MAIN_DRIFT_REPAIR_V1_FROZEN",
+  "render_dependency": false,
+  "github_actions_fallback": 0
+}

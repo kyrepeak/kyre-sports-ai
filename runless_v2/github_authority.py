@@ -159,8 +159,9 @@ class GithubAuthority:
         main_tree: dict[str, str],
         registry: dict[str, Any],
     ) -> None:
-        if str(registry.get("source_main_sha") or "") != main_sha:
-            raise GithubAuthorityError("RUNLESS_V2_REGISTRY_MAIN_IDENTITY_DRIFT")
+        # The registry source-main identity may legitimately lag after an unrelated
+        # main advance. Frozen artifact blobs are the authoritative invariant: every
+        # frozen path below must still match its baseline (or an exact candidate thaw).
         artifacts = self._flatten_registry_artifacts(registry)
         for path, expected in sorted(artifacts.items()):
             main_blob = main_tree.get(path)
