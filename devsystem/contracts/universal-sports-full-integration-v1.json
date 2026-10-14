@@ -1,0 +1,33 @@
+{
+  "active_provider_semantics": "ACTUALLY_CONSULTED_ONLY",
+  "canonical_ids_owned_internally": true,
+  "contract_id": "USFI-EF25BF5612698C251C4E5AEA",
+  "fabrication": false,
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_FULL_INTEGRATION_CERTIFICATION_FROZEN",
+  "full_integration": true,
+  "github_actions_fallback": 0,
+  "health_filters_before_quorum": true,
+  "legacy_registry_mutation": false,
+  "minimum_quorum_early_stop": true,
+  "network_calls": false,
+  "page_wide_source_authority": false,
+  "prior_freeze_tokens": {
+    "step1": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_ARCHITECTURE_CONTRACT_FROZEN",
+    "step2": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP2_CREDIBLE_PROVIDER_REGISTRY_FROZEN",
+    "step3": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP3_FIELD_LEVEL_SOURCE_ROUTER_FROZEN",
+    "step4": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP4_TRUST_QUORUM_ENGINE_FROZEN",
+    "step5": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP5_PROVIDER_HEALTH_CANONICAL_IDENTITY_FROZEN",
+    "step6": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP6_SOURCE_RECEIPT_PROVENANCE_FROZEN",
+    "step7": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_FROZEN"
+  },
+  "prior_steps_frozen": true,
+  "product_runtime_mutation": false,
+  "program_steps": 8,
+  "render_dependency": false,
+  "routing_unit": "DATA_FIELD",
+  "same_semantic_metric_only": true,
+  "sports_model_mutation": false,
+  "step": "8/8",
+  "version": "UNIVERSAL_SPORTS_FULL_INTEGRATION_CERTIFIER_V1",
+  "workstream": "universal-sports-source-finalization-v1"
+}

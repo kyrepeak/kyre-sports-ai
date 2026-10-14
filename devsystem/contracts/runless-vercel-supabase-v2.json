@@ -1,0 +1,46 @@
+{
+  "version": "RUNLESS_VERCEL_SUPABASE_V2_CUTOVER_V1",
+  "workstream": "runless-vercel-supabase-v2",
+  "freeze_token": "RUNLESS_VERCEL_SUPABASE_V2_CUTOVER_FROZEN",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "github_app_id": 5204253,
+  "gate_name": "runless-final-gate",
+  "supabase_schema": "runless_v2",
+  "vercel_project": "kyre-runless-proof",
+  "authority_components": [
+    "SUPABASE_DURABLE_PROOF_IDENTITY",
+    "GITHUB_IMMUTABLE_RECEIPT",
+    "GITHUB_APP_5204253_RUNLESS_FINAL_GATE",
+    "GITHUB_FINALIZATION_LEDGER_V2"
+  ],
+  "initial_authority_enabled": false,
+  "activation_rule": "ALL_CERTIFICATION_MATRIX_ITEMS_GREEN",
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "render_v1_after_cutover": "LEGACY_NON_AUTHORITATIVE",
+  "new_render_v1_proof_requests": false,
+  "proof_authority_state_storage": "SUPABASE_POSTGRES",
+  "terminal_freeze_authority": "GITHUB_FINALIZATION_LEDGER_V2",
+  "sandbox_state_authoritative": false,
+  "process_memory_authoritative": false,
+  "certification_matrix": {
+    "cold_start_status_recovery": "REQUIRED_GREEN",
+    "simultaneous_claim_single_winner": "REQUIRED_GREEN",
+    "expired_lease_takeover_increments_generation": "REQUIRED_GREEN",
+    "stale_fence_rejected": "REQUIRED_GREEN",
+    "same_proof_idempotency": "REQUIRED_GREEN",
+    "different_candidate_outstanding_authority_rejection": "REQUIRED_GREEN",
+    "deterministic_failure_anti_loop": "REQUIRED_GREEN",
+    "exact_candidate_checkout": "REQUIRED_GREEN",
+    "sandbox_cleanup": "REQUIRED_GREEN",
+    "api_auth_failure_before_mutation": "REQUIRED_GREEN",
+    "zero_production_gate_while_authority_disabled": "REQUIRED_GREEN"
+  },
+  "security": {
+    "public_supabase_mutation": false,
+    "secrets_in_repository": false,
+    "proof_api_authentication": "BEARER_CONSTANT_TIME",
+    "fencing_generation_required": true,
+    "database_utc_lease_expiry": true
+  }
+}

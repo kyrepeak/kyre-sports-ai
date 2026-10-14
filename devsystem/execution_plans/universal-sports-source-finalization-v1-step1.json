@@ -1,0 +1,21 @@
+{
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_ARCHITECTURE_CONTRACT_FROZEN",
+  "github_actions_fallback": 0,
+  "mission": "Architecture + Contract Lock + Finalization Bootstrap",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "scope": {
+    "legacy_registry_mutation": false,
+    "product_runtime": false,
+    "render_deployment": false,
+    "sports_model": false
+  },
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "step": "1/8",
+  "step2a": {
+    "authoritative_branch": "api2-universal-sports-source-finalization-v1-step1",
+    "duplicate_proof_paths_forbidden": true,
+    "single_authority": true
+  },
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP1_EXECUTION_PLAN",
+  "workstream": "universal-sports-source-finalization-v1"
+}

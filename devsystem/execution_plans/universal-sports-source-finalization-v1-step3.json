@@ -1,0 +1,24 @@
+{
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP3_FIELD_LEVEL_SOURCE_ROUTER_FROZEN",
+  "github_actions_fallback": 0,
+  "mission": "Field-Level Source Router",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "scope": {
+    "legacy_registry_mutation": false,
+    "network_calls": false,
+    "product_runtime": false,
+    "render_deployment": false,
+    "sports_model": false
+  },
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "step": "3/8",
+  "step2a": {
+    "authoritative_branch": "api2-universal-sports-source-finalization-v1-step3-field-router",
+    "authoritative_pr": 1528,
+    "duplicate_proof_paths_forbidden": true,
+    "single_authority": true,
+    "source_main_sha": "15afb568bc18b03d0c21f804d43fbd045c699ddc"
+  },
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP3_EXECUTION_PLAN",
+  "workstream": "universal-sports-source-finalization-v1"
+}

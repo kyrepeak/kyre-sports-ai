@@ -1,0 +1,24 @@
+{
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP4_TRUST_QUORUM_ENGINE_FROZEN",
+  "github_actions_fallback": 0,
+  "mission": "Trust + Quorum Engine",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "scope": {
+    "legacy_registry_mutation": false,
+    "network_calls": false,
+    "product_runtime": false,
+    "render_deployment": false,
+    "sports_model": false
+  },
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "step": "4/8",
+  "step2a": {
+    "authoritative_branch": "api2-universal-sports-source-finalization-v1-step4-trust-quorum",
+    "authoritative_pr": 1529,
+    "duplicate_proof_paths_forbidden": true,
+    "single_authority": true,
+    "source_main_sha": "20b765584023a21c5fbce089f1ea4ec214767299"
+  },
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP4_EXECUTION_PLAN",
+  "workstream": "universal-sports-source-finalization-v1"
+}

@@ -1,7 +1,7 @@
 """NBA Spread Page 1 — Step 4 Most Bet Game feature.
 
 Preserves the Step-3 verified Phoenix schedule and adds exactly one fail-closed
-featured betting-activity card. Later decision, injury, projection, probability,
+featured betting-volume card. Later decision, injury, projection, probability,
 and ranking layers remain deferred.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ import streamlit as st
 from nba_spread_most_bet_v1 import load_most_bet_feature
 from nba_spread_schedule_v1 import load_verified_nba_schedule
 
-MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP4_MOST_BET_FEATURE_MULTISOURCE"
+MODEL_VERSION = "NBA_SPREAD_PAGE_V1_STEP4_MOST_BET_FEATURE"
 PAGE_HEARTBEAT = "NBA_SPREAD_STEP4_MOST_BET_FEATURE_ACTIVE"
 STEP3_HEARTBEAT = "NBA_SPREAD_STEP3_SCHEDULE_PHOENIX_ACTIVE"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -69,25 +69,18 @@ def _most_bet_card(feature: dict) -> str:
     home_name = escape(str(feature.get("home_name") or home))
     tip = escape(str(feature.get("tip_phoenix") or "Time unavailable"))
     date = escape(str(feature.get("game_date_phoenix") or "Date unavailable"))
-    source = escape(str(feature.get("source") or "Verified provider"))
-    feature_label = escape(str(feature.get("feature_label") or "🔥 Most Bet Game"))
-    activity_label = escape(str(feature.get("activity_label") or "Tracked Bets"))
     bet_count = int(feature.get("bet_count") or 0)
     away_bets = int(feature.get("away_bet_pct") or 0)
     home_bets = int(feature.get("home_bet_pct") or 0)
-    away_money_raw = feature.get("away_money_pct")
-    home_money_raw = feature.get("home_money_pct")
-    if away_money_raw is None or home_money_raw is None:
-        money_text = "Unavailable from source"
-    else:
-        money_text = f"{away} {int(away_money_raw)}% • {home} {int(home_money_raw)}%"
+    away_money = int(feature.get("away_money_pct") or 0)
+    home_money = int(feature.get("home_money_pct") or 0)
     return f"""
 <div data-testid="nba-spread-step4-most-bet-card" style="border:1px solid rgba(103,216,255,.42);border-radius:22px;
 background:linear-gradient(140deg,rgba(8,18,31,.99),rgba(12,42,67,.97));padding:18px 18px 16px;margin:14px 0 12px;
 box-shadow:0 14px 34px rgba(0,0,0,.22)">
   <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
     <div>
-      <div style="font-size:.72rem;font-weight:950;letter-spacing:.1em;text-transform:uppercase;color:#67d8ff">{feature_label}</div>
+      <div style="font-size:.72rem;font-weight:950;letter-spacing:.1em;text-transform:uppercase;color:#67d8ff">🔥 Most Bet Game</div>
       <div style="font-size:1.25rem;font-weight:950;color:#f8fafc;margin-top:6px">{away} @ {home}</div>
       <div style="font-size:.77rem;color:#91a4b8;margin-top:3px">{away_name} at {home_name}</div>
     </div>
@@ -98,19 +91,19 @@ box-shadow:0 14px 34px rgba(0,0,0,.22)">
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px">
     <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
-      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">{activity_label}</div>
+      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">Tracked Bets</div>
       <div style="font-size:1.02rem;color:#f8fafc;font-weight:950;margin-top:3px">{bet_count:,}</div>
     </div>
     <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
-      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">% of Public Activity</div>
+      <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">% of Bets</div>
       <div style="font-size:.82rem;color:#f8fafc;font-weight:900;margin-top:3px">{away} {away_bets}% • {home} {home_bets}%</div>
     </div>
     <div style="border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:10px;background:rgba(5,12,20,.45)">
       <div style="font-size:.62rem;color:#7890a5;text-transform:uppercase;font-weight:900">% of Money</div>
-      <div style="font-size:.82rem;color:#f8fafc;font-weight:900;margin-top:3px">{money_text}</div>
+      <div style="font-size:.82rem;color:#f8fafc;font-weight:900;margin-top:3px">{away} {away_money}% • {home} {home_money}%</div>
     </div>
   </div>
-  <div style="font-size:.66rem;color:#688197;margin-top:11px">Activity source: {source} • Matchup/time: verified Step-3 NBA schedule</div>
+  <div style="font-size:.66rem;color:#688197;margin-top:11px">Volume/splits: Action Network • Matchup/time: verified Step-3 NBA schedule</div>
 </div>
 """
 
@@ -125,7 +118,7 @@ def _render_most_bet(feature: dict) -> None:
 <div data-testid="nba-spread-step4-most-bet-unavailable" style="border:1px dashed rgba(103,216,255,.22);border-radius:16px;
 padding:13px 15px;background:#09131f;margin:14px 0 12px">
   <div style="font-size:.78rem;font-weight:900;color:#b9dceb">🔥 Most Bet Game data unavailable</div>
-  <div style="font-size:.72rem;color:#7890a5;margin-top:4px">No matchup is promoted unless verified public activity matches a verified Step-3 game. The provider fallback chain is exhausted before this state is shown.</div>
+  <div style="font-size:.72rem;color:#7890a5;margin-top:4px">No matchup is promoted unless tracked volume and both betting splits match a verified Step-3 game.</div>
   <div style="font-size:.64rem;color:#61778b;margin-top:6px">{diagnostic}</div>
 </div>
 """,

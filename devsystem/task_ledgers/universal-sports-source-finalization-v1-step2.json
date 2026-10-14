@@ -1,0 +1,12 @@
+{
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP2_CREDIBLE_PROVIDER_REGISTRY_FROZEN",
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "next_legal_action": "RUN_EXACT_HEAD_STATIC_PROOF",
+  "render_dependency": false,
+  "repository": "kyrepeak/kyre-sports-ai",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "step": "2/8",
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP2_TASK_LEDGER",
+  "workstream": "universal-sports-source-finalization-v1"
+}

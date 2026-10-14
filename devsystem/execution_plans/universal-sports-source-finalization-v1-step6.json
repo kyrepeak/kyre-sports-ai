@@ -1,0 +1,24 @@
+{
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP6_SOURCE_RECEIPT_PROVENANCE_FROZEN",
+  "github_actions_fallback": 0,
+  "mission": "Source Receipt + Provenance",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "scope": {
+    "legacy_registry_mutation": false,
+    "network_calls": false,
+    "product_runtime": false,
+    "render_deployment": false,
+    "sports_model": false
+  },
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "step": "6/8",
+  "step2a": {
+    "authoritative_branch": "api2-universal-sports-source-finalization-v1-step6-source-receipt",
+    "authoritative_pr": 1531,
+    "duplicate_proof_paths_forbidden": true,
+    "single_authority": true,
+    "source_main_sha": "246d7d92485fdc93b220f53b14df95402d9aadc6"
+  },
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP6_EXECUTION_PLAN",
+  "workstream": "universal-sports-source-finalization-v1"
+}
