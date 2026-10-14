@@ -106,6 +106,29 @@ def _validate_packet_identity(packet: Mapping[str, Any], backend: Any) -> None:
     if workstream != expected_workstream:
         raise FinalizationWorkerFailure("FINALIZATION_WORKER_WORKSTREAM_MISMATCH")
 
+    try:
+        trusted = dict(backend.trusted_certification())
+    except Exception as exc:
+        raise FinalizationWorkerFailure("FINALIZATION_WORKER_TRUSTED_CERTIFICATION_UNAVAILABLE") from exc
+    trusted_freeze_token = _identity(trusted.get("freeze_token"), "trusted_freeze_token")
+    trusted_candidate_sha = _sha(trusted.get("candidate_sha"), "trusted_candidate_sha")
+    trusted_merged_main_sha = _sha(trusted.get("merged_main_sha"), "trusted_merged_main_sha")
+    trusted_proof_digest = str(trusted.get("proof_digest") or "").strip().lower()
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", trusted_proof_digest):
+        raise FinalizationWorkerFailure("FINALIZATION_WORKER_TRUSTED_PROOF_DIGEST_INVALID")
+
+    packet_proof_digest = str(packet.get("proof_digest") or "").strip().lower()
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", packet_proof_digest):
+        raise FinalizationWorkerFailure("FINALIZATION_WORKER_PROOF_DIGEST_INVALID")
+    for actual, expected, label in (
+        (_identity(packet.get("freeze_token"), "freeze_token"), trusted_freeze_token, "FREEZE_TOKEN"),
+        (_sha(packet.get("candidate_sha"), "candidate_sha"), trusted_candidate_sha, "CANDIDATE"),
+        (_sha(packet.get("merged_main_sha"), "merged_main_sha"), trusted_merged_main_sha, "MERGED_MAIN"),
+        (packet_proof_digest, trusted_proof_digest, "PROOF_DIGEST"),
+    ):
+        if actual != expected:
+            raise FinalizationWorkerFailure(f"FINALIZATION_WORKER_TRUSTED_CERTIFICATION_{label}_MISMATCH")
+
 
 def _validate_preconditions(packet: Mapping[str, Any], snapshot: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     expected_ledger = dict(packet.get("expected_ledger") or {})
@@ -253,6 +276,14 @@ def finalize_certified_packet(packet: Mapping[str, Any], *, backend: Any) -> dic
     files, target = _build_targets(packet, manifest, registry)
 
     expected = dict(packet["expected_ledger"])
+    for immutable_path in (target["record_path"], target["bridge_path"]):
+        try:
+            existing_blob = backend.read_blob_sha(LEDGER_REF, immutable_path)
+        except Exception as exc:
+            raise FinalizationWorkerFailure("FINALIZATION_WORKER_TARGET_PATH_CHECK_FAILED") from exc
+        if existing_blob is not None:
+            raise FinalizationWorkerFailure(f"FINALIZATION_WORKER_TARGET_PATH_EXISTS:{immutable_path}")
+
     try:
         write_result = backend.cas_commit(
             ref=LEDGER_REF,
@@ -274,6 +305,13 @@ def finalize_certified_packet(packet: Mapping[str, Any], *, backend: Any) -> dic
         actual = backend.read_json(LEDGER_REF, path)
         if actual != expected_value:
             raise FinalizationWorkerFailure(f"FINALIZATION_WORKER_READBACK_MISMATCH:{path}")
+        try:
+            observed_blob = str(backend.read_blob_sha(LEDGER_REF, path) or "").strip().lower()
+        except Exception as exc:
+            raise FinalizationWorkerFailure(f"FINALIZATION_WORKER_READBACK_BLOB_UNAVAILABLE:{path}") from exc
+        expected_blob = _git_blob_sha(files[path])
+        if observed_blob != expected_blob:
+            raise FinalizationWorkerFailure(f"FINALIZATION_WORKER_READBACK_BLOB_MISMATCH:{path}")
 
     after = deepcopy(dict(backend.snapshot()))
     if (
