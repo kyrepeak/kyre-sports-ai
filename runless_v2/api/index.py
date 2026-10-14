@@ -11,7 +11,7 @@ def build_payload():
         'task_id': 'universal-sports-source-finalization-v1-step7',
         'workstream': 'universal-sports-source-finalization-v1',
         'candidate_sha': '6e2d917d6603b0cb207ab35f9da72e20edc9fab7',
-        'lease_id': 'SCOPE-LEASE-A70614DFEA642E4A5501A845',
+        'lease_id': 'SCOPE-LEASE-6B1AD33D679509D2DA65A0A2',
         'authorization_id': 'universal-sports-source-finalization-v1-step7-final-authorization',
         'expected_main_sha': '67dad9d7711c39e2dd640d72ab7f5d28946d2d3e',
     }
