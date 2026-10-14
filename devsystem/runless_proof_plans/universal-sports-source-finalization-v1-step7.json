@@ -1,0 +1,31 @@
+{
+  "version": "RUNLESS_PROOF_PLAN_V1",
+  "task_id": "universal-sports-source-finalization-v1-step7",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "7/8",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_FROZEN",
+  "artifacts": [
+    "devsystem/universal_sports_finalization_worker_v1.py",
+    "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py",
+    "devsystem/contracts/universal-sports-finalization-worker-v1.json",
+    "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step7.json",
+    "devsystem/execution_plans/universal-sports-source-finalization-v1-step7.json",
+    "devsystem/task_ledgers/universal-sports-source-finalization-v1-step7.json",
+    "docs/superpowers/plans/2026-10-14-universal-sports-source-finalization-v1-step7.md"
+  ],
+  "dependencies": [
+    "devsystem/universal_sports_finalization_bootstrap_v1.py",
+    "devsystem/frozen_artifact_registry_v1.py",
+    "devsystem/finalization_100_percent_finalizer_v1.py",
+    "runless_v2/finalization_readback.py"
+  ],
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py"],
+    ["python", "-m", "py_compile", "devsystem/universal_sports_finalization_worker_v1.py"]
+  ],
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "product_runtime_mutation": false,
+  "model_projection_mutation": false
+}
