@@ -10,7 +10,7 @@ PROVE_URL = "https://kyre-runless-proof.vercel.app/prove"
 PAYLOAD = {
     "task_id": "universal-sports-source-finalization-v1-step8",
     "workstream": "universal-sports-source-finalization-v1",
-    "candidate_sha": "aecf8bbf83a61ac31a082856bd83a0267eccd5a1",
+    "candidate_sha": "999a8a8fac58cb2cc812d08942ef80ca32e8c9b0",
     "lease_id": "SCOPE-LEASE-BF74A9DA76E8620374013601",
     "authorization_id": "universal-sports-source-finalization-v1-step8-final-authorization",
     "expected_main_sha": "07e101981f201c87e4bca6b0b58e57c6acede22e",
