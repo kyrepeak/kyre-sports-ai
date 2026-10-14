@@ -4,16 +4,16 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 744,
-  "generation": 424,
+  "revision": 745,
+  "generation": 425,
   "holders": [
     {
       "owner_id": "api2:nba-spread-two-page-v1:step6",
-      "lease_id": "SCOPE-LEASE-D5F4F7CD774D2B5CE5800013",
-      "generation": 424,
-      "acquired_at_utc": "2026-10-14T17:25:27Z",
-      "heartbeat_at_utc": "2026-10-14T17:25:27Z",
-      "expires_at_utc": "2026-10-14T19:25:27Z",
+      "lease_id": "SCOPE-LEASE-72CAE18602D1F671F675DB38",
+      "generation": 425,
+      "acquired_at_utc": "2026-10-14T19:29:00Z",
+      "heartbeat_at_utc": "2026-10-14T19:29:00Z",
+      "expires_at_utc": "2026-10-14T19:44:00Z",
       "scope": {
         "write_paths": [
           "devsystem/execution_plans/nba-spread-step6-market-lines-v1.json",
@@ -40,5 +40,5 @@
       }
     }
   ],
-  "state_hash": "862c4cfc735ddc2c8daf8c04b7967355fab4a5e467360b66d83c82a08f28a68f"
+  "state_hash": "e47636a157dbb9adb6402cca1a24d8a9321ccf43323584997201fba232de643e"
 }
