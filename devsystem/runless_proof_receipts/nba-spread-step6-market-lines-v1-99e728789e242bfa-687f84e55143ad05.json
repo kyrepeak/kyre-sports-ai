@@ -1,0 +1,59 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/nba-spread-step6-market-lines-v1.json": "6fd4cbfddb15ecc49dcf3c5a992b031e6ba9d7ce",
+    "devsystem/runless_proof_plans/nba-spread-step6-market-lines-v1.json": "65243e5a99ab19140d9fc61b86fba2dc866b1a7c",
+    "devsystem/task_ledgers/nba-spread-step6-market-lines-v1.json": "15293d42e31eeed1d1a9cefa3f75a5d048fe4cf5",
+    "nba_spread_market_lines_v1.py": "e66a4ae89138b141c09b4b443ecd61748ba3955e",
+    "nba_spread_page_v1.py": "0d54b3cedf609f07cd6213d280e0a8c073563d26",
+    "tests/test_nba_spread_step6_market_lines_v1.py": "7007ea196ef0379199ded8654ff43e00a5ddf1af"
+  },
+  "candidate_sha": "99e728789e242bfa1c39074dd6e84b745ad49a10",
+  "created_at": "2026-10-14T19:13:18.501972+00:00",
+  "dependency_map": {
+    "devsystem/contracts/universal-sports-field-router-v1.json": "6857355bd0666cb4a511941ffe74bb0326d756ed",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json": "6839c3b6569ed3ab16b09530c6bc8acf3e4e7daa",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "devsystem/universal_sports_field_router_v1.py": "871e86d2978809ec96d1f0924118fb80e78b9d85",
+    "devsystem/universal_sports_provider_registry_v1.py": "017c9f5a81a7373cb1a0d4d414fb76d03f93e113",
+    "nba_spread_most_bet_v1.py": "1f656b3ca96d66aaaf773ccc2da7daed52fe5f05",
+    "nba_spread_schedule_v1.py": "143c366f935776b2f8ce77c0947b1fcf23013fa7",
+    "nba_spread_sharp_money_v1.py": "1013ac9719af1b16742435f2bb0f0b92258a0a8f",
+    "nba_spread_step2_activation_v1.py": "9a122781f33e7c383be3090150c130b7b34d75dd"
+  },
+  "digest": "0014beb6b3fb3e9f3aea9f2887be8739cfd0dacb6a7bc218986f40ec9a3c8cc5",
+  "evidence_digests": [
+    "ba5a72cb450086343cc5109a02bcbf7eb5d5277ebddf12b44a47a5ee6aeffff2",
+    "0d3e186a5a409cdb70e034aca43b213b46029a4eaaf20431f3d5d9d3d2e12803"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "355658f685c5927228be45c22dc2a048539d1c468cfda4a3250ab14d52fecb36",
+  "proof_id": "nba-spread-step6-market-lines-v1-99e728789e242bfa-687f84e55143ad05",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP6-MARKET-LINES-R1"
+    ],
+    "revision": 304,
+    "state_hash": "36bbea9b49ad835f19e94981dc6dd1f0a7f78e09b10ec0c8bd592b78d4cc3fc7"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP6-MARKET-LINES-R1"
+    ],
+    "revision": 304,
+    "state_hash": "36bbea9b49ad835f19e94981dc6dd1f0a7f78e09b10ec0c8bd592b78d4cc3fc7"
+  },
+  "request_fingerprint": "a45f9ee77750cb076285640828a605c00765ca5afd229b3b3b03a15aee1811ec",
+  "step": "runless-v2-premerge",
+  "task_id": "nba-spread-step6-market-lines-v1",
+  "workstream": "nba-spread-two-page-v1"
+}
