@@ -4,8 +4,42 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 739,
-  "generation": 421,
-  "holders": [],
-  "state_hash": "428282134373bb6a044c3eeb9c79e86343799a4daaff784988e8e18dc9d66e91"
+  "revision": 740,
+  "generation": 422,
+  "holders": [
+    {
+      "owner_id": "nba-spread-step4-multisource-v1-finalize",
+      "lease_id": "SCOPE-LEASE-EADEC1FD7033345BC5EAE73F",
+      "generation": 422,
+      "acquired_at_utc": "2026-10-14T14:27:04Z",
+      "heartbeat_at_utc": "2026-10-14T14:27:04Z",
+      "expires_at_utc": "2026-10-14T15:27:04Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/execution_plans/nba-spread-step4-most-bet-feature-v1.json",
+          "devsystem/runless_proof_plans/nba-spread-step4-most-bet-feature-v1.json",
+          "devsystem/task_ledgers/nba-spread-step4-most-bet-feature-v1.json",
+          "nba_spread_most_bet_v1.py",
+          "tests/test_nba_spread_step4_multisource_v1.py"
+        ],
+        "dependency_tokens": [
+          "universal-sports-field-router-v1",
+          "universal-sports-provider-registry-v1",
+          "universal-sports-source-finalization-v1",
+          "universal-sports-trust-quorum-v1"
+        ],
+        "shared_resources": [
+          "branch:nba-spread-step4-multisource-v1-finalize",
+          "pr:1524"
+        ],
+        "resource_identity": {
+          "branch_head": "39101e4be09de27c318452a544719872d67f9554",
+          "main_sha": "5aae6cfb46aabfa360b6aadff87f85385fb31946",
+          "pr": "1524"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "b452a7909f908babf87da3e069642ce6bd7b4282ce4241ee1f2c7a9bfee66a6d"
 }
