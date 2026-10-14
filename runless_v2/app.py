@@ -10,7 +10,7 @@ PROVE_URL = "https://kyre-runless-proof.vercel.app/prove"
 PAYLOAD = {
     "task_id": "nba-spread-step4-most-bet-feature-v1",
     "workstream": "nba-spread-two-page-v1",
-    "candidate_sha": "58b7d06680b4d199179b4069eba2fc44d29f1935",
+    "candidate_sha": "5b66e5ecfdc5e7f672367109f880d93e93f863a5",
     "lease_id": "SCOPE-LEASE-EADEC1FD7033345BC5EAE73F",
     "authorization_id": "nba-spread-step4-final-authorization-v2",
     "expected_main_sha": "5aae6cfb46aabfa360b6aadff87f85385fb31946",
