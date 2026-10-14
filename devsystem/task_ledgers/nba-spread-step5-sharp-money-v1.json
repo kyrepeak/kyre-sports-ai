@@ -6,7 +6,7 @@
   "step": "5/10",
   "source_main_sha": "7bce42ee33e9db53549e4bb1e0b98f2c51847d77",
   "authoritative_branch": "nba-spread-step5-sharp-money-r1",
-  "authoritative_pr": null,
+  "authoritative_pr": 1536,
   "state": "READY_FOR_EXACT_HEAD_RUNLESS",
   "status": "IN_PROGRESS",
   "problem": "NBA Spread Page 1 has no separate Sharp Money Game layer even though the frozen universal source architecture exposes exact public-bet percentage and money-percentage fields.",
@@ -17,7 +17,7 @@
     "one_active_problem": true,
     "one_authoritative_proof_chain": true,
     "authoritative_branch": "nba-spread-step5-sharp-money-r1",
-    "active_authoritative_pr": null,
+    "active_authoritative_pr": 1536,
     "scope_lease_id": "SCOPE-LEASE-C4FF2BF33BD3EB72EDF2B820",
     "duplicate_async_runs": 0,
     "blind_retries": 0,
@@ -81,6 +81,6 @@
   },
   "freeze_token": "NBA_SPREAD_STEP5_SHARP_MONEY_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "BIND_EXACT_PAGE_THAW_THEN_OPEN_SINGLE_PR_AND_REQUEST_EXACT_HEAD_RUNLESS",
+  "next_legal_action": "BIND_EXACT_PAGE_THAW_THEN_REQUEST_SINGLE_EXACT_HEAD_RUNLESS_PROOF",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
