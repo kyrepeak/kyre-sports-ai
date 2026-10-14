@@ -1,13 +1,13 @@
 {
-  "github_actions_fallback": 0,
-  "latest_freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP5_PROVIDER_HEALTH_CANONICAL_IDENTITY_FROZEN",
-  "latest_merged_main_sha": "246d7d92485fdc93b220f53b14df95402d9aadc6",
-  "latest_record_blob_sha": "5f7d7d091be8a98ad46bded9b40d1293436b89b8",
-  "latest_record_path": "devsystem/finalization_ledger_v2/records/UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP5_PROVIDER_HEALTH_CANONICAL_IDENTITY_FROZEN.json",
-  "legacy_registry_mutation": false,
-  "previous_state_hash": "db538113d1a75a9999d4d7ea428589c7ff08facb4beb843b765d44fcbe7e929a",
+  "version": "UNIVERSAL_SPORTS_FINALIZATION_LEDGER_V2_MANIFEST",
+  "revision": 6,
+  "previous_state_hash": "152c5c638a0b56908d29c410a6efd4bddc824b4e497959e5dd6800e4b2abfb1d",
+  "latest_freeze_token": "RUNLESS_VERCEL_SUPABASE_V2_CUTOVER_FROZEN",
+  "latest_record_path": "devsystem/finalization_ledger_v2/records/RUNLESS_VERCEL_SUPABASE_V2_CUTOVER_FROZEN.json",
+  "latest_record_blob_sha": "30bd00ba5fc3f95bbc2e64da34196021cc1fc522",
+  "latest_merged_main_sha": "3c9f083e56d49a01abf9ce13c1d0b82995fe98c2",
   "render_dependency": false,
-  "revision": 5,
-  "state_hash": "152c5c638a0b56908d29c410a6efd4bddc824b4e497959e5dd6800e4b2abfb1d",
-  "version": "UNIVERSAL_SPORTS_FINALIZATION_LEDGER_V2_MANIFEST"
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "state_hash": "1d9232bac3d8ea4801fe69684984efeaa33efa79f0f6a1fc914eee2dcb2a3837"
 }
