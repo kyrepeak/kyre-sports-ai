@@ -4,8 +4,41 @@
   "repository": "kyrepeak/kyre-sports-ai",
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
-  "revision": 743,
-  "generation": 423,
-  "holders": [],
-  "state_hash": "707eacdb40fac9f3b559262a3d2ad1a8a96ab68986d7ac0d2a9bf6c57fbbe84d"
+  "revision": 744,
+  "generation": 424,
+  "holders": [
+    {
+      "owner_id": "api2:nba-spread-two-page-v1:step6",
+      "lease_id": "SCOPE-LEASE-D5F4F7CD774D2B5CE5800013",
+      "generation": 424,
+      "acquired_at_utc": "2026-10-14T17:25:27Z",
+      "heartbeat_at_utc": "2026-10-14T17:25:27Z",
+      "expires_at_utc": "2026-10-14T19:25:27Z",
+      "scope": {
+        "write_paths": [
+          "devsystem/execution_plans/nba-spread-step6-market-lines-v1.json",
+          "devsystem/runless_proof_plans/nba-spread-step6-market-lines-v1.json",
+          "devsystem/task_ledgers/nba-spread-step6-market-lines-v1.json",
+          "nba_spread_market_lines_v1.py",
+          "nba_spread_page_v1.py",
+          "tests/test_nba_spread_step6_market_lines_v1.py"
+        ],
+        "dependency_tokens": [
+          "dependency:nba-spread-step5-frozen",
+          "dependency:universal-sports-source-finalization-v1",
+          "step:6",
+          "workstream:nba-spread-two-page-v1"
+        ],
+        "shared_resources": [
+          "entrypoint:nba-spread-page1"
+        ],
+        "resource_identity": {
+          "branch": "nba-spread-step6-market-lines-r1",
+          "source_main": "27378dc4e500e994917a80eeed0bb22067ada4fb"
+        },
+        "exclusive": false
+      }
+    }
+  ],
+  "state_hash": "862c4cfc735ddc2c8daf8c04b7967355fab4a5e467360b66d83c82a08f28a68f"
 }
