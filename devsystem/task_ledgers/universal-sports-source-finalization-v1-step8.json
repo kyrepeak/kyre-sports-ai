@@ -1,0 +1,17 @@
+{
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_TASK_LEDGER",
+  "task_id": "universal-sports-source-finalization-v1-step8",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "8/8",
+  "problem": "Prove the frozen provider registry, field router, canonical identity and field health, minimum trustworthy quorum, deterministic source receipt, and finalization worker compose as one end-to-end provider-independent sports data architecture.",
+  "root_cause": "Steps 1 through 7 were certified independently; program completion requires one deterministic integration path that proves health-aware fallback, quorum early-stop, canonical identity, provenance, fail-closed behavior, and finalization lineage work together without reopening frozen product code.",
+  "patch": "Add a pure Step-8 integration certifier and final program proof contract that consumes frozen Steps 1 through 7, filters unhealthy providers before quorum activation, certifies an NBA injuries fallback-quorum scenario, emits a deterministic source receipt, and fails closed on identity, route, quorum, or lineage drift.",
+  "proof": "Runless exact-head proof plan universal-sports-source-finalization-v1-step8.json",
+  "green": false,
+  "frozen": false,
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_FULL_INTEGRATION_CERTIFICATION_FROZEN",
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "prior_steps_1_through_7_mutation": false
+}
