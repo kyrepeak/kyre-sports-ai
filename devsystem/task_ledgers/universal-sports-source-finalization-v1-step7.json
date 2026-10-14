@@ -1,0 +1,16 @@
+{
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_TASK_LEDGER",
+  "task_id": "universal-sports-source-finalization-v1-step7",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "7/8",
+  "problem": "Harden the append-oriented finalization bootstrap into one portable CAS finalization worker and establish a safe bridge to the legacy frozen registry without duplicate mutation ownership.",
+  "root_cause": "The Step-1 bootstrap is intentionally workstream-local; wider adoption requires exact legacy-state binding, single-write CAS semantics, and independent readback while legacy mutation remains under its existing authority.",
+  "patch": "Add a pure finalization worker with injected transport, exact ledger and legacy-registry preconditions, deterministic freeze/manifest/bridge targets, one CAS write, independent readback, and read-only legacy bridge semantics.",
+  "proof": "Runless exact-head proof plan universal-sports-source-finalization-v1-step7.json",
+  "green": false,
+  "frozen": false,
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_FROZEN",
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false
+}
