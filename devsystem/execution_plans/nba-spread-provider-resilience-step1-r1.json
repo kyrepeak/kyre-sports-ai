@@ -27,7 +27,7 @@
     "one_active_problem": true,
     "authoritative_branch": "nba-spread-provider-resilience-step1-r1",
     "authoritative_pr": 1541,
-    "scope_lease_id": "SCOPE-LEASE-24EF4B7795C20FCA298AD596",
+    "scope_lease_id": "SCOPE-LEASE-F21F31982930CFE32A3DA581",
     "authoritative_pr_max": 1,
     "one_authoritative_proof_chain": true,
     "duplicate_async_runs_allowed": false,
