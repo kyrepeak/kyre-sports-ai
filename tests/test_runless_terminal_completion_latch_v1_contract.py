@@ -41,3 +41,11 @@ def test_terminal_latch_is_idempotent_and_does_not_regress_green_frozen():
     terminal_block = text[green:merged]
     assert "return v_proof" in terminal_block
     assert "update runless_v2.proof_runs" not in terminal_block
+
+
+def test_terminal_latch_normalizes_external_sha256_digest_before_durable_comparison():
+    text = MIGRATION.read_text().lower()
+
+    assert "v_receipt_digest text" in text
+    assert "regexp_replace(lower(p_proof_digest), '^sha256:', '')" in text
+    assert "v_proof.receipt_digest <> v_receipt_digest" in text

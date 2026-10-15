@@ -5,7 +5,8 @@ from runless_v2.state_store import DurableStateStore, RunlessV2StateError
 
 SHA = "a" * 40
 MAIN = "b" * 40
-DIGEST = "c" * 64
+RAW_DIGEST = "c" * 64
+PROOF_DIGEST = "sha256:" + RAW_DIGEST
 FREEZE = "RUNLESS_DYNAMIC_FINALIZATION_AUTHORITY_V1_STEP4_FROZEN"
 MANIFEST = "d" * 64
 
@@ -37,7 +38,7 @@ def row(state):
         "failure_class": "NONE",
         "detail": "",
         "fencing_generation": 1,
-        "receipt_digest": DIGEST,
+        "receipt_digest": RAW_DIGEST,
         "gate_check_run_id": 77,
         "merged_main_sha": MAIN if state != "MERGE_AUTHORIZED" else None,
         "freeze_token": FREEZE if state in {"FREEZE", "READ_BACK", "GREEN_FROZEN"} else None,
@@ -52,7 +53,7 @@ def call(store):
         candidate_sha=SHA,
         merged_main_sha=MAIN,
         freeze_token=FREEZE,
-        proof_digest=DIGEST,
+        proof_digest=PROOF_DIGEST,
         manifest_state_hash=MANIFEST,
     )
 
@@ -75,7 +76,7 @@ def test_closeout_resumes_one_durable_checkpoint_at_a_time_until_terminal(monkey
     assert all(payload["p_candidate_sha"] == SHA for _, payload in calls)
     assert all(payload["p_merged_main_sha"] == MAIN for _, payload in calls)
     assert all(payload["p_freeze_token"] == FREEZE for _, payload in calls)
-    assert all(payload["p_proof_digest"] == DIGEST for _, payload in calls)
+    assert all(payload["p_proof_digest"] == PROOF_DIGEST for _, payload in calls)
     assert all(payload["p_manifest_state_hash"] == MANIFEST for _, payload in calls)
 
 
