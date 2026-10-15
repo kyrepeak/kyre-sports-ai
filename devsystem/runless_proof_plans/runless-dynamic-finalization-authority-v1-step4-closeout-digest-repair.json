@@ -1,0 +1,39 @@
+{
+  "task_id": "runless-dynamic-finalization-authority-v1-step4-closeout-digest-repair",
+  "workstream": "runless-dynamic-finalization-authority-v1-step4-closeout-digest-repair",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_v2_state_store_step4.py",
+      "tests/test_runless_terminal_completion_latch_v1_contract.py",
+      "tests/test_runless_v2_api.py",
+      "tests/test_runless_v2_schema_contract.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "runless_v2/state_store.py",
+      "runless_v2/app.py"
+    ]
+  ],
+  "artifacts": [
+    "supabase/migrations/20261015_runless_terminal_completion_latch_v1.sql",
+    "tests/test_runless_terminal_completion_latch_v1_contract.py",
+    "tests/test_runless_v2_state_store_step4.py",
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step4-closeout-digest-repair.json"
+  ],
+  "dependencies": [
+    "docs/superpowers/specs/2026-10-15-runless-dynamic-finalization-authority-v1-design.md",
+    "runless_v2/state_store.py",
+    "runless_v2/app.py",
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step4.json"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_DYNAMIC_FINALIZATION_AUTHORITY_V1_STEP4_CLOSEOUT_DIGEST_REPAIR_FROZEN"
+}
