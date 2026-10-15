@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-shell-integration-step1-v1",
+  "title": "MONSTER CFB Game Total — shared CFB shell integration Step 1",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-integration-repair-v1",
+  "step": "1/4",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_THAW_LEASE_RUNLESS",
+  "base_main_sha": "497a81adf227ef0e1fa4e86a9e4f9260b999aef9",
+  "branch": "monster-cfb-game-total-shell-integration-step1-v1",
+  "pr_number": 1539,
+  "problem": "College Football -> Game Total Page 1 leaves the shared KYRE SPORTS AI College Football shell and behaves like a standalone page.",
+  "root_cause": "The active Game Total route ultimately short-circuits through the historical exact Game Total direct-render owner instead of running the shared V1 root shell that owns Sport and CFB Market controls.",
+  "patch": "Keep V43 as the exact Page-1 content owner, but for the exact active College Football Game Total Page-1 route temporarily bridge the V1 root Sport/CFB Market selector and fallback renderer, expose Moneyline/Over-Under/Game Total/Top Picks, render V43 inside that shell, and restore every patched seam in finally. Selected-event Page 2 remains unchanged.",
+  "mutation_scope": [
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_shell_integration_step1_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-shell-integration-step1-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-shell-integration-step1-v1.json",
+    "docs/superpowers/specs/2026-10-14-cfb-game-total-shell-integration-step1-v1.md",
+    "docs/superpowers/plans/2026-10-14-cfb-game-total-shell-integration-step1-v1.md"
+  ],
+  "protected_scope": [
+    "app.py",
+    "cfb_game_total_clean_page_v43.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "Moneyline product implementation",
+    "Over/Under product implementation",
+    "Top Picks product implementation",
+    "Game Total model/projection/probability math",
+    "schedule and provider behavior",
+    "sportsbook projection influence",
+    "selected-event Page 2 semantics",
+    "NFL/MLB/WNBA product code"
+  ],
+  "deferred_scope": [
+    "Step 2 RuntimeError after date selection",
+    "Step 3 broader native CFB integration regression sweep",
+    "Step 4 mission final closeout"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_active_pr": 1539,
+    "one_authoritative_proof_chain": true,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "frozen_router_requires_exact_head_thaw": true,
+    "authoritative_main_sha": "497a81adf227ef0e1fa4e86a9e4f9260b999aef9",
+    "test_first_head": "75ea44dfdd71cc664e35a31bce16901164c0c99d",
+    "implementation_head": "a01f4a7052d3e37df043873adf8a2a791322771e"
+  },
+  "tdd": {
+    "initial_red_observed": true,
+    "red_head": "75ea44dfdd71cc664e35a31bce16901164c0c99d",
+    "red_result": "5 failed, 2 passed; failures were the intentionally missing shared-shell bridge contracts.",
+    "focused_green_head": "a01f4a7052d3e37df043873adf8a2a791322771e",
+    "focused_green_result": "7 passed",
+    "protected_green_result": "18 passed across the new shell contract, current V43 Game Cards, Step-8 Page-1 event guard, and Step-8 route-pointer lock.",
+    "preexisting_harness_debt": [
+      "tests/test_cfb_game_total_native_routing_step1_v1.py hard-codes obsolete V39 while authoritative main already owns V43",
+      "tests/test_cfb_game_total_page1_page2_handoff_step7_v1.py has two baseline NameError failures because its artificial namespace omits SELECTOR_SYNC_QUERY_KEY"
+    ],
+    "baseline_ownership_verified": true,
+    "product_regression_from_preexisting_harness_debt": false
+  },
+  "routing_contract": {
+    "shared_shell_owner": "streamlit_memory_lazy_router_v1",
+    "page1_content_owner": "cfb_game_total_clean_page_v43",
+    "page2_owner": "cfb_game_total_page2_step8_final_runtime_v1",
+    "cfb_market_options": ["Moneyline", "Over/Under", "Game Total", "Top Picks"],
+    "root_seams_restored_in_finally": true,
+    "page2_modified": false,
+    "app_py_modified": false,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "parallel_isolation": {
+    "status": "ISOLATED",
+    "app_py_intentionally_excluded": true,
+    "unrelated_open_cfb_top_picks_pr_detected": true,
+    "shared_mutation_collision_detected": false
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-SHELL-STEP1-R1",
+    "planned_thaw_id": "THAW-MONSTER-CFB-GT-SHELL-STEP1-R1",
+    "lease_owner_id": "monster:monster-cfb-game-total-integration-repair-v1:step1-r1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_SHELL_INTEGRATION_STEP1_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "BIND_EXACT_HEAD_THAW_ACQUIRE_LIVE_SCOPE_LEASE_THEN_SUBMIT_ONE_RUNLESS_V2_PROOF"
+}
