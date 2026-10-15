@@ -264,17 +264,25 @@ class DurableStateStore:
         proof_digest: str,
         manifest_state_hash: str,
     ) -> ProofStatus:
-        row = self._single(
-            self._rpc(
-                "closeout_green_frozen",
-                {
-                    "p_proof_id": proof_id,
-                    "p_candidate_sha": candidate_sha,
-                    "p_merged_main_sha": merged_main_sha,
-                    "p_freeze_token": freeze_token,
-                    "p_proof_digest": proof_digest,
-                    "p_manifest_state_hash": manifest_state_hash,
-                },
-            )
-        )
-        return ProofStatus(**row)
+        payload = {
+            "p_proof_id": proof_id,
+            "p_candidate_sha": candidate_sha,
+            "p_merged_main_sha": merged_main_sha,
+            "p_freeze_token": freeze_token,
+            "p_proof_digest": proof_digest,
+            "p_manifest_state_hash": manifest_state_hash,
+        }
+        resumable = {
+            ProofState.MERGED,
+            ProofState.POST_MERGE_VERIFY,
+            ProofState.FREEZE,
+            ProofState.READ_BACK,
+        }
+        for _ in range(6):
+            row = self._single(self._rpc("resume_closeout_green_frozen", payload))
+            status = ProofStatus(**row)
+            if status.state is ProofState.GREEN_FROZEN:
+                return status
+            if status.state not in resumable:
+                raise RunlessV2StateError("RUNLESS_V2_CLOSEOUT_NON_RESUMABLE_STATE")
+        raise RunlessV2StateError("RUNLESS_V2_CLOSEOUT_DID_NOT_TERMINATE")
