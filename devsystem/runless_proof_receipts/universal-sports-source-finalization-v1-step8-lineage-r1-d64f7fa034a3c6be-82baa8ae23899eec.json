@@ -1,0 +1,52 @@
+{
+  "artifact_map": {
+    "devsystem/contracts/universal-sports-full-integration-lineage-r1.json": "a103498ed8213b5c5cfa2626b00cc8ae85fa6ec9",
+    "devsystem/execution_plans/universal-sports-source-finalization-v1-step8-lineage-r1.json": "5b06cfc81c51377a34a4631c377c1fc9be465673",
+    "devsystem/runless_proof_plans/universal-sports-source-finalization-v1-step8-lineage-r1.json": "b7905f676d747b49e26f2cd86aad875c762ff9c5",
+    "devsystem/task_ledgers/universal-sports-source-finalization-v1-step8-lineage-r1.json": "0de390a886818c4e64c1b830eb539e14bb4b3d7f",
+    "devsystem/universal_sports_full_integration_lineage_r1.py": "3a16809cf2d8f008fbd6b78af3c3033544710df1",
+    "tests/test_devsystem_universal_sports_full_integration_step8_lineage_r1.py": "18b6a91f97f864e9a62ca78785509f979c54e392"
+  },
+  "candidate_sha": "d64f7fa034a3c6be970aebd1410069cf41b717e3",
+  "created_at": "2026-10-15T01:20:14.731845+00:00",
+  "dependency_map": {
+    "devsystem/contracts/universal-sports-full-integration-v1.json": "d412d1bcf43cf30244010514937232f6564bde61",
+    "devsystem/universal_sports_finalization_worker_v1.py": "dd9e85e5e49654577d4617d5463309c4f37afca5",
+    "devsystem/universal_sports_full_integration_certifier_v1.py": "7201908f4806b1742f0fa77c4da70ae310cd0c9a"
+  },
+  "digest": "53fc78659de51982a5ba2c798aa2e67291cd96c41267c523a4e55f8419f7b161",
+  "evidence_digests": [
+    "7dc3e9446cafa6e6965b8478ca21f0b2bded2a9c00117a111fba03eb4483a8d8",
+    "cb13046cade9c4d2b812cad424dbe284f0bd8d6042026a722d10a7363746031b",
+    "b09bf81ea85fcc46a1d80df0607b83dc485ff209dbfb9766dafe3f8cfadf481b"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "31f55897f3697a1664905141d814c8c64e0090f3718ce9cbf2212b1639e1e458",
+  "proof_id": "universal-sports-source-finalization-v1-step8-lineage-r1-d64f7fa034a3c6be-82baa8ae23899eec",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 305,
+    "state_hash": "ecf299ce8a95b91186b2ce467d97f55c66614a4657c4232017476e5d49eb1493"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 305,
+    "state_hash": "ecf299ce8a95b91186b2ce467d97f55c66614a4657c4232017476e5d49eb1493"
+  },
+  "request_fingerprint": "78fa8843a9170cb086a20a674414608699a2f31ae4e01cdc6d524ed840c712a7",
+  "step": "runless-v2-premerge",
+  "task_id": "universal-sports-source-finalization-v1-step8-lineage-r1",
+  "workstream": "universal-sports-source-finalization-v1"
+}
