@@ -1,0 +1,59 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-game-total-shell-integration-step1-v1.json": "6e4b2465923ca92fc75fa5342e87896e5cce8f9d",
+    "devsystem/task_ledgers/monster-cfb-game-total-shell-integration-step1-v1.json": "7ec030b2ef2e50a52ba7e941ce17cf8550737775",
+    "docs/superpowers/plans/2026-10-14-cfb-game-total-shell-integration-step1-v1.md": "963e959f932fb8e2ebe73f995472d3445fbd2d5b",
+    "docs/superpowers/specs/2026-10-14-cfb-game-total-shell-integration-step1-v1.md": "1b095cd1e742483ed71297a5ff0201405b4bb7fb",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "ce952bbf87acb5ca51622983e0b8fd951d6d090f",
+    "tests/test_cfb_game_total_shell_integration_step1_v1.py": "789159d7c386597a9aaaae47f96d1646386604f2"
+  },
+  "candidate_sha": "189a587f1d5afb6f068a0c18a69cc31f66df80d8",
+  "created_at": "2026-10-15T02:07:30.334846+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v43.py": "3a05f8f3f9d434a462da702d429e7db990c9b528",
+    "cfb_game_total_games_on_day_step2_visual_v1.py": "0c9cd7abfc7ac5df49081cfa02fb741518da392b",
+    "cfb_game_total_games_on_day_step3_details_v1.py": "8bda1053e79a78f3992e900b738139a9c9b4e9e7",
+    "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py": "384616375610b6940eee161f545d1cd9ff841531",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d",
+    "streamlit_memory_lazy_router_v190.py": "fca1442c144d8ff02868ed0371a92f72257d697e",
+    "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration.py": "a82a0d374c0fc1de9346e0d62f92831e39ddd9f7"
+  },
+  "digest": "60d52ad0e3cb3d3293c611a168f665b2046aba46cecc3a45001b7aaa5cefcb68",
+  "evidence_digests": [
+    "eb274b2c150734f7c2ad98baf650c6dad1015ae04f187c32589d2cb1b876bf88",
+    "f7a123da7aa45e1a22de9f04b648f5554711ec2edbe856b560f77556e2d81356"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4672b6d7019a7512956351e02a05ddb8b6d44a1095bc57e31dffc7a8dfc09848",
+  "proof_id": "monster-cfb-game-total-shell-integration-step1-v1-189a587f1d5afb6f-d3142ede50a7f281",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-SHELL-STEP1-R1"
+    ],
+    "revision": 306,
+    "state_hash": "7985e00908f54645c57bb4570584b1f68e88a48c06225e90d8d31e8a3a5a6bb6"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-SHELL-STEP1-R1"
+    ],
+    "revision": 306,
+    "state_hash": "7985e00908f54645c57bb4570584b1f68e88a48c06225e90d8d31e8a3a5a6bb6"
+  },
+  "request_fingerprint": "df63fa6d767d32eb72aaa71e69d60b99daa524f297dcb758b3ab59b5d10d93e3",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-shell-integration-step1-v1",
+  "workstream": "monster-cfb-game-total-integration-repair-v1"
+}
