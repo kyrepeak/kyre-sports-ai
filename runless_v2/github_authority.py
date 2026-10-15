@@ -11,7 +11,7 @@ import httpx
 import jwt
 
 from .config import Settings
-from .models import ProofRequest
+from .models import ProofRequest, RegistryThawRequest
 from .receipt_contract import validate_receipt
 
 APP_ID_EXPECTED = "5204253"
@@ -218,6 +218,11 @@ class GithubAuthority:
             "artifact_map": self._path_map(candidate_tree, artifacts, "ARTIFACT"),
             "dependency_map": self._path_map(candidate_tree, dependencies, "DEPENDENCY"),
         }
+
+    def request_registry_thaw(self, request: RegistryThawRequest) -> dict[str, Any]:
+        from .registry_thaw import request_registry_thaw
+
+        return request_registry_thaw(self, request)
 
     def _receipt_path(self, proof_id: str) -> str:
         return f"{self.settings.receipt_path.rstrip('/')}/{proof_id}.json"
