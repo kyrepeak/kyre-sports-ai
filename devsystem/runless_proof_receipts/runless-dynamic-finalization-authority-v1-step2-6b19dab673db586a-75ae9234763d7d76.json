@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step2.json": "007eb9ded9c05ecb4ddd9fce4f28f01a8f5e748b",
+    "vercel_finalizer/app.py": "3c118c67c4e32c0ddf87863caf0762a7956d7017",
+    "vercel_finalizer/receipt_binding.py": "331abb66c66d28d58cc64a39526815334a8caf52",
+    "vercel_finalizer/test_app.py": "d6043248fc8ed49a5378086c8109c2099a1aa2f0",
+    "vercel_finalizer/test_receipt_binding.py": "aaf33728c9af820f3f7d68b5d09211d34a4c59d2"
+  },
+  "candidate_sha": "6b19dab673db586a23e4191b104c6545d00478bb",
+  "created_at": "2026-10-15T17:39:44.772089+00:00",
+  "dependency_map": {
+    "docs/superpowers/specs/2026-10-15-runless-dynamic-finalization-authority-v1-design.md": "1f4b607ad37ad7f74b9760cfb858814fd08d8e28",
+    "runless_v2/receipt_contract.py": "8ff66c09746e54aa52f5aaecb3b28ead020679e3",
+    "vercel_finalizer/authority.py": "dbe4e212abac1637611a3f5c91f8bb97dc7585d9"
+  },
+  "digest": "4873874677ff9727ca7272333ef3a59a0039d451346b2e602ff0d17365ddf1ac",
+  "evidence_digests": [
+    "ffcfdcd7fa130c356a7f8f32db275e2d1fad2dc7a7ab5d91d82f67c72e8fe01f",
+    "8ca41da911c54b538d050b34182bc80e917329765d11575336299abba51823bf"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "a8f78e47f4f16451f621414c069102c546df91a19169abfd34005c4f192aa595",
+  "proof_id": "runless-dynamic-finalization-authority-v1-step2-6b19dab673db586a-75ae9234763d7d76",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 310,
+    "state_hash": "a100a006d9849a1044757149bdca245ad9a722acf6bad5fdd5eae03f75923164"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 310,
+    "state_hash": "a100a006d9849a1044757149bdca245ad9a722acf6bad5fdd5eae03f75923164"
+  },
+  "request_fingerprint": "1b173ded1afd78b56b0a45d67d246fb2f795f8ead549584cda01f09cfb3a106c",
+  "step": "runless-v2-premerge",
+  "task_id": "runless-dynamic-finalization-authority-v1-step2",
+  "workstream": "runless-dynamic-finalization-authority-v1-step2"
+}
