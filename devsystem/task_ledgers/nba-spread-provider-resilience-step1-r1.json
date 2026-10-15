@@ -10,9 +10,9 @@
   "state": "READY_FOR_EXACT_HEAD_RUNLESS",
   "status": "IN_PROGRESS",
   "problem": "NBA Spread schedule verification cannot publish because provider transport contracts drifted before the frozen verifier receives usable data.",
-  "root_cause": "NBA Official CDN rejects the legacy request metadata with HTTP 403 and ESPN rejects the rolling YYYYMMDD-YYYYMMDD scoreboard syntax with HTTP 400 while supported single-day calls remain reachable.",
+  "root_cause": "NBA Official CDN remains blocked with HTTP 403 from the Runless/public proof environment even with current browser metadata, and ESPN rejects rolling YYYYMMDD-YYYYMMDD scoreboard syntax while supported single-day calls remain reachable. The NBA Official repair therefore requires an NBA-owned same-source data.nba.com full-season schedule fallback normalized into the frozen parser shape.",
   "root_cause_class": "NBA_SCHEDULE_PROVIDER_TRANSPORT_CONTRACT_DRIFT",
-  "patch": "Preserve every frozen runtime artifact. Add an NBA-CDN browser/WAF transport wrapper, fan ESPN rolling ranges into supported single-day requests and merge events, and prove the additive repaired loader directly. Step 2 owns production-router activation or a provider fallback.",
+  "patch": "Preserve every frozen runtime artifact. Keep the NBA CDN browser/WAF transport attempt, add the NBA-owned data.nba.com same-source full-season schedule fallback with legacy-payload normalization, fan ESPN rolling ranges into supported single-day requests and merge events, and prove the additive repaired loader directly. Step 2 owns production-router activation or any independent-provider fallback.",
   "step2a": {
     "one_active_problem": true,
     "one_authoritative_proof_chain": true,
@@ -26,7 +26,8 @@
   },
   "architecture": {
     "schedule_sources": ["NBA Official", "ESPN NBA"],
-    "nba_official_transport_repair": "BROWSER_WAF_HEADERS",
+    "nba_official_transport_repair": "BROWSER_WAF_HEADERS_PLUS_NBA_OWNED_LEGACY_SCHEDULE_NORMALIZATION",
+    "nba_official_same_source_transport_fallback": "DATA_NBA_COM_FULL_SCHEDULE",
     "espn_transport_repair": "SINGLE_DAY_FANOUT_AND_EVENT_MERGE",
     "source_ownership_changed": false,
     "fallback_provider_added": false,
@@ -53,6 +54,7 @@
   },
   "acceptance": {
     "nba_cdn_browser_header_contract_bound": true,
+    "nba_owned_legacy_schedule_fallback_bound": true,
     "espn_range_fanout_bound": true,
     "nba_official_plus_espn_quorum_preserved": true,
     "fail_closed_semantics_preserved": true,
@@ -68,6 +70,6 @@
   },
   "freeze_token": "NBA_SPREAD_PROVIDER_RESILIENCE_STEP1_R1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "FORWARD_PORT_CURRENT_MAIN_THEN_REQUEST_ONE_EXACT_HEAD_RUNLESS_PROOF",
+  "next_legal_action": "REQUEST_ONE_EXACT_HEAD_RUNLESS_PROOF",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
