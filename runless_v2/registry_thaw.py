@@ -11,7 +11,8 @@ from urllib.parse import quote
 
 import httpx
 
-from .models import RegistryThawRequest
+from devsystem.api2_frozen_registry_lifecycle_v1 import plan_baseline_forward_port
+from .models import RegistryForwardPortRequest, RegistryThawRequest
 
 if TYPE_CHECKING:
     from .github_authority import GithubAuthority
@@ -265,5 +266,99 @@ def request_registry_thaw(authority: GithubAuthority, request: RegistryThawReque
             registry_commit_sha=commit_sha,
             reused=False,
         )
+
+    raise _error("STALE_REGISTRY_CAS")
+
+
+def request_registry_forward_port(authority: GithubAuthority, request: RegistryForwardPortRequest) -> dict[str, Any]:
+    repository = str(getattr(authority.settings, "repository", ""))
+    if request.repository != repository:
+        raise _error("REGISTRY_FORWARD_PORT_REPOSITORY_MISMATCH")
+    candidate = authority.commit(request.candidate_sha)
+    if str((candidate or {}).get("sha") or "") != request.candidate_sha:
+        raise _error("REGISTRY_FORWARD_PORT_CANDIDATE_IDENTITY_MISMATCH")
+    if authority.main_sha() != request.merged_main_sha:
+        raise _error("REGISTRY_FORWARD_PORT_MAIN_IDENTITY_DRIFT")
+
+    for attempt in range(2):
+        snapshot = _read_snapshot(authority, repository=repository)
+        registry = snapshot["registry"]
+        revision = int(registry["revision"])
+        state_hash = str(registry["state_hash"])
+        frozen = snapshot["frozen"]
+
+        if frozen.get(request.path) == request.to_blob:
+            if any(g.get("thaw_id") == request.thaw_id for g in registry["active_thaws"]):
+                raise _error("REGISTRY_FORWARD_PORT_PARTIAL_STATE")
+            return {
+                "state": "FROZEN", "reused": True, "retired_thaw": True,
+                "previous_registry_revision": revision, "current_registry_revision": revision,
+                "previous_state_hash": state_hash, "current_state_hash": state_hash,
+                "registry_commit_sha": snapshot["head_sha"],
+            }
+
+        matches = [g for g in registry["active_thaws"] if g.get("thaw_id") == request.thaw_id]
+        if len(matches) != 1:
+            raise _error("REGISTRY_FORWARD_PORT_THAW_IDENTITY_REQUIRED")
+        grant = matches[0]
+        expected_grant = {
+            "thaw_id": request.thaw_id,
+            "status": "ACTIVE",
+            "target_head_sha": request.candidate_sha,
+            "files": {request.path: {"from_blob": request.from_blob, "to_blob": request.to_blob}},
+        }
+        if grant != expected_grant:
+            raise _error("REGISTRY_FORWARD_PORT_THAW_IDENTITY_MISMATCH")
+
+        planned = plan_baseline_forward_port(
+            registry,
+            updates={request.path: {"from_blob": request.from_blob, "to_blob": request.to_blob}},
+            source_main_sha=request.merged_main_sha,
+        )
+        if request.thaw_id not in planned["retired_empty_thaw_grants"]:
+            raise _error("REGISTRY_FORWARD_PORT_THAW_NOT_RETIRED")
+        updated = planned["registry"]
+        text = _canonical(updated) + "\n"
+        try:
+            written = authority._request(
+                "PUT",
+                f"/contents/{quote(REGISTRY_PATH, safe='/')}",
+                json={
+                    "message": f"registry: forward-port {request.workstream}",
+                    "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
+                    "branch": REGISTRY_BRANCH,
+                    "sha": snapshot["blob_sha"],
+                },
+            )
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in (409, 422) and attempt == 0:
+                continue
+            if exc.response.status_code in (409, 422):
+                raise _error("STALE_REGISTRY_CAS") from exc
+            raise
+
+        commit_sha = str(((written or {}).get("commit") or {}).get("sha") or "")
+        if not _SHA40.fullmatch(commit_sha):
+            raise _error("REGISTRY_FORWARD_PORT_CONTENTS_WRITE_FAILED")
+        readback = _read_snapshot(authority, repository=repository)
+        current = readback["registry"]
+        if readback["head_sha"] != commit_sha:
+            raise _error("REGISTRY_FORWARD_PORT_READBACK_HEAD_MISMATCH")
+        if int(current["revision"]) != int(planned["next_revision"]):
+            raise _error("REGISTRY_FORWARD_PORT_READBACK_REVISION_MISMATCH")
+        if str(current["state_hash"]) != str(planned["state_hash"]):
+            raise _error("REGISTRY_FORWARD_PORT_READBACK_HASH_MISMATCH")
+        if any(g.get("thaw_id") == request.thaw_id for g in current["active_thaws"]):
+            raise _error("REGISTRY_FORWARD_PORT_THAW_STILL_ACTIVE")
+        if _validate_registry(current, repository=repository).get(request.path) != request.to_blob:
+            raise _error("REGISTRY_FORWARD_PORT_BASELINE_READBACK_MISMATCH")
+        return {
+            "state": "FROZEN", "reused": False, "retired_thaw": True,
+            "previous_registry_revision": revision,
+            "current_registry_revision": int(current["revision"]),
+            "previous_state_hash": state_hash,
+            "current_state_hash": str(current["state_hash"]),
+            "registry_commit_sha": commit_sha,
+        }
 
     raise _error("STALE_REGISTRY_CAS")
