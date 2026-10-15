@@ -16,7 +16,13 @@ set search_path = runless_v2, public
 as $$
 declare
     v_proof runless_v2.proof_runs%rowtype;
+    v_receipt_digest text;
 begin
+    v_receipt_digest := regexp_replace(lower(p_proof_digest), '^sha256:', '');
+    if v_receipt_digest !~ '^[0-9a-f]{64}$' then
+        raise exception 'RUNLESS_V2_CLOSEOUT_EVIDENCE_MISMATCH';
+    end if;
+
     select * into v_proof
       from runless_v2.proof_runs
      where proof_id = p_proof_id
@@ -29,7 +35,7 @@ begin
     perform pg_advisory_xact_lock(hashtextextended(v_proof.workstream, 0));
 
     if v_proof.candidate_sha <> p_candidate_sha
-       or v_proof.receipt_digest <> p_proof_digest
+       or v_proof.receipt_digest <> v_receipt_digest
        or p_freeze_token is null or p_freeze_token = ''
        or p_merged_main_sha !~ '^[0-9a-f]{40}$'
        or p_manifest_state_hash is null or p_manifest_state_hash = '' then
