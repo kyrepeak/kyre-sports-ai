@@ -18,7 +18,7 @@
     "one_authoritative_proof_chain": true,
     "authoritative_branch": "nba-spread-provider-resilience-step1-r1",
     "active_authoritative_pr": 1541,
-    "scope_lease_id": "SCOPE-LEASE-24EF4B7795C20FCA298AD596",
+    "scope_lease_id": "SCOPE-LEASE-F21F31982930CFE32A3DA581",
     "duplicate_async_runs": 0,
     "blind_retries": 0,
     "github_actions_fallback": 0,
