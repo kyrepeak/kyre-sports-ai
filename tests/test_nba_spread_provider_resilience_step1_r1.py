@@ -15,59 +15,37 @@ ROUTER = ROOT / "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py"
 def _official_payload():
     return {
         "leagueSchedule": {
-            "gameDates": [
-                {
-                    "gameDate": "10/15/2026 00:00:00",
-                    "games": [
-                        {
-                            "gameId": "0012600101",
-                            "gameDateTimeUTC": "2026-10-16T02:00:00Z",
-                            "gameStatus": 1,
-                            "gameStatusText": "Scheduled",
-                            "arenaName": "Madison Square Garden",
-                            "awayTeam": {
-                                "teamTricode": "TOR",
-                                "teamCity": "Toronto",
-                                "teamName": "Raptors",
-                            },
-                            "homeTeam": {
-                                "teamTricode": "NYK",
-                                "teamCity": "New York",
-                                "teamName": "Knicks",
-                            },
-                        }
-                    ],
-                }
-            ]
+            "gameDates": [{
+                "gameDate": "10/15/2026 00:00:00",
+                "games": [{
+                    "gameId": "0012600101",
+                    "gameDateTimeUTC": "2026-10-16T02:00:00Z",
+                    "gameStatus": 1,
+                    "gameStatusText": "Scheduled",
+                    "arenaName": "Madison Square Garden",
+                    "awayTeam": {"teamTricode": "TOR", "teamCity": "Toronto", "teamName": "Raptors"},
+                    "homeTeam": {"teamTricode": "NYK", "teamCity": "New York", "teamName": "Knicks"},
+                }],
+            }]
         }
     }
 
 
 def _espn_payload():
     return {
-        "events": [
-            {
-                "id": "401999001",
+        "events": [{
+            "id": "401999001",
+            "date": "2026-10-16T02:00:00Z",
+            "status": {"type": {"state": "pre", "description": "Scheduled"}},
+            "competitions": [{
                 "date": "2026-10-16T02:00:00Z",
-                "status": {"type": {"state": "pre", "description": "Scheduled"}},
-                "competitions": [
-                    {
-                        "date": "2026-10-16T02:00:00Z",
-                        "venue": {"fullName": "Madison Square Garden"},
-                        "competitors": [
-                            {
-                                "homeAway": "away",
-                                "team": {"abbreviation": "TOR", "displayName": "Toronto Raptors"},
-                            },
-                            {
-                                "homeAway": "home",
-                                "team": {"abbreviation": "NYK", "displayName": "New York Knicks"},
-                            },
-                        ],
-                    }
+                "venue": {"fullName": "Madison Square Garden"},
+                "competitors": [
+                    {"homeAway": "away", "team": {"abbreviation": "TOR", "displayName": "Toronto Raptors"}},
+                    {"homeAway": "home", "team": {"abbreviation": "NYK", "displayName": "New York Knicks"}},
                 ],
-            }
-        ]
+            }],
+        }]
     }
 
 
@@ -85,21 +63,10 @@ class _Response:
 
 
 class _WafSession:
-    """Simulates both production transport failures repaired by Step 1."""
-
     required = {
-        "sec-ch-ua",
-        "sec-ch-ua-mobile",
-        "sec-ch-ua-platform",
-        "User-Agent",
-        "Accept",
-        "Accept-Encoding",
-        "Origin",
-        "Sec-Fetch-Site",
-        "Sec-Fetch-Mode",
-        "Sec-Fetch-Dest",
-        "Referer",
-        "Accept-Language",
+        "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform", "User-Agent",
+        "Accept", "Accept-Encoding", "Origin", "Sec-Fetch-Site", "Sec-Fetch-Mode",
+        "Sec-Fetch-Dest", "Referer", "Accept-Language",
     }
 
     def __init__(self, *, always_block_official: bool = False):
@@ -117,8 +84,6 @@ class _WafSession:
         if "site.api.espn.com" in url:
             date_value = str((params or {}).get("dates") or "")
             self.espn_dates.append(date_value)
-            # Production endpoint rejects the range syntax used by the frozen
-            # loader; the additive wrapper must convert it to single-day calls.
             if "-" in date_value:
                 return _Response(400, {})
             if date_value == "20261015":
@@ -140,11 +105,7 @@ def test_step1_transport_injects_current_nba_cdn_browser_header_contract():
 
 def test_step1_espn_range_transport_fans_out_to_supported_single_day_calls():
     transport = importlib.import_module("nba_spread_schedule_provider_resilience_step1_r1")
-    assert transport._espn_range_days("20261015-20261017") == (
-        "20261015",
-        "20261016",
-        "20261017",
-    )
+    assert transport._espn_range_days("20261015-20261017") == ("20261015", "20261016", "20261017")
     assert transport._espn_range_days("20261017-20261015") is None
     assert transport._espn_range_days("20261001-20261020") is None
 
@@ -157,7 +118,6 @@ def test_step1_same_provider_repair_restores_nba_official_plus_espn_consensus():
         days=1,
         session=session,
     )
-
     assert result["verification"] == "VERIFIED"
     assert result["diagnostic_state"] == "SOURCE_CONSENSUS"
     assert result["source_agreement"] == 2
@@ -183,7 +143,7 @@ def test_step1_repair_does_not_weaken_fail_closed_semantics():
     assert result["source_agreement"] == 0
 
 
-def test_step1_is_additive_and_routes_only_nba_spread_to_repaired_page():
+def test_step1_is_additive_and_leaves_frozen_router_for_step2_activation():
     assert TRANSPORT.exists()
     assert PAGE_WRAPPER.exists()
     transport_source = TRANSPORT.read_text(encoding="utf-8")
@@ -192,7 +152,8 @@ def test_step1_is_additive_and_routes_only_nba_spread_to_repaired_page():
 
     assert "import nba_spread_schedule_v1 as frozen_schedule" in transport_source
     assert "import nba_spread_page_v1 as frozen_page" in page_source
-    assert 'ACTIVE_PAGE = "nba_spread_page_provider_resilience_step1_r1"' in router_source
+    assert 'ACTIVE_PAGE = "nba_spread_page_v1"' in router_source
+    assert "nba_spread_page_provider_resilience_step1_r1" not in router_source
     assert "cbssports" not in transport_source.lower()
     assert "tinyfish" not in transport_source.lower()
     assert "MAY_MODIFY_MODEL = False" in transport_source
