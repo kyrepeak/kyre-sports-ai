@@ -68,7 +68,14 @@ def test_step2_successor_preserves_frozen_v42_and_does_not_expand_scope():
     assert "MAY_MODIFY_PAGE2 = False" in source
 
 
-def test_step2_router_advances_only_page1_owner_to_v44():
+def test_step2_router_keeps_v43_owner_and_installs_v44_runtime_seam():
     router = ROUTER.read_text()
-    assert 'PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v44"' in router
+    assert 'PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v43"' in router
+    assert "import cfb_game_total_clean_page_v42 as snapshot_owner" in router
+    assert "import cfb_game_total_clean_page_v44 as runtime_repair" in router
+    assert (
+        "snapshot_owner.render_game_total_hub = "
+        "runtime_repair._render_snapshot_without_stale_date_runtimeerror"
+    ) in router
+    assert "snapshot_owner.render_game_total_hub = original_snapshot_render" in router
     assert 'PAGE2_RUNTIME = "cfb_game_total_page2_step8_final_runtime_v1"' in router
