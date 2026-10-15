@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "devsystem/contracts/runless-execution-transport-v1.json": "1c6ea66a917f5b53b214477f086b41f872c702c9",
+    "devsystem/runless_proof_plans/runless-execution-transport-v1.json": "c1357c7dfeb09457b8af0ef5cc3d2e91a88a4a2b",
+    "docs/runless-execution-transport-v1-operations.md": "1549ccf700f0633a4d00163d8a5d5facd5a1765c",
+    "runless_v2/proof_service.py": "f9bce66db0731c5d3d63f5fbccd9d0156a44b420",
+    "runless_v2/transport_client.py": "46d44b817a9d6d9ae2ebd7b50b025c705955e6ef",
+    "supabase/migrations/20261015_runless_execution_transport_v1.sql": "b655b83d4e2450fcbf732a256e448c3ec7be2090",
+    "tests/test_runless_execution_transport_v1_contract.py": "8f10b3b45b606213796f93c427507b70472b7f75",
+    "tests/test_runless_v2_preview_protection_transport.py": "a16085ee117ba456bea6431a59f79ced2ffedc9e",
+    "tests/test_runless_v2_proof_heartbeat.py": "53f71e43930c579882b90aea85df870bba87d9d4",
+    "tests/test_runless_v2_proof_service.py": "ed1855085fdfc46a44f7de7a744936fd01ea3724",
+    "tests/test_runless_v2_transport_client.py": "6b37f5b6d92577e6b295c70177bdd75b4f89ff4e"
+  },
+  "candidate_sha": "b9619daefb25297808322ad91ca4364103c66b3d",
+  "created_at": "2026-10-15T16:29:33.236613+00:00",
+  "dependency_map": {
+    "runless_v2/app.py": "fb9a59a0c0d52953d45e49385ca978c85914ae4b",
+    "runless_v2/models.py": "1b17786118f215921a40f31287cb6ba0d982239f",
+    "runless_v2/state_store.py": "1580999a90f8406ad0caf8b86a42fa81176e6b6d"
+  },
+  "digest": "1c9a340d8c9f1c3931d1cb9128ce65e2035a488e15aaa2f0e68da30c75056e01",
+  "evidence_digests": [
+    "aef563cebb4317f12cb6b72f30510f9c20b8c409958482d2f94c5598ad6050c6",
+    "101d08783c1e75bec2d4aa7a138bbf1db6a8e7a73dac2be3d804a4e57cb44e6b"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "8a828c94bbc547693524f73f9908f8d71d041601d315400d89d94ea644e1e6c1",
+  "proof_id": "runless-execution-transport-v1-b9619daefb252978-e3a792b897a3382f",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 310,
+    "state_hash": "a100a006d9849a1044757149bdca245ad9a722acf6bad5fdd5eae03f75923164"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 310,
+    "state_hash": "a100a006d9849a1044757149bdca245ad9a722acf6bad5fdd5eae03f75923164"
+  },
+  "request_fingerprint": "43aacd4bc5965a301b036ecf71b7d382b09d37c9d5bd3a4797cea1bf3d8a1443",
+  "step": "runless-v2-premerge",
+  "task_id": "runless-execution-transport-v1",
+  "workstream": "runless-execution-transport-v1"
+}
