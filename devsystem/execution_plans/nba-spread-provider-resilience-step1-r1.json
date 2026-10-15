@@ -4,21 +4,21 @@
   "project": "API2",
   "workstream": "nba-spread-provider-resilience-step1-r1",
   "step": "1/3",
-  "source_main_sha": "74686f28b05869e71dc33e449a4b522ac039b117",
-  "goal": "Restore the frozen NBA Spread schedule verification path by repairing provider transport only. NBA Official receives the current browser/WAF header contract and ESPN unsupported rolling date-range requests are fanned out into supported single-day scoreboard requests and merged before the frozen parser. Preserve the exact NBA Official + ESPN NBA quorum, Phoenix identity rules, fail-closed behavior, and all model/projection/probability logic.",
+  "source_main_sha": "e676977b94ce85fe2f6b15ed585e2906c6afa1a4",
+  "goal": "Repair NBA Spread schedule provider transport additively and prove the exact NBA Official + ESPN NBA two-source verifier can recover without mutating any frozen production artifact. Step 2 owns production-router activation or fallback if needed.",
   "write_paths": [
     "devsystem/execution_plans/nba-spread-provider-resilience-step1-r1.json",
     "devsystem/runless_proof_plans/nba-spread-provider-resilience-step1-r1.json",
     "devsystem/task_ledgers/nba-spread-provider-resilience-step1-r1.json",
     "nba_spread_page_provider_resilience_step1_r1.py",
     "nba_spread_schedule_provider_resilience_step1_r1.py",
-    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
     "tests/test_nba_spread_provider_resilience_step1_r1.py"
   ],
   "protected_dependencies": [
     "nba_spread_schedule_v1.py",
     "nba_spread_page_v1.py",
     "nba_spread_step2_activation_v1.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
     "devsystem/contracts/universal-sports-provider-registry-v1.json",
     "devsystem/contracts/universal-sports-field-router-v1.json",
     "devsystem/contracts/universal-sports-trust-quorum-v1.json"
@@ -52,18 +52,20 @@
     "legacy_registry_mutation": false
   },
   "product_scope": {
-    "feature": "NBA Spread schedule verification provider-health repair",
+    "feature": "NBA Spread schedule provider transport repair",
     "timezone": "America/Phoenix",
     "frozen_schedule_engine_preserved": true,
     "frozen_page_preserved": true,
+    "frozen_router_preserved": true,
+    "production_activation_deferred_to_step2": true,
     "sportsbook_projection_influence": 0.0,
     "model_mutation": false,
     "projection_mutation": false,
     "probability_mutation": false
   },
   "frozen_protection": {
-    "required_thaw_id": "THAW-NBA-SPREAD-PROVIDER-RESILIENCE-STEP1-R1",
-    "mutated_frozen_artifact": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "thaw_required": false,
+    "frozen_artifact_mutation": false,
     "historical_entries_rewritten": false
   },
   "proof_mode": "runless",
