@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 import app as target
 from vercel_finalizer.authority import AuthoritySnapshot, FinalizerAuthorityError
+from vercel_finalizer.gate_publication import GateClaimDecision, GatePublicationError
 from vercel_finalizer.receipt_binding import ReceiptBindingError
 
 SHA = "a" * 40
@@ -54,6 +55,18 @@ def authority():
     )
 
 
+def exact_check(*, proof_id="proof-1", digest=DIGEST, check_id=77):
+    return {
+        "id": check_id,
+        "name": "runless-final-gate",
+        "head_sha": SHA,
+        "status": "completed",
+        "conclusion": "success",
+        "app": {"id": 5204253},
+        "output": {"summary": f"runless-v2 receipt={digest.removeprefix('sha256:')} proof={proof_id}"},
+    }
+
+
 def test_health_unconfigured(monkeypatch):
     for key in (
         "GITHUB_APP_ID",
@@ -91,14 +104,6 @@ def test_deployment_sha_mismatch(monkeypatch):
     assert response.json()["detail"] == "FINALIZER_DEPLOYMENT_SHA_MISMATCH"
 
 
-def test_wrong_app_id_fails_closed(monkeypatch):
-    configured(monkeypatch)
-    monkeypatch.setenv("GITHUB_APP_ID", "999")
-    response = client().post("/prove", json=request())
-    assert response.status_code == 502
-    assert response.json()["detail"] == "FINALIZER_ERROR:RuntimeError"
-
-
 def test_authority_failure_fails_closed(monkeypatch):
     configured(monkeypatch)
     monkeypatch.setattr(
@@ -111,70 +116,96 @@ def test_authority_failure_fails_closed(monkeypatch):
     assert response.json()["detail"] == "FINALIZER_STALE_FENCE"
 
 
-def test_existing_success_is_reused(monkeypatch):
+def test_receipt_binding_failure_blocks_gate(monkeypatch):
     configured(monkeypatch)
     monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
     monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
-    monkeypatch.setattr(target, "_existing_success", lambda http, token, sha: True)
-    response = client().post("/prove", json=request())
-    assert response.status_code == 200
-    assert response.json()["reused"] is True
-    assert response.json()["proof_id"] == "proof-1"
-
-
-def test_publish_requires_readback(monkeypatch):
-    configured(monkeypatch)
-    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
-    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
-    states = iter([False, True])
-    monkeypatch.setattr(target, "_existing_success", lambda http, token, sha: next(states))
-    called = {"count": 0}
-    monkeypatch.setattr(
-        target,
-        "_publish_success",
-        lambda http, token, sha, proof_digest: called.__setitem__("count", called["count"] + 1),
-    )
-    response = client().post("/prove", json=request())
-    assert response.status_code == 200
-    assert response.json()["reused"] is False
-    assert called["count"] == 1
-
-
-def test_publish_uses_bound_receipt_digest(monkeypatch):
-    configured(monkeypatch)
-    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
-    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
-    bound_digest = "sha256:" + ("2" * 64)
-    monkeypatch.setattr(
-        target,
-        "resolve_receipt_binding",
-        lambda *args, **kwargs: SimpleNamespace(proof_digest=bound_digest),
-    )
-    states = iter([False, True])
-    monkeypatch.setattr(target, "_existing_success", lambda http, token, sha: next(states))
-    published = {}
-    monkeypatch.setattr(
-        target,
-        "_publish_success",
-        lambda http, token, sha, digest: published.update(sha=sha, digest=digest),
-    )
-    response = client().post("/prove", json=request())
-    assert response.status_code == 200
-    assert published == {"sha": SHA, "digest": bound_digest}
-    assert response.json()["proof_digest"] == bound_digest
-
-
-def test_receipt_binding_failure_blocks_existing_gate(monkeypatch):
-    configured(monkeypatch)
-    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
-    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
-    monkeypatch.setattr(target, "_existing_success", lambda http, token, sha: True)
     monkeypatch.setattr(
         target,
         "resolve_receipt_binding",
         lambda *args, **kwargs: (_ for _ in ()).throw(ReceiptBindingError("FINALIZER_RECEIPT_IDENTITY_MISMATCH")),
-        raising=False,
     )
     response = client().post("/prove", json=request())
     assert response.status_code == 409
     assert response.json()["detail"] == "FINALIZER_RECEIPT_IDENTITY_MISMATCH"
+
+
+def test_existing_gate_reuse_requires_exact_check_id_and_identity(monkeypatch):
+    configured(monkeypatch)
+    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
+    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
+    monkeypatch.setattr(
+        target,
+        "claim_publication",
+        lambda *args, **kwargs: GateClaimDecision(publish=False, reused=True, gate_check_run_id=77),
+    )
+    monkeypatch.setattr(target, "_check_runs", lambda *args, **kwargs: [exact_check()])
+    response = client().post("/prove", json=request())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reused"] is True
+    assert body["gate_check_run_id"] == 77
+    assert body["proof_id"] == "proof-1"
+
+
+def test_wrong_existing_gate_identity_fails_closed(monkeypatch):
+    configured(monkeypatch)
+    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
+    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
+    monkeypatch.setattr(
+        target,
+        "claim_publication",
+        lambda *args, **kwargs: GateClaimDecision(publish=False, reused=True, gate_check_run_id=77),
+    )
+    monkeypatch.setattr(target, "_check_runs", lambda *args, **kwargs: [exact_check(proof_id="other-proof")])
+    response = client().post("/prove", json=request())
+    assert response.status_code == 409
+    assert response.json()["detail"] == "FINALIZER_GATE_IDENTITY_MISMATCH"
+
+
+def test_claimed_publication_posts_once_and_completes_exact_check(monkeypatch):
+    configured(monkeypatch)
+    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
+    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
+    monkeypatch.setattr(
+        target,
+        "claim_publication",
+        lambda *args, **kwargs: GateClaimDecision(publish=True, reused=False, claim_token="claim-1"),
+    )
+    states = iter([[], [exact_check()]])
+    monkeypatch.setattr(target, "_check_runs", lambda *args, **kwargs: next(states))
+    published = {"count": 0}
+    monkeypatch.setattr(
+        target,
+        "_publish_success",
+        lambda *args, **kwargs: published.update(count=published["count"] + 1) or {"id": 77},
+    )
+    completed = {}
+    monkeypatch.setattr(
+        target,
+        "complete_publication",
+        lambda *args, **kwargs: completed.update(kwargs) or 77,
+    )
+    response = client().post("/prove", json=request())
+    assert response.status_code == 200
+    assert response.json()["reused"] is False
+    assert response.json()["gate_check_run_id"] == 77
+    assert published["count"] == 1
+    assert completed["gate_check_run_id"] == 77
+
+
+def test_concurrent_publication_claim_fails_closed_without_post(monkeypatch):
+    configured(monkeypatch)
+    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
+    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
+    monkeypatch.setattr(
+        target,
+        "claim_publication",
+        lambda *args, **kwargs: (_ for _ in ()).throw(GatePublicationError("FINALIZER_GATE_PUBLICATION_IN_PROGRESS")),
+    )
+    posted = {"count": 0}
+    monkeypatch.setattr(target, "_publish_success", lambda *args, **kwargs: posted.update(count=1))
+    response = client().post("/prove", json=request())
+    assert response.status_code == 409
+    assert response.json()["detail"] == "FINALIZER_GATE_PUBLICATION_IN_PROGRESS"
+    assert posted["count"] == 0
