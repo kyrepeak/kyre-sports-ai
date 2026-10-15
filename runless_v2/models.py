@@ -44,6 +44,18 @@ class ProofRequest(BaseModel):
     expected_main_sha: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
 
 
+class RegistryThawRequest(BaseModel):
+    repository: str = Field(min_length=1)
+    workstream: str = Field(min_length=1)
+    task_id: str = Field(min_length=1)
+    candidate_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    thaw_id: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+    from_blob: str = Field(pattern=r"^[0-9a-f]{40}$")
+    to_blob: str = Field(pattern=r"^[0-9a-f]{40}$")
+    expected_main_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+
 class LeaseClaim(BaseModel):
     proof_id: str
     workstream: str
