@@ -34,7 +34,7 @@ from .finalization_readback import validate_finalization_closeout
 from .github_authority import GithubAuthority, GithubAuthorityError
 from .models import ProofRequest, ProofResult, RegistryForwardPortRequest, RegistryThawRequest
 from .proof_service import ProofServiceError, execute_proof_request
-from .registry_thaw import request_registry_forward_port
+from .registry_terminal_reconcile import request_registry_forward_port
 from .sandbox_executor import SandboxExecutor
 from .state_store import DurableStateStore, RunlessV2StateError
 
