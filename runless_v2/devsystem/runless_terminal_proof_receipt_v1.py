@@ -9,5 +9,5 @@ def build_runless_receipt(**kwargs):
     p=dict(kwargs);p.setdefault("created_at",datetime.now(timezone.utc).isoformat());p.setdefault("prior_digest",None);p["digest"]=digest_payload(p);return p
 def validate_runless_receipt(payload):
     if payload.get("digest")!=digest_payload(payload):raise ValueError("RUNLESS_RECEIPT_TAMPERED")
-    if len(payload.get("candidate_sha","") )!=40:raise ValueError("RUNLESS_RECEIPT_BAD_SHA")
+    if len(payload.get("candidate_sha",""))!=40:raise ValueError("RUNLESS_RECEIPT_BAD_SHA")
     return True
