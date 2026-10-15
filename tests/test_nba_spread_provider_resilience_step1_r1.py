@@ -1,10 +1,29 @@
 from __future__ import annotations
 
 import importlib
+import sys
+import types
 from datetime import datetime, timezone
 from pathlib import Path
 
-import requests
+import httpx
+
+try:
+    import requests  # type: ignore
+except ModuleNotFoundError:
+    requests = types.ModuleType("requests")
+
+    class _HTTPError(Exception):
+        pass
+
+    class _Session:
+        def get(self, *args, **kwargs):
+            raise RuntimeError("requests.Session is unavailable in the Runless proof sandbox")
+
+    requests.HTTPError = _HTTPError
+    requests.Session = _Session
+    sys.modules["requests"] = requests
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TRANSPORT = ROOT / "nba_spread_schedule_provider_resilience_step1_r1.py"
@@ -92,6 +111,19 @@ class _WafSession:
         raise AssertionError(f"unexpected URL: {url}")
 
 
+class _HttpxSession:
+    """requests-compatible live adapter using Runless's guaranteed httpx package."""
+
+    def __init__(self):
+        self._client = httpx.Client(follow_redirects=True)
+
+    def get(self, url, *args, params=None, headers=None, timeout=None):
+        wire_headers = dict(headers or {})
+        if "Accept-Encoding" in wire_headers:
+            wire_headers["Accept-Encoding"] = "gzip, deflate"
+        return self._client.get(url, params=params, headers=wire_headers, timeout=timeout)
+
+
 def test_step1_transport_injects_current_nba_cdn_browser_header_contract():
     transport = importlib.import_module("nba_spread_schedule_provider_resilience_step1_r1")
     headers = transport.NBA_CDN_HEADERS
@@ -165,7 +197,11 @@ def test_step1_is_additive_and_leaves_frozen_router_for_step2_activation():
 def test_step1_live_runless_provider_consensus():
     """Authoritative live smoke: exact repaired loader must reach both providers."""
     transport = importlib.import_module("nba_spread_schedule_provider_resilience_step1_r1")
-    result = transport.load_verified_nba_schedule(days=7, timeout=12.0)
+    result = transport.load_verified_nba_schedule(
+        days=7,
+        timeout=12.0,
+        session=_HttpxSession(),
+    )
     assert result.get("verification") == "VERIFIED", result
     assert result.get("diagnostic_state") == "SOURCE_CONSENSUS", result
     assert result.get("source_agreement") == 2, result
