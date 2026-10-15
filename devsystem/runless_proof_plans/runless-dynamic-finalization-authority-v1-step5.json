@@ -26,7 +26,9 @@
   "artifacts": [
     "runless_v2/finalization_convergence.py",
     "tests/test_runless_v2_finalization_convergence_step5.py",
-    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step5.json"
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step5.json",
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step5-scope.json",
+    "docs/superpowers/plans/2026-10-15-runless-dynamic-finalization-authority-v1-step5.md"
   ],
   "dependencies": [
     "docs/superpowers/specs/2026-10-15-runless-dynamic-finalization-authority-v1-design.md",
