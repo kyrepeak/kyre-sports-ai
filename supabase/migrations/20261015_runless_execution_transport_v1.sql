@@ -18,6 +18,7 @@ set search_path = runless_v2, vault, extensions, public
 as $$
 declare
     v_token text;
+    v_vercel_bypass text;
     v_body jsonb;
     v_response extensions.http_response;
     v_payload jsonb;
@@ -89,6 +90,15 @@ begin
         raise exception 'RUNLESS_TRANSPORT_BEARER_NOT_CONFIGURED';
     end if;
 
+    select decrypted_secret into v_vercel_bypass
+      from vault.decrypted_secrets
+     where name = 'runless_v2_vercel_protection_bypass'
+     order by updated_at desc
+     limit 1;
+    if coalesce(v_vercel_bypass, '') = '' then
+        raise exception 'RUNLESS_TRANSPORT_VERCEL_BYPASS_NOT_CONFIGURED';
+    end if;
+
     v_body := jsonb_build_object(
         'task_id', p_task_id,
         'workstream', p_workstream,
@@ -109,6 +119,7 @@ begin
               rtrim(p_base_url, '/') || '/prove',
               array[
                   row('Authorization', 'Bearer ' || v_token)::extensions.http_header,
+                  row('x-vercel-protection-bypass', v_vercel_bypass)::extensions.http_header,
                   row('Accept', 'application/json')::extensions.http_header
               ],
               'application/json',

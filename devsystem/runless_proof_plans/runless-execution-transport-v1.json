@@ -10,7 +10,8 @@
       "tests/test_runless_v2_transport_client.py",
       "tests/test_runless_v2_proof_service.py",
       "tests/test_runless_execution_transport_v1_contract.py",
-      "tests/test_runless_v2_proof_heartbeat.py"
+      "tests/test_runless_v2_proof_heartbeat.py",
+      "tests/test_runless_v2_preview_protection_transport.py"
     ],
     [
       "python",
@@ -30,7 +31,8 @@
     "tests/test_runless_v2_proof_service.py",
     "tests/test_runless_execution_transport_v1_contract.py",
     "tests/test_runless_v2_proof_heartbeat.py",
-    "supabase/migrations/20261015_runless_execution_transport_v1.sql"
+    "supabase/migrations/20261015_runless_execution_transport_v1.sql",
+    "tests/test_runless_v2_preview_protection_transport.py"
   ],
   "dependencies": [
     "runless_v2/app.py",
