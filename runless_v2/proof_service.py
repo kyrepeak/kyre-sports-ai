@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from typing import Any
@@ -13,6 +14,39 @@ from .sandbox_executor import SandboxExecutionError
 
 class ProofServiceError(RuntimeError):
     pass
+
+
+async def _execute_with_lease_heartbeat(
+    *,
+    sandbox: Any,
+    state_store: Any,
+    claim: Any,
+    request: ProofRequest,
+    github: Any,
+    ttl_seconds: int,
+    timeout_seconds: int,
+) -> tuple[Any, Any]:
+    interval = max(1, min(max(1, ttl_seconds // 3), 60))
+    task = asyncio.create_task(
+        sandbox.execute(
+            candidate_sha=request.candidate_sha,
+            task_id=request.task_id,
+            github_token=github.installation_token(),
+            timeout_seconds=timeout_seconds,
+        )
+    )
+    latest_claim = claim
+    try:
+        while True:
+            done, _ = await asyncio.wait({task}, timeout=interval)
+            if task in done:
+                return task.result(), latest_claim
+            latest_claim = state_store.renew(latest_claim, ttl_seconds)
+    except BaseException:
+        if not task.done():
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+        raise
 
 
 def _canonical(value: Any) -> bytes:
@@ -178,10 +212,13 @@ async def execute_proof_request(
     state_store.advance(proof_id, ProofState.FINGERPRINT, ProofState.REUSE_OR_PROVE, claim)
 
     try:
-        sandbox_result = await sandbox.execute(
-            candidate_sha=request.candidate_sha,
-            task_id=request.task_id,
-            github_token=github.installation_token(),
+        sandbox_result, claim = await _execute_with_lease_heartbeat(
+            sandbox=sandbox,
+            state_store=state_store,
+            claim=claim,
+            request=request,
+            github=github,
+            ttl_seconds=ttl_seconds,
             timeout_seconds=int(plan.get("timeout_seconds", 900)),
         )
     except SandboxExecutionError as exc:
