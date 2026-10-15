@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "task_id": "nba-spread-provider-health-step1-v1",
+  "title": "NBA Spread Provider Resilience Step 1 — Provider Health Diagnosis",
+  "project": "API2",
+  "workstream": "nba-spread-provider-resilience-v1",
+  "step": 1,
+  "status": "READY_FOR_PROOF",
+  "source_main": "74686f28b05869e71dc33e449a4b522ac039b117",
+  "failed_layer": "DATA / SCHEDULE VERIFICATION",
+  "first_broken_arrow": "NBA Official HTTP 403 -> fail-closed verifier -> 0 published games",
+  "diagnostic": {
+    "observed_at_utc": "2026-10-15T01:50:00Z",
+    "nba_official_endpoint_1": "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_1.json",
+    "nba_official_endpoint_1_status": 403,
+    "nba_official_endpoint_2": "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json",
+    "nba_official_endpoint_2_status": 403,
+    "independent_fetch_methods_agree": true,
+    "failure_class": "PROVIDER_ACCESS_BLOCKED",
+    "espn_single_day_reachability": "REACHABLE",
+    "espn_probe_date": "2026-10-15",
+    "owner": "NBA Official provider transport",
+    "product_ui_root_cause": false,
+    "streamlit_root_cause": false,
+    "model_root_cause": false
+  },
+  "approved_step2_route": {
+    "primary_provider_id": "nba_official",
+    "healthy_provider_id": "espn",
+    "fallback_provider_id": "cbs_sports",
+    "fallback_capability": "schedule",
+    "fallback_sport": "nba",
+    "minimum_independent_sources": 2,
+    "verification_threshold_lowered": false,
+    "source_loyalty": false,
+    "single_provider_publish_allowed": false,
+    "fail_closed_on_conflict": true
+  },
+  "scope": {
+    "product_runtime_mutation": false,
+    "nba_spread_schedule_mutation": false,
+    "nba_spread_page_mutation": false,
+    "sports_model_mutation": false,
+    "projection_mutation": false,
+    "probability_mutation": false,
+    "legacy_registry_mutation": false,
+    "github_actions_fallback": 0
+  },
+  "acceptance": [
+    "Both NBA Official schedule CDN endpoints are independently observed returning HTTP 403.",
+    "ESPN NBA remains reachable for the current date.",
+    "CBS Sports is already registered as an NBA schedule-capable provider.",
+    "Universal NBA schedule routing already recognizes ESPN and CBS Sports as fallbacks.",
+    "The two-source verification threshold is not lowered.",
+    "No product/runtime/model/frozen artifact is modified in Step 1."
+  ],
+  "freeze_token": "NBA_SPREAD_PROVIDER_HEALTH_STEP1_V1_FROZEN",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
