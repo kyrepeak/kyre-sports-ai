@@ -85,7 +85,7 @@ class _Response:
 
 
 class _WafSession:
-    """Simulates the NBA CDN refusing thin/non-browser request headers."""
+    """Simulates both production transport failures repaired by Step 1."""
 
     required = {
         "sec-ch-ua",
@@ -105,6 +105,7 @@ class _WafSession:
     def __init__(self, *, always_block_official: bool = False):
         self.always_block_official = always_block_official
         self.official_headers: list[dict] = []
+        self.espn_dates: list[str] = []
 
     def get(self, url, *, params=None, headers=None, timeout=None):
         supplied = dict(headers or {})
@@ -114,7 +115,15 @@ class _WafSession:
                 return _Response(403, {})
             return _Response(200, _official_payload())
         if "site.api.espn.com" in url:
-            return _Response(200, _espn_payload())
+            date_value = str((params or {}).get("dates") or "")
+            self.espn_dates.append(date_value)
+            # Production endpoint rejects the range syntax used by the frozen
+            # loader; the additive wrapper must convert it to single-day calls.
+            if "-" in date_value:
+                return _Response(400, {})
+            if date_value == "20261015":
+                return _Response(200, _espn_payload())
+            return _Response(200, {"events": []})
         raise AssertionError(f"unexpected URL: {url}")
 
 
@@ -127,6 +136,17 @@ def test_step1_transport_injects_current_nba_cdn_browser_header_contract():
     assert headers["Sec-Fetch-Site"] == "same-site"
     assert "Chrome/140" in headers["User-Agent"]
     assert "gzip" in headers["Accept-Encoding"]
+
+
+def test_step1_espn_range_transport_fans_out_to_supported_single_day_calls():
+    transport = importlib.import_module("nba_spread_schedule_provider_resilience_step1_r1")
+    assert transport._espn_range_days("20261015-20261017") == (
+        "20261015",
+        "20261016",
+        "20261017",
+    )
+    assert transport._espn_range_days("20261017-20261015") is None
+    assert transport._espn_range_days("20261001-20261020") is None
 
 
 def test_step1_same_provider_repair_restores_nba_official_plus_espn_consensus():
@@ -147,6 +167,7 @@ def test_step1_same_provider_repair_restores_nba_official_plus_espn_consensus():
     assert result["games"][0]["confirming_sources"] == ["NBA Official", "ESPN NBA"]
     assert session.official_headers
     assert _WafSession.required.issubset(session.official_headers[0])
+    assert session.espn_dates == ["20261015"]
 
 
 def test_step1_repair_does_not_weaken_fail_closed_semantics():
@@ -177,3 +198,4 @@ def test_step1_is_additive_and_routes_only_nba_spread_to_repaired_page():
     assert "MAY_MODIFY_MODEL = False" in transport_source
     assert "MAY_MODIFY_PROJECTION = False" in transport_source
     assert "MAY_MODIFY_PROBABILITY = False" in transport_source
+    assert "MAY_MODIFY_SOURCE_OWNERSHIP = False" in transport_source
