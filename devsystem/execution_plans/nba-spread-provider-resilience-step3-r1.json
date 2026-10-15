@@ -1,0 +1,65 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-provider-resilience-step3-r1",
+  "project": "API2",
+  "workstream": "nba-spread-provider-resilience-step3-r1",
+  "step": "3/3",
+  "source_main_sha": "2746aa25c6acf2faf3cec86ffb15adf8377688c9",
+  "goal": "Activate the Step-2 resilient NBA Spread schedule quorum on the existing production NBA Spread route while preserving the frozen Step-1/Step-2 route identity and all non-schedule ownership.",
+  "write_paths": [
+    "devsystem/execution_plans/nba-spread-provider-resilience-step3-r1.json",
+    "devsystem/runless_proof_plans/nba-spread-provider-resilience-step3-r1.json",
+    "devsystem/task_ledgers/nba-spread-provider-resilience-step3-r1.json",
+    "nba_spread_page_provider_resilience_step3_r1.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_provider_resilience_step3_r1.py"
+  ],
+  "protected_dependencies": [
+    "nba_spread_schedule_v1.py",
+    "nba_spread_schedule_provider_resilience_step1_r1.py",
+    "nba_spread_schedule_provider_resilience_step2_r1.py",
+    "nba_spread_page_v1.py",
+    "nba_spread_step2_activation_v1.py",
+    "app.py"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "nba-spread-provider-resilience-step3-r1",
+    "authoritative_pr": null,
+    "authoritative_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": null,
+    "scope_lease_resolution": "RESOLVE_EXACT_THAW_AND_CANONICAL_SCOPE_LEASE_FOR_FINAL_CANDIDATE_BEFORE_RUNLESS_PROOF",
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "github_actions_fallback": 0
+  },
+  "architecture": {
+    "activation_only": true,
+    "legacy_active_page_identity_preserved": "nba_spread_page_v1",
+    "runtime_provider_resilience_page": "nba_spread_page_provider_resilience_step3_r1",
+    "schedule_loader": "nba_spread_schedule_provider_resilience_step2_r1.load_verified_nba_schedule",
+    "schedule_sources": ["NBA Official", "ESPN NBA", "CBS Sports"],
+    "minimum_independent_sources": 2,
+    "quorum_policy": "ANY_TWO_AGREE",
+    "sportsbook_schedule_quorum": false,
+    "model_mutation": false,
+    "projection_mutation": false,
+    "probability_mutation": false,
+    "injury_ownership_mutation": false,
+    "source_ownership_changed_outside_schedule": false
+  },
+  "frozen_protection": {
+    "thaw_required": true,
+    "thaw_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "exact_head_thaw_required": true,
+    "historical_active_page_contract_preserved": true,
+    "historical_entries_rewritten": false
+  },
+  "proof_mode": "runless",
+  "live_production_probe_required": true,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_PROVIDER_RESILIENCE_STEP3_R1_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
