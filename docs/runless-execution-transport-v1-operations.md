@@ -18,11 +18,9 @@ Resolve the current authoritative production URL for `kyre-runless-proof` from V
 
 ## Secret handling
 
-`RUNLESS_PROOF_AUTH_TOKEN` is injected only as **command-scoped** environment data for the invocation of:
+`RUNLESS_PROOF_AUTH_TOKEN` is injected only as **command-scoped** environment data for operator-side client invocation. Connected ChatGPT execution does not export that token from Vercel.
 
-`python -m runless_v2.transport_client ...`
-
-Do not persist the token into the sandbox default environment, filesystem, snapshot, Git repository, logs, proof receipt, durable status row, or chat output. The transport sandbox must remain secretless at rest.
+Do not persist the token into the sandbox default environment, filesystem, snapshot, Git repository, proof receipt, logs, status rows, or chat output. The transport sandbox remains secretless at rest.
 
 ## Proof request procedure
 
@@ -31,8 +29,8 @@ Do not persist the token into the sandbox default environment, filesystem, snaps
 3. If it already succeeded, return the existing receipt and gate evidence.
 4. If it terminally failed, return the existing failure classification; classify the root cause before any replacement request.
 5. Only when durable state proves that no proof exists may one authenticated `prove` request be sent.
-6. The client posts the generic request to the existing Runless V2 `POST /prove` endpoint and returns the durable proof identity/state.
-7. The named transport sandbox may be stopped after the request without affecting proof authority.
+6. The adapter posts the generic request to the existing Runless V2 `POST /prove` endpoint and returns the durable proof identity/state.
+7. Transport interruption never becomes proof truth; durable Runless state remains authoritative.
 
 ## Interruption and anti-loop recovery
 
@@ -57,3 +55,19 @@ No manual user prompt is required between valid terminal transitions.
 ## Isolation
 
 The transport repair does not mutate NBA PR `#1541`, Runless Dynamic Finalization Authority PR `#1544`, sports runtime/model/page files, or frozen registry state during implementation. Those PR identities are live certification baselines only, not constants in reusable transport code.
+
+## Connected execution amendment — server-side Supabase transport
+
+Implementation proved that MCP-created Vercel sandboxes do not inherit project secrets or OIDC credentials, while the connected Vercel tool intentionally does not reveal sensitive environment values. Therefore the permanent connected path is a server-side adapter, not secret export into a sandbox.
+
+The connected caller invokes `runless_v2.request_proof_transport(...)` through the privileged Supabase connection. That function:
+
+1. validates repository, candidate SHA, request identity, and a `kyre-runless-proof*.vercel.app` base URL resolved through Vercel;
+2. serializes identical calls with a PostgreSQL advisory transaction lock;
+3. returns an already-existing durable Runless proof before making any network call;
+4. reads `runless_v2_transport_bearer` only inside Supabase Vault;
+5. makes one synchronous authenticated HTTP POST to the existing `/prove` endpoint;
+6. reads the resulting authoritative row from `runless_v2.proof_runs` and returns proof ID, native/projected state, fencing generation, receipt digest, gate ID, failure class, and execution identity;
+7. exposes no bearer value to chat, source control, sandbox state, receipts, or logs.
+
+`runless_v2.transport_client` remains the generic operator/client implementation, but it is no longer required to receive a secret through the ChatGPT sandbox boundary. Supabase is transport only; it does not replace the existing `/prove` executor or durable proof authority.

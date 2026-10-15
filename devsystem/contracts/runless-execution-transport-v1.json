@@ -10,7 +10,10 @@
   "transport_sandbox_name": "api2-runless-transport",
   "proof_executor": "runless_v2.app:POST /prove",
   "durable_authority": "SUPABASE_RUNLESS_V2",
-  "secret_policy": "COMMAND_SCOPED_ENV_ONLY",
+  "secret_policy": "COMMAND_SCOPED_ENV_ONLY_OR_SERVER_SIDE_VAULT",
+  "connected_transport": "SUPABASE_SECURITY_DEFINER_HTTP_TO_EXISTING_POST_PROVE",
+  "transport_secret_store": "SUPABASE_VAULT",
+  "operator_client": "runless_v2.transport_client",
   "forbidden_mutation_scopes": [
     "pull/1541",
     "pull/1544",
