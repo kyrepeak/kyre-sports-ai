@@ -17,7 +17,9 @@ def test_production_nba_spread_route_activates_step2_resilience_loader():
         "from nba_spread_schedule_provider_resilience_step2_r1 import load_verified_nba_schedule"
         in bridge_source
     )
-    assert 'ACTIVE_PAGE = "nba_spread_page_provider_resilience_step3_r1"' in router_source
+    assert 'ACTIVE_PAGE = "nba_spread_page_v1"' in router_source
+    assert 'PROVIDER_RESILIENCE_PAGE = "nba_spread_page_provider_resilience_step3_r1"' in router_source
+    assert 'importlib.import_module(PROVIDER_RESILIENCE_PAGE)' in router_source
 
     bridge = importlib.import_module("nba_spread_page_provider_resilience_step3_r1")
     step2 = importlib.import_module("nba_spread_schedule_provider_resilience_step2_r1")

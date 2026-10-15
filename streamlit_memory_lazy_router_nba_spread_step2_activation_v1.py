@@ -23,6 +23,7 @@ NBA_SPORT_LABEL = "NBA"
 NBA_MARKETS = ("Spread",)
 NBA_MARKET_LABEL = "🎯 NBA Market"
 ACTIVE_PAGE = "nba_spread_page_v1"
+PROVIDER_RESILIENCE_PAGE = "nba_spread_page_provider_resilience_step3_r1"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_nba_market"
 ROUTE_SESSION_MARKET = "ks_nba_market_touch"
@@ -124,7 +125,7 @@ def _render_nba_spread(market: str) -> Any:
     if not is_nba_spread_route(st.session_state.get("ks_sport_touch"), market):
         raise RuntimeError("NBA_SPREAD_STEP2_ROUTE_IDENTITY_MISMATCH")
     _persist_nba_route_query()
-    page = importlib.import_module(ACTIVE_PAGE)
+    page = importlib.import_module(PROVIDER_RESILIENCE_PAGE)
     return page.render_nba_spread_page()
 
 
@@ -191,6 +192,7 @@ def render_app() -> Any:
 
 __all__ = [
     "ACTIVE_PAGE",
+    "PROVIDER_RESILIENCE_PAGE",
     "FROZEN_PARENT_ROUTER",
     "MAY_MODIFY_EXISTING_NBA_WORKSTREAMS",
     "MAY_MODIFY_MODEL",
