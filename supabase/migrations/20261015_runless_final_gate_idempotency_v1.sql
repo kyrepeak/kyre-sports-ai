@@ -59,6 +59,15 @@ begin
     if v_run.state <> 'RUNLESS_FINAL_GATE' then
         raise exception 'RUNLESS_V2_GATE_CLAIM_STATE_INVALID';
     end if;
+    if not exists (
+        select 1 from runless_v2.workstream_leases l
+         where l.workstream = v_run.workstream
+           and l.owner_proof_id = v_run.proof_id
+           and l.fencing_generation = v_run.fencing_generation
+           and l.expires_at > now()
+    ) then
+        raise exception 'RUNLESS_V2_GATE_CLAIM_STALE_FENCE';
+    end if;
 
     if v_run.gate_check_run_id is not null then
         return jsonb_build_object(
@@ -71,7 +80,11 @@ begin
         if v_run.gate_publication_digest is distinct from p_proof_digest then
             raise exception 'RUNLESS_V2_GATE_CLAIM_IDENTITY_CONFLICT';
         end if;
-        return jsonb_build_object('decision', 'IN_PROGRESS');
+        if v_run.gate_publication_claimed_at is not null
+           and v_run.gate_publication_claimed_at > now() - interval '2 minutes' then
+            return jsonb_build_object('decision', 'IN_PROGRESS');
+        end if;
+        -- Dead-man recovery: the same proof/digest may reclaim an abandoned claim.
     end if;
 
     update runless_v2.proof_runs
@@ -112,6 +125,21 @@ begin
 
     if not found then
         raise exception 'RUNLESS_V2_GATE_COMPLETION_PROOF_NOT_FOUND';
+    end if;
+    if v_run.state <> 'RUNLESS_FINAL_GATE' then
+        raise exception 'RUNLESS_V2_GATE_COMPLETION_STATE_INVALID';
+    end if;
+    if v_run.gate_publication_digest is null then
+        raise exception 'RUNLESS_V2_GATE_COMPLETION_DIGEST_REQUIRED';
+    end if;
+    if not exists (
+        select 1 from runless_v2.workstream_leases l
+         where l.workstream = v_run.workstream
+           and l.owner_proof_id = v_run.proof_id
+           and l.fencing_generation = v_run.fencing_generation
+           and l.expires_at > now()
+    ) then
+        raise exception 'RUNLESS_V2_GATE_COMPLETION_STALE_FENCE';
     end if;
     if v_run.gate_check_run_id is not null then
         if v_run.gate_check_run_id <> p_gate_check_run_id then
