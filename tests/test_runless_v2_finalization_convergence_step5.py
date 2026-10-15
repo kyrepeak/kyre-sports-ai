@@ -102,7 +102,7 @@ def test_step5_reuses_durable_green_frozen_without_duplicate_mutation():
 
 
 def test_step5_fails_closed_before_merge_without_exact_gate_authority():
-    store = Store(status(ProofState.EXECUTING))
+    store = Store(status(ProofState.RUNLESS_FINAL_GATE))
     with pytest.raises(FinalizationConvergenceError, match="MERGE_NOT_AUTHORIZED"):
         converge_green_frozen(
             target(), state_store=store, github=Github(),
