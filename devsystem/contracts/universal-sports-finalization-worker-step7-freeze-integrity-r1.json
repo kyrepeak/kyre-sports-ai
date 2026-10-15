@@ -1,0 +1,26 @@
+{
+  "version": "UNIVERSAL_SPORTS_FINALIZATION_WORKER_STEP7_FREEZE_INTEGRITY_R1",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "7/8",
+  "mission": "Repair Step 7 finalization freeze integrity without rewriting historical freeze state",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_R1_FROZEN",
+  "trusted_certification_identity_required": true,
+  "trusted_certification_fields": [
+    "freeze_token",
+    "candidate_sha",
+    "merged_main_sha",
+    "proof_digest"
+  ],
+  "immutable_record_path_must_be_absent": true,
+  "immutable_bridge_path_must_be_absent": true,
+  "exact_git_blob_readback_required": true,
+  "parsed_json_readback_also_required": true,
+  "one_atomic_cas_write_per_evidence_state": true,
+  "deterministic_failure_retry_loop": false,
+  "original_step7_freeze_record_rewrite": false,
+  "legacy_registry_mutation": false,
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "product_runtime_mutation": false,
+  "model_projection_mutation": false
+}

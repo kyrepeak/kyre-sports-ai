@@ -1,0 +1,22 @@
+{
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FREEZE_INTEGRITY_R1_TASK_LEDGER",
+  "task_id": "universal-sports-source-finalization-v1-step7-freeze-integrity-r1",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "7/8",
+  "problem": "The merged Step-7 worker could accept caller-asserted certification identity, reuse immutable freeze-token paths, and validate parsed JSON without proving exact written Git blobs.",
+  "root_cause": "The original worker trusted syntactically valid packet identity instead of independently trusted certification evidence, guarded only ledger manifest CAS state instead of record/bridge path absence, and read back JSON objects instead of exact Git blob identities.",
+  "patch": "Bind freeze token/candidate/merged-main/proof digest to backend trusted certification, fail closed if immutable record or bridge paths already exist, and verify exact Git blob SHAs after the single CAS write while preserving parsed JSON and legacy-state readback checks.",
+  "proof": "Runless exact-head proof plan universal-sports-source-finalization-v1-step7-freeze-integrity-r1.json",
+  "red_proof": "3/3 R1 regression tests failed on the unhardened worker for the intended missing protections.",
+  "focused_green_proof": "9/9 original Step-7 plus R1 tests passed on the hardened worker.",
+  "regression_green_proof": "68/68 finalization and frozen-registry regression tests passed on the hardened worker.",
+  "green": false,
+  "frozen": false,
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP7_FINALIZATION_WORKER_LEGACY_BRIDGE_R1_FROZEN",
+  "original_step7_record_rewrite": false,
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "product_runtime_mutation": false,
+  "model_projection_mutation": false
+}
