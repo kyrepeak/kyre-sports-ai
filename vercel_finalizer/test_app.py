@@ -1,8 +1,10 @@
 import pytest
+from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 import app as target
 from vercel_finalizer.authority import AuthoritySnapshot, FinalizerAuthorityError
+from vercel_finalizer.receipt_binding import ReceiptBindingError
 
 SHA = "a" * 40
 DIGEST = "sha256:" + ("1" * 64)
@@ -32,6 +34,11 @@ def configured(monkeypatch):
     monkeypatch.setenv("GITHUB_APP_PRIVATE_KEY", "key")
     monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "secret")
+    monkeypatch.setattr(
+        target,
+        "resolve_receipt_binding",
+        lambda *args, **kwargs: SimpleNamespace(proof_digest=kwargs["requested_proof_digest"]),
+    )
 
 
 def authority():
@@ -42,7 +49,7 @@ def authority():
         candidate_sha=SHA,
         fencing_generation=7,
         proof_fingerprint="fp-1",
-        state="RECEIPT",
+        state="RUNLESS_FINAL_GATE",
         scope_lease_id="lease-1",
     )
 
@@ -131,3 +138,43 @@ def test_publish_requires_readback(monkeypatch):
     assert response.status_code == 200
     assert response.json()["reused"] is False
     assert called["count"] == 1
+
+
+def test_publish_uses_bound_receipt_digest(monkeypatch):
+    configured(monkeypatch)
+    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
+    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
+    bound_digest = "sha256:" + ("2" * 64)
+    monkeypatch.setattr(
+        target,
+        "resolve_receipt_binding",
+        lambda *args, **kwargs: SimpleNamespace(proof_digest=bound_digest),
+    )
+    states = iter([False, True])
+    monkeypatch.setattr(target, "_existing_success", lambda http, token, sha: next(states))
+    published = {}
+    monkeypatch.setattr(
+        target,
+        "_publish_success",
+        lambda http, token, sha, digest: published.update(sha=sha, digest=digest),
+    )
+    response = client().post("/prove", json=request())
+    assert response.status_code == 200
+    assert published == {"sha": SHA, "digest": bound_digest}
+    assert response.json()["proof_digest"] == bound_digest
+
+
+def test_receipt_binding_failure_blocks_existing_gate(monkeypatch):
+    configured(monkeypatch)
+    monkeypatch.setattr(target, "resolve_authority", lambda *args, **kwargs: authority())
+    monkeypatch.setattr(target, "_installation_token", lambda settings, http: "tok")
+    monkeypatch.setattr(target, "_existing_success", lambda http, token, sha: True)
+    monkeypatch.setattr(
+        target,
+        "resolve_receipt_binding",
+        lambda *args, **kwargs: (_ for _ in ()).throw(ReceiptBindingError("FINALIZER_RECEIPT_IDENTITY_MISMATCH")),
+        raising=False,
+    )
+    response = client().post("/prove", json=request())
+    assert response.status_code == 409
+    assert response.json()["detail"] == "FINALIZER_RECEIPT_IDENTITY_MISMATCH"
