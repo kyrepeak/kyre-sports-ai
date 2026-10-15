@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-native-regression-step3-v1",
+  "title": "MONSTER CFB Game Total — native integration regression Step 3",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-integration-repair-v1",
+  "step": "3/4",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_RUNLESS",
+  "base_main_sha": "e064907f7c03b355a8b7d4160b0027e3f4ad9f22",
+  "branch": "monster-cfb-game-total-native-regression-step3-v1",
+  "problem": "Steps 1 and 2 repaired shared-shell routing and stale-date handling independently; Step 3 must prove their composition does not regress native CFB Page 1, exact Page 2 handoff, or protected product boundaries.",
+  "root_cause": "The repair mission had focused contracts for each individual repair but no single exact-head regression contract proving the combined V43 shared-shell plus V44 compatibility seam and existing selected-event Page 2 remain coherent together.",
+  "patch": "Add a proof-only native CFB integration regression contract and Runless plan. No product/router/model/projection/probability/provider/Page-2 implementation changes.",
+  "mutation_scope": [
+    "tests/test_monster_cfb_game_total_native_regression_step3_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-native-regression-step3-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-native-regression-step3-v1.json"
+  ],
+  "protected_scope": [
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "cfb_game_total_clean_page_v42.py",
+    "cfb_game_total_clean_page_v43.py",
+    "cfb_game_total_clean_page_v44.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "Game Total model/projection/probability math",
+    "schedule and provider behavior",
+    "sportsbook projection influence",
+    "NFL/MLB/WNBA product code",
+    "parallel API 2 lane"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_proof_chain": true,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "authoritative_main_sha": "e064907f7c03b355a8b7d4160b0027e3f4ad9f22"
+  },
+  "regression_contract": {
+    "shared_cfb_shell_preserved": true,
+    "cfb_market_set_preserved": true,
+    "page1_v43_owner_preserved": true,
+    "step2_v44_runtime_seam_preserved": true,
+    "stale_date_runtimeerror_repair_preserved": true,
+    "selected_event_page2_owner_preserved": true,
+    "temporary_seams_restore_in_finally": true,
+    "model_projection_probability_unchanged": true,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "parallel_isolation": {
+    "status": "ISOLATED",
+    "unrelated_api2_lane_preserved": true
+  },
+  "runless": {
+    "proof_generation": 1,
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_NATIVE_REGRESSION_STEP3_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OPEN_ONE_PR_THEN_OBTAIN_ONE_EXACT_HEAD_RUNLESS_PROOF"
+}
