@@ -41,7 +41,7 @@ from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_game
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP8 FINAL V1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration"
-PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v43"
+PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v44"
 PAGE2_RUNTIME = "cfb_game_total_page2_step8_final_runtime_v1"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"
@@ -156,7 +156,7 @@ def _make_page1_renderer_bridge(delegate: Callable[[str], Any]) -> Callable[[str
 
 
 def _render_page1_game_total(market: str) -> Any:
-    """Render V43 inside the shared shell without changing its product logic."""
+    """Render the active native Game Total owner inside the shared shell."""
     if (
         str(st.session_state.get("ks_sport_touch") or "") != CFB_SPORT_LABEL
         or str(market or "") != GAME_TOTAL_MARKET
