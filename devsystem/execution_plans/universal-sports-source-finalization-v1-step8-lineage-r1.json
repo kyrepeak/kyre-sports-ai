@@ -1,0 +1,19 @@
+{
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_LINEAGE_R1_EXECUTION_PLAN",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "8/8",
+  "mission": "Append-only full-program lineage certification after Step 7 freeze-integrity R1",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "source_main_sha": "497a81adf227ef0e1fa4e86a9e4f9260b999aef9",
+  "authoritative_branch": "api2-universal-sports-source-finalization-v1-step8-lineage-r1",
+  "scope_lease_id": "SCOPE-LEASE-DFE73D4A24B4592BE3901020",
+  "single_authority": true,
+  "historical_step8_rewrite": false,
+  "historical_step7_rewrite": false,
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_FULL_INTEGRATION_CERTIFICATION_LINEAGE_R1_FROZEN",
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "product_runtime_mutation": false,
+  "model_projection_mutation": false
+}
