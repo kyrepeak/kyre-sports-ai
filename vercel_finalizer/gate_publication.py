@@ -57,12 +57,8 @@ def find_exact_gate(
     gate_name: str = GATE_NAME,
     app_id: str = APP_ID_EXPECTED,
 ) -> dict[str, Any] | None:
-    relevant = [
-        check for check in checks
-        if check.get("name") == gate_name
-        and str(check.get("head_sha") or "").lower() == candidate_sha.lower()
-        and str((check.get("app") or {}).get("id")) == str(app_id)
-    ]
+    named = [check for check in checks if check.get("name") == gate_name]
+    relevant = list(named)
     if expected_check_run_id is not None:
         relevant = [check for check in relevant if int(check.get("id") or 0) == int(expected_check_run_id)]
     for check in relevant:
@@ -75,7 +71,7 @@ def find_exact_gate(
             app_id=app_id,
         ):
             return check
-    if relevant:
+    if named:
         raise GatePublicationError("FINALIZER_GATE_IDENTITY_MISMATCH")
     return None
 
