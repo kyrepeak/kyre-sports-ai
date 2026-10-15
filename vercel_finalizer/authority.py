@@ -68,6 +68,16 @@ def resolve_authority(
             "candidate_sha": f"eq.{candidate_sha}",
         },
     )
+    # PostgREST applies these filters in production. Keep the same fail-closed
+    # identity invariant locally so mocked/alternate clients cannot accidentally
+    # authorize a row for a different task or candidate.
+    proofs = [
+        row
+        for row in proofs
+        if str(row.get("workstream") or "") == workstream
+        and str(row.get("task_id") or "") == task_id
+        and str(row.get("candidate_sha") or "").lower() == candidate_sha.lower()
+    ]
     if not proofs:
         raise FinalizerAuthorityError("FINALIZER_AUTHORITY_NOT_FOUND")
     if len(proofs) != 1:
@@ -86,6 +96,7 @@ def resolve_authority(
             "workstream": f"eq.{workstream}",
         },
     )
+    leases = [lease for lease in leases if str(lease.get("workstream") or "") == workstream]
     if len(leases) != 1:
         raise FinalizerAuthorityError("FINALIZER_AUTHORITY_AMBIGUOUS")
     lease = leases[0]
