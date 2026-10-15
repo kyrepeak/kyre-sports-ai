@@ -50,6 +50,26 @@ def _official_payload():
     }
 
 
+def _legacy_official_payload():
+    return {
+        "lscd": [{
+            "mscd": {
+                "mon": "October",
+                "g": [{
+                    "gid": "0012600101",
+                    "gdte": "2026-10-15",
+                    "gdtutc": "2026-10-16",
+                    "utctm": "02:00",
+                    "an": "Madison Square Garden",
+                    "stt": "7:00 pm ET",
+                    "v": {"ta": "TOR", "tc": "Toronto", "tn": "Raptors"},
+                    "h": {"ta": "NYK", "tc": "New York", "tn": "Knicks"},
+                }],
+            }
+        }]
+    }
+
+
 def _espn_payload():
     return {
         "events": [{
@@ -88,18 +108,34 @@ class _WafSession:
         "Sec-Fetch-Dest", "Referer", "Accept-Language",
     }
 
-    def __init__(self, *, always_block_official: bool = False):
+    def __init__(
+        self,
+        *,
+        always_block_official: bool = False,
+        block_cdn_only: bool = False,
+        legacy_available: bool = False,
+    ):
         self.always_block_official = always_block_official
+        self.block_cdn_only = block_cdn_only
+        self.legacy_available = legacy_available
         self.official_headers: list[dict] = []
+        self.legacy_headers: list[dict] = []
+        self.legacy_urls: list[str] = []
         self.espn_dates: list[str] = []
 
     def get(self, url, *, params=None, headers=None, timeout=None):
         supplied = dict(headers or {})
         if "cdn.nba.com" in url:
             self.official_headers.append(supplied)
-            if self.always_block_official or not self.required.issubset(supplied):
+            if self.always_block_official or self.block_cdn_only or not self.required.issubset(supplied):
                 return _Response(403, {})
             return _Response(200, _official_payload())
+        if "data.nba.com" in url:
+            self.legacy_headers.append(supplied)
+            self.legacy_urls.append(str(url))
+            if self.always_block_official or not self.legacy_available:
+                return _Response(403, {})
+            return _Response(200, _legacy_official_payload())
         if "site.api.espn.com" in url:
             date_value = str((params or {}).get("dates") or "")
             self.espn_dates.append(date_value)
@@ -162,6 +198,26 @@ def test_step1_same_provider_repair_restores_nba_official_plus_espn_consensus():
     assert session.espn_dates == ["20261015"]
 
 
+def test_step1_nba_owned_legacy_transport_recovers_when_cdn_is_blocked():
+    transport = importlib.import_module("nba_spread_schedule_provider_resilience_step1_r1")
+    session = _WafSession(block_cdn_only=True, legacy_available=True)
+    result = transport.load_verified_nba_schedule(
+        now_utc=datetime(2026, 10, 15, 12, 0, tzinfo=timezone.utc),
+        days=1,
+        session=session,
+    )
+    assert result["verification"] == "VERIFIED"
+    assert result["diagnostic_state"] == "SOURCE_CONSENSUS"
+    assert result["source_agreement"] == 2
+    assert result["provider_errors"] == {}
+    assert result["games"][0]["game_key"] == "TOR@NYK:2026-10-15"
+    assert result["games"][0]["confirming_sources"] == ["NBA Official", "ESPN NBA"]
+    assert session.legacy_urls == [
+        "https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2026/league/00_full_schedule.json"
+    ]
+    assert session.espn_dates == ["20261015"]
+
+
 def test_step1_repair_does_not_weaken_fail_closed_semantics():
     transport = importlib.import_module("nba_spread_schedule_provider_resilience_step1_r1")
     result = transport.load_verified_nba_schedule(
@@ -188,6 +244,7 @@ def test_step1_is_additive_and_leaves_frozen_router_for_step2_activation():
     assert "nba_spread_page_provider_resilience_step1_r1" not in router_source
     assert "cbssports" not in transport_source.lower()
     assert "tinyfish" not in transport_source.lower()
+    assert "data.nba.com" in transport_source
     assert "MAY_MODIFY_MODEL = False" in transport_source
     assert "MAY_MODIFY_PROJECTION = False" in transport_source
     assert "MAY_MODIFY_PROBABILITY = False" in transport_source
