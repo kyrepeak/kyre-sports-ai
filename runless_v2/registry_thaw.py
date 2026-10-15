@@ -44,16 +44,8 @@ def _validate_registry(payload: Mapping[str, Any], *, repository: str) -> dict[s
         raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
     registry = dict(payload)
     required = {
-        "schema_version",
-        "version",
-        "repository",
-        "registry_ref",
-        "registry_path",
-        "revision",
-        "source_main_sha",
-        "entries",
-        "active_thaws",
-        "state_hash",
+        "schema_version", "version", "repository", "registry_ref", "registry_path",
+        "revision", "source_main_sha", "entries", "active_thaws", "state_hash",
     }
     if required - set(registry):
         raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
@@ -63,49 +55,46 @@ def _validate_registry(payload: Mapping[str, Any], *, repository: str) -> dict[s
         raise _error("REGISTRY_THAW_REGISTRY_REPOSITORY_MISMATCH")
     if registry["registry_ref"] != REGISTRY_REF or registry["registry_path"] != REGISTRY_PATH:
         raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
-    try:
-        revision = int(registry["revision"])
-    except Exception as exc:
-        raise _error("REGISTRY_THAW_REGISTRY_REVISION_INVALID") from exc
-    if revision < 0 or not _SHA40.fullmatch(str(registry["source_main_sha"] or "")):
-        raise _error("REGISTRY_THAW_REGISTRY_REVISION_INVALID")
+    if int(registry["revision"]) < 0 or not _SHA40.fullmatch(str(registry["source_main_sha"] or "")):
+        raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
 
     entries = registry["entries"]
     if not isinstance(entries, Mapping) or not entries:
         raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
     flattened: dict[str, str] = {}
     for checkpoint, entry in entries.items():
-        if not isinstance(entry, Mapping):
+        if not isinstance(entry, Mapping) or entry.get("status") != "FROZEN":
             raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
-        if entry.get("status") != "FROZEN" or str(entry.get("checkpoint_id") or "") != str(checkpoint):
+        if str(entry.get("checkpoint_id") or "") != str(checkpoint):
             raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
         if not _SHA40.fullmatch(str(entry.get("source_main_sha") or "")):
             raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
         artifacts = entry.get("artifacts")
         if not isinstance(artifacts, Mapping) or not artifacts:
             raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
-        for raw_path, raw_blob in artifacts.items():
-            path = str(raw_path or "").strip()
-            blob = str(raw_blob or "").strip().lower()
-            parts = PurePosixPath(path).parts
-            if not path or path.startswith("/") or ".." in parts or not _SHA40.fullmatch(blob):
+        for path, blob in artifacts.items():
+            path_text = str(path or "").strip()
+            blob_text = str(blob or "").lower()
+            if not path_text or path_text.startswith("/") or ".." in PurePosixPath(path_text).parts:
                 raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
-            prior = flattened.get(path)
-            if prior is not None and prior != blob:
-                raise _error("REGISTRY_THAW_FROZEN_BASELINE_CONFLICT")
-            flattened[path] = blob
+            if not _SHA40.fullmatch(blob_text):
+                raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
+            prior = flattened.get(path_text)
+            if prior is not None and prior != blob_text:
+                raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
+            flattened[path_text] = blob_text
 
     thaws = registry["active_thaws"]
     if not isinstance(thaws, list):
         raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
-    seen_ids: set[str] = set()
+    ids: set[str] = set()
     for grant in thaws:
         if not isinstance(grant, Mapping):
             raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
         thaw_id = str(grant.get("thaw_id") or "").strip()
-        if not thaw_id or thaw_id in seen_ids or grant.get("status") != "ACTIVE":
+        if not thaw_id or thaw_id in ids or grant.get("status") != "ACTIVE":
             raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
-        seen_ids.add(thaw_id)
+        ids.add(thaw_id)
         if not _SHA40.fullmatch(str(grant.get("target_head_sha") or "")):
             raise _error("REGISTRY_THAW_REGISTRY_SCHEMA_INVALID")
         files = grant.get("files")
@@ -133,19 +122,15 @@ def _read_snapshot(authority: GithubAuthority, *, repository: str) -> dict[str, 
         "GET",
         f"/contents/{quote(REGISTRY_PATH, safe='/')}?ref={quote(REGISTRY_BRANCH, safe='/')}",
     )
-    if not raw or raw.get("encoding") != "base64" or not _SHA40.fullmatch(str(raw.get("sha") or "")):
+    blob_sha = str((raw or {}).get("sha") or "")
+    if not raw or raw.get("encoding") != "base64" or not _SHA40.fullmatch(blob_sha):
         raise _error("REGISTRY_THAW_REGISTRY_READ_FAILED")
     try:
         registry = json.loads(base64.b64decode(raw["content"]).decode("utf-8"))
     except Exception as exc:
         raise _error("REGISTRY_THAW_REGISTRY_READ_FAILED") from exc
     frozen = _validate_registry(registry, repository=repository)
-    return {
-        "head_sha": head_sha,
-        "blob_sha": str(raw["sha"]),
-        "registry": registry,
-        "frozen": frozen,
-    }
+    return {"head_sha": head_sha, "blob_sha": blob_sha, "registry": registry, "frozen": frozen}
 
 
 def _exact_grant(request: RegistryThawRequest) -> dict[str, Any]:
@@ -153,12 +138,7 @@ def _exact_grant(request: RegistryThawRequest) -> dict[str, Any]:
         "thaw_id": request.thaw_id,
         "status": "ACTIVE",
         "target_head_sha": request.candidate_sha,
-        "files": {
-            request.path: {
-                "from_blob": request.from_blob,
-                "to_blob": request.to_blob,
-            }
-        },
+        "files": {request.path: {"from_blob": request.from_blob, "to_blob": request.to_blob}},
     }
 
 
@@ -207,7 +187,6 @@ def request_registry_thaw(authority: GithubAuthority, request: RegistryThawReque
         raise _error("REGISTRY_THAW_TO_BLOB_INVALID")
     candidate_tree = authority.tree_blobs(request.candidate_sha)
 
-    stale_seen = False
     for attempt in range(2):
         snapshot = _read_snapshot(authority, repository=repository)
         registry = snapshot["registry"]
@@ -244,54 +223,29 @@ def request_registry_thaw(authority: GithubAuthority, request: RegistryThawReque
         updated["revision"] = revision + 1
         updated["state_hash"] = registry_state_hash(updated)
         _validate_registry(updated, repository=repository)
-        content = (_canonical(updated) + "\n").encode("utf-8")
+        text = _canonical(updated) + "\n"
 
-        blob = authority._request(
-            "POST",
-            "/git/blobs",
-            json={"content": base64.b64encode(content).decode("ascii"), "encoding": "base64"},
-        )
-        blob_sha = str((blob or {}).get("sha") or "")
-        if not _SHA40.fullmatch(blob_sha):
-            raise _error("REGISTRY_THAW_GIT_BLOB_WRITE_FAILED")
-        parent = authority.commit(snapshot["head_sha"])
-        tree_sha = str((((parent or {}).get("commit") or {}).get("tree") or {}).get("sha") or "")
-        if not _SHA40.fullmatch(tree_sha):
-            raise _error("REGISTRY_THAW_REGISTRY_PARENT_INVALID")
-        tree = authority._request(
-            "POST",
-            "/git/trees",
-            json={
-                "base_tree": tree_sha,
-                "tree": [{"path": REGISTRY_PATH, "mode": "100644", "type": "blob", "sha": blob_sha}],
-            },
-        )
-        next_tree = str((tree or {}).get("sha") or "")
-        commit = authority._request(
-            "POST",
-            "/git/commits",
-            json={
-                "message": f"runless registry thaw: {request.thaw_id}",
-                "tree": next_tree,
-                "parents": [snapshot["head_sha"]],
-            },
-        )
-        commit_sha = str((commit or {}).get("sha") or "")
-        if not _SHA40.fullmatch(commit_sha):
-            raise _error("REGISTRY_THAW_GIT_COMMIT_FAILED")
         try:
-            authority._request(
-                "PATCH",
-                f"/git/refs/heads/{quote(REGISTRY_BRANCH, safe='/')}",
-                json={"sha": commit_sha, "force": False},
+            written = authority._request(
+                "PUT",
+                f"/contents/{quote(REGISTRY_PATH, safe='/')}",
+                json={
+                    "message": f"runless registry thaw: {request.thaw_id}",
+                    "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
+                    "branch": REGISTRY_BRANCH,
+                    "sha": snapshot["blob_sha"],
+                },
             )
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code in (409, 422):
-                stale_seen = True
                 if attempt == 0:
                     continue
                 raise _error("STALE_REGISTRY_CAS") from exc
             raise
+
+        commit_sha = str(((written or {}).get("commit") or {}).get("sha") or "")
+        if not _SHA40.fullmatch(commit_sha):
+            raise _error("REGISTRY_THAW_CONTENTS_WRITE_FAILED")
 
         readback = _read_snapshot(authority, repository=repository)
         if readback["head_sha"] != commit_sha:
@@ -312,6 +266,4 @@ def request_registry_thaw(authority: GithubAuthority, request: RegistryThawReque
             reused=False,
         )
 
-    if stale_seen:
-        raise _error("STALE_REGISTRY_CAS")
-    raise _error("REGISTRY_THAW_UNREACHABLE")
+    raise _error("STALE_REGISTRY_CAS")
