@@ -1,0 +1,89 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-provider-resilience-step1-r1",
+  "project": "API2",
+  "workstream": "nba-spread-provider-resilience-step1-r1",
+  "step": "1/3",
+  "source_main_sha": "74686f28b05869e71dc33e449a4b522ac039b117",
+  "authoritative_branch": "nba-spread-provider-resilience-step1-r1",
+  "authoritative_pr": null,
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS",
+  "status": "IN_PROGRESS",
+  "problem": "NBA Spread production schedule verification fails closed with NBA_OFFICIAL_UNAVAILABLE, blanking the slate while ESPN NBA remains reachable.",
+  "root_cause": "The frozen schedule transport sends only Accept and a custom User-Agent to cdn.nba.com. The NBA CDN now enforces a fuller browser/WAF request contract including client hints, fetch metadata, Origin/Referer, language, and content encoding. The legacy thin request is rejected with HTTP 403 before schedule parsing.",
+  "root_cause_class": "NBA_CDN_WAF_HEADER_CONTRACT_DRIFT",
+  "patch": "Preserve the frozen schedule/page engines and exact NBA Official + ESPN quorum. Add an NBA-CDN-only session wrapper with the current browser header contract, add an additive page bridge, and change only the NBA Spread active-page pointer to that bridge.",
+  "step2a": {
+    "one_active_problem": true,
+    "one_authoritative_proof_chain": true,
+    "authoritative_branch": "nba-spread-provider-resilience-step1-r1",
+    "active_authoritative_pr": null,
+    "scope_lease_id": "SCOPE-LEASE-24EF4B7795C20FCA298AD596",
+    "duplicate_async_runs": 0,
+    "blind_retries": 0,
+    "github_actions_fallback": 0,
+    "duplicate_prs": 0
+  },
+  "tdd": {
+    "phase": "GREEN_PENDING_EXACT_HEAD_PROOF",
+    "red_commit": "02442a608f697d0ad70c21a753c75ab6da851e7e",
+    "red_test": "tests/test_nba_spread_provider_resilience_step1_r1.py",
+    "red_expected_reason": "additive transport module and page bridge did not yet exist and the router still targeted the frozen page directly",
+    "red_structurally_proven": true,
+    "red_executed": false,
+    "red_execution_note": "Local network clone was unavailable; exact-head execution is delegated to the authoritative Runless proof plane instead of spawning an alternate CI path.",
+    "final_green_verified": false
+  },
+  "architecture": {
+    "schedule_sources": ["NBA Official", "ESPN NBA"],
+    "source_ownership_changed": false,
+    "fallback_provider_added": false,
+    "minimum_independent_sources": 2,
+    "source_exhaustion_fails_closed": true,
+    "page_wide_source_authority": false,
+    "fabrication": false,
+    "transport_repair_only": true
+  },
+  "frozen_protection": {
+    "nba_spread_schedule_v1.py": {
+      "blob": "143c366f935776b2f8ce77c0947b1fcf23013fa7",
+      "mutated": false
+    },
+    "nba_spread_page_v1.py": {
+      "blob": "0d54b3cedf609f07cd6213d280e0a8c073563d26",
+      "mutated": false
+    },
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": {
+      "from_blob": "33f6f638f57d02cef58fb9996e8e0c54c3b917a3",
+      "to_blob": "485ee98e9b0c2be775c00470931635bd2ae6e017",
+      "mutated": true,
+      "exact_thaw_required": true,
+      "thaw_id": "THAW-NBA-SPREAD-PROVIDER-RESILIENCE-STEP1-R1"
+    },
+    "historical_entries_rewritten": false
+  },
+  "runless": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_id": null,
+    "receipt_digest": null
+  },
+  "acceptance": {
+    "nba_cdn_browser_header_contract_bound": true,
+    "nba_official_plus_espn_quorum_preserved": true,
+    "fail_closed_semantics_preserved": true,
+    "phoenix_schedule_identity_preserved": true,
+    "model_mutation": false,
+    "projection_mutation": false,
+    "probability_mutation": false,
+    "exact_head_runless_green": false,
+    "merged_main_verified": false,
+    "production_schedule_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_PROVIDER_RESILIENCE_STEP1_R1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "FINALIZE_EXACT_CANDIDATE_THEN_BIND_ROUTER_THAW_AND_REQUEST_ONE_EXACT_HEAD_RUNLESS_PROOF",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
