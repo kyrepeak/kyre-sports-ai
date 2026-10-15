@@ -31,7 +31,7 @@
     [
       "python",
       "-c",
-      "from nba_spread_schedule_provider_resilience_step1_r1 import load_verified_nba_schedule; r=load_verified_nba_schedule(days=7, timeout=10.0); summary={'verification':r.get('verification'),'diagnostic_state':r.get('diagnostic_state'),'games':len(r.get('games') or []),'provider_errors':r.get('provider_errors')}; print(summary); assert r.get('verification') == 'VERIFIED', r; assert len(r.get('games') or []) >= 1, r"
+      "import json; from nba_spread_schedule_provider_resilience_step1_r1 import load_verified_nba_schedule; r=load_verified_nba_schedule(days=7, timeout=12.0); summary={'verification':r.get('verification'),'diagnostic_state':r.get('diagnostic_state'),'source_agreement':r.get('source_agreement'),'game_count':len(r.get('games') or []),'provider_errors':r.get('provider_errors')}; print(json.dumps(summary,sort_keys=True)); assert r.get('verification')=='VERIFIED', r; assert r.get('source_agreement')==2, r; assert len(r.get('games') or [])>=1, r; assert not r.get('provider_errors'), r; assert all(set(g.get('confirming_sources') or [])=={'NBA Official','ESPN NBA'} for g in r.get('games') or []), r"
     ]
   ],
   "artifacts": [
@@ -52,9 +52,7 @@
     "devsystem/contracts/universal-sports-field-router-v1.json",
     "devsystem/contracts/universal-sports-trust-quorum-v1.json"
   ],
-  "probes": [
-    "live NBA Official + ESPN rolling schedule consensus"
-  ],
+  "probes": [],
   "timeout_seconds": 600,
   "live_ttl_seconds": 900,
   "github_actions_fallback": 0,
