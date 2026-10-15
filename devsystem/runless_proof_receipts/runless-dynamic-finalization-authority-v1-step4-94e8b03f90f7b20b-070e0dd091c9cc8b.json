@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step4.json": "6f59df44c0c67e5c285853b3a777061b24f7f5f9",
+    "runless_v2/state_store.py": "fc9ae638ca8a572fc3edecfea1a513508e48820b",
+    "supabase/migrations/20261015_runless_terminal_completion_latch_v1.sql": "3feb7c3bde8b14db1a3d39fc2babc75c9fde70da",
+    "tests/test_runless_terminal_completion_latch_v1_contract.py": "a6008eecf826dd7e58d8f65a9becbb99a70dab58",
+    "tests/test_runless_v2_state_store_step4.py": "871f8fdb582dd69799bb69b8986a9cbc80c25ca7"
+  },
+  "candidate_sha": "94e8b03f90f7b20bb6e928c77e64774e02f2db7b",
+  "created_at": "2026-10-15T18:21:02.808950+00:00",
+  "dependency_map": {
+    "docs/superpowers/specs/2026-10-15-runless-dynamic-finalization-authority-v1-design.md": "1f4b607ad37ad7f74b9760cfb858814fd08d8e28",
+    "runless_v2/app.py": "fb9a59a0c0d52953d45e49385ca978c85914ae4b",
+    "runless_v2/models.py": "1b17786118f215921a40f31287cb6ba0d982239f",
+    "supabase/migrations/20261013_runless_v2_durable_state.sql": "f35a4783cdf8fde978693d34d5bccbfc11876013"
+  },
+  "digest": "d24155c18703eb726078e1b83774d34bbed1c458396ac6bcab206fc455f42db4",
+  "evidence_digests": [
+    "bb80147aaf9f058c6d23d8df162ec691edb17c0845ee93057d09c890eb66ee84",
+    "a9aaf9c50cbc2bc6cc077341ae62b8d95cd4e088b7a9bb78780891c7938395e4"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "fcb22d3ca5e193b1acd60ab264c99fe6aecaeb35ce229bdf10aaf2af9c3138d5",
+  "proof_id": "runless-dynamic-finalization-authority-v1-step4-94e8b03f90f7b20b-070e0dd091c9cc8b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 310,
+    "state_hash": "a100a006d9849a1044757149bdca245ad9a722acf6bad5fdd5eae03f75923164"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 310,
+    "state_hash": "a100a006d9849a1044757149bdca245ad9a722acf6bad5fdd5eae03f75923164"
+  },
+  "request_fingerprint": "8beb37b981c975877536b549e2df17e05cb503cca85dcf46285e4ecd1be0121d",
+  "step": "runless-v2-premerge",
+  "task_id": "runless-dynamic-finalization-authority-v1-step4",
+  "workstream": "runless-dynamic-finalization-authority-v1-step4"
+}
