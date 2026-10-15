@@ -14,7 +14,17 @@ from .models import FailureClass
 _BAD_SHELL = re.compile(r"[;&|><`$\n\r]")
 _APPROVED_MODULE_PREFIXES = ("devsystem.",)
 _MAX_SANDBOX_SECONDS = 1800
-_MIN_BOOTSTRAP_PACKAGES = ("pytest", "pytest-asyncio", "fastapi", "httpx", "PyJWT", "cryptography")
+_MIN_BOOTSTRAP_PACKAGES = (
+    "pytest",
+    "pytest-asyncio",
+    "fastapi",
+    "httpx",
+    "PyJWT",
+    "cryptography",
+    "pandas",
+    "numpy",
+    "streamlit",
+)
 _REPOSITORY_URL = "https://github.com/kyrepeak/kyre-sports-ai.git"
 
 
