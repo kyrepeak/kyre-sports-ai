@@ -1,0 +1,42 @@
+{
+  "task_id": "runless-dynamic-finalization-authority-v1-step5",
+  "workstream": "runless-dynamic-finalization-authority-v1-step5",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_runless_v2_finalization_convergence_step5.py",
+      "tests/test_runless_v2_state_store_step4.py",
+      "tests/test_runless_v2_finalization_readback.py",
+      "tests/test_devsystem_universal_sports_finalization_worker_step7_v1.py",
+      "tests/test_devsystem_universal_sports_finalization_worker_step7_freeze_integrity_r1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "runless_v2/finalization_convergence.py",
+      "runless_v2/state_store.py",
+      "runless_v2/finalization_readback.py",
+      "devsystem/universal_sports_finalization_worker_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "runless_v2/finalization_convergence.py",
+    "tests/test_runless_v2_finalization_convergence_step5.py",
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step5.json"
+  ],
+  "dependencies": [
+    "docs/superpowers/specs/2026-10-15-runless-dynamic-finalization-authority-v1-design.md",
+    "runless_v2/state_store.py",
+    "runless_v2/finalization_readback.py",
+    "runless_v2/github_authority.py",
+    "devsystem/universal_sports_finalization_worker_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_DYNAMIC_FINALIZATION_AUTHORITY_V1_STEP5_FROZEN"
+}
