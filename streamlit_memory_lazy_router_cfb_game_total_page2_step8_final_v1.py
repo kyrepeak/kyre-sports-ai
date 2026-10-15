@@ -19,9 +19,10 @@ tap carries SELECTOR_SYNC_QUERY_KEY and is required for Page-2 activation; an
 auto-published event without that tap marker is removed after the Page-1 render.
 
 MONSTER shell-integration Step 1 keeps the exact V43 Page-1 content owner but
-renders it through the shared V1 KYRE SPORTS AI shell. The temporary selector
-and renderer seams are restored after every render, and exact selected-event
-Page 2 remains owned by the frozen Step-8 runtime.
+renders it through the shared V1 KYRE SPORTS AI shell. Step 2 installs one
+serialized V44 compatibility seam only while that Page-1 render is active so a
+stale downstream slate date consumes the already-pinned selected-day snapshot
+instead of raising RuntimeError. All temporary seams are restored afterward.
 """
 from __future__ import annotations
 
@@ -30,6 +31,8 @@ from typing import Any, Callable
 
 import streamlit as st
 
+import cfb_game_total_clean_page_v42 as snapshot_owner
+import cfb_game_total_clean_page_v44 as runtime_repair
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration as frozen_parent
 import streamlit_memory_lazy_router_v1 as root
 import streamlit_memory_lazy_router_v160 as render_owner
@@ -41,7 +44,7 @@ from cfb_game_total_games_on_day_step4_interaction_mobile_v1 import install_game
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP8 FINAL V1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration"
-PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v44"
+PAGE1_NATIVE_ROUTE = "cfb_game_total_clean_page_v43"
 PAGE2_RUNTIME = "cfb_game_total_page2_step8_final_runtime_v1"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"
@@ -156,7 +159,7 @@ def _make_page1_renderer_bridge(delegate: Callable[[str], Any]) -> Callable[[str
 
 
 def _render_page1_game_total(market: str) -> Any:
-    """Render the active native Game Total owner inside the shared shell."""
+    """Render V43 inside the shared shell without changing its product logic."""
     if (
         str(st.session_state.get("ks_sport_touch") or "") != CFB_SPORT_LABEL
         or str(market or "") != GAME_TOTAL_MARKET
@@ -178,13 +181,16 @@ def _render_page1_in_shared_shell() -> Any:
     original_selectbox = root.st.selectbox
     original_render_nfl = root._render_nfl
     original_prefixes = root._ROUTE_MODULE_PREFIXES
+    original_snapshot_render = snapshot_owner.render_game_total_hub
     root.st.selectbox = _make_page1_selectbox_bridge(original_selectbox)
     root._render_nfl = _make_page1_renderer_bridge(original_render_nfl)
+    snapshot_owner.render_game_total_hub = runtime_repair._render_snapshot_without_stale_date_runtimeerror
     if "cfb_" not in root._ROUTE_MODULE_PREFIXES:
         root._ROUTE_MODULE_PREFIXES = root._ROUTE_MODULE_PREFIXES + ("cfb_",)
     try:
         return root.render_app()
     finally:
+        snapshot_owner.render_game_total_hub = original_snapshot_render
         root.st.selectbox = original_selectbox
         root._render_nfl = original_render_nfl
         root._ROUTE_MODULE_PREFIXES = original_prefixes
