@@ -10,13 +10,15 @@ Transport recovery stays inside those existing source families:
    to the NBA-owned data.nba.com full-season schedule feed and normalizes its
    legacy payload into the exact shape consumed by the frozen parser.
 3. ESPN rolling date ranges are fanned out to supported single-day scoreboard
-   requests and merged back into the frozen parser's payload shape.
+   requests, provider-specific team aliases are normalized deterministically,
+   and events are merged back into the frozen parser's payload shape.
 
 Provider disagreement still fails closed. No third-party fallback provider is
 activated in Step 1 and no model/projection/probability behavior changes.
 """
 from __future__ import annotations
 
+import copy
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -32,6 +34,15 @@ MAY_MODIFY_PROBABILITY = False
 MAY_MODIFY_SOURCE_OWNERSHIP = False
 NETWORK_PROVIDER_COUNT_ADDED = 0
 MAX_ESPN_RANGE_DAYS = 14
+
+ESPN_TO_NBA_TRICODE: dict[str, str] = {
+    "NY": "NYK",
+    "SA": "SAS",
+    "WSH": "WAS",
+    "NO": "NOP",
+    "GS": "GSW",
+    "UTAH": "UTA",
+}
 
 NBA_LEGACY_SCHEDULE_URL = (
     "https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/"
@@ -100,6 +111,39 @@ def _espn_range_days(raw_dates: Any) -> tuple[str, ...] | None:
     if span < 1 or span > MAX_ESPN_RANGE_DAYS:
         return None
     return tuple((start + timedelta(days=offset)).strftime("%Y%m%d") for offset in range(span))
+
+
+def _normalize_espn_team_aliases(payload: dict[str, Any]) -> dict[str, Any]:
+    """Map only known ESPN NBA team abbreviations to canonical NBA tricodes."""
+    normalized = copy.deepcopy(payload)
+    events = normalized.get("events") if isinstance(normalized, dict) else None
+    if not isinstance(events, list):
+        return normalized
+
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        competitions = event.get("competitions") or []
+        if not isinstance(competitions, list):
+            continue
+        for competition in competitions:
+            if not isinstance(competition, dict):
+                continue
+            competitors = competition.get("competitors") or []
+            if not isinstance(competitors, list):
+                continue
+            for competitor in competitors:
+                if not isinstance(competitor, dict):
+                    continue
+                team = competitor.get("team") or {}
+                if not isinstance(team, dict):
+                    continue
+                raw_code = str(team.get("abbreviation") or "").strip().upper()
+                canonical = ESPN_TO_NBA_TRICODE.get(raw_code)
+                if canonical is not None:
+                    team["abbreviation"] = canonical
+
+    return normalized
 
 
 def _season_start_year(now_utc: datetime | None) -> int:
@@ -285,7 +329,8 @@ class _NbaProviderTransportRepairSession:
                 merged_events.append(event)
 
         merged_payload["events"] = merged_events
-        return _MergedJsonResponse(merged_payload)
+        normalized_payload = _normalize_espn_team_aliases(merged_payload)
+        return _MergedJsonResponse(normalized_payload)
 
     def get(self, url: str, *args: Any, **kwargs: Any):
         headers = dict(kwargs.pop("headers", {}) or {})
@@ -335,6 +380,7 @@ __all__ = [
     "MAY_MODIFY_SOURCE_OWNERSHIP",
     "NETWORK_PROVIDER_COUNT_ADDED",
     "MAX_ESPN_RANGE_DAYS",
+    "ESPN_TO_NBA_TRICODE",
     "NBA_CDN_HEADERS",
     "NBA_LEGACY_HEADERS",
     "NBA_LEGACY_SCHEDULE_URL",
