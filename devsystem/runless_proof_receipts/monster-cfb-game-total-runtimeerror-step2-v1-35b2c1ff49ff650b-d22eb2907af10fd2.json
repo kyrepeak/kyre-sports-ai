@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "cfb_game_total_clean_page_v44.py": "02dac6afff3fc30cb385855c7cafe87dc87c72e3",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-runtimeerror-step2-v1.json": "64574e0128299b1f227db24ca35ef3568310d579",
+    "devsystem/task_ledgers/monster-cfb-game-total-runtimeerror-step2-v1.json": "ae8c89e99fe5c131c9797179077fcb7774a6b904",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "140860d344a6bb32628b932feaf84c8df2cb0b40",
+    "tests/test_cfb_game_total_runtimeerror_step2_v1.py": "c662c2ee95e06ba7dd12d197bc9a1b780a54f2c5"
+  },
+  "candidate_sha": "35b2c1ff49ff650baa2f103b1b18d85beda390f9",
+  "created_at": "2026-10-15T03:17:10.101958+00:00",
+  "dependency_map": {
+    "cfb_game_total_clean_page_v14.py": "7112f5c78e385cc18d148f7e81350788c2666c53",
+    "cfb_game_total_clean_page_v42.py": "fe73bde95befe9582a19c25c58fe564d79f0c707",
+    "cfb_game_total_clean_page_v43.py": "3a05f8f3f9d434a462da702d429e7db990c9b528",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "streamlit_memory_lazy_router_v181.py": "8adc51774159470d50377c6f8e0591abb1c7f60d",
+    "streamlit_memory_lazy_router_v190.py": "fca1442c144d8ff02868ed0371a92f72257d697e"
+  },
+  "digest": "7168c0688234a997e294a39091088e2c677d7fab4ec87aed8bbb8ac2eebbae2c",
+  "evidence_digests": [
+    "61e876213cdc5f1e575923f1039d3546ff955631a4d166167aecc58aa22af5f7",
+    "39c1205ba2b451c22df42d36a4b869bdcbfbc0f95d70d3694a8a07efad8f0dd2"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "353e8170623d4afdb50a199f62854c34dedcaa81c418ca937eb5e9dd04839ff2",
+  "proof_id": "monster-cfb-game-total-runtimeerror-step2-v1-35b2c1ff49ff650b-d22eb2907af10fd2",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-RUNTIME-STEP2-R2"
+    ],
+    "revision": 309,
+    "state_hash": "a235c46048173ee7bab25b6d0fee8f2610cbcd35f503c401d8b7c316511596c4"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-RUNTIME-STEP2-R2"
+    ],
+    "revision": 309,
+    "state_hash": "a235c46048173ee7bab25b6d0fee8f2610cbcd35f503c401d8b7c316511596c4"
+  },
+  "request_fingerprint": "9bd8856badfa12d369216800c9d471631a53b3443f5ad940686c80c3773d4e33",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-runtimeerror-step2-v1",
+  "workstream": "monster-cfb-game-total-integration-repair-v1"
+}
