@@ -19,8 +19,10 @@ def _nested_function(source: str, outer_name: str, inner_name: str) -> ast.Funct
     )
     return next(
         node
-        for node in outer.body
-        if isinstance(node, ast.FunctionDef) and node.name == inner_name
+        for node in ast.walk(outer)
+        if isinstance(node, ast.FunctionDef)
+        and node is not outer
+        and node.name == inner_name
     )
 
 
