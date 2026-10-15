@@ -32,8 +32,9 @@ from .auth import require_bearer
 from .config import Settings
 from .finalization_readback import validate_finalization_closeout
 from .github_authority import GithubAuthority, GithubAuthorityError
-from .models import ProofRequest, ProofResult, RegistryThawRequest
+from .models import ProofRequest, ProofResult, RegistryForwardPortRequest, RegistryThawRequest
 from .proof_service import ProofServiceError, execute_proof_request
+from .registry_thaw import request_registry_forward_port
 from .sandbox_executor import SandboxExecutor
 from .state_store import DurableStateStore, RunlessV2StateError
 
@@ -167,6 +168,20 @@ def create_app(
             raise HTTPException(
                 status_code=503,
                 detail=f"RUNLESS_V2_REGISTRY_THAW_UNAVAILABLE:{type(exc).__name__}",
+            ) from exc
+
+    @app.post("/registry-forward-port", dependencies=[Depends(authenticated)])
+    def registry_forward_port(req: RegistryForwardPortRequest) -> dict[str, Any]:
+        if not cfg.authority_enabled:
+            raise HTTPException(status_code=503, detail="RUNLESS_V2_AUTHORITY_DISABLED")
+        try:
+            return request_registry_forward_port(gh, req)
+        except (GithubAuthorityError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"RUNLESS_V2_REGISTRY_FORWARD_PORT_UNAVAILABLE:{type(exc).__name__}",
             ) from exc
 
     @app.get("/status/{proof_id}", dependencies=[Depends(authenticated)])
