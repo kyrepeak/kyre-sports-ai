@@ -11,13 +11,14 @@ import jwt
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from vercel_finalizer.authority import FinalizerAuthorityError, resolve_authority
+
 APP_ID_EXPECTED = "5204253"
 REPOSITORY = "kyrepeak/kyre-sports-ai"
 GATE_NAME = "runless-final-gate"
-ALLOWED_BRANCH = "api2-universal-sports-source-finalization-v1-step1"
 _SHA40 = re.compile(r"^[0-9a-f]{40}$")
 
-app = FastAPI(title="Kyre Sports Finalizer", version="1.0.0")
+app = FastAPI(title="Kyre Sports Finalizer", version="1.1.0")
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,8 @@ class Settings:
     app_id: str
     installation_id: str
     private_key: str
+    supabase_url: str
+    supabase_service_role_key: str
     repository: str = REPOSITORY
     gate_name: str = GATE_NAME
 
@@ -33,47 +36,38 @@ class Settings:
         app_id = os.getenv("GITHUB_APP_ID", "").strip()
         installation_id = os.getenv("GITHUB_APP_INSTALLATION_ID", "").strip()
         private_key = os.getenv("GITHUB_APP_PRIVATE_KEY", "").replace("\\n", "\n").strip()
+        supabase_url = os.getenv("SUPABASE_URL", "").strip()
+        service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
         if app_id != APP_ID_EXPECTED:
             raise RuntimeError("FINALIZER_GITHUB_APP_ID_MISMATCH")
         if not installation_id:
             raise RuntimeError("FINALIZER_INSTALLATION_ID_REQUIRED")
         if not private_key:
             raise RuntimeError("FINALIZER_PRIVATE_KEY_REQUIRED")
-        return cls(app_id=app_id, installation_id=installation_id, private_key=private_key)
+        if not supabase_url or not service_key:
+            raise RuntimeError("FINALIZER_RUNLESS_AUTHORITY_REQUIRED")
+        return cls(app_id, installation_id, private_key, supabase_url, service_key)
 
 
 class ProveRequest(BaseModel):
+    workstream: str
+    task_id: str
     candidate_sha: str
+    fencing_generation: int
     proof_digest: str
 
 
 def _headers(token: str) -> dict[str, str]:
-    return {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
+    return {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 
 def _app_jwt(settings: Settings) -> str:
     now = int(time.time())
-    return jwt.encode(
-        {"iat": now - 30, "exp": now + 540, "iss": settings.app_id},
-        settings.private_key,
-        algorithm="RS256",
-    )
+    return jwt.encode({"iat": now - 30, "exp": now + 540, "iss": settings.app_id}, settings.private_key, algorithm="RS256")
 
 
 def _installation_token(settings: Settings, client: httpx.Client) -> str:
-    url = f"https://api.github.com/app/installations/{settings.installation_id}/access_tokens"
-    response = client.post(
-        url,
-        headers={
-            "Authorization": f"Bearer {_app_jwt(settings)}",
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-    )
+    response = client.post(f"https://api.github.com/app/installations/{settings.installation_id}/access_tokens", headers={"Authorization": f"Bearer {_app_jwt(settings)}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"})
     response.raise_for_status()
     token = response.json().get("token")
     if not token:
@@ -81,47 +75,14 @@ def _installation_token(settings: Settings, client: httpx.Client) -> str:
     return str(token)
 
 
-def _pr_head(client: httpx.Client, token: str) -> tuple[str, str]:
-    response = client.get(
-        f"https://api.github.com/repos/{REPOSITORY}/pulls/1526",
-        headers=_headers(token),
-    )
-    response.raise_for_status()
-    payload = response.json()
-    return str(payload["head"]["sha"]).lower(), str(payload["head"]["ref"])
-
-
 def _existing_success(client: httpx.Client, token: str, sha: str) -> bool:
-    response = client.get(
-        f"https://api.github.com/repos/{REPOSITORY}/commits/{sha}/check-runs",
-        headers=_headers(token),
-    )
+    response = client.get(f"https://api.github.com/repos/{REPOSITORY}/commits/{sha}/check-runs", headers=_headers(token))
     response.raise_for_status()
-    for run in response.json().get("check_runs", []):
-        if (
-            run.get("name") == GATE_NAME
-            and run.get("conclusion") == "success"
-            and str(run.get("app", {}).get("id")) == APP_ID_EXPECTED
-        ):
-            return True
-    return False
+    return any(run.get("name") == GATE_NAME and run.get("conclusion") == "success" and str(run.get("app", {}).get("id")) == APP_ID_EXPECTED for run in response.json().get("check_runs", []))
 
 
 def _publish_success(client: httpx.Client, token: str, sha: str, proof_digest: str) -> None:
-    response = client.post(
-        f"https://api.github.com/repos/{REPOSITORY}/check-runs",
-        headers=_headers(token),
-        json={
-            "name": GATE_NAME,
-            "head_sha": sha,
-            "status": "completed",
-            "conclusion": "success",
-            "output": {
-                "title": "Universal Sports Finalizer",
-                "summary": f"exact-head proof={proof_digest}",
-            },
-        },
-    )
+    response = client.post(f"https://api.github.com/repos/{REPOSITORY}/check-runs", headers=_headers(token), json={"name": GATE_NAME, "head_sha": sha, "status": "completed", "conclusion": "success", "output": {"title": "Universal Sports Finalizer", "summary": f"exact-head proof={proof_digest}"}})
     response.raise_for_status()
 
 
@@ -131,18 +92,8 @@ def _readback_success(client: httpx.Client, token: str, sha: str) -> bool:
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    configured = all(
-        os.getenv(key)
-        for key in ("GITHUB_APP_ID", "GITHUB_APP_INSTALLATION_ID", "GITHUB_APP_PRIVATE_KEY")
-    )
-    return {
-        "status": "ok",
-        "configured": configured,
-        "gate": GATE_NAME,
-        "repository": REPOSITORY,
-        "render_dependency": False,
-        "github_actions_fallback": 0,
-    }
+    configured = all(os.getenv(key) for key in ("GITHUB_APP_ID", "GITHUB_APP_INSTALLATION_ID", "GITHUB_APP_PRIVATE_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"))
+    return {"status": "ok", "configured": configured, "gate": GATE_NAME, "repository": REPOSITORY, "render_dependency": False, "github_actions_fallback": 0, "authority": "runless_v2"}
 
 
 @app.post("/prove")
@@ -153,38 +104,25 @@ def prove(request: ProveRequest) -> dict[str, Any]:
     proof_digest = request.proof_digest.strip().lower()
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", proof_digest):
         raise HTTPException(status_code=400, detail="FINALIZER_INVALID_PROOF_DIGEST")
-
     deployed_sha = os.getenv("VERCEL_GIT_COMMIT_SHA", "").strip().lower()
     if deployed_sha and deployed_sha != sha:
         raise HTTPException(status_code=409, detail="FINALIZER_DEPLOYMENT_SHA_MISMATCH")
-
     try:
         settings = Settings.from_env()
         with httpx.Client(timeout=15) as client:
+            authority = resolve_authority(client, supabase_url=settings.supabase_url, service_role_key=settings.supabase_service_role_key, workstream=request.workstream, task_id=request.task_id, candidate_sha=sha, fencing_generation=request.fencing_generation)
+            if authority.candidate_sha != sha:
+                raise HTTPException(status_code=409, detail="FINALIZER_AUTHORITY_SHA_MISMATCH")
             token = _installation_token(settings, client)
-            pr_sha, pr_ref = _pr_head(client, token)
-            if pr_ref != ALLOWED_BRANCH or pr_sha != sha:
-                raise HTTPException(status_code=409, detail="FINALIZER_PR_HEAD_MISMATCH")
             if _existing_success(client, token, sha):
-                return {
-                    "status": "success",
-                    "reused": True,
-                    "candidate_sha": sha,
-                    "proof_digest": proof_digest,
-                }
+                return {"status": "success", "reused": True, "candidate_sha": sha, "proof_digest": proof_digest, "proof_id": authority.proof_id}
             _publish_success(client, token, sha, proof_digest)
             if not _readback_success(client, token, sha):
                 raise HTTPException(status_code=502, detail="FINALIZER_CHECK_READBACK_FAILED")
-            return {
-                "status": "success",
-                "reused": False,
-                "candidate_sha": sha,
-                "proof_digest": proof_digest,
-            }
+            return {"status": "success", "reused": False, "candidate_sha": sha, "proof_digest": proof_digest, "proof_id": authority.proof_id}
+    except FinalizerAuthorityError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"FINALIZER_GITHUB_ERROR:{type(exc).__name__}",
-        ) from exc
+        raise HTTPException(status_code=502, detail=f"FINALIZER_ERROR:{type(exc).__name__}") from exc
