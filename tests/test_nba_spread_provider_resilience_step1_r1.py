@@ -160,3 +160,18 @@ def test_step1_is_additive_and_leaves_frozen_router_for_step2_activation():
     assert "MAY_MODIFY_PROJECTION = False" in transport_source
     assert "MAY_MODIFY_PROBABILITY = False" in transport_source
     assert "MAY_MODIFY_SOURCE_OWNERSHIP = False" in transport_source
+
+
+def test_step1_live_runless_provider_consensus():
+    """Authoritative live smoke: exact repaired loader must reach both providers."""
+    transport = importlib.import_module("nba_spread_schedule_provider_resilience_step1_r1")
+    result = transport.load_verified_nba_schedule(days=7, timeout=12.0)
+    assert result.get("verification") == "VERIFIED", result
+    assert result.get("diagnostic_state") == "SOURCE_CONSENSUS", result
+    assert result.get("source_agreement") == 2, result
+    assert len(result.get("games") or []) >= 1, result
+    assert not result.get("provider_errors"), result
+    assert all(
+        set(game.get("confirming_sources") or []) == {"NBA Official", "ESPN NBA"}
+        for game in result.get("games") or []
+    ), result
