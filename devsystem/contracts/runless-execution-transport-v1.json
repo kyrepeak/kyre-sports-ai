@@ -1,0 +1,21 @@
+{
+  "version": "RUNLESS_EXECUTION_TRANSPORT_V1",
+  "authority": "RUNLESS_V2_EXISTING_POST_PROVE",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "gate_name": "runless-final-gate",
+  "github_app_id": 5204253,
+  "github_actions_fallback": 0,
+  "transport_project": "kyre-runless-proof",
+  "repair_branch": "api2-runless-execution-transport-v1",
+  "transport_sandbox_name": "api2-runless-transport",
+  "proof_executor": "runless_v2.app:POST /prove",
+  "durable_authority": "SUPABASE_RUNLESS_V2",
+  "secret_policy": "COMMAND_SCOPED_ENV_ONLY",
+  "forbidden_mutation_scopes": [
+    "pull/1541",
+    "pull/1544",
+    "sports-runtime",
+    "sports-model",
+    "sports-page"
+  ]
+}
