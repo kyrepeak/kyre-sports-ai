@@ -1,0 +1,12 @@
+{
+  "task_id": "runless-dynamic-finalization-authority-v1-step5-scope",
+  "workstream": "runless-dynamic-finalization-authority-v1-step5",
+  "source_main_sha": "db2e6cac1ae8a2a9c25d0f0bff99886123a19ff7",
+  "protected": {
+    "steps_1_through_4": "GREEN_FROZEN_UNTOUCHED",
+    "nba_pr_1541": "UNTOUCHED"
+  },
+  "authoritative_branch": "runless-dynamic-finalization-authority-v1-step5",
+  "parallel_proof_lanes": 0,
+  "freeze_token": "RUNLESS_DYNAMIC_FINALIZATION_AUTHORITY_V1_STEP5_FROZEN"
+}
