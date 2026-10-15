@@ -5,7 +5,7 @@
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-integration-repair-v1",
   "step": "2/4",
-  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_THAW_LEASE_RUNLESS",
+  "status": "IMPLEMENTED_RUNLESS_R2_RECOVERY",
   "base_main_sha": "e676977b94ce85fe2f6b15ed585e2906c6afa1a4",
   "branch": "monster-cfb-game-total-runtimeerror-step2-v1",
   "pr_number": 1542,
@@ -50,7 +50,16 @@
   "tdd": {
     "initial_red_observed": true,
     "red_result": "1 failed, 1 passed; the failure was the exact V42 stale-date RuntimeError after selected day 2026-10-17 encountered downstream request 2026-10-10.",
-    "focused_green_result": "10 passed plus py_compile across Step-2 runtime repair and frozen Step-1 shell regression.",
+    "focused_green_result": "21 passed plus py_compile on exact product candidate before Runless R1.",
+    "runless_r1_failure": {
+      "proof_id": "monster-cfb-game-total-runtimeerror-step2-v1-897b9ee84bd1f63c-9800885f049a6274",
+      "state": "FAILED",
+      "failure_class": "STATIC_PROOF",
+      "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+      "owner": "TEST_HARNESS",
+      "root_cause": "Step-2 regression imported the full Streamlit/requests product stack while Runless intentionally bootstraps only its minimal hermetic proof dependencies.",
+      "recovery": "Rewrite only the Step-2 regression as a stdlib AST/source test that executes the exact nested snapshot_loader logic without importing the app stack. Product code unchanged."
+    },
     "historical_harness_debt": [
       "tests/test_cfb_game_total_games_on_day_data_step5_v1.py hard-codes obsolete active route V42 and was already superseded by V43 before Step 2"
     ],
@@ -73,16 +82,17 @@
     "unrelated_api2_lane_preserved": true
   },
   "runless": {
-    "proof_generation": 1,
-    "authorization_id": "AUTH-MONSTER-CFB-GT-RUNTIME-STEP2-R1",
-    "planned_thaw_id": "THAW-MONSTER-CFB-GT-RUNTIME-STEP2-R1",
+    "proof_generation": 2,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-RUNTIME-STEP2-R2",
+    "planned_thaw_id": "THAW-MONSTER-CFB-GT-RUNTIME-STEP2-R2",
+    "retire_failed_thaw_id": "THAW-MONSTER-CFB-GT-RUNTIME-STEP2-R1",
     "lease_owner_id": "monster:monster-cfb-game-total-integration-repair-v1:step2-r1",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_request_status": "NOT_SUBMITTED"
+    "proof_request_status": "R1_FAILED_R2_NOT_SUBMITTED"
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_RUNTIMEERROR_STEP2_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "EXACT_HEAD_REVERIFY_THEN_BIND_THAW_ACQUIRE_LIVE_SCOPE_LEASE_AND_SUBMIT_ONE_RUNLESS_V2_PROOF"
+  "next_legal_action": "RUNLESS_MINIMAL_ENV_REVERIFY_THEN_RETIRE_R1_THAW_BIND_R2_THAW_REUSE_LIVE_SCOPE_LEASE_AND_SUBMIT_ONE_RUNLESS_V2_R2_PROOF"
 }
