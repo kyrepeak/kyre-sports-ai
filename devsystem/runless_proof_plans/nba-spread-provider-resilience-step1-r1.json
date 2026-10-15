@@ -27,6 +27,11 @@
       "tests/test_nba_spread_step6_market_lines_v1.py",
       "tests/test_devsystem_universal_sports_provider_registry_step2_v1.py",
       "tests/test_devsystem_universal_sports_field_router_step3_v1.py"
+    ],
+    [
+      "python",
+      "-c",
+      "from nba_spread_schedule_provider_resilience_step1_r1 import load_verified_nba_schedule; r=load_verified_nba_schedule(days=7, timeout=10.0); summary={'verification':r.get('verification'),'diagnostic_state':r.get('diagnostic_state'),'games':len(r.get('games') or []),'provider_errors':r.get('provider_errors')}; print(summary); assert r.get('verification') == 'VERIFIED', r; assert len(r.get('games') or []) >= 1, r"
     ]
   ],
   "artifacts": [
@@ -47,7 +52,9 @@
     "devsystem/contracts/universal-sports-field-router-v1.json",
     "devsystem/contracts/universal-sports-trust-quorum-v1.json"
   ],
-  "probes": [],
+  "probes": [
+    "live NBA Official + ESPN rolling schedule consensus"
+  ],
   "timeout_seconds": 600,
   "live_ttl_seconds": 900,
   "github_actions_fallback": 0,
