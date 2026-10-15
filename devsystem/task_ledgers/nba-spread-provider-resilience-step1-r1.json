@@ -4,15 +4,15 @@
   "project": "API2",
   "workstream": "nba-spread-provider-resilience-step1-r1",
   "step": "1/3",
-  "source_main_sha": "74686f28b05869e71dc33e449a4b522ac039b117",
+  "source_main_sha": "e676977b94ce85fe2f6b15ed585e2906c6afa1a4",
   "authoritative_branch": "nba-spread-provider-resilience-step1-r1",
   "authoritative_pr": 1541,
   "state": "READY_FOR_EXACT_HEAD_RUNLESS",
   "status": "IN_PROGRESS",
-  "problem": "NBA Spread production schedule verification fails before the frozen two-source verifier can publish a slate.",
-  "root_cause": "Two provider-transport contracts drifted: NBA Official CDN rejects the legacy thin request metadata with HTTP 403, and ESPN rejects the frozen rolling YYYYMMDD-YYYYMMDD date-range scoreboard syntax with HTTP 400 even though supported single-day scoreboard requests remain reachable.",
+  "problem": "NBA Spread schedule verification cannot publish because provider transport contracts drifted before the frozen verifier receives usable data.",
+  "root_cause": "NBA Official CDN rejects the legacy request metadata with HTTP 403 and ESPN rejects the rolling YYYYMMDD-YYYYMMDD scoreboard syntax with HTTP 400 while supported single-day calls remain reachable.",
   "root_cause_class": "NBA_SCHEDULE_PROVIDER_TRANSPORT_CONTRACT_DRIFT",
-  "patch": "Preserve the frozen schedule/page engines and exact NBA Official + ESPN quorum. Add an NBA-CDN browser/WAF header wrapper, fan ESPN rolling ranges into supported single-day calls and merge events, add an additive page bridge, and change only the NBA Spread active-page pointer to that bridge.",
+  "patch": "Preserve every frozen runtime artifact. Add an NBA-CDN browser/WAF transport wrapper, fan ESPN rolling ranges into supported single-day requests and merge events, and prove the additive repaired loader directly. Step 2 owns production-router activation or a provider fallback.",
   "step2a": {
     "one_active_problem": true,
     "one_authoritative_proof_chain": true,
@@ -24,16 +24,6 @@
     "github_actions_fallback": 0,
     "duplicate_prs": 0
   },
-  "tdd": {
-    "phase": "GREEN_PENDING_EXACT_HEAD_PROOF",
-    "red_commit": "02442a608f697d0ad70c21a753c75ab6da851e7e",
-    "red_test": "tests/test_nba_spread_provider_resilience_step1_r1.py",
-    "red_expected_reason": "additive transport module and page bridge did not yet exist and the router still targeted the frozen page directly",
-    "red_structurally_proven": true,
-    "red_executed": false,
-    "red_execution_note": "Local network clone was unavailable; exact-head execution is delegated to the authoritative Runless proof plane instead of spawning an alternate CI path.",
-    "final_green_verified": false
-  },
   "architecture": {
     "schedule_sources": ["NBA Official", "ESPN NBA"],
     "nba_official_transport_repair": "BROWSER_WAF_HEADERS",
@@ -44,24 +34,13 @@
     "source_exhaustion_fails_closed": true,
     "page_wide_source_authority": false,
     "fabrication": false,
-    "transport_repair_only": true
+    "transport_repair_only": true,
+    "production_activation_deferred_to_step2": true
   },
   "frozen_protection": {
-    "nba_spread_schedule_v1.py": {
-      "blob": "143c366f935776b2f8ce77c0947b1fcf23013fa7",
-      "mutated": false
-    },
-    "nba_spread_page_v1.py": {
-      "blob": "0d54b3cedf609f07cd6213d280e0a8c073563d26",
-      "mutated": false
-    },
-    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": {
-      "from_blob": "33f6f638f57d02cef58fb9996e8e0c54c3b917a3",
-      "to_blob": "485ee98e9b0c2be775c00470931635bd2ae6e017",
-      "mutated": true,
-      "exact_thaw_required": true,
-      "thaw_id": "THAW-NBA-SPREAD-PROVIDER-RESILIENCE-STEP1-R1"
-    },
+    "nba_spread_schedule_v1.py": {"blob": "143c366f935776b2f8ce77c0947b1fcf23013fa7", "mutated": false},
+    "nba_spread_page_v1.py": {"blob": "0d54b3cedf609f07cd6213d280e0a8c073563d26", "mutated": false},
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": {"blob": "33f6f638f57d02cef58fb9996e8e0c54c3b917a3", "mutated": false, "exact_thaw_required": false},
     "historical_entries_rewritten": false
   },
   "runless": {
@@ -78,17 +57,17 @@
     "nba_official_plus_espn_quorum_preserved": true,
     "fail_closed_semantics_preserved": true,
     "phoenix_schedule_identity_preserved": true,
+    "frozen_runtime_mutation": false,
     "model_mutation": false,
     "projection_mutation": false,
     "probability_mutation": false,
     "exact_head_runless_green": false,
     "live_provider_consensus_verified": false,
     "merged_main_verified": false,
-    "production_schedule_verified": false,
     "frozen_verified": false
   },
   "freeze_token": "NBA_SPREAD_PROVIDER_RESILIENCE_STEP1_R1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "REQUEST_ONE_EXACT_HEAD_RUNLESS_PROOF_AND_REQUIRE_THE_LIVE_PROVIDER_PROBE_TO_PASS",
+  "next_legal_action": "FORWARD_PORT_CURRENT_MAIN_THEN_REQUEST_ONE_EXACT_HEAD_RUNLESS_PROOF",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
