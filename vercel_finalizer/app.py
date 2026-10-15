@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from vercel_finalizer.authority import FinalizerAuthorityError, resolve_authority
+from vercel_finalizer.receipt_binding import ReceiptBindingError, resolve_receipt_binding
 
 APP_ID_EXPECTED = "5204253"
 REPOSITORY = "kyrepeak/kyre-sports-ai"
@@ -114,13 +115,23 @@ def prove(request: ProveRequest) -> dict[str, Any]:
             if authority.candidate_sha != sha:
                 raise HTTPException(status_code=409, detail="FINALIZER_AUTHORITY_SHA_MISMATCH")
             token = _installation_token(settings, client)
+            binding = resolve_receipt_binding(
+                client,
+                token=token,
+                repository=settings.repository,
+                receipt_ref=os.getenv("RPP_RECEIPT_REF", "runless-proof-receipts").strip() or "runless-proof-receipts",
+                receipt_path=os.getenv("RPP_RECEIPT_PATH", "devsystem/runless_proof_receipts").strip() or "devsystem/runless_proof_receipts",
+                authority=authority,
+                requested_proof_digest=proof_digest,
+            )
+            proof_digest = binding.proof_digest
             if _existing_success(client, token, sha):
                 return {"status": "success", "reused": True, "candidate_sha": sha, "proof_digest": proof_digest, "proof_id": authority.proof_id}
             _publish_success(client, token, sha, proof_digest)
             if not _readback_success(client, token, sha):
                 raise HTTPException(status_code=502, detail="FINALIZER_CHECK_READBACK_FAILED")
             return {"status": "success", "reused": False, "candidate_sha": sha, "proof_digest": proof_digest, "proof_id": authority.proof_id}
-    except FinalizerAuthorityError as exc:
+    except (FinalizerAuthorityError, ReceiptBindingError) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except HTTPException:
         raise

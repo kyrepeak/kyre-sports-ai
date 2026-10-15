@@ -1,0 +1,42 @@
+{
+  "task_id": "runless-dynamic-finalization-authority-v1-step2",
+  "workstream": "runless-dynamic-finalization-authority-v1-step2",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "vercel_finalizer/test_receipt_binding.py",
+      "vercel_finalizer/test_authority.py",
+      "vercel_finalizer/test_dynamic_authority.py",
+      "vercel_finalizer/test_publish_gate_build.py",
+      "vercel_finalizer/test_no_historical_authority.py",
+      "vercel_finalizer/test_app.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "vercel_finalizer/receipt_binding.py",
+      "vercel_finalizer/authority.py",
+      "vercel_finalizer/app.py"
+    ]
+  ],
+  "artifacts": [
+    "vercel_finalizer/app.py",
+    "vercel_finalizer/receipt_binding.py",
+    "vercel_finalizer/test_app.py",
+    "vercel_finalizer/test_receipt_binding.py",
+    "devsystem/runless_proof_plans/runless-dynamic-finalization-authority-v1-step2.json"
+  ],
+  "dependencies": [
+    "docs/superpowers/specs/2026-10-15-runless-dynamic-finalization-authority-v1-design.md",
+    "vercel_finalizer/authority.py",
+    "runless_v2/receipt_contract.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "freeze_token": "RUNLESS_DYNAMIC_FINALIZATION_AUTHORITY_V1_STEP2_FROZEN"
+}
