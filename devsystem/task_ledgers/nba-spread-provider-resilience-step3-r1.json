@@ -6,9 +6,9 @@
   "step": "3/3",
   "source_main_sha": "2746aa25c6acf2faf3cec86ffb15adf8377688c9",
   "authoritative_branch": "nba-spread-provider-resilience-step3-r1",
-  "authoritative_pr": null,
-  "state": "READY_FOR_FINAL_CANDIDATE_PREFLIGHT",
-  "status": "IN_PROGRESS",
+  "authoritative_pr": 1553,
+  "state": "GREEN_FROZEN",
+  "status": "DONE",
   "problem": "The production NBA Spread route still dispatches to the frozen original page module, so the Step-2 resilient three-provider schedule quorum is proven but not activated through the live page path.",
   "root_cause": "The frozen Step-2 router imports ACTIVE_PAGE directly, while historical Step-1/Step-2 regression contracts intentionally pin ACTIVE_PAGE to nba_spread_page_v1. Replacing that identity directly causes frozen regressions.",
   "root_cause_class": "PRODUCTION_RUNTIME_TARGET_BYPASSES_RESILIENT_SCHEDULE_WITH_FROZEN_IDENTITY_CONSTRAINT",
@@ -60,8 +60,11 @@
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_id": null,
-    "receipt_digest": null
+    "proof_id": "nba-spread-provider-resilience-step3-r1-1e22a0e4edf75c36-1e9ca1301e1edaa2",
+    "receipt_digest": "488133c8ca0ed18b993562e0051dd8a9c8c43645672d50ddc993a4a25128c639",
+    "gate_check_run_id": 116708220391,
+    "merged_main_sha": "37d92d17b7d2a19fe27f8a3bb561b8466aa6cd11",
+    "closeout_state": "GREEN_FROZEN"
   },
   "acceptance": {
     "production_runtime_uses_step2_resilience_loader": true,
@@ -73,12 +76,24 @@
     "projection_mutation": false,
     "probability_mutation": false,
     "sportsbook_projection_influence": 0.0,
-    "exact_head_runless_green": false,
-    "merged_main_verified": false,
-    "frozen_verified": false
+    "exact_head_runless_green": true,
+    "merged_main_verified": true,
+    "frozen_verified": true
   },
   "freeze_token": "NBA_SPREAD_PROVIDER_RESILIENCE_STEP3_R1_FROZEN",
-  "green_plus_frozen_claimed": false,
-  "next_legal_action": "CREATE_FINAL_CANDIDATE_THEN_BIND_EXACT_THAW_AND_SCOPE_LEASE_AND_REQUEST_ONE_EXACT_HEAD_RUNLESS_PROOF",
+  "freeze_exit": {
+    "frozen_token": "NBA_SPREAD_PROVIDER_RESILIENCE_STEP3_R1_FROZEN",
+    "claimed": true
+  },
+  "canonical_completion": {
+    "authority": "FROZEN_REGISTRY_RUNLESS",
+    "freeze_token": "NBA_SPREAD_PROVIDER_RESILIENCE_STEP3_R1_FROZEN",
+    "merged_main_sha": "37d92d17b7d2a19fe27f8a3bb561b8466aa6cd11",
+    "receipt_digest": "488133c8ca0ed18b993562e0051dd8a9c8c43645672d50ddc993a4a25128c639",
+    "registry_revision": 313,
+    "registry_state_hash": "b65d6c55f48223ba97bafe87d8f3957a5a1dc3fcd02d4213805de9ef8e262097"
+  },
+  "green_plus_frozen_claimed": true,
+  "next_legal_action": "TASK_COMPLETE",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
