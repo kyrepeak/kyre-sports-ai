@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from devsystem.universal_sports_full_integration_step8_lineage_r1 import (
+from devsystem.universal_sports_full_integration_lineage_r1 import (
     FREEZE_TOKEN,
     HISTORICAL_STEP7_FREEZE_TOKEN,
     HISTORICAL_STEP8_FREEZE_TOKEN,
@@ -20,7 +20,7 @@ CONTRACTS = ROOT / "devsystem" / "contracts"
 
 def _contract():
     return load_step8_lineage_contract(
-        CONTRACTS / "universal-sports-full-integration-step8-lineage-r1.json"
+        CONTRACTS / "universal-sports-full-integration-lineage-r1.json"
     )
 
 
@@ -33,11 +33,15 @@ def _historical_step8_contract():
 def _evidence():
     return {
         "step7_r1_freeze_token": STEP7_R1_FREEZE_TOKEN,
+        "step7_r1_candidate_sha": "fbc8d068b2892536c42c5a9840b20ffcfbf7924b",
+        "step7_r1_proof_digest": "sha256:6936d9e5fde87291ab09bfc9274c9da2290eb2273d6783be326b0b003d6d3779",
         "step7_r1_record_blob_sha": "82d2b8169df66fbaae9b5f2b05018c53b755009d",
         "step7_r1_bridge_blob_sha": "217feeb49aea0f20f9f3af33f23e6698a46607da",
         "step7_r1_manifest_revision": 13,
         "step7_r1_manifest_state_hash": "c69782783af1acd88c4c1dc949aa2fcc00754f59c497ba28e494748de35d40d7",
         "step7_r1_merged_main_sha": "497a81adf227ef0e1fa4e86a9e4f9260b999aef9",
+        "step7_r1_ledger_head_sha": "a597c0ed19d55a4102b46b73e83fd9d77b4e21c1",
+        "step7_r1_proof_id": "universal-sports-source-finalization-v1-step7-freeze-integrity-r1-fbc8d068b2892536-a7b8dd7666f27a45",
     }
 
 
