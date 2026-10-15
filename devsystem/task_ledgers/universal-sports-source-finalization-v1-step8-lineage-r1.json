@@ -1,0 +1,22 @@
+{
+  "version": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_LINEAGE_R1_TASK_LEDGER",
+  "task_id": "universal-sports-source-finalization-v1-step8-lineage-r1",
+  "workstream": "universal-sports-source-finalization-v1",
+  "step": "8/8",
+  "problem": "Historical Step 8 is GREEN+FROZEN but its prior-freeze lineage predates the Step 7 freeze-integrity R1 closeout.",
+  "root_cause": "Step 8 was certified before the append-only Step 7 R1 repair existed, so its immutable historical contract correctly binds only the original Step 7 token.",
+  "patch": "Add an append-only Step 8 R1 lineage certifier that preserves historical Step 7 and Step 8 evidence while binding exact Step 7 R1 proof, ledger, record, bridge, manifest, candidate, and merged-main identities.",
+  "proof": "Runless exact-head proof plan universal-sports-source-finalization-v1-step8-lineage-r1.json",
+  "red_proof": "Step 8 R1 tests fail because the append-only lineage module does not exist.",
+  "green": false,
+  "frozen": false,
+  "scope_lease_id": "SCOPE-LEASE-DFE73D4A24B4592BE3901020",
+  "freeze_token": "UNIVERSAL_SPORTS_SOURCE_FINALIZATION_V1_STEP8_FULL_INTEGRATION_CERTIFICATION_LINEAGE_R1_FROZEN",
+  "historical_step8_rewrite": false,
+  "historical_step7_rewrite": false,
+  "render_dependency": false,
+  "github_actions_fallback": 0,
+  "legacy_registry_mutation": false,
+  "product_runtime_mutation": false,
+  "model_projection_mutation": false
+}
