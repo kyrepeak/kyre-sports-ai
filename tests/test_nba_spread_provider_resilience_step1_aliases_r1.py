@@ -2,8 +2,26 @@ from __future__ import annotations
 
 import copy
 import importlib
+import sys
+import types
 
 import httpx
+
+try:
+    import requests  # type: ignore
+except ModuleNotFoundError:
+    requests = types.ModuleType("requests")
+
+    class _HTTPError(Exception):
+        pass
+
+    class _Session:
+        def get(self, *args, **kwargs):
+            raise RuntimeError("requests.Session is unavailable in the Runless proof sandbox")
+
+    requests.HTTPError = _HTTPError
+    requests.Session = _Session
+    sys.modules["requests"] = requests
 
 
 ALIASES = {
