@@ -1,0 +1,26 @@
+{
+  "mode": "runless",
+  "task_id": "passing-yards-page2-compact-transport-r1",
+  "workstream": "passing-yards-page2-compact-transport-r1",
+  "source_main_sha": "c6e2568ff4f73b26efb3f1d76603ab1c39187b87",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_page2_compact_transport_r1.py"]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/passing-yards-page2-compact-transport-r1.json",
+    "tests/test_passing_yards_page2_compact_transport_r1.py"
+  ],
+  "dependencies": [
+    "nfl_passing_yards_hub_v86.py",
+    "nfl_passing_yards_hub_v34.py",
+    "streamlit_memory_lazy_router_v239.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "PASSING_YARDS_PAGE2_COMPACT_TRANSPORT_R1_FROZEN"
+}
