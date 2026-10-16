@@ -1,0 +1,62 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step9-fair-spread-probability-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "9/10",
+  "source_main_sha": "ab6e60a6def0991d6d726f5201e93e2cf13403c1",
+  "authoritative_branch": "nba-spread-step9-fair-spread-r1",
+  "authoritative_pr": null,
+  "state": "TDD_RED_PENDING_PROOF",
+  "step2a": {
+    "active_problem": "Kyre Fair Spread + Cover Probability",
+    "root_cause_class": "MISSING_FAIR_SPREAD_PROBABILITY_LAYER",
+    "scope_lease_id": "SCOPE-LEASE-NBA-SPREAD-STEP9-R1",
+    "authorization_id": "AUTH-NBA-SPREAD-STEP9-R1",
+    "one_branch": true,
+    "one_pr_max": true,
+    "one_final_proof_chain": true,
+    "duplicate_async_runs": 0,
+    "parallel_conflict": false
+  },
+  "tdd": {
+    "red_required": true,
+    "red_verified": false,
+    "red_candidate_sha": null,
+    "green_verified": false,
+    "regression_verified": false
+  },
+  "behavior": {
+    "fair_spread_model": true,
+    "analytical_cover_probability": true,
+    "sportsbook_projection_influence": 0.0,
+    "multi_source_performance_quorum": true,
+    "source_conflict_fails_closed": true,
+    "live_final_model_freeze": true,
+    "ranking_mutation": false,
+    "pick_mutation": false
+  },
+  "frozen_protection": {
+    "steps_1_8_reopened": false,
+    "step8_page_modified": false,
+    "step8_test_file_modified": false,
+    "step8_runtime_target_preserved": "nba_spread_page_v3",
+    "step9_runtime_target": "nba_spread_page_v4",
+    "router_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "thaw_required_for_router": true,
+    "thaw_authorized": false
+  },
+  "proof": {
+    "mode": "runless",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "exact_head_verified": false,
+    "merge_authorized": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP9_FAIR_SPREAD_PROBABILITY_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RUN_TDD_RED_PROOF_ONCE"
+}
