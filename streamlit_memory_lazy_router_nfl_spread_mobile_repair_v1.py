@@ -1,7 +1,7 @@
 """API 2 NFL Spread mobile repair overlay.
 
 Adds two presentation/runtime repairs above the frozen production parent:
-1) exact NFL -> Spread delegates to V6 repeatable empty-date auto-advance;
+1) exact NFL -> Spread delegates to V7 professional intelligence over V6 repeatable empty-date auto-advance;
 2) the NFL market selector is rendered as a tap-only popover menu so mobile
    browsers never focus a searchable select input or summon the software keyboard.
 All other sport/market behavior delegates to the current frozen parent unchanged.
@@ -12,13 +12,13 @@ from typing import Any, Callable, Iterable
 
 import streamlit as st
 
-import nfl_spread_hub_v6 as spread_v6
+import nfl_spread_hub_v7 as spread_v7
 import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 as prior
 
 
-MODEL_VERSION = "API2 NFL SPREAD • AUTODATE + TAP-ONLY MOBILE NAV REPAIR V1"
+MODEL_VERSION = "API2 NFL SPREAD • AUTODATE + TAP-ONLY MOBILE NAV + PRO INTELLIGENCE V1"
 FROZEN_PARENT = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1"
-ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v6"
+ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v7"
 TAP_ONLY_NFL_MARKET_NAV = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
@@ -84,7 +84,7 @@ def render_app() -> Any:
     original_selectbox = st.selectbox
     original_spread_page = prior.spread_v5
     st.selectbox = _make_selectbox_bridge(original_selectbox)
-    prior.spread_v5 = spread_v6
+    prior.spread_v5 = spread_v7
     try:
         return prior.render_app()
     finally:
