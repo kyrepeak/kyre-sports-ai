@@ -218,9 +218,13 @@ def test_payload_dedupes_same_provider_across_transports_and_keeps_independent_b
     )
     assert payload["requested_phoenix_date"] == "2026-10-17"
     assert payload["game_count"] == 1
-    books = [row["sportsbook"] for row in payload["games"][0]["market_observations"]]
+    observations = payload["games"][0]["market_observations"]
+    total_rows = [row for row in observations if row["market_type"] == "game_total"]
+    books = [row["sportsbook"] for row in total_rows]
     assert books.count("FanDuel") == 1
     assert "Book B" in books
+    assert any(row["market_type"] == "spread" and row["sportsbook"] == "FanDuel" for row in observations)
+    assert any(row["market_type"] == "moneyline" and row["sportsbook"] == "FanDuel" for row in observations)
     assert payload["fabrication"] is False
     assert payload["page_wide_source_authority"] is False
 
