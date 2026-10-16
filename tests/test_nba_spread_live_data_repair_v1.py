@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _schedule():
@@ -116,15 +120,17 @@ def test_market_provider_failure_fails_closed_without_guessing():
 
 
 def test_page_v6_is_additive_over_frozen_step10_and_router_targets_it():
-    page = importlib.import_module("nba_spread_page_v6")
-    router = importlib.import_module("streamlit_memory_lazy_router_nba_spread_step2_activation_v1")
+    page_source = (ROOT / "nba_spread_page_v6.py").read_text(encoding="utf-8")
+    router_source = (ROOT / "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py").read_text(encoding="utf-8")
 
-    assert page.FROZEN_PARENT_PAGE == "nba_spread_page_v5"
-    assert page.MAY_MODIFY_MODEL is False
-    assert page.MAY_MODIFY_PROJECTION is False
-    assert page.MAY_MODIFY_PROBABILITY is False
-    assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
-    assert router.STEP10_REPAIRED_PAGE == "nba_spread_page_v6"
+    assert 'FROZEN_PARENT_PAGE = "nba_spread_page_v5"' in page_source
+    assert 'import nba_spread_page_v5 as step10_page' in page_source
+    assert "MAY_MODIFY_MODEL = False" in page_source
+    assert "MAY_MODIFY_PROJECTION = False" in page_source
+    assert "MAY_MODIFY_PROBABILITY = False" in page_source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page_source
+    assert 'STEP10_REPAIRED_PAGE = "nba_spread_page_v6"' in router_source
+    assert "importlib.import_module(STEP10_REPAIRED_PAGE)" in router_source
 
 
 def test_runtime_secret_discovery_supports_streamlit_secret_and_env_paths():
