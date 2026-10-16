@@ -1,0 +1,30 @@
+{
+  "version": "API2_TASK_LEDGER_V1",
+  "task_id": "passing-yards-page2-compact-ux-r1",
+  "workstream": "passing-yards-page2-compact-ux-r1",
+  "branch": "passing-yards-page2-compact-ux-r1",
+  "base_main_sha": "b261cb118a515093070c5c7b1b822ee8bf285995",
+  "scope": "Presentation-only compact UX repair for NFL Passing Yards selected-QB Page 2",
+  "frozen_behavior_preserved": [
+    "V85 bounded availability/game-day cleanup",
+    "projection math",
+    "context math",
+    "probability and distribution math",
+    "Step 10 market evaluation math",
+    "Kyre Sports API and FanDuel market behavior",
+    "data-provider behavior",
+    "widget keys",
+    "navigation state",
+    "sportsbook projection influence 0.0%",
+    "stake sizing off"
+  ],
+  "writes": [
+    "nfl_passing_yards_hub_v86.py",
+    "streamlit_memory_lazy_router_v239.py",
+    "tests/test_passing_yards_page2_compact_ux_r1.py",
+    "devsystem/runless_proof_plans/passing-yards-page2-compact-ux-r1.json",
+    "devsystem/task_ledgers/passing-yards-page2-compact-ux-r1.json"
+  ],
+  "freeze_token": "PASSING_YARDS_PAGE2_COMPACT_UX_R1_FROZEN",
+  "state": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+}
