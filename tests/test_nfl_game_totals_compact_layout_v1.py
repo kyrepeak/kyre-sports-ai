@@ -41,7 +41,7 @@ def test_compact_card_keeps_all_certified_sections_inside_one_matchup_article():
     for helper in (
         "_market_html",
         "_offense_defense_html",
-        "_pace_html",
+        "_pace_possession_html",
         "_explosive_html",
         "_red_zone_drive_html",
         "_environment_html",
