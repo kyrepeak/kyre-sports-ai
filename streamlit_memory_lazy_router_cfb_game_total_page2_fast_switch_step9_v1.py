@@ -77,7 +77,10 @@ def _render_selected_page_fast() -> Any:
 def render_app() -> Any:
     if _selected_game_total():
         return _render_selected_page_fast()
-    return page1_repair.render_with_page1_repair(prior.render_app)
+    bridge = globals().get("page1_repair")
+    if bridge is None:
+        return prior.render_app()
+    return bridge.render_with_page1_repair(prior.render_app)
 
 
 __all__ = [
