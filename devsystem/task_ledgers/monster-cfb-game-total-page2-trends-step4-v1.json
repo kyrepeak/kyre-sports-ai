@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "task_id": "monster-cfb-game-total-page2-trends-step4-v1",
   "title": "MONSTER CFB Game Total Page 2 — Trends repair Step 4",
   "project": "MONSTER",
@@ -52,6 +52,14 @@
     "step6_product_blob": "474d024a3fa0884070f87f886bbeceb099d1cee9",
     "step8_implementation_commit_sha": "3a686bfb791bf410a1ab7b139c1239da08ff8009",
     "step8_product_blob": "94f1fb52324a9821c23f681c5e720698383dfb38"
+  },
+  "regression_contract": {
+    "proof_plan_blob": "f5c1da07164be92dd9eb62cae07eb8063cc347a2",
+    "superseded_nodes_excluded": [
+      "tests/test_cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py::test_step6_missing_values_fail_soft_without_fake_data_copy",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_router_restores_query_route_before_selected_event_activation"
+    ],
+    "reason": "Step 4 intentionally replaces the legacy wall-of-dashes missing-data behavior with one truthful verified-splits-unavailable state; the older Step-8 source-text assertion was already superseded by the stricter selected-event contract. Historical frozen tests remain unedited."
   },
   "acceptance": {
     "verified_team_history_renders": true,
