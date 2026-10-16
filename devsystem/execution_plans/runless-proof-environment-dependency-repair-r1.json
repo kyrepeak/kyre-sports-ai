@@ -1,0 +1,10 @@
+{
+  "task_id": "runless-proof-environment-dependency-repair-r1",
+  "workstream": "runless-proof-environment-dependency-repair-r1",
+  "purpose": "Repair the Runless V2 sandbox bootstrap and classify missing proof-environment dependencies as infrastructure failures without poisoning deterministic failed fingerprints.",
+  "candidate_policy": "exact-head",
+  "github_actions_fallback": 0,
+  "product_scope": "none",
+  "nba_product_mutation": false,
+  "recovery_dependency": "PR #1554 remains untouched until this repair is merged and deployed"
+}
