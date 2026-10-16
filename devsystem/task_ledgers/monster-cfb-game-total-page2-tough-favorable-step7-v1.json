@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-tough-favorable-step7-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Tough Matchup + Favorable Team Step 7",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "7/10",
+  "status": "REPAIRED_AWAITING_THAW_AND_EXACT_HEAD_RUNLESS",
+  "base_main_sha": "62e3ef445d9a6266f7a68eb7c93c39ce8a84bbdc",
+  "step6_source_main_sha": "b38576c863abffc9057672117bc870a36c91c30f",
+  "branch": "monster-cfb-game-total-page2-tough-favorable-step7-v1",
+  "pr_number": 1576,
+  "scope_lease_id": "SCOPE-LEASE-E0D3DFE9B87BFDDCFD64D06A",
+  "problem": "Page 2 has verified matchup evidence but no dedicated Tough Matchup + Favorable Team stage after Best Bet.",
+  "root_cause": "The existing verified CFB offense-vs-defense matchup owner was not composed into the selected-event Page-2 flow as a concise stage-level summary.",
+  "patch": "Add a presentation-only Stage 6 summary that reuses the existing verified matchup contract, emits a tough side and/or favorable side only when at least three verified matchup tiles support the existing explicit read, and fails soft without inventing a side. Bind it after Best Bet in the existing Page-2 runtime. No new provider, model, projection, probability, ranking, selection, or sportsbook influence.",
+  "repair_history": [
+    {
+      "failure_class": "CONTROL_PLANE_PROOF_PLAN_SCHEMA",
+      "detail": "Initial Runless plan used invalid command-string schema and omitted required plan fields.",
+      "resolution": "Rebuilt the Step-7 Runless proof plan from the successful Step-6 schema using argv arrays, explicit artifacts/dependencies, timeout, required check, and freeze token."
+    },
+    {
+      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_REQUIRED",
+      "detail": "Runless correctly rejected proof before a live isolated Step-7 lease existed.",
+      "resolution": "Acquired one non-conflicting Step-7 scope lease while preserving the unrelated NBA holder."
+    },
+    {
+      "failure_class": "FROZEN_RUNTIME_PUBLIC_SURFACE_REGRESSION",
+      "detail": "The initial Step-7 integration removed render_cfb_hub and the frozen runtime __all__ export tail.",
+      "resolution": "Added an explicit regression guard and restored the frozen public runtime surface on the same authoritative PR."
+    }
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "authoritative_pr": 1576,
+    "authoritative_main_sha": "62e3ef445d9a6266f7a68eb7c93c39ce8a84bbdc",
+    "scope_lease_id": "SCOPE-LEASE-E0D3DFE9B87BFDDCFD64D06A",
+    "duplicate_proofs": 0,
+    "duplicate_prs": 0,
+    "github_actions_fallback_authorized": false
+  },
+  "protected": {
+    "steps1_to_6_frozen": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "ranking": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_STAGE6_TOUGH_FAVORABLE_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "REQUEST_ONE_EXACT_HEAD_RUNTIME_THAW_THEN_ONE_EXACT_HEAD_RUNLESS_PROOF"
+}

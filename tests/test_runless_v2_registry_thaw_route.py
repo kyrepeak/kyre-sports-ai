@@ -207,6 +207,42 @@ def test_registry_thaw_route_writes_one_exact_cas_thaw_and_preserves_unrelated_s
     }
 
 
+def test_registry_thaw_route_supersedes_same_id_stale_destination_on_new_exact_head():
+    client, github = _client(enabled=True)
+    unrelated = json.loads(json.dumps(github.registry["active_thaws"][0]))
+    github.registry["active_thaws"].append(
+        {
+            "thaw_id": THAW_ID,
+            "status": "ACTIVE",
+            "target_head_sha": "4" * 40,
+            "files": {PATH: {"from_blob": FROM_BLOB, "to_blob": "5" * 40}},
+        }
+    )
+    github.registry["state_hash"] = _state_hash(github.registry)
+    before_entries = json.loads(json.dumps(github.registry["entries"]))
+
+    response = client.post("/registry-thaw", headers=AUTH, json=_payload())
+    assert response.status_code == 200, response.text
+    body = response.json()
+
+    assert github.put_count == 1
+    assert github.registry["entries"] == before_entries
+    assert github.registry["active_thaws"][0] == unrelated
+    assert github.registry["active_thaws"][1] == {
+        "thaw_id": THAW_ID,
+        "status": "ACTIVE",
+        "target_head_sha": CANDIDATE,
+        "files": {PATH: {"from_blob": FROM_BLOB, "to_blob": TO_BLOB}},
+    }
+    assert len(github.registry["active_thaws"]) == 2
+    assert github.registry["revision"] == 42
+    assert github.registry["state_hash"] == _state_hash(github.registry)
+    assert body["target_head_sha"] == CANDIDATE
+    assert body["from_blob"] == FROM_BLOB
+    assert body["to_blob"] == TO_BLOB
+    assert body["reused"] is False
+
+
 class FakeForwardPortGithub(FakeGithub):
     def __init__(self):
         super().__init__()
