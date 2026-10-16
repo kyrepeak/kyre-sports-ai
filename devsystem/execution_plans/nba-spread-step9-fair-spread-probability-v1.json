@@ -11,6 +11,7 @@
   "method": "TDD_RED_GREEN_RUNLESS_EXACT_HEAD",
   "scope": [
     "nba_spread_fair_spread_probability_v1.py",
+    "nba_spread_performance_history_v1.py",
     "nba_spread_page_v4.py",
     "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
     "tests/test_nba_spread_step9_fair_spread_probability_v1.py",
@@ -25,9 +26,17 @@
     "fair_spread_independent_of_market_line": true,
     "integer_push_probability": true,
     "live_final_pregame_model_freeze": true,
+    "uncalibrated_injury_point_values": false,
     "ranking_logic_added": false,
+    "edge_logic_added": false,
     "pick_logic_added": false,
     "steps_1_8_reopened": false
+  },
+  "successor_runtime_ruling": {
+    "obsolete_test": "tests/test_nba_spread_step8_live_final_behavior_v1.py::test_step8_router_preserves_step7_target_and_dispatches_step8_wrapper",
+    "reason": "Step 8 correctly required STEP8_ACTIVE_PAGE to be terminal while Step 8 was current. Step 9 is the authorized successor and dispatches STEP9_ACTIVE_PAGE while preserving STEP8_ACTIVE_PAGE and delegating through nba_spread_page_v3.",
+    "step8_product_code_modified": false,
+    "step8_behavior_regressions_still_run": true
   },
   "finalization": "exact-head proof -> merge -> merged-main verification -> registry freeze/read-back -> lease release -> GREEN + FROZEN"
 }
