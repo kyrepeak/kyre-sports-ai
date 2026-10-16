@@ -7,7 +7,10 @@ frozen production parent:
 2) the certified V132/V136 direct Spread fast path is temporarily redirected to
    V7 so it cannot bypass the professional presentation and fall straight to V4;
 3) the NFL market selector remains a tap-only popover so mobile browsers never
-   focus a searchable input or summon the software keyboard.
+   focus a searchable input or summon the software keyboard;
+4) stale sport/market deep-link query state is cleared when a newer explicit
+   in-session navigation choice exists, preventing nested routers from snapping
+   users back onto a page they already tried to leave.
 Every other sport/market delegates to the current parent unchanged.
 """
 from __future__ import annotations
@@ -19,13 +22,15 @@ import streamlit as st
 import nfl_spread_hub_v7 as spread_v7
 import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 as prior
 import streamlit_memory_lazy_router_v132 as spread_fast_route
+from streamlit_route_hygiene_v1 import apply_route_hygiene
 
 
-MODEL_VERSION = "API2 NFL SPREAD • V7 LIVE ACTIVATION + AUTODATE + TAP-ONLY MOBILE NAV V1"
+MODEL_VERSION = "API2 NFL SPREAD • V7 IDENTITY + NAV STABILITY + AUTODATE + TAP-ONLY MOBILE NAV V1"
 FROZEN_PARENT = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1"
 ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v7"
 DIRECT_FAST_ROUTE_INTERCEPT = True
 TAP_ONLY_NFL_MARKET_NAV = True
+ROUTE_HYGIENE_ENABLED = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
 WAGER_ACTIONS_ENABLED = False
@@ -89,6 +94,10 @@ def _render_v7_direct_spread() -> Any:
 
 
 def render_app() -> Any:
+    # Fresh in-app selections outrank stale deep-link query state. On a true cold
+    # session, route hygiene is a no-op so supported deep links still restore.
+    apply_route_hygiene(st.session_state, st.query_params)
+
     original_selectbox = st.selectbox
     original_spread_page = prior.spread_v5
     original_direct_spread = spread_fast_route._render_direct_spread
@@ -109,6 +118,7 @@ __all__ = [
     "DIRECT_FAST_ROUTE_INTERCEPT",
     "FROZEN_PARENT",
     "MODEL_VERSION",
+    "ROUTE_HYGIENE_ENABLED",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "TAP_ONLY_NFL_MARKET_NAV",
