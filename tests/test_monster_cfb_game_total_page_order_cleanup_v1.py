@@ -9,6 +9,7 @@ NEW_ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page1_daily_sla
 PAGE1_REPAIR = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1.py"
 SELECTED_ROUTE = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1.py"
 ACTIVE = ROOT / "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py"
+DAILY_API = ROOT / "sports_api" / "api" / "cfb_daily_slate_v1.py"
 
 
 def _read(path: Path) -> str:
@@ -85,3 +86,22 @@ def test_outer_router_preserves_all_existing_nfl_spread_repairs() -> None:
         "st.selectbox = original_selectbox",
     ):
         assert marker in active
+
+
+def test_daily_slate_runtime_exposes_universal_field_route_contract_without_page_wide_master() -> None:
+    source = _read(DAILY_API)
+    assert "from devsystem.universal_sports_field_router_v1 import load_router_policy, route_field" in source
+    assert "from devsystem.universal_sports_provider_registry_v1 import load_registry" in source
+    for field in (
+        '"schedule"',
+        '"game_identity"',
+        '"team_identity"',
+        '"injuries"',
+        '"sportsbook_lines"',
+        '"line_movement"',
+    ):
+        assert field in source
+    assert "def source_route_metadata(" in source
+    assert 'sport="ncaaf"' in source
+    assert '"source_routes": source_route_metadata()' in source
+    assert "PAGE_WIDE_SOURCE_AUTHORITY = False" in source
