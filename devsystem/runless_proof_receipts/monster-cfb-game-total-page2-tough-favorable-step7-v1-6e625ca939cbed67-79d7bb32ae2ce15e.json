@@ -1,0 +1,52 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page2_stage6_tough_favorable_v1.py": "ba45b05851ad03ed774863eef42b06c807e21ac9",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "55fd4c9cd0d6af2ec7a1da9ebf12d23a0bc04d56",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-tough-favorable-step7-v1.json": "1816558d9b9f25136bb9603dc85ee761afa9fbcc",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-tough-favorable-step7-v1.json": "3a880394932c688e9a61e7b4c521657dc76e2456",
+    "tests/test_monster_cfb_game_total_page2_tough_favorable_step7_v1.py": "b7dde792598d99bdb2e2d65d407c1eb2259e01a8"
+  },
+  "candidate_sha": "6e625ca939cbed67b4abe4275efd0743f3127019",
+  "created_at": "2026-10-16T07:43:45.555912+00:00",
+  "dependency_map": {
+    "cfb_game_total_page2_stage5_best_bet_v1.py": "e67a63fc22933c92516bb9321aefe0015e75c627",
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "ee6a61b3867725a6add37c62a8a788dea5017456",
+    "cfb_game_total_step4_matchup_v2.py": "47962b6bbd7238fed3837ed42e27e43d851c43ef",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1",
+    "tests/test_monster_cfb_game_total_page2_best_bet_step6_v1.py": "803c4b1225ea6ca8233a2afb3152dad1c648a3ff"
+  },
+  "digest": "49732f2789023b33a68888cbf1968c8fb07709f714dc3ff71c325ca8b59c2452",
+  "evidence_digests": [
+    "5ae5bfa2ebc1dc6c5ba5d43bc6789c51687d791ff9379acc6a249c2370182cd9",
+    "2888175a03ba70fcde7b08428efea7d221a95a5718486a735db478acfe1ae09a"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f09f0e56129cd37bdcdfdaf50da87daffa12f8b6287476d1fc05f3ccfec241ed",
+  "proof_id": "monster-cfb-game-total-page2-tough-favorable-step7-v1-6e625ca939cbed67-79d7bb32ae2ce15e",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TOUGH-FAVORABLE-STEP7-R1"
+    ],
+    "revision": 357,
+    "state_hash": "dc72397335161fc3dcec44883e0140bad7a804d4976363fde8ff7cadcde0aaea"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TOUGH-FAVORABLE-STEP7-R1"
+    ],
+    "revision": 357,
+    "state_hash": "dc72397335161fc3dcec44883e0140bad7a804d4976363fde8ff7cadcde0aaea"
+  },
+  "request_fingerprint": "c35becece9e847643d193e1c78d005927ba9e61e8c5a1580c7caea4f1f55fba6",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-page2-tough-favorable-step7-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1"
+}
