@@ -5,23 +5,34 @@
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
   "step": "8/10",
-  "status": "IMPLEMENTED_AWAITING_THAW_AND_EXACT_HEAD_RUNLESS",
+  "status": "REPAIRED_AWAITING_THAW_AND_EXACT_HEAD_RUNLESS",
   "base_main_sha": "7420820dc5b51e2643f1d0c71ef646dc6e1edd33",
   "branch": "monster-cfb-game-total-page2-data-quality-step8-v1",
+  "pr_number": 1578,
   "scope_lease_id": "SCOPE-LEASE-6A66A51592B19F264ABE57F5",
-  "problem": "Page 2 still leaks long raw numeric precision, uses some unexplained blank placeholders, lacks unified Verified/Partial/Unavailable data-quality states, and does not preserve an already-owned Over/Under lean when explaining a market-unavailable NO BET.",
-  "root_cause": "The frozen Page-2 components receive mixed raw and display-ready values directly from the runtime, with no single presentation-only normalization and quality-state layer.",
+  "problem": "Page 2 still leaked long raw numeric precision, used some unexplained blank placeholders, lacked unified Verified/Partial/Unavailable data-quality states, and did not preserve an already-owned Over/Under lean when explaining a market-unavailable NO BET.",
+  "root_cause": "The frozen Page-2 components received mixed raw and display-ready values directly from the runtime, with no single presentation-only normalization and quality-state layer.",
   "patch": "Add a presentation-only Step-8 data-quality helper and bind it through the existing selected-event runtime. Format owned numeric values to one decimal, preserve real zero values, emit explicit missing-data reasons, expose Market/Pace/Explosives/Red Zone/Trends quality states, and improve market-unavailable NO BET rationale without changing model/provider/projection/probability/ranking/selection truth.",
   "repair_history": [
     {
       "failure_class": "INFRA",
-      "detail": "RUNLESS_V2_PROOF_ENVIRONMENT_DEPENDENCY_MISSING on the authoritative TDD RED candidate 575ca4620addf875673453c354cf026b47713c8b.",
-      "resolution": "Classified as the intended RED dependency gap: the test harness imported cfb_game_total_page2_data_quality_step8_v1 before that Step-8 helper existed. No RED rerun was issued."
+      "detail": "RUNLESS_V2_PROOF_ENVIRONMENT_DEPENDENCY_MISSING on candidate 575ca4620addf875673453c354cf026b47713c8b because the first RED harness raised ModuleNotFoundError for the not-yet-created Step-8 helper.",
+      "resolution": "Changed only the RED harness so the missing helper fails by assertion rather than dependency classification; no product implementation was added before valid RED evidence."
     },
     {
-      "failure_class": "DUPLICATE_ARCHITECTURE_PREVENTED",
-      "detail": "A temporary alternate wrapper path was detected while recovering from the prior loop.",
-      "resolution": "Removed the alternate wrapper before proof and retained the pre-existing authoritative Step-8 test/plan/ledger contract only."
+      "failure_class": "STATIC_PROOF",
+      "detail": "RUNLESS_V2_STATIC_PROOF_FAILED on corrected RED candidate 1efbe607fc82a54f8764fff2780af713e27ac97a.",
+      "resolution": "Accepted as the authoritative TDD RED proof and then implemented the bounded presentation-only data-quality layer."
+    },
+    {
+      "failure_class": "REVIEW_GAP",
+      "detail": "Implementation review found missing Red-Zone values could still become an em dash, Trends driver values could retain raw precision/missing placeholders, and market-unavailable NO BET did not infer a lean from already-owned Over/Under probabilities.",
+      "resolution": "Added regression guards and repaired only the Step-8 runtime wrapper: preserve missing Red-Zone values for frozen empty-state copy, format Trends display values with explicit reasons, and compare only already-owned probabilities for explanatory lean text."
+    },
+    {
+      "failure_class": "PARALLEL_SCOPE_CHECK",
+      "detail": "Intermediate branch commits included a temporary alternate wrapper while the authoritative lane was converging.",
+      "resolution": "Canonical PR diff was read back against main and contains exactly the five declared Step-8 paths; no production or frozen out-of-scope deletion remains."
     }
   ],
   "acceptance": [
@@ -38,9 +49,10 @@
     "one_active_branch": true,
     "one_authoritative_pr": true,
     "one_authoritative_proof_chain": true,
+    "authoritative_pr": 1578,
     "scope_lease_id": "SCOPE-LEASE-6A66A51592B19F264ABE57F5",
     "duplicate_prs": 0,
-    "duplicate_proofs": 0,
+    "duplicate_proofs_same_candidate": 0,
     "github_actions_fallback_authorized": false
   },
   "protected": {
