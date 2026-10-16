@@ -1,9 +1,9 @@
 """CFB Game Total Page 2 Step 7 — Line Lab + Best Bet.
 
 Presentation-only rendering for caller-owned alternate total-line scenarios and
-the caller-owned final recommendation. This module selects and displays supplied
-values; it does not fetch, project, calculate probabilities, or create betting
-recommendations.
+the caller-owned final recommendation. The component switches among supplied
+scenario values without fetching, projecting, calculating probabilities, or
+creating betting recommendations.
 """
 from __future__ import annotations
 
@@ -39,27 +39,35 @@ PAGE2_STEP7_CSS = r"""
 .gtp2s7-body{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(320px,.92fr);gap:12px;padding:14px}
 .gtp2s7-panel{border:1px solid rgba(82,163,197,.20);border-radius:16px;background:rgba(8,29,43,.73);padding:13px}
 .gtp2s7-panel-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.gtp2s7-panel-title strong{color:#eaf9ff;font-size:10px;font-weight:1000}.gtp2s7-panel-title span{color:#6edfff;font-size:7px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}
-.gtp2s7-slider-shell{padding:12px 12px 10px;border:1px solid rgba(86,202,246,.18);border-radius:13px;background:rgba(6,25,38,.72)}
-.gtp2s7-range{display:block;width:100%;min-height:38px;accent-color:#59d9ff;cursor:pointer}
-.gtp2s7-range-meta{display:flex;justify-content:space-between;gap:8px;color:#6f91a4;font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
-.gtp2s7-selected{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
-.gtp2s7-selected article{padding:12px 10px;border:1px solid rgba(84,163,196,.18);border-radius:12px;background:rgba(7,28,42,.80);text-align:center}.gtp2s7-selected span{display:block;color:#7899ac;font-size:6px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}.gtp2s7-selected strong{display:block;margin-top:5px;color:#f8fdff;font-size:15px;font-weight:1000}.gtp2s7-selected article:nth-child(2) strong{color:#72e0ff}.gtp2s7-selected article:nth-child(3) strong{color:#7ce9c0}
-.gtp2s7-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}
-.gtp2s7-option{min-width:0;padding:9px 8px;border:1px solid rgba(78,157,191,.14);border-radius:11px;background:rgba(6,24,36,.66);text-align:center}.gtp2s7-option.is-selected{border-color:rgba(87,214,255,.48);background:linear-gradient(180deg,rgba(10,65,89,.55),rgba(6,28,42,.84));box-shadow:0 0 18px rgba(65,200,255,.07)}.gtp2s7-option b{display:block;color:#eaf9ff;font-size:11px;font-weight:1000}.gtp2s7-option small{display:block;margin-top:4px;color:#7697aa;font-size:6px;font-weight:850;line-height:1.35}
+.gtp2s7-line-radio{position:absolute;opacity:0;pointer-events:none}
+.gtp2s7-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:10px}
+.gtp2s7-option{min-width:0;padding:10px 8px;border:1px solid rgba(78,157,191,.18);border-radius:11px;background:rgba(6,24,36,.72);text-align:center;cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease}.gtp2s7-option:hover{border-color:rgba(87,214,255,.42);transform:translateY(-1px)}.gtp2s7-option b{display:block;color:#eaf9ff;font-size:11px;font-weight:1000}.gtp2s7-option small{display:block;margin-top:4px;color:#7697aa;font-size:6px;font-weight:850;line-height:1.35}
+.gtp2s7-scenario-stage{min-height:118px}.gtp2s7-scenario{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px;border:1px solid rgba(86,202,246,.20);border-radius:13px;background:linear-gradient(180deg,rgba(8,47,66,.58),rgba(6,25,38,.76))}
+.gtp2s7-scenario article{padding:12px 10px;border:1px solid rgba(84,163,196,.18);border-radius:12px;background:rgba(7,28,42,.80);text-align:center}.gtp2s7-scenario span{display:block;color:#7899ac;font-size:6px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}.gtp2s7-scenario strong{display:block;margin-top:5px;color:#f8fdff;font-size:15px;font-weight:1000;overflow-wrap:anywhere}.gtp2s7-scenario article:nth-child(2) strong{color:#72e0ff}.gtp2s7-scenario article:nth-child(3) strong{color:#7ce9c0}
+.gtp2s7-empty{display:grid;place-items:center;min-height:105px;border:1px solid rgba(86,202,246,.16);border-radius:13px;color:#7899ac;font-size:16px;font-weight:1000}
 .gtp2s7-best{position:relative;overflow:hidden;border-color:rgba(76,225,176,.30);background:radial-gradient(circle at 90% 0,rgba(54,223,164,.12),transparent 38%),rgba(8,31,42,.80)}.gtp2s7-best::before{content:"";position:absolute;left:0;top:0;right:0;height:2px;background:linear-gradient(90deg,#4fe1bb,rgba(94,218,255,.70),transparent)}
 .gtp2s7-pick{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid rgba(73,220,174,.24);border-radius:13px;background:rgba(9,55,50,.27)}.gtp2s7-pick span{color:#87b4aa;font-size:7px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}.gtp2s7-pick strong{display:block;margin-top:4px;color:#7af0c2;font-size:23px;font-weight:1000;letter-spacing:-.03em}.gtp2s7-pick em{font-style:normal;color:#dffbf2;font-size:12px;font-weight:1000;text-align:right}
 .gtp2s7-best-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}.gtp2s7-best-grid article{padding:10px;border:1px solid rgba(78,171,192,.15);border-radius:11px;background:rgba(6,26,37,.67)}.gtp2s7-best-grid span{display:block;color:#7393a6;font-size:6px;font-weight:950;letter-spacing:.07em;text-transform:uppercase}.gtp2s7-best-grid strong{display:block;margin-top:5px;color:#f8fdff;font-size:13px;font-weight:1000;overflow-wrap:anywhere}
 .gtp2s7-rationale{margin:9px 0 0;padding:10px 11px;border:1px solid rgba(89,187,210,.14);border-radius:11px;background:rgba(4,21,31,.58);color:#9db6c3;font-size:8px;font-weight:750;line-height:1.5;overflow-wrap:anywhere}
 @media(max-width:760px){.gtp2s7-head{align-items:start;flex-direction:column;gap:9px}.gtp2s7-owned{align-self:flex-start}.gtp2s7-body{grid-template-columns:1fr}.gtp2s7-options{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:480px){.gtp2s7-card{border-radius:17px}.gtp2s7-head{padding:14px 13px 11px}.gtp2s7-head h3{font-size:18px}.gtp2s7-body{padding:10px;gap:8px}.gtp2s7-panel{padding:10px}.gtp2s7-selected{gap:5px}.gtp2s7-selected article{padding:10px 5px}.gtp2s7-selected strong{font-size:12px}.gtp2s7-options{display:flex;overflow-x:auto;gap:6px;scrollbar-width:none}.gtp2s7-options::-webkit-scrollbar{display:none}.gtp2s7-option{min-width:102px}.gtp2s7-pick strong{font-size:20px}.gtp2s7-best-grid{gap:6px}}
+@media(max-width:480px){.gtp2s7-card{border-radius:17px}.gtp2s7-head{padding:14px 13px 11px}.gtp2s7-head h3{font-size:18px}.gtp2s7-body{padding:10px;gap:8px}.gtp2s7-panel{padding:10px}.gtp2s7-options{display:flex;overflow-x:auto;gap:6px;scrollbar-width:none}.gtp2s7-options::-webkit-scrollbar{display:none}.gtp2s7-option{min-width:102px}.gtp2s7-scenario{gap:5px;padding:9px}.gtp2s7-scenario article{padding:10px 5px}.gtp2s7-scenario strong{font-size:12px}.gtp2s7-pick strong{font-size:20px}.gtp2s7-best-grid{gap:6px}}
 </style>
 """
 
 
 def _display(value: Any) -> str:
-    if isinstance(value, float) and not isfinite(value):
+    """Escape display text and collapse any non-finite numeric scalar to an em dash."""
+    if value is None:
         return "—"
-    text = "" if value is None else str(value).strip()
+    if not isinstance(value, (str, bytes, bool)):
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError, OverflowError):
+            pass
+        else:
+            if not isfinite(numeric):
+                return "—"
+    text = str(value).strip()
     return escape(text) if text else "—"
 
 
@@ -77,16 +85,52 @@ def _selected_index(rows: Sequence[Mapping[str, Any]], selected_line: Any) -> in
     return 0
 
 
-def _option_html(row: Mapping[str, Any], index: int, selected_index: int) -> str:
-    cls = "gtp2s7-option is-selected" if index == selected_index else "gtp2s7-option"
+def _radio_html(index: int, selected_index: int) -> str:
+    checked = " checked" if index == selected_index else ""
+    return (
+        f'<input id="gtp2s7-line-{index}" type="radio" name="gtp2s7-line-choice"{checked} '
+        f'class="gtp2s7-line-radio" />'
+    )
+
+
+def _option_html(row: Mapping[str, Any], index: int) -> str:
     line = _display(row.get("line"))
     over = _display(row.get("over_probability"))
     under = _display(row.get("under_probability"))
     return (
-        f'<div class="{cls}" data-line-index="{index}" data-line="{line}" '
-        f'data-over="{over}" data-under="{under}">'
-        f'<b>{line}</b><small>Over {over} • Under {under}</small></div>'
+        f'<label class="gtp2s7-option" for="gtp2s7-line-{index}" data-line-index="{index}" '
+        f'data-line="{line}" data-over="{over}" data-under="{under}">'
+        f'<b>{line}</b><small>Over {over} • Under {under}</small></label>'
     )
+
+
+def _scenario_html(row: Mapping[str, Any], index: int) -> str:
+    line = _display(row.get("line"))
+    over = _display(row.get("over_probability"))
+    under = _display(row.get("under_probability"))
+    return (
+        f'<div class="gtp2s7-scenario gtp2s7-scenario-{index}" data-scenario-line="{line}">'
+        f'<article><span>Selected Line</span><strong>{line}</strong></article>'
+        f'<article><span>Over Probability</span><strong>{over}</strong></article>'
+        f'<article><span>Under Probability</span><strong>{under}</strong></article>'
+        f'</div>'
+    )
+
+
+def _scenario_switch_css(rows: Sequence[Mapping[str, Any]]) -> str:
+    if not rows:
+        return ""
+    selectors = "".join(
+        f'#gtp2s7-line-{index}:checked~.gtp2s7-scenario-stage .gtp2s7-scenario-{index}'
+        + '{display:grid}'
+        for index, _ in enumerate(rows)
+    )
+    selected_labels = "".join(
+        f'#gtp2s7-line-{index}:checked~.gtp2s7-options label[for="gtp2s7-line-{index}"]'
+        + '{border-color:rgba(87,214,255,.58);background:linear-gradient(180deg,rgba(10,65,89,.62),rgba(6,28,42,.88));box-shadow:0 0 18px rgba(65,200,255,.08)}'
+        for index, _ in enumerate(rows)
+    )
+    return f"<style>{selectors}{selected_labels}</style>"
 
 
 def build_line_lab_best_bet_html(
@@ -103,10 +147,14 @@ def build_line_lab_best_bet_html(
     selected_over = _display(selected.get("over_probability"))
     selected_under = _display(selected.get("under_probability"))
     option_count = len(rows)
-    range_max = max(0, option_count - 1)
-    options_html = "".join(_option_html(row, index, selected_index) for index, row in enumerate(rows))
-    if not options_html:
-        options_html = '<div class="gtp2s7-option"><b>—</b><small>Over — • Under —</small></div>'
+
+    radios_html = "".join(_radio_html(index, selected_index) for index, _ in enumerate(rows))
+    options_html = "".join(_option_html(row, index) for index, row in enumerate(rows))
+    scenarios_html = "".join(_scenario_html(row, index) for index, row in enumerate(rows))
+    if not rows:
+        options_html = '<span class="gtp2s7-option"><b>—</b><small>Over — • Under —</small></span>'
+        scenarios_html = '<div class="gtp2s7-empty">—</div>'
+    switch_css = _scenario_switch_css(rows)
 
     rec = recommendation if isinstance(recommendation, Mapping) else {}
     side = _display(rec.get("side"))
@@ -119,29 +167,23 @@ def build_line_lab_best_bet_html(
 
     return f"""
 {PAGE2_STEP7_CSS}
+{switch_css}
 <section id="gtp2-line-lab" class="gtp2s7-wrap" data-step7="{STEP7_MARKER}" data-testid="gtp2s7-line-lab" data-value-ownership="precomputed-inputs">
   <div class="gtp2s7-card">
     <header class="gtp2s7-head">
       <div>
         <span class="gtp2s7-kicker">Stage 4 • Line Lab</span>
         <h3>Line Lab + Best Bet</h3>
-        <p>Move through precomputed total-line scenarios without changing the underlying model.</p>
+        <p>Tap a supplied total line to inspect its precomputed probabilities without changing the underlying model.</p>
       </div>
       <span class="gtp2s7-owned">Display only • no probability recompute</span>
     </header>
     <div class="gtp2s7-body">
-      <div class="gtp2s7-panel">
+      <div class="gtp2s7-panel" data-line-option-count="{option_count}" data-selected-line="{selected_line_display}" data-selected-over="{selected_over}" data-selected-under="{selected_under}">
         <div class="gtp2s7-panel-title"><strong>Line Lab</strong><span>{option_count} owned scenarios</span></div>
-        <div class="gtp2s7-slider-shell" data-line-option-count="{option_count}" data-selected-line="{selected_line_display}" data-selected-over="{selected_over}" data-selected-under="{selected_under}">
-          <input class="gtp2s7-range" type="range" min="0" max="{range_max}" step="1" value="{selected_index}" aria-label="Analysis total line" />
-          <div class="gtp2s7-range-meta"><span>Lower total</span><span>Higher total</span></div>
-        </div>
-        <div class="gtp2s7-selected">
-          <article><span>Selected Line</span><strong>{selected_line_display}</strong></article>
-          <article><span>Over Probability</span><strong>{selected_over}</strong></article>
-          <article><span>Under Probability</span><strong>{selected_under}</strong></article>
-        </div>
+        {radios_html}
         <div class="gtp2s7-options">{options_html}</div>
+        <div class="gtp2s7-scenario-stage">{scenarios_html}</div>
       </div>
       <div id="gtp2-best-bet" class="gtp2s7-panel gtp2s7-best" data-testid="gtp2s7-best-bet">
         <div class="gtp2s7-panel-title"><strong>Best Bet</strong><span>Caller-owned recommendation</span></div>
