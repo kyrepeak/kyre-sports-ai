@@ -7,7 +7,7 @@
   "source_main_sha": "ab6e60a6def0991d6d726f5201e93e2cf13403c1",
   "authoritative_branch": "nba-spread-step9-fair-spread-r1",
   "authoritative_pr": null,
-  "state": "TDD_RED_READY",
+  "state": "TDD_RED_VERIFIED_IMPLEMENTATION_ACTIVE",
   "step2a": {
     "active_problem": "Kyre Fair Spread + Cover Probability",
     "root_cause_class": "MISSING_FAIR_SPREAD_PROBABILITY_LAYER",
@@ -23,8 +23,12 @@
   },
   "tdd": {
     "red_required": true,
-    "red_verified": false,
-    "red_candidate_sha": null,
+    "red_verified": true,
+    "red_candidate_sha": "6b2362b572012ed649aeb203e2f9adec5e3b3456",
+    "red_proof_id": "nba-spread-step9-fair-spread-probability-v1-6b2362b572012ed6-c1ce3ee500fbaee9",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "red_expected_reason": "Step-9 module/page/router contract absent before implementation",
     "green_verified": false,
     "regression_verified": false
   },
@@ -60,5 +64,5 @@
   },
   "freeze_token": "NBA_SPREAD_STEP9_FAIR_SPREAD_PROBABILITY_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "RUN_TDD_RED_PROOF_ONCE"
+  "next_legal_action": "IMPLEMENT_MINIMAL_STEP9_PRODUCTION_CODE"
 }
