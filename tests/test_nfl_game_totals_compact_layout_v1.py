@@ -11,6 +11,7 @@ def _text(path: Path) -> str:
 
 
 def test_compact_layout_wraps_frozen_v10_without_replacing_model_contract():
+    assert COMPACT.exists(), "compact layout module has not been implemented yet"
     compact = _text(COMPACT)
     assert "import nfl_game_totals_hub_v10 as v10" in compact
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = v10.SPORTSBOOK_PROJECTION_INFLUENCE" in compact
