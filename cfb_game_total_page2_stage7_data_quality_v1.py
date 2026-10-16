@@ -11,6 +11,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from html import escape
 from math import isfinite
+from threading import RLock
 from typing import Any, Iterator
 
 import cfb_game_total_page2_step8_final_runtime_v1 as frozen_runtime
@@ -28,6 +29,10 @@ MAY_MODIFY_OTHER_SPORTS = False
 NETWORK_CALLS_ADDED = 0
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 GITHUB_ACTIONS_FALLBACK = 0
+
+_BASE_HEADER = frozen_runtime.build_page2_header_html
+_BASE_BODY = frozen_runtime.build_page2_body_html
+_PATCH_LOCK = RLock()
 
 DATA_QUALITY_CSS = r"""
 <style>
@@ -99,13 +104,14 @@ def build_data_quality_html() -> str:
         + f'<div class="gtp2s11-quality" data-testid="gtp2s11-data-quality" '
         f'data-step8="{STEP8_MARKER}" data-no-estimation="true">'
         '<strong>Data quality:</strong> unavailable or unverified fields are labeled explicitly; '
-        'display numbers use consistent units and precision. No missing value is estimated.'</n        'div>'
+        'display numbers use consistent units and precision. No missing value is estimated.'
+        '</div>'
     )
 
 
 @contextmanager
 def _presentation_patch() -> Iterator[None]:
-    """Temporarily polish frozen builders for this render, then restore them."""
+    """Temporarily polish the frozen snapshot builder, then restore it."""
     original_snapshot = frozen_runtime.step5.build_team_snapshot_key_drivers_html
 
     def snapshot_wrapper(**kwargs: Any) -> str:
@@ -126,12 +132,12 @@ def _presentation_patch() -> Iterator[None]:
 
 def build_page2_header_html(payload: Any) -> str:
     with _presentation_patch():
-        return _polish_missing_copy(frozen_runtime.build_page2_header_html(payload))
+        return _polish_missing_copy(_BASE_HEADER(payload))
 
 
 def build_page2_body_html(payload: Any) -> str:
     with _presentation_patch():
-        html = _polish_missing_copy(frozen_runtime.build_page2_body_html(payload))
+        html = _polish_missing_copy(_BASE_BODY(payload))
     marker = '<div class="gtp2s8-cert"'
     quality = build_data_quality_html()
     return html.replace(marker, quality + marker, 1) if marker in html else html + quality
@@ -146,15 +152,16 @@ def render_step6_cert_surface() -> Any:
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None):
-    original_header = frozen_runtime.build_page2_header_html
-    original_body = frozen_runtime.build_page2_body_html
-    frozen_runtime.build_page2_header_html = build_page2_header_html
-    frozen_runtime.build_page2_body_html = build_page2_body_html
-    try:
-        return frozen_runtime.render_game_total_hub(section_header, status_info, team_logo, h)
-    finally:
-        frozen_runtime.build_page2_header_html = original_header
-        frozen_runtime.build_page2_body_html = original_body
+    with _PATCH_LOCK:
+        original_header = frozen_runtime.build_page2_header_html
+        original_body = frozen_runtime.build_page2_body_html
+        frozen_runtime.build_page2_header_html = build_page2_header_html
+        frozen_runtime.build_page2_body_html = build_page2_body_html
+        try:
+            return frozen_runtime.render_game_total_hub(section_header, status_info, team_logo, h)
+        finally:
+            frozen_runtime.build_page2_header_html = original_header
+            frozen_runtime.build_page2_body_html = original_body
 
 
 def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
