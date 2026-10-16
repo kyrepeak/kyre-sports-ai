@@ -1,0 +1,37 @@
+{
+  "mode": "runless",
+  "task_id": "passing-yards-picker-fast-load-r1",
+  "workstream": "passing-yards-picker-fast-load-r1",
+  "source_main_sha": "f205c051f60050f0ff9616e780c2affed6d21b5e",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_passing_yards_hub_v88.py", "nfl_passing_yards_hub_v87.py", "streamlit_memory_lazy_router_v239.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_picker_fast_load_r1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_page2_compact_transport_r1.py", "-k", "not v239_advances_passing_yards_only_to_v87"],
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_v239_purge_guard.py", "-k", "not active_passing_route_primes_guard_before_import_and_render and not app_activates_v239_only"]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/passing-yards-picker-fast-load-r1.json",
+    "devsystem/task_ledgers/passing-yards-picker-fast-load-r1.json",
+    "nfl_passing_yards_hub_v88.py",
+    "streamlit_memory_lazy_router_v239.py",
+    "tests/test_passing_yards_picker_fast_load_r1.py"
+  ],
+  "dependencies": [
+    "nfl_passing_yards_hub_v87.py",
+    "nfl_passing_yards_hub_v86.py",
+    "nfl_passing_yards_identity_v1.py",
+    "nfl_passing_yards_full_slate_router_v1.py",
+    "nfl_passing_yards_hub_v41.py",
+    "streamlit_memory_lazy_router_v238.py",
+    "streamlit_memory_lazy_router_v225.py",
+    "streamlit_memory_lazy_router_v188.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "PASSING_YARDS_PICKER_FAST_LOAD_R1_FROZEN"
+}
