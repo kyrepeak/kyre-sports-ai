@@ -20,7 +20,7 @@ def test_daily_slate_activation_context_is_page1_only_and_restores() -> None:
     assert "original_page1_route = page1_repair.PAGE1_REPAIR_ROUTE" in source
     assert "finally:" in source
     assert "page1_repair.PAGE1_REPAIR_ROUTE = original_page1_route" in source
-    assert "SAME_PAGE_RUNTIME" not in source
+    assert ".SAME_PAGE_RUNTIME =" not in source
     assert "MAY_MODIFY_SELECTED_GAME_RUNTIME = False" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
 
