@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import cfb_game_total_clean_page_v45 as page1
+import cfb_game_total_page2_network_free_v2 as live_data
 import cfb_game_total_page2_step8_final_runtime_v1 as page2
 import streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1 as cfb_router
 
@@ -36,13 +37,14 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None):
     """Inject frozen Page-2 analysis into the current V45 Page-1 render base."""
     page2.st.markdown(page2.PAGE2_STEP8_CSS, unsafe_allow_html=True)
-    return page2._render_selected_page(
-        page1.render_game_total_hub,
-        section_header,
-        status_info,
-        team_logo,
-        h,
-    )
+    with live_data.install_page2_live_data_repair():
+        return page2._render_selected_page(
+            page1.render_game_total_hub,
+            section_header,
+            status_info,
+            team_logo,
+            h,
+        )
 
 
 def render_cfb_hub(
