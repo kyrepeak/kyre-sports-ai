@@ -10,17 +10,9 @@ import os
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-import streamlit as st
-
 from nba_spread_market_lines_v1 import build_spread_market_context
 from nba_spread_most_bet_v1 import select_most_bet_game
-from nba_spread_public_betting_observations_v1 import (
-    load_verified_public_betting_observations,
-)
 from nba_spread_sharp_money_v1 import select_sharp_money_game
-from nba_spread_sportsbook_observations_v1 import (
-    load_verified_sportsbook_observations,
-)
 
 MODEL_VERSION = "NBA_SPREAD_LIVE_DATA_REPAIR_V1"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -49,14 +41,30 @@ def resolve_sgo_api_key(
     environ: Mapping[str, str] | None = None,
 ) -> str | None:
     """Use the same credential discovery order already proven by other sports."""
-    session = session_state if session_state is not None else st.session_state
-    if secrets is None:
+    st_runtime = None
+    if session_state is None or secrets is None:
         try:
-            secret_map: Mapping[str, Any] = st.secrets
+            import streamlit as st_runtime  # lazy: Runless static proof stays dependency-minimal
+        except Exception:
+            st_runtime = None
+
+    if session_state is not None:
+        session = session_state
+    elif st_runtime is not None:
+        session = st_runtime.session_state
+    else:
+        session = {}
+
+    if secrets is not None:
+        secret_map: Mapping[str, Any] = secrets
+    elif st_runtime is not None:
+        try:
+            secret_map = st_runtime.secrets
         except Exception:
             secret_map = {}
     else:
-        secret_map = secrets
+        secret_map = {}
+
     env = environ if environ is not None else os.environ
     return _clean_key(
         session.get("ks_sportsgameodds_key")
@@ -70,6 +78,9 @@ def load_public_betting_payload(
     schedule_games: Sequence[Mapping[str, object]],
 ) -> dict[str, object]:
     try:
+        from nba_spread_public_betting_observations_v1 import (
+            load_verified_public_betting_observations,
+        )
         payload = load_verified_public_betting_observations(schedule_games)
     except Exception as exc:
         return {
@@ -163,6 +174,9 @@ def load_market_payload(
         return key if name == "SPORTSGAMEODDS_API_KEY" else None
 
     try:
+        from nba_spread_sportsbook_observations_v1 import (
+            load_verified_sportsbook_observations,
+        )
         payload = load_verified_sportsbook_observations(
             schedule_games,
             secret_getter=_secret_getter,
