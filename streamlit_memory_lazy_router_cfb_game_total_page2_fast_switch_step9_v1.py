@@ -1,101 +1,104 @@
-"""MONSTER CFB Game Total Page 2 Step 9 — fast matchup switching overlay.
+"""API 2 NFL Spread smart-next-slate activation overlay.
 
-Exact selected CFB Game Total events bypass Page-1-only installers and the
-inherited full router traversal, then render the selected analysis through the
-current same-page shell repair. Every other route delegates byte-for-behavior to
-the current production router owner.
+This file remains the production entry module name so app.py and every other
+workstream stay untouched. The exact prior CFB Step-9 router is preserved under
+a frozen alias and receives every route except exact NFL -> Spread.
 
-This layer is routing/performance-only. It does not change providers, model,
-projection, probability, ranking, selection, sportsbook influence, or any
-frozen Page-2 analysis logic.
+Only that one route is temporarily redirected to NFL Spread V5. All routing
+seams are restored after the render, including modules imported during it.
 """
 from __future__ import annotations
 
-import importlib
-from typing import Any
+import sys
+from typing import Any, Callable
 
-import streamlit_memory_lazy_router_nba_spread_step2_activation_v1 as prior
-import streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1 as cfb_prior
-import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair
+import streamlit as st
+
+import nfl_spread_hub_v5 as spread_v5
+import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1 as prior
 import streamlit_memory_lazy_router_v1 as root
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP9 FAST SWITCH V1"
-PRIOR_RUNTIME = "streamlit_memory_lazy_router_nba_spread_step2_activation_v1"
-CFB_ROUTE_OWNER = "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1"
-SAME_PAGE_RUNTIME = "cfb_game_total_page2_same_page_shell_repair_v1"
-MAY_MODIFY_MODEL = False
-MAY_MODIFY_PROJECTION = False
-MAY_MODIFY_PROBABILITY = False
-MAY_MODIFY_RANKING = False
-MAY_MODIFY_SELECTION = False
+MODEL_VERSION = "API2 NFL SPREAD • NEXT VERIFIED SLATE ACTIVATION V1"
+FROZEN_PARENT = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1"
+ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v5"
 MAY_MODIFY_OTHER_SPORTS = False
-NETWORK_CALLS_ADDED = 0
+MAY_MODIFY_OTHER_MARKETS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
-
-# Frozen Step-9 source-cert compatibility markers only; these are intentionally
-# not executed by the selected-event path after the same-page repair:
-# cfb_prior._render_page1_navigation_shell()
-# importlib.import_module(cfb_prior.PAGE2_RUNTIME)
-# page.render_cfb_hub(
+STAKE_SIZING_ENABLED = False
+WAGER_ACTIONS_ENABLED = False
 
 
 def record_bootstrap_import_ms(value: float) -> None:
     return prior.record_bootstrap_import_ms(value)
 
 
-def _current_event_id() -> str:
-    """Read the current exact event from the query on every render."""
-    return cfb_prior._query_value(cfb_prior.EVENT_QUERY_KEY)
+def _exact_nfl_spread(market: str) -> bool:
+    return (
+        str(st.session_state.get("ks_sport_touch") or "") == "NFL"
+        and str(market or "") == "Spread"
+    )
 
 
-def _selected_game_total() -> bool:
-    """Fail closed unless the current exact event still owns the selected route."""
-    event_id = _current_event_id()
-    if not event_id:
-        return False
-    if cfb_prior._query_value(cfb_prior.SELECTOR_SYNC_QUERY_KEY) != event_id:
-        return False
-    return bool(cfb_prior._selected_game_total() and _current_event_id() == event_id)
+def _make_render_nfl_bridge(delegate: Callable[[str], Any]) -> Callable[[str], Any]:
+    if getattr(delegate, "_api2_nfl_spread_next_slate_bridge", False):
+        return delegate
+
+    def _bridge(market: str) -> Any:
+        if _exact_nfl_spread(str(market or "")):
+            return spread_v5.render_nfl_hub("Spread")
+        return delegate(market)
+
+    _bridge._api2_nfl_spread_next_slate_bridge = True  # type: ignore[attr-defined]
+    _bridge._api2_nfl_spread_next_slate_delegate = delegate  # type: ignore[attr-defined]
+    return _bridge
 
 
-def _render_selected_page_fast() -> Any:
-    """Render selected analysis inside the one current Page-1 website shell."""
-    event_id = _current_event_id()
-    if not event_id:
-        return prior.render_app()
+def _patch_loaded_router_seams() -> Callable[[str], Any]:
+    original_root_render_nfl = root._render_nfl
+    root._render_nfl = _make_render_nfl_bridge(original_root_render_nfl)
 
-    page = importlib.import_module(SAME_PAGE_RUNTIME)
-    if _current_event_id() != event_id:
-        return prior.render_app()
+    for name, module in list(sys.modules.items()):
+        if not name.startswith("streamlit_memory_lazy_router") or module is None:
+            continue
+        renderer = getattr(module, "_ORIGINAL_RENDER_NFL", None)
+        if callable(renderer):
+            setattr(module, "_ORIGINAL_RENDER_NFL", _make_render_nfl_bridge(renderer))
+    return original_root_render_nfl
 
-    return page.render_selected_in_shared_shell()
+
+def _restore_loaded_router_seams(original_root_render_nfl: Callable[[str], Any]) -> None:
+    for name, module in list(sys.modules.items()):
+        if not name.startswith("streamlit_memory_lazy_router") or module is None:
+            continue
+        renderer = getattr(module, "_ORIGINAL_RENDER_NFL", None)
+        if getattr(renderer, "_api2_nfl_spread_next_slate_bridge", False):
+            setattr(
+                module,
+                "_ORIGINAL_RENDER_NFL",
+                getattr(renderer, "_api2_nfl_spread_next_slate_delegate"),
+            )
+    root._render_nfl = original_root_render_nfl
 
 
 def render_app() -> Any:
-    if _selected_game_total():
-        return _render_selected_page_fast()
-    bridge = globals().get("page1_repair")
-    if bridge is None:
+    original_root_render_nfl = _patch_loaded_router_seams()
+    try:
         return prior.render_app()
-    return bridge.render_with_page1_repair(prior.render_app)
+    finally:
+        _restore_loaded_router_seams(original_root_render_nfl)
 
 
 __all__ = [
-    "CFB_ROUTE_OWNER",
-    "MAY_MODIFY_MODEL",
+    "ACTIVE_SPREAD_PAGE",
+    "FROZEN_PARENT",
+    "MAY_MODIFY_OTHER_MARKETS",
     "MAY_MODIFY_OTHER_SPORTS",
-    "MAY_MODIFY_PROBABILITY",
-    "MAY_MODIFY_PROJECTION",
-    "MAY_MODIFY_RANKING",
-    "MAY_MODIFY_SELECTION",
     "MODEL_VERSION",
-    "NETWORK_CALLS_ADDED",
-    "PRIOR_RUNTIME",
-    "SAME_PAGE_RUNTIME",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
-    "_current_event_id",
-    "_render_selected_page_fast",
-    "_selected_game_total",
+    "STAKE_SIZING_ENABLED",
+    "WAGER_ACTIONS_ENABLED",
+    "_exact_nfl_spread",
+    "_make_render_nfl_bridge",
     "record_bootstrap_import_ms",
     "render_app",
 ]
