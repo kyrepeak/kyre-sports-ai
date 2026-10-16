@@ -14,12 +14,45 @@ from .models import FailureClass
 _BAD_SHELL = re.compile(r"[;&|><`$\n\r]")
 _APPROVED_MODULE_PREFIXES = ("devsystem.",)
 _MAX_SANDBOX_SECONDS = 1800
-_MIN_BOOTSTRAP_PACKAGES = ("pytest", "pytest-asyncio", "fastapi", "httpx", "PyJWT", "cryptography")
+_MIN_BOOTSTRAP_PACKAGES = (
+    "pytest",
+    "pytest-asyncio",
+    "fastapi",
+    "httpx",
+    "PyJWT",
+    "cryptography",
+    "pandas",
+    "numpy",
+    "streamlit",
+)
 _REPOSITORY_URL = "https://github.com/kyrepeak/kyre-sports-ai.git"
 
 
 class SandboxExecutionError(RuntimeError):
     pass
+
+
+def _classify_proof_command_failure(stdout: str, stderr: str) -> tuple[FailureClass, str]:
+    text = f"{stdout}\n{stderr}".lower()
+    missing_dependency = (
+        "modulenotfounderror" in text
+        or "no module named" in text
+        or (
+            "importerror" in text
+            and any(
+                marker in text
+                for marker in (
+                    "missing optional dependency",
+                    "required dependency",
+                    "is not installed",
+                    "package is required",
+                )
+            )
+        )
+    )
+    if missing_dependency:
+        return FailureClass.INFRA, "RUNLESS_V2_PROOF_ENVIRONMENT_DEPENDENCY_MISSING"
+    return FailureClass.STATIC_PROOF, "RUNLESS_V2_STATIC_PROOF_FAILED"
 
 
 def validate_command(command: tuple[str, ...] | list[str]) -> tuple[str, ...]:
@@ -245,6 +278,10 @@ class SandboxExecutor:
                     stdout = str(result.get("stdout") or "")
                     stderr = str(result.get("stderr") or "")
                     ok = int(result.get("exit_code", 1)) == 0
+                    if ok:
+                        failure_class, detail = FailureClass.NONE, ""
+                    else:
+                        failure_class, detail = _classify_proof_command_failure(stdout, stderr)
                     evidence.append(
                         SandboxEvidence(
                             name=" ".join(command),
@@ -252,8 +289,8 @@ class SandboxExecutor:
                             command=list(command),
                             stdout_digest=self._digest(stdout),
                             stderr_digest=self._digest(stderr),
-                            failure_class=FailureClass.NONE if ok else FailureClass.STATIC_PROOF,
-                            detail="" if ok else "RUNLESS_V2_STATIC_PROOF_FAILED",
+                            failure_class=failure_class,
+                            detail=detail,
                         )
                     )
                     if not ok:
