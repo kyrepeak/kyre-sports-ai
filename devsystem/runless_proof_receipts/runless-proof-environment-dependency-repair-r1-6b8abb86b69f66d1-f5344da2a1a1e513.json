@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/runless-proof-environment-dependency-repair-r1.json": "aaeba4c4ed8dc0f4ccd89738afc3e7e24477cbc5",
+    "runless_v2/sandbox_executor.py": "f16cf5e6b67fcff82e69c13a103090f64f309934",
+    "tests/test_runless_v2_sandbox_executor_dependencies_r1.py": "7b8273153a2f6fc3449476b736326eee9e7dd316"
+  },
+  "candidate_sha": "6b8abb86b69f66d1b78756f56410b36c49245dda",
+  "created_at": "2026-10-16T00:05:05.001010+00:00",
+  "dependency_map": {
+    "runless_v2/models.py": "1b17786118f215921a40f31287cb6ba0d982239f",
+    "runless_v2/proof_service.py": "f9bce66db0731c5d3d63f5fbccd9d0156a44b420",
+    "runless_v2/state_store.py": "fc9ae638ca8a572fc3edecfea1a513508e48820b",
+    "tests/test_runless_v2_proof_service.py": "ed1855085fdfc46a44f7de7a744936fd01ea3724",
+    "tests/test_runless_v2_sandbox_executor.py": "84199aac1b75c51d9518c16e26032d1589ad5a7b"
+  },
+  "digest": "efcaa3cb5234d2de83454fda5bc1f62f235e4ea8fbda20f92c782df2e002e097",
+  "evidence_digests": [
+    "10245176580a41166bbdc6615ff4db0268c146dc01e08905b82c621b6dac3a26",
+    "23a695b1fa2c59eb2cfaed3b14c8c8abb9fe770985e25a6288c05194c7f41112"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "8367329e24013e5ee1594983f2cc9f3e80a61fd89477126c920282960b05c7af",
+  "proof_id": "runless-proof-environment-dependency-repair-r1-6b8abb86b69f66d1-f5344da2a1a1e513",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 313,
+    "state_hash": "b65d6c55f48223ba97bafe87d8f3957a5a1dc3fcd02d4213805de9ef8e262097"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 313,
+    "state_hash": "b65d6c55f48223ba97bafe87d8f3957a5a1dc3fcd02d4213805de9ef8e262097"
+  },
+  "request_fingerprint": "43925e11bab7689f6ac659833d49844996e18be06678ef55257f0e57af3e2635",
+  "step": "runless-v2-premerge",
+  "task_id": "runless-proof-environment-dependency-repair-r1",
+  "workstream": "runless-proof-environment-dependency-repair-r1"
+}
