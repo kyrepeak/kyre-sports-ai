@@ -1,0 +1,31 @@
+{
+  "version": "API2_TASK_LEDGER_V1",
+  "task_id": "nfl-game-totals-compact-layout-r1",
+  "workstream": "nfl-game-totals-compact-layout-r1",
+  "branch": "nfl-game-totals-compact-layout-r1",
+  "base_main_sha": "7420820dc5b51e2643f1d0c71ef646dc6e1edd33",
+  "scope": "Presentation-only compact layout repair for NFL Game Total",
+  "frozen_behavior_preserved": [
+    "verified slate",
+    "FanDuel live total",
+    "offense vs defense",
+    "pace and possession",
+    "explosive scoring",
+    "red-zone and drive sustainability",
+    "game environment",
+    "sportsbook-free total projection",
+    "market comparison and final read",
+    "sportsbook projection influence 0.0%",
+    "stake sizing off",
+    "wager actions off"
+  ],
+  "writes": [
+    "nfl_game_totals_compact_layout_v1.py",
+    "nfl_hub_v36.py",
+    "tests/test_nfl_game_totals_compact_layout_v1.py",
+    "devsystem/runless_proof_plans/nfl-game-totals-compact-layout-r1.json",
+    "devsystem/task_ledgers/nfl-game-totals-compact-layout-r1.json"
+  ],
+  "freeze_token": "NFL_GAME_TOTALS_COMPACT_LAYOUT_R1_FROZEN",
+  "state": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF"
+}
