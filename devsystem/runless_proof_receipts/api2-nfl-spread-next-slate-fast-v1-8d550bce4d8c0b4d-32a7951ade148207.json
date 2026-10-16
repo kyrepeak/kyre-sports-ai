@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-spread-next-slate-fast-v1.json": "fc731d1a832850528dff375bcf3e2dfe7eaa2931",
+    "nfl_spread_hub_v5.py": "6e98fc3b2738555715fd8a1624c20c822c1841fa",
+    "nfl_spread_next_slate_v1.py": "18f4262fe8d27912ad0cf52882cbb54d748508f8",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1.py": "a1ea0403629c296ac3e715684c44ded2ae5c35a4",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py": "f3d4b9572a59af185f60dde7639d148d692b29c2",
+    "tests/test_nfl_spread_next_slate_v1.py": "5f448f228fcec98a9089a79fea48b1cf6102c76a"
+  },
+  "candidate_sha": "8d550bce4d8c0b4de586b386e032739e4f0ad9cc",
+  "created_at": "2026-10-16T19:39:17.995181+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "nfl_passing_yards_next_slate_v1.py": "d0361d2bd10fe961c868c5d44d9890880df950be",
+    "nfl_spread_hub_v4.py": "968227405cad1c5544c870632983c502f9596012",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "streamlit_memory_lazy_router_v136.py": "15ae13ee1722ae5003bd152f722d593193f371d4"
+  },
+  "digest": "019b3e72c807b647e8edd09c58ea6a2e964b56fec6e9b6a43b6ce958731d6a96",
+  "evidence_digests": [
+    "619cfbdd4540a47e03e26872a369d4925dd00128d0310b3ee99476d34637471a",
+    "c989392454766b480df108d0b150f6ad22aeac6f2c65dab33ad6f660c6d872a2"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "d51574ca7a604499f0da1571e39e41fe3e35fba9efe6e16e4e72739940aa313d",
+  "proof_id": "api2-nfl-spread-next-slate-fast-v1-8d550bce4d8c0b4d-32a7951ade148207",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 368,
+    "state_hash": "e0c0e7ab955d18a8273e8cd44bddb409f0b392ab13e779277682c9d5a55587c5"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 368,
+    "state_hash": "e0c0e7ab955d18a8273e8cd44bddb409f0b392ab13e779277682c9d5a55587c5"
+  },
+  "request_fingerprint": "bc2678ff5246b07714f22d59beeed657ca7d057badbf7f229eb19f2b60a9592c",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-spread-next-slate-fast-v1",
+  "workstream": "api2-nfl-spread-next-slate-fast-v1"
+}
