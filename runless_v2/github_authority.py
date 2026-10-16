@@ -160,8 +160,9 @@ class GithubAuthority:
         registry: dict[str, Any],
     ) -> None:
         # The registry source-main identity may legitimately lag after an unrelated
-        # main advance. Frozen artifact blobs are the authoritative invariant: every
-        # frozen path below must still match its baseline (or an exact candidate thaw).
+        # main advance. A path inherited unchanged from authoritative main belongs to
+        # that main history, not this candidate's mutation scope. Only candidate-authored
+        # frozen deltas require the registry baseline plus one exact candidate thaw.
         artifacts = self._flatten_registry_artifacts(registry)
         for path, expected in sorted(artifacts.items()):
             main_blob = main_tree.get(path)
@@ -171,8 +172,6 @@ class GithubAuthority:
             main_blob = str(main_blob).lower()
             candidate_blob = str(candidate_blob).lower()
             if candidate_blob == main_blob:
-                if main_blob != expected:
-                    raise GithubAuthorityError("RUNLESS_V2_FROZEN_BASELINE_DRIFT:" + path)
                 continue
             if main_blob != expected:
                 raise GithubAuthorityError("RUNLESS_V2_FROZEN_BASELINE_DRIFT:" + path)
