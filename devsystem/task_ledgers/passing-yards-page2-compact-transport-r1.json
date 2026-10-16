@@ -1,0 +1,40 @@
+{
+  "version": "API2_TASK_LEDGER_V1",
+  "task_id": "passing-yards-page2-compact-transport-r1",
+  "workstream": "passing-yards-page2-compact-transport-r1",
+  "branch": "passing-yards-page2-compact-transport-r1",
+  "status": "IMPLEMENTED_AWAITING_FINAL_PROOF",
+  "source_main": "c6e2568ff4f73b26efb3f1d76603ab1c39187b87",
+  "problem": "Public Passing Yards selected-QB Page 2 remained visually unchanged after the frozen V86 compact UX repair and Streamlit reboot.",
+  "root_cause": "V86 wrapped module-level st.markdown, but frozen V34 emits the final selected-QB composition after capture through placeholder.markdown(active_composition_html(), unsafe_allow_html=True). Frozen V43 also replaces st.markdown during the capture pipeline. Therefore the final Page-2 body bypassed the V86 transformation.",
+  "repair": "Additive V87 presentation-transport wrapper patches st.empty for one Passing Yards render, proxies returned placeholders, and applies the frozen V86 _compact_selected_analysis transform only to selected-QB Page-2 placeholder markdown. V239 advances Passing Yards from V86 to V87.",
+  "red": {
+    "candidate_sha": "8bb753f76586cc834b68eb2a03659e30037c71fa",
+    "proof_id": "passing-yards-page2-compact-transport-r1-8bb753f76586cc83-8ff28cda3c609749",
+    "state": "FAILED",
+    "failure_class": "STATIC_PROOF",
+    "detail": "RUNLESS_V2_STATIC_PROOF_FAILED"
+  },
+  "frozen_behavior": {
+    "v86_compact_transform": "unchanged",
+    "v85_and_prior_product_stack": "unchanged",
+    "projection_math": "unchanged",
+    "context_math": "unchanged",
+    "probability_math": "unchanged",
+    "market_math": "unchanged",
+    "provider_behavior": "unchanged",
+    "widget_navigation_state": "unchanged",
+    "sportsbook_projection_influence": 0.0,
+    "stake_sizing_enabled": false
+  },
+  "acceptance": [
+    "V87 is additive over frozen V86 and transport-only.",
+    "The final selected-QB placeholder markdown is transformed through frozen V86.",
+    "Quick Read and Expected Range markers are present in transformed placeholder output.",
+    "Advanced Evidence is wrapped by the existing frozen V86 transform.",
+    "Non-Page-2 placeholder markdown passes through byte-for-byte.",
+    "Placeholder non-markdown methods and attributes delegate unchanged.",
+    "V239 advances only Passing Yards ownership to V87.",
+    "Frozen model/data/probability/market/provider behavior remains unchanged."
+  ]
+}
