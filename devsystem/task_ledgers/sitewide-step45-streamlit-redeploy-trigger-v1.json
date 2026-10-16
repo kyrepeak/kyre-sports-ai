@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "task_id": "sitewide-step45-streamlit-redeploy-trigger-v1",
+  "status": "DONE",
+  "scope": "Deployment-only Streamlit Cloud refresh marker for already-merged sitewide Steps 4-5 runtime. No product code changes.",
+  "trigger": "Public production remained stale after V236/V237 merged and after one app.py entrypoint-only deploy refresh.",
+  "guardrails": {
+    "source_main": "31bb40ee5564f94794699aaaa3b611e42aa491b3",
+    "active_router": "streamlit_memory_lazy_router_v237",
+    "preserved_receptions_owner": "streamlit_memory_lazy_router_v236",
+    "runtime_code_changed": false,
+    "router_code_changed": false,
+    "model_code_changed": false,
+    "data_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "presentation_code_changed": false,
+    "sportsbook_projection_influence": 0,
+    "step6_started": false
+  },
+  "evidence": {
+    "sitewide_failed_run": 36091539864,
+    "sitewide_failed_attempts": [
+      1,
+      2
+    ],
+    "failure_token": "V236_PUBLIC_DEPLOYMENT_NOT_ACTIVE_REAL_UI",
+    "passing_yards_public_failed_run": 36090870302,
+    "cross_lane_token": "PASSING_YARDS_VISIBLE_CLEANUP_PUBLIC_DEPLOYMENT_NOT_ACTIVE",
+    "v236_branch_real_ui": "GREEN",
+    "descendant_chain": "streamlit_memory_lazy_router_v237 -> streamlit_memory_lazy_router_v236"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
