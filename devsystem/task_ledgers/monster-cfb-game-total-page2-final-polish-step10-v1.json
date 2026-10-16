@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-final-polish-step10-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Final Responsive Polish + Regression Certification Step 10",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "10/10",
+  "status": "TDD_RED_AWAITING_PROOF",
+  "base_main_sha": "a7640b57832e26fb2475bbd53b4ae3e9bd85cc26",
+  "branch": "monster-cfb-game-total-page2-final-polish-step10-v1",
+  "pr_number": null,
+  "scope_lease_id": "SCOPE-LEASE-8C6D1B3F4A275E90D2B6C1A4",
+  "problem": "The 10-step Page-2 mission is functionally complete through Step 9, but it still needs one dedicated final responsive/mobile certification contract that proves the frozen Page-2 surfaces remain contained, readable, touch-safe, regression-safe, and compatible with the Step-9 fast-switch path across the required viewport set.",
+  "root_cause": "Responsive protections exist in the frozen runtime and earlier live-cert assets, but there is no Step-10 mission-level certification artifact binding the final viewport, overflow, touch-target, surface-presence, and Step-9 routing invariants into one terminal proof contract.",
+  "patch": "Add a certification-only Step-10 artifact that evaluates the existing frozen runtime and Step-9 activation without changing product behavior. If the stronger certification contract exposes a real defect, stop and expand scope only for that exact presentation defect; otherwise complete Step 10 with no product mutation.",
+  "acceptance": [
+    "required viewports are 390, 430, 768, and 1440",
+    "responsive breakpoints 760 and 480 remain present",
+    "mobile Page 2 prevents horizontal overflow",
+    "Back-to-Slate keeps a minimum 44px touch target on mobile",
+    "all frozen Page-2 sections remain present",
+    "Step-9 selected-event fast-switch activation remains preserved",
+    "no model/provider/projection/probability/ranking/selection behavior changes",
+    "sportsbook projection influence remains 0.0",
+    "product mutation is unnecessary if the existing frozen responsive contract passes"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-8C6D1B3F4A275E90D2B6C1A4",
+    "duplicate_prs": 0,
+    "duplicate_proofs_same_candidate": 0,
+    "github_actions_fallback_authorized": false
+  },
+  "tdd": {
+    "red_test_committed_before_certification_artifact": true,
+    "product_mutation_started": false,
+    "certification_only_preferred_if_contract_already_passes": true
+  },
+  "protected": {
+    "steps1_to_9_frozen": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "ranking": true,
+    "selection": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_FINAL_POLISH_STEP10_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OPEN_ONE_PR_THEN_PROVE_TDD_RED_ON_EXACT_HEAD"
+}
