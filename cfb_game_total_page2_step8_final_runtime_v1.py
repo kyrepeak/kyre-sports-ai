@@ -154,3 +154,34 @@ def _render_selected_page(callback,*args,**kwargs):
 def render_step6_cert_surface(): return frozen_page.render_step6_cert_surface()
 def render_game_total_hub(section_header=None,status_info=None,team_logo=None,h=None):
     st.markdown(PAGE2_STEP8_CSS,unsafe_allow_html=True); return _render_selected_page(frozen_page.render_game_total_hub,section_header,status_info,team_logo,h)
+
+def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
+    if market != MARKET:
+        raise ValueError(f"Page2 Step8 received unsupported market: {market}")
+    return render_game_total_hub(section_header, status_info, team_logo, h)
+
+
+__all__ = [
+    "FREEZE_TOKEN",
+    "FROZEN_STEP_TOKENS",
+    "GITHUB_ACTIONS_FALLBACK",
+    "MARKET",
+    "MAY_MODIFY_MARKET_OWNERSHIP",
+    "MAY_MODIFY_MODEL",
+    "MAY_MODIFY_OTHER_SPORTS",
+    "MAY_MODIFY_PAGE1",
+    "MAY_MODIFY_PROBABILITY",
+    "MAY_MODIFY_PROJECTION",
+    "MODEL_VERSION",
+    "NETWORK_CALLS_ADDED",
+    "PAGE2_STEP8_CSS",
+    "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "STEP8_MARKER",
+    "TIMEZONE",
+    "build_page2_body_html",
+    "build_page2_final_html",
+    "build_page2_header_html",
+    "render_cfb_hub",
+    "render_game_total_hub",
+    "render_step6_cert_surface",
+]
