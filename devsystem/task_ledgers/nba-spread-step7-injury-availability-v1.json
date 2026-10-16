@@ -1,0 +1,66 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step7-injury-availability-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "7/10",
+  "source_main_sha": "9c52aeff4f69d99e7e2c0c370dc1e3ab2e4963e8",
+  "authoritative_branch": "nba-spread-step7-injury-availability-r1",
+  "authoritative_pr": null,
+  "state": "IMPLEMENTATION_GREEN_PENDING_FROZEN_ROUTER_THAW",
+  "step2a": {
+    "active_problem": "activate the already-tested Step-7 injury wrapper on current production while preserving the certified provider-resilience runtime seam",
+    "root_cause_class": "STALE_STATE_REGRESSION_PROTECTION",
+    "scope_lease_id": "SCOPE-LEASE-5D9BDF3D3FC91A0825124389",
+    "authorization_id": "AUTH-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1",
+    "one_branch": true,
+    "one_pr_max": true,
+    "one_proof_chain": true,
+    "duplicate_async_runs": 0
+  },
+  "tdd": {
+    "core_red_proven": true,
+    "core_green_test_count": 8,
+    "page_integration_red_proven": true,
+    "page_integration_green_test_count": 10,
+    "router_red_contract": "STEP7_ACTIVE_PAGE absent before authorized transition",
+    "provider_resilience_regression_required": true
+  },
+  "source_intelligence": {
+    "semantic_metric_id": "INJURIES",
+    "routing_unit": "DATA_FIELD",
+    "primary_provider": "nba_official",
+    "secondary_provider": "espn",
+    "same_semantic_fallback": true,
+    "page_wide_authority": false,
+    "canonical_identity": "FROZEN_STEP3_GAME_AND_TEAM_IDENTITY",
+    "stale_evidence_fails_closed": true,
+    "provider_conflict_fails_closed": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "frozen_protection": {
+    "steps_1_6_reopened": false,
+    "step6_page_modified": false,
+    "step2_active_page_constant_preserved": "nba_spread_page_v1",
+    "provider_resilience_page_constant_preserved": "nba_spread_page_provider_resilience_step3_r1",
+    "step7_runtime_target": "nba_spread_page_v2",
+    "router_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "router_from_blob": "a058059e78f0c32e465053bdfec776af72eb3660",
+    "required_thaw_id": "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1",
+    "thaw_authorized": false
+  },
+  "proof": {
+    "mode": "runless",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "exact_head_verified": false,
+    "merge_authorized": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP7_INJURY_AVAILABILITY_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "AUTHORIZE_SINGLE_CANDIDATE_BOUND_THAW_THEN_MOVE_EXISTING_BRANCH_TO_EXACT_CANDIDATE",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
