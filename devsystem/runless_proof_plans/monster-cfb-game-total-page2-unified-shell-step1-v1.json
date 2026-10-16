@@ -25,11 +25,13 @@
   "artifacts": [
     "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
     "tests/test_cfb_game_total_page2_unified_shell_step1_v1.py",
-    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-unified-shell-step1-v1.json"
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-unified-shell-step1-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-unified-shell-step1-v1.json"
   ],
   "dependencies": [
     "cfb_game_total_clean_page_v33.py",
     "cfb_game_total_clean_page_v43.py",
+    "cfb_game_total_clean_page_v44.py",
     "cfb_game_total_page2_step8_final_runtime_v1.py",
     "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py",
     "tests/test_cfb_game_total_shell_integration_step1_v1.py",
