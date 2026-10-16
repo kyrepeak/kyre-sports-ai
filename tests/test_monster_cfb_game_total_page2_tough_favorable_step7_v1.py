@@ -1,4 +1,5 @@
 import cfb_game_total_page2_stage6_tough_favorable_v1 as stage6
+import cfb_game_total_page2_step8_final_runtime_v1 as runtime
 
 
 def _battle(team, tone, title, note, verified=6):
@@ -37,3 +38,10 @@ def test_step7_has_no_model_or_network_authority():
     assert stage6.MAY_MODIFY_PROBABILITY is False
     assert stage6.NETWORK_CALLS_ADDED == 0
     assert stage6.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+
+
+def test_step7_preserves_existing_page2_runtime_public_surface():
+    assert hasattr(runtime, "render_cfb_hub")
+    assert "render_cfb_hub" in runtime.__all__
+    assert "render_game_total_hub" in runtime.__all__
+    assert "render_step6_cert_surface" in runtime.__all__
