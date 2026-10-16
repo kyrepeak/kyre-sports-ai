@@ -1,0 +1,72 @@
+{
+  "version": 2,
+  "task_id": "monster-runless-registry-thaw-retarget-step3-blocker-v1",
+  "title": "MONSTER Step 3 blocker — safe same-thaw retarget",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_RUNLESS",
+  "base_main_sha": "3c7121e060fec1193ba759193feb59d9b32477b8",
+  "branch": "monster-runless-registry-thaw-retarget-step3-blocker-v1",
+  "problem": "The authenticated Runless /registry-thaw route rejects a safe same-thaw retarget when only candidate SHA changes while thaw id, protected path, frozen from_blob and approved to_blob remain identical.",
+  "root_cause": "_execute_registry_thaw treated any existing thaw_id whose target_head_sha differed from the request candidate as REGISTRY_THAW_ID_COLLISION, even when the frozen delta was unchanged and the new exact candidate still contained the approved to_blob.",
+  "patch": "Allow one CAS-backed retarget of an existing thaw only when thaw_id, path, from_blob and to_blob are unchanged and the new exact candidate tree contains to_blob. Preserve unrelated entries/thaws and reject any changed blob pair or competing path.",
+  "mutation_scope": [
+    "runless_v2/app.py",
+    "tests/test_runless_v2_registry_thaw_retarget.py",
+    "devsystem/runless_proof_plans/monster-runless-registry-thaw-retarget-step3-blocker-v1.json",
+    "devsystem/task_ledgers/monster-runless-registry-thaw-retarget-step3-blocker-v1.json"
+  ],
+  "protected": {
+    "sports_product_files": true,
+    "providers": true,
+    "model_projection_probability": true,
+    "legacy_frozen_history": true,
+    "unrelated_active_thaws": true,
+    "parallel_workstreams": true
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": null,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-54BA6200581F1AEF4A3B",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "authoritative_main_sha": "3c7121e060fec1193ba759193feb59d9b32477b8"
+  },
+  "tdd": {
+    "red_candidate_sha": "5c9546ea8a3aff728b9f935b182eca90d55c9e4b",
+    "red_proof_id": "monster-runless-registry-thaw-retarget-step3-blocker-v1-5c9546ea8a3aff72-9f3ff0c394e0dbde",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "implementation_commit_sha": "896b0acde572433d96f5d8c570d503e31861aca7",
+    "implementation_app_blob": "1ad12060311e4b19fdcbdd7922b95d2c4cbcd01e"
+  },
+  "product_checkpoint": {
+    "branch": "monster-cfb-game-total-page2-team-snapshot-step3-v1",
+    "pr": 1563,
+    "candidate_sha": "961167df2800d29c17293fc13dfb83067761b76e",
+    "product_blob": "04daaf50a3cff1288c6bfe5e678895022e081bf0",
+    "active_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2"
+  },
+  "acceptance": {
+    "same_thaw_same_delta_retargets": true,
+    "active_thaw_count_unchanged_on_retarget": true,
+    "unrelated_thaws_preserved": true,
+    "registry_revision_advances_once": true,
+    "canonical_hash_readback_required": true,
+    "changed_blob_pair_rejected": true,
+    "network_or_sports_product_mutation": false
+  },
+  "runless": {
+    "proof_generation": 2,
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "authorization_id": "AUTH-MONSTER-RUNLESS-REGISTRY-THAW-RETARGET-STEP3-BLOCKER-R1",
+    "proof_request_status": "NOT_SUBMITTED_AFTER_IMPLEMENTATION"
+  },
+  "freeze_token": "MONSTER_RUNLESS_REGISTRY_THAW_RETARGET_STEP3_BLOCKER_V1_CERTIFIED",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OBTAIN_ONE_EXACT_HEAD_RUNLESS_PROOF_OPEN_ONE_PR_MERGE_EXACT_CERTIFIED_HEAD_DEPLOY_AND_CLOSEOUT"
+}

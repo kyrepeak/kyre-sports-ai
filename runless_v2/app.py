@@ -169,17 +169,19 @@ def _execute_registry_thaw(
         raise GithubAuthorityError("REGISTRY_THAW_REVISION_INVALID")
     previous_state_hash = str(registry["state_hash"])
 
-    for grant in active_before:
+    retarget_index: int | None = None
+    for index, grant in enumerate(active_before):
         grant_id = str(grant.get("thaw_id") or "")
         files = grant.get("files") or {}
         pair = files.get(req.path) if isinstance(files, dict) else None
         if grant_id == req.thaw_id:
-            if (
-                str(grant.get("target_head_sha") or "") == req.candidate_sha
-                and isinstance(pair, dict)
+            if not (
+                isinstance(pair, dict)
                 and str(pair.get("from_blob") or "").lower() == req.from_blob
                 and str(pair.get("to_blob") or "").lower() == req.to_blob
             ):
+                raise GithubAuthorityError("REGISTRY_THAW_ID_COLLISION")
+            if str(grant.get("target_head_sha") or "") == req.candidate_sha:
                 return _registry_thaw_result(
                     req,
                     registry,
@@ -188,23 +190,29 @@ def _execute_registry_thaw(
                     registry_commit_sha=None,
                     reused=True,
                 )
-            raise GithubAuthorityError("REGISTRY_THAW_ID_COLLISION")
+            retarget_index = index
+            break
         if pair is not None:
             raise GithubAuthorityError("REGISTRY_THAW_PATH_CONFLICT")
 
-    registry["active_thaws"] = active_before + [
-        {
-            "thaw_id": req.thaw_id,
-            "status": "ACTIVE",
-            "target_head_sha": req.candidate_sha,
-            "files": {
-                req.path: {
-                    "from_blob": req.from_blob,
-                    "to_blob": req.to_blob,
-                }
-            },
-        }
-    ]
+    expected_grant = {
+        "thaw_id": req.thaw_id,
+        "status": "ACTIVE",
+        "target_head_sha": req.candidate_sha,
+        "files": {
+            req.path: {
+                "from_blob": req.from_blob,
+                "to_blob": req.to_blob,
+            }
+        },
+    }
+    if retarget_index is None:
+        active_target = active_before + [expected_grant]
+    else:
+        active_target = copy.deepcopy(active_before)
+        active_target[retarget_index] = expected_grant
+
+    registry["active_thaws"] = active_target
     registry["revision"] = previous_revision + 1
     registry["state_hash"] = _registry_state_hash(registry)
 
@@ -242,21 +250,21 @@ def _execute_registry_thaw(
         raise GithubAuthorityError("REGISTRY_THAW_UNRELATED_ENTRY_DRIFT")
 
     active_after = list(readback.get("active_thaws") or [])
-    if active_after[:-1] != active_before:
-        raise GithubAuthorityError("REGISTRY_THAW_UNRELATED_ACTIVE_DRIFT")
-    expected_grant = {
-        "thaw_id": req.thaw_id,
-        "status": "ACTIVE",
-        "target_head_sha": req.candidate_sha,
-        "files": {
-            req.path: {
-                "from_blob": req.from_blob,
-                "to_blob": req.to_blob,
-            }
-        },
-    }
-    if not active_after or active_after[-1] != expected_grant:
-        raise GithubAuthorityError("REGISTRY_THAW_READBACK_IDENTITY_MISMATCH")
+    if retarget_index is None:
+        if active_after[:-1] != active_before:
+            raise GithubAuthorityError("REGISTRY_THAW_UNRELATED_ACTIVE_DRIFT")
+        if not active_after or active_after[-1] != expected_grant:
+            raise GithubAuthorityError("REGISTRY_THAW_READBACK_IDENTITY_MISMATCH")
+    else:
+        if len(active_after) != len(active_before):
+            raise GithubAuthorityError("REGISTRY_THAW_RETARGET_COUNT_DRIFT")
+        for index, prior_grant in enumerate(active_before):
+            if index == retarget_index:
+                continue
+            if active_after[index] != prior_grant:
+                raise GithubAuthorityError("REGISTRY_THAW_UNRELATED_ACTIVE_DRIFT")
+        if active_after[retarget_index] != expected_grant:
+            raise GithubAuthorityError("REGISTRY_THAW_READBACK_IDENTITY_MISMATCH")
 
     return _registry_thaw_result(
         req,
