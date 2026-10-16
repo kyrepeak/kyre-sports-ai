@@ -1,11 +1,11 @@
 {
-  "version": 1,
+  "version": 2,
   "task_id": "monster-cfb-game-total-page2-trends-step4-v1",
   "title": "MONSTER CFB Game Total Page 2 — Trends repair Step 4",
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
   "step": "4/10",
-  "status": "TDD_RED_AWAITING_RUNLESS",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_THAW_RUNLESS",
   "base_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37",
   "branch": "monster-cfb-game-total-page2-trends-step4-v1",
   "problem": "Stage 3 Trends renders mostly unexplained em-dashes because the runtime only forwards special raw trend/split keys and ignores already-owned verified completed-game evidence on the away/home team profiles.",
@@ -42,11 +42,16 @@
     "authoritative_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37"
   },
   "tdd": {
-    "red_candidate_sha": null,
-    "red_proof_id": null,
-    "red_failure_class": null,
-    "red_detail": null,
-    "implementation_candidate_sha": null
+    "red_candidate_sha": "fb22d52cfa4b3521aa51f4e5acc894e65814d674",
+    "red_proof_id": "monster-cfb-game-total-page2-trends-step4-v1-fb22d52cfa4b3521-6bd69a7b98d6d759",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "red_gate_check_run_id": null,
+    "red_receipt_digest": null,
+    "step6_implementation_commit_sha": "e13ce7741946d7cbeeabdbb9e6c5bece29bfebdc",
+    "step6_product_blob": "474d024a3fa0884070f87f886bbeceb099d1cee9",
+    "step8_implementation_commit_sha": "3a686bfb791bf410a1ab7b139c1239da08ff8009",
+    "step8_product_blob": "94f1fb52324a9821c23f681c5e720698383dfb38"
   },
   "acceptance": {
     "verified_team_history_renders": true,
@@ -59,14 +64,22 @@
     "network_calls_added": 0,
     "sportsbook_projection_influence": 0.0
   },
+  "frozen_registry": {
+    "step6_from_blob": "c39bb9a5df699f367e87b8f10328f7e3f5a1a8bc",
+    "step6_to_blob": "474d024a3fa0884070f87f886bbeceb099d1cee9",
+    "step8_from_blob": "bf3141e958826cf93cb39435e7ea809865f92a29",
+    "step8_to_blob": "94f1fb52324a9821c23f681c5e720698383dfb38",
+    "thaw_status": "NOT_REQUESTED"
+  },
   "runless": {
-    "proof_generation": 1,
+    "proof_generation": 2,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-TRENDS-STEP4-R2",
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_request_status": "NOT_SUBMITTED"
+    "final_proof_request_status": "NOT_SUBMITTED"
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_TRENDS_STEP4_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "OBTAIN_ONE_TDD_RED_RUNLESS_RESULT_BEFORE_PRODUCT_MUTATION"
+  "next_legal_action": "FRESH_MAIN_CHECK_BIND_EXACT_HEAD_THAWS_OPEN_ONE_PR_THEN_SUBMIT_ONE_FINAL_RUNLESS_PROOF"
 }
