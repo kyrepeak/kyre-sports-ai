@@ -1,0 +1,38 @@
+{
+  "version": "NBA_SPREAD_SHARP_MONEY_OBSERVATIONS_STEP3_TASK_LEDGER_V1",
+  "task_id": "nba-spread-sharp-money-observations-step3-r1",
+  "workstream": "nba-spread-sharp-money-observations-step3-r1",
+  "source_main_sha": "66772da84816c5435d7c35c9d029462876177dec",
+  "scope_lease_id": "SCOPE-LEASE-DEE8518FF6214070A011EA49",
+  "authorization_id": "FINALIZATION-AUTHORITY-100-CONVERGENCE-V1",
+  "freeze_token": "NBA_SPREAD_SHARP_MONEY_OBSERVATIONS_STEP3_R1_FROZEN",
+  "tdd": {
+    "red_existence_candidate": "d2edf2f8a3daf26a366f1b24adb9d3dd5d574968",
+    "red_existence_result": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "shell_green_candidate": "e845c2bf3fe143c4624d629a0b298cc2eb66e765",
+    "shell_green_gate_check_run_id": 116786812232,
+    "shell_green_disposition": "SUPERSEDED_BY_TDD_BEHAVIOR_CONTRACT",
+    "red_behavior_candidate": "c56e95288dc5f0da6d491d5c833ef288168ca320",
+    "red_behavior_result": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "implementation_commit": "a91db98c321059240807e7ae181b939b180d805e",
+    "focused_step3": "8 passed",
+    "targeted_regression": "21 passed",
+    "global_suite_classification": "ENVIRONMENT_COLLECTION_BLOCKED_UNRELATED_DEPENDENCIES"
+  },
+  "scope": {
+    "source": "frozen Step-2 verified public betting observations",
+    "sportsbook_projection_influence": 0.0,
+    "model_mutation": false,
+    "projection_mutation": false,
+    "probability_mutation": false,
+    "ranking_mutation": false,
+    "page_visual_mutation": false,
+    "page_wide_source_authority": false
+  },
+  "proof": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "status": "FINAL_CANDIDATE_PENDING"
+  }
+}
