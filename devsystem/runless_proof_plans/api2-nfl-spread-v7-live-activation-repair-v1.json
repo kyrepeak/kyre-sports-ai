@@ -1,0 +1,36 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-spread-v7-live-activation-repair-v1",
+  "workstream": "api2-nfl-spread-v7-live-activation-repair-v1",
+  "source_main_sha": "32d9a7313e68635369580d2d133095ba8f6edbc8",
+  "commands": [
+    ["python", "-m", "py_compile", "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py", "nfl_spread_hub_v7.py", "nfl_spread_professional_intelligence_v1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_api2_nfl_spread_v7_live_activation_repair_v1.py", "tests/test_nfl_spread_professional_intelligence_v1.py", "tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py", "tests/test_nfl_spread_next_slate_v1.py", "tests/test_nfl_spread_router_v136.py"]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/api2-nfl-spread-v7-live-activation-repair-v1.json",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py",
+    "tests/test_api2_nfl_spread_v7_live_activation_repair_v1.py"
+  ],
+  "dependencies": [
+    "nfl_spread_hub_v4.py",
+    "nfl_spread_hub_v5.py",
+    "nfl_spread_hub_v6.py",
+    "nfl_spread_hub_v7.py",
+    "nfl_spread_professional_intelligence_v1.py",
+    "nfl_spread_next_slate_v1.py",
+    "nfl_spread_autodate_repair_v1.py",
+    "streamlit_memory_lazy_router_v132.py",
+    "streamlit_memory_lazy_router_v136.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_SPREAD_V7_LIVE_ACTIVATION_REPAIR_V1_FROZEN"
+}
