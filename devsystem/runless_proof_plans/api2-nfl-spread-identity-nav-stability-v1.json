@@ -6,8 +6,7 @@
   "commands": [
     ["python", "-m", "py_compile", "streamlit_route_hygiene_v1.py", "nfl_spread_professional_intelligence_v1.py", "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py"],
     ["python", "-m", "pytest", "-q", "tests/test_api2_nfl_spread_identity_nav_stability_v1.py"],
-    ["python", "-m", "pytest", "-q", "tests/test_nfl_spread_professional_intelligence_v1.py", "tests/test_api2_nfl_spread_v7_live_activation_repair_v1.py", "tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py", "tests/test_nfl_spread_next_slate_v1.py", "tests/test_nfl_spread_router_v136.py"],
-    ["python", "-m", "pytest", "-q"]
+    ["python", "-m", "pytest", "-q", "tests/test_nfl_spread_professional_intelligence_v1.py", "tests/test_api2_nfl_spread_v7_live_activation_repair_v1.py", "tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py", "tests/test_nfl_spread_next_slate_v1.py", "tests/test_nfl_spread_router_v136.py"]
   ],
   "artifacts": [
     "devsystem/runless_proof_plans/api2-nfl-spread-identity-nav-stability-v1.json",
@@ -28,8 +27,8 @@
     "streamlit_memory_lazy_router_v157.py"
   ],
   "probes": [],
-  "timeout_seconds": 1200,
-  "live_ttl_seconds": 1500,
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
   "github_actions_fallback": 0,
   "reuse_frozen_proof": [],
   "required_check": "runless-final-gate",
