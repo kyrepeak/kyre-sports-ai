@@ -120,6 +120,16 @@ def _event_id(display_game: Mapping[str, Any]) -> str:
     return str(value or "").strip()
 
 
+def _selected_day(identity: Mapping[str, Any], display_game: Mapping[str, Any]) -> str:
+    value = _first(display_game, "date", "game_date", "kickoff_date", "kickoff_iso")
+    if value in (None, ""):
+        value = _first(identity, "date", "game_date", "kickoff_date", "kickoff_iso")
+    if value in (None, ""):
+        game = _mapping(identity.get("game"))
+        value = _first(game, "date", "game_date", "kickoff_date", "kickoff_iso")
+    return str(value or "").strip()[:10]
+
+
 def _enrich_page2_market_context(display_game: Mapping[str, Any]) -> dict[str, Any]:
     """Restore frozen V38 verified total-market context before Step-8 composition."""
     incoming = dict(_mapping(display_game))
@@ -266,6 +276,7 @@ def build_page2_body_html(payload: Mapping[str, Any]) -> str:
 
     away_name = _first(_mapping(identity.get("away")), "team", "name") or _first(away, "team", "name")
     home_name = _first(_mapping(identity.get("home")), "team", "name") or _first(home, "team", "name")
+    as_of_day = _selected_day(identity, display_game)
     favorable = raw.get("favorable_for") if isinstance(raw.get("favorable_for"), Mapping) else {}
     snapshot = step5.build_team_snapshot_key_drivers_html(
         away_team=away_name,
@@ -289,6 +300,11 @@ def build_page2_body_html(payload: Mapping[str, Any]) -> str:
         explosive_scoring=_first(raw, "explosive_scoring", "explosive_scoring_label"),
         scoring_opportunities=_first(raw, "scoring_opportunities", "scoring_opportunity_rate"),
         red_zone_finishing=_first(raw, "red_zone_finishing", "red_zone_finish_rate"),
+        away_team=away_name,
+        home_team=home_name,
+        away_profile=away,
+        home_profile=home,
+        as_of_day=as_of_day,
     )
 
     scenarios = _line_scenarios(raw, display_game)
