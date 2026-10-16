@@ -1,0 +1,18 @@
+{
+  "task_id": "runless-proof-environment-dependency-repair-r1",
+  "workstream": "runless-proof-environment-dependency-repair-r1",
+  "state": "READY_FOR_EXACT_HEAD_RUNLESS_PROOF",
+  "product_scope": "none",
+  "github_actions_fallback": 0,
+  "repair": {
+    "bootstrap_streamlit": true,
+    "missing_dependency_failure_class": "INFRA",
+    "failed_fingerprint_on_dependency_gap": false,
+    "assertion_failure_class": "STATIC_PROOF"
+  },
+  "verification": {
+    "runless_regressions": "109/109 PASS",
+    "step3_clean_bootstrap": "35/35 PASS",
+    "repair_plan_old_bootstrap": "22/22 PASS"
+  }
+}
