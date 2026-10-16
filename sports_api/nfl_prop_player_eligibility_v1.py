@@ -6,8 +6,13 @@ A player is eligible only when:
 - present on the current ESPN team roster;
 - roster status/group is prop-eligible;
 - present on the current ESPN depth chart at an allowed position;
-- exact-event game-day availability is CONFIRMED;
-- the player is not listed unavailable/inactive for that event.
+- the exact ESPN event identity is verified and the game is still pregame;
+- the player is not listed unavailable/inactive by current event or league evidence.
+
+Before final inactive lists are published, the pool may be provisional while
+remaining exact-ID, roster/depth verified, and fail-closed on known unavailable
+players. Final inactive confirmation is tracked separately and supersedes that
+provisional state when ESPN publishes it.
 
 This module contains no projection, probability, market, ranking, or wager logic.
 """
@@ -324,6 +329,8 @@ def event_availability_state(summary: dict[str, Any]) -> dict[str, Any]:
         return {
             "state": "UNVERIFIED",
             "prop_gate_open": False,
+            "final_inactives_confirmed": False,
+            "provisional_pregame_pool": False,
             "game_state": state,
             "team_ids": team_ids,
             "unavailable": unavailable,
@@ -333,6 +340,19 @@ def event_availability_state(summary: dict[str, Any]) -> dict[str, Any]:
         return {
             "state": "CLOSED",
             "prop_gate_open": False,
+            "final_inactives_confirmed": False,
+            "provisional_pregame_pool": False,
+            "game_state": state,
+            "team_ids": team_ids,
+            "unavailable": unavailable,
+        }
+
+    if state != "pre":
+        return {
+            "state": "UNVERIFIED",
+            "prop_gate_open": False,
+            "final_inactives_confirmed": False,
+            "provisional_pregame_pool": False,
             "game_state": state,
             "team_ids": team_ids,
             "unavailable": unavailable,
@@ -345,7 +365,12 @@ def event_availability_state(summary: dict[str, Any]) -> dict[str, Any]:
     availability = "CONFIRMED" if explicit_both else "PENDING"
     return {
         "state": availability,
-        "prop_gate_open": availability == "CONFIRMED",
+        # PENDING is a verified pregame event with final inactives not yet
+        # published. Keep the page usable from current roster/depth truth while
+        # known event/league unavailable players remain excluded below.
+        "prop_gate_open": True,
+        "final_inactives_confirmed": explicit_both,
+        "provisional_pregame_pool": not explicit_both,
         "game_state": state,
         "team_ids": team_ids,
         "unavailable": unavailable,
@@ -369,7 +394,7 @@ def build_current_prop_pool(
         reason = (
             "pregame prop pool closed after kickoff"
             if availability.get("state") == "CLOSED"
-            else "final game-day availability not confirmed"
+            else "exact pregame event availability is not verified"
         )
         return {}, {**availability, "reason": reason}
 
