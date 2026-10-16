@@ -130,7 +130,7 @@ def test_page1_bridge_changes_only_native_page1_owner() -> None:
         assert marker in source
 
 
-def test_step9_selected_page2_fast_path_stays_first_and_only_page1_fallback_is_wrapped() -> None:
+def test_step9_selected_page2_fast_path_stays_first_and_page1_bridge_is_fail_safe() -> None:
     source = _read(STEP9)
     assert "import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair" in source
     render_start = source.index("def render_app()")
@@ -138,7 +138,10 @@ def test_step9_selected_page2_fast_path_stays_first_and_only_page1_fallback_is_w
     render_body = source[render_start:render_end]
     assert "if _selected_game_total():" in render_body
     assert "return _render_selected_page_fast()" in render_body
-    assert "return page1_repair.render_with_page1_repair(prior.render_app)" in render_body
+    assert 'bridge = globals().get("page1_repair")' in render_body
+    assert "if bridge is None:" in render_body
+    assert "return prior.render_app()" in render_body
+    assert "return bridge.render_with_page1_repair(prior.render_app)" in render_body
     assert render_body.index("return _render_selected_page_fast()") < render_body.index("render_with_page1_repair")
 
 
