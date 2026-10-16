@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/passing-yards-page2-compact-ux-r1.json": "ad5eb1c640c8c4b5ebc10cac1a101c5bc1b5fa69",
+    "devsystem/task_ledgers/passing-yards-page2-compact-ux-r1.json": "f56b1ac2fe5d3218a5187c72f00df9d7bf4af141",
+    "nfl_passing_yards_hub_v86.py": "2fee9c3174d4e7dff42d96f74928b2586f5eedf4",
+    "streamlit_memory_lazy_router_v239.py": "1fc19482774c5ad4610113097651ea91eb9fcc73",
+    "tests/test_passing_yards_page2_compact_ux_r1.py": "df289c44e2a8f83e803801f0c06523d6f2d0a9de"
+  },
+  "candidate_sha": "793ba5d158928569718215890e158372ad8c687f",
+  "created_at": "2026-10-16T09:01:37.700860+00:00",
+  "dependency_map": {
+    "nfl_passing_yards_hub_v67.py": "a707a882ffcfba145100594f9919d23dd8312a3a",
+    "nfl_passing_yards_hub_v69.py": "30e8af9e4b7711ce3ee8d824381bd1ae410d0114",
+    "nfl_passing_yards_hub_v76.py": "509368a9a7ad6618f1470f287c9d1b3f22e486ad",
+    "nfl_passing_yards_hub_v81.py": "a57d01f1adf051b16508abbd646ed22f4267075e",
+    "nfl_passing_yards_hub_v84.py": "8a0f89d62c195890e5c7b3ef77d30948117d40f5",
+    "nfl_passing_yards_hub_v85.py": "ec33cd092e249a701d510cac2b95a8ffd780b4db",
+    "streamlit_memory_lazy_router_v188.py": "ff9804e7698c34bb87ae3e2bfe4f3777926f1553",
+    "streamlit_memory_lazy_router_v225.py": "0de2e2ec55cf5300db1b2d9dddc913b96a0de63d",
+    "streamlit_memory_lazy_router_v238.py": "aee3624198c9e290902b0bf967ec85704a967698"
+  },
+  "digest": "f0de5ebeaf0ca78266d76b2cf6157347a7ee7588c6fbcff15a0287e000530020",
+  "evidence_digests": [
+    "d65234d380b049143aad58f51b61ae441b6fd233be3724a306432bff28c92201",
+    "caf46828fca7177dad4425af5bd90c958bb0f0f638b380821b1bd10928aa8d3d",
+    "fe5b33fee51670754ea2bcfdb0eea8d851a6b5d36f159f4579feffe2952b51a6",
+    "bced16639fd3271bddc8c4016ba4302871f119d7867348ebce87438eb9170fd6"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6ddd865a363fc77f20ee1558cbbb4f1b2235db5dceedb93084b089642a4a1d82",
+  "proof_id": "passing-yards-page2-compact-ux-r1-793ba5d158928569-b3b5ea5f06c4bb6b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 365,
+    "state_hash": "81a0ada60607b42e6a72f3b440a9fb5d0a148b1201480e718c935bc45e6ef3d3"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 365,
+    "state_hash": "81a0ada60607b42e6a72f3b440a9fb5d0a148b1201480e718c935bc45e6ef3d3"
+  },
+  "request_fingerprint": "8edbf8b04dd89aa62a6b620970530422f4192151ae4f9c34db63156d008f821b",
+  "step": "runless-v2-premerge",
+  "task_id": "passing-yards-page2-compact-ux-r1",
+  "workstream": "passing-yards-page2-compact-ux-r1"
+}
