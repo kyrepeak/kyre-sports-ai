@@ -1,0 +1,64 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/nba-spread-step7-injury-availability-v1.json": "539603ea0f7b71376e8792bcc52ae071d44f66c5",
+    "devsystem/runless_proof_plans/nba-spread-step7-injury-availability-v1.json": "5bf612f881a8c03ee2fc7de469df5009d0b243d1",
+    "devsystem/task_ledgers/nba-spread-step7-injury-availability-v1.json": "38ae530cc3b80c6b0b0a9950c69bbacfcd48b638",
+    "nba_spread_injury_availability_v1.py": "15c6988e5cd51d43e27820c145393b52352136f3",
+    "nba_spread_page_v2.py": "381c1788c783977b474fb56267f3f21dce72b61c",
+    "runless_v2/github_authority.py": "9ceedeb1de27ba702b954e54c55c642b0f82e351",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": "478fde67b2da07af0d801a00dcade165cc4d2db2",
+    "tests/test_nba_spread_step7_injury_availability_v1.py": "6cae969568147a9f0b3264e7766fe22bca9862ec",
+    "tests/test_runless_v2_github_authority.py": "7f7a53394a068c9aa8f7a642977e94ddd42d9e48"
+  },
+  "candidate_sha": "7b66b7d2f901e11324b019a79f375954a662b4a3",
+  "created_at": "2026-10-16T04:51:02.830001+00:00",
+  "dependency_map": {
+    "devsystem/contracts/universal-sports-field-router-v1.json": "6857355bd0666cb4a511941ffe74bb0326d756ed",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json": "6839c3b6569ed3ab16b09530c6bc8acf3e4e7daa",
+    "devsystem/contracts/universal-sports-trust-quorum-v1.json": "6a244576ecd18f253f4d0cd2175cf5beb6205e81",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "nba_spread_market_lines_v1.py": "e66a4ae89138b141c09b4b443ecd61748ba3955e",
+    "nba_spread_most_bet_v1.py": "1f656b3ca96d66aaaf773ccc2da7daed52fe5f05",
+    "nba_spread_page_provider_resilience_step3_r1.py": "40cbe2cfd4e0792bfc20b8a2267ec03247c4e35c",
+    "nba_spread_page_v1.py": "0d54b3cedf609f07cd6213d280e0a8c073563d26",
+    "nba_spread_schedule_v1.py": "143c366f935776b2f8ce77c0947b1fcf23013fa7",
+    "nba_spread_sharp_money_v1.py": "1013ac9719af1b16742435f2bb0f0b92258a0a8f",
+    "nba_spread_step2_activation_v1.py": "9a122781f33e7c383be3090150c130b7b34d75dd"
+  },
+  "digest": "9a85d279b491f5b7716f3e0c30049a83c8fcf919e6ea8e7cf16faee1efb63b86",
+  "evidence_digests": [
+    "ca4ddfd74678481b710e4912a784821d2b733a265fb2fb92a5c966e536fb219f",
+    "b4c1dfae294120f09a416944c45b840bf6082ce3669c6abe6b1a0d81aa2a0b6d"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "16a7f1401a4edd0dd0d1a44dc29ac7aa8c7c60a10d1c166a5c8c195cab1732fc",
+  "proof_id": "nba-spread-step7-injury-availability-v1-7b66b7d2f901e113-22067abd6558b2aa",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 328,
+    "state_hash": "671609494e5a0f8163d55753144f0d53af2c4e433c3b254c0dbddea051ea998b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 328,
+    "state_hash": "671609494e5a0f8163d55753144f0d53af2c4e433c3b254c0dbddea051ea998b"
+  },
+  "request_fingerprint": "5468053ef6456afd6c54f5be5aed9337e36c12e082e190e3c175f9b67d5f0b0b",
+  "step": "runless-v2-premerge",
+  "task_id": "nba-spread-step7-injury-availability-v1",
+  "workstream": "nba-spread-two-page-v1"
+}
