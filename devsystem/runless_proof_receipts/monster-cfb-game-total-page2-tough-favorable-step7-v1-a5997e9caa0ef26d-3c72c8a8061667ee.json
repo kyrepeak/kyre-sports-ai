@@ -1,0 +1,55 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page2_stage6_tough_favorable_v1.py": "ba45b05851ad03ed774863eef42b06c807e21ac9",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "49cdb075f664f8cd99618ba06dec87e2ef0347c4",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-tough-favorable-step7-v1.json": "90875564d8a5107b6310ccb66ca41fd5420a1c65",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-tough-favorable-step7-v1.json": "3a880394932c688e9a61e7b4c521657dc76e2456",
+    "runless_v2/app.py": "fecb7b3e98de8be836c4053d1fce9cb64c07cd7c",
+    "tests/test_monster_cfb_game_total_page2_tough_favorable_step7_v1.py": "b7dde792598d99bdb2e2d65d407c1eb2259e01a8",
+    "tests/test_runless_v2_registry_thaw_route.py": "7e3d89533550e218ff56e2c6356f2ed1171658a8"
+  },
+  "candidate_sha": "a5997e9caa0ef26ddfd5ddf79c80cf46dec763c7",
+  "created_at": "2026-10-16T08:03:05.608596+00:00",
+  "dependency_map": {
+    "cfb_game_total_page2_stage5_best_bet_v1.py": "e67a63fc22933c92516bb9321aefe0015e75c627",
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "ee6a61b3867725a6add37c62a8a788dea5017456",
+    "cfb_game_total_step4_matchup_v2.py": "47962b6bbd7238fed3837ed42e27e43d851c43ef",
+    "runless_v2/github_authority.py": "9ceedeb1de27ba702b954e54c55c642b0f82e351",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1",
+    "tests/test_monster_cfb_game_total_page2_best_bet_step6_v1.py": "803c4b1225ea6ca8233a2afb3152dad1c648a3ff"
+  },
+  "digest": "54c6bf5c17026cf59fc8656bb4df030800bc8ab5b16ddd684efc3135f09f1f30",
+  "evidence_digests": [
+    "17150d25027140ec840f2ec6908e87c61e8aebe18a4e69ca1b26ff33e1288e3b",
+    "9f64da3918420647f066a56692a0208b5516635e881c9947ad93fc421ef164bd"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "ea704f91c6d3e53e9e5f348c8900fbd7855c76797f128ddb73f7fd1e90cfa48f",
+  "proof_id": "monster-cfb-game-total-page2-tough-favorable-step7-v1-a5997e9caa0ef26d-3c72c8a8061667ee",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TOUGH-FAVORABLE-STEP7-R1"
+    ],
+    "revision": 359,
+    "state_hash": "8dd475779f104c6f6065e98d7228dc87cae9228c4cccfee63f4a50700b9d23f7"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TOUGH-FAVORABLE-STEP7-R1"
+    ],
+    "revision": 359,
+    "state_hash": "8dd475779f104c6f6065e98d7228dc87cae9228c4cccfee63f4a50700b9d23f7"
+  },
+  "request_fingerprint": "cb09158d6317d69bbe823365eea43c82ba3c5483b5ac3fa813eef27f6dcde7ae",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-page2-tough-favorable-step7-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1"
+}
