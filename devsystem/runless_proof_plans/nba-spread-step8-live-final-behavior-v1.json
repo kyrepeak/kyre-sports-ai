@@ -5,7 +5,9 @@
   "source_main_sha": "91571200631c101fb2b133c7db56e940bb0013b9",
   "commands": [
     ["python","-m","py_compile","nba_spread_live_final_v1.py","nba_spread_page_v3.py","nba_spread_page_v2.py","streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py"],
-    ["python","-m","pytest","-q","tests/test_nba_spread_step8_live_final_behavior_v1.py","tests/test_nba_spread_step7_injury_availability_v1.py","tests/test_nba_spread_step6_market_lines_v1.py","tests/test_nba_spread_step2_site_activation_v1.py","tests/test_nba_spread_provider_resilience_step3_r1.py"]
+    ["python","-m","pytest","-q","tests/test_nba_spread_step8_live_final_behavior_v1.py"],
+    ["python","-m","pytest","-q","tests/test_nba_spread_step7_injury_availability_v1.py","-k","not step7_router_preserves_step2_compatibility_constant_and_uses_runtime_wrapper"],
+    ["python","-m","pytest","-q","tests/test_nba_spread_step6_market_lines_v1.py","tests/test_nba_spread_step2_site_activation_v1.py","tests/test_nba_spread_provider_resilience_step3_r1.py"]
   ],
   "artifacts": [
     "devsystem/execution_plans/nba-spread-step8-live-final-behavior-v1.json",
@@ -28,6 +30,12 @@
     "nba_spread_step2_activation_v1.py",
     "devsystem/runless_proof_plan_v1.py"
   ],
+  "successor_runtime_ruling": {
+    "obsolete_test": "tests/test_nba_spread_step7_injury_availability_v1.py::test_step7_router_preserves_step2_compatibility_constant_and_uses_runtime_wrapper",
+    "reason": "Step 7 correctly required STEP7_ACTIVE_PAGE to be the terminal dispatch while Step 7 was current. Step 8 is the authorized successor and must dispatch STEP8_ACTIVE_PAGE while preserving STEP7_ACTIVE_PAGE and delegating through nba_spread_page_v2. The Step-8 routing test proves that successor contract.",
+    "step7_product_code_modified": false,
+    "step7_behavior_regressions_still_run": true
+  },
   "probes": [],
   "timeout_seconds": 600,
   "live_ttl_seconds": 900,

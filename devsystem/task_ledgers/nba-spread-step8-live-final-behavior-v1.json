@@ -7,7 +7,7 @@
   "source_main_sha": "91571200631c101fb2b133c7db56e940bb0013b9",
   "authoritative_branch": "nba-spread-step8-live-final-r1",
   "authoritative_pr": null,
-  "state": "IMPLEMENTATION_GREEN_PENDING_AUTHORIZED_THAW_AND_FINAL_PROOF",
+  "state": "GREEN_REPROOF_PENDING_AFTER_SUCCESSOR_TEST_PLAN_RULING",
   "step2a": {
     "active_problem": "preserve exact pregame context across verified game-state transitions without rewriting or fabricating history",
     "root_cause_class": "MISSING_LIVE_FINAL_SNAPSHOT_LIFECYCLE",
@@ -28,9 +28,16 @@
     "red_proof_id": "nba-spread-step8-live-final-behavior-v1-c4800013c1ac9505-7ae45f3d54e1be75",
     "red_failure_class": "STATIC_PROOF",
     "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "green_candidate_attempt_1": "62684145a89aef51a7b20feeaacfd9912739a6c3",
+    "green_attempt_1_proof_id": "nba-spread-step8-live-final-behavior-v1-62684145a89aef51-16037d060a23a713",
+    "green_attempt_1_failure_class": "STATIC_PROOF",
+    "green_attempt_1_root_cause": "SUCCESSOR_RUNTIME_TEST_CONFLICT",
     "green_verified": false,
     "regression_verified": false
   },
+  "rulings": [
+    "Ruling: Step-7 terminal-router source assertion is obsolete once Step 8 is the authorized successor. Preserve all Step-7 product code and behavior tests, exclude only the obsolete terminal dispatch assertion, and prove the successor routing contract in Step-8 tests."
+  ],
   "behavior": {
     "pregame_snapshot_capture": true,
     "freeze_at_live_transition": true,
@@ -46,13 +53,18 @@
   "frozen_protection": {
     "steps_1_7_reopened": false,
     "step7_page_modified": false,
+    "step7_test_file_modified": false,
     "step7_runtime_target_preserved": "nba_spread_page_v2",
     "step8_runtime_target": "nba_spread_page_v3",
     "router_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
     "router_from_blob": "478fde67b2da07af0d801a00dcade165cc4d2db2",
     "router_to_blob": "07c91b5a48326d557a0c7269ca6a072ee10df26d",
     "required_thaw_id": "THAW-NBA-SPREAD-STEP8-LIVE-FINAL-R1",
-    "thaw_authorized": false
+    "thaw_authorized": true,
+    "thaw_registry_revision": 334,
+    "thaw_target_candidate": "62684145a89aef51a7b20feeaacfd9912739a6c3",
+    "thaw_retarget_required": true,
+    "thaw_delta_unchanged": true
   },
   "proof": {
     "mode": "runless",
@@ -66,6 +78,6 @@
   },
   "freeze_token": "NBA_SPREAD_STEP8_LIVE_FINAL_BEHAVIOR_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "AUTHORIZE_SINGLE_CANDIDATE_BOUND_ROUTER_THAW_THEN_MOVE_EXISTING_BRANCH_TO_EXACT_CANDIDATE_AND_RUN_FINAL_PROOF",
+  "next_legal_action": "CREATE_SUCCESSOR_PROOF_PLAN_CANDIDATE_REUSE_SAME_THAW_DELTA_RETARGET_AND_RUN_ONCE",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
