@@ -133,6 +133,52 @@ def _scenario_switch_css(rows: Sequence[Mapping[str, Any]]) -> str:
     return f"<style>{selectors}{selected_labels}</style>"
 
 
+def build_line_lab_html(
+    *,
+    line_scenarios: Sequence[Mapping[str, Any]] | None,
+    selected_line: Any,
+) -> str:
+    """Render Stage 4 Line Lab only while preserving the frozen combined renderer."""
+    rows = _scenario_rows(line_scenarios)
+    selected_index = _selected_index(rows, selected_line)
+    selected = rows[selected_index] if rows else {}
+    selected_line_display = _display(selected.get("line") if rows else selected_line)
+    selected_over = _display(selected.get("over_probability"))
+    selected_under = _display(selected.get("under_probability"))
+    option_count = len(rows)
+    radios_html = "".join(_radio_html(index, selected_index) for index, _ in enumerate(rows))
+    options_html = "".join(_option_html(row, index) for index, row in enumerate(rows))
+    scenarios_html = "".join(_scenario_html(row, index) for index, row in enumerate(rows))
+    if not rows:
+        options_html = '<span class="gtp2s7-option"><b>—</b><small>Over — • Under —</small></span>'
+        scenarios_html = '<div class="gtp2s7-empty">—</div>'
+    switch_css = _scenario_switch_css(rows)
+    return f"""
+{PAGE2_STEP7_CSS}
+{switch_css}
+<section id="gtp2-line-lab" class="gtp2s7-wrap" data-step7="{STEP7_MARKER}" data-testid="gtp2s7-line-lab" data-value-ownership="precomputed-inputs">
+  <div class="gtp2s7-card">
+    <header class="gtp2s7-head">
+      <div>
+        <span class="gtp2s7-kicker">Stage 4 • Line Lab</span>
+        <h3>Line Lab</h3>
+        <p>Tap a supplied total line to inspect its precomputed probabilities without changing the underlying model.</p>
+      </div>
+      <span class="gtp2s7-owned">Display only • no probability recompute</span>
+    </header>
+    <div class="gtp2s7-body" style="grid-template-columns:1fr">
+      <div class="gtp2s7-panel" data-line-option-count="{option_count}" data-selected-line="{selected_line_display}" data-selected-over="{selected_over}" data-selected-under="{selected_under}">
+        <div class="gtp2s7-panel-title"><strong>Line Lab</strong><span>{option_count} owned scenarios</span></div>
+        {radios_html}
+        <div class="gtp2s7-options">{options_html}</div>
+        <div class="gtp2s7-scenario-stage">{scenarios_html}</div>
+      </div>
+    </div>
+  </div>
+</section>
+"""
+
+
 def build_line_lab_best_bet_html(
     *,
     line_scenarios: Sequence[Mapping[str, Any]] | None,
@@ -221,5 +267,6 @@ __all__ = [
     "STEP5_FREEZE_TOKEN",
     "STEP6_FREEZE_TOKEN",
     "STEP7_MARKER",
+    "build_line_lab_html",
     "build_line_lab_best_bet_html",
 ]
