@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-trends-step4-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Trends repair Step 4",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "4/10",
+  "status": "TDD_RED_AWAITING_RUNLESS",
+  "base_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37",
+  "branch": "monster-cfb-game-total-page2-trends-step4-v1",
+  "problem": "Stage 3 Trends renders mostly unexplained em-dashes because the runtime only forwards special raw trend/split keys and ignores already-owned verified completed-game evidence on the away/home team profiles.",
+  "root_cause": "The Step-6 presentation surface is wired only to raw.recent_totals/raw.scoring_breakdown/raw scoring-driver keys. The certified team profiles already contain exact pre-kickoff completed_games and recent scoring/allowed evidence, but Step 8 never binds those profiles into Stage 3.",
+  "patch": "Presentation-only repair: derive last-five combined game totals and recent scoring-environment summaries from already-owned team profile evidence, exclude current/future dated games using the selected event day, and show one truthful unavailable state when verified half/quarter splits are absent. No provider fetches or model/projection/probability changes.",
+  "mutation_scope": [
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "tests/test_monster_cfb_game_total_page2_trends_step4_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-trends-step4-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-trends-step4-v1.json"
+  ],
+  "protected": {
+    "steps1_to_3_frozen": true,
+    "page1_shell": true,
+    "games_on_day_parity": true,
+    "selected_event_identity": true,
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "providers": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": null,
+    "one_authoritative_proof_chain": true,
+    "lease_id": "SCOPE-LEASE-583B6C684722D89BFB178635",
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "authoritative_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37"
+  },
+  "tdd": {
+    "red_candidate_sha": null,
+    "red_proof_id": null,
+    "red_failure_class": null,
+    "red_detail": null,
+    "implementation_candidate_sha": null
+  },
+  "acceptance": {
+    "verified_team_history_renders": true,
+    "current_or_future_game_excluded_from_history": true,
+    "recent_scoring_average_visible": true,
+    "recent_allowed_average_visible": true,
+    "scoring_environment_visible": true,
+    "missing_half_quarter_splits_truthful": true,
+    "no_fabricated_split_values": true,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "runless": {
+    "proof_generation": 1,
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_TRENDS_STEP4_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OBTAIN_ONE_TDD_RED_RUNLESS_RESULT_BEFORE_PRODUCT_MUTATION"
+}
