@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "task_id": "runless-v2-proof-bootstrap-pypdf-r1",
+  "project": "API2",
+  "workstream": "runless-v2-proof-bootstrap-pypdf-r1",
+  "source_main_sha": "9c52aeff4f69d99e7e2c0c370dc1e3ab2e4963e8",
+  "goal": "Repair the Runless V2 proof sandbox bootstrap so direct PDF/network dependencies used by certified proof plans are installed deterministically.",
+  "root_cause": "Runless V2 sandbox bootstrap omitted pypdf while NBA Spread Step 7 imports pypdf.PdfReader; requests was also a direct runtime import but only transitively present.",
+  "patch": "Add requests and pypdf to _MIN_BOOTSTRAP_PACKAGES and strengthen the existing dependency regression contract.",
+  "write_paths": [
+    "runless_v2/sandbox_executor.py",
+    "tests/test_runless_v2_sandbox_executor_dependencies_r1.py",
+    "devsystem/execution_plans/runless-v2-proof-bootstrap-pypdf-r1.json",
+    "devsystem/runless_proof_plans/runless-v2-proof-bootstrap-pypdf-r1.json",
+    "devsystem/task_ledgers/runless-v2-proof-bootstrap-pypdf-r1.json"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "runless-v2-proof-bootstrap-pypdf-r1",
+    "scope_lease_id": "SCOPE-LEASE-3484802BC81F7F34CF79B465",
+    "authoritative_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "github_actions_fallback": 0
+  },
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "RUNLESS_V2_PROOF_BOOTSTRAP_PYPDF_R1_FROZEN"
+}
