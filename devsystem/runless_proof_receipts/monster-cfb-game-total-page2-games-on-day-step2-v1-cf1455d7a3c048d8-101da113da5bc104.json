@@ -1,0 +1,58 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-games-on-day-step2-v1.json": "4d0c724650ad6095a67a6f698f009f199dee5753",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-games-on-day-step2-v1.json": "c51e88cc9bd1cba0978253d66411bbb2bb4c6721",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "0b2b5a0d8b0d506a8faf84d96bf1ee13b9932894",
+    "tests/test_cfb_game_total_page2_games_on_day_step2_v1.py": "495b5c52f57bd69b0183aaadc4fc1e53470a87e7"
+  },
+  "candidate_sha": "cf1455d7a3c048d8e6aef6bed6bce683c5109c6b",
+  "created_at": "2026-10-16T03:18:29.342730+00:00",
+  "dependency_map": {
+    "cfb_game_total_games_on_day_step1_layout_v1.py": "8c2697143484ac42769da3274169355eac101438",
+    "cfb_game_total_games_on_day_step2_visual_v1.py": "0c9cd7abfc7ac5df49081cfa02fb741518da392b",
+    "cfb_game_total_games_on_day_step3_details_v1.py": "8bda1053e79a78f3992e900b738139a9c9b4e9e7",
+    "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py": "384616375610b6940eee161f545d1cd9ff841531",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "bf3141e958826cf93cb39435e7ea809865f92a29",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1",
+    "tests/test_cfb_game_total_page2_unified_shell_step1_v1.py": "292a3b6119e3c1bf73a783a1d513a746015670f5",
+    "tests/test_cfb_game_total_step8_page1_event_guard_r1.py": "2802dae1983fcfedd0f4e50d7a65dcfe410f81d4",
+    "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py": "41344c9d238a39338fb2f875c60065beac53fb79"
+  },
+  "digest": "9cc5aa81780582704c6ba6f4d5698178bc2c131081694c64d60aefd2046c4051",
+  "evidence_digests": [
+    "9f4789238c2eeaf86c19d2330dc0ff102179dda3c4f4988c31d15684cc15154e",
+    "54f55be5d9db0516aae5670dc4c0c8ec815082bb50dada378aae52a2341281be",
+    "8abb9cd704f1bdef64741582b3251f5045517d3c42cc9525c0420600d4a68046"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "ea10b3bded2734cfd51708bccd0ba75b57b89f2bd17284ec93affeb1bbea76af",
+  "proof_id": "monster-cfb-game-total-page2-games-on-day-step2-v1-cf1455d7a3c048d8-101da113da5bc104",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R3"
+    ],
+    "revision": 320,
+    "state_hash": "5807241f53199dcb0146657f47e69778216a186378c4b5c305f9df9b3030269b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R3"
+    ],
+    "revision": 320,
+    "state_hash": "5807241f53199dcb0146657f47e69778216a186378c4b5c305f9df9b3030269b"
+  },
+  "request_fingerprint": "bef7c3c25921f5f3ab5182a15348f840e907d29ebb6490c8bc5e2fb70e64be32",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-page2-games-on-day-step2-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1"
+}
