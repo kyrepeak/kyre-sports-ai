@@ -8,13 +8,16 @@ observations without affecting any projection/model path.
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
+from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 
-from sports_api.api.cfb_market_identity_v1 import reconcile_market_feed, resolve_verified_games
+from devsystem.universal_sports_field_router_v1 import load_router_policy, route_field
+from devsystem.universal_sports_provider_registry_v1 import load_registry
+from sports_api.api.cfb_market_identity_v1 import resolve_verified_games
 from sports_api.api.cfb_markets import _load_feed
 from sports_api.api.cfb_odds_v1 import build_odds_payload
 
@@ -31,6 +34,22 @@ HTTP_TIMEOUT_SECONDS = 12.0
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 PAGE_WIDE_SOURCE_AUTHORITY = False
 FABRICATION = False
+
+_ROOT = Path(__file__).resolve().parents[2]
+_PROVIDER_REGISTRY_PATH = (
+    _ROOT / "devsystem" / "contracts" / "universal-sports-provider-registry-v1.json"
+)
+_FIELD_ROUTER_PATH = (
+    _ROOT / "devsystem" / "contracts" / "universal-sports-field-router-v1.json"
+)
+_SOURCE_ROUTE_FIELDS = (
+    "schedule",
+    "game_identity",
+    "team_identity",
+    "injuries",
+    "sportsbook_lines",
+    "line_movement",
+)
 
 
 def _clean(value: Any) -> str:
@@ -427,6 +446,47 @@ def _dedupe_market_observations(rows: Sequence[Mapping[str, Any]]) -> list[dict[
     )
 
 
+def source_route_metadata() -> dict[str, dict[str, Any]]:
+    """Expose eligibility routes without claiming those providers were consulted."""
+    try:
+        registry = load_registry(_PROVIDER_REGISTRY_PATH)
+        policy = load_router_policy(_FIELD_ROUTER_PATH)
+    except (OSError, TypeError, ValueError) as exc:
+        return {
+            field: {
+                "status": "UNAVAILABLE_AFTER_COMPATIBLE_SOURCE_EXHAUSTION",
+                "field": field,
+                "sport": "ncaaf",
+                "page_wide_source_authority": False,
+                "active_provider_ids": [],
+                "fabrication": False,
+                "diagnostic_state": f"UNIVERSAL_ROUTE_CONTRACT_UNAVAILABLE:{type(exc).__name__}",
+            }
+            for field in _SOURCE_ROUTE_FIELDS
+        }
+
+    routes: dict[str, dict[str, Any]] = {}
+    for field in _SOURCE_ROUTE_FIELDS:
+        try:
+            routes[field] = route_field(
+                registry,
+                policy,
+                sport="ncaaf",
+                field=field,
+            )
+        except (TypeError, ValueError) as exc:
+            routes[field] = {
+                "status": "UNAVAILABLE_AFTER_COMPATIBLE_SOURCE_EXHAUSTION",
+                "field": field,
+                "sport": "ncaaf",
+                "page_wide_source_authority": False,
+                "active_provider_ids": [],
+                "fabrication": False,
+                "diagnostic_state": f"UNIVERSAL_ROUTE_UNAVAILABLE:{type(exc).__name__}",
+            }
+    return routes
+
+
 def build_daily_slate_payload(
     selected_phoenix_date: date,
     *,
@@ -478,6 +538,7 @@ def build_daily_slate_payload(
         "game_count": len(games),
         "games": games,
         "diagnostics": {"scoreboard_attempts": diagnostics},
+        "source_routes": source_route_metadata(),
         "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         "page_wide_source_authority": PAGE_WIDE_SOURCE_AUTHORITY,
         "fabrication": FABRICATION,
@@ -507,5 +568,6 @@ __all__ = [
     "phoenix_day_utc_bounds",
     "router",
     "scoreboard_market_observations",
+    "source_route_metadata",
     "upstream_scoreboard_dates_for_phoenix_day",
 ]
