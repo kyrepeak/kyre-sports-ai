@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-data-quality-step8-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Data Quality + Empty States Step 8",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "8/10",
+  "status": "TDD_RED_AWAITING_RUNLESS",
+  "base_main_sha": "7420820dc5b51e2643f1d0c71ef646dc6e1edd33",
+  "branch": "monster-cfb-game-total-page2-data-quality-step8-v1",
+  "scope_lease_id": "SCOPE-LEASE-6A66A51592B19F264ABE57F5",
+  "problem": "Page 2 still leaks long raw numeric precision, uses some unexplained blank placeholders, lacks unified Verified/Partial/Unavailable data-quality states, and does not preserve an already-owned Over/Under lean when explaining a market-unavailable NO BET.",
+  "root_cause": "The frozen Page-2 components receive mixed raw and display-ready values directly from the runtime, with no single presentation-only normalization and quality-state layer.",
+  "patch": "Add a presentation-only Step-8 data-quality helper and bind it through the existing selected-event runtime. Format owned numeric values to one decimal, preserve real zero values, emit explicit missing-data reasons, expose Market/Pace/Explosives/Red Zone/Trends quality states, and improve market-unavailable NO BET rationale without changing model/provider/projection/probability/ranking/selection truth.",
+  "acceptance": [
+    "69.46167500000001 renders as 69.5",
+    "13.0 remains 13.0",
+    "zero remains a real 0.0 rather than missing",
+    "blank values render explicit verified-data reasons instead of unexplained em dashes where Step 8 owns the display value",
+    "Market, Pace, Explosives, Red Zone, and Trends expose Verified/Partial/Unavailable states",
+    "market-unavailable NO BET can explain an already-owned Over/Under lean while still issuing no official bet",
+    "Steps 1-7 frozen behavior remains protected"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-6A66A51592B19F264ABE57F5",
+    "duplicate_prs": 0,
+    "duplicate_proofs": 0,
+    "github_actions_fallback_authorized": false
+  },
+  "protected": {
+    "steps1_to_7_frozen": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "ranking": true,
+    "selection": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_DATA_QUALITY_STEP8_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RUN_TDD_RED_ON_EXACT_HEAD_THEN_IMPLEMENT_BOUNDED_PRESENTATION_PATCH"
+}
