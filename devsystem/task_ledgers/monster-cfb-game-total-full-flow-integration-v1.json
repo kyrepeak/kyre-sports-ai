@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-full-flow-integration-v1",
+  "title": "MONSTER CFB Game Total Full Flow Integration V1",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-full-flow-integration-v1",
+  "step": "1/1",
+  "status": "GREEN_PROOF_PENDING",
+  "base_main_sha": "e53656f35f996e79b4e91b067e47c843680ad00b",
+  "expected_main_sha_before_proof": "e53656f35f996e79b4e91b067e47c843680ad00b",
+  "branch": "monster-cfb-game-total-full-flow-integration-v1",
+  "scope_lease": {
+    "lease_id": "SCOPE-LEASE-4B37E9A1C8D25F60B7A13E4C",
+    "thaw_required": false,
+    "proof_only": true,
+    "note": "Certification-only integration scope. No frozen Page 1 or selected-game product owner is mutated."
+  },
+  "problem": "The new frozen Page 1 Daily Slate and the previously frozen selected-game Page 2 stack are individually certified, but the post-Page-1 combined View Game -> selected analysis -> Back to Slate chain needs one authoritative exact-head integration certification.",
+  "root_cause": "The Page 1 Daily Slate mission intentionally protected and excluded selected-game runtime mutation, so its proof established immutability rather than a new composite full-flow freeze across both already-frozen surfaces.",
+  "patch": "Add only an integration regression contract and Runless proof/control artifacts proving the current Page 1 View Game identity handoff reaches the exact selected-game fast path, preserves the complete Page 2 feature bundle, remains network-free on the selected path, and returns to the slate. No product runtime change is authorized unless this certification exposes a concrete defect.",
+  "tdd": {
+    "product_code_changed": false,
+    "certification_guard_added": true,
+    "expected_behavior": "existing frozen Page 1 and Page 2 integration passes without product mutation"
+  },
+  "protected": {
+    "page1_daily_slate": true,
+    "selected_game_runtime": true,
+    "page2_feature_stack": true,
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "ranking": true,
+    "selection": true,
+    "market_ownership": true,
+    "unrelated_cfb_markets": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_FULL_FLOW_INTEGRATION_V1_FROZEN",
+  "green_plus_frozen_claimed": false
+}
