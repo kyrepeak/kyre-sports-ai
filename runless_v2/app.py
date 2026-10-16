@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import base64
+import copy
+import hashlib
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from typing import Any, Awaitable, Callable
@@ -31,7 +35,12 @@ from . import VERSION
 from .auth import require_bearer
 from .config import Settings
 from .finalization_readback import validate_finalization_closeout
-from .github_authority import GithubAuthority, GithubAuthorityError
+from .github_authority import (
+    REGISTRY_BRANCH,
+    REGISTRY_PATH,
+    GithubAuthority,
+    GithubAuthorityError,
+)
 from .models import ProofRequest, ProofResult
 from .proof_service import ProofServiceError, execute_proof_request
 from .sandbox_executor import SandboxExecutor
@@ -48,6 +57,215 @@ class CloseoutRequest(BaseModel):
     merged_main_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     freeze_token: str
     proof_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+
+class RegistryThawRequest(BaseModel):
+    repository: str = Field(min_length=1)
+    workstream: str = Field(min_length=1)
+    task_id: str = Field(min_length=1)
+    candidate_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    thaw_id: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+    from_blob: str = Field(pattern=r"^[0-9a-f]{40}$")
+    to_blob: str = Field(pattern=r"^[0-9a-f]{40}$")
+    expected_main_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def _registry_state_hash(registry: dict[str, Any]) -> str:
+    payload = copy.deepcopy(registry)
+    payload.pop("state_hash", None)
+    return hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def _decode_registry_content(raw: Any) -> dict[str, Any]:
+    if not isinstance(raw, dict) or raw.get("encoding") != "base64":
+        raise GithubAuthorityError("REGISTRY_THAW_CONTENT_READ_FAILED")
+    try:
+        decoded = base64.b64decode(str(raw["content"])).decode("utf-8")
+        value = json.loads(decoded)
+    except Exception as exc:
+        raise GithubAuthorityError("REGISTRY_THAW_CONTENT_DECODE_FAILED") from exc
+    if not isinstance(value, dict):
+        raise GithubAuthorityError("REGISTRY_THAW_CONTENT_INVALID")
+    return value
+
+
+def _registry_thaw_result(
+    req: RegistryThawRequest,
+    registry: dict[str, Any],
+    *,
+    previous_revision: int,
+    previous_state_hash: str,
+    registry_commit_sha: str | None,
+    reused: bool,
+) -> dict[str, Any]:
+    return {
+        "thaw_id": req.thaw_id,
+        "target_head_sha": req.candidate_sha,
+        "path": req.path,
+        "from_blob": req.from_blob,
+        "to_blob": req.to_blob,
+        "previous_registry_revision": previous_revision,
+        "current_registry_revision": int(registry["revision"]),
+        "previous_state_hash": previous_state_hash,
+        "current_state_hash": str(registry["state_hash"]),
+        "registry_commit_sha": registry_commit_sha,
+        "state": "ACTIVE",
+        "reused": reused,
+        "failure_class": "NONE",
+        "detail": "",
+    }
+
+
+def _execute_registry_thaw(
+    req: RegistryThawRequest,
+    *,
+    settings: Settings,
+    github: Any,
+) -> dict[str, Any]:
+    if req.repository != settings.repository:
+        raise GithubAuthorityError("REGISTRY_THAW_REPOSITORY_MISMATCH")
+    if req.from_blob == req.to_blob:
+        raise GithubAuthorityError("REGISTRY_THAW_NOOP_REJECTED")
+
+    current_main = str(github.main_sha())
+    if current_main != req.expected_main_sha:
+        raise GithubAuthorityError("REGISTRY_THAW_MAIN_IDENTITY_DRIFT")
+
+    main_tree = github.tree_blobs(req.expected_main_sha)
+    candidate_tree = github.tree_blobs(req.candidate_sha)
+    if str(main_tree.get(req.path) or "").lower() != req.from_blob:
+        raise GithubAuthorityError("REGISTRY_THAW_FROM_BLOB_MISMATCH")
+    if str(candidate_tree.get(req.path) or "").lower() != req.to_blob:
+        raise GithubAuthorityError("REGISTRY_THAW_TO_BLOB_MISMATCH")
+
+    registry_api_path = f"/contents/{quote(REGISTRY_PATH, safe='/')}"
+    raw = github._request(
+        "GET",
+        f"{registry_api_path}?ref={quote(REGISTRY_BRANCH, safe='/')}",
+    )
+    registry = _decode_registry_content(raw)
+    if str(registry.get("repository") or "") != settings.repository:
+        raise GithubAuthorityError("REGISTRY_THAW_REPOSITORY_MISMATCH")
+    if str(registry.get("registry_ref") or "") != f"refs/heads/{REGISTRY_BRANCH}":
+        raise GithubAuthorityError("REGISTRY_THAW_REGISTRY_REF_MISMATCH")
+    if str(registry.get("registry_path") or "") != REGISTRY_PATH:
+        raise GithubAuthorityError("REGISTRY_THAW_REGISTRY_PATH_MISMATCH")
+    if str(registry.get("state_hash") or "") != _registry_state_hash(registry):
+        raise GithubAuthorityError("REGISTRY_THAW_STATE_HASH_INVALID")
+
+    frozen = github._flatten_registry_artifacts(registry)
+    if str(frozen.get(req.path) or "").lower() != req.from_blob:
+        raise GithubAuthorityError("REGISTRY_THAW_FROZEN_OWNER_MISSING")
+
+    active_before = copy.deepcopy(list(registry.get("active_thaws") or []))
+    entries_before = copy.deepcopy(registry.get("entries"))
+    previous_revision = int(registry.get("revision", -1))
+    if previous_revision < 0:
+        raise GithubAuthorityError("REGISTRY_THAW_REVISION_INVALID")
+    previous_state_hash = str(registry["state_hash"])
+
+    for grant in active_before:
+        grant_id = str(grant.get("thaw_id") or "")
+        files = grant.get("files") or {}
+        pair = files.get(req.path) if isinstance(files, dict) else None
+        if grant_id == req.thaw_id:
+            if (
+                str(grant.get("target_head_sha") or "") == req.candidate_sha
+                and isinstance(pair, dict)
+                and str(pair.get("from_blob") or "").lower() == req.from_blob
+                and str(pair.get("to_blob") or "").lower() == req.to_blob
+            ):
+                return _registry_thaw_result(
+                    req,
+                    registry,
+                    previous_revision=previous_revision,
+                    previous_state_hash=previous_state_hash,
+                    registry_commit_sha=None,
+                    reused=True,
+                )
+            raise GithubAuthorityError("REGISTRY_THAW_ID_COLLISION")
+        if pair is not None:
+            raise GithubAuthorityError("REGISTRY_THAW_PATH_CONFLICT")
+
+    registry["active_thaws"] = active_before + [
+        {
+            "thaw_id": req.thaw_id,
+            "status": "ACTIVE",
+            "target_head_sha": req.candidate_sha,
+            "files": {
+                req.path: {
+                    "from_blob": req.from_blob,
+                    "to_blob": req.to_blob,
+                }
+            },
+        }
+    ]
+    registry["revision"] = previous_revision + 1
+    registry["state_hash"] = _registry_state_hash(registry)
+
+    content = base64.b64encode(
+        (_canonical_json(registry) + "\n").encode("utf-8")
+    ).decode("ascii")
+    try:
+        written = github._request(
+            "PUT",
+            registry_api_path,
+            json={
+                "message": f"Runless V2: exact-head thaw {req.thaw_id}",
+                "content": content,
+                "branch": REGISTRY_BRANCH,
+                "sha": str(raw.get("sha") or ""),
+            },
+        )
+    except Exception as exc:
+        status_code = getattr(getattr(exc, "response", None), "status_code", None)
+        if status_code in {409, 422}:
+            raise GithubAuthorityError("STALE_REGISTRY_CAS") from exc
+        raise
+
+    commit_sha = str(((written or {}).get("commit") or {}).get("sha") or "") or None
+    readback_raw = github._request(
+        "GET",
+        f"{registry_api_path}?ref={quote(REGISTRY_BRANCH, safe='/')}",
+    )
+    readback = _decode_registry_content(readback_raw)
+    if str(readback.get("state_hash") or "") != _registry_state_hash(readback):
+        raise GithubAuthorityError("REGISTRY_THAW_READBACK_HASH_MISMATCH")
+    if int(readback.get("revision", -1)) != previous_revision + 1:
+        raise GithubAuthorityError("REGISTRY_THAW_READBACK_REVISION_MISMATCH")
+    if readback.get("entries") != entries_before:
+        raise GithubAuthorityError("REGISTRY_THAW_UNRELATED_ENTRY_DRIFT")
+
+    active_after = list(readback.get("active_thaws") or [])
+    if active_after[:-1] != active_before:
+        raise GithubAuthorityError("REGISTRY_THAW_UNRELATED_ACTIVE_DRIFT")
+    expected_grant = {
+        "thaw_id": req.thaw_id,
+        "status": "ACTIVE",
+        "target_head_sha": req.candidate_sha,
+        "files": {
+            req.path: {
+                "from_blob": req.from_blob,
+                "to_blob": req.to_blob,
+            }
+        },
+    }
+    if not active_after or active_after[-1] != expected_grant:
+        raise GithubAuthorityError("REGISTRY_THAW_READBACK_IDENTITY_MISMATCH")
+
+    return _registry_thaw_result(
+        req,
+        readback,
+        previous_revision=previous_revision,
+        previous_state_hash=previous_state_hash,
+        registry_commit_sha=commit_sha,
+        reused=False,
+    )
 
 
 def _supabase_health(store: Any) -> bool:
@@ -172,6 +390,20 @@ def create_app(
             raise HTTPException(status_code=404, detail="RUNLESS_V2_RECEIPT_NOT_FOUND")
         except RunlessV2StateError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    @app.post("/registry-thaw", dependencies=[Depends(authenticated)])
+    def registry_thaw(req: RegistryThawRequest) -> dict[str, Any]:
+        if not cfg.authority_enabled:
+            raise HTTPException(status_code=503, detail="RUNLESS_V2_AUTHORITY_DISABLED")
+        try:
+            return _execute_registry_thaw(req, settings=cfg, github=gh)
+        except (GithubAuthorityError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"RUNLESS_V2_REGISTRY_THAW_UNAVAILABLE:{type(exc).__name__}",
+            ) from exc
 
     @app.post("/closeout", dependencies=[Depends(authenticated)])
     def closeout(req: CloseoutRequest) -> dict[str, Any]:
