@@ -5,7 +5,7 @@
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page1-unified-repair-v1",
   "step": "1/1",
-  "status": "COMPATIBILITY_REPAIRED_AWAITING_EXACT_HEAD_GREEN_PROOF",
+  "status": "REVIEW_PROOFS_HARDENED_AWAITING_EXACT_HEAD_GREEN_PROOF",
   "base_main_sha": "800c3b3c9d3f6fc79af6d9a84cfd30b0d88f400c",
   "branch": "monster-cfb-game-total-page1-unified-repair-v1",
   "pr_number": 1585,
@@ -34,9 +34,25 @@
     "state": "FAILED",
     "failure_class": "STATIC_PROOF",
     "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
-    "classification": "FROZEN_STEP9_ISOLATED_RENDER_APP_HARNESS_MISSING_PAGE1_REPAIR_GLOBAL",
-    "root_cause": "The frozen Step-9 regression executes render_app in an isolated AST namespace without module imports, so a direct page1_repair reference raised NameError on the non-selected branch.",
-    "product_page1_fix_invalidated": false
+    "classification": "FROZEN_STEP9_ISOLATED_RENDER_APP_HARNESS_MISSING_PAGE1_REPAIR_GLOBAL"
+  },
+  "green_attempt_2": {
+    "candidate_sha": "b6dce8fdccebec33e58c9cd59299a7721037d4a0",
+    "proof_id": "monster-cfb-game-total-page1-unified-repair-v1-b6dce8fdccebec33-6b0ae004d8e5ec91",
+    "state_before_review": "MERGE_AUTHORIZED",
+    "failure_class_before_review": "NONE",
+    "gate_check_run_id": 117126011986,
+    "receipt_digest": "acceed90eda1fe3cd18ff3e6b0a63341608138aa7f1796a7bbbc496bda312244",
+    "review_disposition": "SUPERSEDED_BY_REVIEW_PROOF_HARDENING"
+  },
+  "review_hardening": {
+    "full_v36_positional_and_keyword_signature_exercised": true,
+    "v45_render_path_exercises_v44_stale_date_fail_soft": true,
+    "v45_render_path_counts_one_phoenix_selector": true,
+    "v45_render_path_counts_zero_legacy_day_strips": true,
+    "executable_app_to_step9_import_verified_by_ast": true,
+    "executable_step9_to_page1_bridge_import_verified_by_ast": true,
+    "product_code_changed_for_review": false
   },
   "implementation": {
     "page1_owner": "cfb_game_total_clean_page_v45.py",
@@ -100,9 +116,10 @@
     "activation_test_changed_before_activation_patch": true,
     "activation_red_proven": true,
     "implementation_started_after_red": true,
-    "green_failure_classified_before_compatibility_patch": true
+    "green_failure_classified_before_compatibility_patch": true,
+    "review_tests_strengthened_before_final_proof": true
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE1_UNIFIED_REPAIR_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "LOCK_CURRENT_HEAD_AND_MAIN_THEN_REQUEST_ONE_CORRECTED_EXACT_HEAD_GREEN_PROOF"
+  "next_legal_action": "RETIRE_STALE_GREEN_AUTHORITY_THEN_REQUEST_ONE_EXACT_HEAD_REVIEW_GREEN_PROOF"
 }
