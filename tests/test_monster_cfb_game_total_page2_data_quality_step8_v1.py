@@ -124,6 +124,55 @@ def test_step8_market_missing_no_bet_uses_owned_probability_lean() -> None:
     )
 
 
+def test_step8_rendered_body_proves_normalization_quality_and_missing_copy(monkeypatch) -> None:
+    runtime = _runtime()
+    monkeypatch.setattr(runtime, "_matchup_contract", lambda *args, **kwargs: {})
+    monkeypatch.setattr(runtime.stage6, "build_tough_favorable_html", lambda contract: "")
+
+    payload = {
+        "identity": {
+            "away": {"team": "Away"},
+            "home": {"team": "Home"},
+        },
+        "away": {
+            "plays_per_game": 69.46167500000001,
+            "explosive_rate": 0.12,
+            "red_zone_td_rate": 0.69461675,
+        },
+        "home": {},
+        "display_game": {
+            "event_id": "step8-render-proof",
+            "market_total": None,
+            "verified_market_total": None,
+            "market_identity_verified": False,
+            "market_projection_weight": 0.0,
+        },
+        "raw": {
+            "projected_combined_total": 58.12345,
+            "over_probability": 0.61,
+            "under_probability": 0.39,
+            "recent_totals": [],
+            "scoring_breakdown": {},
+        },
+        "final": {
+            "ready": True,
+            "forecast_ready": True,
+            "projected_combined_total": 58.12345,
+            "grade": "A",
+        },
+    }
+
+    html = runtime.build_page2_body_html(payload)
+    assert "69.5" in html
+    assert "69.46167500000001" not in html
+    assert "No verified market total available" in html
+    assert "No verified half/quarter scoring splits available" in html
+    assert "Model favors Over, but verified market data is unavailable, so no official bet is issued." in html
+    assert 'data-testid="gtp2s8-data-quality"' in html
+    assert html.count('data-quality="PARTIAL"') >= 3
+    assert html.count('data-quality="UNAVAILABLE"') >= 2
+
+
 def test_step8_runtime_uses_data_quality_layer_without_recomputing_model() -> None:
     source = RUNTIME.read_text(encoding="utf-8")
     assert "import cfb_game_total_page2_data_quality_step8_v1 as data_quality" in source
