@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import cfb_game_total_clean_page_v45 as page1
-import cfb_game_total_page2_live_data_unified_repair_v1 as live_data
+import cfb_game_total_page2_network_free_v2 as live_data
 import cfb_game_total_page2_step8_final_runtime_v1 as page2
 import streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1 as cfb_router
 
