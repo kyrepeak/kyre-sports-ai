@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-spread-v7-live-activation-repair-v1.json": "2dd27c215ce3e01aad9672ceeb19d9028be76fb2",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py": "3c851049c85b5d13eba545b7712e1fa7207f2812",
+    "tests/test_api2_nfl_spread_v7_live_activation_repair_v1.py": "a47ef4f89a838bbbcf783b1893bc2906805283bb"
+  },
+  "candidate_sha": "43a5a6c526606ad09ab0fb71a02b889772b0913f",
+  "created_at": "2026-10-16T21:35:56.421676+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "nfl_spread_autodate_repair_v1.py": "6b37c5826599313ffd492e978fd9e05f2568b507",
+    "nfl_spread_hub_v4.py": "968227405cad1c5544c870632983c502f9596012",
+    "nfl_spread_hub_v5.py": "6e98fc3b2738555715fd8a1624c20c822c1841fa",
+    "nfl_spread_hub_v6.py": "ca913666c6b82e3af5e2a283f8b9de298401fca5",
+    "nfl_spread_hub_v7.py": "d8e7f1e9a14bfbb9041c80d8ba32f09cf8d8e933",
+    "nfl_spread_next_slate_v1.py": "18f4262fe8d27912ad0cf52882cbb54d748508f8",
+    "nfl_spread_professional_intelligence_v1.py": "a623606ecd8f4d9cbe72ae9869cbc44da7c6aa0c",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py": "f3d4b9572a59af185f60dde7639d148d692b29c2",
+    "streamlit_memory_lazy_router_v132.py": "e6fbaa25d9c9b96aa3092c4e594f25c2d4ddc423",
+    "streamlit_memory_lazy_router_v136.py": "15ae13ee1722ae5003bd152f722d593193f371d4"
+  },
+  "digest": "e0a4f191539be6ce2b64c8d04b383c9ff54450f83023122ef872990855183160",
+  "evidence_digests": [
+    "85e0dc1d593ccb5a026d103f7d98fd03a45fbb6805d8bb270b27b46cbf0af22f",
+    "860bb1717070fe9dca650019098e74ad4c0e8f75155216db98054884a88f5df8"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7e290eb96e3453f9db2a6a655672a7c18e4459ebd35a6412ee9702057f735dec",
+  "proof_id": "api2-nfl-spread-v7-live-activation-repair-v1-43a5a6c526606ad0-745b25da73f10d96",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 370,
+    "state_hash": "3f0890fa9cd11889d069bce5b1d905a46a3ed113b445505f0307b536987f554c"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 370,
+    "state_hash": "3f0890fa9cd11889d069bce5b1d905a46a3ed113b445505f0307b536987f554c"
+  },
+  "request_fingerprint": "955abe92429babe269923618cd5ceea76eefa06c6003f11a6a8cdf621cc0a48a",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-spread-v7-live-activation-repair-v1",
+  "workstream": "api2-nfl-spread-v7-live-activation-repair-v1"
+}
