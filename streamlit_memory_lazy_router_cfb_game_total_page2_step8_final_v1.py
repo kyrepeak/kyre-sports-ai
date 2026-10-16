@@ -31,6 +31,7 @@ from typing import Any, Callable
 
 import streamlit as st
 
+import cfb_game_total_clean_page_v33 as page1_navigation
 import cfb_game_total_clean_page_v42 as snapshot_owner
 import cfb_game_total_clean_page_v44 as runtime_repair
 import streamlit_memory_lazy_router_wnba_pra_repair_v1_step7_final_integration as frozen_parent
@@ -222,6 +223,19 @@ def _clear_auto_event_after_page1() -> bool:
     return True
 
 
+def _render_page1_navigation_shell() -> None:
+    """Reuse the exact Page-1 sport/category shell above selected-event analysis."""
+    st.markdown(
+        page1_navigation.shell.SPORT_NAV_SHELL_CSS
+        + page1_navigation.functional.SPORT_NAV_STEP2_CSS
+        + page1_navigation.responsive.SPORT_NAV_STEP3_CSS
+        + page1_navigation.dropdown.SPORT_DROPDOWN_STEP2_CSS
+        + page1_navigation.SPORT_DROPDOWN_STEP3_CSS,
+        unsafe_allow_html=True,
+    )
+    st.markdown(page1_navigation._sport_dropdown_nav_html(), unsafe_allow_html=True)
+
+
 def render_app() -> Any:
     if not _selected_game_total():
         install_games_on_day_step2_visual()
@@ -230,6 +244,10 @@ def render_app() -> Any:
         rendered = _render_native_page1()
         _clear_auto_event_after_page1()
         return rendered
+
+    shell_renderer = globals().get("_render_page1_navigation_shell")
+    if callable(shell_renderer):
+        shell_renderer()
 
     with _ROUTE_POINTER_LOCK:
         original_cfb_page = cfb_router.GAME_TOTAL_PAGE
@@ -272,6 +290,7 @@ __all__ = [
     "_render_native_page1",
     "_render_page1_game_total",
     "_render_page1_in_shared_shell",
+    "_render_page1_navigation_shell",
     "record_bootstrap_import_ms",
     "render_app",
 ]
