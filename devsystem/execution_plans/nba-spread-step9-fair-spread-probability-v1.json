@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step9-fair-spread-probability-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "9/10",
+  "source_main_sha": "ab6e60a6def0991d6d726f5201e93e2cf13403c1",
+  "authoritative_branch": "nba-spread-step9-fair-spread-r1",
+  "problem": "add sportsbook-independent Kyre Fair Spread and analytical cover probability while preserving frozen Steps 1-8 and LIVE/FINAL pregame immutability",
+  "root_cause_class": "MISSING_FAIR_SPREAD_PROBABILITY_LAYER",
+  "method": "TDD_RED_GREEN_RUNLESS_EXACT_HEAD",
+  "scope": [
+    "nba_spread_fair_spread_probability_v1.py",
+    "nba_spread_page_v4.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_step9_fair_spread_probability_v1.py",
+    "devsystem/execution_plans/nba-spread-step9-fair-spread-probability-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step9-fair-spread-probability-v1.json",
+    "devsystem/task_ledgers/nba-spread-step9-fair-spread-probability-v1.json"
+  ],
+  "invariants": {
+    "sportsbook_projection_influence": 0.0,
+    "multi_source_performance_quorum": true,
+    "fail_closed_on_source_conflict": true,
+    "fair_spread_independent_of_market_line": true,
+    "integer_push_probability": true,
+    "live_final_pregame_model_freeze": true,
+    "ranking_logic_added": false,
+    "pick_logic_added": false,
+    "steps_1_8_reopened": false
+  },
+  "finalization": "exact-head proof -> merge -> merged-main verification -> registry freeze/read-back -> lease release -> GREEN + FROZEN"
+}
