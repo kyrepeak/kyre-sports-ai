@@ -1,20 +1,17 @@
-"""MONSTER CFB Game Total Page 1 — unified repair production overlay.
+"""MONSTER CFB Game Total Page 1 — unified repair bridge.
 
-This thin overlay sits above the frozen Step-9 production router. It changes only
-the Page-1 native owner pointer to V45 for the duration of one render. Selected
-Page 2 keeps the frozen Step-9 direct fast path, and every other route continues
-through the prior production router unchanged.
+This helper changes only the Step-8 router's Page-1 native owner pointer for the
+duration of a delegated non-selected render. The frozen Step-9 router keeps
+selected Page 2 ahead of this helper, so the fast Page-2 path is unchanged.
 """
 from __future__ import annotations
 
 from threading import RLock
-from typing import Any
+from typing import Any, Callable
 
-import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 as prior
 import streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1 as cfb_prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE1 UNIFIED REPAIR V1"
-PRIOR_RUNTIME = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE1 UNIFIED REPAIR BRIDGE V1"
 PAGE1_REPAIR_ROUTE = "cfb_game_total_clean_page_v45"
 MAY_MODIFY_MODEL = False
 MAY_MODIFY_PROJECTION = False
@@ -29,17 +26,13 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _ROUTE_LOCK = RLock()
 
 
-def record_bootstrap_import_ms(value: float) -> None:
-    return prior.record_bootstrap_import_ms(value)
-
-
-def render_app() -> Any:
-    """Temporarily advance only Page 1; frozen Step 9 owns Page 2 unchanged."""
+def render_with_page1_repair(delegate: Callable[[], Any]) -> Any:
+    """Advance only the native Page-1 owner while a prior router renders."""
     with _ROUTE_LOCK:
         original_page1 = cfb_prior.PAGE1_NATIVE_ROUTE
         cfb_prior.PAGE1_NATIVE_ROUTE = PAGE1_REPAIR_ROUTE
         try:
-            return prior.render_app()
+            return delegate()
         finally:
             cfb_prior.PAGE1_NATIVE_ROUTE = original_page1
 
@@ -55,8 +48,6 @@ __all__ = [
     "MODEL_VERSION",
     "NETWORK_CALLS_ADDED",
     "PAGE1_REPAIR_ROUTE",
-    "PRIOR_RUNTIME",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
-    "record_bootstrap_import_ms",
-    "render_app",
+    "render_with_page1_repair",
 ]
