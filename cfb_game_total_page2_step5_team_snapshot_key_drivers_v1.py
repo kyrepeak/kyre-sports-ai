@@ -23,6 +23,13 @@ MAY_MODIFY_MARKET_OWNERSHIP = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 NETWORK_CALLS_ADDED = 0
 
+_MISSING_COPY = {
+    "pace": "No verified pace available",
+    "explosive": "No verified explosive-play data available",
+    "red_zone": "No verified red-zone rate available",
+    "defense": "No verified defensive snapshot available",
+}
+
 PAGE2_STEP5_CSS = r"""
 <style>
 .gtp2s5-wrap{max-width:1180px;margin:0 auto 20px;color:#f7fbff;scroll-margin-top:18px}
@@ -42,14 +49,16 @@ PAGE2_STEP5_CSS = r"""
 .gtp2s5-driver{display:grid;grid-template-columns:minmax(0,1fr) 150px minmax(0,1fr);gap:10px;align-items:stretch}
 .gtp2s5-value{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:12px 13px;border:1px solid rgba(84,154,185,.18);border-radius:13px;background:rgba(7,28,42,.72)}
 .gtp2s5-value strong{color:#f5fbff;font-size:13px;font-weight:1000;overflow-wrap:anywhere}
+.gtp2s5-value.is-missing{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px}
+.gtp2s5-missing{display:block;color:#7896a8;font-size:7px;font-weight:800;line-height:1.25}
 .gtp2s5-value.is-favorable{border-color:rgba(72,224,177,.43);background:linear-gradient(145deg,rgba(9,75,61,.34),rgba(7,31,44,.80))}
 .gtp2s5-value.is-favorable strong{color:#7aefbf}
 .gtp2s5-driver-label{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;border:1px solid rgba(84,173,209,.16);border-radius:12px;background:rgba(9,36,53,.58)}
 .gtp2s5-driver-label strong{color:#dff6ff;font-size:9px;font-weight:1000;letter-spacing:.03em}
 .gtp2s5-fav{display:block;margin-top:4px;color:#69dfff;font-size:7px;font-weight:950;line-height:1.2}
 .gtp2s5-fav.even{color:#9eb2bf}
-@media(max-width:760px){.gtp2s5-head{align-items:start;flex-direction:column;gap:9px}.gtp2s5-owned{align-self:flex-start}.gtp2s5-teams{grid-template-columns:1fr 58px 1fr}.gtp2s5-driver{grid-template-columns:minmax(0,1fr) 116px minmax(0,1fr)}.gtp2s5-team strong{font-size:15px}.gtp2s5-value{padding:10px}.gtp2s5-value strong{font-size:11px}}
-@media(max-width:480px){.gtp2s5-card{border-radius:17px}.gtp2s5-head{padding:14px 13px 11px}.gtp2s5-head h3{font-size:18px}.gtp2s5-body{padding:10px}.gtp2s5-teams{grid-template-columns:1fr 34px 1fr;gap:6px}.gtp2s5-team{padding:10px 8px}.gtp2s5-team strong{font-size:13px}.gtp2s5-driver{grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr);gap:6px}.gtp2s5-value{padding:9px 7px}.gtp2s5-value strong{font-size:10px}.gtp2s5-driver-label{padding:7px 4px}.gtp2s5-driver-label strong{font-size:8px}.gtp2s5-fav{font-size:6px}}
+@media(max-width:760px){.gtp2s5-head{align-items:start;flex-direction:column;gap:9px}.gtp2s5-owned{align-self:flex-start}.gtp2s5-teams{grid-template-columns:1fr 58px 1fr}.gtp2s5-driver{grid-template-columns:minmax(0,1fr) 116px minmax(0,1fr)}.gtp2s5-team strong{font-size:15px}.gtp2s5-value{padding:10px}.gtp2s5-value strong{font-size:11px}.gtp2s5-missing{font-size:6.5px}}
+@media(max-width:480px){.gtp2s5-card{border-radius:17px}.gtp2s5-head{padding:14px 13px 11px}.gtp2s5-head h3{font-size:18px}.gtp2s5-body{padding:10px}.gtp2s5-teams{grid-template-columns:1fr 34px 1fr;gap:6px}.gtp2s5-team{padding:10px 8px}.gtp2s5-team strong{font-size:13px}.gtp2s5-driver{grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr);gap:6px}.gtp2s5-value{padding:9px 7px}.gtp2s5-value strong{font-size:10px}.gtp2s5-driver-label{padding:7px 4px}.gtp2s5-driver-label strong{font-size:8px}.gtp2s5-fav{font-size:6px}.gtp2s5-missing{font-size:6px}}
 </style>
 """
 
@@ -57,6 +66,25 @@ PAGE2_STEP5_CSS = r"""
 def _display(value: Any) -> str:
     text = "" if value is None else str(value).strip()
     return escape(text) if text else "—"
+
+
+def _availability(value: Any) -> str:
+    text = "" if value is None else str(value).strip()
+    return "verified" if text else "missing"
+
+
+def _value_html(*, key: str, value: Any, css_class: str) -> str:
+    availability = _availability(value)
+    if availability == "verified":
+        return (
+            f'<div class="{css_class}" data-availability="verified">'
+            f'<strong>{_display(value)}</strong></div>'
+        )
+    note = _MISSING_COPY.get(key, "No verified Team Snapshot value available")
+    return (
+        f'<div class="{css_class} is-missing" data-availability="missing">'
+        f'<strong>—</strong><span class="gtp2s5-missing">{escape(note)}</span></div>'
+    )
 
 
 def _fav_side(value: Any) -> str:
@@ -85,13 +113,13 @@ def _driver_html(
     home_name: str,
 ) -> str:
     side = _fav_side(favorable)
-    away_class = " gtp2s5-value is-favorable" if side == "away" else " gtp2s5-value"
-    home_class = " gtp2s5-value is-favorable" if side == "home" else " gtp2s5-value"
+    away_class = "gtp2s5-value is-favorable" if side == "away" else "gtp2s5-value"
+    home_class = "gtp2s5-value is-favorable" if side == "home" else "gtp2s5-value"
     return (
         f'<div class="gtp2s5-driver" data-driver="{key}" data-favorable="{side}">'
-        f'<div class="{away_class.strip()}"><strong>{_display(away_value)}</strong></div>'
+        f'{_value_html(key=key, value=away_value, css_class=away_class)}'
         f'<div class="gtp2s5-driver-label"><strong>{escape(label)}</strong>{_badge(side, away_name, home_name)}</div>'
-        f'<div class="{home_class.strip()}"><strong>{_display(home_value)}</strong></div>'
+        f'{_value_html(key=key, value=home_value, css_class=home_class)}'
         '</div>'
     )
 
