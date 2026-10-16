@@ -1,10 +1,10 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-APP = ROOT / "app.py"
 SLATE = ROOT / "cfb_game_total_page2_clean_slate_v1.py"
 ANALYSIS = ROOT / "cfb_game_total_page1_selected_analysis_v1.py"
 ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page_order_cleanup_v1.py"
+ACTIVE = ROOT / "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py"
 
 
 def _read(path: Path) -> str:
@@ -40,9 +40,8 @@ def test_page2_slate_removes_dense_analysis_wall_instead_of_squeezing_it() -> No
     assert "grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr)" not in slate
 
 
-def test_router_reverses_semantics_without_rewriting_frozen_analytics() -> None:
+def test_cfb_context_reverses_semantics_without_rewriting_frozen_analytics() -> None:
     router = _read(ROUTER)
-    assert "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1 as prior" in router
     assert "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1 as cfb_route" in router
     assert "streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair" in router
     assert 'cfb_route.SAME_PAGE_RUNTIME = "cfb_game_total_page1_selected_analysis_v1"' in router
@@ -54,9 +53,8 @@ def test_router_reverses_semantics_without_rewriting_frozen_analytics() -> None:
     assert "NETWORK_CALLS_ADDED = 0" in router
 
 
-def test_production_entry_activates_new_outer_router() -> None:
-    app = _read(APP)
-    assert (
-        "from streamlit_memory_lazy_router_cfb_game_total_page_order_cleanup_v1 import "
-        "record_bootstrap_import_ms, render_app"
-    ) in app
+def test_current_production_outer_router_installs_cfb_context_only_around_prior() -> None:
+    active = _read(ACTIVE)
+    assert "import streamlit_memory_lazy_router_cfb_game_total_page_order_cleanup_v1 as cfb_page_order" in active
+    assert "with cfb_page_order.install_page_order_cleanup():" in active
+    assert "return prior.render_app()" in active
