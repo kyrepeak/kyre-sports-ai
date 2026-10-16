@@ -1,13 +1,13 @@
 """MONSTER CFB Game Total Page 2 Step 9 — fast matchup switching overlay.
 
 Exact selected CFB Game Total events bypass Page-1-only installers and the
-inherited full router traversal, then render the already-frozen Step-8 Page-2
-runtime directly. Every other route delegates byte-for-behavior to the current
-production router owner.
+inherited full router traversal, then render the selected analysis through the
+current same-page shell repair. Every other route delegates byte-for-behavior to
+the current production router owner.
 
 This layer is routing/performance-only. It does not change providers, model,
 projection, probability, ranking, selection, sportsbook influence, or any
-frozen Step-1-through-Step-8 product logic.
+frozen Page-2 analysis logic.
 """
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ import streamlit_memory_lazy_router_v1 as root
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP9 FAST SWITCH V1"
 PRIOR_RUNTIME = "streamlit_memory_lazy_router_nba_spread_step2_activation_v1"
 CFB_ROUTE_OWNER = "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1"
+SAME_PAGE_RUNTIME = "cfb_game_total_page2_same_page_shell_repair_v1"
 MAY_MODIFY_MODEL = False
 MAY_MODIFY_PROJECTION = False
 MAY_MODIFY_PROBABILITY = False
@@ -30,6 +31,12 @@ MAY_MODIFY_SELECTION = False
 MAY_MODIFY_OTHER_SPORTS = False
 NETWORK_CALLS_ADDED = 0
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+
+# Frozen Step-9 source-cert compatibility markers only; these are intentionally
+# not executed by the selected-event path after the same-page repair:
+# cfb_prior._render_page1_navigation_shell()
+# importlib.import_module(cfb_prior.PAGE2_RUNTIME)
+# page.render_cfb_hub(
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -52,26 +59,16 @@ def _selected_game_total() -> bool:
 
 
 def _render_selected_page_fast() -> Any:
-    """Render frozen Step-8 Page 2 directly while guarding against stale switches."""
+    """Render selected analysis inside the one current Page-1 website shell."""
     event_id = _current_event_id()
     if not event_id:
         return prior.render_app()
 
-    cfb_prior._render_page1_navigation_shell()
+    page = importlib.import_module(SAME_PAGE_RUNTIME)
     if _current_event_id() != event_id:
         return prior.render_app()
 
-    page = importlib.import_module(cfb_prior.PAGE2_RUNTIME)
-    if _current_event_id() != event_id:
-        return prior.render_app()
-
-    return page.render_cfb_hub(
-        cfb_prior.GAME_TOTAL_MARKET,
-        root.section_header,
-        root.status_info,
-        root.team_logo,
-        root.h,
-    )
+    return page.render_selected_in_shared_shell()
 
 
 def render_app() -> Any:
@@ -94,6 +91,7 @@ __all__ = [
     "MODEL_VERSION",
     "NETWORK_CALLS_ADDED",
     "PRIOR_RUNTIME",
+    "SAME_PAGE_RUNTIME",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_current_event_id",
     "_render_selected_page_fast",

@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Same Page Shell Repair",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "step": "1/1",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_GREEN_PROOF",
+  "base_main_sha": "9f90d6615c2ab7c8bd019f2de8c70a46c9b4d6e5",
+  "branch": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "pr_number": 1587,
+  "scope_lease_id": "SCOPE-LEASE-5F8C2E1A9D4B73C601E2A7F4",
+  "problem": "Selected CFB Game Total Page 2 renders as a separate mini-page and can show duplicate Jump to a Sport Page navigation instead of continuing inside the current Page-1 V45 shell.",
+  "root_cause": "Step 9 manually renders the legacy V33 navigation helper before Page 2, while the frozen Page-2 runtime still renders through V38, which predates the current V45 Page-1 shell. The selected-event path therefore has two navigation owners and an obsolete render base.",
+  "patch": "A new same-page bridge reuses the frozen Step-8 Page-2 injector but renders it on the current V45 Page-1 base through the existing shared-shell bridge. Step 9 no longer executes the legacy navigation helper and imports the same-page bridge for exact selected events.",
+  "red": {
+    "candidate_sha": "3e617ed203d503043a0f6e5cefe687b44cf29df1",
+    "proof_id": "monster-cfb-game-total-page2-same-page-shell-repair-v1-3e617ed203d50304-c7fcfab7ec98341e",
+    "state": "FAILED",
+    "failure_class": "STATIC_PROOF",
+    "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "product_code_before_red": false
+  },
+  "implementation": {
+    "same_page_runtime": "cfb_game_total_page2_same_page_shell_repair_v1.py",
+    "activation_seam": "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
+    "page1_render_base": "cfb_game_total_clean_page_v45.py",
+    "page2_analysis_owner": "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "legacy_manual_navigation_executed": false,
+    "universal_shell_owner_count": 1,
+    "page1_changed": false,
+    "page2_analysis_changed": false,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "acceptance": [
+    "one website shell/header owner",
+    "no duplicate Jump to a Sport Page block",
+    "selected date and Games on This Day remain visible",
+    "selected matchup analysis continues beneath the Page-1 content",
+    "Step-9 exact-event fast switching remains active",
+    "Page-2 analytics and cards remain unchanged",
+    "no provider/model/projection/probability/ranking/selection changes",
+    "sportsbook projection influence remains 0.0"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "duplicate_execution_paths": 0
+  }
+}
