@@ -1,0 +1,112 @@
+{
+  "version": 3,
+  "task_id": "monster-cfb-game-total-page2-best-bet-step6-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Best Bet repair Step 6",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "6/10",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_THAW_RUNLESS",
+  "base_main_sha": "ee4bc95c216b055b5adfd8adac98bf568b8eddce",
+  "branch": "monster-cfb-game-total-page2-best-bet-step6-v1",
+  "problem": "Stage 5 Best Bet is not a real independent Page-2 stage: the existing Step-7 card is bundled into Stage 4 and the runtime always falls back to NO BET because the frozen Step-12 forecast intentionally keeps betting_pick_active false.",
+  "root_cause": "The frozen Step-12 model is forecast-only by design and must not be changed into a sportsbook-pick engine. Page 2 incorrectly treated its betting_pick_active=false boundary as proof that no display recommendation could ever be derived, even though Page 2 already owns a verified market total plus the frozen total distribution and qualified forecast direction.",
+  "patch": "Bounded display-layer repair: keep Step-12 and all model/provider math frozen; add a dedicated Stage-5 Best Bet presentation component; add a Stage-4 Line-Lab-only renderer while preserving the legacy combined renderer; and derive OVER/UNDER only when forecast_ready is true, market identity is verified with zero projection weight, frozen distribution evidence has a strict stronger side, and projected-total direction agrees. Otherwise fail closed to NO BET. No odds, juice, EV, provider fetch, model rerun, ranking mutation, or sportsbook projection influence.",
+  "mutation_scope": [
+    "cfb_game_total_page2_stage5_best_bet_v1.py",
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "tests/test_monster_cfb_game_total_page2_best_bet_step6_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-best-bet-step6-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-best-bet-step6-v1.json"
+  ],
+  "protected": {
+    "steps1_to_5_frozen": true,
+    "page1_shell": true,
+    "games_on_day_parity": true,
+    "selected_event_identity": true,
+    "step11_distribution_math": true,
+    "step12_forecast_model": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "ranking": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": null,
+    "one_authoritative_proof_chain": true,
+    "lease_id": "SCOPE-LEASE-D8C4E542819F28BDE427B846",
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "authoritative_main_sha": "ee4bc95c216b055b5adfd8adac98bf568b8eddce"
+  },
+  "tdd": {
+    "red_candidate_sha": "c2f2ba4ac31d93e553251838051489edaab74466",
+    "red_verification": "3 failed, 3 passed; missing qualified Best Bet derivation, missing Stage-4 Line-Lab-only renderer, and missing separate Stage-5 Best Bet surface",
+    "step7_split_commit_sha": "822ba2e9e7f916cd5adef134949f758f1c189b6b",
+    "step7_product_blob": "ee6a61b3867725a6add37c62a8a788dea5017456",
+    "stage5_component_commit_sha": "b52e089c23bac0688a45393edd0ff1c14fe50ca7",
+    "stage5_component_blob": "e67a63fc22933c92516bb9321aefe0015e75c627",
+    "step8_binding_commit_sha": "97ef7a3e27237224cfc691d9d4a6bca3c995aa7f",
+    "step8_product_blob": "5853c56207c02b04b993830779865e982cbd870e",
+    "new_test_blob": "803c4b1225ea6ca8233a2afb3152dad1c648a3ff",
+    "green_verification": "6 Step-6 tests passed; 10 valid Step-5/Step-7 predecessor regressions passed; py_compile exit 0",
+    "full_suite_verification": "Bare pytest attempted on exact implementation head; collection stopped because the lightweight sandbox lacks broad repository dependencies including httpx, fastapi, and pydantic. This is environment/test-harness debt, not Step-6 product failure."
+  },
+  "regression_contract": {
+    "proof_plan_blob": "b97e0101ef03a2dffa1dff6896f1ba30b490bb44",
+    "superseded_nodes_excluded": [
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_line_lab_uses_only_precomputed_scenarios",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_runtime_composes_all_frozen_page2_surfaces",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_review_regression_forecast_strength_is_not_bet_probability",
+      "tests/test_cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py::test_step6_missing_values_fail_soft_without_fake_data_copy"
+    ],
+    "unrelated_nodes_excluded": [
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_router_restores_query_route_before_selected_event_activation"
+    ],
+    "reason": "Step 6 intentionally separates Best Bet from the legacy combined Step-7 surface, while the Step-4 Trends repair already superseded the dash-wall assertion. The new Step-6 contract explicitly proves forecast strength is not used as bet probability by producing 80.0% from the frozen distribution while forecast strength is 84%. The router assertion touches an unchanged file outside Step-6 scope."
+  },
+  "acceptance": {
+    "stage4_line_lab_separate": true,
+    "stage5_best_bet_separate": true,
+    "legacy_combined_renderer_preserved": true,
+    "qualified_forecast_required": true,
+    "verified_market_required": true,
+    "frozen_distribution_required": true,
+    "stronger_probability_side_required": true,
+    "projection_direction_agreement_required": true,
+    "ties_and_missing_data_fail_closed": true,
+    "forecast_strength_not_used_as_bet_probability": true,
+    "odds_or_juice_used": false,
+    "edge_ev_pricing_added": false,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "frozen_registry": {
+    "step7_from_blob": "92b4467e7e45e5ba551a5734e162001bda26e725",
+    "step7_to_blob": "ee6a61b3867725a6add37c62a8a788dea5017456",
+    "step7_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-BEST-BET-STEP6-STEP7-R1",
+    "step8_from_blob": "cce99f999cdaf21b6ebc08f35778f014810fdb07",
+    "step8_to_blob": "5853c56207c02b04b993830779865e982cbd870e",
+    "step8_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-BEST-BET-STEP6-STEP8-R1",
+    "legacy_review_thaw": "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+    "legacy_review_thaw_mutated": false,
+    "stage5_new_file_requires_thaw": false,
+    "thaw_status": "NOT_REQUESTED"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-BEST-BET-STEP6-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "final_proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_BEST_BET_STEP6_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "BIND_STEP7_AND_STEP8_THAWS_OPEN_ONE_PR_THEN_SUBMIT_ONE_FINAL_RUNLESS_PROOF"
+}
