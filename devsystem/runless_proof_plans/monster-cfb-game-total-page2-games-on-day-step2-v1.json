@@ -10,8 +10,19 @@
       "tests/test_cfb_game_total_games_on_day_step2_visual_v1.py",
       "tests/test_cfb_game_total_games_on_day_step3_details_v1.py",
       "tests/test_cfb_game_total_games_on_day_step4_interaction_mobile_v1.py",
-      "tests/test_cfb_game_total_page2_step8_final_v1.py",
-      "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py"
+      "tests/test_cfb_game_total_step8_page1_event_guard_r1.py"
+    ],
+    [
+      "python", "-m", "pytest", "-q",
+      "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py::test_step8_serializes_shared_route_pointer_swaps",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_runtime_composes_all_frozen_page2_surfaces",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_runtime_is_display_only_and_preserves_steps_2_to_7",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_router_activates_only_selected_cfb_game_total",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_app_activates_final_router",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_sample_has_no_limited_mock_or_pending_copy",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_review_regression_uses_frozen_distribution_for_line_probabilities",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_review_regression_forecast_strength_is_not_bet_probability",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_restores_frozen_v38_verified_total_before_page2_analysis"
     ],
     [
       "python", "-m", "py_compile",
@@ -32,8 +43,13 @@
     "cfb_game_total_games_on_day_step4_interaction_mobile_v1.py",
     "cfb_game_total_page2_step8_final_runtime_v1.py",
     "tests/test_cfb_game_total_page2_unified_shell_step1_v1.py",
+    "tests/test_cfb_game_total_step8_page1_event_guard_r1.py",
     "tests/test_cfb_game_total_page2_step8_final_v1.py",
     "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py"
+  ],
+  "superseded_regression_nodes_excluded": [
+    "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py::test_step8_real_tap_route_holds_lock_and_restores_shared_owners",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_router_restores_query_route_before_selected_event_activation"
   ],
   "probes": [],
   "timeout_seconds": 600,
