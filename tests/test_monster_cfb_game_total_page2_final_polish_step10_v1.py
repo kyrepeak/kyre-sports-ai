@@ -39,11 +39,14 @@ def test_step10_cert_declares_required_viewports_markers_and_touch_target() -> N
         "gtp2s5-team-snapshot",
         "gtp2s6-trends",
         "gtp2s7-line-lab",
-        "gtp2s7-best-bet",
+        "gtp2s8-data-quality",
+        "gtp2s9-best-bet",
+        "gtp2s10-tough-favorable",
         "gtp2s8-back-to-slate",
         "gtp2s8-final",
     ):
         assert marker in cert.REQUIRED_MARKERS
+    assert "gtp2s7-best-bet" not in cert.REQUIRED_MARKERS
 
 
 def test_step10_existing_runtime_already_meets_mobile_containment_contract() -> None:
