@@ -5,8 +5,7 @@
   "source_main_sha": "0e595ac19ec3b79241812421aaa72bfcb2710e7d",
   "commands": [
     ["python", "-m", "py_compile", "nba_spread_public_betting_observations_v1.py"],
-    ["python", "-m", "pytest", "-q", "tests/test_nba_spread_public_betting_observations_step2_v1.py"],
-    ["python", "-m", "pytest", "-q"]
+    ["python", "-m", "pytest", "-q", "tests/test_nba_spread_public_betting_observations_step2_v1.py"]
   ],
   "artifacts": [
     "devsystem/plans/nba_spread_public_betting_observations_step2_v1.md",
