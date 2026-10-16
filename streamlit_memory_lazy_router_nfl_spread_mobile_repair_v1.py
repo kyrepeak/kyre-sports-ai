@@ -20,7 +20,7 @@ from typing import Any, Callable, Iterable
 import streamlit as st
 
 import nfl_spread_hub_v7 as spread_v7
-import streamlit_memory_lazy_router_cfb_game_total_page_order_cleanup_v1 as cfb_page_order
+import streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1 as cfb_daily_slate
 import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 as prior
 import streamlit_memory_lazy_router_v132 as spread_fast_route
 from streamlit_route_hygiene_v1 import apply_route_hygiene
@@ -107,7 +107,7 @@ def render_app() -> Any:
     prior.spread_v5 = spread_v7
     spread_fast_route._render_direct_spread = _render_v7_direct_spread
     try:
-        with cfb_page_order.install_page_order_cleanup():
+        with cfb_daily_slate.install_daily_slate_page1():
             return prior.render_app()
     finally:
         spread_fast_route._render_direct_spread = original_direct_spread
