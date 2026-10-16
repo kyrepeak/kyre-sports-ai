@@ -1,0 +1,24 @@
+{
+  "task_id": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "workstream": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_monster_cfb_game_total_page2_same_page_shell_repair_v1.py"]
+  ],
+  "artifacts": [
+    "tests/test_monster_cfb_game_total_page2_same_page_shell_repair_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-same-page-shell-repair-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-same-page-shell-repair-v1.json"
+  ],
+  "dependencies": [
+    "cfb_game_total_clean_page_v45.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_SAME_PAGE_SHELL_REPAIR_V1_FROZEN"
+}
