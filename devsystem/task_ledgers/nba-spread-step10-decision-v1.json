@@ -1,0 +1,70 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step10-decision-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "10/10",
+  "source_main_sha": "6eb6ed233dad19ab03c94738495e17ac93f632f7",
+  "authoritative_branch": "nba-spread-step10-decision-r1",
+  "authoritative_pr": null,
+  "state": "TDD_RED_PENDING_PROOF",
+  "step2a": {
+    "active_problem": "Final NBA Spread decision layer",
+    "root_cause_class": "MISSING_FINAL_DECISION_LAYER",
+    "scope_lease_id": "SCOPE-LEASE-NBA-SPREAD-STEP10-R1",
+    "authorization_id": "AUTH-NBA-SPREAD-STEP10-R1",
+    "one_branch": true,
+    "one_pr_max": true,
+    "one_final_proof_chain": true,
+    "duplicate_async_runs": 0,
+    "parallel_conflict": false
+  },
+  "tdd": {
+    "red_required": true,
+    "red_verified": false,
+    "red_blocked_by_main_drift": true,
+    "green_verified": false,
+    "regression_verified": false
+  },
+  "behavior": {
+    "edge_logic": true,
+    "production_grade": true,
+    "pick_strength": true,
+    "slate_ranking": true,
+    "final_pick": true,
+    "step9_model_mutation": false,
+    "sportsbook_projection_influence": 0.0,
+    "new_provider": false,
+    "fail_closed_no_play": true,
+    "live_final_frozen_inputs": true
+  },
+  "frozen_protection": {
+    "steps_1_9_reopened": false,
+    "step9_page_modified": false,
+    "step9_test_file_modified": false,
+    "step9_runtime_target_preserved": "nba_spread_page_v4",
+    "step10_runtime_target": "nba_spread_page_v5",
+    "router_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "thaw_required_for_router": true,
+    "thaw_authorized": false
+  },
+  "parallel_main_drift": {
+    "foreign_main_sha": "6eb6ed233dad19ab03c94738495e17ac93f632f7",
+    "foreign_workstream": "MONSTER CFB Game Total Step 5",
+    "scope_overlap": false,
+    "forward_port_required": true
+  },
+  "proof": {
+    "mode": "runless",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "exact_head_verified": false,
+    "merge_authorized": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP10_DECISION_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "FORWARD_PORT_SAME_BRANCH_TO_NEW_MAIN_THEN_RUN_ONE_TDD_RED_PROOF"
+}
