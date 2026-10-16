@@ -125,6 +125,7 @@ def _render_nba_spread(market: str) -> Any:
     bind_resilient_schedule_loader = getattr(provider_bridge, "_bind_resilient_schedule_loader", None)
     if callable(bind_resilient_schedule_loader):
         bind_resilient_schedule_loader()
+    importlib.import_module(STEP10_ACTIVE_PAGE)
     page = importlib.import_module(STEP10_REPAIRED_PAGE)
     return page.render_nba_spread_page()
 
