@@ -1,0 +1,65 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/nba-spread-step9-fair-spread-probability-v1.json": "35ab0cbf12d72246c7b756df56ff6a839250f4c4",
+    "devsystem/runless_proof_plans/nba-spread-step9-fair-spread-probability-v1.json": "f283102032900fcc5f7e41801bd269cd6a258b94",
+    "devsystem/task_ledgers/nba-spread-step9-fair-spread-probability-v1.json": "27c58be91d7efb515cebcbe173381d6088f9ea55",
+    "nba_spread_fair_spread_probability_v1.py": "75a658346d51800cefbfdfcef7b4bf6082cd9407",
+    "nba_spread_page_v4.py": "fcab52e718e91afde2c7ef0a789bcd221adc4148",
+    "nba_spread_performance_history_v1.py": "681df4c8223b5ab7a7788b019ac9f704ef177936",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": "32d5629efd569a38f3dbe3d99da75e7c642817ec",
+    "tests/test_nba_spread_step9_fair_spread_probability_v1.py": "9b43386cf4e2e6b23969f4e1abb1553db56d490d"
+  },
+  "candidate_sha": "f3999cada3f3ebd567c2c30d18e31a973894cda2",
+  "created_at": "2026-10-16T06:03:17.889267+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "nba_spread_injury_availability_v1.py": "15c6988e5cd51d43e27820c145393b52352136f3",
+    "nba_spread_live_final_v1.py": "60e068b97345237772bbed97c09bbefabb8fee66",
+    "nba_spread_page_provider_resilience_step3_r1.py": "40cbe2cfd4e0792bfc20b8a2267ec03247c4e35c",
+    "nba_spread_page_v1.py": "0d54b3cedf609f07cd6213d280e0a8c073563d26",
+    "nba_spread_page_v2.py": "381c1788c783977b474fb56267f3f21dce72b61c",
+    "nba_spread_page_v3.py": "d03a90122779a438652b262ef91eef35f7917e3b",
+    "nba_spread_schedule_provider_resilience_step1_r1.py": "7e24996d7c5b7f87de7aee4d762119adcb568de9",
+    "nba_spread_schedule_v1.py": "143c366f935776b2f8ce77c0947b1fcf23013fa7",
+    "nba_spread_sportsbook_observations_v1.py": "ba3b3485eb340aa6987f506b9dc532ac122a5f53"
+  },
+  "digest": "5b10a8e652acfb32111a9201737c75665b59ba3a4d8fc05cada57fa49ad39bb2",
+  "evidence_digests": [
+    "f5e91fa01555bed3e4f13642033f0f9af8afe374534c1e88e700ed1c15960f25",
+    "519a6d3407c104e19c159682c323edea1743711cc2ddd537018203e571f2a2be",
+    "c25f84b280e45ef2c60a75127c4f2cf5e9520643e92ced3cf97c83d5aef6f99c",
+    "b13320a93a18dab4daf47d16aa4c7d94585606043eded1ec846b30116f71641e",
+    "780b92676f87e9f2338c4081e559b9251254f9c11ec27940473f104c239f9ca7"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "d3cbb197581399649dbdf13613b5b125b38c45ff599c714612c423d1bbaf3e40",
+  "proof_id": "nba-spread-step9-fair-spread-probability-v1-f3999cada3f3ebd5-fb10f612b456a145",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP9-FAIR-SPREAD-R1"
+    ],
+    "revision": 337,
+    "state_hash": "bea3d06b82bf8cb3e4d8264fb412ffb1623af0a6117aa4ebdd4a3a7dca5a5081"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP9-FAIR-SPREAD-R1"
+    ],
+    "revision": 337,
+    "state_hash": "bea3d06b82bf8cb3e4d8264fb412ffb1623af0a6117aa4ebdd4a3a7dca5a5081"
+  },
+  "request_fingerprint": "1fd27797db04d7fa2591726fdc5ccb04f60c5abbdf6c988628d1d8431ddcc50c",
+  "step": "runless-v2-premerge",
+  "task_id": "nba-spread-step9-fair-spread-probability-v1",
+  "workstream": "nba-spread-two-page-v1"
+}
