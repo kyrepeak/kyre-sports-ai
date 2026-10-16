@@ -57,7 +57,8 @@ def test_selected_game_runtime_pointer_is_not_rewritten_by_daily_slate_context()
 def test_page1_repair_remains_dynamic_route_seam_for_unselected_page1() -> None:
     repair = _read(PAGE1_REPAIR)
     assert "PAGE1_REPAIR_ROUTE =" in repair
-    assert "importlib.import_module(PAGE1_REPAIR_ROUTE)" in repair
+    assert "cfb_prior.PAGE1_NATIVE_ROUTE = PAGE1_REPAIR_ROUTE" in repair
+    assert "cfb_prior.PAGE1_NATIVE_ROUTE = original_page1" in repair
 
 
 def test_current_production_outer_router_activates_daily_slate_not_old_page_order_context() -> None:
