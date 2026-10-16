@@ -1,0 +1,30 @@
+{
+  "mode": "runless",
+  "task_id": "nba-spread-public-betting-observations-step2-r1",
+  "workstream": "nba-spread-public-betting-observations-step2-r1",
+  "source_main_sha": "0e595ac19ec3b79241812421aaa72bfcb2710e7d",
+  "commands": [
+    ["python", "-m", "py_compile", "nba_spread_public_betting_observations_v1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_nba_spread_public_betting_observations_step2_v1.py"]
+  ],
+  "artifacts": [
+    "devsystem/plans/nba_spread_public_betting_observations_step2_v1.md",
+    "devsystem/runless_proof_plans/nba-spread-public-betting-observations-step2-r1.json",
+    "nba_spread_public_betting_observations_v1.py",
+    "tests/test_nba_spread_public_betting_observations_step2_v1.py"
+  ],
+  "dependencies": [
+    "devsystem/contracts/universal-sports-provider-registry-v1.json",
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [
+    "NBA_SPREAD_SPORTSBOOK_OBSERVATIONS_STEP1_R1_FROZEN"
+  ],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_PUBLIC_BETTING_OBSERVATIONS_STEP2_R1_FROZEN"
+}
