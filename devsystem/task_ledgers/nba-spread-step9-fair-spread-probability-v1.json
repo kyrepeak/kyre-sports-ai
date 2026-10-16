@@ -7,7 +7,7 @@
   "source_main_sha": "ab6e60a6def0991d6d726f5201e93e2cf13403c1",
   "authoritative_branch": "nba-spread-step9-fair-spread-r1",
   "authoritative_pr": null,
-  "state": "TDD_RED_VERIFIED_IMPLEMENTATION_ACTIVE",
+  "state": "IMPLEMENTATION_READY_PENDING_ROUTER_THAW_AND_FINAL_PROOF",
   "step2a": {
     "active_problem": "Kyre Fair Spread + Cover Probability",
     "root_cause_class": "MISSING_FAIR_SPREAD_PROBABILITY_LAYER",
@@ -38,8 +38,11 @@
     "sportsbook_projection_influence": 0.0,
     "multi_source_performance_quorum": true,
     "source_conflict_fails_closed": true,
+    "integer_line_push_mass": true,
+    "availability_context_no_uncalibrated_points": true,
     "live_final_model_freeze": true,
     "ranking_mutation": false,
+    "edge_mutation": false,
     "pick_mutation": false
   },
   "frozen_protection": {
@@ -49,6 +52,9 @@
     "step8_runtime_target_preserved": "nba_spread_page_v3",
     "step9_runtime_target": "nba_spread_page_v4",
     "router_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "router_from_blob": "07c91b5a48326d557a0c7269ca6a072ee10df26d",
+    "router_to_blob": "32d5629efd569a38f3dbe3d99da75e7c642817ec",
+    "required_thaw_id": "THAW-NBA-SPREAD-STEP9-FAIR-SPREAD-R1",
     "thaw_required_for_router": true,
     "thaw_authorized": false
   },
@@ -64,5 +70,5 @@
   },
   "freeze_token": "NBA_SPREAD_STEP9_FAIR_SPREAD_PROBABILITY_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "IMPLEMENT_MINIMAL_STEP9_PRODUCTION_CODE"
+  "next_legal_action": "AUTHORIZE_SINGLE_ROUTER_THAW_FOR_FINAL_CANDIDATE_THEN_REQUEST_ONE_GREEN_PROOF"
 }
