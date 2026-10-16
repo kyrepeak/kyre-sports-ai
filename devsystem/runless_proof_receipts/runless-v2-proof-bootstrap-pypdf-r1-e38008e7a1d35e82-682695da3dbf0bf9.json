@@ -1,0 +1,53 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/runless-v2-proof-bootstrap-pypdf-r1.json": "74fce4d2235349c141e4bf4992c720a0382108ce",
+    "devsystem/runless_proof_plans/runless-v2-proof-bootstrap-pypdf-r1.json": "b184cd96feeb864b304bd777c0f43cc8fe4678f6",
+    "devsystem/task_ledgers/runless-v2-proof-bootstrap-pypdf-r1.json": "383fe006cc4d0f41a16331a29b0cfbd36c73b01e",
+    "runless_v2/sandbox_executor.py": "0e843a02bab93d323a1d4073890df605d531debd",
+    "tests/test_runless_v2_sandbox_executor_dependencies_r1.py": "0c35bddc613eaba5585529cf534e8c0a6f83782e"
+  },
+  "candidate_sha": "e38008e7a1d35e82e4812e38783f9a978f8f5072",
+  "created_at": "2026-10-16T04:03:52.542755+00:00",
+  "dependency_map": {
+    "runless_v2/models.py": "1b17786118f215921a40f31287cb6ba0d982239f",
+    "runless_v2/state_store.py": "fc9ae638ca8a572fc3edecfea1a513508e48820b"
+  },
+  "digest": "1aac84c5ff102e931014b209b95ca69170def00ab5f66b6700ef7c8693550ada",
+  "evidence_digests": [
+    "4871e228c89e95c7953d73783d2117fee03ac7f2c41bbd95a7fb2388f47c909e",
+    "31fb2f56024b5e230657536add6105f5e42dca899e5f131d581b74f02db360cc"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "668b656c892e81c1639a3509b537a8357b9b7e95d8cd3192e453bb896ee0a28c",
+  "proof_id": "runless-v2-proof-bootstrap-pypdf-r1-e38008e7a1d35e82-682695da3dbf0bf9",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 323,
+    "state_hash": "648a8bfc718b1449e8285ea88cdd8a9f0da3abc2238814856375135039084598"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 323,
+    "state_hash": "648a8bfc718b1449e8285ea88cdd8a9f0da3abc2238814856375135039084598"
+  },
+  "request_fingerprint": "589a83e9dca5d5070e0d8eacd4dc066facafe1bd9189696844b9c6c21d73d97c",
+  "step": "runless-v2-premerge",
+  "task_id": "runless-v2-proof-bootstrap-pypdf-r1",
+  "workstream": "runless-v2-proof-bootstrap-pypdf-r1"
+}
