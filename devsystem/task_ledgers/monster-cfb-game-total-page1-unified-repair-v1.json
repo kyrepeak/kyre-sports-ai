@@ -5,14 +5,14 @@
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page1-unified-repair-v1",
   "step": "1/1",
-  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_GREEN_PROOF",
+  "status": "COMPATIBILITY_REPAIRED_AWAITING_EXACT_HEAD_GREEN_PROOF",
   "base_main_sha": "800c3b3c9d3f6fc79af6d9a84cfd30b0d88f400c",
   "branch": "monster-cfb-game-total-page1-unified-repair-v1",
   "pr_number": 1585,
   "scope_lease_id": "SCOPE-LEASE-8A666156B6630410AC9CB41D",
   "problem": "Page 1 can show duplicate date controls, omit Phoenix-local today by reviving the legacy Tomorrow+ selector, and then surface the stale-date RuntimeError after the selected-day snapshot has already been pinned.",
   "root_cause": "V41 correctly owns the authoritative Phoenix selector and suppresses the legacy day strip, but the downstream V36 presentation wrapper reassigns the legacy day-strip function during the same render. That defeats V41 ownership, resurrects the Tomorrow+ strip, can rewrite the query date mid-render, and can diverge downstream reads from V42's pinned selected-day snapshot.",
-  "patch": "V45 preserves V41 day ownership while reusing only V36 kickoff/hero presentation. A narrow bridge changes only the native Page-1 pointer, and frozen Step 9 keeps its selected Page-2 fast path first while wrapping only the non-selected fallback through that bridge.",
+  "patch": "V45 preserves V41 day ownership while reusing only V36 kickoff/hero presentation. A narrow bridge changes only the native Page-1 pointer, and frozen Step 9 keeps its selected Page-2 fast path first while wrapping only the non-selected fallback through that bridge. The fallback is fail-safe when Step-9 render_app is executed in isolation by its frozen regression harness.",
   "red": {
     "candidate_sha": "c11fb761326420ae8492cbd29aa8b69a556601a5",
     "proof_id": "monster-cfb-game-total-page1-unified-repair-v1-c11fb761326420ae-d938bc063910133d",
@@ -26,15 +26,25 @@
     "proof_id": "monster-cfb-game-total-page1-unified-repair-v1-ba1ef610eadfed94-c49ebd8c13cf4cd7",
     "state": "FAILED",
     "failure_class": "STATIC_PROOF",
+    "detail": "RUNLESS_V2_STATIC_PROOF_FAILED"
+  },
+  "green_attempt_1": {
+    "candidate_sha": "ecec1c2b6fc91428ba60af3d3d49b1382d614a85",
+    "proof_id": "monster-cfb-game-total-page1-unified-repair-v1-ecec1c2b6fc91428-41a1ce1454db465e",
+    "state": "FAILED",
+    "failure_class": "STATIC_PROOF",
     "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
-    "meaning": "V45 existed but frozen Step 9 had not yet routed the non-selected fallback through the Page-1 repair bridge."
+    "classification": "FROZEN_STEP9_ISOLATED_RENDER_APP_HARNESS_MISSING_PAGE1_REPAIR_GLOBAL",
+    "root_cause": "The frozen Step-9 regression executes render_app in an isolated AST namespace without module imports, so a direct page1_repair reference raised NameError on the non-selected branch.",
+    "product_page1_fix_invalidated": false
   },
   "implementation": {
     "page1_owner": "cfb_game_total_clean_page_v45.py",
     "bridge": "streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1.py",
     "activation_seam": "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
     "step9_from_blob": "c3eb538efb1ab9b17d8f50938beda7c64aedaf6c",
-    "step9_to_blob": "44b37f760607df9282892fa75a7a93d4a8d05e85",
+    "step9_to_blob": "20ccb2de8e1dbae53e89174b0fe57dea50ed61f7",
+    "step9_isolated_harness_fail_safe": true,
     "app_changed": false,
     "page2_selected_fast_path_changed": false,
     "v41_is_sole_visible_day_owner": true,
@@ -59,7 +69,8 @@
     "legacy Tomorrow+ strip cannot render in the V45 native path",
     "selected-day snapshot remains stable for the complete render",
     "existing V44 stale-date RuntimeError protection remains preserved",
-    "Page-2 Step 9 fast-switch selected-event path and Step-10 final certification remain unchanged",
+    "Page-2 Step 9 selected-event fast path and Step-10 final certification remain unchanged",
+    "frozen Step-9 isolated render_app regression remains compatible",
     "no provider/model/projection/probability/ranking/selection changes",
     "sportsbook projection influence remains 0.0"
   ],
@@ -88,9 +99,10 @@
     "red_test_committed_before_product_code": true,
     "activation_test_changed_before_activation_patch": true,
     "activation_red_proven": true,
-    "implementation_started_after_red": true
+    "implementation_started_after_red": true,
+    "green_failure_classified_before_compatibility_patch": true
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE1_UNIFIED_REPAIR_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "LOCK_CURRENT_HEAD_AND_MAIN_THEN_REQUEST_ONE_EXACT_HEAD_GREEN_PROOF"
+  "next_legal_action": "LOCK_CURRENT_HEAD_AND_MAIN_THEN_REQUEST_ONE_CORRECTED_EXACT_HEAD_GREEN_PROOF"
 }
