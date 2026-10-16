@@ -245,6 +245,10 @@ def render_app() -> Any:
         _clear_auto_event_after_page1()
         return rendered
 
+    install_games_on_day_step2_visual()
+    install_games_on_day_step3_details()
+    install_games_on_day_step4_interaction_mobile()
+
     shell_renderer = globals().get("_render_page1_navigation_shell")
     if callable(shell_renderer):
         shell_renderer()

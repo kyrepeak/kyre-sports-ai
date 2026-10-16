@@ -5,7 +5,7 @@
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
   "step": "2/10",
-  "status": "TEST_CONTRACT_RECOVERY_RED_PENDING",
+  "status": "IMPLEMENTED_AWAITING_R2_THAW_RUNLESS",
   "base_main_sha": "80bb72fe19b11ecb832ef04ab89dad481b57504c",
   "branch": "monster-cfb-game-total-page2-games-on-day-step2-v1",
   "problem": "The selected-event Page-2 route does not deterministically install the same Games on This Day presentation stack that Page 1 installs before rendering.",
@@ -31,13 +31,18 @@
   "tdd": {
     "original_red_candidate_sha": "e3de84fa998d24ba5064e9e1d2eaaf0424720695",
     "original_red_proof_id": "monster-cfb-game-total-page2-games-on-day-step2-v1-e3de84fa998d24ba-008dcaf482543908",
-    "original_red_failure_class": "STATIC_PROOF",
     "initial_green_candidate_sha": "cc0cd1671d8b096471e188e8c6d13ac3e9af9733",
     "initial_green_disposition": "SUPERSEDED_TEST_CONTRACT_BUG",
     "test_contract_failure": "selected substring began at shell marker while asserting installer calls appeared before the same marker",
     "obsolete_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R1",
     "obsolete_thaw_retired_registry_revision": 317,
-    "corrected_red_status": "PENDING"
+    "corrected_red_candidate_sha": "61084b0492e37603e46d1157361d1fb282eb6e93",
+    "corrected_red_proof_id": "monster-cfb-game-total-page2-games-on-day-step2-v1-61084b0492e37603-fe50dfae78d6f15f",
+    "corrected_red_failure_class": "STATIC_PROOF",
+    "corrected_red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "corrected_red_gate_check_run_id": null,
+    "corrected_red_receipt_digest": null,
+    "implementation_router_blob": "0b2b5a0d8b0d506a8faf84d96bf1ee13b9932894"
   },
   "acceptance": {
     "selected_event_installs_page1_games_on_day_step2_visual": true,
@@ -54,7 +59,7 @@
     "sportsbook_projection_influence": 0.0
   },
   "runless": {
-    "proof_generation": 3,
+    "proof_generation": 4,
     "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R1",
     "replacement_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R2",
     "required_check": "runless-final-gate",
@@ -64,5 +69,5 @@
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_GAMES_ON_DAY_STEP2_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "OBSERVE_CORRECTED_RED_THEN_REAPPLY_MINIMAL_THREE_INSTALLER_PATCH"
+  "next_legal_action": "FRESH_MAIN_CHECK_BIND_R2_THAW_THEN_SUBMIT_ONE_FINAL_RUNLESS_PROOF"
 }
