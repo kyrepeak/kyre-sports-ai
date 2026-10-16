@@ -16,6 +16,7 @@ from typing import Any
 
 import streamlit_memory_lazy_router_nba_spread_step2_activation_v1 as prior
 import streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1 as cfb_prior
+import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair
 import streamlit_memory_lazy_router_v1 as root
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE2 STEP9 FAST SWITCH V1"
@@ -76,7 +77,10 @@ def _render_selected_page_fast() -> Any:
 def render_app() -> Any:
     if _selected_game_total():
         return _render_selected_page_fast()
-    return prior.render_app()
+    bridge = globals().get("page1_repair")
+    if bridge is None:
+        return prior.render_app()
+    return bridge.render_with_page1_repair(prior.render_app)
 
 
 __all__ = [
