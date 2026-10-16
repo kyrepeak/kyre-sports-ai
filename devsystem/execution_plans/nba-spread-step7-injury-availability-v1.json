@@ -1,0 +1,81 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step7-injury-availability-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "7/10",
+  "source_main_sha": "9c52aeff4f69d99e7e2c0c370dc1e3ab2e4963e8",
+  "goal": "Add a descriptive fail-closed NBA Spread injury and availability layer for exact frozen Step-3 upcoming/delayed matchups. NBA Official injury-report evidence is primary and ESPN NBA injury evidence is an independent same-semantic corroborator/fallback. Preserve frozen Steps 1-6 and the later certified provider-resilience runtime seam. Do not activate projections, probabilities, edges, rankings, or sportsbook-to-model influence.",
+  "write_paths": [
+    "devsystem/execution_plans/nba-spread-step7-injury-availability-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step7-injury-availability-v1.json",
+    "devsystem/task_ledgers/nba-spread-step7-injury-availability-v1.json",
+    "nba_spread_injury_availability_v1.py",
+    "nba_spread_page_v2.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_step7_injury_availability_v1.py"
+  ],
+  "protected_dependencies": [
+    "nba_spread_page_v1.py",
+    "nba_spread_page_provider_resilience_step3_r1.py",
+    "nba_spread_market_lines_v1.py",
+    "nba_spread_most_bet_v1.py",
+    "nba_spread_schedule_v1.py",
+    "nba_spread_sharp_money_v1.py",
+    "nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_step2_site_activation_v1.py",
+    "tests/test_nba_spread_provider_resilience_step3_r1.py",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json",
+    "devsystem/contracts/universal-sports-field-router-v1.json",
+    "devsystem/contracts/universal-sports-trust-quorum-v1.json"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "nba-spread-step7-injury-availability-r1",
+    "scope_lease_id": "SCOPE-LEASE-5D9BDF3D3FC91A0825124389",
+    "authorization_id": "AUTH-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1",
+    "authoritative_pr_max": 1,
+    "one_authoritative_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "github_actions_fallback": 0
+  },
+  "architecture": {
+    "routing_unit": "DATA_FIELD",
+    "required_fields": ["injuries"],
+    "semantic_metric_ids": ["INJURIES"],
+    "primary_provider": "nba_official",
+    "secondary_provider": "espn",
+    "page_wide_source_authority": false,
+    "same_semantic_fallback_allowed": true,
+    "fail_closed_on_stale_or_conflicting_evidence": true,
+    "active_provider_semantics": "ACTUALLY_CONSULTED_ONLY",
+    "canonical_identity": "FROZEN_STEP3_GAME_AND_TEAM_IDENTITY"
+  },
+  "product_scope": {
+    "feature": "Injury + Availability Context",
+    "schedule_authority": "frozen NBA Spread Step 3 Phoenix schedule plus certified provider-resilience loader",
+    "step6_page_preserved_byte_for_byte": true,
+    "additive_page_wrapper": "nba_spread_page_v2.py",
+    "step2_compatibility_constant_preserved": "nba_spread_page_v1",
+    "provider_resilience_constant_preserved": "nba_spread_page_provider_resilience_step3_r1",
+    "step7_runtime_target": "nba_spread_page_v2",
+    "timezone": "America/Phoenix",
+    "sportsbook_projection_influence": 0.0,
+    "model_mutation": false,
+    "projection_mutation": false,
+    "probability_mutation": false
+  },
+  "frozen_router_transition": {
+    "path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "from_blob": "a058059e78f0c32e465053bdfec776af72eb3660",
+    "change": "preserve ACTIVE_PAGE and PROVIDER_RESILIENCE_PAGE; bind the certified resilience loader, then dispatch NBA Spread through STEP7_ACTIVE_PAGE nba_spread_page_v2",
+    "required_thaw_id": "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1",
+    "candidate_bound": true
+  },
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP7_INJURY_AVAILABILITY_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}

@@ -108,6 +108,25 @@ def test_step2a_allows_registry_source_main_lag_when_frozen_blobs_match():
     assert result["registry"]["revision"] == 1
 
 
+def test_step2a_allows_inherited_frozen_main_drift_when_candidate_does_not_touch_path():
+    authority = make_authority()
+    stale_registry = registry()
+    stale_registry["source_main_sha"] = "9" * 40
+    authority.read_frozen_registry = lambda: stale_registry
+    inherited_blob = "8" * 40
+    candidate_tree = {
+        "artifact.py": BLOB,
+        "dependency.py": BLOB,
+        "frozen.py": inherited_blob,
+    }
+    main_tree = {"frozen.py": inherited_blob}
+
+    result = authority.verify_step2a(request(), plan(), candidate_tree, main_tree)
+
+    assert result["main_sha"] == MAIN
+    assert result["registry"]["revision"] == 1
+
+
 def test_step2a_stale_registry_identity_still_rejects_frozen_baseline_drift():
     authority = make_authority()
     stale_registry = registry()
@@ -130,6 +149,44 @@ def test_dead_scope_lease_fails_closed():
 def test_frozen_candidate_delta_requires_exact_thaw():
     authority = make_authority()
     candidate_tree = {"artifact.py": BLOB, "dependency.py": BLOB, "frozen.py": "d" * 40}
+    with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_FROZEN_DELTA_WITHOUT_THAW"):
+        authority.verify_step2a(request(), plan(), candidate_tree, {"frozen.py": BLOB})
+
+
+def test_frozen_candidate_delta_with_exact_thaw_is_allowed():
+    authority = make_authority()
+    thawed_registry = registry()
+    thawed_registry["active_thaws"] = [
+        {
+            "thaw_id": "THAW-LOCAL",
+            "target_head_sha": SHA,
+            "files": {
+                "frozen.py": {
+                    "from_blob": BLOB,
+                    "to_blob": "d" * 40,
+                }
+            },
+        }
+    ]
+    authority.read_frozen_registry = lambda: thawed_registry
+    candidate_tree = {"artifact.py": BLOB, "dependency.py": BLOB, "frozen.py": "d" * 40}
+
+    result = authority.verify_step2a(request(), plan(), candidate_tree, {"frozen.py": BLOB})
+
+    assert result["main_sha"] == MAIN
+
+
+def test_frozen_candidate_delta_with_ambiguous_thaw_fails_closed():
+    authority = make_authority()
+    thawed_registry = registry()
+    pair = {"from_blob": BLOB, "to_blob": "d" * 40}
+    thawed_registry["active_thaws"] = [
+        {"thaw_id": "THAW-LOCAL-A", "target_head_sha": SHA, "files": {"frozen.py": pair}},
+        {"thaw_id": "THAW-LOCAL-B", "target_head_sha": SHA, "files": {"frozen.py": pair}},
+    ]
+    authority.read_frozen_registry = lambda: thawed_registry
+    candidate_tree = {"artifact.py": BLOB, "dependency.py": BLOB, "frozen.py": "d" * 40}
+
     with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_FROZEN_DELTA_WITHOUT_THAW"):
         authority.verify_step2a(request(), plan(), candidate_tree, {"frozen.py": BLOB})
 
