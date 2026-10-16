@@ -21,7 +21,9 @@ REQUIRED_MARKERS = (
     "gtp2s5-team-snapshot",
     "gtp2s6-trends",
     "gtp2s7-line-lab",
-    "gtp2s7-best-bet",
+    "gtp2s8-data-quality",
+    "gtp2s9-best-bet",
+    "gtp2s10-tough-favorable",
     "gtp2s8-back-to-slate",
     "gtp2s8-final",
 )
