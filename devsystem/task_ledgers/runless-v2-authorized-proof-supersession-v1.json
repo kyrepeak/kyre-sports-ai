@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "task_id": "runless-v2-authorized-proof-supersession-v1",
+  "title": "Runless V2 Authorized-Proof Supersession V1",
+  "project": "MONSTER shared control plane",
+  "workstream": "runless-v2-authorized-proof-supersession-v1",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "base_main_sha": "132504ab410c56cc1ad871dc6bb804f0e0fcc27f",
+  "branch": "runless-v2-authorized-proof-supersession-v1",
+  "scope_lease_id": "SCOPE-LEASE-5D3B3891F8C30E2FFC2FD851",
+  "problem": "Proof-before-merge review can invalidate a candidate after Runless records MERGE_AUTHORIZED, but durable Runless V2 has no legal way to retire only that candidate's merge authority and therefore blocks a corrected exact-head proof with RUNLESS_V2_AUTHORITY_CONFLICT.",
+  "root_cause": "claim_workstream treats every MERGE_AUTHORIZED row as permanently outstanding until merged, while the transition graph has no review-repair supersession primitive. Merging, deleting, relabeling FAILED, or switching workstreams would all violate proof history or single-authority guarantees.",
+  "patch": "Preserve the original MERGE_AUTHORIZED proof and immutable receipt, add an explicit SHA-bound supersession marker in durable detail, add an idempotent service-role supersession RPC, ignore only explicitly superseded merge authority when claiming a corrected candidate, trigger-block later state transitions from a superseded proof, and make finalization convergence reject superseded authority before the GitHub merge callback.",
+  "step2a": {
+    "one_active_problem": true,
+    "one_authoritative_branch": true,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-5D3B3891F8C30E2FFC2FD851",
+    "parallel_sports_mutation": false,
+    "github_actions_fallback": 0
+  },
+  "protected": {
+    "step8_product_pr_1578": "PAUSED_READ_ONLY",
+    "cfb_product_runtime": true,
+    "nfl_parallel_lane": true,
+    "immutable_receipt_history": true,
+    "old_proof_state_relabel": false,
+    "old_proof_delete": false
+  },
+  "acceptance": [
+    "supersession requires an exact existing MERGE_AUTHORIZED proof",
+    "replacement candidate must be a different full SHA",
+    "same supersession identity is idempotent",
+    "conflicting replacement identity fails closed",
+    "live workstream execution prevents supersession",
+    "ordinary MERGE_AUTHORIZED rows continue to block replacement candidates",
+    "explicitly superseded MERGE_AUTHORIZED rows no longer block corrected candidate claims",
+    "superseded proof cannot advance state",
+    "finalization convergence rejects superseded authority before any GitHub merge callback",
+    "no proof row or immutable receipt is deleted or relabeled FAILED/GREEN_FROZEN"
+  ],
+  "freeze_token": "RUNLESS_V2_AUTHORIZED_PROOF_SUPERSESSION_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "ONE_EXACT_HEAD_RUNLESS_PROOF"
+}
