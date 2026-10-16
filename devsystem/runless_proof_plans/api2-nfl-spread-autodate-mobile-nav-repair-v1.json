@@ -1,0 +1,33 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-spread-autodate-mobile-nav-repair-v1",
+  "workstream": "api2-nfl-spread-autodate-mobile-nav-repair-v1",
+  "source_main_sha": "72ffb2b37ab034e0b8d3df1800df6180583b577e",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_spread_autodate_repair_v1.py", "nfl_spread_hub_v6.py", "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py", "app.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py", "tests/test_nfl_spread_next_slate_v1.py"]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/api2-nfl-spread-autodate-mobile-nav-repair-v1.json",
+    "app.py",
+    "nfl_spread_autodate_repair_v1.py",
+    "nfl_spread_hub_v6.py",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py",
+    "tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py"
+  ],
+  "dependencies": [
+    "nfl_spread_hub_v5.py",
+    "nfl_spread_next_slate_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
+    "streamlit_memory_lazy_router_v1.py",
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_SPREAD_AUTODATE_MOBILE_NAV_REPAIR_V1_FROZEN"
+}
