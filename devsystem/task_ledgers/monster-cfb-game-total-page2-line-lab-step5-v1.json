@@ -1,0 +1,95 @@
+{
+  "version": 3,
+  "task_id": "monster-cfb-game-total-page2-line-lab-step5-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Line Lab repair Step 5",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "5/10",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_THAW_RUNLESS",
+  "base_main_sha": "f79b55ffa67d47f65425b46aadd76b9ce942cd53",
+  "branch": "monster-cfb-game-total-page2-line-lab-step5-v1",
+  "problem": "Stage 4 Line Lab exposes a movable range control but its selected-line probability cards are server-rendered once and never change, while the Step-8 fallback commonly supplies only one market-line scenario.",
+  "root_cause": "The Step-7 static HTML renderer has no browser binding between the range input and the displayed selected scenario. Step 8 only returns a single fallback scenario when raw.line_scenarios is absent, despite already owning the frozen model distribution needed to read probabilities at nearby supplied thresholds.",
+  "patch": "Display-only repair: replace the fake range with accessible scriptless radio/CSS scenario switching using the previously reviewed Step-7 interactive blob, and make Step 8 provide lower/market/higher fallback lines at market minus 3.0, market, and market plus 3.0 using only the already-owned frozen distribution. Supplied line_scenarios remain authoritative. No provider fetch, model rerun, projection mutation, probability model mutation, recommendation mutation, or sportsbook projection influence.",
+  "mutation_scope": [
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "tests/test_monster_cfb_game_total_page2_line_lab_step5_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-line-lab-step5-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-line-lab-step5-v1.json"
+  ],
+  "protected": {
+    "steps1_to_4_frozen": true,
+    "page1_shell": true,
+    "games_on_day_parity": true,
+    "selected_event_identity": true,
+    "model": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "other_sports": true,
+    "best_bet_logic": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": null,
+    "one_authoritative_proof_chain": true,
+    "lease_id": "SCOPE-LEASE-E3BC54EB1F9CB916788C7C78",
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "authoritative_main_sha": "f79b55ffa67d47f65425b46aadd76b9ce942cd53"
+  },
+  "tdd": {
+    "red_candidate_sha": "4d2c848ce6d34569622a5fbfe3eb0cf23ea458cd",
+    "red_verification": "2 failed, 2 passed; missing radio scenario switching and missing three-line fallback",
+    "line_lab_implementation_commit_sha": "d6b87e0e0ef73d712d810342ddc2a925b42f7d6d",
+    "line_lab_product_blob": "92b4467e7e45e5ba551a5734e162001bda26e725",
+    "step8_implementation_commit_sha": "d9fa5ed76cbc8da2998f751edecb942e8b90bf43",
+    "step8_product_blob": "cce99f999cdaf21b6ebc08f35778f014810fdb07",
+    "new_test_blob": "8f9213cc9d22ab8844201fcc8a13a85241ed8668",
+    "green_verification": "4 Step-5 tests passed; 10 valid predecessor regressions passed; py_compile exit 0"
+  },
+  "regression_contract": {
+    "proof_plan_blob": "2dff082cc7f4b9c4b6cd339afdb3c9223ad0a95d",
+    "superseded_nodes_excluded": [
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_line_lab_uses_only_precomputed_scenarios"
+    ],
+    "reason": "Step 5 intentionally replaces the legacy fake range element with working scriptless radio/CSS scenario selection. Historical frozen tests remain unedited, while all still-valid display-only, recommendation-ownership, fail-soft, escaping, responsive, and Step-8 composition regressions remain in proof scope."
+  },
+  "acceptance": {
+    "three_scriptless_line_choices": true,
+    "selected_scenario_changes_visible_values": true,
+    "no_javascript_required": true,
+    "fallback_lines_market_plus_minus_3": true,
+    "fallback_probabilities_from_frozen_distribution": true,
+    "supplied_scenarios_preserved": true,
+    "best_bet_logic_unchanged": true,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "frozen_registry": {
+    "step7_from_blob": "6cfdb7303062780415428df33780bbce31f8b3e5",
+    "step7_to_blob": "92b4467e7e45e5ba551a5734e162001bda26e725",
+    "step7_reclaimed_thaw_id": "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+    "step8_from_blob": "94f1fb52324a9821c23f681c5e720698383dfb38",
+    "step8_to_blob": "cce99f999cdaf21b6ebc08f35778f014810fdb07",
+    "step8_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-LINE-LAB-STEP5-STEP8-R1",
+    "legacy_review_thaw": "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+    "legacy_review_thaw_mutated": false,
+    "thaw_status": "NOT_REQUESTED"
+  },
+  "runless": {
+    "proof_generation": 1,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-LINE-LAB-STEP5-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "final_proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_LINE_LAB_STEP5_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RETARGET_STEP7_THAW_BIND_STEP8_THAW_OPEN_ONE_PR_THEN_SUBMIT_ONE_FINAL_RUNLESS_PROOF"
+}

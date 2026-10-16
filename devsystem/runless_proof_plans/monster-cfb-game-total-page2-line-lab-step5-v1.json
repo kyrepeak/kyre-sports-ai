@@ -1,0 +1,48 @@
+{
+  "task_id": "monster-cfb-game-total-page2-line-lab-step5-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "commands": [
+    [
+      "python", "-m", "pytest", "-q",
+      "tests/test_monster_cfb_game_total_page2_line_lab_step5_v1.py",
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_module_exists_before_green",
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_renders_reserved_line_lab_and_best_bet_anchors",
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_best_bet_renders_owned_recommendation_values",
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_is_display_only_and_preserves_frozen_predecessors",
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_missing_and_nonfinite_values_fail_soft",
+      "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_escapes_text_and_is_responsive",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_runtime_composes_all_frozen_page2_surfaces",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_runtime_is_display_only_and_preserves_steps_2_to_7",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_sample_has_no_limited_mock_or_pending_copy",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_review_regression_team_snapshot_uses_captured_team_profiles"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+      "cfb_game_total_page2_step8_final_runtime_v1.py",
+      "tests/test_monster_cfb_game_total_page2_line_lab_step5_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "tests/test_monster_cfb_game_total_page2_line_lab_step5_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-line-lab-step5-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-line-lab-step5-v1.json"
+  ],
+  "dependencies": [
+    "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py",
+    "cfb_game_total_page2_step6_trends_scoring_breakdown_v1.py"
+  ],
+  "superseded_regression_nodes_excluded": [
+    "tests/test_cfb_game_total_page2_step7_line_lab_best_bet_v1.py::test_step7_line_lab_uses_only_precomputed_scenarios"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_LINE_LAB_STEP5_V1_FROZEN"
+}

@@ -178,15 +178,19 @@ def _line_scenarios(raw: Mapping[str, Any], display_game: Mapping[str, Any]) -> 
         rows = [dict(row) for row in supplied if isinstance(row, Mapping)]
         if rows:
             return rows
-    line = _market_line(raw, display_game)
-    if line in (None, ""):
+    market = _number(_market_line(raw, display_game))
+    if market is None:
         return []
-    over, under = _distribution_line_probabilities(raw, line)
-    return [{
-        "line": line,
-        "over_probability": _percent(over),
-        "under_probability": _percent(under),
-    }]
+    lines = (round(market - 3.0, 1), round(market, 1), round(market + 3.0, 1))
+    scenarios: list[Mapping[str, Any]] = []
+    for line in lines:
+        over, under = _distribution_line_probabilities(raw, line)
+        scenarios.append({
+            "line": line,
+            "over_probability": _percent(over),
+            "under_probability": _percent(under),
+        })
+    return scenarios
 
 
 def _team_profile_value(profile: Mapping[str, Any], *keys: str) -> Any:
