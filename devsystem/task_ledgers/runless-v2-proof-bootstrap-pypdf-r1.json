@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "task_id": "runless-v2-proof-bootstrap-pypdf-r1",
+  "project": "API2",
+  "workstream": "runless-v2-proof-bootstrap-pypdf-r1",
+  "source_main_sha": "9c52aeff4f69d99e7e2c0c370dc1e3ab2e4963e8",
+  "authoritative_branch": "runless-v2-proof-bootstrap-pypdf-r1",
+  "authoritative_pr": null,
+  "state": "IMPLEMENTATION_GREEN_PENDING_RUNLESS_PROOF",
+  "step2a": {
+    "active_problem": "Runless proof sandbox bootstrap omits direct dependency pypdf",
+    "scope_lease_id": "SCOPE-LEASE-3484802BC81F7F34CF79B465",
+    "one_branch": true,
+    "one_pr_max": true,
+    "one_proof_chain": true,
+    "duplicate_async_runs": 0
+  },
+  "repair": {
+    "pypdf_bootstrapped": true,
+    "requests_explicitly_bootstrapped": true,
+    "product_runtime_modified": false,
+    "nba_step7_candidate_modified": false
+  },
+  "proof": {
+    "mode": "runless",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "exact_head_verified": false,
+    "merge_authorized": false,
+    "merged_main_verified": false
+  },
+  "freeze_token": "RUNLESS_V2_PROOF_BOOTSTRAP_PYPDF_R1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "REQUEST_ONE_EXACT_HEAD_RUNLESS_PROOF_THEN_MERGE_AND_VERIFY_DEPLOYED_PRODUCTION"
+}
