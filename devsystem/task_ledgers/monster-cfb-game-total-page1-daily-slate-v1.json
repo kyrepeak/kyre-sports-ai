@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page1-daily-slate-v1",
+  "title": "MONSTER CFB Game Total Page 1 Daily Slate V1",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page1-daily-slate-v1",
+  "step": "1/1",
+  "status": "GREEN_PROOF_PENDING",
+  "base_main_sha": "11e028bd2969e8b86c9b1f5adf877fe2ea6ad420",
+  "expected_main_sha_before_proof": "11e028bd2969e8b86c9b1f5adf877fe2ea6ad420",
+  "branch": "monster-cfb-game-total-page1-daily-slate-v1",
+  "scope_lease": {
+    "lease_id": "SCOPE-LEASE-8EEA21EF253C22280968AECF",
+    "generation": 510,
+    "acquired_revision": 911,
+    "thaw_required": false,
+    "shared_outer_router_mutated_only_after_lease": true,
+    "note": "The authoritative same-workstream lease was atomically forward-ported before final proof to include the activation regression added during anti-loop recovery. The replacement preserved the same owner and approved Page-1 scope, added no parallel holder, and explicitly covers the selected-runtime protection declaration plus activation test artifact."
+  },
+  "problem": "CFB Game Total needs a true Page 1 that shows every FBS and FCS game for the selected Phoenix calendar day without mixing deep analysis into the slate.",
+  "root_cause": "The prior active presentation was still a two-page reversal/cleanup layer over the historical Game Total chain. It did not provide a canonical all-games Phoenix-day Page 1, explicit compact/expand interactions, or auditable field-level multi-source route metadata for the slate.",
+  "patch": "Add a read-only FBS+FCS Daily Slate API, deterministic observed-quote market consensus, mobile-first canonical Page-1 owner, and a CFB-only unselected-Page-1 routing context. Preserve selected-game runtime and frozen analysis artifacts, use Universal Sports field routing metadata, and activate the Daily Slate through the existing production outer router.",
+  "tdd": {
+    "product_code_before_first_red": false,
+    "api_red": {
+      "candidate": "6f454ec55fc51fdb5ded69327c42fd4cd63ea54c",
+      "observed": true,
+      "failure": "9 expected failures because the Daily Slate API owner/route did not exist",
+      "green_evidence": "18 passed"
+    },
+    "market_red": {
+      "candidate": "4dcafaeecd39b755af1c3b75cfe753b3329c7823",
+      "observed": true,
+      "failure": "9 expected failures because the market-consensus owner did not exist",
+      "green_evidence": "9 passed"
+    },
+    "page1_ui_red": {
+      "candidate": "ff10ec645ff86f0b20de88f70aa7e1772bf6c026",
+      "observed": true,
+      "failure": "8 expected Page-1 failures while existing market tests stayed green",
+      "green_evidence": "17 passed"
+    },
+    "routing_red": {
+      "candidate": "d3e2601ff5d172618bb1797c264dcd7c66eaa5a5",
+      "observed": true,
+      "failure": "4 expected routing failures while historical protection checks passed",
+      "green_evidence": "31 passed with protected NFL Spread regressions"
+    },
+    "activation_red": {
+      "candidate": "e3a491e0e43d2b2cea00132e3b37bf219774b10e",
+      "observed": true,
+      "failure": "same-workstream activation protection contract required explicit selected-runtime immutability",
+      "green_evidence": "18 passed with protected routing regressions on 638114cce33f96d2e3209c4251c5aadb02751610"
+    },
+    "multisource_audit_red": {
+      "candidate": "50cabeecb31c9a54fd8de7a875286eace7b5fae8",
+      "observed": true,
+      "failure": "1 expected failure because Universal Sports field-route metadata was not yet exposed",
+      "green_evidence": "7 passed"
+    }
+  },
+  "pre_candidate_verification": {
+    "head": null,
+    "py_compile": "PENDING_FRESH_EXACT_HEAD_RUN",
+    "pytest": "PENDING_FRESH_EXACT_HEAD_RUN",
+    "tests_failed": null,
+    "note": "Prior verification on 638114cce33f96d2e3209c4251c5aadb02751610 is retained as intermediate evidence only; final proof candidate requires a fresh run after this ledger forward-port."
+  },
+  "multisource_contract": {
+    "page_wide_source_authority": false,
+    "routing_unit": "DATA_FIELD",
+    "universal_route_fields": ["schedule", "game_identity", "team_identity", "injuries", "sportsbook_lines", "line_movement"],
+    "active_provider_semantics": "ACTUALLY_CONSULTED_ONLY",
+    "route_metadata_is_not_consulted_source_claim": true,
+    "market_consensus_uses_observed_quotes_only": true,
+    "synthetic_market_line": false,
+    "missing_data_fabrication": false
+  },
+  "protected": {
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "ranking": true,
+    "selection": true,
+    "selected_game_runtime": true,
+    "page2_page3_redesign": true,
+    "historical_frozen_page_artifacts": true,
+    "unrelated_cfb_markets": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE1_DAILY_SLATE_V1_FROZEN",
+  "green_plus_frozen_claimed": false
+}
