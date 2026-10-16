@@ -4,7 +4,7 @@
 
 **Goal:** Replace the current human-facing CFB Game Total Page 1 with a mobile-first all-games FBS+FCS Daily Slate for one Phoenix calendar day, while preserving frozen analytics and leaving future Page 2/Page 3 redesign out of scope.
 
-**Architecture:** Build one new Page-1 data/API owner, one pure market-consensus layer, one Streamlit Page-1 owner, and one CFB-only activation context. Reuse the existing exact ESPN FBS/FCS identity foundation, Universal Sports field routing for supported semantic categories, current Kyre Sports API identities/odds, existing team-logo identities, and the current selected-game downstream route; bypass the old two-page presentation context without deleting frozen artifacts. Page 1 remains descriptive/contextual only and never changes model/projection/probability/ranking/selection behavior.
+**Architecture:** Build one new Page-1 data/API owner, one pure market-consensus layer, one Streamlit Page-1 owner, and one CFB-only activation context. Reuse the existing exact ESPN FBS/FCS identity foundation, Universal Sports field routing for supported semantic categories, current Kyre Sports API identities/odds, existing team-logo identities, and the current selected-game downstream route; bypass the old two-page presentation context without deleting frozen artifacts. For betting markets, collect only exact-game observations actually present in the existing Kyre/FanDuel feed and in verified ESPN-scoreboard market payloads (including the payload's actual sportsbook/provider identity); treat them as independent only when their provider/book identities differ. Page 1 remains descriptive/contextual only and never changes model/projection/probability/ranking/selection behavior.
 
 **Tech Stack:** Python 3, FastAPI, Streamlit, `zoneinfo`, `httpx`/existing requests patterns, pytest, existing Universal Sports Source Intelligence contracts, existing Runless exact-head proof and Finalization Ledger V2.
 
@@ -27,6 +27,7 @@
 - Do not add a page-wide master provider. Use field/category ownership and fail closed on ambiguous identity.
 - Do not modify unrelated CFB markets or NFL/NBA/WNBA/MLB product behavior.
 - Existing Universal Sports registry/router contracts remain authoritative for supported fields. Weather/venue/broadcast metadata may be attached to verified schedule observations with explicit provenance; this Page-1 mission must not fork a competing global source-router architecture.
+- `injuries`/availability must use the existing Universal Sports route semantics when verified observations exist; route readiness alone is not evidence, so no observation means `Unavailable`.
 - Live refresh must be bounded and cached; no request storm or repeated blind polling.
 
 ## Review Focus
@@ -71,7 +72,7 @@ Do not rewrite `cfb_game_total_clean_page_v45.py`, `cfb_game_total_page1_selecte
 - Modify: `sports_api/api/health.py`
 
 **Interfaces:**
-- Consumes: existing CFB ESPN FBS/FCS exact-date identity behavior, current Kyre Sports API market feed, current team identity conventions, Universal Sports `route_field(...)` for supported fields.
+- Consumes: existing CFB ESPN FBS/FCS exact-date identity behavior, current Kyre Sports API market feed, market observations exposed inside verified ESPN scoreboard competitions, current team identity conventions, Universal Sports `route_field(...)` for supported fields.
 - Produces: `build_daily_slate_payload(selected_phoenix_date: date, *, now_utc: datetime | None = None, scoreboard_payloads: Mapping[tuple[str, int], Mapping[str, Any]] | None = None, market_rows: Sequence[Mapping[str, Any]] | None = None) -> dict[str, Any]` and `GET /api/v1/cfb/daily-slate?game_date=YYYY-MM-DD`.
 
 - [ ] **Step 1: Write the failing API tests first**
@@ -85,6 +86,9 @@ Tests must pin these exact behaviors:
 - attach explicit provenance and `fabrication=False`;
 - accept partial logistics fields instead of dropping a game;
 - fail closed on rows with no authoritative event identity;
+- parse raw sportsbook observations from an ESPN competition only when the event ID is exact and the payload includes an actual provider/book identity;
+- ingest the current Kyre/FanDuel market row as a separate observation only when it reconciles to the same exact game ID;
+- never count two transports of the same sportsbook/provider as two independent sources;
 - register `/api/v1/cfb/daily-slate` in the shared API router.
 
 - [ ] **Step 2: Run focused tests and prove RED**
@@ -99,6 +103,7 @@ Implement these named helpers in `sports_api/api/cfb_daily_slate_v1.py`:
 - `phoenix_day_utc_bounds(selected_day: date) -> tuple[datetime, datetime]`
 - `upstream_scoreboard_dates_for_phoenix_day(selected_day: date) -> tuple[str, ...]`
 - `normalize_scoreboard_event(event: Mapping[str, Any], *, subdivision: str) -> dict[str, Any] | None`
+- `scoreboard_market_observations(event: Mapping[str, Any]) -> list[dict[str, Any]]`
 - `merge_scoreboard_games(rows: Iterable[Mapping[str, Any]], *, selected_day: date) -> list[dict[str, Any]]`
 - `build_daily_slate_payload(...) -> dict[str, Any]`
 - FastAPI handler `daily_slate(game_date: str = Query(...))`.
@@ -107,8 +112,10 @@ Implementation rules:
 - use official event ID as the only accepted game identity;
 - query/parse both ESPN subdivision groups but do not label ESPN as page-wide authority;
 - use current Kyre market feed only as one market-observation source; no model influence;
+- accept scoreboard market data only as exact-game observations and preserve the sportsbook/provider identity from the payload rather than labeling the transport itself as the sportsbook;
 - return raw market observations keyed to exact game ID rather than forcing consensus in the API;
 - preserve provider metadata so the Streamlit market layer can distinguish independent sources;
+- if the only verified market evidence is one source, return it as one observation and let the UI label it `Limited coverage`;
 - no live refresh loop inside the API handler.
 
 - [ ] **Step 4: Register only the additive router**
@@ -137,7 +144,7 @@ Expected: PASS.
 
 Tests must require:
 - no observation without exact game identity is accepted;
-- duplicate quotes from the same provider/book do not count as independent consensus;
+- duplicate quotes from the same provider/book do not count as independent consensus even if they arrived through different transports;
 - `opening`, latest verified `pregame`, and `live` remain separate buckets;
 - displayed current quote is always one observed quote, never an arithmetic synthetic line;
 - nearest-to-median observed quote is selected deterministically; ties break by freshest timestamp then stable provider ID;
@@ -180,7 +187,7 @@ Expected: PASS with opening/pregame/live preservation and no fabricated line.
 - Create/extend: `tests/test_monster_cfb_game_total_page1_daily_slate_v1.py`
 
 **Interfaces:**
-- Consumes: `GET /api/v1/cfb/daily-slate`, exact game rows, `build_game_market_context(...)`, existing Streamlit query/session-state conventions, and current selected-event query key `ks_cfb_game_total_event_id`.
+- Consumes: `GET /api/v1/cfb/daily-slate`, exact game rows, `build_game_market_context(...)`, existing Streamlit query/session-state conventions, current selected-event query key `ks_cfb_game_total_event_id`, and existing Universal Sports `injuries` route semantics for availability labels when actual verified observations are present.
 - Produces: `render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None)` and `render_cfb_hub(market: str, ...)` for the new Page-1 owner.
 
 - [ ] **Step 1: Write failing Page-1 behavior tests**
@@ -199,6 +206,7 @@ Tests must prove:
 - `Completed Games` renders collapsed at the bottom;
 - compact cards contain teams/logos/records/ranks/kickoff-or-status/score if applicable/TV/weather/ML/spread/total plus separate `More` and `View Game` controls;
 - missing fields render `—`/`Unavailable` without removing the card;
+- an availability route with no verified injury observation still renders `Unavailable` rather than implying health;
 - `More` changes only expansion state;
 - only `View Game` emits selected-event route state;
 - deep analytics/projection/probability/pace/red-zone/matchup-reasoning surfaces are absent from this owner;
@@ -235,7 +243,8 @@ Requirements:
 - `More` uses page-local expansion state only;
 - `View Game` builds the exact selected-event handoff and preserves sport/market/date query identity;
 - quick weather displays provider-supplied weather summary when verified, otherwise `—`;
-- detailed weather/availability fields may remain `Unavailable` when no verified source exists;
+- detailed weather fields remain `Unavailable` when no verified observation exists;
+- availability/injury context is displayed only from actual verified observations from the existing source architecture; route availability alone is not treated as player availability evidence;
 - bounded live refresh: cache scheduled slate data for 60 seconds, live-state payload for 20 seconds, and do not introduce a background polling loop; refresh only on Streamlit rerun/user activity or existing bounded rerun mechanism if already present.
 
 - [ ] **Step 5: Run Page-1 tests GREEN**
