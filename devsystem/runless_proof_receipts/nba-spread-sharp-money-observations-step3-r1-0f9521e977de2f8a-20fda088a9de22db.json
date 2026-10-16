@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "devsystem/plans/nba_spread_sharp_money_observations_step3_v1.md": "3428a16ddcd31fdb529bc721409b3de0525955a5",
+    "devsystem/runless_proof_plans/nba-spread-sharp-money-observations-step3-r1.json": "6fd907b59513640460085e5b6c82841ce641ace5",
+    "devsystem/task_ledgers/nba-spread-sharp-money-observations-step3-r1.json": "e944b90539a6f8cc9a525041069627a700f308b9",
+    "nba_spread_sharp_money_observations_v1.py": "ec7c538a67dfd7e609f0396bd215be7a49bd6d50",
+    "tests/test_nba_spread_sharp_money_observations_step3_v1.py": "524aa54e3de547700e23395f9992701f2430bf94"
+  },
+  "candidate_sha": "0f9521e977de2f8a96968dec15ff700117784791",
+  "created_at": "2026-10-16T03:05:35.164800+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "nba_spread_public_betting_observations_v1.py": "1cc99b4929cab34aa093e20493b1014153ec61c9",
+    "nba_spread_sharp_money_v1.py": "1013ac9719af1b16742435f2bb0f0b92258a0a8f",
+    "tests/test_nba_spread_public_betting_observations_step2_v1.py": "6a2e32762d29f5af18990fe15d1c4ef023127575",
+    "tests/test_nba_spread_step5_sharp_money_v1.py": "43b86affc8b77caf848a6073f90ebdde9c9f3fb9"
+  },
+  "digest": "19723ac4478d52a5d329781bfb2bb1d20294a6cc2aa9fd5545e22fdf1654673b",
+  "evidence_digests": [
+    "bc85515ae51fcccb608a1f0469e96c501ff3d521eb93f827cb69a8fbc3a401ea",
+    "db17a0443e00567e3cf5ed54ac730d7dc75ef0ce3a60c39b130503b5b23f9037"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "90d472b185a1b21b8ad3a7c43b4147195e52ffad775fd4d2865b659fef002e76",
+  "proof_id": "nba-spread-sharp-money-observations-step3-r1-0f9521e977de2f8a-20fda088a9de22db",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R1"
+    ],
+    "revision": 316,
+    "state_hash": "4b03b2a9a4adc365be71ad10b090e09dd9290ea76b44043c283ccfdf8cd2a6f9"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R1"
+    ],
+    "revision": 316,
+    "state_hash": "4b03b2a9a4adc365be71ad10b090e09dd9290ea76b44043c283ccfdf8cd2a6f9"
+  },
+  "request_fingerprint": "f989f421f910b7732d065c84bab3c86ca4c7de87b337c54e7db299b7b9a1f22b",
+  "step": "runless-v2-premerge",
+  "task_id": "nba-spread-sharp-money-observations-step3-r1",
+  "workstream": "nba-spread-sharp-money-observations-step3-r1"
+}
