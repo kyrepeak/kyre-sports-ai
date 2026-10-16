@@ -1,0 +1,49 @@
+{
+  "mode": "runless",
+  "task_id": "nba-spread-step9-fair-spread-probability-v1",
+  "workstream": "nba-spread-two-page-v1",
+  "source_main_sha": "ab6e60a6def0991d6d726f5201e93e2cf13403c1",
+  "commands": [
+    ["python","-m","py_compile","nba_spread_fair_spread_probability_v1.py","nba_spread_performance_history_v1.py","nba_spread_page_v4.py","nba_spread_page_v3.py","nba_spread_page_v2.py","streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py"],
+    ["python","-m","pytest","-q","tests/test_nba_spread_step9_fair_spread_probability_v1.py"],
+    ["python","-m","pytest","-q","tests/test_nba_spread_step8_live_final_behavior_v1.py","-k","not step8_router_preserves_step7_target_and_dispatches_step8_wrapper"],
+    ["python","-m","pytest","-q","tests/test_nba_spread_step7_injury_availability_v1.py","-k","not step7_router_preserves_step2_compatibility_constant_and_uses_runtime_wrapper"],
+    ["python","-m","pytest","-q","tests/test_nba_spread_step6_market_lines_v1.py","tests/test_nba_spread_step2_site_activation_v1.py","tests/test_nba_spread_provider_resilience_step3_r1.py"]
+  ],
+  "artifacts": [
+    "devsystem/execution_plans/nba-spread-step9-fair-spread-probability-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step9-fair-spread-probability-v1.json",
+    "devsystem/task_ledgers/nba-spread-step9-fair-spread-probability-v1.json",
+    "nba_spread_fair_spread_probability_v1.py",
+    "nba_spread_performance_history_v1.py",
+    "nba_spread_page_v4.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_step9_fair_spread_probability_v1.py"
+  ],
+  "dependencies": [
+    "nba_spread_page_v3.py",
+    "nba_spread_page_v2.py",
+    "nba_spread_page_v1.py",
+    "nba_spread_live_final_v1.py",
+    "nba_spread_injury_availability_v1.py",
+    "nba_spread_sportsbook_observations_v1.py",
+    "nba_spread_schedule_v1.py",
+    "nba_spread_schedule_provider_resilience_step1_r1.py",
+    "nba_spread_page_provider_resilience_step3_r1.py",
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "successor_runtime_ruling": {
+    "obsolete_test": "tests/test_nba_spread_step8_live_final_behavior_v1.py::test_step8_router_preserves_step7_target_and_dispatches_step8_wrapper",
+    "reason": "Step 9 supersedes Step 8 as terminal runtime owner while preserving Step 8 as its delegated predecessor.",
+    "step8_product_code_modified": false,
+    "step8_behavior_regressions_still_run": true
+  },
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": ["NBA Spread Steps 1-8","NBA Spread provider-resilience Step 3"],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP9_FAIR_SPREAD_PROBABILITY_FROZEN"
+}
