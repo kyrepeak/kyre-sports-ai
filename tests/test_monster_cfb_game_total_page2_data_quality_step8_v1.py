@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import importlib.util
 from pathlib import Path
 from types import ModuleType
@@ -16,6 +17,10 @@ def _data_quality() -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _runtime() -> ModuleType:
+    return importlib.import_module("cfb_game_total_page2_step8_final_runtime_v1")
 
 
 def test_step8_formats_owned_numbers_without_long_float_leakage() -> None:
@@ -73,6 +78,49 @@ def test_step8_market_missing_no_bet_copy_preserves_owned_lean() -> None:
     )
     assert data_quality.market_unavailable_rationale("UNDER") == (
         "Model favors Under, but verified market data is unavailable, so no official bet is issued."
+    )
+
+
+def test_step8_runtime_preserves_missing_red_zone_and_formats_trend_drivers() -> None:
+    runtime = _runtime()
+    assert runtime._display_profile_percent(None) is None
+    assert runtime._display_profile_percent(0.69461675) == "69.5%"
+    assert runtime._display_trend_number(
+        69.46167500000001,
+        missing="No verified explosive-scoring data available",
+    ) == "69.5"
+    assert runtime._display_trend_number(
+        None,
+        missing="No verified scoring-opportunity data available",
+    ) == "No verified scoring-opportunity data available"
+    assert runtime._display_trend_percent(
+        0.69461675,
+        missing="No verified red-zone finishing data available",
+    ) == "69.5%"
+
+
+def test_step8_market_missing_no_bet_uses_owned_probability_lean() -> None:
+    runtime = _runtime()
+    recommendation = runtime._recommendation(
+        {
+            "projected_combined_total": 58.0,
+            "over_probability": 0.61,
+            "under_probability": 0.39,
+        },
+        {
+            "ready": True,
+            "forecast_ready": True,
+            "projected_combined_total": 58.0,
+        },
+        {
+            "market_total": None,
+            "market_identity_verified": False,
+            "market_projection_weight": 0.0,
+        },
+    )
+    assert recommendation["side"] == "NO BET"
+    assert recommendation["rationale"] == (
+        "Model favors Over, but verified market data is unavailable, so no official bet is issued."
     )
 
 
