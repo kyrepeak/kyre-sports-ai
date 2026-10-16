@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-fast-switch-step9-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Fast Matchup Switching Step 9",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "9/10",
+  "status": "TEST_CONTRACT_REPAIRED_AWAITING_EXACT_HEAD_THAW_SUPERSEDE_AND_GREEN_PROOF",
+  "base_main_sha": "73efac34f8200dbc36571e9a2c0890bcfaea1a66",
+  "branch": "monster-cfb-game-total-page2-fast-switch-step9-v1",
+  "pr_number": 1581,
+  "scope_lease_id": "SCOPE-LEASE-81BDB45DE04D365D570FFF71",
+  "app_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-FAST-SWITCH-STEP9-R1",
+  "problem": "Selected CFB Game Total Page 2 renders traverse Page-1 presentation installers and the full inherited router chain before reaching the already-frozen selected-game runtime, adding avoidable rerun overhead when switching matchups.",
+  "root_cause": "The production entrypoint has no selected-CFB fast path above the current NBA overlay, so exact selected events pay routing and Page-1 installation work that does not own Page-2 behavior.",
+  "patch": "Add one routing-only Step-9 overlay above the current production router. For an exact selected CFB Game Total event, re-read current query identity and render the frozen Step-8 Page-2 runtime directly with the preserved navigation shell. All other routes delegate unchanged.",
+  "red": {
+    "candidate_sha": "a9c3855765336d930afc112971635e3f5facf94c",
+    "proof_id": "monster-cfb-game-total-page2-fast-switch-step9-v1-a9c3855765336d93-690ad754c32e2da5",
+    "state": "FAILED",
+    "failure_class": "STATIC_PROOF",
+    "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "product_implementation_before_red": false
+  },
+  "green_attempt_1": {
+    "candidate_sha": "9b48938ba08eb117fe76e0400f9ebfc68cb2ffee",
+    "proof_id": "monster-cfb-game-total-page2-fast-switch-step9-v1-9b48938ba08eb117-56657c0c7282d4ff",
+    "state": "FAILED",
+    "failure_class": "STATIC_PROOF",
+    "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "classification": "TEST_CONTRACT_OVERCONSTRAINED_IMPORT_FORMATTING",
+    "product_runtime_change_required": false
+  },
+  "implementation": {
+    "overlay": "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
+    "direct_selected_page2": true,
+    "page1_installers_skipped_on_selected_page2": true,
+    "current_event_re_read_each_render": true,
+    "non_selected_routes_delegate_to_prior": true,
+    "app_from_blob": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
+    "app_to_blob": "736bfd29adabbd308118dd25b7a5980b73bb72c0",
+    "activation_test_semantic_not_formatting_specific": true
+  },
+  "acceptance": [
+    "exact selected CFB Game Total bypasses the prior full router chain",
+    "selected Page 2 does not run Page-1 presentation installers",
+    "non-selected and non-CFB routes delegate unchanged to the prior production owner",
+    "event identity is re-read on every render so sequential matchup switches cannot reuse stale selection",
+    "Step-8 Page-2 runtime remains frozen and unmodified",
+    "no provider/model/projection/probability/ranking/selection behavior changes",
+    "sportsbook projection influence remains 0.0"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-81BDB45DE04D365D570FFF71",
+    "duplicate_prs": 0,
+    "duplicate_proofs_same_candidate": 0,
+    "github_actions_fallback_authorized": false
+  },
+  "tdd": {
+    "red_test_committed_before_product_code": true,
+    "red_proven": true,
+    "implementation_started_after_red": true,
+    "forward_ported_over_disjoint_main": true
+  },
+  "protected": {
+    "steps1_to_8_frozen": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "ranking": true,
+    "selection": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_FAST_SWITCH_STEP9_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "SUPERSEDE_SAME_APP_THAW_TO_CURRENT_HEAD_THEN_REQUEST_ONE_GREEN_PROOF"
+}
