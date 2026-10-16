@@ -10,12 +10,12 @@
   "expected_main_sha_before_proof": "11e028bd2969e8b86c9b1f5adf877fe2ea6ad420",
   "branch": "monster-cfb-game-total-page1-daily-slate-v1",
   "scope_lease": {
-    "lease_id": "SCOPE-LEASE-084B16A9C11AB037BFE1E22B",
-    "generation": 509,
-    "acquired_revision": 909,
+    "lease_id": "SCOPE-LEASE-8EEA21EF253C22280968AECF",
+    "generation": 510,
+    "acquired_revision": 911,
     "thaw_required": false,
     "shared_outer_router_mutated_only_after_lease": true,
-    "note": "Additive API and isolated Page-1 files were created earlier in the same authoritative branch; shared production-router mutation began only after lease acquisition. A same-workstream forward-port later added one activation-test artifact and one selected-runtime protection declaration; both were inspected, absorbed, and exact-head verified before proof packaging."
+    "note": "The authoritative same-workstream lease was atomically forward-ported before final proof to include the activation regression added during anti-loop recovery. The replacement preserved the same owner and approved Page-1 scope, added no parallel holder, and explicitly covers the selected-runtime protection declaration plus activation test artifact."
   },
   "problem": "CFB Game Total needs a true Page 1 that shows every FBS and FCS game for the selected Phoenix calendar day without mixing deep analysis into the slate.",
   "root_cause": "The prior active presentation was still a two-page reversal/cleanup layer over the historical Game Total chain. It did not provide a canonical all-games Phoenix-day Page 1, explicit compact/expand interactions, or auditable field-level multi-source route metadata for the slate.",
@@ -50,7 +50,7 @@
       "candidate": "e3a491e0e43d2b2cea00132e3b37bf219774b10e",
       "observed": true,
       "failure": "same-workstream activation protection contract required explicit selected-runtime immutability",
-      "green_evidence": "3 passed on 638114cce33f96d2e3209c4251c5aadb02751610"
+      "green_evidence": "18 passed with protected routing regressions on 638114cce33f96d2e3209c4251c5aadb02751610"
     },
     "multisource_audit_red": {
       "candidate": "50cabeecb31c9a54fd8de7a875286eace7b5fae8",
@@ -60,11 +60,11 @@
     }
   },
   "pre_candidate_verification": {
-    "head": "638114cce33f96d2e3209c4251c5aadb02751610",
-    "py_compile": "PASS",
-    "pytest": "53 passed",
-    "tests_failed": 0,
-    "auxiliary_history_query_failure": "shallow sandbox clone could not evaluate base..HEAD after all tests had passed; commit history was read authoritatively from GitHub instead"
+    "head": null,
+    "py_compile": "PENDING_FRESH_EXACT_HEAD_RUN",
+    "pytest": "PENDING_FRESH_EXACT_HEAD_RUN",
+    "tests_failed": null,
+    "note": "Prior verification on 638114cce33f96d2e3209c4251c5aadb02751610 is retained as intermediate evidence only; final proof candidate requires a fresh run after this ledger forward-port."
   },
   "multisource_contract": {
     "page_wide_source_authority": false,
