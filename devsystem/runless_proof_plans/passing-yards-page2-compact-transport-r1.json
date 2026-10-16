@@ -4,19 +4,32 @@
   "workstream": "passing-yards-page2-compact-transport-r1",
   "source_main_sha": "c6e2568ff4f73b26efb3f1d76603ab1c39187b87",
   "commands": [
-    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_page2_compact_transport_r1.py"]
+    ["python", "-m", "py_compile", "nfl_passing_yards_hub_v87.py", "nfl_passing_yards_hub_v86.py", "nfl_passing_yards_hub_v34.py", "streamlit_memory_lazy_router_v239.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_page2_compact_transport_r1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_page2_compact_ux_r1.py", "-k", "not v239_routes_only_passing_yards_to_v86"],
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_v239_purge_guard.py", "-k", "not active_passing_route_primes_guard_before_import_and_render and not app_activates_v239_only"]
   ],
   "artifacts": [
     "devsystem/runless_proof_plans/passing-yards-page2-compact-transport-r1.json",
+    "devsystem/task_ledgers/passing-yards-page2-compact-transport-r1.json",
+    "nfl_passing_yards_hub_v87.py",
+    "streamlit_memory_lazy_router_v239.py",
     "tests/test_passing_yards_page2_compact_transport_r1.py"
   ],
   "dependencies": [
     "nfl_passing_yards_hub_v86.py",
+    "nfl_passing_yards_hub_v85.py",
+    "nfl_passing_yards_hub_v69.py",
+    "nfl_passing_yards_hub_v67.py",
+    "nfl_passing_yards_hub_v59.py",
+    "nfl_passing_yards_hub_v58.py",
     "nfl_passing_yards_hub_v34.py",
-    "streamlit_memory_lazy_router_v239.py"
+    "streamlit_memory_lazy_router_v238.py",
+    "streamlit_memory_lazy_router_v225.py",
+    "streamlit_memory_lazy_router_v188.py"
   ],
   "probes": [],
-  "timeout_seconds": 300,
+  "timeout_seconds": 600,
   "live_ttl_seconds": 900,
   "github_actions_fallback": 0,
   "reuse_frozen_proof": [],
