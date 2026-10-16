@@ -1,0 +1,120 @@
+{
+  "version": 5,
+  "task_id": "monster-cfb-game-total-page2-team-snapshot-step3-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Team Snapshot repair Step 3",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "3/10",
+  "status": "CURRENT_MAIN_FORWARD_PORTED_AWAITING_SAME_THAW_RETARGET_AND_R3_PROOF",
+  "base_main_sha": "2eb88dd8150cb0f2318f217507ba31f77184dc2c",
+  "branch": "monster-cfb-game-total-page2-team-snapshot-step3-v1",
+  "pr_number": 1563,
+  "problem": "Stage 2 Team Snapshot renders missing verified team-profile values as unexplained em-dash placeholders, so the user cannot tell whether a value is unavailable or unverified.",
+  "root_cause": "The frozen Step-5 presentation helper intentionally fails soft through _display(), but it has no field-level availability copy for missing pace, explosive-play, red-zone, or defensive evidence.",
+  "patch": "Preserve the existing fail-soft dash and add presentation-only, field-specific 'No verified ... available' copy for missing Team Snapshot values. Do not fetch, infer, calculate, or fabricate replacement statistics.",
+  "mutation_scope": [
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py",
+    "tests/test_monster_cfb_game_total_page2_team_snapshot_step3_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-team-snapshot-step3-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-team-snapshot-step3-v1.json"
+  ],
+  "protected": {
+    "step1_frozen": true,
+    "step2_frozen": true,
+    "page1_shell": true,
+    "games_on_day_parity": true,
+    "selected_event_identity": true,
+    "page2_runtime_ownership": true,
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "providers": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": 1563,
+    "one_authoritative_proof_chain": true,
+    "lease_id": "SCOPE-LEASE-54BA6200581F1AEF4A3B",
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "authoritative_main_sha": "2eb88dd8150cb0f2318f217507ba31f77184dc2c"
+  },
+  "tdd": {
+    "red_candidate_sha": "eb4b997ab0caf0646a5b858ad109d6b43f50d1b2",
+    "red_proof_id": "monster-cfb-game-total-page2-team-snapshot-step3-v1-eb4b997ab0caf064-91f7bcd8c9f6d5ce",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "implementation_commit_sha": "4e93a08f0efb988ae362087375d27aa7428d4821",
+    "implementation_product_blob": "04daaf50a3cff1288c6bfe5e678895022e081bf0"
+  },
+  "transport_recovery": {
+    "root_cause": "RUNLESS_PRODUCTION_MISSING_REGISTRY_THAW_ROUTE",
+    "repair_pr": 1562,
+    "repair_candidate_sha": "5706e0539d8a359b2fce7466369db193f213f2fd",
+    "repair_proof_id": "monster-runless-registry-thaw-route-step3-blocker-v1-5706e0539d8a359b-bab512537ff6feed",
+    "repair_gate_check_run_id": 116800286287,
+    "repair_receipt_digest": "1ca0ba09d33c330fab8cfdbc82e74387a622f1d73ba3541483e6ae9b07fbc1bc",
+    "repair_merged_main_sha": "9c52aeff4f69d99e7e2c0c370dc1e3ab2e4963e8",
+    "repair_terminal_state": "GREEN_FROZEN"
+  },
+  "thaw_retarget_recovery": {
+    "repair_merged_main_sha": "2eb88dd8150cb0f2318f217507ba31f77184dc2c",
+    "repair_capability": "SAFE_SAME_THAW_SAME_BLOB_PAIR_RETARGET",
+    "active_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2",
+    "from_blob": "bca6b5afa14a5e7747c76dfbb7fd7b670819464a",
+    "to_blob": "04daaf50a3cff1288c6bfe5e678895022e081bf0",
+    "retarget_required": true
+  },
+  "forward_port": {
+    "superseded_candidate_sha": "961167df2800d29c17293fc13dfb83067761b76e",
+    "new_base_main_sha": "2eb88dd8150cb0f2318f217507ba31f77184dc2c",
+    "product_blob_preserved": "04daaf50a3cff1288c6bfe5e678895022e081bf0",
+    "regression_test_blob_preserved": "bacee91740e58b9f5be387de465de9830838cd20",
+    "repaired_plan_blob_preserved": "e770b620eb4d7a988589a39495e53032e078e6ce",
+    "content_preservation_required": true
+  },
+  "proof_contract_recovery": {
+    "failed_candidate_sha": "024d3861a1ed53bd8ff640349ececc4b60a71620",
+    "failed_proof_id": "monster-cfb-game-total-page2-team-snapshot-step3-v1-024d3861a1ed53bd-116e6ee23168d0e4",
+    "failed_failure_class": "STATIC_PROOF",
+    "root_cause": "STEP3_PLAN_REINTRODUCED_SUPERSEDED_STEP8_ROUTER_RESTORE_TEST",
+    "superseded_node": "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_router_restores_query_route_before_selected_event_activation",
+    "repaired_plan_blob": "e770b620eb4d7a988589a39495e53032e078e6ce",
+    "product_blob_changed": false,
+    "regression_test_blob_changed": false,
+    "duplicate_proof_reruns": 0
+  },
+  "acceptance": {
+    "missing_values_keep_fail_soft_dash": true,
+    "missing_pace_explains_unverified_state": true,
+    "missing_explosive_explains_unverified_state": true,
+    "missing_red_zone_explains_unverified_state": true,
+    "missing_defense_explains_unverified_state": true,
+    "verified_values_remain_unchanged": true,
+    "no_fabricated_favorable_side": true,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "frozen_registry": {
+    "owned_freeze_token": "CFB_GAME_TOTAL_PAGE2_V1_STEP5_TEAM_SNAPSHOT_KEY_DRIVERS_FROZEN",
+    "from_blob": "bca6b5afa14a5e7747c76dfbb7fd7b670819464a",
+    "to_blob": "04daaf50a3cff1288c6bfe5e678895022e081bf0",
+    "thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2",
+    "thaw_status": "ACTIVE_REQUIRES_SAFE_RETARGET"
+  },
+  "runless": {
+    "proof_generation": 4,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R3",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "final_proof_request_status": "NOT_SUBMITTED_AFTER_CURRENT_MAIN_FORWARD_PORT"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_TEAM_SNAPSHOT_STEP3_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RETARGET_EXISTING_R2_THAW_TO_EXACT_CURRENT_HEAD_THEN_SUBMIT_ONE_R3_RUNLESS_PROOF"
+}
