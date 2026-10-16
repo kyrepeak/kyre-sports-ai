@@ -1,14 +1,25 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
-
-import cfb_game_total_page2_data_quality_step8_v1 as data_quality
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "cfb_game_total_page2_step8_final_runtime_v1.py"
+DATA_QUALITY = ROOT / "cfb_game_total_page2_data_quality_step8_v1.py"
+
+
+def _data_quality() -> ModuleType:
+    assert DATA_QUALITY.exists(), "Step-8 data-quality presentation helper is not implemented yet"
+    spec = importlib.util.spec_from_file_location("cfb_game_total_page2_data_quality_step8_v1", DATA_QUALITY)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_step8_formats_owned_numbers_without_long_float_leakage() -> None:
+    data_quality = _data_quality()
     assert data_quality.format_optional_number(69.46167500000001) == "69.5"
     assert data_quality.format_optional_number(13.0) == "13.0"
     assert data_quality.format_optional_number(0) == "0.0"
@@ -17,12 +28,14 @@ def test_step8_formats_owned_numbers_without_long_float_leakage() -> None:
 
 
 def test_step8_distinguishes_missing_from_real_zero() -> None:
+    data_quality = _data_quality()
     assert data_quality.display_number(None, missing="No verified market total available") == "No verified market total available"
     assert data_quality.display_number("", missing="No verified market total available") == "No verified market total available"
     assert data_quality.display_number(0, missing="No verified market total available") == "0.0"
 
 
 def test_step8_quality_states_are_verified_partial_or_unavailable() -> None:
+    data_quality = _data_quality()
     assert data_quality.pair_quality(71.2, 68.9) == "VERIFIED"
     assert data_quality.pair_quality(71.2, None) == "PARTIAL"
     assert data_quality.pair_quality(None, None) == "UNAVAILABLE"
@@ -37,6 +50,7 @@ def test_step8_quality_states_are_verified_partial_or_unavailable() -> None:
 
 
 def test_step8_quality_strip_exposes_all_required_statuses() -> None:
+    data_quality = _data_quality()
     html = data_quality.build_data_quality_strip_html(
         market="VERIFIED",
         pace="PARTIAL",
@@ -53,6 +67,7 @@ def test_step8_quality_strip_exposes_all_required_statuses() -> None:
 
 
 def test_step8_market_missing_no_bet_copy_preserves_owned_lean() -> None:
+    data_quality = _data_quality()
     assert data_quality.market_unavailable_rationale("OVER") == (
         "Model favors Over, but verified market data is unavailable, so no official bet is issued."
     )
