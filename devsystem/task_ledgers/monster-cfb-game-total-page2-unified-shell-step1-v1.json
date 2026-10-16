@@ -1,0 +1,80 @@
+{
+  "version": 2,
+  "task_id": "monster-cfb-game-total-page2-unified-shell-step1-v1",
+  "title": "MONSTER CFB Game Total Page 2 — unified Page-1 shell Step 1",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "1/10",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_RUNLESS",
+  "base_main_sha": "6a3c3a1339d3c606b2f393ca49e76c9e49fae531",
+  "branch": "monster-cfb-game-total-page2-unified-shell-step1-v1",
+  "problem": "A real CFB Game Total card tap leaves the Page-1 experience and renders selected-event analysis as a detached Page-2 surface.",
+  "root_cause": "The selected-event branch swaps the exact Game Total owners to the frozen Page-2 runtime and directly renders the frozen parent without first mounting the existing V33 Page-1 sport/category navigation shell.",
+  "patch": "Reuse the existing V33 navigation CSS and HTML above the unchanged selected-event Page-2 runtime. Preserve the no-selection Page-1 path, exact event identity, route-pointer locking/restoration, model/projection/probability/provider ownership, other sports, and sportsbook projection influence.",
+  "mutation_scope": [
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_page2_unified_shell_step1_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-unified-shell-step1-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-unified-shell-step1-v1.json"
+  ],
+  "protected_scope": [
+    "cfb_game_total_clean_page_v33.py",
+    "cfb_game_total_clean_page_v43.py",
+    "cfb_game_total_clean_page_v44.py",
+    "cfb_game_total_page2_step8_final_runtime_v1.py",
+    "Game Total model/projection/probability math",
+    "schedule/provider behavior",
+    "selected-event identity semantics",
+    "NFL/MLB/WNBA product code",
+    "parallel API 2 and NBA lanes"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_proof_chain": true,
+    "lease_id": "SCOPE-LEASE-931AC6629246EB516A8465C8",
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "authoritative_main_sha": "6a3c3a1339d3c606b2f393ca49e76c9e49fae531"
+  },
+  "tdd": {
+    "red_candidate": "2fb1d361485747cb24fd06b3aaa0d67826b49f66",
+    "red_proof_id": "monster-cfb-game-total-page2-unified-shell-step1-v1-2fb1d361485747cb-313387670dc39397",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "red_expected": true,
+    "implementation_commit": "707b67abac8f40c6177f102a082e34842db8b273"
+  },
+  "acceptance": {
+    "selected_event_reuses_page1_v33_navigation_shell": true,
+    "selected_event_page2_runtime_preserved": true,
+    "no_selection_page1_path_preserved": true,
+    "exact_event_identity_preserved": true,
+    "route_pointer_lock_and_restore_preserved": true,
+    "model_projection_probability_unchanged": true,
+    "providers_unchanged": true,
+    "other_sports_unchanged": true,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "runless": {
+    "proof_generation": 2,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-UNIFIED-SHELL-STEP1-R1",
+    "planned_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-UNIFIED-SHELL-STEP1-R1",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_request_status": "NOT_SUBMITTED_FINAL"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_UNIFIED_SHELL_STEP1_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "next_legal_action": "BIND_EXACT_HEAD_THAW_THEN_SUBMIT_ONE_RUNLESS_V2_FINAL_PROOF"
+}
