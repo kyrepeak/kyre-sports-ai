@@ -1,0 +1,55 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page2_data_quality_step8_v1.py": "9ecb3c457666cc265bdd2fdb43ca501d0319d407",
+    "cfb_game_total_page2_step8_final_runtime_v1.py": "ff3841df57a30ece5b6a2a3cae88f04f5a2ac5c1",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-data-quality-step8-v1.json": "7229bfde2205bfed469edf59cf6d2d65bca819d1",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-data-quality-step8-v1.json": "577702f54fc0ae5557dc3f23659089f3d62d0e93",
+    "tests/test_monster_cfb_game_total_page2_data_quality_step8_v1.py": "20f401844e4090d4acb6ad03b142f485e98cdc4a"
+  },
+  "candidate_sha": "c50a642ac4d844a30b681fac532cd298192d8e69",
+  "created_at": "2026-10-16T08:23:59.745690+00:00",
+  "dependency_map": {
+    "cfb_game_total_page2_stage5_best_bet_v1.py": "e67a63fc22933c92516bb9321aefe0015e75c627",
+    "cfb_game_total_page2_stage6_tough_favorable_v1.py": "ba45b05851ad03ed774863eef42b06c807e21ac9",
+    "cfb_game_total_page2_step4_outlook_summary_v1.py": "f0dde67fac3cfca511a27bee74275bf0ae809819",
+    "cfb_game_total_page2_step5_team_snapshot_key_drivers_v1.py": "04daaf50a3cff1288c6bfe5e678895022e081bf0",
+    "cfb_game_total_page2_step7_line_lab_best_bet_v1.py": "ee6a61b3867725a6add37c62a8a788dea5017456",
+    "tests/test_cfb_game_total_page2_step8_final_v1.py": "9b794cbdeaaa8f6fcbdf276c8c907835408a30e1",
+    "tests/test_monster_cfb_game_total_page2_best_bet_step6_v1.py": "803c4b1225ea6ca8233a2afb3152dad1c648a3ff",
+    "tests/test_monster_cfb_game_total_page2_tough_favorable_step7_v1.py": "b7dde792598d99bdb2e2d65d407c1eb2259e01a8"
+  },
+  "digest": "3de0beacc07d4e7831b7f35e89a0019c8a3e08b5727de53b7db83f02ab649e36",
+  "evidence_digests": [
+    "1c3caa105c6a9a9b572a5ccfe20da8c424315c5d9ba0ccfe96705e907814786f",
+    "2b876b0a36cb6d7992e51bf77139404a5c13f0818f1ce067ee1526f1b1b621da"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "3c22561ea7adfa13b6d59bb41d60016a7740a59a07526b07954b993261853052",
+  "proof_id": "monster-cfb-game-total-page2-data-quality-step8-v1-c50a642ac4d844a3-9c74625e5db891e7",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-DATA-QUALITY-STEP8-R1"
+    ],
+    "revision": 361,
+    "state_hash": "0cff36ce6921bd684dfb55c21c25f962a86c30a59679c835aca2ce5194d85624"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-DATA-QUALITY-STEP8-R1"
+    ],
+    "revision": 361,
+    "state_hash": "0cff36ce6921bd684dfb55c21c25f962a86c30a59679c835aca2ce5194d85624"
+  },
+  "request_fingerprint": "80b4430c79e33645537fc36dca9171c9a2f47a41925d714a3ea4d05c5630836b",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-page2-data-quality-step8-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1"
+}
