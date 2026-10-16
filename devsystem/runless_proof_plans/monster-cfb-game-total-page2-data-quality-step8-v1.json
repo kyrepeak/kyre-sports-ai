@@ -8,6 +8,7 @@
       "tests/test_monster_cfb_game_total_page2_tough_favorable_step7_v1.py",
       "tests/test_monster_cfb_game_total_page2_best_bet_step6_v1.py",
       "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_runtime_is_display_only_and_preserves_steps_2_to_7",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_sample_has_no_limited_mock_or_pending_copy",
       "tests/test_cfb_game_total_page2_step8_final_v1.py::test_review_regression_team_snapshot_uses_captured_team_profiles"
     ],
     [
