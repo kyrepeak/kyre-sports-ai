@@ -1,23 +1,23 @@
 {
-  "version": 7,
+  "version": 8,
   "task_id": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
-  "title": "MONSTER CFB Game Total Page 2 — Unified Live Data Repair",
+  "title": "MONSTER CFB Game Total Page 2 — Unified Verified Data Repair",
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
   "step": "1/1",
-  "status": "PR_OPEN_AWAITING_RUNLESS_GREEN",
+  "status": "V2_NETWORK_FREE_READY_FOR_RUNLESS_GREEN",
   "base_main_sha": "c6811556112744c077325f0a2c1fa48ade9b0f6c",
   "branch": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
   "pr_number": 1589,
   "scope_lease_id": "SCOPE-LEASE-D90FE53372DE146B76601694",
-  "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1-GREEN-R1",
-  "problem": "CFB Game Total Page 2 renders owned matchup evidence as unavailable across pace, explosive plays, red-zone, defense and trends/scoring breakdown cards.",
-  "root_cause": "Page 2 reads a flat display schema while certified upstream CFB evidence is owned by Runtime Snapshot V2, Step 5 pace/PBP and Step 6 scoring/PBP contracts. The Page-2 trends helper also requires points_for/points_against rows even though one owned schedule profile shape can expose only a score string. The result is a display-contract mismatch, not a model/projection failure.",
-  "patch": "Add one CFB-only presentation adapter at the existing same-page shell seam. Overlay certified Step-3 history/defense, reuse certified Step-5 pace and Step-6 scoring evidence, normalize score-only completed-game rows, derive recent regulation scoring splits only from verified completed-game PBP, and preserve already-owned values. Model/projection/probability math remains untouched.",
+  "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V2-GREEN-R1",
+  "problem": "CFB Game Total Page 2 renders already-owned matchup evidence as unavailable across pace, explosive/YPP, red-zone, defense and trends because the Page-2 display schema is flatter than the evidence Page 1 already loaded.",
+  "root_cause": "The first unified adapter fixed the schema mismatch but could reopen Runtime Snapshot, Step-5 and Step-6 provider work from the interactive Page-2 render path. That made valid data recovery capable of blocking the page on synchronous provider timeouts and violated the declared zero-new-network-call boundary.",
+  "patch": "Activate a small V2 presentation bridge at the existing same-page seam. V2 consumes only evidence already loaded by Page 1, maps official plays-per-game and yards-per-play rows into Page-2 pace/explosive fields, maps verified red-zone score rate into the existing red_zone_rate display alias, preserves explicit recent points-allowed aggregates for defense, normalizes score-only completed-game rows for trends, preserves only already-verified half/quarter splits, and performs zero provider HTTP from Page 2. The original fetch-capable adapter remains non-authoritative and is no longer on the active render path.",
   "mutation_scope": [
-    "cfb_game_total_page2_live_data_unified_repair_v1.py",
+    "cfb_game_total_page2_network_free_v2.py",
     "cfb_game_total_page2_same_page_shell_repair_v1.py",
-    "tests/test_monster_cfb_game_total_page2_live_data_unified_repair_v1.py",
+    "tests/test_monster_cfb_game_total_page2_network_free_v2.py",
     "devsystem/runless_proof_plans/monster-cfb-game-total-page2-live-data-unified-repair-v1.json",
     "devsystem/task_ledgers/monster-cfb-game-total-page2-live-data-unified-repair-v1.json"
   ],
@@ -31,16 +31,17 @@
     "market_ownership": true,
     "other_sports": true,
     "nfl_spread_lane": true,
-    "sportsbook_projection_influence": 0.0
+    "sportsbook_projection_influence": 0.0,
+    "page2_provider_http": 0
   },
   "step2a": {
     "one_active_problem": true,
     "one_active_branch": true,
-    "one_authoritative_pr": true,
+    "one_authoritative_pr": 1589,
     "one_authoritative_proof_chain": true,
     "duplicate_execution_paths": 0,
     "duplicate_prs": 0,
-    "duplicate_proofs_same_candidate": 0,
+    "duplicate_green_proofs_same_candidate": 0,
     "exact_head_merge_required": true,
     "github_actions_fallback_authorized": false,
     "lease_id": "SCOPE-LEASE-D90FE53372DE146B76601694",
@@ -53,21 +54,25 @@
     "forward_port_to_main_sha": "c6811556112744c077325f0a2c1fa48ade9b0f6c"
   },
   "tdd": {
-    "red_test": "tests/test_monster_cfb_game_total_page2_live_data_unified_repair_v1.py",
-    "red_product_code_written": false,
-    "red_proof_id": "monster-cfb-game-total-page2-live-data-unified-repair-v1-8346044ac37d3aae-cfd3082054639b3f",
-    "red_candidate_sha": "8346044ac37d3aaee809d32e23ac7eac11ba0f04",
-    "red_terminal_state": "FAILED",
-    "red_failure_class": "STATIC_PROOF",
-    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
-    "green_product_code_written_after_red": true
+    "original_red_test": "tests/test_monster_cfb_game_total_page2_live_data_unified_repair_v1.py",
+    "original_red_proof_id": "monster-cfb-game-total-page2-live-data-unified-repair-v1-8346044ac37d3aae-cfd3082054639b3f",
+    "original_red_candidate_sha": "8346044ac37d3aaee809d32e23ac7eac11ba0f04",
+    "original_red_terminal_state": "FAILED",
+    "original_red_failure_class": "STATIC_PROOF",
+    "v2_regression_test": "tests/test_monster_cfb_game_total_page2_network_free_v2.py",
+    "v2_local_red": "interactive Page-2 enrichment attempted two provider HTTP calls before V2",
+    "v2_local_green": "3/3 V2 tests plus py_compile passed in the authoritative sandbox",
+    "review_blocker": "P1 keep live provider calls off Page 2 render path",
+    "review_blocker_resolved_by": "cfb_game_total_page2_network_free_v2.py"
   },
   "failure_history": [
     {"candidate_sha":"9e3e94fbddc6e129dc3305b2f4b1ea2eb3b06539","failure_class":"CONTROL_PLANE_SCOPE_LEASE_ADMISSION","detail":"RUNLESS_V2_SCOPE_LEASE_NOT_LIVE","product_patch":false},
     {"candidate_sha":"c48f295240f6a1e0f25cd04f6f39f26c2cd3f751","failure_class":"STATIC_PROOF_CONTRACT_ADMISSION","detail":"RED proof plan listed not-yet-created adapter as required artifact/compile target","product_patch":false},
     {"candidate_sha":"8346044ac37d3aaee809d32e23ac7eac11ba0f04","failure_class":"EXPECTED_TDD_RED_STATIC_PROOF","detail":"Adapter/wiring absent before implementation","product_patch":false},
-    {"candidate_sha":"ff3abc470f4f015b62356dc329c80d68fd6c50ac","failure_class":"STALE_BASE_FORWARD_PORT_REQUIRED","detail":"Prospective exact frozen candidate abandoned before branch attachment because main advanced independently","product_patch":false},
-    {"candidate_sha":"25e398f2edeb077fca29b74b8c61cc3c79957906","failure_class":"REGISTRY_THAW_FROZEN_OWNER_MISSING","detail":"Canonical registry flattening found no frozen owner for the same-page shell; thaw mutation is not applicable","product_patch":false}
+    {"candidate_sha":"ff3abc470f4f015b62356dc329c80d68fd6c50ac","failure_class":"STALE_BASE_FORWARD_PORT_REQUIRED","detail":"Exact frozen candidate abandoned before branch attachment because main advanced independently","product_patch":false},
+    {"candidate_sha":"25e398f2edeb077fca29b74b8c61cc3c79957906","failure_class":"REGISTRY_THAW_FROZEN_OWNER_MISSING","detail":"Canonical registry has no frozen owner for same-page shell; thaw is not applicable","product_patch":false},
+    {"candidate_sha":"40c06202a20ff36eb89e5152741ac857ded702e2","failure_class":"P1_RENDER_PATH_NETWORK_REOPEN","detail":"Code review and TDD guard proved first adapter could synchronously reopen provider HTTP during Page-2 render","product_patch":true},
+    {"candidate_sha":"40c06202a20ff36eb89e5152741ac857ded702e2","failure_class":"STALE_REGRESSION_SELECTION","detail":"Old Step-9/10 tests assert the pre-NFL active router filename; current main preserves CFB via frozen alias instead","product_patch":false}
   ],
   "freeze_authority": {
     "legacy_thaw_attempt_id": "THAW-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1",
@@ -80,30 +85,32 @@
   "frozen_registry": {
     "repair_path": "cfb_game_total_page2_same_page_shell_repair_v1.py",
     "observed_from_blob": "0ec8fce9c1cad239466b498ac4ce4a2e2fc0dc39",
-    "desired_to_blob": "8840815f153f122c9e4659770efc9228208242a6",
+    "desired_to_blob": "ca1002ca05a48b56aabaa1630ab66e0d1789233f",
     "thaw_required_before_branch_attachment": false,
     "thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1",
     "thaw_status": "NOT_APPLICABLE_NO_FROZEN_OWNER"
   },
   "acceptance": [
-    "Pace renders from verified existing evidence when available",
-    "Explosive-play evidence renders when verified",
-    "Red-zone evidence renders when verified",
-    "Defense renders from verified points-allowed evidence",
-    "Recent completed-game scoring history renders instead of false unavailable state",
-    "Half/quarter scoring splits render only when verified completed-game PBP supports them",
-    "Scoring-opportunity and red-zone finishing drivers render from verified Step-6 evidence when available",
+    "Pace renders from verified preloaded plays-per-game evidence when available",
+    "Explosive indicator renders from verified preloaded yards-per-play evidence when available",
+    "Red-zone indicator renders from verified preloaded red-zone evidence when available",
+    "Defense renders from verified recent points-allowed evidence when available",
+    "Score-only completed-game rows normalize into recent scoring history",
+    "Half/quarter scoring splits render only when already verified upstream",
+    "Page-2 interactive enrichment performs zero provider HTTP",
     "No fabricated values",
-    "Existing verified Page-2 values are never overwritten",
+    "Existing verified Page-2 values remain preserved",
+    "Current NFL overlay delegates CFB routes to the frozen CFB Step-9 owner",
     "Page 1 and other sports remain unchanged",
-    "model/projection/probability outputs remain byte-for-behavior frozen",
+    "model/projection/probability outputs remain frozen",
     "sportsbook projection influence remains 0.0"
   ],
   "runless": {
     "required_check": "runless-final-gate",
     "required_check_app_id": 5204253,
     "github_actions_fallback": 0,
-    "proof_generation": 3
+    "proof_generation": 4,
+    "next_legal_action": "SUBMIT_ONE_EXACT_HEAD_RUNLESS_GREEN_PROOF"
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_LIVE_DATA_UNIFIED_REPAIR_V1_FROZEN",
   "green_plus_frozen_claimed": false
