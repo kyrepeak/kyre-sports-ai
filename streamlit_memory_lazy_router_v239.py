@@ -3,15 +3,15 @@
 Additive over frozen V238. Hosted Streamlit sessions share one interpreter.
 V187's certified direct-prop dispatcher temporarily adds nfl_ to the root
 route-module purge prefixes; on a fresh Passing Yards session that can remove
-shared NFL modules while the V86 graph is importing in another rerun/session.
+shared NFL modules while the V87 graph is importing in another rerun/session.
 
 V239 intercepts only NFL -> Passing Yards, primes V225's already-certified
-Passing Yards route token before importing/rendering V86, and reuses frozen
+Passing Yards route token before importing/rendering V87, and reuses frozen
 V188's direct Passing Yards handoff. This makes V187's route purge a no-op for
 this session while preserving the existing shell and model/data behavior.
 
 Every non-Passing-Yards route delegates unchanged to V238. V238, V237, V236,
-V225, V188, V187, V85, model/data/math owners, and Monster owners stay frozen.
+V225, V188, V187, V86/V85, model/data/math owners, and Monster owners stay frozen.
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ FROZEN_ROUTER = "streamlit_memory_lazy_router_v238"
 FROZEN_ROUTE_GUARD = "streamlit_memory_lazy_router_v225"
 FROZEN_DIRECT_PROP_ROUTER = "streamlit_memory_lazy_router_v188"
 PASSING_MARKET = "Passing Yards"
-PASSING_HUB = "nfl_passing_yards_hub_v86"
+PASSING_HUB = "nfl_passing_yards_hub_v87"
 NFL_SPORT = "NFL"
 SPORT_KEY = "ks_sport_touch"
 NFL_MARKET_KEY = "ks_nfl_market_touch"
@@ -101,7 +101,7 @@ def _prime_passing_route_token() -> str:
 def _render_passing_yards_direct() -> None:
     st.markdown(
         '<span data-passing-yards-router-owner="v239" '
-        'data-passing-yards-route-handoff="v225-guard-v188-v86" '
+        'data-passing-yards-route-handoff="v225-guard-v188-v87" '
         'style="display:none" aria-hidden="true"></span>',
         unsafe_allow_html=True,
     )
@@ -124,7 +124,7 @@ def render_app() -> None:
     if cold:
         _prime_cold_passing_state()
 
-    # Prime before the V86 import and before V188/V187 enter the root shell.
+    # Prime before the V87 import and before V188/V187 enter the root shell.
     # V225's certified session token makes the direct-prop route purge a no-op.
     _prime_passing_route_token()
 
