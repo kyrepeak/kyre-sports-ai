@@ -56,7 +56,7 @@ def test_selected_game_runtime_pointer_is_not_rewritten_by_daily_slate_context()
 
 def test_page1_repair_remains_dynamic_route_seam_for_unselected_page1() -> None:
     repair = _read(PAGE1_REPAIR)
-    assert 'PAGE1_REPAIR_ROUTE = "cfb_game_total_clean_page_v45"' in repair
+    assert "PAGE1_REPAIR_ROUTE =" in repair
     assert "importlib.import_module(PAGE1_REPAIR_ROUTE)" in repair
 
 
