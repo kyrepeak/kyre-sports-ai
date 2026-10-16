@@ -5,12 +5,11 @@
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page1-unified-repair-v1",
   "step": "1/1",
-  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_THAW_AND_GREEN_PROOF",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_GREEN_PROOF",
   "base_main_sha": "800c3b3c9d3f6fc79af6d9a84cfd30b0d88f400c",
   "branch": "monster-cfb-game-total-page1-unified-repair-v1",
   "pr_number": 1585,
   "scope_lease_id": "SCOPE-LEASE-8A666156B6630410AC9CB41D",
-  "step9_thaw_id": "THAW-MONSTER-CFB-GT-PAGE1-UNIFIED-REPAIR-R1",
   "problem": "Page 1 can show duplicate date controls, omit Phoenix-local today by reviving the legacy Tomorrow+ selector, and then surface the stale-date RuntimeError after the selected-day snapshot has already been pinned.",
   "root_cause": "V41 correctly owns the authoritative Phoenix selector and suppresses the legacy day strip, but the downstream V36 presentation wrapper reassigns the legacy day-strip function during the same render. That defeats V41 ownership, resurrects the Tomorrow+ strip, can rewrite the query date mid-render, and can diverge downstream reads from V42's pinned selected-day snapshot.",
   "patch": "V45 preserves V41 day ownership while reusing only V36 kickoff/hero presentation. A narrow bridge changes only the native Page-1 pointer, and frozen Step 9 keeps its selected Page-2 fast path first while wrapping only the non-selected fallback through that bridge.",
@@ -45,6 +44,15 @@
     "network_calls_added": 0,
     "sportsbook_projection_influence": 0.0
   },
+  "freeze_authority": {
+    "legacy_thaw_attempt_id": "THAW-MONSTER-CFB-GT-PAGE1-UNIFIED-REPAIR-R1",
+    "legacy_thaw_result": "FAILED / REGISTRY_THAW_FROZEN_OWNER_MISSING",
+    "legacy_registry_owner_for_step9_router": false,
+    "legacy_registry_mutation_required": false,
+    "immutable_step9_freeze_record": "MONSTER_CFB_GAME_TOTAL_PAGE2_FAST_SWITCH_STEP9_V1_FROZEN",
+    "sidecar_supersession_required_after_merge": true,
+    "duplicate_thaws": 0
+  },
   "acceptance": [
     "one authoritative Phoenix-local Page-1 day selector",
     "today remains selectable and is not future-filtered",
@@ -66,7 +74,7 @@
     "github_actions_fallback_authorized": false
   },
   "protected": {
-    "page2_steps1_to_10_frozen": true,
+    "page2_selected_fast_path_preserved": true,
     "projection": true,
     "probability_model": true,
     "providers": true,
@@ -84,5 +92,5 @@
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE1_UNIFIED_REPAIR_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "LOCK_FINAL_HEAD_AND_MAIN_THEN_REQUEST_ONE_EXACT_STEP9_THAW_AND_ONE_GREEN_PROOF"
+  "next_legal_action": "LOCK_CURRENT_HEAD_AND_MAIN_THEN_REQUEST_ONE_EXACT_HEAD_GREEN_PROOF"
 }
