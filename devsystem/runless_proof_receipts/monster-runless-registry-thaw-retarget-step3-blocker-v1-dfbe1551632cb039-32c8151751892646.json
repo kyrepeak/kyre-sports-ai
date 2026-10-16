@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-runless-registry-thaw-retarget-step3-blocker-v1.json": "313bc38e4032503cbd6c4b922b4b7044495cabae",
+    "devsystem/task_ledgers/monster-runless-registry-thaw-retarget-step3-blocker-v1.json": "9b97e8b4b42a795bc14143072a54f007d71ef99a",
+    "runless_v2/app.py": "1ad12060311e4b19fdcbdd7922b95d2c4cbcd01e",
+    "tests/test_runless_v2_registry_thaw_retarget.py": "4dd467f9193bf35f6c44bde2ac85ddf6f3a21da8"
+  },
+  "candidate_sha": "dfbe1551632cb039fc7b81b30fba871bc8b83b36",
+  "created_at": "2026-10-16T04:12:54.583892+00:00",
+  "dependency_map": {
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/github_authority.py": "479df8f7d6d474b4f1cd461a7b5711179a9c0a7a",
+    "tests/test_runless_v2_api.py": "a836a3aef220486e94c762e8c897fab519d9702a",
+    "tests/test_runless_v2_registry_thaw_route.py": "fe0f797ddac961cad8f4e49f3eb102e601e5f03e"
+  },
+  "digest": "818923f27242fc033ef854652cb3701b608ee9d0f1d7d9924cae6a3d100b171c",
+  "evidence_digests": [
+    "d25c70c8988493c1093bafc32830c35a33625887ab0f7927f5739072f5794f55",
+    "b4c78ff243ddb71bff8ef549cd55ca031e2064f287b87baebf5c5fca00ca3188"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c0adfc627eae4fdc60beac62a648c1dc9202b1d371a32c3a99d7acc05d18ef86",
+  "proof_id": "monster-runless-registry-thaw-retarget-step3-blocker-v1-dfbe1551632cb039-32c8151751892646",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 323,
+    "state_hash": "648a8bfc718b1449e8285ea88cdd8a9f0da3abc2238814856375135039084598"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 323,
+    "state_hash": "648a8bfc718b1449e8285ea88cdd8a9f0da3abc2238814856375135039084598"
+  },
+  "request_fingerprint": "6914935fecbde0965d3a1c68def86c472ca13d3368ec388de43dc74162a1990e",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-runless-registry-thaw-retarget-step3-blocker-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1"
+}
