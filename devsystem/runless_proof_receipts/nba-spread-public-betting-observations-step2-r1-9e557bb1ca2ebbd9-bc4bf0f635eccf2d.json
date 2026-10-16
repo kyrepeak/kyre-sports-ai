@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "devsystem/plans/nba_spread_public_betting_observations_step2_v1.md": "0369ec28f6a83fda53b8d2e3960d0f25ad25983e",
+    "devsystem/runless_proof_plans/nba-spread-public-betting-observations-step2-r1.json": "76482ea748457365ab305613cf3911c8a3133bea",
+    "nba_spread_public_betting_observations_v1.py": "1cc99b4929cab34aa093e20493b1014153ec61c9",
+    "tests/test_nba_spread_public_betting_observations_step2_v1.py": "6a2e32762d29f5af18990fe15d1c4ef023127575"
+  },
+  "candidate_sha": "9e557bb1ca2ebbd9c14fa683a635dd6b64b72de1",
+  "created_at": "2026-10-16T02:31:04.420103+00:00",
+  "dependency_map": {
+    "devsystem/contracts/universal-sports-provider-registry-v1.json": "6839c3b6569ed3ab16b09530c6bc8acf3e4e7daa",
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4"
+  },
+  "digest": "9f14b07d93e2c3ff50db44fdb850ee6eaca8ed7a91e6b3058250deb944de4151",
+  "evidence_digests": [
+    "077a2b494c8147d2c4f03f6380d15f185b5f96bf114e2d00d62c10439e1d8218",
+    "a977f402525447e4482bc737424b2e1d269f726a2a51aa7078e7c7614809ede3"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "e56a4b769f1684e19ca3ab077d9c9799e97fc90fa2974346306e30a449a7699d",
+  "proof_id": "nba-spread-public-betting-observations-step2-r1-9e557bb1ca2ebbd9-bc4bf0f635eccf2d",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 313,
+    "state_hash": "b65d6c55f48223ba97bafe87d8f3957a5a1dc3fcd02d4213805de9ef8e262097"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 313,
+    "state_hash": "b65d6c55f48223ba97bafe87d8f3957a5a1dc3fcd02d4213805de9ef8e262097"
+  },
+  "request_fingerprint": "18e6aa28e9a0e896bfa3350ed48c1835435ad435dff6c93753d5e1c45fb40aa7",
+  "step": "runless-v2-premerge",
+  "task_id": "nba-spread-public-betting-observations-step2-r1",
+  "workstream": "nba-spread-public-betting-observations-step2-r1"
+}
