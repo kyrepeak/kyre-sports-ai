@@ -1,3 +1,4 @@
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 from nfl_spread_professional_intelligence_v1 import render_matchup_card
@@ -5,6 +6,16 @@ from nfl_spread_professional_intelligence_v1 import render_matchup_card
 
 ROOT = Path(__file__).resolve().parents[1]
 OVERLAY = ROOT / "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py"
+HYGIENE = ROOT / "streamlit_route_hygiene_v1.py"
+
+
+def _load_hygiene():
+    assert HYGIENE.exists(), "route hygiene module must exist"
+    spec = spec_from_file_location("streamlit_route_hygiene_v1_test", HYGIENE)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _game():
@@ -81,7 +92,7 @@ def test_v7_restores_frozen_team_logos_exact_ids_and_compacts_deep_sections():
     assert "ID 3" in html
     assert "ID 1" in html
 
-    # The deep analysis stays available without forcing one giant vertical wall.
+    # Deep analysis stays available without forcing one giant vertical wall.
     assert html.count("<details") >= 2
     assert "WHY THE MODEL LEANS" in html
     assert "RISK / COUNTERWEIGHTS" in html
@@ -89,7 +100,7 @@ def test_v7_restores_frozen_team_logos_exact_ids_and_compacts_deep_sections():
 
 
 def test_route_hygiene_preserves_cold_deep_link_but_clears_stale_cross_sport_route():
-    from streamlit_route_hygiene_v1 import stale_route_query_keys
+    stale_route_query_keys = _load_hygiene().stale_route_query_keys
 
     assert stale_route_query_keys(
         {}, {"ks_sport": "NBA", "ks_nba_market": "Spread"}
@@ -102,7 +113,7 @@ def test_route_hygiene_preserves_cold_deep_link_but_clears_stale_cross_sport_rou
 
 
 def test_route_hygiene_clears_stale_market_when_user_changes_page_inside_same_sport():
-    from streamlit_route_hygiene_v1 import stale_route_query_keys
+    stale_route_query_keys = _load_hygiene().stale_route_query_keys
 
     assert stale_route_query_keys(
         {
