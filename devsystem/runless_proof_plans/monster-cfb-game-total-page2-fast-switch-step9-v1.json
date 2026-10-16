@@ -8,16 +8,10 @@
       "tests/test_monster_cfb_game_total_page2_data_quality_step8_v1.py",
       "tests/test_monster_cfb_game_total_page2_tough_favorable_step7_v1.py",
       "tests/test_monster_cfb_game_total_page2_best_bet_step6_v1.py"
-    ],
-    [
-      "python", "-m", "py_compile",
-      "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
-      "tests/test_monster_cfb_game_total_page2_fast_switch_step9_v1.py"
     ]
   ],
   "artifacts": [
     "app.py",
-    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
     "tests/test_monster_cfb_game_total_page2_fast_switch_step9_v1.py",
     "devsystem/runless_proof_plans/monster-cfb-game-total-page2-fast-switch-step9-v1.json",
     "devsystem/task_ledgers/monster-cfb-game-total-page2-fast-switch-step9-v1.json"
