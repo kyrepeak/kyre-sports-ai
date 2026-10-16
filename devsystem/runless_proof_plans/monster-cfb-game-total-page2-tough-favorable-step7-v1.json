@@ -1,0 +1,11 @@
+{
+  "task_id": "monster-cfb-game-total-page2-tough-favorable-step7-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "commands": [
+    "python -m pytest -q tests/test_monster_cfb_game_total_page2_tough_favorable_step7_v1.py tests/test_monster_cfb_game_total_page2_best_bet_step6_v1.py",
+    "python -m py_compile cfb_game_total_page2_stage6_tough_favorable_v1.py cfb_game_total_page2_step8_final_runtime_v1.py"
+  ],
+  "required_check": "runless-final-gate",
+  "github_actions_fallback": 0,
+  "sportsbook_projection_influence": 0.0
+}
