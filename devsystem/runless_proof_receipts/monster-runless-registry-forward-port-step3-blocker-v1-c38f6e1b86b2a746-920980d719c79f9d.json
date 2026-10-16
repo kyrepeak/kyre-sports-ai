@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-runless-registry-forward-port-step3-blocker-v1.json": "2319936281258fc39fb4ef767ed354961d8b5d1a",
+    "runless_v2/app.py": "eb6ebcf11dc4afb174412d8d2084ae49f9c6f337",
+    "tests/test_runless_v2_registry_thaw_route.py": "2815f4083207a1ce0569ed7c694bd8dfe784619d"
+  },
+  "candidate_sha": "c38f6e1b86b2a746c95320d24cacdff7bbfb8976",
+  "created_at": "2026-10-16T04:59:02.592132+00:00",
+  "dependency_map": {
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/github_authority.py": "9ceedeb1de27ba702b954e54c55c642b0f82e351",
+    "tests/test_runless_v2_api.py": "a836a3aef220486e94c762e8c897fab519d9702a"
+  },
+  "digest": "20ee9c2f06f9965326f85956f9bc0012a90892f1e131481960f4c456d48e92c4",
+  "evidence_digests": [
+    "910975354b706de76b602b9434088458478c12646e9635899fcf0ae1d7397542",
+    "2e2c0fa7492043ef7e87738642be78bb348e57cb1d24457926d601d3e6600706"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "56e9eb3912c00bd795740a70fafa92d3e75501933ea5c7698b18749a24738052",
+  "proof_id": "monster-runless-registry-forward-port-step3-blocker-v1-c38f6e1b86b2a746-920980d719c79f9d",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 328,
+    "state_hash": "671609494e5a0f8163d55753144f0d53af2c4e433c3b254c0dbddea051ea998b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-NBA-SPREAD-STEP7-INJURY-AVAILABILITY-R1"
+    ],
+    "revision": 328,
+    "state_hash": "671609494e5a0f8163d55753144f0d53af2c4e433c3b254c0dbddea051ea998b"
+  },
+  "request_fingerprint": "26afe88217b2e4726712d676effc627034a3527c7d568575988749c978a2d3cb",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-runless-registry-forward-port-step3-blocker-v1",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1"
+}
