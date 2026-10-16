@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 V45 = ROOT / "cfb_game_total_clean_page_v45.py"
-ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1.py"
+BRIDGE = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1.py"
 APP = ROOT / "app.py"
 V36 = ROOT / "cfb_game_total_clean_page_v36.py"
 V41 = ROOT / "cfb_game_total_clean_page_v41.py"
@@ -31,7 +31,7 @@ def _function_ast(source: str, name: str) -> ast.Module:
 
 def test_page1_unified_repair_owner_exists_before_green() -> None:
     assert V45.is_file(), "Unified Page-1 repair owner V45 is not implemented yet"
-    assert ROUTER.is_file(), "Unified Page-1 repair router is not implemented yet"
+    assert BRIDGE.is_file(), "Unified Page-1 repair bridge is not implemented yet"
 
 
 def test_v45_preserves_v41_day_owner_while_reusing_v36_kickoff_and_hero() -> None:
@@ -111,14 +111,14 @@ def test_selected_day_loader_accepts_today_without_future_only_filtering() -> No
     assert "selected_day >=" not in load_body
 
 
-def test_unified_router_changes_only_page1_owner_and_preserves_page2_fast_path() -> None:
-    source = _read(ROUTER)
-    assert 'PRIOR_RUNTIME = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1"' in source
+def test_page1_bridge_changes_only_native_page1_owner() -> None:
+    source = _read(BRIDGE)
     assert 'PAGE1_REPAIR_ROUTE = "cfb_game_total_clean_page_v45"' in source
     assert "cfb_prior.PAGE1_NATIVE_ROUTE = PAGE1_REPAIR_ROUTE" in source
-    assert "return prior.render_app()" in source
+    assert "def render_with_page1_repair(" in source
     assert "PAGE2_RUNTIME =" not in source
     assert "cfb_prior.PAGE2_RUNTIME =" not in source
+    assert "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1" not in source
     for marker in (
         "MAY_MODIFY_MODEL = False",
         "MAY_MODIFY_PROJECTION = False",
@@ -130,11 +130,22 @@ def test_unified_router_changes_only_page1_owner_and_preserves_page2_fast_path()
         assert marker in source
 
 
-def test_production_entrypoint_activates_unified_repair_above_frozen_step9() -> None:
+def test_step9_selected_page2_fast_path_stays_first_and_only_page1_fallback_is_wrapped() -> None:
+    source = _read(STEP9)
+    assert "import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair" in source
+    render_start = source.index("def render_app()")
+    render_end = source.index("\n\n__all__", render_start)
+    render_body = source[render_start:render_end]
+    assert "if _selected_game_total():" in render_body
+    assert "return _render_selected_page_fast()" in render_body
+    assert "return page1_repair.render_with_page1_repair(prior.render_app)" in render_body
+    assert render_body.index("return _render_selected_page_fast()") < render_body.index("render_with_page1_repair")
+
+
+def test_app_remains_on_frozen_step9_entrypoint() -> None:
     app = _read(APP)
     runtime = app[app.find("try:"):]
     assert (
-        "from streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 import "
+        "from streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 import "
         "record_bootstrap_import_ms, render_app"
     ) in runtime
-    assert _read(STEP9).count("def render_app()") == 1
