@@ -19,6 +19,8 @@ _MIN_BOOTSTRAP_PACKAGES = (
     "pytest-asyncio",
     "fastapi",
     "httpx",
+    "requests",
+    "pypdf",
     "PyJWT",
     "cryptography",
     "pandas",
