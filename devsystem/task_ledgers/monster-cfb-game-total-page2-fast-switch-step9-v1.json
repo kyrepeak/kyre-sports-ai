@@ -5,14 +5,32 @@
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
   "step": "9/10",
-  "status": "TDD_RED_AWAITING_PROOF",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_THAW_AND_GREEN_PROOF",
   "base_main_sha": "73efac34f8200dbc36571e9a2c0890bcfaea1a66",
   "branch": "monster-cfb-game-total-page2-fast-switch-step9-v1",
   "pr_number": 1581,
   "scope_lease_id": "SCOPE-LEASE-81BDB45DE04D365D570FFF71",
+  "app_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-FAST-SWITCH-STEP9-R1",
   "problem": "Selected CFB Game Total Page 2 renders traverse Page-1 presentation installers and the full inherited router chain before reaching the already-frozen selected-game runtime, adding avoidable rerun overhead when switching matchups.",
   "root_cause": "The production entrypoint has no selected-CFB fast path above the current NBA overlay, so exact selected events pay routing and Page-1 installation work that does not own Page-2 behavior.",
-  "patch": "Add one routing-only Step-9 overlay above the current production router. For an exact selected CFB Game Total event, re-read current query identity and render the frozen Step-8 Page-2 runtime directly with the preserved navigation shell. All other routes delegate unchanged to the current production owner.",
+  "patch": "Add one routing-only Step-9 overlay above the current production router. For an exact selected CFB Game Total event, re-read current query identity and render the frozen Step-8 Page-2 runtime directly with the preserved navigation shell. All other routes delegate unchanged.",
+  "red": {
+    "candidate_sha": "a9c3855765336d930afc112971635e3f5facf94c",
+    "proof_id": "monster-cfb-game-total-page2-fast-switch-step9-v1-a9c3855765336d93-690ad754c32e2da5",
+    "state": "FAILED",
+    "failure_class": "STATIC_PROOF",
+    "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "product_implementation_before_red": false
+  },
+  "implementation": {
+    "overlay": "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
+    "direct_selected_page2": true,
+    "page1_installers_skipped_on_selected_page2": true,
+    "current_event_re_read_each_render": true,
+    "non_selected_routes_delegate_to_prior": true,
+    "app_from_blob": "a8802aa8e32b430e5c33378ab1105ca877b934c1",
+    "app_to_blob": "736bfd29adabbd308118dd25b7a5980b73bb72c0"
+  },
   "acceptance": [
     "exact selected CFB Game Total bypasses the prior full router chain",
     "selected Page 2 does not run Page-1 presentation installers",
@@ -34,10 +52,9 @@
   },
   "tdd": {
     "red_test_committed_before_product_code": true,
-    "red_admission_blocker": "RED_PLAN_PRECONDITION",
-    "red_plan_corrected_without_product_mutation": true,
-    "forward_ported_over_disjoint_main": true,
-    "implementation_started": false
+    "red_proven": true,
+    "implementation_started_after_red": true,
+    "forward_ported_over_disjoint_main": true
   },
   "protected": {
     "steps1_to_8_frozen": true,
@@ -51,5 +68,5 @@
   },
   "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_FAST_SWITCH_STEP9_V1_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "REQUEST_ONE_EXACT_HEAD_TDD_RED_PROOF"
+  "next_legal_action": "ATTACH_APPROVED_APP_BLOB_THEN_REQUEST_ONE_EXACT_HEAD_THAW_AND_ONE_GREEN_PROOF"
 }
