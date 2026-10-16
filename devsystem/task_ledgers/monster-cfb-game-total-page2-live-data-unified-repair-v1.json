@@ -1,14 +1,14 @@
 {
-  "version": 6,
+  "version": 7,
   "task_id": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
   "title": "MONSTER CFB Game Total Page 2 — Unified Live Data Repair",
   "project": "MONSTER",
   "workstream": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
   "step": "1/1",
-  "status": "THAW_NOT_REQUIRED_FORWARD_PORT_READY",
+  "status": "PR_OPEN_AWAITING_RUNLESS_GREEN",
   "base_main_sha": "c6811556112744c077325f0a2c1fa48ade9b0f6c",
   "branch": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
-  "pr_number": null,
+  "pr_number": 1589,
   "scope_lease_id": "SCOPE-LEASE-D90FE53372DE146B76601694",
   "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1-GREEN-R1",
   "problem": "CFB Game Total Page 2 renders owned matchup evidence as unavailable across pace, explosive plays, red-zone, defense and trends/scoring breakdown cards.",
@@ -39,6 +39,8 @@
     "one_authoritative_pr": true,
     "one_authoritative_proof_chain": true,
     "duplicate_execution_paths": 0,
+    "duplicate_prs": 0,
+    "duplicate_proofs_same_candidate": 0,
     "exact_head_merge_required": true,
     "github_actions_fallback_authorized": false,
     "lease_id": "SCOPE-LEASE-D90FE53372DE146B76601694",
@@ -61,36 +63,11 @@
     "green_product_code_written_after_red": true
   },
   "failure_history": [
-    {
-      "candidate_sha": "9e3e94fbddc6e129dc3305b2f4b1ea2eb3b06539",
-      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
-      "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
-      "product_patch": false
-    },
-    {
-      "candidate_sha": "c48f295240f6a1e0f25cd04f6f39f26c2cd3f751",
-      "failure_class": "STATIC_PROOF_CONTRACT_ADMISSION",
-      "detail": "RED proof plan listed not-yet-created adapter as required artifact/compile target",
-      "product_patch": false
-    },
-    {
-      "candidate_sha": "8346044ac37d3aaee809d32e23ac7eac11ba0f04",
-      "failure_class": "EXPECTED_TDD_RED_STATIC_PROOF",
-      "detail": "Adapter/wiring absent before implementation",
-      "product_patch": false
-    },
-    {
-      "candidate_sha": "ff3abc470f4f015b62356dc329c80d68fd6c50ac",
-      "failure_class": "STALE_BASE_FORWARD_PORT_REQUIRED",
-      "detail": "Prospective exact frozen candidate abandoned before branch attachment because main advanced independently to c6811556112744c077325f0a2c1fa48ade9b0f6c",
-      "product_patch": false
-    },
-    {
-      "candidate_sha": "25e398f2edeb077fca29b74b8c61cc3c79957906",
-      "failure_class": "REGISTRY_THAW_FROZEN_OWNER_MISSING",
-      "detail": "Canonical registry flattening found no frozen owner for cfb_game_total_page2_same_page_shell_repair_v1.py; thaw mutation is therefore not applicable",
-      "product_patch": false
-    }
+    {"candidate_sha":"9e3e94fbddc6e129dc3305b2f4b1ea2eb3b06539","failure_class":"CONTROL_PLANE_SCOPE_LEASE_ADMISSION","detail":"RUNLESS_V2_SCOPE_LEASE_NOT_LIVE","product_patch":false},
+    {"candidate_sha":"c48f295240f6a1e0f25cd04f6f39f26c2cd3f751","failure_class":"STATIC_PROOF_CONTRACT_ADMISSION","detail":"RED proof plan listed not-yet-created adapter as required artifact/compile target","product_patch":false},
+    {"candidate_sha":"8346044ac37d3aaee809d32e23ac7eac11ba0f04","failure_class":"EXPECTED_TDD_RED_STATIC_PROOF","detail":"Adapter/wiring absent before implementation","product_patch":false},
+    {"candidate_sha":"ff3abc470f4f015b62356dc329c80d68fd6c50ac","failure_class":"STALE_BASE_FORWARD_PORT_REQUIRED","detail":"Prospective exact frozen candidate abandoned before branch attachment because main advanced independently","product_patch":false},
+    {"candidate_sha":"25e398f2edeb077fca29b74b8c61cc3c79957906","failure_class":"REGISTRY_THAW_FROZEN_OWNER_MISSING","detail":"Canonical registry flattening found no frozen owner for the same-page shell; thaw mutation is not applicable","product_patch":false}
   ],
   "freeze_authority": {
     "legacy_thaw_attempt_id": "THAW-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1",
