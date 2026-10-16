@@ -7,7 +7,7 @@ from runless_v2.state_store import DurableStateStore
 
 
 def test_runless_v2_bootstrap_includes_runtime_dependencies_needed_by_proof_plans():
-    required = {"pandas", "numpy", "streamlit"}
+    required = {"pandas", "numpy", "streamlit", "requests", "pypdf"}
     assert required.issubset(set(_MIN_BOOTSTRAP_PACKAGES))
 
 
