@@ -1,0 +1,53 @@
+{
+  "artifact_map": {
+    "app.py": "79bfc71aa2dfc285afa46070ea70db9d4cc3a857",
+    "devsystem/runless_proof_plans/api2-nfl-spread-autodate-mobile-nav-repair-v1.json": "cd35e7b1cd5b4006fdfb65f81df0f6abf88cff0c",
+    "nfl_spread_autodate_repair_v1.py": "6b37c5826599313ffd492e978fd9e05f2568b507",
+    "nfl_spread_hub_v6.py": "ca913666c6b82e3af5e2a283f8b9de298401fca5",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py": "eab7d0c61772496d5f04f092e65d54d0ac9b0407",
+    "tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py": "19afa5dc6d01552243ec4c6b1dee522f5003199a"
+  },
+  "candidate_sha": "52419dfee69e2169f8defc50539729ab548d9a33",
+  "created_at": "2026-10-16T20:11:11.974137+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "nfl_spread_hub_v5.py": "6e98fc3b2738555715fd8a1624c20c822c1841fa",
+    "nfl_spread_next_slate_v1.py": "18f4262fe8d27912ad0cf52882cbb54d748508f8",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py": "f3d4b9572a59af185f60dde7639d148d692b29c2",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72"
+  },
+  "digest": "07d786bb6a8da5fedc56049c696441cb8a2bb76d19b8c05612dfcdf4da4c6f51",
+  "evidence_digests": [
+    "29c861512281485f71d402c903d547485b1685af2b404c020009246bd45b16b2",
+    "a3f03e67631d3aff2492beaac944f607dd72040d7eac6fbbe1603c287ec7c867"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "1a47b1d647edb2c5bd773c37ffff2743d7cc4e5cfa08aa3460dd4b74ad57c79a",
+  "proof_id": "api2-nfl-spread-autodate-mobile-nav-repair-v1-52419dfee69e2169-de62b5a7c35bdd04",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NFL-SPREAD-AUTODATE-MOBILE-NAV-R1"
+    ],
+    "revision": 369,
+    "state_hash": "01b0b5073c9aa80fd059649f02f04fa2f4b050fd9d2927feb37ae053d9b44f6b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NFL-SPREAD-AUTODATE-MOBILE-NAV-R1"
+    ],
+    "revision": 369,
+    "state_hash": "01b0b5073c9aa80fd059649f02f04fa2f4b050fd9d2927feb37ae053d9b44f6b"
+  },
+  "request_fingerprint": "0dba1a734543a8a1882d9d81c9a90acb9363e6344152f055df1572098613aa3c",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-spread-autodate-mobile-nav-repair-v1",
+  "workstream": "api2-nfl-spread-autodate-mobile-nav-repair-v1"
+}
