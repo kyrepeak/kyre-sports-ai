@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "task_id": "monster-runless-registry-forward-port-step3-blocker-v1",
+  "title": "MONSTER Step 3 blocker — registry forward-port transport",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_RUNLESS",
+  "base_main_sha": "871e6c93df7fa9b87bb81db2635ebc95da4b3eb4",
+  "branch": "monster-runless-registry-forward-port-step3-blocker-v1",
+  "pr": 1567,
+  "problem": "The local Step-3 post-merge frozen-registry forward-port returned HTTP 404 because current Runless production lacked POST /registry-forward-port.",
+  "root_cause": "runless_v2/app.py exposed registry thaw and closeout routes but had no authenticated registry-forward-port route implementing the frozen baseline advance and exact thaw retirement transaction.",
+  "patch": "Add one bearer-protected /registry-forward-port route that validates repository, candidate, merged-main, blob pair and thaw identity; advances all matching frozen baselines; retires only the exact consumed thaw file-pair; preserves unrelated entries and active thaws; performs one CAS write and canonical read-back.",
+  "mutation_scope": [
+    "runless_v2/app.py",
+    "tests/test_runless_v2_registry_thaw_route.py",
+    "devsystem/runless_proof_plans/monster-runless-registry-forward-port-step3-blocker-v1.json",
+    "devsystem/task_ledgers/monster-runless-registry-forward-port-step3-blocker-v1.json"
+  ],
+  "protected": {
+    "sports_product_files": true,
+    "providers": true,
+    "model_projection_probability": true,
+    "legacy_frozen_history": true,
+    "unrelated_active_thaws": true,
+    "parallel_workstreams": true
+  },
+  "workstream_isolation": {
+    "status": "ISOLATED",
+    "foreign_dependency": "NONE",
+    "parallel_conflict": "NONE",
+    "resume_event_owner": "CURRENT_WORKSTREAM"
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": 1567,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-54BA6200581F1AEF4A3B",
+    "github_actions_fallback_authorized": false,
+    "exact_head_merge_required": true,
+    "authoritative_main_sha": "871e6c93df7fa9b87bb81db2635ebc95da4b3eb4"
+  },
+  "tdd": {
+    "red_candidate_sha": "0f6cd50f3e5da5b11a79f5e5fb5ef04cc1acaa48",
+    "red_preview": "https://kyre-runless-proof-qpdm61f4e-kyrepeak.vercel.app/registry-forward-port",
+    "red_observation": "HTTP 404 Not Found",
+    "implementation_commit_sha": "aa5f100a2d69b308700f1d95ae2cc3dcecbfb874"
+  },
+  "product_checkpoint": {
+    "step3_candidate_sha": "6ed7b3e02c482c50167f7696cfe1af24fd19985d",
+    "step3_merged_main_sha": "95865b89eb1f868d0168992e5a139ed2c35d4929",
+    "step3_product_blob": "04daaf50a3cff1288c6bfe5e678895022e081bf0",
+    "active_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-TEAM-SNAPSHOT-STEP3-R2"
+  },
+  "acceptance": {
+    "bearer_protected": true,
+    "authority_disabled_fails_closed": true,
+    "candidate_and_merged_main_blob_identity_required": true,
+    "all_matching_frozen_owners_advance": true,
+    "exact_thaw_retired": true,
+    "unrelated_thaws_preserved": true,
+    "single_cas_write": true,
+    "canonical_hash_readback_required": true,
+    "sports_product_mutation": false
+  },
+  "runless": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "authorization_id": "AUTH-MONSTER-RUNLESS-REGISTRY-FORWARD-PORT-STEP3-BLOCKER-R1",
+    "proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "MONSTER_RUNLESS_REGISTRY_FORWARD_PORT_STEP3_BLOCKER_V1_CERTIFIED",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OBTAIN_ONE_EXACT_HEAD_RUNLESS_PROOF_THEN_MERGE_EXACT_CERTIFIED_HEAD_DEPLOY_AND_CLOSEOUT"
+}

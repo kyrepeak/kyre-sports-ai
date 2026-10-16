@@ -71,6 +71,17 @@ class RegistryThawRequest(BaseModel):
     expected_main_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
 
 
+class RegistryForwardPortRequest(BaseModel):
+    repository: str = Field(min_length=1)
+    workstream: str = Field(min_length=1)
+    candidate_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    merged_main_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    thaw_id: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+    from_blob: str = Field(pattern=r"^[0-9a-f]{40}$")
+    to_blob: str = Field(pattern=r"^[0-9a-f]{40}$")
+
+
 def _canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
@@ -276,6 +287,161 @@ def _execute_registry_thaw(
     )
 
 
+def _execute_registry_forward_port(
+    req: RegistryForwardPortRequest,
+    *,
+    settings: Settings,
+    github: Any,
+) -> dict[str, Any]:
+    if req.repository != settings.repository:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_REPOSITORY_MISMATCH")
+    if req.from_blob == req.to_blob:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_NOOP_REJECTED")
+
+    current_main = str(github.main_sha())
+    if current_main != req.merged_main_sha:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_MAIN_IDENTITY_DRIFT")
+
+    candidate_tree = github.tree_blobs(req.candidate_sha)
+    merged_tree = github.tree_blobs(req.merged_main_sha)
+    if str(candidate_tree.get(req.path) or "").lower() != req.to_blob:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_CANDIDATE_BLOB_MISMATCH")
+    if str(merged_tree.get(req.path) or "").lower() != req.to_blob:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_MERGED_BLOB_MISMATCH")
+
+    registry_api_path = f"/contents/{quote(REGISTRY_PATH, safe='/')}"
+    raw = github._request(
+        "GET",
+        f"{registry_api_path}?ref={quote(REGISTRY_BRANCH, safe='/')}",
+    )
+    registry = _decode_registry_content(raw)
+    if str(registry.get("repository") or "") != settings.repository:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_REPOSITORY_MISMATCH")
+    if str(registry.get("registry_ref") or "") != f"refs/heads/{REGISTRY_BRANCH}":
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_REGISTRY_REF_MISMATCH")
+    if str(registry.get("registry_path") or "") != REGISTRY_PATH:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_REGISTRY_PATH_MISMATCH")
+    if str(registry.get("state_hash") or "") != _registry_state_hash(registry):
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_STATE_HASH_INVALID")
+
+    entries_before = copy.deepcopy(registry.get("entries") or {})
+    active_before = copy.deepcopy(list(registry.get("active_thaws") or []))
+    previous_revision = int(registry.get("revision", -1))
+    if previous_revision < 0:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_REVISION_INVALID")
+    previous_state_hash = str(registry["state_hash"])
+
+    matched_entries = 0
+    for entry in entries_before.values():
+        artifacts = entry.get("artifacts") if isinstance(entry, dict) else None
+        if not isinstance(artifacts, dict) or req.path not in artifacts:
+            continue
+        matched_entries += 1
+        if str(artifacts.get(req.path) or "").lower() != req.from_blob:
+            raise GithubAuthorityError("REGISTRY_FORWARD_PORT_FROZEN_BASELINE_MISMATCH")
+    if matched_entries == 0:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_FROZEN_OWNER_MISSING")
+
+    thaw_index: int | None = None
+    for index, grant in enumerate(active_before):
+        files = grant.get("files") if isinstance(grant, dict) else None
+        pair = files.get(req.path) if isinstance(files, dict) else None
+        if str(grant.get("thaw_id") or "") == req.thaw_id:
+            if str(grant.get("target_head_sha") or "") != req.candidate_sha:
+                raise GithubAuthorityError("REGISTRY_FORWARD_PORT_THAW_IDENTITY_MISMATCH")
+            if not (
+                isinstance(pair, dict)
+                and str(pair.get("from_blob") or "").lower() == req.from_blob
+                and str(pair.get("to_blob") or "").lower() == req.to_blob
+            ):
+                raise GithubAuthorityError("REGISTRY_FORWARD_PORT_THAW_IDENTITY_MISMATCH")
+            thaw_index = index
+            continue
+        if pair is not None:
+            raise GithubAuthorityError("REGISTRY_FORWARD_PORT_PATH_CONFLICT")
+    if thaw_index is None:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_THAW_IDENTITY_MISMATCH")
+
+    target = copy.deepcopy(registry)
+    for entry in target.get("entries", {}).values():
+        artifacts = entry.get("artifacts") if isinstance(entry, dict) else None
+        if isinstance(artifacts, dict) and req.path in artifacts:
+            artifacts[req.path] = req.to_blob
+
+    next_active: list[dict[str, Any]] = []
+    for index, grant in enumerate(target.get("active_thaws") or []):
+        if index != thaw_index:
+            next_active.append(grant)
+            continue
+        kept = copy.deepcopy(grant)
+        kept_files = dict(kept.get("files") or {})
+        kept_files.pop(req.path, None)
+        if kept_files:
+            kept["files"] = kept_files
+            next_active.append(kept)
+    target["active_thaws"] = next_active
+    target["source_main_sha"] = req.merged_main_sha
+    target["revision"] = previous_revision + 1
+    target["state_hash"] = _registry_state_hash(target)
+
+    content = base64.b64encode(
+        (_canonical_json(target) + "\n").encode("utf-8")
+    ).decode("ascii")
+    try:
+        written = github._request(
+            "PUT",
+            registry_api_path,
+            json={
+                "message": f"registry: forward-port {req.workstream}",
+                "content": content,
+                "branch": REGISTRY_BRANCH,
+                "sha": str(raw.get("sha") or ""),
+            },
+        )
+    except Exception as exc:
+        status_code = getattr(getattr(exc, "response", None), "status_code", None)
+        if status_code in {409, 422}:
+            raise GithubAuthorityError("STALE_REGISTRY_CAS") from exc
+        raise
+
+    commit_sha = str(((written or {}).get("commit") or {}).get("sha") or "") or None
+    readback_raw = github._request(
+        "GET",
+        f"{registry_api_path}?ref={quote(REGISTRY_BRANCH, safe='/')}",
+    )
+    readback = _decode_registry_content(readback_raw)
+    if str(readback.get("state_hash") or "") != _registry_state_hash(readback):
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_READBACK_HASH_MISMATCH")
+    if int(readback.get("revision", -1)) != previous_revision + 1:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_READBACK_REVISION_MISMATCH")
+    if str(readback.get("source_main_sha") or "") != req.merged_main_sha:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_READBACK_MAIN_MISMATCH")
+
+    expected_entries = target.get("entries") or {}
+    if readback.get("entries") != expected_entries:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_UNRELATED_ENTRY_DRIFT")
+    if list(readback.get("active_thaws") or []) != next_active:
+        raise GithubAuthorityError("REGISTRY_FORWARD_PORT_UNRELATED_ACTIVE_DRIFT")
+
+    return {
+        "thaw_id": req.thaw_id,
+        "candidate_sha": req.candidate_sha,
+        "merged_main_sha": req.merged_main_sha,
+        "path": req.path,
+        "from_blob": req.from_blob,
+        "to_blob": req.to_blob,
+        "previous_registry_revision": previous_revision,
+        "current_registry_revision": int(readback["revision"]),
+        "previous_state_hash": previous_state_hash,
+        "current_state_hash": str(readback["state_hash"]),
+        "registry_commit_sha": commit_sha,
+        "state": "FROZEN",
+        "retired": True,
+        "failure_class": "NONE",
+        "detail": "",
+    }
+
+
 def _supabase_health(store: Any) -> bool:
     health = getattr(store, "health", None)
     if callable(health):
@@ -411,6 +577,20 @@ def create_app(
             raise HTTPException(
                 status_code=503,
                 detail=f"RUNLESS_V2_REGISTRY_THAW_UNAVAILABLE:{type(exc).__name__}",
+            ) from exc
+
+    @app.post("/registry-forward-port", dependencies=[Depends(authenticated)])
+    def registry_forward_port(req: RegistryForwardPortRequest) -> dict[str, Any]:
+        if not cfg.authority_enabled:
+            raise HTTPException(status_code=503, detail="RUNLESS_V2_AUTHORITY_DISABLED")
+        try:
+            return _execute_registry_forward_port(req, settings=cfg, github=gh)
+        except (GithubAuthorityError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"RUNLESS_V2_REGISTRY_FORWARD_PORT_UNAVAILABLE:{type(exc).__name__}",
             ) from exc
 
     @app.post("/closeout", dependencies=[Depends(authenticated)])
