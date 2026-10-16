@@ -94,7 +94,7 @@ def _decision_card(record: dict) -> str:
   <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:10px">
     <div style="border:1px solid rgba(148,163,184,.13);border-radius:11px;padding:8px;background:rgba(5,12,20,.44)"><div style="font-size:.55rem;color:#71869a;font-weight:900">NO-PUSH COVER</div><div style="font-size:.83rem;color:#f8fafc;font-weight:950;margin-top:3px">{cover}</div></div>
     <div style="border:1px solid rgba(148,163,184,.13);border-radius:11px;padding:8px;background:rgba(5,12,20,.44)"><div style="font-size:.55rem;color:#71869a;font-weight:900">RAW COVER</div><div style="font-size:.83rem;color:#f8fafc;font-weight:950;margin-top:3px">{raw_cover}</div></div>
-    <div style="border:1px solid rgba(148,163,184,.13);border-radius:11px;padding:8px;background:rgba(5,12,20,.44)"><div style="font-size:.55rem;color:#71869a;font-weight:900">COVER EDGE</div><div style="font-size:.83rem;color:#f8fafc;font-weight:950;margin-top:3px">{edge}</div></div>
+    <div style="border:1px solid rgba(148,163,184,.13);border-radius:11px;padding:8px;background:rgba(5,12,20,.44)"><div style="font-size:.55rem;color:#71869a;font-weight:900">Cover Edge</div><div style="font-size:.83rem;color:#f8fafc;font-weight:950;margin-top:3px">{edge}</div></div>
     <div style="border:1px solid rgba(148,163,184,.13);border-radius:11px;padding:8px;background:rgba(5,12,20,.44)"><div style="font-size:.55rem;color:#71869a;font-weight:900">SPREAD EDGE</div><div style="font-size:.83rem;color:#f8fafc;font-weight:950;margin-top:3px">{spread_edge}</div></div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:.62rem;font-weight:950;color:#dbeafe">
