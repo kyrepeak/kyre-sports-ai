@@ -1,0 +1,133 @@
+{
+  "version": 6,
+  "task_id": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Unified Live Data Repair",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
+  "step": "1/1",
+  "status": "THAW_NOT_REQUIRED_FORWARD_PORT_READY",
+  "base_main_sha": "c6811556112744c077325f0a2c1fa48ade9b0f6c",
+  "branch": "monster-cfb-game-total-page2-live-data-unified-repair-v1",
+  "pr_number": null,
+  "scope_lease_id": "SCOPE-LEASE-D90FE53372DE146B76601694",
+  "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1-GREEN-R1",
+  "problem": "CFB Game Total Page 2 renders owned matchup evidence as unavailable across pace, explosive plays, red-zone, defense and trends/scoring breakdown cards.",
+  "root_cause": "Page 2 reads a flat display schema while certified upstream CFB evidence is owned by Runtime Snapshot V2, Step 5 pace/PBP and Step 6 scoring/PBP contracts. The Page-2 trends helper also requires points_for/points_against rows even though one owned schedule profile shape can expose only a score string. The result is a display-contract mismatch, not a model/projection failure.",
+  "patch": "Add one CFB-only presentation adapter at the existing same-page shell seam. Overlay certified Step-3 history/defense, reuse certified Step-5 pace and Step-6 scoring evidence, normalize score-only completed-game rows, derive recent regulation scoring splits only from verified completed-game PBP, and preserve already-owned values. Model/projection/probability math remains untouched.",
+  "mutation_scope": [
+    "cfb_game_total_page2_live_data_unified_repair_v1.py",
+    "cfb_game_total_page2_same_page_shell_repair_v1.py",
+    "tests/test_monster_cfb_game_total_page2_live_data_unified_repair_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-live-data-unified-repair-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-live-data-unified-repair-v1.json"
+  ],
+  "protected": {
+    "page1": true,
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "ranking": true,
+    "selection": true,
+    "market_ownership": true,
+    "other_sports": true,
+    "nfl_spread_lane": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "duplicate_execution_paths": 0,
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "lease_id": "SCOPE-LEASE-D90FE53372DE146B76601694",
+    "lease_generation": 501,
+    "lease_state_revision": 892,
+    "lease_state_hash": "5f7ae727a9a1f84045fbd0873912c3b301f0de7e909a2f1409839e3c8945b602",
+    "lease_expires_at_utc": "2026-10-16T22:12:56Z",
+    "parallel_api2_lane_preserved": true,
+    "forward_port_from_main_sha": "72ffb2b37ab034e0b8d3df1800df6180583b577e",
+    "forward_port_to_main_sha": "c6811556112744c077325f0a2c1fa48ade9b0f6c"
+  },
+  "tdd": {
+    "red_test": "tests/test_monster_cfb_game_total_page2_live_data_unified_repair_v1.py",
+    "red_product_code_written": false,
+    "red_proof_id": "monster-cfb-game-total-page2-live-data-unified-repair-v1-8346044ac37d3aae-cfd3082054639b3f",
+    "red_candidate_sha": "8346044ac37d3aaee809d32e23ac7eac11ba0f04",
+    "red_terminal_state": "FAILED",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "green_product_code_written_after_red": true
+  },
+  "failure_history": [
+    {
+      "candidate_sha": "9e3e94fbddc6e129dc3305b2f4b1ea2eb3b06539",
+      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
+      "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
+      "product_patch": false
+    },
+    {
+      "candidate_sha": "c48f295240f6a1e0f25cd04f6f39f26c2cd3f751",
+      "failure_class": "STATIC_PROOF_CONTRACT_ADMISSION",
+      "detail": "RED proof plan listed not-yet-created adapter as required artifact/compile target",
+      "product_patch": false
+    },
+    {
+      "candidate_sha": "8346044ac37d3aaee809d32e23ac7eac11ba0f04",
+      "failure_class": "EXPECTED_TDD_RED_STATIC_PROOF",
+      "detail": "Adapter/wiring absent before implementation",
+      "product_patch": false
+    },
+    {
+      "candidate_sha": "ff3abc470f4f015b62356dc329c80d68fd6c50ac",
+      "failure_class": "STALE_BASE_FORWARD_PORT_REQUIRED",
+      "detail": "Prospective exact frozen candidate abandoned before branch attachment because main advanced independently to c6811556112744c077325f0a2c1fa48ade9b0f6c",
+      "product_patch": false
+    },
+    {
+      "candidate_sha": "25e398f2edeb077fca29b74b8c61cc3c79957906",
+      "failure_class": "REGISTRY_THAW_FROZEN_OWNER_MISSING",
+      "detail": "Canonical registry flattening found no frozen owner for cfb_game_total_page2_same_page_shell_repair_v1.py; thaw mutation is therefore not applicable",
+      "product_patch": false
+    }
+  ],
+  "freeze_authority": {
+    "legacy_thaw_attempt_id": "THAW-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1",
+    "legacy_thaw_result": "FAILED / REGISTRY_THAW_FROZEN_OWNER_MISSING",
+    "legacy_registry_owner_for_same_page_shell": false,
+    "legacy_registry_mutation_required": false,
+    "sidecar_supersession_required_after_merge": true,
+    "duplicate_thaws": 0
+  },
+  "frozen_registry": {
+    "repair_path": "cfb_game_total_page2_same_page_shell_repair_v1.py",
+    "observed_from_blob": "0ec8fce9c1cad239466b498ac4ce4a2e2fc0dc39",
+    "desired_to_blob": "8840815f153f122c9e4659770efc9228208242a6",
+    "thaw_required_before_branch_attachment": false,
+    "thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-LIVE-DATA-V1",
+    "thaw_status": "NOT_APPLICABLE_NO_FROZEN_OWNER"
+  },
+  "acceptance": [
+    "Pace renders from verified existing evidence when available",
+    "Explosive-play evidence renders when verified",
+    "Red-zone evidence renders when verified",
+    "Defense renders from verified points-allowed evidence",
+    "Recent completed-game scoring history renders instead of false unavailable state",
+    "Half/quarter scoring splits render only when verified completed-game PBP supports them",
+    "Scoring-opportunity and red-zone finishing drivers render from verified Step-6 evidence when available",
+    "No fabricated values",
+    "Existing verified Page-2 values are never overwritten",
+    "Page 1 and other sports remain unchanged",
+    "model/projection/probability outputs remain byte-for-behavior frozen",
+    "sportsbook projection influence remains 0.0"
+  ],
+  "runless": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "proof_generation": 3
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_LIVE_DATA_UNIFIED_REPAIR_V1_FROZEN",
+  "green_plus_frozen_claimed": false
+}
