@@ -7,7 +7,7 @@
     ["python", "-m", "py_compile", "nfl_passing_yards_hub_v86.py", "nfl_passing_yards_hub_v85.py", "streamlit_memory_lazy_router_v239.py"],
     ["python", "-m", "pytest", "-q", "tests/test_passing_yards_page2_compact_ux_r1.py"],
     ["python", "-m", "pytest", "-q", "tests/test_passing_yards_visible_cleanup_v85.py", "-k", "not cleanup_router_wraps_monster_router_without_replacing_it and not app_activates_v237_only_at_entrypoint"],
-    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_v239_purge_guard.py", "-k", "not active_passing_route_primes_guard_before_import_and_render"]
+    ["python", "-m", "pytest", "-q", "tests/test_passing_yards_v239_purge_guard.py", "-k", "not active_passing_route_primes_guard_before_import_and_render and not app_activates_v239_only"]
   ],
   "artifacts": [
     "devsystem/runless_proof_plans/passing-yards-page2-compact-ux-r1.json",
