@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-fast-switch-step9-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Fast Matchup Switching Step 9",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "9/10",
+  "status": "TDD_RED_AWAITING_PROOF",
+  "base_main_sha": "c6e2568ff4f73b26efb3f1d76603ab1c39187b87",
+  "branch": "monster-cfb-game-total-page2-fast-switch-step9-v1",
+  "pr_number": null,
+  "scope_lease_id": "SCOPE-LEASE-3FACA0EA25E3413B018920C2",
+  "problem": "Selected CFB Game Total Page 2 renders traverse Page-1 presentation installers and the full inherited router chain before reaching the already-frozen selected-game runtime, adding avoidable rerun overhead when switching matchups.",
+  "root_cause": "The production entrypoint has no selected-CFB fast path above the current NBA overlay, so exact selected events pay routing and Page-1 installation work that does not own Page-2 behavior.",
+  "patch": "Add one routing-only Step-9 overlay above the current production router. For an exact selected CFB Game Total event, re-read current query identity and render the frozen Step-8 Page-2 runtime directly with the preserved navigation shell. All other routes delegate unchanged to the current production owner.",
+  "acceptance": [
+    "exact selected CFB Game Total bypasses the prior full router chain",
+    "selected Page 2 does not run Page-1 presentation installers",
+    "non-selected and non-CFB routes delegate unchanged to the prior production owner",
+    "event identity is re-read on every render so sequential matchup switches cannot reuse stale selection",
+    "Step-8 Page-2 runtime remains frozen and unmodified",
+    "no provider/model/projection/probability/ranking/selection behavior changes",
+    "sportsbook projection influence remains 0.0"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-3FACA0EA25E3413B018920C2",
+    "duplicate_prs": 0,
+    "duplicate_proofs_same_candidate": 0,
+    "github_actions_fallback_authorized": false
+  },
+  "protected": {
+    "steps1_to_8_frozen": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "ranking": true,
+    "selection": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_FAST_SWITCH_STEP9_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "PROVE_TDD_RED_THEN_IMPLEMENT_MINIMAL_FAST_PATH"
+}
