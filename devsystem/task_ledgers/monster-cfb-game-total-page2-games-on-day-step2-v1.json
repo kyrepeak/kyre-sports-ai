@@ -1,0 +1,83 @@
+{
+  "version": 3,
+  "task_id": "monster-cfb-game-total-page2-games-on-day-step2-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Games on This Day parity Step 2",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "2/10",
+  "status": "IMPLEMENTED_CURRENT_PROOF_CONTRACT_AWAITING_R3_THAW",
+  "base_main_sha": "80bb72fe19b11ecb832ef04ab89dad481b57504c",
+  "branch": "monster-cfb-game-total-page2-games-on-day-step2-v1",
+  "pr": 1560,
+  "problem": "The selected-event Page-2 route does not deterministically install the same Games on This Day presentation stack that Page 1 installs before rendering.",
+  "root_cause": "The no-selection Page-1 branch invokes the existing Step-2 visual, Step-3 details, and Step-4 interaction/mobile installers, while the selected-event branch mounts the shared shell and switches directly to PAGE2_RUNTIME without invoking those installers.",
+  "patch": "Install the already-existing Games on This Day Step-2/3/4 stack on the selected-event path before the shared shell and unchanged Page-2 pointer swap. Do not duplicate cards or alter event identity, Page-2 runtime, model, projection, probability, providers, other sports, or sportsbook influence.",
+  "mutation_scope": [
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py",
+    "tests/test_cfb_game_total_page2_games_on_day_step2_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-games-on-day-step2-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page2-games-on-day-step2-v1.json"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": 1560,
+    "one_authoritative_proof_chain": true,
+    "lease_id": "SCOPE-LEASE-4B64F2D4AA774BB1A3C7298E",
+    "exact_head_merge_required": true,
+    "github_actions_fallback_authorized": false,
+    "cross_workstream_state_separation_required": true,
+    "authoritative_main_sha": "80bb72fe19b11ecb832ef04ab89dad481b57504c"
+  },
+  "tdd": {
+    "original_red_candidate_sha": "e3de84fa998d24ba5064e9e1d2eaaf0424720695",
+    "original_red_proof_id": "monster-cfb-game-total-page2-games-on-day-step2-v1-e3de84fa998d24ba-008dcaf482543908",
+    "initial_green_candidate_sha": "cc0cd1671d8b096471e188e8c6d13ac3e9af9733",
+    "initial_green_disposition": "SUPERSEDED_TEST_CONTRACT_BUG",
+    "obsolete_r1_thaw_retired_registry_revision": 317,
+    "corrected_red_candidate_sha": "61084b0492e37603e46d1157361d1fb282eb6e93",
+    "corrected_red_proof_id": "monster-cfb-game-total-page2-games-on-day-step2-v1-61084b0492e37603-fe50dfae78d6f15f",
+    "corrected_red_failure_class": "STATIC_PROOF",
+    "corrected_red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "implementation_router_blob": "0b2b5a0d8b0d506a8faf84d96bf1ee13b9932894",
+    "r2_candidate_sha": "25d88c5291edfcc08c9e2c0daac2f405ee25eb6d",
+    "r2_proof_id": "monster-cfb-game-total-page2-games-on-day-step2-v1-25d88c5291edfcc0-ba70db653ffd7451",
+    "r2_failure_class": "STATIC_PROOF",
+    "r2_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "r2_failure_owner": "SUPERSEDED_REGRESSION_CONTRACTS",
+    "r2_superseded_nodes": [
+      "tests/test_cfb_game_total_step8_route_pointer_lock_r1.py::test_step8_real_tap_route_holds_lock_and_restores_shared_owners",
+      "tests/test_cfb_game_total_page2_step8_final_v1.py::test_step8_router_restores_query_route_before_selected_event_activation"
+    ],
+    "r2_thaw_retired_registry_revision": 319,
+    "current_test_contract": "EXECUTED_SELECTED_EVENT_PARITY_STACK_PLUS_LOCK_AND_RESTORE"
+  },
+  "acceptance": {
+    "selected_event_installs_page1_games_on_day_step2_visual": true,
+    "selected_event_installs_page1_games_on_day_step3_details": true,
+    "selected_event_installs_page1_games_on_day_step4_interaction_mobile": true,
+    "installers_run_before_selected_page2_pointer_swap": true,
+    "selected_event_execution_order_proved": true,
+    "route_pointer_lock_and_restore_proved": true,
+    "page1_behavior_preserved": true,
+    "selected_event_identity_preserved": true,
+    "page2_runtime_preserved": true,
+    "model_projection_probability_unchanged": true,
+    "providers_unchanged": true,
+    "other_sports_unchanged": true,
+    "network_calls_added": 0,
+    "sportsbook_projection_influence": 0.0
+  },
+  "runless": {
+    "proof_generation": 5,
+    "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R1",
+    "replacement_thaw_id": "THAW-MONSTER-CFB-GT-PAGE2-GAMES-ON-DAY-STEP2-R3",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "final_proof_request_status": "NOT_SUBMITTED"
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_GAMES_ON_DAY_STEP2_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "FRESH_MAIN_CHECK_BIND_R3_THAW_THEN_SUBMIT_ONE_FINAL_RUNLESS_PROOF"
+}
