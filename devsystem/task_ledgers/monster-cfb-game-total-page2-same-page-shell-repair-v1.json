@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Same Page Shell Repair",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "step": "1/1",
+  "status": "RED_PENDING",
+  "base_main_sha": "9f90d6615c2ab7c8bd019f2de8c70a46c9b4d6e5",
+  "branch": "monster-cfb-game-total-page2-same-page-shell-repair-v1",
+  "scope_lease_id": "SCOPE-LEASE-5F8C2E1A9D4B73C601E2A7F4",
+  "problem": "Selected CFB Game Total Page 2 renders as a separate mini-page and can show duplicate Jump to a Sport Page navigation instead of continuing inside the current Page-1 V45 shell.",
+  "root_cause": "Step 9 manually renders the legacy V33 navigation helper before Page 2, while the frozen Page-2 runtime still renders through V38, which predates the current V45 Page-1 shell. The selected-event path therefore has two navigation owners and an obsolete render base.",
+  "patch": "Render selected-event Page-2 analysis through a new additive bridge that reuses the frozen Step-8 analysis injector but calls the current V45 Page-1 render as its base. Remove the manual legacy navigation call from the Step-9 selected fast path and import the same-page bridge instead.",
+  "acceptance": [
+    "one website shell/header owner",
+    "no duplicate Jump to a Sport Page block",
+    "selected date and Games on This Day remain visible",
+    "selected matchup analysis continues beneath the Page-1 content",
+    "Step-9 exact-event fast switching remains active",
+    "Page-2 analytics and cards remain unchanged",
+    "no provider/model/projection/probability/ranking/selection changes",
+    "sportsbook projection influence remains 0.0"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "duplicate_execution_paths": 0
+  }
+}
