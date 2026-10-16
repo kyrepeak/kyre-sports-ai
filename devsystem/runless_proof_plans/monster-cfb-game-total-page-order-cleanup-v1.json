@@ -12,7 +12,8 @@
     "streamlit_memory_lazy_router_cfb_game_total_page_order_cleanup_v1.py",
     "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py",
     "tests/test_monster_cfb_game_total_page_order_cleanup_v1.py",
-    "devsystem/runless_proof_plans/monster-cfb-game-total-page-order-cleanup-v1.json"
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page-order-cleanup-v1.json",
+    "devsystem/task_ledgers/monster-cfb-game-total-page-order-cleanup-v1.json"
   ],
   "dependencies": [
     "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1.py",
