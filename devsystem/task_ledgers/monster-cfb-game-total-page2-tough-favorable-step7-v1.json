@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page2-tough-favorable-step7-v1",
+  "title": "MONSTER CFB Game Total Page 2 — Tough Matchup + Favorable Team Step 7",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page2-unified-flow-repair-v1",
+  "step": "7/10",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_RUNLESS",
+  "base_main_sha": "b38576c863abffc9057672117bc870a36c91c30f",
+  "branch": "monster-cfb-game-total-page2-tough-favorable-step7-v1",
+  "problem": "Page 2 has verified matchup evidence but no dedicated Tough Matchup + Favorable Team stage after Best Bet.",
+  "root_cause": "The existing verified CFB offense-vs-defense matchup owner is not composed into the selected-event Page-2 flow as a concise stage-level summary.",
+  "patch": "Add a presentation-only Stage 6 summary that reuses the existing verified matchup contract, emits a tough side and/or favorable side only when at least three verified matchup tiles support the existing explicit read, and fails soft without inventing a side. Bind it after Best Bet in the existing Page-2 runtime. No new provider, model, projection, probability, ranking, selection, or sportsbook influence.",
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_proof_chain": true,
+    "authoritative_main_sha": "b38576c863abffc9057672117bc870a36c91c30f",
+    "github_actions_fallback_authorized": false
+  },
+  "protected": {"steps1_to_6_frozen": true, "projection": true, "probability_model": true, "providers": true, "ranking": true, "other_sports": true, "sportsbook_projection_influence": 0.0},
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_STAGE6_TOUGH_FAVORABLE_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OPEN_ONE_PR_THEN_SUBMIT_ONE_EXACT_HEAD_RUNLESS_PROOF"
+}
