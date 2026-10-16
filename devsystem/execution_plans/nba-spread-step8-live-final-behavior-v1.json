@@ -4,7 +4,7 @@
   "project": "API2",
   "workstream": "nba-spread-two-page-v1",
   "step": "8/10",
-  "source_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37",
+  "source_main_sha": "91571200631c101fb2b133c7db56e940bb0013b9",
   "goal": "Add fail-closed Kyre Sports Preview / Live-Final behavior. Capture exact pregame context while a verified matchup is UPCOMING or DELAYED; once it becomes LIVE, freeze that pregame snapshot so current live data cannot rewrite it; preserve the same frozen snapshot through FINAL; retain history across Streamlit reruns and rolling-window exit; never reconstruct missing pregame state after tip-off. Preserve frozen Steps 1-7 and defer fair spread, cover probability, model edge, and ranking to Steps 9-10.",
   "write_paths": [
     "devsystem/execution_plans/nba-spread-step8-live-final-behavior-v1.json",
@@ -38,7 +38,8 @@
     "one_authoritative_final_proof_chain": true,
     "duplicate_async_runs_allowed": false,
     "blind_retries_allowed": false,
-    "github_actions_fallback": 0
+    "github_actions_fallback": 0,
+    "unrelated_main_forward_port": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37 -> 91571200631c101fb2b133c7db56e940bb0013b9"
   },
   "architecture": {
     "state_authority": "FROZEN_STEP3_VERIFIED_SCHEDULE",

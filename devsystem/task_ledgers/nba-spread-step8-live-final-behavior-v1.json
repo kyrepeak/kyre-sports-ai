@@ -4,7 +4,7 @@
   "project": "API2",
   "workstream": "nba-spread-two-page-v1",
   "step": "8/10",
-  "source_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37",
+  "source_main_sha": "91571200631c101fb2b133c7db56e940bb0013b9",
   "authoritative_branch": "nba-spread-step8-live-final-r1",
   "authoritative_pr": null,
   "state": "TDD_RED_PENDING",
@@ -16,7 +16,10 @@
     "one_branch": true,
     "one_pr_max": true,
     "one_final_proof_chain": true,
-    "duplicate_async_runs": 0
+    "duplicate_async_runs": 0,
+    "main_drift_classification": "UNRELATED_MONSTER_CFB_FORWARD_PORT",
+    "main_drift_from": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37",
+    "main_drift_to": "91571200631c101fb2b133c7db56e940bb0013b9"
   },
   "tdd": {
     "red_required": true,
@@ -58,6 +61,6 @@
   },
   "freeze_token": "NBA_SPREAD_STEP8_LIVE_FINAL_BEHAVIOR_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "COMMIT_RED_TESTS_AND_VERIFY_EXPECTED_FAILURE",
+  "next_legal_action": "COMMIT_FORWARD_PORTED_RED_TESTS_AND_VERIFY_EXPECTED_FAILURE",
   "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
 }
