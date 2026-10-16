@@ -7,19 +7,21 @@
   "source_main_sha": "ab6e60a6def0991d6d726f5201e93e2cf13403c1",
   "authoritative_branch": "nba-spread-step9-fair-spread-r1",
   "authoritative_pr": null,
-  "state": "IMPLEMENTATION_READY_PENDING_ROUTER_THAW_AND_FINAL_PROOF",
+  "state": "IMPLEMENTATION_READY_FINAL_PROOF_PENDING",
   "step2a": {
     "active_problem": "Kyre Fair Spread + Cover Probability",
     "root_cause_class": "MISSING_FAIR_SPREAD_PROBABILITY_LAYER",
-    "scope_lease_id": "SCOPE-LEASE-7AAB4026F68681F35F1ED0A7",
-    "scope_lease_generation": 475,
-    "scope_lease_registry_revision": 843,
+    "scope_lease_id": "SCOPE-LEASE-C5FE0C9A6FE5273C36C29504",
+    "scope_lease_generation": 476,
+    "scope_lease_registry_revision": 845,
     "authorization_id": "AUTH-NBA-SPREAD-STEP9-R1",
     "one_branch": true,
     "one_pr_max": true,
     "one_final_proof_chain": true,
     "duplicate_async_runs": 0,
-    "parallel_conflict": false
+    "parallel_conflict_detected": true,
+    "parallel_conflict_resolved": true,
+    "parallel_conflict_resolution": "compatible same-authority forward commits adopted without overwrite or second branch"
   },
   "tdd": {
     "red_required": true,
@@ -56,7 +58,11 @@
     "router_to_blob": "32d5629efd569a38f3dbe3d99da75e7c642817ec",
     "required_thaw_id": "THAW-NBA-SPREAD-STEP9-FAIR-SPREAD-R1",
     "thaw_required_for_router": true,
-    "thaw_authorized": false
+    "thaw_authorized": true,
+    "thaw_registry_revision": 337,
+    "thaw_target_candidate": "f3999cada3f3ebd567c2c30d18e31a973894cda2",
+    "thaw_retarget_required": true,
+    "thaw_delta_unchanged": true
   },
   "proof": {
     "mode": "runless",
@@ -70,5 +76,5 @@
   },
   "freeze_token": "NBA_SPREAD_STEP9_FAIR_SPREAD_PROBABILITY_FROZEN",
   "green_plus_frozen_claimed": false,
-  "next_legal_action": "AUTHORIZE_SINGLE_ROUTER_THAW_FOR_FINAL_CANDIDATE_THEN_REQUEST_ONE_GREEN_PROOF"
+  "next_legal_action": "RETARGET_SAME_THAW_TO_FINAL_CANDIDATE_THEN_REQUEST_ONE_GREEN_PROOF"
 }
