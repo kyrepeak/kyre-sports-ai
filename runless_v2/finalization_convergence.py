@@ -30,7 +30,18 @@ def _state_name(value: Any) -> str:
     return str(getattr(raw, "value", raw) or "")
 
 
+def _authority_superseded(value: Any) -> bool:
+    detail = str(_field(value, "detail", "") or "")
+    prefix = "AUTHORITY_SUPERSEDED:"
+    if not detail.startswith(prefix):
+        return False
+    parts = detail.split(":", 2)
+    return len(parts) == 3 and len(parts[1]) == 40 and bool(parts[2])
+
+
 def _require_merge_authority(status: Any, target: FinalizationTarget) -> None:
+    if _authority_superseded(status):
+        raise FinalizationConvergenceError("RUNLESS_V2_STEP5_AUTHORITY_SUPERSEDED")
     if _state_name(status) != ProofState.MERGE_AUTHORIZED.value:
         raise FinalizationConvergenceError("RUNLESS_V2_STEP5_MERGE_NOT_AUTHORIZED")
     if str(_field(status, "proof_id", "")) != target.proof_id:
