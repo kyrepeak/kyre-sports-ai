@@ -71,9 +71,11 @@ def test_step9_event_identity_is_re_read_each_render_so_matchup_switches_cannot_
 def test_step9_production_entrypoint_activates_only_new_overlay() -> None:
     _overlay_source()
     app = APP.read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 import (" in app
-    assert "record_bootstrap_import_ms" in app
-    assert "render_app" in app
+    runtime = app[app.find("try:"):]
+    assert (
+        "from streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 import "
+        "record_bootstrap_import_ms, render_app"
+    ) in runtime
 
 
 def test_step9_is_routing_only_and_preserves_frozen_model_truth() -> None:
