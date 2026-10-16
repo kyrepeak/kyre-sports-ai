@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "task_id": "nba-spread-step10-decision-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "10/10",
+  "source_main_sha": "6eb6ed233dad19ab03c94738495e17ac93f632f7",
+  "authoritative_branch": "nba-spread-step10-decision-r1",
+  "problem": "add the final deterministic edge, production grade, Pick Strength, slate ranking, and spread-pick layer using only frozen Step-9 outputs",
+  "root_cause_class": "MISSING_FINAL_DECISION_LAYER",
+  "method": "TDD_RED_GREEN_RUNLESS_EXACT_HEAD",
+  "scope": [
+    "nba_spread_decision_v1.py",
+    "nba_spread_page_v5.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_step10_decision_v1.py",
+    "devsystem/execution_plans/nba-spread-step10-decision-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step10-decision-v1.json",
+    "devsystem/task_ledgers/nba-spread-step10-decision-v1.json"
+  ],
+  "invariants": {
+    "step9_model_math_modified": false,
+    "sportsbook_projection_influence": 0.0,
+    "new_provider_added": false,
+    "edge_uses_verified_step9_probability_only": true,
+    "push_normalized_before_edge": true,
+    "missing_or_unverified_inputs_fail_closed": true,
+    "live_final_uses_frozen_step9_inputs": true,
+    "ranking_is_deterministic": true,
+    "steps_1_9_reopened": false
+  },
+  "parallel_main_drift": {
+    "classified": true,
+    "foreign_merge_sha": "6eb6ed233dad19ab03c94738495e17ac93f632f7",
+    "foreign_workstream": "MONSTER CFB Game Total Step 5",
+    "scope_overlap": false
+  },
+  "finalization": "exact-head proof -> merge -> merged-main verification -> registry freeze/read-back -> Finalization Ledger V2 -> closeout -> lease release -> GREEN + FROZEN"
+}

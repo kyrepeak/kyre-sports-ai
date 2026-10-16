@@ -1,0 +1,81 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step10-decision-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "10/10",
+  "source_main_sha": "6eb6ed233dad19ab03c94738495e17ac93f632f7",
+  "authoritative_branch": "nba-spread-step10-decision-r1",
+  "authoritative_pr": null,
+  "state": "IMPLEMENTATION_READY_PENDING_ROUTER_THAW_AND_FINAL_PROOF",
+  "step2a": {
+    "active_problem": "Final NBA Spread decision layer",
+    "root_cause_class": "MISSING_FINAL_DECISION_LAYER",
+    "scope_lease_id": "SCOPE-LEASE-5D2F6E63B642C516A1B769D5",
+    "scope_lease_generation": 478,
+    "scope_lease_registry_revision": 849,
+    "authorization_id": "AUTH-NBA-SPREAD-STEP10-R1",
+    "one_branch": true,
+    "one_pr_max": true,
+    "one_final_proof_chain": true,
+    "duplicate_async_runs": 0,
+    "parallel_conflict": false
+  },
+  "tdd": {
+    "red_required": true,
+    "red_verified": true,
+    "red_candidate_sha": "968712d2caeea24be66678858d5c276a09e81f7c",
+    "red_proof_id": "nba-spread-step10-decision-v1-968712d2caeea24b-6080cbe0631e86af",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "red_expected_reason": "Step-10 decision module/page/router contract absent before implementation",
+    "green_verified": false,
+    "regression_verified": false
+  },
+  "behavior": {
+    "edge_logic": true,
+    "push_normalized_edge": true,
+    "production_grade": true,
+    "pick_strength": true,
+    "slate_ranking": true,
+    "final_pick": true,
+    "minimum_play_edge_pp": 2.0,
+    "step9_model_mutation": false,
+    "sportsbook_projection_influence": 0.0,
+    "new_provider": false,
+    "fail_closed_no_play": true,
+    "live_final_frozen_inputs": true
+  },
+  "frozen_protection": {
+    "steps_1_9_reopened": false,
+    "step9_page_modified": false,
+    "step9_test_file_modified": false,
+    "step9_runtime_target_preserved": "nba_spread_page_v4",
+    "step10_runtime_target": "nba_spread_page_v5",
+    "router_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "router_from_blob": "32d5629efd569a38f3dbe3d99da75e7c642817ec",
+    "router_to_blob": "b481420e29e404bd4db054b4c8559a5da202a3bb",
+    "required_thaw_id": "THAW-NBA-SPREAD-STEP10-DECISION-R1",
+    "thaw_required_for_router": true,
+    "thaw_authorized": false
+  },
+  "parallel_main_drift": {
+    "foreign_main_sha": "6eb6ed233dad19ab03c94738495e17ac93f632f7",
+    "foreign_workstream": "MONSTER CFB Game Total Step 5",
+    "scope_overlap": false,
+    "forward_port_completed": true
+  },
+  "proof": {
+    "mode": "runless",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "exact_head_verified": false,
+    "merge_authorized": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP10_DECISION_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "AUTHORIZE_SINGLE_ROUTER_THAW_FOR_FINAL_CANDIDATE_THEN_REQUEST_ONE_GREEN_PROOF"
+}
