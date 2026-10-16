@@ -1,5 +1,6 @@
 streamlit
 requests
+pypdf
 pandas
 numpy
 streamlit-autorefresh
@@ -37,3 +38,4 @@ posthog~=7.48
 # WNBA Data Completeness Repair V1 Step 3 final merged-main deployment refresh after session-only handoff 2026-10-07 R3
 # CFB Game Total Games on This Day Step 1 full Streamlit redeploy trigger 2026-10-10 R1
 # CFB Game Total Native Website Rebuild Step 8 stale-process full Streamlit redeploy trigger 2026-10-10 R1
+# NBA Spread Step 10 post-freeze production dependency repair: install pypdf in Streamlit root runtime 2026-10-16 R1
