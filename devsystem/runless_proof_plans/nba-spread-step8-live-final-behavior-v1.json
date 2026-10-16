@@ -4,19 +4,29 @@
   "workstream": "nba-spread-two-page-v1",
   "source_main_sha": "91571200631c101fb2b133c7db56e940bb0013b9",
   "commands": [
-    ["python","-m","pytest","-q","tests/test_nba_spread_step8_live_final_behavior_v1.py"]
+    ["python","-m","py_compile","nba_spread_live_final_v1.py","nba_spread_page_v3.py","nba_spread_page_v2.py","streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py"],
+    ["python","-m","pytest","-q","tests/test_nba_spread_step8_live_final_behavior_v1.py","tests/test_nba_spread_step7_injury_availability_v1.py","tests/test_nba_spread_step6_market_lines_v1.py","tests/test_nba_spread_step2_site_activation_v1.py","tests/test_nba_spread_provider_resilience_step3_r1.py"]
   ],
   "artifacts": [
     "devsystem/execution_plans/nba-spread-step8-live-final-behavior-v1.json",
     "devsystem/runless_proof_plans/nba-spread-step8-live-final-behavior-v1.json",
     "devsystem/task_ledgers/nba-spread-step8-live-final-behavior-v1.json",
+    "nba_spread_live_final_v1.py",
+    "nba_spread_page_v3.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
     "tests/test_nba_spread_step8_live_final_behavior_v1.py"
   ],
   "dependencies": [
     "nba_spread_page_v2.py",
     "nba_spread_page_v1.py",
+    "nba_spread_injury_availability_v1.py",
+    "nba_spread_market_lines_v1.py",
+    "nba_spread_most_bet_v1.py",
     "nba_spread_schedule_v1.py",
-    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py"
+    "nba_spread_sharp_money_v1.py",
+    "nba_spread_page_provider_resilience_step3_r1.py",
+    "nba_spread_step2_activation_v1.py",
+    "devsystem/runless_proof_plan_v1.py"
   ],
   "probes": [],
   "timeout_seconds": 600,
