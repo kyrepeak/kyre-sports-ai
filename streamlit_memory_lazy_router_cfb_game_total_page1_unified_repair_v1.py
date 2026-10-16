@@ -12,7 +12,7 @@ from typing import Any, Callable
 import streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1 as cfb_prior
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB GAME TOTAL PAGE1 UNIFIED REPAIR BRIDGE V1"
-PAGE1_REPAIR_ROUTE = "cfb_game_total_clean_page_v45"
+PAGE1_REPAIR_ROUTE = "cfb_game_total_page1_compact_layout_v1"
 MAY_MODIFY_MODEL = False
 MAY_MODIFY_PROJECTION = False
 MAY_MODIFY_PROBABILITY = False

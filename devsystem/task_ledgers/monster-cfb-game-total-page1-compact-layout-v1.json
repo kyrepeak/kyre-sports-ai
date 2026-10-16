@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "task_id": "monster-cfb-game-total-page1-compact-layout-v1",
+  "title": "MONSTER CFB Game Total Page 1 Compact Layout V1",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page1-compact-layout-v1",
+  "step": "1/1",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_GREEN",
+  "base_main_sha": "e394078a33bad6a53730275930e07b3f8985b572",
+  "branch": "monster-cfb-game-total-page1-compact-layout-v1",
+  "scope_lease_id": "SCOPE-LEASE-3BB2A6BCFB16E16A3CE5998F",
+  "authorization_id": "AUTH-MONSTER-CFB-GT-PAGE1-COMPACT-V1-GREEN-R1",
+  "problem": "CFB Game Total Page 1 is vertically overloaded on mobile because deep analysis steps are forced open and mobile team comparison layouts collapse to single-column towers.",
+  "root_cause": "Presentation defaults, not data/model logic: Steps 1-3 emit open details and narrow-screen CSS collapses verified two-team evidence to one card per row.",
+  "patch": "Page-1-only presentation wrapper above V45 converts shared analysis details into one exclusive collapsed accordion and overrides narrow-screen Identity, Team Performance and Team Evidence layouts while preserving all analytics and Page 2.",
+  "protected": {
+    "page2": true,
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "ranking": true,
+    "selection": true,
+    "market_ownership": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_proof_chain": true,
+    "duplicate_execution_paths": 0,
+    "duplicate_prs": 0,
+    "exact_head_merge_required": true,
+    "lease_id": "SCOPE-LEASE-3BB2A6BCFB16E16A3CE5998F",
+    "lease_generation": 504,
+    "parallel_api2_lane_preserved": true
+  },
+  "tdd": {
+    "red_test": "tests/test_monster_cfb_game_total_page1_compact_layout_v1.py",
+    "red_product_code_written": false,
+    "red_proof_id": "monster-cfb-game-total-page1-compact-layout-v1-0deaf978817b34e4-ba8123d18960f22f",
+    "red_candidate_sha": "0deaf978817b34e41ac47faa0c17a9f75ab04f01",
+    "red_terminal_state": "FAILED",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "green_product_code_written_after_red": true
+  },
+  "acceptance": [
+    "Analysis steps no longer all render expanded by default",
+    "Analysis details share one exclusive accordion group",
+    "Mobile identity comparison stays side-by-side instead of becoming a tall single-column tower",
+    "Mobile Team Performance stays side-by-side instead of becoming a tall single-column tower",
+    "Mobile Team Evidence stays side-by-side instead of becoming a tall single-column tower",
+    "Page 2 remains on frozen V45 owner",
+    "No model, projection, probability, ranking, selection, provider, market-owner, sportsbook, or other-sport changes"
+  ],
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE1_COMPACT_LAYOUT_V1_FROZEN",
+  "green_plus_frozen_claimed": false
+}
