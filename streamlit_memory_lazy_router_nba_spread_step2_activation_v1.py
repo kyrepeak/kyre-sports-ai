@@ -27,6 +27,7 @@ PROVIDER_RESILIENCE_PAGE = "nba_spread_page_provider_resilience_step3_r1"
 STEP7_ACTIVE_PAGE = "nba_spread_page_v2"
 STEP8_ACTIVE_PAGE = "nba_spread_page_v3"
 STEP9_ACTIVE_PAGE = "nba_spread_page_v4"
+STEP10_ACTIVE_PAGE = "nba_spread_page_v5"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_nba_market"
 ROUTE_SESSION_MARKET = "ks_nba_market_touch"
@@ -123,7 +124,7 @@ def _render_nba_spread(market: str) -> Any:
     bind_resilient_schedule_loader = getattr(provider_bridge, "_bind_resilient_schedule_loader", None)
     if callable(bind_resilient_schedule_loader):
         bind_resilient_schedule_loader()
-    page = importlib.import_module(STEP9_ACTIVE_PAGE)
+    page = importlib.import_module(STEP10_ACTIVE_PAGE)
     return page.render_nba_spread_page()
 
 
@@ -194,6 +195,7 @@ __all__ = [
     "STEP7_ACTIVE_PAGE",
     "STEP8_ACTIVE_PAGE",
     "STEP9_ACTIVE_PAGE",
+    "STEP10_ACTIVE_PAGE",
     "FROZEN_PARENT_ROUTER",
     "MAY_MODIFY_EXISTING_NBA_WORKSTREAMS",
     "MAY_MODIFY_MODEL",
