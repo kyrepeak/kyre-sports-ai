@@ -1,0 +1,31 @@
+{
+  "version": "API2_TASK_LEDGER_V1",
+  "task_id": "passing-yards-picker-fast-load-r1",
+  "workstream": "passing-yards-picker-fast-load-r1",
+  "branch": "passing-yards-picker-fast-load-r1",
+  "status": "IMPLEMENTED_AWAITING_FINAL_PROOF",
+  "source_main": "f205c051f60050f0ff9616e780c2affed6d21b5e",
+  "problem": "The Passing Yards quarterback picker renders oversized player/team images on mobile and enters the expensive selected-player analysis stack before a quarterback is selected, making the initial picker visually oversized and slower than necessary.",
+  "root_cause": "The live Passing Yards owner always enters frozen V87/V86/V85 and the historical picker is composed only after the deep Passing Yards chain has already executed. Legacy image classes also inherit later responsive overrides that can make picker headshots/team logos fill most of the mobile card.",
+  "repair": "Additive V88 fast-picker owner uses only verified slate plus exact quarterback identity before player selection, renders isolated compact cards with hard image bounds and lazy/async image hints, returns without importing the selected-player analysis owner, and delegates selected quarterback requests unchanged to frozen V87. V239 advances only the Passing Yards hub pointer from V87 to V88.",
+  "frozen_behavior": {
+    "v87_selected_qb_page2": "unchanged",
+    "projection_math": "unchanged",
+    "context_math": "unchanged",
+    "probability_math": "unchanged",
+    "market_math": "unchanged",
+    "provider_behavior": "unchanged",
+    "sportsbook_projection_influence": 0.0,
+    "stake_sizing_enabled": false
+  },
+  "acceptance": [
+    "V88 is presentation/performance-only and keeps V87 as the selected-QB owner.",
+    "V88 has no top-level Streamlit, pandas, Passing Yards hub, or identity imports.",
+    "The unselected route loads verified slate plus exact QB identity only and returns without V87.",
+    "The selected route delegates unchanged to frozen V87.",
+    "QB headshots are hard-bounded to 112px desktop, 96px mobile, and 84px narrow-mobile CSS sizes.",
+    "Team logos are hard-bounded to 56px desktop, 44px mobile, and 38px narrow-mobile CSS sizes.",
+    "Image elements keep explicit width/height plus lazy loading, async decoding, and low fetch priority.",
+    "V239 advances only Passing Yards ownership to V88 and preserves non-Passing-Yards delegation."
+  ]
+}
