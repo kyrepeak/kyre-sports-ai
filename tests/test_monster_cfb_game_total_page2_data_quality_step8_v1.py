@@ -133,3 +133,89 @@ def test_step8_runtime_uses_data_quality_layer_without_recomputing_model() -> No
     assert "data_quality.format_optional_percent" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "NETWORK_CALLS_ADDED = 0" in source
+
+
+def test_step8_rendered_page2_output_applies_normalization_quality_and_no_bet_copy(monkeypatch) -> None:
+    runtime = _runtime()
+
+    monkeypatch.setattr(
+        runtime.step4,
+        "build_outlook_projection_summary_html",
+        lambda **kwargs: (
+            "<outlook>"
+            f"{kwargs['over_probability']}|{kwargs['under_probability']}|"
+            f"{kwargs['projected_total']}|{kwargs['market_line']}|{kwargs['edge']}"
+            "</outlook>"
+        ),
+    )
+    monkeypatch.setattr(
+        runtime.step5,
+        "build_team_snapshot_key_drivers_html",
+        lambda **kwargs: (
+            "<snapshot>"
+            f"{kwargs['away_pace']}|{kwargs['home_pace']}|"
+            f"{kwargs['away_explosive']}|{kwargs['home_explosive']}|"
+            f"{kwargs['away_red_zone']}|{kwargs['home_red_zone']}|"
+            f"{kwargs['away_defense']}|{kwargs['home_defense']}"
+            "</snapshot>"
+        ),
+    )
+    monkeypatch.setattr(runtime.step6, "build_trends_scoring_breakdown_html", lambda **kwargs: "<trends/>")
+    monkeypatch.setattr(runtime.step7, "build_line_lab_html", lambda **kwargs: "<line-lab/>")
+    monkeypatch.setattr(
+        runtime.stage5,
+        "build_best_bet_html",
+        lambda recommendation: f"<best-bet>{recommendation['rationale']}</best-bet>",
+    )
+    monkeypatch.setattr(runtime, "_matchup_contract", lambda *args, **kwargs: {})
+    monkeypatch.setattr(runtime.stage6, "build_tough_favorable_html", lambda contract: "<tough-favorable/>")
+
+    payload = {
+        "identity": {
+            "away": {"team": "Away State"},
+            "home": {"team": "Home State"},
+        },
+        "away": {
+            "plays_per_game": 71.234,
+            "yards_per_play": 0.184,
+            "red_zone_td_rate": 0.631,
+            "points_allowed_pg": 13.0,
+        },
+        "home": {
+            "red_zone_td_rate": 0.552,
+            "points_allowed_pg": 0,
+        },
+        "display_game": {
+            "event_id": "step8-render-proof",
+            "market_identity_verified": False,
+            "market_projection_weight": 0.0,
+        },
+        "raw": {
+            "over_probability": 0.69461675,
+            "under_probability": 0.30538325,
+            "recent_totals": [67.0, 72.0],
+            "scoring_breakdown": {},
+        },
+        "final": {
+            "ready": True,
+            "forecast_ready": True,
+            "projected_total": 69.46167500000001,
+        },
+    }
+
+    html = runtime.build_page2_body_html(payload)
+
+    assert "69.5%|30.5%|69.5|No verified market total available|No verified edge available" in html
+    assert "71.2|None|18.4%|None|63.1%|55.2%|13.0|0.0" in html
+    assert "69.46167500000001" not in html
+
+    assert '<span>Market</span><strong>Unavailable</strong>' in html
+    assert '<span>Pace</span><strong>Partial</strong>' in html
+    assert '<span>Explosives</span><strong>Partial</strong>' in html
+    assert '<span>Red Zone</span><strong>Verified</strong>' in html
+    assert '<span>Trends</span><strong>Partial</strong>' in html
+
+    assert (
+        "Model favors Over, but verified market data is unavailable, so no official bet is issued."
+        in html
+    )
