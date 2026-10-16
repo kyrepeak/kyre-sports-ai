@@ -19,6 +19,7 @@ import streamlit as st
 import cfb_game_total_clean_page_v21 as late_analysis_owner
 import cfb_game_total_clean_page_v36 as hero_runtime_owner
 import cfb_game_total_clean_page_v38 as frozen_page
+import cfb_game_total_page2_data_quality_step8_v1 as data_quality
 import cfb_game_total_page2_step2_matchup_hero_phx_v1 as step2
 import cfb_game_total_page2_step3_integrated_flow_v1 as step3
 import cfb_game_total_page2_step4_outlook_summary_v1 as step4
@@ -48,6 +49,7 @@ _LOCK = RLock()
 _LIVE_CONTEXT: ContextVar[dict[str, Any]] = ContextVar("cfb_gt_page2_step8_context", default={})
 PAGE2_STEP8_CSS = '<style>.gtp2s8-final{max-width:1180px;margin:0 auto;color:#f7fbff;overflow-x:clip}.gtp2s8-back{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px auto 10px;padding:8px 10px;border:1px solid rgba(79,190,232,.22);border-radius:12px;background:rgba(5,22,34,.82)}.gtp2s8-back a{display:inline-flex;align-items:center;min-height:40px;padding:0 12px;border:1px solid rgba(83,207,250,.34);border-radius:10px;background:rgba(15,82,111,.25);color:#80ddff;text-decoration:none;font-size:9px;font-weight:1000;letter-spacing:.05em;text-transform:uppercase}.gtp2s8-back span{min-width:0;color:#7f9eb0;font-size:8px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gtp2s8-cert{margin:0 auto 18px;padding:9px 11px;border:1px solid rgba(71,224,174,.24);border-radius:12px;background:rgba(8,56,47,.22);color:#80efc3;font-size:8px;font-weight:900;letter-spacing:.04em;text-align:center}.gt159-shell>.gtp2s8-live~.gt159-section,.gt159-shell>.gtp2s8-live~.gt159-final,.gt159-shell>.gtp2s8-live~.gt159-top5{display:none!important}@media(max-width:760px){.gtp2s8-final{width:100%;max-width:100%;overflow-x:hidden}.gtp2s8-back{align-items:flex-start;flex-direction:column}.gtp2s8-back a{min-height:44px}.gtp2s8-back span{max-width:100%}}@media(max-width:480px){.gtp2s8-back{margin-bottom:8px;padding:7px}.gtp2s8-cert{font-size:7px;padding:8px}.gtp2s8-final *{max-width:100%;box-sizing:border-box}}</style>'
 
+
 def _mapping(value: Any) -> Mapping[str, Any]: return value if isinstance(value, Mapping) else {}
 def _first(mapping: Mapping[str, Any], *keys: str) -> Any:
     for key in keys:
@@ -59,10 +61,8 @@ def _number(value: Any) -> float | None:
     except (TypeError, ValueError): return None
     return number if isfinite(number) else None
 def _percent(value: Any) -> str:
-    number=_number(value)
-    if number is None: return str(value or "").strip() or "—"
-    if 0.0 <= number <= 1.0: number*=100.0
-    return f"{number:.1f}%"
+    formatted=data_quality.format_optional_percent(value)
+    return formatted if formatted is not None else str(value or "").strip() or "—"
 def _projected(raw, final): return (_first(final,"projected_combined_total","projected_total") if final.get("ready") else None) or _first(raw,"projected_combined_total","projected_total")
 def _market_line(raw, display_game): return _first(display_game,"market_total","verified_market_total") or _first(raw,"analysis_line","market_total")
 def _display_edge(projected, market):
@@ -100,11 +100,44 @@ def _line_scenarios(raw,display_game):
         over,under=_distribution_line_probabilities(raw,line); result.append({"line":line,"over_probability":_percent(over),"under_probability":_percent(under)})
     return result
 def _team_profile_value(profile,*keys): return _first(profile,*keys)
+def _display_profile_number(value):
+    formatted=data_quality.format_optional_number(value)
+    return formatted if formatted is not None else value
+def _display_profile_percent(value):
+    formatted=data_quality.format_optional_percent(value)
+    if formatted is not None:return formatted
+    text=str(value or "").strip()
+    return text or None
+def _display_explosive(value):
+    number=_number(value)
+    if number is None:return value
+    if 0.0 <= number <= 1.0:return data_quality.format_optional_percent(number)
+    return data_quality.format_optional_number(number)
+def _display_trend_number(value,*,missing):
+    formatted=data_quality.format_optional_number(value)
+    if formatted is not None:return formatted
+    text=str(value or "").strip()
+    return text if text and text!="—" else missing
+def _display_trend_percent(value,*,missing):
+    formatted=data_quality.format_optional_percent(value)
+    if formatted is not None:return formatted
+    text=str(value or "").strip()
+    return text if text and text!="—" else missing
+def _owned_lean(raw,final):
+    value=_first(final,"side","lean","pick","recommendation") or _first(raw,"side","lean","pick","recommendation")
+    text=str(value or "").strip().upper()
+    if text in {"OVER","UNDER"}:return text
+    over_value=_first(final,"over_probability"); under_value=_first(final,"under_probability")
+    if over_value is None:over_value=_first(raw,"over_probability")
+    if under_value is None:under_value=_first(raw,"under_probability")
+    over,under=_number(over_value),_number(under_value)
+    if over is not None and under is not None and over!=under:return "OVER" if over>under else "UNDER"
+    return None
 def _recommendation(raw,final,display_game):
     projected=_projected(raw,final); market=_market_line(raw,display_game); pn,mn=_number(projected),_number(market); edge=_display_edge(projected,market); confidence=_first(final,"grade","confidence_label","confidence")
     def no_bet(reason): return {"side":"NO BET","line":market,"probability":None,"expected_total":projected,"edge":edge,"confidence":confidence,"rationale":reason}
     if final.get("ready") is not True or final.get("forecast_ready") is not True:return no_bet("No bet: the independent Game Total forecast is not qualified.")
-    if mn is None or display_game.get("market_identity_verified") is not True or _number(display_game.get("market_projection_weight"))!=0.0:return no_bet("No bet: a verified market total is unavailable.")
+    if mn is None or display_game.get("market_identity_verified") is not True or _number(display_game.get("market_projection_weight"))!=0.0:return no_bet(data_quality.market_unavailable_rationale(_owned_lean(raw,final)))
     if pn is None:return no_bet("No bet: the qualified forecast has no verified expected total.")
     over,under=_distribution_line_probabilities(raw,mn)
     if over is None or under is None:return no_bet("No bet: the frozen total distribution is unavailable at the verified line.")
@@ -117,10 +150,10 @@ def _recommendation(raw,final,display_game):
         side,probability="UNDER",under
     return {"side":side,"line":mn,"probability":_percent(probability),"expected_total":projected,"edge":edge,"confidence":confidence,"rationale":f"Qualified frozen forecast and distribution favor {side} at the verified market total."}
 
+
 def _matchup_contract(identity,away,home,display_game):
     """Reuse the existing verified CFB matchup owner; Step 7 adds no provider or model."""
     return matchup_read_owner.build_step4_contract(identity,away,home,display_game,load_engine=True,load_fallback=True)
-
 def build_page2_header_html(payload):
     identity,away,home,display_game,raw,final=map(_mapping,(payload.get("identity"),payload.get("away"),payload.get("home"),payload.get("display_game"),payload.get("raw"),payload.get("final")))
     event_id=_event_id(display_game); market=_market_line(raw,display_game); confidence=_percent(_first(final,"forecast_strength","confidence"))
@@ -128,16 +161,34 @@ def build_page2_header_html(payload):
     return f'{PAGE2_STEP8_CSS}<div class="gtp2s8-final gtp2s8-live" data-testid="gtp2s8-final" data-step8="{STEP8_MARKER}" data-timezone="{TIMEZONE}" data-event-id="{escape(event_id)}"><div class="gtp2s8-back" data-testid="gtp2s8-back-to-slate"><a href="?ks_jump_sport=CFB&amp;ks_jump_market=Game+Total" target="_self">← Back to Slate</a><span>Exact event {escape(event_id or "—")} • Phoenix time</span></div>{hero}{step3.build_integrated_game_total_flow_html(active_step=1)}</div>'
 def build_page2_body_html(payload):
     identity,away,home,display_game,raw,final=map(_mapping,(payload.get("identity"),payload.get("away"),payload.get("home"),payload.get("display_game"),payload.get("raw"),payload.get("final")))
-    projected=_projected(raw,final); market=_market_line(raw,display_game); over,under=_distribution_line_probabilities(raw,market)
+    projected=_projected(raw,final); market=_market_line(raw,display_game); edge=_display_edge(projected,market); over,under=_distribution_line_probabilities(raw,market)
     if over is None and under is None: over,under=raw.get("over_probability"),raw.get("under_probability")
-    outlook=step4.build_outlook_projection_summary_html(over_probability=over,under_probability=under,projected_total=projected,market_line=market,edge=_display_edge(projected,market),confidence_label=_first(final,"grade","confidence_label") or _percent(_first(final,"forecast_strength","confidence")))
+    over_display=data_quality.format_optional_percent(over) or "No verified Over probability available"
+    under_display=data_quality.format_optional_percent(under) or "No verified Under probability available"
+    projected_display=data_quality.display_number(projected,missing="No verified projected total available")
+    market_display=data_quality.display_number(market,missing="No verified market total available")
+    edge_display=data_quality.display_number(edge,missing="No verified edge available")
+    outlook=step4.build_outlook_projection_summary_html(over_probability=over_display,under_probability=under_display,projected_total=projected_display,market_line=market_display,edge=edge_display,confidence_label=_first(final,"grade","confidence_label") or _percent(_first(final,"forecast_strength","confidence")))
     away_name=_first(_mapping(identity.get("away")),"team","name") or _first(away,"team","name"); home_name=_first(_mapping(identity.get("home")),"team","name") or _first(home,"team","name"); favorable=raw.get("favorable_for") if isinstance(raw.get("favorable_for"),Mapping) else {}
-    snapshot=step5.build_team_snapshot_key_drivers_html(away_team=away_name,home_team=home_name,away_pace=_team_profile_value(away,"plays_per_game","expected_plays","pace","pace_label"),home_pace=_team_profile_value(home,"plays_per_game","expected_plays","pace","pace_label"),away_explosive=_team_profile_value(away,"yards_per_play","explosive_rate","explosive_efficiency","explosive"),home_explosive=_team_profile_value(home,"yards_per_play","explosive_rate","explosive_efficiency","explosive"),away_red_zone=_percent(_team_profile_value(away,"red_zone_td_rate","red_zone_rate","red_zone")),home_red_zone=_percent(_team_profile_value(home,"red_zone_td_rate","red_zone_rate","red_zone")),away_defense=_team_profile_value(away,"points_allowed_pg","points_allowed","defensive_efficiency","defense"),home_defense=_team_profile_value(home,"points_allowed_pg","points_allowed","defensive_efficiency","defense"),favorable_for=favorable)
+    away_pace=_team_profile_value(away,"plays_per_game","expected_plays","pace","pace_label"); home_pace=_team_profile_value(home,"plays_per_game","expected_plays","pace","pace_label")
+    away_explosive=_team_profile_value(away,"yards_per_play","explosive_rate","explosive_efficiency","explosive"); home_explosive=_team_profile_value(home,"yards_per_play","explosive_rate","explosive_efficiency","explosive")
+    away_red_zone=_team_profile_value(away,"red_zone_td_rate","red_zone_rate","red_zone"); home_red_zone=_team_profile_value(home,"red_zone_td_rate","red_zone_rate","red_zone")
+    away_defense=_team_profile_value(away,"points_allowed_pg","points_allowed","defensive_efficiency","defense"); home_defense=_team_profile_value(home,"points_allowed_pg","points_allowed","defensive_efficiency","defense")
+    snapshot=step5.build_team_snapshot_key_drivers_html(away_team=away_name,home_team=home_name,away_pace=_display_profile_number(away_pace),home_pace=_display_profile_number(home_pace),away_explosive=_display_explosive(away_explosive),home_explosive=_display_explosive(home_explosive),away_red_zone=_display_profile_percent(away_red_zone),home_red_zone=_display_profile_percent(home_red_zone),away_defense=_display_profile_number(away_defense),home_defense=_display_profile_number(home_defense),favorable_for=favorable)
     scoring_map=raw.get("scoring_breakdown") if isinstance(raw.get("scoring_breakdown"),Mapping) else {}
-    trends=step6.build_trends_scoring_breakdown_html(recent_totals=raw.get("recent_totals") if isinstance(raw.get("recent_totals"),Sequence) and not isinstance(raw.get("recent_totals"),(str,bytes)) else [],market_line=market,scoring_breakdown=scoring_map,explosive_scoring=_first(raw,"explosive_scoring","explosive_scoring_label"),scoring_opportunities=_first(raw,"scoring_opportunities","scoring_opportunity_rate"),red_zone_finishing=_first(raw,"red_zone_finishing","red_zone_finish_rate"),away_team=away_name,home_team=home_name,away_profile=away,home_profile=home,as_of_day=_selected_day(identity,display_game))
+    scoring_map={key:(_display_profile_number(value) if key in {"away_1h","home_1h","away_2h","home_2h","q1","q2","q3","q4"} else value) for key,value in scoring_map.items()}
+    recent_totals=raw.get("recent_totals") if isinstance(raw.get("recent_totals"),Sequence) and not isinstance(raw.get("recent_totals"),(str,bytes)) else []
+    explosive_scoring=_display_trend_number(_first(raw,"explosive_scoring","explosive_scoring_label"),missing="No verified explosive-scoring data available")
+    scoring_opportunities=_display_trend_number(_first(raw,"scoring_opportunities","scoring_opportunity_rate"),missing="No verified scoring-opportunity data available")
+    red_zone_finishing=_display_trend_percent(_first(raw,"red_zone_finishing","red_zone_finish_rate"),missing="No verified red-zone finishing data available")
+    trends=step6.build_trends_scoring_breakdown_html(recent_totals=recent_totals,market_line=market_display,scoring_breakdown=scoring_map,explosive_scoring=explosive_scoring,scoring_opportunities=scoring_opportunities,red_zone_finishing=red_zone_finishing,away_team=away_name,home_team=home_name,away_profile=away,home_profile=home,as_of_day=_selected_day(identity,display_game))
+    split_keys=("away_1h","home_1h","away_2h","home_2h","q1","q2","q3","q4")
+    splits_available=any(scoring_map.get(key) not in (None,"") for key in split_keys)
+    recent_available=bool(recent_totals) or bool(away.get("completed_games")) or bool(home.get("completed_games"))
+    quality=data_quality.build_data_quality_strip_html(market=data_quality.market_quality(market,identity_verified=display_game.get("market_identity_verified") is True,projection_weight=display_game.get("market_projection_weight")),pace=data_quality.pair_quality(away_pace,home_pace),explosives=data_quality.pair_quality(away_explosive,home_explosive),red_zone=data_quality.pair_quality(away_red_zone,home_red_zone),trends=data_quality.trends_quality(recent_available=recent_available,splits_available=splits_available))
     scenarios=_line_scenarios(raw,display_game); line_lab=step7.build_line_lab_html(line_scenarios=scenarios,selected_line=_first(raw,"analysis_line") or market); best_bet=stage5.build_best_bet_html(_recommendation(raw,final,display_game))
     matchup_contract=_matchup_contract(identity,away,home,display_game); tough_favorable=stage6.build_tough_favorable_html(matchup_contract)
-    return f'<div class="gtp2s8-final gtp2s8-live" data-testid="gtp2s8-body">{outlook}{snapshot}{trends}{line_lab}{best_bet}{tough_favorable}<div class="gtp2s8-cert" data-testid="gtp2s8-live-cert-state" data-sportsbook-projection-influence="0.0">LIVE SELECTED-EVENT DATA • EXACT IDENTITY • RESPONSIVE CERT TARGET</div></div>'
+    return f'<div class="gtp2s8-final gtp2s8-live" data-testid="gtp2s8-body">{quality}{outlook}{snapshot}{trends}{line_lab}{best_bet}{tough_favorable}<div class="gtp2s8-cert" data-testid="gtp2s8-live-cert-state" data-sportsbook-projection-influence="0.0">LIVE SELECTED-EVENT DATA • EXACT IDENTITY • RESPONSIVE CERT TARGET</div></div>'
 def build_page2_final_html(payload): return build_page2_header_html(payload)+build_page2_body_html(payload)
 def _live_payload(raw,final,display_game,statuses,ready_count):
     payload=dict(_LIVE_CONTEXT.get() or {}); payload.update({"raw":raw,"final":final,"display_game":display_game,"statuses":statuses,"ready_count":ready_count}); return payload
