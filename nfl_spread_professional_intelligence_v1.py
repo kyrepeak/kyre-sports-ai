@@ -21,8 +21,9 @@ CSS = r"""
 .ksp7-card{border:1px solid rgba(86,194,255,.28);border-radius:22px;padding:20px;margin:16px 0;background:linear-gradient(180deg,#071827 0%,#07131f 100%);box-shadow:0 14px 36px rgba(0,0,0,.18);color:#eaf5ff}
 .ksp7-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;border-bottom:1px solid rgba(109,200,255,.16);padding-bottom:15px}.ksp7-phase{font-size:12px;font-weight:900;letter-spacing:.08em;color:#63efbd;text-transform:uppercase}.ksp7-title{font-size:24px;font-weight:850;line-height:1.18;margin-top:7px}.ksp7-meta{font-size:13px;color:#8fa8bc;margin-top:8px;line-height:1.55}.ksp7-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.ksp7-badge{font-size:11px;font-weight:800;padding:7px 10px;border:1px solid rgba(86,194,255,.3);border-radius:999px;color:#a9ddff}.ksp7-badge.good{border-color:rgba(61,232,173,.48);color:#78efc2}.ksp7-badge.warn{border-color:rgba(247,198,89,.48);color:#f7cf72}
 .ksp7-verdict{margin-top:16px;border:1px solid rgba(61,232,173,.46);border-radius:18px;padding:17px;background:linear-gradient(135deg,rgba(10,55,56,.5),rgba(8,29,43,.9))}.ksp7-kicker{font-size:11px;font-weight:900;letter-spacing:.08em;color:#7fa0b8;text-transform:uppercase}.ksp7-lean{font-size:27px;font-weight:900;margin-top:5px;color:#7af0c4}.ksp7-explain{font-size:14px;color:#c6d6e2;margin-top:6px;line-height:1.5}.ksp7-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:13px}.ksp7-tile{padding:12px;border-radius:13px;border:1px solid rgba(86,194,255,.18);background:#071521}.ksp7-tile span{display:block;font-size:10px;font-weight:850;letter-spacing:.06em;color:#7994a8;text-transform:uppercase}.ksp7-tile b{display:block;font-size:18px;margin-top:6px}.ksp7-tile.hero b{color:#78efc2}
-.ksp7-section{margin-top:15px;border:1px solid rgba(86,194,255,.18);border-radius:17px;padding:15px;background:rgba(5,17,27,.72)}.ksp7-section h3{font-size:12px;letter-spacing:.075em;text-transform:uppercase;margin:0 0 12px;color:#9ab6ca}.ksp7-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ksp7-team{border:1px solid rgba(86,194,255,.16);border-radius:14px;padding:13px}.ksp7-team-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.ksp7-team-name{font-weight:850}.ksp7-team-rec{font-size:11px;color:#748da1}.ksp7-mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.ksp7-mini div{padding:9px;border-radius:10px;background:#081927}.ksp7-mini span{display:block;font-size:9px;color:#718ca0;text-transform:uppercase;font-weight:800}.ksp7-mini b{display:block;margin-top:4px;font-size:14px}.ksp7-row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.ksp7-metric{padding:11px;border-radius:12px;background:#081927;border:1px solid rgba(86,194,255,.12)}.ksp7-metric span{display:block;font-size:9px;color:#7894a8;font-weight:850;text-transform:uppercase}.ksp7-metric b{display:block;font-size:16px;margin-top:5px}.ksp7-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ksp7-list{border-radius:12px;background:#071722;padding:12px}.ksp7-list h4{font-size:11px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}.ksp7-item{font-size:12px;color:#c7d6e0;padding:8px 0;border-top:1px solid rgba(255,255,255,.07);line-height:1.45}.ksp7-item:first-of-type{border-top:0}.ksp7-method{font-size:12px;color:#8da6b8;line-height:1.55}.ksp7-method strong{color:#c8dce9}.ksp7-gated{padding:14px;border-radius:12px;background:rgba(94,24,30,.2);color:#f0b8bc}.ksp7-edge{color:#78efc2!important}
-@media(max-width:720px){.ksp7-card{padding:14px;border-radius:18px}.ksp7-title{font-size:21px}.ksp7-grid{grid-template-columns:1fr 1fr}.ksp7-compare,.ksp7-cols{grid-template-columns:1fr}.ksp7-row3{grid-template-columns:1fr 1fr}.ksp7-lean{font-size:23px}}
+.ksp7-section{margin-top:15px;border:1px solid rgba(86,194,255,.18);border-radius:17px;padding:15px;background:rgba(5,17,27,.72)}.ksp7-section h3{font-size:12px;letter-spacing:.075em;text-transform:uppercase;margin:0 0 12px;color:#9ab6ca}.ksp7-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ksp7-team{border:1px solid rgba(86,194,255,.16);border-radius:14px;padding:13px;min-width:0}.ksp7-team-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.ksp7-team-ident{display:flex;align-items:center;gap:9px;min-width:0}.ksp7-team-logo{width:34px;height:34px;object-fit:contain;flex:0 0 34px}.ksp7-team-fallback{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:0 0 34px;background:#0d2637;border:1px solid rgba(86,194,255,.2);font-size:10px;font-weight:900;color:#a9ddff}.ksp7-team-copy{min-width:0}.ksp7-team-name{font-weight:850;white-space:normal;line-height:1.2}.ksp7-team-rec{font-size:11px;color:#748da1;margin-top:3px}.ksp7-mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.ksp7-mini div{padding:9px;border-radius:10px;background:#081927;min-width:0}.ksp7-mini span{display:block;font-size:9px;color:#718ca0;text-transform:uppercase;font-weight:800}.ksp7-mini b{display:block;margin-top:4px;font-size:14px;overflow-wrap:anywhere}.ksp7-row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.ksp7-metric{padding:11px;border-radius:12px;background:#081927;border:1px solid rgba(86,194,255,.12)}.ksp7-metric span{display:block;font-size:9px;color:#7894a8;font-weight:850;text-transform:uppercase}.ksp7-metric b{display:block;font-size:16px;margin-top:5px}.ksp7-list{border-radius:12px;background:#071722;padding:12px}.ksp7-list h4{font-size:11px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em}.ksp7-item{font-size:12px;color:#c7d6e0;padding:8px 0;border-top:1px solid rgba(255,255,255,.07);line-height:1.45}.ksp7-item:first-of-type{border-top:0}.ksp7-method{font-size:12px;color:#8da6b8;line-height:1.55}.ksp7-method strong{color:#c8dce9}.ksp7-gated{padding:14px;border-radius:12px;background:rgba(94,24,30,.2);color:#f0b8bc}.ksp7-edge{color:#78efc2!important}
+.ksp7-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.ksp7-detail{border:1px solid rgba(86,194,255,.18);border-radius:15px;background:rgba(5,17,27,.72);overflow:hidden}.ksp7-detail summary{cursor:pointer;list-style:none;padding:14px 15px;font-size:11px;font-weight:900;letter-spacing:.07em;color:#b8d0e0;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;gap:10px}.ksp7-detail summary::-webkit-details-marker{display:none}.ksp7-detail summary::after{content:'+';font-size:18px;color:#78efc2}.ksp7-detail[open] summary::after{content:'−'}.ksp7-detail-body{padding:0 13px 13px}.ksp7-detail-wide{margin-top:10px}.ksp7-detail-note{font-size:10px;color:#718ca0;font-weight:700;letter-spacing:.03em}
+@media(max-width:720px){.ksp7-card{padding:14px;border-radius:18px}.ksp7-title{font-size:21px}.ksp7-grid{grid-template-columns:1fr 1fr}.ksp7-compare{grid-template-columns:1fr 1fr;gap:7px}.ksp7-team{padding:9px}.ksp7-team-ident{gap:6px}.ksp7-team-logo,.ksp7-team-fallback{width:27px;height:27px;flex-basis:27px}.ksp7-team-name{font-size:13px}.ksp7-team-rec{font-size:9px}.ksp7-mini{gap:5px}.ksp7-mini div{padding:7px}.ksp7-mini b{font-size:12px}.ksp7-row3{grid-template-columns:1fr 1fr}.ksp7-detail-grid{grid-template-columns:1fr}.ksp7-lean{font-size:23px}}
 </style>
 """
 
@@ -71,6 +72,17 @@ def _nickname(team: str) -> str:
     return bits[-1] if bits else "Team"
 
 
+def _logo_html(url: Any, abbr: str, team: str) -> str:
+    logo = _safe(url)
+    if logo.startswith("https://") or logo.startswith("http://"):
+        return (
+            f'<img class="ksp7-team-logo" src="{escape(logo, quote=True)}" '
+            f'alt="{escape(team, quote=True)} logo">'
+        )
+    fallback = "".join(part[:1] for part in _safe(abbr, "NFL").split())[:3] or "NFL"
+    return f'<span class="ksp7-team-fallback">{escape(fallback)}</span>'
+
+
 def _fair_lines(analytics: dict[str, Any]) -> tuple[float, float]:
     away_margin = _num(analytics.get("projected_away_margin"))
     if not math.isfinite(away_margin):
@@ -110,8 +122,21 @@ def _range_for_side(analytics: dict[str, Any], side: str, lo_key: str, hi_key: s
     return (-hi if math.isfinite(hi) else math.nan, -lo if math.isfinite(lo) else math.nan)
 
 
-def _team_block(team: str, abbr: str, record: str, market_line: Any, fair_line: Any, cover: Any, win: Any, price: Any) -> str:
-    return f'''<div class="ksp7-team"><div class="ksp7-team-head"><div><div class="ksp7-team-name">{escape(team)}</div><div class="ksp7-team-rec">{escape(abbr)} • {escape(record)}</div></div><b>{escape(_line(market_line))}</b></div><div class="ksp7-mini"><div><span>Market</span><b>{escape(_line(market_line))} <small>{escape(_price(price))}</small></b></div><div><span>Fair line</span><b>{escape(_line(fair_line))}</b></div><div><span>Cover</span><b>{escape(_pct(cover))}</b></div><div><span>Win</span><b>{escape(_pct(win))}</b></div></div></div>'''
+def _team_block(
+    team: str,
+    abbr: str,
+    record: str,
+    logo_url: Any,
+    team_id: str,
+    market_line: Any,
+    fair_line: Any,
+    cover: Any,
+    win: Any,
+    price: Any,
+) -> str:
+    safe_id = _safe(team_id, "—")
+    logo = _logo_html(logo_url, abbr, team)
+    return f'''<div class="ksp7-team" data-team-id="{escape(safe_id, quote=True)}"><div class="ksp7-team-head"><div class="ksp7-team-ident">{logo}<div class="ksp7-team-copy"><div class="ksp7-team-name">{escape(team)}</div><div class="ksp7-team-rec">{escape(abbr)} • ID {escape(safe_id)} • {escape(record)}</div></div></div><b>{escape(_line(market_line))}</b></div><div class="ksp7-mini"><div><span>Market</span><b>{escape(_line(market_line))} <small>{escape(_price(price))}</small></b></div><div><span>Fair line</span><b>{escape(_line(fair_line))}</b></div><div><span>Cover</span><b>{escape(_pct(cover))}</b></div><div><span>Win</span><b>{escape(_pct(win))}</b></div></div></div>'''
 
 
 def render_matchup_card(
@@ -123,17 +148,20 @@ def render_matchup_card(
 ) -> str:
     """Render a compact decision-first card from already-certified inputs only."""
     book = dict(book or {})
+    identity = dict(market.get("identity") or {})
     away = _safe(game.get("away_team"), "Away")
     home = _safe(game.get("home_team"), "Home")
-    away_abbr = _safe(game.get("away_abbr"), "AWAY").upper()
-    home_abbr = _safe(game.get("home_abbr"), "HOME").upper()
+    away_abbr = _safe(game.get("away_abbr") or identity.get("away_abbr"), "AWAY").upper()
+    home_abbr = _safe(game.get("home_abbr") or identity.get("home_abbr"), "HOME").upper()
     away_record = _safe(game.get("away_record"), "—")
     home_record = _safe(game.get("home_record"), "—")
+    away_team_id = _safe(identity.get("away_team_id"), "—")
+    home_team_id = _safe(identity.get("home_team_id"), "—")
     phase = _safe(game.get("season_type"), "NFL")
     tip = _safe(game.get("tip_et"), "TBD")
     venue = _safe(game.get("venue"), "Venue TBD")
     broadcast = _safe(game.get("broadcast"), "—")
-    event_id = _safe(game.get("game_id"))
+    event_id = _safe(game.get("game_id") or identity.get("official_event_id"))
 
     ready = bool(analytics.get("ready"))
     market_ready = bool(market.get("ready")) and bool(book)
@@ -187,7 +215,13 @@ def render_matchup_card(
 
     away_win, away_cover, _ = _side_values(analytics, "away")
     home_win, home_cover, _ = _side_values(analytics, "home")
-    compare = _team_block(away, away_abbr, away_record, market_away, fair_away, away_cover, away_win, book.get("away_price")) + _team_block(home, home_abbr, home_record, market_home, fair_home, home_cover, home_win, book.get("home_price"))
+    compare = _team_block(
+        away, away_abbr, away_record, game.get("away_logo"), away_team_id,
+        market_away, fair_away, away_cover, away_win, book.get("away_price"),
+    ) + _team_block(
+        home, home_abbr, home_record, game.get("home_logo"), home_team_id,
+        market_home, fair_home, home_cover, home_win, book.get("home_price"),
+    )
 
     edge_text = f"{edge:+.1f} pts" if math.isfinite(edge) else "—"
     market_text = f"{lean_nick} {_line(lean_market)}" if market_ready else "MARKET UNAVAILABLE"
@@ -216,13 +250,16 @@ def render_matchup_card(
 
     html = f'''
     <article class="ksp7-card" data-spread-v7="true" data-event-id="{escape(event_id, quote=True)}">
-      <div class="ksp7-top"><div><div class="ksp7-phase">{escape(phase)}</div><div class="ksp7-title">{escape(away)} <span style="color:#6f8799">@</span> {escape(home)}</div><div class="ksp7-meta">🕒 {escape(tip)} &nbsp;•&nbsp; 🏟️ {escape(venue)} &nbsp;•&nbsp; 📺 {escape(broadcast)}</div><div class="ksp7-badges"><span class="ksp7-badge {'good' if market_ready else 'warn'}">{'MARKET READY' if market_ready else 'MARKET UNAVAILABLE'}</span><span class="ksp7-badge good">MODEL {escape(quality)}</span><span class="ksp7-badge good">{escape(sim_status)}</span><span class="ksp7-badge">EXACT ID</span></div></div></div>
+      <div class="ksp7-top"><div><div class="ksp7-phase">{escape(phase)}</div><div class="ksp7-title">{escape(away)} <span style="color:#6f8799">@</span> {escape(home)}</div><div class="ksp7-meta">🕒 {escape(tip)} &nbsp;•&nbsp; 🏟️ {escape(venue)} &nbsp;•&nbsp; 📺 {escape(broadcast)}</div><div class="ksp7-badges"><span class="ksp7-badge {'good' if market_ready else 'warn'}">{'MARKET READY' if market_ready else 'MARKET UNAVAILABLE'}</span><span class="ksp7-badge good">MODEL {escape(quality)}</span><span class="ksp7-badge good">{escape(sim_status)}</span><span class="ksp7-badge">EXACT ID {escape(event_id)}</span></div></div></div>
       {verdict}
       <section class="ksp7-section"><h3>TEAM COMPARISON</h3><div class="ksp7-compare">{compare}</div></section>
       <section class="ksp7-section"><h3>MARKET VS MODEL</h3><div class="ksp7-row3"><div class="ksp7-metric"><span>Current market</span><b>{escape(market_text)}</b></div><div class="ksp7-metric"><span>Model fair line</span><b>{escape(fair_text)}</b></div><div class="ksp7-metric"><span>MODEL EDGE</span><b class="ksp7-edge">{escape(edge_text)}</b></div></div></section>
       <section class="ksp7-section"><h3>PROJECTION RANGE</h3><div class="ksp7-row3"><div class="ksp7-metric"><span>Middle 50%</span><b>{escape(p25p75)}</b></div><div class="ksp7-metric"><span>90% range</span><b>{escape(p05p95)}</b></div><div class="ksp7-metric"><span>Predictive SD</span><b>{escape(_margin(predictive_sd))}</b></div><div class="ksp7-metric"><span>Parameter SE</span><b>{escape(_margin(parameter_se))}</b></div><div class="ksp7-metric"><span>Non-win risk</span><b>{escape(_pct(non_win))}</b></div><div class="ksp7-metric"><span>Push</span><b>{escape(_pct(push) if market_ready else '—')}</b></div></div></section>
-      <section class="ksp7-section"><div class="ksp7-cols"><div class="ksp7-list"><h4>WHY THE MODEL LEANS</h4>{support_html}</div><div class="ksp7-list"><h4>RISK / COUNTERWEIGHTS</h4>{risk_html}</div></div></section>
-      <section class="ksp7-section"><h3>MODEL VERIFICATION</h3><div class="ksp7-method"><strong>{sims:,} simulations • {escape(sim_status)}</strong><br>Football-only feature family: {escape(features)}.<br>Parameter uncertainty: {_margin(parameter_se)} pts • residual uncertainty: {_margin(residual_sd)} pts • cover MC SE: {escape(mc_se_text)}.<br>Sportsbook line is comparison/settlement context only. <strong>Sportsbook influence on projection math: 0.0%</strong></div></section>
+      <div class="ksp7-detail-grid">
+        <details class="ksp7-detail"><summary>WHY THE MODEL LEANS <span class="ksp7-detail-note">4 signals</span></summary><div class="ksp7-detail-body"><div class="ksp7-list">{support_html}</div></div></details>
+        <details class="ksp7-detail"><summary>RISK / COUNTERWEIGHTS <span class="ksp7-detail-note">4 checks</span></summary><div class="ksp7-detail-body"><div class="ksp7-list">{risk_html}</div></div></details>
+      </div>
+      <details class="ksp7-detail ksp7-detail-wide"><summary>MODEL VERIFICATION <span class="ksp7-detail-note">5M certified details</span></summary><div class="ksp7-detail-body"><div class="ksp7-method"><strong>{sims:,} simulations • {escape(sim_status)}</strong><br>Football-only feature family: {escape(features)}.<br>Parameter uncertainty: {_margin(parameter_se)} pts • residual uncertainty: {_margin(residual_sd)} pts • cover MC SE: {escape(mc_se_text)}.<br>Sportsbook line is comparison/settlement context only. <strong>Sportsbook influence on projection math: 0.0%</strong></div></div></details>
     </article>
     '''
     return "".join(line.strip() for line in html.splitlines())
