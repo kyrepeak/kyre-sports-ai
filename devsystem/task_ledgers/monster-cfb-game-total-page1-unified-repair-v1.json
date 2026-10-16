@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "task_id": "monster-cfb-game-total-page1-unified-repair-v1",
+  "title": "MONSTER CFB Game Total Page 1 — Unified Today + Duplicate + Runtime Repair",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-page1-unified-repair-v1",
+  "step": "1/1",
+  "status": "TDD_RED_AWAITING_PROOF",
+  "base_main_sha": "800c3b3c9d3f6fc79af6d9a84cfd30b0d88f400c",
+  "branch": "monster-cfb-game-total-page1-unified-repair-v1",
+  "pr_number": null,
+  "scope_lease_id": "SCOPE-LEASE-8A666156B6630410AC9CB41D",
+  "problem": "Page 1 can show duplicate date controls, omit Phoenix-local today by reviving the legacy Tomorrow+ selector, and then surface the stale-date RuntimeError after the selected-day snapshot has already been pinned.",
+  "root_cause": "V41 correctly owns the authoritative Phoenix selector and suppresses the legacy day strip, but the downstream V36 presentation wrapper reassigns the legacy day-strip function during the same render. That defeats V41 ownership, resurrects the Tomorrow+ strip, can rewrite the query date mid-render, and can diverge downstream reads from V42's pinned selected-day snapshot.",
+  "patch": "Add V45 as an additive Page-1 compatibility owner that preserves the V41 day owner while reusing only V36 kickoff/hero presentation, plus one thin production overlay above frozen Step 9 that points Page 1 at V45 and delegates Page 2/other routes unchanged.",
+  "acceptance": [
+    "one authoritative Phoenix-local Page-1 day selector",
+    "today remains selectable and is not future-filtered",
+    "legacy Tomorrow+ strip cannot render in the V45 native path",
+    "selected-day snapshot remains stable for the complete render",
+    "existing V44 stale-date RuntimeError protection remains preserved",
+    "Page-2 Step 9 fast-switch and Step-10 final certification remain unchanged",
+    "no provider/model/projection/probability/ranking/selection changes",
+    "sportsbook projection influence remains 0.0"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "one_active_branch": true,
+    "one_authoritative_pr": true,
+    "one_authoritative_proof_chain": true,
+    "scope_lease_id": "SCOPE-LEASE-8A666156B6630410AC9CB41D",
+    "duplicate_prs": 0,
+    "duplicate_proofs_same_candidate": 0,
+    "github_actions_fallback_authorized": false
+  },
+  "protected": {
+    "page2_steps1_to_10_frozen": true,
+    "projection": true,
+    "probability_model": true,
+    "providers": true,
+    "ranking": true,
+    "selection": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "tdd": {
+    "red_test_committed_before_product_code": true,
+    "product_implementation_started": false
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE1_UNIFIED_REPAIR_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "OPEN_ONE_PR_THEN_PROVE_TDD_RED"
+}
