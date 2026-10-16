@@ -1,0 +1,46 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/nba-spread-sharp-money-observations-step3-r1.json": "f9715c4c0d1e7ef92bda73876ffcab40948b3350",
+    "tests/test_nba_spread_sharp_money_observations_step3_v1.py": "9facd74969bf7be391fd57f40439e4bf5a2836bb"
+  },
+  "candidate_sha": "e845c2bf3fe143c4624d629a0b298cc2eb66e765",
+  "created_at": "2026-10-16T02:55:23.706527+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "nba_spread_public_betting_observations_v1.py": "1cc99b4929cab34aa093e20493b1014153ec61c9",
+    "nba_spread_sharp_money_v1.py": "1013ac9719af1b16742435f2bb0f0b92258a0a8f"
+  },
+  "digest": "209c450a70a1c854d3dee3c1d9a37b3a3b8aec30869fd8796dd02c446d0b207b",
+  "evidence_digests": [
+    "147f12d2cf4a618067a35b7b5817ebf3b99d1c1141aa846652f08933d8460e92"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "e2d19f51b4650179c7b5435c82c2562d9f9139f3b2d198ebd2def90035f472e9",
+  "proof_id": "nba-spread-sharp-money-observations-step3-r1-e845c2bf3fe143c4-9e6cc54e73206a9b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 315,
+    "state_hash": "5685feb5f2c129711844a99545738ffdcd4d99ad063ed50b1912d526dbc5cbb5"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REPAIR-R1",
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 315,
+    "state_hash": "5685feb5f2c129711844a99545738ffdcd4d99ad063ed50b1912d526dbc5cbb5"
+  },
+  "request_fingerprint": "aab36a35856e745402be93ad13671ac9857b53e92ba34fcce98143b72a72e014",
+  "step": "runless-v2-premerge",
+  "task_id": "nba-spread-sharp-money-observations-step3-r1",
+  "workstream": "nba-spread-sharp-money-observations-step3-r1"
+}
