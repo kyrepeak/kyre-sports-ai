@@ -1,0 +1,63 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step8-live-final-behavior-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "8/10",
+  "source_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37",
+  "authoritative_branch": "nba-spread-step8-live-final-r1",
+  "authoritative_pr": null,
+  "state": "TDD_RED_PENDING",
+  "step2a": {
+    "active_problem": "preserve exact pregame context across verified game-state transitions without rewriting or fabricating history",
+    "root_cause_class": "MISSING_LIVE_FINAL_SNAPSHOT_LIFECYCLE",
+    "scope_lease_id": "SCOPE-LEASE-71EA060FAF5E38DE8522683D",
+    "authorization_id": "AUTH-NBA-SPREAD-STEP8-LIVE-FINAL-R1",
+    "one_branch": true,
+    "one_pr_max": true,
+    "one_final_proof_chain": true,
+    "duplicate_async_runs": 0
+  },
+  "tdd": {
+    "red_required": true,
+    "red_verified": false,
+    "green_verified": false,
+    "regression_verified": false
+  },
+  "behavior": {
+    "pregame_snapshot_capture": true,
+    "freeze_at_live_transition": true,
+    "final_preserves_snapshot": true,
+    "stale_state_regression_ignored": true,
+    "first_seen_live_final_fails_closed": true,
+    "history_retained_outside_current_window": true,
+    "sportsbook_projection_influence": 0.0,
+    "model_mutation": false,
+    "probability_mutation": false,
+    "ranking_mutation": false
+  },
+  "frozen_protection": {
+    "steps_1_7_reopened": false,
+    "step7_page_modified": false,
+    "step7_runtime_target_preserved": "nba_spread_page_v2",
+    "step8_runtime_target": "nba_spread_page_v3",
+    "router_path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "router_from_blob": "478fde67b2da07af0d801a00dcade165cc4d2db2",
+    "required_thaw_id": "THAW-NBA-SPREAD-STEP8-LIVE-FINAL-R1",
+    "thaw_authorized": false
+  },
+  "proof": {
+    "mode": "runless",
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "exact_head_verified": false,
+    "merge_authorized": false,
+    "merged_main_verified": false,
+    "frozen_verified": false
+  },
+  "freeze_token": "NBA_SPREAD_STEP8_LIVE_FINAL_BEHAVIOR_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "COMMIT_RED_TESTS_AND_VERIFY_EXPECTED_FAILURE",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}

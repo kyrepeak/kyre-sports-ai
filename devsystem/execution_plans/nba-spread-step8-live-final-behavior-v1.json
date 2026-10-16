@@ -1,0 +1,83 @@
+{
+  "schema_version": 2,
+  "task_id": "nba-spread-step8-live-final-behavior-v1",
+  "project": "API2",
+  "workstream": "nba-spread-two-page-v1",
+  "step": "8/10",
+  "source_main_sha": "281b0a3de3fa9a6b2c8365aac2be5861f46ecc37",
+  "goal": "Add fail-closed Kyre Sports Preview / Live-Final behavior. Capture exact pregame context while a verified matchup is UPCOMING or DELAYED; once it becomes LIVE, freeze that pregame snapshot so current live data cannot rewrite it; preserve the same frozen snapshot through FINAL; retain history across Streamlit reruns and rolling-window exit; never reconstruct missing pregame state after tip-off. Preserve frozen Steps 1-7 and defer fair spread, cover probability, model edge, and ranking to Steps 9-10.",
+  "write_paths": [
+    "devsystem/execution_plans/nba-spread-step8-live-final-behavior-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step8-live-final-behavior-v1.json",
+    "devsystem/task_ledgers/nba-spread-step8-live-final-behavior-v1.json",
+    "nba_spread_live_final_v1.py",
+    "nba_spread_page_v3.py",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "tests/test_nba_spread_step8_live_final_behavior_v1.py"
+  ],
+  "protected_dependencies": [
+    "nba_spread_page_v2.py",
+    "nba_spread_page_v1.py",
+    "nba_spread_injury_availability_v1.py",
+    "nba_spread_market_lines_v1.py",
+    "nba_spread_most_bet_v1.py",
+    "nba_spread_schedule_v1.py",
+    "nba_spread_sharp_money_v1.py",
+    "nba_spread_page_provider_resilience_step3_r1.py",
+    "tests/test_nba_spread_step7_injury_availability_v1.py",
+    "tests/test_nba_spread_step6_market_lines_v1.py",
+    "tests/test_nba_spread_provider_resilience_step3_r1.py"
+  ],
+  "step2a": {
+    "one_active_problem": true,
+    "active_problem": "preserve exact pregame NBA Spread context across verified UPCOMING/DELAYED -> LIVE -> FINAL transitions without rewriting or fabricating pregame state",
+    "authoritative_branch": "nba-spread-step8-live-final-r1",
+    "scope_lease_id": "SCOPE-LEASE-71EA060FAF5E38DE8522683D",
+    "authorization_id": "AUTH-NBA-SPREAD-STEP8-LIVE-FINAL-R1",
+    "authoritative_pr_max": 1,
+    "one_authoritative_final_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "github_actions_fallback": 0
+  },
+  "architecture": {
+    "state_authority": "FROZEN_STEP3_VERIFIED_SCHEDULE",
+    "canonical_identity": "game_key plus frozen away/home/tip identity",
+    "pregame_states": ["UPCOMING", "DELAYED"],
+    "live_state": "LIVE",
+    "terminal_states": ["FINAL", "CANCELLED"],
+    "monotonic_state_order": true,
+    "pregame_snapshot_immutable_after_tipoff": true,
+    "first_seen_live_or_final_fails_closed": true,
+    "history_store": "streamlit_session_state",
+    "history_retained_when_game_leaves_window": true,
+    "network_calls_added": 0,
+    "page_wide_source_authority": false
+  },
+  "product_scope": {
+    "feature": "Kyre Sports Preview / Live-Final Behavior",
+    "additive_state_module": "nba_spread_live_final_v1.py",
+    "additive_page_wrapper": "nba_spread_page_v3.py",
+    "step7_page_preserved": "nba_spread_page_v2.py",
+    "step7_runtime_target_preserved": "nba_spread_page_v2",
+    "step8_runtime_target": "nba_spread_page_v3",
+    "timezone": "America/Phoenix",
+    "sportsbook_projection_influence": 0.0,
+    "model_mutation": false,
+    "projection_mutation": false,
+    "probability_mutation": false,
+    "ranking_mutation": false
+  },
+  "frozen_router_transition": {
+    "path": "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py",
+    "from_blob": "478fde67b2da07af0d801a00dcade165cc4d2db2",
+    "change": "preserve ACTIVE_PAGE, PROVIDER_RESILIENCE_PAGE, and STEP7_ACTIVE_PAGE; add STEP8_ACTIVE_PAGE nba_spread_page_v3 and dispatch NBA Spread through it",
+    "required_thaw_id": "THAW-NBA-SPREAD-STEP8-LIVE-FINAL-R1",
+    "candidate_bound": true
+  },
+  "proof_mode": "runless",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP8_LIVE_FINAL_BEHAVIOR_FROZEN",
+  "finalization_authority": "FINALIZATION AUTHORITY & 100% CONVERGENCE V1"
+}
