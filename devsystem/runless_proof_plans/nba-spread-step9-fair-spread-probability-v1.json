@@ -1,0 +1,26 @@
+{
+  "mode": "runless",
+  "task_id": "nba-spread-step9-fair-spread-probability-v1",
+  "workstream": "nba-spread-two-page-v1",
+  "source_main_sha": "ab6e60a6def0991d6d726f5201e93e2cf13403c1",
+  "commands": [
+    ["python","-m","pytest","-q","tests/test_nba_spread_step9_fair_spread_probability_v1.py"]
+  ],
+  "artifacts": [
+    "devsystem/execution_plans/nba-spread-step9-fair-spread-probability-v1.json",
+    "devsystem/runless_proof_plans/nba-spread-step9-fair-spread-probability-v1.json",
+    "devsystem/task_ledgers/nba-spread-step9-fair-spread-probability-v1.json",
+    "tests/test_nba_spread_step9_fair_spread_probability_v1.py"
+  ],
+  "dependencies": [
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": ["NBA Spread Steps 1-8"],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "NBA_SPREAD_STEP9_FAIR_SPREAD_PROBABILITY_FROZEN"
+}
