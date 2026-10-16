@@ -186,13 +186,20 @@ def _execute_registry_thaw(
         files = grant.get("files") or {}
         pair = files.get(req.path) if isinstance(files, dict) else None
         if grant_id == req.thaw_id:
-            if not (
-                isinstance(pair, dict)
+            same_path_and_baseline = (
+                isinstance(files, dict)
+                and set(files) == {req.path}
+                and isinstance(pair, dict)
                 and str(pair.get("from_blob") or "").lower() == req.from_blob
-                and str(pair.get("to_blob") or "").lower() == req.to_blob
-            ):
+            )
+            if not same_path_and_baseline:
                 raise GithubAuthorityError("REGISTRY_THAW_ID_COLLISION")
-            if str(grant.get("target_head_sha") or "") == req.candidate_sha:
+
+            current_target = str(grant.get("target_head_sha") or "")
+            current_to_blob = str(pair.get("to_blob") or "").lower()
+            if current_target == req.candidate_sha:
+                if current_to_blob != req.to_blob:
+                    raise GithubAuthorityError("REGISTRY_THAW_ID_COLLISION")
                 return _registry_thaw_result(
                     req,
                     registry,
@@ -201,6 +208,12 @@ def _execute_registry_thaw(
                     registry_commit_sha=None,
                     reused=True,
                 )
+
+            # A reviewed candidate may legitimately change the destination blob.
+            # The earlier exact-main/candidate tree checks already prove the new
+            # blob pair, while this identity check keeps the same thaw ID bound to
+            # exactly one frozen path and the same frozen baseline. Unrelated
+            # grants are preserved and verified again after the registry CAS.
             retarget_index = index
             break
         if pair is not None:
