@@ -25,6 +25,7 @@ import cfb_game_total_page2_step4_outlook_summary_v1 as step4
 import cfb_game_total_page2_step5_team_snapshot_key_drivers_v1 as step5
 import cfb_game_total_page2_step6_trends_scoring_breakdown_v1 as step6
 import cfb_game_total_page2_step7_line_lab_best_bet_v1 as step7
+import cfb_game_total_page2_stage5_best_bet_v1 as stage5
 
 MODEL_VERSION = "CFB GAME TOTAL PAGE2 STEP8 • FINAL RESPONSIVE LIVE DATA V1"
 MARKET = frozen_page.MARKET
@@ -198,27 +199,62 @@ def _team_profile_value(profile: Mapping[str, Any], *keys: str) -> Any:
 
 
 def _recommendation(raw: Mapping[str, Any], final: Mapping[str, Any], display_game: Mapping[str, Any]) -> dict[str, Any]:
+    """Derive a fail-closed display recommendation from already-owned frozen evidence."""
     projected = _projected(raw, final)
     market = _market_line(raw, display_game)
-    active = final.get("betting_pick_active") is True
-    if not active:
+    projected_number = _number(projected)
+    market_number = _number(market)
+    edge = _display_edge(projected, market)
+    confidence = _first(final, "grade", "confidence_label", "confidence")
+
+    def no_bet(reason: str) -> dict[str, Any]:
         return {
             "side": "NO BET",
             "line": market,
             "probability": None,
             "expected_total": projected,
-            "edge": _display_edge(projected, market),
-            "confidence": _first(final, "grade", "confidence_label", "confidence"),
-            "rationale": _first(final, "rationale", "reason", "summary", "explanation") or "Independent Game Total forecast",
+            "edge": edge,
+            "confidence": confidence,
+            "rationale": reason,
         }
+
+    verified_market = (
+        market_number is not None
+        and display_game.get("market_identity_verified") is True
+        and _number(display_game.get("market_projection_weight")) == 0.0
+    )
+    if final.get("ready") is not True or final.get("forecast_ready") is not True:
+        return no_bet("No bet: the independent Game Total forecast is not qualified.")
+    if not verified_market:
+        return no_bet("No bet: a verified market total is unavailable.")
+    if projected_number is None:
+        return no_bet("No bet: the qualified forecast has no verified expected total.")
+
+    over, under = _distribution_line_probabilities(raw, market_number)
+    if over is None or under is None:
+        return no_bet("No bet: the frozen total distribution is unavailable at the verified line.")
+    if over == under:
+        return no_bet("No bet: the frozen distribution is tied at the verified market total.")
+
+    if over > under:
+        if projected_number <= market_number:
+            return no_bet("No bet: distribution direction and projected-total direction disagree.")
+        side = "OVER"
+        probability = over
+    else:
+        if projected_number >= market_number:
+            return no_bet("No bet: distribution direction and projected-total direction disagree.")
+        side = "UNDER"
+        probability = under
+
     return {
-        "side": _first(final, "recommendation", "pick", "lean", "side"),
-        "line": market,
-        "probability": _first(final, "bet_probability", "probability", "win_probability"),
+        "side": side,
+        "line": market_number,
+        "probability": _percent(probability),
         "expected_total": projected,
-        "edge": _display_edge(projected, market),
-        "confidence": _first(final, "grade", "confidence_label", "confidence"),
-        "rationale": _first(final, "rationale", "reason", "summary", "explanation") or "Independent Game Total forecast",
+        "edge": edge,
+        "confidence": confidence,
+        "rationale": f"Qualified frozen forecast and distribution favor {side} at the verified market total.",
     }
 
 
@@ -313,17 +349,19 @@ def build_page2_body_html(payload: Mapping[str, Any]) -> str:
 
     scenarios = _line_scenarios(raw, display_game)
     selected_line = _first(raw, "analysis_line") or market
-    line_lab = step7.build_line_lab_best_bet_html(
+    recommendation = _recommendation(raw, final, display_game)
+    line_lab = step7.build_line_lab_html(
         line_scenarios=scenarios,
         selected_line=selected_line,
-        recommendation=_recommendation(raw, final, display_game),
     )
+    best_bet = stage5.build_best_bet_html(recommendation)
     return f"""
 <div class="gtp2s8-final gtp2s8-live" data-testid="gtp2s8-body">
   {outlook}
   {snapshot}
   {trends}
   {line_lab}
+  {best_bet}
   <div class="gtp2s8-cert" data-testid="gtp2s8-live-cert-state" data-sportsbook-projection-influence="0.0">LIVE SELECTED-EVENT DATA • EXACT IDENTITY • RESPONSIVE CERT TARGET</div>
 </div>
 """
