@@ -16,7 +16,7 @@ def test_v3_cold_start_seeds_canonical_route_from_valid_query(monkeypatch) -> No
     assert nav3.render_app() == "delegated"
     assert session["ks_universal_sport"] == "cfb"
     assert session["ks_universal_market"] == "game-total"
-    assert session["ks_cfb_market"] == "Game Total"
+    assert session["ks_cfb_market_touch"] == "Game Total"
 
 
 def test_v3_valid_existing_canonical_route_remains_authoritative(monkeypatch) -> None:
