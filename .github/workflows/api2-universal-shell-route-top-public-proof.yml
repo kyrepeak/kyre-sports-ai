@@ -32,7 +32,7 @@ jobs:
       - name: Prove public shell, Top, and MLB to NFL isolation
         run: |
           python -m devsystem.api2_universal_shell_route_top_public_cert_v1 \
-            --production-url https://pick6vault.streamlit.app \
+            --production-url https://kyre-sports-ai.streamlit.app \
             --artifact-dir artifacts/api2-universal-shell-route-top-public
 
       - name: Upload proof artifacts
