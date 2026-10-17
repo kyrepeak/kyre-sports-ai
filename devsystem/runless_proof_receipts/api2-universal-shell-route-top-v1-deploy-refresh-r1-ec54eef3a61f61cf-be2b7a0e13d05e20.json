@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-universal-shell-route-top-v1-deploy-refresh-r1.json": "eda35e4fee374d8b74457e93accf9f292de91ed5",
+    "requirements.txt": "ea3e55ff0c44cf0c5ad89c9f64c9bbb5ef4ea3c3",
+    "tests/test_api2_universal_shell_route_top_deploy_refresh_r1.py": "ca763fc6a7aa439d6c817bfdaaf336865e96605f"
+  },
+  "candidate_sha": "ec54eef3a61f61cf362cd5bfa73c4f5614103695",
+  "created_at": "2026-10-17T18:26:35.674353+00:00",
+  "dependency_map": {
+    "app.py": "ed8965e01fbbe2f3179c8433350970c8d384b059",
+    "kyre_universal_entrypoint_cold_start_v1.py": "092f876b8849ab2012a14f4f9ef277c2b364b011",
+    "kyre_universal_shell_runtime_v2.py": "9fef48375fb376ac2dcd7dc4213070b61e4dd8bb",
+    "streamlit_memory_lazy_router_universal_nav_v3.py": "fddeb8634821aab62474c71e103b3c62ac56b6b2"
+  },
+  "digest": "8cb64537761e87b35ff2f40417dcb67d5215a7a882eb8924cdabd65e0bec34c0",
+  "evidence_digests": [
+    "452b1bce9cd16bec3b0b6e1baab67f69312d325a3620b3ad67aa9cede87db047",
+    "2f057b1dde15bcc82394cc7d1d3029f923aa73a8c07dfeab1528b87cf46fa7cd"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "5342065187da2f00126ae913dceae371972fd5619a23811fb69723a2d1b82a9e",
+  "proof_id": "api2-universal-shell-route-top-v1-deploy-refresh-r1-ec54eef3a61f61cf-be2b7a0e13d05e20",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 389,
+    "state_hash": "740d22ba38780c42d248f8fc288d0efa8494feac42bf9ef09b1d22c0e1f9b335"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 389,
+    "state_hash": "740d22ba38780c42d248f8fc288d0efa8494feac42bf9ef09b1d22c0e1f9b335"
+  },
+  "request_fingerprint": "94726b542ce454c830fa9af10c6d82fad42d36ce54fd51ebb57e395c1abb4592",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-shell-route-top-v1-deploy-refresh-r1",
+  "workstream": "api2-universal-shell-route-top-v1-deploy-refresh-r1"
+}
