@@ -100,6 +100,16 @@ def test_current_router_activates_and_restores_one_page2_runtime_seam() -> None:
     assert "MAY_MODIFY_PAGE1 = False" in src
 
 
+def test_current_router_preserves_and_restores_existing_nfl_spread_bridge() -> None:
+    src = _text(ACTIVE_ROUTER)
+    assert "import nfl_spread_hub_v5 as spread_v5" in src
+    assert "def _make_render_nfl_bridge" in src
+    assert "original_root_render_nfl = _patch_loaded_router_seams()" in src
+    assert "_restore_loaded_router_seams(original_root_render_nfl)" in src
+    assert 'ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v5"' in src
+    assert "MAY_MODIFY_OTHER_SPORTS = False" in src
+
+
 def test_page1_owner_is_not_edited_by_the_successor_contract() -> None:
     page1 = _text(PAGE1)
     assert "cfb_game_total_page2_complete_repair_r1" not in page1
