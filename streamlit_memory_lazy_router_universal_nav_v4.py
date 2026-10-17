@@ -1,9 +1,12 @@
-"""Universal Sports Navigation V4 — immediate same-run handoff bridge.
+"""Universal Sports Navigation V4 — same-run + terminal ownership bridge.
 
-V3 remains the steady-state canonical owner. V4 replaces the renderer used by
-V2 during the current run with the stable V1 renderer that returns a RouteIntent
-immediately. Cross-sport cleanup happens before the intent is returned to V1 so
-V1 can update canonical state and the legacy render owner in the same pass.
+V3 remains the steady-state canonical owner. V4 preserves the immediate V1
+RouteIntent handoff and also guards the final legacy-root render boundary.
+Historical router overlays may temporarily rewrite ``st.selectbox`` while they
+delegate; the terminal guard therefore reapplies only the canonical global
+sport/market selector bridge after those overlays have installed their seams and
+immediately before the legacy root chooses the body owner. Page-level controls
+still delegate through the downstream selector unchanged.
 """
 from __future__ import annotations
 
@@ -16,7 +19,7 @@ import streamlit_memory_lazy_router_universal_nav_v3 as prior
 import universal_sports_nav_ui_v1 as stable_ui
 
 
-MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4.1 • SAME-RUN SINGLE OWNER"
+MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4.2 • SAME-RUN TERMINAL OWNER"
 FROZEN_PARENT = "streamlit_memory_lazy_router_universal_nav_v3"
 PENDING_INTENT_KEY = getattr(v2, "PENDING_INTENT_KEY", "ks_universal_pending_intent_v2")
 UNIVERSAL_NAV_ENABLED = True
@@ -42,21 +45,49 @@ def _render_immediate_handoff(state: Any) -> Any:
         v2._clear_cross_route_query_context(st.query_params)
         v2._clear_cross_route_session_context(st.session_state, outgoing_sport)
 
-    # This renderer is called from inside Universal Nav V1. Returning the tap
-    # intent preserves V1's single-owner contract: V1 applies the intent to its
-    # local RouteState before it patches the URL, bridges legacy selectors, and
-    # renders the destination body. Consuming the intent here and forcing an
-    # extra rerun can leave URL/session on the new sport while V1 still holds
-    # the outgoing sport in its local state for the current pass.
+    # Universal V1 must receive the tap itself so its local RouteState, URL,
+    # legacy compatibility state, and destination render owner all advance in
+    # the same Streamlit pass.
     return intent
+
+
+def _terminal_root_guard(delegate: Any) -> Any:
+    """Return a root renderer that makes canonical navigation the final owner.
+
+    Lower historical overlays are free to wrap ``st.selectbox`` first. At the
+    exact root boundary we capture that downstream selector, place the Universal
+    V1 compatibility bridge above it for global sport/market controls only, run
+    the unchanged root renderer, then restore the downstream selector exactly.
+    """
+
+    def _guarded_root_render() -> Any:
+        state = v2.prior._resolve_initial_state(st.session_state, st.query_params)
+        v2.prior._persist_state(state, st.session_state)
+        v2.prior.apply_legacy_route_state(state, st.session_state)
+
+        downstream_selectbox = v2.legacy_root.st.selectbox
+        v2.legacy_root.st.selectbox = v2.prior.make_legacy_selectbox_bridge(
+            downstream_selectbox,
+            state,
+        )
+        try:
+            return delegate()
+        finally:
+            v2.legacy_root.st.selectbox = downstream_selectbox
+
+    return _guarded_root_render
 
 
 def render_app() -> Any:
     original_renderer = v2.nav_ui.render_universal_nav
+    original_root_render = v2.legacy_root.render_app
+
     v2.nav_ui.render_universal_nav = _render_immediate_handoff
+    v2.legacy_root.render_app = _terminal_root_guard(original_root_render)
     try:
         return prior.render_app()
     finally:
+        v2.legacy_root.render_app = original_root_render
         v2.nav_ui.render_universal_nav = original_renderer
 
 
@@ -65,6 +96,7 @@ __all__ = [
     "MODEL_VERSION",
     "PENDING_INTENT_KEY",
     "UNIVERSAL_NAV_ENABLED",
+    "_terminal_root_guard",
     "record_bootstrap_import_ms",
     "render_app",
 ]
