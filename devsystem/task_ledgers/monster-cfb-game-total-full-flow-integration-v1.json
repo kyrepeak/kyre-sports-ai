@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "task_id": "monster-cfb-game-total-full-flow-integration-v1",
   "title": "MONSTER CFB Game Total Full Flow Integration V1",
   "project": "MONSTER",
@@ -9,8 +9,13 @@
   "base_main_sha": "e53656f35f996e79b4e91b067e47c843680ad00b",
   "expected_main_sha_before_proof": "e53656f35f996e79b4e91b067e47c843680ad00b",
   "branch": "monster-cfb-game-total-full-flow-integration-v1",
+  "pr_number": 1596,
   "scope_lease": {
-    "lease_id": "SCOPE-LEASE-4B37E9A1C8D25F60B7A13E4C",
+    "lease_id": "SCOPE-LEASE-E9F1EBAF050391C9AF0AEE68",
+    "generation": 511,
+    "state_revision": 913,
+    "state_hash": "47bc8657cd31c0e050ed060851f9f9b1b13078ff2c932a3aec054770a1ded291",
+    "expires_at_utc": "2026-10-17T00:59:47Z",
     "thaw_required": false,
     "proof_only": true,
     "note": "Certification-only integration scope. No frozen Page 1 or selected-game product owner is mutated."
@@ -23,6 +28,15 @@
     "certification_guard_added": true,
     "expected_behavior": "existing frozen Page 1 and Page 2 integration passes without product mutation"
   },
+  "failure_history": [
+    {
+      "candidate_sha": "30a959ab8a9737d8b9076472b4f91886e83d46af",
+      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
+      "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
+      "product_patch": false,
+      "resolution": "Acquire one canonical live scope lease and continue the same PR/authority chain"
+    }
+  ],
   "protected": {
     "page1_daily_slate": true,
     "selected_game_runtime": true,
