@@ -12,8 +12,6 @@ from pathlib import Path
 import re
 import time
 
-from playwright.sync_api import sync_playwright
-
 DEFAULT_URL = "https://pick6vault.streamlit.app"
 
 
@@ -85,6 +83,8 @@ def _visible_nfl_control(frame):
 
 
 def run(*, production_url: str, artifact_dir: str | Path) -> dict:
+    from playwright.sync_api import sync_playwright
+
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
     start_url = production_url.rstrip("/") + "/?sport=mlb&market=slate"
