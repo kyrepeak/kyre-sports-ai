@@ -77,13 +77,7 @@ def _render_immediate_handoff(state: Any) -> Any:
 
 
 def _terminal_root_guard(delegate: Any) -> Any:
-    """Return a root renderer that makes canonical navigation the final owner.
-
-    Lower historical overlays are free to wrap ``st.selectbox`` first. At the
-    exact root boundary we capture that downstream selector, place the Universal
-    V1 compatibility bridge above it for global sport/market controls only, run
-    the unchanged root renderer, then restore the downstream selector exactly.
-    """
+    """Return a root renderer that makes canonical navigation the final owner."""
 
     def _guarded_root_render() -> Any:
         state = v2.prior._resolve_initial_state(st.session_state, st.query_params)
@@ -104,10 +98,7 @@ def _terminal_root_guard(delegate: Any) -> Any:
         v2.prior.apply_legacy_route_state(state, st.session_state)
 
         downstream_selectbox = v2.legacy_root.st.selectbox
-        canonical_selectbox = v2.prior.make_legacy_selectbox_bridge(
-            downstream_selectbox,
-            state,
-        )
+        canonical_selectbox = v2.prior.make_legacy_selectbox_bridge(downstream_selectbox, state)
 
         def traced_selectbox(label: Any, options: Any, *args: Any, **kwargs: Any) -> Any:
             selected = canonical_selectbox(label, options, *args, **kwargs)
@@ -139,9 +130,57 @@ def _terminal_root_guard(delegate: Any) -> Any:
     return _guarded_root_render
 
 
+def _traced_parent_guard(delegate: Any) -> Any:
+    def _guarded_parent_render() -> Any:
+        _trace(
+            "PARENT_ENTER",
+            module=getattr(delegate, "__module__", ""),
+            name=getattr(delegate, "__name__", ""),
+            query_sport=_query_value("sport"),
+            query_market=_query_value("market"),
+            canonical_sport=st.session_state.get("ks_universal_sport"),
+            canonical_market=st.session_state.get("ks_universal_market"),
+            legacy_sport=st.session_state.get("ks_sport_touch"),
+        )
+        try:
+            result = delegate()
+        except BaseException as exc:
+            _trace(
+                "PARENT_ABORT",
+                exc_type=type(exc).__name__,
+                query_sport=_query_value("sport"),
+                canonical_sport=st.session_state.get("ks_universal_sport"),
+                legacy_sport=st.session_state.get("ks_sport_touch"),
+            )
+            raise
+        _trace(
+            "PARENT_EXIT",
+            query_sport=_query_value("sport"),
+            canonical_sport=st.session_state.get("ks_universal_sport"),
+            legacy_sport=st.session_state.get("ks_sport_touch"),
+        )
+        return result
+
+    return _guarded_parent_render
+
+
 def render_app() -> Any:
     original_renderer = v2.nav_ui.render_universal_nav
     original_root_render = v2.legacy_root.render_app
+    immediate_parent = v2.prior.prior
+    original_parent_render = immediate_parent.render_app
+    original_rerun = st.rerun
+
+    def traced_rerun(*args: Any, **kwargs: Any) -> Any:
+        _trace(
+            "RERUN",
+            query_sport=_query_value("sport"),
+            query_market=_query_value("market"),
+            canonical_sport=st.session_state.get("ks_universal_sport"),
+            canonical_market=st.session_state.get("ks_universal_market"),
+            legacy_sport=st.session_state.get("ks_sport_touch"),
+        )
+        return original_rerun(*args, **kwargs)
 
     _trace(
         "V4_ENTER",
@@ -153,9 +192,13 @@ def render_app() -> Any:
     )
     v2.nav_ui.render_universal_nav = _render_immediate_handoff
     v2.legacy_root.render_app = _terminal_root_guard(original_root_render)
+    immediate_parent.render_app = _traced_parent_guard(original_parent_render)
+    st.rerun = traced_rerun
     try:
         return prior.render_app()
     finally:
+        st.rerun = original_rerun
+        immediate_parent.render_app = original_parent_render
         v2.legacy_root.render_app = original_root_render
         v2.nav_ui.render_universal_nav = original_renderer
 
