@@ -169,6 +169,14 @@ def build_parallel_scoreboard_payload(fallback_module: Any, selected_phoenix_dat
 @contextmanager
 def install_parallel_scoreboard_fallback(fallback_module: Any):
     original = fallback_module.build_requests_fallback_payload
+    canonical = (
+        getattr(original, "__module__", "") == getattr(fallback_module, "__name__", "")
+        and getattr(original, "__name__", "") == "build_requests_fallback_payload"
+    )
+    if not canonical:
+        # Preserve injected test/diagnostic delegates instead of shadowing them.
+        yield
+        return
 
     def build(selected_phoenix_date, *, scoreboard_payloads=None):
         return build_parallel_scoreboard_payload(
