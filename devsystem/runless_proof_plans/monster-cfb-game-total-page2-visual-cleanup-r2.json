@@ -1,7 +1,7 @@
 {
   "task_id": "monster-cfb-game-total-page2-visual-cleanup-r2",
   "workstream": "monster-cfb-game-total-page2-visual-cleanup-r2",
-  "source_main_sha": "69d6d1bd6b38f5f43ae948eabbea27ca66b1115c",
+  "source_main_sha": "6fa15769f8a531cfb71a992b9c27eab3254d55ef",
   "required_check": "runless-final-gate",
   "required_app_id": 5204253,
   "timeout_seconds": 300,
