@@ -5,8 +5,6 @@ from pathlib import Path
 import sys
 import types
 
-import pytest
-
 from devsystem.api2_universal_shell_route_top_public_cert_v1 import _visible_nfl_control
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,7 +56,11 @@ def _load_v4(monkeypatch, *, returned_intent):
 
     def v3_render_app():
         events.append("v3-delegate")
-        return v2.nav_ui.render_universal_nav(types.SimpleNamespace(sport_id="mlb", market_id="slate"))
+        state = types.SimpleNamespace(sport_id="mlb", market_id="slate")
+        intent = v2.nav_ui.render_universal_nav(state)
+        owner = getattr(intent, "sport_id", None) or state.sport_id
+        events.append(("legacy-owner", owner))
+        return owner
 
     v3.render_app = v3_render_app
 
@@ -91,20 +93,18 @@ def test_entrypoint_executes_preserved_body_fresh_on_every_streamlit_rerun():
     assert "exec(_legacy_entrypoint_code, globals(), globals())" in app
 
 
-def test_v4_uses_immediate_return_value_to_commit_nfl_before_legacy_delegate(monkeypatch):
+def test_v4_returns_tap_intent_so_legacy_owner_switches_to_nfl_in_same_run(monkeypatch):
     intent = types.SimpleNamespace(sport_id="nfl", market_id=None, source="tap")
     module, v2, events = _load_v4(monkeypatch, returned_intent=intent)
     original = v2.nav_ui.render_universal_nav
 
-    with pytest.raises(_RerunSignal):
-        module.render_app()
+    result = module.render_app()
 
+    assert result == "nfl"
     assert events == [
         "v3-delegate",
         "pill-return",
-        ("prepare", "nfl", None),
-        ("mask", "nfl", "slate"),
-        "rerun",
+        ("legacy-owner", "nfl"),
     ]
     assert v2.nav_ui.render_universal_nav is original
 
@@ -115,8 +115,8 @@ def test_v4_no_tap_preserves_v3_delegate_without_extra_rerun(monkeypatch):
 
     result = module.render_app()
 
-    assert result is None
-    assert events == ["v3-delegate", "pill-return"]
+    assert result == "mlb"
+    assert events == ["v3-delegate", "pill-return", ("legacy-owner", "mlb")]
     assert v2.nav_ui.render_universal_nav is original
 
 
