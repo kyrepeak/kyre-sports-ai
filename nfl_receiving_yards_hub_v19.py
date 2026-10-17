@@ -14,6 +14,7 @@ from typing import Any
 
 import streamlit as st
 
+import nfl_receiving_yards_hub_v3 as summary_page
 import nfl_receiving_yards_hub_v15 as card_owner
 import nfl_receiving_yards_hub_v18 as prior
 
@@ -23,6 +24,7 @@ DISPLAY_ONLY = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 _ORIGINAL_PLAYER_CARD_V15 = card_owner._player_card_v15
+_ORIGINAL_MARKDOWN = st.markdown
 
 _COMPACT_CSS = r'''
 <style>
@@ -57,6 +59,15 @@ _COMPACT_CSS = r'''
 '''
 
 
+def _compact_markdown_v19(body: Any, *args: Any, **kwargs: Any):
+    """Route pure CSS to st.html so legacy style layers consume no page height."""
+    if isinstance(body, str):
+        stripped = body.strip()
+        if stripped.startswith("<style>") and stripped.endswith("</style>"):
+            return st.html(body)
+    return _ORIGINAL_MARKDOWN(body, *args, **kwargs)
+
+
 def _compact_player_card_v19(
     player: dict[str, Any],
     team: dict[str, Any],
@@ -68,13 +79,21 @@ def _compact_player_card_v19(
 
 
 def render_nfl_receiving_yards_hub() -> None:
-    st.markdown(_COMPACT_CSS, unsafe_allow_html=True)
-    original = card_owner._player_card_v15
+    # st.html sends style-only content to Streamlit's event container, avoiding
+    # the empty block spacing accumulated by the additive V3-V15 CSS layers.
+    st.html(_COMPACT_CSS)
+    original_card = card_owner._player_card_v15
+    original_markdown = st.markdown
+    original_summary_markdown = summary_page._ORIGINAL_MARKDOWN
     card_owner._player_card_v15 = _compact_player_card_v19
+    st.markdown = _compact_markdown_v19
+    summary_page._ORIGINAL_MARKDOWN = _compact_markdown_v19
     try:
         return prior.render_nfl_receiving_yards_hub()
     finally:
-        card_owner._player_card_v15 = original
+        summary_page._ORIGINAL_MARKDOWN = original_summary_markdown
+        st.markdown = original_markdown
+        card_owner._player_card_v15 = original_card
 
 
 def render_nfl_hub(market: str = "Receiving Yards") -> None:
@@ -88,6 +107,7 @@ __all__ = [
     "FROZEN_PRIOR",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_compact_markdown_v19",
     "_compact_player_card_v19",
     "render_nfl_hub",
     "render_nfl_receiving_yards_hub",
