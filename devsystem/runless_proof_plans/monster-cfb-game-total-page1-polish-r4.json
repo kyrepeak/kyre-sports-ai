@@ -1,0 +1,32 @@
+{
+  "mode": "runless",
+  "task_id": "monster-cfb-game-total-page1-polish-r4",
+  "workstream": "monster-cfb-game-total-page1-polish-r4",
+  "source_main_sha": "b0bdcc5a1a6081a99dfc638a8dc98c03e3cd79ba",
+  "commands": [
+    ["python", "-m", "py_compile", "cfb_game_total_page1_polish_r4.py", "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py", "tests/test_monster_cfb_game_total_page1_polish_r4.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_monster_cfb_game_total_page1_polish_r4.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_monster_cfb_game_total_page1_polish_r4.py", "tests/test_monster_cfb_game_total_daily_slate_runtime_fallback_r1.py", "tests/test_monster_cfb_game_total_page1_daily_slate_v1.py", "tests/test_monster_cfb_game_total_full_flow_integration_v1.py", "tests/test_monster_cfb_game_total_page2_same_page_shell_repair_v1.py", "tests/test_monster_cfb_game_total_daily_slate_full_render_r3.py", "tests/test_streamlit_memory_lazy_router_universal_nav_v1.py", "tests/test_universal_sports_nav_compat_v1.py"]
+  ],
+  "artifacts": [
+    "cfb_game_total_page1_polish_r4.py",
+    "cfb_game_total_page1_polish_r4.css",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py",
+    "tests/test_monster_cfb_game_total_page1_polish_r4.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page1-polish-r4.json"
+  ],
+  "dependencies": [
+    "cfb_game_total_page1_daily_slate_v1.py",
+    "cfb_game_total_page1_daily_slate_runtime_fallback_r1.py",
+    "cfb_game_total_page1_daily_slate_market_v1.py",
+    "streamlit_memory_lazy_router_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE1_POLISH_R4_FROZEN"
+}
