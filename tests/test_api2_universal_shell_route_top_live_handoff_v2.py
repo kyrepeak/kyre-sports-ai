@@ -39,6 +39,17 @@ def _load_v4(monkeypatch, *, returned_intent):
     v2 = types.ModuleType("streamlit_memory_lazy_router_universal_nav_v2")
     v2.nav_ui = types.SimpleNamespace(render_universal_nav=lambda _state: None)
 
+    def clear_query(query):
+        assert query is st.query_params
+        events.append("clear-query")
+
+    def clear_session(session, outgoing_sport_id):
+        assert session is st.session_state
+        events.append(("clear-session", outgoing_sport_id))
+
+    v2._clear_cross_route_query_context = clear_query
+    v2._clear_cross_route_session_context = clear_session
+
     def prepare(intent, session, query):
         events.append(("prepare", getattr(intent, "sport_id", None), getattr(intent, "market_id", None)))
         assert session is st.session_state
@@ -104,6 +115,8 @@ def test_v4_returns_tap_intent_so_legacy_owner_switches_to_nfl_in_same_run(monke
     assert events == [
         "v3-delegate",
         "pill-return",
+        "clear-query",
+        ("clear-session", "mlb"),
         ("legacy-owner", "nfl"),
     ]
     assert v2.nav_ui.render_universal_nav is original
