@@ -74,6 +74,21 @@ def make_legacy_selectbox_bridge(
     return _bridge
 
 
+def make_legacy_markdown_bridge(delegate: Callable[..., Any]) -> Callable[..., Any]:
+    """Hide only the obsolete root KYRE SPORTS AI hero during safe cutover."""
+    def _bridge(body: Any, *args, **kwargs):
+        text = str(body or "")
+        has_shell = 'class="ks-shell"' in text or "class='ks-shell'" in text
+        if has_shell and "KYRE SPORTS AI" in text:
+            return None
+        return delegate(body, *args, **kwargs)
+
+    return _bridge
+
+
 __all__ = [
-    "LEGACY_TOP_LEVEL_LABELS", "apply_legacy_route_state", "make_legacy_selectbox_bridge",
+    "LEGACY_TOP_LEVEL_LABELS",
+    "apply_legacy_route_state",
+    "make_legacy_markdown_bridge",
+    "make_legacy_selectbox_bridge",
 ]
