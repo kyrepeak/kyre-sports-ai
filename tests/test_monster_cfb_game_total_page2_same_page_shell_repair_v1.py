@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-STEP9 = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py"
+STEP9 = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1.py"
 SAME_PAGE = ROOT / "cfb_game_total_page2_same_page_shell_repair_v1.py"
 PAGE1 = ROOT / "cfb_game_total_clean_page_v45.py"
 PAGE2 = ROOT / "cfb_game_total_page2_step8_final_runtime_v1.py"
