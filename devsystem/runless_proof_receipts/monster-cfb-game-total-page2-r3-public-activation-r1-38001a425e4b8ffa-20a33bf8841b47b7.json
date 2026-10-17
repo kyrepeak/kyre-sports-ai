@@ -1,0 +1,47 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page2-r3-public-activation-r1.json": "d0f6bf6e8fd3722c7bbf1c9b0e11da2fe9206285",
+    "requirements.txt": "0b17c165d60d2bdc3a7b26c81e98fa2f8b6bf88e",
+    "tests/test_monster_cfb_game_total_page2_r3_public_activation_r1.py": "2c45d23f2e4e40f1276e0c417e5ae7be448862b4"
+  },
+  "candidate_sha": "38001a425e4b8ffa75f4a8b289d8c111b0a97bee",
+  "created_at": "2026-10-17T16:46:15.707980+00:00",
+  "dependency_map": {
+    "cfb_game_total_page2_visual_cleanup_r3.py": "6a2d60c1bdf3f2ca06128ad8c62b8ae5accb21cc",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py": "e2141cc3ed26cc5f3238f69c4fc5a2c313d85261"
+  },
+  "digest": "b905e315fada8a089e89e19c9d8061c07120f96bc5ca8448c0aac6585f7fa57a",
+  "evidence_digests": [
+    "b5b23741ad8fc32cbbd194382ef3d86f475a74b9ca4dc68fb0b445aa6b4d1559",
+    "8670259f606301d1b3b390d65af41fb1971c52bc12bb75f7fe2c73a81024541d"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "d6124f4e2423f817a4fc10ebf1680de68e033fc57397f286d3d7486d9cbc5adf",
+  "proof_id": "monster-cfb-game-total-page2-r3-public-activation-r1-38001a425e4b8ffa-20a33bf8841b47b7",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-R3-PUBLIC-ACTIVATION-R1"
+    ],
+    "revision": 383,
+    "state_hash": "60818a21ba6818e4564a25f5309b09c4d74cf767136f38d275cc3488b6cd0d30"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-GT-PAGE2-R3-PUBLIC-ACTIVATION-R1"
+    ],
+    "revision": 383,
+    "state_hash": "60818a21ba6818e4564a25f5309b09c4d74cf767136f38d275cc3488b6cd0d30"
+  },
+  "request_fingerprint": "1d0e405b37b7144c862698e98ddbdaefb1ed0dc74eb7ce87ac7754a63ac95365",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-page2-r3-public-activation-r1",
+  "workstream": "monster-cfb-game-total-page2-r3-public-activation-r1"
+}
