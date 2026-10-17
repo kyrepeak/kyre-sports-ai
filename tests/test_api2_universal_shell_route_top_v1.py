@@ -69,8 +69,8 @@ def test_entrypoint_cold_start_helper_seeds_valid_route_without_touching_v3():
 
 def test_entrypoint_activates_cold_start_guard_before_legacy_body():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME_REFRESH_2026_10_17_R2" in app
+    assert "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME_REFRESH_2026_10_17_R4" in app
     guard = "seed_canonical_route_if_missing(st.session_state, st.query_params)"
-    legacy = "from app_legacy_entrypoint_v1 import *"
+    legacy = '_legacy_entrypoint_path = Path(__file__).with_name("app_legacy_entrypoint_v1.py")'
     assert guard in app
     assert app.index(guard) < app.index(legacy)
