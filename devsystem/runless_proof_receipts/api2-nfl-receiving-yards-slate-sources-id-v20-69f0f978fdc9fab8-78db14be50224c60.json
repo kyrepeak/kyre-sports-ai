@@ -1,0 +1,53 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-receiving-yards-slate-sources-id-v20.json": "ec7b9d46ff5dd08923a5a275a2131e41ce171c05",
+    "nfl_receiving_yards_hub_v20.py": "bcd18ab8c11d183ef3d886e5d68077ef2aff2a68",
+    "nfl_receiving_yards_multisource_v1.py": "57e6edc18d2eef9d58786bfe596b2a80e9827968",
+    "streamlit_memory_lazy_router_universal_nav_v2.py": "8a10435f58f5fc087a4c340fa6884daf9e6552fc",
+    "tests/test_nfl_receiving_yards_slate_sources_id_v20.py": "9023895e14580c03ad4488667d9eb2cc966d90cd"
+  },
+  "candidate_sha": "69f0f978fdc9fab80ba1558b9840b43fd483f989",
+  "created_at": "2026-10-17T07:35:48.742300+00:00",
+  "dependency_map": {
+    "nfl_prop_analytics_roster_truth_v1.py": "053092b8cfdfd70ea7809611b29782b47b3abf9b",
+    "nfl_receiving_yards_hub_v15.py": "552299f727b5c08022b7fc98516861d52cf171d3",
+    "nfl_receiving_yards_hub_v18.py": "f06cf8c0e4e1343ccd3be5653e854ba92820939c",
+    "nfl_receiving_yards_hub_v19.py": "077f48b5a23183a270c836889b11704d7a0debf7",
+    "streamlit_memory_lazy_router_universal_nav_v1.py": "bfaad87a3042fd5ef33624e1d7bfae5f5745bb9f",
+    "universal_tap_only_selector_v1.py": "01c651429ed024c4920ad08440729f52817f2921"
+  },
+  "digest": "5c08782662176f6cee74221b1ccf5b6edad1ed404d4191b6b73570fe63fcbdc7",
+  "evidence_digests": [
+    "ca296e379e62ea3868f3d505aad413b6ca3009d9c3fac1ce8d7431731b0faffa",
+    "7e01c1bd232eca777c9a436a9fbdf18fcb67f47871236c4b79878a3ad867378b",
+    "65ace19493959c7d05f8467acfe58e629418ecfd5356450862dbf2d68c7b1b1c",
+    "bf1999b6616cbf54369b04ce52ce48a5f4daa73cb410108ebadbbb2ef7bd396b"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "33a41896663bc932bb0020b70c57f073b70d02020b31222848cd1b2bf7845fad",
+  "proof_id": "api2-nfl-receiving-yards-slate-sources-id-v20-69f0f978fdc9fab8-78db14be50224c60",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 378,
+    "state_hash": "7b37fb9c662561f6c9c9eecd5c726c0f480c5481a1d4a5c6e8d21bd3a0b879ae"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 378,
+    "state_hash": "7b37fb9c662561f6c9c9eecd5c726c0f480c5481a1d4a5c6e8d21bd3a0b879ae"
+  },
+  "request_fingerprint": "ccd48fec1a4cd0e07219f260115a49b91b7ec45a3f9b8d1010e52fe8a308cc62",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-receiving-yards-slate-sources-id-v20",
+  "workstream": "api2-nfl-receiving-yards-slate-sources-id-v20"
+}
