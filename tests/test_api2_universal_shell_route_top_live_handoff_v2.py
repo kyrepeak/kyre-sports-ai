@@ -7,6 +7,8 @@ import types
 
 import pytest
 
+from devsystem.api2_universal_shell_route_top_public_cert_v1 import _visible_nfl_control
+
 ROOT = Path(__file__).resolve().parents[1]
 V4_PATH = ROOT / "streamlit_memory_lazy_router_universal_nav_v4.py"
 
@@ -109,3 +111,42 @@ def test_v4_no_tap_preserves_v3_delegate_without_extra_rerun(monkeypatch):
     assert result is None
     assert events == ["v3-delegate", "pill-return"]
     assert v2.nav_ui.render_universal_nav is original
+
+
+class _FakeItem:
+    def __init__(self, label: str):
+        self.label = label
+
+    def is_visible(self):
+        return True
+
+
+class _FakeLocator:
+    def __init__(self, labels):
+        self.labels = list(labels)
+
+    def filter(self, *, has_text):
+        return _FakeLocator([label for label in self.labels if has_text.search(label)])
+
+    def count(self):
+        return len(self.labels)
+
+    def nth(self, index):
+        return _FakeItem(self.labels[index])
+
+
+class _FakeFrame:
+    def locator(self, selector):
+        assert selector == "button"
+        return _FakeLocator(["🏈 NFL", "🏟️ CFB", "🏀 NBA", "⚾ MLB", "🏀 WNBA"])
+
+    def get_by_text(self, text, exact=False):
+        assert text == "NFL"
+        assert exact is True
+        return _FakeLocator([])
+
+
+def test_public_certificate_targets_actual_emoji_labeled_nfl_button():
+    control = _visible_nfl_control(_FakeFrame())
+    assert control is not None
+    assert control.label == "🏈 NFL"
