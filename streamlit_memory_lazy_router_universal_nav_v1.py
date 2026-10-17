@@ -15,6 +15,7 @@ import streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1 as prior
 import universal_sports_nav_ui_v1 as nav_ui
 from universal_sports_nav_compat_v1 import (
     apply_legacy_route_state,
+    make_legacy_markdown_bridge,
     make_legacy_selectbox_bridge,
 )
 from universal_sports_nav_controller_v1 import (
@@ -70,12 +71,34 @@ def _persist_state(state: RouteState, session: Any) -> None:
 
 def _resolve_initial_state(session: Mapping[str, Any], query: Mapping[str, Any]) -> RouteState:
     normalized = normalize_legacy_query(query, session)
-    return resolve_route(
+    state = resolve_route(
         canonical_sport=normalized.sport_id,
         canonical_market=normalized.market_id,
         last_market_by_sport=_memory_from_session(session),
         epoch=_epoch_from_session(session),
     )
+
+    # Browser Back/Forward or a shared canonical URL can change route identity
+    # without a new pills click. Advance the UI generation whenever the valid
+    # canonical route differs from the route we last persisted, so stale native
+    # widget state cannot overwrite the URL on the next render.
+    persisted_sport = str(session.get(_SPORT_KEY) or "").strip().lower()
+    persisted_market = str(session.get(_MARKET_KEY) or "").strip().lower()
+    has_canonical_route = bool(normalized.sport_id and normalized.market_id)
+    if (
+        has_canonical_route
+        and persisted_sport
+        and persisted_market
+        and (persisted_sport, persisted_market) != (state.sport_id, state.market_id)
+    ):
+        return RouteState(
+            state.sport_id,
+            state.market_id,
+            state.source,
+            state.epoch + 1,
+            state.last_market_by_sport,
+        )
+    return state
 
 
 def _apply_intent(state: RouteState, intent: RouteIntent | None) -> RouteState:
@@ -121,13 +144,15 @@ def render_app() -> Any:
     # inputs without erasing other sports' remembered market keys.
     apply_legacy_route_state(state, st.session_state)
 
-    # 7–9: install only the universal global-selector bridge, delegate, and
-    # always restore the parent's callable ownership even if rendering raises.
+    # 7–9: suppress only obsolete global navigation/hero presentation, delegate,
+    # and always restore parent/Streamlit callable ownership even if rendering raises.
     original_selectbox = st.selectbox
+    original_markdown = st.markdown
     original_hygiene = prior.apply_route_hygiene
     original_parent_bridge_factory = prior._make_selectbox_bridge
 
     st.selectbox = make_legacy_selectbox_bridge(original_selectbox, state)
+    st.markdown = make_legacy_markdown_bridge(original_markdown)
     prior.apply_route_hygiene = _no_route_hygiene
     prior._make_selectbox_bridge = _identity_selectbox_factory
     try:
@@ -135,6 +160,7 @@ def render_app() -> Any:
     finally:
         prior._make_selectbox_bridge = original_parent_bridge_factory
         prior.apply_route_hygiene = original_hygiene
+        st.markdown = original_markdown
         st.selectbox = original_selectbox
 
 
