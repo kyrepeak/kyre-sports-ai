@@ -1,0 +1,58 @@
+{
+  "artifact_map": {
+    "app.py": "a310b3453e69af471ef9cc0fc8b9013b80948d38",
+    "devsystem/api2_universal_shell_route_top_public_cert_v1.py": "fb65593f5ee702693a77bdbc0cd58e65ad0ec449",
+    "devsystem/runless_proof_plans/api2-universal-shell-route-top-live-handoff-v2.json": "cb220bf816af35089cf92bc81b1bbd8a04d006c7",
+    "streamlit_memory_lazy_router_universal_nav_v4.py": "ed9238fcdef86c9a669b0f45362823f1508367c9",
+    "tests/test_api2_universal_shell_route_top_live_handoff_v2.py": "1eabe12e6ef796bd8f29a67c5a0ebeea81b2d00f"
+  },
+  "candidate_sha": "104c2eb4449f5555a13d1959a82fdd01f5c283ab",
+  "created_at": "2026-10-17T21:18:21.559263+00:00",
+  "dependency_map": {
+    "kyre_universal_shell_runtime_v2.py": "9fef48375fb376ac2dcd7dc4213070b61e4dd8bb",
+    "streamlit_memory_lazy_router_universal_nav_v1.py": "bfaad87a3042fd5ef33624e1d7bfae5f5745bb9f",
+    "streamlit_memory_lazy_router_universal_nav_v2.py": "49764d9a9006f6dd4d1940e8599026bd85e2170d",
+    "streamlit_memory_lazy_router_universal_nav_v3.py": "fddeb8634821aab62474c71e103b3c62ac56b6b2",
+    "universal_sports_nav_compat_v1.py": "8ee12de48d4f26bc18039c39c97b02ab9d7bb348",
+    "universal_sports_nav_controller_v1.py": "3bca7acd27274c02b2eba4ad942f072bf7377c70",
+    "universal_sports_nav_registry_v1.py": "f63415d8395e3a9867001a72a7dcf737123b87b7",
+    "universal_sports_nav_ui_v1.py": "6393311b52c14531703f3be048884233a6d7d010",
+    "universal_sports_nav_url_v1.py": "13d03b082245f6cbbc645e115e7b2d0e0e97c9db"
+  },
+  "digest": "6a743c061011764e85c2abbaae96045fa6f50e409b80194403fe5f4447f6adf0",
+  "evidence_digests": [
+    "ff7b95e85b4bf0ed66f1e86ee6e6868212938d6dca51aa6d82d4be8274505844",
+    "8fb65d6c6c300db5c67823c26c6962fa82c2ae6e5ced704b63d77ea0b539532e"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "df04dfb198d6ea12b204ba56192dad24d5caabcd6a60655354818173831b7680",
+  "proof_id": "api2-universal-shell-route-top-live-handoff-v2-104c2eb4449f5555-c596ce43054bec3b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-R3-FINAL"
+    ],
+    "revision": 391,
+    "state_hash": "a3682e05f9026656b3bf5958e9417377df0572499bed7fc34c7b60e3bf3f4339"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-R3-FINAL"
+    ],
+    "revision": 391,
+    "state_hash": "a3682e05f9026656b3bf5958e9417377df0572499bed7fc34c7b60e3bf3f4339"
+  },
+  "request_fingerprint": "1171dde386e6ae90396b971998f2b6e5cb524ab5079fc4a2ff08380d67a5e295",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-shell-route-top-live-handoff-v2",
+  "workstream": "api2-universal-shell-route-top-v1"
+}
