@@ -2,12 +2,11 @@
 
 The endpoint is read-only. It returns the exact Step-18A consumer snapshot and
 a verified player game-log dataset as two isolated components inside one hosted
-API response. The Step-3 history transport now uses a bounded multi-source
-provider policy: the repository-established ESPN athlete gamelog and the
-official WNBA player profile are read in parallel, with official WNBA values
-allowed to backfill only missing observed per-game fields. Direct WNBA Stats
-hosts remain outside the latency-critical path. No projection, market, ranking,
-qualification, simulation, sportsbook, or wager work is performed here.
+API response. The Step-3 history transport uses the certified WNBA-profile +
+ESPN multi-source adapter first, then falls through to the repository's existing
+official WNBA Stats player-game-log client only when both primary providers are
+unavailable. No projection, market, ranking, qualification, simulation,
+sportsbook, or wager work is performed here.
 """
 from __future__ import annotations
 
@@ -16,8 +15,8 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
-from sports_api.wnba_pra_history_multisource_v1 import (
-    get_multisource_player_game_log_dataset as get_step3_espn_player_game_log_dataset,
+from sports_api.wnba_pra_history_runtime_fallback_v1 import (
+    get_runtime_player_game_log_dataset as get_step3_espn_player_game_log_dataset,
 )
 from sports_api.wnba_step18a_streamlit_consumer import build_step18a_consumer_latest
 
@@ -68,9 +67,10 @@ def build_pra_detail_bundle(player_id: int, season: int = DEFAULT_SEASON) -> dic
             "read_only_get": True,
             "streamlit_hosted_reads_required": 1,
             "consumer_source": "wnba_step18a_streamlit_consumer_latest",
-            "history_source": "espn_wnba_athlete_gamelog",
-            "history_source_policy": "official_wnba_profile_plus_espn_parallel",
+            "history_source": "wnba_multisource_runtime_fallback",
+            "history_source_policy": "official_wnba_profile_plus_espn_plus_official_stats_fallback",
             "official_wnba_backfill_missing_only": True,
+            "official_wnba_stats_fallback": True,
             "consumer_payload_transformed_server_side": False,
             "history_payload_transformed_server_side": True,
             "projection_run": False,
