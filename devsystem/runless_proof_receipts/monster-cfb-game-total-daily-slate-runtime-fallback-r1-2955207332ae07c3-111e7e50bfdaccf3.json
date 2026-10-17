@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page1_daily_slate_runtime_fallback_r1.py": "1ae2e7313fc2c4c436ec3ed02324bbbd45d0806f",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-daily-slate-runtime-fallback-r1.json": "747202b804c17a82aefc7b67aab89ba8433b8cb6",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py": "c8e3ccc25390efe3ab6ad6da962d07ac694f7fe1",
+    "tests/test_monster_cfb_game_total_daily_slate_runtime_fallback_r1.py": "c757d9b0bb561504d1130f55f9f060d058f920be"
+  },
+  "candidate_sha": "2955207332ae07c39897da25d67fb24c0b92aca8",
+  "created_at": "2026-10-17T01:03:51.488332+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_daily_slate_market_v1.py": "6585219cc7ea9c301769c7e4daf1ab97cdef9d3f",
+    "cfb_game_total_page1_daily_slate_v1.py": "ee2e231db9d928c5c51c40cf5c1df2888fa767db",
+    "cfb_game_total_page2_same_page_shell_repair_v1.py": "ca1002ca05a48b56aabaa1630ab66e0d1789233f",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1.py": "82ac5cf50f53480f9080e567773d2328716725c6",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1.py": "a1ea0403629c296ac3e715684c44ded2ae5c35a4"
+  },
+  "digest": "19dcfbbb5b3afbaf904f076b8be17d85207215a351c24e8ae0b3c4949ae5bac6",
+  "evidence_digests": [
+    "cc31a07c7f560b8a623bc87497281b2d4c6e79a757581952b97f23046f7340f3",
+    "45955528ea3d6b9cdaca33f2b46f8e9047fa0fb82070c3f76057bd2663c774b6"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "62a401b18ad2cae76e2e874698bce9515169df57f5dc5c05fad0e22776c9f7d9",
+  "proof_id": "monster-cfb-game-total-daily-slate-runtime-fallback-r1-2955207332ae07c3-111e7e50bfdaccf3",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SPORTS-NAVIGATION-V1-APP-R1"
+    ],
+    "revision": 373,
+    "state_hash": "d92329c36d2dc4bd6778fe9b29fb8387550fef400395f315d5ca9895d00a33a0"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SPORTS-NAVIGATION-V1-APP-R1"
+    ],
+    "revision": 373,
+    "state_hash": "d92329c36d2dc4bd6778fe9b29fb8387550fef400395f315d5ca9895d00a33a0"
+  },
+  "request_fingerprint": "16bd5912f1aeb3532cbde50b306f3a6e90d6a6c68f4bfd8c585f8debdf588c30",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-daily-slate-runtime-fallback-r1",
+  "workstream": "monster-cfb-game-total-daily-slate-runtime-fallback-r1"
+}
