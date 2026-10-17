@@ -218,6 +218,74 @@ class GithubAuthority:
             "dependency_map": self._path_map(candidate_tree, dependencies, "DEPENDENCY"),
         }
 
+    def verify_base_drift_successor(
+        self,
+        *,
+        old_candidate_sha: str,
+        old_expected_main_sha: str | None,
+        successor_candidate_sha: str,
+        successor_expected_main_sha: str,
+        pr_number: int,
+        branch: str,
+    ) -> dict[str, Any]:
+        if not old_expected_main_sha:
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_OLD_MAIN_REQUIRED")
+        if successor_candidate_sha == old_candidate_sha:
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_SUCCESSOR_UNCHANGED")
+
+        current_main = self.main_sha()
+        if current_main != successor_expected_main_sha:
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_MAIN_IDENTITY_DRIFT")
+        if current_main == old_expected_main_sha:
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_MAIN_UNCHANGED")
+
+        pr = self._request("GET", f"/pulls/{pr_number}")
+        if str(pr.get("state") or "") != "open":
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_PR_NOT_OPEN")
+        head = dict(pr.get("head") or {})
+        base = dict(pr.get("base") or {})
+        head_repo = dict(head.get("repo") or {})
+        base_repo = dict(base.get("repo") or {})
+        if (
+            str(head_repo.get("full_name") or "") != self.settings.repository
+            or str(base_repo.get("full_name") or "") != self.settings.repository
+            or str(base.get("ref") or "") != "main"
+        ):
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_PR_REPOSITORY_MISMATCH")
+        if str(head.get("ref") or "") != branch:
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_BRANCH_MISMATCH")
+        if str(head.get("sha") or "") != successor_candidate_sha:
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_HEAD_MISMATCH")
+
+        try:
+            old_compare = self._request(
+                "GET", f"/compare/{old_candidate_sha}...{successor_candidate_sha}"
+            )
+            main_compare = self._request(
+                "GET", f"/compare/{current_main}...{successor_candidate_sha}"
+            )
+        except Exception as exc:
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_ANCESTRY_UNAVAILABLE") from exc
+
+        old_status = str((old_compare or {}).get("status") or "")
+        main_status = str((main_compare or {}).get("status") or "")
+        if old_status != "ahead":
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_OLD_NOT_ANCESTOR")
+        if main_status != "ahead":
+            raise GithubAuthorityError("RUNLESS_V2_BASE_DRIFT_MAIN_NOT_ANCESTOR")
+
+        return {
+            "pr_number": int(pr_number),
+            "branch": branch,
+            "old_candidate_sha": old_candidate_sha,
+            "old_expected_main_sha": old_expected_main_sha,
+            "successor_candidate_sha": successor_candidate_sha,
+            "successor_expected_main_sha": successor_expected_main_sha,
+            "current_main_sha": current_main,
+            "old_ancestry_status": old_status,
+            "main_ancestry_status": main_status,
+        }
+
     def _receipt_path(self, proof_id: str) -> str:
         return f"{self.settings.receipt_path.rstrip('/')}/{proof_id}.json"
 
