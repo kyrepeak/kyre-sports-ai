@@ -1,17 +1,16 @@
-"""Universal Sports Navigation V4 — atomic same-run route ownership bridge.
+"""Universal Sports Navigation V4 — atomic route commit + rerun-safe terminal guard.
 
-V3 remains the steady-state canonical owner. V4 preserves the immediate V1
-RouteIntent fallback and registers atomic callbacks on the universal sport and
-market pills. A pill change commits canonical session state, canonical URL, and
-legacy compatibility state *before* the next body-render run begins, then issues
-one explicit full rerun. This avoids Streamlit fast-rerun races that can update
-the URL while leaving the outgoing sport body on screen.
+V3 remains the steady-state canonical owner. V4 registers atomic callbacks on
+the universal sport and market pills so a tap commits canonical session state,
+canonical URL, and legacy compatibility state before the next body-render run
+begins. That removes the Streamlit fast-rerun race that could update the URL
+while leaving the outgoing sport body on screen.
 
-The final legacy-root guard remains as defense in depth: historical router
-overlays may temporarily rewrite ``st.selectbox`` while they delegate, so the
-canonical global selector bridge is reapplied immediately before the legacy
-root chooses the body owner. Page-level controls continue to delegate through
-the downstream selector unchanged.
+Historical router overlays may still rewrite ``st.selectbox`` while delegating,
+so V4 also protects the final legacy-root boundary. The guard is explicitly
+rerun-safe: if a fast rerun interrupts cleanup, the next run unwraps any leaked
+V4 guard back to its original delegate before installing exactly one new guard.
+No parent-router wrapper or rerun wrapper is stacked across Streamlit runs.
 """
 from __future__ import annotations
 
@@ -24,7 +23,7 @@ import streamlit_memory_lazy_router_universal_nav_v3 as prior
 import universal_sports_nav_ui_v1 as stable_ui
 
 
-MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4.3 • ATOMIC PILL COMMIT"
+MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4.4 • RERUN-SAFE TERMINAL OWNER"
 FROZEN_PARENT = "streamlit_memory_lazy_router_universal_nav_v3"
 PENDING_INTENT_KEY = getattr(v2, "PENDING_INTENT_KEY", "ks_universal_pending_intent_v2")
 UNIVERSAL_NAV_ENABLED = True
@@ -33,6 +32,8 @@ UNIVERSAL_NAV_ENABLED = True
 # assigns its renderer into the V1 module while delegating, so resolving the
 # attribute later would recurse back into this bridge.
 _STABLE_RENDERER = stable_ui.render_universal_nav
+_ROOT_GUARD_MARKER = "_api2_v4_terminal_guard"
+_ROOT_GUARD_DELEGATE = "_api2_v4_terminal_delegate"
 
 
 def _query_value(key: str) -> str:
@@ -89,9 +90,8 @@ def _commit_pill_intent(
         v2._clear_cross_route_query_context(st.query_params)
         v2._clear_cross_route_session_context(st.session_state, outgoing_sport)
 
-    # Session and compatibility state are committed before URL mutation or any
-    # rerun can interrupt this callback.  The next run therefore starts with a
-    # complete single-owner route even under Streamlit's runner.fastReruns.
+    # Commit session/compatibility state before URL mutation or rerun can
+    # interrupt this callback. The next run starts with one complete owner.
     v2.prior._persist_state(next_state, st.session_state)
     v2.prior.apply_legacy_route_state(next_state, st.session_state)
 
@@ -107,9 +107,8 @@ def _commit_pill_intent(
     )
     v2.prior.apply_query_patch(st.query_params, patch)
 
-    # A single explicit full rerun is intentional here. The callback already
-    # advanced the epoch, so the replacement pill widgets have new identities
-    # and cannot re-fire this callback in a loop.
+    # The callback already advanced the epoch; replacement pill widgets receive
+    # fresh identities, preventing a callback/rerun loop.
     st.rerun()
 
 
@@ -142,9 +141,8 @@ def _render_with_atomic_pill_callbacks(state: Any) -> Any:
 
 
 def _render_immediate_handoff(state: Any) -> Any:
-    # The callback path is authoritative in Streamlit 1.66+. Returning an intent
-    # remains a safe fallback for test doubles or any environment where the
-    # widget callback was not the source of the current route change.
+    # Callback commits are authoritative in Streamlit 1.66+. Returning an intent
+    # remains a safe fallback for test doubles and non-callback environments.
     intent = _render_with_atomic_pill_callbacks(state)
     if intent is None:
         return None
@@ -166,8 +164,25 @@ def _render_immediate_handoff(state: Any) -> Any:
     return intent
 
 
+def _unwrap_terminal_root(candidate: Any) -> Any:
+    """Collapse leaked V4 guards from interrupted fast-rerun cleanup."""
+    current = candidate
+    seen: set[int] = set()
+    while getattr(current, _ROOT_GUARD_MARKER, False):
+        identity = id(current)
+        if identity in seen:
+            raise RuntimeError("API2_V4_ROOT_GUARD_CYCLE")
+        seen.add(identity)
+        delegate = getattr(current, _ROOT_GUARD_DELEGATE, None)
+        if not callable(delegate):
+            raise RuntimeError("API2_V4_ROOT_GUARD_DELEGATE_MISSING")
+        current = delegate
+    return current
+
+
 def _terminal_root_guard(delegate: Any) -> Any:
-    """Return a root renderer that makes canonical navigation the final owner."""
+    """Return one canonical root renderer and retain its original delegate."""
+    delegate = _unwrap_terminal_root(delegate)
 
     def _guarded_root_render() -> Any:
         state = v2.prior._resolve_initial_state(st.session_state, st.query_params)
@@ -205,72 +220,22 @@ def _terminal_root_guard(delegate: Any) -> Any:
 
         v2.legacy_root.st.selectbox = traced_selectbox
         try:
-            result = delegate()
-            _trace(
-                "ROOT_EXIT",
-                state_sport=getattr(state, "sport_id", None),
-                canonical_sport=st.session_state.get("ks_universal_sport"),
-                legacy_sport=st.session_state.get("ks_sport_touch"),
-                query_sport=_query_value("sport"),
-            )
-            return result
+            return delegate()
         finally:
             v2.legacy_root.st.selectbox = downstream_selectbox
 
+    setattr(_guarded_root_render, _ROOT_GUARD_MARKER, True)
+    setattr(_guarded_root_render, _ROOT_GUARD_DELEGATE, delegate)
     return _guarded_root_render
-
-
-def _traced_parent_guard(delegate: Any) -> Any:
-    def _guarded_parent_render() -> Any:
-        _trace(
-            "PARENT_ENTER",
-            module=getattr(delegate, "__module__", ""),
-            name=getattr(delegate, "__name__", ""),
-            query_sport=_query_value("sport"),
-            query_market=_query_value("market"),
-            canonical_sport=st.session_state.get("ks_universal_sport"),
-            canonical_market=st.session_state.get("ks_universal_market"),
-            legacy_sport=st.session_state.get("ks_sport_touch"),
-        )
-        try:
-            result = delegate()
-        except BaseException as exc:
-            _trace(
-                "PARENT_ABORT",
-                exc_type=type(exc).__name__,
-                query_sport=_query_value("sport"),
-                canonical_sport=st.session_state.get("ks_universal_sport"),
-                legacy_sport=st.session_state.get("ks_sport_touch"),
-            )
-            raise
-        _trace(
-            "PARENT_EXIT",
-            query_sport=_query_value("sport"),
-            canonical_sport=st.session_state.get("ks_universal_sport"),
-            legacy_sport=st.session_state.get("ks_sport_touch"),
-        )
-        return result
-
-    return _guarded_parent_render
 
 
 def render_app() -> Any:
     original_renderer = v2.nav_ui.render_universal_nav
-    original_root_render = v2.legacy_root.render_app
-    immediate_parent = getattr(v2.prior, "prior", None)
-    original_parent_render = getattr(immediate_parent, "render_app", None)
-    original_rerun = st.rerun
 
-    def traced_rerun(*args: Any, **kwargs: Any) -> Any:
-        _trace(
-            "RERUN",
-            query_sport=_query_value("sport"),
-            query_market=_query_value("market"),
-            canonical_sport=st.session_state.get("ks_universal_sport"),
-            canonical_market=st.session_state.get("ks_universal_market"),
-            legacy_sport=st.session_state.get("ks_sport_touch"),
-        )
-        return original_rerun(*args, **kwargs)
+    # A fast rerun may interrupt the prior run before its finally block restores
+    # the root. Normalize that leaked state first, then install exactly one guard.
+    original_root_render = _unwrap_terminal_root(v2.legacy_root.render_app)
+    guarded_root_render = _terminal_root_guard(original_root_render)
 
     _trace(
         "V4_ENTER",
@@ -279,19 +244,17 @@ def render_app() -> Any:
         canonical_sport=st.session_state.get("ks_universal_sport"),
         canonical_market=st.session_state.get("ks_universal_market"),
         legacy_sport=st.session_state.get("ks_sport_touch"),
+        leaked_root_guard=(v2.legacy_root.render_app is not original_root_render),
     )
     v2.nav_ui.render_universal_nav = _render_immediate_handoff
-    v2.legacy_root.render_app = _terminal_root_guard(original_root_render)
-    if immediate_parent is not None and original_parent_render is not None:
-        immediate_parent.render_app = _traced_parent_guard(original_parent_render)
-    st.rerun = traced_rerun
+    v2.legacy_root.render_app = guarded_root_render
     try:
         return prior.render_app()
     finally:
-        st.rerun = original_rerun
-        if immediate_parent is not None and original_parent_render is not None:
-            immediate_parent.render_app = original_parent_render
-        v2.legacy_root.render_app = original_root_render
+        # Restore only our exact guard. If a downstream owner deliberately moved
+        # the root pointer, do not overwrite that newer authority.
+        if v2.legacy_root.render_app is guarded_root_render:
+            v2.legacy_root.render_app = original_root_render
         v2.nav_ui.render_universal_nav = original_renderer
 
 
@@ -303,6 +266,7 @@ __all__ = [
     "_commit_pill_intent",
     "_render_with_atomic_pill_callbacks",
     "_terminal_root_guard",
+    "_unwrap_terminal_root",
     "record_bootstrap_import_ms",
     "render_app",
 ]
