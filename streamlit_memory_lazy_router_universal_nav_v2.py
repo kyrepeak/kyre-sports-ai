@@ -27,6 +27,7 @@ PENDING_INTENT_KEY = nav_ui.PENDING_INTENT_KEY
 RECEIVING_V17_MODULE = "nfl_receiving_yards_hub_v17"
 RECEIVING_V18_MODULE = "nfl_receiving_yards_hub_v18"
 RECEIVING_V19_MODULE = "nfl_receiving_yards_hub_v19"
+RECEIVING_V20_MODULE = "nfl_receiving_yards_hub_v20"
 
 _ROUTE_LOCAL_QUERY_KEYS = frozenset({"date", "game_id", "player_id"})
 
@@ -89,6 +90,8 @@ def _render_app_impl() -> Any:
     def receiving_import(module_name: str):
         if receiving_route and str(module_name) == RECEIVING_V17_MODULE:
             module_name = RECEIVING_V19_MODULE
+        if receiving_route and str(module_name) == RECEIVING_V19_MODULE:
+            module_name = RECEIVING_V20_MODULE
         return original_import(module_name)
 
     def clean_router_debug(body: Any, *args: Any, **kwargs: Any):
