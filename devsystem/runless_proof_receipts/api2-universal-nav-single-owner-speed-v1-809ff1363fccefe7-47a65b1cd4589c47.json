@@ -1,0 +1,52 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-universal-nav-single-owner-speed-v1.json": "e7f4d4bb8fc21b34761bc275a01f16ce2a521b38",
+    "tests/test_api2_universal_nav_single_owner_speed_v1.py": "cbbed30a227efde4fb87e2369e39b2853a203717",
+    "universal_sports_nav_ui_v1.py": "6393311b52c14531703f3be048884233a6d7d010"
+  },
+  "candidate_sha": "809ff1363fccefe7bf2ffc574730c2616fc08758",
+  "created_at": "2026-10-17T03:02:18.394185+00:00",
+  "dependency_map": {
+    "app.py": "272d8cf3d6ecd9ad3eebb2fc64ff522dbbcafb05",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py": "20fada13ddce44e0c3eae52e4cec4b2751d10c9a",
+    "streamlit_memory_lazy_router_universal_nav_v1.py": "bfaad87a3042fd5ef33624e1d7bfae5f5745bb9f",
+    "universal_sports_nav_compat_v1.py": "8ee12de48d4f26bc18039c39c97b02ab9d7bb348",
+    "universal_sports_nav_controller_v1.py": "3bca7acd27274c02b2eba4ad942f072bf7377c70",
+    "universal_sports_nav_registry_v1.py": "f63415d8395e3a9867001a72a7dcf737123b87b7",
+    "universal_sports_nav_url_v1.py": "13d03b082245f6cbbc645e115e7b2d0e0e97c9db"
+  },
+  "digest": "c8da98c7b4863a412faca586616eb6dcd4b509b75417669b2d8a285e9f99f81f",
+  "evidence_digests": [
+    "76d3dc8b6041318a8fb8e1f28121686899362553e3dc5770c99f94ad6f688341",
+    "59d8470ef2aa914abe550bf2ef823e9850f53d2688dfc1d7f28a3f2dcedd74ac",
+    "bf0006d2f743d741eaea19abbb8686157e6aac55a2d0ec15a1939a5d567fc0f5",
+    "5f3a2ed23e5b38c2d367c651c40e3906ffb587fe1a15dde211bbf738470efb81"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6636a378556c3144e17d89830524bf72eef73daee323fdd0ac24740d8b11c193",
+  "proof_id": "api2-universal-nav-single-owner-speed-v1-809ff1363fccefe7-47a65b1cd4589c47",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 376,
+    "state_hash": "141f12912b41d42fe6ad279d8722d09570cd5ae4683a7695a62edf5c3aa20751"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 376,
+    "state_hash": "141f12912b41d42fe6ad279d8722d09570cd5ae4683a7695a62edf5c3aa20751"
+  },
+  "request_fingerprint": "f87bb1394830f1f1ef914f0aea2698dc5f5eea08c7d16ef21fdd71da31318ed4",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-nav-single-owner-speed-v1",
+  "workstream": "api2-universal-nav-single-owner-speed-v1"
+}
