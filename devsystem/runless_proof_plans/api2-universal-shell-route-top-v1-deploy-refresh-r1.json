@@ -1,0 +1,29 @@
+{
+  "mode": "runless",
+  "task_id": "api2-universal-shell-route-top-v1-deploy-refresh-r1",
+  "workstream": "api2-universal-shell-route-top-v1-deploy-refresh-r1",
+  "source_main_sha": "bdd14171cf1baebd5aa00336d1028140d020db6a",
+  "commands": [
+    ["python", "-m", "py_compile", "tests/test_api2_universal_shell_route_top_deploy_refresh_r1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_api2_universal_shell_route_top_deploy_refresh_r1.py", "tests/test_api2_universal_shell_route_top_v1.py", "tests/test_monster_cfb_page2_r4_universal_nav_cold_start_r1.py", "tests/test_api2_universal_route_render_isolation_v2.py"]
+  ],
+  "artifacts": [
+    "requirements.txt",
+    "tests/test_api2_universal_shell_route_top_deploy_refresh_r1.py",
+    "devsystem/runless_proof_plans/api2-universal-shell-route-top-v1-deploy-refresh-r1.json"
+  ],
+  "dependencies": [
+    "app.py",
+    "kyre_universal_entrypoint_cold_start_v1.py",
+    "kyre_universal_shell_runtime_v2.py",
+    "streamlit_memory_lazy_router_universal_nav_v3.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_DEPLOY_REFRESH_R1_FROZEN"
+}
