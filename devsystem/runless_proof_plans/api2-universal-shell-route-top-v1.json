@@ -2,12 +2,13 @@
   "mode": "runless",
   "task_id": "api2-universal-shell-route-top-v1",
   "workstream": "api2-universal-shell-route-top-v1",
-  "source_main_sha": "824ff916e4d3ed065bdf35031a1e09f548397671",
+  "source_main_sha": "80bf12c8cee414b1ebcd6c1be456d7e794defb7a",
   "commands": [
     [
       "python",
       "-m",
       "py_compile",
+      "kyre_universal_entrypoint_cold_start_v1.py",
       "app.py",
       "app_legacy_entrypoint_v1.py",
       "kyre_universal_shell_runtime_v2.py",
@@ -40,6 +41,7 @@
   ],
   "artifacts": [
     "app.py",
+    "kyre_universal_entrypoint_cold_start_v1.py",
     "app_legacy_entrypoint_v1.py",
     "kyre_universal_shell_runtime_v2.py",
     "streamlit_memory_lazy_router_universal_nav_v3.py",
