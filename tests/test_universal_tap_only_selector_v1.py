@@ -134,3 +134,72 @@ def test_page_for_index_contract():
     assert mod._page_for_index(None, 99) == 0
     assert mod._page_for_index(0, 99) == 0
     assert mod._page_for_index(20, 99) == 1
+
+
+def test_long_list_renders_only_one_page_and_next_does_not_change_selection(monkeypatch):
+    mod = _module()
+    values = [f'P{i}' for i in range(41)]
+    fake = FakeSt(clicked={'players__tap_only__next'})
+    fake.session_state['players'] = 'P0'
+    monkeypatch.setattr(mod, 'st', fake)
+    result = mod._tap_only_selectbox('Players', values, key='players')
+    option_buttons = [b for b in fake.buttons if '__tap_only__option__' in str(b[1])]
+    assert len(option_buttons) == 20
+    assert result == 'P0'
+    assert fake.session_state['players'] == 'P0'
+    assert fake.session_state[mod._pagination_key('players')] == 1
+
+
+def test_long_list_initial_page_contains_current_selection(monkeypatch):
+    mod = _module()
+    values = [f'P{i}' for i in range(41)]
+    fake = FakeSt()
+    fake.session_state['players'] = 'P25'
+    monkeypatch.setattr(mod, 'st', fake)
+    mod._tap_only_selectbox('Players', values, key='players')
+    labels = [b[0] for b in fake.buttons if '__tap_only__option__' in str(b[1])]
+    assert labels[0] == 'P20'
+    assert '✓ P25' in labels
+    assert fake.captions[-1] == 'items 21–40 of 41'
+
+
+def test_41_options_page_boundaries(monkeypatch):
+    mod = _module()
+    values = [f'P{i}' for i in range(41)]
+    fake = FakeSt()
+    fake.session_state['players'] = 'P40'
+    monkeypatch.setattr(mod, 'st', fake)
+    mod._tap_only_selectbox('Players', values, key='players')
+    labels = [b[0] for b in fake.buttons if '__tap_only__option__' in str(b[1])]
+    assert labels == ['✓ P40']
+    assert fake.captions[-1] == 'items 41–41 of 41'
+
+
+def test_selection_callback_runs_once_and_can_mutate_same_key(monkeypatch):
+    mod = _module()
+    calls = []
+    fake = FakeSt(clicked={'team__tap_only__option__1'})
+    fake.session_state['team'] = 'A'
+    monkeypatch.setattr(mod, 'st', fake)
+    def callback(prefix, *, suffix):
+        calls.append((prefix, suffix))
+        fake.session_state['team'] = 'CALLBACK'
+    mod._tap_only_selectbox('Team', ['A', 'B'], key='team', on_change=callback, args=('x',), kwargs={'suffix': 'y'})
+    assert calls == [('x', 'y')]
+    assert fake.session_state['team'] == 'CALLBACK'
+
+
+def test_no_key_selector_identity_is_stable_per_callsite_and_distinct_between_callsites():
+    mod = _module()
+    frame = object()
+    first = mod._selector_identity('Player', None, frame=('page.py', 10))
+    again = mod._selector_identity('Player', None, frame=('page.py', 10))
+    second = mod._selector_identity('Player', None, frame=('page.py', 11))
+    assert first == again
+    assert first != second
+    assert first.startswith('__tap_only_selectbox__')
+
+
+def test_pagination_key_is_namespaced():
+    mod = _module()
+    assert mod._pagination_key('team') == '__tap_only_page__team'
