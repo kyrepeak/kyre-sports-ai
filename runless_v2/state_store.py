@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 
 from .config import Settings
-from .models import FailureClass, LeaseClaim, ProofRequest, ProofState, ProofStatus
+from .models import AuthoritySupersession, FailureClass, LeaseClaim, ProofRequest, ProofState, ProofStatus
 
 
 class RunlessV2StateError(RuntimeError):
@@ -233,6 +234,71 @@ class DurableStateStore:
             )
         )
         return ProofStatus(**row)
+
+    def live_workstream_leases(self, workstream: str) -> list[dict[str, Any]]:
+        response = self.client.get(
+            self._url("/rest/v1/workstream_leases"),
+            headers=self._read_headers,
+            params={"select": "*", "workstream": f"eq.{workstream}"},
+        )
+        if response.status_code >= 400:
+            self._raise(response)
+        rows = response.json()
+        if not isinstance(rows, list):
+            raise RunlessV2StateError("RUNLESS_V2_BAD_RESPONSE")
+        now = datetime.now(timezone.utc)
+        live: list[dict[str, Any]] = []
+        for value in rows:
+            row = dict(value)
+            raw = str(row.get("expires_at") or "")
+            try:
+                expires = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                if expires.tzinfo is None:
+                    expires = expires.replace(tzinfo=timezone.utc)
+            except ValueError:
+                raise RunlessV2StateError("RUNLESS_V2_LEASE_EXPIRY_INVALID")
+            if expires.astimezone(timezone.utc) > now:
+                live.append(row)
+        return live
+
+    def supersede_base_drift_authority(
+        self,
+        *,
+        workstream: str,
+        task_id: str,
+        old_proof_id: str,
+        old_candidate_sha: str,
+        successor_candidate_sha: str,
+        successor_expected_main_sha: str,
+        github_pr_number: int,
+        github_branch: str,
+    ) -> AuthoritySupersession:
+        row = self._single(
+            self._rpc(
+                "supersede_base_drift_authority",
+                {
+                    "p_workstream": workstream,
+                    "p_task_id": task_id,
+                    "p_old_proof_id": old_proof_id,
+                    "p_old_candidate_sha": old_candidate_sha,
+                    "p_successor_candidate_sha": successor_candidate_sha,
+                    "p_successor_expected_main_sha": successor_expected_main_sha,
+                    "p_github_pr_number": github_pr_number,
+                    "p_github_branch": github_branch,
+                },
+            )
+        )
+        return AuthoritySupersession(**row)
+
+    def authority_supersession(self, old_proof_id: str) -> AuthoritySupersession:
+        response = self.client.get(
+            self._url("/rest/v1/authority_supersessions"),
+            headers=self._read_headers,
+            params={"select": "*", "old_proof_id": f"eq.{old_proof_id}", "limit": "1"},
+        )
+        if response.status_code >= 400:
+            self._raise(response)
+        return AuthoritySupersession(**self._single(response.json()))
 
     def status(self, proof_id: str) -> ProofStatus:
         response = self.client.get(

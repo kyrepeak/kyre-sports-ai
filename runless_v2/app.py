@@ -41,13 +41,25 @@ from .github_authority import (
     GithubAuthority,
     GithubAuthorityError,
 )
-from .models import ProofRequest, ProofResult
+from .models import ProofRequest, ProofResult, ProofState
 from .proof_service import ProofServiceError, execute_proof_request
 from .sandbox_executor import SandboxExecutor
 from .state_store import DurableStateStore, RunlessV2StateError
 
 _LEDGER_BRANCH = "monster-finalization-ledger-v2"
 _MANIFEST_PATH = "devsystem/finalization_ledger_v2/manifest.json"
+
+
+class BaseDriftSupersessionRequest(BaseModel):
+    repository: str = Field(min_length=1)
+    workstream: str = Field(min_length=1)
+    task_id: str = Field(min_length=1)
+    old_proof_id: str = Field(min_length=1)
+    old_candidate_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    successor_candidate_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    successor_expected_main_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
+    pr_number: int = Field(gt=0)
+    branch: str = Field(min_length=1)
 
 
 class CloseoutRequest(BaseModel):
@@ -558,6 +570,77 @@ def create_app(
             raise HTTPException(
                 status_code=503,
                 detail=f"RUNLESS_V2_PROOF_UNAVAILABLE:{type(exc).__name__}",
+            ) from exc
+
+    @app.post("/supersede-base-drift", dependencies=[Depends(authenticated)])
+    def supersede_base_drift(req: BaseDriftSupersessionRequest) -> dict[str, Any]:
+        if not cfg.authority_enabled:
+            raise HTTPException(status_code=503, detail="RUNLESS_V2_AUTHORITY_DISABLED")
+        try:
+            if req.repository != cfg.repository:
+                raise RunlessV2StateError("RUNLESS_V2_SUPERSESSION_REPOSITORY_MISMATCH")
+
+            before = store.status(req.old_proof_id)
+            if (
+                before.workstream != req.workstream
+                or before.task_id != req.task_id
+                or before.candidate_sha != req.old_candidate_sha
+            ):
+                raise RunlessV2StateError("RUNLESS_V2_SUPERSESSION_OLD_IDENTITY_MISMATCH")
+            if before.state is not ProofState.MERGE_AUTHORIZED:
+                raise RunlessV2StateError("RUNLESS_V2_SUPERSESSION_OLD_STATE_INVALID")
+            if not before.receipt_digest or before.gate_check_run_id is None:
+                raise RunlessV2StateError("RUNLESS_V2_SUPERSESSION_MISSING_EVIDENCE")
+            if store.live_workstream_leases(req.workstream):
+                raise RunlessV2StateError("RUNLESS_V2_SUPERSESSION_WORKSTREAM_BUSY")
+
+            gh.verify_base_drift_successor(
+                old_candidate_sha=req.old_candidate_sha,
+                old_expected_main_sha=before.expected_main_sha,
+                successor_candidate_sha=req.successor_candidate_sha,
+                successor_expected_main_sha=req.successor_expected_main_sha,
+                pr_number=req.pr_number,
+                branch=req.branch,
+            )
+
+            store.supersede_base_drift_authority(
+                workstream=req.workstream,
+                task_id=req.task_id,
+                old_proof_id=req.old_proof_id,
+                old_candidate_sha=req.old_candidate_sha,
+                successor_candidate_sha=req.successor_candidate_sha,
+                successor_expected_main_sha=req.successor_expected_main_sha,
+                github_pr_number=req.pr_number,
+                github_branch=req.branch,
+            )
+            durable = store.authority_supersession(req.old_proof_id)
+            after = store.status(req.old_proof_id)
+            if (
+                durable.workstream != req.workstream
+                or durable.old_proof_id != req.old_proof_id
+                or durable.old_candidate_sha != req.old_candidate_sha
+                or durable.successor_candidate_sha != req.successor_candidate_sha
+                or durable.successor_expected_main_sha != req.successor_expected_main_sha
+                or durable.github_pr_number != req.pr_number
+                or durable.github_branch != req.branch
+                or durable.reason != "BASE_DRIFT"
+            ):
+                raise RunlessV2StateError("RUNLESS_V2_SUPERSESSION_READBACK_IDENTITY_MISMATCH")
+            if (
+                durable.old_receipt_digest != before.receipt_digest
+                or durable.old_gate_check_run_id != before.gate_check_run_id
+                or after.receipt_digest != before.receipt_digest
+                or after.gate_check_run_id != before.gate_check_run_id
+                or after.state is not ProofState.SUPERSEDED_BASE_DRIFT
+            ):
+                raise RunlessV2StateError("RUNLESS_V2_SUPERSESSION_READBACK_EVIDENCE_MISMATCH")
+            return durable.model_dump(mode="json")
+        except (RunlessV2StateError, GithubAuthorityError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"RUNLESS_V2_SUPERSESSION_UNAVAILABLE:{type(exc).__name__}",
             ) from exc
 
     @app.get("/status/{proof_id}", dependencies=[Depends(authenticated)])

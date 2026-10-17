@@ -83,3 +83,12 @@ def test_public_roles_cannot_mutate_control_state():
     assert "revoke all on all functions in schema runless_v2 from anon" in text
     assert "revoke all on all functions in schema runless_v2 from authenticated" in text
     assert "grant usage on schema runless_v2 to service_role" in text
+
+
+def test_base_drift_supersession_extension_is_separate_and_fail_closed():
+    extension = ROOT / "supabase" / "migrations" / "20261017_runless_base_drift_authority_supersession_v1.sql"
+    assert extension.exists()
+    text = extension.read_text().lower()
+    assert "superseded_base_drift" in text
+    assert "authority_supersessions" in text
+    assert "supersede_base_drift_authority" in text

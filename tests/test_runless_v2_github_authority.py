@@ -257,3 +257,96 @@ def test_gate_readback_accepts_exact_app_sha_and_receipt_digest():
     authority._publish_check = lambda candidate_sha, receipt: {"id": 77}
     authority._check_runs = lambda candidate_sha: [check]
     assert authority.publish_gate_and_readback(SHA, receipt)["id"] == 77
+
+
+OLD_MAIN = "e" * 40
+SUCCESSOR = "d" * 40
+
+
+def _wire_base_drift(authority, *, pr_state="open", head_ref="feature", head_sha=SUCCESSOR,
+                     compare_old="ahead", compare_main="ahead", compare_error=False):
+    authority.main_sha = lambda: MAIN
+
+    def request(method, path, **kwargs):
+        if path == "/pulls/17":
+            return {
+                "number": 17,
+                "state": pr_state,
+                "head": {"ref": head_ref, "sha": head_sha, "repo": {"full_name": authority.settings.repository}},
+                "base": {"ref": "main", "repo": {"full_name": authority.settings.repository}},
+            }
+        if path.startswith("/compare/"):
+            if compare_error:
+                raise RuntimeError("compare unavailable")
+            if path == f"/compare/{SHA}...{SUCCESSOR}":
+                return {"status": compare_old}
+            if path == f"/compare/{MAIN}...{SUCCESSOR}":
+                return {"status": compare_main}
+        raise AssertionError(path)
+
+    authority._request = request
+    return authority
+
+
+def _verify_base_drift(authority, **overrides):
+    args = dict(
+        old_candidate_sha=SHA,
+        old_expected_main_sha=OLD_MAIN,
+        successor_candidate_sha=SUCCESSOR,
+        successor_expected_main_sha=MAIN,
+        pr_number=17,
+        branch="feature",
+    )
+    args.update(overrides)
+    return authority.verify_base_drift_successor(**args)
+
+
+def test_base_drift_accepts_open_same_branch_head_descendant_of_old_and_main():
+    authority = _wire_base_drift(make_authority())
+    result = _verify_base_drift(authority)
+    assert result["pr_number"] == 17
+    assert result["branch"] == "feature"
+    assert result["successor_candidate_sha"] == SUCCESSOR
+    assert result["current_main_sha"] == MAIN
+    assert result["old_ancestry_status"] == "ahead"
+    assert result["main_ancestry_status"] == "ahead"
+
+
+@pytest.mark.parametrize(("pr_state", "head_ref", "marker"), [
+    ("closed", "feature", "RUNLESS_V2_BASE_DRIFT_PR_NOT_OPEN"),
+    ("open", "other", "RUNLESS_V2_BASE_DRIFT_BRANCH_MISMATCH"),
+])
+def test_base_drift_rejects_closed_pr_or_branch_mismatch(pr_state, head_ref, marker):
+    authority = _wire_base_drift(make_authority(), pr_state=pr_state, head_ref=head_ref)
+    with pytest.raises(GithubAuthorityError, match=marker):
+        _verify_base_drift(authority)
+
+
+def test_base_drift_rejects_successor_not_current_pr_head():
+    authority = _wire_base_drift(make_authority(), head_sha="9" * 40)
+    with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_BASE_DRIFT_HEAD_MISMATCH"):
+        _verify_base_drift(authority)
+
+
+def test_base_drift_rejects_unchanged_main():
+    authority = _wire_base_drift(make_authority())
+    with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_BASE_DRIFT_MAIN_UNCHANGED"):
+        _verify_base_drift(authority, old_expected_main_sha=MAIN)
+
+
+def test_base_drift_rejects_non_descendant_of_old_candidate():
+    authority = _wire_base_drift(make_authority(), compare_old="diverged")
+    with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_BASE_DRIFT_OLD_NOT_ANCESTOR"):
+        _verify_base_drift(authority)
+
+
+def test_base_drift_rejects_successor_not_containing_current_main():
+    authority = _wire_base_drift(make_authority(), compare_main="diverged")
+    with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_BASE_DRIFT_MAIN_NOT_ANCESTOR"):
+        _verify_base_drift(authority)
+
+
+def test_base_drift_fails_closed_when_compare_api_is_unavailable():
+    authority = _wire_base_drift(make_authority(), compare_error=True)
+    with pytest.raises(GithubAuthorityError, match="RUNLESS_V2_BASE_DRIFT_ANCESTRY_UNAVAILABLE"):
+        _verify_base_drift(authority)
