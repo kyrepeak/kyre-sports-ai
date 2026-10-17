@@ -1,0 +1,67 @@
+{
+  "artifact_map": {
+    "app.py": "272d8cf3d6ecd9ad3eebb2fc64ff522dbbcafb05",
+    "devsystem/runless_proof_plans/api2-universal-sports-navigation-v1.json": "bb02734e312559816bdef1ea14b636653d569d26",
+    "streamlit_memory_lazy_router_universal_nav_v1.py": "bfaad87a3042fd5ef33624e1d7bfae5f5745bb9f",
+    "tests/test_streamlit_memory_lazy_router_universal_nav_v1.py": "93025d1bf62544f534252e5d209299df04f58dce",
+    "tests/test_universal_sports_nav_compat_v1.py": "79bbc1d7c793e7c6cc94f04d73a48956ab923173",
+    "tests/test_universal_sports_nav_controller_v1.py": "835dbb01765b1075fe04d80dec14762632de1fbc",
+    "tests/test_universal_sports_nav_registry_v1.py": "9235983a84c4abb529037007288566625c0bcb5d",
+    "tests/test_universal_sports_nav_ui_v1.py": "f053fbee432ae24c110d3727a91bce0880396600",
+    "tests/test_universal_sports_nav_url_v1.py": "abb5fe47f4de61170f22b614730ac403ff681e98",
+    "universal_sports_nav_compat_v1.py": "8ee12de48d4f26bc18039c39c97b02ab9d7bb348",
+    "universal_sports_nav_controller_v1.py": "3bca7acd27274c02b2eba4ad942f072bf7377c70",
+    "universal_sports_nav_registry_v1.py": "f63415d8395e3a9867001a72a7dcf737123b87b7",
+    "universal_sports_nav_ui_v1.py": "d2d5f46aa423f4ba510c92085e284179f562e6a5",
+    "universal_sports_nav_url_v1.py": "13d03b082245f6cbbc645e115e7b2d0e0e97c9db"
+  },
+  "candidate_sha": "9ee6f0c40121c481336c368fa20c2d1eb2b84240",
+  "created_at": "2026-10-17T01:13:31.471880+00:00",
+  "dependency_map": {
+    "cfb_hub_v1.py": "f5bded2de4de81507dec3d8887853de57154d51a",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py": "c8e3ccc25390efe3ab6ad6da962d07ac694f7fe1",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py": "f3d4b9572a59af185f60dde7639d148d692b29c2",
+    "streamlit_memory_lazy_router_nba_spread_step2_activation_v1.py": "c2e1eb8f207e200a21fa966bba2ef879242441c8",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py": "20fada13ddce44e0c3eae52e4cec4b2751d10c9a",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "streamlit_memory_lazy_router_v132.py": "e6fbaa25d9c9b96aa3092c4e594f25c2d4ddc423",
+    "streamlit_memory_lazy_router_v136.py": "15ae13ee1722ae5003bd152f722d593193f371d4",
+    "streamlit_route_hygiene_v1.py": "1ef2be65aaec4aa193b1eb9a457d19925e3d072a"
+  },
+  "digest": "9b97c014139118e786f5e7ee99468d00a937ffb74b4f13e84246dfb34c16822e",
+  "evidence_digests": [
+    "67446a9308d667edf1bd6c390c97892050bec4ae16bc9e2a86954c653da2acca",
+    "30f3ea63a04d4b4b2c8e8951c72105c5ea44863cc50c1b85ccf7a6a030ea8e51",
+    "5e0b74dbd38d5703c39bf57103d88e296ed1db0fb488deed85ef13d2d1152aa8",
+    "d3cba89dab6e1c4723e6e6fd075797ebe01d739d297fb58c2e0d944a7a1f67a5"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "3e2869ea618170e0d4368a6bc4dacb5fa649e014f7b6cac6cd978088e403b87b",
+  "proof_id": "api2-universal-sports-navigation-v1-9ee6f0c40121c481-930d4d4ca9faa828",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SPORTS-NAVIGATION-V1-APP-R1"
+    ],
+    "revision": 375,
+    "state_hash": "d25e6a41a2c7dab463492bc9878f954045ede6411a20f0fc0f7fe9eee8273e0b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SPORTS-NAVIGATION-V1-APP-R1"
+    ],
+    "revision": 375,
+    "state_hash": "d25e6a41a2c7dab463492bc9878f954045ede6411a20f0fc0f7fe9eee8273e0b"
+  },
+  "request_fingerprint": "61acf39f6ae9a19dca4d5cca0d0f26d35edaf358d7e69ac33b877a9157336ecc",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-sports-navigation-v1",
+  "workstream": "api2-universal-sports-navigation-v1"
+}
