@@ -108,3 +108,8 @@ def test_rejects_stale_fence():
 def test_store_failure_fails_closed():
     with pytest.raises(FinalizerAuthorityError, match="FINALIZER_AUTHORITY_STORE_UNAVAILABLE"):
         call(FakeClient([], [], fail=True))
+
+
+def test_rejects_superseded_base_drift_as_current_mutation_authority():
+    with pytest.raises(FinalizerAuthorityError, match="FINALIZER_AUTHORITY_SUPERSEDED"):
+        call(FakeClient([proof(state="SUPERSEDED_BASE_DRIFT")], [lease()]))

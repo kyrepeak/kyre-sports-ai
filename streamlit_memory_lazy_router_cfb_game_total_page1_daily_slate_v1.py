@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from threading import RLock
+from typing import Any, Callable
 
 import cfb_game_total_page1_daily_slate_runtime_fallback_r1 as daily_fallback
 import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair
+import streamlit_memory_lazy_router_v1 as root
 
 MODEL_VERSION = "CFB GAME TOTAL PAGE1 DAILY SLATE ROUTER V1"
 ACTIVE_MARKER = "CFB_GAME_TOTAL_PAGE1_DAILY_SLATE_ROUTER_V1_ACTIVE"
@@ -27,17 +29,18 @@ MAY_MODIFY_SELECTED_GAME_RUNTIME = False
 NETWORK_CALLS_ADDED = 0
 FALLBACK_NETWORK_ONLY_WHEN_PRIMARY_UNAVAILABLE = False
 FALLBACK_NETWORK_ON_EMPTY_PRIMARY = True
+FRESH_IMPORT_CROSSCHECK_ENABLED = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _LOCK = RLock()
 
 
-@contextmanager
-def _install_empty_primary_crosscheck():
-    """Do not trust a non-throwing empty primary slate without a fallback check."""
-    original_load_day = daily_fallback.page._load_day
+def _empty_primary_crosscheck(delegate: Callable[[Any], dict[str, Any]]) -> Callable[[Any], dict[str, Any]]:
+    """Wrap one Daily Slate loader without changing any analysis/model logic."""
+    if getattr(delegate, "_cfbgt_daily_empty_primary_crosscheck", False):
+        return delegate
 
     def load_day(day):
-        payload = dict(original_load_day(day))
+        payload = dict(delegate(day))
         if int(payload.get("game_count") or 0) > 0 or payload.get("games"):
             return payload
 
@@ -55,11 +58,52 @@ def _install_empty_primary_crosscheck():
         payload["primary_empty"] = True
         return payload
 
-    daily_fallback.page._load_day = load_day
+    load_day._cfbgt_daily_empty_primary_crosscheck = True  # type: ignore[attr-defined]
+    load_day._cfbgt_daily_empty_primary_delegate = delegate  # type: ignore[attr-defined]
+    return load_day
+
+
+@contextmanager
+def _install_empty_primary_crosscheck():
+    """Patch the currently loaded Page-1 owner for non-purging renders."""
+    original_load_day = daily_fallback.page._load_day
+    wrapped = _empty_primary_crosscheck(original_load_day)
+    daily_fallback.page._load_day = wrapped
     try:
         yield
     finally:
-        daily_fallback.page._load_day = original_load_day
+        if daily_fallback.page._load_day is wrapped:
+            daily_fallback.page._load_day = original_load_day
+
+
+@contextmanager
+def _install_fresh_import_crosscheck():
+    """Patch the fresh Page-1 module created after the root router purges cfb_*."""
+    original_import = root._import
+    patched_modules: list[tuple[Any, Callable[..., Any], Callable[..., Any]]] = []
+
+    def import_with_daily_slate_crosscheck(name: str):
+        module = original_import(name)
+        if str(name) != PAGE1_DAILY_SLATE_ROUTE:
+            return module
+
+        original_load_day = getattr(module, "_load_day", None)
+        if not callable(original_load_day):
+            return module
+        wrapped = _empty_primary_crosscheck(original_load_day)
+        if wrapped is not original_load_day:
+            module._load_day = wrapped
+            patched_modules.append((module, original_load_day, wrapped))
+        return module
+
+    root._import = import_with_daily_slate_crosscheck
+    try:
+        yield
+    finally:
+        root._import = original_import
+        for module, original_load_day, wrapped in reversed(patched_modules):
+            if getattr(module, "_load_day", None) is wrapped:
+                module._load_day = original_load_day
 
 
 @contextmanager
@@ -71,7 +115,8 @@ def install_daily_slate_page1():
         try:
             with daily_fallback._install_runtime_fallback():
                 with _install_empty_primary_crosscheck():
-                    yield
+                    with _install_fresh_import_crosscheck():
+                        yield
         finally:
             page1_repair.PAGE1_REPAIR_ROUTE = original_page1_route
 
@@ -80,6 +125,7 @@ __all__ = [
     "ACTIVE_MARKER",
     "FALLBACK_NETWORK_ON_EMPTY_PRIMARY",
     "FALLBACK_NETWORK_ONLY_WHEN_PRIMARY_UNAVAILABLE",
+    "FRESH_IMPORT_CROSSCHECK_ENABLED",
     "MAY_MODIFY_MARKET_OWNERSHIP",
     "MAY_MODIFY_MODEL",
     "MAY_MODIFY_OTHER_SPORTS",

@@ -117,6 +117,8 @@ def resolve_authority(
     row = proofs[0]
     if int(row.get("fencing_generation") or -1) != int(fencing_generation):
         raise FinalizerAuthorityError("FINALIZER_STALE_FENCE")
+    if str(row.get("state") or "") == "SUPERSEDED_BASE_DRIFT":
+        raise FinalizerAuthorityError("FINALIZER_AUTHORITY_SUPERSEDED")
 
     leases = _read(
         client,
