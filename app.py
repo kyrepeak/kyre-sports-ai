@@ -7,13 +7,44 @@ new additive Universal Navigation V4 and Universal Shell V2 runtimes.
 """
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 import sys
 
 import streamlit as st
 
+
+# Streamlit can hot-reload this source inside a Python process that previously
+# ran an older activation shim. That older shim temporarily exposed successor
+# modules under frozen compatibility names and, before the alias-scoping repair,
+# could leave those aliases installed. Recover the real frozen/base modules
+# *before* importing their successors so a pre-poisoned process can heal itself
+# without requiring a manual Community Cloud reboot.
+def _ensure_base_module(module_name: str, required_attr: str):
+    existing = sys.modules.get(module_name)
+    if (
+        existing is not None
+        and getattr(existing, "__name__", "") == module_name
+        and hasattr(existing, required_attr)
+    ):
+        return existing
+    sys.modules.pop(module_name, None)
+    return importlib.import_module(module_name)
+
+
+_real_nav_v2 = _ensure_base_module("streamlit_memory_lazy_router_universal_nav_v2", "nav_ui")
+_real_shell_v1 = _ensure_base_module("kyre_universal_shell_runtime_v1", "activate_step3_page")
+
 import kyre_universal_shell_runtime_v2 as _shell_v2
 import streamlit_memory_lazy_router_universal_nav_v4 as _router_v4
+
+# Successor modules themselves may already be cached from the poisoned process.
+# Repair only their frozen-parent dependency references; do not reload the module
+# graph or mutate page/model implementations.
+_router_v4.v2 = _real_nav_v2
+_router_v4.prior.prior = _real_nav_v2
+_shell_v2.prior = _real_shell_v1
+
 from kyre_universal_shell_runtime_v2 import activate_universal_shell
 from kyre_universal_entrypoint_cold_start_v1 import seed_canonical_route_if_missing
 from streamlit_memory_lazy_router_universal_nav_v4 import record_bootstrap_import_ms, render_app
