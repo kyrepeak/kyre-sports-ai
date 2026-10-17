@@ -13,6 +13,7 @@ from typing import Any, Mapping, MutableMapping
 import streamlit as st
 
 import streamlit_memory_lazy_router_universal_nav_v1 as prior
+import streamlit_memory_lazy_router_v1 as legacy_root
 import universal_sports_nav_ui_v2 as nav_ui
 import universal_tap_only_selector_v1 as tap_selector
 from universal_sports_nav_controller_v1 import RouteIntent, resolve_route
@@ -23,6 +24,8 @@ MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V2 • TAP-FIRST HANDOFF"
 FROZEN_PARENT = "streamlit_memory_lazy_router_universal_nav_v1"
 UNIVERSAL_NAV_ENABLED = True
 PENDING_INTENT_KEY = nav_ui.PENDING_INTENT_KEY
+RECEIVING_V17_MODULE = "nfl_receiving_yards_hub_v17"
+RECEIVING_V18_MODULE = "nfl_receiving_yards_hub_v18"
 
 _ROUTE_LOCAL_QUERY_KEYS = frozenset({"date", "game_id", "player_id"})
 
@@ -75,10 +78,31 @@ def _render_app_impl() -> Any:
         _prepare_pending_handoff(pending, st.session_state, st.query_params)
 
     original_renderer = prior.nav_ui.render_universal_nav
+    original_import = legacy_root._import
+    original_markdown = st.markdown
+    receiving_route = (
+        str(st.session_state.get("ks_universal_sport") or "").strip().lower() == "nfl"
+        and str(st.session_state.get("ks_universal_market") or "").strip().lower() == "receiving-yards"
+    )
+
+    def receiving_import(module_name: str):
+        if receiving_route and str(module_name) == RECEIVING_V17_MODULE:
+            module_name = RECEIVING_V18_MODULE
+        return original_import(module_name)
+
+    def clean_router_debug(body: Any, *args: Any, **kwargs: Any):
+        if receiving_route and isinstance(body, str) and "KYRE STREAMLIT MEMORY LAZY ROUTER V1" in body:
+            return None
+        return original_markdown(body, *args, **kwargs)
+
     prior.nav_ui.render_universal_nav = nav_ui.render_universal_nav
+    legacy_root._import = receiving_import
+    st.markdown = clean_router_debug
     try:
         return prior.render_app()
     finally:
+        st.markdown = original_markdown
+        legacy_root._import = original_import
         prior.nav_ui.render_universal_nav = original_renderer
 
 
