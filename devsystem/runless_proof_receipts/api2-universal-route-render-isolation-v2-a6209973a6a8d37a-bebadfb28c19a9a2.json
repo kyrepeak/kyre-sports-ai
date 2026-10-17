@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-universal-route-render-isolation-v2.json": "6da0448cbd2be1dcd09a0371b48aec41e3d814e6",
+    "streamlit_memory_lazy_router_universal_nav_v2.py": "49764d9a9006f6dd4d1940e8599026bd85e2170d",
+    "tests/test_api2_universal_route_render_isolation_v2.py": "aa8ba4bc861d564fc36a68f802a2a8d04bf6919b"
+  },
+  "candidate_sha": "a6209973a6a8d37a8f849f028fdcbc0c16704f8d",
+  "created_at": "2026-10-17T16:53:10.454995+00:00",
+  "dependency_map": {
+    "app.py": "71dae24d8024c0037356a06ad02dbdab088db6bf",
+    "streamlit_memory_lazy_router_universal_nav_v1.py": "bfaad87a3042fd5ef33624e1d7bfae5f5745bb9f",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "universal_sports_nav_compat_v1.py": "8ee12de48d4f26bc18039c39c97b02ab9d7bb348",
+    "universal_sports_nav_ui_v2.py": "f08d77a4e7c2638237d504a2a627c53ee369da04"
+  },
+  "digest": "04134f964a7a6356f218c1672b493e416a8f67f100ba6af84bc00effb0a71bf6",
+  "evidence_digests": [
+    "987a6f8d9f4b4a94ce6815f215652eaf93ee9977fd1627d7cb57e58f14c1bb61",
+    "7de94e6464767db351dc936e5f42413646f70fc6655686da5cd2a84c1f50cbae"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "880adb99fc6cc3d7543bdf6153285ff2ce09083418a9fb91cf1a85bbbed0f63f",
+  "proof_id": "api2-universal-route-render-isolation-v2-a6209973a6a8d37a-bebadfb28c19a9a2",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 384,
+    "state_hash": "d9378cddd023709d74bb810ac0e2a8d483a5778d772310bc646b9470093a863b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 384,
+    "state_hash": "d9378cddd023709d74bb810ac0e2a8d483a5778d772310bc646b9470093a863b"
+  },
+  "request_fingerprint": "7326e29ac35e4873f5a4202d5f5419111c37e59164b59e0fc3c9a3f3fd12d037",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-route-render-isolation-v2",
+  "workstream": "api2-universal-route-render-isolation-v2"
+}
