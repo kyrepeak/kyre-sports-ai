@@ -1,0 +1,44 @@
+name: API2 Universal Shell Route Top Public Proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/api2_universal_shell_route_top_public_cert_v1.py"
+      - ".github/workflows/api2-universal-shell-route-top-public-proof.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-production-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public shell, Top, and MLB to NFL isolation
+        run: |
+          python -m devsystem.api2_universal_shell_route_top_public_cert_v1 \
+            --production-url https://pick6vault.streamlit.app \
+            --artifact-dir artifacts/api2-universal-shell-route-top-public
+
+      - name: Upload proof artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api2-universal-shell-route-top-public-proof
+          path: artifacts/api2-universal-shell-route-top-public
+          if-no-files-found: warn
