@@ -76,6 +76,39 @@ def test_hosted_api_outage_uses_requests_fallback(monkeypatch):
     assert calls == [selected]
 
 
+def test_empty_hosted_payload_is_crosschecked_on_real_page1_route(monkeypatch):
+    selected = date(2026, 10, 16)
+    calls: list[date] = []
+
+    monkeypatch.setattr(
+        page,
+        "_load_slate_cached_60",
+        lambda _day_iso: {
+            "requested_phoenix_date": selected.isoformat(),
+            "game_count": 0,
+            "games": [],
+        },
+    )
+
+    def requests_builder(day: date, **_kwargs):
+        calls.append(day)
+        return {
+            "requested_phoenix_date": day.isoformat(),
+            "game_count": 4,
+            "games": [{"event_id": f"live-{index}"} for index in range(4)],
+        }
+
+    monkeypatch.setattr(fallback, "build_requests_fallback_payload", requests_builder)
+
+    with router.install_daily_slate_page1():
+        payload = page._load_day(selected)
+
+    assert payload["game_count"] == 4
+    assert payload["transport"] == "requests_espn_fallback"
+    assert payload["primary_empty"] is True
+    assert calls == [selected]
+
+
 def test_total_transport_failure_is_not_reported_as_a_normal_empty_slate(monkeypatch):
     selected = date(2026, 10, 17)
 
