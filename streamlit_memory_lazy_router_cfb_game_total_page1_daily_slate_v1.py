@@ -10,6 +10,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from threading import RLock
 
+import cfb_game_total_page1_daily_slate_runtime_fallback_r1 as daily_fallback
 import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair
 
 MODEL_VERSION = "CFB GAME TOTAL PAGE1 DAILY SLATE ROUTER V1"
@@ -24,6 +25,7 @@ MAY_MODIFY_MARKET_OWNERSHIP = False
 MAY_MODIFY_OTHER_SPORTS = False
 MAY_MODIFY_SELECTED_GAME_RUNTIME = False
 NETWORK_CALLS_ADDED = 0
+FALLBACK_NETWORK_ONLY_WHEN_PRIMARY_UNAVAILABLE = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _LOCK = RLock()
 
@@ -35,13 +37,15 @@ def install_daily_slate_page1():
         original_page1_route = page1_repair.PAGE1_REPAIR_ROUTE
         page1_repair.PAGE1_REPAIR_ROUTE = PAGE1_DAILY_SLATE_ROUTE
         try:
-            yield
+            with daily_fallback._install_runtime_fallback():
+                yield
         finally:
             page1_repair.PAGE1_REPAIR_ROUTE = original_page1_route
 
 
 __all__ = [
     "ACTIVE_MARKER",
+    "FALLBACK_NETWORK_ONLY_WHEN_PRIMARY_UNAVAILABLE",
     "MAY_MODIFY_MARKET_OWNERSHIP",
     "MAY_MODIFY_MODEL",
     "MAY_MODIFY_OTHER_SPORTS",
