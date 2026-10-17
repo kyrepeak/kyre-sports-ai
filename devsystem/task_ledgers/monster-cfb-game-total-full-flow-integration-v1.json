@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "task_id": "monster-cfb-game-total-full-flow-integration-v1",
   "title": "MONSTER CFB Game Total Full Flow Integration V1",
   "project": "MONSTER",
@@ -26,7 +26,8 @@
   "tdd": {
     "product_code_changed": false,
     "certification_guard_added": true,
-    "expected_behavior": "existing frozen Page 1 and Page 2 integration passes without product mutation"
+    "expected_behavior": "existing frozen Page 1 and Page 2 integration passes without product mutation",
+    "proof_selection_repair": "Removed stale historical Step-9/Step-10 regression files and retained current Daily Slate activation, same-page shell, network-free V2, and full-flow integration guards."
   },
   "failure_history": [
     {
@@ -35,6 +36,14 @@
       "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
       "product_patch": false,
       "resolution": "Acquire one canonical live scope lease and continue the same PR/authority chain"
+    },
+    {
+      "candidate_sha": "83e9c9e1858a233f2e92691db6798807712111ca",
+      "proof_id": "monster-cfb-game-total-full-flow-integration-v1-83e9c9e1858a233f-3cda99d919cb1942",
+      "failure_class": "STALE_REGRESSION_SELECTION",
+      "detail": "STATIC_PROOF included historical Step-9/Step-10 tests already documented as stale against the current frozen-router alias",
+      "product_patch": false,
+      "resolution": "Narrow exact-head proof to current frozen-path regression owners"
     }
   ],
   "protected": {
