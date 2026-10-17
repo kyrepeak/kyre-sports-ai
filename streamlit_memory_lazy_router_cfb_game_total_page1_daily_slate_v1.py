@@ -13,6 +13,7 @@ from typing import Any, Callable
 
 import cfb_game_total_page1_daily_slate_runtime_fallback_r1 as daily_fallback
 import cfb_game_total_page1_polish_r4 as page1_polish
+import cfb_game_total_page1_market_truth_r5 as page1_market_truth
 import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair
 import streamlit_memory_lazy_router_v1 as root
 
@@ -71,9 +72,11 @@ def _install_empty_primary_crosscheck():
     wrapped = _empty_primary_crosscheck(original_load_day)
     daily_fallback.page._load_day = wrapped
     polish_originals = page1_polish.install_into(daily_fallback.page)
+    market_originals = page1_market_truth.install_into(daily_fallback.page)
     try:
         yield
     finally:
+        page1_market_truth.restore_from(daily_fallback.page, market_originals)
         page1_polish.restore_from(daily_fallback.page, polish_originals)
         if daily_fallback.page._load_day is wrapped:
             daily_fallback.page._load_day = original_load_day
@@ -97,7 +100,8 @@ def _install_fresh_import_crosscheck():
         if wrapped is not original_load_day:
             module._load_day = wrapped
         polish_originals = page1_polish.install_into(module)
-        patched_modules.append((module, original_load_day, wrapped, polish_originals))
+        market_originals = page1_market_truth.install_into(module)
+        patched_modules.append((module, original_load_day, wrapped, polish_originals, market_originals))
         return module
 
     root._import = import_with_daily_slate_crosscheck
@@ -105,7 +109,8 @@ def _install_fresh_import_crosscheck():
         yield
     finally:
         root._import = original_import
-        for module, original_load_day, wrapped, polish_originals in reversed(patched_modules):
+        for module, original_load_day, wrapped, polish_originals, market_originals in reversed(patched_modules):
+            page1_market_truth.restore_from(module, market_originals)
             page1_polish.restore_from(module, polish_originals)
             if getattr(module, "_load_day", None) is wrapped:
                 module._load_day = original_load_day
