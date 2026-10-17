@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "app.py": "2b566e2633046fb6b89a23f0682a064b579cdeef",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-v4-route-ownership-r1.json": "afd5dc8eec593327bb368f4142ec0f4f83068343",
+    "streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1.py": "841035fcf44dfc10ebe6e2f12fb2c32cee098505",
+    "tests/test_monster_cfb_game_total_v4_route_ownership_r1.py": "ea73a0e74bfc709b915abf006849cae3f5cee0fe"
+  },
+  "candidate_sha": "153cae8e0437969d28f564f4f0f1a8c3b1e32692",
+  "created_at": "2026-10-17T23:32:16.604890+00:00",
+  "dependency_map": {
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py": "942f079e8fd3a0653e5be413fa1423003ac9368c",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py": "36177de2a9378a1fc23f5bad71269a08cbbe167f",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py": "903ce520f032f80558e6d6e0fa94e65c7d584d99",
+    "streamlit_memory_lazy_router_universal_nav_v2.py": "49764d9a9006f6dd4d1940e8599026bd85e2170d",
+    "streamlit_memory_lazy_router_universal_nav_v3.py": "fddeb8634821aab62474c71e103b3c62ac56b6b2",
+    "streamlit_memory_lazy_router_universal_nav_v4.py": "32abc07a33db633d24465c19a5c67631e79511e4"
+  },
+  "digest": "8c325c70929d186e290270d90b452e98076afc6b7598bf0a75bdfdbd329b14fe",
+  "evidence_digests": [
+    "33a984051276292736d069014e1f1cd7213837925f2de3b732fae0d31e18c3b1",
+    "97bc894e3593914e54671497b678c90471c0d1bcc7e062ae20cf1bfa8f5ac91d"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "035162f546dc7923b2e2a206200c861f256a732b2fbe9bb640477202766c0a7f",
+  "proof_id": "monster-cfb-game-total-v4-route-ownership-r1-153cae8e0437969d-666e841734febac8",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-MONSTER-CFB-GT-V4-ROUTE-OWNERSHIP-R1-APP"
+    ],
+    "revision": 401,
+    "state_hash": "275b0dccf2f6764de7f8240e07988c31857c62fd8271de257f4219e8cf7fb8ab"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-MONSTER-CFB-GT-V4-ROUTE-OWNERSHIP-R1-APP"
+    ],
+    "revision": 401,
+    "state_hash": "275b0dccf2f6764de7f8240e07988c31857c62fd8271de257f4219e8cf7fb8ab"
+  },
+  "request_fingerprint": "afda68e18802d4f149b47a9c74de14837d78635bbfab9100b8b8c5b53cead7e4",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-v4-route-ownership-r1",
+  "workstream": "monster-cfb-game-total-v4-route-ownership-r1"
+}
