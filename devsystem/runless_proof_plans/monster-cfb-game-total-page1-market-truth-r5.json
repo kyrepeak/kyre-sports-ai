@@ -1,7 +1,7 @@
 {
   "task_id": "monster-cfb-game-total-page1-market-truth-r5",
   "workstream": "monster-cfb-game-total-page1-market-truth-r5",
-  "source_main_sha": "efd977f9ab7b11ead5648eaea086ce4d0ffd378f",
+  "source_main_sha": "454d307de18bd0a15467db8de805cd2ea5a35cb3",
   "required_check": "runless-final-gate",
   "required_app_id": 5204253,
   "timeout_seconds": 300,
