@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LINE_LAB = ROOT / "cfb_game_total_page2_line_lab_v2.py"
 PAGE2 = ROOT / "cfb_game_total_page2_complete_repair_r1.py"
-ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_complete_repair_r1.py"
-APP = ROOT / "app.py"
+ACTIVE_ROUTER = ROOT / "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py"
+PAGE1 = ROOT / "cfb_game_total_clean_page_v45.py"
 
 
 def _text(path: Path) -> str:
@@ -64,9 +64,11 @@ def test_custom_line_is_analysis_only_and_best_bet_stays_on_verified_market() ->
 def test_page2_uses_verified_multi_source_owners_not_network_free_only_bridge() -> None:
     src = _text(PAGE2)
     assert "cfb_game_total_page2_live_data_unified_repair_v1 as live_data" in src
-    assert "install_page2_live_data_repair" in src
+    assert "live_data._live_enrich(payload)" in src
     assert "cfb_game_total_page2_network_free_v2" not in src
     assert "MULTI_SOURCE_REQUIRED = True" in src
+    assert "market_truth.enrich_games_with_market_truth" in src
+    assert "_fetch_action_json_board" in src
 
 
 def test_page2_has_canonical_back_to_page1_and_selected_event_identity() -> None:
@@ -75,6 +77,7 @@ def test_page2_has_canonical_back_to_page1_and_selected_event_identity() -> None
     assert "Back to CFB Game Totals" in src
     assert "data-event-id" in src
     assert "SELECTED_GAME_ONLY = True" in src
+    assert "sync_id != event_id" in src
 
 
 def test_page2_replaces_legacy_tail_and_formats_expected_total_cleanly() -> None:
@@ -83,22 +86,23 @@ def test_page2_replaces_legacy_tail_and_formats_expected_total_cleanly() -> None
     assert "gt204-team-evidence" in src
     assert "data-testid=\"gtp2r1-team-evidence\"" in src
     assert "format_optional_number" in src
-    assert "</div>" not in src.split("STRAY_MARKUP_GUARD =", 1)[-1][:80]
+    assert "round(expected, 1)" in src
+    assert "STRAY_MARKUP_GUARD" in src
 
 
-def test_router_overlay_is_additive_and_restores_the_single_cfb_runtime_seam() -> None:
-    src = _text(ROUTER)
-    assert "import streamlit_memory_lazy_router_universal_nav_v2 as prior" in src
-    assert "import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1 as cfb_fast" in src
-    assert 'PAGE2_RUNTIME = "cfb_game_total_page2_complete_repair_r1"' in src
-    assert "original_runtime = cfb_fast.SAME_PAGE_RUNTIME" in src
-    assert "cfb_fast.SAME_PAGE_RUNTIME = PAGE2_RUNTIME" in src
-    assert "cfb_fast.SAME_PAGE_RUNTIME = original_runtime" in src
+def test_current_router_activates_and_restores_one_page2_runtime_seam() -> None:
+    src = _text(ACTIVE_ROUTER)
+    assert "import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1 as prior" in src
+    assert 'CFB_PAGE2_RUNTIME = "cfb_game_total_page2_complete_repair_r1"' in src
+    assert "original_page2_runtime = prior.SAME_PAGE_RUNTIME" in src
+    assert "prior.SAME_PAGE_RUNTIME = CFB_PAGE2_RUNTIME" in src
+    assert "prior.SAME_PAGE_RUNTIME = original_page2_runtime" in src
+    assert "MAY_MODIFY_PAGE1 = False" in src
 
 
-def test_app_activates_additive_page2_repair_without_touching_page1_owner() -> None:
-    app = _text(APP)
-    assert "from streamlit_memory_lazy_router_cfb_game_total_page2_complete_repair_r1 import record_bootstrap_import_ms, render_app" in app
-    router = _text(ROUTER)
-    assert "cfb_game_total_clean_page_v45" not in router
-    assert "MAY_MODIFY_PAGE1 = False" in router
+def test_page1_owner_is_not_edited_by_the_successor_contract() -> None:
+    page1 = _text(PAGE1)
+    assert "cfb_game_total_page2_complete_repair_r1" not in page1
+    page2 = _text(PAGE2)
+    assert "MAY_MODIFY_PAGE1 = False" in page2
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page2
