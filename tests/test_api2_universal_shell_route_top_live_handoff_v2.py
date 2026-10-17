@@ -15,7 +15,7 @@ class _RerunSignal(BaseException):
     pass
 
 
-def _load_v4(monkeypatch, *, returned_intent):
+def _load_v4(monkeypatch, *, returned_intent, downstream_selector_clobber: bool = False):
     events: list[object] = []
 
     st = types.ModuleType("streamlit")
@@ -36,8 +36,68 @@ def _load_v4(monkeypatch, *, returned_intent):
 
     stable_ui.render_universal_nav = returned_renderer
 
+    legacy_root = types.ModuleType("streamlit_memory_lazy_router_v1")
+    legacy_root.st = st
+
+    def native_selectbox(_label, options, *args, **kwargs):
+        values = list(options)
+        return values[0] if values else None
+
+    st.selectbox = native_selectbox
+
+    def root_render_app():
+        sport = st.selectbox("🏟️ Sport", ["MLB", "WNBA", "NFL"], key="ks_sport_touch")
+        market_label = "🎯 NFL Market" if sport == "NFL" else "🎯 MLB Market"
+        market_options = ["Slate", "Moneyline"]
+        market = st.selectbox(market_label, market_options, key="ks_nfl_market_touch" if sport == "NFL" else "ks_mlb_market_touch")
+        events.append(("root-owner", sport, market))
+        return sport
+
+    legacy_root.render_app = root_render_app
+
+    canonical_v1 = types.ModuleType("streamlit_memory_lazy_router_universal_nav_v1")
+
+    def resolve_initial_state(session, query):
+        return types.SimpleNamespace(
+            sport_id=str(query.get("sport") or session.get("ks_universal_sport") or "mlb"),
+            market_id=str(query.get("market") or session.get("ks_universal_market") or "slate"),
+            source="canonical",
+            epoch=0,
+            last_market_by_sport={},
+        )
+
+    def persist_state(state, session):
+        session["ks_universal_sport"] = state.sport_id
+        session["ks_universal_market"] = state.market_id
+
+    def apply_legacy_route_state(state, session):
+        session["ks_sport_touch"] = "NFL" if state.sport_id == "nfl" else "MLB"
+        if state.sport_id == "nfl":
+            session["ks_nfl_market_touch"] = "Slate"
+        else:
+            session["ks_mlb_market_touch"] = "Slate"
+
+    def make_legacy_selectbox_bridge(delegate, state):
+        def bridge(label, options, *args, **kwargs):
+            if label == "🏟️ Sport":
+                return "NFL" if state.sport_id == "nfl" else "MLB"
+            if label == "🎯 NFL Market" and state.sport_id == "nfl":
+                return "Slate"
+            if label == "🎯 MLB Market" and state.sport_id == "mlb":
+                return "Slate"
+            return delegate(label, options, *args, **kwargs)
+
+        return bridge
+
+    canonical_v1._resolve_initial_state = resolve_initial_state
+    canonical_v1._persist_state = persist_state
+    canonical_v1.apply_legacy_route_state = apply_legacy_route_state
+    canonical_v1.make_legacy_selectbox_bridge = make_legacy_selectbox_bridge
+
     v2 = types.ModuleType("streamlit_memory_lazy_router_universal_nav_v2")
     v2.nav_ui = types.SimpleNamespace(render_universal_nav=lambda _state: None)
+    v2.prior = canonical_v1
+    v2.legacy_root = legacy_root
 
     def clear_query(query):
         assert query is st.query_params
@@ -70,6 +130,22 @@ def _load_v4(monkeypatch, *, returned_intent):
         state = types.SimpleNamespace(sport_id="mlb", market_id="slate")
         intent = v2.nav_ui.render_universal_nav(state)
         owner = getattr(intent, "sport_id", None) or state.sport_id
+        if downstream_selector_clobber:
+            st.session_state["ks_universal_sport"] = owner
+            st.session_state["ks_universal_market"] = "slate"
+            st.query_params["sport"] = owner
+            st.query_params["market"] = "slate"
+
+            def stale_downstream_selectbox(label, options, *args, **kwargs):
+                if label == "🏟️ Sport":
+                    return "MLB"
+                values = list(options)
+                return values[0] if values else None
+
+            # Reproduce the old router ancestry overwriting the universal
+            # selectbox bridge immediately before the actual root body renders.
+            legacy_root.st.selectbox = stale_downstream_selectbox
+            return legacy_root.render_app()
         events.append(("legacy-owner", owner))
         return owner
 
@@ -77,8 +153,10 @@ def _load_v4(monkeypatch, *, returned_intent):
 
     for name, module in {
         "streamlit": st,
+        "streamlit_memory_lazy_router_universal_nav_v1": canonical_v1,
         "streamlit_memory_lazy_router_universal_nav_v2": v2,
         "streamlit_memory_lazy_router_universal_nav_v3": v3,
+        "streamlit_memory_lazy_router_v1": legacy_root,
         "universal_sports_nav_ui_v1": stable_ui,
     }.items():
         monkeypatch.setitem(sys.modules, name, module)
@@ -87,7 +165,7 @@ def _load_v4(monkeypatch, *, returned_intent):
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module, v2, events
+    return module, v2, legacy_root, events
 
 
 def test_entrypoint_boots_v4_and_forces_r4_runtime_refresh():
@@ -106,7 +184,7 @@ def test_entrypoint_executes_preserved_body_fresh_on_every_streamlit_rerun():
 
 def test_v4_returns_tap_intent_so_legacy_owner_switches_to_nfl_in_same_run(monkeypatch):
     intent = types.SimpleNamespace(sport_id="nfl", market_id=None, source="tap")
-    module, v2, events = _load_v4(monkeypatch, returned_intent=intent)
+    module, v2, _root, events = _load_v4(monkeypatch, returned_intent=intent)
     original = v2.nav_ui.render_universal_nav
 
     result = module.render_app()
@@ -122,8 +200,26 @@ def test_v4_returns_tap_intent_so_legacy_owner_switches_to_nfl_in_same_run(monke
     assert v2.nav_ui.render_universal_nav is original
 
 
+def test_v4_reasserts_canonical_nfl_at_actual_root_after_downstream_selector_clobber(monkeypatch):
+    intent = types.SimpleNamespace(sport_id="nfl", market_id=None, source="tap")
+    module, v2, legacy_root, events = _load_v4(
+        monkeypatch,
+        returned_intent=intent,
+        downstream_selector_clobber=True,
+    )
+    original_renderer = v2.nav_ui.render_universal_nav
+    original_root_render = legacy_root.render_app
+
+    result = module.render_app()
+
+    assert result == "NFL"
+    assert ("root-owner", "NFL", "Slate") in events
+    assert legacy_root.render_app is original_root_render
+    assert v2.nav_ui.render_universal_nav is original_renderer
+
+
 def test_v4_no_tap_preserves_v3_delegate_without_extra_rerun(monkeypatch):
-    module, v2, events = _load_v4(monkeypatch, returned_intent=None)
+    module, v2, _root, events = _load_v4(monkeypatch, returned_intent=None)
     original = v2.nav_ui.render_universal_nav
 
     result = module.render_app()
