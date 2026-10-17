@@ -52,5 +52,5 @@
   "reuse_frozen_proof": [],
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
-  "freeze_token": "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_FROZEN"
+  "freeze_token": "API2_UNIVERSAL_SHELL_ROUTE_TOP_LIVE_HANDOFF_V2_FROZEN"
 }
