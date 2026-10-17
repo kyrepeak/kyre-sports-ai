@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page1_market_truth_r5.css": "a727b2cff3b7070a05fb3d1fc4a5c17b515e848e",
+    "cfb_game_total_page1_market_truth_r5.py": "2993027bf790dd0ac4f5457bf96565d0520187a6",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-page1-market-truth-r5.json": "8611e2f4dc90b5bce86f3634f90340daa14df9b0",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py": "1a965d8dfca0db093dcffdb792255bbfb146a124",
+    "tests/test_monster_cfb_game_total_page1_market_truth_r5.py": "15f72ed7e4cb2c9e19dc5fc28db18e41b521964f"
+  },
+  "candidate_sha": "ee37493559f37d4b6fc2da172d8547de2d56ff0d",
+  "created_at": "2026-10-17T05:02:21.637854+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_daily_slate_runtime_fallback_r1.py": "1ae2e7313fc2c4c436ec3ed02324bbbd45d0806f",
+    "cfb_game_total_page1_daily_slate_v1.py": "ee2e231db9d928c5c51c40cf5c1df2888fa767db",
+    "cfb_game_total_page1_polish_r4.py": "d9547b4647a2b257d8b516d50deb0e64e6f99226"
+  },
+  "digest": "fe1cf6d4c0b5a6e19edc6be047def0ab2bb83490038b2db6d21da7afa607d7aa",
+  "evidence_digests": [
+    "a2eac0938cd246e303dec1c0054f5e01bd6838d2b68faad5e9a5f02ba7254646",
+    "d0dcceb9eceeef5f1fce52feb5649720cf578ebc335d81f141570d08cce9e58c"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "680263502dfedb6219c8b069bfb9954a4bbf4d7d94dfb67386f605ff420d223b",
+  "proof_id": "monster-cfb-game-total-page1-market-truth-r5-ee37493559f37d4b-71fe06bae41f653c",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 378,
+    "state_hash": "7b37fb9c662561f6c9c9eecd5c726c0f480c5481a1d4a5c6e8d21bd3a0b879ae"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 378,
+    "state_hash": "7b37fb9c662561f6c9c9eecd5c726c0f480c5481a1d4a5c6e8d21bd3a0b879ae"
+  },
+  "request_fingerprint": "a367783f84d3e9bc93caa5280a1cf8a61a65a3b23fc093ab46b82740fb23cc1d",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-page1-market-truth-r5",
+  "workstream": "monster-cfb-game-total-page1-market-truth-r5"
+}
