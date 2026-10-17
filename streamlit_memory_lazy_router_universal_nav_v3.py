@@ -10,12 +10,13 @@ from typing import Any, Mapping, MutableMapping
 
 import streamlit as st
 
+import streamlit_memory_lazy_router_universal_nav_v1 as canonical_v1
 import streamlit_memory_lazy_router_universal_nav_v2 as prior
 from universal_sports_nav_compat_v1 import apply_legacy_route_state
 from universal_sports_nav_controller_v1 import RouteState
 from universal_sports_nav_registry_v1 import SPORTS, get_market, get_sport
 
-MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V3 • CANONICAL RENDER OWNER"
+MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V3.1 • CANONICAL RENDER OWNER + COLD START"
 FROZEN_PARENT = "streamlit_memory_lazy_router_universal_nav_v2"
 PENDING_INTENT_KEY = prior.PENDING_INTENT_KEY
 UNIVERSAL_NAV_ENABLED = True
@@ -48,6 +49,20 @@ def _active_route(session: Mapping[str, Any]) -> tuple[str, str]:
     if sport is None or market is None:
         raise ValueError("canonical universal route is not registered live")
     return sport_id, market_id
+
+
+def _seed_canonical_route_if_missing(
+    session: MutableMapping[str, Any],
+    query: Mapping[str, Any],
+) -> tuple[str, str]:
+    """Seed a valid cold-start/deep-link route before V3 enforces ownership."""
+    try:
+        return _active_route(session)
+    except ValueError:
+        state = canonical_v1._resolve_initial_state(session, query)
+        canonical_v1._persist_state(state, session)
+        apply_legacy_route_state(state, session)
+        return state.sport_id, state.market_id
 
 
 def _all_legacy_route_keys() -> dict[str, set[str]]:
@@ -100,6 +115,7 @@ def render_app() -> Any:
     # consume it. V2 performs the hard handoff/rerun; V3 enforces ownership on
     # the following clean steady-state run.
     if _should_sync_steady_state(st.session_state):
+        _seed_canonical_route_if_missing(st.session_state, st.query_params)
         _enforce_canonical_legacy_owner(st.session_state)
     return prior.render_app()
 
@@ -110,6 +126,7 @@ __all__ = [
     "PENDING_INTENT_KEY",
     "UNIVERSAL_NAV_ENABLED",
     "_enforce_canonical_legacy_owner",
+    "_seed_canonical_route_if_missing",
     "_should_sync_steady_state",
     "record_bootstrap_import_ms",
     "render_app",
