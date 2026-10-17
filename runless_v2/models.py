@@ -27,6 +27,7 @@ class ProofState(str, Enum):
     RECEIPT = "RECEIPT"
     RUNLESS_FINAL_GATE = "RUNLESS_FINAL_GATE"
     MERGE_AUTHORIZED = "MERGE_AUTHORIZED"
+    SUPERSEDED_BASE_DRIFT = "SUPERSEDED_BASE_DRIFT"
     MERGED = "MERGED"
     POST_MERGE_VERIFY = "POST_MERGE_VERIFY"
     FREEZE = "FREEZE"
@@ -74,6 +75,22 @@ class ProofStatus(BaseModel):
     freeze_token: str | None = None
     manifest_state_hash: str | None = None
     terminal_at: str | None = None
+
+
+class AuthoritySupersession(BaseModel):
+    supersession_id: str
+    workstream: str
+    old_proof_id: str
+    old_candidate_sha: str
+    old_expected_main_sha: str | None = None
+    successor_candidate_sha: str
+    successor_expected_main_sha: str
+    reason: str
+    github_pr_number: int | None = None
+    github_branch: str
+    old_gate_check_run_id: int
+    old_receipt_digest: str
+    created_at: str
 
 
 class ProofResult(BaseModel):
