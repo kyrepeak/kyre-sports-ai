@@ -150,8 +150,8 @@ def _build_payload(game: Mapping[str, Any], day: str) -> dict[str, Any]:
         "final": final,
         "statuses": statuses,
         "ready_count": sum(1 for n in range(1, 11) if statuses.get(n) == "READY") + int(bool(raw.get("ready"))) + int(bool(final.get("ready"))),
-        "away_logo_html": frozen_runtime._matchup_header_html(identity, away, home, display_game),
-        "home_logo_html": "",
+        "away_logo_html": page2.hero_runtime_owner.hero_owner._logo(_mapping(_mapping(identity).get("away"))),
+        "home_logo_html": page2.hero_runtime_owner.hero_owner._logo(_mapping(_mapping(identity).get("home"))),
     }
     # The verified adapter can consult the already-certified form, pace, scoring,
     # ESPN/Kyre and SportsDataverse owners. It cannot mutate frozen model truth.
