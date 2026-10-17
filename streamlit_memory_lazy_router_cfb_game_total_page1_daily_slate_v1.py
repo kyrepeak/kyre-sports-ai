@@ -8,8 +8,12 @@ selected-game route.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from threading import RLock
-from typing import Any, Callable
+from typing import Any, Callable, Mapping
+
+import requests
+import streamlit as st
 
 import cfb_game_total_page1_daily_slate_runtime_fallback_r1 as daily_fallback
 import cfb_game_total_page1_polish_r4 as page1_polish
@@ -34,6 +38,76 @@ FALLBACK_NETWORK_ON_EMPTY_PRIMARY = True
 FRESH_IMPORT_CROSSCHECK_ENABLED = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _LOCK = RLock()
+
+ACTION_API_URL = "https://api.actionnetwork.com/web/v2/scoreboard/ncaaf?bookIds=15,30,68,69,71,75,79,123,2988"
+_ACTION_API_BOOKS = {
+    "15": {"display_name": "Consensus"}, "30": {"display_name": "Open"},
+    "68": {"display_name": "DK NJ", "parent_name": "DraftKings"},
+    "69": {"display_name": "FanDuel NJ", "parent_name": "FanDuel"},
+    "71": {"display_name": "BetRivers NJ", "parent_name": "BetRivers"},
+    "75": {"display_name": "BetMGM NJ", "parent_name": "BetMGM"},
+    "79": {"display_name": "bet365 NJ", "parent_name": "bet365"},
+    "123": {"display_name": "Caesars NJ", "parent_name": "Caesars"},
+    "2988": {"display_name": "Fanatics NJ", "parent_name": "Fanatics"},
+}
+
+
+def _parse_action_api(payload: Mapping[str, Any], observed_at_utc: str | None = None) -> list[dict[str, Any]]:
+    games = payload.get("games") if isinstance(payload, Mapping) else None
+    if not isinstance(games, list):
+        return []
+    observed = observed_at_utc or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    parsed: list[dict[str, Any]] = []
+    for raw in games:
+        if not isinstance(raw, Mapping):
+            continue
+        teams = [t for t in raw.get("teams") or [] if isinstance(t, Mapping)]
+        away = next((t for t in teams if str(t.get("id")) == str(raw.get("away_team_id"))), None)
+        home = next((t for t in teams if str(t.get("id")) == str(raw.get("home_team_id"))), None)
+        if away is None or home is None:
+            continue
+        observations = page1_market_truth._action_observations(raw, _ACTION_API_BOOKS, observed)
+        if observations:
+            parsed.append({
+                "action_event_id": page1_market_truth._clean(raw.get("id")),
+                "start_time_utc": page1_market_truth._clean(raw.get("start_time")),
+                "away_aliases": sorted(page1_market_truth._action_team_aliases(away)),
+                "home_aliases": sorted(page1_market_truth._action_team_aliases(home)),
+                "observations": observations,
+            })
+    return parsed
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _fetch_action_json_board() -> list[dict[str, Any]]:
+    response = requests.get(
+        ACTION_API_URL,
+        timeout=12.0,
+        headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+    )
+    response.raise_for_status()
+    return _parse_action_api(response.json())
+
+
+@contextmanager
+def _install_action_json_primary():
+    original = page1_market_truth.fetch_action_market_board
+
+    def fetch():
+        try:
+            direct = _fetch_action_json_board()
+            if direct:
+                return direct
+        except Exception:
+            pass
+        return original()
+
+    page1_market_truth.fetch_action_market_board = fetch
+    try:
+        yield
+    finally:
+        if page1_market_truth.fetch_action_market_board is fetch:
+            page1_market_truth.fetch_action_market_board = original
 
 
 def _empty_primary_crosscheck(delegate: Callable[[Any], dict[str, Any]]) -> Callable[[Any], dict[str, Any]]:
@@ -124,9 +198,10 @@ def install_daily_slate_page1():
         page1_repair.PAGE1_REPAIR_ROUTE = PAGE1_DAILY_SLATE_ROUTE
         try:
             with daily_fallback._install_runtime_fallback():
-                with _install_empty_primary_crosscheck():
-                    with _install_fresh_import_crosscheck():
-                        yield
+                with _install_action_json_primary():
+                    with _install_empty_primary_crosscheck():
+                        with _install_fresh_import_crosscheck():
+                            yield
         finally:
             page1_repair.PAGE1_REPAIR_ROUTE = original_page1_route
 
