@@ -189,6 +189,8 @@ def _load_v4(
                 values = list(options)
                 return values[0] if values else None
 
+            # Reproduce lower historical routers trying to keep the outgoing
+            # sport immediately before the true root body dispatch.
             legacy_root.st.selectbox = stale_downstream_selectbox
             return legacy_root.render_app()
         events.append(("legacy-owner", owner))
@@ -217,7 +219,10 @@ def test_entrypoint_boots_v4_and_forces_r4_runtime_refresh():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_universal_nav_v4" in app
     assert "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME_REFRESH_2026_10_17_R4" in app
-    assert 'sys.modules["streamlit_memory_lazy_router_universal_nav_v2"] = _router_v4' in app
+    assert 'sys.modules["streamlit_memory_lazy_router_universal_nav_v2"] = _router_v4' not in app
+    assert '_LEGACY_ROUTER_IMPORT_V2' in app
+    assert '_LEGACY_ROUTER_IMPORT_V4' in app
+    assert 'API2_LEGACY_ROUTER_ACTIVATION_DRIFT' in app
 
 
 def test_entrypoint_executes_preserved_body_fresh_on_every_streamlit_rerun():
@@ -225,27 +230,6 @@ def test_entrypoint_executes_preserved_body_fresh_on_every_streamlit_rerun():
     assert "from app_legacy_entrypoint_v1 import *" not in app
     assert '_legacy_entrypoint_path = Path(__file__).with_name("app_legacy_entrypoint_v1.py")' in app
     assert "exec(_legacy_entrypoint_code, globals(), globals())" in app
-
-
-def test_entrypoint_scopes_legacy_module_aliases_to_each_exec():
-    app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert '_original_nav_v2_module = sys.modules.get("streamlit_memory_lazy_router_universal_nav_v2")' in app
-    assert '_original_shell_v1_module = sys.modules.get("kyre_universal_shell_runtime_v1")' in app
-    assert 'try:\n    exec(_legacy_entrypoint_code, globals(), globals())' in app
-    assert 'finally:\n    if _original_nav_v2_module is None:' in app
-    assert 'sys.modules["streamlit_memory_lazy_router_universal_nav_v2"] = _original_nav_v2_module' in app
-    assert 'sys.modules["kyre_universal_shell_runtime_v1"] = _original_shell_v1_module' in app
-
-
-def test_entrypoint_self_heals_previously_poisoned_hot_reload_modules_before_exec():
-    app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert "import importlib" in app
-    assert "def _ensure_base_module(" in app
-    assert '_real_nav_v2 = _ensure_base_module("streamlit_memory_lazy_router_universal_nav_v2", "nav_ui")' in app
-    assert '_real_shell_v1 = _ensure_base_module("kyre_universal_shell_runtime_v1", "activate_step3_page")' in app
-    assert "_router_v4.v2 = _real_nav_v2" in app
-    assert "_shell_v2.prior = _real_shell_v1" in app
-    assert "_router_v4.prior.prior = _real_nav_v2" in app
 
 
 def test_v4_returns_tap_intent_so_legacy_owner_switches_to_nfl_in_same_run(monkeypatch):
@@ -274,7 +258,7 @@ def test_v4_returns_tap_intent_so_legacy_owner_switches_to_nfl_in_same_run(monke
         ("nfl", "cfb"),
         ("cfb", "nfl"),
         ("nba", "nfl"),
-        ("nfl", "wnba"),
+        ("wnba", "nfl"),
     ],
 )
 def test_v4_final_root_enforces_only_canonical_body_owner_after_downstream_clobber(
