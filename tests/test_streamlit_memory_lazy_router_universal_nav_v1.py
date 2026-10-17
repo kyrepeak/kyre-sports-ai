@@ -113,11 +113,10 @@ def test_bridge_and_parent_hygiene_are_restored_after_parent_exception(monkeypat
     assert overlay.prior._make_selectbox_bridge is original_bridge_factory
 
 
-def test_production_entrypoint_cutover_contract_is_red_until_task7():
+def test_production_entrypoint_boots_universal_nav_overlay():
     source = APP.read_text(encoding="utf-8")
     expected = (
         "from streamlit_memory_lazy_router_universal_nav_v1 import "
         "record_bootstrap_import_ms, render_app"
     )
-    # Task 7 intentionally flips this assertion after Task 6 is implemented.
-    assert expected not in source
+    assert expected in source
