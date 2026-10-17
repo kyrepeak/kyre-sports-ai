@@ -25,9 +25,41 @@ MAY_MODIFY_MARKET_OWNERSHIP = False
 MAY_MODIFY_OTHER_SPORTS = False
 MAY_MODIFY_SELECTED_GAME_RUNTIME = False
 NETWORK_CALLS_ADDED = 0
-FALLBACK_NETWORK_ONLY_WHEN_PRIMARY_UNAVAILABLE = True
+FALLBACK_NETWORK_ONLY_WHEN_PRIMARY_UNAVAILABLE = False
+FALLBACK_NETWORK_ON_EMPTY_PRIMARY = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _LOCK = RLock()
+
+
+@contextmanager
+def _install_empty_primary_crosscheck():
+    """Do not trust a non-throwing empty primary slate without a fallback check."""
+    original_load_day = daily_fallback.page._load_day
+
+    def load_day(day):
+        payload = dict(original_load_day(day))
+        if int(payload.get("game_count") or 0) > 0 or payload.get("games"):
+            return payload
+
+        try:
+            fallback_payload = dict(daily_fallback.build_requests_fallback_payload(day))
+        except Exception:
+            payload["primary_empty"] = True
+            return payload
+
+        if int(fallback_payload.get("game_count") or 0) > 0 or fallback_payload.get("games"):
+            fallback_payload["primary_empty"] = True
+            fallback_payload["transport"] = "requests_espn_fallback"
+            return fallback_payload
+
+        payload["primary_empty"] = True
+        return payload
+
+    daily_fallback.page._load_day = load_day
+    try:
+        yield
+    finally:
+        daily_fallback.page._load_day = original_load_day
 
 
 @contextmanager
@@ -38,13 +70,15 @@ def install_daily_slate_page1():
         page1_repair.PAGE1_REPAIR_ROUTE = PAGE1_DAILY_SLATE_ROUTE
         try:
             with daily_fallback._install_runtime_fallback():
-                yield
+                with _install_empty_primary_crosscheck():
+                    yield
         finally:
             page1_repair.PAGE1_REPAIR_ROUTE = original_page1_route
 
 
 __all__ = [
     "ACTIVE_MARKER",
+    "FALLBACK_NETWORK_ON_EMPTY_PRIMARY",
     "FALLBACK_NETWORK_ONLY_WHEN_PRIMARY_UNAVAILABLE",
     "MAY_MODIFY_MARKET_OWNERSHIP",
     "MAY_MODIFY_MODEL",
