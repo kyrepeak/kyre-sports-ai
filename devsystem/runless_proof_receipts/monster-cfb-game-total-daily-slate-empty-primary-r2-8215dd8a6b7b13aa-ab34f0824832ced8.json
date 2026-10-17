@@ -1,0 +1,46 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-game-total-daily-slate-empty-primary-r2.json": "78a39b5f9a890ea299b70bd7091bc26c81115107",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py": "c1e0da3011983ceb4619e5ac3eed3c93097e6e7e",
+    "tests/test_monster_cfb_game_total_daily_slate_runtime_fallback_r1.py": "5d53a785f610878ba2c828639b3208eca9e9e094"
+  },
+  "candidate_sha": "8215dd8a6b7b13aaa8a6ff25f3550108a7eafc13",
+  "created_at": "2026-10-17T01:42:07.422099+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_daily_slate_runtime_fallback_r1.py": "1ae2e7313fc2c4c436ec3ed02324bbbd45d0806f",
+    "cfb_game_total_page1_daily_slate_v1.py": "ee2e231db9d928c5c51c40cf5c1df2888fa767db"
+  },
+  "digest": "9eb14e90dac417020d2074eb10edc5e44c248de1f9adb6c5e606a0469add33af",
+  "evidence_digests": [
+    "83d41a05c115c0977ab53e1989b50c4b4c1413b18b8cc079b749a8d45a430e7a",
+    "bf15b4d3d76b8a2e32742738003f7ad4b7380b32001293767db7c9427fc3ccd9",
+    "a31aebb502bb7187e2ca2aa72822d58326da0360ab9a67338bf6408f9b6b1f6a"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "60aa5968bad24169db58e95cc4ef4aef61b671c5afaac0eeee33d831261e17e7",
+  "proof_id": "monster-cfb-game-total-daily-slate-empty-primary-r2-8215dd8a6b7b13aa-ab34f0824832ced8",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 376,
+    "state_hash": "141f12912b41d42fe6ad279d8722d09570cd5ae4683a7695a62edf5c3aa20751"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 376,
+    "state_hash": "141f12912b41d42fe6ad279d8722d09570cd5ae4683a7695a62edf5c3aa20751"
+  },
+  "request_fingerprint": "8898d8da9f5a3ba759f05690b39e4145131a40c0b6b0c38932ff89e12a5771d7",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-daily-slate-empty-primary-r2",
+  "workstream": "monster-cfb-game-total-daily-slate-empty-primary-r2"
+}
