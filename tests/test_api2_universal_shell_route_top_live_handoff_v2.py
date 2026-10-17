@@ -237,6 +237,17 @@ def test_entrypoint_scopes_legacy_module_aliases_to_each_exec():
     assert 'sys.modules["kyre_universal_shell_runtime_v1"] = _original_shell_v1_module' in app
 
 
+def test_entrypoint_self_heals_previously_poisoned_hot_reload_modules_before_exec():
+    app = (ROOT / "app.py").read_text(encoding="utf-8")
+    assert "import importlib" in app
+    assert "def _ensure_base_module(" in app
+    assert '_real_nav_v2 = _ensure_base_module("streamlit_memory_lazy_router_universal_nav_v2", "nav_ui")' in app
+    assert '_real_shell_v1 = _ensure_base_module("kyre_universal_shell_runtime_v1", "activate_step3_page")' in app
+    assert "_router_v4.v2 = _real_nav_v2" in app
+    assert "_shell_v2.prior = _real_shell_v1" in app
+    assert "_router_v4.prior.prior = _real_nav_v2" in app
+
+
 def test_v4_returns_tap_intent_so_legacy_owner_switches_to_nfl_in_same_run(monkeypatch):
     intent = types.SimpleNamespace(sport_id="nfl", market_id=None, source="tap")
     module, v2, _root, _st, events = _load_v4(monkeypatch, returned_intent=intent)
