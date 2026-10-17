@@ -8,6 +8,7 @@ def _text(path: str) -> str:
 def test_r2_is_presentation_only_successor() -> None:
     text = _text("cfb_game_total_page2_visual_cleanup_r2.py")
     assert "import cfb_game_total_page2_complete_repair_r1 as prior" in text
+    assert 'R1_PARENT = "cfb_game_total_page2_complete_repair_r1"' in text
     assert "MAY_MODIFY_MODEL = False" in text
     assert "MAY_MODIFY_PROJECTION = False" in text
     assert "MAY_MODIFY_PROBABILITY = False" in text
@@ -58,8 +59,11 @@ def test_stage7_has_one_clean_header_and_reuses_verified_cards() -> None:
     assert "gtp2r2-team-wrap" in text
 
 
-def test_route_pointer_activates_cleanup_r2_only_for_page2_runtime() -> None:
+def test_route_pointer_activates_cleanup_r2_and_restores_same_seam() -> None:
     route = _text("streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py")
     assert 'CFB_PAGE2_RUNTIME = "cfb_game_total_page2_visual_cleanup_r2"' in route
+    assert "original_page2_runtime = prior.SAME_PAGE_RUNTIME" in route
+    assert "prior.SAME_PAGE_RUNTIME = CFB_PAGE2_RUNTIME" in route
+    assert "prior.SAME_PAGE_RUNTIME = original_page2_runtime" in route
     assert "MAY_MODIFY_PAGE1 = False" in route
     assert "MAY_MODIFY_OTHER_SPORTS = False" in route
