@@ -7,8 +7,7 @@
       "tests/test_monster_cfb_game_total_full_flow_integration_v1.py",
       "tests/test_monster_cfb_game_total_page1_daily_slate_activation_v1.py",
       "tests/test_monster_cfb_game_total_page2_same_page_shell_repair_v1.py",
-      "tests/test_monster_cfb_game_total_page2_fast_switch_step9_v1.py",
-      "tests/test_monster_cfb_game_total_page2_final_polish_step10_v1.py"
+      "tests/test_monster_cfb_game_total_page2_network_free_v2.py"
     ]
   ],
   "artifacts": [
