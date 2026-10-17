@@ -18,7 +18,7 @@ import universal_sports_nav_ui_v1 as stable_ui
 
 MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4 • IMMEDIATE SAME-RUN HANDOFF"
 FROZEN_PARENT = "streamlit_memory_lazy_router_universal_nav_v3"
-PENDING_INTENT_KEY = v2.PENDING_INTENT_KEY
+PENDING_INTENT_KEY = getattr(v2, "PENDING_INTENT_KEY", "ks_universal_pending_intent_v2")
 UNIVERSAL_NAV_ENABLED = True
 
 # Keep the original V1 callable itself, not a module lookup. V2 temporarily
