@@ -1,11 +1,9 @@
-"""API 2 NFL Spread smart-next-slate activation overlay.
+"""API 2 NFL Spread + MONSTER CFB Page-2 additive activation overlay.
 
-This file remains the production entry module name so app.py and every other
-workstream stay untouched. The exact prior CFB Step-9 router is preserved under
-a frozen alias and receives every route except exact NFL -> Spread.
-
-Only that one route is temporarily redirected to NFL Spread V5. All routing
-seams are restored after the render, including modules imported during it.
+The current production ancestry already enters through this module beneath
+Universal Navigation. NFL Spread keeps its frozen V5 bridge. Exact selected CFB
+Game Total temporarily receives the Page-2 Complete Repair R1 runtime by changing
+one existing SAME_PAGE_RUNTIME pointer and restoring it after every render.
 """
 from __future__ import annotations
 
@@ -18,9 +16,11 @@ import nfl_spread_hub_v5 as spread_v5
 import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1 as prior
 import streamlit_memory_lazy_router_v1 as root
 
-MODEL_VERSION = "API2 NFL SPREAD • NEXT VERIFIED SLATE ACTIVATION V1"
+MODEL_VERSION = "API2 NFL SPREAD + MONSTER CFB PAGE2 COMPLETE REPAIR ACTIVATION V2"
 FROZEN_PARENT = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1"
 ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v5"
+CFB_PAGE2_RUNTIME = "cfb_game_total_page2_complete_repair_r1"
+MAY_MODIFY_PAGE1 = False
 MAY_MODIFY_OTHER_SPORTS = False
 MAY_MODIFY_OTHER_MARKETS = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -82,17 +82,22 @@ def _restore_loaded_router_seams(original_root_render_nfl: Callable[[str], Any])
 
 def render_app() -> Any:
     original_root_render_nfl = _patch_loaded_router_seams()
+    original_page2_runtime = prior.SAME_PAGE_RUNTIME
+    prior.SAME_PAGE_RUNTIME = CFB_PAGE2_RUNTIME
     try:
         return prior.render_app()
     finally:
+        prior.SAME_PAGE_RUNTIME = original_page2_runtime
         _restore_loaded_router_seams(original_root_render_nfl)
 
 
 __all__ = [
     "ACTIVE_SPREAD_PAGE",
+    "CFB_PAGE2_RUNTIME",
     "FROZEN_PARENT",
     "MAY_MODIFY_OTHER_MARKETS",
     "MAY_MODIFY_OTHER_SPORTS",
+    "MAY_MODIFY_PAGE1",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
