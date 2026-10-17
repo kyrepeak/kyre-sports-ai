@@ -17,7 +17,8 @@ import streamlit_memory_lazy_router_universal_nav_v1 as prior
 import streamlit_memory_lazy_router_v1 as legacy_root
 import universal_sports_nav_ui_v2 as nav_ui
 import universal_tap_only_selector_v2 as tap_selector
-from universal_sports_nav_controller_v1 import RouteIntent, resolve_route
+from universal_sports_nav_controller_v1 import RouteIntent, RouteState, resolve_route
+from universal_sports_nav_registry_v1 import get_market, get_sport
 from universal_sports_nav_url_v1 import apply_query_patch, query_patch_for_state
 
 
@@ -77,7 +78,11 @@ def _clear_cross_route_session_context(session: MutableMapping[str, Any], outgoi
                 continue
 
 
-def _prepare_pending_handoff(intent: RouteIntent, session: MutableMapping[str, Any], query: MutableMapping[str, Any]) -> None:
+def _prepare_pending_handoff(
+    intent: RouteIntent,
+    session: MutableMapping[str, Any],
+    query: MutableMapping[str, Any],
+) -> RouteState:
     current = prior._resolve_initial_state(session, query)
     state = resolve_route(
         intent=intent,
@@ -92,12 +97,49 @@ def _prepare_pending_handoff(intent: RouteIntent, session: MutableMapping[str, A
     prior._persist_state(state, session)
     prior.apply_legacy_route_state(state, session)
     apply_query_patch(query, query_patch_for_state(state, query))
+    return state
+
+
+def _render_handoff_mask(state: RouteState) -> None:
+    """Cover stale DOM while the committed destination starts on a clean rerun."""
+    sport = get_sport(state.sport_id)
+    market = get_market(state.sport_id, state.market_id)
+    sport_label = sport.label if sport is not None else str(state.sport_id).upper()
+    market_label = (
+        market.label
+        if market is not None
+        else str(state.market_id).replace("-", " ").title()
+    )
+    st.markdown(
+        f"""
+<div class="ks-route-transition-v2">
+  <div class="ks-route-transition-v2__card">
+    <div class="ks-route-transition-v2__brand">KYRE SPORTS</div>
+    <div class="ks-route-transition-v2__title">Loading {sport_label} · {market_label}</div>
+    <div class="ks-route-transition-v2__sub">Switching pages...</div>
+  </div>
+</div>
+<style>
+.ks-route-transition-v2{{position:fixed;inset:0;z-index:2147483646;background:#080d16;display:flex;align-items:center;justify-content:center;padding:24px}}
+.ks-route-transition-v2__card{{width:min(520px,92vw);border:1px solid rgba(56,189,248,.28);border-radius:22px;padding:26px;background:#0f1726;text-align:center}}
+.ks-route-transition-v2__brand{{font-size:.72rem;font-weight:900;letter-spacing:.14em;color:#38bdf8}}
+.ks-route-transition-v2__title{{margin-top:8px;font-size:1.25rem;font-weight:900;color:#f8fafc}}
+.ks-route-transition-v2__sub{{margin-top:7px;font-size:.82rem;color:#94a3b8}}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def _render_app_impl() -> Any:
     pending = _consume_pending_intent(st.session_state)
     if pending is not None:
-        _prepare_pending_handoff(pending, st.session_state, st.query_params)
+        state = _prepare_pending_handoff(pending, st.session_state, st.query_params)
+        _render_handoff_mask(state)
+        rerun = getattr(st, "rerun", None)
+        if callable(rerun):
+            rerun()
+            return None
 
     original_renderer = prior.nav_ui.render_universal_nav
     original_import = legacy_root._import
