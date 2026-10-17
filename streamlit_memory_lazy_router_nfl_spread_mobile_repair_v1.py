@@ -20,15 +20,22 @@ from typing import Any, Callable, Iterable
 import streamlit as st
 
 import nfl_spread_hub_v7 as spread_v7
+import nfl_spread_hub_v8 as spread_v8
+
+# Keep the frozen V7 compatibility symbol/helper contract while forwarding its
+# runtime target to additive V8. Old callers remain stable; production gets V8.
+FROZEN_SPREAD_V7 = spread_v7
+spread_v7 = spread_v8
 import streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1 as cfb_daily_slate
 import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1 as prior
 import streamlit_memory_lazy_router_v132 as spread_fast_route
 from streamlit_route_hygiene_v1 import apply_route_hygiene
 
 
-MODEL_VERSION = "API2 NFL SPREAD • V7 IDENTITY + NAV STABILITY + AUTODATE + TAP-ONLY MOBILE NAV V1"
+MODEL_VERSION = "API2 NFL SPREAD • V8 READABLE HISTORY + V7 NAV STABILITY • TAP-ONLY MOBILE NAV V1"
 FROZEN_PARENT = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1"
 ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v7"
+RUNTIME_SPREAD_PAGE = "nfl_spread_hub_v8"
 DIRECT_FAST_ROUTE_INTERCEPT = True
 TAP_ONLY_NFL_MARKET_NAV = True
 ROUTE_HYGIENE_ENABLED = True
@@ -121,6 +128,7 @@ __all__ = [
     "FROZEN_PARENT",
     "MODEL_VERSION",
     "ROUTE_HYGIENE_ENABLED",
+    "RUNTIME_SPREAD_PAGE",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "TAP_ONLY_NFL_MARKET_NAV",
