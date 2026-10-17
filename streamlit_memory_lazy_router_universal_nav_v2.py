@@ -2,9 +2,10 @@
 
 This additive layer fixes first-tap cross-sport switching without reopening the
 frozen V1 router. A widget callback records the newest explicit tap before the
-next rerun. V2 consumes that intent, clears stale route-local URL context on a
-sport handoff, updates the canonical route, then delegates through V1 with only
-its renderer temporarily upgraded to the callback-driven V2 UI.
+next rerun. V2 consumes that intent, clears stale route-local URL and outgoing
+sport-local session context on a sport handoff, updates the canonical route,
+then delegates through V1 with only its renderer temporarily upgraded to the
+callback-driven V2 UI.
 """
 from __future__ import annotations
 
@@ -15,7 +16,7 @@ import streamlit as st
 import streamlit_memory_lazy_router_universal_nav_v1 as prior
 import streamlit_memory_lazy_router_v1 as legacy_root
 import universal_sports_nav_ui_v2 as nav_ui
-import universal_tap_only_selector_v1 as tap_selector
+import universal_tap_only_selector_v2 as tap_selector
 from universal_sports_nav_controller_v1 import RouteIntent, resolve_route
 from universal_sports_nav_url_v1 import apply_query_patch, query_patch_for_state
 
@@ -28,6 +29,7 @@ RECEIVING_V17_MODULE = "nfl_receiving_yards_hub_v17"
 RECEIVING_V18_MODULE = "nfl_receiving_yards_hub_v18"
 RECEIVING_V19_MODULE = "nfl_receiving_yards_hub_v19"
 RECEIVING_V20_MODULE = "nfl_receiving_yards_hub_v20"
+RECEIVING_V21_MODULE = "nfl_receiving_yards_hub_v21"
 
 _ROUTE_LOCAL_QUERY_KEYS = frozenset({"date", "game_id", "player_id"})
 
@@ -58,6 +60,23 @@ def _clear_cross_route_query_context(query: MutableMapping[str, Any]) -> None:
                 continue
 
 
+def _clear_cross_route_session_context(session: MutableMapping[str, Any], outgoing_sport_id: str) -> None:
+    """Retire outgoing sport-local widget/page state before the new sport renders."""
+    sport = str(outgoing_sport_id or "").strip().lower()
+    if not sport:
+        return
+    prefixes = (f"{sport}_", f"ks_{sport}_")
+    for raw_key in list(session.keys()):
+        key = str(raw_key).strip().lower()
+        if key.startswith("ks_universal_"):
+            continue
+        if key.startswith(prefixes):
+            try:
+                del session[raw_key]
+            except Exception:
+                continue
+
+
 def _prepare_pending_handoff(intent: RouteIntent, session: MutableMapping[str, Any], query: MutableMapping[str, Any]) -> None:
     current = prior._resolve_initial_state(session, query)
     state = resolve_route(
@@ -69,6 +88,7 @@ def _prepare_pending_handoff(intent: RouteIntent, session: MutableMapping[str, A
     )
     if state.sport_id != current.sport_id:
         _clear_cross_route_query_context(query)
+        _clear_cross_route_session_context(session, current.sport_id)
     prior._persist_state(state, session)
     prior.apply_legacy_route_state(state, session)
     apply_query_patch(query, query_patch_for_state(state, query))
@@ -92,6 +112,8 @@ def _render_app_impl() -> Any:
             module_name = RECEIVING_V19_MODULE
         if receiving_route and str(module_name) == RECEIVING_V19_MODULE:
             module_name = RECEIVING_V20_MODULE
+        if receiving_route and str(module_name) == RECEIVING_V20_MODULE:
+            module_name = RECEIVING_V21_MODULE
         return original_import(module_name)
 
     def clean_router_debug(body: Any, *args: Any, **kwargs: Any):

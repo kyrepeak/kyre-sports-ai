@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from importlib import import_module
-from importlib.util import find_spec
 from pathlib import Path
 
 
@@ -37,18 +36,15 @@ class _FakeSt:
 
 
 def _selector_module():
-    name = "universal_tap_only_selector_v2" if find_spec("universal_tap_only_selector_v2") else "universal_tap_only_selector_v1"
-    return import_module(name)
+    return import_module("universal_tap_only_selector_v2")
 
 
 def _router_module():
-    name = "streamlit_memory_lazy_router_universal_nav_v3" if find_spec("streamlit_memory_lazy_router_universal_nav_v3") else "streamlit_memory_lazy_router_universal_nav_v2"
-    return import_module(name)
+    return import_module("streamlit_memory_lazy_router_universal_nav_v2")
 
 
 def _receiving_module():
-    name = "nfl_receiving_yards_hub_v21" if find_spec("nfl_receiving_yards_hub_v21") else "nfl_receiving_yards_hub_v20"
-    return import_module(name)
+    return import_module("nfl_receiving_yards_hub_v21")
 
 
 def test_game_tap_key_follows_exact_value_when_options_reorder(monkeypatch):
@@ -123,8 +119,7 @@ def test_key_receiving_options_show_face_team_logo_and_exact_identity():
             }
         ],
     }
-    renderer = getattr(hub, "_team_id_cards_html_v21", getattr(hub, "_team_id_cards_html_v20"))
-    html = renderer(team)
+    html = hub._team_id_cards_html_v21(team)
 
     assert "Devontez Walker" in html
     assert "ESPN ID 4696882" in html
@@ -144,6 +139,9 @@ def test_player_vs_defense_history_contract_remains_in_active_lineage():
     assert "No fallback was invented" in source
 
 
-def test_app_activates_single_owner_router_successor():
-    source = Path("app.py").read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_universal_nav_v3 import record_bootstrap_import_ms, render_app" in source
+def test_app_keeps_single_owner_router_and_router_activates_repair_successors():
+    app_source = Path("app.py").read_text(encoding="utf-8")
+    router_source = Path("streamlit_memory_lazy_router_universal_nav_v2.py").read_text(encoding="utf-8")
+    assert "from streamlit_memory_lazy_router_universal_nav_v2 import record_bootstrap_import_ms, render_app" in app_source
+    assert "import universal_tap_only_selector_v2 as tap_selector" in router_source
+    assert 'RECEIVING_V21_MODULE = "nfl_receiving_yards_hub_v21"' in router_source
