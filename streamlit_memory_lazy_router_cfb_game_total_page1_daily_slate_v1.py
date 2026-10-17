@@ -18,6 +18,7 @@ import streamlit as st
 import cfb_game_total_page1_daily_slate_runtime_fallback_r1 as daily_fallback
 import cfb_game_total_page1_polish_r4 as page1_polish
 import cfb_game_total_page1_market_truth_r5 as page1_market_truth
+import cfb_game_total_public_latency_r1 as latency
 import streamlit_memory_lazy_router_cfb_game_total_page1_unified_repair_v1 as page1_repair
 import streamlit_memory_lazy_router_v1 as root
 
@@ -142,6 +143,7 @@ def _empty_primary_crosscheck(delegate: Callable[[Any], dict[str, Any]]) -> Call
 @contextmanager
 def _install_empty_primary_crosscheck():
     """Patch the currently loaded Page-1 owner for non-purging renders."""
+    latency_originals = latency.install_shared_daily_slate_loaders(daily_fallback.page)
     original_load_day = daily_fallback.page._load_day
     wrapped = _empty_primary_crosscheck(original_load_day)
     daily_fallback.page._load_day = wrapped
@@ -154,6 +156,7 @@ def _install_empty_primary_crosscheck():
         page1_polish.restore_from(daily_fallback.page, polish_originals)
         if daily_fallback.page._load_day is wrapped:
             daily_fallback.page._load_day = original_load_day
+        latency.restore_shared_daily_slate_loaders(latency_originals)
 
 
 @contextmanager
@@ -170,12 +173,13 @@ def _install_fresh_import_crosscheck():
         original_load_day = getattr(module, "_load_day", None)
         if not callable(original_load_day):
             return module
+        latency_originals = latency.install_shared_daily_slate_loaders(module)
         wrapped = _empty_primary_crosscheck(original_load_day)
         if wrapped is not original_load_day:
             module._load_day = wrapped
         polish_originals = page1_polish.install_into(module)
         market_originals = page1_market_truth.install_into(module)
-        patched_modules.append((module, original_load_day, wrapped, polish_originals, market_originals))
+        patched_modules.append((module, original_load_day, wrapped, polish_originals, market_originals, latency_originals))
         return module
 
     root._import = import_with_daily_slate_crosscheck
@@ -183,11 +187,12 @@ def _install_fresh_import_crosscheck():
         yield
     finally:
         root._import = original_import
-        for module, original_load_day, wrapped, polish_originals, market_originals in reversed(patched_modules):
+        for module, original_load_day, wrapped, polish_originals, market_originals, latency_originals in reversed(patched_modules):
             page1_market_truth.restore_from(module, market_originals)
             page1_polish.restore_from(module, polish_originals)
             if getattr(module, "_load_day", None) is wrapped:
                 module._load_day = original_load_day
+            latency.restore_shared_daily_slate_loaders(latency_originals)
 
 
 @contextmanager
@@ -197,11 +202,12 @@ def install_daily_slate_page1():
         original_page1_route = page1_repair.PAGE1_REPAIR_ROUTE
         page1_repair.PAGE1_REPAIR_ROUTE = PAGE1_DAILY_SLATE_ROUTE
         try:
-            with daily_fallback._install_runtime_fallback():
-                with _install_action_json_primary():
-                    with _install_empty_primary_crosscheck():
-                        with _install_fresh_import_crosscheck():
-                            yield
+            with latency.install_parallel_scoreboard_fallback(daily_fallback):
+                with daily_fallback._install_runtime_fallback():
+                    with _install_action_json_primary():
+                        with _install_empty_primary_crosscheck():
+                            with _install_fresh_import_crosscheck():
+                                yield
         finally:
             page1_repair.PAGE1_REPAIR_ROUTE = original_page1_route
 
