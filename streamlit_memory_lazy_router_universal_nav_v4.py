@@ -1,12 +1,17 @@
-"""Universal Sports Navigation V4 — same-run + terminal ownership bridge.
+"""Universal Sports Navigation V4 — atomic same-run route ownership bridge.
 
 V3 remains the steady-state canonical owner. V4 preserves the immediate V1
-RouteIntent handoff and also guards the final legacy-root render boundary.
-Historical router overlays may temporarily rewrite ``st.selectbox`` while they
-delegate; the terminal guard therefore reapplies only the canonical global
-sport/market selector bridge after those overlays have installed their seams and
-immediately before the legacy root chooses the body owner. Page-level controls
-still delegate through the downstream selector unchanged.
+RouteIntent fallback and registers atomic callbacks on the universal sport and
+market pills. A pill change commits canonical session state, canonical URL, and
+legacy compatibility state *before* the next body-render run begins, then issues
+one explicit full rerun. This avoids Streamlit fast-rerun races that can update
+the URL while leaving the outgoing sport body on screen.
+
+The final legacy-root guard remains as defense in depth: historical router
+overlays may temporarily rewrite ``st.selectbox`` while they delegate, so the
+canonical global selector bridge is reapplied immediately before the legacy
+root chooses the body owner. Page-level controls continue to delegate through
+the downstream selector unchanged.
 """
 from __future__ import annotations
 
@@ -19,7 +24,7 @@ import streamlit_memory_lazy_router_universal_nav_v3 as prior
 import universal_sports_nav_ui_v1 as stable_ui
 
 
-MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4.2 • SAME-RUN TERMINAL OWNER"
+MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4.3 • ATOMIC PILL COMMIT"
 FROZEN_PARENT = "streamlit_memory_lazy_router_universal_nav_v3"
 PENDING_INTENT_KEY = getattr(v2, "PENDING_INTENT_KEY", "ks_universal_pending_intent_v2")
 UNIVERSAL_NAV_ENABLED = True
@@ -50,15 +55,104 @@ def record_bootstrap_import_ms(value: float) -> None:
     return prior.record_bootstrap_import_ms(value)
 
 
+def _commit_pill_intent(
+    state: Any,
+    *,
+    sport_widget_key: str | None = None,
+    market_widget_key: str | None = None,
+) -> None:
+    """Commit one widget change before body rendering, then rerun exactly once."""
+    sport_id = None
+    market_id = None
+    if sport_widget_key:
+        sport_id = str(st.session_state.get(sport_widget_key) or "").strip().lower() or None
+    if market_widget_key:
+        market_id = str(st.session_state.get(market_widget_key) or "").strip().lower() or None
+
+    if sport_id and sport_id == str(getattr(state, "sport_id", "") or "").strip().lower():
+        sport_id = None
+    if market_id and market_id == str(getattr(state, "market_id", "") or "").strip().lower():
+        market_id = None
+    if sport_id is None and market_id is None:
+        return
+
+    outgoing_sport = str(getattr(state, "sport_id", "") or "").strip().lower()
+    intent = v2.prior.RouteIntent(
+        sport_id=sport_id or getattr(state, "sport_id", None),
+        market_id=market_id,
+        source="tap",
+    )
+    next_state = v2.prior._apply_intent(state, intent)
+    incoming_sport = str(getattr(next_state, "sport_id", "") or "").strip().lower()
+
+    if outgoing_sport and incoming_sport and incoming_sport != outgoing_sport:
+        v2._clear_cross_route_query_context(st.query_params)
+        v2._clear_cross_route_session_context(st.session_state, outgoing_sport)
+
+    # Session and compatibility state are committed before URL mutation or any
+    # rerun can interrupt this callback.  The next run therefore starts with a
+    # complete single-owner route even under Streamlit's runner.fastReruns.
+    v2.prior._persist_state(next_state, st.session_state)
+    v2.prior.apply_legacy_route_state(next_state, st.session_state)
+
+    patch = v2.prior.query_patch_for_state(next_state, st.query_params)
+    _trace(
+        "CALLBACK_COMMIT",
+        outgoing=outgoing_sport,
+        incoming=incoming_sport,
+        market=getattr(next_state, "market_id", None),
+        epoch=getattr(next_state, "epoch", None),
+        query_sport=_query_value("sport"),
+        query_market=_query_value("market"),
+    )
+    v2.prior.apply_query_patch(st.query_params, patch)
+
+    # A single explicit full rerun is intentional here. The callback already
+    # advanced the epoch, so the replacement pill widgets have new identities
+    # and cannot re-fire this callback in a loop.
+    st.rerun()
+
+
+def _render_with_atomic_pill_callbacks(state: Any) -> Any:
+    """Render stable V1 pills while registering pre-render route callbacks."""
+    native_pills = getattr(st, "pills", None)
+    if not callable(native_pills):
+        return _STABLE_RENDERER(state)
+
+    def atomic_pills(label: Any, options: Any, *args: Any, **kwargs: Any) -> Any:
+        widget_key = str(kwargs.get("key") or "")
+        clean_label = str(label or "").strip()
+        if clean_label == "Sport" and widget_key:
+            kwargs["on_change"] = lambda key=widget_key, snapshot=state: _commit_pill_intent(
+                snapshot,
+                sport_widget_key=key,
+            )
+        elif clean_label == "Market" and widget_key:
+            kwargs["on_change"] = lambda key=widget_key, snapshot=state: _commit_pill_intent(
+                snapshot,
+                market_widget_key=key,
+            )
+        return native_pills(label, options, *args, **kwargs)
+
+    st.pills = atomic_pills
+    try:
+        return _STABLE_RENDERER(state)
+    finally:
+        st.pills = native_pills
+
+
 def _render_immediate_handoff(state: Any) -> Any:
-    intent = _STABLE_RENDERER(state)
+    # The callback path is authoritative in Streamlit 1.66+. Returning an intent
+    # remains a safe fallback for test doubles or any environment where the
+    # widget callback was not the source of the current route change.
+    intent = _render_with_atomic_pill_callbacks(state)
     if intent is None:
         return None
 
     outgoing_sport = str(getattr(state, "sport_id", "") or "").strip().lower()
     incoming_sport = str(getattr(intent, "sport_id", "") or outgoing_sport).strip().lower()
     _trace(
-        "INTENT",
+        "INTENT_FALLBACK",
         outgoing=outgoing_sport,
         incoming=incoming_sport,
         query_sport=_query_value("sport"),
@@ -69,7 +163,6 @@ def _render_immediate_handoff(state: Any) -> Any:
     if outgoing_sport and incoming_sport and incoming_sport != outgoing_sport:
         v2._clear_cross_route_query_context(st.query_params)
         v2._clear_cross_route_session_context(st.session_state, outgoing_sport)
-
     return intent
 
 
@@ -207,6 +300,8 @@ __all__ = [
     "MODEL_VERSION",
     "PENDING_INTENT_KEY",
     "UNIVERSAL_NAV_ENABLED",
+    "_commit_pill_intent",
+    "_render_with_atomic_pill_callbacks",
     "_terminal_root_guard",
     "record_bootstrap_import_ms",
     "render_app",
