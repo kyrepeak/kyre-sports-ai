@@ -14,6 +14,7 @@ import streamlit as st
 
 import streamlit_memory_lazy_router_universal_nav_v1 as prior
 import universal_sports_nav_ui_v2 as nav_ui
+import universal_tap_only_selector_v1 as tap_selector
 from universal_sports_nav_controller_v1 import RouteIntent, resolve_route
 from universal_sports_nav_url_v1 import apply_query_patch, query_patch_for_state
 
@@ -68,7 +69,7 @@ def _prepare_pending_handoff(intent: RouteIntent, session: MutableMapping[str, A
     apply_query_patch(query, query_patch_for_state(state, query))
 
 
-def render_app() -> Any:
+def _render_app_impl() -> Any:
     pending = _consume_pending_intent(st.session_state)
     if pending is not None:
         _prepare_pending_handoff(pending, st.session_state, st.query_params)
@@ -79,6 +80,11 @@ def render_app() -> Any:
         return prior.render_app()
     finally:
         prior.nav_ui.render_universal_nav = original_renderer
+
+
+def render_app() -> Any:
+    with tap_selector.install_universal_tap_only_selectboxes():
+        return _render_app_impl()
 
 
 __all__ = [
