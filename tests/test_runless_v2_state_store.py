@@ -283,3 +283,78 @@ def test_health_targets_runless_v2_schema_with_accept_profile():
     )
     assert s.health() is True
     assert seen["accept_profile"] == "runless_v2"
+
+
+def test_live_workstream_leases_reads_only_live_rows_for_one_workstream():
+    seen = {}
+    def handler(req):
+        seen["url"] = str(req.url)
+        seen["params"] = dict(req.url.params)
+        return json_response(req, 200, [{
+            "workstream": "ws-1",
+            "owner_proof_id": "proof-live",
+            "fencing_generation": 9,
+            "expires_at": "2099-01-01T00:00:00+00:00",
+        }])
+    rows = store(handler).live_workstream_leases("ws-1")
+    assert rows[0]["owner_proof_id"] == "proof-live"
+    assert "/rest/v1/workstream_leases" in seen["url"]
+    assert seen["params"]["workstream"] == "eq.ws-1"
+
+
+def test_supersede_base_drift_authority_calls_atomic_rpc_and_returns_typed_row():
+    seen = {}
+    row = {
+        "supersession_id": "base-drift-1",
+        "workstream": "ws-1",
+        "old_proof_id": "proof-old",
+        "old_candidate_sha": SHA,
+        "old_expected_main_sha": MAIN,
+        "successor_candidate_sha": "c" * 40,
+        "successor_expected_main_sha": "d" * 40,
+        "reason": "BASE_DRIFT",
+        "github_pr_number": 1600,
+        "github_branch": "feature",
+        "old_gate_check_run_id": 77,
+        "old_receipt_digest": "receipt-old",
+        "created_at": "2026-10-17T02:30:00+00:00",
+    }
+    def handler(req):
+        seen["url"] = str(req.url)
+        seen["body"] = json.loads(req.content)
+        return json_response(req, 200, row)
+    result = store(handler).supersede_base_drift_authority(
+        workstream="ws-1", task_id="task-1", old_proof_id="proof-old",
+        old_candidate_sha=SHA, successor_candidate_sha="c" * 40,
+        successor_expected_main_sha="d" * 40, github_pr_number=1600,
+        github_branch="feature",
+    )
+    assert result.supersession_id == "base-drift-1"
+    assert seen["url"].endswith("/rest/v1/rpc/supersede_base_drift_authority")
+    assert seen["body"]["p_old_proof_id"] == "proof-old"
+    assert seen["body"]["p_github_pr_number"] == 1600
+
+
+def test_authority_supersession_reads_durable_row_by_old_proof_id():
+    seen = {}
+    row = {
+        "supersession_id": "base-drift-1",
+        "workstream": "ws-1",
+        "old_proof_id": "proof-old",
+        "old_candidate_sha": SHA,
+        "old_expected_main_sha": MAIN,
+        "successor_candidate_sha": "c" * 40,
+        "successor_expected_main_sha": "d" * 40,
+        "reason": "BASE_DRIFT",
+        "github_pr_number": 1600,
+        "github_branch": "feature",
+        "old_gate_check_run_id": 77,
+        "old_receipt_digest": "receipt-old",
+        "created_at": "2026-10-17T02:30:00+00:00",
+    }
+    def handler(req):
+        seen["params"] = dict(req.url.params)
+        return json_response(req, 200, [row])
+    result = store(handler).authority_supersession("proof-old")
+    assert result.old_proof_id == "proof-old"
+    assert seen["params"]["old_proof_id"] == "eq.proof-old"
