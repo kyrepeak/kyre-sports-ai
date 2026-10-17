@@ -4,7 +4,10 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "app.py"
+      - "streamlit_memory_lazy_router_universal_nav_v4.py"
       - "devsystem/api2_universal_shell_route_top_public_cert_v1.py"
+      - "tests/test_api2_universal_shell_route_top_live_handoff_v2.py"
       - ".github/workflows/api2-universal-shell-route-top-public-proof.yml"
 
 permissions:
@@ -28,6 +31,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt playwright
           python -m playwright install --with-deps chromium
+
+      - name: Run focused immediate-handoff regression
+        run: python -m pytest -q tests/test_api2_universal_shell_route_top_live_handoff_v2.py
 
       - name: Launch exact app in real Streamlit runtime
         run: |
