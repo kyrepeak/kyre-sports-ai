@@ -21,12 +21,14 @@ import streamlit as st
 import streamlit_memory_lazy_router_universal_nav_v2 as v2
 import streamlit_memory_lazy_router_universal_nav_v3 as prior
 import universal_sports_nav_ui_v1 as stable_ui
+from universal_sports_nav_registry_v1 import get_market, get_sport
 
 
 MODEL_VERSION = "API2 UNIVERSAL SPORTS NAVIGATION V4.4 • RERUN-SAFE TERMINAL OWNER"
 FROZEN_PARENT = "streamlit_memory_lazy_router_universal_nav_v3"
 PENDING_INTENT_KEY = getattr(v2, "PENDING_INTENT_KEY", "ks_universal_pending_intent_v2")
 UNIVERSAL_NAV_ENABLED = True
+ROUTE_TRANSITION_KEY = "ks_universal_route_transition_v1"
 
 # Keep the original V1 callable itself, not a module lookup. V2 temporarily
 # assigns its renderer into the V1 module while delegating, so resolving the
@@ -54,6 +56,101 @@ def _trace(marker: str, **values: Any) -> None:
 
 def record_bootstrap_import_ms(value: float) -> None:
     return prior.record_bootstrap_import_ms(value)
+
+
+def _record_route_transition(state: Any) -> None:
+    """Persist the exact destination generation before Streamlit reruns."""
+    st.session_state[ROUTE_TRANSITION_KEY] = {
+        "sport_id": str(getattr(state, "sport_id", "") or "").strip().lower(),
+        "market_id": str(getattr(state, "market_id", "") or "").strip().lower(),
+        "epoch": int(getattr(state, "epoch", 0) or 0),
+        "confirmed": False,
+    }
+
+
+def _transition_matches_state(transition: Any, state: Any) -> bool:
+    if not isinstance(transition, dict):
+        return False
+    return (
+        str(transition.get("sport_id") or "").strip().lower()
+        == str(getattr(state, "sport_id", "") or "").strip().lower()
+        and str(transition.get("market_id") or "").strip().lower()
+        == str(getattr(state, "market_id", "") or "").strip().lower()
+        and int(transition.get("epoch") or 0) == int(getattr(state, "epoch", 0) or 0)
+    )
+
+
+def _render_pending_transition_mask() -> Any:
+    """Cover any stale outgoing body until the exact destination finishes rendering."""
+    transition = st.session_state.get(ROUTE_TRANSITION_KEY)
+    if not isinstance(transition, dict):
+        return None
+
+    sport_id = str(transition.get("sport_id") or "").strip().lower()
+    market_id = str(transition.get("market_id") or "").strip().lower()
+    if not sport_id or not market_id:
+        st.session_state.pop(ROUTE_TRANSITION_KEY, None)
+        return None
+
+    sport = get_sport(sport_id)
+    market = get_market(sport_id, market_id)
+    sport_label = sport.label if sport is not None else sport_id.upper()
+    market_label = market.label if market is not None else market_id.replace("-", " ").title()
+
+    placeholder = st.empty()
+    placeholder.markdown(
+        f"""
+<div class="ks-route-transition-v4">
+  <div class="ks-route-transition-v4__brand">KYRE SPORTS AI</div>
+  <div class="ks-route-transition-v4__card">
+    <div class="ks-route-transition-v4__title">Loading {sport_label}</div>
+    <div class="ks-route-transition-v4__market">{market_label}</div>
+    <div class="ks-route-transition-v4__sub">Switching to the selected page…</div>
+  </div>
+</div>
+<style>
+.ks-route-transition-v4{{position:fixed;inset:0;z-index:2147483647;background:#060b13;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:calc(env(safe-area-inset-top,0px) + 54px) 20px 28px}}
+.ks-route-transition-v4__brand{{width:min(650px,94vw);border:1px solid rgba(56,189,248,.25);border-radius:20px;padding:16px 22px;color:#eaf6ff;font-size:.86rem;font-weight:900;letter-spacing:.16em;box-sizing:border-box}}
+.ks-route-transition-v4__brand::first-letter{{color:#7dd3fc}}
+.ks-route-transition-v4__card{{margin-top:22px;width:min(650px,94vw);border:1px solid rgba(56,189,248,.24);border-radius:22px;background:#0c1420;padding:28px 24px;text-align:center;box-sizing:border-box;box-shadow:0 20px 60px rgba(0,0,0,.34)}}
+.ks-route-transition-v4__title{{font-size:1.22rem;font-weight:900;color:#f8fafc}}
+.ks-route-transition-v4__market{{margin-top:7px;font-size:.94rem;font-weight:800;color:#7dd3fc}}
+.ks-route-transition-v4__sub{{margin-top:9px;font-size:.78rem;color:#94a3b8}}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+    return placeholder
+
+
+def _confirm_route_transition(state: Any) -> bool:
+    transition = st.session_state.get(ROUTE_TRANSITION_KEY)
+    if not _transition_matches_state(transition, state):
+        return False
+    updated = dict(transition)
+    updated["confirmed"] = True
+    st.session_state[ROUTE_TRANSITION_KEY] = updated
+    return True
+
+
+def _finish_route_transition(placeholder: Any) -> None:
+    if placeholder is None:
+        return
+    transition = st.session_state.get(ROUTE_TRANSITION_KEY)
+    if not isinstance(transition, dict) or not bool(transition.get("confirmed")):
+        return
+    placeholder.empty()
+    st.session_state.pop(ROUTE_TRANSITION_KEY, None)
+
+
+def _clear_route_transition_mask(placeholder: Any) -> None:
+    """Expose a real rendering error instead of hiding it behind the mask."""
+    if placeholder is None:
+        return
+    try:
+        placeholder.empty()
+    except Exception:
+        pass
 
 
 def _commit_pill_intent(
@@ -94,6 +191,7 @@ def _commit_pill_intent(
     # interrupt this callback. The next run starts with one complete owner.
     v2.prior._persist_state(next_state, st.session_state)
     v2.prior.apply_legacy_route_state(next_state, st.session_state)
+    _record_route_transition(next_state)
 
     patch = v2.prior.query_patch_for_state(next_state, st.query_params)
     _trace(
@@ -201,6 +299,7 @@ def _terminal_root_guard(delegate: Any) -> Any:
         )
         v2.prior._persist_state(state, st.session_state)
         v2.prior.apply_legacy_route_state(state, st.session_state)
+        _confirm_route_transition(state)
 
         downstream_selectbox = v2.legacy_root.st.selectbox
         canonical_selectbox = v2.prior.make_legacy_selectbox_bridge(downstream_selectbox, state)
@@ -230,6 +329,7 @@ def _terminal_root_guard(delegate: Any) -> Any:
 
 
 def render_app() -> Any:
+    transition_placeholder = _render_pending_transition_mask()
     original_renderer = v2.nav_ui.render_universal_nav
 
     # A fast rerun may interrupt the prior run before its finally block restores
@@ -249,7 +349,12 @@ def render_app() -> Any:
     v2.nav_ui.render_universal_nav = _render_immediate_handoff
     v2.legacy_root.render_app = guarded_root_render
     try:
-        return prior.render_app()
+        result = prior.render_app()
+        _finish_route_transition(transition_placeholder)
+        return result
+    except Exception:
+        _clear_route_transition_mask(transition_placeholder)
+        raise
     finally:
         # Restore only our exact guard. If a downstream owner deliberately moved
         # the root pointer, do not overwrite that newer authority.
@@ -262,6 +367,7 @@ __all__ = [
     "FROZEN_PARENT",
     "MODEL_VERSION",
     "PENDING_INTENT_KEY",
+    "ROUTE_TRANSITION_KEY",
     "UNIVERSAL_NAV_ENABLED",
     "_commit_pill_intent",
     "_render_with_atomic_pill_callbacks",
