@@ -5,6 +5,7 @@ import time
 
 import cfb_game_total_page1_daily_slate_runtime_fallback_r1 as fallback
 import cfb_game_total_page1_daily_slate_v1 as slate
+import cfb_game_total_public_latency_r1 as latency
 
 
 class _Response:
@@ -27,13 +28,40 @@ def test_same_day_daily_slate_loaders_share_one_transport(monkeypatch) -> None:
     monkeypatch.setattr(slate.requests, "get", fake_get)
     slate._load_slate_cached_60.clear()
     slate._load_slate_cached_20.clear()
-
-    first = slate._load_slate_cached_60("2026-10-17")
-    second = slate._load_slate_cached_20("2026-10-17")
+    originals = latency.install_shared_daily_slate_loaders(slate)
+    try:
+        first = slate._load_slate_cached_60("2026-10-17")
+        second = slate._load_slate_cached_20("2026-10-17")
+    finally:
+        latency.restore_shared_daily_slate_loaders(originals)
 
     assert first["requested_phoenix_date"] == "2026-10-17"
     assert second["requested_phoenix_date"] == "2026-10-17"
     assert len(calls) == 1
+
+
+def test_same_day_transport_failure_is_not_retried_in_same_render(monkeypatch) -> None:
+    calls = 0
+
+    def fake_get(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise slate.requests.Timeout("provider slow")
+
+    monkeypatch.setattr(slate.requests, "get", fake_get)
+    slate._load_slate_cached_60.clear()
+    slate._load_slate_cached_20.clear()
+    originals = latency.install_shared_daily_slate_loaders(slate)
+    try:
+        for loader in (slate._load_slate_cached_60, slate._load_slate_cached_20):
+            try:
+                loader("2026-10-17")
+            except slate.requests.Timeout:
+                pass
+    finally:
+        latency.restore_shared_daily_slate_loaders(originals)
+
+    assert calls == 1
 
 
 def test_espn_fallback_fetches_independent_scoreboards_concurrently(monkeypatch) -> None:
@@ -54,7 +82,8 @@ def test_espn_fallback_fetches_independent_scoreboards_concurrently(monkeypatch)
         return {"events": []}
 
     monkeypatch.setattr(fallback, "_fetch_scoreboard_payload", fake_fetch)
-    payload = fallback.build_requests_fallback_payload(fallback.date(2026, 10, 17))
+    with latency.install_parallel_scoreboard_fallback(fallback):
+        payload = fallback.build_requests_fallback_payload(fallback.date(2026, 10, 17))
 
     assert payload["requested_phoenix_date"] == "2026-10-17"
     assert len(seen) == 4
@@ -66,3 +95,13 @@ def test_espn_fallback_fetches_independent_scoreboards_concurrently(monkeypatch)
         ("2026-10-18", 80),
         ("2026-10-18", 81),
     ]
+
+
+def test_source_diversity_and_model_ownership_are_preserved() -> None:
+    assert latency.SOURCE_DIVERSITY_REDUCED is False
+    assert latency.MAY_MODIFY_MODEL is False
+    assert latency.MAY_MODIFY_PROJECTION is False
+    assert latency.MAY_MODIFY_PROBABILITY is False
+    assert latency.MAY_MODIFY_RANKING is False
+    assert latency.MAY_MODIFY_SELECTION is False
+    assert latency.MAY_MODIFY_SELECTED_GAME_RUNTIME is False
