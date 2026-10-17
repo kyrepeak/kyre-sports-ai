@@ -92,6 +92,9 @@ def render_universal_nav(state: RouteState) -> RouteIntent | None:
     if active_sport is None:
         active_sport = sports[0]
 
+    sport_widget_key = f"{SPORT_CONTROL_KEY}__{state.epoch}"
+    market_widget_key = f"{MARKET_CONTROL_KEY}__{state.epoch}"
+
     with st.container(key=NAV_CONTAINER_KEY):
         st.markdown(_NAV_CSS, unsafe_allow_html=True)
         st.markdown('<div class="ks-universal-brand">KYRE SPORTS</div>', unsafe_allow_html=True)
@@ -99,7 +102,7 @@ def render_universal_nav(state: RouteState) -> RouteIntent | None:
             "Sport",
             sport_ids,
             default=state.sport_id if state.sport_id in sport_ids else active_sport.id,
-            key=SPORT_CONTROL_KEY,
+            key=sport_widget_key,
             format_func=_sport_label,
             selection_mode="single",
             label_visibility="collapsed",
@@ -110,7 +113,7 @@ def render_universal_nav(state: RouteState) -> RouteIntent | None:
             "Market",
             market_ids,
             default=state.market_id if state.market_id in market_ids else active_sport.default_market_id,
-            key=MARKET_CONTROL_KEY,
+            key=market_widget_key,
             format_func=lambda market_id: _market_label(active_sport.id, market_id),
             selection_mode="single",
             label_visibility="collapsed",
