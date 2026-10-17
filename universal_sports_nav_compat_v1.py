@@ -68,6 +68,12 @@ def make_legacy_selectbox_bridge(
         target_sport = _MARKET_LABEL_TO_SPORT.get(text)
         if target_sport == state.sport_id:
             return market.legacy_market
+        # CFB and NBA still traverse the legacy root's NFL fallback dispatch
+        # seam. Feed that seam the canonical market instead of the first NFL
+        # option so downstream sport-specific renderer bridges receive the
+        # destination route rather than a stale/default NFL market.
+        if text == "🎯 NFL Market" and state.sport_id in {"cfb", "nba"}:
+            return market.legacy_market
         values = list(options or ())
         return values[0] if values else None
 
