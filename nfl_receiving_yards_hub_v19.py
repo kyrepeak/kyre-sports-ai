@@ -5,8 +5,8 @@ Receiving Yards identity, relevance, history, market, and projection chain and
 only compresses the per-player deep-evidence surface that remained too tall on
 mobile/tablet.
 
-No projection, probability, sportsbook, line, expected-value, or wager math is
-changed. Sportsbook projection influence remains exactly 0.0%.
+No analytical, sportsbook, line, expected-value, or wager math is changed.
+Sportsbook projection influence remains exactly 0.0%.
 """
 from __future__ import annotations
 
