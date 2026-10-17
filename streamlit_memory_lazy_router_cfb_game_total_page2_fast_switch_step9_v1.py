@@ -2,8 +2,9 @@
 
 The current production ancestry already enters through this module beneath
 Universal Navigation. NFL Spread keeps its frozen V5 bridge. Exact selected CFB
-Game Total temporarily receives the Page-2 Visual Cleanup R3 runtime by changing
-one existing SAME_PAGE_RUNTIME pointer and restoring it after every render.
+Game Total temporarily receives the purge-safe Page-2 Visual Cleanup R4 runtime
+by changing one existing SAME_PAGE_RUNTIME pointer and restoring it after every
+render.
 """
 from __future__ import annotations
 
@@ -16,10 +17,10 @@ import nfl_spread_hub_v5 as spread_v5
 import streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1 as prior
 import streamlit_memory_lazy_router_v1 as root
 
-MODEL_VERSION = "API2 NFL SPREAD + MONSTER CFB PAGE2 VISUAL CLEANUP R3 ACTIVATION V4"
+MODEL_VERSION = "API2 NFL SPREAD + MONSTER CFB PAGE2 VISUAL CLEANUP R4 ACTIVATION V5"
 FROZEN_PARENT = "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_frozen_v1"
 ACTIVE_SPREAD_PAGE = "nfl_spread_hub_v5"
-CFB_PAGE2_RUNTIME = "cfb_game_total_page2_visual_cleanup_r3"
+CFB_PAGE2_RUNTIME = "cfb_game_total_page2_visual_cleanup_r4"
 MAY_MODIFY_PAGE1 = False
 MAY_MODIFY_OTHER_SPORTS = False
 MAY_MODIFY_OTHER_MARKETS = False
