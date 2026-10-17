@@ -77,11 +77,18 @@ def _load_v4(monkeypatch, *, returned_intent):
     return module, v2, events
 
 
-def test_entrypoint_boots_v4_and_forces_r3_runtime_refresh():
+def test_entrypoint_boots_v4_and_forces_r4_runtime_refresh():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_universal_nav_v4" in app
-    assert "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME_REFRESH_2026_10_17_R3" in app
+    assert "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME_REFRESH_2026_10_17_R4" in app
     assert 'sys.modules["streamlit_memory_lazy_router_universal_nav_v2"] = _router_v4' in app
+
+
+def test_entrypoint_executes_preserved_body_fresh_on_every_streamlit_rerun():
+    app = (ROOT / "app.py").read_text(encoding="utf-8")
+    assert "from app_legacy_entrypoint_v1 import *" not in app
+    assert '_legacy_entrypoint_path = Path(__file__).with_name("app_legacy_entrypoint_v1.py")' in app
+    assert "exec(_legacy_entrypoint_code, globals(), globals())" in app
 
 
 def test_v4_uses_immediate_return_value_to_commit_nfl_before_legacy_delegate(monkeypatch):
