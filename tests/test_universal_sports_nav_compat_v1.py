@@ -60,6 +60,27 @@ def test_bridge_suppresses_only_known_top_level_navigation_selectboxes():
     assert [c[0] for c in calls] == ["📅 Date", "Player", "Game"]
 
 
+def test_markdown_bridge_suppresses_only_legacy_root_hero():
+    compat = _compat()
+    calls = []
+    def delegate(body, *args, **kwargs):
+        calls.append(str(body))
+        return "delegated"
+
+    bridge = compat.make_legacy_markdown_bridge(delegate)
+    legacy = '<div class="ks-shell"><div class="ks-title">🧠 KYRE SPORTS AI</div></div>'
+    assert bridge(legacy, unsafe_allow_html=True) is None
+    assert calls == []
+
+    normal = '<div class="matchup-card">Bears at Falcons</div>'
+    assert bridge(normal, unsafe_allow_html=True) == "delegated"
+    assert calls == [normal]
+
+    other_shell = '<div class="ks-shell">page-specific shell without root brand</div>'
+    assert bridge(other_shell, unsafe_allow_html=True) == "delegated"
+    assert calls[-1] == other_shell
+
+
 def test_known_top_level_labels_contract_is_exact():
     compat = _compat()
     assert compat.LEGACY_TOP_LEVEL_LABELS == frozenset({
