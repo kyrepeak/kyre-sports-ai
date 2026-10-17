@@ -1,0 +1,74 @@
+name: API2 Universal Shell Route Top Public Proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "streamlit_memory_lazy_router_universal_nav_v4.py"
+      - "devsystem/api2_universal_shell_route_top_public_cert_v1.py"
+      - "tests/test_api2_universal_shell_route_top_live_handoff_v2.py"
+      - ".github/workflows/api2-universal-shell-route-top-public-proof.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-production-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact PR merge runtime
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install exact Streamlit runtime and proof dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt playwright pytest
+          python -m playwright install --with-deps chromium
+
+      - name: Run focused immediate-handoff regression
+        run: python -m pytest -q tests/test_api2_universal_shell_route_top_live_handoff_v2.py
+
+      - name: Launch exact app in real Streamlit runtime
+        run: |
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            --browser.gatherUsageStats false \
+            > /tmp/api2-streamlit.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health | grep -qi ok; then
+              echo API2_LOCAL_STREAMLIT_HEALTH_GREEN
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/api2-streamlit.log || true
+          exit 1
+
+      - name: Prove shell, Top, and MLB to NFL isolation in Streamlit runtime
+        run: |
+          python -m devsystem.api2_universal_shell_route_top_public_cert_v1 \
+            --production-url http://127.0.0.1:8501 \
+            --artifact-dir artifacts/api2-universal-shell-route-top-public
+
+      - name: Show Streamlit runtime log on failure
+        if: failure()
+        run: cat /tmp/api2-streamlit.log || true
+
+      - name: Upload proof artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api2-universal-shell-route-top-public-proof
+          path: |
+            artifacts/api2-universal-shell-route-top-public
+            /tmp/api2-streamlit.log
+          if-no-files-found: warn
