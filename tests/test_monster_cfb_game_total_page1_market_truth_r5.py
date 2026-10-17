@@ -61,3 +61,19 @@ def test_installed_page1_exposes_multisource_enricher_and_compact_more():
         assert 'FanDuel' in html
         assert 'Event ID' in html and 'Team IDs' in html and 'Tiger Stadium' in html
         assert html.count('<div') >= 3
+
+
+def _direct_action_payload():
+    return {"games":[{"id":289492,"start_time":"2026-10-17T16:00:00.000Z","away_team_id":1,"home_team_id":2,"teams":[{"id":1,"full_name":"Mississippi State Bulldogs","display_name":"Mississippi State","location":"Mississippi State","abbr":"MSST"},{"id":2,"full_name":"LSU Tigers","display_name":"LSU","location":"LSU","abbr":"LSU"}],"markets":{"69":{"event":{"moneyline":[{"side":"away","odds":580,"line_status":"normal","is_live":False},{"side":"home","odds":-880,"line_status":"normal","is_live":False}],"spread":[{"side":"away","value":16.5,"line_status":"normal","is_live":False},{"side":"home","value":-16.5,"line_status":"normal","is_live":False}],"total":[{"side":"over","value":56.5,"line_status":"normal","is_live":False}]}}}}]}
+
+
+def test_direct_action_json_parser_preserves_fanduel_quote():
+    rows=router._parse_action_api(_direct_action_payload(), "2026-10-17T05:00:00+00:00")
+    quote,quotes=router.page1_market_truth.select_featured_book_quote(rows[0]["observations"])
+    assert (quote["book"],quote["away_moneyline"],quote["home_moneyline"],quote["away_spread"],quote["home_spread"],quote["total"]) == ("FanDuel",580,-880,16.5,-16.5,56.5)
+    assert "FanDuel" in quotes
+
+
+def test_route_owns_direct_json_api_primary_contract():
+    assert router.ACTION_API_URL.startswith("https://api.actionnetwork.com/web/v2/scoreboard/ncaaf")
+    assert callable(router._fetch_action_json_board) and callable(router._install_action_json_primary)
