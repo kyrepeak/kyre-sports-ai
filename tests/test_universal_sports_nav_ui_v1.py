@@ -30,6 +30,27 @@ def test_ui_contract_uses_one_scoped_sticky_pills_shell():
     assert "KYRE SPORTS" in source
 
 
+def test_renderer_scopes_widget_keys_to_route_epoch(monkeypatch):
+    ui = _ui()
+    state = RouteState("nfl", "spread", "canonical_url", 7, {"nfl": "spread"})
+    seen_keys = []
+    selections = iter(["nfl", "spread"])
+    def pills(*args, **kwargs):
+        seen_keys.append(kwargs.get("key"))
+        return next(selections)
+    monkeypatch.setattr(ui.st, "pills", pills)
+    class DummyContainer:
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+    monkeypatch.setattr(ui.st, "container", lambda **k: DummyContainer())
+    monkeypatch.setattr(ui.st, "markdown", lambda *a, **k: None)
+    assert ui.render_universal_nav(state) is None
+    assert seen_keys == [
+        "ks_universal_sport_pills__7",
+        "ks_universal_market_pills__7",
+    ]
+
+
 def test_renderer_returns_sport_tap_only_when_selection_changes(monkeypatch):
     ui = _ui()
     state = RouteState("nfl", "spread", "canonical_url", 1, {"nfl": "spread"})
