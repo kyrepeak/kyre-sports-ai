@@ -1,6 +1,7 @@
 {
   "task_id": "monster-cfb-game-total-page2-visual-cleanup-r4",
   "workstream": "monster-cfb-game-total-page2-visual-cleanup-r4",
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_PAGE2_VISUAL_CLEANUP_R4_FROZEN",
   "source_main_sha": "932fcf81f45ce03755e5e9bd1b1228014d1ff432",
   "required_check": "runless-final-gate",
   "required_app_id": 5204253,
