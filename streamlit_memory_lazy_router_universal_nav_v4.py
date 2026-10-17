@@ -70,9 +70,6 @@ def _render_immediate_handoff(state: Any) -> Any:
         v2._clear_cross_route_query_context(st.query_params)
         v2._clear_cross_route_session_context(st.session_state, outgoing_sport)
 
-    # Universal V1 must receive the tap itself so its local RouteState, URL,
-    # legacy compatibility state, and destination render owner all advance in
-    # the same Streamlit pass.
     return intent
 
 
@@ -167,8 +164,8 @@ def _traced_parent_guard(delegate: Any) -> Any:
 def render_app() -> Any:
     original_renderer = v2.nav_ui.render_universal_nav
     original_root_render = v2.legacy_root.render_app
-    immediate_parent = v2.prior.prior
-    original_parent_render = immediate_parent.render_app
+    immediate_parent = getattr(v2.prior, "prior", None)
+    original_parent_render = getattr(immediate_parent, "render_app", None)
     original_rerun = st.rerun
 
     def traced_rerun(*args: Any, **kwargs: Any) -> Any:
@@ -192,13 +189,15 @@ def render_app() -> Any:
     )
     v2.nav_ui.render_universal_nav = _render_immediate_handoff
     v2.legacy_root.render_app = _terminal_root_guard(original_root_render)
-    immediate_parent.render_app = _traced_parent_guard(original_parent_render)
+    if immediate_parent is not None and original_parent_render is not None:
+        immediate_parent.render_app = _traced_parent_guard(original_parent_render)
     st.rerun = traced_rerun
     try:
         return prior.render_app()
     finally:
         st.rerun = original_rerun
-        immediate_parent.render_app = original_parent_render
+        if immediate_parent is not None and original_parent_render is not None:
+            immediate_parent.render_app = original_parent_render
         v2.legacy_root.render_app = original_root_render
         v2.nav_ui.render_universal_nav = original_renderer
 
