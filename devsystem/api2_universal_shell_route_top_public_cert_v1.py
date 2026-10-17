@@ -71,18 +71,16 @@ def _wait(page, predicate, *, seconds: float, label: str):
 
 
 def _visible_nfl_control(frame):
-    candidates = [
-        frame.locator("button").filter(has_text=re.compile(r"^\\s*NFL\\s*$", re.I)),
-        frame.get_by_text("NFL", exact=True),
-    ]
-    for locator in candidates:
-        try:
-            for index in range(locator.count()):
-                item = locator.nth(index)
-                if item.is_visible():
-                    return item
-        except Exception:
-            continue
+    nfl_button = frame.locator("button").filter(
+        has_text=re.compile(r"^\s*(?:🏈\s*)?NFL\s*$", re.I)
+    )
+    try:
+        for index in range(nfl_button.count()):
+            item = nfl_button.nth(index)
+            if item.is_visible():
+                return item
+    except Exception:
+        pass
     return None
 
 
