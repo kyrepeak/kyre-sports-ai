@@ -1,0 +1,28 @@
+{
+  "mode": "runless",
+  "task_id": "runless-post-merge-public-failure-recovery-v1",
+  "workstream": "runless-post-merge-public-failure-recovery-v1",
+  "source_main_sha": "e229ba6c57dfde690425cfd9fc5d30fbb8503c60",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_runless_v2_post_merge_public_failure_recovery_v1.py", "tests/test_runless_v2_base_drift_supersession_v1.py", "tests/test_runless_v2_schema_contract.py", "tests/test_runless_v2_state_store.py"]
+  ],
+  "artifacts": [
+    "supabase/migrations/20261017_runless_post_merge_public_failure_recovery_v1.sql",
+    "supabase/migrations/20261017_runless_post_merge_public_failure_transport_v1.sql",
+    "tests/test_runless_v2_post_merge_public_failure_recovery_v1.py",
+    "devsystem/runless_proof_plans/runless-post-merge-public-failure-recovery-v1.json"
+  ],
+  "dependencies": [
+    "supabase/migrations/20261013_runless_v2_durable_state.sql",
+    "supabase/migrations/20261017_runless_base_drift_authority_supersession_v1.sql",
+    "runless_v2/models.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "RUNLESS_POST_MERGE_PUBLIC_FAILURE_RECOVERY_V1_FROZEN"
+}
