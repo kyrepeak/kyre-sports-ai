@@ -76,7 +76,7 @@ def test_hosted_api_outage_uses_requests_fallback(monkeypatch):
     assert calls == [selected]
 
 
-def test_empty_hosted_payload_is_crosschecked_with_fallback(monkeypatch):
+def test_empty_hosted_payload_is_crosschecked_on_real_page1_route(monkeypatch):
     selected = date(2026, 10, 16)
     calls: list[date] = []
 
@@ -100,7 +100,8 @@ def test_empty_hosted_payload_is_crosschecked_with_fallback(monkeypatch):
 
     monkeypatch.setattr(fallback, "build_requests_fallback_payload", requests_builder)
 
-    payload = fallback._load_day_with_fallback(selected)
+    with router.install_daily_slate_page1():
+        payload = page._load_day(selected)
 
     assert payload["game_count"] == 4
     assert payload["transport"] == "requests_espn_fallback"
