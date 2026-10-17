@@ -28,22 +28,38 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V146_NFL_RECEIVING_YARDS_PLAYER_VS_DEFENS
 # Frozen V146 certification compatibility: from streamlit_memory_lazy_router_v146 import record_bootstrap_import_ms, render_app
 # Frozen Universal Shell V1 certification compatibility: from kyre_universal_shell_runtime_v1 import activate_universal_shell
 
-# The preserved entrypoint still contains the historical V2/V1 import lines.
-# Route those exact names to the additive successors before executing it.
-sys.modules["streamlit_memory_lazy_router_universal_nav_v2"] = _router_v4
-sys.modules["kyre_universal_shell_runtime_v1"] = _shell_v2
-
-seed_canonical_route_if_missing(st.session_state, st.query_params)
-
 # Streamlit reruns app.py inside the same Python process. Importing the preserved
 # entrypoint as a module would execute its top-level render path only once, then
 # reuse the cached module on every widget rerun. Execute the preserved source
 # directly instead so every tap gets a fresh router/render pass while the file
 # itself remains frozen and unchanged.
+seed_canonical_route_if_missing(st.session_state, st.query_params)
 _legacy_entrypoint_path = Path(__file__).with_name("app_legacy_entrypoint_v1.py")
 _legacy_entrypoint_code = compile(
     _legacy_entrypoint_path.read_text(encoding="utf-8"),
     str(_legacy_entrypoint_path),
     "exec",
 )
-exec(_legacy_entrypoint_code, globals(), globals())
+
+# The preserved entrypoint still contains historical V2/V1 import lines. Scope
+# those compatibility aliases to this one preserved-source execution only.
+# Leaving either alias installed in sys.modules poisons later Streamlit hot
+# reloads: V4 can be re-imported under the V2 name and lose the real V2
+# ``nav_ui`` contract. Always restore the exact original module identities,
+# including when Streamlit interrupts the render with a rerun exception.
+_original_nav_v2_module = sys.modules.get("streamlit_memory_lazy_router_universal_nav_v2")
+_original_shell_v1_module = sys.modules.get("kyre_universal_shell_runtime_v1")
+sys.modules["streamlit_memory_lazy_router_universal_nav_v2"] = _router_v4
+sys.modules["kyre_universal_shell_runtime_v1"] = _shell_v2
+try:
+    exec(_legacy_entrypoint_code, globals(), globals())
+finally:
+    if _original_nav_v2_module is None:
+        sys.modules.pop("streamlit_memory_lazy_router_universal_nav_v2", None)
+    else:
+        sys.modules["streamlit_memory_lazy_router_universal_nav_v2"] = _original_nav_v2_module
+
+    if _original_shell_v1_module is None:
+        sys.modules.pop("kyre_universal_shell_runtime_v1", None)
+    else:
+        sys.modules["kyre_universal_shell_runtime_v1"] = _original_shell_v1_module
