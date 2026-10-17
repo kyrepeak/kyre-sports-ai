@@ -10,7 +10,6 @@ from universal_sports_nav_registry_v1 import get_sport, visible_sports
 NAV_CONTAINER_KEY = "ks_universal_nav_shell"
 SPORT_CONTROL_KEY = "ks_universal_sport_pills"
 MARKET_CONTROL_KEY = "ks_universal_market_pills"
-_CSS_SESSION_KEY = "ks_universal_nav_css_loaded"
 
 _NAV_CSS = r"""
 <style>
@@ -72,6 +71,20 @@ _NAV_CSS = r"""
 </style>
 """
 
+# Registry metadata is immutable for the lifetime of this module. Build the
+# option/label maps once instead of reconstructing them on every Streamlit rerun.
+_NAV_SPORTS = visible_sports()
+_SPORT_IDS = tuple(sport.id for sport in _NAV_SPORTS)
+_SPORT_LABELS = {sport.id: f"{sport.icon} {sport.label}" for sport in _NAV_SPORTS}
+_MARKET_IDS_BY_SPORT = {
+    sport.id: tuple(market.id for market in sport.markets if market.live)
+    for sport in _NAV_SPORTS
+}
+_MARKET_LABELS_BY_SPORT = {
+    sport.id: {market.id: market.label for market in sport.markets if market.live}
+    for sport in _NAV_SPORTS
+}
+
 
 def _sport_label(sport_id: str) -> str:
     sport = get_sport(sport_id)
@@ -87,8 +100,8 @@ def _market_label(sport_id: str, market_id: str) -> str:
 
 
 def render_universal_nav(state: RouteState) -> RouteIntent | None:
-    sports = visible_sports()
-    sport_ids = [sport.id for sport in sports]
+    sports = _NAV_SPORTS
+    sport_ids = _SPORT_IDS
     active_sport = get_sport(state.sport_id)
     if active_sport is None:
         active_sport = sports[0]
@@ -96,31 +109,29 @@ def render_universal_nav(state: RouteState) -> RouteIntent | None:
     sport_widget_key = f"{SPORT_CONTROL_KEY}__{state.epoch}"
     market_widget_key = f"{MARKET_CONTROL_KEY}__{state.epoch}"
 
-    # CSS is static. Inject it only once for the browser session instead of on
-    # every Streamlit rerun; navigation controls themselves still rerender normally.
-    if not st.session_state.get(_CSS_SESSION_KEY, False):
-        st.markdown(_NAV_CSS, unsafe_allow_html=True)
-        st.session_state[_CSS_SESSION_KEY] = True
-
     with st.container(key=NAV_CONTAINER_KEY):
+        # Streamlit reconstructs the output tree on every rerun, so the style
+        # element must remain present. Static option metadata above is the safe
+        # place to remove repeated rerender work.
+        st.markdown(_NAV_CSS, unsafe_allow_html=True)
         st.markdown('<div class="ks-universal-brand">KYRE SPORTS</div>', unsafe_allow_html=True)
         selected_sport = st.pills(
             "Sport",
             sport_ids,
             default=state.sport_id if state.sport_id in sport_ids else active_sport.id,
             key=sport_widget_key,
-            format_func=_sport_label,
+            format_func=_SPORT_LABELS.get,
             selection_mode="single",
             label_visibility="collapsed",
         )
 
-        market_ids = [market.id for market in active_sport.markets if market.live]
+        market_ids = _MARKET_IDS_BY_SPORT[active_sport.id]
         selected_market = st.pills(
             "Market",
             market_ids,
             default=state.market_id if state.market_id in market_ids else active_sport.default_market_id,
             key=market_widget_key,
-            format_func=lambda market_id: _market_label(active_sport.id, market_id),
+            format_func=_MARKET_LABELS_BY_SPORT[active_sport.id].get,
             selection_mode="single",
             label_visibility="collapsed",
         )
