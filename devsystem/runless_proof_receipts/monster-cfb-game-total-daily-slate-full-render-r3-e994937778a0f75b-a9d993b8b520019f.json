@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-game-total-daily-slate-full-render-r3.json": "3201659692178b17508d93d3f911d63e951ddf75",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py": "b494c77a2336398eaa51c6fea71c4b7d54b8be3f",
+    "tests/test_monster_cfb_game_total_daily_slate_full_render_r3.py": "78166d58cb171192ebfce7e651e7edfdfeb51e70"
+  },
+  "candidate_sha": "e994937778a0f75b4b2d9c20323ac238d6b13817",
+  "created_at": "2026-10-17T02:02:58.285104+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_daily_slate_runtime_fallback_r1.py": "1ae2e7313fc2c4c436ec3ed02324bbbd45d0806f",
+    "cfb_game_total_page1_daily_slate_v1.py": "ee2e231db9d928c5c51c40cf5c1df2888fa767db",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1.py": "0b2b5a0d8b0d506a8faf84d96bf1ee13b9932894",
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72"
+  },
+  "digest": "f577d470f8177eafb829f7cb4ba5022cfefb971e4a39e13f1fa201e8033d2fc1",
+  "evidence_digests": [
+    "0c0a5a0d2aba0603f1455b8ee115c4bd2b4629175bae68790554624ae9618dac",
+    "a236f14472083e1e7b33c643066d5a3015961fe5eee7e993e2b609873fef0d82",
+    "82b029af05479145e3e9e4b9f87137a9ee763bf6ea3621582035eaf14c756a31"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "50b23600523996039faacd409e3bc5ba3a5442c85a82434b3980d16ac05f529c",
+  "proof_id": "monster-cfb-game-total-daily-slate-full-render-r3-e994937778a0f75b-a9d993b8b520019f",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 376,
+    "state_hash": "141f12912b41d42fe6ad279d8722d09570cd5ae4683a7695a62edf5c3aa20751"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 376,
+    "state_hash": "141f12912b41d42fe6ad279d8722d09570cd5ae4683a7695a62edf5c3aa20751"
+  },
+  "request_fingerprint": "e48dbb7be47ee0eb94295645e305d710f6071b64ee1e2af1aafdbd99cfe6997d",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-game-total-daily-slate-full-render-r3",
+  "workstream": "monster-cfb-game-total-daily-slate-full-render-r3"
+}
