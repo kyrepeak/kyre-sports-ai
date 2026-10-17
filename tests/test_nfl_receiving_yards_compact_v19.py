@@ -29,6 +29,16 @@ def test_v19_wraps_frozen_v15_player_stack_without_changing_payload():
     assert "prior.render_nfl_receiving_yards_hub()" in source
 
 
+def test_v19_style_only_markdown_does_not_create_dead_vertical_blocks():
+    source = (ROOT / "nfl_receiving_yards_hub_v19.py").read_text(encoding="utf-8")
+    assert "_compact_markdown_v19" in source
+    assert 'if stripped.startswith("<style>") and stripped.endswith("</style>"):' in source
+    assert "return st.html(body)" in source
+    assert "st.markdown = _compact_markdown_v19" in source
+    assert "st.markdown = original_markdown" in source
+    assert "st.html(_COMPACT_CSS)" in source
+
+
 def test_universal_router_activates_receiving_v19():
     source = (ROOT / "streamlit_memory_lazy_router_universal_nav_v2.py").read_text(encoding="utf-8")
     assert 'RECEIVING_V19_MODULE = "nfl_receiving_yards_hub_v19"' in source
