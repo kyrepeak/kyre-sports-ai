@@ -1,0 +1,65 @@
+{
+  "version": 3,
+  "task_id": "monster-cfb-game-total-full-flow-integration-v1",
+  "title": "MONSTER CFB Game Total Full Flow Integration V1",
+  "project": "MONSTER",
+  "workstream": "monster-cfb-game-total-full-flow-integration-v1",
+  "step": "1/1",
+  "status": "GREEN_PROOF_PENDING",
+  "base_main_sha": "e53656f35f996e79b4e91b067e47c843680ad00b",
+  "expected_main_sha_before_proof": "e53656f35f996e79b4e91b067e47c843680ad00b",
+  "branch": "monster-cfb-game-total-full-flow-integration-v1",
+  "pr_number": 1596,
+  "scope_lease": {
+    "lease_id": "SCOPE-LEASE-E9F1EBAF050391C9AF0AEE68",
+    "generation": 511,
+    "state_revision": 913,
+    "state_hash": "47bc8657cd31c0e050ed060851f9f9b1b13078ff2c932a3aec054770a1ded291",
+    "expires_at_utc": "2026-10-17T00:59:47Z",
+    "thaw_required": false,
+    "proof_only": true,
+    "note": "Certification-only integration scope. No frozen Page 1 or selected-game product owner is mutated."
+  },
+  "problem": "The new frozen Page 1 Daily Slate and the previously frozen selected-game Page 2 stack are individually certified, but the post-Page-1 combined View Game -> selected analysis -> Back to Slate chain needs one authoritative exact-head integration certification.",
+  "root_cause": "The Page 1 Daily Slate mission intentionally protected and excluded selected-game runtime mutation, so its proof established immutability rather than a new composite full-flow freeze across both already-frozen surfaces.",
+  "patch": "Add only an integration regression contract and Runless proof/control artifacts proving the current Page 1 View Game identity handoff reaches the exact selected-game fast path, preserves the complete Page 2 feature bundle, remains network-free on the selected path, and returns to the slate. No product runtime change is authorized unless this certification exposes a concrete defect.",
+  "tdd": {
+    "product_code_changed": false,
+    "certification_guard_added": true,
+    "expected_behavior": "existing frozen Page 1 and Page 2 integration passes without product mutation",
+    "proof_selection_repair": "Removed stale historical Step-9/Step-10 regression files and retained current Daily Slate activation, same-page shell, network-free V2, and full-flow integration guards."
+  },
+  "failure_history": [
+    {
+      "candidate_sha": "30a959ab8a9737d8b9076472b4f91886e83d46af",
+      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
+      "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
+      "product_patch": false,
+      "resolution": "Acquire one canonical live scope lease and continue the same PR/authority chain"
+    },
+    {
+      "candidate_sha": "83e9c9e1858a233f2e92691db6798807712111ca",
+      "proof_id": "monster-cfb-game-total-full-flow-integration-v1-83e9c9e1858a233f-3cda99d919cb1942",
+      "failure_class": "STALE_REGRESSION_SELECTION",
+      "detail": "STATIC_PROOF included historical Step-9/Step-10 tests already documented as stale against the current frozen-router alias",
+      "product_patch": false,
+      "resolution": "Narrow exact-head proof to current frozen-path regression owners"
+    }
+  ],
+  "protected": {
+    "page1_daily_slate": true,
+    "selected_game_runtime": true,
+    "page2_feature_stack": true,
+    "model": true,
+    "projection": true,
+    "probability": true,
+    "ranking": true,
+    "selection": true,
+    "market_ownership": true,
+    "unrelated_cfb_markets": true,
+    "other_sports": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_FULL_FLOW_INTEGRATION_V1_FROZEN",
+  "green_plus_frozen_claimed": false
+}
