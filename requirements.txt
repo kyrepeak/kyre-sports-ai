@@ -1,4 +1,5 @@
 streamlit
+packaging>=20
 requests
 pypdf
 pandas
