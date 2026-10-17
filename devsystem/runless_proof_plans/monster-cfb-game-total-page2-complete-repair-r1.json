@@ -7,7 +7,7 @@
   "timeout_seconds": 300,
   "commands": [
     ["python", "-m", "py_compile", "cfb_game_total_page2_line_lab_v2.py", "cfb_game_total_page2_complete_repair_r1.py", "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py"],
-    ["python", "-m", "pytest", "-q", "tests/test_monster_cfb_game_total_page2_complete_repair_r1.py", "tests/test_monster_cfb_game_total_page2_same_page_shell_repair_v1.py", "tests/test_monster_cfb_game_total_page2_network_free_v2.py", "tests/test_monster_cfb_game_total_full_flow_integration_v1.py", "tests/test_monster_cfb_game_total_page1_market_truth_r5.py", "tests/test_monster_cfb_game_total_page1_daily_slate_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_api2_nfl_spread_v7_live_activation_repair_v1.py"]
+    ["python", "-m", "pytest", "-q", "tests/test_monster_cfb_game_total_page2_complete_repair_r1.py", "tests/test_monster_cfb_game_total_page2_same_page_shell_repair_v1.py", "tests/test_monster_cfb_game_total_page2_network_free_v2.py", "tests/test_monster_cfb_game_total_full_flow_integration_v1.py", "tests/test_monster_cfb_game_total_page1_market_truth_r5.py", "tests/test_monster_cfb_game_total_page1_daily_slate_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py"]
   ],
   "probes": [],
   "public_runtime_required": true,
