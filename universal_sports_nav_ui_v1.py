@@ -10,6 +10,7 @@ from universal_sports_nav_registry_v1 import get_sport, visible_sports
 NAV_CONTAINER_KEY = "ks_universal_nav_shell"
 SPORT_CONTROL_KEY = "ks_universal_sport_pills"
 MARKET_CONTROL_KEY = "ks_universal_market_pills"
+_CSS_SESSION_KEY = "ks_universal_nav_css_loaded"
 
 _NAV_CSS = r"""
 <style>
@@ -95,8 +96,13 @@ def render_universal_nav(state: RouteState) -> RouteIntent | None:
     sport_widget_key = f"{SPORT_CONTROL_KEY}__{state.epoch}"
     market_widget_key = f"{MARKET_CONTROL_KEY}__{state.epoch}"
 
-    with st.container(key=NAV_CONTAINER_KEY):
+    # CSS is static. Inject it only once for the browser session instead of on
+    # every Streamlit rerun; navigation controls themselves still rerender normally.
+    if not st.session_state.get(_CSS_SESSION_KEY, False):
         st.markdown(_NAV_CSS, unsafe_allow_html=True)
+        st.session_state[_CSS_SESSION_KEY] = True
+
+    with st.container(key=NAV_CONTAINER_KEY):
         st.markdown('<div class="ks-universal-brand">KYRE SPORTS</div>', unsafe_allow_html=True)
         selected_sport = st.pills(
             "Sport",
