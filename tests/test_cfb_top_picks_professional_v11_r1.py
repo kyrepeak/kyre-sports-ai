@@ -97,16 +97,16 @@ def test_decision_snapshot_separates_probability_reliability_fair_and_market(mon
         "source_freshness_audit": {"material_fact_count": 53, "sources": [{"source": "ESPN"}, {"source": "NCAA"}]},
     }
     html = page._decision_snapshot_html(_pick(), detail)
-    assert "MODEL WIN PROBABILITY" in html
-    assert "MODEL RELIABILITY" in html
-    assert "MODEL FAIR PRICE" in html
-    assert "MARKET QUOTE" in html
-    assert "MODEL VS MARKET EDGE" in html
+    assert "Model Win Probability" in html
+    assert "Model Reliability" in html
+    assert "Model Fair Price" in html
+    assert "Market Quote" in html
+    assert "Model vs Market Edge" in html
     assert "83%" in html and "94%" in html
     assert "53 verified facts" in html
-    assert "3 QUICK REASONS" in html
-    assert "KEY RISK" in html
-    assert "WHAT WOULD CHANGE THIS PICK?" in html
+    assert "3 Quick Reasons" in html
+    assert "Key Risk" in html
+    assert "What Would Change This Pick?" in html
 
 
 def test_page_html_adds_decision_layer_and_collapses_legacy_research(monkeypatch):
