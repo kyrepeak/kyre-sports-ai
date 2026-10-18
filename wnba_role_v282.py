@@ -106,27 +106,37 @@ base.advanced_usage_table = advanced_usage_table
 base._redistribute_team_minutes = _redistribute_team_minutes
 
 
-def role_projection_for_game(row, stats: pd.DataFrame | None = None) -> dict:
-    """Preserve V2.8 math, but fail closed when no current player pool is available."""
-    if stats is None:
-        stats = base.availability.player_form_table()
-
-    game_pool = base.availability.slate_player_pool(pd.DataFrame([row]), stats)
+def _empty_role_result(row, stats: pd.DataFrame | None = None) -> dict:
     team_ids = (
         int(row.get("away_team_id") or 0),
         int(row.get("home_team_id") or 0),
     )
+    try:
+        av = base.availability.availability_for_game(row, stats)
+        availability_source = av.get("source") if isinstance(av, dict) else "—"
+    except Exception:
+        availability_source = "—"
+    return {
+        "teams": {team_id: pd.DataFrame() for team_id in team_ids},
+        "usage_source": "unavailable",
+        "availability_source": availability_source,
+    }
+
+
+def role_projection_for_game(row, stats: pd.DataFrame | None = None) -> dict:
+    """Preserve V2.8 math, but fail closed before fragile team-id lookups."""
+    if stats is None:
+        stats = base.availability.player_form_table()
+
+    # The upstream pool helper indexes stats["TEAM_ID"]. Provider/roster drift can
+    # yield a non-empty frame without that identity column, so guard it before the
+    # lookup instead of allowing a pandas KeyError to take down the PRA route.
+    if stats is None or stats.empty or "TEAM_ID" not in stats.columns:
+        return _empty_role_result(row, stats)
+
+    game_pool = base.availability.slate_player_pool(pd.DataFrame([row]), stats)
     if game_pool is None or game_pool.empty or "TEAM_ID" not in game_pool.columns:
-        try:
-            av = base.availability.availability_for_game(row, stats)
-            availability_source = av.get("source") if isinstance(av, dict) else "—"
-        except Exception:
-            availability_source = "—"
-        return {
-            "teams": {team_id: pd.DataFrame() for team_id in team_ids},
-            "usage_source": "unavailable",
-            "availability_source": availability_source,
-        }
+        return _empty_role_result(row, stats)
 
     return base.role_projection_for_game(row, stats)
 
