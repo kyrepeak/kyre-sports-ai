@@ -52,6 +52,7 @@ from streamlit_memory_lazy_router_universal_nav_v4 import record_bootstrap_impor
 API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME = "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME_REFRESH_2026_10_17_R4"
 DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V146_NFL_RECEIVING_YARDS_PLAYER_VS_DEFENSE_HISTORY_2026-09-16"
 
+# Frozen MONSTER CFB V4 ownership predecessor compatibility: streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1
 # Frozen Universal Nav V3 certification compatibility: from streamlit_memory_lazy_router_universal_nav_v3 import record_bootstrap_import_ms, render_app
 # Frozen Universal Nav V2 certification compatibility: from streamlit_memory_lazy_router_universal_nav_v2 import record_bootstrap_import_ms, render_app
 # Frozen root-router certification compatibility: streamlit_memory_lazy_router_v1
@@ -72,7 +73,7 @@ _LEGACY_ROUTER_IMPORT_V2 = (
     "record_bootstrap_import_ms, render_app"
 )
 _LEGACY_ROUTER_IMPORT_V4 = (
-    "    from streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1 import "
+    "    from streamlit_memory_lazy_router_monster_cfb_market_completeness_r1 import "
     "record_bootstrap_import_ms, render_app"
 )
 _legacy_router_import_count = _legacy_entrypoint_source.count(_LEGACY_ROUTER_IMPORT_V2)
