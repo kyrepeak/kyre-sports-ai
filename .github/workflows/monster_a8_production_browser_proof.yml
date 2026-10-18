@@ -1,0 +1,48 @@
+name: Monster A8 Production Browser Proof
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  production-browser-proof:
+    if: github.head_ref == 'monster-a8-production-proof-runtime-fix'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Install Playwright Chromium
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check 'playwright==1.55.0'
+          python -m playwright install --with-deps chromium
+
+      - name: Open production Streamlit once
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re
+          import time
+          from playwright.sync_api import sync_playwright
+
+          url = "https://kyre-sports-ai.streamlit.app/"
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page()
+              page.goto(url, wait_until="domcontentloaded", timeout=60_000)
+              time.sleep(5)
+              body = page.locator("body").inner_text(timeout=10_000)
+              print(f"production_url={page.url}")
+              print(f"production_title={page.title()}")
+              print("production_body_prefix=" + re.sub(r"\s+", " ", body)[:300])
+              wake = page.get_by_text("Yes, get this app back up!", exact=False)
+              if wake.count() > 0:
+                  print("sleep_state_detected=true")
+                  wake.first.click(timeout=10_000)
+                  time.sleep(20)
+                  print(f"post_wake_url={page.url}")
+              else:
+                  print("sleep_state_detected=false")
+              print("MONSTER_A8_PRODUCTION_BROWSER_PROOF=completed")
+              browser.close()
+          PY
