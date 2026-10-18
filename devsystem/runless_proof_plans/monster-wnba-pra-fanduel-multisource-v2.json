@@ -29,10 +29,7 @@
       "--noconftest",
       "-q",
       "sports_api/tests/test_wnba_fanduel_direct.py",
-      "sports_api/tests/test_wnba_roster_identity_resolver_v1.py",
-      "sports_api/tests/test_wnba_prop_line_feed_adapter.py",
-      "sports_api/tests/test_wnba_prop_feed_failover_fanduel_v1.py",
-      "sports_api/tests/test_wnba_prop_feed_failover.py"
+      "tests/test_wnba_pra_fanduel_product_e2e_v2.py"
     ],
     [
       "python",
@@ -102,6 +99,7 @@
     "sports_api/tests/test_wnba_fanduel_direct.py",
     "sports_api/tests/test_wnba_roster_identity_resolver_v1.py",
     "sports_api/tests/test_wnba_prop_feed_failover_fanduel_v1.py",
+    "tests/test_wnba_pra_fanduel_product_e2e_v2.py",
     "tests/test_wnba_pra_api_market_bridge_freshness_v2.py",
     "tests/test_wnba_pra_fanduel_eligibility_v1.py",
     "tests/test_wnba_pra_fanduel_product_v2.py",
