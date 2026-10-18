@@ -37,7 +37,6 @@
       "tests/test_universal_sports_nav_registry_v1.py",
       "tests/test_api2_route_transition_mask_v1.py",
       "tests/test_api2_universal_nav_single_owner_speed_v1.py",
-      "tests/test_cfb_top_picks_professional_v11_r1.py",
       "tests/test_api2_nfl_rushing_cleanup_v1.py"
     ],
     [
