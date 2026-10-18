@@ -1,0 +1,34 @@
+{
+  "mode": "runless",
+  "task_id": "monster-cfb-game-total-slate-market-completeness-r1",
+  "workstream": "monster-cfb-game-total-slate-market-completeness-r1",
+  "source_main_sha": "64ce687f55db85bb722c71a1b9d53c9adcefa2c7",
+  "commands": [
+    ["python", "-m", "py_compile", "app.py", "cfb_game_total_page2_market_completeness_r1.py", "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1.py", "tests/test_monster_cfb_game_total_slate_market_completeness_r1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_monster_cfb_game_total_slate_market_completeness_r1.py", "tests/test_monster_cfb_game_total_v4_route_ownership_r1.py", "tests/test_monster_cfb_game_total_page2_complete_repair_r1.py", "tests/test_monster_cfb_game_total_page2_visual_cleanup_r4.py", "tests/test_monster_cfb_game_total_public_latency_r1.py", "tests/test_api2_universal_shell_route_top_live_handoff_v2.py", "tests/test_api2_public_module_identity_collision_v1.py", "tests/test_api2_route_transition_mask_v1.py"]
+  ],
+  "artifacts": [
+    "app.py",
+    "cfb_game_total_page2_market_completeness_r1.py",
+    "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1.py",
+    "tests/test_monster_cfb_game_total_slate_market_completeness_r1.py",
+    "devsystem/runless_proof_plans/monster-cfb-game-total-slate-market-completeness-r1.json"
+  ],
+  "dependencies": [
+    "cfb_game_total_page2_visual_cleanup_r4.py",
+    "cfb_game_total_page2_complete_repair_r1.py",
+    "cfb_game_total_page1_market_truth_r5.py",
+    "streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1.py",
+    "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page2_fast_switch_step9_v1.py",
+    "streamlit_memory_lazy_router_universal_nav_v4.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_SLATE_MARKET_COMPLETENESS_R1_FROZEN"
+}
