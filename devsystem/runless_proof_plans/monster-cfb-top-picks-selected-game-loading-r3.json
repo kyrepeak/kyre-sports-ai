@@ -1,0 +1,31 @@
+{
+  "mode": "runless",
+  "task_id": "monster-cfb-top-picks-selected-game-loading-r3",
+  "workstream": "monster-cfb-top-picks-selected-game-loading-r3",
+  "source_main_sha": "75c9518abf59e8dc954ea5d5051f169a94b687ce",
+  "commands": [
+    ["python", "-m", "py_compile", "cfb_top_picks_page_v11.py", "tests/test_cfb_top_picks_selected_game_loading_r3.py"],
+    ["python", "-m", "pytest", "-q", "--noconftest", "tests/test_cfb_top_picks_selected_game_loading_r3.py", "tests/test_cfb_top_picks_detail_nav_repair_r2.py", "tests/test_cfb_top_picks_professional_v11_r1.py", "tests/test_cfb_top_picks_market_tabs_r1.py"],
+    ["python", "-m", "pytest", "-q", "--noconftest", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_final_page_removes_obsolete_audit_footer", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_history_attempt_alias_closes_nonhistory_provenance_gap", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_wraps_frozen_step8", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_fair_model_price_has_truthful_sportsbook_unavailable_state", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_visible_page_body_uses_streamlit_html_boundary", "tests/test_monster_cfb_top_picks_shell_integration_r1.py", "tests/test_universal_sports_nav_registry_v1.py", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_url_v1.py"]
+  ],
+  "artifacts": [
+    "cfb_top_picks_page_v11.py",
+    "tests/test_cfb_top_picks_selected_game_loading_r3.py",
+    "devsystem/runless_proof_plans/monster-cfb-top-picks-selected-game-loading-r3.json"
+  ],
+  "dependencies": [
+    "cfb_top_picks_page_v9.py",
+    "cfb_top_picks_page_v10.py",
+    "cfb_top_picks_details_v5.py",
+    "universal_runtime_v5_loader_v11.py",
+    "universal_sports_nav_url_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_CFB_TOP_PICKS_SELECTED_GAME_LOADING_R3_FROZEN"
+}
