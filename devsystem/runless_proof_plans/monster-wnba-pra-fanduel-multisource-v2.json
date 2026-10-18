@@ -2,7 +2,7 @@
   "mode": "runless",
   "task_id": "monster-wnba-pra-fanduel-multisource-v2",
   "workstream": "monster-wnba-pra-fanduel-multisource-v2",
-  "source_main_sha": "6cd1e17c57eb39cbb35946242f0f3bc604ac09d3",
+  "source_main_sha": "84bce0c3fe434adcedf912836f423598949875a8",
   "commands": [
     [
       "python",
