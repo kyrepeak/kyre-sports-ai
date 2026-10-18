@@ -1,10 +1,7 @@
 """WNBA PRA V2.8.2 — hardened Step 5 usage/minutes engine.
 
-This module keeps V2.8/V2.8.1 basketball logic but removes the fragile usage
-bridge that could raise AttributeError inside Streamlit. Official Advanced USG%
-remains first priority. If it is unavailable, ESPN box-score USG is attempted;
-if that path also fails, an explicitly labeled production-role proxy is used so
-the page remains operational instead of crashing.
+This module keeps V2.8/V2.8.1 basketball logic but removes fragile provider and
+empty-pool failure modes so the PRA page remains operational instead of crashing.
 """
 from __future__ import annotations
 
@@ -41,7 +38,6 @@ def _merge_usage_frames(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 
 def _official_usage(season: int):
-    """Call the original low-level Advanced Stats fetchers directly."""
     frames, sources = {}, []
     for label, last_n in (("SEASON", 0), ("L10", 10), ("L5", 5)):
         try:
@@ -56,7 +52,6 @@ def _official_usage(season: int):
 
 
 def _production_role_proxy(season: int):
-    """Last-resort role proxy; explicitly NOT labeled as official USG%."""
     try:
         stats = base.availability.player_form_table(int(season))
     except Exception:
@@ -75,7 +70,6 @@ def _production_role_proxy(season: int):
         load = (pts + 1.35 * ast) / mins
         med = float(load[load.gt(0)].median()) if load.gt(0).any() else 0.25
         load = load.where(load.gt(0), med).clip(lower=.05)
-        # Calibrate to a realistic WNBA role band while preserving within-team rank.
         z = (load - float(load.mean())) / max(float(load.std(ddof=0)), .08)
         proxy = (20.0 + 4.5 * z).clip(8.0, 35.0)
         for idx, r in team.iterrows():
@@ -88,20 +82,15 @@ def _production_role_proxy(season: int):
                 "L10_USG_PCT": val,
                 "L5_USG_PCT": val,
             })
-    out = pd.DataFrame(rows)
-    return out, "Production-role proxy (estimated; not official USG%)"
+    return pd.DataFrame(rows), "Production-role proxy (estimated; not official USG%)"
 
 
 @st.cache_data(ttl=900, show_spinner=False)
 def advanced_usage_table(season: int | None = None):
     season = int(season or base.availability.current_season())
-
     official, source = _official_usage(season)
     if official is not None and not official.empty:
         return official, source
-
-    # V2.8.1 ESPN possession-based fallback. Any provider/parser failure is
-    # contained here so it can never take down the PRA page.
     try:
         day_str = base._day_str()
         espn = prior._espn_usage_fallback(season, day_str)
@@ -109,25 +98,42 @@ def advanced_usage_table(season: int | None = None):
             return espn, "ESPN WNBA box-score estimated USG%"
     except Exception:
         pass
-
     return _production_role_proxy(season)
 
 
-# Use the safer minute-cap allocator from V2.8.1.
 _redistribute_team_minutes = prior._redistribute_team_minutes
-
-# Patch the V2.8 module globals used dynamically by its projection functions.
 base.advanced_usage_table = advanced_usage_table
 base._redistribute_team_minutes = _redistribute_team_minutes
 
-role_projection_for_game = base.role_projection_for_game
+
+def role_projection_for_game(row, stats: pd.DataFrame | None = None) -> dict:
+    """Preserve V2.8 math, but fail closed when no current player pool is available."""
+    if stats is None:
+        stats = base.availability.player_form_table()
+
+    game_pool = base.availability.slate_player_pool(pd.DataFrame([row]), stats)
+    team_ids = (
+        int(row.get("away_team_id") or 0),
+        int(row.get("home_team_id") or 0),
+    )
+    if game_pool is None or game_pool.empty or "TEAM_ID" not in game_pool.columns:
+        try:
+            av = base.availability.availability_for_game(row, stats)
+            availability_source = av.get("source") if isinstance(av, dict) else "—"
+        except Exception:
+            availability_source = "—"
+        return {
+            "teams": {team_id: pd.DataFrame() for team_id in team_ids},
+            "usage_source": "unavailable",
+            "availability_source": availability_source,
+        }
+
+    return base.role_projection_for_game(row, stats)
 
 
 def role_diagnostics(day):
     """Never allow a provider-layer exception to crash the page header."""
     try:
-        # Clear only the old role diagnostic cache so it recomputes with the
-        # V2.8.2 patched usage/minute functions.
         try:
             base._role_diag_for_day.clear()
         except Exception:
@@ -172,7 +178,6 @@ def clear_role_cache():
         pass
 
 
-# Re-export Step 1-4 interfaces expected by the existing V2.8 UI.
 availability = base.availability
 current_season = base.current_season
 schedule_for_date = base.schedule_for_date
