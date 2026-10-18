@@ -10,15 +10,17 @@
       "pytest",
       "--noconftest",
       "-q",
-      "sports_api/tests/test_wnba_fanduel_direct.py"
+      "sports_api/tests/test_wnba_roster_identity_resolver_v1.py"
     ]
   ],
   "artifacts": [
-    "sports_api/collectors/wnba_fanduel_direct.py",
-    "sports_api/tests/test_wnba_fanduel_direct.py",
+    "sports_api/tests/test_wnba_roster_identity_resolver_v1.py",
     "devsystem/runless_proof_plans/monster-wnba-pra-fanduel-multisource-v2.json"
   ],
-  "dependencies": [],
+  "dependencies": [
+    "sports_api/wnba_prop_line_feed_adapter.py",
+    "sports_api/wnba_rosters.py"
+  ],
   "probes": [],
   "timeout_seconds": 900,
   "live_ttl_seconds": 1200,
