@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-rushing-fanduel-only-v1.json": "1f504b88590ba5aade324acd742d868d0744fbf5",
+    "nfl_rushing_yards_hub_v18.py": "c427840409b3e285a4f15fbce8b1e1e38fdf63a9",
+    "tests/test_api2_nfl_rushing_fanduel_only_v1.py": "f60dcbfe23d3271313f0438d68a30a0b2acb2837",
+    "universal_runtime_v5_loader_v11.py": "1bcd2e21935e18d189b695b5245f17db053173a0"
+  },
+  "candidate_sha": "df95b87a8b5129c76cebb89d335388431a12dfe2",
+  "created_at": "2026-10-18T05:39:02.335435+00:00",
+  "dependency_map": {
+    "nfl_rushing_yards_hub_v17.py": "ac7fa03887b222dd8985e7949a52d19816536695",
+    "nfl_rushing_yards_market_api_v1.py": "0bc9c90251809a0afa0fb67d2f58f9af45950747",
+    "universal_runtime_v5_loader.py": "9a17ac1c7276ac64262e8587fd8b8a47cb519366"
+  },
+  "digest": "d070061da8d196f39e0f3bfabfecaf151a27a05b25dd4ffa2da0c1d638b1e26a",
+  "evidence_digests": [
+    "a4d39b1dadd96a42cbc3a5bd6b51ec2d6ae3cf5d14a39257deaa3abd37044183",
+    "6d6443d08688944f911937fc42aee0906e51e54024b15ad6aaf0fbc3afc1f0d3"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6d84225427b2ca8cd9b159534255a6e9ce5ef3f9a42aa20fbc7cf28f3ae32367",
+  "proof_id": "api2-nfl-rushing-fanduel-only-v1-df95b87a8b5129c7-4adfb07d39fb97e1",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "dbab16041089db5c0a71910be890425656249cf13a8de5264de64f8e8c07f820",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-fanduel-only-v1",
+  "workstream": "api2-nfl-rushing-fanduel-only-v1"
+}
