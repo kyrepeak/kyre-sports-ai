@@ -1,0 +1,29 @@
+{
+  "mode": "runless",
+  "task_id": "monster-wnba-pra-fanduel-multisource-v2",
+  "workstream": "monster-wnba-pra-fanduel-multisource-v2",
+  "source_main_sha": "6cd1e17c57eb39cbb35946242f0f3bc604ac09d3",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "sports_api/tests/test_wnba_fanduel_direct.py"
+    ]
+  ],
+  "artifacts": [
+    "sports_api/tests/test_wnba_fanduel_direct.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-fanduel-multisource-v2.json"
+  ],
+  "dependencies": [],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_WNBA_PRA_FANDUEL_MULTISOURCE_V2_FROZEN"
+}
