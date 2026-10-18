@@ -79,6 +79,29 @@ def test_no_complete_same_book_quote_does_not_mix_partial_books(monkeypatch):
     assert "home_spread" not in out
 
 
+def test_incomplete_snapshot_masks_inherited_partial_market_values(monkeypatch):
+    module, _, _ = _load_runtime(monkeypatch, quote=None, quotes={})
+    html = module._market_snapshot_html(
+        {
+            "event_id": "402",
+            "market_sportsbook": "PartialBook",
+            "away_moneyline": 125.0,
+            "home_moneyline": -145.0,
+            "away_spread": 3.0,
+            "home_spread": -3.0,
+            "market_total": 51.5,
+        }
+    )
+    assert "PartialBook" not in html
+    assert "+125" not in html
+    assert "-145" not in html
+    assert "+3" not in html
+    assert "-3" not in html
+    assert "51.5" not in html
+    assert html.count("Unavailable") == 5
+    assert "No complete named book" in html
+
+
 def test_market_snapshot_renders_ml_spread_total_from_one_verified_book(monkeypatch):
     quote = _quote()
     module, _, rendered = _load_runtime(monkeypatch, quote=quote, quotes={"FanDuel": quote})
