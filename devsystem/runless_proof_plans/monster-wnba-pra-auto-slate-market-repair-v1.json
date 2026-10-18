@@ -1,0 +1,63 @@
+{
+  "mode": "runless",
+  "task_id": "monster-wnba-pra-auto-slate-market-repair-v1",
+  "workstream": "monster-wnba-pra-auto-slate-market-repair-v1",
+  "source_main_sha": "be3a8b470b4b085a87c50a0da18c1db965be9881",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "wnba_pra_hub_v3616.py",
+      "wnba_pra_api_market_bridge_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_wnba_pra_auto_slate_market_repair_v1.py",
+      "tests/test_wnba_pra_api_market_bridge_freshness_v2.py",
+      "tests/test_wnba_pra_api_market_bridge_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_wnba_pra_fanduel_product_e2e_v2.py",
+      "tests/test_wnba_pra_fanduel_product_route_v2.py",
+      "tests/test_wnba_pra_playoff_context_v1.py",
+      "tests/test_wnba_pra_playoff_product_route_v1.py",
+      "tests/test_wnba_pra_product_snapshot_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "wnba_pra_hub_v3616.py",
+    "wnba_pra_api_market_bridge_v1.py",
+    "tests/test_wnba_pra_auto_slate_market_repair_v1.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-auto-slate-market-repair-v1.json"
+  ],
+  "dependencies": [
+    "wnba_pra_playoff_context_v1.py",
+    "wnba_pra_api_market_bridge_legacy_v1.py",
+    "wnba_api_client_v1.py",
+    "wnba_pra_product_snapshot_v1.py",
+    "wnba_pra_market_consensus_v1.py",
+    "wnba_pra_product_view_model_v1.py",
+    "wnba_pra_product_view_v2.py",
+    "sports_api/api/wnba_prop_feed_failover.py",
+    "sports_api/wnba_prop_feed_failover.py",
+    "sports_api/collectors/wnba_fanduel_direct.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_WNBA_PRA_AUTO_SLATE_MARKET_REPAIR_V1_FROZEN"
+}
