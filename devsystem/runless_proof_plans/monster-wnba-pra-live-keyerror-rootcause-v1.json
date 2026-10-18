@@ -7,6 +7,7 @@
     ["python", "-m", "pytest", "--noconftest", "-q", "-s", "tests/test_wnba_pra_live_route_keyerror_repro_v1.py"]
   ],
   "artifacts": [
+    "wnba_role_v282.py",
     "tests/test_wnba_pra_live_route_keyerror_repro_v1.py",
     "devsystem/runless_proof_plans/monster-wnba-pra-live-keyerror-rootcause-v1.json"
   ],
