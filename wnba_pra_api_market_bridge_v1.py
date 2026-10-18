@@ -18,7 +18,7 @@ from wnba_pra_api_market_bridge_legacy_v1 import *  # noqa: F401,F403
 
 MODEL_VERSION = "WNBA PRA API MARKET BRIDGE V2 • SNAPSHOT FRESHNESS"
 API_SOURCE = previous.API_SOURCE
-SNAPSHOT_PATH = previous.SNAPSHOT_PATH
+SNAPSHOT_PATH = "/api/v1/wnba/markets/player-props/collection-store/snapshots"
 CACHE_TTL_SECONDS = previous.CACHE_TTL_SECONDS
 SNAPSHOT_MAX_AGE_SECONDS = 600.0
 KyreWNBAAPIClient = previous.KyreWNBAAPIClient
@@ -89,9 +89,6 @@ def _snapshot_offers(
         stamp, durable_stamp = _snapshot_stamp(raw)
         if stamp is None:
             continue
-        # Stored collection timestamps are always freshness-authoritative. The
-        # offer-timestamp fallback exists only for legacy deterministic fixtures;
-        # when a caller supplies `now`, it is freshness-authoritative too.
         enforce_age = durable_stamp or now is not None
         age = max(0.0, (_current_time(now) - stamp).total_seconds())
         if enforce_age and age > SNAPSHOT_MAX_AGE_SECONDS:
@@ -191,8 +188,6 @@ def clear_cache() -> None:
     _CACHE.clear()
 
 
-# Reuse the established customer diagnostic renderer, but point its module-level
-# lookup at the freshness-aware market reader.
 previous.market_snapshot = market_snapshot
 previous.clear_cache = clear_cache
 render_market_panel = previous.render_market_panel
