@@ -1,5 +1,7 @@
 import traceback
 
+import pandas as pd
+
 
 def _run_boundary(name, fn):
     try:
@@ -9,6 +11,17 @@ def _run_boundary(name, fn):
         print(f"LIVE_PRA_EXCEPTION={type(exc).__name__}:{exc}")
         traceback.print_exc()
         raise
+
+
+def test_slate_player_pool_fails_closed_when_team_id_is_missing():
+    import wnba_availability_v27 as availability
+
+    schedule = pd.DataFrame([{"away_team_id": 1, "home_team_id": 2}])
+    stats = pd.DataFrame([{"PLAYER_NAME": "Missing Team Identity"}])
+
+    pool = availability.slate_player_pool(schedule, stats)
+    assert isinstance(pool, pd.DataFrame)
+    assert pool.empty
 
 
 def test_active_wnba_pra_snapshot_boundaries_do_not_raise_keyerror():
