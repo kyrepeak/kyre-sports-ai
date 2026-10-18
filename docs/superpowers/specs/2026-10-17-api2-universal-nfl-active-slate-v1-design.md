@@ -23,7 +23,7 @@ The universal NFL active slate must behave as follows:
 6. The behavior applies universally to the NFL section: Slate, Moneyline, Spread, Game Total, Passing Yards, Rushing Yards, Receiving Yards, Receptions, Passing TDs, Anytime TD, Daily Picks, and future NFL markets that join the shared NFL shell.
 7. The existing date picker remains available as a manual override.
 8. A deliberate manual date selection must be respected and must not immediately snap back to the automatic active slate.
-9. Automatic mode becomes authoritative again on a fresh NFL session/entry or when the manual override is explicitly cleared/reset by the shared controller.
+9. A manual override persists across NFL market switches and rerenders for the current Streamlit session. A new Streamlit session starts in `AUTO`; the shared controller may also expose an internal reset-to-active action for future UI use without requiring a new visible control in V1.
 10. If schedule verification is unavailable, fail closed rather than inventing a date.
 
 ## 3. Design goal
@@ -80,8 +80,8 @@ Use Eastern Time as the canonical NFL slate calendar boundary, matching the exis
 1. Use the user-selected date.
 2. Do not auto-advance merely because that date is empty or completed.
 3. Surface the actual state for that requested date.
-4. Preserve the override while the user remains in the manual flow.
-5. Allow a single shared reset-to-active action or fresh-entry policy to return to `AUTO`.
+4. Preserve the override across all NFL market switches and normal rerenders for the current Streamlit session.
+5. A new Streamlit session starts in `AUTO`. The controller may provide an internal reset method so a future shared-shell control can restore the active slate without changing the resolver contract.
 
 ## 7. Game-status rule
 
@@ -142,7 +142,7 @@ The resolver must feel instantaneous during normal NFL navigation.
 Requirements:
 
 - Do not perform a new full schedule scan on every Streamlit rerender.
-- Cache a verified active slate for a short safe interval/session and invalidate when the date boundary, game-status terminal transition, manual override, or source state requires it.
+- Cache a verified active slate for a short safe interval/session and invalidate when the Eastern date boundary, game-status terminal transition, manual override, or source state requires it.
 - Use calendar discovery before bounded network scanning.
 - Never loop through hundreds of dates with live network requests.
 - Reuse the same result across all NFL markets in the same session.
@@ -170,12 +170,13 @@ Implementation is not complete until tests cover at minimum:
 8. Thursday final → Sunday slate when next.
 9. Irregular/international/postseason dates work without weekday assumptions.
 10. Manual override to a past/future date is respected.
-11. Switching among all NFL markets preserves the same shared date.
-12. Fresh automatic entry after a manual session resolves the current active slate again according to the approved reset policy.
-13. Calendar discovery unavailable → bounded primary fallback works.
-14. Calendar + provider failure → fail closed and retryable.
-15. No duplicate async work, network scan loops, or independent market ownership is introduced.
-16. Mobile navigation/regression proof confirms the date widget does not reopen the keyboard or cause stale-page bleed during NFL market switching.
+11. Manual override persists while switching among NFL markets in the same Streamlit session.
+12. A new Streamlit session begins in automatic mode and resolves the current active slate.
+13. Switching among all NFL markets in automatic mode preserves the same shared date.
+14. Calendar discovery unavailable → bounded primary fallback works.
+15. Calendar + provider failure → fail closed and retryable.
+16. No duplicate async work, network scan loops, or independent market ownership is introduced.
+17. Mobile navigation/regression proof confirms the date widget does not reopen the keyboard or cause stale-page bleed during NFL market switching.
 
 ## 14. API 2 execution constraints
 
@@ -200,4 +201,4 @@ V1 does not remove historical-date browsing.
 
 The design is successful when a user can tap any NFL page and immediately see the next currently actionable NFL slate without manually searching for a date, while still retaining deliberate manual date browsing.
 
-All NFL markets must agree on that date, all-final slates must roll forward automatically, and no page-specific date owner may silently fight the universal controller.
+All NFL markets must agree on that date in automatic mode, manual overrides must remain stable across NFL market navigation, all-final slates must roll forward automatically, and no page-specific date owner may silently fight the universal controller.
