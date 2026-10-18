@@ -58,6 +58,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V146_NFL_RECEIVING_YARDS_PLAYER_VS_DEFENS
 # Frozen root-router certification compatibility: streamlit_memory_lazy_router_v1
 # Frozen Universal Nav V1 certification compatibility: from streamlit_memory_lazy_router_universal_nav_v1 import record_bootstrap_import_ms, render_app
 # Frozen V146 certification compatibility: from streamlit_memory_lazy_router_v146 import record_bootstrap_import_ms, render_app
+# Frozen Rushing V15 certification compatibility: streamlit_memory_lazy_router_v111 import record_bootstrap_import_ms, render_app
+# Frozen Rushing V14 certification compatibility: streamlit_memory_lazy_router_v110 import record_bootstrap_import_ms, render_app
 # Frozen Universal Shell V1 certification compatibility: from kyre_universal_shell_runtime_v1 import activate_universal_shell
 
 # Streamlit reruns app.py inside the same Python process. Importing the preserved
@@ -72,9 +74,9 @@ _LEGACY_ROUTER_IMPORT_V2 = (
     "    from streamlit_memory_lazy_router_universal_nav_v2 import "
     "record_bootstrap_import_ms, render_app"
 )
-# Certified parent preserved inside this successor chain:
-# streamlit_memory_lazy_router_api2_nfl_active_slate_v1
 _LEGACY_ROUTER_IMPORT_V4 = (
+    # Frozen parent preserved by the cleanup successor:
+    # streamlit_memory_lazy_router_api2_nfl_active_slate_v1
     "    from streamlit_memory_lazy_router_api2_nfl_rushing_cleanup_v1 import "
     "record_bootstrap_import_ms, render_app"
 )
