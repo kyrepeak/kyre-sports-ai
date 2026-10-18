@@ -51,6 +51,12 @@ from streamlit_memory_lazy_router_universal_nav_v4 import record_bootstrap_impor
 
 API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME = "API2_UNIVERSAL_SHELL_ROUTE_TOP_V1_RUNTIME_REFRESH_2026_10_17_R4"
 DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V146_NFL_RECEIVING_YARDS_PLAYER_VS_DEFENSE_HISTORY_2026-09-16"
+FROZEN_V106_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V106_NFL_RUSHING_YARDS_PERFORMANCE_FAST_ROUTE_2026-09-12"
+FROZEN_V107_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V107_NFL_RUSHING_YARDS_HTML_RENDER_REPAIR_2026-09-12"
+FROZEN_V108_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V108_NFL_RUSHING_YARDS_FANDUEL_FULL_LINEUP_2026-09-12"
+FROZEN_V109_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V109_NFL_RUSHING_YARDS_MATCHUP_TIERS_2026-09-12"
+FROZEN_V110_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V110_NFL_RUSHING_YARDS_DETAILED_MATCHUP_TIERS_2026-09-13"
+FROZEN_V111_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V111_NFL_RUSHING_YARDS_PHOENIX_GAME_TIMES_2026-09-13"
 
 # Frozen MONSTER CFB V4 ownership predecessor compatibility: streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1
 # Frozen Universal Nav V3 certification compatibility: from streamlit_memory_lazy_router_universal_nav_v3 import record_bootstrap_import_ms, render_app
@@ -60,6 +66,10 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V146_NFL_RECEIVING_YARDS_PLAYER_VS_DEFENS
 # Frozen V146 certification compatibility: from streamlit_memory_lazy_router_v146 import record_bootstrap_import_ms, render_app
 # Frozen Rushing V15 certification compatibility: streamlit_memory_lazy_router_v111 import record_bootstrap_import_ms, render_app
 # Frozen Rushing V14 certification compatibility: streamlit_memory_lazy_router_v110 import record_bootstrap_import_ms, render_app
+# Frozen Rushing V13 certification compatibility: streamlit_memory_lazy_router_v109 import record_bootstrap_import_ms, render_app
+# Frozen Rushing V12 certification compatibility: streamlit_memory_lazy_router_v108 import record_bootstrap_import_ms, render_app
+# Frozen Rushing V11 certification compatibility: streamlit_memory_lazy_router_v107 import record_bootstrap_import_ms, render_app
+# Frozen Rushing V10 certification compatibility: streamlit_memory_lazy_router_v106 import record_bootstrap_import_ms, render_app
 # Frozen Universal Shell V1 certification compatibility: from kyre_universal_shell_runtime_v1 import activate_universal_shell
 
 # Streamlit reruns app.py inside the same Python process. Importing the preserved
