@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-keyerror-crash-repair-v1.json": "618587dae5e382a449c17ee86d8c6239aa60b2d2",
+    "tests/test_wnba_pra_keyerror_crash_repair_v1.py": "ce372236b15309fd5f79edf589912ed76f369b5a",
+    "wnba_role_v282.py": "459912d7cfdf878570c072152254930f8ec4f1c9"
+  },
+  "candidate_sha": "b4f0cc7e74a95a7e403a501a1ddc8865eac86cd9",
+  "created_at": "2026-10-18T20:53:21.970652+00:00",
+  "dependency_map": {
+    "wnba_pra_api_market_bridge_v1.py": "05d9d8112393e18ef1b70a69d8da9164e4aa41d1",
+    "wnba_pra_hub_v3616.py": "5f6bb00ef36a901b0a9b01d61aba359d8ab91eed",
+    "wnba_pra_product_snapshot_v1.py": "a3e77e91431ddb898c5d5e000da1b41437146169",
+    "wnba_role_v28.py": "c9e4928c6e6ea736acbb8b54036b78270c7b5a3a"
+  },
+  "digest": "5fa14489ef446c2826e4cd05271bd56d4207df892edbf183968bd40a36c85198",
+  "evidence_digests": [
+    "05530d8df188f18962cd3663639b968ca0088e11115e0bcd2aadc5274caa11a0",
+    "f0578f4ee43855d02a4b9d4ba59ea58265110521beabf028396370fd17fe33fa"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "cceb4e54e87761ec280545e3ac3a0b6e861a22063719665614b5ddd6e6b07b61",
+  "proof_id": "monster-wnba-pra-keyerror-crash-repair-v1-b4f0cc7e74a95a7e-5e77ab8b6d323beb",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "c8ae644067fc22eb36f3ac12cf5007fc74ab0cc3032178675334bd34b65ad03e",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-keyerror-crash-repair-v1",
+  "workstream": "monster-wnba-pra-keyerror-crash-repair-v1"
+}
