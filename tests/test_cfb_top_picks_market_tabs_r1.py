@@ -118,7 +118,7 @@ def test_monster_route_successor_activates_v10_only_for_cfb_top_picks(monkeypatc
     fake_st = types.SimpleNamespace(
         query_params={"ks_sport": "College Football", "ks_cfb_market": "Top Picks"}
     )
-    prior = types.ModuleType("streamlit_memory_lazy_router_monster_cfb_market_completeness_r1")
+    prior = types.ModuleType("streamlit_memory_lazy_router_api2_nfl_active_slate_v1")
     prior.record_bootstrap_import_ms = lambda value: None
     top_picks_owner = types.ModuleType("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9")
     top_picks_owner.TOP_PICKS_PAGE = "cfb_top_picks_page_v9"
@@ -130,11 +130,12 @@ def test_monster_route_successor_activates_v10_only_for_cfb_top_picks(monkeypatc
 
     prior.render_app = _render_app
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
-    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1", prior)
+    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_api2_nfl_active_slate_v1", prior)
     monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9", top_picks_owner)
     name = "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1"
     sys.modules.pop(name, None)
     router = importlib.import_module(name)
+    assert router.FROZEN_PARENT == "streamlit_memory_lazy_router_api2_nfl_active_slate_v1"
     assert router.render_app() == "ok"
     assert seen == [router.TOP_PICKS_PAGE]
     assert top_picks_owner.TOP_PICKS_PAGE == "cfb_top_picks_page_v9"
@@ -144,7 +145,7 @@ def test_monster_route_successor_leaves_other_routes_untouched(monkeypatch):
     fake_st = types.SimpleNamespace(
         query_params={"ks_sport": "College Football", "ks_cfb_market": "Game Total"}
     )
-    prior = types.ModuleType("streamlit_memory_lazy_router_monster_cfb_market_completeness_r1")
+    prior = types.ModuleType("streamlit_memory_lazy_router_api2_nfl_active_slate_v1")
     prior.record_bootstrap_import_ms = lambda value: None
     top_picks_owner = types.ModuleType("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9")
     top_picks_owner.TOP_PICKS_PAGE = "cfb_top_picks_page_v9"
@@ -156,7 +157,7 @@ def test_monster_route_successor_leaves_other_routes_untouched(monkeypatch):
 
     prior.render_app = _render_app
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
-    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1", prior)
+    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_api2_nfl_active_slate_v1", prior)
     monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9", top_picks_owner)
     name = "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1"
     sys.modules.pop(name, None)
