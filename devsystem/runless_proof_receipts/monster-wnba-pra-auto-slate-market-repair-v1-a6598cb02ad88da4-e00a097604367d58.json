@@ -1,0 +1,57 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-auto-slate-market-repair-v1.json": "3623782ba51958722c0cf3f76ab292fc5a2c8259",
+    "tests/test_wnba_pra_auto_slate_market_repair_v1.py": "e7f7be1a50a301768b6acc0fa564a8e1b1fccf83",
+    "wnba_pra_api_market_bridge_v1.py": "05d9d8112393e18ef1b70a69d8da9164e4aa41d1",
+    "wnba_pra_hub_v3616.py": "5f6bb00ef36a901b0a9b01d61aba359d8ab91eed"
+  },
+  "candidate_sha": "a6598cb02ad88da42890a2749fe68f3666af078a",
+  "created_at": "2026-10-18T20:30:30.773608+00:00",
+  "dependency_map": {
+    "sports_api/api/wnba_prop_feed_failover.py": "734610e1c80705850df7715a0087cdd97a8857f3",
+    "sports_api/collectors/wnba_fanduel_direct.py": "5a1e6d308701133f08aadcc139f7d89a0494a0b1",
+    "sports_api/wnba_prop_feed_failover.py": "5e8a8b6fabc11636e8ad854cbeb23f549714de68",
+    "wnba_api_client_v1.py": "a371d30e59fc44c441cf08a411bc8210a111913d",
+    "wnba_pra_api_market_bridge_legacy_v1.py": "fdae04d8c6f26a435c8c29ca6db8809e43444a50",
+    "wnba_pra_market_consensus_v1.py": "e87ac8d4c63ebd18ff6b1d2ffd7be942edb9d9c6",
+    "wnba_pra_playoff_context_v1.py": "91f20553944e38a590e28be887e63109dd956486",
+    "wnba_pra_product_snapshot_v1.py": "a3e77e91431ddb898c5d5e000da1b41437146169",
+    "wnba_pra_product_view_model_v1.py": "3950031c4be28201bd2511b2aaa75c2e4a7b79de",
+    "wnba_pra_product_view_v2.py": "379a818a7b3e19f18ee9a6bce22054dc300a91a4"
+  },
+  "digest": "a75715d4691f12cdbc7863799164048ee5431c617437913dbc8fe6a24ab441c6",
+  "evidence_digests": [
+    "99c46a422e38e194a9aa8b1d648b67625681b345cde0eb5fa97f358fb4347bdc",
+    "19d2945fcd90b8da09a18a0c977eba8553ede3159b16c246384f75d9d7666740",
+    "6f6d8ad52e105b4659dd10b70db055824ab2f32567ffceb927c09c6d7fae2cf5"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "413e3604641b4bd46475579581da3961b0bc4818cff1eea4c12326564885e8cc",
+  "proof_id": "monster-wnba-pra-auto-slate-market-repair-v1-a6598cb02ad88da4-e00a097604367d58",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "d13fdeb5eb64ba9e7be7db99b5a5cdd1e9501e508fd0678b431161c6a5297896",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-auto-slate-market-repair-v1",
+  "workstream": "monster-wnba-pra-auto-slate-market-repair-v1"
+}
