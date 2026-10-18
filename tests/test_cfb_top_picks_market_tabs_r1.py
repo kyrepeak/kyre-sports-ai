@@ -7,19 +7,13 @@ import types
 MODULE = "cfb_top_picks_page_v10"
 
 
-def _load(monkeypatch):
-    fake_st = types.SimpleNamespace(
-        query_params={},
-        markdown=lambda *args, **kwargs: None,
-        empty=lambda: None,
-    )
-    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
+def _load():
     sys.modules.pop(MODULE, None)
     return importlib.import_module(MODULE)
 
 
-def test_market_query_normalization_and_safe_default(monkeypatch):
-    page = _load(monkeypatch)
+def test_market_query_normalization_and_safe_default():
+    page = _load()
     assert page._normalize_market("Moneyline") == "MONEYLINE"
     assert page._normalize_market("spread") == "SPREAD"
     assert page._normalize_market("Over/Under") == "OVER/UNDER"
@@ -27,8 +21,8 @@ def test_market_query_normalization_and_safe_default(monkeypatch):
     assert page._normalize_market("not-a-market") == "MONEYLINE"
 
 
-def test_market_tabs_are_real_click_targets_with_exactly_one_active(monkeypatch):
-    page = _load(monkeypatch)
+def test_market_tabs_are_real_click_targets_with_exactly_one_active():
+    page = _load()
     html = page._market_tabs_html("SPREAD")
     assert html.count("<a ") == 3
     assert html.count("tp1-chip active") == 1
@@ -40,8 +34,8 @@ def test_market_tabs_are_real_click_targets_with_exactly_one_active(monkeypatch)
     assert "top_pick_market=OVER%2FUNDER" in html
 
 
-def test_detail_href_preserves_selected_market_and_exact_event(monkeypatch):
-    page = _load(monkeypatch)
+def test_detail_href_preserves_selected_market_and_exact_event():
+    page = _load()
     href = page._detail_href_for_market("401234567", "OVER/UNDER")
     assert "ks_sport=College+Football" in href
     assert "ks_cfb_market=Top+Picks" in href
@@ -49,8 +43,8 @@ def test_detail_href_preserves_selected_market_and_exact_event(monkeypatch):
     assert "top_pick_detail=401234567" in href
 
 
-def test_market_ranker_returns_only_selected_market_and_reranks(monkeypatch):
-    page = _load(monkeypatch)
+def test_market_ranker_returns_only_selected_market_and_reranks():
+    page = _load()
     candidates = [
         {"event_id": "1", "market": "MONEYLINE", "probability_value": 0.70, "reliability": 0.7},
         {"event_id": "2", "market": "SPREAD", "probability_value": 0.61, "reliability": 0.9},
@@ -65,7 +59,20 @@ def test_market_ranker_returns_only_selected_market_and_reranks(monkeypatch):
 
 
 def test_page_html_replaces_static_tabs_and_preserves_market_on_card_links(monkeypatch):
-    page = _load(monkeypatch)
+    page = _load()
+    frozen_tabs = (
+        '<div class="tp1-segmented" data-testid="cfb-top-picks-market-tabs">'
+        '<div class="tp1-chip active">Moneyline</div>'
+        '<div class="tp1-chip">Spread</div>'
+        '<div class="tp1-chip">Over/Under</div>'
+        '</div>'
+    )
+
+    def fake_frozen_page(*args, **kwargs):
+        href = page.base._detail_href("401")
+        return frozen_tabs + f'<a data-testid="frozen-card" href="{href}">card</a>'
+
+    monkeypatch.setattr(page.prior, "_page_html", fake_frozen_page)
     original = page.base._detail_href
     html = page._page_html(
         [{"rank": 1, "event_id": "401", "market": "SPREAD"}],
