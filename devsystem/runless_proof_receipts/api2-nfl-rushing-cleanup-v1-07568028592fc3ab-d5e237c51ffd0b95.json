@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "app.py": "cb65f5d1cb900748720ce89b044762c766feb2d3",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-cleanup-v1.json": "b6ed16301131cee304d49f84d7012c0d5e8ee912",
+    "nfl_rushing_yards_hub_v17.py": "ac7fa03887b222dd8985e7949a52d19816536695",
+    "streamlit_memory_lazy_router_api2_nfl_rushing_cleanup_v1.py": "53c298bea09d3ed290c7c6e051eea77eef19a05a",
+    "tests/test_api2_nfl_rushing_cleanup_v1.py": "30011bdb4a220fec9d66537c3476272068f71d8c"
+  },
+  "candidate_sha": "07568028592fc3abb86620e23190922d53473cbf",
+  "created_at": "2026-10-18T02:05:10.424507+00:00",
+  "dependency_map": {
+    "nfl_rushing_yards_hub_v1.py": "874d1f408fd72d3933b1948a22c0d6cd49a4b56e",
+    "nfl_rushing_yards_hub_v16.py": "2a81e3130882b579a8d1e52bca0ef1f4e94c988c",
+    "nfl_rushing_yards_hub_v2.py": "e056906eb99efefa120c6062cdedecf773c275e1",
+    "nfl_rushing_yards_hub_v3.py": "5966bf17943c01154fc7482e55f3705f743f3cd8",
+    "nfl_rushing_yards_projection_v1.py": "454d757e04674b287e1feaf23e875096e731537c",
+    "streamlit_memory_lazy_router_api2_nfl_active_slate_v1.py": "f05c9ba32c627052ec04bf3204c0d8d882f67df9",
+    "streamlit_memory_lazy_router_v187.py": "449a6a0712ab0f6be70cebe5a3822e59f279e3b6"
+  },
+  "digest": "1d9c3124bb5c6d4114e0add9c83ec5a4d949c55c61f0fa917bb402334930462e",
+  "evidence_digests": [
+    "65910ffee05aa52854aceb380a739c20bb20135f699c365e71a8b53ea1a19738",
+    "70f8bfbe879c65091cfb26c523313d1becc64ae292b16bba046d7712d7f61955"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c040772671185964db78b8b499a37e1cbcdad637866b3af975d8539418afd93b",
+  "proof_id": "api2-nfl-rushing-cleanup-v1-07568028592fc3ab-d5e237c51ffd0b95",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-NFL-RUSHING-CLEANUP-V1-APP"
+    ],
+    "revision": 410,
+    "state_hash": "b0eac4be9fc6ed84b9927ebf29c8e9595ee04a630332b003487a624662164397"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-NFL-RUSHING-CLEANUP-V1-APP"
+    ],
+    "revision": 410,
+    "state_hash": "b0eac4be9fc6ed84b9927ebf29c8e9595ee04a630332b003487a624662164397"
+  },
+  "request_fingerprint": "8fab80e816fd66ca0f9c45027c65f21aa27f9ad0893c28678bc5dcf96028094b",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-cleanup-v1",
+  "workstream": "api2-nfl-rushing-cleanup-v1"
+}
