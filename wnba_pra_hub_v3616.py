@@ -3,8 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import importlib
-
-import streamlit as st
+from zoneinfo import ZoneInfo
 
 import wnba_pra_api_market_bridge_v1 as api_market
 import wnba_pra_playoff_context_v1 as playoff
@@ -24,8 +23,8 @@ FANDUEL_PRODUCT_CONTRACT = {"fanduel_primary_board_eligibility": True, "fanduel_
 
 
 def resolve_active_slate_date() -> str:
-    """Return today when it has a verified game, otherwise the next verified game date."""
-    today = datetime.now().astimezone().date().isoformat()
+    """Use today's verified WNBA slate, otherwise advance to the next verified game date."""
+    today = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
     context = playoff.resolve_playoff_context(today)
     return context.effective_date
 
