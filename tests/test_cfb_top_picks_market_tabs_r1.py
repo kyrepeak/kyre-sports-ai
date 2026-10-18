@@ -102,7 +102,7 @@ def test_page_html_replaces_static_tabs_and_preserves_market_on_card_links(monke
     assert "<div class=\"tp1-chip active\">Moneyline</div>" not in html
 
 
-def test_step9_owner_activates_v10_and_restores_nested_owner_chain(monkeypatch):
+def test_step9_owner_activates_v11_and_restores_nested_owner_chain(monkeypatch):
     st = types.SimpleNamespace(query_params={})
     owners = []
     for name, page_name in (
@@ -130,7 +130,7 @@ def test_step9_owner_activates_v10_and_restores_nested_owner_chain(monkeypatch):
     name = "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9"
     sys.modules.pop(name, None)
     router = importlib.import_module(name)
-    assert router.TOP_PICKS_PAGE == "cfb_top_picks_page_v10"
+    assert router.TOP_PICKS_PAGE == "cfb_top_picks_page_v11"
     assert router.render_app() == "ok"
-    assert seen == [["cfb_top_picks_page_v10"] * 3]
+    assert seen == [["cfb_top_picks_page_v11"] * 3]
     assert [o.TOP_PICKS_PAGE for o in owners] == ["v6", "v7", "v8"]

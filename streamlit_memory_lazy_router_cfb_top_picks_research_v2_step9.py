@@ -2,7 +2,7 @@
 
 Preserves the current WNBA PRA Speed V3 Step 4 parent and advances only the
 nested CFB Top Picks page owned by the frozen CFB wrapper chain to the additive
-V10 interactive-market-tabs successor.
+V11 professional decision-surface successor.
 
 Step 9 must propagate its page selection through Steps 8, 7, and 6 because
 each nested wrapper owns a TOP_PICKS_PAGE selector and otherwise overwrites
@@ -20,10 +20,10 @@ import streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8 as cfb_step8
 import streamlit_memory_lazy_router_wnba_pra_speed_v3_step4 as current_parent
 import streamlit_memory_lazy_router_v241 as top_picks_base
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB TOP PICKS RESEARCH V2 STEP 9 + V10 MARKET TABS R1"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER • CFB TOP PICKS RESEARCH V2 STEP 9 + V11 PROFESSIONAL R1"
 CURRENT_PARENT_ROUTER = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4"
 FROZEN_CFB_PARENT_ROUTER = "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8"
-TOP_PICKS_PAGE = "cfb_top_picks_page_v10"
+TOP_PICKS_PAGE = "cfb_top_picks_page_v11"
 TOP_PICK_DETAIL_QUERY = "top_pick_detail"
 UNIVERSAL_SPORT_JUMP_QUERY_KEY = "ks_jump_sport"
 UNIVERSAL_MARKET_JUMP_QUERY_KEY = "ks_jump_market"
