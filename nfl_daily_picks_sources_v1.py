@@ -229,7 +229,7 @@ def _spread_provider(day: date, now_utc: datetime) -> dict[str, Any]:
     """Consume the certified Spread market + 5M analytics helpers directly."""
     try:
         import nfl_spread_hub_v1 as transport
-           import nfl_spread_hub_v3 as analytics_owner
+        import nfl_spread_hub_v3 as analytics_owner
     except Exception as exc:
         return _gated("nfl_spread_hub_v3", f"Spread source import unavailable: {type(exc).__name__}")
 
