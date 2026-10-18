@@ -149,6 +149,10 @@ def _moneyline_provider(day: date, now_utc: datetime) -> dict[str, Any]:
         quality_label = _safe(edge.get("market_quality"), "MEDIUM").upper()
         quality = 0.95 if quality_label in {"HIGH", "GREEN", "GOOD"} else (0.80 if quality_label in {"MEDIUM", "WATCH"} else 0.65)
         fresh_at = now_utc - timedelta(seconds=age)
+        prereq = final.get("prerequisites") or {}
+        prereq_reasons = prereq.get("reasons") or () if isinstance(prereq, dict) else ()
+        leader_grade = final.get("leader_grade") or {}
+        source_grade = _safe(leader_grade.get("grade"), final_state) if isinstance(leader_grade, dict) else _safe(leader_grade, final_state)
         rows.append({
             "game_id": gid,
             "game_date": day,
@@ -168,8 +172,8 @@ def _moneyline_provider(day: date, now_utc: datetime) -> dict[str, Any]:
             "source_age_seconds": age,
             "data_quality": quality,
             "uncertainty": abs(float(side_out.get("model_p")) - float(side_out.get("conservative_p"))) if _finite(side_out.get("model_p")) and _finite(side_out.get("conservative_p")) else 0.0,
-            "reason_components": tuple(str(item) for item in (final.get("prerequisites") or ()) if str(item).strip()) or ("Certified V8 final grade QUALIFIED",),
-            "source_grade": _safe(final.get("leader_grade"), "QUALIFIED"),
+            "reason_components": tuple(str(item) for item in prereq_reasons if str(item).strip()) or ("Certified V8 final grade QUALIFIED",),
+            "source_grade": source_grade,
             "source_state": final_state,
             "freshness_limit_seconds": ttl,
             "actionable": True,

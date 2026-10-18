@@ -146,3 +146,67 @@ def test_one_provider_exception_does_not_break_other_markets(monkeypatch):
     assert by_market["game-total"].status == "ERROR"
     assert by_market["game-total"].candidates == ()
     assert all(by_market[m].status == "READY" for m in sources.MARKET_ORDER if m != "game-total")
+
+
+def test_moneyline_provider_normalizes_real_v8_final_shape(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    built_at = 1_000.0
+    fake_state = {
+        "nfl_moneyline_v12_model_hot_state": {
+            "day": DAY.isoformat(),
+            "built_at": built_at,
+            "ttl_seconds": 30.0,
+        },
+        "nfl_moneyline_v8_final_outputs": {
+            "G1": {
+                "state": "QUALIFIED",
+                "leader_side": "away",
+                "leader_grade": {"grade": "QUALIFIED", "reason": "full thresholds"},
+                "prerequisites": {"eligible": True, "reasons": ["calibration MEDIUM+", "market MEDIUM+"]},
+            }
+        },
+        "nfl_moneyline_v7_edge_outputs": {
+            "G1": {
+                "ready": True,
+                "market_quality": "HIGH",
+                "away": {
+                    "ready": True,
+                    "model_p": 0.62,
+                    "conservative_p": 0.58,
+                    "edge": 0.07,
+                    "conservative_edge": 0.03,
+                },
+            }
+        },
+    }
+
+    class Series:
+        def to_dict(self):
+            return {
+                "game_id": "G1",
+                "state": "pre",
+                "kickoff_at": NOW + timedelta(hours=3),
+                "away_abbr": "HOU",
+                "home_abbr": "JAX",
+                "away_team": "Houston Texans",
+                "home_team": "Jacksonville Jaguars",
+            }
+
+    class Games:
+        def iterrows(self):
+            yield 0, Series()
+
+    fake_streamlit = SimpleNamespace(session_state=fake_state)
+    fake_nfl = SimpleNamespace(load_nfl_slate=lambda day: (Games(), {"request_ok": True}))
+    monkeypatch.setitem(sys.modules, "streamlit", fake_streamlit)
+    monkeypatch.setitem(sys.modules, "nfl_hub_v1", fake_nfl)
+    monkeypatch.setattr(sources.time, "time", lambda: built_at + 10.0)
+
+    payload = sources._moneyline_provider(DAY, NOW)
+    assert payload["status"] == "READY"
+    assert len(payload["rows"]) == 1
+    normalized = payload["rows"][0]
+    assert normalized["source_grade"] == "QUALIFIED"
+    assert normalized["reason_components"] == ("calibration MEDIUM+", "market MEDIUM+")
