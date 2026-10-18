@@ -1,0 +1,85 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-daily-picks-v1",
+  "workstream": "api2-nfl-daily-picks-v1",
+  "source_main_sha": "3ccae958a953d47284c3ff2a41e573232917af3a",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "nfl_daily_picks_core_v1.py",
+      "nfl_daily_picks_sources_v1.py",
+      "nfl_daily_picks_ranking_v1.py",
+      "nfl_daily_picks_hub_v1.py",
+      "universal_runtime_v5_loader_v11.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_daily_picks_core_v1.py",
+      "tests/test_api2_nfl_daily_picks_sources_v1.py",
+      "tests/test_api2_nfl_daily_picks_ranking_v1.py",
+      "tests/test_api2_nfl_daily_picks_hub_v1.py",
+      "tests/test_api2_nfl_daily_picks_route_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_universal_sports_nav_controller_v1.py",
+      "tests/test_universal_sports_nav_url_v1.py",
+      "tests/test_universal_sports_nav_registry_v1.py",
+      "tests/test_api2_route_transition_mask_v1.py",
+      "tests/test_api2_universal_nav_single_owner_speed_v1.py",
+      "tests/test_cfb_top_picks_professional_v11_r1.py",
+      "tests/test_api2_nfl_rushing_cleanup_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "artifacts": [
+    "nfl_daily_picks_core_v1.py",
+    "nfl_daily_picks_sources_v1.py",
+    "nfl_daily_picks_ranking_v1.py",
+    "nfl_daily_picks_hub_v1.py",
+    "tests/test_api2_nfl_daily_picks_core_v1.py",
+    "tests/test_api2_nfl_daily_picks_sources_v1.py",
+    "tests/test_api2_nfl_daily_picks_ranking_v1.py",
+    "tests/test_api2_nfl_daily_picks_hub_v1.py",
+    "tests/test_api2_nfl_daily_picks_route_v1.py",
+    "universal_runtime_v5_loader_v11.py",
+    "devsystem/runless_proof_plans/api2-nfl-daily-picks-v1.json"
+  ],
+  "dependencies": [
+    "universal_runtime_v5_loader.py",
+    "universal_runtime_v5_state.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py",
+    "nfl_hub_v1.py",
+    "nfl_hub_v18.py",
+    "nfl_moneyline_hub_v8.py",
+    "nfl_moneyline_hub_v12.py",
+    "nfl_spread_hub_v1.py",
+    "nfl_spread_hub_v3.py",
+    "nfl_game_totals_market_read_v1.py",
+    "nfl_passing_yards_market_v1.py",
+    "nfl_rushing_yards_hub_v18.py",
+    "nfl_receiving_yards_hub_v21.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_DAILY_PICKS_V1_FROZEN"
+}
