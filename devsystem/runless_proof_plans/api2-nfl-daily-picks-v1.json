@@ -12,7 +12,8 @@
       "nfl_daily_picks_sources_v1.py",
       "nfl_daily_picks_ranking_v1.py",
       "nfl_daily_picks_hub_v1.py",
-      "universal_runtime_v5_loader_v11.py"
+      "universal_runtime_v5_loader_v11.py",
+      "runless_v2/proof_service.py"
     ],
     [
       "python",
@@ -24,7 +25,8 @@
       "tests/test_api2_nfl_daily_picks_sources_v1.py",
       "tests/test_api2_nfl_daily_picks_ranking_v1.py",
       "tests/test_api2_nfl_daily_picks_hub_v1.py",
-      "tests/test_api2_nfl_daily_picks_route_v1.py"
+      "tests/test_api2_nfl_daily_picks_route_v1.py",
+      "tests/test_runless_v2_receipt_retry_v1.py"
     ],
     [
       "python",
@@ -55,6 +57,8 @@
     "tests/test_api2_nfl_daily_picks_ranking_v1.py",
     "tests/test_api2_nfl_daily_picks_hub_v1.py",
     "tests/test_api2_nfl_daily_picks_route_v1.py",
+    "tests/test_runless_v2_receipt_retry_v1.py",
+    "runless_v2/proof_service.py",
     "universal_runtime_v5_loader_v11.py",
     "devsystem/runless_proof_plans/api2-nfl-daily-picks-v1.json"
   ],
