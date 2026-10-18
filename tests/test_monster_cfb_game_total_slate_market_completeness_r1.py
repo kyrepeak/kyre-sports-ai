@@ -42,10 +42,7 @@ def _load_runtime(monkeypatch, *, quote=None, quotes=None):
 
     fake_router = types.ModuleType("streamlit_memory_lazy_router_cfb_game_total_page2_step8_final_v1")
     fake_router.PAGE1_NATIVE_ROUTE = "old-route"
-    fake_router._ROUTE_POINTER_LOCK = types.SimpleNamespace(
-        __enter__=lambda self: self,
-        __exit__=lambda self, *args: False,
-    )
+    fake_router._ROUTE_POINTER_LOCK = types.SimpleNamespace()
     fake_router._render_page1_in_shared_shell = lambda: "shared-shell"
 
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
@@ -110,39 +107,50 @@ def test_runtime_restores_frozen_base_hooks_after_render(monkeypatch):
 
 def _load_router(monkeypatch, *, is_cfb=True):
     calls: list[str] = []
+    seen_runtime: list[str] = []
+    fast_switch = types.SimpleNamespace(CFB_PAGE2_RUNTIME="cfb_game_total_page2_visual_cleanup_r4")
+
+    fake_cfb = types.ModuleType("streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1")
+    fake_cfb.prior = fast_switch
+
     fake_prior = types.ModuleType("streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1")
     fake_prior._is_cfb_game_total_route = lambda: is_cfb
     fake_prior.record_bootstrap_import_ms = lambda value: calls.append(f"bootstrap:{value}")
-    fake_prior.render_app = lambda: calls.append("prior") or "prior"
 
-    fast_switch = types.SimpleNamespace(CFB_PAGE2_RUNTIME="cfb_game_total_page2_visual_cleanup_r4")
-    fake_cfb = types.ModuleType("streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1")
-    fake_cfb.prior = fast_switch
+    def _render():
+        seen_runtime.append(fast_switch.CFB_PAGE2_RUNTIME)
+        calls.append("prior")
+        return "prior"
+
+    fake_prior.render_app = _render
 
     monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1", fake_prior)
     monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_nfl_spread_mobile_repair_v1", fake_cfb)
     sys.modules.pop(ROUTER, None)
     module = importlib.import_module(ROUTER)
-    return module, fake_cfb, calls
+    return module, fake_cfb, calls, seen_runtime
 
 
 def test_monster_router_activates_successor_only_for_cfb_and_restores(monkeypatch):
-    module, cfb, calls = _load_router(monkeypatch, is_cfb=True)
+    module, cfb, calls, seen_runtime = _load_router(monkeypatch, is_cfb=True)
     old = cfb.prior.CFB_PAGE2_RUNTIME
     assert module.render_app() == "prior"
     assert calls == ["prior"]
+    assert seen_runtime == [module.CFB_PAGE2_RUNTIME]
     assert cfb.prior.CFB_PAGE2_RUNTIME == old
 
 
 def test_non_cfb_route_does_not_touch_page2_runtime(monkeypatch):
-    module, cfb, calls = _load_router(monkeypatch, is_cfb=False)
+    module, cfb, calls, seen_runtime = _load_router(monkeypatch, is_cfb=False)
     old = cfb.prior.CFB_PAGE2_RUNTIME
     assert module.render_app() == "prior"
     assert calls == ["prior"]
+    assert seen_runtime == [old]
     assert cfb.prior.CFB_PAGE2_RUNTIME == old
 
 
 def test_app_activates_market_completeness_successor():
     source = Path("app.py").read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1" in source
-    assert "streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1" not in source.split("_LEGACY_ROUTER_IMPORT_V4 =", 1)[1].split("_legacy_router_import_count", 1)[0]
+    active = source.split("_LEGACY_ROUTER_IMPORT_V4 =", 1)[1].split("_legacy_router_import_count", 1)[0]
+    assert "streamlit_memory_lazy_router_monster_cfb_v4_route_ownership_r1" not in active
