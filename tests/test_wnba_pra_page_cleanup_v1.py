@@ -52,10 +52,14 @@ def test_step2_cleanup_patches_only_presentation_owners():
 
 def test_step2_active_compatibility_route_forwards_to_clean_wrapper():
     source = (ROOT / "wnba_pra_hub_v3612.py").read_text(encoding="utf-8")
-    assert "import wnba_pra_hub_v3615 as active" in source
-    successor = (ROOT / "wnba_pra_hub_v3615.py").read_text(encoding="utf-8")
-    assert "import wnba_pra_hub_v3614 as previous" in successor
+    assert "import wnba_pra_hub_v3616 as active" in source
+    successor = (ROOT / "wnba_pra_hub_v3616.py").read_text(encoding="utf-8")
+    assert "wnba_pra_product_view_v2" in successor
+    assert "require_fanduel=True" in successor
 
+    # The predecessor cleanup chain remains intact underneath the successor.
+    predecessor = (ROOT / "wnba_pra_hub_v3615.py").read_text(encoding="utf-8")
+    assert "import wnba_pra_hub_v3614 as previous" in predecessor
     wrapper = (ROOT / "wnba_pra_hub_v3614.py").read_text(encoding="utf-8")
     assert wrapper.index("previous.api_market.install()") < wrapper.index("cleanup.begin_render()")
     assert wrapper.index("cleanup.begin_render()") < wrapper.index("previous.frozen.base.render_wnba_pra_hub")
