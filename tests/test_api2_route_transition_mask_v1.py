@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 import streamlit_memory_lazy_router_universal_nav_v4 as router
+import universal_sports_nav_compat_v1 as compat
 
 
 class _RerunSignal(BaseException):
@@ -99,3 +100,24 @@ def test_transition_mask_stays_until_exact_terminal_owner_confirms(monkeypatch):
     router._finish_route_transition(placeholder)
     assert fake.placeholder.empty_calls == 1
     assert router.ROUTE_TRANSITION_KEY not in fake.session_state
+
+
+@pytest.mark.parametrize(
+    ("sport_id", "market_id", "expected"),
+    [
+        ("cfb", "moneyline", "Moneyline"),
+        ("cfb", "over-under", "Over/Under"),
+        ("cfb", "game-total", "Game Total"),
+        ("nba", "spread", "Spread"),
+    ],
+)
+def test_legacy_bridge_maps_virtual_sport_through_root_nfl_market_seam(sport_id, market_id, expected):
+    state = _state(sport_id, market_id, 11)
+    bridge = compat.make_legacy_selectbox_bridge(lambda _label, options, *args, **kwargs: list(options)[0], state)
+    assert bridge("🎯 NFL Market", ["Slate", "Passing Yards"], key="ks_nfl_market_touch") == expected
+
+
+def test_legacy_bridge_keeps_native_nfl_market_behavior():
+    state = _state("nfl", "slate", 11)
+    bridge = compat.make_legacy_selectbox_bridge(lambda _label, options, *args, **kwargs: list(options)[0], state)
+    assert bridge("🎯 NFL Market", ["Slate", "Passing Yards"], key="ks_nfl_market_touch") == "Slate"
