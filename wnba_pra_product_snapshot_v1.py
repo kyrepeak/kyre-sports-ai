@@ -16,7 +16,7 @@ import wnba_pra_matchup_v30 as matchup
 import wnba_pra_final_v32 as final
 import wnba_schedule_v25 as schedule
 import wnba_pra_hub_v27 as v27
-import wnba_role_v28 as role
+import wnba_role_v282 as role
 
 
 def _frame(value: Any) -> pd.DataFrame:
