@@ -51,6 +51,9 @@ def build_prop_line_feed_board(
     roster_getter: Callable[..., dict[str, Any]] = previous.get_current_players_dataset,
     roster_resolver: Callable[..., dict[str, Any]] = resolve_verified_roster,
 ) -> dict[str, Any]:
+    # Preserve the V1 fail-fast order before any schedule/network work.
+    if not isinstance(season, int) or isinstance(season, bool) or season <= 0:
+        raise ValueError("WNBA Step 5M season must be a positive integer.")
     target_date = previous._target_date(date)
     try:
         slate = slate_getter(target_date, season)
