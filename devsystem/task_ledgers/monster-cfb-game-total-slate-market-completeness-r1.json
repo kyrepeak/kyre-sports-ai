@@ -1,0 +1,26 @@
+{
+  "task_id": "monster-cfb-game-total-slate-market-completeness-r1",
+  "workstream": "MONSTER",
+  "state": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "source_main_sha": "64ce687f55db85bb722c71a1b9d53c9adcefa2c7",
+  "candidate_sha": "fba92c252f7291c42bd6121efc6ca1abe1c2401d",
+  "authority_branch": "monster-cfb-game-total-slate-market-completeness-r1",
+  "active_problem": "CFB Game Total Page 2 must preserve exact selected-game identity while exposing one verified same-book moneyline + spread + total snapshot whenever the existing multi-source market owner can prove a complete quote.",
+  "rules": {
+    "step_2a_enforced": true,
+    "single_authority_chain": true,
+    "duplicate_async_forbidden": true,
+    "anti_loop": true,
+    "api2_read_only": true,
+    "selected_game_only": true,
+    "same_book_complete_quote_required": true,
+    "sportsbook_projection_influence": 0.0,
+    "model_changes": false,
+    "projection_changes": false,
+    "probability_changes": false,
+    "ranking_changes": false,
+    "selection_changes": false,
+    "other_sports_changes": false
+  },
+  "freeze_token": "MONSTER_CFB_GAME_TOTAL_SLATE_MARKET_COMPLETENESS_R1_FROZEN"
+}
