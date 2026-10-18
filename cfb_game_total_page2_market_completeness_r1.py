@@ -122,15 +122,26 @@ def _apply_complete_market(
 
 
 def _market_snapshot_html(display_game: Mapping[str, Any]) -> str:
-    book = _clean(display_game.get("market_sportsbook")) or "No complete named book"
-    quote_count = int(display_game.get("market_quote_count") or 0)
-    observed = _clean(display_game.get("market_observed_at_utc")) or "timestamp unavailable"
     complete = display_game.get("market_complete_same_book") is True
-    note = (
-        f"{quote_count} complete same-book quote{'s' if quote_count != 1 else ''} verified • {observed}"
-        if complete
-        else "No single named sportsbook currently has verified moneyline + spread + total together; fields remain unavailable rather than mixing books."
-    )
+    if complete:
+        book = _clean(display_game.get("market_sportsbook")) or "Verified named book"
+        quote_count = int(display_game.get("market_quote_count") or 0)
+        observed = _clean(display_game.get("market_observed_at_utc")) or "timestamp unavailable"
+        away_moneyline = display_game.get("away_moneyline")
+        home_moneyline = display_game.get("home_moneyline")
+        away_spread = display_game.get("away_spread")
+        home_spread = display_game.get("home_spread")
+        market_total = display_game.get("market_total")
+        note = f"{quote_count} complete same-book quote{'s' if quote_count != 1 else ''} verified • {observed}"
+    else:
+        book = "No complete named book"
+        away_moneyline = None
+        home_moneyline = None
+        away_spread = None
+        home_spread = None
+        market_total = None
+        note = "No single named sportsbook currently has verified moneyline + spread + total together; fields remain unavailable rather than mixing books."
+
     return (
         _MARKET_CSS
         + '<section class="gtp2mcr1" data-testid="gtp2-market-complete-r1">'
@@ -139,19 +150,19 @@ def _market_snapshot_html(display_game: Mapping[str, Any]) -> str:
         + '</strong></div><small>SAME-BOOK ML + SPREAD + TOTAL</small></div>'
         + '<div class="gtp2mcr1-grid">'
         + '<div class="gtp2mcr1-cell"><span>Away ML</span><b>'
-        + escape(_american(display_game.get("away_moneyline")))
+        + escape(_american(away_moneyline))
         + '</b></div>'
         + '<div class="gtp2mcr1-cell"><span>Home ML</span><b>'
-        + escape(_american(display_game.get("home_moneyline")))
+        + escape(_american(home_moneyline))
         + '</b></div>'
         + '<div class="gtp2mcr1-cell"><span>Away Spread</span><b>'
-        + escape(_spread(display_game.get("away_spread")))
+        + escape(_spread(away_spread))
         + '</b></div>'
         + '<div class="gtp2mcr1-cell"><span>Home Spread</span><b>'
-        + escape(_spread(display_game.get("home_spread")))
+        + escape(_spread(home_spread))
         + '</b></div>'
         + '<div class="gtp2mcr1-cell"><span>O/U Total</span><b>'
-        + escape(_total(display_game.get("market_total")))
+        + escape(_total(market_total))
         + '</b></div></div>'
         + '<div class="gtp2mcr1-note">'
         + escape(note)
