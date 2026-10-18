@@ -7,9 +7,10 @@ and a collapsed deep-research layer.
 """
 from __future__ import annotations
 
-from html import escape
+from html import escape, unescape
 import re
 from typing import Any
+from urllib.parse import parse_qsl, urlencode
 
 import streamlit as st
 
@@ -102,6 +103,36 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _canonical_top_picks_href(href: Any) -> str:
+    text = unescape(_clean(href))
+    if not text.startswith("?"):
+        return text
+    pairs = parse_qsl(text[1:], keep_blank_values=True)
+    params: list[tuple[str, str]] = [("sport", "cfb"), ("market", "top-picks")]
+    for key, value in pairs:
+        if key in {"sport", "market", "ks_sport", "ks_cfb_market"}:
+            continue
+        params.append((key, value))
+    return "?" + urlencode(params)
+
+
+def _canonicalize_top_picks_routes(html: str) -> str:
+    def replace_href(match: re.Match[str]) -> str:
+        href = unescape(match.group(1))
+        if "ks_sport=" not in href and "ks_cfb_market=" not in href:
+            return match.group(0)
+        canonical = _canonical_top_picks_href(href)
+        return f'href="{escape(canonical, quote=True)}"'
+
+    return re.sub(r'href="([^"]+)"', replace_href, html)
+
+
+def _build_pick_detail(row: dict, slate_day: str) -> dict:
+    import cfb_top_picks_details_v5 as detail_provider
+
+    return detail_provider.build_pick_detail(row, slate_day)
+
+
 def _probability(row: dict) -> float:
     raw = row.get("probability_value")
     try:
@@ -175,7 +206,7 @@ def _top10_overview_html(picks: list[dict], selected_market: Any) -> str:
     for row in picks[:10]:
         rank = int(row.get("rank") or 0)
         event_id = _clean(row.get("event_id"))
-        href = escape(prior._detail_href_for_market(event_id, market), quote=True)
+        href = escape(_canonical_top_picks_href(prior._detail_href_for_market(event_id, market)), quote=True)
         pick = escape(_clean(row.get("pick")) or "Verified pick")
         matchup = escape(f"{_clean(row.get('away'))} @ {_clean(row.get('home'))}")
         prob = _probability(row)
@@ -292,6 +323,7 @@ def _page_html(
         picks, diag, slate_day, selected_event, selected_detail,
         selected_market=market,
     )
+    html = _canonicalize_top_picks_routes(html)
     board = '<div class="tp2-board" data-testid="cfb-top-picks-card-board">'
     if board not in html:
         raise RuntimeError("Top Picks V11 could not find the existing Top-10 board boundary.")
@@ -338,7 +370,7 @@ def render_top_picks_page() -> None:
 
     if selected_row is not None:
         with st.spinner("Loading verified matchup research..."):
-            selected_detail = prior.details.build_pick_detail(selected_row, slate_day)
+            selected_detail = _build_pick_detail(selected_row, slate_day)
         board.html(_page_html(picks, diag, slate_day, selected_event, selected_detail, selected_market=selected_market))
 
     if not picks:
