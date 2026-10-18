@@ -3,7 +3,7 @@
   "workstream": "MONSTER",
   "state": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
   "source_main_sha": "64ce687f55db85bb722c71a1b9d53c9adcefa2c7",
-  "candidate_sha": "fba92c252f7291c42bd6121efc6ca1abe1c2401d",
+  "candidate_ref": "monster-cfb-game-total-slate-market-completeness-r1",
   "authority_branch": "monster-cfb-game-total-slate-market-completeness-r1",
   "active_problem": "CFB Game Total Page 2 must preserve exact selected-game identity while exposing one verified same-book moneyline + spread + total snapshot whenever the existing multi-source market owner can prove a complete quote.",
   "rules": {
