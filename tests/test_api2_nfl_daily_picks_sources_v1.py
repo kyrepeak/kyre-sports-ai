@@ -148,17 +148,13 @@ def test_one_provider_exception_does_not_break_other_markets(monkeypatch):
     assert all(by_market[m].status == "READY" for m in sources.MARKET_ORDER if m != "game-total")
 
 
-def test_moneyline_provider_normalizes_real_v8_final_shape(monkeypatch):
+def _install_moneyline_runtime(monkeypatch, *, quote_age_seconds=10.0, selected_day=DAY):
     import sys
     from types import SimpleNamespace
 
-    built_at = 1_000.0
+    quote_at = NOW - timedelta(seconds=quote_age_seconds)
     fake_state = {
-        "nfl_moneyline_v12_model_hot_state": {
-            "day": DAY.isoformat(),
-            "built_at": built_at,
-            "ttl_seconds": 30.0,
-        },
+        "nfl_v1_date": selected_day,
         "nfl_moneyline_v8_final_outputs": {
             "G1": {
                 "state": "QUALIFIED",
@@ -178,6 +174,18 @@ def test_moneyline_provider_normalizes_real_v8_final_shape(monkeypatch):
                     "edge": 0.07,
                     "conservative_edge": 0.03,
                 },
+            }
+        },
+        "nfl_moneyline_v5_market_snapshots": {
+            "G1": {
+                "ready": True,
+                "rows": [
+                    {
+                        "usable": True,
+                        "updated_at": quote_at.isoformat().replace("+00:00", "Z"),
+                        "age_seconds": quote_age_seconds,
+                    }
+                ],
             }
         },
     }
@@ -202,11 +210,36 @@ def test_moneyline_provider_normalizes_real_v8_final_shape(monkeypatch):
     fake_nfl = SimpleNamespace(load_nfl_slate=lambda day: (Games(), {"request_ok": True}))
     monkeypatch.setitem(sys.modules, "streamlit", fake_streamlit)
     monkeypatch.setitem(sys.modules, "nfl_hub_v1", fake_nfl)
-    monkeypatch.setattr(sources.time, "time", lambda: built_at + 10.0)
+    return fake_state
+
+
+def test_moneyline_provider_reads_active_v9_v8_state_without_v12_hot_key(monkeypatch):
+    _install_moneyline_runtime(monkeypatch, quote_age_seconds=10.0)
 
     payload = sources._moneyline_provider(DAY, NOW)
+
     assert payload["status"] == "READY"
     assert len(payload["rows"]) == 1
     normalized = payload["rows"][0]
     assert normalized["source_grade"] == "QUALIFIED"
     assert normalized["reason_components"] == ("calibration MEDIUM+", "market MEDIUM+")
+    assert normalized["source_age_seconds"] == 10.0
+    assert normalized["freshness_limit_seconds"] == 180.0
+
+
+def test_moneyline_provider_fails_closed_when_active_v9_market_snapshot_aged_out(monkeypatch):
+    _install_moneyline_runtime(monkeypatch, quote_age_seconds=181.0)
+
+    payload = sources._moneyline_provider(DAY, NOW)
+
+    assert payload["status"] == "STALE"
+    assert payload["rows"] == []
+
+
+def test_moneyline_provider_rejects_state_from_another_selected_date(monkeypatch):
+    _install_moneyline_runtime(monkeypatch, quote_age_seconds=10.0, selected_day=date(2026, 10, 19))
+
+    payload = sources._moneyline_provider(DAY, NOW)
+
+    assert payload["status"] == "GATED"
+    assert payload["rows"] == []

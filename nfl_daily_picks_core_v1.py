@@ -85,7 +85,12 @@ def candidate_is_eligible(candidate: DailyPickCandidate, *, now_utc: datetime) -
         return False, "INVALID_FRESHNESS"
     if not _finite(candidate.freshness_limit_seconds) or float(candidate.freshness_limit_seconds) <= 0:
         return False, "INVALID_FRESHNESS_LIMIT"
-    if float(candidate.source_age_seconds) > float(candidate.freshness_limit_seconds):
+    try:
+        elapsed_age = max(0.0, float((now_utc - candidate.source_fresh_at).total_seconds()))
+    except (AttributeError, TypeError, ValueError):
+        return False, "INVALID_FRESHNESS"
+    effective_age = max(float(candidate.source_age_seconds), elapsed_age)
+    if effective_age > float(candidate.freshness_limit_seconds):
         return False, "STALE"
     if not _finite(candidate.data_quality) or not 0.0 <= float(candidate.data_quality) <= 1.0:
         return False, "INVALID_DATA_QUALITY"

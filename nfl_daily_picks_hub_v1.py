@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 try:
     import streamlit as st
-except Exception:
+except Exception:  # local/unit-test environments do not need Streamlit installed
     st = None
 
 from nfl_daily_picks_sources_v1 import MARKET_LABELS, MARKET_ORDER, load_all_market_candidates
@@ -104,7 +104,12 @@ def build_daily_picks_board(
         market_id: (by_market.get(market_id).diagnostic if by_market.get(market_id) else "No source result returned.")
         for market_id in MARKET_ORDER
     }
-    candidates = tuple(candidate for result in results for candidate in result.candidates)
+    candidates = tuple(
+        candidate
+        for result in results
+        if str(result.status or "").upper() == "READY"
+        for candidate in result.candidates
+    )
     ranked = rank_daily_picks(candidates, now_utc=now_utc, limit=10)
     cards = tuple(_card_payload(candidate, index) for index, candidate in enumerate(ranked, start=1))
     return {
@@ -122,7 +127,9 @@ def _status_html(board: Mapping[str, Any]) -> str:
     for market_id in MARKET_ORDER:
         state = str(board["market_statuses"].get(market_id, "UNAVAILABLE")).upper()
         css = "ready" if state == "READY" else ("error" if state == "ERROR" else "gated")
-        cards.append(f'<div class="kdp-status {css}"><b>{escape(MARKET_LABELS[market_id])}</b><span>{escape(state)}</span></div>')
+        cards.append(
+            f'<div class="kdp-status {css}"><b>{escape(MARKET_LABELS[market_id])}</b><span>{escape(state)}</span></div>'
+        )
     return '<div class="kdp-status-grid">' + "".join(cards) + '</div>'
 
 
@@ -162,6 +169,7 @@ def render_nfl_daily_picks_hub() -> None:
     now = _now_utc()
     day = _selected_day()
     board = build_daily_picks_board(day, now_utc=now)
+
     st.markdown(_CSS, unsafe_allow_html=True)
     st.markdown(
         '<section class="kdp-shell">'
@@ -173,6 +181,7 @@ def render_nfl_daily_picks_hub() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(_status_html(board), unsafe_allow_html=True)
+
     cards = board["ranked_picks"]
     if not cards:
         st.info(ZERO_STATE)
@@ -181,6 +190,7 @@ def render_nfl_daily_picks_hub() -> None:
             if diagnostic:
                 st.caption(f"{MARKET_LABELS[market_id]} • {board['market_statuses'][market_id]} • {diagnostic}")
         return
+
     st.markdown('<div class="kdp-grid">' + "".join(_card_html(card) for card in cards) + '</div>', unsafe_allow_html=True)
     gated = [MARKET_LABELS[mid] for mid, state in board["market_statuses"].items() if state != "READY"]
     if gated:
@@ -194,4 +204,10 @@ def render_nfl_hub(market: str = "Daily Picks") -> None:
     return render_nfl_daily_picks_hub()
 
 
-__all__ = ["MODEL_VERSION", "ZERO_STATE", "build_daily_picks_board", "render_nfl_daily_picks_hub", "render_nfl_hub"]
+__all__ = [
+    "MODEL_VERSION",
+    "ZERO_STATE",
+    "build_daily_picks_board",
+    "render_nfl_daily_picks_hub",
+    "render_nfl_hub",
+]

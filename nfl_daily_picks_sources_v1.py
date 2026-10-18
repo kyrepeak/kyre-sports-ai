@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 import math
-import time
 from typing import Any, Callable, Mapping
 from zoneinfo import ZoneInfo
 
@@ -97,7 +96,7 @@ def _gated(version: str, diagnostic: str) -> dict[str, Any]:
 
 
 def _moneyline_provider(day: date, now_utc: datetime) -> dict[str, Any]:
-    """Read the current certified V8/V12 hot output only; never run the page UI."""
+    """Read the active V9/V8 production state only; never run the Moneyline page UI."""
     try:
         import streamlit as st
         import nfl_hub_v1 as nfl
@@ -105,27 +104,34 @@ def _moneyline_provider(day: date, now_utc: datetime) -> dict[str, Any]:
         return _gated("nfl_moneyline_hub_v8", f"Moneyline source import unavailable: {type(exc).__name__}")
 
     state = st.session_state
-    hot = state.get("nfl_moneyline_v12_model_hot_state") or {}
-    if _safe(hot.get("day")) != day.isoformat():
-        return _gated("nfl_moneyline_hub_v8", "Certified Moneyline hot snapshot is not primed for this slate date.")
-    built_at = _number(hot.get("built_at"))
-    ttl = _number(hot.get("ttl_seconds"), 30.0) or 30.0
-    if built_at is None:
-        return _gated("nfl_moneyline_hub_v8", "Certified Moneyline snapshot has no freshness timestamp.")
-    age = max(0.0, time.time() - built_at)
-    if age > ttl:
-        return _gated("nfl_moneyline_hub_v8", "Certified Moneyline hot snapshot is stale; hidden UI execution is forbidden.")
+    selected_day = _date(state.get("nfl_v1_date"), date.min)
+    if selected_day != day:
+        return _gated("nfl_moneyline_hub_v8", "Active Moneyline production state belongs to a different slate date.")
 
     finals = state.get("nfl_moneyline_v8_final_outputs") or {}
     edges = state.get("nfl_moneyline_v7_edge_outputs") or {}
-    if not finals or not edges:
-        return _gated("nfl_moneyline_hub_v8", "Certified Moneyline final/edge outputs are not available in the current source snapshot.")
+    snapshots = state.get("nfl_moneyline_v5_market_snapshots") or {}
+    if not finals or not edges or not snapshots:
+        return _gated(
+            "nfl_moneyline_hub_v8",
+            "Active V9/V8 Moneyline final, edge, and market snapshots are not all available for this slate date.",
+        )
 
     games, diag = nfl.load_nfl_slate(day.isoformat())
     if not (diag or {}).get("request_ok"):
         return _gated("nfl_moneyline_hub_v8", "Verified NFL slate is unavailable for Moneyline identity reconciliation.")
 
+    normalized_now = _utc(now_utc)
+    if normalized_now is None:
+        return _gated("nfl_moneyline_hub_v8", "Moneyline freshness clock is invalid.")
+
+    stale_seconds = 180.0
     rows: list[dict[str, Any]] = []
+    row_fresh_ats: list[datetime] = []
+    qualified_seen = 0
+    stale_qualified = 0
+    unavailable_qualified = 0
+
     for _, series in games.iterrows():
         game = series.to_dict()
         if _safe(game.get("state"), "pre").lower() != "pre":
@@ -137,18 +143,37 @@ def _moneyline_provider(day: date, now_utc: datetime) -> dict[str, Any]:
         leader = _safe(final.get("leader_side")).lower()
         if final_state != "QUALIFIED" or leader not in {"away", "home"}:
             continue
+        qualified_seen += 1
+
         side_out = edge.get(leader) or {}
-        if not side_out.get("ready"):
+        snapshot = snapshots.get(gid) or {}
+        if not side_out.get("ready") or not snapshot.get("ready"):
+            unavailable_qualified += 1
             continue
+
+        usable_rows = [row for row in (snapshot.get("rows") or ()) if isinstance(row, Mapping) and row.get("usable") is True]
+        timestamps = [_utc(row.get("updated_at")) for row in usable_rows]
+        if not usable_rows or any(stamp is None for stamp in timestamps):
+            unavailable_qualified += 1
+            continue
+        quote_times = [stamp for stamp in timestamps if stamp is not None]
+        quote_ages = [max(0.0, (normalized_now - stamp).total_seconds()) for stamp in quote_times]
+        if not quote_ages or any(age > stale_seconds for age in quote_ages):
+            stale_qualified += 1
+            continue
+
         kickoff = _kickoff_from_slate(game, day)
         if kickoff is None:
+            unavailable_qualified += 1
             continue
         team = _safe(game.get(f"{leader}_abbr"))
         opponent_side = "home" if leader == "away" else "away"
         opponent = _safe(game.get(f"{opponent_side}_abbr"))
         quality_label = _safe(edge.get("market_quality"), "MEDIUM").upper()
         quality = 0.95 if quality_label in {"HIGH", "GREEN", "GOOD"} else (0.80 if quality_label in {"MEDIUM", "WATCH"} else 0.65)
-        fresh_at = now_utc - timedelta(seconds=age)
+        fresh_at = min(quote_times)
+        age = max(quote_ages)
+        row_fresh_ats.append(fresh_at)
         prereq = final.get("prerequisites") or {}
         prereq_reasons = prereq.get("reasons") or () if isinstance(prereq, dict) else ()
         leader_grade = final.get("leader_grade") or {}
@@ -175,14 +200,27 @@ def _moneyline_provider(day: date, now_utc: datetime) -> dict[str, Any]:
             "reason_components": tuple(str(item) for item in prereq_reasons if str(item).strip()) or ("Certified V8 final grade QUALIFIED",),
             "source_grade": source_grade,
             "source_state": final_state,
-            "freshness_limit_seconds": ttl,
+            "freshness_limit_seconds": stale_seconds,
             "actionable": True,
         })
+
+    if not rows and stale_qualified:
+        status = "STALE"
+        diagnostic = f"{stale_qualified} qualified Moneyline candidate(s) were rejected because the active V9 sportsbook snapshot aged beyond 180s."
+    elif not rows and unavailable_qualified:
+        status = "GATED"
+        diagnostic = f"{unavailable_qualified} qualified Moneyline candidate(s) lacked a complete active V9/V8 edge or timestamped market snapshot."
+    else:
+        status = "READY"
+        diagnostic = "Active V9/V8 final grade + V7 edge + V5 timestamped market snapshot; no Moneyline UI rendered."
+        if qualified_seen == 0:
+            diagnostic += " No source-owned QUALIFIED Moneyline candidates are present."
+
     return {
-        "status": "READY",
+        "status": status,
         "source_version": "nfl_moneyline_hub_v8",
-        "fresh_at": now_utc - timedelta(seconds=age),
-        "diagnostic": "Certified V8 final grade + V7 edge snapshot; no Moneyline UI rendered.",
+        "fresh_at": min(row_fresh_ats) if row_fresh_ats else None,
+        "diagnostic": diagnostic,
         "rows": rows,
     }
 
@@ -191,7 +229,7 @@ def _spread_provider(day: date, now_utc: datetime) -> dict[str, Any]:
     """Consume the certified Spread market + 5M analytics helpers directly."""
     try:
         import nfl_spread_hub_v1 as transport
-        import nfl_spread_hub_v3 as analytics_owner
+           import nfl_spread_hub_v3 as analytics_owner
     except Exception as exc:
         return _gated("nfl_spread_hub_v3", f"Spread source import unavailable: {type(exc).__name__}")
 

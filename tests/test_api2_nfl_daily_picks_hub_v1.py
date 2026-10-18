@@ -126,3 +126,23 @@ def test_renderer_uses_one_controlled_card_path_without_old_foundation(monkeypat
     assert "kdp-card" in rendered
     assert "knfl-game" not in rendered
     assert "NFL Daily Picks" in rendered
+
+
+def test_non_ready_market_cannot_publish_cached_ready_candidate(monkeypatch):
+    stale_cached = candidate(9, market_id="spread", game_id="G9", team_id="BUF", opponent_team_id="MIA")
+    healthy = candidate(10, market_id="moneyline", game_id="G10", team_id="KC", opponent_team_id="LV", market_line=None)
+    results = []
+    for market_id in hub.MARKET_ORDER:
+        if market_id == "spread":
+            results.append(result(market_id, status="ERROR", candidates=(stale_cached,), diagnostic="provider failed"))
+        elif market_id == "moneyline":
+            results.append(result(market_id, status="READY", candidates=(healthy,), diagnostic="ok"))
+        else:
+            results.append(result(market_id, status="READY", candidates=(), diagnostic="ok"))
+    monkeypatch.setattr(hub, "load_all_market_candidates", lambda day, now_utc, loaders=None: tuple(results))
+
+    board = hub.build_daily_picks_board(DAY, now_utc=NOW)
+
+    assert board["market_statuses"]["spread"] == "ERROR"
+    assert board["candidate_count"] == 1
+    assert [card["subject"] for card in board["ranked_picks"]] == [healthy.subject_label]

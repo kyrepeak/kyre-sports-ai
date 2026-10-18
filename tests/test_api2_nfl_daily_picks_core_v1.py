@@ -107,3 +107,14 @@ def test_six_market_statuses_are_independent():
         "rushing-yards": "UNAVAILABLE",
         "receiving-yards": "ERROR",
     }
+
+
+def test_freshness_uses_elapsed_time_from_source_timestamp_not_only_cached_age():
+    stale_timestamp = candidate(
+        source_fresh_at=NOW - timedelta(seconds=121),
+        source_age_seconds=10.0,
+        freshness_limit_seconds=120.0,
+    )
+    ok, reason = candidate_is_eligible(stale_timestamp, now_utc=NOW)
+    assert ok is False
+    assert reason == "STALE"
