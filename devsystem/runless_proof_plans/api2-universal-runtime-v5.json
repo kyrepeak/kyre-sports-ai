@@ -1,0 +1,42 @@
+{
+  "mode": "runless",
+  "task_id": "api2-universal-runtime-v5",
+  "workstream": "api2-universal-runtime-v5",
+  "source_main_sha": "f4571ca46a288e4effca6afb038db6a8d4ffc33f",
+  "commands": [
+    ["python", "-m", "py_compile", "app.py", "universal_runtime_v5_state.py", "universal_runtime_v5_vault.py", "universal_runtime_v5_scope.py", "universal_runtime_v5_snapshot.py", "universal_runtime_v5_loader.py", "universal_runtime_v5_loader_v11.py", "universal_runtime_v5_health.py", "streamlit_memory_lazy_router_universal_runtime_v5.py", "devsystem/api2_universal_runtime_v5_cert.py"],
+    ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_url_v1.py", "tests/test_universal_sports_nav_registry_v1.py", "tests/test_api2_route_transition_mask_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_cfb_top_picks_professional_v11_r1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_rushing_cleanup_v1.py", "tests/test_cfb_game_total_page1_v2_step4_side_market_completeness.py", "tests/test_nba_spread_provider_resilience_step3_r1.py", "tests/test_mlb_moneyline_clean_ui_v1.py", "tests/test_wnba_pra_page_cleanup_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_wnba_pra_speed_v3_step9.py", "-k", "not test_step9_duplicate_key_guard_preserves_frozen_game_center_bytes and not test_step9_precompute_handoff_reuses_existing_future_and_preserves_fallback"]
+  ],
+  "artifacts": [
+    "app.py",
+    "universal_runtime_v5_state.py",
+    "universal_runtime_v5_vault.py",
+    "universal_runtime_v5_scope.py",
+    "universal_runtime_v5_snapshot.py",
+    "universal_runtime_v5_loader.py",
+    "universal_runtime_v5_loader_v11.py",
+    "universal_runtime_v5_health.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py",
+    "devsystem/api2_universal_runtime_v5_cert.py",
+    "devsystem/runless_proof_plans/api2-universal-runtime-v5.json"
+  ],
+  "dependencies": [
+    "streamlit_memory_lazy_router_api2_nfl_rushing_cleanup_v1.py",
+    "streamlit_memory_lazy_router_v1.py",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py",
+    "cfb_top_picks_page_v11.py",
+    "cfb_game_total_page2_market_completeness_r1.py",
+    "universal_sports_nav_registry_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_UNIVERSAL_RUNTIME_V5_FROZEN"
+}
