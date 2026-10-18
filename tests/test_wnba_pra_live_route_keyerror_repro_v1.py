@@ -13,15 +13,21 @@ def _run_boundary(name, fn):
         raise
 
 
-def test_slate_player_pool_fails_closed_when_team_id_is_missing():
-    import wnba_availability_v27 as availability
+def test_role_projection_fails_closed_when_team_id_is_missing():
+    import wnba_role_v282 as role
 
-    schedule = pd.DataFrame([{"away_team_id": 1, "home_team_id": 2}])
+    game = pd.Series({
+        "game_id": "synthetic-live-pra",
+        "away_team_id": 1,
+        "home_team_id": 2,
+        "game_date": "2026-10-18",
+    })
     stats = pd.DataFrame([{"PLAYER_NAME": "Missing Team Identity"}])
 
-    pool = availability.slate_player_pool(schedule, stats)
-    assert isinstance(pool, pd.DataFrame)
-    assert pool.empty
+    result = role.role_projection_for_game(game, stats)
+    assert set(result["teams"]) == {1, 2}
+    assert result["teams"][1].empty
+    assert result["teams"][2].empty
 
 
 def test_active_wnba_pra_snapshot_boundaries_do_not_raise_keyerror():
