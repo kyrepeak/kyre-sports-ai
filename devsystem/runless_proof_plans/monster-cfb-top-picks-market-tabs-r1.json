@@ -14,14 +14,12 @@
     "devsystem/runless_proof_plans/monster-cfb-top-picks-market-tabs-r1.json"
   ],
   "dependencies": [
-    "app.py",
     "cfb_top_picks_page_v9.py",
     "cfb_top_picks_page_v4.py",
     "cfb_top_picks_engine_v1.py",
     "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8.py",
     "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step7.py",
-    "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6.py",
-    "streamlit_memory_lazy_router_api2_nfl_active_slate_v1.py"
+    "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6.py"
   ],
   "probes": [],
   "timeout_seconds": 900,
