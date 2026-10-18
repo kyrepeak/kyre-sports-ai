@@ -133,4 +133,4 @@ def test_step9_owner_activates_v10_and_restores_nested_owner_chain(monkeypatch):
     assert router.TOP_PICKS_PAGE == "cfb_top_picks_page_v10"
     assert router.render_app() == "ok"
     assert seen == [["cfb_top_picks_page_v10"] * 3]
-    assert [o.TOP_PICKS_PAGE for o in owners] == ["v8", "v7", "v6"]
+    assert [o.TOP_PICKS_PAGE for o in owners] == ["v6", "v7", "v8"]
