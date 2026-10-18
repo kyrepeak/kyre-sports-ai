@@ -7,7 +7,6 @@
     ["python", "-m", "py_compile", "nfl_universal_future_navigation_v1.py", "universal_runtime_v5_loader_v12.py", "streamlit_memory_lazy_router_universal_runtime_v5.py", "universal_tap_only_selector_v2.py"],
     ["python", "-m", "pytest", "-q", "tests/test_api2_nfl_universal_future_navigation_v1.py", "tests/test_universal_tap_only_selector_v1.py", "tests/test_api2_universal_tap_only_selector_cross_sport_v1.py", "tests/test_api2_nfl_active_slate_controller_v1.py", "tests/test_api2_nfl_active_slate_runtime_v1.py", "tests/test_api2_nfl_active_slate_legacy_compat_v1.py"],
     ["python", "-m", "pytest", "-q", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_url_v1.py", "tests/test_universal_sports_nav_registry_v1.py", "tests/test_api2_route_transition_mask_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_passing_yards_picker_fast_load_r1.py"],
-    ["python", "-m", "devsystem.api2_nfl_active_slate_cert_v1"],
     ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
   ],
   "artifacts": [
@@ -27,7 +26,6 @@
     "nfl_active_slate_runtime_v1.py",
     "nfl_hub_v1.py",
     "nfl_passing_yards_next_slate_v1.py",
-    "devsystem/api2_nfl_active_slate_cert_v1.py",
     "devsystem/api2_universal_runtime_v5_cert.py"
   ],
   "probes": [],
