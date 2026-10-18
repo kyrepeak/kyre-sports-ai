@@ -11,6 +11,7 @@
   "artifacts": [
     "universal_sports_nav_registry_v1.py",
     "tests/test_monster_cfb_top_picks_shell_integration_r1.py",
+    "tests/test_universal_sports_nav_registry_v1.py",
     "devsystem/runless_proof_plans/monster-cfb-top-picks-shell-integration-r1.json"
   ],
   "dependencies": [
