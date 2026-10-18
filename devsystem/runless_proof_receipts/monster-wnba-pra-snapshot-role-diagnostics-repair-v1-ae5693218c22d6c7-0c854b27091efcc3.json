@@ -1,0 +1,47 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-snapshot-role-diagnostics-repair-v1.json": "54b15273f58cd72586e72c9eb0b9a216412d9155",
+    "tests/test_wnba_pra_snapshot_role_diagnostics_repair_v1.py": "c058495b1ca23345a908e6521e04185c00c78fff"
+  },
+  "candidate_sha": "ae5693218c22d6c70ee01b778e7673ec3c220693",
+  "created_at": "2026-10-18T21:15:35.738778+00:00",
+  "dependency_map": {
+    "wnba_pra_hub_v3616.py": "5f6bb00ef36a901b0a9b01d61aba359d8ab91eed",
+    "wnba_pra_product_snapshot_v1.py": "ed02093f6f31a897f7cabd212dcd4476ad70264a",
+    "wnba_role_v28.py": "c9e4928c6e6ea736acbb8b54036b78270c7b5a3a",
+    "wnba_role_v282.py": "459912d7cfdf878570c072152254930f8ec4f1c9"
+  },
+  "digest": "0252e93e3c2029d3d9803f6ae38e47ebdbb863fa3b18417fef66c3953fc5cb80",
+  "evidence_digests": [
+    "b9b7e697b07247f804ebe53520ea4c0e3d0a9ae0d00e9634eb6d809d90f95a75"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "a85b47873544a97fc58c4d9d708aca6b5f390eb0af1366bce158526178baafae",
+  "proof_id": "monster-wnba-pra-snapshot-role-diagnostics-repair-v1-ae5693218c22d6c7-0c854b27091efcc3",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "7cba10bc69734afd8fedad82d24d7f3cb83b638d1ddd9d41dc961db392cb9385",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-snapshot-role-diagnostics-repair-v1",
+  "workstream": "monster-wnba-pra-snapshot-role-diagnostics-repair-v1"
+}
