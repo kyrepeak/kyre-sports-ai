@@ -11,6 +11,7 @@
     "devsystem/runless_proof_plans/monster-wnba-pra-live-keyerror-rootcause-v1.json"
   ],
   "dependencies": [
+    "devsystem/browser_qa_v1.py",
     "wnba_pra_hub_v3616.py",
     "wnba_pra_product_snapshot_v1.py",
     "wnba_pra_market_v29.py",
