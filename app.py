@@ -73,7 +73,7 @@ _LEGACY_ROUTER_IMPORT_V2 = (
     "record_bootstrap_import_ms, render_app"
 )
 _LEGACY_ROUTER_IMPORT_V4 = (
-    "    from streamlit_memory_lazy_router_api2_nfl_active_slate_v1 import "
+    "    from streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1 import "
     "record_bootstrap_import_ms, render_app"
 )
 _legacy_router_import_count = _legacy_entrypoint_source.count(_LEGACY_ROUTER_IMPORT_V2)
