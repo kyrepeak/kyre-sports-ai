@@ -1,0 +1,29 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-rushing-fanduel-only-v1",
+  "workstream": "api2-nfl-rushing-fanduel-only-v1",
+  "source_main_sha": "f5fa94771ff72b40be79efa85d03fe6296296d0a",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_rushing_yards_hub_v18.py", "universal_runtime_v5_loader_v11.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_rushing_cleanup_v1.py", "tests/test_api2_nfl_rushing_fanduel_only_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py"]
+  ],
+  "artifacts": [
+    "nfl_rushing_yards_hub_v18.py",
+    "universal_runtime_v5_loader_v11.py",
+    "tests/test_api2_nfl_rushing_fanduel_only_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-fanduel-only-v1.json"
+  ],
+  "dependencies": [
+    "nfl_rushing_yards_hub_v17.py",
+    "universal_runtime_v5_loader.py",
+    "nfl_rushing_yards_market_api_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_RUSHING_FANDUEL_ONLY_V1_FROZEN"
+}
