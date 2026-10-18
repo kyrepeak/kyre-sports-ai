@@ -1,7 +1,7 @@
 {
   "mode": "runless",
   "task_id": "monster-wnba-pra-live-keyerror-rootcause-v1",
-  "workstream": "monster-wnba-pra-live-keyerror-rootcause-v1",
+  "workstream": "monster-wnba-pra-live-keyerror-product-fix-v1",
   "source_main_sha": "18c291cc45fa50b5b4ad1349fbed4e6c42c5fe93",
   "commands": [
     ["python", "-m", "pytest", "--noconftest", "-q", "-s", "tests/test_wnba_pra_live_route_keyerror_repro_v1.py"]
@@ -29,5 +29,5 @@
   "reuse_frozen_proof": [],
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
-  "freeze_token": "MONSTER_WNBA_PRA_LIVE_KEYERROR_ROOTCAUSE_V1_FROZEN"
+  "freeze_token": "MONSTER_WNBA_PRA_LIVE_KEYERROR_PRODUCT_FIX_V1_FROZEN"
 }
