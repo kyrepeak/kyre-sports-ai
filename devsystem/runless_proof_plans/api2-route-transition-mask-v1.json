@@ -2,13 +2,37 @@
   "mode": "runless",
   "task_id": "api2-route-transition-mask-v1",
   "workstream": "api2-route-transition-mask-v1",
-  "source_main_sha": "458d1bfb1fc577f6cdfa079262d5403a3e673987",
+  "source_main_sha": "c600dd7eda84fb336d84a0c656a0a047dc4f5a16",
   "commands": [
-    ["python", "-m", "py_compile", "streamlit_memory_lazy_router_universal_nav_v4.py", "tests/test_api2_route_transition_mask_v1.py"],
-    ["python", "-m", "pytest", "-q", "tests/test_api2_route_transition_mask_v1.py", "tests/test_api2_universal_shell_route_top_live_handoff_v2.py", "tests/test_api2_universal_shell_route_top_v1.py", "tests/test_api2_public_module_identity_collision_v1.py", "tests/test_api2_universal_nav_receiving_identity_repair_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_api2_universal_nav_tap_first_handoff_v1.py", "tests/test_api2_universal_tap_only_selector_cross_sport_v1.py", "tests/test_streamlit_memory_lazy_router_universal_nav_v1.py", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_url_v1.py"]
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "streamlit_memory_lazy_router_universal_nav_v4.py",
+      "universal_sports_nav_compat_v1.py",
+      "tests/test_api2_route_transition_mask_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_api2_route_transition_mask_v1.py",
+      "tests/test_api2_universal_shell_route_top_live_handoff_v2.py",
+      "tests/test_api2_universal_shell_route_top_v1.py",
+      "tests/test_api2_public_module_identity_collision_v1.py",
+      "tests/test_api2_universal_nav_receiving_identity_repair_v1.py",
+      "tests/test_api2_universal_nav_single_owner_speed_v1.py",
+      "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
+      "tests/test_api2_universal_tap_only_selector_cross_sport_v1.py",
+      "tests/test_streamlit_memory_lazy_router_universal_nav_v1.py",
+      "tests/test_universal_sports_nav_controller_v1.py",
+      "tests/test_universal_sports_nav_url_v1.py"
+    ]
   ],
   "artifacts": [
     "streamlit_memory_lazy_router_universal_nav_v4.py",
+    "universal_sports_nav_compat_v1.py",
     "tests/test_api2_route_transition_mask_v1.py",
     "devsystem/runless_proof_plans/api2-route-transition-mask-v1.json"
   ],
@@ -19,8 +43,7 @@
     "streamlit_memory_lazy_router_universal_nav_v1.py",
     "universal_sports_nav_registry_v1.py",
     "universal_sports_nav_controller_v1.py",
-    "universal_sports_nav_url_v1.py",
-    "universal_sports_nav_compat_v1.py"
+    "universal_sports_nav_url_v1.py"
   ],
   "probes": [],
   "timeout_seconds": 900,
