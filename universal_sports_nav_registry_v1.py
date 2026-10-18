@@ -82,6 +82,7 @@ SPORTS: tuple[SportRoute, ...] = (
             _market("moneyline", "Moneyline", "Moneyline", _CFB_KEY),
             _market("over-under", "Over/Under", "Over/Under", _CFB_KEY),
             _market("game-total", "Game Total", "Game Total", _CFB_KEY, page_params=("date", "game_id")),
+            _market("top-picks", "Top Picks", "Top Picks", _CFB_KEY),
         ),
     ),
     SportRoute(
