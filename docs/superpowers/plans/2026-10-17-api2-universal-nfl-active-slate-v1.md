@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make every NFL page automatically open the nearest verified NFL date that still has a scheduled/live game, roll forward immediately after an all-final slate, and preserve a deliberate manual date override across NFL markets.
+**Goal:** Make every NFL page automatically open the nearest verified NFL date that still has a scheduled/live game, roll forward after an all-final slate, and preserve a deliberate manual date override across NFL markets.
 
-**Architecture:** Add one pure NFL active-slate resolver plus one Streamlit session/runtime owner above the current terminal route chain. The runtime seeds `nfl_v1_date`, bridges NFL date widgets into shared AUTO/MANUAL state, and delegates every non-NFL route unchanged; existing market-specific smart-slate helpers remain in place but are taught to stand down while the universal state is MANUAL so they cannot fight the user's override.
+**Architecture:** Add one pure NFL active-slate resolver plus one Streamlit session/runtime owner above the current terminal route chain. The runtime seeds the compatibility date (`nfl_v1_date`), bridges NFL date widgets into shared AUTO/MANUAL state, and delegates every non-NFL route unchanged. Existing market-specific smart-slate helpers remain in place for backward compatibility but stand down while the universal state is MANUAL so they cannot fight the user's explicit date choice.
 
 **Tech Stack:** Python 3.13, Streamlit, pandas, existing ESPN NFL `load_nfl_slate`, existing nflverse schedule-calendar discovery, pytest, existing Universal Navigation V4/terminal successor chain, Runless V2 exact-head proof.
 
@@ -15,15 +15,16 @@
 - API 2 stays in its own execution lane: do not import MONSTER live task state, branches, PRs, SHAs, runs, blockers, leases, or proof authority.
 - Step 2A is mandatory before product implementation: one active problem, one authoritative branch, one authoritative PR, one proof path.
 - Authoritative branch: `api2-universal-nfl-active-slate-v1`; authoritative PR: `#1638`. Do not create a replacement branch or PR.
-- Before the first product-code commit, forward-port the planning branch onto the then-current protected `main` using force-with-lease/replay of the approved spec + plan if needed; do this once, not by repeated polling or duplicate PRs.
-- At plan-writing time, protected `main` is `dbe2561a305bad898d94e14a35d76d8eca32401d`, whose terminal app handoff is `streamlit_memory_lazy_router_monster_cfb_market_completeness_r1`; preserve that MONSTER CFB successor unchanged and place the API 2 NFL owner above it.
+- Before the first product-code commit, forward-port this planning branch onto the then-current protected `main` using one force-with-lease/replay of the approved spec + plan if needed. Inspect the authoritative result once; do not create a duplicate branch, PR, deployment, lease, or proof request.
+- At plan self-review time, protected `main` contains the MONSTER terminal successor `streamlit_memory_lazy_router_monster_cfb_market_completeness_r1`. Preserve that successor unchanged underneath the new API 2 NFL owner.
 - Use Eastern Time (`America/New_York`) as the canonical NFL calendar boundary.
 - Do not hard-code Thursday/Sunday/Monday rules; verified schedule/game state chooses the date.
 - Keep `nfl_v1_date` for compatibility.
 - Manual date browsing remains available. MANUAL mode must never be auto-advanced by Spread, Passing Yards, Receiving Yards, or Game Total page-local smart-slate helpers.
-- A cross-sport exit/fresh NFL entry returns to AUTO by allowing the existing Universal Navigation sport-local cleanup to clear the `nfl_*` runtime state; NFL-to-NFL market changes preserve MANUAL.
+- NFL-to-NFL market changes preserve MANUAL. A cross-sport exit/fresh NFL entry returns to AUTO by allowing the existing Universal Navigation sport-local cleanup to clear the `nfl_*` runtime state.
 - Calendar discovery may identify candidate dates, but a candidate must be verified by the authoritative renderable NFL loader before it becomes active.
 - Provider/calendar failure is fail-closed and retryable; never permanently cache a transient `NO_GAMES`/unavailable result.
+- Do not layer a new long-lived cache over current-day game status. The universal runtime must expose terminal-status changes as soon as the existing authoritative loader refreshes; future verified schedule dates may use safe session-level reuse.
 - No model, projection, probability, ranking, selection, sportsbook influence, stake sizing, or wager behavior may change.
 - Preserve current Universal Navigation route-transition masking, tap-only mobile navigation, sticky `KYRE SPORTS AI` shell, Top button, and MONSTER CFB Page-2 market-completeness ownership.
 - Exact-head proof-before-merge, merged-main read-back, production proof, and frozen-registry closeout are required before GREEN + FROZEN.
@@ -33,8 +34,35 @@
 1. **Unknown or malformed game status:** do not treat it as an all-final slate and jump ahead; fail closed instead. Task 1 pins this with `test_unknown_state_fails_closed_without_rollover`.
 2. **Stale calendar hint:** if nflverse points at a date whose authoritative loader has no usable/non-final games, continue to the next candidate/fallback rather than exposing the hint. Task 1 pins this with `test_calendar_candidate_must_verify_before_selection`.
 3. **Manual override vs page-local auto-advance:** a user selecting an empty/completed date must stay on it across Spread, Passing Yards, Receiving Yards, and Game Total. Task 3 pins all four helpers.
-4. **Route lifetime:** NFL-to-NFL market changes preserve MANUAL, while leaving NFL and later returning starts AUTO. Task 2 and Task 4 pin both transitions.
-5. **Transient provider failure/cache poisoning:** unavailable schedule truth must remain retryable and must not freeze a false empty slate. Task 1 and Task 2 pin this behavior.
+4. **Route lifetime:** NFL-to-NFL market changes preserve MANUAL, while leaving NFL and later returning starts AUTO. Tasks 2 and 4 pin both transitions.
+5. **Transient provider failure/cache poisoning:** unavailable schedule truth must remain retryable and must not freeze a false empty slate. Tasks 1 and 2 pin this behavior; Task 2 also proves no extra current-day status cache delays terminal rollover beyond the authoritative loader's own freshness.
+
+---
+
+### Task 0: Rebase the single authority onto current protected main
+
+**Files:**
+- Preserve: `docs/superpowers/specs/2026-10-17-api2-universal-nfl-active-slate-v1-design.md`
+- Preserve: `docs/superpowers/plans/2026-10-17-api2-universal-nfl-active-slate-v1.md`
+- No product files may change in this task.
+
+**Interfaces:**
+- Consumes: authoritative branch `api2-universal-nfl-active-slate-v1`, PR `#1638`, current protected `main`.
+- Produces: same branch + same PR rebased/forward-ported to current main with only the approved spec/plan above it.
+
+- [ ] **Step 1: Read authoritative heads once**
+
+Read protected `main`, branch `api2-universal-nfl-active-slate-v1`, and PR `#1638`. Record exact SHAs. Do not create another branch or PR.
+
+- [ ] **Step 2: Forward-port the planning branch once if main advanced**
+
+If the branch is behind/diverged from current main, replay the approved spec + plan onto current main using force-with-lease against the exact branch head observed in Step 1. Preserve PR `#1638`.
+
+- [ ] **Step 3: Read back the same branch/PR once**
+
+Verify the PR still points to `api2-universal-nfl-active-slate-v1`, its base is `main`, and the diff contains only the two planning docs before product implementation starts.
+
+Expected: one authoritative lane, no duplicate async work.
 
 ---
 
@@ -75,7 +103,7 @@ Expected: FAIL because `nfl_active_slate_controller_v1` does not exist yet.
 
 - [ ] **Step 3: Implement the minimal pure controller**
 
-Implement the two interfaces above. Calendar discovery is only a candidate index; call `primary_loader` on each selected candidate before returning `FOUND`. Treat `pre`/`in` as active, all-`post` as exhausted, an empty verified frame as empty, and malformed/unknown status or `request_ok != True` as unavailable/fail-closed. Keep network fallback bounded at 21 days.
+Implement the two interfaces above. Calendar discovery is only a candidate index; call `primary_loader` on every candidate before returning `FOUND`. Treat `pre`/`in` as active, all-`post` as exhausted, an empty verified frame as empty, and malformed/unknown status or `request_ok != True` as unavailable/fail-closed. Keep network fallback bounded at 21 days.
 
 - [ ] **Step 4: Run focused tests and existing next-slate regressions**
 
@@ -109,11 +137,12 @@ Commit message: `API2: add verified universal NFL active-slate resolver`
 
 Add tests proving:
 - fresh session starts `AUTO`, writes the verified date to `nfl_v1_date`, and records source/state;
-- verified short-lived rerender cache reuses the result, but `UNAVAILABLE` is not permanently cached;
+- current-day AUTO resolution is re-evaluated on a meaningful rerender instead of being hidden behind a second long TTL;
+- safe reuse is allowed for an unchanged verified future date, but `UNAVAILABLE` is never permanently cached;
 - a newly encountered NFL date widget is seeded from the universal date even if its page-local default says today;
 - a user change from the bridge's last seeded widget value enters `MANUAL` and writes both `nfl_manual_slate_date` and `nfl_v1_date`;
 - MANUAL seeds a different NFL market's date widget to the same manual date;
-- non-NFL/non-date widgets delegate byte-for-behavior to native Streamlit;
+- non-NFL/non-date widgets delegate to native Streamlit unchanged;
 - clearing the sport-local `nfl_*` state yields AUTO on the next fresh NFL entry.
 
 - [ ] **Step 2: Run runtime tests and verify RED**
@@ -124,7 +153,7 @@ Expected: FAIL because the runtime module does not exist.
 
 - [ ] **Step 3: Implement the shared session owner**
 
-`prepare_nfl_active_slate` must skip resolution in MANUAL and preserve the user's date. In AUTO it calls Task 1 once per safe cache window/session state, writes `nfl_v1_date`, and leaves failures retryable. Do not scan the network itself.
+`prepare_nfl_active_slate` must skip resolution in MANUAL and preserve the user's date. In AUTO it calls Task 1, writes `nfl_v1_date`, records diagnostics, allows retry on `UNAVAILABLE`, and must not add a long current-day cache over the existing authoritative loader. Do not perform network scanning itself.
 
 - [ ] **Step 4: Implement the NFL-only date-input bridge**
 
@@ -153,11 +182,11 @@ Commit message: `API2: add shared NFL auto manual slate runtime`
 - Regression: `tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py`
 - Regression: `tests/test_nfl_passing_yards_v37_smart_slate.py`
 - Regression: `tests/test_nfl_receiving_yards_smart_slate_v11.py`
-- Regression: existing NFL Game Totals V8/V9/V10 tests discovered by `pytest --collect-only -q tests | grep -i game_totals` before mutation.
+- Regression: exact NFL Game Totals V8/V9/V10 smart-date tests discovered with `pytest --collect-only -q tests | grep -i game_totals` before mutation.
 
 **Interfaces:**
 - Consumes: Task 2 `is_manual_mode(session)`.
-- Produces: existing helper signatures unchanged; they simply preserve the selected date and perform zero auto-advance resolver calls while universal mode is MANUAL.
+- Produces: existing helper signatures unchanged; they preserve the selected date and perform zero auto-advance resolver calls while universal mode is MANUAL.
 
 - [ ] **Step 1: Write failing compatibility tests for all four page-local auto owners**
 
@@ -178,7 +207,7 @@ Import/use `is_manual_mode` without changing any projection/data/model path. Pre
 Run at minimum:
 `python -m pytest -q tests/test_api2_nfl_active_slate_legacy_compat_v1.py tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py tests/test_nfl_passing_yards_v37_smart_slate.py tests/test_nfl_receiving_yards_smart_slate_v11.py`
 
-Then run the collected Game Totals smart-date tests that cover `_auto_surface_next_slate` and V9/V10 rendering.
+Then run the collected Game Totals smart-date tests that cover `_auto_surface_next_slate` and V9/V10/compact rendering.
 
 Expected: PASS; AUTO behavior remains unchanged and MANUAL never snaps forward.
 
@@ -196,12 +225,14 @@ Commit message: `API2: preserve manual NFL dates across smart slate pages`
 - Test: `tests/test_api2_nfl_active_slate_router_v1.py`
 - Regression: `tests/test_api2_universal_shell_route_top_live_handoff_v2.py`
 - Regression: `tests/test_api2_route_transition_mask_v1.py`
+- Regression: `tests/test_api2_public_module_identity_collision_v1.py`
 - Regression: `tests/test_monster_cfb_game_total_v4_route_ownership_r1.py`
-- Regression: current MONSTER CFB market-completeness route test on execution base.
+- Regression: `tests/test_monster_cfb_game_total_slate_market_completeness_r1.py`
+- Regression: `tests/test_monster_cfb_game_total_public_latency_r1.py`
 
 **Interfaces:**
 - Consumes: Task 2 `prepare_nfl_active_slate(...)` and `install_nfl_date_input_bridge(...)`.
-- Consumes/delegates: current protected-main terminal parent `streamlit_memory_lazy_router_monster_cfb_market_completeness_r1` (or its exact forward-ported successor if protected main advances before execution; preserve the same one-authority lineage in this PR).
+- Consumes/delegates: current protected-main terminal parent `streamlit_memory_lazy_router_monster_cfb_market_completeness_r1` (or its exact forward-ported successor if protected main advances before execution; preserve that same merged ownership chain in this PR).
 - Produces: `record_bootstrap_import_ms(value: float) -> None` and `render_app() -> Any` matching the terminal router contract.
 
 - [ ] **Step 1: Write failing terminal-router tests**
@@ -211,7 +242,7 @@ Assert:
 - the date-input bridge is installed only around NFL rendering and restored afterward;
 - NFL market switches keep shared MANUAL state;
 - CFB/MLB/NBA/WNBA call the prior terminal router without invoking the NFL resolver;
-- current MONSTER CFB Game Total ownership remains byte-/behavior-preserved;
+- current MONSTER CFB Game Total ownership remains behavior-preserved;
 - `app.py` rewrites the preserved legacy import to exactly the new API 2 NFL terminal successor and still contains one legacy-import replacement only.
 
 - [ ] **Step 2: Run router tests and verify RED**
@@ -222,18 +253,16 @@ Expected: FAIL because the terminal successor is not created/activated.
 
 - [ ] **Step 3: Implement the additive terminal successor**
 
-Detect NFL from canonical universal route/session/query using the same normalization policy as current terminal route owners. For NFL only, prepare shared slate state, install the date bridge, and delegate to the frozen/current parent. For all other sports, delegate directly. Do not modify model/source/page routing.
+Detect NFL from canonical universal route/session/query using the same normalization policy as current terminal route owners. For NFL only, prepare shared slate state, install the date bridge, and delegate to the current parent. For all other sports, delegate directly. Do not modify model/source/page routing.
 
 - [ ] **Step 4: Advance the app's single terminal import rewrite**
 
-Change only the current `_LEGACY_ROUTER_IMPORT_*` replacement target so the preserved entrypoint imports `streamlit_memory_lazy_router_api2_nfl_active_slate_v1`. The new successor's parent must be the exact current main terminal route owner, preserving MONSTER CFB market-completeness behavior underneath it.
+Change only the current `_LEGACY_ROUTER_IMPORT_*` replacement target so the preserved entrypoint imports `streamlit_memory_lazy_router_api2_nfl_active_slate_v1`. The new successor's parent must be the exact current-main terminal route owner, preserving MONSTER CFB market-completeness behavior underneath it.
 
 - [ ] **Step 5: Run route/navigation regression suite**
 
 Run:
-`python -m pytest -q tests/test_api2_nfl_active_slate_router_v1.py tests/test_api2_universal_shell_route_top_live_handoff_v2.py tests/test_api2_route_transition_mask_v1.py tests/test_monster_cfb_game_total_v4_route_ownership_r1.py`
-
-Also run the current market-completeness route test found on the execution base.
+`python -m pytest -q tests/test_api2_nfl_active_slate_router_v1.py tests/test_api2_universal_shell_route_top_live_handoff_v2.py tests/test_api2_route_transition_mask_v1.py tests/test_api2_public_module_identity_collision_v1.py tests/test_monster_cfb_game_total_v4_route_ownership_r1.py tests/test_monster_cfb_game_total_slate_market_completeness_r1.py tests/test_monster_cfb_game_total_public_latency_r1.py`
 
 Expected: PASS.
 
@@ -273,10 +302,11 @@ Require assertions for:
 - completed current slate rolling forward;
 - manual override remaining fixed across at least Slate → Spread → Passing Yards → Game Total → Receiving Yards;
 - leaving NFL and returning restores AUTO;
-- no software keyboard/searchable selector regression;
-- KYRE SPORTS AI header + Top control remain visible;
+- tap-only navigation does not summon a searchable text/keyboard path;
+- `KYRE SPORTS AI` header + Top control remain visible;
 - no stale other-sport body bleed;
-- projection/sportsbook/model invariants unchanged.
+- current MONSTER CFB market-completeness route still passes;
+- projection/sportsbook/model invariants are unchanged.
 
 - [ ] **Step 2: Run cert contract and verify RED**
 
@@ -284,19 +314,19 @@ Run: `python -m pytest -q tests/test_api2_nfl_active_slate_public_cert_v1.py`
 
 Expected: FAIL because cert/proof artifacts do not exist.
 
-- [ ] **Step 3: Implement the certification + one Runless proof plan**
+- [ ] **Step 3: Implement certification + one Runless proof plan**
 
-The Runless plan should compile changed files and run Task 1-5 focused tests plus the existing Universal Navigation/route-transition regressions. Use one proof request only for the exact candidate head.
+The Runless plan must compile changed files and run Tasks 1-5 focused tests plus the existing Universal Navigation, module-identity, route-transition, and MONSTER CFB ownership/latency regressions. Use one proof request only for the exact candidate head.
 
 - [ ] **Step 4: Run the full focused local gate once**
 
-Run the combined Task 1-5 tests, the inherited smart-slate tests, and current Universal Navigation/CFB ownership tests. Do not launch duplicate async proofs.
+Run the combined Tasks 1-5 tests, inherited smart-slate tests, Universal Navigation/route-transition/module-identity tests, and current MONSTER CFB ownership/market-completeness/latency tests.
 
 Expected: all PASS.
 
-- [ ] **Step 5: Verify branch scope against the exact current main merge base**
+- [ ] **Step 5: Verify branch scope against the exact current-main merge base**
 
-Confirm the diff contains only the approved spec/plan, new NFL active-slate controller/runtime/router/cert/proof artifacts, the four manual-mode compatibility guards, `app.py` activation, and required current control-plane ledger/freeze metadata. Confirm zero model/projection/probability/ranking/sportsbook mutations.
+Confirm the diff contains only the approved spec/plan, new NFL active-slate controller/runtime/router/cert/proof artifacts, the four MANUAL-mode compatibility guards, `app.py` activation, and required current control-plane ledger/freeze metadata. Confirm zero model/projection/probability/ranking/sportsbook mutations.
 
 - [ ] **Step 6: Request exactly one Runless exact-head proof**
 
