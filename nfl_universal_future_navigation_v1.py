@@ -11,8 +11,9 @@ No projection, probability, market, sportsbook, or stake math is modified here.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 import re
+import sys
 from typing import Any, Callable, Iterable, Mapping
 from zoneinfo import ZoneInfo
 
@@ -86,7 +87,6 @@ def future_only_games(games: Any, *, now_utc: datetime | None = None):
         if kickoff is not None:
             keep.append(kickoff > now)
             continue
-        # A future verified ET calendar date is safely upcoming even if kickoff is TBD.
         try:
             game_day = pd.to_datetime(row.get("game_date")).date()
         except Exception:
@@ -112,6 +112,33 @@ def make_future_only_loader(loader: Callable[[str], tuple[Any, Mapping[str, Any]
     if hasattr(loader, "clear"):
         wrapped.clear = loader.clear
     return wrapped
+
+
+@contextmanager
+def install_future_only_nfl_loader(original_loader, future_loader):
+    """Patch direct-import loader aliases for the active NFL render, then restore."""
+    patched: list[tuple[Any, Any]] = []
+    for module in tuple(sys.modules.values()):
+        if module is None:
+            continue
+        try:
+            current = getattr(module, "load_nfl_slate", None)
+        except Exception:
+            continue
+        if current is original_loader:
+            try:
+                setattr(module, "load_nfl_slate", future_loader)
+                patched.append((module, current))
+            except Exception:
+                continue
+    try:
+        yield
+    finally:
+        for module, previous in reversed(patched):
+            try:
+                setattr(module, "load_nfl_slate", previous)
+            except Exception:
+                pass
 
 
 def _matchup_text(value: Any) -> str:
@@ -208,5 +235,5 @@ __all__ = [
     "MAY_MODIFY_MARKET_MATH", "MAY_MODIFY_PROBABILITY", "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION", "PREGAME_STATES", "SPORTSBOOK_PROJECTION_INFLUENCE", "STAKE_SIZING_ENABLED",
     "allowed_matchups", "filter_selector_options", "future_only_games",
-    "install_nfl_future_selector_bridge", "make_future_only_loader",
+    "install_future_only_nfl_loader", "install_nfl_future_selector_bridge", "make_future_only_loader",
 ]
