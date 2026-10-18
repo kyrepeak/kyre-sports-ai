@@ -7,6 +7,8 @@ from universal_runtime_v5_state import RuntimeRoute
 
 
 def resolve_destination(route: RuntimeRoute):
+    if route.sport_id == "nfl" and route.market_id == "rushing-yards":
+        return prior._nfl_adapter(route, "nfl_rushing_yards_hub_v18", ttl_ms=20_000)
     if route.sport_id == "cfb" and route.market_id == "top-picks":
         return prior._cfb_page_adapter(route, "cfb_top_picks_page_v11", ttl_ms=30_000)
     return prior.resolve_destination(route)
