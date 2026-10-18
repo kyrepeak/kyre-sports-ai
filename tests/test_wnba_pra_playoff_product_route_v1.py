@@ -12,9 +12,13 @@ def _stub_local_storage(monkeypatch):
     monkeypatch.setitem(sys.modules,"streamlit_local_storage",module)
 
 
-def test_compatibility_boundary_advances_to_v3615():
+def test_compatibility_boundary_advances_to_current_successor():
     source=(ROOT/"wnba_pra_hub_v3612.py").read_text(encoding="utf-8")
-    assert "import wnba_pra_hub_v3615 as active" in source
+    assert "import wnba_pra_hub_v3616 as active" in source
+    current=(ROOT/"wnba_pra_hub_v3616.py").read_text(encoding="utf-8")
+    assert "require_fanduel=True" in current
+    predecessor=(ROOT/"wnba_pra_hub_v3615.py").read_text(encoding="utf-8")
+    assert "PLAYOFF_PRODUCT_CONTRACT" in predecessor
 
 
 def test_universal_runtime_keeps_existing_step9_adapter():
