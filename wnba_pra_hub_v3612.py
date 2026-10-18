@@ -1,14 +1,12 @@
 """Compatibility route for the frozen PRA V3.6.12 import boundary.
 
-The preserved application imports this historical module name. It now forwards
-that presentation boundary to V3.6.13, which adds only PRA Precision Step 1
-Opportunity Decomposition inside each existing V2.8 Minutes + Role Top-5 player
-card. Production PRA math and every downstream betting/model output remain
-frozen.
+The preserved application imports this historical module name. It now forwards that historical presentation boundary to V3.6.15, the
+playoff-first PRA product successor. Production PRA math and every downstream
+betting/model output remain frozen.
 """
 from __future__ import annotations
 
-import wnba_pra_hub_v3614 as active
+import wnba_pra_hub_v3615 as active
 
 MODEL_VERSION = active.MODEL_VERSION
 MLB_FROZEN_BASELINE = active.MLB_FROZEN_BASELINE
