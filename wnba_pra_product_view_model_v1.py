@@ -8,6 +8,7 @@ import pandas as pd
 
 from wnba_pra_product_snapshot_v1 import PRAProductSnapshot
 from wnba_pra_playoff_context_v1 import PlayoffContext
+from wnba_pra_fanduel_eligibility_v1 import current_fanduel_pra_offers
 
 OUT = {"OUT", "INACTIVE", "DOUBTFUL"}
 UNRESOLVED = {"QUESTIONABLE", "DAY-TO-DAY", "DAY TO DAY", "GTD", "GAME TIME DECISION", "PROBABLE"}
@@ -38,6 +39,11 @@ class PlayerDecisionView:
     decision_strength: float | None
     final_card_selected: bool
     evidence_state: str
+    fanduel_eligible: bool = False
+    fanduel_line: float | None = None
+    fanduel_over_odds: int | None = None
+    fanduel_under_odds: int | None = None
+    market_freshness: str = "UNAVAILABLE"
 
 
 def _value(row: dict[str, Any], *names: str, default: Any = None) -> Any:
@@ -86,6 +92,8 @@ def build_player_views(
     snapshot: PRAProductSnapshot,
     context: PlayoffContext,
     consensus: pd.DataFrame,
+    *,
+    require_fanduel: bool = False,
 ) -> tuple[PlayerDecisionView, ...]:
     raw_rows = snapshot.projections.to_dict("records") if isinstance(snapshot.projections, pd.DataFrame) and not snapshot.projections.empty else []
     matchup = _map(snapshot.matchup_rows)
@@ -93,10 +101,15 @@ def build_player_views(
     final_rows = _map(snapshot.final_card)
     final_keys = set(final_rows)
     markets = _consensus_map(consensus)
+    fanduel = current_fanduel_pra_offers(snapshot.market_rows)
 
     views: list[PlayerDecisionView] = []
     for raw in raw_rows:
         key = _key(raw)
+        fd_offer = fanduel.get(key)
+        if require_fanduel and fd_offer is None:
+            continue
+
         adjusted = matchup.get(key, {})
         source = dict(raw)
         source.update(adjusted)  # preserved matchup-adjusted output wins when present
@@ -109,9 +122,14 @@ def build_player_views(
         if under is None and over is not None:
             push = _flt(_value(mc, "push", default=0.0)) or 0.0
             under = max(0.0, min(1.0, 1.0 - over - push))
-        selected = key in final_keys and availability != "OUT / INACTIVE"
+
+        if require_fanduel:
+            selected = key in final_keys and availability == "VERIFIED" and fd_offer is not None
+        else:
+            selected = key in final_keys and availability != "OUT / INACTIVE"
         final_row = final_rows.get(key, {}) if selected else {}
-        evidence = availability_evidence if availability_evidence != "VERIFIED" else str(market.get("evidence_state") or context.evidence_state or "UNAVAILABLE")
+        evidence = availability_evidence if availability_evidence != "VERIFIED" else str(market.get("evidence_state") or (fd_offer.evidence_state if fd_offer else context.evidence_state) or "UNAVAILABLE")
+        market_line = fd_offer.line if require_fanduel and fd_offer is not None else _flt(market.get("consensus_line"))
 
         views.append(PlayerDecisionView(
             player_key=str(key[1]),
@@ -128,7 +146,7 @@ def build_player_views(
             proj_reb=_flt(_value(source, "PROJ_REB", "proj_reb", "projection_reb")),
             proj_ast=_flt(_value(source, "PROJ_AST", "proj_ast", "projection_ast")),
             proj_pra=_flt(_value(source, "PROJ_PRA", "projection", "proj_pra")),
-            market_line=_flt(market.get("consensus_line")),
+            market_line=market_line,
             book_count=int(market.get("book_count") or 0),
             over_probability=over,
             under_probability=under,
@@ -137,6 +155,11 @@ def build_player_views(
             decision_strength=_flt(_value(final_row, "decision_strength", default=_value(mc, "decision_strength"))),
             final_card_selected=selected,
             evidence_state=evidence,
+            fanduel_eligible=fd_offer is not None,
+            fanduel_line=fd_offer.line if fd_offer is not None else None,
+            fanduel_over_odds=fd_offer.over_odds if fd_offer is not None else None,
+            fanduel_under_odds=fd_offer.under_odds if fd_offer is not None else None,
+            market_freshness="CURRENT" if fd_offer is not None else "UNAVAILABLE",
         ))
     return tuple(views)
 
