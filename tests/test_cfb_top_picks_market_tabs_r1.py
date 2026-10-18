@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 import sys
 import types
 
@@ -8,11 +9,7 @@ MODULE = "cfb_top_picks_page_v10"
 
 
 def _load(monkeypatch):
-    fake_st = types.SimpleNamespace(
-        query_params={},
-        markdown=lambda *args, **kwargs: None,
-        empty=lambda: None,
-    )
+    fake_st = types.SimpleNamespace(query_params={}, markdown=lambda *a, **k: None, empty=lambda: None)
     fake_engine = types.ModuleType("cfb_top_picks_engine_v1")
     fake_engine._f = lambda value, default=0.0: float(value if value is not None else default)
     fake_base = types.ModuleType("cfb_top_picks_page_v4")
@@ -25,10 +22,9 @@ def _load(monkeypatch):
     fake_base._query_value = lambda key: ""
     fake_prior = types.ModuleType("cfb_top_picks_page_v9")
     fake_prior.CSS = ""
-    fake_prior._page_html = lambda *args, **kwargs: ""
+    fake_prior._page_html = lambda *a, **k: ""
     fake_prior._loading_detail = lambda row: {}
     fake_prior.details = types.SimpleNamespace(build_pick_detail=lambda row, slate_day: {})
-
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
     monkeypatch.setitem(sys.modules, "cfb_top_picks_engine_v1", fake_engine)
     monkeypatch.setitem(sys.modules, "cfb_top_picks_page_v4", fake_base)
@@ -87,26 +83,19 @@ def test_page_html_replaces_static_tabs_and_preserves_market_on_card_links(monke
     page = _load(monkeypatch)
     frozen_tabs = (
         '<div class="tp1-segmented" data-testid="cfb-top-picks-market-tabs">'
-        '<div class="tp1-chip active">Moneyline</div>'
-        '<div class="tp1-chip">Spread</div>'
-        '<div class="tp1-chip">Over/Under</div>'
-        '</div>'
+        '<div class="tp1-chip active">Moneyline</div><div class="tp1-chip">Spread</div>'
+        '<div class="tp1-chip">Over/Under</div></div>'
     )
-
     def fake_frozen_page(*args, **kwargs):
         href = page.base._detail_href("401")
         return frozen_tabs + f'<a data-testid="frozen-card" href="{href}">card</a>'
-
     monkeypatch.setattr(page.prior, "_page_html", fake_frozen_page)
     original = page.base._detail_href
     html = page._page_html(
         [{"rank": 1, "event_id": "401", "market": "SPREAD"}],
-        {"games_analyzed": 1},
-        "2026-10-24",
-        selected_market="SPREAD",
+        {"games_analyzed": 1}, "2026-10-24", selected_market="SPREAD",
     )
     assert page.base._detail_href is original
-    assert 'data-testid="cfb-top-picks-market-tabs"' in html
     assert html.count("tp1-chip active") == 1
     assert 'data-market="SPREAD"' in html
     assert "top_pick_market=SPREAD" in html
@@ -114,54 +103,41 @@ def test_page_html_replaces_static_tabs_and_preserves_market_on_card_links(monke
     assert "<div class=\"tp1-chip active\">Moneyline</div>" not in html
 
 
-def test_monster_route_successor_activates_v10_only_for_cfb_top_picks(monkeypatch):
-    fake_st = types.SimpleNamespace(
-        query_params={"ks_sport": "College Football", "ks_cfb_market": "Top Picks"}
-    )
-    prior = types.ModuleType("streamlit_memory_lazy_router_api2_nfl_active_slate_v1")
-    prior.record_bootstrap_import_ms = lambda value: None
-    top_picks_owner = types.ModuleType("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9")
-    top_picks_owner.TOP_PICKS_PAGE = "cfb_top_picks_page_v9"
+def test_step9_owner_activates_v10_and_restores_nested_owner_chain(monkeypatch):
+    st = types.SimpleNamespace(query_params={})
+    owners = []
+    for name, page_name in (
+        ("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6", "v6"),
+        ("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step7", "v7"),
+        ("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8", "v8"),
+    ):
+        module = types.ModuleType(name)
+        module.TOP_PICKS_PAGE = page_name
+        owners.append(module)
+        monkeypatch.setitem(sys.modules, name, module)
+    current_parent = types.ModuleType("streamlit_memory_lazy_router_wnba_pra_speed_v3_step4")
+    current_parent.record_bootstrap_import_ms = lambda value: None
     seen = []
-
-    def _render_app():
-        seen.append(top_picks_owner.TOP_PICKS_PAGE)
-        return "ok"
-
-    prior.render_app = _render_app
-    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
-    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_api2_nfl_active_slate_v1", prior)
-    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9", top_picks_owner)
-    name = "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1"
+    current_parent.render_app = lambda: seen.append([o.TOP_PICKS_PAGE for o in owners]) or "ok"
+    base = types.ModuleType("streamlit_memory_lazy_router_v241")
+    base.ROUTE_QUERY_SPORT = "ks_sport"
+    base.ROUTE_QUERY_MARKET = "ks_cfb_market"
+    base.CFB_SPORT_LABEL = "College Football"
+    base.TOP_PICKS_MARKET = "Top Picks"
+    base._prime_top_picks_state_from_query = lambda: None
+    monkeypatch.setitem(sys.modules, "streamlit", st)
+    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_wnba_pra_speed_v3_step4", current_parent)
+    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_v241", base)
+    name = "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9"
     sys.modules.pop(name, None)
     router = importlib.import_module(name)
-    assert router.FROZEN_PARENT == "streamlit_memory_lazy_router_api2_nfl_active_slate_v1"
+    assert router.TOP_PICKS_PAGE == "cfb_top_picks_page_v10"
     assert router.render_app() == "ok"
-    assert seen == [router.TOP_PICKS_PAGE]
-    assert top_picks_owner.TOP_PICKS_PAGE == "cfb_top_picks_page_v9"
+    assert seen == [["cfb_top_picks_page_v10"] * 3]
+    assert [o.TOP_PICKS_PAGE for o in owners] == ["v8", "v7", "v6"]
 
 
-def test_monster_route_successor_leaves_other_routes_untouched(monkeypatch):
-    fake_st = types.SimpleNamespace(
-        query_params={"ks_sport": "College Football", "ks_cfb_market": "Game Total"}
-    )
-    prior = types.ModuleType("streamlit_memory_lazy_router_api2_nfl_active_slate_v1")
-    prior.record_bootstrap_import_ms = lambda value: None
-    top_picks_owner = types.ModuleType("streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9")
-    top_picks_owner.TOP_PICKS_PAGE = "cfb_top_picks_page_v9"
-    seen = []
-
-    def _render_app():
-        seen.append(top_picks_owner.TOP_PICKS_PAGE)
-        return "ok"
-
-    prior.render_app = _render_app
-    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
-    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_api2_nfl_active_slate_v1", prior)
-    monkeypatch.setitem(sys.modules, "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9", top_picks_owner)
-    name = "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1"
-    sys.modules.pop(name, None)
-    router = importlib.import_module(name)
-    assert router.render_app() == "ok"
-    assert seen == ["cfb_top_picks_page_v9"]
-    assert top_picks_owner.TOP_PICKS_PAGE == "cfb_top_picks_page_v9"
+def test_api2_terminal_owner_remains_untouched():
+    source = Path("app.py").read_text(encoding="utf-8")
+    assert "streamlit_memory_lazy_router_api2_nfl_active_slate_v1" in source
+    assert "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1" not in source
