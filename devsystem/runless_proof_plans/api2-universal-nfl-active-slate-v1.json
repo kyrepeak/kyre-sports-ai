@@ -1,0 +1,46 @@
+{
+  "mode": "runless",
+  "task_id": "api2-universal-nfl-active-slate-v1",
+  "workstream": "api2-universal-nfl-active-slate-v1",
+  "source_main_sha": "130cd11c8d775ca8e206cadac7cd938e143155e3",
+  "commands": [
+    ["python", "-m", "py_compile", "app.py", "nfl_active_slate_controller_v1.py", "nfl_active_slate_runtime_v1.py", "nfl_spread_autodate_repair_v1.py", "nfl_passing_yards_hub_v37.py", "nfl_receiving_yards_hub_v11.py", "nfl_game_totals_hub_v8_1.py", "streamlit_memory_lazy_router_api2_nfl_active_slate_v1.py", "devsystem/api2_nfl_active_slate_cert_v1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_api2_nfl_active_slate_controller_v1.py", "tests/test_api2_nfl_active_slate_runtime_v1.py", "tests/test_api2_nfl_active_slate_legacy_compat_v1.py", "tests/test_api2_nfl_active_slate_router_v1.py", "tests/test_api2_nfl_active_slate_cert_v1.py", "tests/test_api2_nfl_spread_autodate_mobile_nav_repair_v1.py", "tests/test_nfl_spread_next_slate_v1.py", "tests/test_nfl_passing_yards_v37_smart_slate.py", "tests/test_nfl_receiving_yards_smart_slate_v11.py", "tests/test_nfl_game_totals_mobile_hotfix_v8_1.py", "tests/test_api2_universal_shell_route_top_live_handoff_v2.py", "tests/test_api2_route_transition_mask_v1.py", "tests/test_api2_public_module_identity_collision_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_api2_universal_nav_tap_first_handoff_v1.py", "tests/test_api2_universal_tap_only_selector_cross_sport_v1.py", "tests/test_streamlit_memory_lazy_router_universal_nav_v1.py", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_url_v1.py"],
+    ["python", "devsystem/api2_nfl_active_slate_cert_v1.py"]
+  ],
+  "artifacts": [
+    "app.py",
+    "nfl_active_slate_controller_v1.py",
+    "nfl_active_slate_runtime_v1.py",
+    "nfl_spread_autodate_repair_v1.py",
+    "nfl_passing_yards_hub_v37.py",
+    "nfl_receiving_yards_hub_v11.py",
+    "nfl_game_totals_hub_v8_1.py",
+    "streamlit_memory_lazy_router_api2_nfl_active_slate_v1.py",
+    "devsystem/api2_nfl_active_slate_cert_v1.py",
+    "tests/test_api2_nfl_active_slate_controller_v1.py",
+    "tests/test_api2_nfl_active_slate_runtime_v1.py",
+    "tests/test_api2_nfl_active_slate_legacy_compat_v1.py",
+    "tests/test_api2_nfl_active_slate_router_v1.py",
+    "tests/test_api2_nfl_active_slate_cert_v1.py",
+    "devsystem/runless_proof_plans/api2-universal-nfl-active-slate-v1.json"
+  ],
+  "dependencies": [
+    "app_legacy_entrypoint_v1.py",
+    "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1.py",
+    "streamlit_memory_lazy_router_universal_nav_v4.py",
+    "streamlit_memory_lazy_router_universal_nav_v3.py",
+    "streamlit_memory_lazy_router_universal_nav_v2.py",
+    "universal_sports_nav_registry_v1.py",
+    "nfl_hub_v1.py",
+    "nfl_passing_yards_next_slate_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_ACTIVE_SLATE_V1_FROZEN"
+}
