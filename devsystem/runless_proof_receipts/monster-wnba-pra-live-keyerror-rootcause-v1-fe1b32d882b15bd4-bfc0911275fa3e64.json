@@ -1,0 +1,52 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-live-keyerror-rootcause-v1.json": "75df99202ca8cc70d98a51c06cf4e4919c6672b6",
+    "tests/test_wnba_pra_live_route_keyerror_repro_v1.py": "53e841157ba802eb7dec206a0e2ac93525a273c7",
+    "wnba_role_v282.py": "906ddedff6f581ece62b8df833ab85f1bb821f71"
+  },
+  "candidate_sha": "fe1b32d882b15bd4f82f9b34bd96747449c42abb",
+  "created_at": "2026-10-18T21:42:31.017804+00:00",
+  "dependency_map": {
+    "wnba_availability_v27.py": "4cdb65b9fd7942865ad17e7b27e29fb815192de1",
+    "wnba_pra_final_v32.py": "f3568b66de05ba09d3756002ea6e39fdc84bd1cf",
+    "wnba_pra_hub_v27.py": "1f155c3891240d618e3631ef25405ba4f893d18b",
+    "wnba_pra_hub_v3616.py": "5f6bb00ef36a901b0a9b01d61aba359d8ab91eed",
+    "wnba_pra_market_v29.py": "f481868433ed75fc2d710546f116d72b0e4bd8a2",
+    "wnba_pra_matchup_v30.py": "0f4d007e2933e02eb8658ff72fa94904df1d1179",
+    "wnba_pra_product_snapshot_v1.py": "ed02093f6f31a897f7cabd212dcd4476ad70264a",
+    "wnba_role_v282.py": "906ddedff6f581ece62b8df833ab85f1bb821f71"
+  },
+  "digest": "ca1a6d64e592ec5ccb88fdceaefbcd14018da5528b5bcb99507434cb86d5383f",
+  "evidence_digests": [
+    "9db66e0aebff7e0e1c1664483bfb173de83fbeb3b60584b477579b53c7b52664"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "1e7a81c84194c1bc38d4f8275e627ec9f529ef489d13f5c3bb73e43544879755",
+  "proof_id": "monster-wnba-pra-live-keyerror-rootcause-v1-fe1b32d882b15bd4-bfc0911275fa3e64",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "ab0dbe3b52aaf903bdbb06ea6e5b1702763b951b89e8abda12a523eb9cb83948",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-live-keyerror-rootcause-v1",
+  "workstream": "monster-wnba-pra-live-keyerror-product-fix-v1"
+}
