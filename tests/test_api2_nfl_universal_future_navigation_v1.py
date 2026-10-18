@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import importlib
+import sys
+import types
 
 import pandas as pd
 
@@ -57,11 +59,29 @@ def test_game_selector_options_remove_started_matchups_without_touching_player_l
     assert mod.filter_selector_options("Player", players, allowed_matchups={"anything"}) == players
 
 
+def test_future_loader_context_patches_direct_import_aliases_and_restores_them():
+    mod = importlib.import_module("nfl_universal_future_navigation_v1")
+
+    def original(day):
+        return _games(), {"request_ok": True}
+
+    filtered = mod.make_future_only_loader(original, now_provider=lambda: FIXED_NOW)
+    fake = types.ModuleType("_api2_fake_nfl_page")
+    fake.load_nfl_slate = original
+    sys.modules[fake.__name__] = fake
+    try:
+        with mod.install_future_only_nfl_loader(original, filtered):
+            assert fake.load_nfl_slate is filtered
+        assert fake.load_nfl_slate is original
+    finally:
+        sys.modules.pop(fake.__name__, None)
+
+
 def test_loader_v12_installs_tap_only_and_future_filter_for_every_nfl_adapter():
-    loader = importlib.import_module("universal_runtime_v5_loader_v12")
-    source = open(loader.__file__, "r", encoding="utf-8").read()
+    source = open("universal_runtime_v5_loader_v12.py", "r", encoding="utf-8").read()
     assert "install_universal_tap_only_selectboxes" in source
     assert "install_nfl_future_selector_bridge" in source
+    assert "install_future_only_nfl_loader" in source
     assert "route.sport_id == \"nfl\"" in source
 
 
