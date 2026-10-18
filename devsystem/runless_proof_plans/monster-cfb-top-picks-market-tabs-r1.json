@@ -4,24 +4,24 @@
   "workstream": "monster-cfb-top-picks-market-tabs-r1",
   "source_main_sha": "5b116f3a45f6c4e9352e4bafbc845e9049d09133",
   "commands": [
-    ["python", "-m", "py_compile", "app.py", "cfb_top_picks_page_v10.py", "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1.py", "tests/test_cfb_top_picks_market_tabs_r1.py"],
-    ["python", "-m", "pytest", "-q", "--noconftest", "tests/test_cfb_top_picks_market_tabs_r1.py", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py", "tests/test_api2_nfl_active_slate_router_v1.py", "tests/test_api2_universal_shell_route_top_live_handoff_v2.py", "tests/test_api2_route_transition_mask_v1.py", "tests/test_api2_public_module_identity_collision_v1.py"]
+    ["python", "-m", "py_compile", "cfb_top_picks_page_v10.py", "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py", "tests/test_cfb_top_picks_market_tabs_r1.py"],
+    ["python", "-m", "pytest", "-q", "--noconftest", "tests/test_cfb_top_picks_market_tabs_r1.py", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_final_page_removes_obsolete_audit_footer", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_history_attempt_alias_closes_nonhistory_provenance_gap", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_wraps_frozen_step8", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_fair_model_price_has_truthful_sportsbook_unavailable_state", "tests/test_cfb_top_picks_research_v2_step9_full_slate_v1.py::test_step9_visible_page_body_uses_streamlit_html_boundary"]
   ],
   "artifacts": [
-    "app.py",
     "cfb_top_picks_page_v10.py",
-    "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1.py",
+    "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py",
     "tests/test_cfb_top_picks_market_tabs_r1.py",
     "devsystem/runless_proof_plans/monster-cfb-top-picks-market-tabs-r1.json"
   ],
   "dependencies": [
+    "app.py",
     "cfb_top_picks_page_v9.py",
     "cfb_top_picks_page_v4.py",
     "cfb_top_picks_engine_v1.py",
-    "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9.py",
-    "streamlit_memory_lazy_router_api2_nfl_active_slate_v1.py",
-    "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1.py",
-    "streamlit_memory_lazy_router_universal_nav_v4.py"
+    "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step8.py",
+    "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step7.py",
+    "streamlit_memory_lazy_router_cfb_top_picks_research_v2_step6.py",
+    "streamlit_memory_lazy_router_api2_nfl_active_slate_v1.py"
   ],
   "probes": [],
   "timeout_seconds": 900,
