@@ -25,7 +25,7 @@
   ],
   "probes": [],
   "timeout_seconds": 900,
-  "live_ttl_seconds": 1200,
+  "live_ttl_seconds": 1800,
   "github_actions_fallback": 0,
   "reuse_frozen_proof": [],
   "required_check": "runless-final-gate",
