@@ -1,0 +1,57 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-comparison-v1.json": "3763842bb43ee52d9a761c0235b1fff0b4a9f225",
+    "docs/superpowers/plans/2026-10-18-nfl-passing-yards-comparison-dashboard-v1.md": "3aad4137658babfb8fb85dcaebe2eeea7bc2f0b8",
+    "nfl_passing_yards_hub_v89.py": "99d8d4cbedc7e227985a14e3ac3dd79515deac75",
+    "tests/test_api2_nfl_passing_yards_comparison_v1.py": "04b414edaebf0576fb8f357075ff3c263c9ef9a0",
+    "universal_runtime_v5_loader_v11.py": "4e60200469dea5c3a7976cb1704a24ab5893afc3"
+  },
+  "candidate_sha": "e5675f5ba5774e152fdd26d84659eef442226854",
+  "created_at": "2026-10-18T20:49:01.020447+00:00",
+  "dependency_map": {
+    "devsystem/api2_universal_runtime_v5_cert.py": "d3921447063983620d6afe95fca466cb8c2e201c",
+    "nfl_passing_yards_hub_v34.py": "523fea4c4ecab1d81cd843bbfab2d4fbe56eef5a",
+    "nfl_passing_yards_hub_v43.py": "063146b627f5f2da073007275945e76b723e6a84",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "336c3f64ed3b74cffd431e21b3cd9e3f51db3720",
+    "tests/test_passing_yards_picker_fast_load_r1.py": "28d166b6ed1e1a0c23422266644dcdb9f75a35f6",
+    "tests/test_universal_sports_nav_controller_v1.py": "835dbb01765b1075fe04d80dec14762632de1fbc",
+    "tests/test_universal_sports_nav_registry_v1.py": "fbf8bbaa1d93fc43dd3083e16f11fe3828de662b",
+    "tests/test_universal_sports_nav_url_v1.py": "abb5fe47f4de61170f22b614730ac403ff681e98",
+    "universal_runtime_v5_loader.py": "9a17ac1c7276ac64262e8587fd8b8a47cb519366"
+  },
+  "digest": "54454e8929d3c33df8bf7edc501c3b36a0cdb035b8e9ea5ecd0e2991d0ac213c",
+  "evidence_digests": [
+    "985abfed657be56b3d7f9cf9bb4f0321227cf5a9e313eed1885b648d62554200",
+    "db8c88092194974d23c6fd28414e043e16a093fcab256dda5a4a448a8eec92cc",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6518ff53f19f57eac6f40fb790578dba6235c0df6162e8132935f3cd30325947",
+  "proof_id": "api2-nfl-passing-yards-comparison-v1-e5675f5ba5774e15-371da608998bbc83",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "94bd81c6211db25cd01f05b1a713b6a1450c034bff8455c13f73938047c28239",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-passing-yards-comparison-v1",
+  "workstream": "api2-nfl-passing-yards-comparison-v1"
+}
