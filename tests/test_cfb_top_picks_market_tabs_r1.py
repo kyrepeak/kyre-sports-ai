@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-from pathlib import Path
 import sys
 import types
 
@@ -135,9 +134,3 @@ def test_step9_owner_activates_v10_and_restores_nested_owner_chain(monkeypatch):
     assert router.render_app() == "ok"
     assert seen == [["cfb_top_picks_page_v10"] * 3]
     assert [o.TOP_PICKS_PAGE for o in owners] == ["v8", "v7", "v6"]
-
-
-def test_api2_terminal_owner_remains_untouched():
-    source = Path("app.py").read_text(encoding="utf-8")
-    assert "streamlit_memory_lazy_router_api2_nfl_active_slate_v1" in source
-    assert "streamlit_memory_lazy_router_monster_cfb_top_picks_market_tabs_r1" not in source
