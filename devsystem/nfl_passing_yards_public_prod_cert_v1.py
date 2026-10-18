@@ -417,6 +417,100 @@ def _assert_market_triplets(frame, api_payload: dict[str, Any]) -> list[dict[str
     return observed
 
 
+
+_COMPACT_WHY_LABELS = (
+    "Volume",
+    "Efficiency",
+    "Pressure Adj",
+    "Personnel",
+    "Weather",
+    "Recent SD",
+)
+
+_FORBIDDEN_V36_VISUAL_SELECTORS = (
+    ".kpass36-whyintro",
+    ".kpass36-qbidentity",
+    ".kpass36-resultrow",
+    '[data-five-step-visual-complete="true"]',
+)
+
+
+def _assert_compact_why_visual_parity(frame) -> dict[str, Any]:
+    """Prove the public page matches the approved compact V16 reference panel."""
+    panel = frame.locator("section.kpy16-why")
+    panel_count = panel.count()
+    if panel_count != 1:
+        raise PublicProductionCertFailure(
+            f"expected exactly one compact Why This Projection panel; saw {panel_count}"
+        )
+
+    title = str(panel.locator(".kpy16-whytitle").inner_text(timeout=10000) or "").strip()
+    tag = str(panel.locator(".kpy16-tag").inner_text(timeout=10000) or "").strip()
+    if "Why This Projection" not in title:
+        raise PublicProductionCertFailure(f"compact panel title mismatch: {title!r}")
+    if tag != "RESULT → REASONS":
+        raise PublicProductionCertFailure(f"compact panel result/reasons tag mismatch: {tag!r}")
+
+    cards = panel.locator("section.kpy16-whycard")
+    card_count = cards.count()
+    if card_count != 2:
+        raise PublicProductionCertFailure(
+            f"expected exactly two compact QB reason cards; saw {card_count}"
+        )
+
+    card_evidence: list[dict[str, Any]] = []
+    for index in range(card_count):
+        card = cards.nth(index)
+        name = str(card.locator(".kpy16-whyname").inner_text(timeout=10000) or "").strip()
+        confidence = str(card.locator(".kpy16-conf").inner_text(timeout=10000) or "").strip()
+        labels = [
+            str(value or "").strip()
+            for value in card.locator(".kpy16-reason span").all_inner_texts()
+        ]
+        projection = str(card.locator(".kpy16-proj").inner_text(timeout=10000) or "").strip()
+        if tuple(labels) != _COMPACT_WHY_LABELS:
+            raise PublicProductionCertFailure(
+                f"compact QB card {index + 1} labels mismatch: {labels!r}"
+            )
+        if not projection.startswith("Projection:") or not projection.endswith("yds"):
+            raise PublicProductionCertFailure(
+                f"compact QB card {index + 1} projection footer mismatch: {projection!r}"
+            )
+        if not name or not confidence:
+            raise PublicProductionCertFailure(
+                f"compact QB card {index + 1} missing name/confidence"
+            )
+        card_evidence.append(
+            {
+                "name": name,
+                "confidence": confidence,
+                "labels": labels,
+                "projection": projection,
+            }
+        )
+
+    forbidden = {
+        selector: frame.locator(selector).count()
+        for selector in _FORBIDDEN_V36_VISUAL_SELECTORS
+    }
+    present = {selector: count for selector, count in forbidden.items() if count}
+    if present:
+        raise PublicProductionCertFailure(
+            "deprecated giant V36 duplicate visual is still present: "
+            + json.dumps(present, sort_keys=True)
+        )
+
+    evidence = {
+        "panel_count": panel_count,
+        "card_count": card_count,
+        "result_tag": tag,
+        "cards": card_evidence,
+        "forbidden_v36_counts": forbidden,
+    }
+    print("NFL_PASSING_YARDS_COMPACT_WHY_VISUAL_GREEN " + json.dumps(evidence, sort_keys=True))
+    return evidence
+
+
 def run_public_cert(
     *,
     production_url: str = PRODUCTION_URL,
@@ -444,7 +538,7 @@ def run_public_cert(
 
             _wait_text(frame, "KYRE SPORTS API BRIDGE — STEP 10 AUTO MARKET", 120000)
             _set_slate_date(page, frame, event["day"])
-            _wait_text(frame, "Choose matchup", 120000)
+            _matchup_combobox(frame)
             step3_matchups = _certify_all_public_matchups(page, frame, expected_games=14)
             chosen_matchup = _select_exact_matchup(page, frame, event)
 
@@ -452,6 +546,7 @@ def run_public_cert(
             _wait_text(frame, "KYRE SPORTS API MARKET GREEN", 180000)
             body = _body(frame)
             _assert_no_runtime_error(body, "NFL Passing Yards public route")
+            compact_why_visual = _assert_compact_why_visual_parity(frame)
             if event["event_id"] not in body:
                 raise PublicProductionCertFailure(
                     f"public UI did not prove official ESPN event {event['event_id']} after matchup selection"
@@ -480,6 +575,7 @@ def run_public_cert(
                 "synthetic_ids": False,
                 "stake_sizing_enabled": False,
                 "frame_scan_count": len(scan),
+                "compact_why_visual": compact_why_visual,
                 "screenshot": str(screenshot),
                 "discovery_diagnostics": event.get("discovery_diagnostics") or [],
             }

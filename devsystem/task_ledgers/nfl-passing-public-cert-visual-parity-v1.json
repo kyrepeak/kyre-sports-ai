@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "nfl-passing-public-cert-visual-parity-v1",
+  "status": "DONE",
+  "scope": "Verifier-only Step 5 proof upgrade: assert the deployed NFL Passing Yards page contains exactly one compact V16 Why This Projection panel with two QB cards, exact six reason labels, projection footers, and no deprecated giant V36 duplicate visual.",
+  "trigger": "Generic production verifier opened CFB and could not prove the user-approved NFL Passing Yards visual target.",
+  "guardrails": {
+    "production_render_changed": false,
+    "projection_math_changed": false,
+    "market_logic_changed": false,
+    "data_sources_changed": false,
+    "router_behavior_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
