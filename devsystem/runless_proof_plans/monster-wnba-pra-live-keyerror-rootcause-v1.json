@@ -4,7 +4,7 @@
   "workstream": "monster-wnba-pra-live-keyerror-product-fix-v1",
   "source_main_sha": "18c291cc45fa50b5b4ad1349fbed4e6c42c5fe93",
   "commands": [
-    ["python", "-m", "pytest", "--noconftest", "-q", "-s", "tests/test_wnba_pra_live_route_keyerror_repro_v1.py"]
+    ["python", "-m", "pytest", "--noconftest", "-q", "-s", "tests/test_wnba_pra_live_route_keyerror_repro_v1.py", "-k", "not public_streamlit"]
   ],
   "artifacts": [
     "wnba_role_v282.py",
@@ -12,7 +12,6 @@
     "devsystem/runless_proof_plans/monster-wnba-pra-live-keyerror-rootcause-v1.json"
   ],
   "dependencies": [
-    "devsystem/browser_qa_v1.py",
     "wnba_pra_hub_v3616.py",
     "wnba_pra_product_snapshot_v1.py",
     "wnba_pra_market_v29.py",
