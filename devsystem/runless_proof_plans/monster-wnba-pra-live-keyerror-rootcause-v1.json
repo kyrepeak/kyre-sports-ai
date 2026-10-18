@@ -1,0 +1,32 @@
+{
+  "mode": "runless",
+  "task_id": "monster-wnba-pra-live-keyerror-rootcause-v1",
+  "workstream": "monster-wnba-pra-live-keyerror-product-fix-v1",
+  "source_main_sha": "18c291cc45fa50b5b4ad1349fbed4e6c42c5fe93",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "-s", "tests/test_wnba_pra_live_route_keyerror_repro_v1.py", "-k", "not public_streamlit"]
+  ],
+  "artifacts": [
+    "wnba_role_v282.py",
+    "tests/test_wnba_pra_live_route_keyerror_repro_v1.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-live-keyerror-rootcause-v1.json"
+  ],
+  "dependencies": [
+    "wnba_pra_hub_v3616.py",
+    "wnba_pra_product_snapshot_v1.py",
+    "wnba_pra_market_v29.py",
+    "wnba_pra_matchup_v30.py",
+    "wnba_pra_final_v32.py",
+    "wnba_pra_hub_v27.py",
+    "wnba_availability_v27.py",
+    "wnba_role_v282.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_WNBA_PRA_LIVE_KEYERROR_PRODUCT_FIX_V1_FROZEN"
+}
