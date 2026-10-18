@@ -1,24 +1,28 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-
-import pytest
-
-from sports_api.collectors.wnba_fanduel_direct import collect_fanduel_wnba_feed
+import importlib.util
 
 
 NOW = datetime(2026, 10, 18, 18, 30, tzinfo=timezone.utc)
 
 
+def _collector():
+    module_name = "sports_api.collectors.wnba_fanduel_direct"
+    assert importlib.util.find_spec(module_name) is not None, "WNBA FanDuel collector is not implemented yet"
+    from sports_api.collectors.wnba_fanduel_direct import collect_fanduel_wnba_feed
+
+    return collect_fanduel_wnba_feed
+
+
 def _runner(runner_id: str, side: str, line=31.5, odds=-110):
-    row = {
+    return {
         "runnerId": runner_id,
         "runnerStatus": "ACTIVE",
         "result": {"type": side},
         "handicap": line,
         "winRunnerOdds": {"americanDisplayOdds": {"americanOdds": odds}},
     }
-    return row
 
 
 def _event(event_id="9001", name="Atlanta Dream @ Golden State Valkyries"):
@@ -78,6 +82,7 @@ def _event_page(markets, events=None):
 
 
 def test_collect_fanduel_wnba_feed_emits_only_pregame_pra_offers():
+    collect_fanduel_wnba_feed = _collector()
     open_pra = _pra_market()
     in_play = _pra_market("m-live", player="Rhyne Howard", in_play=True)
     closed = _pra_market("m-closed", player="Veronica Burton", status="SUSPENDED")
@@ -105,6 +110,7 @@ def test_collect_fanduel_wnba_feed_emits_only_pregame_pra_offers():
 
 
 def test_collect_fanduel_wnba_feed_preserves_source_ids_and_timestamps():
+    collect_fanduel_wnba_feed = _collector()
     requester = _requester(_landing([_event()]), _event_page([_pra_market()]))
 
     out = collect_fanduel_wnba_feed(
@@ -124,6 +130,7 @@ def test_collect_fanduel_wnba_feed_preserves_source_ids_and_timestamps():
 
 
 def test_collect_fanduel_wnba_feed_does_not_invent_missing_lines():
+    collect_fanduel_wnba_feed = _collector()
     market = _pra_market()
     market["runners"]["o"].pop("handicap")
     requester = _requester(_landing([_event()]), _event_page([market]))
@@ -139,6 +146,7 @@ def test_collect_fanduel_wnba_feed_does_not_invent_missing_lines():
 
 
 def test_collect_fanduel_wnba_feed_handles_attachment_maps_and_lists():
+    collect_fanduel_wnba_feed = _collector()
     map_requester = _requester(
         _landing({"9001": _event()}),
         {"attachments": {"events": {"9001": _event()}, "markets": {"m": _pra_market()}}},
@@ -155,6 +163,7 @@ def test_collect_fanduel_wnba_feed_handles_attachment_maps_and_lists():
 
 
 def test_collect_fanduel_wnba_feed_excludes_non_pra_player_markets():
+    collect_fanduel_wnba_feed = _collector()
     markets = [
         {**_pra_market("m-reb", player="Allisha Gray"), "marketName": "Allisha Gray - Rebounds"},
         {**_pra_market("m-ast", player="Rhyne Howard"), "marketName": "Rhyne Howard - Assists"},
