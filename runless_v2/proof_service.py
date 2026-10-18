@@ -105,6 +105,24 @@ def _failure_detail(exc: BaseException) -> str:
     return str(exc) or type(exc).__name__
 
 
+async def _put_receipt_with_transient_retry(
+    github: Any,
+    receipt: dict[str, Any],
+    *,
+    retries: int = 3,
+    delay_seconds: float = 0.25,
+) -> dict[str, Any]:
+    attempts = max(1, int(retries))
+    for attempt in range(attempts):
+        try:
+            return github.put_or_read_receipt(receipt)
+        except GithubAuthorityError as exc:
+            if str(exc) != "RUNLESS_V2_RECEIPT_READBACK_FAILED" or attempt + 1 >= attempts:
+                raise
+            await asyncio.sleep(max(0.0, float(delay_seconds)))
+    raise AssertionError("unreachable")
+
+
 def _identity_failure_class(detail: str) -> FailureClass:
     upper = detail.upper()
     if "REGISTRY" in upper or "FROZEN" in upper or "THAW" in upper:
@@ -311,7 +329,7 @@ async def execute_proof_request(
     )
 
     try:
-        receipt = github.put_or_read_receipt(receipt)
+        receipt = await _put_receipt_with_transient_retry(github, receipt)
     except GithubAuthorityError as exc:
         detail = _failure_detail(exc)
         failed = state_store.record_failure_and_release(
