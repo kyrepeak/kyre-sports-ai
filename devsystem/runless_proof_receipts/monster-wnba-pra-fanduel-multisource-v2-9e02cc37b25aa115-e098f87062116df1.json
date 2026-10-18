@@ -1,0 +1,43 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-fanduel-multisource-v2.json": "4eea20c4d99d41748bed6534b3038a6222f0f44e",
+    "sports_api/collectors/wnba_fanduel_direct.py": "5a1e6d308701133f08aadcc139f7d89a0494a0b1",
+    "sports_api/tests/test_wnba_fanduel_direct.py": "e674b95e3dab9267cba35d66e8e1457ba0e75d6c"
+  },
+  "candidate_sha": "9e02cc37b25aa11566810ccbf5254ebe441e0862",
+  "created_at": "2026-10-18T18:32:54.544393+00:00",
+  "dependency_map": {},
+  "digest": "ae6281d5a673aba413680e170362123d146015fee589621631994166a65573a0",
+  "evidence_digests": [
+    "b1616b16f356fe19a71ca5d4329a8261dec66f8cdaa092d078d71e766dedbb4e"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4c138105ed632a525ae44156fc80bb1805fc6e3d28bda9dabfea4e23fb7ce847",
+  "proof_id": "monster-wnba-pra-fanduel-multisource-v2-9e02cc37b25aa115-e098f87062116df1",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "c570c1f1678af42a6f7c78bde5d5738ac727ff448e6c02980782fe7eb4afc7b0",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-fanduel-multisource-v2",
+  "workstream": "monster-wnba-pra-fanduel-multisource-v2"
+}
