@@ -1,0 +1,26 @@
+{
+  "mode": "runless",
+  "task_id": "monster-wnba-pra-keyerror-crash-repair-v1",
+  "workstream": "monster-wnba-pra-keyerror-crash-repair-v1",
+  "source_main_sha": "1650b47d9395e78c090acd07c14eb0539bd1a60d",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_wnba_pra_keyerror_crash_repair_v1.py"]
+  ],
+  "artifacts": [
+    "tests/test_wnba_pra_keyerror_crash_repair_v1.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-keyerror-crash-repair-v1.json"
+  ],
+  "dependencies": [
+    "wnba_role_v282.py",
+    "wnba_role_v28.py",
+    "wnba_pra_hub_v3616.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_WNBA_PRA_KEYERROR_CRASH_REPAIR_V1_FROZEN"
+}
