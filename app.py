@@ -72,8 +72,10 @@ _LEGACY_ROUTER_IMPORT_V2 = (
     "    from streamlit_memory_lazy_router_universal_nav_v2 import "
     "record_bootstrap_import_ms, render_app"
 )
+# Certified parent preserved inside this successor chain:
+# streamlit_memory_lazy_router_api2_nfl_active_slate_v1
 _LEGACY_ROUTER_IMPORT_V4 = (
-    "    from streamlit_memory_lazy_router_api2_nfl_active_slate_v1 import "
+    "    from streamlit_memory_lazy_router_api2_nfl_rushing_cleanup_v1 import "
     "record_bootstrap_import_ms, render_app"
 )
 _legacy_router_import_count = _legacy_entrypoint_source.count(_LEGACY_ROUTER_IMPORT_V2)
