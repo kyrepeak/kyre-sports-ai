@@ -295,25 +295,47 @@ Preserve existing Rushing Yards and CFB Top Picks overlay clauses unchanged.
 
 - [ ] **Step 4: Create the Runless proof plan**
 
-The proof plan must compile the new modules and run exactly the new Daily Picks suites plus the current Runtime V5/NFL route regressions needed to prove no unrelated route moved. Artifacts must include only the new Daily Picks modules/tests, the narrow V5 overlay mutation, and the proof plan itself.
+The proof plan must compile the new modules and run exactly the new Daily Picks suites plus the current certified Runtime V5 navigation/regression surface. The frozen V5 proof defines that current runtime surface as:
+
+- `tests/test_universal_sports_nav_controller_v1.py`
+- `tests/test_universal_sports_nav_url_v1.py`
+- `tests/test_universal_sports_nav_registry_v1.py`
+- `tests/test_api2_route_transition_mask_v1.py`
+- `tests/test_api2_universal_nav_single_owner_speed_v1.py`
+- `tests/test_cfb_top_picks_professional_v11_r1.py`
+
+For NFL/product guard coverage, retain the current focused rushing regression `tests/test_api2_nfl_rushing_cleanup_v1.py`. Do not broaden into historical frozen-era router suites that are no longer part of Runtime V5's certified proof surface.
+
+Artifacts must include only the new Daily Picks modules/tests, the narrow V5 overlay mutation, and the proof plan itself.
 
 - [ ] **Step 5: Run the authoritative local regression gate**
 
 Run:
 
 ```bash
-python -m py_compile nfl_daily_picks_core_v1.py nfl_daily_picks_sources_v1.py nfl_daily_picks_ranking_v1.py nfl_daily_picks_hub_v1.py universal_runtime_v5_loader_v11.py
-python -m pytest -q \
+python -m py_compile \
+  nfl_daily_picks_core_v1.py \
+  nfl_daily_picks_sources_v1.py \
+  nfl_daily_picks_ranking_v1.py \
+  nfl_daily_picks_hub_v1.py \
+  universal_runtime_v5_loader_v11.py
+
+python -m pytest --noconftest -q \
   tests/test_api2_nfl_daily_picks_core_v1.py \
   tests/test_api2_nfl_daily_picks_sources_v1.py \
   tests/test_api2_nfl_daily_picks_ranking_v1.py \
   tests/test_api2_nfl_daily_picks_hub_v1.py \
   tests/test_api2_nfl_daily_picks_route_v1.py \
-  tests/test_api2_universal_runtime_v5_loader.py \
-  tests/test_api2_universal_runtime_v5_routes.py
+  tests/test_universal_sports_nav_controller_v1.py \
+  tests/test_universal_sports_nav_url_v1.py \
+  tests/test_universal_sports_nav_registry_v1.py \
+  tests/test_api2_route_transition_mask_v1.py \
+  tests/test_api2_universal_nav_single_owner_speed_v1.py \
+  tests/test_cfb_top_picks_professional_v11_r1.py \
+  tests/test_api2_nfl_rushing_cleanup_v1.py
 ```
 
-Expected: all selected tests PASS and compile exits 0. If current Runtime V5 test filenames differ at execution time, discover the current authoritative V5 route/loader regression files once and substitute them; do not broaden to historical frozen-era router suites that no longer represent current runtime ownership.
+Expected: all selected tests PASS and compile exits 0. These Runtime V5 regression filenames are pinned from the existing frozen V5 Runless proof plan rather than guessed at execution time.
 
 - [ ] **Step 6: Commit the route + proof gate**
 
