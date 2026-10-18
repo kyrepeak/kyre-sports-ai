@@ -16,6 +16,7 @@ from typing import Any
 import streamlit as st
 
 import nfl_receiving_yards_hub_v10 as prior
+from nfl_active_slate_runtime_v1 import is_manual_mode
 from nfl_hub_v1 import ET
 from nfl_passing_yards_hub_v12 import find_next_verified_slate
 from nfl_receiving_yards_slate_controller_v1 import (
@@ -55,6 +56,14 @@ def _selected_date() -> date:
 
 def _prime_smart_slate() -> dict[str, Any]:
     selected = _selected_date()
+    if is_manual_mode(st.session_state):
+        return {
+            "state": "MANUAL",
+            "resolved_date": selected,
+            "source": "universal_manual",
+            "advanced": False,
+        }
+
     result = resolve_next_verified_slate_date(
         selected,
         find_next_verified_slate,

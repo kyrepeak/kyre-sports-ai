@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 
 import nfl_game_totals_hub_v8 as v8
+from nfl_active_slate_runtime_v1 import is_manual_mode
 from sports_api.nfl_data_router_v1 import clear_router_caches
 from sports_api.nfl_game_totals_mobile_navigation_v1 import find_next_game_day
 
@@ -87,6 +88,9 @@ def _initial_date(today: date) -> date:
 
 
 def _auto_surface_next_slate(selected: date, today: date) -> date:
+    if is_manual_mode(st.session_state):
+        return selected
+
     should_auto_advance = AUTO_ADVANCE_EMPTY_TODAY and selected == today
     if not should_auto_advance:
         return selected

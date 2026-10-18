@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Callable, MutableMapping
 
+from nfl_active_slate_runtime_v1 import is_manual_mode
+
 
 _CHECKED_DATE_KEY = "_nfl_spread_v6_checked_date"
 _CHECKED_RESULT_KEY = "_nfl_spread_v6_checked_result"
@@ -39,6 +41,15 @@ def apply_spread_autodate(
 ) -> dict[str, Any]:
     """Advance an empty visible date and keep verified same-date rerenders fast."""
     selected = _current_selected_day(session, today)
+    if is_manual_mode(session):
+        return {
+            "state": "MANUAL",
+            "resolved_date": selected,
+            "source": "universal_manual",
+            "reason": "manual_override",
+            "advanced": False,
+        }
+
     cached_day = _coerce_day(session.get(_CHECKED_DATE_KEY), date.min)
     cached = session.get(_CHECKED_RESULT_KEY)
 
