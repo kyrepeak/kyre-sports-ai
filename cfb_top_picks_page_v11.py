@@ -14,6 +14,7 @@ from urllib.parse import parse_qsl, urlencode
 
 import streamlit as st
 
+import cfb_top_picks_page_v9 as loading_owner
 import cfb_top_picks_page_v10 as prior
 
 MODEL_VERSION = "CFB TOP PICKS V11 • PROFESSIONAL DECISION SURFACE R1"
@@ -365,7 +366,7 @@ def render_top_picks_page() -> None:
     selected_row = next((row for row in picks if _clean(row.get("event_id")) == selected_event), None)
 
     board = st.empty()
-    initial = prior._loading_detail(selected_row) if selected_row is not None else None
+    initial = loading_owner._loading_detail(selected_row) if selected_row is not None else None
     board.html(_page_html(picks, diag, slate_day, selected_event, initial, selected_market=selected_market))
 
     if selected_row is not None:
