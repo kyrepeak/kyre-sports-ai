@@ -1,0 +1,39 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-universal-future-navigation-v1",
+  "workstream": "api2-nfl-universal-future-navigation-v1",
+  "source_main_sha": "31e29ae8781979fcfe5e24aaccfdacc0b8f005f4",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_universal_future_navigation_v1.py", "universal_runtime_v5_loader_v12.py", "streamlit_memory_lazy_router_universal_runtime_v5.py", "universal_tap_only_selector_v2.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_api2_nfl_universal_future_navigation_v1.py", "tests/test_universal_tap_only_selector_v1.py", "tests/test_api2_universal_tap_only_selector_cross_sport_v1.py", "tests/test_api2_nfl_active_slate_controller_v1.py", "tests/test_api2_nfl_active_slate_runtime_v1.py", "tests/test_api2_nfl_active_slate_legacy_compat_v1.py"],
+    ["python", "-m", "pytest", "-q", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_url_v1.py", "tests/test_universal_sports_nav_registry_v1.py", "tests/test_api2_route_transition_mask_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_passing_yards_picker_fast_load_r1.py"],
+    ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
+  ],
+  "artifacts": [
+    "nfl_universal_future_navigation_v1.py",
+    "universal_runtime_v5_loader_v12.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py",
+    "tests/test_api2_nfl_universal_future_navigation_v1.py",
+    "docs/superpowers/plans/2026-10-18-api2-nfl-universal-future-navigation-v1.md",
+    "devsystem/runless_proof_plans/api2-nfl-universal-future-navigation-v1.json"
+  ],
+  "dependencies": [
+    "universal_runtime_v5_loader_v11.py",
+    "universal_runtime_v5_loader.py",
+    "universal_tap_only_selector_v2.py",
+    "universal_tap_only_selector_v1.py",
+    "nfl_active_slate_controller_v1.py",
+    "nfl_active_slate_runtime_v1.py",
+    "nfl_hub_v1.py",
+    "nfl_passing_yards_next_slate_v1.py",
+    "devsystem/api2_universal_runtime_v5_cert.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_UNIVERSAL_FUTURE_NAVIGATION_V1_FROZEN"
+}
