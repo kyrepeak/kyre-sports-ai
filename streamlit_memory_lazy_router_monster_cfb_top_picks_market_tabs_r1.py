@@ -2,7 +2,8 @@
 
 Only exact College Football -> Top Picks renders temporarily advance the frozen
 Top Picks Step-9 page pointer to V10. Every other sport/market delegates through
-the existing MONSTER CFB market-completeness parent unchanged. Pointer state is
+the current API2 NFL active-slate terminal owner unchanged. That parent already
+delegates to the frozen MONSTER CFB market-completeness chain. Pointer state is
 restored in ``finally`` on every render.
 """
 from __future__ import annotations
@@ -11,11 +12,11 @@ from typing import Any
 
 import streamlit as st
 
-import streamlit_memory_lazy_router_monster_cfb_market_completeness_r1 as prior
+import streamlit_memory_lazy_router_api2_nfl_active_slate_v1 as prior
 import streamlit_memory_lazy_router_cfb_top_picks_research_v2_step9 as top_picks_owner
 
 MODEL_VERSION = "MONSTER CFB TOP PICKS MARKET TABS R1"
-FROZEN_PARENT = "streamlit_memory_lazy_router_monster_cfb_market_completeness_r1"
+FROZEN_PARENT = "streamlit_memory_lazy_router_api2_nfl_active_slate_v1"
 TOP_PICKS_PAGE = "cfb_top_picks_page_v10"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
