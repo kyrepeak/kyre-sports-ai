@@ -1,0 +1,135 @@
+name: NFL Rushing Yards Step 4 Live Streamlit Witness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-rushing-yards-step4-live-streamlit-witness.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-step4-live-streamlit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-live-streamlit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser witness dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify deployed NFL Rushing Yards Step 4 V3 route
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://kyre-sports-ai.streamlit.app"
+          REQUIRED = (
+              "RUSHING YARDS LAB",
+              "4 OF 4 • MARKET LIVE • GRADE LOCKED",
+              "4 • LIVE MARKET ✅ • GRADE LOCKED",
+          )
+          FORBIDDEN = (
+              "Traceback (most recent call last)",
+              "ModuleNotFoundError",
+              "ImportError:",
+              "SyntaxError:",
+              "NameError:",
+          )
+
+          def find_frame(page, timeout=90):
+              deadline = time.monotonic() + timeout
+              scans = []
+              while time.monotonic() < deadline:
+                  scans = []
+                  for idx, frame in enumerate(page.frames):
+                      try:
+                          body = frame.locator("body").inner_text(timeout=5000)
+                      except Exception:
+                          body = ""
+                      try:
+                          combos = frame.get_by_role("combobox").count()
+                      except Exception:
+                          combos = 0
+                      scans.append({"index": idx, "url": frame.url, "comboboxes": combos, "body_start": body[:400]})
+                      if "get this app back up" in body.casefold():
+                          wake = frame.get_by_text("Yes, get this app back up!", exact=False)
+                          if wake.count() > 0:
+                              wake.click()
+                              page.wait_for_timeout(8000)
+                              continue
+                      if combos >= 1 and ("KYRE SPORTS AI" in body or "Sport" in body):
+                          return frame, scans
+                  page.wait_for_timeout(2000)
+              raise AssertionError("Could not find live Streamlit frame: " + json.dumps(scans, ensure_ascii=False))
+
+          def choose(page, frame, index, value):
+              combos = frame.get_by_role("combobox")
+              if combos.count() <= index:
+                  raise AssertionError(f"Expected combobox {index}; found {combos.count()}")
+              combos.nth(index).click()
+              page.wait_for_timeout(250)
+              page.keyboard.type(value)
+              page.keyboard.press("Enter")
+              page.wait_for_timeout(2500)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width": 1440, "height": 1600})
+              try:
+                  page.goto(URL + "/", wait_until="domcontentloaded", timeout=120000)
+                  frame, scans = find_frame(page)
+                  choose(page, frame, 0, "NFL")
+
+                  deadline = time.monotonic() + 35
+                  while time.monotonic() < deadline:
+                      if frame.get_by_role("combobox").count() >= 2:
+                          break
+                      page.wait_for_timeout(750)
+                  else:
+                      raise AssertionError("NFL route did not expose market selector")
+
+                  choose(page, frame, 1, "Rushing Yards")
+
+                  deadline = time.monotonic() + 35
+                  body = ""
+                  while time.monotonic() < deadline:
+                      body = frame.locator("body").inner_text()
+                      if REQUIRED[1] in body:
+                          break
+                      page.wait_for_timeout(1000)
+
+                  forbidden = [marker for marker in FORBIDDEN if marker in body]
+                  marker_lines = [
+                      line for line in body.splitlines()
+                      if "OF 4" in line or "RUSHING" in line or "MARKET" in line or "Step 4" in line
+                  ]
+                  print("LIVE_RUSHING_MARKER_EXCERPT=" + json.dumps(marker_lines[:50], ensure_ascii=False))
+                  if forbidden:
+                      raise AssertionError("Live Rushing route runtime error: " + " | ".join(forbidden))
+                  missing = [marker for marker in REQUIRED if marker not in body]
+                  if missing:
+                      raise AssertionError("Live Step 4 V3 marker missing: " + json.dumps(missing, ensure_ascii=False))
+
+                  print("NFL_RUSHING_YARDS_STEP4_LIVE_STREAMLIT_GREEN")
+                  print(json.dumps({
+                      "streamlit_url": URL,
+                      "route": "NFL -> Rushing Yards",
+                      "required_markers": list(REQUIRED),
+                      "app_frame_url": frame.url,
+                      "frame_scan_count": len(scans),
+                  }, sort_keys=True))
+              finally:
+                  page.close()
+                  browser.close()
+          PY
