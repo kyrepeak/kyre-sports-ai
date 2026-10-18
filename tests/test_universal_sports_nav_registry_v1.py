@@ -27,7 +27,7 @@ def test_registry_market_inventory_is_live_only_and_exact():
     nav = _registry()
     expected = {
         "nfl": ("slate", "moneyline", "spread", "game-total", "passing-yards", "rushing-yards", "receiving-yards", "receptions", "passing-tds", "anytime-td", "daily-picks"),
-        "cfb": ("moneyline", "over-under", "game-total"),
+        "cfb": ("moneyline", "over-under", "game-total", "top-picks"),
         "nba": ("spread",),
         "mlb": ("slate", "one-plus-hit", "home-run", "hits-runs-rbis", "pitcher-strikeouts", "matchup-explorer", "daily-game-picks", "moneyline", "run-line", "game-total", "live-game", "live-odds"),
         "wnba": ("points", "rebounds", "assists", "rebounds-assists", "pra", "spread", "moneyline", "game-total", "daily-picks"),
@@ -48,6 +48,8 @@ def test_registry_uses_exact_legacy_identity_contracts():
     }
     assert nav.get_market("nfl", "passing-yards").legacy_market == "Passing Yards"
     assert nav.get_market("cfb", "over-under").legacy_market == "Over/Under"
+    assert nav.get_market("cfb", "top-picks").legacy_market == "Top Picks"
+    assert nav.get_market("cfb", "top-picks").legacy_market_key == "ks_cfb_market_touch"
     assert nav.get_market("mlb", "hits-runs-rbis").legacy_market == "Hits + Runs + RBIs"
     assert nav.get_market("wnba", "rebounds-assists").legacy_market == "Rebounds + Assists"
     assert nav.get_market("nba", "spread").legacy_market_key == "ks_nba_market_touch"
