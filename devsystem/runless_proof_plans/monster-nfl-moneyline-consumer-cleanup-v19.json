@@ -1,0 +1,38 @@
+{
+  "mode": "runless",
+  "task_id": "monster-nfl-moneyline-consumer-cleanup-v19",
+  "workstream": "monster-nfl-moneyline-consumer-cleanup-v19",
+  "source_main_sha": "ea6d68b4f8435eccb2d02c50931d9f2aeac44f25",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_moneyline_consumer_cleanup_v19.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_moneyline_v9_fresh_matchup_cards_v1.py", "tests/test_nfl_moneyline_v10_kyre_api_v1.py", "tests/test_nfl_moneyline_v11_no_flash_v1.py", "tests/test_nfl_moneyline_v12_performance_fast_route_v1.py", "-k", "not app_activates_v129_and_preserves_v128_descendant_anchor and not app_activates_v130_and_preserves_v129_descendant_anchor"],
+    ["python", "-m", "py_compile", "nfl_moneyline_hub_v19.py", "universal_runtime_v5_loader_v21.py"]
+  ],
+  "artifacts": [
+    "nfl_moneyline_hub_v19.py",
+    "universal_runtime_v5_loader_v21.py",
+    "tests/test_nfl_moneyline_consumer_cleanup_v19.py",
+    "devsystem/runless_proof_plans/monster-nfl-moneyline-consumer-cleanup-v19.json"
+  ],
+  "dependencies": [
+    "nfl_active_slate_runtime_v1.py",
+    "nfl_moneyline_hub_v5.py",
+    "nfl_moneyline_hub_v8.py",
+    "nfl_moneyline_hub_v9.py",
+    "nfl_moneyline_hub_v11.py",
+    "nfl_moneyline_hub_v15.py",
+    "nfl_moneyline_hub_v16.py",
+    "nfl_moneyline_hub_v17.py",
+    "nfl_moneyline_hub_v18.py",
+    "nfl_moneyline_market_api_v1.py",
+    "universal_runtime_v5_loader.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_NFL_MONEYLINE_CONSUMER_CLEANUP_V19_FROZEN"
+}
