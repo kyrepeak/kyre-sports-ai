@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "cfb_moneyline_clean_page_v6.py": "0a93fa0ccc8c301934e9618273bceaaa9eab543f",
+    "devsystem/runless_proof_plans/api2-cfb-moneyline-v6-runtime-base-repair.json": "86e2b0ea35473f69ef4fb7627f9ebb7292ec4d33",
+    "tests/test_api2_cfb_moneyline_v5_runtime_base_repair.py": "86be36ecf47ac0d490a74e28cd2266a40e613b97",
+    "universal_runtime_v5_loader_v17.py": "4194bb378ab423cc06434a77c44afa1cf44d1cdc"
+  },
+  "candidate_sha": "aac6938cf0fbb74de2e02ba2f4c97fac1dc2a7aa",
+  "created_at": "2026-10-19T02:12:00.016198+00:00",
+  "dependency_map": {
+    "cfb_moneyline_clean_page_v1.py": "f166bf356584a8588e7a3b771d2f08144b0cb2c8",
+    "cfb_moneyline_clean_page_v4.py": "fb8f070080b3fa17c1ecf1641c3fd27a0b8ed9d7",
+    "cfb_moneyline_clean_page_v5.py": "8209181103015ed1fdde2810c38cd8c418fc8c69",
+    "cfb_moneyline_final_v1.py": "5ab8184b966166a80e0f49e18a5a4d03fb3cb4b1",
+    "cfb_moneyline_hub_v5.py": "b07e4821f77fd480d73eaabf47ed5e439d48afc2",
+    "cfb_moneyline_model_v1.py": "fe8f14fd10a56373c05a2d86b76e4154b8dad6ba",
+    "cfb_moneyline_slate_v1.py": "2fd0553e403eb29bb2c071f9cb4aef6dafb74653",
+    "cfb_universal_next_slate_navigation_v1.py": "1855e35ec083c1b9afee1597c572e8436e35b500",
+    "devsystem/api2_universal_runtime_v5_cert.py": "d3921447063983620d6afe95fca466cb8c2e201c",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "962612ab07db77a010b5c3d96ee0fed6ac418c5b",
+    "universal_runtime_v5_loader_v16.py": "59a23e52a721b933386fee2ce829ebd173ecebf0",
+    "universal_tap_only_selector_v2.py": "31519f9f151a4d588ee96de6de367c063f5d75b7"
+  },
+  "digest": "b67805da88a94ab76a44a4cad5b6fe93837e261d01298453e45cdf1b2174993d",
+  "evidence_digests": [
+    "a5a22c3bfbbd4d9d88b4e90de1dc8cd41401391d05a3fde84664dafdcdbb1f48",
+    "328098ab111e2d2091354a130c7957965d860f39e56420771809cf8a52161ce0",
+    "8b149baee7d8c2d7ce50c1088b634c4f115f9129a7c863c99cbc4d32cd8d4267",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7dad46da0dd43d3cc6880235428b7335e0fa854d740261a44d6105bdcdafb6f4",
+  "proof_id": "api2-cfb-moneyline-v6-runtime-base-repair-aac6938cf0fbb74d-123f5297a196d2f2",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "3b6cf9f9b5e0144c188baa9cc1b88ca136ddb1c0d7544ed85af3c02344925347",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-moneyline-v6-runtime-base-repair",
+  "workstream": "api2-cfb-moneyline-v6-runtime-base-repair"
+}
