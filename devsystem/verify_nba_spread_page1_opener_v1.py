@@ -55,6 +55,11 @@ def _summarize_record(record: Mapping[str, Any]) -> dict[str, Any]:
             "verification": _clean(market.get("verification")) or "UNAVAILABLE",
             "coverage": _clean(market.get("coverage")) or "UNAVAILABLE",
             "sportsbook_count": int(market.get("sportsbook_count") or 0),
+            "sportsbook": _clean(market.get("sportsbook")) or None,
+            "away_spread": market.get("away_spread"),
+            "home_spread": market.get("home_spread"),
+            "away_price": market.get("away_price"),
+            "home_price": market.get("home_price"),
             "label": _clean(market.get("label")) or None,
         },
         "fair": {
@@ -113,6 +118,7 @@ def run_probe(
             "blocker": "SCHEDULE_UNVERIFIED",
             "credential_resolved": credential_resolved,
             "provider_calls": counters,
+            "all_opener_markets_verified": False,
             "games": [],
         }
     if missing:
@@ -122,14 +128,7 @@ def run_probe(
             "missing_matchups": missing,
             "credential_resolved": credential_resolved,
             "provider_calls": counters,
-            "games": [],
-        }
-    if not credential_resolved:
-        return {
-            "verification": "BLOCKED",
-            "blocker": "SPORTSGAMEODDS_CREDENTIAL_UNAVAILABLE",
-            "credential_resolved": False,
-            "provider_calls": counters,
+            "all_opener_markets_verified": False,
             "games": [],
         }
 
@@ -140,12 +139,13 @@ def run_probe(
     injuries = dict(injury_loader(opener) or {})
     counters["public"] += 1
     public = dict(public_loader(opener) or {})
+    now = datetime.now(timezone.utc)
     board = build_decision_board_state(
         opener,
         market,
         injuries,
         public,
-        now_utc=datetime.now(timezone.utc),
+        now_utc=now,
     )
     cold_ms = (perf_counter() - cold_started) * 1000.0
 
@@ -155,7 +155,7 @@ def run_probe(
         market,
         injuries,
         public,
-        now_utc=datetime.now(timezone.utc),
+        now_utc=now,
     )
     warm_ms = (perf_counter() - warm_started) * 1000.0
 
@@ -165,15 +165,34 @@ def run_probe(
     expected_matchups = sorted(label for _, _, _, label in TARGETS)
     provider_contract_ok = all(counters[name] <= 1 for name in ("market", "injury", "public"))
     identity_ok = exact_matchups == expected_matchups and rows == warm_rows
+    all_opener_markets_verified = (
+        len(rows) == len(TARGETS)
+        and all(
+            _clean(row.get("market", {}).get("verification")).upper() == "VERIFIED"
+            and int(row.get("market", {}).get("sportsbook_count") or 0) >= 1
+            for row in rows
+        )
+    )
+
+    if not identity_ok or not provider_contract_ok:
+        blocker = "OPENER_CONTRACT_MISMATCH"
+    elif not all_opener_markets_verified:
+        blocker = "OPENER_MARKET_UNVERIFIED"
+    else:
+        blocker = None
 
     market_diag = _clean(market.get("diagnostic_state")) or "UNKNOWN"
     return {
-        "verification": "VERIFIED" if provider_contract_ok and identity_ok else "BLOCKED",
-        "blocker": None if provider_contract_ok and identity_ok else "OPENER_CONTRACT_MISMATCH",
-        "credential_resolved": True,
+        "verification": "VERIFIED" if blocker is None else "BLOCKED",
+        "blocker": blocker,
+        "credential_resolved": credential_resolved,
+        "all_opener_markets_verified": all_opener_markets_verified,
         "market_transport": {
             "verification": _clean(market.get("verification")) or "UNAVAILABLE",
             "diagnostic_state": market_diag,
+            "source": _clean(market.get("source")) or None,
+            "source_chain": list(market.get("source_chain") or []),
+            "primary_source_state": _clean(market.get("primary_source_state")) or None,
             "stale_observation_count": int(market.get("stale_observation_count") or 0),
         },
         "provider_calls": counters,
