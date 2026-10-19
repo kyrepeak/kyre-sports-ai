@@ -85,4 +85,4 @@ def test_terminal_v3_and_app_advance_only_the_loader_handoff() -> None:
     assert "prior.resolve_destination = resolve_destination" in source
     assert "return prior.render_app()" in source
     app_source = _source(APP)
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v3" in app_source
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v" in app_source

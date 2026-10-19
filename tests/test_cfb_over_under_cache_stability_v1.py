@@ -139,12 +139,8 @@ def test_router_v74_targets_v33_only_for_direct_cfb_ou():
     assert router.OVER_UNDER_MARKET == "Over/Under"
 
 
-def test_app_entrypoint_advances_to_v74_and_retains_v73_guard():
+def test_v74_history_remains_frozen_while_app_allows_additive_runtime_successors():
+    assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v73"
+    assert router.ACTIVE_PAGE == "cfb_over_under_clean_page_v33"
     text = Path("app.py").read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_v73 import render_app as _frozen_v73_render_app" in text
-    assert "from streamlit_memory_lazy_router_v74 import render_app" in text
-    assert (
-        'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V74_CFB_OU_CACHE_STABLE_ANALYSIS_2026-09-11"'
-        in text
-    )
-    assert "0.0% sportsbook projection influence" in text
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v" in text

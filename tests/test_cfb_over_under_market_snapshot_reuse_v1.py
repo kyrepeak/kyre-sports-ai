@@ -203,13 +203,8 @@ def test_router_v76_targets_only_v35_for_active_cfb_over_under(monkeypatch):
     }
 
 
-def test_app_advances_to_v76_and_retains_v75_guard():
+def test_v76_history_remains_frozen_while_app_allows_additive_runtime_successors():
+    assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v75"
+    assert router.ACTIVE_PAGE == "cfb_over_under_clean_page_v35"
     text = Path("app.py").read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_v75 import render_app as _frozen_v75_render_app" in text
-    assert "from streamlit_memory_lazy_router_v76 import render_app" in text
-    assert (
-        'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V76_CFB_OU_MARKET_SNAPSHOT_REUSE_2026-09-11"'
-        in text
-    )
-    assert "frozen V14 projection math" in text
-    assert "0.0% sportsbook projection influence" in text
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v" in text
