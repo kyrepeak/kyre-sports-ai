@@ -56,11 +56,7 @@
     "streamlit_memory_lazy_router_universal_runtime_v5.py",
     "devsystem/api2_universal_runtime_v5_cert.py"
   ],
-  "probes": [
-    "BOS@DET 2026-10-20",
-    "PHI@NYK 2026-10-20",
-    "OKC@SAS 2026-10-20"
-  ],
+  "probes": [],
   "timeout_seconds": 1200,
   "live_ttl_seconds": 1800,
   "github_actions_fallback": 0,
