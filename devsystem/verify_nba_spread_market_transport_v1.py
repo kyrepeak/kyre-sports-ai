@@ -41,40 +41,30 @@ def summarize_transport_result(payload: Mapping[str, Any], *, credential_resolve
         "credential_resolved": bool(credential_resolved),
         "verification": str(payload.get("verification") or "UNAVAILABLE"),
         "diagnostic_state": str(payload.get("diagnostic_state") or "UNKNOWN"),
-        "source": str(payload.get("source") or "SportsGameOdds"),
+        "source": str(payload.get("source") or "SportsGameOdds+ESPN Public Scoreboard"),
+        "source_chain": list(payload.get("source_chain") or []),
+        "primary_source_state": str(payload.get("primary_source_state") or "") or None,
         "stale_observation_count": int(payload.get("stale_observation_count") or 0),
         "games": games,
     }
 
 
 def run_probe(schedule_games: Sequence[Mapping[str, object]]) -> dict[str, Any]:
-    """Run the real credential-aware provider probe for an already-resolved slate."""
-    from nba_spread_live_data_repair_v2 import resolve_sgo_api_key
-    from nba_spread_sportsbook_observations_v2 import load_verified_sportsbook_observations_v2
+    """Run the real production V2 market source chain for an already-resolved slate."""
+    import nba_spread_live_data_repair_v2 as live_v2
 
-    key = resolve_sgo_api_key()
-    if not key:
-        payload = {
-            "verification": "UNAVAILABLE",
-            "diagnostic_state": "SPORTSGAMEODDS_CREDENTIAL_UNAVAILABLE",
-            "source": "SportsGameOdds",
-            "observations": [],
-        }
-        return summarize_transport_result(payload, credential_resolved=False)
-
-    def getter(name: str) -> str | None:
-        return key if name == "SPORTSGAMEODDS_API_KEY" else None
-
+    key = live_v2.resolve_sgo_api_key()
     try:
-        payload = load_verified_sportsbook_observations_v2(schedule_games, secret_getter=getter)
+        payload = live_v2.load_market_payload_v2(schedule_games)
     except Exception as exc:
         payload = {
             "verification": "UNAVAILABLE",
-            "diagnostic_state": f"SPORTSGAMEODDS_TRANSPORT_ERROR:{type(exc).__name__}",
-            "source": "SportsGameOdds",
+            "diagnostic_state": f"MARKET_SOURCE_CHAIN_ERROR:{type(exc).__name__}",
+            "source": "SportsGameOdds+ESPN Public Scoreboard",
             "observations": [],
+            "source_chain": ["SportsGameOdds", "ESPN Public Scoreboard"],
         }
-    return summarize_transport_result(payload, credential_resolved=True)
+    return summarize_transport_result(payload, credential_resolved=bool(key))
 
 
 def run_static_contract_probe() -> dict[str, Any]:
@@ -120,7 +110,7 @@ def run_static_contract_probe() -> dict[str, Any]:
 
 
 def run_live_probe() -> dict[str, Any]:
-    """Run the real production-shaped schedule + provider probe when explicitly requested."""
+    """Run the real production-shaped schedule + market source-chain probe."""
     try:
         from nba_spread_schedule_provider_resilience_step2_r1 import load_verified_nba_schedule
 
@@ -133,7 +123,8 @@ def run_live_probe() -> dict[str, Any]:
             "verification": "UNAVAILABLE",
             "diagnostic_state": f"LIVE_PROBE_ERROR:{type(exc).__name__}",
             "credential_resolved": False,
-            "source": "SportsGameOdds",
+            "source": "SportsGameOdds+ESPN Public Scoreboard",
+            "source_chain": ["SportsGameOdds", "ESPN Public Scoreboard"],
             "games": {},
         }
 
