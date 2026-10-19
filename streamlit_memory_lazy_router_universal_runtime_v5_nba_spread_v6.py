@@ -1,10 +1,10 @@
-"""Additive Universal Runtime V5 terminal overlay for NBA Spread Page 1 V7."""
+"""Additive Universal Runtime V5 terminal overlay for NBA Spread Page 1 V7 + NFL Spread V10."""
 from __future__ import annotations
 
 import streamlit_memory_lazy_router_universal_runtime_v5 as prior
-from universal_runtime_v5_loader_v22 import choose_prefetch, load_destination, resolve_destination
+from universal_runtime_v5_loader_v23 import choose_prefetch, load_destination, resolve_destination
 
-MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA SPREAD PAGE1 LAUNCH READY V1 OVERLAY"
+MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA SPREAD PAGE1 + NFL SPREAD V10 OVERLAY"
 FROZEN_RUNTIME = "streamlit_memory_lazy_router_universal_runtime_v5"
 MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
