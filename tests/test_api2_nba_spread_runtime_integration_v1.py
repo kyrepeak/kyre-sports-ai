@@ -52,3 +52,17 @@ def test_opener_verifier_and_runless_plan_exist_with_required_scope():
     assert "API2_NBA_SPREAD_PAGE1_DECISION_BOARD_V1_FROZEN" in plan_text
     assert "test_api2_nba_spread_runtime_integration_v1.py" in plan_text
     assert "api2_universal_runtime_v5_cert" in plan_text
+
+
+def test_runless_verifier_clis_are_static_by_default(monkeypatch):
+    market = importlib.import_module("devsystem.verify_nba_spread_market_transport_v1")
+    opener = importlib.import_module("devsystem.verify_nba_spread_page1_opener_v1")
+
+    def live_must_not_run():
+        raise AssertionError("default Runless verifier path must not call live providers")
+
+    monkeypatch.setattr(market, "run_live_probe", live_must_not_run, raising=False)
+    monkeypatch.setattr(opener, "run_live_probe", live_must_not_run, raising=False)
+
+    assert market.main([]) == 0
+    assert opener.main([]) == 0
