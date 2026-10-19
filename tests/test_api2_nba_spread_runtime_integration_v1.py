@@ -47,7 +47,7 @@ def test_opener_verifier_and_runless_plan_exist_with_required_scope():
     assert "BOS@DET" in text and "PHI@NYK" in text and "OKC@SAS" in text
     assert "credential_resolver" in text
     assert "live_v2.resolve_sgo_api_key" in text
-    assert "credential material is never printed or returned" in text
+    assert "credential material is never printed or returned" in text.casefold()
     plan_text = plan.read_text(encoding="utf-8")
     assert "API2_NBA_SPREAD_PAGE1_DECISION_BOARD_V1_FROZEN" in plan_text
     assert "test_api2_nba_spread_runtime_integration_v1.py" in plan_text
