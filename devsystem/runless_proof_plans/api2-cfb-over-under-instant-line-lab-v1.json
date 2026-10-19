@@ -17,6 +17,9 @@
     "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v4.py",
     "tests/test_api2_cfb_over_under_instant_line_lab_v1.py",
     "tests/test_api2_cfb_over_under_slider_readability_v3.py",
+    "tests/test_cfb_over_under_cache_stability_v1.py",
+    "tests/test_cfb_over_under_market_snapshot_reuse_v1.py",
+    "tests/test_cfb_over_under_performance_profiler_v1.py",
     "devsystem/runless_proof_plans/api2-cfb-over-under-instant-line-lab-v1.json"
   ],
   "dependencies": [
