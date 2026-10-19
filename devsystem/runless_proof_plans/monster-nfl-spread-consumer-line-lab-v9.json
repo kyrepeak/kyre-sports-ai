@@ -1,0 +1,36 @@
+{
+  "mode": "runless",
+  "task_id": "monster-nfl-spread-consumer-line-lab-v9",
+  "workstream": "monster-nfl-spread-consumer-line-lab-v9",
+  "source_main_sha": "49ce4a2cfb180f7896ba5f96c05a7cacd4f52377",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_spread_consumer_line_lab_v9.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_spread_mc_v1.py", "tests/test_nfl_spread_v4_visual_parity.py", "tests/test_nfl_spread_matchup_history_v1.py", "tests/test_api2_nfl_spread_readable_projection_matchup_history_v1.py", "tests/test_nfl_spread_next_slate_v1.py"],
+    ["python", "-m", "py_compile", "nfl_spread_line_lab_v1.py", "nfl_spread_hub_v9.py", "universal_runtime_v5_loader_v21.py"]
+  ],
+  "artifacts": [
+    "nfl_spread_line_lab_v1.py",
+    "nfl_spread_hub_v9.py",
+    "universal_runtime_v5_loader_v21.py",
+    "tests/test_nfl_spread_consumer_line_lab_v9.py",
+    "devsystem/runless_proof_plans/monster-nfl-spread-consumer-line-lab-v9.json"
+  ],
+  "dependencies": [
+    "nfl_spread_hub_v1.py",
+    "nfl_spread_hub_v3.py",
+    "nfl_spread_hub_v4.py",
+    "nfl_spread_hub_v8.py",
+    "nfl_spread_mc_v1.py",
+    "nfl_spread_matchup_history_v1.py",
+    "nfl_spread_next_slate_v1.py",
+    "universal_runtime_v5_loader.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_NFL_SPREAD_CONSUMER_LINE_LAB_V9_FROZEN"
+}
