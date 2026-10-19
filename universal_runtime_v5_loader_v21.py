@@ -1,4 +1,4 @@
-"""Runtime V5 loader V21 — CFB Game Total date/slate repair override."""
+"""Runtime V5 loader V21 — current terminal destination overrides."""
 from __future__ import annotations
 
 import importlib
@@ -8,10 +8,12 @@ import universal_runtime_v5_loader_v20 as prior
 from universal_runtime_v5_loader import DestinationAdapter, choose_prefetch, load_destination, run_prefetch
 from universal_runtime_v5_state import RuntimeRoute
 
-MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 LOADER V21 • CFB GAME TOTAL DATE + SLATE REPAIR V1"
+MODEL_VERSION = "UNIVERSAL RUNTIME V5 LOADER V21 • NFL MONEYLINE V19 + SPREAD V9 + CFB GT REPAIR"
 
 
 def resolve_destination(route: RuntimeRoute):
+    if route.sport_id == "nfl" and route.market_id == "spread":
+        return base_loader._nfl_adapter(route, "nfl_spread_hub_v9", ttl_ms=20_000)
     if route.sport_id == "nfl" and route.market_id == "moneyline":
         return base_loader._nfl_adapter(route, "nfl_moneyline_hub_v19", ttl_ms=20_000)
     if route.sport_id == "cfb" and route.market_id == "game-total":
