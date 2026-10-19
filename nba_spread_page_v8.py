@@ -154,6 +154,30 @@ def _decision_card_html(record: Mapping[str, Any]) -> str:
     </div>'''
 
 
+def _load_schedule_and_market_once() -> tuple[dict, dict | None]:
+    """Run the frozen V7 schedule/model chain with the verified V2 market seam.
+
+    V7 already owns the Step-9 market-threshold injection point. V8 swaps only
+    that transport dependency, captures its result, and restores the frozen
+    binding immediately. The captured payload is then reused by Page 1 so the
+    market provider is not fetched again for the same render.
+    """
+    captured: dict[str, dict] = {}
+    original_market_loader = frozen_v7.live_repair_page._load_verified_market_payload
+
+    def _market_once(games: list[dict]) -> dict:
+        if "payload" not in captured:
+            captured["payload"] = dict(live_v2.load_market_payload_v2(games) or {})
+        return captured["payload"]
+
+    frozen_v7.live_repair_page._load_verified_market_payload = _market_once
+    try:
+        schedule = frozen_v7._load_launch_schedule()
+    finally:
+        frozen_v7.live_repair_page._load_verified_market_payload = original_market_loader
+    return dict(schedule or {}), captured.get("payload")
+
+
 @st.cache_data(ttl=90, show_spinner=False)
 def _load_market_once(games: list[dict]) -> dict:
     return live_v2.load_market_payload_v2(games)
@@ -257,7 +281,7 @@ def render_nba_spread_page() -> None:
     st.markdown('<div data-testid="nba-spread-v8-decision-board-active" style="display:none!important"></div>', unsafe_allow_html=True)
     st.markdown('<div class="nba8-hero"><div class="nba8-kicker">KYRE SPORTS AI • NBA</div><div class="nba8-title">🏀 NBA Spread Decision Board</div><div class="nba8-sub">Verified market context • Kyre fair line • exact-game analysis handoff</div></div>', unsafe_allow_html=True)
 
-    schedule = frozen_v7._load_launch_schedule()
+    schedule, captured_market = _load_schedule_and_market_once()
     if schedule.get("verification") != "VERIFIED":
         st.markdown('<div class="nba8-empty">Verified NBA schedule is temporarily unavailable. No matchup will be invented.</div>', unsafe_allow_html=True)
         with st.expander("Sources & Diagnostics", expanded=False):
@@ -275,7 +299,7 @@ def render_nba_spread_page() -> None:
         st.markdown('<div class="nba8-empty">No verified upcoming NBA games are available in the current rolling window.</div>', unsafe_allow_html=True)
         return
 
-    market_payload = _load_market_once(games)
+    market_payload = captured_market if isinstance(captured_market, Mapping) else _load_market_once(games)
     injury_payload = _load_injuries_once(games)
     public_payload = _load_public_once(games)
     history = _market_history(market_payload)
