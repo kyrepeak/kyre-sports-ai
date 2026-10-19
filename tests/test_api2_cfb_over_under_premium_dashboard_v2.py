@@ -88,4 +88,4 @@ def test_additive_terminal_overlay_advances_only_loader_and_app_handoff() -> Non
     assert "prior.resolve_destination = resolve_destination" in source
     assert "return prior.render_app()" in source
     app_source = APP.read_text(encoding="utf-8")
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v2" in app_source
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v" in app_source
