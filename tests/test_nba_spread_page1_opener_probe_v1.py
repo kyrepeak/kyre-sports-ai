@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from devsystem.verify_nba_spread_page1_opener_v1 import run_probe
+
+TEST_NOW = datetime(2026, 10, 19, 22, 25, 30, tzinfo=timezone.utc)
 
 
 def _games():
@@ -68,6 +72,7 @@ def test_probe_calls_each_page_level_provider_at_most_once_and_reuses_payloads()
         injury_loader=injury_loader,
         public_loader=public_loader,
         credential_resolver=lambda: "present-but-never-returned",
+        now_utc=TEST_NOW,
     )
     assert result["verification"] == "VERIFIED"
     assert result["credential_resolved"] is True
@@ -94,6 +99,7 @@ def test_probe_allows_verified_fallback_without_sgo_credential():
         injury_loader=lambda games: {"verification": "UNAVAILABLE", "features": []},
         public_loader=lambda games: {"verification": "UNAVAILABLE", "observations": []},
         credential_resolver=lambda: None,
+        now_utc=TEST_NOW,
     )
     assert result["verification"] == "VERIFIED"
     assert result["credential_resolved"] is False
@@ -112,6 +118,7 @@ def test_probe_blocks_when_any_opener_market_is_unverified():
         injury_loader=lambda games: {"verification": "UNAVAILABLE", "features": []},
         public_loader=lambda games: {"verification": "UNAVAILABLE", "observations": []},
         credential_resolver=lambda: None,
+        now_utc=TEST_NOW,
     )
     assert result["verification"] == "BLOCKED"
     assert result["blocker"] == "OPENER_MARKET_UNVERIFIED"
@@ -126,6 +133,7 @@ def test_probe_fails_closed_on_missing_exact_opener_identity():
         injury_loader=lambda games: {},
         public_loader=lambda games: {},
         credential_resolver=lambda: "present",
+        now_utc=TEST_NOW,
     )
     assert result["verification"] == "BLOCKED"
     assert result["blocker"] == "OPENER_GAME_IDENTITY_MISSING"
