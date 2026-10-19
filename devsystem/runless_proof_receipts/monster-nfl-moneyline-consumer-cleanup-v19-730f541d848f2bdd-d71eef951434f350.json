@@ -1,0 +1,58 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-nfl-moneyline-consumer-cleanup-v19.json": "6c648d792f16c6a45bbb69ae3177968930aa8246",
+    "nfl_moneyline_hub_v19.py": "4d9b7f7caa5af89544e8a0602394745e334263fd",
+    "tests/test_nfl_moneyline_consumer_cleanup_v19.py": "cfee401521fb8518e7f687f2796aa2b2dc1b5e2f",
+    "universal_runtime_v5_loader_v21.py": "aff061b9d3eaf25597da5bc648e41aa64c1c0f1d"
+  },
+  "candidate_sha": "730f541d848f2bddbaaa03292620891cfeaeb79e",
+  "created_at": "2026-10-19T21:05:17.360411+00:00",
+  "dependency_map": {
+    "nfl_active_slate_runtime_v1.py": "ac62fad9b89911a47f32ea6db03a08aa9925427d",
+    "nfl_moneyline_hub_v11.py": "6d5bac86b19c146392647dac7695558ef63c6e65",
+    "nfl_moneyline_hub_v15.py": "dc42a5ef44f7d4f23fcdd522fc80b0bf0985b79e",
+    "nfl_moneyline_hub_v16.py": "9e3cd5f5fd7554ba86cd0a0c9c86f34ffed7ab02",
+    "nfl_moneyline_hub_v17.py": "1c0a751bbab54e280ddbb3f607b474f48c71bc26",
+    "nfl_moneyline_hub_v18.py": "43cb5b3ddacf107aa576b88accd18caf29d660d0",
+    "nfl_moneyline_hub_v5.py": "0654219adc0b2caa10ae21b139661a4c7aa8988a",
+    "nfl_moneyline_hub_v8.py": "ffd46f2afe574c7104eb4c80c3e305d8c74a8a86",
+    "nfl_moneyline_hub_v9.py": "fae03ae3d6af610bb7cabd2a254aef657a030deb",
+    "nfl_moneyline_market_api_v1.py": "ac2b1b82f39270c6909e8b915b6f00ad382334c5",
+    "universal_runtime_v5_loader.py": "9a17ac1c7276ac64262e8587fd8b8a47cb519366"
+  },
+  "digest": "369608cae5a424387e96a5f8657018a3b8a8559bea50c2f8afe46e667af997b7",
+  "evidence_digests": [
+    "79e3d3747c85bb611df96ce4c167456e8cd66380c2a3a5f67d013ed2a0a73563",
+    "425a6248b19235b3c854116ccb950585b41b9ef0047ea5b5e545f8477d73f150",
+    "92503cf97b622a21daff7503580cd018753ee67611a00a5433a68661bb0c3aae"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "fb58495324a0e7c608448e2a60a6f3df16172ea8d82aab52f17e7602d7469730",
+  "proof_id": "monster-nfl-moneyline-consumer-cleanup-v19-730f541d848f2bdd-d71eef951434f350",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 423,
+    "state_hash": "52e5fa5823f6cfb0235af3b791a0887a2fb5e8da8b7bbd137514807f62ba9d14"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 423,
+    "state_hash": "52e5fa5823f6cfb0235af3b791a0887a2fb5e8da8b7bbd137514807f62ba9d14"
+  },
+  "request_fingerprint": "60f06986022bab0a504b8d00cb10e775d2533b422150badb357e332d3c6856d9",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-nfl-moneyline-consumer-cleanup-v19",
+  "workstream": "monster-nfl-moneyline-consumer-cleanup-v19"
+}
