@@ -1,0 +1,38 @@
+{
+  "mode": "runless",
+  "task_id": "api2-cfb-game-total-date-slate-repair-v1",
+  "workstream": "api2-cfb-game-total-date-slate-repair-v1",
+  "source_main_sha": "127b4047717b05a653a100d8d0ce3d8a176e7278",
+  "commands": [
+    ["python", "-m", "py_compile", "cfb_game_total_v5_date_slate_repair_v1.py", "universal_runtime_v5_loader_v21.py", "streamlit_memory_lazy_router_universal_runtime_v5_cfb_gt_v5.py", "app.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_game_total_v5_date_slate_repair_v1.py", "tests/test_monster_cfb_game_total_page1_daily_slate_v1.py", "tests/test_monster_cfb_game_total_daily_slate_runtime_fallback_r1.py", "tests/test_monster_cfb_game_total_daily_slate_full_render_r3.py", "tests/test_monster_cfb_game_total_page1_polish_r4.py", "tests/test_monster_cfb_game_total_page1_market_truth_r5.py", "tests/test_monster_cfb_game_total_full_flow_integration_v1.py", "tests/test_cfb_game_total_page2_games_on_day_step2_v1.py", "tests/test_cfb_game_total_step8_page1_event_guard_r1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_universal_next_slate_navigation_v1.py", "tests/test_api2_universal_tap_only_selector_cross_sport_v1.py", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_url_v1.py", "tests/test_universal_sports_nav_registry_v1.py", "tests/test_api2_route_transition_mask_v1.py", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "-k", "not test_runtime_handoff_points_to_v13_only and not test_runtime_handoff_points_to_v14_only"],
+    ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
+  ],
+  "artifacts": [
+    "app.py",
+    "cfb_game_total_v5_date_slate_repair_v1.py",
+    "universal_runtime_v5_loader_v21.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_gt_v5.py",
+    "tests/test_api2_cfb_game_total_v5_date_slate_repair_v1.py",
+    "docs/superpowers/plans/2026-10-19-cfb-game-total-date-slate-repair-v1.md",
+    "devsystem/runless_proof_plans/api2-cfb-game-total-date-slate-repair-v1.json"
+  ],
+  "dependencies": [
+    "cfb_game_total_page1_daily_slate_v1.py",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py",
+    "cfb_game_total_page1_daily_slate_runtime_fallback_r1.py",
+    "cfb_game_total_page2_market_completeness_r1.py",
+    "universal_runtime_v5_loader_v20.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py",
+    "devsystem/api2_universal_runtime_v5_cert.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_CFB_GAME_TOTAL_DATE_SLATE_REPAIR_V1_FROZEN"
+}
