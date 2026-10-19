@@ -15,13 +15,13 @@ def test_loader_v24_overrides_only_nba_spread_and_delegates_other_routes(monkeyp
 
     nba_adapter = loader.resolve_destination(nba_route)
     assert "NBA SPREAD PAGE1 DECISION BOARD V1" in loader.MODEL_VERSION
-    assert nba_adapter.model_version == loader.MODEL_VERSION
+    assert nba_adapter.source_version == loader.MODEL_VERSION
 
     prior = importlib.import_module("universal_runtime_v5_loader_v23")
     prior_adapter = prior.resolve_destination(nfl_route)
     current_adapter = loader.resolve_destination(nfl_route)
     assert current_adapter.route_key == prior_adapter.route_key
-    assert current_adapter.model_version == prior_adapter.model_version
+    assert current_adapter.source_version == prior_adapter.source_version
 
 
 def test_terminal_v7_binds_loader_v24_and_preserves_frozen_runtime():
@@ -45,8 +45,9 @@ def test_opener_verifier_and_runless_plan_exist_with_required_scope():
     assert plan.exists()
     text = verifier.read_text(encoding="utf-8")
     assert "BOS@DET" in text and "PHI@NYK" in text and "OKC@SAS" in text
-    assert "SPORTSGAMEODDS_API_KEY" in text
-    assert "secret" not in text.casefold() or "secret" in text.casefold()
+    assert "credential_resolver" in text
+    assert "live_v2.resolve_sgo_api_key" in text
+    assert "credential material is never printed or returned" in text
     plan_text = plan.read_text(encoding="utf-8")
     assert "API2_NBA_SPREAD_PAGE1_DECISION_BOARD_V1_FROZEN" in plan_text
     assert "test_api2_nba_spread_runtime_integration_v1.py" in plan_text
