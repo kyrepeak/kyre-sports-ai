@@ -1,0 +1,59 @@
+{
+  "artifact_map": {
+    "cfb_moneyline_clean_page_v5.py": "8209181103015ed1fdde2810c38cd8c418fc8c69",
+    "devsystem/runless_proof_plans/api2-cfb-moneyline-detail-redesign-v5.json": "fd191a22ad7ea720d3908457a7363d2be91c49e9",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "962612ab07db77a010b5c3d96ee0fed6ac418c5b",
+    "tests/test_api2_cfb_moneyline_detail_redesign_v5.py": "04509bccf60f0b0f6281b940d89f3c23d4da52f4",
+    "universal_runtime_v5_loader_v17.py": "46ad0af989d14b0504c56821b675ca52b077b5ee"
+  },
+  "candidate_sha": "5f60d6c3325ce65e730c25dffc36fb2304e62bfd",
+  "created_at": "2026-10-19T01:46:01.123478+00:00",
+  "dependency_map": {
+    "cfb_moneyline_clean_page_v3.py": "1e064d591212f0d793f327abca6a14ff3b81c9c1",
+    "cfb_moneyline_clean_page_v4.py": "fb8f070080b3fa17c1ecf1641c3fd27a0b8ed9d7",
+    "cfb_moneyline_final_v1.py": "5ab8184b966166a80e0f49e18a5a4d03fb3cb4b1",
+    "cfb_moneyline_hub_v5.py": "b07e4821f77fd480d73eaabf47ed5e439d48afc2",
+    "cfb_moneyline_model_v1.py": "fe8f14fd10a56373c05a2d86b76e4154b8dad6ba",
+    "cfb_moneyline_slate_v1.py": "2fd0553e403eb29bb2c071f9cb4aef6dafb74653",
+    "cfb_universal_next_slate_navigation_v1.py": "1855e35ec083c1b9afee1597c572e8436e35b500",
+    "devsystem/api2_universal_runtime_v5_cert.py": "d3921447063983620d6afe95fca466cb8c2e201c",
+    "universal_runtime_v5_loader_v16.py": "59a23e52a721b933386fee2ce829ebd173ecebf0",
+    "universal_tap_only_selector_v2.py": "31519f9f151a4d588ee96de6de367c063f5d75b7"
+  },
+  "digest": "9a56126d804d0c51ab365b11e923a78c4d4f7c73ef5a48dfea4285a20848f1c2",
+  "evidence_digests": [
+    "e295de7d25b35c7e6050f3b91219d191fd139f6f2cd177854248b5c18eddf98d",
+    "c5a0f7d348f785d82e636200e0e3a5efa60841290b08d75f74c1c815512deda2",
+    "5e1ec0a7fd39152a4360677ad944b93e6793f327dc0e41f5081b6b466998448b",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "696b8e467165d055a8bd607599ba98e753bfd2324f0a09dd25cdf51f1879407f",
+  "proof_id": "api2-cfb-moneyline-detail-redesign-v5-5f60d6c3325ce65e-b6353cf240233c23",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 414,
+    "state_hash": "06205c796046d4d6dc76ace4888d1f3cb27c1397813e0f4aee86226b236ffb73"
+  },
+  "request_fingerprint": "247c33a1b373a1406c12075f270065ea69a3ecc9c53fa0601465439f9365b0bd",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-moneyline-detail-redesign-v5",
+  "workstream": "api2-cfb-moneyline-detail-redesign-v5"
+}
