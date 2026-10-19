@@ -6,23 +6,22 @@
   "commands": [
     ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_spread_visual_hierarchy_v10.py"],
     ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_spread_consumer_line_lab_v9.py", "tests/test_nfl_spread_mc_v1.py", "tests/test_nfl_spread_v4_visual_parity.py", "tests/test_nfl_spread_matchup_history_v1.py", "tests/test_api2_nfl_spread_readable_projection_matchup_history_v1.py", "tests/test_nfl_spread_next_slate_v1.py"],
-    ["python", "-m", "py_compile", "nfl_spread_hub_v10.py", "universal_runtime_v5_loader_v23.py", "streamlit_memory_lazy_router_universal_runtime_v5_nfl_spread_v10.py", "app.py"]
+    ["python", "-m", "py_compile", "nfl_spread_hub_v10.py", "universal_runtime_v5_loader_v23.py", "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v6.py", "app.py"]
   ],
   "artifacts": [
     "nfl_spread_hub_v10.py",
     "universal_runtime_v5_loader_v23.py",
-    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_spread_v10.py",
-    "app.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v6.py",
     "tests/test_nfl_spread_visual_hierarchy_v10.py",
     "devsystem/runless_proof_plans/monster-nfl-spread-visual-hierarchy-v10.json"
   ],
   "dependencies": [
+    "app.py",
     "nfl_spread_hub_v9.py",
     "nfl_spread_line_lab_v1.py",
     "nfl_spread_hub_v8.py",
     "nfl_spread_hub_v4.py",
-    "universal_runtime_v5_loader_v22.py",
-    "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v6.py"
+    "universal_runtime_v5_loader_v22.py"
   ],
   "probes": [],
   "timeout_seconds": 300,
