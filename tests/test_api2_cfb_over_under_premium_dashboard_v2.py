@@ -6,7 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "cfb_over_under_clean_page_v40.py"
 LOADER = ROOT / "universal_runtime_v5_loader_v18.py"
-ROUTER = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5.py"
+TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v2.py"
+APP = ROOT / "app.py"
 
 
 def test_v40_is_additive_presentation_only_and_keeps_model_frozen() -> None:
@@ -69,11 +70,22 @@ def test_v40_line_lab_reuses_analysis_line_as_threshold_only() -> None:
     assert "0.0% model influence" in source
 
 
-def test_loader_v18_routes_only_cfb_over_under_to_v40_and_preserves_v17() -> None:
+def test_loader_v18_routes_only_cfb_over_under_to_v40_and_preserves_wrapper() -> None:
     source = LOADER.read_text(encoding="utf-8")
     assert "import universal_runtime_v5_loader_v17 as prior" in source
     assert 'route.sport_id == "cfb" and route.market_id == "over-under"' in source
     assert 'importlib.import_module("cfb_over_under_clean_page_v40")' in source
+    assert "return base.renderer(page)" in source
     assert "return prior.resolve_destination(route)" in source
-    router_source = ROUTER.read_text(encoding="utf-8")
-    assert "from universal_runtime_v5_loader_v18 import choose_prefetch, load_destination, resolve_destination" in router_source
+
+
+def test_additive_terminal_overlay_advances_only_loader_and_app_handoff() -> None:
+    source = TERMINAL.read_text(encoding="utf-8")
+    assert "import streamlit_memory_lazy_router_universal_runtime_v5 as prior" in source
+    assert "from universal_runtime_v5_loader_v18 import choose_prefetch, load_destination, resolve_destination" in source
+    assert "prior.choose_prefetch = choose_prefetch" in source
+    assert "prior.load_destination = load_destination" in source
+    assert "prior.resolve_destination = resolve_destination" in source
+    assert "return prior.render_app()" in source
+    app_source = APP.read_text(encoding="utf-8")
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v2" in app_source
