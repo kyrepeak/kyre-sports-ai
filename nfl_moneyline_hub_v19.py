@@ -14,6 +14,7 @@ from html import escape
 import pandas as pd
 import streamlit as st
 
+import nfl_moneyline_hub_v5 as frozen_v5
 import nfl_moneyline_hub_v9 as presentation
 import nfl_moneyline_hub_v11 as hidden_owner
 import nfl_moneyline_hub_v13 as theme_owner
@@ -22,11 +23,13 @@ import nfl_moneyline_hub_v15 as matchup_visual
 import nfl_moneyline_hub_v16 as analysis_visual
 import nfl_moneyline_hub_v17 as market_visual
 import nfl_moneyline_hub_v18 as responsive_visual
+import nfl_moneyline_market_api_v1 as kyre_market
 
 MODEL_VERSION = "NFL MONEYLINE V19 • CONSUMER-FIRST CLEAN SURFACE"
 FROZEN_ENGINE = "nfl_moneyline_hub_v8"
 FROZEN_PRESENTATION = "nfl_moneyline_hub_v18"
 HEADLESS_FROZEN_ENGINE = "nfl_moneyline_hub_v11._hidden_run_frozen_engine"
+API_ADAPTER = "nfl_moneyline_market_api_v1"
 PRESENTATION_ONLY = True
 DISPLAY_ONLY = True
 MAY_MODIFY_PROJECTION = False
@@ -56,8 +59,13 @@ def _safe(value, fallback="") -> str:
 
 
 def _silent_frozen_engine() -> None:
-    """Execute frozen analytical ownership without exposing its step-first UI."""
-    return hidden_owner._hidden_run_frozen_engine()
+    """Execute frozen analytical ownership invisibly with the certified API transport."""
+    original_market = frozen_v5.market
+    frozen_v5.market = kyre_market
+    try:
+        return hidden_owner._hidden_run_frozen_engine()
+    finally:
+        frozen_v5.market = original_market
 
 
 def _composed_css() -> str:
@@ -173,7 +181,7 @@ def render_nfl_hub(market: str = "Moneyline") -> None:
 
 
 __all__ = [
-    "DISPLAY_ONLY", "FROZEN_ENGINE", "FROZEN_PRESENTATION", "HEADLESS_FROZEN_ENGINE",
+    "API_ADAPTER", "DISPLAY_ONLY", "FROZEN_ENGINE", "FROZEN_PRESENTATION", "HEADLESS_FROZEN_ENGINE",
     "MAY_MODIFY_MARKET_MATH", "MAY_MODIFY_PROJECTION", "MODEL_VERSION", "MONTE_CARLO_SIMULATIONS",
     "PRESENTATION_ONLY", "SPORTSBOOK_MODEL_INFLUENCE", "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED", "_silent_frozen_engine", "render_nfl_hub", "render_nfl_moneyline_hub",
