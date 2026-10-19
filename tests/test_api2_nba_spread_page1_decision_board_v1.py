@@ -24,6 +24,40 @@ def test_v8_is_additive_over_v7_and_preserves_frozen_model_ownership():
     assert mod.MAY_MODIFY_PAGE2 is False
 
 
+def test_schedule_bridge_uses_v2_market_once_and_restores_frozen_seam(monkeypatch):
+    mod = _module()
+    calls = {"market": 0}
+    games = [{
+        "game_key": "BOS@DET:2026-10-20",
+        "game_date_phoenix": "2026-10-20",
+        "away_tricode": "BOS",
+        "home_tricode": "DET",
+        "status": "UPCOMING",
+    }]
+    payload = {"verification": "VERIFIED", "diagnostic_state": "OK", "observations": []}
+    original = mod.frozen_v7.live_repair_page._load_verified_market_payload
+
+    def fake_market(selected):
+        calls["market"] += 1
+        assert selected == games
+        return payload
+
+    def fake_schedule():
+        first = mod.frozen_v7.live_repair_page._load_verified_market_payload(games)
+        second = mod.frozen_v7.live_repair_page._load_verified_market_payload(games)
+        assert first is second
+        return {"verification": "VERIFIED", "games": games}
+
+    monkeypatch.setattr(mod.live_v2, "load_market_payload_v2", fake_market)
+    monkeypatch.setattr(mod.frozen_v7, "_load_launch_schedule", fake_schedule)
+    schedule, captured = mod._load_schedule_and_market_once()
+
+    assert schedule["verification"] == "VERIFIED"
+    assert captured == payload
+    assert calls["market"] == 1
+    assert mod.frozen_v7.live_repair_page._load_verified_market_payload is original
+
+
 def test_human_slate_label_is_readable_not_iso_only():
     mod = _module()
     assert mod._human_slate_label("2026-10-20") == "NEXT NBA SLATE • TUE OCT 20"
