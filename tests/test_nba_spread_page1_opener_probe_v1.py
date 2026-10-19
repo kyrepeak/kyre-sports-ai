@@ -30,22 +30,29 @@ def _games():
     return rows
 
 
+def _verified_market(selected, *, book="DraftKings"):
+    observations = []
+    for game in selected:
+        observations.append({
+            "game_key": game["game_key"],
+            "game_date_phoenix": "2026-10-20",
+            "away_tricode": game["away_tricode"],
+            "home_tricode": game["home_tricode"],
+            "sportsbook": book,
+            "away_spread": -1.5,
+            "home_spread": 1.5,
+            "retrieved_at_utc": "2026-10-19T22:25:00+00:00",
+        })
+    return {"verification": "VERIFIED", "diagnostic_state": "OK", "observations": observations}
+
+
 def test_probe_calls_each_page_level_provider_at_most_once_and_reuses_payloads():
     calls = {"market": 0, "injury": 0, "public": 0}
     games = _games()
 
     def market_loader(selected):
         calls["market"] += 1
-        observations = []
-        for game in selected:
-            for book, spread in (("FanDuel", -1.5), ("DraftKings", -2.0)):
-                observations.append({
-                    "game_key": game["game_key"], "game_date_phoenix": "2026-10-20",
-                    "away_tricode": game["away_tricode"], "home_tricode": game["home_tricode"],
-                    "sportsbook": book, "away_spread": spread, "home_spread": -spread,
-                    "retrieved_at_utc": "2026-10-19T22:25:00+00:00",
-                })
-        return {"verification": "VERIFIED", "diagnostic_state": "OK", "observations": observations}
+        return _verified_market(selected, book="FanDuel")
 
     def injury_loader(selected):
         calls["injury"] += 1
@@ -68,29 +75,47 @@ def test_probe_calls_each_page_level_provider_at_most_once_and_reuses_payloads()
     assert result["provider_calls"]["injury"] == 1
     assert result["provider_calls"]["public"] == 1
     assert result["zero_provider_calls_per_card"] is True
+    assert result["all_opener_markets_verified"] is True
     assert calls == {"market": 1, "injury": 1, "public": 1}
     assert len(result["games"]) == 3
     assert result["sportsbook_projection_influence"] == 0.0
 
 
-def test_probe_fails_closed_without_credential_before_provider_fetches():
+def test_probe_allows_verified_fallback_without_sgo_credential():
     called = {"market": 0}
 
     def market_loader(selected):
         called["market"] += 1
-        return {}
+        return _verified_market(selected)
 
     result = run_probe(
         schedule_loader=lambda: {"verification": "VERIFIED", "games": _games()},
         market_loader=market_loader,
-        injury_loader=lambda games: {},
-        public_loader=lambda games: {},
+        injury_loader=lambda games: {"verification": "UNAVAILABLE", "features": []},
+        public_loader=lambda games: {"verification": "UNAVAILABLE", "observations": []},
+        credential_resolver=lambda: None,
+    )
+    assert result["verification"] == "VERIFIED"
+    assert result["credential_resolved"] is False
+    assert result["all_opener_markets_verified"] is True
+    assert called["market"] == 1
+
+
+def test_probe_blocks_when_any_opener_market_is_unverified():
+    def market_loader(selected):
+        payload = _verified_market(selected[:-1])
+        return payload
+
+    result = run_probe(
+        schedule_loader=lambda: {"verification": "VERIFIED", "games": _games()},
+        market_loader=market_loader,
+        injury_loader=lambda games: {"verification": "UNAVAILABLE", "features": []},
+        public_loader=lambda games: {"verification": "UNAVAILABLE", "observations": []},
         credential_resolver=lambda: None,
     )
     assert result["verification"] == "BLOCKED"
-    assert result["blocker"] == "SPORTSGAMEODDS_CREDENTIAL_UNAVAILABLE"
-    assert result["credential_resolved"] is False
-    assert called["market"] == 0
+    assert result["blocker"] == "OPENER_MARKET_UNVERIFIED"
+    assert result["all_opener_markets_verified"] is False
 
 
 def test_probe_fails_closed_on_missing_exact_opener_identity():
