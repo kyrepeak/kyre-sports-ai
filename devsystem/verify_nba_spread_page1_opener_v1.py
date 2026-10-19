@@ -96,12 +96,33 @@ def run_probe(
     credential_resolver: Callable[[], object] | None = None,
     now_utc: datetime | None = None,
 ) -> dict[str, Any]:
+    captured_production_market: dict[str, Any] = {}
+
     if schedule_loader is None:
-        from nba_spread_page_v7 import _load_launch_schedule as schedule_loader
+        import nba_spread_page_provider_resilience_step3_r1 as provider_bridge
+        import nba_spread_page_v8 as page_v8
+
+        def _production_schedule_loader() -> Mapping[str, Any]:
+            provider_bridge._bind_resilient_schedule_loader()
+            schedule, market = page_v8._load_schedule_and_market_once()
+            if isinstance(market, Mapping):
+                captured_production_market["payload"] = dict(market)
+            return schedule
+
+        schedule_loader = _production_schedule_loader
+
     if market_loader is None or credential_resolver is None:
         import nba_spread_live_data_repair_v2 as live_v2
-        market_loader = market_loader or live_v2.load_market_payload_v2
         credential_resolver = credential_resolver or live_v2.resolve_sgo_api_key
+        if market_loader is None:
+            def _production_market_loader(games: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
+                captured = captured_production_market.get("payload")
+                if isinstance(captured, Mapping):
+                    return dict(captured)
+                return live_v2.load_market_payload_v2(games)
+
+            market_loader = _production_market_loader
+
     if injury_loader is None:
         from nba_spread_page_v2 import _load_injury_availability as injury_loader
     if public_loader is None:
