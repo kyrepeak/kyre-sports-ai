@@ -42,10 +42,13 @@ def test_v10_preserves_native_slider_and_frozen_settlement_math():
     assert "spread_mc.simulate" not in source
 
 
-def test_runtime_v23_owns_only_nfl_spread_and_preserves_v22():
+def test_runtime_v23_owns_only_nfl_spread_and_preserves_v22_without_touching_frozen_app():
     loader = (ROOT / "universal_runtime_v5_loader_v23.py").read_text(encoding="utf-8")
+    overlay = (ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v6.py").read_text(encoding="utf-8")
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert "import universal_runtime_v5_loader_v22 as prior" in loader
     assert 'route.sport_id == "nfl" and route.market_id == "spread"' in loader
     assert '"nfl_spread_hub_v10"' in loader
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_spread_v10" in app
+    assert "from universal_runtime_v5_loader_v23 import" in overlay
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v6" in app
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_spread_v10" not in app
