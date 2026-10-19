@@ -8,7 +8,7 @@ from typing import Mapping, MutableMapping
 import streamlit as st
 import universal_sports_nav_ui_v2 as nav_ui
 from universal_runtime_v5_health import RuntimeEvent, assert_runtime_health, record_event, summarize_health
-from universal_runtime_v5_loader_v16 import choose_prefetch, load_destination, resolve_destination
+from universal_runtime_v5_loader_v17 import choose_prefetch, load_destination, resolve_destination
 from universal_runtime_v5_scope import RenderScope, can_commit, commit_if_current, new_scope
 from universal_runtime_v5_snapshot import VerifiedSnapshot, get_snapshot, put_snapshot, snapshot_key
 from universal_runtime_v5_state import RuntimeRoute, RuntimeState, bootstrap_runtime, canonical_query_patch, commit_intent
