@@ -92,6 +92,7 @@ def run_probe(
     injury_loader: Callable[[Sequence[Mapping[str, Any]]], Mapping[str, Any]] | None = None,
     public_loader: Callable[[Sequence[Mapping[str, Any]]], Mapping[str, Any]] | None = None,
     credential_resolver: Callable[[], object] | None = None,
+    now_utc: datetime | None = None,
 ) -> dict[str, Any]:
     if schedule_loader is None:
         from nba_spread_page_v7 import _load_launch_schedule as schedule_loader
@@ -104,6 +105,10 @@ def run_probe(
     if public_loader is None:
         from nba_spread_live_data_repair_v2 import load_public_betting_payload as public_loader
 
+    now = now_utc or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    now = now.astimezone(timezone.utc)
     credential_resolved = bool(credential_resolver())
     counters = {"schedule": 0, "market": 0, "injury": 0, "public": 0}
 
@@ -139,7 +144,6 @@ def run_probe(
     injuries = dict(injury_loader(opener) or {})
     counters["public"] += 1
     public = dict(public_loader(opener) or {})
-    now = datetime.now(timezone.utc)
     board = build_decision_board_state(
         opener,
         market,
