@@ -67,6 +67,23 @@ def test_selected_event_supports_legacy_event_query_for_frozen_page2() -> None:
     assert repair.selected_event_id(route, query=query, session={}) == "401871092"
 
 
+def test_selected_event_syncs_canonical_identity_into_frozen_page2_keys() -> None:
+    _assert_new_modules()
+    import cfb_game_total_v5_date_slate_repair_v1 as repair
+
+    route = SimpleNamespace(params={"date": "2026-10-20", "game_id": "401871055"})
+    query: dict[str, str] = {}
+    session: dict[str, str] = {}
+    repair.sync_selected_event_id("401871055", route, query=query, session=session)
+    assert query["game_id"] == "401871055"
+    assert query["date"] == "2026-10-20"
+    assert query["ks_cfb_game_total_event_id"] == "401871055"
+    assert query["ks_cfb_game_total_selector_sync"] == "401871055"
+    assert query["ks_cfb_game_total_date"] == "2026-10-20"
+    assert session["ks_cfb_game_total_event_id"] == "401871055"
+    assert session["ks_cfb_game_total_selector_sync"] == "401871055"
+
+
 def test_page1_runtime_context_patches_links_only_while_installed(monkeypatch) -> None:
     _assert_new_modules()
     import cfb_game_total_v5_date_slate_repair_v1 as repair
@@ -100,6 +117,7 @@ def test_loader_v21_repairs_only_cfb_game_total_and_delegates_everything_else() 
     assert 'importlib.import_module("cfb_game_total_page2_market_completeness_r1")' in source
     assert "with repair.install_page1_runtime(page1):" in source
     assert "event_id = repair.selected_event_id(route)" in source
+    assert "repair.sync_selected_event_id(event_id, route)" in source
     assert "return page2.render_cfb_hub(\"Game Total\")" in source
     assert "return prior.resolve_destination(route)" in source
 
