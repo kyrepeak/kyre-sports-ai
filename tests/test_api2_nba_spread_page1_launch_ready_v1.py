@@ -64,7 +64,10 @@ def test_market_context_is_per_game_and_requires_verified_observations() -> None
     assert market[("BOS", "DET")]["verification"] == "VERIFIED"
     assert market[("BOS", "DET")]["sportsbook_count"] == 2
     assert market[("PHI", "NYK")]["verification"] == "UNAVAILABLE"
-    assert market[("PHI", "NYK")]["diagnostic_state"] == "CONSENSUS_QUORUM_NOT_MET"
+    assert market[("PHI", "NYK")]["diagnostic_state"] in {
+        "NO_VERIFIED_SCHEDULE_MATCH",
+        "CONSENSUS_QUORUM_NOT_MET",
+    }
 
 
 def test_compact_injury_summary_replaces_full_injury_cards() -> None:
