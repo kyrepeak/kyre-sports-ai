@@ -152,6 +152,31 @@ def _line_pair(point_spread: Mapping[str, Any], phase: str) -> tuple[float, floa
     return away, home, _american_price(away_phase.get("odds")), _american_price(home_phase.get("odds"))
 
 
+def _details_spread_pair(
+    odds: Mapping[str, Any],
+    game: Mapping[str, object],
+) -> tuple[float, float, int | None, int | None] | None:
+    """Resolve a bare ESPN spread only when ``details`` proves the favorite side."""
+    spread = _number(odds.get("spread"))
+    details = _clean(odds.get("details"))
+    if spread is None or math.isclose(spread, 0.0, abs_tol=1e-9) or not details:
+        return None
+    parts = details.rsplit(maxsplit=1)
+    if len(parts) != 2:
+        return None
+    favorite_label, line_text = parts
+    favorite_line = _number(line_text)
+    magnitude = abs(spread)
+    if favorite_line is None or favorite_line >= 0 or not math.isclose(abs(favorite_line), magnitude, abs_tol=1e-9):
+        return None
+    favorite = _norm(favorite_label)
+    if favorite and favorite in _schedule_tokens(game, "away"):
+        return -magnitude, magnitude, None, None
+    if favorite and favorite in _schedule_tokens(game, "home"):
+        return magnitude, -magnitude, None, None
+    return None
+
+
 def normalize_espn_spread_observations_v1(
     payloads: Sequence[Mapping[str, Any]],
     schedule_games: Sequence[Mapping[str, object]],
@@ -187,10 +212,9 @@ def normalize_espn_spread_observations_v1(
                     continue
                 current = _line_pair(point_spread, "close")
                 if current is None:
-                    spread = _number(odds.get("spread"))
-                    if spread is None:
+                    current = _details_spread_pair(odds, game)
+                    if current is None:
                         continue
-                    current = (-spread, spread, None, None)
                 away_spread, home_spread, away_price, home_price = current
                 opened = _line_pair(point_spread, "open")
                 row = {
@@ -221,14 +245,18 @@ def normalize_espn_spread_observations_v1(
                 rows.append(row)
 
     deduped: dict[tuple[str, str], dict[str, object]] = {}
+    conflicted: set[tuple[str, str]] = set()
     for row in rows:
         key = (_clean(row.get("game_key")), _clean(row.get("sportsbook")).casefold())
+        if key in conflicted:
+            continue
         previous = deduped.get(key)
         if previous is not None:
             pair = (float(previous["away_spread"]), float(previous["home_spread"]))
             current = (float(row["away_spread"]), float(row["home_spread"]))
             if pair != current:
                 deduped.pop(key, None)
+                conflicted.add(key)
                 continue
         deduped[key] = row
     return list(deduped.values())
