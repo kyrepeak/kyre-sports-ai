@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "app.py": "767ad8260551e3e9c261557e21989d469fb9bd37",
+    "cfb_game_total_v5_date_slate_repair_v1.py": "73a332b24cf9f2d17f050b5521b399a32d642d91",
+    "devsystem/runless_proof_plans/api2-cfb-game-total-date-slate-repair-v1.json": "44a8008a767e75ed2026fa180037a22bd3070105",
+    "docs/superpowers/plans/2026-10-19-cfb-game-total-date-slate-repair-v1.md": "1921d8f74765a6e51c82faacb097f60d3e94b566",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_gt_v5.py": "1b7b336fd452c1223deb012e28d246dba44da116",
+    "tests/test_api2_cfb_game_total_v5_date_slate_repair_v1.py": "00ddb03511ce0801a75152b6b6030adbb3f56c11",
+    "universal_runtime_v5_loader_v21.py": "4e0dde0067e6d3c677eb47c23485a7cf34b07cc2"
+  },
+  "candidate_sha": "2029893f78c902199952086bbc6484ce475fc5f5",
+  "created_at": "2026-10-19T16:10:20.665824+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_daily_slate_runtime_fallback_r1.py": "1ae2e7313fc2c4c436ec3ed02324bbbd45d0806f",
+    "cfb_game_total_page1_daily_slate_v1.py": "ee2e231db9d928c5c51c40cf5c1df2888fa767db",
+    "cfb_game_total_page2_market_completeness_r1.py": "4c6adc52e6888e91a678eaad877af15132a539a1",
+    "devsystem/api2_universal_runtime_v5_cert.py": "d3921447063983620d6afe95fca466cb8c2e201c",
+    "streamlit_memory_lazy_router_cfb_game_total_page1_daily_slate_v1.py": "942f079e8fd3a0653e5be413fa1423003ac9368c",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "962612ab07db77a010b5c3d96ee0fed6ac418c5b",
+    "universal_runtime_v5_loader_v20.py": "6ae0183085e562ac16acf36cb21714a0de859407"
+  },
+  "digest": "a6e64e71fbd7e497077ecbf22a2e23fcaeaa58c252ab6e2990e9516d344767d0",
+  "evidence_digests": [
+    "163a2ed99254a6b6f27db1f6aea56e933a939181f4301f28d3926ec20c7bf786",
+    "3c078a1bc49d1ff1ec0aa1f1ee8509a2665fed0f4d00b94a5bdc9c248c7ee283",
+    "78ab9408ae3305454569e6e17e490e3f4a2ec97c1c0e5371604d67c80abc0f83",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "70213c11b83f8cd4d9f0e15f463ca8b8b29bc471048bb48726448a6a1eddaedc",
+  "proof_id": "api2-cfb-game-total-date-slate-repair-v1-2029893f78c90219-a42fb2b035450f98",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-CFB-GAME-TOTAL-DATE-SLATE-REPAIR-V1-APP"
+    ],
+    "revision": 422,
+    "state_hash": "70e2f778aab765a4f7623e48b12132a00f1023d96afd2bef6f3a1d98e18f3ed1"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-CFB-GAME-TOTAL-DATE-SLATE-REPAIR-V1-APP"
+    ],
+    "revision": 422,
+    "state_hash": "70e2f778aab765a4f7623e48b12132a00f1023d96afd2bef6f3a1d98e18f3ed1"
+  },
+  "request_fingerprint": "6c303e6949e354b34897bdd3ef95925555a1022516bf60aad7ff137fa01e31fc",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-game-total-date-slate-repair-v1",
+  "workstream": "api2-cfb-game-total-date-slate-repair-v1"
+}
