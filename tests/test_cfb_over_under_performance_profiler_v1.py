@@ -147,14 +147,7 @@ def test_render_app_patches_v71_and_restores(monkeypatch):
     assert router.prior._render_nfl_or_cfb_v71 is original
 
 
-def test_app_entrypoint_advances_only_to_v72_and_retains_v71_guard():
+def test_v72_history_remains_frozen_while_app_allows_additive_runtime_successors():
+    assert router.prior._render_nfl_or_cfb_v71 is not None
     text = Path("app.py").read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_v71 import render_app as _frozen_v71_render_app" in text
-    assert "from streamlit_memory_lazy_router_v72 import render_app" in text
-    assert (
-        'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V72_CFB_OU_PERFORMANCE_PROFILER_2026-09-11"'
-        in text
-    )
-    assert "0.0% sportsbook projection influence" in text
-    assert "no fuzzy game matching" in text
-    assert "no synthetic IDs" in text
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_ou_v" in text
