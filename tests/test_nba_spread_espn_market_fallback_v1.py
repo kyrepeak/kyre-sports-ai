@@ -83,6 +83,25 @@ def test_normalizer_binds_exact_game_and_preserves_current_open_prices():
     assert row["sportsbook_projection_influence"] == 0.0
 
 
+def test_bare_spread_uses_details_to_preserve_home_favorite_side():
+    import nba_spread_espn_market_fallback_v1 as market
+
+    payload = _espn_payload()
+    odds = payload["events"][0]["competitions"][0]["odds"][0]
+    odds.pop("pointSpread")
+    odds["details"] = "DET -3.5"
+    odds["spread"] = 3.5
+
+    rows = market.normalize_espn_spread_observations_v1(
+        [payload],
+        _schedule(),
+        retrieved_at_utc="2026-10-19T22:50:00Z",
+    )
+    assert len(rows) == 1
+    assert rows[0]["away_spread"] == 3.5
+    assert rows[0]["home_spread"] == -3.5
+
+
 def test_normalizer_rejects_nonmatching_schedule_identity():
     import nba_spread_espn_market_fallback_v1 as market
 
