@@ -43,14 +43,14 @@ def test_v4_reason_cards_are_capped_to_three_for_lean_layout():
     assert html.count('cfbm4-reason ') == 3
 
 
-def test_v15_routes_cfb_moneyline_to_v4_and_preserves_wrappers():
-    src = Path('universal_runtime_v5_loader_v15.py').read_text()
+def test_v16_routes_cfb_moneyline_to_v4_and_preserves_wrappers():
+    src = Path('universal_runtime_v5_loader_v16.py').read_text()
     assert 'cfb_moneyline_clean_page_v4' in src
     assert 'install_cfb_next_slate_date_bridge' in src
     assert 'install_universal_tap_only_selectboxes' in src
     assert 'market_id == "moneyline"' in src
 
 
-def test_runtime_handoff_stays_on_v15():
+def test_runtime_handoff_points_to_v16():
     src = Path('streamlit_memory_lazy_router_universal_runtime_v5.py').read_text()
-    assert 'from universal_runtime_v5_loader_v15 import choose_prefetch, load_destination, resolve_destination' in src
+    assert 'from universal_runtime_v5_loader_v16 import choose_prefetch, load_destination, resolve_destination' in src
