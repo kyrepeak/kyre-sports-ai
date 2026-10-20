@@ -34,6 +34,19 @@ def test_page3_navigation_contract_is_pinned_in_ui_source():
     assert '↑ TOP' in source
 
 
+def test_runtime_v3_successor_is_pinned_in_all_thawed_route_contracts():
+    paths=(
+        'universal_runtime_v5_loader_nfl_daily_picks_command_v3.py',
+        'tests/test_cfb_player_props_page1_integration_v1.py',
+        'tests/test_cfb_player_props_page1_route_v1.py',
+        'tests/test_cfb_player_props_page2_integration_v1.py',
+    )
+    for path in paths:
+        source=(ROOT/path).read_text()
+        assert 'CFB_PLAYER_PROPS_RUNTIME_V3' in source
+    assert 'cfb_player_props_runtime_v3' in (ROOT/paths[0]).read_text()
+
+
 def test_control_plane_files_bind_page3_freeze_and_runless_contract():
     ledger=json.loads((ROOT/'devsystem/task_ledgers/monster-cfb-player-props-page3-v1.json').read_text())
     proof=json.loads((ROOT/'devsystem/runless_proof_plans/monster-cfb-player-props-page3-v1.json').read_text())
