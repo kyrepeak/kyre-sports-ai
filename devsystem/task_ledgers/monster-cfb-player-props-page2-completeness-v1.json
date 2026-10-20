@@ -1,0 +1,51 @@
+{
+  "task_id": "monster-cfb-player-props-page2-completeness-v1",
+  "workstream": "monster-cfb-player-props-page2-completeness-v1",
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "source_main_sha": "a23d1e102bded0906668d2c69a14cafdb64a5e09",
+  "scope_lease_id": "SCOPE-LEASE-A5CA79A14D8AC51F551E1E30",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE2_COMPLETENESS_V1_FROZEN",
+  "required_check": "runless-final-gate",
+  "required_app_id": 5204253,
+  "sportsbook_projection_influence": 0.0,
+  "source_policy": {
+    "field": "cfb_player_props",
+    "priority": [
+      "Direct FanDuel",
+      "SportsGameOdds multi-book",
+      "Odds-API.io gap-fill"
+    ],
+    "rules": [
+      "use relevant sources rather than every source",
+      "prefer direct sportsbook observations",
+      "preserve sportsbook-specific quotes",
+      "prefer newer observations during same-book merge",
+      "never convert missing values to zero",
+      "one source failure must not blank verified fallback data"
+    ]
+  },
+  "root_cause": "FanDuel player-prop rows were fetched without verified game binding and were discarded by Page 2 exact-game safety filtering.",
+  "implementation": [
+    "exact verified-game binding for direct FanDuel CFB player props",
+    "existing Odds-API.io credential path used for approved gap fill",
+    "production compatibility bridge preserves existing Page 1/Page 2 import contract",
+    "SportsGameOdds remains an independent multi-book source",
+    "fail-soft source isolation and null-safe parsing"
+  ],
+  "verification": {
+    "red_observed": true,
+    "focused_passed": 9,
+    "broad_regression_passed": 86,
+    "compile": "GREEN",
+    "universal_runtime_v5_cert": "GREEN"
+  },
+  "artifacts": [
+    "cfb_player_props_fanduel_bound_v2.py",
+    "cfb_player_props_fanduel_v1.py",
+    "cfb_player_props_odds_api_v1.py",
+    "cfb_player_props_page2_completeness_v1.py",
+    "tests/test_cfb_player_props_page2_completeness_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page2-completeness-v1.json",
+    "devsystem/task_ledgers/monster-cfb-player-props-page2-completeness-v1.json"
+  ]
+}
