@@ -1,0 +1,15 @@
+{
+  "branch": "monster-cfb-player-props-page3-v1-review-r1",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
+  "notes": [
+    "Post-merge review repair for CFB Player Props Page 3 only",
+    "Repairs January CFB season derivation, real ESPN auxiliary history enrichment, and identity-keyed slider reset",
+    "No sportsbook input modifies projection math"
+  ],
+  "scope_lease_id": "SCOPE-LEASE-6D1246D45FDBF86C57602EE4",
+  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
+  "sportsbook_projection_influence": 0.0,
+  "status": "RED_TESTS_PINNED",
+  "task_id": "monster-cfb-player-props-page3-v1",
+  "workstream": "monster-cfb-player-props-page3-review-r1"
+}
