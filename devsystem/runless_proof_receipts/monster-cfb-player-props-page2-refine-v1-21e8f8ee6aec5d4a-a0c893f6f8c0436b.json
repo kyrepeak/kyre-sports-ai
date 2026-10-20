@@ -1,0 +1,57 @@
+{
+  "artifact_map": {
+    "cfb_player_props_page2_v1.py": "9ebf088e52df80c123923bd53e6d593a6a232e53",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page2-refine-v1.json": "6cd6bae6d05b85375781368845f1bef091817567",
+    "devsystem/task_ledgers/monster-cfb-player-props-page2-refine-v1.json": "25a014ceea08bec6ae5ce745e6f5718764312873",
+    "tests/test_cfb_player_props_page2_refine_v1.py": "42a37584310d772a41697a2eda02c081a2a41586"
+  },
+  "candidate_sha": "21e8f8ee6aec5d4a2656be77a71e79f465724b2a",
+  "created_at": "2026-10-20T16:58:15.238755+00:00",
+  "dependency_map": {
+    "cfb_player_props_model_v1.py": "75090fb22d569a3bed6c808ecb563c08685dacf7",
+    "cfb_player_props_page1_handoff_v1.py": "d80d0db5c6aca817a84ad82051d2b7e5253e8f04",
+    "cfb_player_props_page1_v1.py": "c93d6f905aff63230b0f3a7db22321518138a972",
+    "cfb_player_props_page2_availability_v1.py": "53b928707d197a16e6a819e8aaf5b6fa606811cb",
+    "cfb_player_props_page2_context_v1.py": "e31da30ece9ad1b46ba4b7a86da18438fbc8108c",
+    "cfb_player_props_page2_handoff_v1.py": "bf5ceeefd86988e336c8eb857e681a7fb0002a5f",
+    "cfb_player_props_page2_market_v1.py": "57161a18ff4857fa874fb6beeb6f46c19994a4f4",
+    "cfb_player_props_page2_matchup_v1.py": "0fc4c824dfedebed76a8c0f45ad356ec168c07ae",
+    "cfb_player_props_page2_roster_v1.py": "d6a923f2232457798f80f63ac3f03ae1d08154eb",
+    "universal_atomic_navigation_runtime_v1.py": "f76dc97c67d94c2876b8ce07c773de60b27f4b5c"
+  },
+  "digest": "c24bd43414d8de0db35d6d7f0799e6085ad66d1372557fb87c6b0213347203d8",
+  "evidence_digests": [
+    "043b96435c0afd75df1f40064c516719f2f965f451f7534bcf94a9b5fcf41907",
+    "990e8dec82fe90458a47ef61241e0227f699b3a1f148b8c57097214509fa3e45",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4c2eebe0ebeafbb58d63c8255b479cb5f6a56ebee3ad1a99864fa8a87ccf8200",
+  "proof_id": "monster-cfb-player-props-page2-refine-v1-21e8f8ee6aec5d4a-a0c893f6f8c0436b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE2-REFINE-V1"
+    ],
+    "revision": 443,
+    "state_hash": "4bfd154192f10e1ac18a01d8b4fbfc4d6b52d86477076a6e553533c9edb5a9fe"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE2-REFINE-V1"
+    ],
+    "revision": 443,
+    "state_hash": "4bfd154192f10e1ac18a01d8b4fbfc4d6b52d86477076a6e553533c9edb5a9fe"
+  },
+  "request_fingerprint": "c31146fc064bd755963aeedc9d37fe66f1f2a69a0d8ae971d3fe13b5af466ef0",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-player-props-page2-refine-v1",
+  "workstream": "monster-cfb-player-props-page2-refine-v1"
+}
