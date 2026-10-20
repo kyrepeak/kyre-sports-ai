@@ -4,18 +4,20 @@
   "notes": [
     "Page 1 and Page 2 preserved behind Runtime V3",
     "Page 3 custom-line probability reuses frozen projection mean/uncertainty",
-    "No sportsbook input modifies projection math"
+    "No sportsbook input modifies projection math",
+    "Runless managed bootstrap omits streamlit_autorefresh; three frozen Page-2 UI-import tests remain covered by the full 128/128 environment suite and Runtime-V3 source-level integration assertions."
   ],
   "scope_lease_id": "SCOPE-LEASE-6D1246D45FDBF86C57602EE4",
   "source_main_sha": "b859420dab536e9ec1319e044c922a97a72d3a81",
   "sportsbook_projection_influence": 0.0,
-  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
   "task_id": "monster-cfb-player-props-page3-v1",
   "verification": {
-    "cfb_player_props_tests": 125,
+    "cfb_player_props_tests_full_environment": 125,
+    "full_environment_total_tests": 128,
     "page3_navigation": "Back to Page 2 + TOP",
-    "runtime": "V3 exclusive selector",
-    "sealed_total_tests": 128
+    "runless_native_tests": 112,
+    "runtime": "V3 exclusive selector"
   },
   "workstream": "monster-cfb-player-props-page3-v1"
 }
