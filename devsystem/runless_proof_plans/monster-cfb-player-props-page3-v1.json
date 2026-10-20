@@ -1,7 +1,13 @@
 {
   "artifacts": [
+    "cfb_player_props_page3_analysis_v1.py",
+    "cfb_player_props_page3_context_v1.py",
+    "cfb_player_props_page3_history_v1.py",
     "devsystem/task_ledgers/monster-cfb-player-props-page3-v1.json",
     "devsystem/runless_proof_plans/monster-cfb-player-props-page3-v1.json",
+    "tests/test_cfb_player_props_page3_analysis_v1.py",
+    "tests/test_cfb_player_props_page3_context_v1.py",
+    "tests/test_cfb_player_props_page3_history_v1.py",
     "tests/test_cfb_player_props_page3_integration_v1.py"
   ],
   "candidate_binding": "authoritative exact PR head at proof request",
@@ -57,6 +63,13 @@
       "devsystem.api2_universal_runtime_v5_cert"
     ]
   ],
+  "dependencies": [
+    "cfb_player_props_history_v1.py",
+    "cfb_player_props_model_v1.py",
+    "cfb_player_props_page2_market_v1.py",
+    "cfb_player_props_page2_matchup_v1.py",
+    "cfb_player_props_page2_availability_v1.py"
+  ],
   "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
   "known_baseline_exceptions": [
     "Runless managed bootstrap omits streamlit_autorefresh; the three frozen Page-2 UI-import tests are excluded from Runless but passed in the full environment as part of the 128/128 sealed suite. Runtime-V3 changes to those frozen route-contract files are pinned by Page-3 source-level integration assertions."
@@ -68,9 +81,9 @@
   "reuse": {
     "allow_existing_authoritative_path": true
   },
-  "source_main_sha": "b859420dab536e9ec1319e044c922a97a72d3a81",
+  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
   "sportsbook_projection_influence": 0.0,
   "task_id": "monster-cfb-player-props-page3-v1",
   "timeout_seconds": 300,
-  "workstream": "monster-cfb-player-props-page3-v1"
+  "workstream": "monster-cfb-player-props-page3-review-r1"
 }
