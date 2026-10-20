@@ -1,0 +1,32 @@
+{
+  "mode": "runless",
+  "task_id": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "workstream": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "source_main_sha": "4694b46dff3444eb08a0e3caa1614651a31c5ae3",
+  "commands": [
+    ["python", "-m", "py_compile", "tests/test_cfb_player_props_page1_runtime_dependencies_r1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_cfb_player_props_page1_runtime_dependencies_r1.py", "tests/test_cfb_player_props_page1_v1.py", "tests/test_cfb_player_props_page1_integration_v1.py", "tests/test_cfb_player_props_page1_route_v1.py", "tests/test_universal_atomic_navigation_v1.py", "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py"],
+    ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
+  ],
+  "artifacts": [
+    "requirements.txt",
+    "tests/test_cfb_player_props_page1_runtime_dependencies_r1.py",
+    "devsystem/task_ledgers/monster-cfb-player-props-page1-runtime-deps-r1.json",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page1-runtime-deps-r1.json"
+  ],
+  "dependencies": [
+    "cfb_player_props_page1_v1.py",
+    "cfb_player_props_fanduel_v1.py",
+    "sports_api/collectors/cfb_fanduel_direct.py",
+    "sports_api/api/cfb_market_identity_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 600,
+  "public_runtime_required": false,
+  "required_check": "runless-final-gate",
+  "required_app_id": 5204253,
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE1_RUNTIME_DEPS_R1_FROZEN",
+  "github_actions_fallback": 0,
+  "reuse": {"allow_existing_authoritative_path": true}
+}
