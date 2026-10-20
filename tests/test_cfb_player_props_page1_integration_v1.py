@@ -24,10 +24,11 @@ def test_player_props_route_is_single_lazy_destination_and_nonselected_delegates
     assert seen == [other]
 
 
-def test_page1_reuses_existing_next_slate_owner_and_projection_is_book_independent():
+def test_page1_reuses_next_slate_rules_with_current_schedule_owner_and_projection_is_book_independent():
     source = (ROOT / "cfb_player_props_page1_slate_v1.py").read_text()
     assert "cfb_universal_next_slate_navigation_v1 as next_slate" in source
-    assert "games_loader=schedule.games_for_date" in source
+    assert "import cfb_schedule_v4 as schedule" in source
+    assert "next_slate.game_is_future_pregame" in source
     assert model.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
 

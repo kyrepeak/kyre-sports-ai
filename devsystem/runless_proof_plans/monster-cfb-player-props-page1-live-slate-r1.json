@@ -1,0 +1,37 @@
+{
+  "mode": "runless",
+  "task_id": "monster-cfb-player-props-page1-live-slate-r1",
+  "workstream": "monster-cfb-player-props-page1-live-slate-r1",
+  "source_main_sha": "e03b166df0a1865523955e348ab7402234d5a831",
+  "commands": [
+    ["python", "-m", "py_compile", "cfb_player_props_page1_slate_v1.py", "tests/test_cfb_player_props_page1_live_slate_r1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_cfb_player_props_identity_v1.py", "tests/test_cfb_player_props_market_v1.py", "tests/test_cfb_player_props_model_v1.py", "tests/test_cfb_player_props_page1_handoff_v1.py", "tests/test_cfb_player_props_page1_integration_v1.py", "tests/test_cfb_player_props_page1_live_slate_r1.py", "tests/test_cfb_player_props_page1_route_v1.py", "tests/test_cfb_player_props_page1_runtime_dependencies_r1.py", "tests/test_cfb_player_props_page1_slate_v1.py", "tests/test_cfb_player_props_page1_v1.py", "tests/test_universal_atomic_navigation_v1.py", "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py", "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py", "-k", "not app_stays_on_existing_v3_terminal_so_v4_lane_keeps_entrypoint_ownership"],
+    ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
+  ],
+  "artifacts": [
+    "cfb_player_props_page1_slate_v1.py",
+    "tests/test_cfb_player_props_page1_live_slate_r1.py",
+    "tests/test_cfb_player_props_page1_integration_v1.py",
+    "tests/test_cfb_player_props_page1_slate_v1.py",
+    "docs/superpowers/plans/2026-10-20-cfb-player-props-page1-live-slate-r1.md",
+    "devsystem/task_ledgers/monster-cfb-player-props-page1-live-slate-r1.json",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page1-live-slate-r1.json"
+  ],
+  "dependencies": [
+    "cfb_schedule_v4.py",
+    "cfb_universal_next_slate_navigation_v1.py",
+    "cfb_player_props_page1_v1.py"
+  ],
+  "known_baseline_exceptions": [
+    "Bare pytest is blocked during collection by tests/conftest.py line 203 pinning obsolete streamlit_memory_lazy_router_v157 while current production intentionally boots Universal Runtime V5 with NFL Daily Picks V4."
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 600,
+  "public_runtime_required": false,
+  "required_check": "runless-final-gate",
+  "required_app_id": 5204253,
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE1_LIVE_SLATE_R1_FROZEN",
+  "github_actions_fallback": 0,
+  "reuse": {"allow_existing_authoritative_path": true}
+}

@@ -1,11 +1,11 @@
 """CFB Player Props Page 1 V1 — next-slate schedule normalization."""
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable, Mapping
 from zoneinfo import ZoneInfo
 
-import cfb_schedule_v1 as schedule
+import cfb_schedule_v4 as schedule
 import cfb_universal_next_slate_navigation_v1 as next_slate
 
 MODEL_VERSION = "CFB PLAYER PROPS PAGE 1 • SLATE V1"
@@ -70,30 +70,42 @@ def load_next_player_prop_slate(
     *,
     now_provider: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
 ) -> dict[str, Any]:
-    resolved = next_slate.resolve_runtime_cfb_slate_date(
-        games_loader=schedule.games_for_date,
-        now_provider=now_provider,
-    )
-    if resolved is None:
-        return {
-            "state": "unavailable",
-            "slate_date": None,
-            "games": [],
-            "source": schedule.MODEL_VERSION,
-        }
-    normalized: list[dict[str, Any]] = []
-    for raw in schedule.games_for_date(resolved) or []:
-        if not isinstance(raw, Mapping):
-            continue
+    now = now_provider()
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    now_utc = now.astimezone(timezone.utc)
+
+    for offset in range(next_slate.MAX_SCAN_DAYS + 1):
+        slate_date = now_utc.date() + timedelta(days=offset)
         try:
-            normalized.append(normalize_page1_game(raw, resolved))
-        except (TypeError, ValueError):
+            raw_games = list(schedule.games_for_date(slate_date) or [])
+        except Exception:
             continue
-    normalized.sort(key=lambda row: (row["kickoff_iso"], row["official_game_id"]))
+
+        normalized: list[dict[str, Any]] = []
+        for raw in raw_games:
+            if not isinstance(raw, Mapping):
+                continue
+            if not next_slate.game_is_future_pregame(raw, now_utc=now_utc):
+                continue
+            try:
+                normalized.append(normalize_page1_game(raw, slate_date))
+            except (TypeError, ValueError):
+                continue
+
+        if normalized:
+            normalized.sort(key=lambda row: (row["kickoff_iso"], row["official_game_id"]))
+            return {
+                "state": "live",
+                "slate_date": slate_date,
+                "games": normalized,
+                "source": schedule.MODEL_VERSION,
+            }
+
     return {
-        "state": "live" if normalized else "unavailable",
-        "slate_date": resolved,
-        "games": normalized,
+        "state": "unavailable",
+        "slate_date": None,
+        "games": [],
         "source": schedule.MODEL_VERSION,
     }
 
