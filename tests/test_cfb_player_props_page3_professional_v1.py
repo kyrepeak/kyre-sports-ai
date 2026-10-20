@@ -148,6 +148,7 @@ def test_page3_source_has_professional_ui_contract():
         "SPORTSBOOK MARKET",
         "WHY THE MODEL SEES IT THIS WAY",
         "DATA QUALITY & SOURCES",
+        "ACTIVE FIELD SOURCES",
         "← Back to Game Props",
         "↑ TOP",
     ):
