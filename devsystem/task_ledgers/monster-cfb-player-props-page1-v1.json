@@ -3,6 +3,16 @@
   "baseline_exception": "Bare repo pytest is pre-collection blocked by stale tests/conftest.py assertion requiring obsolete streamlit_memory_lazy_router_v157; focused --noconftest and current runtime certifications are authoritative for this lane.",
   "branch": "monster-cfb-player-props-page1-v1",
   "candidate_binding": "Exact candidate SHA is the immutable authoritative branch/PR head supplied to Runless proof transport; this in-tree ledger intentionally does not self-reference its containing commit SHA.",
+  "failure_history": [
+    {
+      "candidate_sha": "64ff4e5d994e4e68309a0f0319988a4833bdf553",
+      "classification": "INFRA",
+      "detail": "RUNLESS_V2_COMMAND_REJECTED",
+      "proof_id": "monster-cfb-player-props-page1-v1-64ff4e5d994e4e68-54158a4b06cb5630",
+      "root_cause": "Proof plan invoked runtime certification as `python devsystem/api2_universal_runtime_v5_cert.py`; Runless V2 allowlist requires approved devsystem tools as `python -m devsystem.<module>`. Product tests and runtime certification were otherwise GREEN.",
+      "repair": "Use `python -m devsystem.api2_universal_runtime_v5_cert` in the same authoritative PR/branch."
+    }
+  ],
   "forbidden_changes": [
     "app.py",
     "CFB Page 2",
@@ -25,9 +35,9 @@
     "universal_sports_nav_registry_v1.py",
     "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py"
   ],
-  "proof_state": "LOCAL_VERIFIED_READY_FOR_EXACT_HEAD_PROOF",
+  "proof_state": "ROOT_CAUSE_PATCHED_READY_FOR_EXACT_HEAD_PROOF",
   "scope": "Page 1 only: canonical CFB player-props route, next-active-slate game hub, verified player-prop observations, compact sportsbook-independent Kyre signal, and exact selected-game handoff. No Page 2 or Page 3 product implementation.",
-  "scope_lease": "SCOPE-LEASE-00EC0273AAC9CEC6B1DB6004",
+  "scope_lease": "SCOPE-LEASE-1BC3CB371A0DF8D33F1281E8",
   "source_main": "1e3e7f452ffb7fb304e79c396601612b1ac438f4",
   "sportsbook_projection_influence": 0.0,
   "status": "READY_FOR_EXACT_HEAD_PROOF",
@@ -43,6 +53,7 @@
     "integration": "5 passed",
     "page1_route_nav": "14 passed",
     "page1_ui": "6 passed",
+    "runless_allowed_runtime_cert_command": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
     "runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
     "slate_handoff": "7 passed"
   },
