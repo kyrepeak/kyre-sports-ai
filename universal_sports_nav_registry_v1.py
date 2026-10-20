@@ -61,7 +61,7 @@ _MLB_NORMAL = (("ks_mlb_live_odds_route", False),)
 
 SPORTS: tuple[SportRoute, ...] = (
     SportRoute(
-        id="nfl", label="NFL", icon="🏈", legacy_sport="NFL", default_market_id="slate",
+        id="nfl", label="NFL", icon="🏈", legacy_sport="NFL", default_market_id="daily-picks",
         markets=(
             _market("slate", "Slate", "Slate", _NFL_KEY),
             _market("moneyline", "Moneyline", "Moneyline", _NFL_KEY),
