@@ -126,8 +126,8 @@ def _decision(view: Mapping[str,Any]) -> None:
 def _recent_table(block: Mapping[str,Any]) -> pd.DataFrame:
     rows=[]
     for row in block.get("rows") or ():
-        item={"Date":row.get("game_date") or row.get("event_id"),"Opponent":row.get("opponent_name") or row.get("opponent_team_id") or "—","Result":row.get("value")}
-        for key,label in (("pass_attempts","ATT"),("completions","CMP"),("completion_percentage","CMP%"),("yards_per_attempt","Y/A"),("passing_touchdowns","TD"),("interceptions","INT")):
+        item={"Date":row.get("game_date") or row.get("date") or row.get("event_id"),"Opponent":row.get("opponent_name") or row.get("opponent_team_id") or "—","Result":row.get("value") if row.get("value") is not None else row.get("combined_total")}
+        for key,label in (("pass_attempts","ATT"),("completions","CMP"),("completion_percentage","CMP%"),("yards_per_attempt","Y/A"),("passing_touchdowns","TD"),("interceptions","INT"),("away_points","Away Pts"),("home_points","Home Pts")):
             if row.get(key) is not None: item[label]=row.get(key)
         rows.append(item)
     return pd.DataFrame(rows)
@@ -162,7 +162,13 @@ def render_cfb_player_props_page3() -> None:
     if st.session_state.get("cfbpp3_line_identity") != identity:
         st.session_state["cfbpp3_line_identity"]=identity
         st.session_state["cfbpp3_line"]=initial
-    active_line=float(st.session_state.get("cfbpp3_line") or initial)
+    slider_state_key=f"cfbpp3_slider_{identity}"
+    widget_line=st.session_state.get(slider_state_key)
+    if widget_line is not None:
+        active_line=float(widget_line)
+    else:
+        active_line=float(st.session_state.get("cfbpp3_line") or initial)
+    st.session_state["cfbpp3_line"]=active_line
     packet=page3_analysis.reline_page3_analysis(packet,active_line)
     view=professional.build_professional_view(context,packet,selected_line=active_line)
 
@@ -174,13 +180,16 @@ def render_cfb_player_props_page3() -> None:
     a,b,c,d=st.columns(4)
     a.metric("Kyre Projection",_fmt(projection.get("projection")))
     b.metric("Market Consensus",_fmt(market.get("consensus_line")))
-    c.metric("Projection − Market",_fmt((view.get("decision") or {}).get("margin")))
+    c.metric("Projection − Market",_fmt((view.get("decision") or {}).get("market_margin")))
     d.metric("Verified Books",str(int(market.get("book_count") or 0)))
 
     low,high,step=line_lab.LINE_BOUNDS[current]
     st.markdown('<div class="cfbpp3-section">LINE LAB</div>',unsafe_allow_html=True)
     st.caption(f"Model projection marker: {_fmt(projection.get('projection'))} • Current market marker: {_fmt(market.get('consensus_line'))}")
-    selected_line=st.slider("Move the line",min_value=float(low),max_value=float(high),value=active_line,step=float(step),key=f"cfbpp3_slider_{identity}")
+    if slider_state_key in st.session_state:
+        selected_line=st.slider("Move the line",min_value=float(low),max_value=float(high),step=float(step),key=slider_state_key)
+    else:
+        selected_line=st.slider("Move the line",min_value=float(low),max_value=float(high),value=active_line,step=float(step),key=slider_state_key)
     st.session_state["cfbpp3_line"]=selected_line
     packet=page3_analysis.reline_page3_analysis(packet,selected_line)
     view=professional.build_professional_view(context,packet,selected_line=selected_line)
@@ -230,10 +239,11 @@ def render_cfb_player_props_page3() -> None:
     st.markdown('<div class="cfbpp3-section">TEAM MATCHUP HISTORY</div>',unsafe_allow_html=True)
     team=view.get("team_matchup") or {}
     if team.get("available"):
-        st.caption("Historical team meetings are shown separately and are not labeled as player H2H.")
-        st.dataframe(pd.DataFrame(list(team.get("rows") or ())),use_container_width=True,hide_index=True)
+        st.caption(f"Historical team meetings are separate from player H2H • sample {int(team.get('sample_size') or 0)} • sources {', '.join(team.get('sources') or ()) or 'unavailable'}")
+        st.dataframe(_recent_table(team),use_container_width=True,hide_index=True)
     else:
-        st.caption("Verified team matchup history unavailable for this exact opponent identity.")
+        status=_text(team.get("status"))
+        st.caption(f"Verified team matchup history unavailable for this exact opponent identity{f' • {status}' if status else ''}.")
 
     st.markdown('<div class="cfbpp3-section">OPPONENT VS ROLE</div>',unsafe_allow_html=True)
     role=view.get("opponent_vs_role") or {}
@@ -252,7 +262,7 @@ def render_cfb_player_props_page3() -> None:
 
     st.markdown('<div class="cfbpp3-section">OPPONENT DEFENSE</div>',unsafe_allow_html=True)
     matchup=packet.get("matchup") or {}
-    st.write(f"**{_text(matchup.get('label')) or 'CHECK'}** — {_text(matchup.get('detail')) or 'Defense data unavailable'}")
+    st.write(f"**{_text(matchup.get('label')) or 'CHECK'}** — {_text(matchup.get('detail')) or _text(matchup.get('message')) or 'Defense data unavailable'}")
 
     st.markdown('<div class="cfbpp3-section">SPORTSBOOK MARKET • SPORTSBOOK BOARD</div>',unsafe_allow_html=True)
     book_rows=_book_rows(market.get("observations"))
