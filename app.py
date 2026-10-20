@@ -1,9 +1,9 @@
-"""KYRE Sports AI production entrypoint — Universal Runtime V5 + NBA Spread decision-board overlay."""
+"""KYRE Sports AI production entrypoint — Universal Runtime V5 + NBA Spread S-tier overlay."""
 from time import perf_counter
 
 _BOOTSTRAP_STARTED = perf_counter()
 
-from streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v7 import (  # noqa: E402
+from streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8 import (  # noqa: E402
     record_bootstrap_import_ms,
     render_app,
 )
