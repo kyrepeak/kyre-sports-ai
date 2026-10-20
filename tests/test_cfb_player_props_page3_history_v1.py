@@ -72,6 +72,7 @@ def test_load_page3_history_enriches_real_gamelog_auxiliary_fields(monkeypatch):
     }
     monkeypatch.setattr(h.frozen_history,'load_verified_player_history',lambda p,m,season:list(base))
     monkeypatch.setattr(h.frozen_history,'_fetch_gamelog',lambda athlete_id,season:payload)
+    monkeypatch.setattr(h.gamebook_recovery,'load_completed_gamebook_history',lambda *args,**kwargs: [])
     rows=h.load_page3_history(player,'passing_yards',season=2026)
     assert rows[0]['completions']==20
     assert rows[0]['pass_attempts']==31
@@ -87,6 +88,32 @@ def test_load_verified_history_delegates_to_frozen_owner(monkeypatch):
     seen=[]
     monkeypatch.setattr(h.frozen_history,'load_verified_player_history',lambda p,m,season: seen.append((p,m,season)) or _rows())
     monkeypatch.setattr(h.frozen_history,'_fetch_gamelog',lambda athlete_id,season:{})
+    monkeypatch.setattr(h.gamebook_recovery,'load_completed_gamebook_history',lambda *args,**kwargs: (_ for _ in ()).throw(AssertionError('recovery should not run when primary sample is sufficient')))
     rows=h.load_page3_history(player,'passing_yards',season=2026)
     assert len(rows)==9
+    assert seen==[(player,'passing_yards',2026)]
+
+
+def test_load_page3_history_recovers_exact_id_gamebooks_when_primary_is_short(monkeypatch):
+    import cfb_player_props_page3_history_v1 as h
+    player=CanonicalPlayerIdentity('50216301','2393','Roman Gagliano','QB','Middle Tennessee','MTSU')
+    primary=[
+        {'event_id':'e6','completed':True,'market_key':'passing_yards','value':291.0,'game_date':'2026-10-13','source':'ESPN CFB athlete gamelog'},
+    ]
+    recovered=[
+        {'event_id':'e6','completed':True,'market_key':'passing_yards','value':291.0,'game_date':'2026-10-13','source':'ESPN CFB completed game books'},
+        {'event_id':'e5','completed':True,'market_key':'passing_yards','value':81.0,'game_date':'2026-10-03','source':'ESPN CFB completed game books'},
+        {'event_id':'e4','completed':True,'market_key':'passing_yards','value':216.0,'game_date':'2026-09-26','source':'ESPN CFB completed game books'},
+        {'event_id':'e3','completed':True,'market_key':'passing_yards','value':173.0,'game_date':'2026-09-19','source':'ESPN CFB completed game books'},
+        {'event_id':'e2','completed':True,'market_key':'passing_yards','value':243.0,'game_date':'2026-09-12','source':'ESPN CFB completed game books'},
+        {'event_id':'e1','completed':True,'market_key':'passing_yards','value':200.0,'game_date':'2026-09-05','source':'ESPN CFB completed game books'},
+    ]
+    monkeypatch.setattr(h.frozen_history,'load_verified_player_history',lambda p,m,season:list(primary))
+    monkeypatch.setattr(h.frozen_history,'_fetch_gamelog',lambda athlete_id,season:{})
+    seen=[]
+    monkeypatch.setattr(h.gamebook_recovery,'load_completed_gamebook_history',lambda p,m,season: seen.append((p,m,season)) or list(recovered))
+    rows=h.load_page3_history(player,'passing_yards',season=2026)
+    assert len(rows)==6
+    assert [row['event_id'] for row in rows]==['e6','e5','e4','e3','e2','e1']
+    assert rows[0]['source']=='ESPN CFB athlete gamelog'
     assert seen==[(player,'passing_yards',2026)]

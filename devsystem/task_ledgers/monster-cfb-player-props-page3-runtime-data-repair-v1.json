@@ -1,0 +1,27 @@
+{
+  "branch": "monster-cfb-player-props-page3-runtime-data-repair-v1",
+  "candidate_binding": "authoritative exact PR head at proof request",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_RUNTIME_DATA_REPAIR_V1_FROZEN",
+  "parent_freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_PROFESSIONAL_V1_FROZEN",
+  "notes": [
+    "Single successor repair for the production Page-3 blank projection/probability symptom after Professional V1 freeze.",
+    "Root cause is an insufficient/empty single athlete-gamelog input path while verified completed player history exists.",
+    "Recovery uses completed ESPN team schedules plus exact-team/exact-athlete game books only when the primary sample is below the frozen model MIN_SAMPLE.",
+    "Primary gamelog rows win on duplicate event IDs; recovery never fabricates player results or synthetic zero values.",
+    "Frozen projection formula and sportsbook projection influence remain unchanged at 0.0.",
+    "No universal-runtime route mutation and no unrelated sports-page mutation in this workstream.",
+    "One branch, one PR, one Runless proof, one expected-head merge and one finalization authority only."
+  ],
+  "scope_lease_id": "SCOPE-LEASE-D03F7220CC412191F8FF06C4",
+  "source_main_sha": "16d40ed3d3daaf6f2450a2c63e145471f2c67322",
+  "sportsbook_projection_influence": 0.0,
+  "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
+  "task_id": "monster-cfb-player-props-page3-runtime-data-repair-v1",
+  "workstream": "monster-cfb-player-props-page3-runtime-data-repair-v1",
+  "implementation": [
+    "Task 1: regression-pin primary-short history recovery and event deduplication",
+    "Task 2: add exact-ID completed-game book recovery owner",
+    "Task 3: invoke recovery only below frozen MIN_SAMPLE while preserving primary data precedence",
+    "Task 4: exact-head Runless proof, expected-head merge, successor freeze/read-back and lease release"
+  ]
+}
