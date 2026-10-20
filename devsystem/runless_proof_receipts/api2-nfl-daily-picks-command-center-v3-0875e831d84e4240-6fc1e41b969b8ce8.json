@@ -1,0 +1,69 @@
+{
+  "artifact_map": {
+    "app.py": "d010e904b997dad3f562df5bbc7c6ac26dcd2537",
+    "devsystem/runless_proof_plans/api2-nfl-daily-picks-command-center-v3.json": "a1081b2dde491af02d19a635ae4552ac842a4a9d",
+    "devsystem/task_ledgers/api2-nfl-daily-picks-command-center-v3.json": "89b7c3495bc81c9ba5630904a65272758fa9fb34",
+    "docs/superpowers/plans/2026-10-19-api2-nfl-daily-picks-command-center-v3.md": "07f39c19e804c75fc1a376ff4ad3cabca554fd7d",
+    "docs/superpowers/specs/2026-10-19-api2-nfl-daily-picks-command-center-v3-design.md": "e8bcbbd34656569c4abbb896c6eee14fccdf6d0e",
+    "nfl_daily_picks_command_center_v3.py": "adaa75df4c30283eaa9e2f7fc78e8094630561fc",
+    "nfl_daily_picks_market_v3.py": "a0d52029173968387088fe573dbbff7a3168beab",
+    "nfl_daily_picks_parlay_v3.py": "4de303d8c277ddeecde9405111678795308d2a12",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py": "1d76a57af6954ed361ddc40631d47b27ce5684af",
+    "tests/test_api2_nfl_daily_picks_command_center_v3.py": "2aad1d6a599eec84af00fe2ad75a1c7227c5b73c",
+    "tests/test_api2_nfl_daily_picks_command_center_v3_review_fix.py": "703a4d578b1059675c1a5cc679b3b62cb7bc1cfa",
+    "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py": "068fe6a868557e1046ec80a3b0fbad8a1f35537f"
+  },
+  "candidate_sha": "0875e831d84e4240314893ea6e03223272d0d918",
+  "created_at": "2026-10-20T02:01:32.009144+00:00",
+  "dependency_map": {
+    "devsystem/api2_universal_runtime_v5_cert.py": "d3921447063983620d6afe95fca466cb8c2e201c",
+    "nfl_daily_picks_core_v1.py": "34ca85d6d1747a5ccedb6b3e09669fb9231efec0",
+    "nfl_daily_picks_hub_v1.py": "49636aae139a0f86e29fec8867525d8feeaf5262",
+    "nfl_daily_picks_ranking_v1.py": "fce1eeb9f154653c560e96f17ced8122ffb6547b",
+    "nfl_daily_picks_sources_v1.py": "bc779f90426ef4c7b5cddefe247cbe835515bb6a",
+    "nfl_game_totals_market_read_v1.py": "ca86561ffbb329f686df752afdfc95da1f210ba3",
+    "nfl_moneyline_market_v11.py": "bf619c85639c724a7c1f60188672b037d709138d",
+    "nfl_spread_hub_v1.py": "7bfbb024466e67fab9423431632e7b3f2209f8c0",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8.py": "981276639c2e0fa50e1053546a7271e545ff8c1f",
+    "universal_runtime_v5_loader_nba_spread_stier_v2.py": "16b93bb135bc4ab2d79ec62c67b94635bb587487"
+  },
+  "digest": "10d73a713a5bf84edd0dfca9761c85a03828de8707ba595c437c2ebc44cdf8e5",
+  "evidence_digests": [
+    "e1c0f791b5f064fd4032fde1392b1fb659af77a0e94b052ecb120ff9665de1ca",
+    "0b248259b7cb5c8dfd67202bc1696744a1ae54c33717032383880dce6b69a9bb",
+    "8011da3248b62ba0b7482fb4f5c26e4ee510bd749da1426adf8274613d8f5531",
+    "cbb7f1fd5867885d2991798eb15bbcc9ccf25901f3d951fdc89305dfc6146e58",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7760814f4a50445d0ec38924b37b3dd271f43235d672c9173ed05891b1b878e0",
+  "proof_id": "api2-nfl-daily-picks-command-center-v3-0875e831d84e4240-6fc1e41b969b8ce8",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-NFL-DAILY-PICKS-COMMAND-CENTER-V3-APP-R1"
+    ],
+    "revision": 434,
+    "state_hash": "5e1f888a42850a7f47ea0cc984f3fb6983c42244560242fc0783ae99aebcf643"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-NFL-DAILY-PICKS-COMMAND-CENTER-V3-APP-R1"
+    ],
+    "revision": 434,
+    "state_hash": "5e1f888a42850a7f47ea0cc984f3fb6983c42244560242fc0783ae99aebcf643"
+  },
+  "request_fingerprint": "53acb164aa154011ce9f84da2a32094657d58246107db9e162b1ec6ead20caea",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-daily-picks-command-center-v3",
+  "workstream": "api2-nfl-daily-picks-command-center-v3"
+}
