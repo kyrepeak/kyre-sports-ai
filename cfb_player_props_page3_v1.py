@@ -90,7 +90,7 @@ def _friendly_timestamp(value: Any) -> str:
         dt = dt.astimezone(ZoneInfo("America/Phoenix"))
         clock = dt.strftime("%I:%M %p").lstrip("0")
         return f"Updated {clock} MST"
-    except (TypeError, ValueError, ZoneInfo.KeyError):
+    except (TypeError, ValueError, KeyError):
         return f"Updated {raw}"
 
 
@@ -163,7 +163,7 @@ def _hero(context: dict[str, Any], packet: dict[str, Any]) -> None:
     freshness = _friendly_timestamp((packet.get("quality") or {}).get("latest_market_timestamp"))
     kickoff = _text(context.get("kickoff_phoenix")) or _text(context.get("kickoff_iso")) or "Kickoff unavailable"
     st.markdown(
-        f'''<div class="cfbpp3-shell"><div class="cfbpp3-kicker">CFB • PLAYER PROPS • PROFESSIONAL ANALYTICS V2</div><div class="cfbpp3-title">{escape(player.canonical_name)} • {escape(market)}</div><div class="cfbpp3-sub">Verified player-prop intelligence, market context and matchup evidence in one compact decision dashboard.</div><div class="cfbpp3-hero">{images}<div><div class="cfbpp3-name">{escape(player.canonical_name)}</div><div class="cfbpp3-meta">{escape(player.position)} • {escape(player.team_name)} vs {escape(_text(opponent))}</div><span class="cfbpp3-chip">{escape(availability)}</span><span class="cfbpp3-chip">LINE {escape(line)}</span><span class="cfbpp3-chip">{escape(kickoff)}</span><span class="cfbpp3-chip">{escape(freshness)}</span></div></div></div>''',
+        f'''<div class="cfbpp3-shell"><div class="cfbpp3-kicker">CFB • PLAYER PROPS • PLAYER PROP INTELLIGENCE LAB • PROFESSIONAL ANALYTICS V2</div><div class="cfbpp3-title">{escape(player.canonical_name)} • {escape(market)}</div><div class="cfbpp3-sub">Verified player-prop intelligence, market context and matchup evidence in one compact decision dashboard.</div><div class="cfbpp3-hero">{images}<div><div class="cfbpp3-name">{escape(player.canonical_name)}</div><div class="cfbpp3-meta">{escape(player.position)} • {escape(player.team_name)} vs {escape(_text(opponent))}</div><span class="cfbpp3-chip">{escape(availability)}</span><span class="cfbpp3-chip">LINE {escape(line)}</span><span class="cfbpp3-chip">{escape(kickoff)}</span><span class="cfbpp3-chip">{escape(freshness)}</span></div></div></div>''',
         unsafe_allow_html=True,
     )
 
