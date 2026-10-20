@@ -10,15 +10,25 @@ from time import perf_counter
 
 import streamlit as st
 
-# Importing the current terminal first preserves its complete loader-overlay
+# Prefer a future independently-landed NFL V4 terminal, but never own or modify
+# that lane here. Fall back only when the V4 module itself is absent; dependency
+# failures inside V4 must surface rather than being disguised as a fallback.
+_V4_RUNTIME = "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4"
+try:
+    import streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4 as upstream
+except ModuleNotFoundError as exc:
+    if exc.name != _V4_RUNTIME:
+        raise
+    import streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3 as upstream
+
+# Importing the selected upstream first preserves its complete loader-overlay
 # chain and patches the frozen Runtime V5 resolver to the latest destination
 # ownership without changing any individual sport page.
-import streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3 as upstream
 import streamlit_memory_lazy_router_universal_runtime_v5 as core
 from universal_atomic_navigation_v1 import route_identity, transition_markup
 
 MODEL_VERSION = "MONSTER UNIVERSAL ATOMIC NAVIGATION V1 • TERMINAL"
-UPSTREAM_RUNTIME = "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3"
+UPSTREAM_RUNTIME = upstream.__name__
 MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 LAST_RENDERED_ROUTE_KEY = "ks_atomic_navigation_last_rendered_route_v1"
