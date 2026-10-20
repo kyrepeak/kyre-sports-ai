@@ -1,0 +1,47 @@
+{
+  "task_id": "api2-nba-pra-page1-upcoming-status-repair-v1",
+  "workstream": "api2-nba-pra-page1-upcoming-status-repair-v1",
+  "source_main_sha": "d33a5a6ef5e812a1acd5536c2768188df61be6b5",
+  "status": "FINAL_CANDIDATE_BUILDING",
+  "progress_percent": 78,
+  "step2a": {
+    "authoritative_branch": "api2-nba-pra-page1-upcoming-status-repair-v1",
+    "authoritative_pr": null,
+    "authoritative_sandbox": "nba-pra-page1-upcoming-status-repair-v1",
+    "scope_lease_id": "SCOPE-LEASE-7D45584FF232691F8A45A44A",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "scope": {
+    "active_problem": "Canonical UPCOMING status emitted by the NBA schedule normalizer was not recognized as an eligible pregame state by NBA PRA Page 1 V2.",
+    "repair": "Add UPCOMING to the explicit scheduled-status token set only.",
+    "game_state_primary": "NBA Official via verified schedule",
+    "game_state_secondary": ["Sportradar", "SportsDataIO"],
+    "backup_verification": ["ESPN NBA", "CBS Sports"],
+    "hide_live_final_canceled_postponed": true,
+    "sportsbook_projection_influence": 0.0,
+    "odds_model_scope_change": false
+  },
+  "proof": {
+    "tdd_red": "2 failed, 1 passed: canonical UPCOMING rejected and next slate collapsed to None while LIVE/FINAL exclusion already passed.",
+    "tdd_green": "3 passed",
+    "page1_v2_green": "19 passed",
+    "existing_pra_green": "23 passed",
+    "applicable_navigation": "18 passed, 1 stale production-entrypoint assertion deselected",
+    "compile": "PASS",
+    "runtime_v5": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+    "bare_pytest": "Attempted; collection INTERNALERROR from pre-existing tests/conftest.py assertion requiring streamlit_memory_lazy_router_v157 while current production base already runs Universal Runtime V5/PRA."
+  },
+  "rulings": [
+    "Only game-state eligibility is changed; no props, odds, player stats, injuries, model math, or UI redesign is in scope.",
+    "LIVE, FINAL, completed, canceled, postponed, suspended, delayed, and ambiguous games remain excluded.",
+    "Protected-main advances were classified before convergence; all deltas were CFB Page 3 only with zero repair-path overlap.",
+    "Final-mile convergence reuses the exact verified NBA source/test blobs over current main; no additional NBA code changes are introduced.",
+    "Accidental inert probe refs are not authority and are excluded from PR/proof/merge."
+  ],
+  "freeze_token": "API2_NBA_PRA_PAGE1_UPCOMING_STATUS_REPAIR_V1_FROZEN",
+  "next_legal_action": "Fresh-verify the immutable exact head, open one PR, run one exact-head Runless proof, merge only if protected main remains source_main_sha and the required check succeeds, then complete Runless V2 finalization/read-back."
+}
