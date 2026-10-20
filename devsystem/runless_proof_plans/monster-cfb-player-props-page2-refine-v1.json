@@ -1,0 +1,70 @@
+{
+  "app_py_change_required": false,
+  "artifacts": [
+    "cfb_player_props_page2_v1.py",
+    "tests/test_cfb_player_props_page2_refine_v1.py",
+    "devsystem/task_ledgers/monster-cfb-player-props-page2-refine-v1.json",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page2-refine-v1.json"
+  ],
+  "candidate_binding": "authoritative exact PR head at proof request",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "cfb_player_props_page2_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_cfb_player_props_page2_refine_v1.py",
+      "tests/test_cfb_player_props_page2_v1.py",
+      "tests/test_cfb_player_props_page2_context_v1.py",
+      "tests/test_cfb_player_props_page2_handoff_v1.py",
+      "tests/test_cfb_player_props_page2_integration_v1.py",
+      "tests/test_cfb_player_props_page1_route_v1.py",
+      "tests/test_cfb_player_props_page1_handoff_v1.py",
+      "tests/test_cfb_player_props_page1_integration_v1.py",
+      "tests/test_cfb_player_props_model_v1.py",
+      "tests/test_universal_atomic_navigation_v1.py",
+      "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "dependencies": [
+    "cfb_player_props_page2_context_v1.py",
+    "cfb_player_props_page2_roster_v1.py",
+    "cfb_player_props_page2_availability_v1.py",
+    "cfb_player_props_page2_market_v1.py",
+    "cfb_player_props_page2_matchup_v1.py",
+    "cfb_player_props_page2_handoff_v1.py",
+    "cfb_player_props_model_v1.py",
+    "cfb_player_props_page1_v1.py",
+    "cfb_player_props_page1_handoff_v1.py",
+    "universal_atomic_navigation_runtime_v1.py"
+  ],
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE2_REFINE_V1_FROZEN",
+  "known_baseline_exceptions": [
+    "Bare repo pytest currently INTERNALERRORs during global collection/conftest before task tests run; the authoritative lane uses --noconftest plus the current Universal Runtime V5 certification."
+  ],
+  "mode": "runless",
+  "probes": [],
+  "public_runtime_required": false,
+  "required_app_id": 5204253,
+  "required_check": "runless-final-gate",
+  "reuse": {
+    "allow_existing_authoritative_path": true
+  },
+  "source_main_sha": "e164e913ad9b9aa07dc6efbb67f04b20a1369538",
+  "sportsbook_projection_influence": 0.0,
+  "task_id": "monster-cfb-player-props-page2-refine-v1",
+  "timeout_seconds": 300,
+  "workstream": "monster-cfb-player-props-page2-refine-v1"
+}
