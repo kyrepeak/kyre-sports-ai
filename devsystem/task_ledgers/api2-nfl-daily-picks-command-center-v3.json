@@ -1,0 +1,95 @@
+{
+  "task_id": "api2-nfl-daily-picks-command-center-v3",
+  "workstream": "api2-nfl-daily-picks-command-center-v3",
+  "source_main_sha": "575a83867da2c7bb9817a0cd9082b98270905da3",
+  "status": "IMPLEMENTED_PREFLIGHT_GREEN_EXACT_HEAD_CONTROL_LOCK_PENDING",
+  "progress_percent": 88,
+  "step2a": {
+    "authoritative_branch": "api2-nfl-daily-picks-command-center-v3",
+    "authoritative_pr": 1674,
+    "authoritative_sandbox": "nfl-daily-picks-command-v3-preflight",
+    "single_branch": true,
+    "single_pr": true,
+    "single_preflight_environment": true,
+    "single_proof_path": true,
+    "duplicate_pr_or_run": false,
+    "anti_loop": true
+  },
+  "scope": {
+    "markets": ["moneyline", "spread", "game-total"],
+    "player_props_in_scope": false,
+    "risk_modes": ["Safe", "Balanced", "Aggressive", "Max Edge"],
+    "default_risk_mode": "Balanced",
+    "same_game_parlays": true,
+    "cross_game_parlays": true,
+    "sportsbook_projection_influence": 0.0,
+    "game_total_probability_policy": "FAIL_CLOSED_UNLESS_SOURCE_PROBABILITY_CERTIFIED"
+  },
+  "red_evidence": {
+    "command": "python -m pytest --noconftest -q tests/test_api2_nfl_daily_picks_command_center_v3.py",
+    "candidate_sha": "f2b15a960e93b8fc2709e33b5dac0b4dd67c013a",
+    "result": "11 failed",
+    "reason": "V3 production modules intentionally absent before implementation"
+  },
+  "green_evidence": {
+    "focused_candidate_sha": "39fd9996abb75716379ad8369306d589aec50b84",
+    "compile": "PASS",
+    "focused_contract": "11 passed in 0.43s",
+    "daily_picks_regression": "55 passed, 1 proven-stale historical assertion deselected",
+    "universal_navigation": "30 passed",
+    "universal_runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN"
+  },
+  "rulings": [
+    {
+      "finding": "tests/test_api2_nfl_daily_picks_route_v1.py expects nfl_passing_yards_hub_v42",
+      "evidence": "source main 575a83867da2c7bb9817a0cd9082b98270905da3 already routes passing-yards to nfl_passing_yards_hub_v89",
+      "decision": "Treat test_existing_nfl_destinations_remain_unchanged as a superseded historical assertion and deselect only that assertion in V3 proof; V3 isolation contract separately proves unrelated routes delegate unchanged to current upstream runtime.",
+      "cost_if_wrong": "A non-Daily-Picks NFL route regression could be missed; mitigated by direct V3 delegation tests, universal navigation tests, and Universal Runtime V5 certification."
+    },
+    {
+      "finding": "Current NFL Game Total engine exposes projection/range and OVER/UNDER/PASS but no certified hit-probability contract",
+      "decision": "Keep Game Total visible in Command Center analytics but block probability-based parlay eligibility unless source_probability_certified is explicitly true.",
+      "cost_if_wrong": "Total parlays remain conservatively unavailable rather than receiving a fabricated probability."
+    }
+  ],
+  "implemented_artifacts": [
+    "nfl_daily_picks_parlay_v3.py",
+    "nfl_daily_picks_market_v3.py",
+    "nfl_daily_picks_command_center_v3.py",
+    "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py",
+    "tests/test_api2_nfl_daily_picks_command_center_v3.py",
+    "app.py",
+    "docs/superpowers/specs/2026-10-19-api2-nfl-daily-picks-command-center-v3-design.md",
+    "docs/superpowers/plans/2026-10-19-api2-nfl-daily-picks-command-center-v3.md"
+  ],
+  "runtime_integration": {
+    "loader": "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py",
+    "terminal": "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py",
+    "entrypoint": "app.py",
+    "upstream_runtime": "universal_runtime_v5_loader_nba_spread_stier_v2.py",
+    "scope": "NFL Daily Picks only",
+    "shared_numbered_loader_owned": false
+  },
+  "frozen_registry": {
+    "checked": true,
+    "registry_ref": "monster-frozen-artifact-registry",
+    "registry_revision_observed": 433,
+    "overlap": ["app.py"],
+    "new_v3_paths_frozen": false,
+    "required_action": "OBTAIN_EXACT_HEAD_APP_THAW_BEFORE_RUNLESS_PROOF"
+  },
+  "preflight": {
+    "environment": "Vercel named sandbox nfl-daily-picks-command-v3-preflight",
+    "single_environment_reused": true,
+    "initial_infrastructure_failure": "pytest absent from base sandbox image",
+    "resolution": "installed pytest and repository requirements in the same sandbox",
+    "transport_failure": "shallow fetch exposed new branch through FETCH_HEAD only",
+    "transport_resolution": "checked out exact FETCH_HEAD in same sandbox; no duplicate environment"
+  },
+  "runless_proof_plan": "devsystem/runless_proof_plans/api2-nfl-daily-picks-command-center-v3.json",
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_DAILY_PICKS_COMMAND_CENTER_V3_FROZEN",
+  "final_candidate_policy": "The exact candidate SHA is the branch head after this ledger and its Runless proof plan are committed. No candidate-owned file may mutate after the external exact-head thaw and scope lease are granted."
+}
