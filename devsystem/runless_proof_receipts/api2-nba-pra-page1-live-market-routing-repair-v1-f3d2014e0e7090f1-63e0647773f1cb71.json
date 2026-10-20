@@ -1,0 +1,55 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page1-live-market-routing-repair-v1.json": "8db6edbbe664854dfba2f4bdb0c6655e3f22ffc2",
+    "devsystem/task_ledgers/api2-nba-pra-page1-live-market-routing-repair-v1.json": "570705ccf299153573d07d5e0bd053ea345f93ad",
+    "nba_pra_page1_data_core_v2.py": "b594b921c637be059bd6755ce94a3e4dabad0351",
+    "nba_pra_page1_data_v2.py": "0ee5d0ebe578c18a5db4e1e2f601199187dae2d0",
+    "tests/test_api2_nba_pra_page1_live_market_routing_repair_v1.py": "6171e40d30d6d51971155690427181d529fbf19f"
+  },
+  "candidate_sha": "f3d2014e0e7090f1764806408406df14f4b0563c",
+  "created_at": "2026-10-20T22:52:56.381690+00:00",
+  "dependency_map": {
+    "nba_pra_page1_common_v1.py": "a7f129f5ab55e01f951a16946656ae434f67f1ce",
+    "nba_pra_page1_sgo_v1.py": "95ba83fae47fef538b3ff599857723f466039850",
+    "nba_pra_page1_sources_v2.py": "40cb7baa865ac4c57841ffb6bf0dc6b9914c225d",
+    "nba_pra_page1_ui_v2.py": "d430f08ef00c003833396827aad29ad29881e233",
+    "nba_pra_page1_v2.py": "0960882642eddd02f764e2ec5b2eaf3a7d1990bc",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "3284caf40c7c6f460c3b0f84229079eccf3d408d"
+  },
+  "digest": "b80e523a84744453e17b445d5d727d680bfefbb48fd77f723800bc9da57cced3",
+  "evidence_digests": [
+    "ae5830176474d043e65c4e7cc2969ab5efc007ba37d6fda63b6306e6cd0f8961",
+    "47a4383ff2cede3d4124a7e1762a8b8564b7ab3a1871eaca14fb929e7a1fb831",
+    "07d6d9aa58f06e87430cd268bfec06529e48194c32bb14e74c57cf4a6895398e",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4b11b727548a9c5e419afce1358b38e65709818a7328f7958cd9849d65610280",
+  "proof_id": "api2-nba-pra-page1-live-market-routing-repair-v1-f3d2014e0e7090f1-63e0647773f1cb71",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "request_fingerprint": "c43f3cd385574a4f46103daa40f3afe7a5fa196deda6c2ebe3286fa60931c3c1",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page1-live-market-routing-repair-v1",
+  "workstream": "api2-nba-pra-page1-live-market-routing-repair-v1"
+}
