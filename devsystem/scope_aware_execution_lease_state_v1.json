@@ -1,1 +1,53 @@
-{"generation":619,"holders":[{"acquired_at_utc":"2026-10-20T16:36:30Z","expires_at_utc":"2026-10-20T22:36:30Z","generation":618,"heartbeat_at_utc":"2026-10-20T16:36:30Z","lease_id":"SCOPE-LEASE-2604AB381A8D0D4978AA4BBE","owner_id":"chat:monster-cfb-player-props-page2-refine-v1","scope":{"dependency_tokens":["data:cfb-player-props-frozen-v1","domain:cfb","route:cfb:player-props","runtime:universal-v5"],"exclusive":false,"resource_identity":{},"shared_resources":[],"write_paths":["cfb_player_props_page2_v1.py","devsystem/runless_proof_plans/monster-cfb-player-props-page2-refine-v1.json","devsystem/task_ledgers/monster-cfb-player-props-page2-refine-v1.json","tests/test_cfb_player_props_page2_refine_v1.py"]}},{"acquired_at_utc":"2026-10-20T16:59:41Z","expires_at_utc":"2026-10-20T17:29:41Z","generation":619,"heartbeat_at_utc":"2026-10-20T16:59:41Z","lease_id":"SCOPE-LEASE-737F08AE457AD4A12E81ADEE","owner_id":"chat:api2-nba-pra-page1-v1","scope":{"dependency_tokens":["control:runless-proof-plan","domain:nba","route:nba:pra"],"exclusive":false,"resource_identity":{},"shared_resources":["entrypoint:app.py"],"write_paths":["app.py","devsystem/runless_proof_plans/api2-nba-pra-page1-v1.json","devsystem/task_ledgers/api2-nba-pra-page1-v1.json","nba_pra_nav_overlay_v1.py","nba_pra_page1_common_v1.py","nba_pra_page1_data_v1.py","nba_pra_page1_history_v1.py","nba_pra_page1_model_v1.py","nba_pra_page1_odds_v1.py","nba_pra_page1_sgo_v1.py","nba_pra_page1_ui_v1.py","nba_pra_page1_v1.py","streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py","tests/test_api2_nba_pra_data_behavior_v1.py","tests/test_api2_nba_pra_market_behavior_v1.py","tests/test_api2_nba_pra_model_behavior_v1.py","tests/test_api2_nba_pra_nav_overlay_v1.py","tests/test_api2_nba_pra_page1_v1.py","universal_runtime_v5_loader_nba_pra_page1_v1.py"]}}],"lease_ref":"refs/heads/monster-scope-aware-execution-leases","lease_state_path":"devsystem/scope_aware_execution_lease_state_v1.json","repository":"kyrepeak/kyre-sports-ai","revision":1127,"schema_version":1,"state_hash":"77f9420a8c0bf4bf874eb64806f1feadda9632b802b47525bcffb55307367cc7","version":"MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"}
+{
+  "generation": 619,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-20T16:59:41Z",
+      "expires_at_utc": "2026-10-20T17:29:41Z",
+      "generation": 619,
+      "heartbeat_at_utc": "2026-10-20T16:59:41Z",
+      "lease_id": "SCOPE-LEASE-737F08AE457AD4A12E81ADEE",
+      "owner_id": "chat:api2-nba-pra-page1-v1",
+      "scope": {
+        "dependency_tokens": [
+          "control:runless-proof-plan",
+          "domain:nba",
+          "route:nba:pra"
+        ],
+        "exclusive": false,
+        "resource_identity": {},
+        "shared_resources": [
+          "entrypoint:app.py"
+        ],
+        "write_paths": [
+          "app.py",
+          "devsystem/runless_proof_plans/api2-nba-pra-page1-v1.json",
+          "devsystem/task_ledgers/api2-nba-pra-page1-v1.json",
+          "nba_pra_nav_overlay_v1.py",
+          "nba_pra_page1_common_v1.py",
+          "nba_pra_page1_data_v1.py",
+          "nba_pra_page1_history_v1.py",
+          "nba_pra_page1_model_v1.py",
+          "nba_pra_page1_odds_v1.py",
+          "nba_pra_page1_sgo_v1.py",
+          "nba_pra_page1_ui_v1.py",
+          "nba_pra_page1_v1.py",
+          "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+          "tests/test_api2_nba_pra_data_behavior_v1.py",
+          "tests/test_api2_nba_pra_market_behavior_v1.py",
+          "tests/test_api2_nba_pra_model_behavior_v1.py",
+          "tests/test_api2_nba_pra_nav_overlay_v1.py",
+          "tests/test_api2_nba_pra_page1_v1.py",
+          "universal_runtime_v5_loader_nba_pra_page1_v1.py"
+        ]
+      }
+    }
+  ],
+  "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
+  "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "revision": 1128,
+  "schema_version": 1,
+  "state_hash": "679cfafa9ef8ce9c7f907247313b6634d611cdb20ee9d1d51abdaf57f2b66287",
+  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
+}
