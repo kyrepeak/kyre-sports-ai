@@ -1,0 +1,65 @@
+{
+  "task_id": "monster-cfb-player-props-live-source-repair-v1",
+  "workstream": "monster-cfb-player-props-live-source-repair-v1",
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "source_main_sha": "8bbf5e6be64ff15c20b745c6bc48c3e73a2ec18c",
+  "scope_lease_id": "SCOPE-LEASE-FC6A88845228FBEC1D2A9DBA",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_LIVE_SOURCE_REPAIR_V1_FROZEN",
+  "required_check": "runless-final-gate",
+  "required_app_id": 5204253,
+  "sportsbook_projection_influence": 0.0,
+  "root_cause": [
+    "FanDuel CFB transport read only the NCAAF landing page, while standard player passing/rushing/receiving props live on the event-page popular tab.",
+    "FanDuel live market aliases Passing Yds, Rushing Yds, Passing TDs, and Any Time Touchdown Scorer were not all normalized by the adapter.",
+    "FanDuel standard O/U runners include side text in runnerName, for example Roman Gagliano Over, which failed exact roster identity matching.",
+    "FanDuel American prices are nested under americanDisplayOdds and the prior parser dropped them to null."
+  ],
+  "implementation": [
+    "fetch exactly one FanDuel event-page popular tab for each verified slate game",
+    "preserve exact verified-game binding before any prop row is emitted",
+    "normalize current FanDuel CFB market-name aliases",
+    "derive exact player identity from the market title before exact roster reconciliation",
+    "parse nested FanDuel American prices without converting missing values to zero",
+    "ignore alternate one-sided ladders unless they satisfy the existing two-way supported-market contract"
+  ],
+  "live_verification": {
+    "provider": "FanDuel",
+    "matchup": "Middle Tennessee @ FIU",
+    "provider_event_id": "36194208",
+    "verified_branch_head_before_control_files": "0200eab0b14c0374449ea4236834463fd1832c3d",
+    "total_rows_returned": 42,
+    "roman_gagliano_rows": 6,
+    "roman_gagliano_markets": {
+      "passing_yards": {"line": 202.5, "over_price": -114, "under_price": -114},
+      "rushing_yards": {"line": 9.5, "over_price": -114, "under_price": -114},
+      "passing_touchdowns": {"line": 0.5, "over_price": -260, "under_price": 188}
+    }
+  },
+  "verification": {
+    "red_observed": true,
+    "red_reason": "adapter never called the FanDuel event-page popular tab",
+    "focused_green": 1,
+    "page1_page2_regression_passed": 57,
+    "all_cfb_player_props_tests_passed": 95,
+    "compile": "GREEN",
+    "universal_runtime_v5_cert": "GREEN",
+    "live_provider_probe": "GREEN"
+  },
+  "source_policy": {
+    "field": "cfb_player_props",
+    "rules": [
+      "use the best relevant sources instead of every source for every field",
+      "prefer direct sportsbook data where available",
+      "preserve sportsbook-specific quotes",
+      "prefer newer observations when the same book changes",
+      "never convert missing or null values into zero",
+      "one failed source must not blank valid data from another approved source"
+    ]
+  },
+  "artifacts": [
+    "cfb_player_props_fanduel_bound_v2.py",
+    "tests/test_cfb_player_props_fanduel_event_tabs_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-live-source-repair-v1.json",
+    "devsystem/task_ledgers/monster-cfb-player-props-live-source-repair-v1.json"
+  ]
+}

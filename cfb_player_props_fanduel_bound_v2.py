@@ -10,19 +10,28 @@ from datetime import datetime, timezone
 import re
 from typing import Any, Mapping, Sequence
 
-from sports_api.collectors.cfb_fanduel_direct import fetch_fanduel_ncaaf_page
+import httpx
+
+from sports_api.collectors.cfb_fanduel_direct import (
+    FANDUEL_BASE_URL, FANDUEL_HEADERS, FANDUEL_PUBLIC_WEB_KEY,
+    fetch_fanduel_ncaaf_page,
+)
 
 _MARKETS = {
     "passing yards": "passing_yards",
+    "passing yds": "passing_yards",
     "pass yds": "passing_yards",
     "rushing yards": "rushing_yards",
+    "rushing yds": "rushing_yards",
     "rush yds": "rushing_yards",
     "receiving yards": "receiving_yards",
     "receiving yds": "receiving_yards",
     "receptions": "receiving_receptions",
     "passing touchdowns": "passing_touchdowns",
+    "passing tds": "passing_touchdowns",
     "pass tds": "passing_touchdowns",
     "anytime touchdown scorer": "touchdowns",
+    "any time touchdown scorer": "touchdowns",
     "player to score a touchdown": "touchdowns",
     "anytime td": "touchdowns",
 }
@@ -47,6 +56,20 @@ def _rows(value: Any) -> list[dict[str, Any]]:
 def _fetch_payload() -> dict[str, Any]:
     try:
         payload = fetch_fanduel_ncaaf_page(timeout=12.0)
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def _fetch_event_page(event_id: str, tab: str = "popular") -> dict[str, Any]:
+    params = {"_ak": FANDUEL_PUBLIC_WEB_KEY, "eventId": _text(event_id)}
+    if tab:
+        params["tab"] = _text(tab)
+    try:
+        with httpx.Client(headers=FANDUEL_HEADERS, timeout=12.0, follow_redirects=False) as client:
+            response = client.get(f"{FANDUEL_BASE_URL}/sbapi/event-page", params=params)
+            response.raise_for_status()
+            payload = response.json()
         return payload if isinstance(payload, dict) else {}
     except Exception:
         return {}
@@ -110,11 +133,25 @@ def _match_verified_game(event: Mapping[str, Any], games: Sequence[Mapping[str, 
 
 def _price(value: Any) -> int | None:
     if isinstance(value, Mapping):
-        value = value.get("americanDisplayOdds") or value.get("americanOdds") or value.get("price")
+        display = value.get("americanDisplayOdds")
+        if isinstance(display, Mapping):
+            value = display.get("americanOdds") if display.get("americanOdds") is not None else display.get("americanOddsInt")
+        else:
+            value = display if display is not None else value.get("americanOdds") if value.get("americanOdds") is not None else value.get("price")
     try:
         return int(round(float(value)))
     except (TypeError, ValueError):
         return None
+
+
+def _player_name(market_name: Any, runner: Mapping[str, Any]) -> str:
+    title = _text(market_name)
+    if " - " in title:
+        candidate = title.split(" - ", 1)[0].strip()
+        if candidate:
+            return candidate
+    runner_name = _text(runner.get("runnerName") or runner.get("name") or runner.get("participantName"))
+    return re.sub(r"\s+(?:over|under)\s*$", "", runner_name, flags=re.I).strip()
 
 
 def fetch_fanduel_cfb_player_props(slate_games: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -128,59 +165,72 @@ def fetch_fanduel_cfb_player_props(slate_games: Sequence[Mapping[str, Any]]) -> 
         for event in events
         if _text(event.get("eventId") or event.get("id") or event.get("_attachment_key"))
     }
+    documents: list[Mapping[str, Any]] = [payload]
+    for event_id, event in event_map.items():
+        if _match_verified_game(event, slate_games) is None:
+            continue
+        detail = _fetch_event_page(event_id, "popular")
+        if isinstance(detail, Mapping) and detail:
+            documents.append(detail)
+
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     out: list[dict[str, Any]] = []
-    for market in _rows(attachments.get("markets")):
-        stat = _market_key(market.get("marketName") or market.get("name") or market.get("displayName"))
-        if stat is None or market.get("inPlay") is True:
+    for document in documents:
+        document_attachments = document.get("attachments") if isinstance(document, Mapping) else None
+        if not isinstance(document_attachments, Mapping):
             continue
-        status = _text(market.get("marketStatus") or market.get("status")).upper()
-        if status not in {"", "OPEN"}:
-            continue
-        event_id = _text(market.get("eventId") or market.get("eventID") or market.get("event_id"))
-        event = event_map.get(event_id)
-        if event is None:
-            continue
-        game = _match_verified_game(event, slate_games)
-        if game is None:
-            continue
-        official_game_id = _text(game.get("official_game_id") or game.get("event_id") or game.get("game_id"))
-        if not official_game_id:
-            continue
-        matchup = _parse_matchup(event.get("name") or event.get("eventName") or event.get("displayName"))
-        event_start = _text(event.get("openDate") or event.get("startTime") or event.get("date") or game.get("kickoff_iso"))
-        for runner in _rows(market.get("runners")):
-            if _text(runner.get("runnerStatus")).upper() not in {"", "ACTIVE"}:
+        for market in _rows(document_attachments.get("markets")):
+            market_name = market.get("marketName") or market.get("name") or market.get("displayName")
+            stat = _market_key(market_name)
+            if stat is None or market.get("inPlay") is True:
                 continue
-            result = runner.get("result") if isinstance(runner.get("result"), Mapping) else {}
-            side = _text(result.get("type") or runner.get("side")).lower()
-            if side not in {"over", "under"}:
+            status = _text(market.get("marketStatus") or market.get("status")).upper()
+            if status not in {"", "OPEN"}:
                 continue
-            try:
-                line = float(runner.get("handicap"))
-            except (TypeError, ValueError):
+            event_id = _text(market.get("eventId") or market.get("eventID") or market.get("event_id"))
+            event = event_map.get(event_id)
+            if event is None:
                 continue
-            name = _text(runner.get("runnerName") or runner.get("name") or runner.get("participantName"))
-            if not name:
+            game = _match_verified_game(event, slate_games)
+            if game is None:
                 continue
-            price = _price(runner.get("winRunnerOdds") or runner.get("americanOdds") or runner.get("odds"))
-            out.append({
-                "provider": "FanDuel",
-                "provider_event_id": event_id,
-                "provider_player_id": _text(runner.get("participantId") or runner.get("playerId") or runner.get("playerID")),
-                "provider_market_id": _text(market.get("marketId") or market.get("id") or market.get("_attachment_key")),
-                "official_game_id": official_game_id,
-                "player_name": name,
-                "stat_id": stat,
-                "sportsbook": "FanDuel",
-                "side": side,
-                "line": line,
-                "price": price,
-                "observed_at_utc": now,
-                "away_team": _text(game.get("away_team") or (matchup[0] if matchup else "")),
-                "home_team": _text(game.get("home_team") or (matchup[1] if matchup else "")),
-                "event_start": event_start,
-            })
+            official_game_id = _text(game.get("official_game_id") or game.get("event_id") or game.get("game_id"))
+            if not official_game_id:
+                continue
+            matchup = _parse_matchup(event.get("name") or event.get("eventName") or event.get("displayName"))
+            event_start = _text(event.get("openDate") or event.get("startTime") or event.get("date") or game.get("kickoff_iso"))
+            for runner in _rows(market.get("runners")):
+                if _text(runner.get("runnerStatus")).upper() not in {"", "ACTIVE"}:
+                    continue
+                result = runner.get("result") if isinstance(runner.get("result"), Mapping) else {}
+                side = _text(result.get("type") or runner.get("side")).lower()
+                if side not in {"over", "under"}:
+                    continue
+                try:
+                    line = float(runner.get("handicap"))
+                except (TypeError, ValueError):
+                    continue
+                name = _player_name(market_name, runner)
+                if not name:
+                    continue
+                price = _price(runner.get("winRunnerOdds") or runner.get("americanOdds") or runner.get("odds"))
+                out.append({
+                    "provider": "FanDuel",
+                    "provider_event_id": event_id,
+                    "provider_player_id": _text(runner.get("participantId") or runner.get("playerId") or runner.get("playerID")),
+                    "provider_market_id": _text(market.get("marketId") or market.get("id") or market.get("_attachment_key")),
+                    "official_game_id": official_game_id,
+                    "player_name": name,
+                    "stat_id": stat,
+                    "sportsbook": "FanDuel",
+                    "side": side,
+                    "line": line,
+                    "price": price,
+                    "observed_at_utc": now,
+                    "away_team": _text(game.get("away_team") or (matchup[0] if matchup else "")),
+                    "home_team": _text(game.get("home_team") or (matchup[1] if matchup else "")),
+                    "event_start": event_start,
+                })
     return out
 
 
