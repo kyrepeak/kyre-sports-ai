@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page1-v1.json": "c21595389c3897d4143081087fe7e449bee281a5",
+    "devsystem/task_ledgers/monster-cfb-player-props-page1-v1.json": "489ac500f8e4c597d6a2fabcd6134a260a6460ce",
+    "tests/test_cfb_player_props_page1_integration_v1.py": "327372cc38fcaae737a995950e8e109d81414436"
+  },
+  "candidate_sha": "5a8e9d21f54d88486ab789c299c294e9cd275a0a",
+  "created_at": "2026-10-20T04:41:48.170787+00:00",
+  "dependency_map": {
+    "cfb_over_under_logo_resolver_v2.py": "b60aa651ff4e9d0db74fdb03e6a24d0819a5c8c4",
+    "cfb_over_under_logo_resolver_v3.py": "cddb2eadc6f94e17378eff33529a6400a48767d8",
+    "cfb_schedule_v1.py": "30379330a7f2f38f922c7083c1109c95eaf01b11",
+    "cfb_universal_next_slate_navigation_v1.py": "1855e35ec083c1b9afee1597c572e8436e35b500",
+    "universal_atomic_navigation_runtime_v1.py": "f76dc97c67d94c2876b8ce07c773de60b27f4b5c"
+  },
+  "digest": "9e3928002f9f1da257978660a9ee9f5432ec15482054fb480870d4ccd779f3d7",
+  "evidence_digests": [
+    "6d212bb33b3f25e5a5829a81fd5aaa2a39fb16c9cdcb9b726f8105e1d9b25576",
+    "11bfdadf6854104f015e3e28fe4d41fb00108efa538313efd5faf75dd37b4e24",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "ea2fefcb635a8e649f302e5c10839eccd250f9c5dd3109759c7ff593c7604a56",
+  "proof_id": "monster-cfb-player-props-page1-v1-5a8e9d21f54d8848-174d691856b1655c",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 435,
+    "state_hash": "b8ecbab46e13c8cabde5e80e6e741bedd88ef4f91c1f7af691501892e79e6d1e"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1"
+    ],
+    "revision": 435,
+    "state_hash": "b8ecbab46e13c8cabde5e80e6e741bedd88ef4f91c1f7af691501892e79e6d1e"
+  },
+  "request_fingerprint": "ba02865fa387e05d98e31ddb71b1be0b166e4ea445f8068aac7d45edbf396777",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-player-props-page1-v1",
+  "workstream": "monster-cfb-player-props-page1-v1"
+}
