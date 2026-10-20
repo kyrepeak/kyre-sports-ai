@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "cfb_player_props_page3_gamebook_recovery_v1.py": "8d5c294cf9219d8ede55ea8836485450b783ef67",
+    "cfb_player_props_page3_history_v1.py": "01a90a390472e44bbc66a067c31192ec2820409c",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page3-runtime-data-repair-v1.json": "4428ffafccb12fb84170bc8393d34675499e4bdc",
+    "devsystem/task_ledgers/monster-cfb-player-props-page3-runtime-data-repair-v1.json": "27de635088c22a8441f2fdcd23a630ebe30bba85",
+    "tests/test_cfb_player_props_page3_history_v1.py": "76aff0b132816fa7f4fd763981527f29a82220cc"
+  },
+  "candidate_sha": "7be8058774c1b427afab995c32c3df006c646b80",
+  "created_at": "2026-10-20T22:04:44.374494+00:00",
+  "dependency_map": {
+    "cfb_player_props_history_v1.py": "d507d7e599ae5d8a93903541038f61f2f1f60b02",
+    "cfb_player_props_model_v1.py": "75090fb22d569a3bed6c808ecb563c08685dacf7",
+    "cfb_player_props_page2_market_v1.py": "57161a18ff4857fa874fb6beeb6f46c19994a4f4",
+    "cfb_player_props_page3_analysis_v1.py": "05dc14042fb2f081b20a1f31ba39fc5fb98899d6",
+    "cfb_player_props_page3_context_v1.py": "4bc9361b6dfe4ebbcb0d72eb148ac35599e7a59f",
+    "cfb_player_props_page3_line_lab_v1.py": "5428a65e5b214fa59ec56044c018cb7008290c19"
+  },
+  "digest": "7e8785c0ce028e4f0755eb87af9fbeabc8d1b6cad9f5a797f67919dc3b7f019b",
+  "evidence_digests": [
+    "90aa52d82472280e9263c34f1b36ee7871dca3b47375e5ef36a29677313802f4",
+    "45985c6889d7aaf2e1edb81c53f36b8f1dcc59bbfe147d75af41e30f486a84c8",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6a1d035591931a9b6d134a527e30f1a3efe6067527d3e0ab7b8358304c0ed214",
+  "proof_id": "monster-cfb-player-props-page3-runtime-data-repair-v1-7be8058774c1b427-121819e686f3b6d9",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "request_fingerprint": "79f8e70854ce73968f5455c0d6c46072914e982d53b82df5a1e6fd3981f85202",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-player-props-page3-runtime-data-repair-v1",
+  "workstream": "monster-cfb-player-props-page3-runtime-data-repair-v1"
+}
