@@ -1,0 +1,20 @@
+{
+  "task": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "task_id": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "workstream": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "title": "CFB Player Props Page 1 production runtime dependency repair R1",
+  "status": "BASE_DRIFT_RECONCILED_READY_FOR_EXACT_HEAD_PROOF",
+  "source_main": "9dd511d15d89086d62f0df4b925e475ca9661cdb",
+  "branch": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "scope_lease": "SCOPE-LEASE-4DDA77ECB79508FE86CAB913",
+  "scope": "Production dependency repair only: declare the two packages required by the already-frozen CFB Player Props Page 1 import chain. No Page-1 product logic changes.",
+  "root_cause": "Root requirements.txt omitted httpx and fastapi. Clean requirements-only import failed with ModuleNotFoundError: httpx; adding only httpx and fastapi made the same import succeed.",
+  "base_drift": "Parallel NFL V4 lane merged current main from 4694b46dff3444eb08a0e3caa1614651a31c5ae3 to 9dd511d15d89086d62f0df4b925e475ca9661cdb with disjoint paths; repair lane reconciled without product changes.",
+  "current_atomic_contract": "Current main intentionally activates certified NFL Daily Picks V4. Six current Atomic/V4 inheritance assertions passed while one obsolete V3 app-terminal ownership assertion was deselected and documented.",
+  "changed_product_logic": false,
+  "app_py_owned": false,
+  "dependencies_added": ["httpx", "fastapi"],
+  "red": "1 failed: root requirements missing httpx",
+  "green": "21 focused repair regressions passed before base drift; current NFL V4 Atomic inheritance gate passed 6 with 1 obsolete V3 assertion deselected; clean requirements-only Page-1 import succeeded; final exact-head gate pending.",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE1_RUNTIME_DEPS_R1_FROZEN"
+}
