@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import cfb_player_props_fanduel_bound_v2 as fanduel_v2
+import cfb_player_props_fanduel_v1 as bridge
 import cfb_player_props_odds_api_v1 as odds_api
 import cfb_player_props_page2_completeness_v1 as completeness
 from cfb_player_props_identity_v1 import CanonicalPlayerIdentity
@@ -107,6 +108,18 @@ def test_odds_api_parser_extracts_book_specific_player_prop_rows():
     assert all(row["line"] is not None for row in rows)
 
 
+def test_bridge_keeps_verified_fallback_when_direct_source_fails(monkeypatch):
+    fallback = [{
+        "provider": "Odds-API.io", "official_game_id": "401999001",
+        "player_name": "Roman Gagliano", "stat_id": "passing_yards",
+        "sportsbook": "DraftKings", "side": "over", "line": 194.5,
+        "price": -110, "observed_at_utc": "2026-10-20T17:12:00Z",
+    }]
+    monkeypatch.setattr(bridge.direct_fanduel, "fetch_fanduel_cfb_player_props", lambda games: (_ for _ in ()).throw(RuntimeError("fd down")))
+    monkeypatch.setattr(bridge.odds_api, "fetch_odds_api_cfb_player_props", lambda games: fallback)
+    assert bridge.fetch_fanduel_cfb_player_props([_context()["game"]]) == fallback
+
+
 def test_completeness_merges_relevant_sources_and_recovers_missing_player(monkeypatch):
     player = _player()
     context = _context()
@@ -180,13 +193,14 @@ def test_coverage_summary_is_professional_and_fail_closed():
     }
 
 
-def test_page2_uses_completeness_owner_and_market_coverage_bar():
-    source = (ROOT / "cfb_player_props_page2_v1.py").read_text()
-    assert "cfb_player_props_page2_completeness_v1 as completeness_owner" in source
-    assert "load_game_prop_observations_with_diagnostics" in source
-    assert "Market Coverage" in source
-    assert "players with lines" in source
-    assert "sportsbooks" in source
+def test_page2_existing_market_owner_uses_multisource_bridge():
+    market_source = (ROOT / "cfb_player_props_page2_market_v1.py").read_text()
+    bridge_source = (ROOT / "cfb_player_props_fanduel_v1.py").read_text()
+    assert "import cfb_player_props_fanduel_v1 as fanduel" in market_source
+    assert "fetch_fanduel_cfb_player_props([game])" in market_source
+    assert "cfb_player_props_fanduel_bound_v2 as direct_fanduel" in bridge_source
+    assert "cfb_player_props_odds_api_v1 as odds_api" in bridge_source
+    assert "SportsGameOdds remains an independent multi-book source" in bridge_source
 
 
 def test_projection_math_remains_book_independent():
