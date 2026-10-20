@@ -1,0 +1,53 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page3-v1.json": "eddd77dce15f4e9ca7f7d562838e5bc3fe378e98",
+    "devsystem/task_ledgers/monster-cfb-player-props-page3-v1.json": "499f9578a9234ad34eff29b6a1eca8b061ccf357",
+    "tests/test_cfb_player_props_page3_integration_v1.py": "d9e6b8f96a0bf19036911b78a78fcf97ba78084f"
+  },
+  "candidate_sha": "0217efdfc2de7653bfce4751e3a55079a31bf854",
+  "created_at": "2026-10-20T19:42:58.823285+00:00",
+  "dependency_map": {},
+  "digest": "8de79dac4ef8f8b9a36a878a3efb43cebcf0ae56aaf731c0bbf636d86765c8c0",
+  "evidence_digests": [
+    "d190a071581be811d025a6eafcb720b6494224fa19d6f6b3ea28bf42a59708d2",
+    "baa09a02c78f327f0e1f5a01e10cb6195a399cefd1234a799aa9d6b7aa7d720a",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "a4549ad57186e26ebbbc40572857b306654e10593d2ccd2a34170d46fb96911f",
+  "proof_id": "monster-cfb-player-props-page3-v1-0217efdfc2de7653-732fe729109ab666",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-RUNTIME-V3-LOADER-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-PAGE1-INTEGRATION-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-PAGE1-ROUTE-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-PAGE2-INTEGRATION-R1"
+    ],
+    "revision": 458,
+    "state_hash": "cc6a5d233a95b225aca87f6c40bd98de68535a6f3eedf1e66277101f94218245"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-RUNTIME-V3-LOADER-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-PAGE1-INTEGRATION-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-PAGE1-ROUTE-R1",
+      "THAW-CFB-PLAYER-PROPS-PAGE3-PAGE2-INTEGRATION-R1"
+    ],
+    "revision": 458,
+    "state_hash": "cc6a5d233a95b225aca87f6c40bd98de68535a6f3eedf1e66277101f94218245"
+  },
+  "request_fingerprint": "5ac056da2b314376f640113debe4dce637517b200cd4317c06933ed42ecf6d7e",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-player-props-page3-v1",
+  "workstream": "monster-cfb-player-props-page3-v1"
+}
