@@ -35,20 +35,16 @@ def test_normalize_preserves_official_identity_and_derives_phoenix_time():
     assert row["home_team_id"] == "202"
 
 
-def test_load_next_slate_reuses_existing_resolver_and_keeps_every_verified_game(monkeypatch):
+def test_load_next_slate_scans_forward_once_per_day_and_keeps_every_verified_game(monkeypatch):
     import cfb_player_props_page1_slate_v1 as slate
     games = [_game("401999001", "2026-10-24T19:30:00-04:00"), _game("401999002", "2026-10-24T22:00:00-04:00"), _game("bad", "2026-10-24T23:00:00-04:00", verified=False)]
-    seen = {}
-    def fake_resolver(*, games_loader, now_provider, max_days=14):
-        seen["loader"] = games_loader
-        return date(2026, 10, 24)
+    seen = []
     def fake_games_for_date(day):
-        seen.setdefault("days", []).append(day)
-        return games
-    monkeypatch.setattr(slate.next_slate, "resolve_runtime_cfb_slate_date", fake_resolver)
+        seen.append(day)
+        return games if day == date(2026, 10, 24) else []
     monkeypatch.setattr(slate.schedule, "games_for_date", fake_games_for_date)
     result = slate.load_next_player_prop_slate(now_provider=lambda: datetime(2026, 10, 20, 4, 0, tzinfo=timezone.utc))
-    assert seen["loader"] is fake_games_for_date
+    assert seen == [date(2026, 10, 20), date(2026, 10, 21), date(2026, 10, 22), date(2026, 10, 23), date(2026, 10, 24)]
     assert result["state"] == "live"
     assert result["slate_date"] == date(2026, 10, 24)
     assert [g["official_game_id"] for g in result["games"]] == ["401999001", "401999002"]
@@ -56,8 +52,8 @@ def test_load_next_slate_reuses_existing_resolver_and_keeps_every_verified_game(
 
 def test_schedule_unavailable_fails_closed_without_synthesizing_games(monkeypatch):
     import cfb_player_props_page1_slate_v1 as slate
-    monkeypatch.setattr(slate.next_slate, "resolve_runtime_cfb_slate_date", lambda **kwargs: None)
-    result = slate.load_next_player_prop_slate()
+    monkeypatch.setattr(slate.schedule, "games_for_date", lambda day: [])
+    result = slate.load_next_player_prop_slate(now_provider=lambda: datetime(2026, 10, 20, 4, 0, tzinfo=timezone.utc))
     assert result["state"] == "unavailable"
     assert result["games"] == []
     assert result["slate_date"] is None
