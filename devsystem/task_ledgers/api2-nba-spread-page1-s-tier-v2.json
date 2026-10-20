@@ -1,1 +1,100 @@
-{"task_id":"api2-nba-spread-page1-s-tier-v2","workstream":"api2-nba-spread-page1-s-tier-v2","source_main_sha":"b543e453f0161391c021eef9cfc33ad6496ca4cc","original_source_main_sha":"b543e453f0161391c021eef9cfc33ad6496ca4cc","branch_head_before_execution":"b543e453f0161391c021eef9cfc33ad6496ca4cc","status":"IMPLEMENTED_PREFLIGHT_GREEN_PENDING_FINAL_PROOF","progress_percent":93,"step2a":{"authoritative_branch":"api2-nba-spread-page1-s-tier-v2","authoritative_pr":null,"scope_lease_id":"SCOPE-LEASE-91A0F2C4775E6C8D2143C0B7","shared_runtime_write_allowed":true,"duplicate_pr_or_run":false,"single_proof_path":true,"anti_loop":true},"red_evidence":{"command":"python -m pytest -q tests/test_api2_nba_spread_page1_s_tier_v2.py","failed":1,"reason":"planned S-tier successor modules absent","collection_error":false},"implemented_artifacts":["nba_spread_sportsbook_observations_v3.py","nba_spread_odds_api_observations_v1.py","nba_spread_live_data_repair_v3.py","nba_spread_decision_board_data_v2.py","nba_spread_page_v9.py","universal_runtime_v5_loader_v25.py","streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8.py","tests/test_api2_nba_spread_page1_s_tier_v2.py","app.py"],"baseline":{"freeze_token":"API2_NBA_SPREAD_PAGE1_DECISION_BOARD_V1_FROZEN","merged_main_sha":"b543e453f0161391c021eef9cfc33ad6496ca4cc"},"runtime_integration":{"loader":"universal_runtime_v5_loader_v25.py","terminal":"streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8.py","entrypoint":"app.py","delegate_prior_loader":"universal_runtime_v5_loader_v24.py","scope":"NBA spread only"},"market_transport":{"primary":"SportsGameOdds V3 multi-book","secondary_gap_fill":"Odds-API.io","credentialless_fallback":"ESPN Public Scoreboard sportsbook rows","major_books":["FanDuel","DraftKings","BetMGM","Caesars","Pinnacle","ESPN BET","Fanatics","Bet365"],"open_line_policy":"provider open/close evidence required for OPEN_TO_CURRENT label","sportsbook_projection_influence":0.0},"preflight":{"environment":"Vercel sandbox nba-spread-stier-v2-preflight","initial_infrastructure_failure":"pytest missing from bare sandbox runtime","resolution":"installed repository requirements plus pytest in same sandbox; no duplicate environment","focused_contract":"6 passed","page_handoff_and_existing_data":"42 passed","frozen_model_and_provider_regressions":"66 passed, 5 superseded runtime assertions deselected","universal_navigation":"30 passed","universal_runtime_cert":"API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN"},"superseded_baseline_assertion":{"reason":"prior tests intentionally pin superseded terminal runtime versions; V25 activation and prior-route delegation are proven by the new S-tier contract and universal runtime certification"},"runless_proof_plan":"devsystem/runless_proof_plans/api2-nba-spread-page1-s-tier-v2.json","freeze_token":"API2_NBA_SPREAD_PAGE1_S_TIER_V2_FROZEN","sportsbook_projection_influence":0.0}
+{
+  "task_id": "api2-nba-spread-page1-s-tier-v2",
+  "workstream": "api2-nba-spread-page1-s-tier-v2",
+  "source_main_sha": "b543e453f0161391c021eef9cfc33ad6496ca4cc",
+  "original_source_main_sha": "b543e453f0161391c021eef9cfc33ad6496ca4cc",
+  "branch_head_before_execution": "b543e453f0161391c021eef9cfc33ad6496ca4cc",
+  "status": "IMPLEMENTED_ISOLATED_PREFLIGHT_GREEN_SCOPE_LEASE_REQUIRED",
+  "progress_percent": 95,
+  "step2a": {
+    "authoritative_branch": "api2-nba-spread-page1-s-tier-v2",
+    "authoritative_pr": 1673,
+    "scope_lease_id": null,
+    "scope_lease_requirement": "ACQUIRE_ONE_LIVE_NON_OVERLAPPING_LEASE_AFTER_FINAL_CANDIDATE_LOCK_BEFORE_RUNLESS_PROVE",
+    "shared_runtime_write_allowed": false,
+    "duplicate_pr_or_run": false,
+    "single_proof_path": true,
+    "anti_loop": true
+  },
+  "red_evidence": {
+    "initial": {
+      "command": "python -m pytest -q tests/test_api2_nba_spread_page1_s_tier_v2.py",
+      "failed": 1,
+      "reason": "planned S-tier successor modules absent",
+      "collection_error": false
+    },
+    "parallel_conflict_repair": {
+      "command": "python -m pytest --noconftest -q tests/test_api2_nba_spread_page1_s_tier_v2.py",
+      "failed": 2,
+      "reason": "workstream-unique runtime loader absent and stale shared V25 path still owned by NBA candidate",
+      "collection_error": false,
+      "green_after_repair": "6 passed"
+    }
+  },
+  "parallel_conflict": {
+    "detected": true,
+    "classification": "PARALLEL_CONFLICT_DETECTED",
+    "competing_owner_id": "MONSTER-NFL-SPREAD-STIER-V11",
+    "competing_lease_id": "SCOPE-LEASE-NFLSPREADV11STIER001",
+    "conflicting_path": "universal_runtime_v5_loader_v25.py",
+    "resolution": "NBA workstream released V25 ownership and moved to universal_runtime_v5_loader_nba_spread_stier_v2.py; competing lane was not mutated",
+    "invalidated_candidate_sha": "60334841dae1b1f8a9a4d0185736ddcf1f30bdb7",
+    "proof_submitted_for_invalidated_candidate": false,
+    "merged_invalidated_candidate": false
+  },
+  "implemented_artifacts": [
+    "nba_spread_sportsbook_observations_v3.py",
+    "nba_spread_odds_api_observations_v1.py",
+    "nba_spread_live_data_repair_v3.py",
+    "nba_spread_decision_board_data_v2.py",
+    "nba_spread_page_v9.py",
+    "universal_runtime_v5_loader_nba_spread_stier_v2.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8.py",
+    "tests/test_api2_nba_spread_page1_s_tier_v2.py",
+    "app.py"
+  ],
+  "baseline": {
+    "freeze_token": "API2_NBA_SPREAD_PAGE1_DECISION_BOARD_V1_FROZEN",
+    "merged_main_sha": "b543e453f0161391c021eef9cfc33ad6496ca4cc"
+  },
+  "runtime_integration": {
+    "loader": "universal_runtime_v5_loader_nba_spread_stier_v2.py",
+    "terminal": "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8.py",
+    "entrypoint": "app.py",
+    "base_loader_policy": ["universal_runtime_v5_loader_v25.py if independently present", "universal_runtime_v5_loader_v24.py otherwise"],
+    "owns_shared_v25_path": false,
+    "scope": "NBA spread only"
+  },
+  "market_transport": {
+    "primary": "SportsGameOdds V3 multi-book",
+    "secondary_gap_fill": "Odds-API.io",
+    "credentialless_fallback": "ESPN Public Scoreboard sportsbook rows",
+    "major_books": ["FanDuel", "DraftKings", "BetMGM", "Caesars", "Pinnacle", "ESPN BET", "Fanatics", "Bet365"],
+    "open_line_policy": "provider open/close evidence required for OPEN_TO_CURRENT label",
+    "sportsbook_projection_influence": 0.0
+  },
+  "preflight": {
+    "environment": "Vercel sandbox nba-spread-stier-v2-preflight",
+    "single_environment_reused": true,
+    "initial_infrastructure_failure": "pytest missing from bare sandbox runtime",
+    "resolution": "installed repository requirements plus pytest in same sandbox; no duplicate environment",
+    "pre_conflict_exact_candidate": "60334841dae1b1f8a9a4d0185736ddcf1f30bdb7",
+    "pre_conflict_full_package": {
+      "focused_contract": "6 passed",
+      "page_handoff_and_existing_data": "42 passed",
+      "frozen_model_and_provider_regressions": "66 passed, 5 superseded runtime assertions deselected",
+      "universal_navigation": "30 passed",
+      "market_transport_verifier": "VERIFIED",
+      "page1_opener_verifier": "VERIFIED",
+      "universal_runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN"
+    },
+    "post_conflict_isolation_focused_contract": "6 passed",
+    "post_conflict_full_package": "PENDING_EXACT_FINAL_CANDIDATE_RERUN"
+  },
+  "superseded_baseline_assertion": {
+    "reason": "prior tests intentionally pin superseded terminal runtime versions; the isolated NBA runtime contract plus universal runtime certification prove the successor binding without claiming a shared numbered-loader path"
+  },
+  "runless_proof_plan": "devsystem/runless_proof_plans/api2-nba-spread-page1-s-tier-v2.json",
+  "freeze_token": "API2_NBA_SPREAD_PAGE1_S_TIER_V2_FROZEN",
+  "sportsbook_projection_influence": 0.0
+}
