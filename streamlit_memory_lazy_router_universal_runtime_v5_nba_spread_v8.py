@@ -1,14 +1,20 @@
-"""Additive Universal Runtime V5 terminal overlay for NBA Spread S-tier V2.
+"""Workstream-isolated Universal Runtime V5 terminal for NBA Spread S-tier V2.
 
 Preserves the frozen universal runtime and all non-NBA-spread routes while
-advancing only the NBA Spread loader binding from V24/Page V8 to V25/Page V9.
+binding the NBA spread destination through the uniquely named S-tier overlay.
+The overlay can inherit a newer shared base loader without owning that shared
+loader path itself.
 """
 from __future__ import annotations
 
 import streamlit_memory_lazy_router_universal_runtime_v5 as prior
-from universal_runtime_v5_loader_v25 import choose_prefetch, load_destination, resolve_destination
+from universal_runtime_v5_loader_nba_spread_stier_v2 import (
+    choose_prefetch,
+    load_destination,
+    resolve_destination,
+)
 
-MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA SPREAD PAGE1 S-TIER V2 OVERLAY"
+MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA SPREAD PAGE1 S-TIER V2 ISOLATED OVERLAY"
 FROZEN_RUNTIME = "streamlit_memory_lazy_router_universal_runtime_v5"
 MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
