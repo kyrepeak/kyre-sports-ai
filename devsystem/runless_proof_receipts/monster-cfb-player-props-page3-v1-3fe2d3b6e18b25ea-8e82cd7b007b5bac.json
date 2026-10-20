@@ -1,0 +1,57 @@
+{
+  "artifact_map": {
+    "cfb_player_props_page3_analysis_v1.py": "05dc14042fb2f081b20a1f31ba39fc5fb98899d6",
+    "cfb_player_props_page3_context_v1.py": "4bc9361b6dfe4ebbcb0d72eb148ac35599e7a59f",
+    "cfb_player_props_page3_history_v1.py": "dda2c63c8ac054497f6379b0d2ef83bd05a529a4",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page3-v1.json": "cd0e09d72a27d3e0db3fe22f18f7b391227e17d1",
+    "devsystem/task_ledgers/monster-cfb-player-props-page3-v1.json": "50a8028f8cdc3c4792ecea56a0d950406fbeb954",
+    "tests/test_cfb_player_props_page3_analysis_v1.py": "46f9b3993355a587f256a250467729aa5c6a9ac7",
+    "tests/test_cfb_player_props_page3_context_v1.py": "bc12a51b2c29e9dc7fa0191ff35447b8efaec82e",
+    "tests/test_cfb_player_props_page3_history_v1.py": "9964edc72d0adf319a4d33dfa43b642a3a152cfc",
+    "tests/test_cfb_player_props_page3_integration_v1.py": "d9e6b8f96a0bf19036911b78a78fcf97ba78084f"
+  },
+  "candidate_sha": "3fe2d3b6e18b25eae662bb34558ca57c7ce6e3df",
+  "created_at": "2026-10-20T20:37:06.985890+00:00",
+  "dependency_map": {
+    "cfb_player_props_history_v1.py": "d507d7e599ae5d8a93903541038f61f2f1f60b02",
+    "cfb_player_props_model_v1.py": "75090fb22d569a3bed6c808ecb563c08685dacf7",
+    "cfb_player_props_page2_availability_v1.py": "53b928707d197a16e6a819e8aaf5b6fa606811cb",
+    "cfb_player_props_page2_market_v1.py": "57161a18ff4857fa874fb6beeb6f46c19994a4f4",
+    "cfb_player_props_page2_matchup_v1.py": "0fc4c824dfedebed76a8c0f45ad356ec168c07ae"
+  },
+  "digest": "b25f91d9fe7063b8fc95ba979c99026b9f2f4d46506b35959eb6e89dbd8be7d9",
+  "evidence_digests": [
+    "d190a071581be811d025a6eafcb720b6494224fa19d6f6b3ea28bf42a59708d2",
+    "764c666c57b4745d0fc787532776574f484126f73786bd3bdf45d4d87de2a9d7",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "ecab85b6afb17b3dd01113291c7e3cad6578c53bab5d9e6397fd577227152404",
+  "proof_id": "monster-cfb-player-props-page3-v1-3fe2d3b6e18b25ea-8e82cd7b007b5bac",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "request_fingerprint": "efb8d98c75b1f166acedcaddedbfd176647f1a5ca971137431d785b0275ee93d",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-player-props-page3-v1",
+  "workstream": "monster-cfb-player-props-page3-review-r1"
+}
