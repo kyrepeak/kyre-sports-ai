@@ -1,0 +1,78 @@
+{
+  "artifact_map": {
+    "app.py": "a875f00abbcfd7a981a0331831276aca007d3e69",
+    "devsystem/runless_proof_plans/api2-nba-spread-page1-s-tier-v2.json": "3d597e26119ccb2e05a5c36335f4331109571798",
+    "devsystem/task_ledgers/api2-nba-spread-page1-s-tier-v2.json": "8aa86dc65ae69bb25c68b6a0943e8ea64176d2ce",
+    "docs/superpowers/plans/2026-10-19-nba-spread-page1-s-tier-v2.md": "e16ed47a2954b65eeafe2e63284ce4d9dd717dd6",
+    "docs/superpowers/specs/2026-10-19-nba-spread-page1-s-tier-v2-design.md": "b2b649857242c29e7fc47d9cfbf24c20f3748a44",
+    "nba_spread_decision_board_data_v2.py": "970f6b86e4b238c94386b43c7b70add09a95e929",
+    "nba_spread_live_data_repair_v3.py": "e912c090c3c0e2cfda08f9127a93afa44fddb054",
+    "nba_spread_odds_api_observations_v1.py": "5a46c9d30fedc3b1005a2924c783456b89ac2db0",
+    "nba_spread_page_v9.py": "14ce8866de09589422a7d5a491075715c98b95b8",
+    "nba_spread_sportsbook_observations_v3.py": "240feefa8e71c4b9aff9759a554ed2386a906320",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8.py": "981276639c2e0fa50e1053546a7271e545ff8c1f",
+    "tests/test_api2_nba_spread_page1_s_tier_v2.py": "cb225d72cdc898237e2a7fcd9536fab80194dd3e",
+    "universal_runtime_v5_loader_nba_spread_stier_v2.py": "16b93bb135bc4ab2d79ec62c67b94635bb587487"
+  },
+  "candidate_sha": "c6ecc188a00b0147443c206a5e2c1bc47d9f0053",
+  "created_at": "2026-10-20T01:06:51.185210+00:00",
+  "dependency_map": {
+    "devsystem/api2_universal_runtime_v5_cert.py": "d3921447063983620d6afe95fca466cb8c2e201c",
+    "nba_spread_decision_board_data_v1.py": "76643a4bc990a2d1d04d5c8054202786ccd7911f",
+    "nba_spread_decision_v1.py": "cf7ab16dbb6419982f7f67f00512813de48a75f5",
+    "nba_spread_espn_market_fallback_v1.py": "661687198632faeb75c350fd3b34feffc10e62a6",
+    "nba_spread_fair_spread_probability_v1.py": "75a658346d51800cefbfdfcef7b4bf6082cd9407",
+    "nba_spread_injury_availability_v1.py": "15c6988e5cd51d43e27820c145393b52352136f3",
+    "nba_spread_live_data_repair_v2.py": "dff9707618c355395dcefc339ca5b7fb25125c5b",
+    "nba_spread_page1_handoff_v1.py": "cb73b54ff82d31a958aa79f8ef1891043fba4901",
+    "nba_spread_page2_selected_game_v1.py": "ba89eecd5041888fd0a972ee3c266fb4264b81c8",
+    "nba_spread_page_provider_resilience_step3_r1.py": "40cbe2cfd4e0792bfc20b8a2267ec03247c4e35c",
+    "nba_spread_page_v8.py": "148e5e581eac0f4675f02604937952a9f2b4e1cf",
+    "nba_spread_public_betting_observations_v1.py": "1cc99b4929cab34aa093e20493b1014153ec61c9",
+    "nba_spread_sportsbook_observations_v2.py": "f8cc585619134ab7626b049cc7c13eab66970cea",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "962612ab07db77a010b5c3d96ee0fed6ac418c5b",
+    "universal_runtime_v5_loader_v24.py": "5a495eccfae944e76296817caa82563ac8dc68d0"
+  },
+  "digest": "65f60e42762455b68c5392530312b0d62f799961e1a4e44ae256b920fe3c0948",
+  "evidence_digests": [
+    "4b8a004b65d27c0d6df873ee261c888f9dff62a57be15eb3311fde8974dddfbc",
+    "771e8f863e23d057f7f0aaaa20a4bf6d8d6a0ec25234f28b2c177ff56b91dca0",
+    "fca6d5611a74e770c36356652af12421f2b2edc8f149eacbf67df11733cd3b4c",
+    "04380462a33576bace92541d4dc5bc254f9c6261966da370e41a00d0cce0c322",
+    "ca676bbd9788c837f1f89cf411fcda6ac05a9b83e1ba32f3eb1efc002215d842",
+    "cff24925dc6314733d04d7c6c70a907e09dbecbc62c94708c23323fc996c26d1",
+    "bb876ebd2d8cb9600e5d7cfb768b2b1db7926aa20f100b2441edf096b5dc84a2",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7d4b00206539ea0ac96c085c5e6e9a2fa2d93fd663b8d8105bcfad08f2ecfd73",
+  "proof_id": "api2-nba-spread-page1-s-tier-v2-c6ecc188a00b0147-56d8829829caa608",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-NBA-SPREAD-PAGE1-STIER-V2-APP-R1"
+    ],
+    "revision": 432,
+    "state_hash": "ff565194bcaa8e0731b56504d60d1e6b221f68be295b92959029fc88fa5372b4"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-NBA-SPREAD-PAGE1-STIER-V2-APP-R1"
+    ],
+    "revision": 432,
+    "state_hash": "ff565194bcaa8e0731b56504d60d1e6b221f68be295b92959029fc88fa5372b4"
+  },
+  "request_fingerprint": "a3551c7ee7797a7863340d52a5f1221de4cec9227e77792d3af1164d277ed4f6",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-spread-page1-s-tier-v2",
+  "workstream": "api2-nba-spread-page1-s-tier-v2"
+}
