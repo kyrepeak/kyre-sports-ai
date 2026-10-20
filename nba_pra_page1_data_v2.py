@@ -1,116 +1,139 @@
-"""NBA PRA Page 1 V2 — type-routed, upcoming-only snapshot."""
+"""NBA PRA Page 1 V2 live-market routing overlay.
+
+Preserves the frozen/current Page-1 snapshot implementation in
+``nba_pra_page1_data_core_v2`` while fixing sportsbook credential reuse,
+Phoenix-local market windows, and primary-to-secondary routing.
+"""
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
-from typing import Any, Callable, Mapping
+from datetime import datetime, time, timedelta, timezone
+from typing import Any, Mapping
 
-from nba_pra_page1_data_v1 import flatten_injury_players
-from nba_pra_page1_history_v1 import build_player_profiles
-from nba_pra_page1_sgo_v1 import load_sgo_pra_observations
-from nba_pra_page1_sources_v2 import (
-    build_sportsbook_board,
-    load_approved_odds_api_pra_observations,
-    load_nba_stats_profiles,
-    route_player_profiles,
-    select_featured_quote,
-    select_next_upcoming_slate,
-)
+import nba_pra_page1_data_core_v2 as _core
+import nba_pra_page1_sgo_v1 as _sgo
+from nba_pra_page1_common_v1 import PHOENIX_TZ
+from nba_pra_page1_sources_v2 import load_approved_odds_api_pra_observations
 
-MODEL_VERSION = "NBA PRA PAGE 1 COMMAND CENTER V2"
-SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+# Preserve the existing module surface, including private helpers used by tests.
+globals().update({k: v for k, v in vars(_core).items() if not k.startswith("__")})
 
 
-def _default_schedule_loader(**kwargs):
-    from nba_spread_schedule_provider_resilience_step2_r1 import load_verified_nba_schedule
-    return load_verified_nba_schedule(**kwargs)
+def _connected_secret(name: str) -> str | None:
+    session_key = {
+        "SPORTSGAMEODDS_API_KEY": "ks_sportsgameodds_key",
+        "SGO_API_KEY": "ks_sportsgameodds_key",
+        "ODDS_API_IO_KEY": "ks_odds_api_key",
+        "ODDS_API_KEY": "ks_odds_api_key",
+    }.get(str(name or "").strip())
+    try:
+        import streamlit as st
+        if session_key:
+            value = st.session_state.get(session_key)
+            if value:
+                return str(value).strip() or None
+        value = st.secrets.get(name)
+        if value:
+            return str(value).strip() or None
+    except Exception:
+        pass
+    import os
+    value = os.getenv(name)
+    return str(value).strip() if value else None
 
 
-def _default_injury_loader(games, *, now_utc):
-    from nba_spread_injury_availability_v1 import _fetch_official_rows, build_game_injury_features
-    official_rows, meta = _fetch_official_rows(games, now_utc)
-    available = bool(meta.get("available"))
-    return build_game_injury_features(
-        games,
-        official_rows=official_rows if available else [],
-        espn_rows=[],
-        official_available=available,
-        espn_available=False,
-        fetched_at_utc=meta.get("reported_at_utc") if available else None,
-        now_utc=now_utc,
+def _phoenix_window(slate_date):
+    start = datetime.combine(slate_date, time.min, tzinfo=PHOENIX_TZ)
+    end = start + timedelta(days=1)
+    fmt = lambda value: value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    return fmt(start), fmt(end)
+
+
+def _load_sgo_primary(slate_date, *, request_get=None, secret_getter=None, timeout: float = 6.0):
+    upstream = request_get or _sgo._default_get
+    starts_after, starts_before = _phoenix_window(slate_date)
+
+    def phoenix_get(url, **kwargs):
+        params = dict(kwargs.get("params") or {})
+        params["startsAfter"] = starts_after
+        params["startsBefore"] = starts_before
+        kwargs["params"] = params
+        return upstream(url, **kwargs)
+
+    return _sgo.load_sgo_pra_observations(
+        slate_date,
+        request_get=phoenix_get,
+        secret_getter=secret_getter or _connected_secret,
+        timeout=timeout,
     )
 
 
-def _backup_loader_for(games, board):
-    def load(names, slate_date):
-        wanted = {"".join(ch for ch in str(name).casefold() if ch.isalnum()) for name in names}
-        market = {key: {"player_name": entry.get("player_name")} for key, entry in board.items() if key in wanted}
-        profiles = build_player_profiles(games, market, slate_date)
-        for value in profiles.values():
-            value["stats_source"] = "ESPN backup"
-        return profiles
-    return load
+def _load_odds_secondary(slate_date):
+    return load_approved_odds_api_pra_observations(slate_date, secret_getter=_connected_secret)
+
+
+def _primary_market_covers_games(payload: Mapping[str, Any], games) -> bool:
+    rows = [row for row in (payload.get("observations") or []) if isinstance(row, Mapping)]
+    if not rows:
+        return False
+    event_ids = {str(row.get("provider_event_id") or "").strip() for row in rows} - {""}
+    if len(event_ids) >= len(games):
+        return True
+    matchups = {
+        (
+            "".join(ch for ch in str(row.get("away_team") or "").casefold() if ch.isalnum()),
+            "".join(ch for ch in str(row.get("home_team") or "").casefold() if ch.isalnum()),
+        )
+        for row in rows
+        if str(row.get("away_team") or "").strip() and str(row.get("home_team") or "").strip()
+    }
+    return len(matchups) >= len(games)
+
+
+def _skipped_secondary():
+    return {
+        "source": "Odds-API.io",
+        "verification": "SKIPPED_PRIMARY_COMPLETE",
+        "diagnostic_state": "SKIPPED_PRIMARY_COMPLETE",
+        "observations": [],
+        "fabrication": False,
+        "sportsbook_projection_influence": 0.0,
+    }
 
 
 def load_page1_snapshot_v2(
-    *,
-    now: datetime | None = None,
-    schedule_loader: Callable[..., Mapping[str, Any]] | None = None,
-    sgo_loader: Callable[[date], Mapping[str, Any]] | None = None,
-    odds_loader: Callable[[date], Mapping[str, Any]] | None = None,
-    official_profile_loader: Callable[[date], Mapping[str, Any]] | None = None,
-    backup_profile_loader=None,
-    injury_loader=None,
-) -> dict[str, Any]:
-    now = now or datetime.now(timezone.utc)
-    if now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
-    schedule_loader = schedule_loader or _default_schedule_loader
-    schedule = dict(schedule_loader(now_utc=now) or {})
-    slate_text, games = select_next_upcoming_slate(list(schedule.get("games") or []), now)
-    empty = {
-        "verification": schedule.get("verification", "UNAVAILABLE"),
-        "slate_date": slate_text,
-        "games": games,
-        "market": {},
-        "profiles": {},
-        "injury_players": {},
-        "sources": {"schedule": schedule},
-        "sportsbook_projection_influence": 0.0,
-    }
-    if not slate_text or not games:
-        return empty
-    slate_date = date.fromisoformat(slate_text)
-    sgo_loader = sgo_loader or load_sgo_pra_observations
-    odds_loader = odds_loader or load_approved_odds_api_pra_observations
-    sgo, odds = dict(sgo_loader(slate_date) or {}), dict(odds_loader(slate_date) or {})
-    board = build_sportsbook_board(sgo, odds)
-    market = {}
-    for key, entry in board.items():
-        featured = select_featured_quote(entry)
-        if featured is not None:
-            market[key] = {**entry, "featured_quote": featured}
-    if not market:
-        return {**empty, "sources": {"schedule": schedule, "sgo": sgo, "odds_api": odds}}
-    official_profile_loader = official_profile_loader or load_nba_stats_profiles
-    backup_profile_loader = backup_profile_loader or _backup_loader_for(games, market)
-    profiles = route_player_profiles(
-        [entry["player_name"] for entry in market.values()],
-        slate_date,
-        official_loader=official_profile_loader,
-        backup_loader=backup_profile_loader,
+    *, now=None, schedule_loader=None, sgo_loader=None, odds_loader=None,
+    official_profile_loader=None, backup_profile_loader=None, injury_loader=None,
+):
+    now_utc = now or datetime.now(timezone.utc)
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    schedule_impl = schedule_loader or _core._default_schedule_loader
+    primary_impl = sgo_loader or _load_sgo_primary
+    secondary_impl = odds_loader or _load_odds_secondary
+    state = {}
+
+    def schedule_proxy(**kwargs):
+        result = dict(schedule_impl(**kwargs) or {})
+        _, games = _core.select_next_upcoming_slate(list(result.get("games") or []), now_utc)
+        state["games"] = games
+        return result
+
+    def primary_proxy(day):
+        result = dict(primary_impl(day) or {})
+        state["primary"] = result
+        return result
+
+    def secondary_proxy(day):
+        if _primary_market_covers_games(state.get("primary", {}), state.get("games", [])):
+            return _skipped_secondary()
+        return dict(secondary_impl(day) or {})
+
+    return _core.load_page1_snapshot_v2(
+        now=now_utc,
+        schedule_loader=schedule_proxy,
+        sgo_loader=primary_proxy,
+        odds_loader=secondary_proxy,
+        official_profile_loader=official_profile_loader,
+        backup_profile_loader=backup_profile_loader,
+        injury_loader=injury_loader,
     )
-    injury_loader = injury_loader or _default_injury_loader
-    try:
-        injury_payload = dict(injury_loader(games, now_utc=now) or {})
-    except Exception:
-        injury_payload = {"verification": "UNAVAILABLE", "features": []}
-    return {
-        "verification": schedule.get("verification", "UNAVAILABLE"),
-        "slate_date": slate_text,
-        "games": games,
-        "market": market,
-        "profiles": profiles,
-        "injury_players": flatten_injury_players(injury_payload),
-        "sources": {"schedule": schedule, "sgo": sgo, "odds_api": odds, "injuries": injury_payload},
-        "sportsbook_projection_influence": 0.0,
-    }
