@@ -1,0 +1,21 @@
+{
+  "branch": "monster-cfb-player-props-page3-v1",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
+  "notes": [
+    "Page 1 and Page 2 preserved behind Runtime V3",
+    "Page 3 custom-line probability reuses frozen projection mean/uncertainty",
+    "No sportsbook input modifies projection math"
+  ],
+  "scope_lease_id": "SCOPE-LEASE-6D1246D45FDBF86C57602EE4",
+  "source_main_sha": "b859420dab536e9ec1319e044c922a97a72d3a81",
+  "sportsbook_projection_influence": 0.0,
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "task_id": "monster-cfb-player-props-page3-v1",
+  "verification": {
+    "cfb_player_props_tests": 125,
+    "page3_navigation": "Back to Page 2 + TOP",
+    "runtime": "V3 exclusive selector",
+    "sealed_total_tests": 128
+  },
+  "workstream": "monster-cfb-player-props-page3-v1"
+}
