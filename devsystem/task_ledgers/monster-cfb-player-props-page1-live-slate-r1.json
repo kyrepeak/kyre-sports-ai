@@ -1,0 +1,25 @@
+{
+  "task": "monster-cfb-player-props-page1-live-slate-r1",
+  "task_id": "monster-cfb-player-props-page1-live-slate-r1",
+  "workstream": "monster-cfb-player-props-page1-live-slate-r1",
+  "title": "CFB Player Props Page 1 live slate repair R1",
+  "status": "LOCAL_VERIFIED_READY_FOR_EXACT_HEAD_PROOF",
+  "source_main": "e03b166df0a1865523955e348ab7402234d5a831",
+  "branch": "monster-cfb-player-props-page1-live-slate-r1",
+  "scope_lease": "SCOPE-LEASE-89997D65705E749BB2F90035",
+  "scope": "Page 1 next-active-slate discovery and game hydration only. No Page 2/3, model, projection, probability, or sportsbook math changes.",
+  "root_cause": "CFB Player Props Page 1 imported cfb_schedule_v1, which returned zero games for Oct 20-24 2026 while current cfb_schedule_v4 returned verified slates. The loader also discovered a date and then fetched games a second time, allowing a valid date to collapse to zero rendered games.",
+  "red": "2 new regressions failed: Page 1 owned cfb_schedule_v1 and a successful first schedule read was lost by the second fetch.",
+  "green": "3 new live-slate tests passed; full Page-1 suite 43/43 passed; sealed current-runtime proof bundle 49 passed / 1 documented obsolete V3 assertion deselected; real schedule check returned 3 verified Oct 20 games from CFB Schedule V4.",
+  "live_evidence": {
+    "date": "2026-10-20",
+    "verified_game_count": 3,
+    "games": ["Middle Tenn. @ FIU", "Missouri St. @ Delaware", "South Alabama @ Marshall"],
+    "source": "CFB SCHEDULE V4 • ROBUST ESPN ENRICHMENT"
+  },
+  "baseline_exception": "Bare pytest exits during collection because tests/conftest.py line 203 still pins obsolete streamlit_memory_lazy_router_v157.",
+  "changed_model_math": false,
+  "changed_sportsbook_logic": false,
+  "changed_app_py": false,
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE1_LIVE_SLATE_R1_FROZEN"
+}
