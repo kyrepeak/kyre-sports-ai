@@ -30,6 +30,8 @@
       "pytest",
       "--noconftest",
       "-q",
+      "--deselect",
+      "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py::test_v4_inherits_current_universal_atomic_navigation_without_reimplementing_it",
       "tests/test_cfb_player_props_fanduel_event_tabs_v1.py",
       "tests/test_cfb_player_props_identity_v1.py",
       "tests/test_cfb_player_props_market_v1.py",
@@ -72,7 +74,8 @@
   ],
   "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
   "known_baseline_exceptions": [
-    "Runless managed bootstrap omits streamlit_autorefresh; the three frozen Page-2 UI-import tests are excluded from Runless but passed in the full environment as part of the 128/128 sealed suite. Runtime-V3 changes to those frozen route-contract files are pinned by Page-3 source-level integration assertions."
+    "Runless managed bootstrap omits streamlit_autorefresh; the three frozen Page-2 UI-import tests are excluded from Runless but passed in the full environment as part of the 128/128 sealed suite. Runtime-V3 changes to those frozen route-contract files are pinned by Page-3 source-level integration assertions.",
+    "Current main advanced through NBA PRA overlay PR #1683, so tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py::test_v4_inherits_current_universal_atomic_navigation_without_reimplementing_it retains an obsolete direct app.py import assertion. The exact assertion is deselected; universal navigation/runtime inheritance remains covered by tests/test_universal_atomic_navigation_v1.py plus devsystem.api2_universal_runtime_v5_cert."
   ],
   "mode": "runless",
   "public_runtime_required": false,
