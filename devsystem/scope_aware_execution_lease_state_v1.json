@@ -1,1 +1,80 @@
-{"generation":619,"holders":[{"acquired_at_utc":"2026-10-20T16:59:41Z","expires_at_utc":"2026-10-20T18:08:04Z","generation":619,"heartbeat_at_utc":"2026-10-20T17:08:04Z","lease_id":"SCOPE-LEASE-737F08AE457AD4A12E81ADEE","owner_id":"chat:api2-nba-pra-page1-v1","scope":{"dependency_tokens":["control:runless-proof-plan","domain:nba","route:nba:pra"],"exclusive":false,"resource_identity":{},"shared_resources":["entrypoint:app.py"],"write_paths":["app.py","devsystem/runless_proof_plans/api2-nba-pra-page1-v1.json","devsystem/task_ledgers/api2-nba-pra-page1-v1.json","nba_pra_nav_overlay_v1.py","nba_pra_page1_common_v1.py","nba_pra_page1_data_v1.py","nba_pra_page1_history_v1.py","nba_pra_page1_model_v1.py","nba_pra_page1_odds_v1.py","nba_pra_page1_sgo_v1.py","nba_pra_page1_ui_v1.py","nba_pra_page1_v1.py","streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py","tests/test_api2_nba_pra_data_behavior_v1.py","tests/test_api2_nba_pra_market_behavior_v1.py","tests/test_api2_nba_pra_model_behavior_v1.py","tests/test_api2_nba_pra_nav_overlay_v1.py","tests/test_api2_nba_pra_page1_v1.py","universal_runtime_v5_loader_nba_pra_page1_v1.py"]}}],"lease_ref":"refs/heads/monster-scope-aware-execution-leases","lease_state_path":"devsystem/scope_aware_execution_lease_state_v1.json","repository":"kyrepeak/kyre-sports-ai","revision":1129,"schema_version":1,"state_hash":"71a1231600546a0895cc13879fe51f469535653c0b56ec01251e7da3682289ea","version":"MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"}
+{
+  "generation": 620,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-20T16:59:41Z",
+      "expires_at_utc": "2026-10-20T18:08:04Z",
+      "generation": 619,
+      "heartbeat_at_utc": "2026-10-20T17:08:04Z",
+      "lease_id": "SCOPE-LEASE-737F08AE457AD4A12E81ADEE",
+      "owner_id": "chat:api2-nba-pra-page1-v1",
+      "scope": {
+        "dependency_tokens": [
+          "control:runless-proof-plan",
+          "domain:nba",
+          "route:nba:pra"
+        ],
+        "exclusive": false,
+        "resource_identity": {},
+        "shared_resources": [
+          "entrypoint:app.py"
+        ],
+        "write_paths": [
+          "app.py",
+          "devsystem/runless_proof_plans/api2-nba-pra-page1-v1.json",
+          "devsystem/task_ledgers/api2-nba-pra-page1-v1.json",
+          "nba_pra_nav_overlay_v1.py",
+          "nba_pra_page1_common_v1.py",
+          "nba_pra_page1_data_v1.py",
+          "nba_pra_page1_history_v1.py",
+          "nba_pra_page1_model_v1.py",
+          "nba_pra_page1_odds_v1.py",
+          "nba_pra_page1_sgo_v1.py",
+          "nba_pra_page1_ui_v1.py",
+          "nba_pra_page1_v1.py",
+          "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+          "tests/test_api2_nba_pra_data_behavior_v1.py",
+          "tests/test_api2_nba_pra_market_behavior_v1.py",
+          "tests/test_api2_nba_pra_model_behavior_v1.py",
+          "tests/test_api2_nba_pra_nav_overlay_v1.py",
+          "tests/test_api2_nba_pra_page1_v1.py",
+          "universal_runtime_v5_loader_nba_pra_page1_v1.py"
+        ]
+      }
+    },
+    {
+      "owner_id": "chat:monster-cfb-player-props-page2-completeness-v1",
+      "lease_id": "SCOPE-LEASE-F289F6F08E89F42E66B412AA",
+      "generation": 620,
+      "acquired_at_utc": "2026-10-20T17:15:00Z",
+      "heartbeat_at_utc": "2026-10-20T17:15:00Z",
+      "expires_at_utc": "2026-10-20T19:15:00Z",
+      "scope": {
+        "write_paths": [
+          "cfb_player_props_action_v1.py",
+          "cfb_player_props_fanduel_bound_v2.py",
+          "cfb_player_props_page2_completeness_v1.py",
+          "devsystem/runless_proof_plans/monster-cfb-player-props-page2-completeness-v1.json",
+          "devsystem/task_ledgers/monster-cfb-player-props-page2-completeness-v1.json",
+          "tests/test_cfb_player_props_page2_completeness_v1.py"
+        ],
+        "dependency_tokens": [
+          "control:runless-proof-plan",
+          "data:cfb-player-props-frozen-v1",
+          "domain:cfb",
+          "route:cfb:player-props"
+        ],
+        "shared_resources": [],
+        "resource_identity": {},
+        "exclusive": false
+      }
+    }
+  ],
+  "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
+  "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "revision": 1130,
+  "schema_version": 1,
+  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
+  "state_hash": "4630a100a9320d11ea802b7693f010689a0d156893765fe24a5d7b94084926fb"
+}
