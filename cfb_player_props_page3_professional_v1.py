@@ -13,6 +13,9 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 _OPTIONAL_QB_NUMERIC_FIELDS = (
     "pass_attempts", "completions", "passing_touchdowns", "interceptions",
 )
+_DIRECT_BOOK_TOKENS = (
+    "fanduel", "draftkings", "betmgm", "caesars", "fanatics", "bet365",
+)
 
 
 def _text(value: Any) -> str:
@@ -36,6 +39,104 @@ def _unique(values: Sequence[Any]) -> tuple[str, ...]:
             seen.add(value)
             out.append(value)
     return tuple(out)
+
+
+def _value(raw: Any, key: str) -> Any:
+    if isinstance(raw, Mapping):
+        return raw.get(key)
+    return getattr(raw, key, None)
+
+
+def _provider_id(label: Any) -> str:
+    text = _text(label)
+    token = "".join(ch for ch in text.casefold() if ch.isalnum())
+    if not token:
+        return ""
+    if any(book in token for book in _DIRECT_BOOK_TOKENS):
+        return "direct_sportsbook_feed"
+    if "oddsapi" in token:
+        return "the_odds_api"
+    if "sportsdataio" in token or token == "sportsdata":
+        return "sportsdataio"
+    if "sportsreference" in token:
+        return "sports_reference"
+    if "collegefootballdata" in token or token == "cfbd":
+        return "collegefootballdata"
+    if "ncaa" in token:
+        return "ncaa_official"
+    if "officialteam" in token or token in {"teamsite", "teamsites"}:
+        return "official_team_sites"
+    if "rotowire" in token:
+        return "rotowire"
+    if "actionnetwork" in token:
+        return "action_network"
+    if "vegasinsider" in token:
+        return "vegasinsider"
+    if token == "espn" or token.startswith("espn"):
+        return "espn"
+    if token == "cbs" or token.startswith("cbssports"):
+        return "cbs_sports"
+    return ""
+
+
+def _newest_timestamp(rows: Sequence[Any]) -> str:
+    normalized = []
+    for raw in rows or ():
+        stamp = _text(_value(raw, "observed_at_utc") or _value(raw, "updated_at_utc") or _value(raw, "updated_at"))
+        label = _text(_value(raw, "provider") or _value(raw, "source") or _value(raw, "provider_id"))
+        if stamp:
+            normalized.append({"provider": label, "observed_at_utc": stamp})
+    newest = source_policy.choose_newest_equivalent(normalized)
+    return _text((newest or {}).get("observed_at_utc"))
+
+
+def _source_block(field_family: str, labels: Sequence[Any], *, newest_timestamp: str = "") -> dict[str, Any]:
+    actual = _unique(labels)
+    available_ids = _unique([_provider_id(label) for label in actual if _provider_id(label)])
+    active = source_policy.rank_sources(field_family, available_ids)
+    block = source_policy.provenance(field_family, active, newest_timestamp=newest_timestamp)
+    block["actual_provider_labels"] = actual
+    return block
+
+
+def _build_source_status(
+    context: Mapping[str, Any], packet: Mapping[str, Any], history_rows: Sequence[Mapping[str, Any]], market: Mapping[str, Any]
+) -> dict[str, Any]:
+    observations = tuple(market.get("observations") or ())
+    player_prop_labels = [
+        _value(row, "provider") or _value(row, "source") or _value(row, "provider_id")
+        for row in observations
+    ]
+    history_labels = [row.get("source") or row.get("provider") or row.get("provider_id") for row in history_rows]
+
+    availability = packet.get("availability") or {}
+    availability_labels = []
+    if isinstance(availability, Mapping):
+        availability_labels.append(availability.get("source") or availability.get("provider") or availability.get("provider_id"))
+
+    movement = packet.get("movement") or market.get("movement") or {}
+    movement_labels = []
+    movement_stamp = ""
+    if isinstance(movement, Mapping):
+        movement_labels.extend((movement.get("sportsbook"), movement.get("source"), movement.get("provider")))
+        movement_stamp = _text(movement.get("observed_at_utc") or movement.get("updated_at_utc"))
+
+    game_state_labels = [
+        context.get("game_state_source"), context.get("status_source"), context.get("schedule_source")
+    ]
+    game_state = packet.get("game_state") or {}
+    if isinstance(game_state, Mapping):
+        game_state_labels.extend((game_state.get("source"), game_state.get("provider")))
+
+    history_stamp = _newest_timestamp(history_rows)
+    return {
+        "player_props": _source_block("player_props", player_prop_labels, newest_timestamp=_newest_timestamp(observations)),
+        "game_lines": _source_block("game_lines", movement_labels, newest_timestamp=movement_stamp),
+        "player_stats": _source_block("player_stats", history_labels, newest_timestamp=history_stamp),
+        "game_state": _source_block("game_state", game_state_labels),
+        "history": _source_block("history", history_labels, newest_timestamp=history_stamp),
+        "availability": _source_block("availability", availability_labels),
+    }
 
 
 def _verified_row(raw: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -197,6 +298,7 @@ def build_professional_view(
     team = build_team_matchup(team_rows, opponent_team_id=opponent, selected_player_id=player_id)
 
     board = _sportsbook_board(market)
+    source_status = _build_source_status(context, packet, history_rows, market)
     return {
         "decision": {
             "projection": projected,
@@ -217,6 +319,7 @@ def build_professional_view(
         "sportsbook_board": board,
         "market_movement": dict(packet.get("movement") or market.get("movement") or {"available": False}),
         "reasoning": dict(packet.get("reasoning") or {}),
+        "source_status": source_status,
         "quality": {
             **quality,
             "history_sample_size": int(last5.get("sample_size") or 0),
