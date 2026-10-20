@@ -100,6 +100,10 @@ def _stamp_short(value: Any) -> str:
     return friendly.replace("Updated ", "") if friendly.startswith("Updated ") else "—"
 
 
+def _evidence_status(model_ready: Any) -> str:
+    return "READY" if model_ready is True else "LIMITED"
+
+
 def _team_logo(context: dict[str, Any], player: Any) -> str:
     try:
         visuals = logo_exact.resolve_visuals(context.get("game") or context)
@@ -373,7 +377,7 @@ def render_cfb_player_props_page3() -> None:
     quality = view.get("quality") or packet.get("quality") or {}
     history_sources = ", ".join(quality.get("history_sources") or ()) or "Unavailable"
     sample_count = int(quality.get("model_sample_count") or 0)
-    quality_status = "READY" if sample_count >= frozen_model.MIN_SAMPLE else "LIMITED"
+    quality_status = _evidence_status(lab.get("model_ready"))
     st.markdown(_stat_grid((("Model Sample", str(sample_count), f"Minimum {frozen_model.MIN_SAMPLE}"), ("Books", str(int(quality.get("verified_book_count") or 0)), "Verified market sources"), ("Availability", _text(quality.get("availability_state")) or "UNVERIFIED", "Player status"), ("Evidence", quality_status, f"History n={int(quality.get('history_sample_size') or 0)}"))), unsafe_allow_html=True)
     st.caption(f"History sources actually used: {history_sources} • Latest history: {_friendly_timestamp(quality.get('latest_history_timestamp'))}")
     st.caption(f"Latest verified market observation: {_friendly_timestamp(quality.get('latest_market_timestamp'))} • Sportsbook projection influence: {SPORTSBOOK_PROJECTION_INFLUENCE:.1f}")
