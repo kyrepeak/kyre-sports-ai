@@ -1,0 +1,80 @@
+{
+  "task_id": "monster-universal-atomic-navigation-v1",
+  "workstream": "monster-universal-atomic-navigation-v1",
+  "source_main_sha": "b0d7cc02e413ff59759c26ac913fcaad88d521a8",
+  "original_source_main_sha": "b0d7cc02e413ff59759c26ac913fcaad88d521a8",
+  "branch_head_before_execution": "b0d7cc02e413ff59759c26ac913fcaad88d521a8",
+  "status": "IMPLEMENTED_PREFLIGHT_GREEN_PARALLEL_ENTRYPOINT_CONFLICT_PENDING",
+  "progress_percent": 72,
+  "step2a": {
+    "authoritative_branch": "monster-universal-atomic-navigation-v1",
+    "authoritative_pr": null,
+    "scope_lease_id": null,
+    "single_proof_path": true,
+    "duplicate_pr_or_run": false,
+    "anti_loop": true,
+    "candidate_locked": false,
+    "proof_submitted": false
+  },
+  "active_problem": "Universal site navigation must hide and deactivate the outgoing destination during sport/market/page transitions and must not background-load non-selected destinations.",
+  "red_evidence": {
+    "environment_first_attempt": {
+      "command": "pytest -q tests/test_universal_atomic_navigation_v1.py",
+      "classification": "BARE_SANDBOX_PYTEST_MISSING",
+      "resolution": "installed repository requirements plus pytest in the same sandbox; no duplicate sandbox"
+    },
+    "feature_red": {
+      "result": "7 failed",
+      "reason": "Atomic Navigation V1 helper, terminal and app activation did not exist"
+    },
+    "parallel_conflict_repair_red": {
+      "result": "1 failed, 7 deselected",
+      "reason": "future NFL Daily Picks V4 inheritance was absent before conflict repair"
+    }
+  },
+  "parallel_conflict": {
+    "detected": true,
+    "classification": "PARALLEL_CONFLICT_DETECTED",
+    "competing_owner_id": "API2-NFL-DAILY-PICKS-V4-PREMIUM-LIVE-V1",
+    "competing_lease_id": "SCOPE-LEASE-60AA5081B68F4E4319A287C7",
+    "shared_resource": "entrypoint:app.py",
+    "competing_write_paths_owned_here": false,
+    "resolution": "Atomic terminal can inherit an independently-landed NFL Daily Picks V4 module, while this lane never modifies or owns any V4 artifact. Candidate/proof/PR remain blocked until the competing entrypoint lease is released or otherwise no longer conflicts.",
+    "proof_submitted_during_conflict": false,
+    "pr_created_during_conflict": false
+  },
+  "implementation": {
+    "helper": "universal_atomic_navigation_v1.py",
+    "terminal": "streamlit_memory_lazy_router_universal_runtime_v5_atomic_navigation_v1.py",
+    "entrypoint": "app.py",
+    "route_transition_policy": "opaque shield then clear outgoing destination before selected destination load",
+    "background_prefetch": "DISABLED_IN_ATOMIC_TERMINAL",
+    "stale_commit_guard": "existing Runtime V5 generation/scope can_commit + commit_if_current",
+    "same_route_rerun_full_shield": false,
+    "upstream_policy": "prefer independently-present streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4; otherwise v3; do not swallow dependency failures inside v4",
+    "sportsbook_projection_influence": 0.0
+  },
+  "preflight": {
+    "environment": "Vercel sandbox universal-atomic-nav-v1-preflight",
+    "single_environment_reused": true,
+    "focused_contract": "8 passed",
+    "current_stack_sample": "51 passed; 3 superseded exact-app-owner assertions failed",
+    "compile": "GREEN",
+    "universal_runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+    "full_suite": "COLLECTION_BLOCKED_BY_PREEXISTING_tests/conftest.py_APP_V157_ASSERTION"
+  },
+  "superseded_baseline_assertions": {
+    "reason": "historical tests and the repository-wide collection hook pin app.py to predecessor terminals (V157, universal-nav V2/V4, NBA V7/V8, NFL Daily Picks V3). Current main already supersedes several of those exact app-owner expectations. Atomic Navigation V1 is validated as an additive terminal successor instead of restoring obsolete owners."
+  },
+  "artifacts": [
+    "app.py",
+    "universal_atomic_navigation_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_atomic_navigation_v1.py",
+    "tests/test_universal_atomic_navigation_v1.py",
+    "docs/superpowers/specs/2026-10-19-universal-atomic-navigation-v1.md",
+    "docs/superpowers/plans/2026-10-19-universal-atomic-navigation-v1.md",
+    "devsystem/task_ledgers/monster-universal-atomic-navigation-v1.json",
+    "devsystem/runless_proof_plans/monster-universal-atomic-navigation-v1.json"
+  ],
+  "freeze_token": "MONSTER_UNIVERSAL_ATOMIC_NAVIGATION_V1_FROZEN"
+}
