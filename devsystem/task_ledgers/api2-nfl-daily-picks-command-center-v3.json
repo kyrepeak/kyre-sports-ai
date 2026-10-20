@@ -2,8 +2,8 @@
   "task_id": "api2-nfl-daily-picks-command-center-v3",
   "workstream": "api2-nfl-daily-picks-command-center-v3",
   "source_main_sha": "575a83867da2c7bb9817a0cd9082b98270905da3",
-  "status": "IMPLEMENTED_PREFLIGHT_GREEN_EXACT_HEAD_CONTROL_LOCK_PENDING",
-  "progress_percent": 88,
+  "status": "REVIEWED_PREFLIGHT_GREEN_FINAL_CANDIDATE_LOCKED_PENDING_EXTERNAL_THAW_LEASE_PROOF",
+  "progress_percent": 95,
   "step2a": {
     "authoritative_branch": "api2-nfl-daily-picks-command-center-v3",
     "authoritative_pr": 1674,
@@ -26,18 +26,50 @@
     "game_total_probability_policy": "FAIL_CLOSED_UNLESS_SOURCE_PROBABILITY_CERTIFIED"
   },
   "red_evidence": {
-    "command": "python -m pytest --noconftest -q tests/test_api2_nfl_daily_picks_command_center_v3.py",
-    "candidate_sha": "f2b15a960e93b8fc2709e33b5dac0b4dd67c013a",
-    "result": "11 failed",
-    "reason": "V3 production modules intentionally absent before implementation"
+    "initial_contract": {
+      "command": "python -m pytest --noconftest -q tests/test_api2_nfl_daily_picks_command_center_v3.py",
+      "candidate_sha": "f2b15a960e93b8fc2709e33b5dac0b4dd67c013a",
+      "result": "11 failed",
+      "reason": "V3 production modules intentionally absent before implementation"
+    },
+    "review_freshness_fix": {
+      "candidate_sha": "a29acb2faeff74527dbdfd51abb9566a1ec0e84f",
+      "result": "2 failed",
+      "reason": "safe spread observation builder absent; proved missing/unknown quote age needed a fail-closed adapter"
+    },
+    "review_presentation_fix": {
+      "candidate_sha": "d1731c54361a845f15c6739d2d488c855411aace",
+      "result": "1 failed, 2 passed",
+      "reason": "approved S-tier hierarchy was not yet rendering featured intelligence, full analytics labels and explicit parlay controls"
+    }
   },
   "green_evidence": {
-    "focused_candidate_sha": "39fd9996abb75716379ad8369306d589aec50b84",
-    "compile": "PASS",
-    "focused_contract": "11 passed in 0.43s",
-    "daily_picks_regression": "55 passed, 1 proven-stale historical assertion deselected",
-    "universal_navigation": "30 passed",
-    "universal_runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN"
+    "initial_focused_candidate_sha": "39fd9996abb75716379ad8369306d589aec50b84",
+    "initial_focused_contract": "11 passed",
+    "review_fix_focused": "14 passed",
+    "daily_picks_regression_after_review_fix": "58 passed, 1 proven-stale historical assertion deselected",
+    "universal_navigation_after_review_fix": "30 passed",
+    "universal_runtime_cert_after_review_fix": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+    "compile_after_review_fix": "PASS"
+  },
+  "final_review": {
+    "type": "self-review (no subagent tool available)",
+    "invalidated_candidate_sha": "91c5f3c9e69d42e8a3de2c2c2cadc7943c3c84f3",
+    "important_findings_fixed": [
+      {
+        "finding": "Spread market rows with missing age_seconds were being converted to zero-age observations.",
+        "fix": "Added _spread_observation_rows fail-closed adapter; missing, invalid or negative age produces no verified observation.",
+        "proof": "review fix RED 2 failed -> GREEN within 14/14 focused tests"
+      },
+      {
+        "finding": "Payload carried S-tier analytics but presentation omitted featured intelligence, projection, movement, freshness, why/risk and explicit parlay controls.",
+        "fix": "Rendered FEATURED INTELLIGENCE, Model projection, Line movement, Freshness, Why it rates, What could go wrong, Build Me a Parlay, Remove Last Leg and Reset Slip while preserving source/model ownership.",
+        "proof": "presentation contract RED 1 failed -> GREEN within 14/14 focused tests"
+      }
+    ],
+    "critical_findings_remaining": 0,
+    "important_findings_remaining": 0,
+    "deferred_minors": []
   },
   "rulings": [
     {
@@ -59,6 +91,7 @@
     "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py",
     "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py",
     "tests/test_api2_nfl_daily_picks_command_center_v3.py",
+    "tests/test_api2_nfl_daily_picks_command_center_v3_review_fix.py",
     "app.py",
     "docs/superpowers/specs/2026-10-19-api2-nfl-daily-picks-command-center-v3-design.md",
     "docs/superpowers/plans/2026-10-19-api2-nfl-daily-picks-command-center-v3.md"
@@ -91,5 +124,5 @@
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
   "freeze_token": "API2_NFL_DAILY_PICKS_COMMAND_CENTER_V3_FROZEN",
-  "final_candidate_policy": "The exact candidate SHA is the branch head after this ledger and its Runless proof plan are committed. No candidate-owned file may mutate after the external exact-head thaw and scope lease are granted."
+  "final_candidate_policy": "The exact candidate SHA is the branch head produced by this ledger update. Candidate-owned files are immutable after external exact-head thaw and scope lease grant."
 }
