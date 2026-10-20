@@ -1,0 +1,46 @@
+{
+  "app_py_owned": false,
+  "baseline_exception": "Bare repo pytest may be pre-collection blocked by stale global conftest pins; this lane uses the approved --noconftest focused regression bundle plus the current Universal Runtime V5 certification.",
+  "branch": "monster-cfb-player-props-page2-v1",
+  "candidate_binding": "Exact candidate SHA is the immutable authoritative branch/PR head supplied to Runless proof transport; this in-tree ledger intentionally does not self-reference its containing commit SHA.",
+  "failure_history": [],
+  "forbidden_changes": [
+    "app.py",
+    "CFB Player Props Page 3 / Line Lab",
+    "NFL Daily Picks V4 product files",
+    "frozen Page-1 projection formulas"
+  ],
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE2_V1_FROZEN",
+  "maximum_history_games": 8,
+  "minimum_verified_completed_games": 4,
+  "product_files": [
+    "cfb_player_props_runtime_v2.py",
+    "cfb_player_props_page2_context_v1.py",
+    "cfb_player_props_page2_roster_v1.py",
+    "cfb_player_props_page2_availability_v1.py",
+    "cfb_player_props_page2_market_v1.py",
+    "cfb_player_props_page2_matchup_v1.py",
+    "cfb_player_props_page2_handoff_v1.py",
+    "cfb_player_props_page2_v1.py",
+    "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py"
+  ],
+  "proof_state": "READY_FOR_EXACT_HEAD_PROOF",
+  "scope": "Page 2 only: exact selected CFB game, verified QB/RB/WR/TE rosters, fail-closed availability, verified multi-book player props, best lines, trusted movement only, recent production, frozen Kyre signal preview, opponent-defense presentation context, professional player-first command board, Back action, and canonical future Page-3 handoff. No Page-3 Line Lab implementation.",
+  "scope_lease": "SCOPE-LEASE-9F9406AA5BCE41F8F7404CC5",
+  "source_main": "87e3b4b130eede849b579301412854ea0327373f",
+  "sportsbook_projection_influence": 0.0,
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "task": "monster-cfb-player-props-page2-v1",
+  "task_id": "monster-cfb-player-props-page2-v1",
+  "title": "CFB Player Props Page 2 V1 — Game Command Board",
+  "verification": {
+    "compile": "PENDING_AUTHORITATIVE_RUNLESS",
+    "focused_page2_page1_regression": "PENDING_AUTHORITATIVE_RUNLESS",
+    "runtime_cert": "PENDING_AUTHORITATIVE_RUNLESS",
+    "tdd_red_green": "RED gates observed locally before each implementation owner; focused Task-1 context/runtime green observed locally",
+    "runless_required_check": "runless-final-gate",
+    "runless_required_app_id": 5204253
+  },
+  "version": 1,
+  "workstream": "monster-cfb-player-props-page2-v1"
+}

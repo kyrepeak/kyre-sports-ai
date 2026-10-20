@@ -19,11 +19,11 @@ def test_cfb_player_props_is_additive_canonical_route():
     assert cfb.default_market_id == "moneyline"
 
 
-def test_cfb_player_props_gets_lazy_page1_adapter_without_importing_page():
+def test_cfb_player_props_gets_lazy_runtime_v2_adapter_without_importing_page():
     route = RuntimeRoute("cfb", "player-props", {"date": "2026-10-24"}, 7, "tap")
     adapter = loader.resolve_destination(route)
     assert adapter.route_key == ("cfb", "player-props")
-    assert adapter.source_version == "CFB_PLAYER_PROPS_PAGE1_V1"
+    assert adapter.source_version == "CFB_PLAYER_PROPS_RUNTIME_V2"
     assert adapter.ttl_ms == 30_000
 
 
