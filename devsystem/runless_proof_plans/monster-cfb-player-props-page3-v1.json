@@ -84,7 +84,7 @@
   "reuse": {
     "allow_existing_authoritative_path": true
   },
-  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
+  "source_main_sha": "446b0c211bd268d5d1992ac4110428318a5d2eee",
   "sportsbook_projection_influence": 0.0,
   "task_id": "monster-cfb-player-props-page3-v1",
   "timeout_seconds": 300,
