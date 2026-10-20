@@ -1,0 +1,53 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page1-upcoming-status-repair-v1.json": "9cbd1940a93be910fec7ae16d78cda7620938a6e",
+    "devsystem/task_ledgers/api2-nba-pra-page1-upcoming-status-repair-v1.json": "d89deb4dc78600fb60e9940ed5c1b3642bd9b15e",
+    "nba_pra_page1_sources_v2.py": "40cb7baa865ac4c57841ffb6bf0dc6b9914c225d",
+    "tests/test_api2_nba_pra_page1_upcoming_status_repair_v1.py": "1a0b077c5ef5f5c03ed68cf48e29128a215021a7"
+  },
+  "candidate_sha": "9a72ec0d60246f3c935455957289723d942995d1",
+  "created_at": "2026-10-20T22:14:03.667338+00:00",
+  "dependency_map": {
+    "nba_pra_page1_data_v2.py": "b594b921c637be059bd6755ce94a3e4dabad0351",
+    "nba_pra_page1_v2.py": "0960882642eddd02f764e2ec5b2eaf3a7d1990bc",
+    "nba_spread_schedule_provider_resilience_step2_r1.py": "68aae43bb00e92efdf9ba8d787507a5302d1bc83",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "3284caf40c7c6f460c3b0f84229079eccf3d408d"
+  },
+  "digest": "29bb6f57e0afd62995a4ccedf172a87c8da99144619ed5535ef1aa6ac9306997",
+  "evidence_digests": [
+    "78115656a5f89b4feb9963da82bdd3713c27fbb816c6aa345299b9d15dca0a6d",
+    "13275100d411006d991b7e669eac0d8509ccd70c14a1f52af8df1370fecd17e6",
+    "a809122e8c522017c8404ce019ace0ca4fc30052bc76684ff244840075dc65ac",
+    "686947f97876318c03ee1eed9b93da9bc54a402cf919c59979a8430f8012e479",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "b05292b19f735b190efd92db78cb65f780de6bf7227b5c4cc6e5f21615993e64",
+  "proof_id": "api2-nba-pra-page1-upcoming-status-repair-v1-9a72ec0d60246f3c-628222be217f4361",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "request_fingerprint": "4aeb26a47ce68bcc8b38321eb0b3396111575d802fa1e2b2057daad6c2a8dbfc",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page1-upcoming-status-repair-v1",
+  "workstream": "api2-nba-pra-page1-upcoming-status-repair-v1"
+}
