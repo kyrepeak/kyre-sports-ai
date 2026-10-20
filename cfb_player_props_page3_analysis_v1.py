@@ -111,7 +111,9 @@ def build_page3_analysis(context: Mapping[str, Any], *, selected_line: Any = Non
         'market_key':market_key,
         'player':player,
         'market':market,
+        'available_markets':tuple(key for key in page2_market.MARKET_ORDER if any(row.canonical_player_id == player.official_player_id and row.market_key == key for row in observations)),
         'projection':projection,
+        'history_rows':tuple(history),
         'line_lab':evaluated,
         'probability_curve':curve,
         'history':history_view,
@@ -127,4 +129,18 @@ def build_page3_analysis(context: Mapping[str, Any], *, selected_line: Any = Non
     }
 
 
-__all__=['SPORTSBOOK_PROJECTION_INFLUENCE','build_page3_analysis','build_reasoning']
+def reline_page3_analysis(packet: Mapping[str, Any], selected_line: Any) -> dict[str, Any]:
+    out=dict(packet)
+    market_key=_text(out.get('market_key'))
+    projection=out.get('projection') or {}
+    evaluated=line_lab.evaluate_line(projection,selected_line,market_key)
+    history_rows=list(out.get('history_rows') or [])
+    history_view=page3_history.build_history_view(history_rows,evaluated.get('line'))
+    out['line_lab']=evaluated
+    out['probability_curve']=line_lab.build_probability_curve(projection,evaluated.get('line'),market_key)
+    out['history']=history_view
+    out['reasoning']=build_reasoning(evaluated,history_view,out.get('matchup') or {},out.get('availability') or {},out.get('movement') or {})
+    return out
+
+
+__all__=['SPORTSBOOK_PROJECTION_INFLUENCE','build_page3_analysis','build_reasoning','reline_page3_analysis']
