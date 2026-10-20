@@ -1,0 +1,58 @@
+{
+  "task_id": "api2-nba-pra-page1-command-center-v2",
+  "workstream": "api2-nba-pra-page1-command-center-v2",
+  "source_main_sha": "88cc62f815456890a8ba007be7cd6d927c6a15a2",
+  "status": "REMOTE_CANDIDATE_READY",
+  "progress_percent": 82,
+  "step2a": {
+    "authoritative_branch": "api2-nba-pra-page1-command-center-v2",
+    "authoritative_pr": null,
+    "pr_binding": "Open exactly one PR after this immutable candidate is published; do not mutate candidate merely to backfill the PR number.",
+    "authoritative_sandbox": "nba-pra-page1-command-center-v2",
+    "authoritative_sandbox_session": "sbx_oohp02YWzuMUzz3RU3kbX7g5TcDA",
+    "scope_lease_id": "SCOPE-LEASE-0689D085D49230C433BD7567",
+    "single_branch": true,
+    "single_pr": true,
+    "single_preflight_environment": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "scope": {
+    "premium_command_center_ui": true,
+    "upcoming_games_only": true,
+    "hide_live_final_canceled_postponed": true,
+    "ambiguous_same_day_state_fails_closed": true,
+    "sportsbook_lines_preserved_per_book": true,
+    "sportsbook_consensus_averaging": false,
+    "sportsbook_projection_influence": 0.0,
+    "player_stats_primary": "NBA Stats",
+    "player_stats_backup": "ESPN only for players missing from NBA Stats; no existing NBA Sportradar/SportsDataIO adapter is present in this repository",
+    "injury_primary": "NBA Official Injury Report",
+    "injury_fallback": "fail closed until an approved NBA RotoWire adapter exists",
+    "game_state_primary": "NBA Official via verified schedule",
+    "game_state_verification": ["ESPN NBA", "CBS Sports"]
+  },
+  "proof": {
+    "tdd_red_upcoming": "ModuleNotFoundError: nba_pra_page1_sources_v2",
+    "tdd_red_source_routing": "ImportError: build_sportsbook_board missing",
+    "tdd_red_snapshot": "ModuleNotFoundError: nba_pra_page1_data_v2",
+    "tdd_red_ui": "ModuleNotFoundError: nba_pra_page1_ui_v2",
+    "tdd_red_injury_policy": "default V2 injury route still imported legacy combined loader",
+    "v2_green": "17 passed",
+    "scoped_green": "40 passed",
+    "applicable_navigation": "18 passed, 1 stale production-entrypoint assertion deselected",
+    "compile": "PASS",
+    "runtime_v5": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+    "bare_pytest": "Attempted; collection INTERNALERROR on pre-existing assertion requiring streamlit_memory_lazy_router_v157 in app.py. Source main already boots Universal Runtime V5 NBA PRA wrapper; this workstream does not modify app.py."
+  },
+  "rulings": [
+    "Never synthesize or median-average conflicting sportsbook PRA lines; preserve each approved sportsbook quote and select the featured quote only by explicit sportsbook priority.",
+    "Do not call props/stats/injuries when there is no eligible upcoming slate.",
+    "NBA Official injury report is the Page 1 V2 injury primary; because no existing NBA RotoWire adapter exists, missing official injury data fails closed instead of using the legacy ESPN fallback.",
+    "The tap-first production-entrypoint assertion is stale: source main already imports the Universal Runtime V5 NBA PRA terminal wrapper.",
+    "The repository-wide bare pytest collection assertion for streamlit_memory_lazy_router_v157 is stale against source main and is recorded, not patched in this NBA PRA scope."
+  ],
+  "freeze_token": "API2_NBA_PRA_PAGE1_COMMAND_CENTER_V2_FROZEN",
+  "next_legal_action": "Open one PR on this candidate, run one exact-head Runless proof, merge only if protected main remains source_main_sha and the required check succeeds, then complete Runless V2 finalization/read-back."
+}
