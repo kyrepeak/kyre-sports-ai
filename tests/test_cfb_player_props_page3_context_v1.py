@@ -53,7 +53,8 @@ def test_unsupported_market_fails_closed(monkeypatch):
 
 def test_back_clears_page3_only_and_preserves_exact_game():
     import cfb_player_props_page3_context_v1 as page3
-    session={'sport':'cfb','market':'player-props','date':'2026-10-20','game_id':'g1','player_id':'p1','prop':'passing_yards','cfbpp3_line':205.5,'cfbpp3_line_identity':'g1:p1:passing_yards'}
+    slider_key='cfbpp3_slider_g1:p1:passing_yards'
+    session={'sport':'cfb','market':'player-props','date':'2026-10-20','game_id':'g1','player_id':'p1','prop':'passing_yards','cfbpp3_line':205.5,'cfbpp3_line_identity':'g1:p1:passing_yards',slider_key:205.5}
     query=dict(session)
     page3.clear_page3_selection(session,query)
     for mapping in (session,query):
@@ -61,16 +62,19 @@ def test_back_clears_page3_only_and_preserves_exact_game():
         assert mapping['date']=='2026-10-20' and mapping['game_id']=='g1'
         assert 'player_id' not in mapping and 'prop' not in mapping
         assert 'cfbpp3_line' not in mapping and 'cfbpp3_line_identity' not in mapping
+        assert slider_key not in mapping
 
 
 def test_switch_market_preserves_game_and_player_and_resets_line_state():
     import cfb_player_props_page3_context_v1 as page3
-    session={'date':'2026-10-20','game_id':'g1','player_id':'p1','prop':'passing_yards','cfbpp3_line':202.5,'cfbpp3_line_identity':'old'}
-    query={'date':'2026-10-20','game_id':'g1','player_id':'p1','prop':'passing_yards'}
+    slider_key='cfbpp3_slider_g1:p1:passing_yards'
+    session={'date':'2026-10-20','game_id':'g1','player_id':'p1','prop':'passing_yards','cfbpp3_line':202.5,'cfbpp3_line_identity':'old',slider_key:222.5}
+    query={'date':'2026-10-20','game_id':'g1','player_id':'p1','prop':'passing_yards',slider_key:222.5}
     assert page3.switch_page3_market(session,query,'rushing_yards') is True
     assert session['game_id']=='g1' and session['player_id']=='p1' and session['prop']=='rushing_yards'
     assert query['game_id']=='g1' and query['player_id']=='p1' and query['prop']=='rushing_yards'
     assert 'cfbpp3_line' not in session and 'cfbpp3_line_identity' not in session
+    assert slider_key not in session and slider_key not in query
     before=dict(session)
     assert page3.switch_page3_market(session,query,'not_real') is False
     assert session==before

@@ -1,23 +1,49 @@
 {
-  "branch": "monster-cfb-player-props-page3-v1",
+  "branch": "monster-cfb-player-props-page3-v1-review-r1",
   "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
   "notes": [
-    "Page 1 and Page 2 preserved behind Runtime V3",
-    "Page 3 custom-line probability reuses frozen projection mean/uncertainty",
-    "No sportsbook input modifies projection math",
-    "Runless managed bootstrap omits streamlit_autorefresh; three frozen Page-2 UI-import tests remain covered by the full 128/128 environment suite and Runtime-V3 source-level integration assertions."
+    "Successor authority for the three unresolved post-merge PR #1687 correctness findings only.",
+    "Page 1 and Page 2 remain preserved behind Runtime V3.",
+    "Page 3 custom-line probability continues to reuse the frozen projection mean/uncertainty.",
+    "No sportsbook input modifies projection math.",
+    "The original Page-3 Runless workstream is terminal MERGE_AUTHORIZED and is not reused for mutation.",
+    "PR #1689 exact-head diagnostic at 4e14a2a5d5ced4e80c7ad7b7505727828b72ecce proved all Page-3/current-runtime tests GREEN except one unrelated stale NFL V4 direct app.py import assertion superseded when main advanced through NBA PRA overlay PR #1683.",
+    "The canonical Runless plan deselects only that stale assertion; it does not modify Page-3 product bytes or projection behavior.",
+    "Current main 446b0c211bd268d5d1992ac4110428318a5d2eee was merged into the Page-3 successor authority with no overlapping CFB Page-3 paths before final exact-head proof."
   ],
   "scope_lease_id": "SCOPE-LEASE-6D1246D45FDBF86C57602EE4",
-  "source_main_sha": "b859420dab536e9ec1319e044c922a97a72d3a81",
+  "source_main_sha": "446b0c211bd268d5d1992ac4110428318a5d2eee",
   "sportsbook_projection_influence": 0.0,
   "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
+  "successor_of": {
+    "pr": 1687,
+    "merge_commit_sha": "de5c121cbb0b97e5c668431e59224012e37008aa",
+    "prior_proof_id": "monster-cfb-player-props-page3-v1-0217efdfc2de7653-732fe729109ab666",
+    "prior_workstream": "monster-cfb-player-props-page3-v1"
+  },
   "task_id": "monster-cfb-player-props-page3-v1",
   "verification": {
-    "cfb_player_props_tests_full_environment": 125,
-    "full_environment_total_tests": 128,
-    "page3_navigation": "Back to Page 2 + TOP",
-    "runless_native_tests": 113,
+    "red_candidate": "cd4ea07b2c99ed9f8880a7d55f7a8c1c940237b4",
+    "red_proof_id": "monster-cfb-player-props-page3-v1-cd4ea07b2c99ed9f-7c6a500f9be4b894",
+    "red_failure_class": "STATIC_PROOF",
+    "red_regressions": [
+      "January postseason must resolve to the prior CFB season.",
+      "Real ESPN gamelog rows must enrich opportunity and exact opponent evidence.",
+      "Back/market switch must clear identity-keyed Streamlit slider state."
+    ],
+    "implementation": [
+      "derive CFB season with the repository July boundary instead of calendar year slicing",
+      "enrich frozen ESPN normalized history with cached raw gamelog opportunity fields and exact opponent team IDs without changing frozen projection math",
+      "clear every cfbpp3_slider_* session/query key whenever Page-3 local state resets"
+    ],
+    "latest_failed_candidate": "4e14a2a5d5ced4e80c7ad7b7505727828b72ecce",
+    "latest_failed_proof_id": "monster-cfb-player-props-page3-v1-4e14a2a5d5ced4e8-100989b411531aef",
+    "latest_failure_class": "STATIC_PROOF",
+    "latest_failure_root_cause": "stale unrelated tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py direct app.py import assertion after main advanced through NBA PRA overlay PR #1683",
+    "exact_environment_diagnostic": "114 passed, 1 failed at 4e14a2a5; after the exact stale assertion was deselected, 114 passed, 1 deselected and API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN at 5d75122a",
+    "baseline_correction": "deselect only tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py::test_v4_inherits_current_universal_atomic_navigation_without_reimplementing_it while retaining universal atomic navigation tests and Runtime V5 certification",
+    "runless_native_tests_before_review": 113,
     "runtime": "V3 exclusive selector"
   },
-  "workstream": "monster-cfb-player-props-page3-v1"
+  "workstream": "monster-cfb-player-props-page3-review-r1"
 }

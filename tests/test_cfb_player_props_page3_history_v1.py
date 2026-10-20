@@ -58,11 +58,35 @@ def test_prior_opponent_history_requires_exact_verified_opponent_identity():
     assert h.build_prior_opponent_history([{'event_id':'e1','opponent_name':'FIU','value':10}], 'opp')['available'] is False
 
 
+def test_load_page3_history_enriches_real_gamelog_auxiliary_fields(monkeypatch):
+    import cfb_player_props_page3_history_v1 as h
+    player=CanonicalPlayerIdentity('p1','t1','Roman Gagliano','QB','Middle Tennessee','MTSU')
+    base=[{'event_id':'e1','completed':True,'market_key':'passing_yards','value':240.0,'game_date':'2026-10-15','source':'ESPN CFB athlete gamelog'}]
+    payload={
+        'events':[{'eventId':'e1','date':'2026-10-15T20:00:00Z','opponent':{'id':'opp'}}],
+        'categories':[
+            {'name':'passing','labels':['C/ATT','YDS'],'events':[{'eventId':'e1','completed':True,'stats':['20/31','240']}]},
+            {'name':'rushing','labels':['CAR','YDS'],'events':[{'eventId':'e1','completed':True,'stats':['8','44']}]},
+            {'name':'receiving','labels':['REC','YDS','TGTS'],'events':[{'eventId':'e1','completed':True,'stats':['3','28','5']}]},
+        ],
+    }
+    monkeypatch.setattr(h.frozen_history,'load_verified_player_history',lambda p,m,season:list(base))
+    monkeypatch.setattr(h.frozen_history,'_fetch_gamelog',lambda athlete_id,season:payload)
+    rows=h.load_page3_history(player,'passing_yards',season=2026)
+    assert rows[0]['completions']==20
+    assert rows[0]['pass_attempts']==31
+    assert rows[0]['carries']==8
+    assert rows[0]['receptions']==3
+    assert rows[0]['targets']==5
+    assert rows[0]['opponent_team_id']=='opp'
+
+
 def test_load_verified_history_delegates_to_frozen_owner(monkeypatch):
     import cfb_player_props_page3_history_v1 as h
     player=CanonicalPlayerIdentity('p1','t1','Roman Gagliano','QB','Middle Tennessee','MTSU')
     seen=[]
     monkeypatch.setattr(h.frozen_history,'load_verified_player_history',lambda p,m,season: seen.append((p,m,season)) or _rows())
+    monkeypatch.setattr(h.frozen_history,'_fetch_gamelog',lambda athlete_id,season:{})
     rows=h.load_page3_history(player,'passing_yards',season=2026)
     assert len(rows)==9
     assert seen==[(player,'passing_yards',2026)]

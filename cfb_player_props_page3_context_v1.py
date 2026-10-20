@@ -14,6 +14,7 @@ PAGE3_LOCAL_KEYS = (
     "cfbpp3_market",
     "cfbpp3_market_tab",
 )
+SLIDER_KEY_PREFIX = "cfbpp3_slider_"
 
 
 def _text(value: Any) -> str:
@@ -87,10 +88,19 @@ def resolve_page3_context(session: Mapping[str, Any], query: Mapping[str, Any]) 
     }
 
 
+def _clear_mapping_local(mapping: MutableMapping[str, Any]) -> None:
+    keys=list(PAGE3_LOCAL_KEYS)
+    try:
+        keys.extend(str(key) for key in list(mapping.keys()) if str(key).startswith(SLIDER_KEY_PREFIX))
+    except Exception:
+        pass
+    for key in dict.fromkeys(keys):
+        _remove(mapping,key)
+
+
 def _clear_local(session: MutableMapping[str, Any], query: MutableMapping[str, Any]) -> None:
-    for key in PAGE3_LOCAL_KEYS:
-        _remove(session, key)
-        _remove(query, key)
+    _clear_mapping_local(session)
+    _clear_mapping_local(query)
 
 
 def clear_page3_selection(session: MutableMapping[str, Any], query: MutableMapping[str, Any]) -> None:
@@ -126,4 +136,4 @@ def switch_page3_market(session: MutableMapping[str, Any], query: MutableMapping
     return True
 
 
-__all__ = ["PAGE3_LOCAL_KEYS", "clear_page3_selection", "resolve_page3_context", "switch_page3_market"]
+__all__ = ["PAGE3_LOCAL_KEYS", "SLIDER_KEY_PREFIX", "clear_page3_selection", "resolve_page3_context", "switch_page3_market"]

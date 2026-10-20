@@ -17,6 +17,17 @@ def _text(value: Any) -> str:
     return str(value or '').strip()
 
 
+def _cfb_season_from_date(value: Any) -> int:
+    text=_text(value)
+    try:
+        year=int(text[:4]); month=int(text[5:7])
+    except (TypeError,ValueError):
+        return 0
+    if month < 1 or month > 12:
+        return 0
+    return year if month >= 7 else year - 1
+
+
 def _opponent_team_id(context: Mapping[str, Any], player: Any) -> str:
     team_id=_text(getattr(player,'official_team_id',''))
     away=_text(context.get('away_team_id')); home=_text(context.get('home_team_id'))
@@ -71,8 +82,7 @@ def build_page3_analysis(context: Mapping[str, Any], *, selected_line: Any = Non
     if player is None or not market_key:
         return {'state':'invalid','reason':'Exact player and market are required.','sportsbook_projection_influence':SPORTSBOOK_PROJECTION_INFLUENCE}
     if season is None:
-        try: season=int(_text(context.get('slate_date'))[:4])
-        except Exception: season=0
+        season=_cfb_season_from_date(context.get('slate_date'))
 
     observations=page2_market.load_game_prop_observations(context,[player])
     market=page2_market.build_player_market_view(player,market_key,observations,opening_rows=opening_rows)

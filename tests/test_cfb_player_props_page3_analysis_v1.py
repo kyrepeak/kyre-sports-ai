@@ -49,6 +49,18 @@ def test_analysis_packet_reuses_current_market_and_frozen_projection(monkeypatch
     assert out['quality']['verified_book_count']==1
 
 
+def test_january_postseason_uses_prior_cfb_season(monkeypatch):
+    import cfb_player_props_page3_analysis_v1 as a
+    _wire(monkeypatch,a)
+    seen=[]
+    monkeypatch.setattr(a.page3_history,'load_page3_history',lambda player,market_key,season: seen.append(season) or list(_history()))
+    context=_context()
+    context['slate_date']='2027-01-05'
+    out=a.build_page3_analysis(context,selected_line=205.5)
+    assert out['state']=='ready'
+    assert seen==[2026]
+
+
 def test_market_disappears_without_silent_substitution(monkeypatch):
     import cfb_player_props_page3_analysis_v1 as a
     _wire(monkeypatch,a,observations=[])
