@@ -5,7 +5,8 @@
   "candidate_binding": "Exact candidate SHA is the immutable authoritative branch/PR head supplied to Runless proof transport; this in-tree ledger intentionally does not self-reference its containing commit SHA.",
   "failure_history": [
     "TDD RED: six refinement tests failed before implementation as expected.",
-    "Frozen source-contract regression: Back/Analyze literal pins were preserved without duplicate runtime controls."
+    "Frozen source-contract regression: Back/Analyze literal pins were preserved without duplicate runtime controls.",
+    "Autorefresh proof-runtime concern resolved by retaining the declared streamlit-autorefresh requirement and using a test-only shim for minimal diagnostic runtimes."
   ],
   "forbidden_changes": [
     "app.py",
@@ -35,9 +36,9 @@
   },
   "title": "CFB Player Props Page 2 Refinement V1",
   "verification": {
-    "compile": "GREEN_DIAGNOSTIC",
-    "focused_page2_page1_regression": "47_PASSED",
-    "refinement_tdd": "6_RED_THEN_6_GREEN",
+    "compile": "GREEN_EXACT_HEAD_DIAGNOSTIC",
+    "focused_page2_page1_regression": "48_PASSED",
+    "refinement_tdd": "6_RED_THEN_GREEN_PLUS_DEPENDENCY_GUARD",
     "runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
     "bare_repo_pytest": "KNOWN_GLOBAL_COLLECTION_INTERNALERROR",
     "runless_required_check": "runless-final-gate",
