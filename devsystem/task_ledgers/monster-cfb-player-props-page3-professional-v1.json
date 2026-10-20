@@ -1,0 +1,29 @@
+{
+  "branch": "monster-cfb-player-props-page3-professional-v1",
+  "candidate_binding": "authoritative exact PR head at proof request",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_PROFESSIONAL_V1_FROZEN",
+  "parent_freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
+  "notes": [
+    "Professional Page-3 successor only; parent Page-3 freeze remains authoritative for frozen core owners.",
+    "Frozen Page-3 analysis/context/history owners are not modified.",
+    "Adds field-specific CFB source policy, professional Last-3/Last-5/direct-H2H composition, reachable read-only team matchup history fallback, and premium Page-3 presentation.",
+    "Sportsbook observations remain book-specific and sportsbook projection influence remains 0.0.",
+    "No universal-runtime route mutation in this workstream.",
+    "Missing data remains unavailable/null and is never converted into fabricated zero values.",
+    "Current main 2a3be3e5fea22efc7f1f135e9092ca32fe694317 was carried forward as a true merge parent after non-overlapping NBA PRA Page-1 V2 drift.",
+    "PR #1692 review findings for slider synchronization, market-consensus margin, and reachable team matchup history are regression-pinned before exact-head proof.",
+    "One successor branch/PR/Runless proof/finalization authority only."
+  ],
+  "scope_lease_id": "SCOPE-LEASE-5B3FE9DA17B4BF0A67A81C90",
+  "source_main_sha": "2a3be3e5fea22efc7f1f135e9092ca32fe694317",
+  "sportsbook_projection_influence": 0.0,
+  "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
+  "task_id": "monster-cfb-player-props-page3-professional-v1",
+  "workstream": "monster-cfb-player-props-page3-professional-v1",
+  "implementation": [
+    "Task 1: field-specific source policy with 2-4 relevant-source routing and null-safe fallback semantics",
+    "Task 2: Last-3/Last-5/direct-player-H2H/team-history professional composer over frozen Page-3 packet",
+    "Task 3: premium mobile-safe Page-3 UI with decision bar, Line Lab centerpiece, history, market and source-quality sections",
+    "Task 4: exact-head Runless proof, expected-head merge, successor freeze/read-back and lease release"
+  ]
+}
