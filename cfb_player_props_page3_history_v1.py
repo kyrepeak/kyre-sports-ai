@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import re
 from typing import Any, Mapping, Sequence
 
 import cfb_player_props_history_v1 as frozen_history
@@ -9,12 +10,169 @@ from cfb_player_props_identity_v1 import CanonicalPlayerIdentity
 from cfb_player_props_market_v1 import canonical_market_key
 
 
+def _text(value: Any) -> str:
+    return str(value or '').strip()
+
+
+def _norm(value: Any) -> str:
+    return re.sub(r'[^a-z0-9]+','',_text(value).lower())
+
+
 def _finite(value: Any) -> float | None:
     try:
-        out=float(value)
+        out=float(str(value).replace(',','').strip())
         return out if math.isfinite(out) else None
     except (TypeError,ValueError):
         return None
+
+
+def _event_rows(raw: Any) -> list[dict[str, Any]]:
+    helper=getattr(frozen_history,'_event_rows',None)
+    if callable(helper):
+        try:
+            return [dict(row) for row in helper(raw)]
+        except Exception:
+            pass
+    if isinstance(raw,Mapping):
+        items=raw.get('items')
+        if isinstance(items,list):
+            return [dict(row) for row in items if isinstance(row,Mapping)]
+        out=[]
+        for key,value in raw.items():
+            if isinstance(value,Mapping):
+                row=dict(value); row.setdefault('eventId',str(key)); out.append(row)
+        return out
+    return [dict(row) for row in raw if isinstance(row,Mapping)] if isinstance(raw,list) else []
+
+
+def _categories(payload: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    helper=getattr(frozen_history,'_categories',None)
+    if callable(helper):
+        try:
+            return list(helper(payload))
+        except Exception:
+            pass
+    cats=payload.get('categories')
+    if isinstance(cats,list):
+        return [row for row in cats if isinstance(row,Mapping)]
+    stats=payload.get('statistics')
+    if isinstance(stats,Mapping) and isinstance(stats.get('categories'),list):
+        return [row for row in stats['categories'] if isinstance(row,Mapping)]
+    return []
+
+
+def _event_meta(payload: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    helper=getattr(frozen_history,'_event_meta',None)
+    if callable(helper):
+        try:
+            return dict(helper(payload))
+        except Exception:
+            pass
+    rows=_event_rows(payload.get('events') or payload.get('eventMetadata') or {})
+    return {_text(row.get('eventId') or row.get('id')):row for row in rows if _text(row.get('eventId') or row.get('id'))}
+
+
+def _raw_stat_map(category: Mapping[str, Any], item: Mapping[str, Any]) -> dict[str, Any]:
+    raw=item.get('stats') or item.get('statistics') or []
+    if isinstance(raw,Mapping):
+        return {_norm(key):value for key,value in raw.items() if _norm(key)}
+    labels=[_norm(value) for value in (category.get('labels') or category.get('names') or [])]
+    values=list(raw) if isinstance(raw,list) else []
+    return {labels[idx]:values[idx] for idx in range(min(len(labels),len(values))) if labels[idx]}
+
+
+def _first(stats: Mapping[str, Any], *aliases: str) -> Any:
+    for alias in aliases:
+        key=_norm(alias)
+        if key in stats:
+            return stats[key]
+    return None
+
+
+def _pair(value: Any) -> tuple[float,float] | None:
+    text=_text(value)
+    if '/' not in text:
+        return None
+    left,right=text.split('/',1)
+    first=_finite(left); second=_finite(right)
+    if first is None or second is None or first < 0 or second < 0:
+        return None
+    return first,second
+
+
+def _team_id(value: Any) -> str:
+    if not isinstance(value,Mapping):
+        return ''
+    direct=_text(value.get('id') or value.get('teamId') or value.get('team_id'))
+    if direct:
+        return direct
+    nested=value.get('team')
+    if isinstance(nested,Mapping):
+        return _text(nested.get('id') or nested.get('teamId') or nested.get('team_id'))
+    return ''
+
+
+def _opponent_team_id(meta: Mapping[str, Any], own_team_id: str) -> str:
+    own=_text(own_team_id)
+    for key in ('opponent','opponentTeam','opponent_team'):
+        candidate=_team_id(meta.get(key))
+        if candidate and candidate != own:
+            return candidate
+
+    competitor_groups=[]
+    if isinstance(meta.get('competitors'),list):
+        competitor_groups.append(meta.get('competitors'))
+    competition=meta.get('competition')
+    if isinstance(competition,Mapping) and isinstance(competition.get('competitors'),list):
+        competitor_groups.append(competition.get('competitors'))
+    competitions=meta.get('competitions')
+    if isinstance(competitions,list):
+        for raw in competitions:
+            if isinstance(raw,Mapping) and isinstance(raw.get('competitors'),list):
+                competitor_groups.append(raw.get('competitors'))
+    for group in competitor_groups:
+        for competitor in group:
+            candidate=_team_id(competitor)
+            if candidate and candidate != own:
+                return candidate
+    return ''
+
+
+def _auxiliary_by_event(payload: Mapping[str, Any], own_team_id: str) -> dict[str,dict[str,Any]]:
+    if not isinstance(payload,Mapping):
+        return {}
+    out: dict[str,dict[str,Any]]={}
+    for event_id,meta in _event_meta(payload).items():
+        opponent=_opponent_team_id(meta,own_team_id)
+        if opponent:
+            out.setdefault(event_id,{})['opponent_team_id']=opponent
+
+    for category in _categories(payload):
+        kind=_norm(category.get('name') or category.get('displayName') or category.get('abbreviation'))
+        for item in _event_rows(category.get('events')):
+            event_id=_text(item.get('eventId') or item.get('id'))
+            if not event_id:
+                continue
+            target=out.setdefault(event_id,{})
+            stats=_raw_stat_map(category,item)
+            if 'pass' in kind:
+                pair=_pair(_first(stats,'C/ATT','CMP/ATT','completions/attempts'))
+                if pair is not None:
+                    target['completions'],target['pass_attempts']=pair
+                else:
+                    completions=_finite(_first(stats,'CMP','COMP','completions'))
+                    attempts=_finite(_first(stats,'ATT','passingAttempts','passAttempts'))
+                    if completions is not None and completions >= 0: target['completions']=completions
+                    if attempts is not None and attempts >= 0: target['pass_attempts']=attempts
+            if 'rush' in kind:
+                carries=_finite(_first(stats,'CAR','ATT','carries','rushingAttempts','rushAttempts'))
+                if carries is not None and carries >= 0: target['carries']=carries
+            if 'receiv' in kind:
+                receptions=_finite(_first(stats,'REC','receptions','receivingReceptions'))
+                targets=_finite(_first(stats,'TGT','TGTS','TAR','targets','receivingTargets'))
+                if receptions is not None and receptions >= 0: target['receptions']=receptions
+                if targets is not None and targets >= 0: target['targets']=targets
+    return out
 
 
 def load_page3_history(player: CanonicalPlayerIdentity, market_key: str, *, season: int) -> list[dict[str, Any]]:
@@ -22,9 +180,21 @@ def load_page3_history(player: CanonicalPlayerIdentity, market_key: str, *, seas
     if market is None:
         return []
     try:
-        return [dict(row) for row in (frozen_history.load_verified_player_history(player, market, season=int(season)) or []) if isinstance(row, Mapping)]
+        rows=[dict(row) for row in (frozen_history.load_verified_player_history(player, market, season=int(season)) or []) if isinstance(row, Mapping)]
     except Exception:
         return []
+    try:
+        raw_fetch=getattr(frozen_history,'_fetch_gamelog',None)
+        payload=raw_fetch(player.official_player_id,int(season)) if callable(raw_fetch) else {}
+        auxiliary=_auxiliary_by_event(payload,player.official_team_id)
+    except Exception:
+        auxiliary={}
+    for row in rows:
+        extra=auxiliary.get(_text(row.get('event_id'))) or {}
+        for key,value in extra.items():
+            if value not in (None,''):
+                row[key]=value
+    return rows
 
 
 def _summary(rows: Sequence[Mapping[str, Any]], line: float | None) -> dict[str, Any]:
