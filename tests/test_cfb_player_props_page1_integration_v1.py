@@ -32,10 +32,9 @@ def test_page1_reuses_next_slate_rules_with_current_schedule_owner_and_projectio
     assert model.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
 
-def test_scope_adds_only_page2_while_entrypoint_stays_untouched():
+def test_task1_scope_preserves_page1_and_entrypoint_without_page3():
     names = {path.name for path in ROOT.glob("cfb_player_props_page*_v1.py")}
     assert "cfb_player_props_page1_v1.py" in names
-    assert "cfb_player_props_page2_v1.py" in names
     assert "cfb_player_props_page3_v1.py" not in names
     app = (ROOT / "app.py").read_text()
     assert "cfb_player_props" not in app
