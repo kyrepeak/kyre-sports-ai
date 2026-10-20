@@ -17,7 +17,12 @@ from nfl_daily_picks_market_v3 import (
     line_movement,
     normalize_market_observations,
 )
-from nfl_daily_picks_parlay_v3 import DEFAULT_RISK_MODE, RISK_MODES, build_parlay
+from nfl_daily_picks_parlay_v3 import (
+    DEFAULT_RISK_MODE,
+    RISK_MODES,
+    build_parlay,
+    estimate_parlay_probability,
+)
 from nfl_daily_picks_ranking_v1 import normalized_pick_score
 
 MARKET_IDS = ("moneyline", "spread", "game-total")
@@ -69,6 +74,17 @@ def _pick_for_market(candidates: Iterable[DailyPickCandidate], market_id: str) -
     return sorted(rows, key=lambda candidate: (-normalized_pick_score(candidate), str(candidate.side)))[0]
 
 
+def _risk_copy(candidate: DailyPickCandidate) -> str:
+    uncertainty = max(0.0, float(candidate.uncertainty))
+    age = max(0.0, float(candidate.source_age_seconds))
+    limit = max(1.0, float(candidate.freshness_limit_seconds))
+    if uncertainty >= 0.20:
+        return "Model uncertainty is elevated; normal game variance can erase this edge quickly."
+    if age / limit >= 0.70:
+        return "The source snapshot is nearing its freshness limit, so a new line can change the value."
+    return "Normal variance plus late line, injury or availability movement can change the edge before kickoff."
+
+
 def _market_payload(
     candidate: DailyPickCandidate | None,
     *,
@@ -87,6 +103,9 @@ def _market_payload(
             "market_line": None,
             "best_book": {"ready": False, "status": "No verified current book"},
             "line_movement": {"ready": False, "reason": "NO_QUALIFIED_SOURCE_PICK"},
+            "freshness_seconds": None,
+            "why": "Source engine is connected, but no qualified source-owned pick is available right now.",
+            "risk": "No recommendation is published until the source contract is qualified and fresh.",
         }
 
     source_probability_ok = _total_probability_certified(candidate)
@@ -122,6 +141,7 @@ def _market_payload(
         and source_fresh
         and (not live_state or live_verified)
     )
+    reasons = [str(item).strip() for item in tuple(candidate.reason_components or ()) if str(item).strip()]
     return {
         "visible": True,
         "qualified": bool(candidate.source_ready),
@@ -138,6 +158,8 @@ def _market_payload(
         "best_book": best,
         "line_movement": movement,
         "live_eligible_verified": live_verified,
+        "why": reasons[0] if reasons else "Source-owned qualified result ranked by probability, edge, quality, freshness and uncertainty.",
+        "risk": str(meta.get("risk_reason") or "").strip() or _risk_copy(candidate),
     }
 
 
@@ -237,12 +259,40 @@ def _pct(value: Any) -> str:
         return "—"
 
 
+def _number(value: Any) -> str:
+    try:
+        return f"{float(value):.1f}"
+    except Exception:
+        return "—"
+
+
 def _line(value: Any) -> str:
     try:
         number = float(value)
     except Exception:
         return "—"
     return f"{number:+.1f}" if number != 0 else "0.0"
+
+
+def _freshness(value: Any) -> str:
+    try:
+        seconds = max(0.0, float(value))
+    except Exception:
+        return "Unavailable"
+    return f"{seconds:.0f}s old" if seconds < 120 else f"{seconds / 60.0:.1f}m old"
+
+
+def _movement_text(payload: Mapping[str, Any]) -> str:
+    movement = dict(payload.get("line_movement") or {})
+    if movement.get("ready") is not True:
+        return "No verified opening line"
+    opening = _number(movement.get("opening_line"))
+    current = _number(movement.get("current_line"))
+    try:
+        delta = f"{float(movement.get('delta')):+.1f}"
+    except Exception:
+        delta = "—"
+    return f"{opening} → {current} ({delta})"
 
 
 def _spread_observation_rows(game_id: str, row: Mapping[str, Any], now_utc: datetime) -> tuple[dict[str, Any], ...]:
@@ -319,10 +369,25 @@ def _collect_runtime_context(day: date, now_utc: datetime):
 _CSS = r"""
 <style>
 .kcc-hero{border:1px solid #315b73;border-radius:22px;padding:18px;background:radial-gradient(circle at 90% 0%,rgba(56,189,248,.18),transparent 34%),linear-gradient(145deg,#07131f,#071019);box-shadow:0 18px 46px rgba(0,0,0,.22)}
-.kcc-kicker{font-size:.64rem;font-weight:950;letter-spacing:.13em;color:#7dd3fc}.kcc-title{font-size:1.7rem;font-weight:950;color:#f8fafc;margin-top:4px}.kcc-sub{font-size:.74rem;line-height:1.5;color:#91a7b8;margin-top:5px}.kcc-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.kcc-stat{border:1px solid #294157;border-radius:12px;background:#091621;padding:10px}.kcc-stat b{display:block;color:#f2f8fc;font-size:1rem}.kcc-stat span{color:#6f8799;font-size:.43rem;font-weight:950;text-transform:uppercase}.kcc-card{border:1px solid #294c63;border-radius:18px;background:linear-gradient(160deg,#091724,#08111b);padding:13px;margin:10px 0}.kcc-game{display:flex;justify-content:space-between;gap:8px}.kcc-game b{color:#f8fafc;font-size:.92rem}.kcc-game span{color:#7dd3fc;font-size:.52rem;font-weight:950}.kcc-markets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.kcc-market{border:1px solid #20384b;border-radius:11px;background:#07131d;padding:8px}.kcc-market h4{font-size:.54rem;color:#8bdcf8;margin:0 0 5px}.kcc-market strong{display:block;color:#f5f9fc;font-size:.75rem}.kcc-market small{display:block;color:#71889a;font-size:.42rem;margin-top:3px}.kcc-slip{position:sticky;bottom:8px;z-index:6;border:1px solid #40708c;border-radius:14px;padding:10px;background:rgba(4,16,25,.96);box-shadow:0 12px 34px rgba(0,0,0,.3)}.kcc-slip b{color:#c8efff}.kcc-slip span{color:#88a3b7;font-size:.55rem;margin-left:6px}
-@media(max-width:760px){.kcc-summary{grid-template-columns:repeat(2,1fr)}.kcc-markets{grid-template-columns:1fr}.kcc-title{font-size:1.45rem}}
+.kcc-kicker{font-size:.68rem;font-weight:950;letter-spacing:.13em;color:#7dd3fc}.kcc-title{font-size:1.82rem;font-weight:950;color:#f8fafc;margin-top:4px}.kcc-sub{font-size:.79rem;line-height:1.55;color:#9db0bf;margin-top:6px}.kcc-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.kcc-stat{border:1px solid #294157;border-radius:12px;background:#091621;padding:10px}.kcc-stat b{display:block;color:#f2f8fc;font-size:1.02rem}.kcc-stat span{color:#7890a3;font-size:.47rem;font-weight:950;text-transform:uppercase}.kcc-section{margin:14px 0 7px;font-size:.62rem;font-weight:950;letter-spacing:.10em;color:#7dd3fc}.kcc-featured{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.kcc-feature{border:1px solid #31566f;border-radius:14px;background:linear-gradient(160deg,#0b1d2b,#08131d);padding:10px}.kcc-feature em{font-style:normal;color:#f0c96c;font-size:.48rem;font-weight:950}.kcc-feature b{display:block;color:#f7fbff;font-size:.82rem;margin-top:4px}.kcc-feature span{display:block;color:#89a0b2;font-size:.49rem;margin-top:3px;line-height:1.4}.kcc-card{border:1px solid #294c63;border-radius:18px;background:linear-gradient(160deg,#091724,#08111b);padding:13px;margin:10px 0}.kcc-game{display:flex;justify-content:space-between;gap:8px}.kcc-game b{color:#f8fafc;font-size:.98rem}.kcc-game span{color:#7dd3fc;font-size:.57rem;font-weight:950}.kcc-markets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.kcc-market{border:1px solid #20384b;border-radius:11px;background:#07131d;padding:9px}.kcc-market h4{font-size:.59rem;color:#8bdcf8;margin:0 0 5px}.kcc-market strong{display:block;color:#f5f9fc;font-size:.82rem}.kcc-market small{display:block;color:#8196a7;font-size:.47rem;margin-top:4px;line-height:1.4}.kcc-why,.kcc-risk{margin-top:7px;border-radius:8px;padding:7px}.kcc-why{background:#0a1d29;border-left:2px solid #38bdf8}.kcc-risk{background:#17170f;border-left:2px solid #b9a04b}.kcc-why b,.kcc-risk b{font-size:.48rem}.kcc-why b{color:#bcecff}.kcc-risk b{color:#eadb98}.kcc-why span,.kcc-risk span{font-size:.43rem;color:#91a4b3;line-height:1.4}.kcc-slip{position:sticky;bottom:8px;z-index:6;border:1px solid #40708c;border-radius:14px;padding:10px;background:rgba(4,16,25,.96);box-shadow:0 12px 34px rgba(0,0,0,.3)}.kcc-slip b{color:#c8efff}.kcc-slip span{color:#98adbd;font-size:.58rem;margin-left:6px}
+@media(max-width:760px){.kcc-summary{grid-template-columns:repeat(2,1fr)}.kcc-featured,.kcc-markets{grid-template-columns:1fr}.kcc-title{font-size:1.55rem}.kcc-sub{font-size:.74rem}}
 </style>
 """
+
+
+def _featured_html(featured: Iterable[DailyPickCandidate]) -> str:
+    labels = ("BEST PICK", "STRONG EDGE", "TOP VALUE")
+    blocks = []
+    for index, candidate in enumerate(tuple(featured)[:3]):
+        reasons = [str(item).strip() for item in tuple(candidate.reason_components or ()) if str(item).strip()]
+        why = reasons[0] if reasons else "Source-owned qualified result."
+        blocks.append(
+            '<div class="kcc-feature">'
+            f'<em>{labels[index]}</em><b>{escape(candidate.subject_label)} • {escape(candidate.market_label)}</b>'
+            f'<span>{escape(candidate.side)} • {_pct(candidate.model_probability)} model probability • score {normalized_pick_score(candidate):.3f}</span>'
+            f'<span>{escape(why)}</span></div>'
+        )
+    return '<div class="kcc-featured">' + ''.join(blocks) + '</div>' if blocks else ''
 
 
 def render_nfl_daily_picks_command_center() -> None:
@@ -353,6 +418,7 @@ def render_nfl_daily_picks_command_center() -> None:
         '</div>',
         unsafe_allow_html=True,
     )
+    st.markdown('<div class="kcc-section">FEATURED INTELLIGENCE</div>' + _featured_html(board["featured"]), unsafe_allow_html=True)
     bucket_name = st.radio("Slate view", ("LIVE NOW", "NEXT GAMES", "ALL NFL"), horizontal=True, key="nfl_daily_picks_v3_bucket")
     rows = board["buckets"][bucket_name]
     if not rows:
@@ -365,23 +431,55 @@ def render_nfl_daily_picks_command_center() -> None:
             best = payload.get("best_book") or {}
             book_text = _safe(best.get("book"), "No verified current book") if best.get("ready") else "No verified current book"
             probability_text = _pct(payload.get("probability")) if payload.get("probability_state") == "CERTIFIED" else "Source probability unavailable"
+            projection_text = _number(payload.get("projection"))
+            movement_text = _movement_text(payload)
+            freshness_text = _freshness(payload.get("freshness_seconds"))
             chunks.append(
                 f'<div class="kcc-market"><h4>{escape(MARKET_LABELS[market_id])}</h4><strong>{escape(_safe(payload.get("side"), "Connected"))}</strong>'
-                f'<small>Model probability: {escape(probability_text)}</small><small>Market: {escape(_line(payload.get("market_line")))}</small><small>Best book: {escape(book_text)}</small></div>'
+                f'<small>Model probability: {escape(probability_text)}</small><small>Model projection: {escape(projection_text)}</small>'
+                f'<small>Market: {escape(_line(payload.get("market_line")))}</small><small>Line movement: {escape(movement_text)}</small>'
+                f'<small>Best book: {escape(book_text)}</small><small>Freshness: {escape(freshness_text)}</small>'
+                f'<div class="kcc-why"><b>Why it rates</b><span>{escape(_safe(payload.get("why")))}</span></div>'
+                f'<div class="kcc-risk"><b>What could go wrong</b><span>{escape(_safe(payload.get("risk")))}</span></div></div>'
             )
         live_note = " • live rec verified" if row.get("live_recommendation_enabled") else (" • live model stays pregame-only" if row["state"] == "live" else "")
         st.markdown(
             f'<article class="kcc-card"><div class="kcc-game"><b>{escape(row["matchup"])}</b><span>{escape(row["state"].upper())} • {escape(kickoff_text)} {ET_LABEL}{escape(live_note)}</span></div><div class="kcc-markets">{"".join(chunks)}</div></article>',
             unsafe_allow_html=True,
         )
+
     generated = board["generated_parlay"]
-    if generated.get("allowed"):
-        legs = len(generated.get("legs") or ())
-        estimate = _pct(generated.get("estimated_probability"))
-        st.markdown(
-            f'<div class="kcc-slip"><b>Build-Me-a-Parlay • {escape(risk_mode)}</b><span>{legs} legs • {escape(str(generated.get("correlation_grade")))} correlation • {escape(estimate)} estimated parlay probability</span></div>',
-            unsafe_allow_html=True,
-        )
+    if "nfl_daily_picks_v3_slip_active" not in st.session_state:
+        st.session_state["nfl_daily_picks_v3_slip_active"] = False
+    if "nfl_daily_picks_v3_slip_trim" not in st.session_state:
+        st.session_state["nfl_daily_picks_v3_slip_trim"] = 0
+    a1, a2, a3 = st.columns(3)
+    if a1.button("Build Me a Parlay", key="nfl_daily_picks_v3_build_parlay", use_container_width=True):
+        st.session_state["nfl_daily_picks_v3_slip_active"] = True
+        st.session_state["nfl_daily_picks_v3_slip_trim"] = 0
+    if a2.button("Remove Last Leg", key="nfl_daily_picks_v3_remove_leg", use_container_width=True):
+        st.session_state["nfl_daily_picks_v3_slip_active"] = True
+        st.session_state["nfl_daily_picks_v3_slip_trim"] = int(st.session_state.get("nfl_daily_picks_v3_slip_trim", 0)) + 1
+    if a3.button("Reset Slip", key="nfl_daily_picks_v3_reset_slip", use_container_width=True):
+        st.session_state["nfl_daily_picks_v3_slip_active"] = False
+        st.session_state["nfl_daily_picks_v3_slip_trim"] = 0
+
+    if st.session_state.get("nfl_daily_picks_v3_slip_active") and generated.get("allowed"):
+        base_legs = tuple(generated.get("legs") or ())
+        trim = max(0, int(st.session_state.get("nfl_daily_picks_v3_slip_trim", 0)))
+        legs = base_legs[: max(0, len(base_legs) - trim)]
+        estimate = estimate_parlay_probability(legs) if len(legs) >= 2 else {"allowed": False}
+        if estimate.get("allowed"):
+            probability = _pct(estimate.get("estimated_probability"))
+            grade = _safe(estimate.get("correlation_grade"))
+            st.markdown(
+                f'<div class="kcc-slip"><b>Parlay Slip • {escape(risk_mode)}</b><span>{len(legs)} legs • {escape(grade)} correlation • {escape(probability)} estimated parlay probability</span></div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown('<div class="kcc-slip"><b>Parlay Slip</b><span>Add at least 2 qualified non-conflicting legs.</span></div>', unsafe_allow_html=True)
+    elif generated.get("allowed"):
+        st.markdown('<div class="kcc-slip"><b>Parlay Slip ready</b><span>Tap Build Me a Parlay to load the current risk-profile combination.</span></div>', unsafe_allow_html=True)
     else:
         st.markdown(
             f'<div class="kcc-slip"><b>Parlay builder • {escape(risk_mode)}</b><span>{escape(str(generated.get("reason") or "Waiting for enough qualified legs"))}</span></div>',
