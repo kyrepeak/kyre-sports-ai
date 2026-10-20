@@ -21,6 +21,17 @@ def _rows():
     ]
 
 
+def _packet(*, observations=(), history=None):
+    return {
+        "history_rows":tuple(_rows() if history is None else history),
+        "projection":{"projection":280,"model_ready":True,"sample_count":6},
+        "line_lab":{"line":250.5,"margin":29.5,"over_probability":0.71,"under_probability":0.29,"model_ready":True},
+        "market":{"consensus_line":248.5,"observations":observations,"book_count":len(observations)},
+        "quality":{},
+        "sportsbook_projection_influence":0.0,
+    }
+
+
 def test_recent_windows_return_honest_last3_and_last5_samples():
     m=_m()
     last3=m.build_recent_window(_rows()[:2],limit=3,selected_line=250.5)
@@ -84,8 +95,7 @@ def test_opponent_vs_role_unavailable_has_no_directional_claim():
 
 def test_decision_view_uses_frozen_projection_and_selected_line_only():
     m=_m()
-    packet={"history_rows":tuple(_rows()),"projection":{"projection":280,"model_ready":True,"sample_count":6},"line_lab":{"line":250.5,"margin":29.5,"over_probability":0.71,"under_probability":0.29,"model_ready":True},"market":{"consensus_line":248.5,"observations":(),"book_count":0},"quality":{},"sportsbook_projection_influence":0.0}
-    view=m.build_professional_view({"opponent_team_id":"t9","official_player_id":"p1"},packet,selected_line=250.5)
+    view=m.build_professional_view({"opponent_team_id":"t9","official_player_id":"p1"},_packet(),selected_line=250.5)
     assert view["decision"]["projection"] == 280
     assert view["decision"]["selected_line"] == 250.5
     assert view["decision"]["margin"] == 29.5
@@ -93,9 +103,17 @@ def test_decision_view_uses_frozen_projection_and_selected_line_only():
     assert view["decision"]["over_probability"] == 0.71
 
 
+def test_decision_distinguishes_selected_margin_from_market_consensus_margin():
+    m=_m()
+    view=m.build_professional_view({"opponent_team_id":"t9","official_player_id":"p1"},_packet(),selected_line=250.5)
+    assert view["decision"]["margin"] == 29.5
+    assert view["decision"]["market_consensus"] == 248.5
+    assert view["decision"]["market_margin"] == 31.5
+
+
 def test_professional_view_does_not_mutate_input_packet():
     m=_m()
-    packet={"history_rows":tuple(_rows()),"projection":{"projection":280,"model_ready":True,"sample_count":6},"line_lab":{"line":250.5,"margin":29.5,"over_probability":0.71,"under_probability":0.29,"model_ready":True},"market":{"observations":(),"book_count":0},"quality":{},"sportsbook_projection_influence":0.0}
+    packet=_packet()
     before=copy.deepcopy(packet)
     m.build_professional_view({"opponent_team_id":"t9","official_player_id":"p1"},packet,selected_line=250.5)
     assert packet == before
@@ -113,16 +131,8 @@ def test_professional_view_reports_actual_approved_sources_by_field_only():
         SimpleNamespace(provider="Odds-API.io",sportsbook="DraftKings",side="under",line=251.5,price=-105,observed_at_utc="2026-10-20T20:03:00Z"),
         SimpleNamespace(provider="SportsGameOdds",sportsbook="BetMGM",side="over",line=252.5,price=-115,observed_at_utc="2026-10-20T20:02:00Z"),
     )
-    history=tuple(_rows()[:2])
-    packet={
-        "history_rows":history,
-        "projection":{"projection":280,"model_ready":True,"sample_count":6},
-        "line_lab":{"line":250.5,"margin":29.5,"over_probability":0.71,"under_probability":0.29,"model_ready":True},
-        "market":{"observations":observations,"book_count":3},
-        "availability":{"state":"ACTIVE","source":"RotoWire"},
-        "quality":{},
-        "sportsbook_projection_influence":0.0,
-    }
+    packet=_packet(observations=observations,history=_rows()[:2])
+    packet["availability"]={"state":"ACTIVE","source":"RotoWire"}
     view=m.build_professional_view({"opponent_team_id":"t9","official_player_id":"p1"},packet,selected_line=250.5)
     props=view["source_status"]["player_props"]
     history_status=view["source_status"]["history"]
@@ -132,6 +142,48 @@ def test_professional_view_reports_actual_approved_sources_by_field_only():
     assert "sportsdataio" not in props["active_provider_ids"]
     assert history_status["active_provider_ids"] == ("ncaa_official","espn")
     assert availability["active_provider_ids"] == ("rotowire",)
+
+
+def test_team_matchup_loader_uses_reachable_runtime_history_router():
+    m=_m()
+    seen={}
+    def fake_loader(row,game):
+        seen["row"]=dict(row); seen["game"]=dict(game)
+        return {
+            "status":"VERIFIED_HISTORY",
+            "history_ready":True,
+            "recent_meetings":[
+                {"event_id":"old1","date":"2025-10-01","away_points":24,"home_points":31,"combined_total":55,"source":"ESPN exact-team schedule history"}
+            ],
+            "sources_verified":["ESPN"],
+            "observed_at":"2026-10-20T21:00:00Z",
+        }
+    context={
+        "official_game_id":"future1","away_team":"Away U","home_team":"Home U",
+        "away_team_id":"101","home_team_id":"202",
+        "game":{"espn_event_id":"future1","away_espn_team_id":"101","home_espn_team_id":"202","away_team":"Away U","home_team":"Home U"},
+    }
+    out=m.load_team_matchup_history(context,history_loader=fake_loader)
+    assert seen["game"]["away_espn_team_id"] == "101"
+    assert seen["game"]["home_espn_team_id"] == "202"
+    assert out["available"] is True
+    assert out["status"] == "VERIFIED_HISTORY"
+    assert out["rows"][0]["event_id"] == "old1"
+    assert out["rows"][0]["source"] == "ESPN exact-team schedule history"
+    assert out["sources"] == ("ESPN",)
+
+
+def test_professional_view_uses_loaded_team_history_when_context_has_no_rows(monkeypatch):
+    m=_m()
+    monkeypatch.setattr(m,"load_team_matchup_history",lambda context:{
+        "available":True,"status":"VERIFIED_HISTORY","sources":("ESPN",),"observed_at":"2026-10-20T21:00:00Z",
+        "rows":({"event_id":"old1","date":"2025-10-01","source":"ESPN exact-team schedule history"},),
+    })
+    context={"opponent_team_id":"t9","official_player_id":"p1","away_team":"A","home_team":"B","away_team_id":"1","home_team_id":"2"}
+    view=m.build_professional_view(context,_packet(),selected_line=250.5)
+    assert view["team_matchup"]["available"] is True
+    assert view["team_matchup"]["sample_size"] == 1
+    assert view["team_matchup"]["rows"][0]["event_id"] == "old1"
 
 
 def test_page3_source_has_professional_ui_contract():
@@ -156,3 +208,11 @@ def test_page3_source_has_professional_ui_contract():
     assert "st.number_input" not in source
     assert "st.text_input" not in source
     assert "build_professional_view" in source
+
+
+def test_page3_reads_slider_widget_state_before_first_decision_and_keeps_market_margin_distinct():
+    source=(Path(__file__).resolve().parents[1]/"cfb_player_props_page3_v1.py").read_text()
+    assert 'slider_state_key=f"cfbpp3_slider_{identity}"' in source
+    assert 'widget_line=st.session_state.get(slider_state_key)' in source
+    assert source.index('widget_line=st.session_state.get(slider_state_key)') < source.index('_decision(view)')
+    assert 'get("market_margin")' in source
