@@ -1,0 +1,48 @@
+{
+  "task_id": "monster-cfb-player-props-live-source-closeout-r1",
+  "workstream": "monster-cfb-player-props-live-source-closeout-r1",
+  "status": "RED_TESTS_COMMITTED",
+  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
+  "scope_lease_id": "SCOPE-LEASE-7D3A2F89C6E14B0FA53D9172",
+  "parent_freeze_token": "MONSTER_CFB_PLAYER_PROPS_LIVE_SOURCE_REPAIR_V1_FROZEN",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_LIVE_SOURCE_CLOSEOUT_R1_FROZEN",
+  "required_check": "runless-final-gate",
+  "required_app_id": 5204253,
+  "sportsbook_projection_influence": 0.0,
+  "root_cause": [
+    "FanDuel event-page details are fetched sequentially for every verified game on a full CFB slate, so one slow provider can block Page 1 for many timeout windows.",
+    "Alternate and ladder FanDuel player-prop markets contain the same canonical stat aliases as main markets and can be emitted into the canonical merge key, allowing a non-main threshold to displace the intended line."
+  ],
+  "implementation": [
+    "fetch verified FanDuel event-page details with bounded parallelism so the slate degrades within one bounded request window instead of one timeout per game",
+    "reject alternate, alt, ladder, and milestone market families before canonical stat alias matching",
+    "preserve exact verified-game binding, canonical player extraction, nested American price parsing, and sportsbook projection influence 0.0"
+  ],
+  "verification": {
+    "red_observed": false,
+    "red_tests_commit": "392ec8444137b127efae2946ca73b3e61d587e96",
+    "compile": "PENDING",
+    "focused_green": "PENDING",
+    "regression": "PENDING",
+    "universal_runtime_v5_cert": "PENDING"
+  },
+  "anti_loop": {
+    "single_authoritative_pr": 1688,
+    "single_authoritative_branch": "monster-cfb-player-props-live-source-closeout-r1",
+    "duplicate_branch_search_completed": true,
+    "duplicate_pr_search_completed": true,
+    "stale_parent_prs_retired": [1681, 1685, 1686],
+    "no_duplicate_proof_requests": true
+  },
+  "parallel_isolation": {
+    "rebase_source_main": "1a09caa7b003bbb104f76adee611b7bb964574ff",
+    "overlap_check": "GREEN",
+    "parallel_changes": "NBA PRA only; no overlap with CFB live-source artifacts"
+  },
+  "artifacts": [
+    "cfb_player_props_fanduel_bound_v2.py",
+    "tests/test_cfb_player_props_fanduel_event_tabs_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-live-source-closeout-r1.json",
+    "devsystem/task_ledgers/monster-cfb-player-props-live-source-closeout-r1.json"
+  ]
+}
