@@ -14,7 +14,7 @@ def test_player_props_route_is_single_lazy_runtime_destination_and_nonselected_d
     route = RuntimeRoute("cfb", "player-props", {"date": "2026-10-24"}, 4, "tap")
     adapter = loader.resolve_destination(route)
     assert adapter.route_key == ("cfb", "player-props")
-    assert adapter.source_version == "CFB_PLAYER_PROPS_RUNTIME_V2"
+    assert adapter.source_version == "CFB_PLAYER_PROPS_RUNTIME_V3"
 
     seen = []
     sentinel = object()
@@ -32,10 +32,10 @@ def test_page1_reuses_next_slate_rules_with_current_schedule_owner_and_projectio
     assert model.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
 
-def test_task1_scope_preserves_page1_and_entrypoint_without_page3():
+def test_page1_remains_present_and_entrypoint_untouched_with_runtime_v3_successor():
     names = {path.name for path in ROOT.glob("cfb_player_props_page*_v1.py")}
     assert "cfb_player_props_page1_v1.py" in names
-    assert "cfb_player_props_page3_v1.py" not in names
+    assert (ROOT / "cfb_player_props_runtime_v3.py").exists()
     app = (ROOT / "app.py").read_text()
     assert "cfb_player_props" not in app
 

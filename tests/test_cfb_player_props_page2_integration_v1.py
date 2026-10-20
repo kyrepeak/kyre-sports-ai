@@ -16,7 +16,7 @@ def test_page2_runtime_is_single_canonical_lazy_destination_and_other_routes_sta
     route = RuntimeRoute("cfb", "player-props", {"date": "2026-10-24", "game_id": "401999001"}, 22, "tap")
     adapter = loader.resolve_destination(route)
     assert adapter.route_key == ("cfb", "player-props")
-    assert adapter.source_version == "CFB_PLAYER_PROPS_RUNTIME_V2"
+    assert adapter.source_version == "CFB_PLAYER_PROPS_RUNTIME_V3"
     assert adapter.ttl_ms == 30_000
 
     sentinel = object()
@@ -27,7 +27,7 @@ def test_page2_runtime_is_single_canonical_lazy_destination_and_other_routes_sta
     assert seen == [other]
 
 
-def test_scope_contains_page2_only_and_does_not_create_page3_or_touch_entrypoint():
+def test_page2_contract_remains_present_with_runtime_v3_successor_and_entrypoint_untouched():
     expected = {
         "cfb_player_props_runtime_v2.py",
         "cfb_player_props_page2_context_v1.py",
@@ -39,7 +39,7 @@ def test_scope_contains_page2_only_and_does_not_create_page3_or_touch_entrypoint
         "cfb_player_props_page2_v1.py",
     }
     assert all((ROOT / name).exists() for name in expected)
-    assert not (ROOT / "cfb_player_props_page3_v1.py").exists()
+    assert (ROOT / "cfb_player_props_runtime_v3.py").exists()
     assert "cfb_player_props" not in (ROOT / "app.py").read_text()
 
 
@@ -56,7 +56,7 @@ def test_runtime_overlay_does_not_introduce_nonselected_prefetch_or_duplicate_ro
     source = (ROOT / "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py").read_text()
     assert "from universal_runtime_v5_loader import DestinationAdapter, choose_prefetch, load_destination, run_prefetch" in source
     assert "def choose_prefetch" not in source
-    assert "CFB_PLAYER_PROPS_RUNTIME_V2" in source
+    assert "CFB_PLAYER_PROPS_RUNTIME_V3" in source
 
 
 def test_control_plane_files_bind_exact_page2_freeze_token_and_runless_shapes():
