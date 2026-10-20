@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 from html import escape
+import math
 from typing import Any, Iterable, Mapping
 
 try:
@@ -244,6 +245,24 @@ def _line(value: Any) -> str:
     return f"{number:+.1f}" if number != 0 else "0.0"
 
 
+def _spread_observation_rows(game_id: str, row: Mapping[str, Any], now_utc: datetime) -> tuple[dict[str, Any], ...]:
+    raw_age = row.get("age_seconds")
+    try:
+        age = float(raw_age)
+    except (TypeError, ValueError):
+        return ()
+    if not math.isfinite(age) or age < 0.0:
+        return ()
+    book = str(row.get("sportsbook") or "").strip()
+    if not book:
+        return ()
+    updated = now_utc - timedelta(seconds=age)
+    return (
+        {"game_id": game_id, "market_id": "spread", "side": "AWAY", "book": book, "price": row.get("away_price"), "line": row.get("away_spread"), "updated_at": updated, "verified": True, "provider": "Kyre Sports API"},
+        {"game_id": game_id, "market_id": "spread", "side": "HOME", "book": book, "price": row.get("home_price"), "line": row.get("home_spread"), "updated_at": updated, "verified": True, "provider": "Kyre Sports API"},
+    )
+
+
 def _collect_runtime_context(day: date, now_utc: datetime):
     from nfl_daily_picks_sources_v1 import _kickoff_from_slate, load_all_market_candidates
     import nfl_hub_v1 as nfl
@@ -291,14 +310,7 @@ def _collect_runtime_context(day: date, now_utc: datetime):
         markets = spread_market._fetch_markets(games)
         for game_id, snapshot in markets.items():
             for row in snapshot.get("books") or []:
-                age = float(row.get("age_seconds") or 0.0)
-                updated = now_utc - timedelta(seconds=max(0.0, age))
-                observations.extend(
-                    [
-                        {"game_id": game_id, "market_id": "spread", "side": "AWAY", "book": row.get("sportsbook"), "price": row.get("away_price"), "line": row.get("away_spread"), "updated_at": updated, "verified": True, "provider": "Kyre Sports API"},
-                        {"game_id": game_id, "market_id": "spread", "side": "HOME", "book": row.get("sportsbook"), "price": row.get("home_price"), "line": row.get("home_spread"), "updated_at": updated, "verified": True, "provider": "Kyre Sports API"},
-                    ]
-                )
+                observations.extend(_spread_observation_rows(str(game_id), row, now_utc))
     except Exception:
         pass
     return candidates, states, observations
