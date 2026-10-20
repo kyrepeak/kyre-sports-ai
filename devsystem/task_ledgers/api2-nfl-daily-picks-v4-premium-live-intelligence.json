@@ -1,0 +1,58 @@
+{
+  "task_id": "api2-nfl-daily-picks-v4-premium-live-intelligence",
+  "workstream": "api2-nfl-daily-picks-v4-premium-live-intelligence",
+  "source_main_sha": "4694b46dff3444eb08a0e3caa1614651a31c5ae3",
+  "status": "CURRENT_MAIN_REVERIFYING",
+  "progress_percent": 99,
+  "step2a": {
+    "authoritative_branch": "api2-nfl-daily-picks-v4-premium-live-intelligence",
+    "authoritative_pr": null,
+    "authoritative_sandbox": "nfl-daily-picks-v4-preflight",
+    "authoritative_sandbox_session": "sbx_82iGqT4yu8VRhzeJ4RnEMdDEFa2K",
+    "single_branch": true,
+    "single_pr": true,
+    "single_preflight_environment": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "head_drift": {
+    "stale_candidate_sha": "519832ba751a3e662d2b5a5cc959beebcd7b0f2e",
+    "invalidated_before_thaw_lease_proof": true,
+    "current_main_sha": "4694b46dff3444eb08a0e3caa1614651a31c5ae3",
+    "forward_port_preserves_atomic_navigation": true,
+    "forward_port_preserves_cfb_player_props": true
+  },
+  "scope": {
+    "smart_live": true,
+    "pregame_refresh_seconds": 45,
+    "live_refresh_seconds": 20,
+    "live_quote_fresh_seconds": 75,
+    "live_quote_stale_seconds": 120,
+    "max_pair_skew_seconds": 60,
+    "live_market_policy": "FAIL_CLOSED_TO_LIVE_ODDS_UNAVAILABLE",
+    "live_model_policy": "PREGAME_MODEL_UNLESS_SEPARATELY_CERTIFIED",
+    "sportsbook_projection_influence": 0.0,
+    "game_total_probability_policy": "FAIL_CLOSED_UNLESS_SOURCE_PROBABILITY_CERTIFIED"
+  },
+  "proof": {
+    "red": "5 failed, 1 passed before V4 implementation",
+    "v4": "8 passed",
+    "v4_atomic_inheritance": "1 passed",
+    "v3": "13 passed, 1 superseded V3 entrypoint assertion deselected",
+    "daily_picks": "65 passed, 2 proven stale/superseded assertions deselected",
+    "universal_navigation": "30 passed",
+    "atomic_navigation": "5 passed, 1 explicit pre-V4 handoff assertion deselected",
+    "runtime_v5": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+    "compile": "PASS"
+  },
+  "rulings": [
+    "Passing Yards v42 historical assertion is stale against source main, which already routes v89.",
+    "V3-only app ownership assertions are superseded by the approved V4 entrypoint forward-port.",
+    "Atomic Navigation app-stays-V3 assertion is an explicit pre-V4 handoff; V4 proves V4 -> V3 -> render_atomic_app inheritance."
+  ],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_DAILY_PICKS_V4_PREMIUM_LIVE_INTELLIGENCE_FROZEN",
+  "next_legal_action": "Reverify against current main, rebuild exact candidate, then thaw/lease/prove."
+}

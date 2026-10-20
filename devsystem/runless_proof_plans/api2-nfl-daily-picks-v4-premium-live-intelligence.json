@@ -1,0 +1,110 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-daily-picks-v4-premium-live-intelligence",
+  "workstream": "api2-nfl-daily-picks-v4-premium-live-intelligence",
+  "source_main_sha": "4694b46dff3444eb08a0e3caa1614651a31c5ae3",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "app.py",
+      "nfl_daily_picks_live_v4.py",
+      "nfl_daily_picks_command_center_v4.py",
+      "universal_runtime_v5_loader_nfl_daily_picks_command_v4.py",
+      "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_daily_picks_command_center_v4.py",
+      "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_daily_picks_command_center_v3.py",
+      "tests/test_api2_nfl_daily_picks_command_center_v3_review_fix.py",
+      "-k",
+      "not test_terminal_router_and_app_advance_only_to_v3_overlay"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_daily_picks_core_v1.py",
+      "tests/test_api2_nfl_daily_picks_sources_v1.py",
+      "tests/test_api2_nfl_daily_picks_ranking_v1.py",
+      "tests/test_api2_nfl_daily_picks_hub_v1.py",
+      "tests/test_api2_nfl_daily_picks_route_v1.py",
+      "tests/test_api2_nfl_daily_picks_premium_v2.py",
+      "tests/test_api2_nfl_daily_picks_command_center_v3.py",
+      "tests/test_api2_nfl_daily_picks_command_center_v3_review_fix.py",
+      "tests/test_api2_nfl_daily_picks_command_center_v4.py",
+      "-k",
+      "not test_existing_nfl_destinations_remain_unchanged and not test_terminal_router_and_app_advance_only_to_v3_overlay"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_universal_sports_nav_controller_v1.py",
+      "tests/test_universal_sports_nav_url_v1.py",
+      "tests/test_universal_sports_nav_registry_v1.py",
+      "tests/test_api2_route_transition_mask_v1.py",
+      "tests/test_api2_universal_nav_single_owner_speed_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py",
+      "tests/test_universal_atomic_navigation_v1.py",
+      "-k",
+      "not test_app_stays_on_existing_v3_terminal_so_v4_lane_keeps_entrypoint_ownership"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_cfb_player_props_page1_route_v1.py",
+      "tests/test_cfb_player_props_page1_integration_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "artifacts": [
+    "app.py",
+    "nfl_daily_picks_live_v4.py",
+    "nfl_daily_picks_command_center_v4.py",
+    "universal_runtime_v5_loader_nfl_daily_picks_command_v4.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4.py",
+    "tests/test_api2_nfl_daily_picks_command_center_v4.py",
+    "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py",
+    "devsystem/task_ledgers/api2-nfl-daily-picks-v4-premium-live-intelligence.json",
+    "devsystem/runless_proof_plans/api2-nfl-daily-picks-v4-premium-live-intelligence.json"
+  ],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_DAILY_PICKS_V4_PREMIUM_LIVE_INTELLIGENCE_FROZEN"
+}
