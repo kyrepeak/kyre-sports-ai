@@ -1,0 +1,80 @@
+{
+  "app_py_change_required": false,
+  "artifacts": [
+    "devsystem/task_ledgers/monster-cfb-player-props-page1-v1.json",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page1-v1.json",
+    "tests/test_cfb_player_props_page1_integration_v1.py"
+  ],
+  "candidate_binding": "authoritative exact PR head at proof request",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "cfb_player_props_page1_v1.py",
+      "cfb_player_props_page1_slate_v1.py",
+      "cfb_player_props_page1_handoff_v1.py",
+      "cfb_player_props_identity_v1.py",
+      "cfb_player_props_market_v1.py",
+      "cfb_player_props_sportsgameodds_v1.py",
+      "cfb_player_props_fanduel_v1.py",
+      "cfb_player_props_history_v1.py",
+      "cfb_player_props_model_v1.py",
+      "universal_sports_nav_registry_v1.py",
+      "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_cfb_player_props_page1_route_v1.py",
+      "tests/test_cfb_player_props_page1_slate_v1.py",
+      "tests/test_cfb_player_props_page1_handoff_v1.py",
+      "tests/test_cfb_player_props_identity_v1.py",
+      "tests/test_cfb_player_props_market_v1.py",
+      "tests/test_cfb_player_props_model_v1.py",
+      "tests/test_cfb_player_props_page1_v1.py",
+      "tests/test_cfb_player_props_page1_integration_v1.py",
+      "tests/test_api2_cfb_universal_next_slate_navigation_v1.py",
+      "tests/test_universal_sports_nav_registry_v1.py",
+      "tests/test_universal_sports_nav_controller_v1.py",
+      "tests/test_universal_sports_nav_url_v1.py",
+      "tests/test_universal_atomic_navigation_v1.py",
+      "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py",
+      "-k",
+      "not runtime_handoff_points_to_v13_only"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "dependencies": [
+    "cfb_schedule_v1.py",
+    "cfb_universal_next_slate_navigation_v1.py",
+    "cfb_over_under_logo_resolver_v3.py",
+    "cfb_over_under_logo_resolver_v2.py",
+    "universal_atomic_navigation_runtime_v1.py"
+  ],
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE1_V1_FROZEN",
+  "known_baseline_exceptions": [
+    "tests/conftest.py pins obsolete streamlit_memory_lazy_router_v157 before collection",
+    "tests/test_api2_cfb_universal_next_slate_navigation_v1.py::test_runtime_handoff_points_to_v13_only pins obsolete loader V13; current frozen runtime uses V17 + Atomic Navigation"
+  ],
+  "mode": "runless",
+  "probes": [],
+  "public_runtime_required": false,
+  "required_app_id": 5204253,
+  "required_check": "runless-final-gate",
+  "reuse": {
+    "allow_existing_authoritative_path": true
+  },
+  "source_main_sha": "1e3e7f452ffb7fb304e79c396601612b1ac438f4",
+  "sportsbook_projection_influence": 0.0,
+  "task_id": "monster-cfb-player-props-page1-v1",
+  "timeout_seconds": 300,
+  "workstream": "monster-cfb-player-props-page1-v1"
+}

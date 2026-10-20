@@ -14,6 +14,20 @@ BASE_LOADER_NAME = "universal_runtime_v5_loader_nba_spread_stier_v2"
 
 
 def resolve_destination(route: RuntimeRoute):
+    if route.sport_id == "cfb" and route.market_id == "player-props":
+        def loader():
+            return importlib.import_module("cfb_player_props_page1_v1")
+
+        def renderer(page):
+            return page.render_cfb_player_props_page1()
+
+        return DestinationAdapter(
+            ("cfb", "player-props"),
+            loader,
+            renderer,
+            "CFB_PLAYER_PROPS_PAGE1_V1",
+            30_000,
+        )
     if route.sport_id == "nfl" and route.market_id == "daily-picks":
         base_destination = upstream.resolve_destination(route)
 

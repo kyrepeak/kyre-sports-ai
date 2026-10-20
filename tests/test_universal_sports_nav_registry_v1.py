@@ -27,7 +27,7 @@ def test_registry_market_inventory_is_live_only_and_exact():
     nav = _registry()
     expected = {
         "nfl": ("slate", "moneyline", "spread", "game-total", "passing-yards", "rushing-yards", "receiving-yards", "receptions", "passing-tds", "anytime-td", "daily-picks"),
-        "cfb": ("moneyline", "over-under", "game-total", "top-picks"),
+        "cfb": ("moneyline", "over-under", "game-total", "top-picks", "player-props"),
         "nba": ("spread",),
         "mlb": ("slate", "one-plus-hit", "home-run", "hits-runs-rbis", "pitcher-strikeouts", "matchup-explorer", "daily-game-picks", "moneyline", "run-line", "game-total", "live-game", "live-odds"),
         "wnba": ("points", "rebounds", "assists", "rebounds-assists", "pra", "spread", "moneyline", "game-total", "daily-picks"),
