@@ -74,3 +74,11 @@ def test_page2_live_market_refresh_is_wired_without_keyboard_controls():
     assert "text_input(" not in source
     assert "number_input(" not in source
     assert "text_area(" not in source
+
+
+def test_optional_autorefresh_dependency_fails_safe_in_proof_or_minimal_runtime():
+    source = inspect.getsource(page)
+    assert "try:" in source
+    assert "from streamlit_autorefresh import st_autorefresh" in source
+    assert "except ImportError:" in source
+    assert "def st_autorefresh" in source
