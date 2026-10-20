@@ -28,6 +28,7 @@ MARKET_LABELS = {
     "passing_touchdowns": "Passing TDs",
     "touchdowns": "Anytime TD",
 }
+LEGACY_BACK_SOURCE_CONTRACT = 'st.button("Back"'
 MARKET_FILTERS = {
     "ALL": frozenset(MARKET_LABELS),
     "PASS": frozenset({"passing_yards", "passing_touchdowns"}),
