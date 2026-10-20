@@ -16,7 +16,7 @@ SOURCE_POLICY = {
 APPROVED_PRA_BOOKS = ("FanDuel", "DraftKings", "BetMGM", "Caesars", "ESPN BET", "bet365")
 SPORTSBOOK_PRIORITY = APPROVED_PRA_BOOKS
 _BLOCKED_STATUS_TOKENS = ("live", "in progress", "halftime", "quarter", "qtr", "final", "completed", "canceled", "cancelled", "postponed", "suspended", "delayed")
-_SCHEDULED_STATUS_TOKENS = ("scheduled", "pregame", "pre-game", "not started")
+_SCHEDULED_STATUS_TOKENS = ("upcoming", "scheduled", "pregame", "pre-game", "not started")
 
 
 def _text(value: Any) -> str:
