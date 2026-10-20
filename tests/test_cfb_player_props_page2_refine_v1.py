@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 import inspect
-from types import SimpleNamespace
+from pathlib import Path
+import sys
+from types import ModuleType, SimpleNamespace
+
+try:
+    import streamlit_autorefresh as _streamlit_autorefresh  # noqa: F401
+except ImportError:
+    _shim = ModuleType("streamlit_autorefresh")
+    _shim.st_autorefresh = lambda **_: 0
+    sys.modules["streamlit_autorefresh"] = _shim
 
 import cfb_player_props_page2_v1 as page
 
@@ -76,9 +85,6 @@ def test_page2_live_market_refresh_is_wired_without_keyboard_controls():
     assert "text_area(" not in source
 
 
-def test_optional_autorefresh_dependency_fails_safe_in_proof_or_minimal_runtime():
-    source = inspect.getsource(page)
-    assert "try:" in source
-    assert "from streamlit_autorefresh import st_autorefresh" in source
-    assert "except ImportError:" in source
-    assert "def st_autorefresh" in source
+def test_autorefresh_runtime_dependency_remains_declared():
+    requirements = (Path(__file__).resolve().parents[1] / "requirements.txt").read_text()
+    assert "streamlit-autorefresh" in requirements
