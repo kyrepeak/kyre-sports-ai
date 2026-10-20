@@ -8,6 +8,10 @@
   "candidate_binding": "authoritative exact PR head at proof request",
   "commands": [
     [
+      "python", "-m", "pip", "install", "--disable-pip-version-check", "--quiet",
+      "-r", "requirements.txt", "pytest", "pytest-asyncio", "PyJWT", "cryptography"
+    ],
+    [
       "python", "-m", "py_compile",
       "cfb_player_props_runtime_v2.py",
       "cfb_player_props_page2_context_v1.py",

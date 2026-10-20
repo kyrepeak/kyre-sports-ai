@@ -73,6 +73,9 @@ def test_control_plane_files_bind_exact_page2_freeze_token_and_runless_shapes():
     assert proof["required_app_id"] == 5204253
     assert proof["sportsbook_projection_influence"] == 0.0
     assert all(command[:2] == ["python", "-m"] for command in proof["commands"])
+    assert proof["commands"][0][2:5] == ["pip", "install", "--disable-pip-version-check"]
+    assert "-r" in proof["commands"][0] and "requirements.txt" in proof["commands"][0]
+    assert "pytest" in proof["commands"][0]
     assert any(command[2] == "py_compile" for command in proof["commands"])
     assert any(command[2] == "pytest" for command in proof["commands"])
     assert any(command[2] == "devsystem.api2_universal_runtime_v5_cert" for command in proof["commands"])
