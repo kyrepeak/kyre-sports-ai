@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import importlib
 from pathlib import Path
+from types import SimpleNamespace
 
 
 def _m():
@@ -103,6 +104,34 @@ def test_professional_view_does_not_mutate_input_packet():
 def test_sportsbook_projection_influence_remains_zero():
     m=_m()
     assert m.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+
+
+def test_professional_view_reports_actual_approved_sources_by_field_only():
+    m=_m()
+    observations=(
+        SimpleNamespace(provider="FanDuel",sportsbook="FanDuel",side="over",line=250.5,price=-110,observed_at_utc="2026-10-20T20:00:00Z"),
+        SimpleNamespace(provider="Odds-API.io",sportsbook="DraftKings",side="under",line=251.5,price=-105,observed_at_utc="2026-10-20T20:03:00Z"),
+        SimpleNamespace(provider="SportsGameOdds",sportsbook="BetMGM",side="over",line=252.5,price=-115,observed_at_utc="2026-10-20T20:02:00Z"),
+    )
+    history=tuple(_rows()[:2])
+    packet={
+        "history_rows":history,
+        "projection":{"projection":280,"model_ready":True,"sample_count":6},
+        "line_lab":{"line":250.5,"margin":29.5,"over_probability":0.71,"under_probability":0.29,"model_ready":True},
+        "market":{"observations":observations,"book_count":3},
+        "availability":{"state":"ACTIVE","source":"RotoWire"},
+        "quality":{},
+        "sportsbook_projection_influence":0.0,
+    }
+    view=m.build_professional_view({"opponent_team_id":"t9","official_player_id":"p1"},packet,selected_line=250.5)
+    props=view["source_status"]["player_props"]
+    history_status=view["source_status"]["history"]
+    availability=view["source_status"]["availability"]
+    assert props["active_provider_ids"] == ("direct_sportsbook_feed","the_odds_api")
+    assert props["actual_provider_labels"] == ("FanDuel","Odds-API.io","SportsGameOdds")
+    assert "sportsdataio" not in props["active_provider_ids"]
+    assert history_status["active_provider_ids"] == ("ncaa_official","espn")
+    assert availability["active_provider_ids"] == ("rotowire",)
 
 
 def test_page3_source_has_professional_ui_contract():
