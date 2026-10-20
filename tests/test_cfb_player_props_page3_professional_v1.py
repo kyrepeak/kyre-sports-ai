@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import importlib
+from pathlib import Path
 
 
 def _m():
@@ -102,3 +103,26 @@ def test_professional_view_does_not_mutate_input_packet():
 def test_sportsbook_projection_influence_remains_zero():
     m=_m()
     assert m.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+
+
+def test_page3_source_has_professional_ui_contract():
+    source=(Path(__file__).resolve().parents[1]/"cfb_player_props_page3_v1.py").read_text()
+    for token in (
+        "cfb_player_props_page3_professional_v1",
+        "MODEL DECISION",
+        "LINE LAB",
+        "LAST 3",
+        "LAST 5",
+        "DIRECT PLAYER VS OPPONENT",
+        "TEAM MATCHUP HISTORY",
+        "OPPONENT VS ROLE",
+        "SPORTSBOOK MARKET",
+        "WHY THE MODEL SEES IT THIS WAY",
+        "DATA QUALITY & SOURCES",
+        "← Back to Game Props",
+        "↑ TOP",
+    ):
+        assert token in source
+    assert "st.number_input" not in source
+    assert "st.text_input" not in source
+    assert "build_professional_view" in source
