@@ -291,5 +291,23 @@ def render_cfb_player_props_page3() -> None:
     st.caption(f"History sources actually used: {history_sources} • Latest history: {_text(quality.get('latest_history_timestamp')) or 'Unavailable'}")
     st.caption(f"Latest verified market observation: {_text(quality.get('latest_market_timestamp')) or 'Unavailable'} • Sportsbook projection influence: {SPORTSBOOK_PROJECTION_INFLUENCE:.1f}")
 
+    st.markdown('<div class="cfbpp3-section">ACTIVE FIELD SOURCES</div>',unsafe_allow_html=True)
+    source_status=view.get("source_status") or {}
+    source_labels=(
+        ("player_props","Player Props / Sportsbook Lines"),
+        ("game_lines","Game Lines / Movement"),
+        ("player_stats","Player Stats"),
+        ("game_state","Game Status / Live State"),
+        ("history","Player / Matchup History"),
+        ("availability","Availability"),
+    )
+    for key,label in source_labels:
+        block=source_status.get(key) or {}
+        active=", ".join(str(value).replace("_"," ").title() for value in block.get("active_provider_ids") or ()) or "No approved active source observed"
+        actual=", ".join(block.get("actual_provider_labels") or ()) or "No source label observed"
+        stamp=_text(block.get("newest_timestamp"))
+        suffix=f" • Latest {stamp}" if stamp else ""
+        st.caption(f"{label}: **{active}** • Observed: {actual}{suffix}")
+
 
 __all__=["MARKET_LABELS","SPORTSBOOK_PROJECTION_INFLUENCE","render_cfb_player_props_page3"]
