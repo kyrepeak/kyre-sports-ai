@@ -8,6 +8,8 @@ from typing import Any, Mapping, Sequence
 import cfb_player_props_history_v1 as frozen_history
 from cfb_player_props_identity_v1 import CanonicalPlayerIdentity
 from cfb_player_props_market_v1 import canonical_market_key
+import cfb_player_props_model_v1 as frozen_model
+import cfb_player_props_page3_gamebook_recovery_v1 as gamebook_recovery
 
 
 def _text(value: Any) -> str:
@@ -175,6 +177,26 @@ def _auxiliary_by_event(payload: Mapping[str, Any], own_team_id: str) -> dict[st
     return out
 
 
+def _merge_primary_and_recovery(
+    primary: Sequence[Mapping[str, Any]], recovery: Sequence[Mapping[str, Any]]
+) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]]=[]
+    seen: set[str]=set()
+    for source_rows in (primary,recovery):
+        for raw in source_rows or ():
+            if not isinstance(raw,Mapping):
+                continue
+            row=dict(raw)
+            event_id=_text(row.get('event_id'))
+            if event_id and event_id in seen:
+                continue
+            if event_id:
+                seen.add(event_id)
+            merged.append(row)
+    merged.sort(key=lambda row: (_text(row.get('game_date')),_text(row.get('event_id'))),reverse=True)
+    return merged
+
+
 def load_page3_history(player: CanonicalPlayerIdentity, market_key: str, *, season: int) -> list[dict[str, Any]]:
     market=canonical_market_key(market_key)
     if market is None:
@@ -182,7 +204,15 @@ def load_page3_history(player: CanonicalPlayerIdentity, market_key: str, *, seas
     try:
         rows=[dict(row) for row in (frozen_history.load_verified_player_history(player, market, season=int(season)) or []) if isinstance(row, Mapping)]
     except Exception:
-        return []
+        rows=[]
+
+    if len(rows) < int(frozen_model.MIN_SAMPLE):
+        try:
+            recovered=gamebook_recovery.load_completed_gamebook_history(player,market,season=int(season))
+        except Exception:
+            recovered=[]
+        rows=_merge_primary_and_recovery(rows,recovered)
+
     try:
         raw_fetch=getattr(frozen_history,'_fetch_gamelog',None)
         payload=raw_fetch(player.official_player_id,int(season)) if callable(raw_fetch) else {}
