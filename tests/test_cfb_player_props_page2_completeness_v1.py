@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import cfb_player_props_action_v1 as action
 import cfb_player_props_fanduel_bound_v2 as fanduel_v2
+import cfb_player_props_odds_api_v1 as odds_api
 import cfb_player_props_page2_completeness_v1 as completeness
 from cfb_player_props_identity_v1 import CanonicalPlayerIdentity
 from cfb_player_props_page2_roster_v1 import Page2Player
@@ -75,33 +74,40 @@ def test_fanduel_v2_binds_provider_event_to_verified_game(monkeypatch):
     assert {row["event_start"] for row in rows} == {"2026-10-20T23:00:00Z"}
 
 
-def test_action_parser_extracts_verified_prop_rows_from_next_data():
+def test_odds_api_parser_extracts_book_specific_player_prop_rows():
     payload = {
-        "props": {"pageProps": {"playerProps": [{
-            "game": {
-                "id": "an-game", "start_time": "2026-10-20T23:00:00Z",
-                "away_team": {"display_name": "Middle Tennessee"},
-                "home_team": {"display_name": "FIU"},
-            },
-            "player": {"id": "272129", "full_name": "Roman Gagliano", "team": {"display_name": "Middle Tennessee"}},
-            "market": {"id": "an-pass", "name": "Pass Yds", "stat_key": "passing_yards"},
-            "book": {"display_name": "FanDuel"},
-            "side": "over", "line": 194.5, "odds": -114,
-        }]}}
+        "id": "oa-game",
+        "away": "Middle Tennessee",
+        "home": "FIU",
+        "date": "2026-10-20T23:00:00Z",
+        "bookmakers": {
+            "DraftKings": [{
+                "name": "Player Passing Yards",
+                "updatedAt": "2026-10-20T17:10:00Z",
+                "odds": [
+                    {"playerName": "Roman Gagliano", "side": "over", "line": 194.5, "price": -110},
+                    {"playerName": "Roman Gagliano", "side": "under", "line": 194.5, "price": -110},
+                ],
+            }],
+            "FanDuel": [{
+                "name": "Player Rushing Yards",
+                "updatedAt": "2026-10-20T17:11:00Z",
+                "odds": [
+                    {"playerName": "Roman Gagliano", "side": "over", "line": 11.5, "price": -114},
+                    {"playerName": "Roman Gagliano", "side": "under", "line": 11.5, "price": -114},
+                ],
+            }],
+        },
     }
-    html = '<script id="__NEXT_DATA__" type="application/json">' + json.dumps(payload) + '</script>'
-    rows = action.parse_action_props_page(html, observed_at_utc="2026-10-20T17:10:00Z")
-    assert len(rows) == 1
-    row = rows[0]
-    assert row["player_name"] == "Roman Gagliano"
-    assert row["stat_id"] == "passing_yards"
-    assert row["line"] == 194.5
-    assert row["sportsbook"] == "FanDuel"
-    assert row["away_team"] == "Middle Tennessee"
-    assert row["home_team"] == "FIU"
+    rows = odds_api.parse_event_player_props(payload, observed_at_utc="2026-10-20T17:12:00Z")
+    assert len(rows) == 4
+    assert {row["sportsbook"] for row in rows} == {"DraftKings", "FanDuel"}
+    assert {row["stat_id"] for row in rows} == {"passing_yards", "rushing_yards"}
+    assert {row["player_name"] for row in rows} == {"Roman Gagliano"}
+    assert all(row["line"] is not None for row in rows)
 
 
-def test_completeness_merges_sources_and_recovers_missing_player(monkeypatch):
+def test_completeness_merges_relevant_sources_and_recovers_missing_player(monkeypatch):
     player = _player()
     context = _context()
     base = {
@@ -116,9 +122,9 @@ def test_completeness_merges_sources_and_recovers_missing_player(monkeypatch):
         {**base, "provider": "FanDuel", "sportsbook": "FanDuel", "side": "over", "line": 194.5, "price": -114},
         {**base, "provider": "FanDuel", "sportsbook": "FanDuel", "side": "under", "line": 194.5, "price": -114},
     ])
-    monkeypatch.setattr(completeness.action, "fetch_action_cfb_player_props", lambda: [
-        {**base, "provider": "ActionNetwork", "sportsbook": "DraftKings", "side": "over", "line": 193.5, "price": -110},
-        {**base, "provider": "ActionNetwork", "sportsbook": "DraftKings", "side": "under", "line": 193.5, "price": -110},
+    monkeypatch.setattr(completeness.odds_api, "fetch_odds_api_cfb_player_props", lambda games: [
+        {**base, "provider": "Odds-API.io", "sportsbook": "DraftKings", "side": "over", "line": 193.5, "price": -110},
+        {**base, "provider": "Odds-API.io", "sportsbook": "DraftKings", "side": "under", "line": 193.5, "price": -110},
     ])
     observations, diagnostics = completeness.load_game_prop_observations_with_diagnostics(context, [player])
     assert len(observations) == 4
@@ -127,6 +133,39 @@ def test_completeness_merges_sources_and_recovers_missing_player(monkeypatch):
     assert diagnostics["market_count"] == 1
     assert diagnostics["sportsbook_count"] == 2
     assert diagnostics["provider_count"] == 2
+
+
+def test_one_failed_source_does_not_blank_verified_fallback(monkeypatch):
+    player = _player()
+    context = _context()
+    base = {
+        "official_game_id": "401999001", "official_player_id": "roman-16",
+        "official_team_id": "mtsu-1", "player_name": "Roman Gagliano",
+        "stat_id": "passing_touchdowns", "observed_at_utc": "2026-10-20T17:13:00Z",
+        "provider_event_id": "oa-game", "provider_player_id": "oa-player",
+        "provider_market_id": "oa-td",
+    }
+    monkeypatch.setattr(completeness.fanduel, "fetch_fanduel_cfb_player_props", lambda games: (_ for _ in ()).throw(RuntimeError("fd down")))
+    monkeypatch.setattr(completeness.sgo, "fetch_sgo_cfb_player_props", lambda day: [])
+    monkeypatch.setattr(completeness.odds_api, "fetch_odds_api_cfb_player_props", lambda games: [
+        {**base, "provider": "Odds-API.io", "sportsbook": "DraftKings", "side": "over", "line": 0.5, "price": 178},
+        {**base, "provider": "Odds-API.io", "sportsbook": "DraftKings", "side": "under", "line": 0.5, "price": -245},
+    ])
+    observations, diagnostics = completeness.load_game_prop_observations_with_diagnostics(context, [player])
+    assert len(observations) == 2
+    assert diagnostics["source_errors"]["FanDuel"] == "RuntimeError"
+    assert diagnostics["players_with_markets"] == 1
+
+
+def test_missing_line_never_becomes_zero():
+    payload = {
+        "id": "oa-game", "away": "Middle Tennessee", "home": "FIU", "date": "2026-10-20T23:00:00Z",
+        "bookmakers": {"DraftKings": [{
+            "name": "Player Passing Yards", "updatedAt": "2026-10-20T17:10:00Z",
+            "odds": [{"playerName": "Roman Gagliano", "side": "over", "line": None, "price": -110}],
+        }]},
+    }
+    assert odds_api.parse_event_player_props(payload, observed_at_utc="2026-10-20T17:12:00Z") == []
 
 
 def test_coverage_summary_is_professional_and_fail_closed():
