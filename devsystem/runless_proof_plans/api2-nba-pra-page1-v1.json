@@ -1,0 +1,112 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nba-pra-page1-v1",
+  "workstream": "api2-nba-pra-page1-v1",
+  "source_main_sha": "de5c121cbb0b97e5c668431e59224012e37008aa",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "app.py",
+      "nba_pra_nav_overlay_v1.py",
+      "nba_pra_page1_model_v1.py",
+      "nba_pra_page1_common_v1.py",
+      "nba_pra_page1_sgo_v1.py",
+      "nba_pra_page1_odds_v1.py",
+      "nba_pra_page1_history_v1.py",
+      "nba_pra_page1_data_v1.py",
+      "nba_pra_page1_ui_v1.py",
+      "nba_pra_page1_v1.py",
+      "universal_runtime_v5_loader_nba_pra_page1_v1.py",
+      "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nba_pra_page1_v1.py",
+      "tests/test_api2_nba_pra_nav_overlay_v1.py",
+      "tests/test_api2_nba_pra_model_behavior_v1.py",
+      "tests/test_api2_nba_pra_data_behavior_v1.py",
+      "tests/test_api2_nba_pra_market_behavior_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_universal_sports_nav_registry_v1.py",
+      "tests/test_universal_sports_nav_compat_v1.py",
+      "tests/test_universal_sports_nav_controller_v1.py",
+      "tests/test_universal_sports_nav_ui_v1.py",
+      "tests/test_universal_sports_nav_url_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nba_spread_page1_launch_ready_v1.py",
+      "tests/test_api2_nba_spread_runtime_integration_v1.py",
+      "-k",
+      "not test_terminal_and_app_advance_only_runtime_loader_handoff and not test_production_entrypoint_uses_terminal_v7_only"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_daily_picks_command_center_v4.py",
+      "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py",
+      "-k",
+      "not test_v4_renderer_and_overlay_contract_is_additive_and_fail_closed and not test_v4_inherits_current_universal_atomic_navigation_without_reimplementing_it"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_cfb_player_props_page1_route_v1.py",
+      "tests/test_cfb_player_props_page1_integration_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "artifacts": [
+    "app.py",
+    "nba_pra_nav_overlay_v1.py",
+    "nba_pra_page1_model_v1.py",
+    "nba_pra_page1_common_v1.py",
+    "nba_pra_page1_sgo_v1.py",
+    "nba_pra_page1_odds_v1.py",
+    "nba_pra_page1_history_v1.py",
+    "nba_pra_page1_data_v1.py",
+    "nba_pra_page1_ui_v1.py",
+    "nba_pra_page1_v1.py",
+    "universal_runtime_v5_loader_nba_pra_page1_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "tests/test_api2_nba_pra_page1_v1.py",
+    "tests/test_api2_nba_pra_nav_overlay_v1.py",
+    "tests/test_api2_nba_pra_model_behavior_v1.py",
+    "tests/test_api2_nba_pra_data_behavior_v1.py",
+    "tests/test_api2_nba_pra_market_behavior_v1.py",
+    "devsystem/task_ledgers/api2-nba-pra-page1-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-page1-v1.json"
+  ],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NBA_PRA_PAGE1_COMMAND_CENTER_V1_FROZEN"
+}
