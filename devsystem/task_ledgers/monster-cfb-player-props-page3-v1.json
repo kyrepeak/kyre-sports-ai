@@ -1,23 +1,32 @@
 {
-  "branch": "monster-cfb-player-props-page3-v1",
+  "branch": "monster-cfb-player-props-page3-v1-review-r1",
   "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
   "notes": [
-    "Page 1 and Page 2 preserved behind Runtime V3",
-    "Page 3 custom-line probability reuses frozen projection mean/uncertainty",
-    "No sportsbook input modifies projection math",
-    "Runless managed bootstrap omits streamlit_autorefresh; three frozen Page-2 UI-import tests remain covered by the full 128/128 environment suite and Runtime-V3 source-level integration assertions."
+    "Successor authority for the three unresolved post-merge PR #1687 correctness findings only.",
+    "Page 1 and Page 2 remain preserved behind Runtime V3.",
+    "Page 3 custom-line probability continues to reuse the frozen projection mean/uncertainty.",
+    "No sportsbook input modifies projection math.",
+    "The original Page-3 Runless workstream is terminal MERGE_AUTHORIZED and is not reused for mutation."
   ],
   "scope_lease_id": "SCOPE-LEASE-6D1246D45FDBF86C57602EE4",
-  "source_main_sha": "b859420dab536e9ec1319e044c922a97a72d3a81",
+  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
   "sportsbook_projection_influence": 0.0,
-  "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
+  "status": "RED_REVIEW_REGRESSIONS_COMMITTED",
+  "successor_of": {
+    "pr": 1687,
+    "merge_commit_sha": "de5c121cbb0b97e5c668431e59224012e37008aa",
+    "prior_proof_id": "monster-cfb-player-props-page3-v1-0217efdfc2de7653-732fe729109ab666",
+    "prior_workstream": "monster-cfb-player-props-page3-v1"
+  },
   "task_id": "monster-cfb-player-props-page3-v1",
   "verification": {
-    "cfb_player_props_tests_full_environment": 125,
-    "full_environment_total_tests": 128,
-    "page3_navigation": "Back to Page 2 + TOP",
-    "runless_native_tests": 113,
+    "red_regressions": [
+      "January postseason must resolve to the prior CFB season.",
+      "Real ESPN gamelog rows must enrich opportunity and exact opponent evidence.",
+      "Back/market switch must clear identity-keyed Streamlit slider state."
+    ],
+    "runless_native_tests_before_review": 113,
     "runtime": "V3 exclusive selector"
   },
-  "workstream": "monster-cfb-player-props-page3-v1"
+  "workstream": "monster-cfb-player-props-page3-review-r1"
 }
