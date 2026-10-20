@@ -31,6 +31,12 @@ def test_professional_v2_formats_verified_timestamp_with_phoenix_calendar_date()
     assert page3._friendly_timestamp("") == "Update time unavailable"
 
 
+def test_professional_v2_evidence_status_uses_frozen_model_readiness_not_sample_count():
+    assert page3._evidence_status(True) == "READY"
+    assert page3._evidence_status(False) == "LIMITED"
+    assert page3._evidence_status(None) == "LIMITED"
+
+
 def test_professional_v2_never_surfaces_internal_opponent_id_in_recent_table():
     frame = page3._recent_table({
         "rows": (
