@@ -1,7 +1,7 @@
 {
   "task_id": "monster-cfb-player-props-page2-completeness-v1",
   "workstream": "monster-cfb-player-props-page2-completeness-v1",
-  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
   "source_main_sha": "a23d1e102bded0906668d2c69a14cafdb64a5e09",
   "scope_lease_id": "SCOPE-LEASE-A5CA79A14D8AC51F551E1E30",
   "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE2_COMPLETENESS_V1_FROZEN",
@@ -35,9 +35,13 @@
   "verification": {
     "red_observed": true,
     "focused_passed": 9,
-    "broad_regression_passed": 86,
+    "full_environment_regression_passed": 86,
+    "runless_native_regression_passed": 77,
     "compile": "GREEN",
-    "universal_runtime_v5_cert": "GREEN"
+    "universal_runtime_v5_cert": "GREEN",
+    "first_authoritative_proof_failure": "RUNLESS_V2_PROOF_ENVIRONMENT_DEPENDENCY_MISSING",
+    "first_authoritative_proof_failure_class": "INFRA",
+    "infra_root_cause": "Runless managed bootstrap lacks streamlit-autorefresh required only by already-frozen Page-2 UI import tests; product transport tests are unaffected."
   },
   "artifacts": [
     "cfb_player_props_fanduel_bound_v2.py",
