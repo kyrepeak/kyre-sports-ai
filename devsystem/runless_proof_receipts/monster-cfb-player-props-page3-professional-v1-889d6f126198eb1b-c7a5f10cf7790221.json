@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "cfb_player_props_page3_professional_v1.py": "cb1f7cf143bd710eac784fa5946e2653fc9e613f",
+    "cfb_player_props_page3_source_policy_v1.py": "e9b90e20af5ba243f7a2ba6b349d9ed67e6bab7a",
+    "cfb_player_props_page3_v1.py": "c924b99521b49e18cedccd38e67ac050b2cb8c12",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page3-professional-v1.json": "97a48a92c0bdbe4887d68884155326171c9f2cba",
+    "devsystem/task_ledgers/monster-cfb-player-props-page3-professional-v1.json": "26610570c1c3ff344963d8c04665597473688f6b",
+    "docs/superpowers/plans/2026-10-20-cfb-player-props-page3-professional-v1.md": "87b0b8dec0ab14a4f40a85a6d4530e68a551bccd",
+    "docs/superpowers/specs/2026-10-20-cfb-player-props-page3-professional-v1-design.md": "5522a8b9966eb4eb4c1b36224f0b7903972a0d99",
+    "tests/test_cfb_player_props_page3_professional_v1.py": "d4b7fee8ac3022e0eec9f03fceb2ed033cb241ff",
+    "tests/test_cfb_player_props_page3_source_policy_v1.py": "a2f291e91fb56d7e615536858ecea4c5b5cb086e"
+  },
+  "candidate_sha": "889d6f126198eb1ba3b97d7d18a6f80e0bad1eab",
+  "created_at": "2026-10-20T21:24:56.482943+00:00",
+  "dependency_map": {
+    "cfb_player_props_page2_market_v1.py": "57161a18ff4857fa874fb6beeb6f46c19994a4f4",
+    "cfb_player_props_page3_analysis_v1.py": "05dc14042fb2f081b20a1f31ba39fc5fb98899d6",
+    "cfb_player_props_page3_context_v1.py": "4bc9361b6dfe4ebbcb0d72eb148ac35599e7a59f",
+    "cfb_player_props_page3_history_v1.py": "dda2c63c8ac054497f6379b0d2ef83bd05a529a4",
+    "cfb_player_props_page3_line_lab_v1.py": "5428a65e5b214fa59ec56044c018cb7008290c19",
+    "cfb_top_picks_history_router_v1.py": "878263c3e4599e2bedac463105863fd319cb06e5",
+    "devsystem/contracts/universal-sports-field-router-v1.json": "6857355bd0666cb4a511941ffe74bb0326d756ed",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json": "6839c3b6569ed3ab16b09530c6bc8acf3e4e7daa"
+  },
+  "digest": "0b9cdb9d9f82c14324aeec05435624236890072643fa7ea45058491c44a22818",
+  "evidence_digests": [
+    "a8cecdb4309a2e9ffc5ead9b2caf78455e72135065beeeddc63fe3896aa95227",
+    "a246e4e3bbd6ade1f1d2043e7d33b01c6439062b2427f079ee1e2c314456d506",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c906c554a9026c3debd58ed251fc886cd3c3ed7d935b45d282f5e35d7e9786fa",
+  "proof_id": "monster-cfb-player-props-page3-professional-v1-889d6f126198eb1b-c7a5f10cf7790221",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-V1-APP-R1"
+    ],
+    "revision": 463,
+    "state_hash": "f2758b43f061b6f4ad27e207bfa8c637b978ad748c869e438ab30d9734bee434"
+  },
+  "request_fingerprint": "88cfcbd11a6cfd68ab29f4ac06a3fbda7ac63f9f7107b7ca3d1e8e07a367b1e0",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-player-props-page3-professional-v1",
+  "workstream": "monster-cfb-player-props-page3-professional-v1"
+}
