@@ -4,33 +4,43 @@
   "workstream": "monster-universal-atomic-navigation-v1",
   "source_main_sha": "b0d7cc02e413ff59759c26ac913fcaad88d521a8",
   "commands": [
-    ["python", "-m", "py_compile", "app.py", "universal_atomic_navigation_v1.py", "streamlit_memory_lazy_router_universal_runtime_v5_atomic_navigation_v1.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_atomic_navigation_v1.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_api2_universal_route_render_isolation_v2.py", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_registry_v1.py", "tests/test_universal_sports_nav_ui_v1.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_daily_picks_command_center_v3.py", "tests/test_api2_nfl_daily_picks_command_center_v3_review_fix.py", "-k", "not test_terminal_router_and_app_advance_only_to_v3_overlay"],
+    ["python", "-m", "py_compile", "universal_atomic_navigation_v1.py", "universal_atomic_navigation_runtime_v1.py", "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py", "app.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_atomic_navigation_v1.py", "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_universal_nav_single_owner_speed_v1.py", "tests/test_api2_universal_route_render_isolation_v2.py", "tests/test_universal_sports_nav_controller_v1.py", "tests/test_universal_sports_nav_registry_v1.py", "tests/test_universal_sports_nav_ui_v1.py", "tests/test_universal_sports_nav_url_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_daily_picks_command_center_v3.py", "tests/test_api2_nfl_daily_picks_command_center_v3_review_fix.py"],
     ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_spread_page1_s_tier_v2.py", "tests/test_api2_nba_spread_runtime_integration_v1.py", "tests/test_nba_spread_page_isolation_v1.py", "-k", "not (test_isolated_runtime_overlay_advances_nba_only_and_can_inherit_a_future_base_loader or test_production_entrypoint_uses_terminal_v7_only)"],
     ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
   ],
   "artifacts": [
-    "app.py",
     "universal_atomic_navigation_v1.py",
-    "streamlit_memory_lazy_router_universal_runtime_v5_atomic_navigation_v1.py",
+    "universal_atomic_navigation_runtime_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py",
     "tests/test_universal_atomic_navigation_v1.py",
+    "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py",
     "docs/superpowers/specs/2026-10-19-universal-atomic-navigation-v1.md",
     "docs/superpowers/plans/2026-10-19-universal-atomic-navigation-v1.md",
     "devsystem/task_ledgers/monster-universal-atomic-navigation-v1.json",
     "devsystem/runless_proof_plans/monster-universal-atomic-navigation-v1.json"
   ],
   "dependencies": [
+    "app.py",
     "streamlit_memory_lazy_router_universal_runtime_v5.py",
-    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8.py",
+    "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py",
     "universal_sports_nav_ui_v2.py",
     "universal_sports_nav_controller_v1.py",
     "devsystem/api2_universal_runtime_v5_cert.py"
   ],
+  "parallel_isolation": {
+    "competing_owner": "API2-NFL-DAILY-PICKS-V4-PREMIUM-LIVE-V1",
+    "competing_shared_resource": "entrypoint:app.py",
+    "resolution": "Atomic Navigation releases app.py ownership and integrates beneath the existing V3 terminal. No V4-owned path is modified. Future V4 freezes V3 and therefore inherits Atomic Navigation without a cross-lane write.",
+    "app_py_diff": false,
+    "v4_write_path_overlap": false
+  },
   "superseded_assertions": [
     "tests/conftest.py exact app.py V157 owner assertion",
-    "historical exact app.py ownership assertions for universal-nav V2/V4, NBA V7/V8, and NFL Daily Picks V3"
+    "historical exact app.py ownership assertions for universal-nav V2/V4 and NBA V7/V8"
   ],
   "probes": [],
   "timeout_seconds": 1200,
