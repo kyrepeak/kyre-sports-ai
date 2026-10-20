@@ -88,8 +88,9 @@ def _friendly_timestamp(value: Any) -> str:
     try:
         dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         dt = dt.astimezone(ZoneInfo("America/Phoenix"))
+        date_label = f"{dt.strftime('%b')} {dt.day}, {dt.year}"
         clock = dt.strftime("%I:%M %p").lstrip("0")
-        return f"Updated {clock} MST"
+        return f"Updated {date_label} • {clock} MST"
     except (TypeError, ValueError, KeyError):
         return f"Updated {raw}"
 
