@@ -1,0 +1,32 @@
+{
+  "task_id": "api2-nba-pra-nav-import-order-repair-v1",
+  "workstream": "api2-nba-pra-nav-import-order-repair-v1",
+  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
+  "status": "REMOTE_EXACT_HEAD_READY",
+  "progress_percent": 78,
+  "step2a": {
+    "authoritative_branch": "api2-nba-pra-nav-import-order-repair-v1",
+    "authoritative_pr": 1690,
+    "authoritative_sandbox": "nba-pra-nav-import-order-repair-v1",
+    "authoritative_sandbox_session": "sbx_7J73aGuvOQ3Rvxq6gj9gcjYdqcPr",
+    "scope_lease_id": "SCOPE-LEASE-0D760B5F994E2CCF8FF156C3",
+    "single_branch": true,
+    "single_pr": true,
+    "single_preflight_environment": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "problem": "NBA PRA route exists in the registry but Universal Nav V1 caches NBA market IDs before the PRA overlay activates, so production renders Spread only.",
+  "repair": "Activate nba_pra_nav_overlay_v1 before importing Universal Runtime V5/nav UI so the cached NBA market list includes PRA on first production import.",
+  "proof": {
+    "tdd_red": "Fresh-process production-wrapper test failed with AssertionError: ('spread',).",
+    "focused_green": "Repair regression + existing PRA nav/page tests: 6 passed.",
+    "universal_nav": "7 passed, 1 pre-existing stale V2-entrypoint assertion deselected; current main already boots Runtime V5 PRA wrapper.",
+    "runtime_v5": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN.",
+    "projection_policy": "No model/data/projection changes; sportsbook projection influence unchanged at 0.0%."
+  },
+  "stale_assertions": ["test_production_entrypoint_boots_tap_first_overlay"],
+  "freeze_token": "API2_NBA_PRA_NAV_IMPORT_ORDER_REPAIR_V1_FROZEN",
+  "next_legal_action": "Run the one exact-head Runless proof for PR #1690. If protected main moved from source_main_sha, stop and classify once instead of creating a convergence loop. If MERGE_AUTHORIZED, merge PR #1690 and complete Runless V2 closeout/read-back."
+}

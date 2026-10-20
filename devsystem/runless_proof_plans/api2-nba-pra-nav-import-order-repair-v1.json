@@ -1,0 +1,24 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nba-pra-nav-import-order-repair-v1",
+  "workstream": "api2-nba-pra-nav-import-order-repair-v1",
+  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
+  "commands": [
+    ["python", "-m", "py_compile", "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py", "tests/test_api2_nba_pra_nav_import_order_repair_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_nav_import_order_repair_v1.py", "tests/test_api2_nba_pra_nav_overlay_v1.py", "tests/test_api2_nba_pra_page1_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_universal_nav_tap_first_handoff_v1.py", "-k", "not production_entrypoint_boots_tap_first_overlay"],
+    ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
+  ],
+  "artifacts": [
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "tests/test_api2_nba_pra_nav_import_order_repair_v1.py",
+    "devsystem/task_ledgers/api2-nba-pra-nav-import-order-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-nav-import-order-repair-v1.json"
+  ],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NBA_PRA_NAV_IMPORT_ORDER_REPAIR_V1_FROZEN"
+}
