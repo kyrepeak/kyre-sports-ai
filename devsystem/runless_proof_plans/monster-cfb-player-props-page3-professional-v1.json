@@ -75,6 +75,7 @@
     "cfb_player_props_page3_history_v1.py",
     "cfb_player_props_page3_line_lab_v1.py",
     "cfb_player_props_page2_market_v1.py",
+    "cfb_top_picks_history_router_v1.py",
     "devsystem/contracts/universal-sports-provider-registry-v1.json",
     "devsystem/contracts/universal-sports-field-router-v1.json"
   ],
@@ -90,7 +91,7 @@
   "reuse": {
     "allow_existing_authoritative_path": true
   },
-  "source_main_sha": "88cc62f815456890a8ba007be7cd6d927c6a15a2",
+  "source_main_sha": "2a3be3e5fea22efc7f1f135e9092ca32fe694317",
   "sportsbook_projection_influence": 0.0,
   "task_id": "monster-cfb-player-props-page3-professional-v1",
   "timeout_seconds": 300,
