@@ -25,8 +25,9 @@ def test_professional_v2_compacts_page_into_dashboard_grids_and_source_audit():
     assert "st.metric(" not in source
 
 
-def test_professional_v2_formats_verified_timestamp_for_humans():
-    assert page3._friendly_timestamp("2026-10-20T22:00:49.979325Z") == "Updated 3:00 PM MST"
+def test_professional_v2_formats_verified_timestamp_with_phoenix_calendar_date():
+    assert page3._friendly_timestamp("2026-10-20T22:00:49.979325Z") == "Updated Oct 20, 2026 • 3:00 PM MST"
+    assert page3._friendly_timestamp("2026-10-19T22:00:49.979325Z") == "Updated Oct 19, 2026 • 3:00 PM MST"
     assert page3._friendly_timestamp("") == "Update time unavailable"
 
 
