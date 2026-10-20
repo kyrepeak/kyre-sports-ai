@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import nfl_daily_picks_command_center_v3 as page
 
@@ -33,3 +34,18 @@ def test_spread_observation_builder_preserves_verified_age() -> None:
     assert all(row["verified"] is True for row in rows)
     assert all(row["updated_at"] == NOW - timedelta(seconds=45) for row in rows)
     assert all(row["provider"] == "Kyre Sports API" for row in rows)
+
+
+def test_command_center_renders_full_s_tier_analytics_hierarchy() -> None:
+    source = Path(page.__file__).read_text(encoding="utf-8")
+    for required in (
+        "FEATURED INTELLIGENCE",
+        "Model projection",
+        "Line movement",
+        "Freshness",
+        "Why it rates",
+        "What could go wrong",
+        "Build Me a Parlay",
+        "Reset Slip",
+    ):
+        assert required in source
