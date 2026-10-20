@@ -85,6 +85,15 @@ def test_terminal_preserves_current_runtime_chain_and_fallback():
     assert "MAY_MODIFY_PROJECTION = False" in source
 
 
+def test_terminal_can_inherit_future_nfl_v4_without_owning_that_lane():
+    source = _required_source(TERMINAL)
+    v4 = "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4"
+    v3 = "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3"
+    assert v4 in source
+    assert "except ModuleNotFoundError" in source
+    assert source.index(v4) < source.index(v3)
+
+
 def test_app_activates_atomic_navigation_terminal():
     source = _required_source(APP)
     assert "streamlit_memory_lazy_router_universal_runtime_v5_atomic_navigation_v1" in source
