@@ -1,0 +1,51 @@
+{
+  "app_py_owned": false,
+  "baseline_exception": "Bare repo pytest is pre-collection blocked by stale tests/conftest.py assertion requiring obsolete streamlit_memory_lazy_router_v157; focused --noconftest and current runtime certifications are authoritative for this lane.",
+  "branch": "monster-cfb-player-props-page1-v1",
+  "candidate_binding": "Exact candidate SHA is the immutable authoritative branch/PR head supplied to Runless proof transport; this in-tree ledger intentionally does not self-reference its containing commit SHA.",
+  "forbidden_changes": [
+    "app.py",
+    "CFB Page 2",
+    "CFB Page 3",
+    "NFL Daily Picks V4 files"
+  ],
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE1_V1_FROZEN",
+  "maximum_history_games": 8,
+  "minimum_verified_completed_games": 4,
+  "product_files": [
+    "cfb_player_props_page1_v1.py",
+    "cfb_player_props_page1_slate_v1.py",
+    "cfb_player_props_page1_handoff_v1.py",
+    "cfb_player_props_identity_v1.py",
+    "cfb_player_props_market_v1.py",
+    "cfb_player_props_sportsgameodds_v1.py",
+    "cfb_player_props_fanduel_v1.py",
+    "cfb_player_props_history_v1.py",
+    "cfb_player_props_model_v1.py",
+    "universal_sports_nav_registry_v1.py",
+    "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py"
+  ],
+  "proof_state": "LOCAL_VERIFIED_READY_FOR_EXACT_HEAD_PROOF",
+  "scope": "Page 1 only: canonical CFB player-props route, next-active-slate game hub, verified player-prop observations, compact sportsbook-independent Kyre signal, and exact selected-game handoff. No Page 2 or Page 3 product implementation.",
+  "scope_lease": "SCOPE-LEASE-00EC0273AAC9CEC6B1DB6004",
+  "source_main": "1e3e7f452ffb7fb304e79c396601612b1ac438f4",
+  "sportsbook_projection_influence": 0.0,
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "task": "monster-cfb-player-props-page1-v1",
+  "task_id": "monster-cfb-player-props-page1-v1",
+  "title": "CFB Player Props Page 1 V1 — Game-First Prop Hub",
+  "verification": {
+    "combined_regression": "70 passed, 1 deselected",
+    "compile": "GREEN",
+    "deselected_stale_test": "tests/test_api2_cfb_universal_next_slate_navigation_v1.py::test_runtime_handoff_points_to_v13_only",
+    "history_model": "8 passed",
+    "identity_market": "10 passed",
+    "integration": "5 passed",
+    "page1_route_nav": "14 passed",
+    "page1_ui": "6 passed",
+    "runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+    "slate_handoff": "7 passed"
+  },
+  "version": 1,
+  "workstream": "monster-cfb-player-props-page1-v1"
+}
