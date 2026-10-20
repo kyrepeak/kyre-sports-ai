@@ -350,11 +350,7 @@ def _render_active_player(
     )
     for market in prepared:
         market_key = _text(market.get("market_key"))
-        if st.button(
-            "Analyze",
-            key=f"cfbpp2_analyze_{player.official_player_id}_{market_key}",
-            use_container_width=True,
-        ):
+        if st.button("Analyze", key=f"cfbpp2_analyze_{player.official_player_id}_{market_key}", use_container_width=True):
             payload = page3_handoff.build_selected_prop_handoff(
                 context, player, market, generation=_runtime_generation(context)
             )
