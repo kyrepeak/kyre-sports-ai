@@ -79,3 +79,14 @@ def test_reasoning_does_not_invent_movement_or_confidence():
     assert 'high confidence' not in text
     assert 'medium confidence' not in text
     assert 'low confidence' not in text
+
+
+def test_reline_changes_threshold_views_without_rebuilding_market(monkeypatch):
+    import cfb_player_props_page3_analysis_v1 as a
+    _wire(monkeypatch,a)
+    packet=a.build_page3_analysis(_context(),selected_line=202.5,season=2026)
+    changed=a.reline_page3_analysis(packet,220.5)
+    assert changed['market'] is packet['market']
+    assert changed['line_lab']['line']==220.5
+    assert changed['history']['selected_line']==220.5
+    assert changed['projection']==packet['projection']
