@@ -72,4 +72,4 @@ def test_epoch_changes_only_when_route_changes():
 def test_invalid_canonical_fails_closed_to_live_defaults():
     nav = _controller()
     state = nav.resolve_route(canonical_sport="nfl", canonical_market="not-real", last_market_by_sport={"nfl": "not-live"})
-    assert (state.sport_id, state.market_id) == ("nfl", "slate")
+    assert (state.sport_id, state.market_id) == ("nfl", "daily-picks")
