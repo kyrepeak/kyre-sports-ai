@@ -11,7 +11,7 @@
   "scope_lease_id": "SCOPE-LEASE-6D1246D45FDBF86C57602EE4",
   "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
   "sportsbook_projection_influence": 0.0,
-  "status": "RED_REVIEW_REGRESSIONS_COMMITTED",
+  "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
   "successor_of": {
     "pr": 1687,
     "merge_commit_sha": "de5c121cbb0b97e5c668431e59224012e37008aa",
@@ -20,10 +20,18 @@
   },
   "task_id": "monster-cfb-player-props-page3-v1",
   "verification": {
+    "red_candidate": "cd4ea07b2c99ed9f8880a7d55f7a8c1c940237b4",
+    "red_proof_id": "monster-cfb-player-props-page3-v1-cd4ea07b2c99ed9f-7c6a500f9be4b894",
+    "red_failure_class": "STATIC_PROOF",
     "red_regressions": [
       "January postseason must resolve to the prior CFB season.",
       "Real ESPN gamelog rows must enrich opportunity and exact opponent evidence.",
       "Back/market switch must clear identity-keyed Streamlit slider state."
+    ],
+    "implementation": [
+      "derive CFB season with the repository July boundary instead of calendar year slicing",
+      "enrich frozen ESPN normalized history with cached raw gamelog opportunity fields and exact opponent team IDs without changing frozen projection math",
+      "clear every cfbpp3_slider_* session/query key whenever Page-3 local state resets"
     ],
     "runless_native_tests_before_review": 113,
     "runtime": "V3 exclusive selector"
