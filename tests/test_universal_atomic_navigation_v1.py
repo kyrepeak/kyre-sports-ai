@@ -3,9 +3,12 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 from types import SimpleNamespace
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 HELPER = ROOT / "universal_atomic_navigation_v1.py"
 TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_atomic_navigation_v1.py"
 APP = ROOT / "app.py"
