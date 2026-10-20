@@ -1,0 +1,18 @@
+{
+  "task": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "task_id": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "workstream": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "title": "CFB Player Props Page 1 production runtime dependency repair R1",
+  "status": "LOCAL_VERIFIED_READY_FOR_EXACT_HEAD_PROOF",
+  "source_main": "4694b46dff3444eb08a0e3caa1614651a31c5ae3",
+  "branch": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "scope_lease": "SCOPE-LEASE-29CEDCFB3A6398149E29BE27",
+  "scope": "Production dependency repair only: declare the two packages required by the already-frozen CFB Player Props Page 1 import chain. No Page-1 product logic changes.",
+  "root_cause": "Root requirements.txt omitted httpx and fastapi. Clean requirements-only import failed with ModuleNotFoundError: httpx; adding only httpx and fastapi made the same import succeed.",
+  "changed_product_logic": false,
+  "app_py_owned": false,
+  "dependencies_added": ["httpx", "fastapi"],
+  "red": "1 failed: root requirements missing httpx",
+  "green": "1 passed plus clean requirements-only Page-1 import marker CFB_PLAYER_PROPS_PAGE1_PRODUCTION_REQUIREMENTS_IMPORT_GREEN",
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE1_RUNTIME_DEPS_R1_FROZEN"
+}
