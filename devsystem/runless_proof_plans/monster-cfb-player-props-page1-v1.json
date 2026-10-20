@@ -48,7 +48,8 @@
     ],
     [
       "python",
-      "devsystem/api2_universal_runtime_v5_cert.py"
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
     ]
   ],
   "dependencies": [
