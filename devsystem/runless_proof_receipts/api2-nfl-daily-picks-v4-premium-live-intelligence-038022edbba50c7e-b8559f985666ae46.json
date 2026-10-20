@@ -1,0 +1,58 @@
+{
+  "artifact_map": {
+    "app.py": "c1074748d7853065294f08c189eab1898b97ea6e",
+    "devsystem/runless_proof_plans/api2-nfl-daily-picks-v4-premium-live-intelligence.json": "c1b11978f69e90b8dd1a2fa1d153d08eef207d58",
+    "devsystem/task_ledgers/api2-nfl-daily-picks-v4-premium-live-intelligence.json": "531ea1cc68fb972aa2404b538afea33286c4ab82",
+    "nfl_daily_picks_command_center_v4.py": "da6f8ad787af113b8d2da0a2ef97f938e10e7244",
+    "nfl_daily_picks_live_v4.py": "48b2ff1480d19d16071a1ebc452a5afeb66fd099",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4.py": "a89229e10311a976320bff9d4df362e8608d0cb7",
+    "tests/test_api2_nfl_daily_picks_command_center_v4.py": "ceb6c2dec7fdc664116b4cce1c965fd7e5bdc14d",
+    "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py": "da7d6145da5823e646d0f2e9db0873aa5cacca87",
+    "universal_runtime_v5_loader_nfl_daily_picks_command_v4.py": "a6bf95f6657b57a9126feadc945535fd3d570da4"
+  },
+  "candidate_sha": "038022edbba50c7eff4653bd1967d55ca4f78674",
+  "created_at": "2026-10-20T05:06:56.214072+00:00",
+  "dependency_map": {},
+  "digest": "3ccdc7141c23e452a41a7aa88f0175d1d79cbd91a5f3652aaa373129d475ff80",
+  "evidence_digests": [
+    "3bc4417b54d126cab842839748178037eddcd8cb4847fff6b5b1e879cc0a092f",
+    "be6c6ff4f58eb80699ae70ff1dccd2b9d0cd8761e775f69583f699af5ef5c19c",
+    "4c6c7309542f8767329f80d4c2173255643d304f39e162508b46f67c02f25a2c",
+    "63228d4cedff3d39f40991e6db6fa5ff07bdd01f849b21bebd3ffc72e313f5e6",
+    "356eee4d1c803a6b51ffd1df7f51ffc5d61783159eed4be6c9b75c8b2378152a",
+    "2209cc6db3fceff8a51abf6851bbf7686286eeb1950112ce7726a20309c2849f",
+    "db75a024d4f35cfd3b3345964d9d70629b6ad7b89819f1f7ded4e8cb84d1d649",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f7ecc867b700aa347ccf71e90ae8d672898ab437362ba8dca758c9e4c6c7a5c3",
+  "proof_id": "api2-nfl-daily-picks-v4-premium-live-intelligence-038022edbba50c7e-b8559f985666ae46",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-NFL-DAILY-PICKS-V4-PREMIUM-LIVE-APP-R1"
+    ],
+    "revision": 436,
+    "state_hash": "180520076721dcb2d0ca739fa831e64740f8f73d852d8c9fbfaf0dcd1c20358b"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-SHELL-ROUTE-TOP-V1-DEPLOY-REFRESH-R1",
+      "THAW-API2-NFL-DAILY-PICKS-V4-PREMIUM-LIVE-APP-R1"
+    ],
+    "revision": 436,
+    "state_hash": "180520076721dcb2d0ca739fa831e64740f8f73d852d8c9fbfaf0dcd1c20358b"
+  },
+  "request_fingerprint": "24ac47ce915c88d341f888a27c597f7f9c0955f51f14066919d010011c9486fa",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-daily-picks-v4-premium-live-intelligence",
+  "workstream": "api2-nfl-daily-picks-v4-premium-live-intelligence"
+}
