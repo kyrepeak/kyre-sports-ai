@@ -4,8 +4,8 @@
   "source_main_sha": "b0d7cc02e413ff59759c26ac913fcaad88d521a8",
   "original_source_main_sha": "b0d7cc02e413ff59759c26ac913fcaad88d521a8",
   "branch_head_before_execution": "b0d7cc02e413ff59759c26ac913fcaad88d521a8",
-  "status": "IMPLEMENTED_PREFLIGHT_GREEN_PARALLEL_ENTRYPOINT_CONFLICT_PENDING",
-  "progress_percent": 72,
+  "status": "AUTHORITATIVE_WAIT_PARALLEL_ENTRYPOINT_LEASE",
+  "progress_percent": 82,
   "step2a": {
     "authoritative_branch": "monster-universal-atomic-navigation-v1",
     "authoritative_pr": null,
@@ -14,7 +14,8 @@
     "duplicate_pr_or_run": false,
     "anti_loop": true,
     "candidate_locked": false,
-    "proof_submitted": false
+    "proof_submitted": false,
+    "next_legal_action": "AFTER_MATERIAL_LEASE_CHANGE_REREAD_MAIN_AND_SCOPE_ONCE_THEN_FORWARD_PORT_IF_NEEDED"
   },
   "active_problem": "Universal site navigation must hide and deactivate the outgoing destination during sport/market/page transitions and must not background-load non-selected destinations.",
   "red_evidence": {
@@ -38,10 +39,11 @@
     "competing_owner_id": "API2-NFL-DAILY-PICKS-V4-PREMIUM-LIVE-V1",
     "competing_lease_id": "SCOPE-LEASE-60AA5081B68F4E4319A287C7",
     "shared_resource": "entrypoint:app.py",
-    "competing_write_paths_owned_here": false,
+    "lease_observation": "unchanged on the single permitted post-preflight reread",
     "resolution": "Atomic terminal can inherit an independently-landed NFL Daily Picks V4 module, while this lane never modifies or owns any V4 artifact. Candidate/proof/PR remain blocked until the competing entrypoint lease is released or otherwise no longer conflicts.",
     "proof_submitted_during_conflict": false,
-    "pr_created_during_conflict": false
+    "pr_created_during_conflict": false,
+    "polling_disabled": true
   },
   "implementation": {
     "helper": "universal_atomic_navigation_v1.py",
@@ -58,9 +60,15 @@
     "environment": "Vercel sandbox universal-atomic-nav-v1-preflight",
     "single_environment_reused": true,
     "focused_contract": "8 passed",
-    "current_stack_sample": "51 passed; 3 superseded exact-app-owner assertions failed",
+    "exact_runless_plan_dry_run": {
+      "atomic_contract": "8 passed",
+      "universal_nav_and_isolation": "23 passed",
+      "nfl_current_terminal": "13 passed, 1 superseded owner assertion deselected",
+      "nba_current_runtime": "24 passed, 2 superseded owner assertions deselected",
+      "universal_runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+      "overall": "GREEN"
+    },
     "compile": "GREEN",
-    "universal_runtime_cert": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
     "full_suite": "COLLECTION_BLOCKED_BY_PREEXISTING_tests/conftest.py_APP_V157_ASSERTION"
   },
   "superseded_baseline_assertions": {
