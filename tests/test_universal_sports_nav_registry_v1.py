@@ -15,7 +15,7 @@ def test_registry_has_exact_live_sport_order_and_defaults():
     assert tuple(s.id for s in sports) == ("nfl", "cfb", "nba", "mlb", "wnba")
     assert nav.DEFAULT_SPORT_ID == "mlb"
     assert {s.id: s.default_market_id for s in sports} == {
-        "nfl": "slate",
+        "nfl": "daily-picks",
         "cfb": "moneyline",
         "nba": "spread",
         "mlb": "slate",
