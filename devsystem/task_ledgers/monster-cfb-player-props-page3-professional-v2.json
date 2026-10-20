@@ -13,7 +13,8 @@
     "No API 2 workstream mutation, no universal runtime route mutation and no unrelated sports-page mutation in this workstream.",
     "One branch, one PR, one Runless proof, one expected-head merge and one finalization authority only."
   ],
-  "scope_lease_id": "SCOPE-LEASE-77DB03C6DD8C8F82AA3FD3AE",
+  "scope_lease_id": "SCOPE-LEASE-E8F649A130A0C9A8001C5874",
+  "authorization_id": "AUTH-MONSTER-CFB-PAGE3-PROFESSIONAL-V2-1695",
   "source_main_sha": "d33a5a6ef5e812a1acd5536c2768188df61be6b5",
   "sportsbook_projection_influence": 0.0,
   "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
