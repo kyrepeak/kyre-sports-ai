@@ -120,11 +120,11 @@ Preferred source roles:
 
 - existing official CFB schedule/identity owner for game truth;
 - official/statistical source such as the existing ESPN-backed CFB identity/stat paths for player/team history where available;
-- SportsGameOdds or another currently configured multi-book aggregator for sportsbook observations when it exposes the required CFB player-prop market;
-- direct FanDuel transport using the repository's existing CFB provider pattern when that surface exposes verified player props;
-- an already-supported secondary odds provider may fill missing observations only when identity and freshness gates pass.
+- the currently configured multi-book aggregator (SportsGameOdds when its CFB player-prop capability is available) is preferred for broad sportsbook observations;
+- direct FanDuel transport using the repository's existing CFB provider pattern may fill FanDuel-specific gaps when that surface exposes verified player props;
+- an already-supported secondary odds provider may fill remaining missing observations only when identity and freshness gates pass.
 
-No fallback may overwrite a fresher verified primary quote merely because it is present. Each field keeps provenance.
+Provider precedence is deterministic per observation: a fresher identity-verified observation wins over an older observation from the same book/market; a fallback may fill a missing book/market but may not overwrite a fresher verified primary observation merely because the fallback is present. Each field keeps provenance.
 
 A provider that lacks a market is an unavailable source, not a reason to fabricate a row.
 
@@ -138,12 +138,14 @@ Minimum readiness for a displayed probability:
 
 - verified player identity;
 - verified game/opponent identity;
-- sufficient official recent/season sample for the requested statistic;
+- **at least 4 verified completed-game observations for that player and target market statistic**;
 - no unresolved structural parsing failure;
 - finite model projection and dispersion/uncertainty;
 - live/acceptable sportsbook line freshness for the probability shown against that line.
 
-When readiness fails, Page 1 may still display a verified sportsbook market, but must label the Kyre signal as unavailable/pending rather than inventing a projection.
+Fewer than 4 verified completed-game observations means the sportsbook market may still display, but Page 1 must not display a Kyre probability/edge for that player-market.
+
+When any other readiness gate fails, Page 1 may still display a verified sportsbook market, but must label the Kyre signal as unavailable/pending rather than inventing a projection.
 
 ## Page 1 visual design
 
@@ -251,12 +253,12 @@ Implementation must be TDD-first.
 Required focused contracts:
 
 1. `player-props` is a valid CFB canonical route with `date` and `game_id` params.
-2. Existing four CFB markets remain byte/behavior compatible except for the additive nav option.
+2. Existing four CFB markets remain behavior compatible except for the additive nav option.
 3. Next-active-slate selection reuses current CFB schedule truth.
 4. Page 1 renders every verified game in the selected slate even when prop coverage is missing.
 5. Prop observations require verified game + player + market identity and finite live line data.
 6. Multi-source merge preserves provenance and does not overwrite fresher verified observations with weaker fallback rows.
-7. Probability/edge is absent unless model readiness gates pass.
+7. Probability/edge is absent unless all model readiness gates pass, including the four-game minimum.
 8. Sportsbook line acts as threshold/context and has 0.0 direct influence on the underlying Kyre projection.
 9. Tapping one card emits the exact official game handoff and no other game.
 10. Atomic Navigation route isolation remains GREEN; no old-page/background renderer executes for the selected route.
