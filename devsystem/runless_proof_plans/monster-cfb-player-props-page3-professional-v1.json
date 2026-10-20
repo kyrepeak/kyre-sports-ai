@@ -1,0 +1,98 @@
+{
+  "artifacts": [
+    "cfb_player_props_page3_source_policy_v1.py",
+    "cfb_player_props_page3_professional_v1.py",
+    "cfb_player_props_page3_v1.py",
+    "tests/test_cfb_player_props_page3_source_policy_v1.py",
+    "tests/test_cfb_player_props_page3_professional_v1.py",
+    "devsystem/task_ledgers/monster-cfb-player-props-page3-professional-v1.json",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page3-professional-v1.json",
+    "docs/superpowers/specs/2026-10-20-cfb-player-props-page3-professional-v1-design.md",
+    "docs/superpowers/plans/2026-10-20-cfb-player-props-page3-professional-v1.md"
+  ],
+  "candidate_binding": "authoritative exact PR head at proof request",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "cfb_player_props_page3_source_policy_v1.py",
+      "cfb_player_props_page3_professional_v1.py",
+      "cfb_player_props_page3_v1.py",
+      "cfb_player_props_page3_context_v1.py",
+      "cfb_player_props_page3_line_lab_v1.py",
+      "cfb_player_props_page3_history_v1.py",
+      "cfb_player_props_page3_analysis_v1.py",
+      "cfb_player_props_runtime_v3.py",
+      "universal_runtime_v5_loader_nfl_daily_picks_command_v3.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "--deselect",
+      "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py::test_v4_inherits_current_universal_atomic_navigation_without_reimplementing_it",
+      "tests/test_cfb_player_props_fanduel_event_tabs_v1.py",
+      "tests/test_cfb_player_props_identity_v1.py",
+      "tests/test_cfb_player_props_market_v1.py",
+      "tests/test_cfb_player_props_model_v1.py",
+      "tests/test_cfb_player_props_page1_handoff_v1.py",
+      "tests/test_cfb_player_props_page1_integration_v1.py",
+      "tests/test_cfb_player_props_page1_live_slate_r1.py",
+      "tests/test_cfb_player_props_page1_route_v1.py",
+      "tests/test_cfb_player_props_page1_runtime_dependencies_r1.py",
+      "tests/test_cfb_player_props_page1_slate_v1.py",
+      "tests/test_cfb_player_props_page1_v1.py",
+      "tests/test_cfb_player_props_page2_completeness_v1.py",
+      "tests/test_cfb_player_props_page2_context_v1.py",
+      "tests/test_cfb_player_props_page2_handoff_v1.py",
+      "tests/test_cfb_player_props_page2_market_v1.py",
+      "tests/test_cfb_player_props_page2_matchup_v1.py",
+      "tests/test_cfb_player_props_page2_roster_v1.py",
+      "tests/test_cfb_player_props_page3_source_policy_v1.py",
+      "tests/test_cfb_player_props_page3_professional_v1.py",
+      "tests/test_cfb_player_props_page3_analysis_v1.py",
+      "tests/test_cfb_player_props_page3_context_v1.py",
+      "tests/test_cfb_player_props_page3_history_v1.py",
+      "tests/test_cfb_player_props_page3_integration_v1.py",
+      "tests/test_cfb_player_props_page3_line_lab_v1.py",
+      "tests/test_cfb_player_props_page3_v1.py",
+      "tests/test_cfb_player_props_runtime_v3.py",
+      "tests/test_universal_atomic_navigation_v1.py",
+      "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "dependencies": [
+    "cfb_player_props_page3_analysis_v1.py",
+    "cfb_player_props_page3_context_v1.py",
+    "cfb_player_props_page3_history_v1.py",
+    "cfb_player_props_page3_line_lab_v1.py",
+    "cfb_player_props_page2_market_v1.py",
+    "devsystem/contracts/universal-sports-provider-registry-v1.json",
+    "devsystem/contracts/universal-sports-field-router-v1.json"
+  ],
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_PROFESSIONAL_V1_FROZEN",
+  "parent_freeze_token": "MONSTER_CFB_PLAYER_PROPS_PAGE3_V1_FROZEN",
+  "known_baseline_exceptions": [
+    "Current runtime still contains the documented stale NFL V4 direct app.py import assertion. Only tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py::test_v4_inherits_current_universal_atomic_navigation_without_reimplementing_it is deselected; universal navigation remains covered by tests/test_universal_atomic_navigation_v1.py plus devsystem.api2_universal_runtime_v5_cert."
+  ],
+  "mode": "runless",
+  "public_runtime_required": false,
+  "required_app_id": 5204253,
+  "required_check": "runless-final-gate",
+  "reuse": {
+    "allow_existing_authoritative_path": true
+  },
+  "source_main_sha": "88cc62f815456890a8ba007be7cd6d927c6a15a2",
+  "sportsbook_projection_influence": 0.0,
+  "task_id": "monster-cfb-player-props-page3-professional-v1",
+  "timeout_seconds": 300,
+  "workstream": "monster-cfb-player-props-page3-professional-v1"
+}
