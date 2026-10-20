@@ -1,0 +1,69 @@
+{
+  "app_py_change_required": false,
+  "artifacts": [
+    "cfb_player_props_fanduel_bound_v2.py",
+    "tests/test_cfb_player_props_fanduel_event_tabs_v1.py",
+    "devsystem/task_ledgers/monster-cfb-player-props-live-source-closeout-r1.json",
+    "devsystem/runless_proof_plans/monster-cfb-player-props-live-source-closeout-r1.json"
+  ],
+  "candidate_binding": "authoritative exact PR head at proof request",
+  "commands": [
+    [
+      "python", "-m", "py_compile",
+      "cfb_player_props_fanduel_bound_v2.py",
+      "cfb_player_props_fanduel_v1.py",
+      "cfb_player_props_page1_v1.py",
+      "cfb_player_props_page2_market_v1.py"
+    ],
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_cfb_player_props_fanduel_event_tabs_v1.py",
+      "tests/test_cfb_player_props_page2_completeness_v1.py",
+      "tests/test_cfb_player_props_page2_context_v1.py",
+      "tests/test_cfb_player_props_page2_roster_v1.py",
+      "tests/test_cfb_player_props_page2_market_v1.py",
+      "tests/test_cfb_player_props_page2_matchup_v1.py",
+      "tests/test_cfb_player_props_page2_handoff_v1.py",
+      "tests/test_cfb_player_props_page1_route_v1.py",
+      "tests/test_cfb_player_props_page1_slate_v1.py",
+      "tests/test_cfb_player_props_page1_handoff_v1.py",
+      "tests/test_cfb_player_props_identity_v1.py",
+      "tests/test_cfb_player_props_market_v1.py",
+      "tests/test_cfb_player_props_model_v1.py",
+      "tests/test_cfb_player_props_page1_v1.py",
+      "tests/test_cfb_player_props_page1_integration_v1.py",
+      "tests/test_universal_atomic_navigation_v1.py",
+      "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py"
+    ],
+    [
+      "python", "-m", "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "dependencies": [
+    "cfb_player_props_fanduel_v1.py",
+    "cfb_player_props_page1_v1.py",
+    "cfb_player_props_page2_market_v1.py",
+    "cfb_player_props_identity_v1.py",
+    "cfb_player_props_market_v1.py",
+    "sports_api/collectors/cfb_fanduel_direct.py"
+  ],
+  "freeze_token": "MONSTER_CFB_PLAYER_PROPS_LIVE_SOURCE_CLOSEOUT_R1_FROZEN",
+  "known_baseline_exceptions": [
+    "Authoritative regression uses --noconftest because the repository global conftest can pin unrelated legacy runtime symbols before task collection.",
+    "Runless proof remains source/data-layer focused and does not import the already-frozen Page-2 UI dependency streamlit-autorefresh."
+  ],
+  "mode": "runless",
+  "parent_freeze_token": "MONSTER_CFB_PLAYER_PROPS_LIVE_SOURCE_REPAIR_V1_FROZEN",
+  "probes": [],
+  "public_runtime_required": false,
+  "required_app_id": 5204253,
+  "required_check": "runless-final-gate",
+  "reuse": {
+    "allow_existing_authoritative_path": true
+  },
+  "source_main_sha": "1a09caa7b003bbb104f76adee611b7bb964574ff",
+  "sportsbook_projection_influence": 0.0,
+  "task_id": "monster-cfb-player-props-live-source-closeout-r1",
+  "timeout_seconds": 300,
+  "workstream": "monster-cfb-player-props-live-source-closeout-r1"
+}
