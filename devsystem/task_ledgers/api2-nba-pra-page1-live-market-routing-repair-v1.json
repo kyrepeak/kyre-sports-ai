@@ -1,0 +1,44 @@
+{
+  "task_id": "api2-nba-pra-page1-live-market-routing-repair-v1",
+  "workstream": "api2-nba-pra-page1-live-market-routing-repair-v1",
+  "source_main_sha": "d0fee42379f1e36fe40e096f046ee335fbe9038f",
+  "status": "FINAL_CANDIDATE_BUILDING",
+  "progress_percent": 86,
+  "step2a": {
+    "authoritative_branch": "api2-nba-pra-page1-live-market-routing-repair-v1",
+    "authoritative_pr": null,
+    "authoritative_sandbox": "nba-pra-page1-live-market-routing-repair-v1",
+    "scope_lease_id": "SCOPE-LEASE-CB1CBF6D4F7AB8A45917679D",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "scope": {
+    "active_problem": "NBA PRA Page 1 found the upcoming games but returned zero tracked players because the sportsbook market path did not reuse connected session credentials, used UTC-day bounds for a Phoenix slate, and called both transports unconditionally.",
+    "repair": "Preserve current Page-1 V2 as an immutable core and add a routing overlay that reuses connected sportsbook session credentials, queries SportsGameOdds over the full Phoenix-local slate day, and calls Odds-API.io only when primary coverage is unavailable or incomplete.",
+    "player_props_primary": "SportsGameOdds transport preserving sportsbook-specific quotes",
+    "player_props_secondary": "Odds-API.io only for unavailable or incomplete primary coverage",
+    "never_average_conflicting_lines": true,
+    "preserve_book_line_price_timestamp": true,
+    "sportsbook_projection_influence": 0.0,
+    "fabrication": false
+  },
+  "proof": {
+    "tdd_red": "3 failed, 2 passed before production repair: session credentials ignored, Phoenix-local SGO bounds wrong, and secondary transport called despite complete primary coverage.",
+    "tdd_green": "5 passed",
+    "nba_pra_regression": "44 passed",
+    "applicable_navigation": "18 passed, 1 stale production-entrypoint assertion deselected",
+    "compile": "PASS",
+    "runtime_v5": "API2_UNIVERSAL_RUNTIME_V5_CERT_GREEN",
+    "diff_check": "PASS",
+    "bare_pytest": "Attempted once; collection INTERNALERROR from pre-existing global CFB tests/conftest.py frozen V150-V161 collection gate. Classified outside this NBA lease and not retried."
+  },
+  "rulings": [
+    "No model math, probability formula, PRA line averaging, injury logic, game-state eligibility, or UI redesign is changed.",
+    "SportsGameOdds remains primary; Odds-API.io is called only to fill unavailable or incomplete primary slate coverage.",
+    "The 2026-10-20 Phoenix slate maps to 2026-10-20T07:00:00Z through 2026-10-21T07:00:00Z, covering both PHI-NYK and OKC-SAS.",
+    "No guessed line, price, timestamp, player, or probability is permitted."
+  ]
+}
