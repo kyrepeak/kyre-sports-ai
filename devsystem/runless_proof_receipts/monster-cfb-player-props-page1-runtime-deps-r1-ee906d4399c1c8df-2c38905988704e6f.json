@@ -1,0 +1,52 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-cfb-player-props-page1-runtime-deps-r1.json": "acdce229145e50de95075a34418f6bd1b8f42e3e",
+    "devsystem/task_ledgers/monster-cfb-player-props-page1-runtime-deps-r1.json": "b26e83ccd1b68d6e12c9db33aef36426dee4f3b6",
+    "requirements.txt": "052bc5caa4bd1935f0294fcca540d9b20d2eba7e",
+    "tests/test_cfb_player_props_page1_runtime_dependencies_r1.py": "1361de3f3e8f8f12a1e0c63f1564905f823f4682"
+  },
+  "candidate_sha": "ee906d4399c1c8df63dc284d8de17570986995cc",
+  "created_at": "2026-10-20T05:24:00.677448+00:00",
+  "dependency_map": {
+    "cfb_player_props_fanduel_v1.py": "4669a302e2ffce1401d3c7b76cc66dfad49a932d",
+    "cfb_player_props_page1_v1.py": "c93d6f905aff63230b0f3a7db22321518138a972",
+    "sports_api/api/cfb_market_identity_v1.py": "aa9891c8e27ff5081b9ef14d7744facb0669ac9d",
+    "sports_api/collectors/cfb_fanduel_direct.py": "e9f747c793e80595070100724aa0ea802a08e252",
+    "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py": "da7d6145da5823e646d0f2e9db0873aa5cacca87"
+  },
+  "digest": "c6f1cdde6f1877e4cbbed84d987e5336ead492110b4cd322daebebd7ac488e4c",
+  "evidence_digests": [
+    "7520807c68a6b71df3411626f01e8770b1d374f6252ea5361e3d4b058f5da987",
+    "8f3f0c021c3dd6a6ebaae28c08e506876923ec3d5c7a60d726c096ce769bd70a",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7a951b41ade850ff818aeeb1c88f8da2593fe60f2d8ff7558d1f532c34ca7dfa",
+  "proof_id": "monster-cfb-player-props-page1-runtime-deps-r1-ee906d4399c1c8df-2c38905988704e6f",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-PLAYER-PROPS-PAGE1-RUNTIME-DEPS-R1"
+    ],
+    "revision": 439,
+    "state_hash": "e3dac6776c279a9ded690dc110c0ff80968e1ea060a093c65021387514a207b0"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-CFB-PLAYER-PROPS-PAGE1-RUNTIME-DEPS-R1"
+    ],
+    "revision": 439,
+    "state_hash": "e3dac6776c279a9ded690dc110c0ff80968e1ea060a093c65021387514a207b0"
+  },
+  "request_fingerprint": "d7f01bd6bd0684d19fe4200660785cc129733caee4bae0c9977e1c8ebb17b7b4",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-player-props-page1-runtime-deps-r1",
+  "workstream": "monster-cfb-player-props-page1-runtime-deps-r1"
+}
