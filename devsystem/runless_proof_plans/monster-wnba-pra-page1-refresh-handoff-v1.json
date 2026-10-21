@@ -1,0 +1,33 @@
+{
+  "mode":"runless",
+  "task_id":"monster-wnba-pra-page1-refresh-handoff-v1",
+  "workstream":"monster-wnba-pra-page1-refresh-handoff-v1",
+  "source_main_sha":"077d3f6a79cf168735bf1a2cf71c138549e7c176",
+  "commands":[
+    ["python","-m","pytest","--noconftest","-q","tests/test_wnba_pra_page1_refresh_handoff_v1.py","tests/test_wnba_pra_page1_final_polish_v1.py","tests/test_wnba_pra_page1_stier_v1.py","tests/test_wnba_pra_max_speed_snapshot_v1.py","tests/test_wnba_pra_max_speed_streamlit_v1.py","tests/test_monster_wnba_pra_vercel_gateway_v1.py","tests/test_monster_wnba_pra_api_only_v1.py","tests/test_wnba_pra_fanduel_product_route_v2.py","tests/test_wnba_pra_playoff_product_route_v1.py"],
+    ["python","-m","py_compile","wnba_pra_hub_v3612.py","wnba_pra_hub_v3618.py","devsystem/wnba_pra_page1_refresh_handoff_source_policy_v1.py"],
+    ["python","-m","devsystem.wnba_pra_page1_refresh_handoff_source_policy_v1"]
+  ],
+  "artifacts":[
+    "wnba_pra_hub_v3612.py",
+    "wnba_pra_hub_v3618.py",
+    "tests/test_wnba_pra_page1_refresh_handoff_v1.py",
+    "devsystem/wnba_pra_page1_refresh_handoff_source_policy_v1.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-refresh-handoff-v1.json"
+  ],
+  "dependencies":[
+    "streamlit_memory_lazy_router_v1.py",
+    "wnba_pra_hub_v3617.py",
+    "wnba_pra_page_snapshot_client_v1.py",
+    "wnba_pra_page_snapshot_publish_v1.py",
+    "wnba_pra_page1_final_polish_v1.py"
+  ],
+  "probes":[],
+  "timeout_seconds":900,
+  "live_ttl_seconds":1200,
+  "github_actions_fallback":0,
+  "reuse_frozen_proof":[],
+  "required_check":"runless-final-gate",
+  "required_check_app_id":5204253,
+  "freeze_token":"MONSTER_WNBA_PRA_PAGE1_REFRESH_HANDOFF_V1_FROZEN"
+}
