@@ -51,6 +51,43 @@ def _text(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _event_teams(payload: Mapping[str, Any] | None) -> dict[str, tuple[str, str]]:
+    obj = payload if isinstance(payload, Mapping) else {}
+    events = obj.get("source_events")
+    out: dict[str, tuple[str, str]] = {}
+    if not isinstance(events, list):
+        return out
+    for row in events:
+        if not isinstance(row, Mapping):
+            continue
+        event_id = _text(row.get("source_event_id"))
+        name = _text(row.get("event_name"))
+        if not event_id or " @ " not in name:
+            continue
+        away, home = (part.strip() for part in name.split(" @ ", 1))
+        if away and home:
+            out[event_id] = (away, home)
+    return out
+
+
+def _enrich_identity(raw_offers: list[dict[str, Any]], payload: Mapping[str, Any] | None) -> list[dict[str, Any]]:
+    event_teams = _event_teams(payload)
+    out: list[dict[str, Any]] = []
+    for source in raw_offers:
+        row = dict(source)
+        if not _text(row.get("away_team")) or not _text(row.get("home_team")):
+            pair = event_teams.get(_text(row.get("source_event_id")))
+            if pair:
+                row.setdefault("away_team", pair[0])
+                row.setdefault("home_team", pair[1])
+                if not _text(row.get("away_team")):
+                    row["away_team"] = pair[0]
+                if not _text(row.get("home_team")):
+                    row["home_team"] = pair[1]
+        out.append(row)
+    return out
+
+
 def _pra_offer(row: Mapping[str, Any]) -> bool:
     stat = _text(row.get("stat")).casefold().replace(" ", "")
     return stat in {"pra", "points+rebounds+assists", "pointsreboundsassists"}
@@ -115,7 +152,7 @@ def build_pra_market_board(
 
     try:
         primary_payload = primary(date=day, season=season_int)
-        primary_offers = _valid_two_sided_pra(_offers(primary_payload))
+        primary_offers = _valid_two_sided_pra(_enrich_identity(_offers(primary_payload), primary_payload))
         if primary_offers:
             health.append(_provider_health(PRIMARY_PROVIDER, "READY", len(primary_offers)))
             return _result(day, season_int, PRIMARY_PROVIDER, primary_offers, health, primary_payload)
@@ -125,7 +162,7 @@ def build_pra_market_board(
 
     try:
         secondary_payload = secondary(date=day, season=season_int)
-        secondary_offers = _valid_two_sided_pra(_offers(secondary_payload))
+        secondary_offers = _valid_two_sided_pra(_enrich_identity(_offers(secondary_payload), secondary_payload))
         if secondary_offers:
             health.append(_provider_health(SECONDARY_PROVIDER, "READY", len(secondary_offers)))
             return _result(day, season_int, SECONDARY_PROVIDER, secondary_offers, health, secondary_payload)
