@@ -20,7 +20,7 @@
       "wnba_pra_hub_v3617.py",
       "devsystem/wnba_pra_page1_stier_source_policy_v1.py"
     ],
-    ["python", "devsystem/wnba_pra_page1_stier_source_policy_v1.py"]
+    ["python", "-m", "devsystem.wnba_pra_page1_stier_source_policy_v1"]
   ],
   "artifacts": [
     "devsystem/runless_proof_plans/monster-wnba-pra-page1-s-tier-v1.json",
