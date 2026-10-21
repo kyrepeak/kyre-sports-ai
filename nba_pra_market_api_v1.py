@@ -9,7 +9,7 @@ import requests
 
 DEFAULT_API_BASE_URL = "https://kyre-runless-proof.vercel.app"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
-APPROVED_BOOKS = {"FanDuel", "DraftKings", "BetMGM", "Caesars", "ESPN BET", "bet365"}
+APPROVED_BOOKS = {"FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fanatics Sportsbook"}
 
 
 def _empty(state: str) -> dict[str, Any]:

@@ -43,6 +43,9 @@ from .github_authority import (
 )
 from .models import ProofRequest, ProofResult, ProofState
 from .nba_pra_market_v1 import router as nba_pra_market_router
+from .nba_pra_player_context_v1 import router as nba_pra_player_context_router
+from .nba_pra_schedule_v1 import router as nba_pra_schedule_router
+from .nba_pra_injury_v1 import router as nba_pra_injury_router
 from .proof_service import ProofServiceError, execute_proof_request
 from .sandbox_executor import SandboxExecutor
 from .state_store import DurableStateStore, RunlessV2StateError
@@ -526,6 +529,9 @@ def create_app(
 
     app = FastAPI(title="Runless V2 Proof Authority", version="2")
     app.include_router(nba_pra_market_router)
+    app.include_router(nba_pra_player_context_router)
+    app.include_router(nba_pra_schedule_router)
+    app.include_router(nba_pra_injury_router)
     app.state.settings = cfg
     app.state.state_store = store
     app.state.github = gh
@@ -730,6 +736,9 @@ def create_app(
 def _unconfigured_app(error: BaseException) -> FastAPI:
     fallback = FastAPI(title="Runless V2 Proof Authority", version="2")
     fallback.include_router(nba_pra_market_router)
+    fallback.include_router(nba_pra_player_context_router)
+    fallback.include_router(nba_pra_schedule_router)
+    fallback.include_router(nba_pra_injury_router)
 
     @fallback.get("/health")
     def health() -> dict[str, Any]:
