@@ -1,0 +1,44 @@
+name: API2 NBA no-ESPN authoritative handoff
+
+on:
+  push:
+    branches:
+      - api2-nba-pra-no-espn-enrichment-v1
+    paths:
+      - .github/workflows/api2-nba-no-espn-handoff.yml
+
+permissions:
+  contents: write
+
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authoritative branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch exact tested patch
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 --retry-delay 2 \
+            https://sb-fy3l9h8n40yt.vercel.run/api2-nba-no-espn.patch \
+            -o /tmp/api2-nba-no-espn.patch
+          echo "84df32e92811a25b38e216435e410b2faab8ef1054cd1b632956c0f606c67115  /tmp/api2-nba-no-espn.patch" | sha256sum -c -
+
+      - name: Apply candidate and prove exact tree
+        run: |
+          set -euo pipefail
+          git apply --index /tmp/api2-nba-no-espn.patch
+          git rm .github/workflows/api2-nba-no-espn-handoff.yml
+          git diff --cached --check
+          test "$(git write-tree)" = "5b4e748bb31b1e64b14dee06bcb187cf607044c2"
+
+      - name: Commit exact authoritative candidate
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix: route NBA PRA through Kyre API without ESPN or SGO"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
