@@ -1,1 +1,39 @@
-{"generation":665,"holders":[{"acquired_at_utc":"2026-10-21T22:17:54Z","expires_at_utc":"2026-10-21T23:17:54Z","generation":665,"heartbeat_at_utc":"2026-10-21T22:17:54Z","lease_id":"SCOPE-LEASE-82955C59BF6E3300071E5158","owner_id":"monster-wnba-pra-page1-final-polish-v1","scope":{"dependency_tokens":[],"exclusive":false,"resource_identity":{},"shared_resources":["workstream:monster-wnba-pra-page1-final-polish-v1"],"write_paths":["devsystem/runless_proof_plans/monster-wnba-pra-page1-final-polish-v1.json","devsystem/wnba_pra_page1_final_polish_source_policy_v1.py","runless_v2/__init__.py","runless_v2/wnba_pra_page1_final_polish_runtime_v1.py","tests/test_wnba_pra_page1_final_polish_v1.py","wnba_pra_hub_v3612.py","wnba_pra_hub_v3618.py","wnba_pra_page1_final_polish_v1.py","wnba_pra_page_model_artifact_final_polish_v1.py"]}},{"acquired_at_utc":"2026-10-21T22:07:02Z","expires_at_utc":"2026-10-21T22:37:02Z","generation":663,"heartbeat_at_utc":"2026-10-21T22:07:02Z","lease_id":"SCOPE-LEASE-F989FDCCB8731BF0425641AB","owner_id":"api2-nba-pra-every-player-analyze-v1","scope":{"dependency_tokens":[],"exclusive":false,"resource_identity":{"base_main_sha":"736266d864e55beca2d2f491224db3c40d782452","red_head_sha":"0a15e61ab0420f13245912b1c3750d7c39c4e725"},"shared_resources":[],"write_paths":["nba_pra_page1_v2.py","tests/test_api2_nba_pra_every_player_analyze_v1.py"]}}],"lease_ref":"refs/heads/monster-scope-aware-execution-leases","lease_state_path":"devsystem/scope_aware_execution_lease_state_v1.json","repository":"kyrepeak/kyre-sports-ai","revision":1218,"schema_version":1,"state_hash":"5587e72e772b02462a8137c177127c34cbdb79ed669e959525e30099ad5e3b74","version":"MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"}
+{
+  "generation": 665,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-21T22:17:54Z",
+      "expires_at_utc": "2026-10-21T23:17:54Z",
+      "generation": 665,
+      "heartbeat_at_utc": "2026-10-21T22:17:54Z",
+      "lease_id": "SCOPE-LEASE-82955C59BF6E3300071E5158",
+      "owner_id": "monster-wnba-pra-page1-final-polish-v1",
+      "scope": {
+        "dependency_tokens": [],
+        "exclusive": false,
+        "resource_identity": {},
+        "shared_resources": [
+          "workstream:monster-wnba-pra-page1-final-polish-v1"
+        ],
+        "write_paths": [
+          "devsystem/runless_proof_plans/monster-wnba-pra-page1-final-polish-v1.json",
+          "devsystem/wnba_pra_page1_final_polish_source_policy_v1.py",
+          "runless_v2/__init__.py",
+          "runless_v2/wnba_pra_page1_final_polish_runtime_v1.py",
+          "tests/test_wnba_pra_page1_final_polish_v1.py",
+          "wnba_pra_hub_v3612.py",
+          "wnba_pra_hub_v3618.py",
+          "wnba_pra_page1_final_polish_v1.py",
+          "wnba_pra_page_model_artifact_final_polish_v1.py"
+        ]
+      }
+    }
+  ],
+  "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
+  "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "revision": 1219,
+  "schema_version": 1,
+  "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
+  "state_hash": "0eeae690985ad52b25bff0f559bacb83b6c1212666981b1231d5a0d18ed3eff6"
+}
