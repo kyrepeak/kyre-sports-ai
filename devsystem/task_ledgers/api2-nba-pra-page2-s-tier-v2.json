@@ -1,0 +1,52 @@
+{
+  "task_id": "api2-nba-pra-page2-s-tier-v2",
+  "workstream": "api2-nba-pra-page2-s-tier-v2",
+  "source_main_sha": "de5bb53d54368d29721de59fd9a80f97a7732283",
+  "status": "PR_BOUND_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 80,
+  "step2a": {
+    "active_problem": "NBA PRA Page 2 S-tier presentation, instant Line Lab, complete verified context, and usage/rank enrichment",
+    "authoritative_branch": "api2-nba-pra-page2-s-tier-v2",
+    "authoritative_pr": 1717,
+    "scope_lease_id": "SCOPE-LEASE-DA2A95592560CB06EACCE018",
+    "scope_lease_generation": 658,
+    "scope_lease_expires_at_utc": "2026-10-21T21:27:12Z",
+    "authorization_id": "AUTH-API2-NBA-PRA-PAGE2-S-TIER-V2-R1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "proof_request_submitted": false,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "usage_owner": "NBA Stats Advanced through server-side Kyre Sports API enrichment",
+    "usage_rank_scope": "verified NBA Stats team-player USG% cohort",
+    "usage_missing_policy": "current regular season first; prior regular season from the same NBA Stats owner only when the requested player has no verified current-season sample; never estimate",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "sportsbook_projection_influence": 0.0,
+    "fabrication": false
+  },
+  "evidence": {
+    "tdd_red": "focused successor contract failed on missing runless_v2.nba_pra_usage_v1 before implementation",
+    "implementation": "S-tier command center, compact analytics context, multi-book market cards, recent-form strip, opponent analytics, usage/rank card, model/risk summary, sticky reactive game log",
+    "line_lab_architecture": "provider-backed snapshot/matchup loads are outside @st.fragment; fragment performs local evaluate_line and presentation only",
+    "source_guard": "dedicated active-path guard included in exact-head proof plan",
+    "full_gate": "PENDING_RUNLESS_V2_EXACT_HEAD_PROOF"
+  },
+  "control_plane": {
+    "local_git_dns_unavailable": "switched once to connected GitHub authority; no parallel local mutation path retained",
+    "live_scope_lease": "ACQUIRED_AND_READ_BACK",
+    "parallel_conflict": false,
+    "legacy_frozen_registry_owner_for_nba_pra_page2_v1_py": false,
+    "thaw_required": false
+  },
+  "baseline": {
+    "freeze_token": "API2_NBA_PRA_PAGE2_V1_FROZEN",
+    "merged_main_sha": "de5bb53d54368d29721de59fd9a80f97a7732283",
+    "state": "GREEN_FROZEN"
+  },
+  "freeze_token": "API2_NBA_PRA_PAGE2_S_TIER_V2_FROZEN"
+}
