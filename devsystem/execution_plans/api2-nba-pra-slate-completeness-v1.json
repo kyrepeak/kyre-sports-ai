@@ -12,6 +12,7 @@
     "devsystem/task_ledgers/api2-nba-pra-slate-completeness-v1.json",
     "docs/superpowers/plans/2026-10-21-nba-pra-slate-completeness-v1.md",
     "nba_pra_team_identity_v1.py",
+    "nba_pra_page1_api_only_v1.py",
     "nba_pra_page1_model_v1.py",
     "nba_pra_page1_ui_v2.py",
     "nba_pra_page1_v2.py",
@@ -25,7 +26,6 @@
     "tests/test_api2_nba_pra_slate_completeness_v1.py"
   ],
   "protected_dependencies": [
-    "nba_pra_page1_api_only_v1.py",
     "nba_pra_market_api_v1.py",
     "runless_v2/nba_pra_market_v1.py",
     "requirements.txt",
@@ -46,6 +46,7 @@
     "schedule_backup": "CBS Sports",
     "player_context_primary": "NBA Stats",
     "player_context_secondary": "Basketball-Reference",
+    "player_identity_backup": "CBS Sports roster verification only after upstream identity degradation",
     "market_primary": "FanDuel",
     "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
     "fabrication": false
@@ -53,10 +54,14 @@
   "step2a": {
     "one_active_problem": true,
     "authoritative_branch": "api2-nba-pra-slate-completeness-v1",
-    "authoritative_pr": "PENDING",
+    "authoritative_pr": 1713,
+    "authoritative_pr_max": 1,
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
+    "one_authoritative_final_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
     "anti_loop": true,
     "duplicate_authority": false
   },
