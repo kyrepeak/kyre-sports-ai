@@ -137,3 +137,50 @@ def test_odds_api_fallback_preserves_event_and_team_identity():
     assert {r['provider_event_id'] for r in out['observations']}=={'okc-sas'}
     assert {r['away_team'] for r in out['observations']}=={'Oklahoma City Thunder'}
     assert {r['home_team'] for r in out['observations']}=={'San Antonio Spurs'}
+
+
+def test_client_calls_kyre_api_without_sgo_key_instead_of_short_circuiting():
+    import nba_pra_market_api_v1 as client
+    seen = {}
+
+    class R:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {
+                'service': 'Kyre Sports API — Vercel',
+                'ready': False,
+                'observations': [],
+                'projection_weight': 0.0,
+                'consensus_averaging': False,
+                'diagnostic_state': 'NO_AVAILABLE_PRA_PROVIDER',
+            }
+
+    def fake_post(url, **kwargs):
+        seen['url'] = url
+        seen['json'] = dict(kwargs['json'])
+        return R()
+
+    out = client.load_kyre_sports_api_pra_observations(
+        date(2026, 10, 20), api_key=None, request_post=fake_post
+    )
+    assert seen['url'] == 'https://kyre-runless-proof.vercel.app/api/v1/nba/pra/market'
+    assert seen['json'] == {'date': '2026-10-20'}
+    assert out['diagnostic_state'] == 'NO_AVAILABLE_PRA_PROVIDER'
+
+
+def test_vercel_market_route_accepts_missing_sgo_key_and_skips_sgo(monkeypatch):
+    import runless_v2.nba_pra_market_v1 as api
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError('SGO must not be called when its optional credential is absent')
+
+    monkeypatch.setattr(api, '_fetch_sgo_events', forbidden)
+    request = api.NbaPraMarketRequest(date=date(2026, 10, 20))
+    payload = api.market(request)
+    assert payload['service'] == 'Kyre Sports API — Vercel'
+    assert payload['observations'] == []
+    assert payload['diagnostic_state'] == 'NO_AVAILABLE_PRA_PROVIDER'
+    assert payload['projection_weight'] == 0.0
+    assert payload['consensus_averaging'] is False
