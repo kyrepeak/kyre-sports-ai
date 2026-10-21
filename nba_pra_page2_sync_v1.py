@@ -21,6 +21,13 @@ from nba_pra_runtime_v2 import (
 )
 
 MODEL_VERSION = "NBA PRA PAGE 2 SYNC V2 • LIVE ACCEPTANCE REPAIR"
+_UNVERIFIED_AVAILABILITY = {
+    "",
+    "UNVERIFIED",
+    "NO VERIFIED INJURY FLAG",
+    "NOT CURRENTLY VERIFIED",
+    "UNKNOWN",
+}
 
 
 def _text(value: Any) -> str:
@@ -39,14 +46,15 @@ def apply_handoff_context(
     handoff: Mapping[str, Any] | None,
     player_key: str,
 ) -> dict[str, Any]:
-    '''Reuse only verified same-player Page 1 context when the refresh is blank.'''
+    '''Reuse only genuinely verified same-player Page 1 context when refresh is blank.'''
     out = dict(context or {})
     payload = dict(handoff or {})
     if _text(payload.get("player_key")) != _text(player_key):
         return out
     current = _text(out.get("availability")).upper()
     handed = _text(payload.get("availability"))
-    if current in {"", "UNVERIFIED"} and handed:
+    handed_state = handed.upper()
+    if current in {"", "UNVERIFIED"} and handed_state not in _UNVERIFIED_AVAILABILITY:
         out["availability"] = handed
     return out
 
