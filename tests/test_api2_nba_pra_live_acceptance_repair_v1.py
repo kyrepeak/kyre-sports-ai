@@ -35,15 +35,15 @@ def test_basketball_reference_game_log_preserves_verified_opponent() -> None:
     assert rows[0]["opponent"] == "CHA"
 
 
-def test_cbs_game_log_preserves_verified_opponent() -> None:
-    import runless_v2.nba_pra_player_context_v1 as ctx
+def test_cbs_game_log_preserves_verified_opponent_in_active_history_path() -> None:
+    from runless_v2.nba_pra_live_acceptance_repair_v1 import _parse_cbs_game_log_html
 
     headers = ["date", "opponent", "result", "fpts", "min", "pts", "reb", "ast", "stl"]
     head = "".join(f"<th>{h}</th>" for h in headers)
     values = ["Apr 12, 2026", "vs ATL", "W", "11", "26", "4", "2", "2", "1"]
     body = "".join(f"<td>{v}</td>" for v in values)
     html = f'<h4>2025-26 Regular Season Game Log</h4><table><thead><tr>{head}</tr></thead><tbody><tr>{body}</tr></tbody></table>'
-    rows = ctx._parse_cbs_game_log_html(html)
+    rows = _parse_cbs_game_log_html(html)
     assert rows[0]["opponent"] == "ATL"
 
 
@@ -136,8 +136,8 @@ def test_loading_overlay_covers_actual_page2_fetch_instead_of_flashing_before_it
     assert "show_loading_overlay: bool = False" in sync
     assert "render_page2_loading_screen" in sync
     assert "loading_placeholder = st.empty()" in sync
-    assert sync.index("loading_placeholder = st.empty()") < sync.index("load_page2_snapshot_v1(")
-    assert sync.index("load_kyre_sports_api_nba_pra_matchup(") < sync.index("loading_placeholder.empty()")
+    assert sync.index("loading_placeholder = st.empty()") < sync.index("snapshot = load_page2_snapshot_v1(")
+    assert sync.index("matchup_raw = load_kyre_sports_api_nba_pra_matchup(") < sync.index("loading_placeholder.empty()", sync.index("matchup_raw ="))
 
 
 def test_repair_active_path_keeps_prohibited_sources_out() -> None:
@@ -148,6 +148,7 @@ def test_repair_active_path_keeps_prohibited_sources_out() -> None:
         ROOT / "nba_pra_page2_context_v1.py",
         ROOT / "runless_v2" / "nba_pra_player_context_enrichment_v2.py",
         ROOT / "runless_v2" / "nba_pra_usage_v1.py",
+        ROOT / "runless_v2" / "nba_pra_live_acceptance_repair_v1.py",
     ]
     combined = "\n".join(path.read_text(encoding="utf-8").casefold() for path in paths)
     assert "sportsgameodds" not in combined
