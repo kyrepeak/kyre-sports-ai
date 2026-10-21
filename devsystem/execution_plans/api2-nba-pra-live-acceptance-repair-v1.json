@@ -14,6 +14,7 @@
     "runless_v2/nba_pra_live_acceptance_repair_v1.py",
     "tests/test_api2_nba_pra_live_acceptance_repair_v1.py",
     "tests/test_api2_nba_pra_page2_s_tier_v2.py",
+    "tests/test_api2_nba_pra_page2_runtime_v1.py",
     "devsystem/execution_plans/api2-nba-pra-live-acceptance-repair-v1.json",
     "devsystem/runless_proof_plans/api2-nba-pra-live-acceptance-repair-v1.json",
     "devsystem/task_ledgers/api2-nba-pra-live-acceptance-repair-v1.json"
