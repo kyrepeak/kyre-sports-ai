@@ -122,6 +122,7 @@ def test_active_successor_files_do_not_import_prohibited_providers():
     paths = [
         "sports_api/wnba_pra_market_gateway_v1.py",
         "sports_api/api/wnba_pra_market_gateway_v1.py",
+        "sports_api/api/wnba_draftkings_direct.py",
         "wnba_pra_api_market_bridge_v2.py",
         "wnba_pra_hub_v3617.py",
         "wnba_pra_product_view_v3.py",
@@ -142,12 +143,13 @@ def test_streamlit_bridge_uses_one_kyre_api_market_board_endpoint():
     assert 'requests.post' not in source
 
 
-def test_api_router_and_main_are_wired():
+def test_api_router_is_mounted_through_existing_wnba_market_router():
     route_source = (ROOT / "sports_api/api/wnba_pra_market_gateway_v1.py").read_text(encoding="utf-8")
-    main_source = (ROOT / "sports_api/main.py").read_text(encoding="utf-8")
+    carrier_source = (ROOT / "sports_api/api/wnba_draftkings_direct.py").read_text(encoding="utf-8")
     assert '@router.get("/pra/market-board")' in route_source
-    assert "wnba_pra_market_gateway_router" in main_source
-    assert "app.include_router(wnba_pra_market_gateway_router)" in main_source
+    assert 'APIRouter(tags=["wnba"])' in route_source
+    assert "wnba_pra_market_gateway_router" in carrier_source
+    assert "router.include_router(wnba_pra_market_gateway_router)" in carrier_source
 
 
 def test_compatibility_boundary_advances_to_api_only_successor():
@@ -161,6 +163,8 @@ def test_successor_installs_api_only_shim_before_preserved_model_imports():
     snapshot_pos = source.index("importlib.import_module(\"wnba_pra_product_snapshot_v1\")")
     assert install_pos < snapshot_pos
     assert "require_fanduel=False" in source
+    assert "wnba_pra_hub_v3616" not in source
+    assert "def __getattr__" not in source
 
 
 def test_product_view_labels_actual_selected_sportsbook():
