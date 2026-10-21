@@ -7,10 +7,9 @@ from typing import Any, Mapping
 
 from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2
 from nba_pra_page1_model_v1 import grade_market, project_pra
-from nba_pra_runtime_v2 import SESSION_SELECTED_QUOTE
+from nba_pra_runtime_v2 import select_player_for_analysis
 from nba_pra_page1_ui_v2 import (
     FILTER_OPTIONS,
-    SESSION_PLAYER,
     build_game_card_html,
     build_kpi_strip_html,
     build_leaderboard_row_html,
@@ -19,7 +18,7 @@ from nba_pra_page1_ui_v2 import (
     dashboard_kpis,
 )
 
-MODEL_VERSION = "NBA PRA PAGE 1/3 • HARD ANALYTICS V1"
+MODEL_VERSION = "NBA PRA PAGE 1/3 • HARD ANALYTICS V2 • EXACT PAGE 2 HANDOFF"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 SOURCE_DIAGNOSTICS_MARKER = "NBA_PRA_SOURCE_DIAGNOSTICS_V1"
 
@@ -68,6 +67,7 @@ def build_items(snapshot: Mapping[str, Any], *, now_utc: datetime | None = None)
             "availability": injury.get("status") or "No verified injury flag",
             "quotes": list(market.get("quotes") or []),
             "featured_quote": featured,
+            "snapshot_at_utc": str(featured.get("observed_at_utc") or ""),
             "model": model,
             "grade": grade,
         })
@@ -92,6 +92,11 @@ def _filter_items(items: list[dict[str, Any]], selected: str) -> list[dict[str, 
     if selected == "HIGH CONFIDENCE":
         return [x for x in items if x["grade"].get("confidence") == "HIGH"]
     return items
+
+
+def _open_player(st, item: Mapping[str, Any]) -> None:
+    select_player_for_analysis(st.session_state, item)
+    st.rerun()
 
 
 def render_nba_pra_page1_v2() -> None:
@@ -170,12 +175,10 @@ def render_nba_pra_page1_v2() -> None:
                 key=f"np3-featured-{item['key']}",
                 use_container_width=False,
             ):
-                st.session_state[SESSION_PLAYER] = item["key"]
-                st.session_state[SESSION_SELECTED_QUOTE] = dict(item["featured_quote"])
-                st.rerun()
+                _open_player(st, item)
 
     st.markdown(
-        '<div class="np3-section"><b>ALL UPCOMING PRA MARKETS</b><span>compact live board • book quotes remain separate</span></div>',
+        '<div class="np3-section"><b>ALL UPCOMING PRA PLAYERS</b><span>every listed player can be analyzed • exact Page 1 snapshot carries into Page 2</span></div>',
         unsafe_allow_html=True,
     )
     market_rows = items if selected == "BEST EDGES" else ranked
@@ -187,10 +190,8 @@ def render_nba_pra_page1_v2() -> None:
     )
     for item in market_rows:
         if st.button(
-            f"View {item['player_name']} on Page 2 →",
+            f"Analyze {item['player_name']} →",
             key=f"np3-all-{item['key']}",
             use_container_width=False,
         ):
-            st.session_state[SESSION_PLAYER] = item["key"]
-            st.session_state[SESSION_SELECTED_QUOTE] = dict(item["featured_quote"])
-            st.rerun()
+            _open_player(st, item)

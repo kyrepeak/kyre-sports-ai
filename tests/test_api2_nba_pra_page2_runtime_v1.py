@@ -24,26 +24,50 @@ def test_no_selection_renders_page1_only(monkeypatch):
     calls = []
     fake_st = types.SimpleNamespace(session_state={})
     fake_p1 = types.SimpleNamespace(render_nba_pra_page1_v2=lambda: calls.append("page1"))
-    fake_p2 = types.SimpleNamespace(render_nba_pra_page2_v1=lambda: calls.append("page2"))
+    fake_sync = types.SimpleNamespace(render_nba_pra_page2_sync_v1=lambda: calls.append("page2"))
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
     monkeypatch.setitem(sys.modules, "nba_pra_page1_v2", fake_p1)
-    monkeypatch.setitem(sys.modules, "nba_pra_page2_v1", fake_p2)
+    monkeypatch.setitem(sys.modules, "nba_pra_page2_sync_v1", fake_sync)
     runtime = _load_runtime()
     runtime.render_nba_pra_runtime_v2()
     assert calls == ["page1"]
 
 
-def test_valid_selection_renders_page2_only(monkeypatch):
+def test_valid_selection_renders_synced_page2_only(monkeypatch):
     calls = []
     fake_st = types.SimpleNamespace(session_state={page1_ui.SESSION_PLAYER: "player-123"})
     fake_p1 = types.SimpleNamespace(render_nba_pra_page1_v2=lambda: calls.append("page1"))
-    fake_p2 = types.SimpleNamespace(render_nba_pra_page2_v1=lambda: calls.append("page2"))
+    fake_sync = types.SimpleNamespace(render_nba_pra_page2_sync_v1=lambda: calls.append("page2"))
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
     monkeypatch.setitem(sys.modules, "nba_pra_page1_v2", fake_p1)
-    monkeypatch.setitem(sys.modules, "nba_pra_page2_v1", fake_p2)
+    monkeypatch.setitem(sys.modules, "nba_pra_page2_sync_v1", fake_sync)
     runtime = _load_runtime()
     runtime.render_nba_pra_runtime_v2()
     assert calls == ["page2"]
+
+
+def test_loading_phase_renders_overlay_then_reruns_without_page1(monkeypatch):
+    calls = []
+    state = {
+        page1_ui.SESSION_PLAYER: "player-123",
+        "ks_nba_pra_nav_phase_v1": "loading_page2",
+        "ks_nba_pra_analysis_handoff_v1": {"player_name": "Andrew Nembhard"},
+    }
+    fake_st = types.SimpleNamespace(
+        session_state=state,
+        markdown=lambda *_args, **_kwargs: calls.append("loading"),
+        rerun=lambda: calls.append("rerun"),
+    )
+    fake_p1 = types.SimpleNamespace(render_nba_pra_page1_v2=lambda: calls.append("page1"))
+    fake_sync = types.SimpleNamespace(render_nba_pra_page2_sync_v1=lambda: calls.append("page2"))
+    monkeypatch.setitem(sys.modules, "streamlit", fake_st)
+    monkeypatch.setitem(sys.modules, "nba_pra_page1_v2", fake_p1)
+    monkeypatch.setitem(sys.modules, "nba_pra_page2_sync_v1", fake_sync)
+    runtime = _load_runtime()
+    monkeypatch.setattr(runtime, "sleep", lambda _seconds: None)
+    runtime.render_nba_pra_runtime_v2()
+    assert calls == ["loading", "rerun"]
+    assert state[runtime.SESSION_NAV_PHASE] == "page2"
 
 
 def test_back_clears_only_page2_state_and_preserves_route():
@@ -52,6 +76,8 @@ def test_back_clears_only_page2_state_and_preserves_route():
         page1_ui.SESSION_PLAYER: "player-123",
         runtime.SESSION_LINE_LAB: 31.5,
         runtime.SESSION_PAGE2_TAB: "history",
+        runtime.SESSION_ANALYSIS_HANDOFF: {"player_key": "player-123"},
+        runtime.SESSION_NAV_PHASE: "page2",
         "sport": "nba",
         "market": "pra",
         "date": "2026-10-21",
@@ -61,10 +87,13 @@ def test_back_clears_only_page2_state_and_preserves_route():
     assert page1_ui.SESSION_PLAYER not in state
     assert runtime.SESSION_LINE_LAB not in state
     assert runtime.SESSION_PAGE2_TAB not in state
+    assert runtime.SESSION_ANALYSIS_HANDOFF not in state
+    assert runtime.SESSION_NAV_PHASE not in state
     assert state["sport"] == "nba"
     assert state["market"] == "pra"
     assert state["date"] == "2026-10-21"
     assert state["other"] == "keep"
+
 
 def test_page2_state_clear_includes_selected_quote():
     runtime = _load_runtime()
@@ -79,13 +108,22 @@ def test_page2_state_clear_includes_selected_quote():
     assert state['sport']=='nba' and state['market']=='pra'
 
 
-def test_page1_click_source_hands_off_exact_featured_quote():
+def test_page1_click_source_uses_atomic_exact_analysis_handoff():
     from pathlib import Path
     text = Path('nba_pra_page1_v2.py').read_text()
-    assert 'SESSION_SELECTED_QUOTE' in text
-    assert 'dict(item["featured_quote"])' in text or "dict(item['featured_quote'])" in text
+    runtime = Path('nba_pra_runtime_v2.py').read_text()
+    assert 'select_player_for_analysis' in text
+    assert 'featured_quote' in runtime
+    assert 'SESSION_SELECTED_QUOTE' in runtime
+    assert 'SESSION_ANALYSIS_HANDOFF' in runtime
+    assert 'deepcopy(quote)' in runtime
 
-def test_page1_selection_immediately_reruns_into_page2():
+
+def test_page1_selection_reruns_through_clean_loading_phase():
     from pathlib import Path
-    text=Path('nba_pra_page1_v2.py').read_text()
-    assert text.count('st.rerun()') >= 2
+    page1 = Path('nba_pra_page1_v2.py').read_text()
+    runtime = Path('nba_pra_runtime_v2.py').read_text()
+    assert 'st.rerun()' in page1
+    assert 'SESSION_NAV_PHASE' in runtime
+    assert 'loading_page2' in runtime
+    assert 'render_page2_loading_screen' in runtime
