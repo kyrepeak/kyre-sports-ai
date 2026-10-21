@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException, Query
 
 from sports_api.wnba_pra_market_gateway_v1 import build_pra_market_board
 
-router = APIRouter(prefix="/api/v1/wnba", tags=["wnba"])
+# This router is mounted under the already-certified /api/v1/wnba carrier.
+router = APIRouter(tags=["wnba"])
 
 
 @router.get("/pra/market-board")
