@@ -12,6 +12,8 @@ import wnba_pra_page1_final_polish_v1 as _page1_final_polish
 
 active.render_page_snapshot = _page1_final_polish.render_page_snapshot
 
+import wnba_pra_hub_v3618 as refresh_handoff
+
 MODEL_VERSION = active.MODEL_VERSION
 MLB_FROZEN_BASELINE = active.MLB_FROZEN_BASELINE
 MLB_FROZEN_BRANCH = active.MLB_FROZEN_BRANCH
@@ -20,7 +22,7 @@ PRECISION_STEP1_CONTRACT = active.PRECISION_STEP1_CONTRACT
 
 
 def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h=None):
-    return active.render_wnba_pra_hub(section_header, status_info, team_logo, h)
+    return refresh_handoff.render_wnba_pra_hub(section_header, status_info, team_logo, h)
 
 
 def __getattr__(name):
