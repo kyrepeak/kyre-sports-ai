@@ -46,9 +46,17 @@ def test_controller_skips_fast_reruns_and_does_not_poll():
     nav = importlib.import_module("universal_atomic_navigation_v2")
     markup = nav.transition_controller_markup()
     assert "clearTimeout" in markup
-    assert "NOT_RUNNING" in markup
+    assert "NOTRUNNING" in markup
     assert "setInterval" not in markup
     assert "pointerdown" in markup
+
+
+def test_controller_normalizes_real_streamlit_script_state_values():
+    nav = importlib.import_module("universal_atomic_navigation_v2")
+    markup = nav.transition_controller_markup()
+    assert "NOTRUNNING" in markup
+    assert "RERUNREQUESTED" in markup
+    assert "replace(/[^A-Z]/g" in markup
 
 
 def test_server_fallback_is_named_opaque_and_pointer_blocking():
