@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from copy import deepcopy
 from html import escape
-from time import sleep
 from typing import Any, MutableMapping, Mapping
 
 from nba_pra_page1_ui_v2 import SESSION_PLAYER
+from nba_pra_page2_line_lab_v1 import _score as _line_lab_score
 
-MODEL_VERSION = "NBA PRA RUNTIME V3 • PAGE 1/2 EXACT HANDOFF"
+MODEL_VERSION = "NBA PRA RUNTIME V4 • LIVE ACCEPTANCE REPAIR"
 SESSION_SELECTED_QUOTE = "ks_nba_pra_page2_selected_quote"
 SESSION_LINE_LAB = "ks_nba_pra_page2_line_lab"
 SESSION_PAGE2_TAB = "ks_nba_pra_page2_tab"
@@ -29,6 +29,17 @@ def selected_player_key(session_state: Mapping[str, Any]) -> str | None:
     return value or None
 
 
+def _handoff_grade(item: Mapping[str, Any]) -> dict[str, Any]:
+    grade = deepcopy(dict(item.get("grade") or {}))
+    if not grade:
+        return grade
+    if grade.get("score") is None or not str(grade.get("tier") or "").strip():
+        score, tier = _line_lab_score(grade)
+        grade["score"] = score
+        grade["tier"] = tier
+    return grade
+
+
 def select_player_for_analysis(session_state: MutableMapping[str, Any], item: Mapping[str, Any]) -> None:
     '''Atomically hand Page 2 the exact analysis shown on Page 1.'''
     player_key = str(item.get("key") or "").strip()
@@ -38,14 +49,15 @@ def select_player_for_analysis(session_state: MutableMapping[str, Any], item: Ma
     session_state[SESSION_PLAYER] = player_key
     session_state[SESSION_SELECTED_QUOTE] = deepcopy(quote)
     session_state[SESSION_ANALYSIS_HANDOFF] = {
-        "schema_version": "NBA_PRA_ANALYSIS_HANDOFF_V1",
+        "schema_version": "NBA_PRA_ANALYSIS_HANDOFF_V2",
         "player_key": player_key,
         "player_name": str(item.get("player_name") or "Player"),
         "team": str(item.get("team") or ""),
         "position": str(item.get("position") or ""),
+        "availability": str(item.get("availability") or ""),
         "quote": deepcopy(quote),
         "model": deepcopy(dict(item.get("model") or {})),
-        "grade": deepcopy(dict(item.get("grade") or {})),
+        "grade": _handoff_grade(item),
         "snapshot_at_utc": str(quote.get("observed_at_utc") or ""),
         "sportsbook_projection_influence": 0.0,
     }
@@ -76,11 +88,10 @@ def render_nba_pra_runtime_v2() -> None:
 
     nav_phase = str(st.session_state.get(SESSION_NAV_PHASE) or "").strip()
     if nav_phase == "loading_page2":
-        handoff = st.session_state.get(SESSION_ANALYSIS_HANDOFF) or {}
-        st.markdown(render_page2_loading_screen(str(handoff.get("player_name") or "player")), unsafe_allow_html=True)
+        from nba_pra_page2_sync_v1 import render_nba_pra_page2_sync_v1
+
+        render_nba_pra_page2_sync_v1(show_loading_overlay=True)
         st.session_state[SESSION_NAV_PHASE] = "page2"
-        sleep(0.08)
-        st.rerun()
         return
 
     player_key = selected_player_key(st.session_state)

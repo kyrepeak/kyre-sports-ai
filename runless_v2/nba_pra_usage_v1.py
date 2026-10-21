@@ -56,7 +56,12 @@ def _result_block(payload: Mapping[str, Any]) -> Mapping[str, Any]:
     return {}
 
 
-def normalize_nba_usage_payload(payload: Mapping[str, Any], *, season_label: str) -> dict[str, dict[str, Any]]:
+def normalize_nba_usage_payload(
+    payload: Mapping[str, Any],
+    *,
+    season_label: str,
+    season_type: str = "Regular Season",
+) -> dict[str, dict[str, Any]]:
     block = _result_block(payload)
     headers = [str(item) for item in (block.get("headers") or [])]
     rows = block.get("rowSet") or []
@@ -92,6 +97,7 @@ def normalize_nba_usage_payload(payload: Mapping[str, Any], *, season_label: str
         )
 
     out: dict[str, dict[str, Any]] = {}
+    period = _text(season_type).upper() or "REGULAR SEASON"
     for row in normalized_rows:
         teammates = [candidate for candidate in normalized_rows if candidate["team"] == row["team"]]
         rank = 1 + sum(1 for candidate in teammates if float(candidate["usage_pct"]) > float(row["usage_pct"]))
@@ -99,14 +105,20 @@ def normalize_nba_usage_payload(payload: Mapping[str, Any], *, season_label: str
             **row,
             "usage_rank": rank,
             "usage_team_size": len(teammates),
-            "usage_period": f"{season_label} REGULAR SEASON",
+            "usage_period": f"{season_label} {period}",
             "usage_source": "NBA Stats",
             "usage_scope": "TEAM PLAYERS WITH VERIFIED NBA STATS USG%",
         }
     return out
 
 
-def _load_season(end_year: int, *, request_get: Callable[..., Any], timeout: float) -> dict[str, dict[str, Any]]:
+def _load_season(
+    end_year: int,
+    *,
+    season_type: str = "Regular Season",
+    request_get: Callable[..., Any],
+    timeout: float,
+) -> dict[str, dict[str, Any]]:
     label = _season_label(end_year)
     response = request_get(
         NBA_STATS_ADVANCED_URL,
@@ -118,7 +130,7 @@ def _load_season(end_year: int, *, request_get: Callable[..., Any], timeout: flo
             "PaceAdjust": "N",
             "Rank": "N",
             "Season": label,
-            "SeasonType": "Regular Season",
+            "SeasonType": season_type,
         },
         headers=NBA_STATS_HEADERS,
         timeout=timeout,
@@ -127,7 +139,7 @@ def _load_season(end_year: int, *, request_get: Callable[..., Any], timeout: flo
     payload = response.json()
     if not isinstance(payload, Mapping):
         return {}
-    return normalize_nba_usage_payload(payload, season_label=label)
+    return normalize_nba_usage_payload(payload, season_label=label, season_type=season_type)
 
 
 def load_nba_usage_context(
@@ -137,10 +149,11 @@ def load_nba_usage_context(
     request_get: Callable[..., Any] | None = None,
     timeout: float = 8.0,
 ) -> dict[str, Any]:
-    """Return verified usage/rank for requested players, current season first.
+    """Return verified usage/rank using bounded NBA Stats fallback.
 
-    If the requested player has no verified current-regular-season sample yet,
-    the immediately prior NBA regular season is used. No value is estimated.
+    Order is current regular season, current preseason for still-missing players,
+    then immediately prior regular season. No value is estimated and no cohort is
+    blended across periods.
     """
     if request_get is None:
         import requests
@@ -165,37 +178,31 @@ def load_nba_usage_context(
         }
 
     end_year = _season_end_year(slate_date)
-    current: dict[str, dict[str, Any]] = {}
-    current_error = ""
-    try:
-        current = _load_season(end_year, request_get=request_get, timeout=timeout)
-    except Exception as exc:
-        current_error = type(exc).__name__
-
     profiles: dict[str, dict[str, Any]] = {}
-    for key, _name in requested:
-        if key in current:
-            profiles[key] = dict(current[key])
+    errors: list[str] = []
 
-    missing = [key for key, _name in requested if key not in profiles]
-    prior_error = ""
-    if missing:
+    def merge_period(year: int, season_type: str, label: str) -> None:
+        missing = [key for key, _name in requested if key not in profiles]
+        if not missing:
+            return
         try:
-            prior = _load_season(end_year - 1, request_get=request_get, timeout=timeout)
+            rows = _load_season(year, season_type=season_type, request_get=request_get, timeout=timeout)
         except Exception as exc:
-            prior = {}
-            prior_error = type(exc).__name__
+            errors.append(f"{label}_{type(exc).__name__}")
+            return
         for key in missing:
-            if key in prior:
-                profiles[key] = dict(prior[key])
+            if key in rows:
+                profiles[key] = dict(rows[key])
+
+    merge_period(end_year, "Regular Season", "CURRENT_REGULAR")
+    merge_period(end_year, "Pre Season", "CURRENT_PRESEASON")
+    merge_period(end_year - 1, "Regular Season", "PRIOR_REGULAR")
 
     resolved = len(profiles)
     status = "HEALTHY" if resolved == len(requested) else "DEGRADED"
     detail = f"RESOLVED_{resolved}_OF_{len(requested)}"
-    if current_error:
-        detail += f":CURRENT_{current_error}"
-    if prior_error:
-        detail += f":PRIOR_{prior_error}"
+    if errors:
+        detail += ":" + ":".join(errors)
     return {
         "status": status,
         "diagnostic_state": detail,

@@ -16,10 +16,18 @@ from nba_pra_runtime_v2 import (
     SESSION_LINE_LAB,
     SESSION_SELECTED_QUOTE,
     clear_page2_state,
+    render_page2_loading_screen,
     selected_player_key,
 )
 
-MODEL_VERSION = "NBA PRA PAGE 2 SYNC V1 • EXACT PAGE 1 HANDOFF"
+MODEL_VERSION = "NBA PRA PAGE 2 SYNC V2 • LIVE ACCEPTANCE REPAIR"
+_UNVERIFIED_AVAILABILITY = {
+    "",
+    "UNVERIFIED",
+    "NO VERIFIED INJURY FLAG",
+    "NOT CURRENTLY VERIFIED",
+    "UNKNOWN",
+}
 
 
 def _text(value: Any) -> str:
@@ -31,6 +39,24 @@ def _same_number(left: Any, right: Any) -> bool:
         return abs(float(left) - float(right)) < 1e-9
     except (TypeError, ValueError):
         return False
+
+
+def apply_handoff_context(
+    context: Mapping[str, Any],
+    handoff: Mapping[str, Any] | None,
+    player_key: str,
+) -> dict[str, Any]:
+    '''Reuse only genuinely verified same-player Page 1 context when refresh is blank.'''
+    out = dict(context or {})
+    payload = dict(handoff or {})
+    if _text(payload.get("player_key")) != _text(player_key):
+        return out
+    current = _text(out.get("availability")).upper()
+    handed = _text(payload.get("availability"))
+    handed_state = handed.upper()
+    if current in {"", "UNVERIFIED"} and handed_state not in _UNVERIFIED_AVAILABILITY:
+        out["availability"] = handed
+    return out
 
 
 def resolve_initial_analysis(
@@ -56,46 +82,63 @@ def resolve_initial_analysis(
     return model, evaluate_line(model.get("projection"), model.get("sigma"), float(active_line))
 
 
-def render_nba_pra_page2_sync_v1() -> None:
+def render_nba_pra_page2_sync_v1(*, show_loading_overlay: bool = False) -> None:
     import streamlit as st
+
+    handoff = st.session_state.get(SESSION_ANALYSIS_HANDOFF)
+    handoff_map = handoff if isinstance(handoff, Mapping) else None
+    loading_placeholder = st.empty()
+    if show_loading_overlay:
+        player_name = _text((handoff_map or {}).get("player_name")) or "player"
+        loading_placeholder.markdown(render_page2_loading_screen(player_name), unsafe_allow_html=True)
 
     st.markdown(_css(), unsafe_allow_html=True)
     st.markdown('<a class="ks-p2-top" href="#ks-nba-pra-page2-top">↑ TOP</a>', unsafe_allow_html=True)
     if st.button("← Back to PRA Board", key="nba-pra-p2-sync-back", use_container_width=False):
+        if show_loading_overlay:
+            loading_placeholder.empty()
         clear_page2_state(st.session_state)
         st.rerun()
 
     key = selected_player_key(st.session_state)
     if key is None:
+        if show_loading_overlay:
+            loading_placeholder.empty()
         st.warning("No verified player selection. Return to the PRA board.")
         return
 
     now = datetime.now(timezone.utc)
-    with st.spinner("Loading selected NBA PRA intelligence…"):
-        snapshot = load_page2_snapshot_v1(key, now=now)
+    snapshot = load_page2_snapshot_v1(key, now=now)
 
     selected = st.session_state.get(SESSION_SELECTED_QUOTE)
     context = build_page2_context(snapshot, key, selected_quote=selected if isinstance(selected, Mapping) else None)
+    context = apply_handoff_context(context, handoff_map, key)
     if context.get("state") not in {"ready", "line_moved"}:
+        if show_loading_overlay:
+            loading_placeholder.empty()
         st.warning("Selected player or PRA market is no longer available. Return to the PRA board.")
         return
 
     profile = context.get("player") or {}
     default_line = default_line_for_context(context)
     if default_line is None:
+        if show_loading_overlay:
+            loading_placeholder.empty()
         st.warning("Verified PRA line unavailable. No test line was invented.")
         return
 
-    handoff = st.session_state.get(SESSION_ANALYSIS_HANDOFF)
     initial_model, initial_result = resolve_initial_analysis(
         profile,
-        handoff if isinstance(handoff, Mapping) else None,
+        handoff_map,
         key,
         float(default_line),
     )
 
     matchup_raw = load_kyre_sports_api_nba_pra_matchup(_text(context.get("opponent")), now_utc=now)
     matchup = build_matchup_summary(matchup_raw)
+    if show_loading_overlay:
+        loading_placeholder.empty()
+
     options = line_steps(float(default_line), width=10.0)
     prior = st.session_state.get(SESSION_LINE_LAB)
     default = prior if prior in options else default_line if default_line in options else min(options, key=lambda value: abs(value - default_line))

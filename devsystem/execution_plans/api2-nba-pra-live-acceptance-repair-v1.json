@@ -1,0 +1,51 @@
+{
+  "project": "API2",
+  "workstream": "api2-nba-pra-live-acceptance-repair-v1",
+  "step": "2A/1",
+  "source_main_sha": "3d9611172aeb6fbce2bfd298dc5fcf393436b376",
+  "authoritative_branch": "api2-nba-pra-live-acceptance-repair-v1",
+  "authoritative_pr": 1720,
+  "goal": "Repair NBA PRA Page 2 live acceptance: preserve verified opponent history, fill legitimate current-preseason usage/rank before older fallback, preserve Page 1 Kyre score and availability into Page 2, and keep the professional loading overlay mounted through the actual fetch.",
+  "write_paths": [
+    "nba_pra_runtime_v2.py",
+    "nba_pra_page2_sync_v1.py",
+    "runless_v2/__init__.py",
+    "runless_v2/nba_pra_usage_v1.py",
+    "runless_v2/nba_pra_live_acceptance_repair_v1.py",
+    "tests/test_api2_nba_pra_live_acceptance_repair_v1.py",
+    "tests/test_api2_nba_pra_page2_s_tier_v2.py",
+    "tests/test_api2_nba_pra_page2_runtime_v1.py",
+    "devsystem/execution_plans/api2-nba-pra-live-acceptance-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-live-acceptance-repair-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-live-acceptance-repair-v1.json"
+  ],
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "player_props_odds": ["FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fanatics Sportsbook", "The Odds API", "OpticOdds"],
+    "official_player_team_stats": ["NBA Stats", "Sportradar", "SportsDataIO"],
+    "game_player_history": ["Basketball-Reference", "Stathead", "NBA Stats", "Sportradar"],
+    "injuries_availability_lineups": ["NBA Official Injury Report", "RotoWire"],
+    "advanced_analytics": ["NBA Stats", "PBP Stats", "Sportradar"],
+    "backup_verification": ["CBS Sports", "Basketball-Reference", "SportsDataIO", "Sportradar"],
+    "conflicting_lines": "preserve sportsbook, line, price, timestamp; never average",
+    "fabrication": false
+  },
+  "acceptance": {
+    "history_opponent": "When an approved source provides an opponent, the normalized game row retains it and Page 2 can render OPP and exact prior-opponent history.",
+    "usage_rank": "Current NBA Stats regular season first, current preseason for still-missing players, prior regular season last; no cross-period averaging or estimation.",
+    "score_parity": "At the same sportsbook line, Page 2 receives the same Kyre Edge score/tier semantics Page 1 displays.",
+    "availability_parity": "A verified same-player Page 1 availability label may fill an immediately unverified Page 2 refresh; newer explicit Page 2 status wins.",
+    "loading": "The fixed professional overlay remains mounted across the actual Page 2 snapshot and matchup fetch and no 80ms flash/rerun remains.",
+    "line_lab": "Slider moves remain local with zero external fetches.",
+    "source_guard": "No SGO/SportsGameOdds or ESPN/ESPN BET in the repaired active path."
+  },
+  "anti_loop": {
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "duplicate_runs_forbidden": true,
+    "merge_before_exact_head_green_forbidden": true
+  },
+  "freeze_token": "API2_NBA_PRA_LIVE_ACCEPTANCE_REPAIR_V1_FROZEN"
+}

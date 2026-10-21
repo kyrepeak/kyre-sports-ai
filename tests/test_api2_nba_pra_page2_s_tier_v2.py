@@ -150,7 +150,7 @@ def test_page2_slider_reruns_only_a_streamlit_fragment_with_no_provider_fetches(
 def test_official_usage_loader_falls_back_to_prior_season_and_ranks_within_team() -> None:
     from runless_v2.nba_pra_usage_v1 import load_nba_usage_context
 
-    calls: list[tuple[str, str]] = []
+    calls: list[tuple[str, str, str]] = []
 
     class Response:
         def __init__(self, payload: dict):
@@ -174,6 +174,7 @@ def test_official_usage_loader_falls_back_to_prior_season_and_ranks_within_team(
         }
 
     current = payload([[1, "Current Player", "IND", 1, 22.0, 0.18]])
+    preseason = payload([])
     prior = payload(
         [
             [10, "Tyrese Haliburton", "IND", 70, 33.5, 0.271],
@@ -184,8 +185,12 @@ def test_official_usage_loader_falls_back_to_prior_season_and_ranks_within_team(
     )
 
     def fake_get(url: str, *, params: dict, headers: dict, timeout: float):
-        calls.append((url, str(params.get("Season"))))
-        return Response(current if params.get("Season") == "2026-27" else prior)
+        calls.append((url, str(params.get("Season")), str(params.get("SeasonType"))))
+        if params.get("Season") == "2026-27" and params.get("SeasonType") == "Regular Season":
+            return Response(current)
+        if params.get("Season") == "2026-27" and params.get("SeasonType") == "Pre Season":
+            return Response(preseason)
+        return Response(prior)
 
     out = load_nba_usage_context(
         date(2026, 10, 21),
@@ -200,8 +205,9 @@ def test_official_usage_loader_falls_back_to_prior_season_and_ranks_within_team(
     assert row["usage_period"] == "2025-26 REGULAR SEASON"
     assert row["usage_source"] == "NBA Stats"
     assert calls == [
-        ("https://stats.nba.com/stats/leaguedashplayerstats", "2026-27"),
-        ("https://stats.nba.com/stats/leaguedashplayerstats", "2025-26"),
+        ("https://stats.nba.com/stats/leaguedashplayerstats", "2026-27", "Regular Season"),
+        ("https://stats.nba.com/stats/leaguedashplayerstats", "2026-27", "Pre Season"),
+        ("https://stats.nba.com/stats/leaguedashplayerstats", "2025-26", "Regular Season"),
     ]
 
 
