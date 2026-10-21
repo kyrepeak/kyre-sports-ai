@@ -102,7 +102,7 @@ def test_handoff_adds_same_kyre_score_page1_visually_displays() -> None:
         "player_name": "Mikel Brown Jr.",
         "team": "BKN",
         "position": "PG",
-        "availability": "No verified injury flag",
+        "availability": "AVAILABLE",
         "featured_quote": quote,
         "model": model,
         "grade": grade_market(model["projection"], quote["line"], model["sigma"]),
@@ -112,16 +112,25 @@ def test_handoff_adds_same_kyre_score_page1_visually_displays() -> None:
     handed = state[SESSION_ANALYSIS_HANDOFF]
     assert handed["grade"]["score"] == 10.0
     assert handed["grade"]["tier"] == "ELITE"
-    assert handed["availability"] == "No verified injury flag"
+    assert handed["availability"] == "AVAILABLE"
 
 
 def test_page2_reuses_verified_handoff_availability_when_refresh_is_unverified() -> None:
     from nba_pra_page2_sync_v1 import apply_handoff_context
 
     context = {"availability": "UNVERIFIED"}
+    handoff = {"player_key": "mikelbrownjr", "availability": "AVAILABLE"}
+    out = apply_handoff_context(context, handoff, "mikelbrownjr")
+    assert out["availability"] == "AVAILABLE"
+
+
+def test_page2_does_not_promote_unverified_injury_fallback() -> None:
+    from nba_pra_page2_sync_v1 import apply_handoff_context
+
+    context = {"availability": "UNVERIFIED"}
     handoff = {"player_key": "mikelbrownjr", "availability": "No verified injury flag"}
     out = apply_handoff_context(context, handoff, "mikelbrownjr")
-    assert out["availability"] == "No verified injury flag"
+    assert out["availability"] == "UNVERIFIED"
 
 
 def test_loading_overlay_covers_actual_page2_fetch_instead_of_flashing_before_it() -> None:
