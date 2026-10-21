@@ -1,0 +1,78 @@
+{
+  "version": "API2_UNIVERSAL_PAGE_EXPERIENCE_V1",
+  "task_id": "api2-universal-page-experience-v1",
+  "workstream": "api2-universal-page-experience-v1",
+  "original_source_main_sha": "077d3f6a79cf168735bf1a2cf71c138549e7c176",
+  "proof_base_main_sha": "139a2e6496e51699c52a8c2b3065abfdaeddcd65",
+  "goal": "Give every current and future universal KYRE SPORTS AI route one shared floating TOP control and one atomic slow-transition loading shield without page-by-page patches.",
+  "write_paths": [
+    "docs/superpowers/specs/2026-10-21-api2-universal-page-experience-v1.md",
+    "docs/superpowers/plans/2026-10-21-api2-universal-page-experience-v1.md",
+    "universal_page_experience_v1.py",
+    "universal_page_experience_runtime_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py",
+    "tests/test_universal_page_experience_v1.py",
+    "tests/test_universal_page_experience_runtime_v1.py",
+    "tests/test_universal_page_experience_coverage_v1.py",
+    "tests/test_universal_atomic_navigation_v2_inheritance.py",
+    "devsystem/execution_plans/api2-universal-page-experience-v1.json",
+    "devsystem/runless_proof_plans/api2-universal-page-experience-v1.json",
+    "devsystem/task_ledgers/api2-universal-page-experience-v1.json"
+  ],
+  "constraints": {
+    "loader_delay_ms": 140,
+    "top_reveal_px": 320,
+    "top_min_touch_px": 44,
+    "loader_background": "#060b13",
+    "universal_shell_ownership": true,
+    "page_by_page_patches_forbidden": true,
+    "background_prefetch_forbidden": true,
+    "repeated_polling_forbidden": true,
+    "sports_provider_calls": false,
+    "model_projection_probability_mutation": false,
+    "kyre_sports_api_routing_mutation": false,
+    "sgo_forbidden": true,
+    "espn_forbidden": true,
+    "espn_bet_forbidden": true
+  },
+  "step2a": {
+    "authoritative_branch": "api2-universal-page-experience-v1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "scope_lease_id": "SCOPE-LEASE-98C1037AFAEEFD4D714D2456",
+    "scope_lease_generation": 670,
+    "main_drift_reconciled_once": true,
+    "reconciled_from_main_sha": "139a2e6496e51699c52a8c2b3065abfdaeddcd65"
+  },
+  "acceptance": [
+    "Every live registered sport/market route inherits the universal controller",
+    "Declared game/player deep routes inherit the same controller",
+    "Exactly one TOP control is reused across reruns",
+    "TOP appears after meaningful scroll and returns the active scroll owner to zero",
+    "Slow page transitions use an opaque KYRE SPORTS AI shield after 140 ms",
+    "Fast transitions do not visibly flash the loader",
+    "Analyze/Open/View/Back and popstate receive page-transition protection",
+    "Local sliders/inputs/selects do not retain the full-page loader",
+    "One V3 ancestor seam propagates the experience to V4/NBA and descendants",
+    "Runtime V5 can_commit/commit_if_current stale-write guards remain intact",
+    "No sports model/provider files are changed"
+  ],
+  "evidence": {
+    "task1_tdd": "valid RED for missing module; then 3 passed",
+    "task2_tdd": "2 intended RED failures with prior tests green; then 5 passed",
+    "task3_tdd": "missing runtime/seam RED; then 11 passed including Atomic Navigation V2 parent tests",
+    "task4_coverage": "12 passed across every live registry route plus declared deep routes",
+    "universal_regression": "49 passed on reconciled successor c3272eeff0cf351fc9f20490fb60f386a2d963ca with --noconftest",
+    "compile": "exit 0 on reconciled successor c3272eeff0cf351fc9f20490fb60f386a2d963ca",
+    "sports_regression": "103 positive NBA/NFL/CFB/WNBA/MLB regression passes before reconciliation; product blobs were forward-ported byte-for-byte over disjoint WNBA main drift",
+    "known_baseline_stale_assertions": [
+      "test_api2_nfl_universal_future_navigation_v1.py::test_runtime_v5_uses_loader_v12",
+      "test_wnba_pra_navigation_v2_step7.py::test_step7_marker_and_router_activation",
+      "test_api2_cfb_universal_next_slate_navigation_v1.py::test_runtime_handoff_points_to_v13_only"
+    ],
+    "known_baseline_collector": "tests/conftest.py contains an obsolete V157 app-entrypoint assertion for legacy test_cfb_* collection; it fails on source main and is out of scope"
+  },
+  "freeze_token": "API2_UNIVERSAL_PAGE_EXPERIENCE_V1_FROZEN"
+}
