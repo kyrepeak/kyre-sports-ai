@@ -14,7 +14,6 @@ import re
 from typing import Any
 
 from sports_api.collectors.wnba_fanduel_direct import collect_fanduel_wnba_feed
-from sports_api.wnba_step19a_draftkings_sportscontent import build_step19a_draftkings_snapshot
 
 MODEL_VERSION = "WNBA PRA MARKET GATEWAY V1 • KYRE API ONLY"
 SCHEMA_VERSION = "wnba_pra_market_gateway_v1"
@@ -78,8 +77,6 @@ def _enrich_identity(raw_offers: list[dict[str, Any]], payload: Mapping[str, Any
         if not _text(row.get("away_team")) or not _text(row.get("home_team")):
             pair = event_teams.get(_text(row.get("source_event_id")))
             if pair:
-                row.setdefault("away_team", pair[0])
-                row.setdefault("home_team", pair[1])
                 if not _text(row.get("away_team")):
                     row["away_team"] = pair[0]
                 if not _text(row.get("home_team")):
@@ -132,6 +129,11 @@ def _provider_health(provider_id: str, state: str, count: int, *, error: str | N
 
 
 def _default_draftkings(*, date: str, season: int) -> dict[str, Any]:
+    # DraftKings is a true secondary dependency: do not import its transport or
+    # its optional network stack unless FanDuel is empty/degraded and fallback
+    # is actually required for this request.
+    from sports_api.wnba_step19a_draftkings_sportscontent import build_step19a_draftkings_snapshot
+
     env = dict(os.environ)
     env["WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED"] = "true"
     env.setdefault("WNBA_STEP19A_DRAFTKINGS_SITE", "dkusaz")
