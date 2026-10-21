@@ -36,6 +36,21 @@ def test_vercel_market_contract_preserves_quote_identity_and_never_echoes_key(mo
     assert 'secret-test-key' not in repr(payload)
 
 
+def test_focused_sgo_request_uses_plural_oddids_filter(monkeypatch):
+    api=importlib.import_module('runless_v2.nba_pra_market_v1')
+    calls=[]
+    def fake_request(params, api_key):
+        calls.append(dict(params))
+        return [_event()]
+    monkeypatch.setattr(api,'_request_events',fake_request)
+    events, diagnostic=api._fetch_sgo_events(date(2026,10,20),'secret-test-key')
+    assert events
+    assert diagnostic=='FOCUSED_OK'
+    assert 'oddIDs' in calls[0]
+    assert calls[0]['oddIDs']==api._odd_filter()
+    assert 'oddID' not in calls[0]
+
+
 def test_runless_app_keeps_authority_routes_and_mounts_nba_market_route():
     source=open('runless_v2/app.py',encoding='utf-8').read()
     for route in ('/health','/prove','/closeout'):
