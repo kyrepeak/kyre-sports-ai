@@ -38,7 +38,7 @@ jobs:
           git apply /tmp/history.patch
           test "$(git hash-object nba_pra_page1_ui_v2.py)" = 'c3d0c56d6dfb876a0938b48f37e6406d10c2d1fb'
           test "$(git hash-object runless_v2/nba_pra_player_context_v1.py)" = '3b75eca7752a5203e8f0bb325911342c4409bffb'
-          test "$(git hash-object tests/test_api2_nba_pra_history_coverage_v1.py)" = 'b95d9e996d5b50991e986e5aee783b1786c5226f'
+          test "$(git hash-object tests/test_api2_nba_pra_history_coverage_v1.py)" = '049a57f3b4bc1b8756fb1bfbbcb8d451c6f2352f'
           rm -rf .history_handoff
           rm -f .github/workflows/api2-nba-pra-history-handoff.yml
           if grep -RniE 'sportsgameodds|\bsgo\b|espn bet|espn' runless_v2/nba_pra_player_context_v1.py nba_pra_page1_ui_v2.py nba_pra_page1_api_only_v1.py nba_pra_market_api_v1.py nba_pra_schedule_api_v1.py | grep -vE 'forbidden|not.*espn|no.*espn'; then
