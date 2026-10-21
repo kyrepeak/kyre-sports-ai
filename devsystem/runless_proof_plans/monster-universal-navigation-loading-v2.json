@@ -1,0 +1,31 @@
+{
+  "mode": "runless",
+  "task_id": "monster-universal-navigation-loading-v2",
+  "workstream": "monster-universal-navigation-loading-v2",
+  "source_main_sha": "d81c5bd4080d4498a1cd8e2aa5380ce12f2d6c2a",
+  "scope_lease_id": "SCOPE-LEASE-DC7F6B7DAA12AB3B270ED426",
+  "freeze_token": "MONSTER_UNIVERSAL_NAVIGATION_LOADING_V2_FROZEN",
+  "parent_freeze_token": "MONSTER_UNIVERSAL_ATOMIC_NAVIGATION_V1_FROZEN",
+  "required_check": "runless-final-gate",
+  "required_app_id": 5204253,
+  "public_runtime_required": false,
+  "timeout_seconds": 300,
+  "sportsbook_projection_influence": 0.0,
+  "commands": [
+    ["python", "-m", "py_compile", "universal_atomic_navigation_v2.py", "universal_atomic_navigation_runtime_v2.py", "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_atomic_navigation_v2.py", "tests/test_universal_atomic_navigation_v2_inheritance.py", "tests/test_universal_atomic_navigation_v1.py", "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py", "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py"],
+    ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
+  ],
+  "artifacts": [
+    "universal_atomic_navigation_v2.py",
+    "universal_atomic_navigation_runtime_v2.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py",
+    "tests/test_universal_atomic_navigation_v2.py",
+    "tests/test_universal_atomic_navigation_v2_inheritance.py",
+    "docs/superpowers/specs/2026-10-20-universal-navigation-loading-v2.md",
+    "docs/superpowers/plans/2026-10-20-universal-navigation-loading-v2.md",
+    "devsystem/task_ledgers/monster-universal-navigation-loading-v2.json",
+    "devsystem/runless_proof_plans/monster-universal-navigation-loading-v2.json"
+  ],
+  "reuse": {"allow_existing_authoritative_path": true}
+}
