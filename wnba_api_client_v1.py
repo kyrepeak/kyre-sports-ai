@@ -16,6 +16,8 @@ import requests
 from requests.adapters import HTTPAdapter
 
 BASE_URL = "https://kyre-sports-api.onrender.com"
+PRA_VERCEL_BASE_URL = "https://kyre-runless-proof.vercel.app"
+ALLOWED_API_HOSTS = {"kyre-sports-api.onrender.com", "kyre-runless-proof.vercel.app"}
 EXPECTED_API_NAME = "Kyre Sports API"
 SUPPORTED_SEASON = 2026
 DEFAULT_TIMEOUT_SECONDS = 30.0
@@ -44,8 +46,8 @@ class KyreWNBAAPIError(RuntimeError):
 def _clean_base_url(value: str) -> str:
     text = str(value or "").strip().rstrip("/")
     parsed = urlsplit(text)
-    if parsed.scheme != "https" or parsed.netloc != "kyre-sports-api.onrender.com":
-        raise KyreWNBAAPIError("WNBA API base URL is not the certified Render origin.")
+    if parsed.scheme != "https" or parsed.netloc not in ALLOWED_API_HOSTS:
+        raise KyreWNBAAPIError("WNBA API base URL is not a certified Kyre Sports API origin.")
     if parsed.path not in {"", "/"} or parsed.query or parsed.fragment or parsed.username or parsed.password:
         raise KyreWNBAAPIError("WNBA API base URL contains an unsafe component.")
     return text

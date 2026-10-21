@@ -20,6 +20,7 @@ from wnba_api_client_v1 import KyreWNBAAPIClient, KyreWNBAAPIError, SUPPORTED_SE
 
 MODEL_VERSION = "WNBA PRA API MARKET BRIDGE V3 • API-ONLY PROVIDER ROUTING"
 API_SOURCE = "Kyre Sports API"
+PRA_API_BASE_URL = "https://kyre-runless-proof.vercel.app"
 MARKET_BOARD_PATH = "/api/v1/wnba/pra/market-board"
 CACHE_TTL_SECONDS = 30.0
 _CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
@@ -48,7 +49,7 @@ def _payload_to_snapshot(day_str: str, payload: Mapping[str, Any]) -> dict[str, 
 
 
 def _read_api_snapshot(day_str: str, *, api_client: Any | None = None) -> dict[str, Any]:
-    api = api_client or KyreWNBAAPIClient()
+    api = api_client or KyreWNBAAPIClient(base_url=PRA_API_BASE_URL)
     schedule = api.games_for_date(day_str, SUPPORTED_SEASON)
     board = api.get_json(MARKET_BOARD_PATH, params={"date": day_str, "season": SUPPORTED_SEASON})
     normalized = legacy._build_snapshot(day_str, schedule, _payload_to_snapshot(day_str, board))

@@ -8,6 +8,8 @@ import wnba_schedule_v25 as schedule
 from wnba_api_client_v1 import KyreWNBAAPIClient, SUPPORTED_SEASON
 from wnba_pra_source_fusion_v1 import SourceObservation, fuse_observations
 
+PRA_API_BASE_URL = "https://kyre-runless-proof.vercel.app"
+
 @dataclass(frozen=True)
 class PlayoffContext:
     selected_date: str
@@ -90,7 +92,7 @@ def _day_snapshot(day: str, api: KyreWNBAAPIClient):
     if api_ok:
         observations.append(SourceObservation("Kyre Sports API • WNBA official schedule", "schedule", day, _signature(api_frame), None, "CURRENT", 0, True))
     if bool(diag) or not corroborating.empty:
-        source = str(diag.get("chosen_source") or "WNBA/ESPN schedule reconciliation")
+        source = str(diag.get("chosen_source") or "WNBA schedule reconciliation")
         observations.append(SourceObservation(source, "schedule", day, _signature(corroborating), None, "CURRENT", 10, False))
     evidence = fuse_observations(observations)
     games = api_frame if api_ok else corroborating
@@ -112,7 +114,7 @@ def _next_game_mapping(games: pd.DataFrame, raw_games: tuple[Mapping[str, Any], 
 
 def resolve_playoff_context(selected_date: str, *, api_client: KyreWNBAAPIClient | None = None, lookahead_days: int = 14) -> PlayoffContext:
     selected = pd.to_datetime(selected_date).strftime("%Y-%m-%d")
-    api = api_client or KyreWNBAAPIClient()
+    api = api_client or KyreWNBAAPIClient(base_url=PRA_API_BASE_URL)
     games, raw_games, evidence = _day_snapshot(selected, api)
     if not games.empty:
         competition, series = _competition(raw_games[0] if raw_games else None)

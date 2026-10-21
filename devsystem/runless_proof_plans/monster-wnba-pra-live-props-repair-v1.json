@@ -1,0 +1,45 @@
+{
+  "task_id": "monster-wnba-pra-live-props-repair-v1",
+  "workstream": "monster-wnba-pra-live-props-repair-v1",
+  "source_main_sha": "4923fdfd254527aef02f54469c165d5a4291b340",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_wnba_pra_vercel_gateway_v1.py",
+      "tests/test_monster_wnba_pra_api_only_v1.py",
+      "tests/test_wnba_step7f_streamlit_api.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "runless_v2/_wnba_fanduel_direct_v1.py",
+      "runless_v2/wnba_pra_market_v1.py",
+      "runless_v2/wnba_schedule_v1.py",
+      "wnba_api_client_v1.py",
+      "wnba_pra_api_market_bridge_v2.py",
+      "wnba_pra_playoff_context_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/monster-wnba-pra-live-props-repair-v1.json",
+    "runless_v2/_wnba_fanduel_direct_v1.py",
+    "runless_v2/app.py",
+    "runless_v2/requirements.txt",
+    "runless_v2/wnba_pra_market_v1.py",
+    "runless_v2/wnba_schedule_v1.py",
+    "tests/test_monster_wnba_pra_vercel_gateway_v1.py",
+    "wnba_api_client_v1.py",
+    "wnba_pra_api_market_bridge_v2.py",
+    "wnba_pra_playoff_context_v1.py"
+  ],
+  "dependencies": [
+    "wnba_pra_api_market_bridge_legacy_v1.py",
+    "wnba_pra_hub_v3612.py",
+    "wnba_pra_hub_v3617.py",
+    "wnba_pra_product_view_v3.py",
+    "wnba_pra_source_fusion_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "freeze_token": "MONSTER_WNBA_PRA_LIVE_PROPS_REPAIR_V1_FROZEN"
+}
