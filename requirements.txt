@@ -45,3 +45,4 @@ posthog~=7.48
 # CFB Game Total Page 2 R2 public full Streamlit redeploy trigger 2026-10-17 R1
 # CFB Game Total Page 2 R3 final visual cleanup full Streamlit redeploy trigger 2026-10-17 R1
 # API 2 Universal Shell Route Top V1 deploy refresh R1 full Streamlit rebuild trigger 2026-10-17
+# API2 NBA PRA Page 1 stale-runtime full Streamlit redeploy trigger 2026-10-20 R1
