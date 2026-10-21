@@ -186,3 +186,126 @@ def test_vercel_market_route_accepts_missing_sgo_key_and_skips_sgo(monkeypatch):
     assert payload['diagnostic_state'] == 'OK'
     assert payload['projection_weight'] == 0.0
     assert payload['consensus_averaging'] is False
+
+
+def _conflicted_schedule():
+    return {
+        'verification': 'UNAVAILABLE',
+        'diagnostic_state': 'PROVIDER_CONFLICT',
+        'games': [],
+        'source_agreement': 0,
+        'conflict_game_keys': ['OKC@SAS:2026-10-20'],
+        'provider_game_keys': {
+            'NBA Official': ['OKC@SAS:2026-10-20', 'GSW@LAL:2026-10-21'],
+            'ESPN NBA': ['OKC@SAS:2026-10-20', 'GSW@LAL:2026-10-21'],
+            'CBS Sports': [],
+        },
+    }
+
+
+def _fanduel_schedule_payload():
+    return {
+        'attachments': {
+            'competitions': {'nba': {'competitionId': 10547864, 'name': 'NBA'}},
+            'events': {
+                'past-conflict': {
+                    'eventId': 35928229,
+                    'competitionId': 10547864,
+                    'name': 'Oklahoma City Thunder @ San Antonio Spurs',
+                    'openDate': '2026-10-21T01:40:00Z',
+                },
+                'future-confirmed': {
+                    'eventId': 35930000,
+                    'competitionId': 10547864,
+                    'name': 'Golden State Warriors @ Los Angeles Lakers',
+                    'openDate': '2026-10-22T02:00:00Z',
+                },
+            },
+        }
+    }
+
+
+class _JsonResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self._payload
+
+
+def test_isolated_schedule_conflict_keeps_other_two_source_confirmed_future_games():
+    import nba_pra_page1_data_v2 as data
+
+    seen = {}
+    def fake_get(url, **kwargs):
+        seen['url'] = url
+        seen['params'] = dict(kwargs.get('params') or {})
+        return _JsonResponse(_fanduel_schedule_payload())
+
+    now = datetime(2026, 10, 21, 2, 10, tzinfo=timezone.utc)
+    recovered = data._recover_quorum_schedule(
+        _conflicted_schedule(), now, request_get=fake_get
+    )
+
+    assert recovered['verification'] == 'VERIFIED'
+    assert recovered['diagnostic_state'] == 'QUORUM_RECOVERED_AFTER_ISOLATED_CONFLICT'
+    assert recovered['conflict_game_keys'] == ['OKC@SAS:2026-10-20']
+    assert [g['game_key'] for g in recovered['games']] == ['GSW@LAL:2026-10-21']
+    assert recovered['games'][0]['confirming_sources'][:2] == ['NBA Official', 'ESPN NBA']
+    assert recovered['games'][0]['gameStatus'] == 1
+    assert recovered['games'][0]['tip_utc'] == '2026-10-22T02:00:00Z'
+    assert seen['params']['customPageId'] == 'nba'
+
+
+def test_page1_advances_to_recovered_next_slate_after_isolated_schedule_conflict():
+    import nba_pra_page1_data_v2 as data
+
+    now = datetime(2026, 10, 21, 2, 10, tzinfo=timezone.utc)
+    called = {}
+
+    def fake_get(url, **kwargs):
+        return _JsonResponse(_fanduel_schedule_payload())
+
+    def api(day):
+        called['day'] = day
+        base = {
+            'provider': 'FanDuel',
+            'provider_event_id': '35930000',
+            'provider_player_id': 'Stephen Curry',
+            'player_name': 'Stephen Curry',
+            'sportsbook': 'FanDuel',
+            'line': 43.5,
+            'observed_at_utc': '2026-10-21T02:05:00Z',
+            'away_team': 'Golden State Warriors',
+            'home_team': 'Los Angeles Lakers',
+        }
+        return {
+            'source': 'Kyre Sports API — Vercel',
+            'verification': 'VERIFIED',
+            'observations': [
+                {**base, 'side': 'over', 'price': -110},
+                {**base, 'side': 'under', 'price': -110},
+            ],
+        }
+
+    snap = data.load_page1_snapshot_v2(
+        now=now,
+        schedule_loader=lambda **kwargs: _conflicted_schedule(),
+        schedule_recovery_get=fake_get,
+        api_loader=api,
+        sgo_loader=lambda day: (_ for _ in ()).throw(AssertionError('direct SGO should be skipped')),
+        odds_loader=lambda day: (_ for _ in ()).throw(AssertionError('secondary should be skipped')),
+        official_profile_loader=lambda day: {
+            'stephencurry': {'player_name': 'Stephen Curry', 'team': 'GSW', 'current_games': [], 'prior_games': []}
+        },
+        backup_profile_loader=lambda names, day: {},
+        injury_loader=lambda *args, **kwargs: {'verification': 'VERIFIED', 'features': []},
+    )
+
+    assert snap['slate_date'] == '2026-10-21'
+    assert [g['game_key'] for g in snap['games']] == ['GSW@LAL:2026-10-21']
+    assert called['day'] == date(2026, 10, 21)
+    assert set(snap['market']) == {'stephencurry'}
