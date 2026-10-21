@@ -1,9 +1,9 @@
 """Vercel transport for NBA pregame PRA sportsbook observations.
 
-The endpoint is market-context only. It accepts a request-scoped provider
-credential from the server-side Streamlit client, never persists or returns the
-credential, and preserves sportsbook/provider/line/price/timestamp identity.
-Sportsbook data has exactly 0.0 projection influence.
+The endpoint is market-context only. It accepts an optional request-scoped
+provider credential from the server-side Streamlit client, never persists or
+returns the credential, and preserves sportsbook/provider/line/price/timestamp
+identity. Sportsbook data has exactly 0.0 projection influence.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ BOOK_LABELS = {
 
 class NbaPraMarketRequest(BaseModel):
     date: date
-    sportsgameodds_api_key: SecretStr = Field(min_length=1, max_length=1024)
+    sportsgameodds_api_key: SecretStr | None = Field(default=None, min_length=1, max_length=1024)
 
 
 def _text(value: Any) -> str:
@@ -211,8 +211,12 @@ def _fetch_sgo_events(slate_date: date, api_key: str) -> tuple[list[dict[str, An
         return [], f"SGO_ERROR:{focused_error or 'EMPTY'}:{suffix}"
 
 
-def collect_nba_pra_market(slate_date: date, api_key: str) -> dict[str, Any]:
-    events, diagnostic = _fetch_sgo_events(slate_date, api_key)
+def collect_nba_pra_market(slate_date: date, api_key: str | None = None) -> dict[str, Any]:
+    key = _text(api_key)
+    if key:
+        events, diagnostic = _fetch_sgo_events(slate_date, key)
+    else:
+        events, diagnostic = [], "NO_AVAILABLE_PRA_PROVIDER"
     rows = [row for event in events for row in _parse_event(event)]
     player_count = len({_norm(row.get("player_name")) for row in rows if row.get("player_name")})
     return {
@@ -247,7 +251,5 @@ def status() -> dict[str, Any]:
 
 @router.post("")
 def market(request: NbaPraMarketRequest) -> dict[str, Any]:
-    return collect_nba_pra_market(
-        request.date,
-        request.sportsgameodds_api_key.get_secret_value(),
-    )
+    key = request.sportsgameodds_api_key.get_secret_value() if request.sportsgameodds_api_key else None
+    return collect_nba_pra_market(request.date, key)
