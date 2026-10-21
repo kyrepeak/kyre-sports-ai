@@ -99,6 +99,22 @@ def _open_player(st, item: Mapping[str, Any]) -> None:
     st.rerun()
 
 
+def render_market_player_cards(st, items: list[Mapping[str, Any]], *, now_utc: datetime | None = None) -> None:
+    '''Render every player card with its own immediate Page 2 Analyze action.'''
+    for item in items:
+        st.markdown(
+            build_market_row_html(item, now_utc=now_utc),
+            unsafe_allow_html=True,
+        )
+        player_name = str(item.get("player_name") or "Player").upper()
+        if st.button(
+            f"ANALYZE {player_name} →",
+            key=f"np3-all-{item['key']}",
+            use_container_width=False,
+        ):
+            _open_player(st, item)
+
+
 def render_nba_pra_page1_v2() -> None:
     import streamlit as st
 
@@ -182,16 +198,4 @@ def render_nba_pra_page1_v2() -> None:
         unsafe_allow_html=True,
     )
     market_rows = items if selected == "BEST EDGES" else ranked
-    st.markdown(
-        '<div class="np3-market-list">'
-        + "".join(build_market_row_html(item, now_utc=now) for item in market_rows)
-        + "</div>",
-        unsafe_allow_html=True,
-    )
-    for item in market_rows:
-        if st.button(
-            f"Analyze {item['player_name']} →",
-            key=f"np3-all-{item['key']}",
-            use_container_width=False,
-        ):
-            _open_player(st, item)
+    render_market_player_cards(st, market_rows, now_utc=now)
