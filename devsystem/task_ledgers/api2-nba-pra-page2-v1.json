@@ -8,7 +8,7 @@
     "active_problem": "NBA PRA selected-player Page 2 intelligence and exact Page 1/Page 2 handoff",
     "authoritative_branch": "api2-nba-pra-page2-v1",
     "authoritative_pr": 1716,
-    "scope_lease_id": "SCOPE-LEASE-9543D7D206BC48D40E042A7E",
+    "scope_lease_id": "SCOPE-LEASE-56B0B9D9271B8C7E0180DDCD",
     "authorization_id": "AUTH-API2-NBA-PRA-PAGE2-V1-R1",
     "single_branch": true,
     "single_pr": true,
@@ -45,6 +45,16 @@
     "line_lab": "0.5-step thresholds; exact tapped line is default; sportsbook projection influence 0.0%",
     "baseline_debt": "three unrelated legacy navigation assertions reproduced on frozen baseline and are outside Page 2 scope"
   },
+  "control_plane_failures": [
+    {
+      "candidate_sha": "f9e2c4f581ec0060a8a2dd641081c523e890f75d",
+      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
+      "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
+      "proof_created": false,
+      "product_patch": false,
+      "resolution": "Acquired one canonical disjoint live Page-2 proof lease and continued the same PR/authority chain"
+    }
+  ],
   "frozen_registry_preflight": {
     "modified_frozen_paths": [],
     "thaw_required": false,

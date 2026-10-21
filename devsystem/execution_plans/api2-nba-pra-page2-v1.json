@@ -43,7 +43,7 @@
     "requirements.txt",
     "runless_v2/requirements.txt"
   ],
-  "scope_lease_id": "SCOPE-LEASE-9543D7D206BC48D40E042A7E",
+  "scope_lease_id": "SCOPE-LEASE-56B0B9D9271B8C7E0180DDCD",
   "authorization_id": "AUTH-API2-NBA-PRA-PAGE2-V1-R1",
   "freeze_token": "API2_NBA_PRA_PAGE2_V1_FROZEN",
   "routing_contract": {
