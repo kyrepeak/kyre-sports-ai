@@ -8,6 +8,9 @@ frozen and Universal Runtime V5 is unchanged.
 from __future__ import annotations
 
 import wnba_pra_hub_v3617 as active
+import wnba_pra_page1_final_polish_v1 as _page1_final_polish
+
+active.render_page_snapshot = _page1_final_polish.render_page_snapshot
 
 MODEL_VERSION = active.MODEL_VERSION
 MLB_FROZEN_BASELINE = active.MLB_FROZEN_BASELINE
