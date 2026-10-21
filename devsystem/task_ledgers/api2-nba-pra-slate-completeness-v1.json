@@ -1,0 +1,56 @@
+{
+  "task_id": "api2-nba-pra-slate-completeness-v1",
+  "workstream": "api2-nba-pra-slate-completeness-v1",
+  "source_main_sha": "2b70a2b9b07d65602b38f7c1435f11ed0dba2dd3",
+  "status": "PR_BOUND_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 99,
+  "step2a": {
+    "active_problem": "NBA PRA slate completeness and identity/time/logo/data integrity",
+    "authoritative_branch": "api2-nba-pra-slate-completeness-v1",
+    "authoritative_pr": 1713,
+    "scope_lease_id": "SCOPE-LEASE-E25481ACFE2472D4A6DCDCF5",
+    "authorization_id": "AUTH-API2-NBA-PRA-SLATE-COMPLETENESS-V1-R1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "proof_request_submitted": false,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": [
+      "SportsGameOdds",
+      "SGO",
+      "ESPN",
+      "ESPN BET"
+    ],
+    "schedule_primary": "NBA Official",
+    "schedule_backup": "CBS Sports",
+    "player_context_primary": "NBA Stats",
+    "player_context_secondary": "Basketball-Reference",
+    "player_identity_backup": "CBS Sports roster verification only after upstream identity degradation",
+    "market_primary": "FanDuel",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "fabrication": false
+  },
+  "evidence": {
+    "tdd": "RED observed then GREEN for time/logo/bulk identity/name normalization/cache regressions",
+    "local_nba_pra_suite": "103 passed",
+    "compile": "PASS",
+    "active_path_ban_scan": "PASS",
+    "transport_handoff": "SUCCESS; production/pre-existing regression blobs matched tested local hashes before publish",
+    "live_market": "121 players / 242 observations; 121/121 featured lines",
+    "live_identity": "121/121 team, position, headshot, and Kyre player ID",
+    "live_schedule": "11/11 games with Phoenix tip labels and 11/11 matchup logos during verification",
+    "history_policy": "fail closed on probability/confidence when real game-level variance is unavailable; never fabricate",
+    "root_pytest_baseline_blocker": "tests/conftest.py:203 requires obsolete V157 import on protected-main Universal Runtime V5; unrelated and untouched"
+  },
+  "frozen_registry_preflight": {
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a",
+    "modified_paths_currently_frozen": [],
+    "thaw_required": false
+  },
+  "freeze_token": "API2_NBA_PRA_SLATE_COMPLETENESS_V1_FROZEN"
+}

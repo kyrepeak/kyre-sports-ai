@@ -71,7 +71,8 @@ def test_compact_rows_keep_identity_and_decision_metrics_visible():
     for html in (leader, market):
         assert "Devin Booker" in html
         assert "1626164.png" in html
-        assert "teamlogos/nba/500/phx.png" in html
+        assert "cdn.nba.com/logos/nba/1610612756/global/L/logo.svg" in html
+        assert "espn" not in html.casefold()
         assert "38.5" in html
         assert "42.1" in html
         assert "+3.6" in html

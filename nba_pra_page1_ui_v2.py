@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from html import escape
 from typing import Any, Mapping, Sequence
 
-TEAM_LOGO_BASE = "https://a.espncdn.com/i/teamlogos/nba/500/{code}.png"
+from nba_pra_team_identity_v1 import resolve_nba_team_logo
+
+PHOENIX_TZ = ZoneInfo("America/Phoenix")
 FILTER_OPTIONS = ("BEST EDGES", "ALL PLAYERS", "OVER", "UNDER", "HIGH CONFIDENCE")
 SESSION_PLAYER = "ks_nba_pra_selected_player"
 
@@ -48,6 +51,18 @@ def _parse_utc(value: Any) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
+def _phoenix_tip_label(game: Mapping[str, Any]) -> str:
+    direct = _text(game.get("tip_phoenix") or game.get("game_time_phoenix") or game.get("tip_local"))
+    if direct:
+        return direct
+    raw = game.get("tip_iso_phoenix") or game.get("tip_utc") or game.get("start_time_utc")
+    parsed = _parse_utc(raw)
+    if parsed is None:
+        return "Time pending"
+    local = parsed.astimezone(PHOENIX_TZ)
+    return f"{local.strftime('%I:%M %p').lstrip('0')} MST"
 
 
 def freshness_label(observed_at_utc: Any, now_utc: datetime) -> tuple[str, str]:
@@ -121,8 +136,8 @@ def _identity_html(item: Mapping[str, Any], *, compact: bool = False) -> str:
         else f'<div class="{avatar_class} np3-avatar-fallback">NBA</div>'
     )
     logo = ""
-    if len(team) == 3 and team.isalpha():
-        logo_url = TEAM_LOGO_BASE.format(code=team.lower())
+    logo_url = resolve_nba_team_logo(team)
+    if logo_url:
         logo = f'<img class="np3-team-badge" src="{escape(logo_url)}" alt="{escape(team)} logo">'
     meta = " • ".join(v for v in (team, position, stats_source) if v)
     return (
@@ -134,17 +149,19 @@ def _identity_html(item: Mapping[str, Any], *, compact: bool = False) -> str:
 def build_game_card_html(game: Mapping[str, Any]) -> str:
     away = _text(game.get("away_tricode")) or "—"
     home = _text(game.get("home_tricode")) or "—"
-    tip = _text(game.get("tip_phoenix") or game.get("game_time_phoenix") or game.get("tip_local")) or "Time pending"
+    tip = _phoenix_tip_label(game)
     venue = _text(game.get("venue") or game.get("arena"))
-    away_logo = TEAM_LOGO_BASE.format(code=away.lower())
-    home_logo = TEAM_LOGO_BASE.format(code=home.lower())
+    away_logo = resolve_nba_team_logo(away)
+    home_logo = resolve_nba_team_logo(home)
+    away_image = f'<img src="{escape(away_logo)}" alt="{escape(away)}">' if away_logo else ""
+    home_image = f'<img src="{escape(home_logo)}" alt="{escape(home)}">' if home_logo else ""
     meta = escape(tip) + (f" • {escape(venue)}" if venue else "")
     return (
         '<div class="np3-game-card np2-game-card"><div class="np3-game-state">UPCOMING</div>'
         '<div class="np3-matchup">'
-        f'<div class="np3-team"><img src="{escape(away_logo)}" alt="{escape(away)}"><b>{escape(away)}</b></div>'
+        f'<div class="np3-team">{away_image}<b>{escape(away)}</b></div>'
         '<span class="np3-at">@</span>'
-        f'<div class="np3-team"><img src="{escape(home_logo)}" alt="{escape(home)}"><b>{escape(home)}</b></div>'
+        f'<div class="np3-team">{home_image}<b>{escape(home)}</b></div>'
         f'</div><div class="np3-game-meta">{meta}</div></div>'
     )
 

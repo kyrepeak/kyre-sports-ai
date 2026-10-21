@@ -239,7 +239,16 @@ def load_page1_snapshot_v2(
         return result
 
     names = _market_names(market_payload)
-    context = dict(context_impl(slate_date, names) or {})
+    team_codes = sorted({
+        _text(code).upper()
+        for game in games
+        for code in (game.get("away_tricode"), game.get("home_tricode"))
+        if _text(code)
+    })
+    if player_context_loader is None:
+        context = dict(context_impl(slate_date, names, team_codes=team_codes) or {})
+    else:
+        context = dict(context_impl(slate_date, names) or {})
     profiles = {str(k): dict(v) for k, v in (context.get("profiles") or {}).items() if isinstance(v, Mapping)}
     try:
         injuries = dict(injury_impl(games, now_utc=now_utc) or {})
