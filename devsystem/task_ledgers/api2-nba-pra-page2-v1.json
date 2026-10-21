@@ -1,0 +1,55 @@
+{
+  "task_id": "api2-nba-pra-page2-v1",
+  "workstream": "api2-nba-pra-page2-v1",
+  "source_main_sha": "b7a6641ef5b7fcd84fa9ceb191b8f4e92ef3ee43",
+  "status": "PR_BOUND_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 99,
+  "step2a": {
+    "active_problem": "NBA PRA selected-player Page 2 intelligence and exact Page 1/Page 2 handoff",
+    "authoritative_branch": "api2-nba-pra-page2-v1",
+    "authoritative_pr": 1716,
+    "scope_lease_id": "SCOPE-LEASE-9543D7D206BC48D40E042A7E",
+    "authorization_id": "AUTH-API2-NBA-PRA-PAGE2-V1-R1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "proof_request_submitted": false,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "market_primary": "FanDuel",
+    "history_primary": "NBA Stats",
+    "history_secondary": "Basketball-Reference",
+    "history_backup": "CBS Sports game log after upstream degradation/rate limit",
+    "opponent_context": "CBS Sports opponent team tables through Kyre Sports API",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "sportsbook_projection_influence": 0.0,
+    "probability_policy": "fail closed without verified variance",
+    "fabrication": false
+  },
+  "evidence": {
+    "tdd": "RED then GREEN for exclusive runtime routing, selected-player context, exact quote movement, Line Lab monotonicity/fail-closed variance, opponent ranks, S-tier UI, selected-only enrichment, and immediate Page 1 to Page 2 rerun",
+    "tested_tree_sha": "99d62a2e28e42b87b10ef9c9d84407ec400905c0",
+    "implementation_head_before_authority": "474b4316d705639d430283521ed3b605116c9056",
+    "nba_pra_suite": "133 passed",
+    "runless_and_gateway_regression": "PASS",
+    "compile": "PASS",
+    "diff_check": "PASS",
+    "active_path_ban_scan": "PASS",
+    "selected_only_live_context": "requested_players=1 / verified_players=1",
+    "opponent_rank_coverage": "30/30 NBA teams for PTS, REB, AST tables",
+    "no_fake_probability": "probability and score remain unavailable when verified variance is unavailable",
+    "line_lab": "0.5-step thresholds; exact tapped line is default; sportsbook projection influence 0.0%",
+    "baseline_debt": "three unrelated legacy navigation assertions reproduced on frozen baseline and are outside Page 2 scope"
+  },
+  "frozen_registry_preflight": {
+    "modified_frozen_paths": [],
+    "thaw_required": false,
+    "legacy_registry_revision": 470,
+    "legacy_registry_state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "freeze_token": "API2_NBA_PRA_PAGE2_V1_FROZEN"
+}
