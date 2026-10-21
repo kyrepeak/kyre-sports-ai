@@ -38,6 +38,12 @@ def test_existing_streamlit_session_sportsbook_keys_are_reused(monkeypatch):
     assert common._connected_secret("ODDS_API_IO_KEY")=="odds-session-key"
     assert common._connected_secret("ODDS_API_KEY")=="odds-session-key"
 
+def test_legacy_sportsgameodds_secret_alias_is_reused(monkeypatch):
+    import nba_pra_page1_data_v2 as common
+    monkeypatch.setitem(sys.modules,"streamlit",types.SimpleNamespace(session_state={},secrets={"SPORTSGAMEODDS_KEY":"legacy-production-key"}))
+    for key in ("SPORTSGAMEODDS_API_KEY","SPORTSGAMEODDS_KEY","SGO_API_KEY"): monkeypatch.delenv(key,raising=False)
+    assert common._connected_secret("SPORTSGAMEODDS_API_KEY")=="legacy-production-key"
+
 def test_sgo_uses_full_phoenix_slate_day_so_both_night_games_are_covered():
     from nba_pra_page1_data_v2 import _load_sgo_primary
     captured={}
