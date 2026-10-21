@@ -177,10 +177,12 @@ def test_vercel_market_route_accepts_missing_sgo_key_and_skips_sgo(monkeypatch):
         raise AssertionError('SGO must not be called when its optional credential is absent')
 
     monkeypatch.setattr(api, '_fetch_sgo_events', forbidden)
+    monkeypatch.setattr(api, '_fetch_fanduel_pra_observations', lambda day: (_rows('FanDuel'), 'FANDUEL_OK'))
     request = api.NbaPraMarketRequest(date=date(2026, 10, 20))
     payload = api.market(request)
     assert payload['service'] == 'Kyre Sports API — Vercel'
-    assert payload['observations'] == []
-    assert payload['diagnostic_state'] == 'NO_AVAILABLE_PRA_PROVIDER'
+    assert len(payload['observations']) == 2
+    assert {row['provider'] for row in payload['observations']} == {'FanDuel'}
+    assert payload['diagnostic_state'] == 'OK'
     assert payload['projection_weight'] == 0.0
     assert payload['consensus_averaging'] is False
