@@ -30,6 +30,7 @@
     "nba_pra_runtime_v2.py",
     "nba_pra_page2_sync_v1.py",
     "tests/test_api2_nba_pra_page1_page2_sync_v1.py",
+    "tests/test_api2_nba_pra_page2_runtime_v1.py",
     "devsystem/execution_plans/api2-nba-pra-page1-page2-sync-v1.json",
     "devsystem/runless_proof_plans/api2-nba-pra-page1-page2-sync-v1.json",
     "devsystem/task_ledgers/api2-nba-pra-page1-page2-sync-v1.json"
