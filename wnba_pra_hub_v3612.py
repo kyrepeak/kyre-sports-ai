@@ -1,13 +1,13 @@
 """Compatibility route for the frozen PRA V3.6.12 import boundary.
 
 The preserved application imports this historical module name. It now forwards
-that presentation boundary to V3.6.16, the FanDuel-qualified WNBA PRA customer
-product successor. Production projection/probability/selection math remains
+that presentation boundary to V3.6.17, the Kyre Sports API-only WNBA PRA market
+routing successor. Production projection/probability/selection math remains
 frozen and Universal Runtime V5 is unchanged.
 """
 from __future__ import annotations
 
-import wnba_pra_hub_v3616 as active
+import wnba_pra_hub_v3617 as active
 
 MODEL_VERSION = active.MODEL_VERSION
 MLB_FROZEN_BASELINE = active.MLB_FROZEN_BASELINE

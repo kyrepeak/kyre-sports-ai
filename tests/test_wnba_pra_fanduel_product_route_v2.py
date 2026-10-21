@@ -7,7 +7,7 @@ import inspect
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_v3616_orchestration_requires_fanduel_gated_views():
+def test_v3616_historical_orchestration_requires_fanduel_gated_views():
     import wnba_pra_hub_v3616 as hub
 
     source = inspect.getsource(hub.render_wnba_pra_hub)
@@ -19,10 +19,10 @@ def test_v3616_orchestration_requires_fanduel_gated_views():
     assert "wnba_pra_product_view_v2" in (ROOT / "wnba_pra_hub_v3616.py").read_text(encoding="utf-8")
 
 
-def test_historical_v3612_boundary_forwards_only_to_v3616():
+def test_historical_v3612_boundary_forwards_to_current_v3617_successor():
     source = (ROOT / "wnba_pra_hub_v3612.py").read_text(encoding="utf-8")
-    assert "import wnba_pra_hub_v3616 as active" in source
-    assert "wnba_pra_hub_v3615 as active" not in source
+    assert "import wnba_pra_hub_v3617 as active" in source
+    assert "wnba_pra_hub_v3616 as active" not in source
     assert "universal_runtime_v5" not in source
 
 
@@ -36,6 +36,24 @@ def test_v3616_contract_preserves_model_and_market_math():
     assert contract["projection_math_changed"] is False
     assert contract["monte_carlo_changed"] is False
     assert contract["qualification_changed"] is False
+    assert contract["ranking_changed"] is False
+    assert contract["selection_changed"] is False
+    assert contract["sportsbook_projection_influence"] == 0.0
+
+
+def test_v3617_contract_preserves_math_while_allowing_api_owned_fallback():
+    import wnba_pra_hub_v3617 as hub
+
+    contract = hub.MULTISOURCE_PRODUCT_CONTRACT
+    assert contract["application_gateway"] == "kyre_sports_api"
+    assert contract["primary_market_provider"] == "fanduel"
+    assert contract["secondary_market_provider"] == "draftkings"
+    assert contract["secondary_only_when_primary_unusable"] is True
+    assert contract["provider_specific_quotes"] is True
+    assert contract["line_averaging"] is False
+    assert contract["projection_math_changed"] is False
+    assert contract["market_probability_math_changed"] is False
+    assert contract["monte_carlo_changed"] is False
     assert contract["ranking_changed"] is False
     assert contract["selection_changed"] is False
     assert contract["sportsbook_projection_influence"] == 0.0

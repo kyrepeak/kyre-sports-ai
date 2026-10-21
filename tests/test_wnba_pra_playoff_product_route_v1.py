@@ -14,11 +14,11 @@ def _stub_local_storage(monkeypatch):
 
 def test_compatibility_boundary_advances_to_current_successor():
     source=(ROOT/"wnba_pra_hub_v3612.py").read_text(encoding="utf-8")
-    assert "import wnba_pra_hub_v3616 as active" in source
-    current=(ROOT/"wnba_pra_hub_v3616.py").read_text(encoding="utf-8")
-    assert "require_fanduel=True" in current
-    predecessor=(ROOT/"wnba_pra_hub_v3615.py").read_text(encoding="utf-8")
-    assert "PLAYOFF_PRODUCT_CONTRACT" in predecessor
+    assert "import wnba_pra_hub_v3617 as active" in source
+    current=(ROOT/"wnba_pra_hub_v3617.py").read_text(encoding="utf-8")
+    assert "require_fanduel=False" in current
+    predecessor=(ROOT/"wnba_pra_hub_v3616.py").read_text(encoding="utf-8")
+    assert "FANDUEL_PRODUCT_CONTRACT" in predecessor
 
 
 def test_universal_runtime_keeps_existing_step9_adapter():

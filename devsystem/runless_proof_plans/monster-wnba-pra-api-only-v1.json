@@ -1,0 +1,51 @@
+{
+  "task_id": "monster-wnba-pra-api-only-v1",
+  "workstream": "monster-wnba-pra-api-only-v1",
+  "source_main_sha": "4a3440e917725e2084a394a4ced538750d05aed3",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_wnba_pra_api_only_v1.py",
+      "tests/test_wnba_pra_playoff_product_route_v1.py",
+      "tests/test_wnba_pra_fanduel_product_route_v2.py",
+      "tests/test_wnba_pra_auto_slate_market_repair_v1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "sports_api/wnba_pra_market_gateway_v1.py",
+      "sports_api/api/wnba_pra_market_gateway_v1.py",
+      "sports_api/api/wnba_draftkings_direct.py",
+      "wnba_pra_api_market_bridge_v2.py",
+      "wnba_pra_hub_v3612.py",
+      "wnba_pra_hub_v3617.py",
+      "wnba_pra_product_view_v3.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/monster-wnba-pra-api-only-v1.json",
+    "devsystem/task_ledgers/monster-wnba-pra-api-only-v1.json",
+    "docs/superpowers/plans/2026-10-21-wnba-pra-api-only-v1.md",
+    "sports_api/wnba_pra_market_gateway_v1.py",
+    "sports_api/api/wnba_pra_market_gateway_v1.py",
+    "sports_api/api/wnba_draftkings_direct.py",
+    "wnba_pra_api_market_bridge_v2.py",
+    "wnba_pra_hub_v3612.py",
+    "wnba_pra_hub_v3617.py",
+    "wnba_pra_product_view_v3.py",
+    "tests/test_monster_wnba_pra_api_only_v1.py",
+    "tests/test_wnba_pra_playoff_product_route_v1.py",
+    "tests/test_wnba_pra_fanduel_product_route_v2.py"
+  ],
+  "dependencies": [
+    "sports_api/collectors/wnba_fanduel_direct.py",
+    "sports_api/wnba_step19a_draftkings_sportscontent.py",
+    "wnba_api_client_v1.py",
+    "wnba_pra_product_snapshot_v1.py",
+    "wnba_pra_market_v29.py",
+    "wnba_pra_product_view_model_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "freeze_token": "MONSTER_WNBA_PRA_API_ONLY_V1_FROZEN"
+}

@@ -6,6 +6,7 @@ from fastapi import APIRouter
 # elevates them only inside a private reconciliation call context.
 import sports_api.wnba_step19a_step17b_bridge as _wnba_step19a_step17b_bridge  # noqa: F401
 from sports_api.api.wnba_step6j_canary import router as step6j_canary_router
+from sports_api.api.wnba_pra_market_gateway_v1 import router as wnba_pra_market_gateway_router
 from sports_api.wnba_step6d_direct_integration import get_step6d_direct_market_status
 from sports_api.wnba_draftkings_shadow_ingestion import get_shadow_readiness
 from sports_api.wnba_official_reconciliation import get_reconciliation_readiness
@@ -35,3 +36,4 @@ def get_draftkings_reconciled_sync_status():
 
 
 router.include_router(step6j_canary_router)
+router.include_router(wnba_pra_market_gateway_router)
