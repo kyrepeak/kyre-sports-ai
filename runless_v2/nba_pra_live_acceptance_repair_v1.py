@@ -7,9 +7,9 @@ contains it; nothing is inferred when the source does not expose an opponent.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 import re
-from typing import Any
+from typing import Any, Mapping
 
 from . import nba_pra_player_context_v1 as base
 
@@ -143,6 +143,39 @@ def _parse_cbs_game_log_html(document: str) -> list[dict[str, Any]]:
     return games
 
 
+def _cbs_player_history(player_name: str, slate_date: date, seed: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    profile = dict(seed or {})
+    provider_ids = dict(profile.get("provider_ids") or {})
+    provider_id = base._text(provider_ids.get("cbs_sports"))
+    if not provider_id:
+        return None
+    canonical_name = base._text(profile.get("player_name") or player_name)
+    current_start = slate_date.year if slate_date.month >= 10 else slate_date.year - 1
+    current_games: list[dict[str, Any]] = []
+    prior_games: list[dict[str, Any]] = []
+    for season_start, target in ((current_start, current_games), (current_start - 1, prior_games)):
+        try:
+            document = base._cbs_game_log_document(provider_id, canonical_name, season_start)
+            target.extend(_parse_cbs_game_log_html(document))
+        except Exception:
+            continue
+        if len(current_games) >= 10:
+            break
+    if not current_games and not prior_games:
+        return None
+    out = dict(profile)
+    out.update(
+        {
+            "player_name": canonical_name,
+            "provider_ids": provider_ids,
+            "current_games": current_games[:40],
+            "prior_games": prior_games[:40],
+            "stats_source": "CBS Sports game log",
+        }
+    )
+    return out
+
+
 base._parse_game_log = _parse_game_log
 base._parse_reference_daily_leaders = _parse_reference_daily_leaders
-base._parse_cbs_game_log_html = _parse_cbs_game_log_html
+base._cbs_player_history = _cbs_player_history
