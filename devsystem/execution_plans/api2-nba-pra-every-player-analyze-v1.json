@@ -1,0 +1,30 @@
+{
+  "version": "API2_NBA_PRA_EVERY_PLAYER_ANALYZE_V1",
+  "task_id": "api2-nba-pra-every-player-analyze-v1",
+  "workstream": "api2-nba-pra-every-player-analyze-v1",
+  "source_main_sha": "f37392efba1c22c67cf5bd02bab626c57d9d5c5c",
+  "goal": "Give every NBA PRA player card its own immediate Analyze action into Page 2 while preserving the exact Page 1 snapshot handoff and frozen live-acceptance repair.",
+  "write_paths": [
+    "nba_pra_page1_v2.py",
+    "tests/test_api2_nba_pra_every_player_analyze_v1.py",
+    "devsystem/execution_plans/api2-nba-pra-every-player-analyze-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-every-player-analyze-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-every-player-analyze-v1.json"
+  ],
+  "constraints": {
+    "kyre_sports_api_only": true,
+    "sgo_forbidden": true,
+    "espn_forbidden": true,
+    "espn_bet_forbidden": true,
+    "sportsbook_line_averaging_forbidden": true,
+    "page1_page2_snapshot_parity_required": true,
+    "frozen_live_acceptance_baseline_preserved": true
+  },
+  "acceptance": [
+    "Every visible player card owns exactly one immediate Analyze action",
+    "First, middle, and last visible players each open their own Page 2 analysis",
+    "No cross-player handoff",
+    "NBA PRA regression family remains green",
+    "Production code compiles"
+  ]
+}
