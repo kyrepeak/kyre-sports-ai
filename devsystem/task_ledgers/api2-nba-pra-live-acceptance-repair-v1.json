@@ -8,10 +8,10 @@
     "active_problem": "NBA PRA live Page 2 acceptance repair: opponent/history metadata, verified usage/rank fallback, score/availability parity, and full-duration loading overlay",
     "authoritative_branch": "api2-nba-pra-live-acceptance-repair-v1",
     "authoritative_pr": 1720,
-    "scope_lease_id": "SCOPE-LEASE-B81CC379E9B129D7C49D73B1",
-    "scope_lease_generation": 660,
-    "scope_lease_expires_at_utc": "2026-10-21T23:22:41Z",
-    "authorization_id": "AUTH-API2-NBA-PRA-LIVE-ACCEPTANCE-REPAIR-V1-R1",
+    "scope_lease_id": "SCOPE-LEASE-FCE45F434AC3D1660C0454FA",
+    "scope_lease_generation": 661,
+    "scope_lease_expires_at_utc": "2026-10-21T23:30:15Z",
+    "authorization_id": "AUTH-API2-NBA-PRA-LIVE-ACCEPTANCE-REPAIR-V1-R2",
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
@@ -39,6 +39,7 @@
     "review": "P1 availability finding patched so only genuinely verified statuses can fill an unverified refresh; placeholder injury text remains unverified.",
     "failed_proof_reproduction": "Exact failed SHA reproduced under the Runless bootstrap environment: 65 passed, 1 failed. The only failure was the pre-repair runtime regression expecting sleep(0.08) and rerun.",
     "root_cause_patch": "Updated tests/test_api2_nba_pra_page2_runtime_v1.py to require direct Page 2 handoff with show_loading_overlay=True and no Page 1/rerun. Added that test file to proof artifacts so the successor fingerprints the corrected contract.",
+    "control_plane": "Released generation-660 scope and reacquired generation-661 with the corrected runtime regression path included; successor proof must use R2 only.",
     "full_gate": "PENDING_SUCCESSOR_RUNLESS_V2_EXACT_HEAD_PROOF"
   },
   "freeze_token": "API2_NBA_PRA_LIVE_ACCEPTANCE_REPAIR_V1_FROZEN"
