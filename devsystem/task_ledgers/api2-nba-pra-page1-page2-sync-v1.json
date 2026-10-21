@@ -2,16 +2,21 @@
   "task_id": "api2-nba-pra-page1-page2-sync-v1",
   "workstream": "api2-nba-pra-page1-page2-sync-v1",
   "source_main_sha": "43f09793e9065500c846324b46c4536c01b9519b",
-  "status": "IMPLEMENTED_PENDING_EXACT_HEAD_PROOF",
-  "progress_percent": 55,
+  "status": "PR_BOUND_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 61,
   "step2a": {
     "authoritative_branch": "api2-nba-pra-page1-page2-sync-v1",
-    "authoritative_pr": null,
+    "authoritative_pr": 1719,
+    "scope_lease_id": "SCOPE-LEASE-API2NBA-PRA-SYNC-1719",
+    "scope_lease_generation": 659,
+    "scope_lease_expires_at_utc": "2026-10-21T22:27:00Z",
+    "authorization_id": "AUTH-API2-NBA-PRA-PAGE1-PAGE2-SYNC-V1-R1",
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
     "proof_request_submitted": false,
-    "anti_loop": true
+    "anti_loop": true,
+    "duplicate_authority": false
   },
   "evidence": {
     "tdd_red": "successor contract committed before production implementation; missing runtime handoff/loading/sync renderer made the new contract unsatisfied",
@@ -22,6 +27,7 @@
     "application_gateway": "Kyre Sports API only",
     "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
     "sportsbook_projection_influence": 0.0,
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
     "fabrication": false
   },
   "freeze_token": "API2_NBA_PRA_PAGE1_PAGE2_SYNC_V1_FROZEN"
