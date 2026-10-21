@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from html import escape
 from typing import Any, Mapping
 
-from nba_pra_page1_data_v2 import load_page1_snapshot_v2
+from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2
 from nba_pra_page1_model_v1 import grade_market, project_pra
 from nba_pra_page1_ui_v2 import FILTER_OPTIONS, SESSION_PLAYER, build_game_card_html, build_player_card_html, css, dashboard_kpis
 
