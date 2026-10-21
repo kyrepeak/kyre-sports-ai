@@ -18,7 +18,7 @@ def test_client_uses_vercel_kyre_api_without_echoing_key():
         seen['url']=url; seen['json']=dict(kwargs['json']); return R()
     out=client.load_kyre_sports_api_pra_observations(date(2026,10,20),api_key='secret-test-key',request_post=fake_post)
     assert seen['url']=='https://kyre-runless-proof.vercel.app/api/v1/nba/pra/market'
-    assert seen['json']=={'date':'2026-10-20','sportsgameodds_api_key':'secret-test-key'}
+    assert seen['json']=={'date':'2026-10-20'}
     assert len(out['observations'])==2
     assert out['sportsbook_projection_influence']==0.0
     assert 'secret-test-key' not in repr(out)
