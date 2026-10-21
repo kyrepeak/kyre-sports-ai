@@ -1,0 +1,52 @@
+{
+  "schema_version": 2,
+  "task_id": "api2-nba-pra-page1-page2-sync-v1",
+  "project": "API2",
+  "workstream": "api2-nba-pra-page1-page2-sync-v1",
+  "source_main_sha": "43f09793e9065500c846324b46c4536c01b9519b",
+  "goal": "Make NBA PRA Page 1 and Page 2 share the exact selected-player sportsbook/model/grade snapshot, add a full-screen professional loading transition, and expose Analyze Player for every listed PRA player while preserving Kyre Sports API-only routing and frozen model semantics.",
+  "write_paths": [
+    "nba_pra_page1_v2.py",
+    "nba_pra_runtime_v2.py",
+    "nba_pra_page2_sync_v1.py",
+    "tests/test_api2_nba_pra_page1_page2_sync_v1.py",
+    "devsystem/execution_plans/api2-nba-pra-page1-page2-sync-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-page1-page2-sync-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-page1-page2-sync-v1.json"
+  ],
+  "protected_dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_page1_model_v1.py",
+    "nba_pra_page1_ui_v2.py",
+    "nba_pra_page2_v1.py",
+    "nba_pra_page2_api_only_v1.py",
+    "nba_pra_page2_context_v1.py",
+    "nba_pra_page2_line_lab_v1.py",
+    "nba_pra_page2_matchup_api_v1.py",
+    "nba_pra_player_context_api_v1.py"
+  ],
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "missing_data": "use approved source fallback by data type only; never guess",
+    "sportsbook_projection_influence": 0.0,
+    "fabrication": false
+  },
+  "consistency_contract": {
+    "page1_to_page2": "same player key + same sportsbook line reuses exact Page 1 model and grade",
+    "matched_fields": ["projection", "probability", "edge", "lean", "confidence", "Kyre Score", "sportsbook", "line", "price", "timestamp"],
+    "line_lab": "alternate threshold recalculates locally from handed-off frozen model",
+    "every_listed_player_analyzable": true,
+    "loading_transition": "full viewport; Page 1 not rendered behind loading phase"
+  },
+  "step2a": {
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "anti_loop": true
+  },
+  "freeze_token": "API2_NBA_PRA_PAGE1_PAGE2_SYNC_V1_FROZEN"
+}
