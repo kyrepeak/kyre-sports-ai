@@ -37,20 +37,27 @@ def _connected_secret(name: str) -> str | None:
         "ODDS_API_IO_KEY": "ks_odds_api_key",
         "ODDS_API_KEY": "ks_odds_api_key",
     }.get(str(name or "").strip())
+    secret_names = [str(name or "").strip()]
+    if secret_names[0] in {"SPORTSGAMEODDS_API_KEY", "SGO_API_KEY"}:
+        secret_names.append("SPORTSGAMEODDS_KEY")
     try:
         import streamlit as st
         if session_key:
             value = st.session_state.get(session_key)
             if value:
                 return str(value).strip() or None
-        value = st.secrets.get(name)
-        if value:
-            return str(value).strip() or None
+        for secret_name in secret_names:
+            value = st.secrets.get(secret_name)
+            if value:
+                return str(value).strip() or None
     except Exception:
         pass
     import os
-    value = os.getenv(name)
-    return str(value).strip() if value else None
+    for secret_name in secret_names:
+        value = os.getenv(secret_name)
+        if value:
+            return str(value).strip() or None
+    return None
 
 
 def _phoenix_window(slate_date):
