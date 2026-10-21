@@ -196,7 +196,7 @@ def _fetch_sgo_events(slate_date: date, api_key: str) -> tuple[list[dict[str, An
     }
     focused_error = ""
     try:
-        focused = _request_events({**base, "oddID": _odd_filter()}, api_key)
+        focused = _request_events({**base, "oddIDs": _odd_filter()}, api_key)
         if focused:
             return focused, "FOCUSED_OK"
     except Exception as exc:
