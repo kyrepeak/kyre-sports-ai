@@ -36,6 +36,9 @@ jobs:
           echo 'b847ad854150f0ea7a3807e22bdeea703b34703bc8b89f6d8379e5c59c01a757  /tmp/history.patch' | sha256sum -c -
           git apply --check /tmp/history.patch
           git apply /tmp/history.patch
+          test "$(git hash-object nba_pra_page1_ui_v2.py)" = 'c3d0c56d6dfb876a0938b48f37e6406d10c2d1fb'
+          test "$(git hash-object runless_v2/nba_pra_player_context_v1.py)" = '3b75eca7752a5203e8f0bb325911342c4409bffb'
+          test "$(git hash-object tests/test_api2_nba_pra_history_coverage_v1.py)" = 'b95d9e996d5b50991e986e5aee783b1786c5226f'
           rm -rf .history_handoff
           rm -f .github/workflows/api2-nba-pra-history-handoff.yml
           if grep -RniE 'sportsgameodds|\bsgo\b|espn bet|espn' runless_v2/nba_pra_player_context_v1.py nba_pra_page1_ui_v2.py nba_pra_page1_api_only_v1.py nba_pra_market_api_v1.py nba_pra_schedule_api_v1.py | grep -vE 'forbidden|not.*espn|no.*espn'; then
@@ -44,8 +47,8 @@ jobs:
           fi
           git add -A
           git diff --cached --check
-          tree="$(git write-tree)"
-          test "$tree" = '48f35a47f8d81a5059cf2efe31c1c179e04f9a31'
+          unexpected="$(git diff --cached --name-only | grep -Ev '^(nba_pra_page1_ui_v2.py|runless_v2/nba_pra_player_context_v1.py|tests/test_api2_nba_pra_history_coverage_v1.py|\.history_handoff/|\.github/workflows/api2-nba-pra-history-handoff.yml)$' || true)"
+          test -z "$unexpected"
           git config user.name 'kyrepeak'
           git config user.email 'kyrewhite15@gmail.com'
           git commit -m 'candidate: NBA PRA history coverage'
