@@ -1,0 +1,53 @@
+{
+  "task_id": "api2-universal-page-experience-v1",
+  "workstream": "api2-universal-page-experience-v1",
+  "original_source_main_sha": "077d3f6a79cf168735bf1a2cf71c138549e7c176",
+  "proof_base_main_sha": "139a2e6496e51699c52a8c2b3065abfdaeddcd65",
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "progress_percent": 92,
+  "step2a": {
+    "active_problem": "Universal TOP plus atomic anti-bleed loading on every current/future universal route without page-by-page patches.",
+    "authoritative_branch": "api2-universal-page-experience-v1",
+    "scope_lease_id": "SCOPE-LEASE-98C1037AFAEEFD4D714D2456",
+    "scope_lease_generation": 670,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false,
+    "main_drift_classification": "DISJOINT_WNBA_REFRESH_HANDOFF",
+    "main_drift_reconciled": true
+  },
+  "contracts": {
+    "loader_delay_ms": 140,
+    "top_reveal_px": 320,
+    "top_min_touch_px": 44,
+    "opaque_loader": "#060b13",
+    "registry_driven_coverage": true,
+    "local_controls_excluded": true,
+    "runtime_v5_stale_write_guard_preserved": true,
+    "no_background_prefetch": true,
+    "no_model_provider_mutation": true,
+    "forbidden_sources": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"]
+  },
+  "evidence": {
+    "task1_green": "3 passed",
+    "task2_green": "5 passed",
+    "task3_green": "11 passed",
+    "task4_green": "12 passed",
+    "universal_exact_successor_gate": "49 passed plus py_compile exit 0 on c3272eeff0cf351fc9f20490fb60f386a2d963ca",
+    "sports_positive_regressions": 103,
+    "baseline_stale_failures_verified_on_source_main": 3,
+    "global_legacy_collector_out_of_scope": "tests/conftest.py obsolete V157 app entrypoint assertion",
+    "sandbox_sqlite_environment_gap": "legacy MLB final-runtime test requires unavailable _sqlite3; no product assertion reached"
+  },
+  "remaining": [
+    "run proof plan on final control-artifact candidate",
+    "open one PR",
+    "require Runless exact-head authorization",
+    "merge exact candidate",
+    "read durable freeze/finalization state",
+    "release scope lease"
+  ],
+  "freeze_token": "API2_UNIVERSAL_PAGE_EXPERIENCE_V1_FROZEN"
+}
