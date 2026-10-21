@@ -1,4 +1,4 @@
-"""NBA PRA Page 1/3 — Command Center V2."""
+'''NBA PRA Page 1/3 — hard analytics command center.'''
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -7,9 +7,18 @@ from typing import Any, Mapping
 
 from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2
 from nba_pra_page1_model_v1 import grade_market, project_pra
-from nba_pra_page1_ui_v2 import FILTER_OPTIONS, SESSION_PLAYER, build_game_card_html, build_player_card_html, css, dashboard_kpis
+from nba_pra_page1_ui_v2 import (
+    FILTER_OPTIONS,
+    SESSION_PLAYER,
+    build_game_card_html,
+    build_kpi_strip_html,
+    build_leaderboard_row_html,
+    build_market_row_html,
+    css,
+    dashboard_kpis,
+)
 
-MODEL_VERSION = "NBA PRA PAGE 1/3 • COMMAND CENTER V2"
+MODEL_VERSION = "NBA PRA PAGE 1/3 • HARD ANALYTICS V1"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 SOURCE_DIAGNOSTICS_MARKER = "NBA_PRA_SOURCE_DIAGNOSTICS_V1"
 
@@ -82,12 +91,14 @@ def render_nba_pra_page1_v2() -> None:
     now = datetime.now(timezone.utc)
     st.markdown(css(), unsafe_allow_html=True)
     st.markdown(
-        '<div class="np2-hero"><div class="np2-kicker">KYRE SPORTS AI • NBA PRA COMMAND CENTER</div>'
-        '<div class="np2-title">NBA PRA Intelligence</div>'
-        '<div class="np2-sub">Find the strongest Points + Rebounds + Assists opportunities fast — live sportsbook-specific lines, player analytics, model projections, and upcoming games in one decision surface.</div>'
-        '<div class="np2-status"><span>KYRE SPORTS API PRIMARY</span><span>SMART SOURCE ROUTING</span><span>LIVE MULTI-BOOK</span><span>NO LINE AVERAGING</span><span>SPORTSBOOK INFLUENCE 0.0%</span></div></div>',
+        '<section class="np3-command"><div><div class="np3-kicker">KYRE SPORTS AI • NBA PRA</div>'
+        '<h1>NBA PRA Intelligence</h1>'
+        '<p>Live player-prop decision board • sportsbook lines stay separate • model-driven analytics</p></div>'
+        '<div class="np3-command-meta"><span>KYRE SPORTS API</span><span>SMART SOURCE ROUTING</span>'
+        '<span>NO LINE AVERAGING</span><span>0.0% BOOK INFLUENCE</span></div></section>',
         unsafe_allow_html=True,
     )
+
     with st.spinner("Loading verified NBA PRA intelligence…"):
         snapshot = load_page1_snapshot_v2(now=now)
 
@@ -98,25 +109,18 @@ def render_nba_pra_page1_v2() -> None:
 
     items = build_items(snapshot, now_utc=now)
     slate = escape(str(snapshot.get("slate_date") or "—"))
+
     st.markdown(
-        f'<div class="np2-sec"><b>UPCOMING NBA SLATE • {slate}</b><span>{len(games)} games • Phoenix time</span></div>',
+        f'<div class="np3-section"><b>UPCOMING NBA SLATE • {slate}</b><span>{len(games)} games • Phoenix time</span></div>',
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="np2-games">' + "".join(build_game_card_html(g) for g in games) + "</div>", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="np3-games">' + "".join(build_game_card_html(game) for game in games) + "</div>",
+        unsafe_allow_html=True,
+    )
 
     kpis = dashboard_kpis(items, now_utc=now)
-    over = f"+{kpis['best_over_edge']:.1f}" if kpis["best_over_edge"] is not None else "—"
-    under = f"{kpis['best_under_edge']:.1f}" if kpis["best_under_edge"] is not None else "—"
-    freshness = f"{kpis['fresh_quotes']}/{kpis['players_tracked']}" if kpis["players_tracked"] else "0/0"
-    st.markdown(
-        '<div class="np2-kpis">'
-        f'<div class="np2-kpi"><small>PLAYERS TRACKED</small><b>{kpis["players_tracked"]}</b><em>verified PRA markets</em></div>'
-        f'<div class="np2-kpi"><small>BEST OVER EDGE</small><b>{over}</b><em>PRA vs featured line</em></div>'
-        f'<div class="np2-kpi"><small>BEST UNDER EDGE</small><b>{under}</b><em>PRA vs featured line</em></div>'
-        f'<div class="np2-kpi"><small>FRESH MARKET</small><b>{freshness}</b><em>≤ 120 sec</em></div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(build_kpi_strip_html(kpis), unsafe_allow_html=True)
 
     diagnostics = source_diagnostic_summary(snapshot)
     with st.expander("Kyre Sports API • Sources & Diagnostics", expanded=False):
@@ -127,30 +131,53 @@ def render_nba_pra_page1_v2() -> None:
         st.warning("PRA market or model history is unavailable for the upcoming slate. No line, price, or probability was fabricated.")
         return
 
-    selected = st.radio("PRA filters", FILTER_OPTIONS, horizontal=True, label_visibility="collapsed", key="np2-filter")
+    selected = st.radio(
+        "PRA filters",
+        FILTER_OPTIONS,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="np2-filter",
+    )
     ranked = _filter_items(items, selected)
+
     st.markdown(
-        '<div class="np2-sec"><b>KYRE AI • TOP PRA EDGES</b><span>ranked by model certainty, then edge</span></div>',
+        '<div class="np3-section"><b>KYRE AI • TOP PRA EDGES</b><span>ranked by certainty, then edge</span></div>',
         unsafe_allow_html=True,
     )
     featured = ranked[:3]
     if featured:
-        columns = st.columns(len(featured))
-        for index, item in enumerate(featured, start=1):
-            with columns[index - 1]:
-                st.markdown(build_player_card_html(item, rank=index, now_utc=now), unsafe_allow_html=True)
-                if st.button(f"Analyze {item['player_name']}", key=f"np2-featured-{item['key']}", use_container_width=True):
-                    st.session_state[SESSION_PLAYER] = item["key"]
+        st.markdown(
+            '<div class="np3-leaderboard">'
+            + "".join(
+                build_leaderboard_row_html(item, rank=index, now_utc=now)
+                for index, item in enumerate(featured, start=1)
+            )
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+        for item in featured:
+            if st.button(
+                f"Analyze {item['player_name']} →",
+                key=f"np3-featured-{item['key']}",
+                use_container_width=False,
+            ):
+                st.session_state[SESSION_PLAYER] = item["key"]
 
     st.markdown(
-        '<div class="np2-sec"><b>ALL UPCOMING PRA MARKETS</b><span>sportsbook quotes remain separate</span></div>',
+        '<div class="np3-section"><b>ALL UPCOMING PRA MARKETS</b><span>compact live board • book quotes remain separate</span></div>',
         unsafe_allow_html=True,
     )
     market_rows = items if selected == "BEST EDGES" else ranked
-    for start in range(0, len(market_rows), 2):
-        columns = st.columns(2)
-        for offset, item in enumerate(market_rows[start:start + 2]):
-            with columns[offset]:
-                st.markdown(build_player_card_html(item, now_utc=now), unsafe_allow_html=True)
-                if st.button(f"View {item['player_name']} on Page 2", key=f"np2-all-{item['key']}", use_container_width=True):
-                    st.session_state[SESSION_PLAYER] = item["key"]
+    st.markdown(
+        '<div class="np3-market-list">'
+        + "".join(build_market_row_html(item, now_utc=now) for item in market_rows)
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+    for item in market_rows:
+        if st.button(
+            f"View {item['player_name']} on Page 2 →",
+            key=f"np3-all-{item['key']}",
+            use_container_width=False,
+        ):
+            st.session_state[SESSION_PLAYER] = item["key"]
