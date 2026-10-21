@@ -2,8 +2,8 @@
   "task_id": "api2-nba-pra-live-acceptance-repair-v1",
   "workstream": "api2-nba-pra-live-acceptance-repair-v1",
   "source_main_sha": "3d9611172aeb6fbce2bfd298dc5fcf393436b376",
-  "status": "PR_BOUND_PENDING_EXACT_HEAD_PROOF",
-  "progress_percent": 89,
+  "status": "SUCCESSOR_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 96,
   "step2a": {
     "active_problem": "NBA PRA live Page 2 acceptance repair: opponent/history metadata, verified usage/rank fallback, score/availability parity, and full-duration loading overlay",
     "authoritative_branch": "api2-nba-pra-live-acceptance-repair-v1",
@@ -17,7 +17,12 @@
     "single_proof_path": true,
     "anti_loop": true,
     "duplicate_authority": false,
-    "proof_request_submitted": false
+    "failed_proof_id": "api2-nba-pra-live-acceptance-repair-v1-a938a819e815a079-1a546a2213b184b3",
+    "failed_candidate_sha": "a938a819e815a079657f719ea8f681906f021fc1",
+    "failed_proof_class": "STATIC_PROOF",
+    "failed_proof_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "failed_proof_retried": false,
+    "successor_proof_submitted": false
   },
   "routing_contract": {
     "application_gateway": "Kyre Sports API only",
@@ -32,7 +37,9 @@
     "tdd_red": "Live acceptance contracts were committed before production mutation on PR #1720.",
     "implementation": "Opponent metadata preservation, preseason usage/rank fill, Page1/Page2 score+availability handoff, loading overlay spanning actual provider-backed parent fetch.",
     "review": "P1 availability finding patched so only genuinely verified statuses can fill an unverified refresh; placeholder injury text remains unverified.",
-    "full_gate": "PENDING_RUNLESS_V2_EXACT_HEAD_PROOF"
+    "failed_proof_reproduction": "Exact failed SHA reproduced under the Runless bootstrap environment: 65 passed, 1 failed. The only failure was the pre-repair runtime regression expecting sleep(0.08) and rerun.",
+    "root_cause_patch": "Updated tests/test_api2_nba_pra_page2_runtime_v1.py to require direct Page 2 handoff with show_loading_overlay=True and no Page 1/rerun. Added that test file to proof artifacts so the successor fingerprints the corrected contract.",
+    "full_gate": "PENDING_SUCCESSOR_RUNLESS_V2_EXACT_HEAD_PROOF"
   },
   "freeze_token": "API2_NBA_PRA_LIVE_ACCEPTANCE_REPAIR_V1_FROZEN"
 }
