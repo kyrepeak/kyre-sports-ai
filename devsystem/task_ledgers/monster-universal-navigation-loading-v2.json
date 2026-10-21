@@ -1,0 +1,38 @@
+{
+  "task_id": "monster-universal-navigation-loading-v2",
+  "workstream": "monster-universal-navigation-loading-v2",
+  "source_main_sha": "d81c5bd4080d4498a1cd8e2aa5380ce12f2d6c2a",
+  "branch": "monster-universal-navigation-loading-v2",
+  "scope_lease_id": "SCOPE-LEASE-DC7F6B7DAA12AB3B270ED426",
+  "status": "IMPLEMENTED_TDD_GREEN_READY_FOR_RECONCILE_AND_PROOF",
+  "progress_percent": 55,
+  "active_problem": "Slow navigation can leave the outgoing Streamlit page visibly exposed before the next rerun paints the existing server-side transition shield.",
+  "root_cause": "Streamlit intentionally retains stale DOM across reruns to avoid flicker; the frozen V1 shield begins only after the next Python rerun has started, leaving a browser-side visibility gap.",
+  "implementation": {
+    "parent_freeze": "MONSTER_UNIVERSAL_ATOMIC_NAVIGATION_V1_FROZEN",
+    "browser_controller": "singleton pointerdown + ScriptRunState observer",
+    "delay_ms": 140,
+    "fast_path": "cancel loader when script returns to notRunning before threshold",
+    "slow_path": "opaque full viewport destination-name loading surface",
+    "deep_page_example": "CFB Player Props Analyze -> CFB Player Prop Intelligence Lab",
+    "background_prefetch": false,
+    "model_projection_mutation": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "step2a": {
+    "single_branch": true,
+    "single_pr": true,
+    "single_final_proof": true,
+    "anti_loop": true,
+    "competing_pr_found": false,
+    "parallel_scope_conflict": false
+  },
+  "tdd": {
+    "initial_red": "3 failed: V2 helper absent",
+    "inheritance_red": "2 failed: V2 runtime absent and V3 still inherited V1",
+    "streamlit_state_red": "1 failed: real camel-case script-state normalization absent",
+    "focused_green": "6 passed",
+    "compile_green": true
+  },
+  "freeze_token": "MONSTER_UNIVERSAL_NAVIGATION_LOADING_V2_FROZEN"
+}
