@@ -15,18 +15,20 @@ def resolve_requested_player(
     requested_name: str,
     roster: Mapping[str, Mapping[str, Any]],
 ) -> tuple[str, Mapping[str, Any]] | None:
-    exact = _cbs._norm(requested_name)
-    if exact in roster:
-        return exact, roster[exact]
+    requested_key = _cbs._norm(requested_name)
+    exact_row = roster.get(requested_key)
+    if exact_row is not None and _cbs._norm(exact_row.get('player_name')) == requested_key:
+        return requested_key, exact_row
+
     requested = _tokens(requested_name)
-    if len(requested) < 2 or len(requested[0]) != 1:
+    if len(requested) < 2 or not requested[0]:
         return None
-    initial = requested[0].casefold()
+    initial = requested[0][0].casefold()
     surname = _cbs._norm(requested[-1])
     matches: list[tuple[str, Mapping[str, Any]]] = []
     for key, row in roster.items():
         canonical = _tokens(row.get('player_name'))
-        if len(canonical) < 2:
+        if len(canonical) < 2 or not canonical[0]:
             continue
         if canonical[0][0].casefold() != initial:
             continue
@@ -79,29 +81,34 @@ def load_cbs_profiles(
 
     current_start_year = slate_date.year if slate_date.month >= 7 else slate_date.year - 1
 
+    def load_season(player_id: str, slug: str, season: int):
+        document = (
+            _cbs._fetch_gamelog(player_id, slug, season)
+            if fetch_text is None
+            else fetch('gamelog', player_id, season)
+        )
+        return _cbs.parse_cbs_gamelog(document)
+
     def history_job(requested_key: str, row: Mapping[str, Any]):
         player_id = _cbs._clean((row.get('provider_ids') or {}).get('cbs_sports'))
         slug = _cbs._clean(row.get('provider_slug'))
         if not player_id or not slug:
             return requested_key, None
         try:
-            document = (
-                _cbs._fetch_gamelog(player_id, slug, current_start_year)
-                if fetch_text is None
-                else fetch('gamelog', player_id, current_start_year)
-            )
-            current = _cbs.parse_cbs_gamelog(document)
+            current = load_season(player_id, slug, current_start_year)
         except Exception:
             current = []
         prior = []
         if len(current) < 8:
             try:
-                document = (
-                    _cbs._fetch_gamelog(player_id, slug, current_start_year - 1)
-                    if fetch_text is None
-                    else fetch('gamelog', player_id, current_start_year - 1)
-                )
-                prior = _cbs.parse_cbs_gamelog(document)
+                prior = load_season(player_id, slug, current_start_year - 1)
+            except Exception:
+                prior = []
+        # Long-absence players may legitimately have no immediately prior season.
+        # Look back exactly one additional season, then stop.
+        if not current and not prior:
+            try:
+                prior = load_season(player_id, slug, current_start_year - 2)
             except Exception:
                 prior = []
         if not current and not prior:
