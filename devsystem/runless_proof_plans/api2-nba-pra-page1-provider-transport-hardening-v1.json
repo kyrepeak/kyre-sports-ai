@@ -2,7 +2,7 @@
   "mode": "runless",
   "task_id": "api2-nba-pra-page1-provider-transport-hardening-v1",
   "workstream": "api2-nba-pra-page1-provider-transport-hardening-v1",
-  "source_main_sha": "1da8c0b1f591b998d785aa88c35e049d79a20861",
+  "source_main_sha": "cf3454f58011705b7fa86c77e771b7004208591a",
   "commands": [
     [
       "python",
@@ -10,6 +10,7 @@
       "py_compile",
       "runless_v2/nba_pra_market_v1.py",
       "runless_v2/app.py",
+      "runless_v2/app_core.py",
       "nba_pra_market_api_v1.py",
       "nba_pra_page1_data_v2.py",
       "nba_pra_page1_sources_v2.py"
@@ -52,7 +53,8 @@
       "tests/test_runless_v2_api.py",
       "tests/test_runless_v2_cutover_contract.py",
       "tests/test_runless_v2_live_hardening.py",
-      "tests/test_runless_v2_nba_pra_market_v1.py"
+      "tests/test_runless_v2_nba_pra_market_v1.py",
+      "tests/test_runless_v2_verified_post_merge_failure_v1.py"
     ],
     [
       "python",
@@ -75,11 +77,14 @@
   "artifacts": [
     "runless_v2/nba_pra_market_v1.py",
     "runless_v2/app.py",
+    "runless_v2/app_core.py",
     "nba_pra_market_api_v1.py",
     "nba_pra_page1_data_v2.py",
     "nba_pra_page1_sources_v2.py",
+    "supabase/migrations/20261021_runless_verified_post_merge_public_failure_v1.sql",
     "tests/test_api2_nba_pra_page1_provider_transport_hardening_v1.py",
     "tests/test_runless_v2_nba_pra_market_v1.py",
+    "tests/test_runless_v2_verified_post_merge_failure_v1.py",
     "devsystem/task_ledgers/api2-nba-pra-page1-provider-transport-hardening-v1.json",
     "devsystem/runless_proof_plans/api2-nba-pra-page1-provider-transport-hardening-v1.json"
   ],
