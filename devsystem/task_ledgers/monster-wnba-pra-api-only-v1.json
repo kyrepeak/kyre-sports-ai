@@ -1,9 +1,9 @@
 {
   "task_id": "monster-wnba-pra-api-only-v1",
   "workstream": "monster-wnba-pra-api-only-v1",
-  "source_main_sha": "2b70a2b9b07d65602b38f7c1435f11ed0dba2dd3",
+  "source_main_sha": "4a3440e917725e2084a394a4ced538750d05aed3",
   "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
-  "progress_percent": 98,
+  "progress_percent": 99,
   "step2a": {
     "active_problem": "Restore the WNBA PRA player board through Kyre Sports API only, with FanDuel primary and approved DraftKings fallback when FanDuel is empty/degraded, while SGO and ESPN/ESPN BET remain prohibited.",
     "authoritative_branch": "monster-wnba-pra-api-only-v1",
@@ -43,6 +43,7 @@
     "nearby_regression_green": "23 passed before proof-environment repair; successor exact Runless bootstrap reproduction now 24 passed.",
     "compile": "PASS",
     "runless_bootstrap_reproduction": "PASS: exact fixed Runless dependency set without curl_cffi completed 24 tests plus py_compile after lazy secondary-import repair.",
+    "parallel_main_reconciliation": "PASS: NBA PRA PR #1713 changes were disjoint; current main was merged into the same WNBA PR while preserving all 13 WNBA blobs exactly.",
     "active_startup_ban_scan": "PASS: importing the active V3.6.12 compatibility route loads no SportsGameOdds/SGO or ESPN module.",
     "live_fanduel": "Current WNBA PRA primary returned 0 usable PRA offers; classified EMPTY, not fatal.",
     "live_draftkings": "Step-19A approved fallback returned 30 exact two-sided PRA quote rows across 15 players for the verified 2026-10-21 Finals slate.",
