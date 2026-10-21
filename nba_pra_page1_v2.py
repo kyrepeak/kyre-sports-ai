@@ -11,6 +11,24 @@ from nba_pra_page1_ui_v2 import FILTER_OPTIONS, SESSION_PLAYER, build_game_card_
 
 MODEL_VERSION = "NBA PRA PAGE 1/3 • COMMAND CENTER V2"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+SOURCE_DIAGNOSTICS_MARKER = "NBA_PRA_SOURCE_DIAGNOSTICS_V1"
+
+
+def source_diagnostic_summary(snapshot: Mapping[str, Any]) -> dict[str, str]:
+    sources = dict(snapshot.get("sources") or {})
+
+    def _state(name: str) -> str:
+        payload = dict(sources.get(name) or {})
+        verification = str(payload.get("verification") or "UNAVAILABLE").strip().upper()
+        diagnostic = str(payload.get("diagnostic_state") or "NO_DIAGNOSTIC").strip()
+        return f"{verification} • {diagnostic}"
+
+    return {
+        "runtime_marker": SOURCE_DIAGNOSTICS_MARKER,
+        "kyre_sports_api": _state("kyre_sports_api"),
+        "sgo": _state("sgo"),
+        "odds_api": _state("odds_api"),
+    }
 
 
 def _norm(value: Any) -> str:
@@ -95,6 +113,14 @@ def render_nba_pra_page1_v2() -> None:
         f'<div class="np2-kpi"><small>FRESH MARKET</small><b>{freshness}</b><em>≤ 120 sec</em></div>'
         '</div>', unsafe_allow_html=True,
     )
+    diagnostics = source_diagnostic_summary(snapshot)
+    with st.expander("Sources & Diagnostics", expanded=False):
+        st.caption(diagnostics["runtime_marker"])
+        st.write({
+            "Kyre Sports API": diagnostics["kyre_sports_api"],
+            "SportsGameOdds": diagnostics["sgo"],
+            "Odds-API.io": diagnostics["odds_api"],
+        })
     if not items:
         st.warning("PRA market or model history is unavailable for the upcoming slate. No line, price, or probability was fabricated.")
         return
