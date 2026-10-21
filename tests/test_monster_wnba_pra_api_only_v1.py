@@ -21,6 +21,13 @@ def _offer(book="FanDuel", *, player="Allisha Gray", side="over", line=31.5, odd
     return row
 
 
+def test_draftkings_transport_is_lazy_optional_fallback_dependency():
+    source = (ROOT / "sports_api/wnba_pra_market_gateway_v1.py").read_text(encoding="utf-8")
+    marker = "from sports_api.wnba_step19a_draftkings_sportscontent import build_step19a_draftkings_snapshot"
+    assert marker in source
+    assert source.index("def _default_draftkings") < source.index(marker)
+
+
 def test_gateway_uses_fanduel_first_without_unnecessary_secondary_call():
     from sports_api import wnba_pra_market_gateway_v1 as gateway
 
