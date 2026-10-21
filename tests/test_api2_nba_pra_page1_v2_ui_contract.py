@@ -54,3 +54,20 @@ def test_runtime_terminal_hands_nba_pra_to_v2_without_changing_other_routes():
     assert "render_nba_pra_page1_v2" in text
     assert 'route.sport_id == "nba" and route.market_id == "pra"' in text
     assert "return _v1_resolve_destination(route)" in text
+
+
+def test_source_diagnostics_are_specific_and_never_expose_secret_material():
+    from nba_pra_page1_v2 import source_diagnostic_summary
+    snapshot={"sources":{
+        "kyre_sports_api":{"verification":"UNAVAILABLE","diagnostic_state":"KYRE_VERCEL_SGO_CREDENTIAL_UNAVAILABLE","api_key":"DO-NOT-LEAK"},
+        "sgo":{"verification":"UNAVAILABLE","diagnostic_state":"SGO_CREDENTIAL_UNAVAILABLE","credential":"DO-NOT-LEAK"},
+        "odds_api":{"verification":"VERIFIED","diagnostic_state":"OK","secret":"DO-NOT-LEAK"},
+    }}
+    diag=source_diagnostic_summary(snapshot)
+    assert diag == {
+        "runtime_marker":"NBA_PRA_SOURCE_DIAGNOSTICS_V1",
+        "kyre_sports_api":"UNAVAILABLE • KYRE_VERCEL_SGO_CREDENTIAL_UNAVAILABLE",
+        "sgo":"UNAVAILABLE • SGO_CREDENTIAL_UNAVAILABLE",
+        "odds_api":"VERIFIED • OK",
+    }
+    assert "DO-NOT-LEAK" not in repr(diag)
