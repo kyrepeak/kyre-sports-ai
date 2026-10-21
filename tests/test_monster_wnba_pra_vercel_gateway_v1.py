@@ -154,3 +154,22 @@ def test_runless_app_mounts_wnba_kyre_api_routes_and_prohibited_sources_absent()
         assert "sportsgameodds" not in text
         assert "espn" not in text
         assert "espn bet" not in text
+
+
+def test_vercel_router_imports_when_curl_cffi_unavailable():
+    import subprocess
+    import sys
+
+    code = r"""
+import builtins
+original = builtins.__import__
+def guarded(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == 'curl_cffi' or name.startswith('curl_cffi.'):
+        raise ImportError('simulated proof sandbox without curl_cffi')
+    return original(name, globals, locals, fromlist, level)
+builtins.__import__ = guarded
+import runless_v2.wnba_pra_market_v1 as market
+assert market.cffi_requests is None
+"""
+    result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
