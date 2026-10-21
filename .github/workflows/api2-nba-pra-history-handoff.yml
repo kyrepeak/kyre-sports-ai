@@ -1,0 +1,52 @@
+name: API2 NBA PRA history exact-tree handoff
+
+on:
+  push:
+    branches:
+      - api2-nba-pra-history-coverage-v1
+
+permissions:
+  contents: write
+
+jobs:
+  handoff:
+    if: "!contains(github.event.head_commit.message, 'candidate: NBA PRA history coverage')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: api2-nba-pra-history-coverage-v1
+          fetch-depth: 1
+      - name: Reconstruct exact tested candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            .history_handoff/chunk00 \
+            .history_handoff/chunk01 \
+            .history_handoff/chunk02 \
+            .history_handoff/chunk03 \
+            .history_handoff/chunk04 \
+            .history_handoff/chunk05a \
+            .history_handoff/chunk05 \
+            .history_handoff/chunk06 \
+            .history_handoff/chunk07 > /tmp/history.patch.gz.b64
+          echo '93ca08ad4789820d6a534ef1e597fdce4340e24b86f64aa9a2ccd5f30f94cc71  /tmp/history.patch.gz.b64' | sha256sum -c -
+          base64 -d /tmp/history.patch.gz.b64 | gzip -d > /tmp/history.patch
+          echo 'b847ad854150f0ea7a3807e22bdeea703b34703bc8b89f6d8379e5c59c01a757  /tmp/history.patch' | sha256sum -c -
+          git apply --check /tmp/history.patch
+          git apply /tmp/history.patch
+          rm -rf .history_handoff
+          rm -f .github/workflows/api2-nba-pra-history-handoff.yml
+          if grep -RniE 'sportsgameodds|\bsgo\b|espn bet|espn' runless_v2/nba_pra_player_context_v1.py nba_pra_page1_ui_v2.py nba_pra_page1_api_only_v1.py nba_pra_market_api_v1.py nba_pra_schedule_api_v1.py | grep -vE 'forbidden|not.*espn|no.*espn'; then
+            echo 'Forbidden provider reference in active path' >&2
+            exit 1
+          fi
+          git add -A
+          git diff --cached --check
+          tree="$(git write-tree)"
+          test "$tree" = '48f35a47f8d81a5059cf2efe31c1c179e04f9a31'
+          git config user.name 'kyrepeak'
+          git config user.email 'kyrewhite15@gmail.com'
+          git commit -m 'candidate: NBA PRA history coverage'
+          git push origin HEAD:api2-nba-pra-history-coverage-v1
