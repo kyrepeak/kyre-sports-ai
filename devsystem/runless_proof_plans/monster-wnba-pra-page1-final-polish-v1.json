@@ -1,0 +1,30 @@
+{
+  "mode":"runless",
+  "task_id":"monster-wnba-pra-page1-final-polish-v1",
+  "workstream":"monster-wnba-pra-page1-final-polish-v1",
+  "source_main_sha":"736266d864e55beca2d2f491224db3c40d782452",
+  "commands":[
+    ["python","-m","pytest","--noconftest","-q","tests/test_wnba_pra_page1_final_polish_v1.py","tests/test_wnba_pra_page1_stier_v1.py","tests/test_wnba_pra_max_speed_snapshot_v1.py","tests/test_wnba_pra_max_speed_streamlit_v1.py","tests/test_monster_wnba_pra_vercel_gateway_v1.py","tests/test_monster_wnba_pra_api_only_v1.py","tests/test_wnba_pra_fanduel_product_route_v2.py","tests/test_wnba_pra_playoff_product_route_v1.py"],
+    ["python","-m","py_compile","wnba_pra_page1_final_polish_v1.py","wnba_pra_page_model_artifact_final_polish_v1.py","runless_v2/wnba_pra_page1_final_polish_runtime_v1.py","runless_v2/__init__.py","wnba_pra_hub_v3612.py","devsystem/wnba_pra_page1_final_polish_source_policy_v1.py"],
+    ["python","-m","devsystem.wnba_pra_page1_final_polish_source_policy_v1"]
+  ],
+  "artifacts":[
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-final-polish-v1.json",
+    "devsystem/wnba_pra_page1_final_polish_source_policy_v1.py",
+    "tests/test_wnba_pra_page1_final_polish_v1.py",
+    "runless_v2/__init__.py",
+    "runless_v2/wnba_pra_page1_final_polish_runtime_v1.py",
+    "wnba_pra_page_model_artifact_final_polish_v1.py",
+    "wnba_pra_page1_final_polish_v1.py",
+    "wnba_pra_hub_v3612.py"
+  ],
+  "dependencies":["wnba_pra_hub_v3617.py","wnba_pra_page1_stier_v1.py","wnba_pra_page_model_artifact_v1.py","runless_v2/wnba_pra_page_snapshot_v1.py","wnba_pra_page_snapshot_client_v1.py","wnba_pra_page_snapshot_publish_v1.py","runless_v2/wnba_pra_market_v1.py"],
+  "probes":[],
+  "timeout_seconds":900,
+  "live_ttl_seconds":1200,
+  "github_actions_fallback":0,
+  "reuse_frozen_proof":[],
+  "required_check":"runless-final-gate",
+  "required_check_app_id":5204253,
+  "freeze_token":"MONSTER_WNBA_PRA_PAGE1_FINAL_POLISH_V1_FROZEN"
+}
