@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-refresh-handoff-v1.json": "1f5144875f57187ea5d553cbee6cec4056786dd3",
+    "devsystem/wnba_pra_page1_refresh_handoff_source_policy_v1.py": "33dc9d4ea801e7fe1beda90328a6fcef2d651dc3",
+    "tests/test_wnba_pra_page1_refresh_handoff_v1.py": "2fc8059b4eb696b02ff628fc87a38a7db23dba0f",
+    "wnba_pra_hub_v3612.py": "55881f7884d00e24b82a233db7f0e88a62fc26f8",
+    "wnba_pra_hub_v3618.py": "2376bd16c0ec8427c793e51f912ac3d9f3324651"
+  },
+  "candidate_sha": "62bab0ee7a536433d8937186becf2a356b4b85eb",
+  "created_at": "2026-10-21T23:15:06.215766+00:00",
+  "dependency_map": {
+    "streamlit_memory_lazy_router_v1.py": "10116208c20e67fbd6756edc2260b6180e7a4c72",
+    "wnba_pra_hub_v3617.py": "6e073b3831c4807dcaf0d38ed2f106369ddfd447",
+    "wnba_pra_page1_final_polish_v1.py": "f524cc7e8216372047690c0b61305dbb308640c9",
+    "wnba_pra_page_snapshot_client_v1.py": "6bc7126b39bae00b1551f9f3a6f402e0ded6cd12",
+    "wnba_pra_page_snapshot_publish_v1.py": "b25fda63d03e01cc67ba1f3945ea587dc6be43be"
+  },
+  "digest": "544ccf11da3a6c5fb06ddbb2a6865a8c07b6c39573a519ff96c2c46d0491ae85",
+  "evidence_digests": [
+    "1606c4873158f12117af2975ffd6240c166894de64bfdc6eb7aeb9b98adee963",
+    "35894d5acfdb386a5f14458d6620d64db7068d4e95be839fb4b69f24288273a3",
+    "dd06559a3e89c8c31b2bd5c975f9a81104e0752f8179a7daffeee1a74763c7ce"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "b604e092b19316048f9f5338d75290f4057d0d7fef2aa006e8cd78e909cc3c70",
+  "proof_id": "monster-wnba-pra-page1-refresh-handoff-v1-62bab0ee7a536433-b3560f6db2e15230",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "c75834e0d3417e7ad461cd113d537a5247a4b8186ec2b208020a80307549c6bb",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-page1-refresh-handoff-v1",
+  "workstream": "monster-wnba-pra-page1-refresh-handoff-v1"
+}
