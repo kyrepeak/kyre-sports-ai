@@ -3,11 +3,15 @@
   "workstream": "api2-nba-pra-live-acceptance-repair-v1",
   "source_main_sha": "3d9611172aeb6fbce2bfd298dc5fcf393436b376",
   "status": "PR_BOUND_PENDING_EXACT_HEAD_PROOF",
-  "progress_percent": 68,
+  "progress_percent": 89,
   "step2a": {
     "active_problem": "NBA PRA live Page 2 acceptance repair: opponent/history metadata, verified usage/rank fallback, score/availability parity, and full-duration loading overlay",
     "authoritative_branch": "api2-nba-pra-live-acceptance-repair-v1",
     "authoritative_pr": 1720,
+    "scope_lease_id": "SCOPE-LEASE-B81CC379E9B129D7C49D73B1",
+    "scope_lease_generation": 660,
+    "scope_lease_expires_at_utc": "2026-10-21T23:22:41Z",
+    "authorization_id": "AUTH-API2-NBA-PRA-LIVE-ACCEPTANCE-REPAIR-V1-R1",
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
@@ -27,6 +31,7 @@
   "evidence": {
     "tdd_red": "Live acceptance contracts were committed before production mutation on PR #1720.",
     "implementation": "Opponent metadata preservation, preseason usage/rank fill, Page1/Page2 score+availability handoff, loading overlay spanning actual provider-backed parent fetch.",
+    "review": "P1 availability finding patched so only genuinely verified statuses can fill an unverified refresh; placeholder injury text remains unverified.",
     "full_gate": "PENDING_RUNLESS_V2_EXACT_HEAD_PROOF"
   },
   "freeze_token": "API2_NBA_PRA_LIVE_ACCEPTANCE_REPAIR_V1_FROZEN"
