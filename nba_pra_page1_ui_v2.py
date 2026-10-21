@@ -1,4 +1,4 @@
-"""Professional NBA PRA Page 1 V2 presentation helpers."""
+'''Professional NBA PRA Page 1 V2 presentation helpers.'''
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -19,6 +19,14 @@ def _fmt(value: Any, digits: int = 1, missing: str = "—") -> str:
         return f"{float(value):.{digits}f}"
     except (TypeError, ValueError):
         return missing
+
+
+def _signed(value: Any, digits: int = 1, missing: str = "—") -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return missing
+    return f"{number:+.{digits}f}"
 
 
 def _price(value: Any) -> str:
@@ -67,7 +75,6 @@ def _probability_text(grade: Mapping[str, Any]) -> str:
 
 
 def _edge_score(grade: Mapping[str, Any]) -> tuple[str, str]:
-    """Return a compact 0-10 decision score without inventing missing model data."""
     lean = _text(grade.get("lean")).upper()
     if lean not in {"OVER", "UNDER"}:
         return "—", "PASS"
@@ -93,101 +100,214 @@ def _why_text(item: Mapping[str, Any]) -> str:
         pieces.append(f"{lean} lean")
     if model.get("projection") is not None and q.get("line") is not None:
         edge = float(model["projection"]) - float(q["line"])
-        pieces.append(f"Model is {abs(edge):.1f} PRA {'above' if edge > 0 else 'below' if edge < 0 else 'at'} {q.get('sportsbook') or 'market'} line")
+        pieces.append(f"Model {abs(edge):.1f} PRA {'above' if edge > 0 else 'below' if edge < 0 else 'at'} line")
     if current.get("l5") is not None:
-        pieces.append(f"L5 PRA {_fmt(current.get('l5'))}")
+        pieces.append(f"L5 {_fmt(current.get('l5'))}")
     if current.get("minutes") is not None:
-        pieces.append(f"current minutes avg {_fmt(current.get('minutes'))}")
-    return " • ".join(pieces[:4]) or "Model/history evidence is still building"
+        pieces.append(f"{_fmt(current.get('minutes'))} min")
+    return " • ".join(pieces[:4]) or "Model/history evidence pending"
 
 
-def build_game_card_html(game: Mapping[str, Any]) -> str:
-    away, home = _text(game.get("away_tricode")) or "—", _text(game.get("home_tricode")) or "—"
-    tip = _text(game.get("tip_phoenix") or game.get("game_time_phoenix") or game.get("tip_local")) or "Time pending"
-    venue = _text(game.get("venue") or game.get("arena"))
-    away_logo, home_logo = TEAM_LOGO_BASE.format(code=away.lower()), TEAM_LOGO_BASE.format(code=home.lower())
-    meta = escape(tip) + (f" • {escape(venue)}" if venue else "")
-    return (
-        '<div class="np2-game-card"><div class="np2-game-state">UPCOMING</div><div class="np2-matchup">'
-        f'<div class="np2-team"><img src="{escape(away_logo)}" alt="{escape(away)}"><b>{escape(away)}</b></div>'
-        '<span class="np2-at">@</span>'
-        f'<div class="np2-team"><img src="{escape(home_logo)}" alt="{escape(home)}"><b>{escape(home)}</b></div>'
-        f'</div><div class="np2-game-meta">{meta}</div></div>'
-    )
-
-
-def build_player_card_html(item: Mapping[str, Any], *, rank: int | None = None, now_utc: datetime | None = None) -> str:
-    now = now_utc or datetime.now(timezone.utc)
+def _identity_html(item: Mapping[str, Any], *, compact: bool = False) -> str:
     name = _text(item.get("player_name")) or "Player"
     team = _text(item.get("team")) or "NBA"
     position = _text(item.get("position"))
     headshot = _text(item.get("headshot"))
     stats_source = _text(item.get("stats_source")) or "History unavailable"
-    availability = _text(item.get("availability")) or "No verified injury flag"
+    avatar_class = "np3-avatar np3-avatar-sm" if compact else "np3-avatar"
+    image = (
+        f'<img class="{avatar_class}" src="{escape(headshot)}" alt="{escape(name)}">'
+        if headshot
+        else f'<div class="{avatar_class} np3-avatar-fallback">NBA</div>'
+    )
+    logo = ""
+    if len(team) == 3 and team.isalpha():
+        logo_url = TEAM_LOGO_BASE.format(code=team.lower())
+        logo = f'<img class="np3-team-badge" src="{escape(logo_url)}" alt="{escape(team)} logo">'
+    meta = " • ".join(v for v in (team, position, stats_source) if v)
+    return (
+        f'<div class="np3-id"><div class="np3-avatar-wrap">{image}{logo}</div>'
+        f'<div class="np3-id-copy"><strong>{escape(name)}</strong><span>{escape(meta)}</span></div></div>'
+    )
+
+
+def build_game_card_html(game: Mapping[str, Any]) -> str:
+    away = _text(game.get("away_tricode")) or "—"
+    home = _text(game.get("home_tricode")) or "—"
+    tip = _text(game.get("tip_phoenix") or game.get("game_time_phoenix") or game.get("tip_local")) or "Time pending"
+    venue = _text(game.get("venue") or game.get("arena"))
+    away_logo = TEAM_LOGO_BASE.format(code=away.lower())
+    home_logo = TEAM_LOGO_BASE.format(code=home.lower())
+    meta = escape(tip) + (f" • {escape(venue)}" if venue else "")
+    return (
+        '<div class="np3-game-card np2-game-card"><div class="np3-game-state">UPCOMING</div>'
+        '<div class="np3-matchup">'
+        f'<div class="np3-team"><img src="{escape(away_logo)}" alt="{escape(away)}"><b>{escape(away)}</b></div>'
+        '<span class="np3-at">@</span>'
+        f'<div class="np3-team"><img src="{escape(home_logo)}" alt="{escape(home)}"><b>{escape(home)}</b></div>'
+        f'</div><div class="np3-game-meta">{meta}</div></div>'
+    )
+
+
+def build_leaderboard_row_html(
+    item: Mapping[str, Any], *, rank: int, now_utc: datetime | None = None
+) -> str:
+    now = now_utc or datetime.now(timezone.utc)
     featured = item.get("featured_quote") or {}
-    quotes = list(item.get("quotes") or [])
+    model = item.get("model") or {}
+    grade = item.get("grade") or {}
+    current = model.get("current") or {}
+    lean = _text(grade.get("lean")).upper() if _text(grade.get("lean")) else "PASS"
+    confidence = _text(grade.get("confidence")).upper() or "UNAVAILABLE"
+    score, tier = _edge_score(grade)
+    fresh, fresh_state = freshness_label(featured.get("observed_at_utc"), now)
+    accent = "over" if lean == "OVER" else "under" if lean == "UNDER" else "neutral"
+    projection = _fmt(model.get("projection"), 1, "—")
+    probability = _probability_text(grade)
+    edge = _signed(grade.get("edge"))
+    return f'''<article class="np3-leader-row np3-{accent}">
+<div class="np3-rank">#{rank}</div>
+{_identity_html(item)}
+<div class="np3-decision"><small>LINE</small><b>{_fmt(featured.get("line"))}</b><span>{escape(_text(featured.get("sportsbook")) or "—")}</span></div>
+<div class="np3-decision"><small>PROJ</small><b>{projection}</b><span>Kyre AI</span></div>
+<div class="np3-decision"><small>EDGE</small><b>{edge}</b><span>PRA</span></div>
+<div class="np3-decision"><small>PROB</small><b>{probability}</b><span>{escape(confidence)}</span></div>
+<div class="np3-form"><small>FORM</small><span><b>L5</b> {_fmt(current.get("l5"))}</span><span><b>L10</b> {_fmt(current.get("l10"))}</span></div>
+<div class="np3-edge-score"><small>KYRE EDGE</small><b>{escape(score)}</b><span>{escape(tier)}</span></div>
+<div class="np3-side np3-side-{accent}">{escape(lean)}</div>
+<div class="np3-row-fresh np2-{fresh_state}">{escape(fresh)}</div>
+</article>'''
+
+
+def _quote_pills(quotes: Sequence[Mapping[str, Any]], now: datetime) -> str:
+    rows = []
+    for quote in quotes:
+        fresh, state = freshness_label(quote.get("observed_at_utc"), now)
+        sportsbook = _text(quote.get("sportsbook")) or "Book"
+        rows.append(
+            '<span class="np3-book-pill">'
+            f'<b>{escape(sportsbook)}</b>'
+            f'<strong>{_fmt(quote.get("line"))}</strong>'
+            f'<em>O {_price(quote.get("over_price"))} · U {_price(quote.get("under_price"))}</em>'
+            f'<i class="np2-{state}">{escape(fresh)}</i></span>'
+        )
+    return "".join(rows) or '<span class="np3-book-empty">No verified sportsbook quote</span>'
+
+
+def build_market_row_html(item: Mapping[str, Any], *, now_utc: datetime | None = None) -> str:
+    now = now_utc or datetime.now(timezone.utc)
+    featured = item.get("featured_quote") or {}
+    model = item.get("model") or {}
+    grade = item.get("grade") or {}
+    current = model.get("current") or {}
+    lean = _text(grade.get("lean")).upper() if _text(grade.get("lean")) else "PASS"
+    confidence = _text(grade.get("confidence")).upper() or "UNAVAILABLE"
+    score, tier = _edge_score(grade)
+    accent = "over" if lean == "OVER" else "under" if lean == "UNDER" else "neutral"
+    projection = _fmt(model.get("projection"), 1, "—")
+    edge = _signed(grade.get("edge"))
+    probability = _probability_text(grade)
+    availability = _text(item.get("availability")) or "No verified injury flag"
+    books = _quote_pills(list(item.get("quotes") or []), now)
+    return f'''<article class="np3-market-row np2-player-card np3-{accent}">
+<div class="np3-market-main">
+{_identity_html(item, compact=True)}
+<div class="np3-market-metrics">
+<span><small>LINE</small><b>{_fmt(featured.get("line"))}</b><em>{escape(_text(featured.get("sportsbook")) or "—")}</em></span>
+<span><small>PROJ</small><b>{projection}</b><em>Kyre AI</em></span>
+<span><small>EDGE</small><b>{edge}</b><em>PRA</em></span>
+<span><small>PROB</small><b>{probability}</b><em>{escape(confidence)}</em></span>
+<span><small>SCORE</small><b>{escape(score)}</b><em>{escape(tier)}</em></span>
+</div>
+<div class="np3-side np3-side-{accent}">{escape(lean)}</div>
+</div>
+<div class="np3-market-sub">
+<span><b>L5</b> {_fmt(current.get("l5"))}</span>
+<span><b>L10</b> {_fmt(current.get("l10"))}</span>
+<span><b>MIN</b> {_fmt(current.get("minutes"))}</span>
+<span><b>STATUS</b> {escape(availability)}</span>
+<span class="np3-evidence">{escape(_why_text(item))}</span>
+</div>
+<div class="np3-book-strip">{books}</div>
+</article>'''
+
+
+def build_kpi_strip_html(kpis: Mapping[str, Any]) -> str:
+    over = f"+{float(kpis['best_over_edge']):.1f}" if kpis.get("best_over_edge") is not None else "—"
+    under = f"{float(kpis['best_under_edge']):.1f}" if kpis.get("best_under_edge") is not None else "—"
+    players = int(kpis.get("players_tracked") or 0)
+    freshness = f"{int(kpis.get('fresh_quotes') or 0)}/{players}" if players else "0/0"
+    return (
+        '<div class="np3-kpi-strip">'
+        f'<div><small>PLAYERS</small><b>{players}</b><span>tracked</span></div>'
+        f'<div><small>MARKETS</small><b>{players}</b><span>verified PRA</span></div>'
+        f'<div><small>BEST OVER</small><b>{over}</b><span>model edge</span></div>'
+        f'<div><small>BEST UNDER</small><b>{under}</b><span>model edge</span></div>'
+        f'<div><small>FRESH</small><b>{freshness}</b><span>≤120 sec</span></div>'
+        '</div>'
+    )
+
+
+def build_player_card_html(item: Mapping[str, Any], *, rank: int | None = None, now_utc: datetime | None = None) -> str:
+    now = now_utc or datetime.now(timezone.utc)
+    featured = item.get("featured_quote") or {}
     model = item.get("model") or {}
     grade = item.get("grade") or {}
     current = model.get("current") or {}
     lean = _text(grade.get("lean")).upper() or "PASS"
     confidence = _text(grade.get("confidence")).upper() or "UNAVAILABLE"
     freshness, fresh_state = freshness_label(featured.get("observed_at_utc"), now)
-    accent = "over" if lean == "OVER" else "under" if lean == "UNDER" else "neutral"
-    image = (
-        f'<img class="np2-headshot" src="{escape(headshot)}" alt="{escape(name)}">'
-        if headshot
-        else '<div class="np2-headshot np2-headshot-fallback">NBA</div>'
-    )
-    team_logo = ""
-    if len(team) == 3 and team.isalpha():
-        logo_url = TEAM_LOGO_BASE.format(code=team.lower())
-        team_logo = f'<img class="np2-player-team-logo" src="{escape(logo_url)}" alt="{escape(team)} logo">'
+    score, tier = _edge_score(grade)
+    quotes = _quote_pills(list(item.get("quotes") or []), now)
     rank_html = f'<span class="np2-rank">#{rank}</span>' if rank else ""
-    edge_score, edge_tier = _edge_score(grade)
-
-    quote_html = []
-    for q in quotes:
-        q_fresh, q_state = freshness_label(q.get("observed_at_utc"), now)
-        quote_html.append(
-            '<div class="np2-book">'
-            f'<div><b>{escape(_text(q.get("sportsbook")))}</b><span>{_fmt(q.get("line"))}</span></div>'
-            f'<small>O {_price(q.get("over_price"))} • U {_price(q.get("under_price"))}</small>'
-            f'<em class="np2-{q_state}">{escape(q_fresh)}</em></div>'
-        )
-    books = "".join(quote_html) or '<div class="np2-book-empty">No verified sportsbook quote</div>'
-    meta = " • ".join(v for v in (team, position, stats_source) if v)
-
-    return f'''<div class="np2-player-card np2-{accent}">
-<div class="np2-player-top">{rank_html}<div class="np2-avatar-wrap">{image}{team_logo}</div><div class="np2-player-id"><div class="np2-player-name">{escape(name)}</div><div class="np2-player-meta">{escape(meta)}</div></div><div class="np2-edge-badge"><small>KYRE EDGE SCORE</small><strong>{escape(edge_score)}</strong><span>{escape(edge_tier)}</span></div><div class="np2-lean-badge">{escape(lean)}</div></div>
+    return f'''<div class="np2-player-card">
+<div class="np2-player-top">{rank_html}{_identity_html(item)}<div class="np2-edge-badge"><small>KYRE EDGE SCORE</small><strong>{escape(score)}</strong><span>{escape(tier)}</span></div><div class="np2-lean-badge">{escape(lean)}</div></div>
 <div class="np2-primary-grid">
-<div class="np2-metric np2-market-metric"><small>PRA LINE • {escape(_text(featured.get('sportsbook')) or '—')}</small><strong>{_fmt(featured.get('line'))}</strong><span>O {_price(featured.get('over_price'))} / U {_price(featured.get('under_price'))}</span></div>
-<div class="np2-metric"><small>KYRE AI PROJECTION</small><strong>{_fmt(model.get('projection'), 1, 'BUILDING')}</strong><span>projected PRA</span></div>
-<div class="np2-metric"><small>{escape(lean if lean in {'OVER','UNDER'} else 'MODEL')} PROBABILITY</small><strong>{_probability_text(grade)}</strong><span>{escape(confidence)} confidence</span></div>
-<div class="np2-metric"><small>MODEL EDGE</small><strong>{_fmt(grade.get('edge'))}</strong><span>PRA vs featured line</span></div>
+<div class="np2-metric"><small>PRA LINE • {escape(_text(featured.get("sportsbook")) or "—")}</small><strong>{_fmt(featured.get("line"))}</strong><span>O {_price(featured.get("over_price"))} / U {_price(featured.get("under_price"))}</span></div>
+<div class="np2-metric"><small>KYRE AI PROJECTION</small><strong>{_fmt(model.get("projection"), 1, "—")}</strong><span>projected PRA</span></div>
+<div class="np2-metric"><small>{escape(lean if lean in {"OVER", "UNDER"} else "MODEL")} PROBABILITY</small><strong>{_probability_text(grade)}</strong><span>{escape(confidence)} confidence</span></div>
+<div class="np2-metric"><small>MODEL EDGE</small><strong>{_fmt(grade.get("edge"))}</strong><span>PRA vs featured line</span></div>
 </div>
-<div class="np2-support-row"><span><b>L5</b> {_fmt(current.get('l5'))}</span><span><b>L10</b> {_fmt(current.get('l10'))}</span><span><b>MIN</b> {_fmt(current.get('minutes'))}</span><span><b>AVAILABILITY</b> {escape(availability)}</span></div>
-<div class="np2-books-label">LIVE SPORTSBOOK MARKET • quotes stay separate — never averaged</div><div class="np2-books">{books}</div>
+<div class="np2-support-row"><span><b>L5</b> {_fmt(current.get("l5"))}</span><span><b>L10</b> {_fmt(current.get("l10"))}</span><span><b>MIN</b> {_fmt(current.get("minutes"))}</span></div>
+<div class="np2-books-label">LIVE SPORTSBOOK MARKET • quotes stay separate — never averaged</div><div class="np2-books">{quotes}</div>
 <div class="np2-why"><b>WHY THE MODEL LIKES IT</b><span>{escape(_why_text(item))}</span></div>
 <div class="np2-card-foot"><span class="np2-{fresh_state}">● {escape(freshness)}</span><span>Sportsbook projection influence 0.0%</span></div></div>'''
 
 
 def dashboard_kpis(items: Sequence[Mapping[str, Any]], *, now_utc: datetime | None = None) -> dict[str, Any]:
     now = now_utc or datetime.now(timezone.utc)
-    over_edges = [float((x.get("grade") or {})["edge"]) for x in items if (x.get("grade") or {}).get("lean") == "OVER" and (x.get("grade") or {}).get("edge") is not None]
-    under_edges = [float((x.get("grade") or {})["edge"]) for x in items if (x.get("grade") or {}).get("lean") == "UNDER" and (x.get("grade") or {}).get("edge") is not None]
-    fresh = sum(freshness_label((x.get("featured_quote") or {}).get("observed_at_utc"), now)[1] == "fresh" for x in items)
-    return {"players_tracked": len(items), "best_over_edge": max(over_edges) if over_edges else None, "best_under_edge": min(under_edges) if under_edges else None, "fresh_quotes": fresh}
+    over_edges = [
+        float((x.get("grade") or {})["edge"])
+        for x in items
+        if (x.get("grade") or {}).get("lean") == "OVER" and (x.get("grade") or {}).get("edge") is not None
+    ]
+    under_edges = [
+        float((x.get("grade") or {})["edge"])
+        for x in items
+        if (x.get("grade") or {}).get("lean") == "UNDER" and (x.get("grade") or {}).get("edge") is not None
+    ]
+    fresh = sum(
+        freshness_label((x.get("featured_quote") or {}).get("observed_at_utc"), now)[1] == "fresh"
+        for x in items
+    )
+    return {
+        "players_tracked": len(items),
+        "best_over_edge": max(over_edges) if over_edges else None,
+        "best_under_edge": min(under_edges) if under_edges else None,
+        "fresh_quotes": fresh,
+    }
 
 
 def css() -> str:
     return r'''<style>
-.np2-hero{position:relative;overflow:hidden;padding:22px 22px;border:1px solid #1f516b;border-radius:24px;background:radial-gradient(circle at 88% -10%,#105074 0,#0a2332 28%,#06131d 58%,#03080d 100%);margin:8px 0 14px;box-shadow:0 18px 46px rgba(0,0,0,.34)}
-.np2-hero:after{content:"";position:absolute;right:-80px;top:-105px;width:250px;height:250px;border-radius:50%;border:1px solid rgba(115,220,255,.12);box-shadow:0 0 70px rgba(71,190,235,.08)}
-.np2-kicker{color:#73dcff;font-size:.73rem;font-weight:900;letter-spacing:.17em}.np2-title{font-size:2.15rem;font-weight:950;color:#fff;line-height:1.05;margin:7px 0}.np2-sub{color:#9cb2c1;font-size:.93rem;line-height:1.5;max-width:760px}.np2-status{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.np2-status span{border:1px solid #1d4054;border-radius:999px;padding:6px 10px;color:#ccefff;background:rgba(7,19,29,.88);font-size:.7rem;font-weight:800;letter-spacing:.03em}
-.np2-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:11px 0 17px}.np2-kpi{background:linear-gradient(160deg,#081824,#051018);border:1px solid #16384b;border-radius:15px;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}.np2-kpi small{display:block;color:#7290a3;font-size:.62rem;letter-spacing:.09em;font-weight:800}.np2-kpi b{display:block;color:#f4fbff;font-size:1.3rem;margin-top:3px}.np2-kpi em{font-style:normal;color:#7adfff;font-size:.67rem}.np2-sec{display:flex;justify-content:space-between;align-items:end;margin:19px 1px 8px}.np2-sec b{color:#eafaff;font-size:.87rem;letter-spacing:.12em}.np2-sec span{color:#6f899b;font-size:.7rem}
-.np2-games{display:flex;gap:9px;overflow-x:auto;padding:2px 0 11px;scroll-snap-type:x proximity}.np2-game-card{min-width:220px;scroll-snap-align:start;border:1px solid #173c51;border-radius:17px;padding:13px;background:linear-gradient(145deg,#081824,#03080d);box-shadow:0 8px 24px rgba(0,0,0,.16)}.np2-game-state{font-size:.6rem;color:#70e7b1;font-weight:900;letter-spacing:.13em}.np2-matchup{display:flex;align-items:center;justify-content:center;gap:10px;margin:9px 0}.np2-team{display:flex;align-items:center;gap:6px;color:#fff}.np2-team img{width:34px;height:34px;object-fit:contain}.np2-at{color:#567183;font-weight:800}.np2-game-meta{color:#8da5b5;font-size:.69rem}
-.np2-player-card{border:1px solid #173f55;border-radius:20px;padding:15px;background:linear-gradient(152deg,#081824 0,#050d14 58%,#03070b 100%);margin:0 0 12px;box-shadow:0 13px 34px rgba(0,0,0,.2);position:relative;overflow:hidden}.np2-player-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#2b718f}.np2-player-card.np2-over{border-color:#176648}.np2-player-card.np2-over:before{background:#37cf90}.np2-player-card.np2-under{border-color:#6b2a35}.np2-player-card.np2-under:before{background:#e15a6d}.np2-player-top{display:flex;align-items:center;gap:9px}.np2-rank{font-size:.68rem;font-weight:900;color:#7de2ff;background:#092334;border:1px solid #1d526d;border-radius:999px;padding:4px 6px}.np2-avatar-wrap{position:relative;flex:0 0 54px;width:54px;height:54px}.np2-headshot{width:54px;height:54px;border-radius:15px;object-fit:cover;background:#0a1720;border:1px solid #183c50}.np2-headshot-fallback{display:flex;align-items:center;justify-content:center;color:#74dfff;font-size:.7rem;font-weight:900}.np2-player-team-logo{position:absolute;right:-5px;bottom:-4px;width:24px;height:24px;object-fit:contain;background:#06111a;border:1px solid #315467;border-radius:50%;padding:2px}.np2-player-id{flex:1;min-width:0}.np2-player-name{color:#fff;font-size:1.08rem;font-weight:950;letter-spacing:-.01em}.np2-player-meta{color:#7f9aac;font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.np2-edge-badge{min-width:74px;text-align:center;border:1px solid #1d526d;background:#071b29;border-radius:12px;padding:6px 8px}.np2-edge-badge small{display:block;color:#6f99ae;font-size:.48rem;font-weight:900;letter-spacing:.08em}.np2-edge-badge strong{display:block;color:#eafaff;font-size:1rem;line-height:1.05;margin:2px 0}.np2-edge-badge span{display:block;color:#72ddff;font-size:.55rem;font-weight:900;letter-spacing:.08em}.np2-lean-badge{font-weight:950;font-size:.7rem;border-radius:999px;padding:5px 8px;color:#fff;background:#123345}.np2-over .np2-lean-badge{background:#0d4a35}.np2-under .np2-lean-badge{background:#54232d}
-.np2-primary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}.np2-metric{border:1px solid #123448;border-radius:12px;padding:9px;background:#071925;min-width:0}.np2-market-metric{background:linear-gradient(150deg,#092233,#071925)}.np2-metric small{display:block;color:#7893a5;font-size:.56rem;letter-spacing:.05em;font-weight:800}.np2-metric strong{display:block;color:#f4fbff;font-size:1.28rem;line-height:1.15;margin:2px 0}.np2-metric span{display:block;color:#7893a5;font-size:.6rem}.np2-support-row{display:flex;gap:6px;flex-wrap:wrap}.np2-support-row span{border-radius:999px;background:#081824;border:1px solid #123447;padding:5px 7px;color:#9eb4c3;font-size:.63rem}.np2-support-row b{color:#d7f4ff}.np2-books-label{color:#6f91a5;font-size:.58rem;font-weight:900;letter-spacing:.09em;margin:11px 0 5px}.np2-books{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.np2-book{border:1px solid #15384c;border-radius:11px;padding:8px;background:#06131d}.np2-book div{display:flex;justify-content:space-between;color:#dff7ff;font-size:.69rem}.np2-book small{display:block;color:#8da4b3;font-size:.62rem}.np2-book em{display:block;font-style:normal;font-size:.54rem;margin-top:3px}.np2-why{border-top:1px solid #102a38;margin-top:11px;padding-top:9px}.np2-why b{display:block;color:#75dcff;font-size:.59rem;letter-spacing:.1em}.np2-why span{color:#adc1ce;font-size:.69rem;line-height:1.4}.np2-card-foot{display:flex;justify-content:space-between;gap:8px;color:#698397;font-size:.57rem;margin-top:8px}.np2-fresh{color:#65dda3!important}.np2-stale{color:#f0bd6c!important}.np2-unknown{color:#8697a3!important}.np2-book-empty{color:#8499a7;font-size:.68rem}
-@media(max-width:900px){.np2-player-top{flex-wrap:wrap}.np2-edge-badge{margin-left:auto}.np2-primary-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:720px){.np2-title{font-size:1.6rem}.np2-kpis{grid-template-columns:repeat(2,1fr)}.np2-books{grid-template-columns:1fr}.np2-player-card{padding:13px}.np2-card-foot{flex-direction:column}.np2-game-card{min-width:195px}.np2-lean-badge{order:5}.np2-edge-badge{min-width:70px}}
+:root{--np3-bg:#05090f;--np3-panel:#08121c;--np3-panel2:#0b1823;--np3-line:#173448;--np3-blue:#79ddff;--np3-text:#f3f9fc;--np3-muted:#7890a2;--np3-green:#46d69a;--np3-red:#ed6f80}
+.np3-command{display:grid;grid-template-columns:1.3fr auto;gap:18px;align-items:end;padding:18px 20px;border:1px solid #1b4158;border-radius:20px;background:linear-gradient(135deg,#07131e 0,#091b28 55%,#071018 100%);box-shadow:0 14px 38px rgba(0,0,0,.25);margin:6px 0 10px}.np3-kicker{color:var(--np3-blue);font-size:.68rem;font-weight:900;letter-spacing:.16em}.np3-command h1{color:#fff;font-size:2rem;line-height:1;margin:5px 0 6px}.np3-command p{color:#91a7b6;margin:0;font-size:.82rem;max-width:720px}.np3-command-meta{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.np3-command-meta span{border:1px solid #1d4257;border-radius:999px;padding:6px 9px;color:#ccefff;background:#071620;font-size:.62rem;font-weight:800}
+.np3-section{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:16px 2px 7px}.np3-section b{color:#eafaff;font-size:.76rem;letter-spacing:.12em}.np3-section span{color:#657f91;font-size:.65rem}.np3-games{display:flex;gap:8px;overflow-x:auto;padding:1px 0 9px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.np3-game-card{min-width:178px;scroll-snap-align:start;border:1px solid #173a4f;border-radius:14px;padding:10px 11px;background:#07131d}.np3-game-state{color:#67dca4;font-size:.54rem;font-weight:900;letter-spacing:.12em}.np3-matchup{display:flex;align-items:center;justify-content:center;gap:7px;margin:7px 0 5px}.np3-team{display:flex;align-items:center;gap:4px;color:#fff;font-size:.82rem}.np3-team img{width:29px;height:29px;object-fit:contain}.np3-at{color:#527083;font-size:.72rem}.np3-game-meta{color:#7d95a5;font-size:.6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np3-kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #17384d;border-radius:15px;background:#06111a;overflow:hidden;margin:4px 0 12px}.np3-kpi-strip>div{padding:10px 12px;border-right:1px solid #123045;min-width:0}.np3-kpi-strip>div:last-child{border-right:0}.np3-kpi-strip small{display:block;color:#668499;font-size:.52rem;font-weight:900;letter-spacing:.08em}.np3-kpi-strip b{display:block;color:#f5fbff;font-size:1.12rem;margin:1px 0}.np3-kpi-strip span{display:block;color:#6fa8bf;font-size:.54rem;white-space:nowrap}
+div[data-testid="stRadio"]{position:sticky;top:.4rem;z-index:20;background:rgba(5,9,15,.96);backdrop-filter:blur(12px);border:1px solid #17384d;border-radius:13px;padding:5px 8px;margin:8px 0 12px}div[data-testid="stRadio"] label{font-size:.72rem!important;font-weight:800!important}
+.np3-leaderboard{display:flex;flex-direction:column;gap:6px}.np3-leader-row{display:grid;grid-template-columns:34px minmax(180px,1.55fr) repeat(4,minmax(64px,.6fr)) minmax(100px,.8fr) 74px 68px;gap:9px;align-items:center;border:1px solid #17384d;border-radius:14px;background:linear-gradient(90deg,#07131d,#081824);padding:9px 11px;position:relative}.np3-leader-row:before,.np3-market-row:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:4px;background:#2e7899}.np3-leader-row.np3-over:before,.np3-market-row.np3-over:before{background:var(--np3-green)}.np3-leader-row.np3-under:before,.np3-market-row.np3-under:before{background:var(--np3-red)}
+.np3-rank{color:#8de5ff;font-weight:950;font-size:.78rem;text-align:center}.np3-id{display:flex;align-items:center;gap:9px;min-width:0}.np3-avatar-wrap{position:relative;flex:0 0 auto}.np3-avatar{width:48px;height:48px;border-radius:12px;object-fit:cover;background:#0b1d2a;border:1px solid #1c455e}.np3-avatar-sm{width:42px;height:42px;border-radius:10px}.np3-avatar-fallback{display:flex;align-items:center;justify-content:center;color:#7ce1ff;font-size:.62rem;font-weight:900}.np3-team-badge{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;object-fit:contain;background:#07131d;border:1px solid #2a5369;border-radius:50%;padding:2px}.np3-id-copy{min-width:0}.np3-id-copy strong{display:block;color:#fff;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.np3-id-copy span{display:block;color:#738c9d;font-size:.57rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.np3-decision small,.np3-form small,.np3-edge-score small{display:block;color:#607f94;font-size:.48rem;font-weight:900;letter-spacing:.08em}.np3-decision b,.np3-edge-score b{display:block;color:#f6fbff;font-size:.98rem;line-height:1.1}.np3-decision span,.np3-edge-score span{display:block;color:#7892a5;font-size:.52rem}.np3-form span{display:block;color:#9eb4c3;font-size:.55rem}.np3-form b{color:#dff6ff}.np3-edge-score{border:1px solid #1c4f69;background:#071b29;border-radius:9px;padding:5px 6px;text-align:center}.np3-edge-score span{color:#72ddff;font-weight:900}.np3-side{font-size:.59rem;font-weight:950;border-radius:999px;padding:5px 7px;text-align:center;background:#183245;color:#fff}.np3-side-over{background:#0e4d39}.np3-side-under{background:#5a2630}.np3-row-fresh{position:absolute;right:10px;bottom:4px;font-size:.46rem}
+.np3-market-list{display:flex;flex-direction:column;gap:7px}.np3-market-row{position:relative;border:1px solid #153549;border-radius:14px;background:#06111a;padding:9px 10px 8px 12px;margin:0}.np3-market-main{display:grid;grid-template-columns:minmax(185px,1.25fr) minmax(360px,2fr) 68px;gap:11px;align-items:center}.np3-market-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.np3-market-metrics span{padding:3px 6px;border-left:1px solid #133349;min-width:0}.np3-market-metrics small{display:block;color:#627f91;font-size:.46rem;font-weight:900;letter-spacing:.07em}.np3-market-metrics b{display:block;color:#f7fbff;font-size:.9rem}.np3-market-metrics em{display:block;color:#718b9d;font-size:.48rem;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.np3-market-sub{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid #102b3a;margin-top:7px;padding-top:6px;color:#7f98a9;font-size:.53rem}.np3-market-sub b{color:#d6f3ff}.np3-evidence{margin-left:auto;color:#83cdea}.np3-book-strip{display:flex;gap:5px;overflow-x:auto;margin-top:6px;padding-bottom:1px}.np3-book-pill{display:grid;grid-template-columns:auto auto auto;align-items:center;gap:7px;min-width:max-content;border:1px solid #17394d;border-radius:999px;padding:4px 7px;background:#071722}.np3-book-pill b{color:#dff7ff;font-size:.54rem}.np3-book-pill strong{color:#fff;font-size:.6rem}.np3-book-pill em{color:#8ca5b4;font-size:.49rem;font-style:normal}.np3-book-pill i{font-size:.44rem;font-style:normal}.np3-book-empty{color:#7f94a2;font-size:.55rem}.np2-player-card{border:1px solid #173f55;border-radius:16px;padding:12px;background:#07131d;margin:0 0 10px}.np2-player-top{display:flex;align-items:center;gap:8px}.np2-rank{font-size:.64rem;font-weight:900;color:#7de2ff}.np2-edge-badge{margin-left:auto;border:1px solid #1d526d;border-radius:10px;padding:5px 7px;text-align:center}.np2-edge-badge small,.np2-edge-badge span{display:block;font-size:.48rem;color:#77bfdc}.np2-edge-badge strong{color:#fff}.np2-lean-badge{font-size:.6rem;font-weight:900}.np2-primary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:9px 0}.np2-metric{border:1px solid #123448;border-radius:9px;padding:7px}.np2-metric small,.np2-metric span{display:block;font-size:.52rem;color:#7893a5}.np2-metric strong{display:block;color:#fff}.np2-support-row{display:flex;gap:6px}.np2-support-row span{font-size:.53rem;color:#8ca5b4}.np2-books-label,.np2-why,.np2-card-foot{font-size:.52rem;color:#7690a2;margin-top:7px}.np2-books{margin-top:5px}.np2-fresh{color:#5bd59a!important}.np2-stale{color:#efbd6b!important}.np2-unknown{color:#8496a2!important}
+@media(max-width:900px){.np3-command{grid-template-columns:1fr}.np3-command-meta{justify-content:flex-start}.np3-leader-row{grid-template-columns:30px minmax(150px,1.4fr) repeat(4,60px) 72px 62px}.np3-form{display:none}.np3-market-main{grid-template-columns:minmax(160px,1fr) minmax(300px,2fr) 62px}.np3-evidence{display:none}}
+@media(max-width:720px){.np3-command{padding:14px 14px;border-radius:16px}.np3-command h1{font-size:1.45rem}.np3-command p{font-size:.72rem}.np3-command-meta span{font-size:.54rem;padding:5px 7px}.np3-section{margin-top:13px}.np3-game-card{min-width:164px;padding:9px}.np3-kpi-strip{grid-template-columns:repeat(5,minmax(82px,1fr));overflow-x:auto}.np3-kpi-strip>div{padding:8px 9px}.np3-kpi-strip b{font-size:1rem}.np3-leaderboard{overflow-x:auto}.np3-leader-row{min-width:720px;padding:8px 9px}.np3-market-row{padding:8px 9px 7px 11px}.np3-market-main{grid-template-columns:1fr 64px}.np3-market-metrics{grid-column:1 / -1;grid-row:2;grid-template-columns:repeat(5,1fr);border-top:1px solid #102b3a;padding-top:6px}.np3-market-sub{gap:8px}.np3-market-sub span:nth-child(4){flex-basis:100%}.np3-book-strip{margin-top:5px}.np3-avatar-sm{width:38px;height:38px}.np3-id-copy strong{font-size:.82rem}.np3-side{align-self:start}.np2-primary-grid{grid-template-columns:repeat(2,1fr)}}
 </style>'''

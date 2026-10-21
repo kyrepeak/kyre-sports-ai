@@ -1,0 +1,28 @@
+{
+  "task_id": "api2-nba-pra-page1-hard-analytics-ui-v1",
+  "workstream": "api2-nba-pra-page1-hard-analytics-ui-v1",
+  "source_main_sha": "2b412cd3505126501ffab02584fc02b309c1a93b",
+  "status": "AUTHORITATIVE_PROOF_READY",
+  "progress_percent": 72,
+  "step2a": {
+    "active_problem": "NBA PRA Page 1 is functionally correct but still visually resembles the old stacked-card layout on mobile.",
+    "authoritative_branch": "api2-nba-pra-page1-hard-analytics-ui-v1",
+    "authoritative_pr": 1710,
+    "scope_lease_id": "SCOPE-LEASE-934D1909F830291F6EB06FEB",
+    "scope_lease_generation": 649,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "scope": {
+    "repair": "Presentation-only hard redesign: compact command header, swipe matchup rail, KPI strip, sticky filters, ranked leaderboard rows, and dense all-market analytics rows with player headshots and team logos.",
+    "frozen_owners": "API transport, Kyre Sports API routing, model math, schedule logic, sportsbook market behavior, and the API-only no-SGO contract remain unchanged."
+  },
+  "evidence": {
+    "tdd_red": "2 expected failures captured before implementation",
+    "frozen_registry_overlap": false,
+    "api2_sgo_rule": "Page 1 uses Kyre Sports API only; SGO remains forbidden"
+  }
+}
