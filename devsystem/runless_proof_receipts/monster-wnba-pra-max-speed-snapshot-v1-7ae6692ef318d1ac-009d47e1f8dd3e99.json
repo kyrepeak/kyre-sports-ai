@@ -1,0 +1,59 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-max-speed-snapshot-v1.json": "6fddd1c0a78f9d0079a3ae9d1ef6551cd4359a19",
+    "devsystem/wnba_pra_max_speed_profile_v1.py": "f43831c14661b077ebf286fd8c4608d06c021fc8",
+    "runless_v2/app.py": "713c2ed0b95164160e131120b8b779eccafd7867",
+    "runless_v2/wnba_pra_page_snapshot_store_v1.py": "3d1fab0818124b28e2ca5eed8ef66a9cf66665cc",
+    "runless_v2/wnba_pra_page_snapshot_v1.py": "e9159d93a8fb6f6fca754391a5fa52a8d09ef407",
+    "supabase/migrations/20261021_wnba_pra_page_snapshot_publish_fence_v1.sql": "8cff4634dab401a79753d1aa847ad13575d4ace4",
+    "supabase/migrations/20261021_wnba_pra_page_snapshots_v1.sql": "c9f481b7ce84de5374350b23b154ab7b25830ff3",
+    "tests/test_wnba_pra_max_speed_snapshot_v1.py": "203870b695e9af151c2add36826edacaff8b1fbd",
+    "tests/test_wnba_pra_max_speed_streamlit_v1.py": "0902c0fe97d72a60a4e854080111b58c690f9465",
+    "wnba_pra_hub_v3617.py": "777be8663c5b7a020fd96aa83145fc39a39580ac",
+    "wnba_pra_page_model_artifact_v1.py": "63f9bfe947c751a64e528d16b58d90d6179f961f",
+    "wnba_pra_page_snapshot_client_v1.py": "6bc7126b39bae00b1551f9f3a6f402e0ded6cd12",
+    "wnba_pra_page_snapshot_publish_v1.py": "b25fda63d03e01cc67ba1f3945ea587dc6be43be",
+    "wnba_pra_page_snapshot_renderer_v1.py": "202e1c6981346f34dba33c68ff4632b7e3f6e2b1",
+    "wnba_pra_source_clean_guard_v1.py": "88789cf68eb7e22fa57297e147d369d2ba0eb1b2"
+  },
+  "candidate_sha": "7ae6692ef318d1acc84689cf4db27c566cb7e431",
+  "created_at": "2026-10-21T20:00:16.532204+00:00",
+  "dependency_map": {
+    "runless_v2/wnba_pra_market_v1.py": "058175b811e1015ef934b72461e499d25d7041e9",
+    "streamlit_memory_lazy_router_wnba_pra_speed_v3_step9_duplicate_key_guard.py": "51eef1fe2526801a467f155d1c0b32d516ef8a35",
+    "wnba_pra_api_market_bridge_v2.py": "9b02dc38684b85040ed43a895a9043215dc627f4",
+    "wnba_pra_product_snapshot_v1.py": "ed02093f6f31a897f7cabd212dcd4476ad70264a"
+  },
+  "digest": "b8a17424c1faf24db2198725863e970b759be59355b8c1ea4107044f347315f5",
+  "evidence_digests": [
+    "eadacba4007be3d9c82f226afe57ca1e21944133d734eddda148d8d349813816",
+    "4a328b99bff5abc9848f0f579be3cec18f8beadfbd72db646d77c68e615402c0"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "7acbd9c7269d14d53373572f3bea82c38242b9d2317abe0674d159d8147a5bbf",
+  "proof_id": "monster-wnba-pra-max-speed-snapshot-v1-7ae6692ef318d1ac-009d47e1f8dd3e99",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "ae7877ecbcdc723e2c6dfd865a949d0b39c876c59d9b9fabc804cf81c861d9ad",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-max-speed-snapshot-v1",
+  "workstream": "monster-wnba-pra-max-speed-snapshot-v1"
+}
