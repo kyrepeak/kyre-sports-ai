@@ -71,3 +71,72 @@ def test_source_diagnostics_are_specific_and_never_expose_secret_material():
         "odds_api":"VERIFIED • OK",
     }
     assert "DO-NOT-LEAK" not in repr(diag)
+
+
+def test_all_upcoming_markets_render_when_best_edges_is_empty(monkeypatch):
+    import sys
+    import types
+    import nba_pra_page1_v2 as page
+
+    snapshot = {
+        "games": [{"away_tricode": "ATL", "home_tricode": "ORL", "tip_phoenix": "7:00 PM MST"}],
+        "slate_date": "2026-10-21",
+        "market": {
+            "testplayer": {
+                "player_name": "Test Player",
+                "featured_quote": {
+                    "sportsbook": "FanDuel",
+                    "line": 25.5,
+                    "over_price": -110,
+                    "under_price": -110,
+                    "provider": "FanDuel",
+                    "observed_at_utc": "2026-10-21T03:00:00Z",
+                },
+                "quotes": [{
+                    "sportsbook": "FanDuel",
+                    "line": 25.5,
+                    "over_price": -110,
+                    "under_price": -110,
+                    "provider": "FanDuel",
+                    "observed_at_utc": "2026-10-21T03:00:00Z",
+                }],
+            }
+        },
+        "profiles": {"testplayer": {"player_name": "Test Player", "team": "ATL"}},
+        "injury_players": {},
+        "sources": {},
+    }
+
+    monkeypatch.setattr(page, "load_page1_snapshot_v2", lambda now: snapshot)
+    monkeypatch.setattr(page, "project_pra", lambda *_args, **_kwargs: {
+        "projection": None, "sigma": None, "current": {}, "prior": {}, "basis": "UNAVAILABLE"
+    })
+    monkeypatch.setattr(page, "grade_market", lambda *_args, **_kwargs: {
+        "edge": None, "over_probability": None, "lean": "HOLD", "confidence": "LOW"
+    })
+
+    rendered = []
+
+    class _Context:
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    fake = types.SimpleNamespace()
+    fake.session_state = {}
+    fake.markdown = lambda html, **_kwargs: rendered.append(str(html))
+    fake.spinner = lambda *_args, **_kwargs: _Context()
+    fake.expander = lambda *_args, **_kwargs: _Context()
+    fake.columns = lambda count: [_Context() for _ in range(count)]
+    fake.radio = lambda *_args, **_kwargs: "BEST EDGES"
+    fake.button = lambda *_args, **_kwargs: False
+    fake.caption = lambda *_args, **_kwargs: None
+    fake.write = lambda *_args, **_kwargs: None
+    fake.warning = lambda *_args, **_kwargs: None
+    fake.info = lambda *_args, **_kwargs: None
+    monkeypatch.setitem(sys.modules, "streamlit", fake)
+
+    page.render_nba_pra_page1_v2()
+
+    assert any("np2-player-card" in html and "Test Player" in html for html in rendered)
