@@ -46,6 +46,7 @@ from .nba_pra_market_v1 import router as nba_pra_market_router
 from .nba_pra_player_context_v1 import router as nba_pra_player_context_router
 from .nba_pra_schedule_v1 import router as nba_pra_schedule_router
 from .nba_pra_injury_v1 import router as nba_pra_injury_router
+from .nba_pra_matchup_v1 import router as nba_pra_matchup_router
 from .wnba_pra_market_v1 import router as wnba_pra_market_router
 from .wnba_pra_page_snapshot_v1 import router as wnba_pra_page_snapshot_router
 from .wnba_schedule_v1 import router as wnba_schedule_router
@@ -535,6 +536,7 @@ def create_app(
     app.include_router(nba_pra_player_context_router)
     app.include_router(nba_pra_schedule_router)
     app.include_router(nba_pra_injury_router)
+    app.include_router(nba_pra_matchup_router)
     app.include_router(wnba_pra_market_router)
     app.include_router(wnba_pra_page_snapshot_router)
     app.include_router(wnba_schedule_router)
@@ -745,6 +747,7 @@ def _unconfigured_app(error: BaseException) -> FastAPI:
     fallback.include_router(nba_pra_player_context_router)
     fallback.include_router(nba_pra_schedule_router)
     fallback.include_router(nba_pra_injury_router)
+    fallback.include_router(nba_pra_matchup_router)
     fallback.include_router(wnba_pra_market_router)
     fallback.include_router(wnba_pra_page_snapshot_router)
     fallback.include_router(wnba_schedule_router)

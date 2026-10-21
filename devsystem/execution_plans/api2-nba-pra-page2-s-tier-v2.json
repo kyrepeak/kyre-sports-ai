@@ -1,0 +1,82 @@
+{
+  "schema_version": 2,
+  "task_id": "api2-nba-pra-page2-s-tier-v2",
+  "project": "API2",
+  "workstream": "api2-nba-pra-page2-s-tier-v2",
+  "step": "2A/1",
+  "source_main_sha": "de5bb53d54368d29721de59fd9a80f97a7732283",
+  "goal": "Upgrade the already-frozen NBA PRA Page 2 presentation and interaction layer to an S-tier player command center, isolate Line Lab threshold interaction from provider-backed reruns, add verified usage percentage and within-team usage rank through Kyre Sports API, preserve exact sportsbook quotes, and remove avoidable blank presentation without changing the frozen Kyre projection/history ownership contract.",
+  "write_paths": [
+    "devsystem/execution_plans/api2-nba-pra-page2-s-tier-v2.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-s-tier-v2.json",
+    "devsystem/task_ledgers/api2-nba-pra-page2-s-tier-v2.json",
+    "nba_pra_page2_v1.py",
+    "runless_v2/__init__.py",
+    "runless_v2/nba_pra_player_context_enrichment_v2.py",
+    "runless_v2/nba_pra_usage_v1.py",
+    "tests/test_api2_nba_pra_page2_s_tier_v2.py",
+    "tests/test_api2_nba_pra_page2_source_guard_v2.py"
+  ],
+  "protected_dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_page1_model_v1.py",
+    "nba_pra_page1_ui_v2.py",
+    "nba_pra_page2_api_only_v1.py",
+    "nba_pra_page2_context_v1.py",
+    "nba_pra_page2_line_lab_v1.py",
+    "nba_pra_page2_matchup_api_v1.py",
+    "nba_pra_page2_matchup_v1.py",
+    "nba_pra_player_context_api_v1.py",
+    "nba_pra_schedule_api_v1.py",
+    "runless_v2/nba_pra_player_context_v1.py",
+    "requirements.txt",
+    "runless_v2/requirements.txt"
+  ],
+  "scope_lease_id": "SCOPE-LEASE-DA2A95592560CB06EACCE018",
+  "authorization_id": "AUTH-API2-NBA-PRA-PAGE2-S-TIER-V2-R1",
+  "freeze_token": "API2_NBA_PRA_PAGE2_S_TIER_V2_FROZEN",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "player_props_odds": ["FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fanatics Sportsbook", "The Odds API", "OpticOdds"],
+    "official_player_team_stats": ["NBA Stats", "Sportradar", "SportsDataIO"],
+    "game_player_history": ["Basketball-Reference", "Stathead", "NBA Stats", "Sportradar"],
+    "live_scores_state_play_by_play": ["Sportradar", "NBA", "SportsDataIO"],
+    "injuries_availability_lineups": ["NBA Official Injury Report", "RotoWire"],
+    "advanced_analytics": ["NBA Stats", "PBP Stats", "Sportradar"],
+    "usage_primary": "NBA Stats Advanced through Kyre Sports API",
+    "usage_fallback": "immediately prior NBA regular season from the same NBA Stats source only when the requested current-season player has no verified sample",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "missing_data": "use the next approved source for that data type only; never guess; compact not-currently-verified state only after legitimate approved paths are unavailable",
+    "sportsbook_projection_influence": 0.0,
+    "projection_contract": "existing Page 2 frozen projection/history ownership remains unchanged",
+    "fabrication": false
+  },
+  "performance_contract": {
+    "line_lab": "Streamlit fragment owns threshold-only interaction",
+    "slider_provider_fetches": 0,
+    "slider_updates": ["probability", "edge", "verdict", "Kyre Score", "hit rate", "game-log OVER/UNDER"],
+    "provider_context_load_location": "parent render before fragment"
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "api2-nba-pra-page2-s-tier-v2",
+    "authoritative_pr": 1717,
+    "authoritative_pr_max": 1,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "one_authoritative_final_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "frozen_successor_contract": {
+    "baseline_freeze_token": "API2_NBA_PRA_PAGE2_V1_FROZEN",
+    "baseline_main_sha": "de5bb53d54368d29721de59fd9a80f97a7732283",
+    "legacy_registry_path_owner_detected": false,
+    "thaw_required": false,
+    "successor_freeze_token": "API2_NBA_PRA_PAGE2_S_TIER_V2_FROZEN"
+  }
+}
