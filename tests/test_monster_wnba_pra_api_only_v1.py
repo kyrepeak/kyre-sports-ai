@@ -5,8 +5,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _offer(book="FanDuel", *, player="Allisha Gray", side="over", line=31.5, odds=-110):
-    return {
+def _offer(book="FanDuel", *, player="Allisha Gray", side="over", line=31.5, odds=-110, teams=True):
+    row = {
         "sportsbook": book,
         "player_name": player,
         "stat": "pra",
@@ -15,9 +15,10 @@ def _offer(book="FanDuel", *, player="Allisha Gray", side="over", line=31.5, odd
         "american_odds": odds,
         "market_captured_at_utc": "2026-10-21T15:00:00+00:00",
         "source_event_id": "evt-1",
-        "away_team": "Golden State Valkyries",
-        "home_team": "Atlanta Dream",
     }
+    if teams:
+        row.update({"away_team": "Golden State Valkyries", "home_team": "Atlanta Dream"})
+    return row
 
 
 def test_gateway_uses_fanduel_first_without_unnecessary_secondary_call():
@@ -43,7 +44,7 @@ def test_gateway_uses_fanduel_first_without_unnecessary_secondary_call():
     assert result["offers"][0]["sportsbook"] == "FanDuel"
 
 
-def test_gateway_falls_back_to_draftkings_when_fanduel_has_no_pra():
+def test_gateway_falls_back_to_draftkings_when_fanduel_has_no_pra_and_enriches_identity():
     from sports_api import wnba_pra_market_gateway_v1 as gateway
 
     calls = []
@@ -56,10 +57,14 @@ def test_gateway_falls_back_to_draftkings_when_fanduel_has_no_pra():
         calls.append("dk")
         return {
             "offers": [
-                _offer("DraftKings", line=30.5, odds=-105),
-                _offer("DraftKings", side="under", line=30.5, odds=-115),
+                _offer("DraftKings", line=30.5, odds=-105, teams=False),
+                _offer("DraftKings", side="under", line=30.5, odds=-115, teams=False),
             ],
-            "source_events": [{"source_event_id": "evt-1"}],
+            "source_events": [{
+                "source_event_id": "evt-1",
+                "event_name": "GS Valkyries @ ATL Dream",
+                "participants": ["ATL Dream", "GS Valkyries"],
+            }],
         }
 
     result = gateway.build_pra_market_board(
@@ -74,6 +79,8 @@ def test_gateway_falls_back_to_draftkings_when_fanduel_has_no_pra():
     assert quote["line"] == 30.5
     assert quote["american_odds"] == -105
     assert quote["market_captured_at_utc"] == "2026-10-21T15:00:00+00:00"
+    assert quote["away_team"] == "GS Valkyries"
+    assert quote["home_team"] == "ATL Dream"
 
 
 def test_gateway_marks_primary_degraded_and_keeps_fallback_alive():
