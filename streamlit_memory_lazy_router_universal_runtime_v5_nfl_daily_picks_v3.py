@@ -2,21 +2,22 @@
 
 Preserves the current NBA Spread S-tier terminal and all unrelated routes while
 injecting only the isolated NFL Daily Picks V3 runtime owner. Rendering is
-handed to Universal Atomic Navigation V2 so every selected destination gets a
-delayed browser-first loading shield without background destination prefetch.
+handed to Universal Page Experience V1 so every selected destination inherits
+the universal TOP control plus delayed fail-closed loading protection without
+background destination prefetch.
 """
 from __future__ import annotations
 
 import streamlit_memory_lazy_router_universal_runtime_v5 as frozen_runtime
 import streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8 as prior
-from universal_atomic_navigation_runtime_v2 import render_atomic_app
+from universal_page_experience_runtime_v1 import render_page_experience_app
 from universal_runtime_v5_loader_nfl_daily_picks_command_v3 import (
     choose_prefetch,
     load_destination,
     resolve_destination,
 )
 
-MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NFL DAILY PICKS COMMAND CENTER V3 TERMINAL • ATOMIC NAV V2"
+MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NFL DAILY PICKS COMMAND CENTER V3 TERMINAL • PAGE EXPERIENCE V1"
 FROZEN_RUNTIME = "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v8"
 MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -29,7 +30,7 @@ record_bootstrap_import_ms = prior.record_bootstrap_import_ms
 
 
 def render_app():
-    return render_atomic_app(frozen_runtime)
+    return render_page_experience_app(frozen_runtime)
 
 
 __all__ = [

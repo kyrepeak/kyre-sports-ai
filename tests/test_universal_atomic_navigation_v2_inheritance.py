@@ -19,24 +19,28 @@ def test_v2_runtime_mounts_client_controller_before_selected_destination_load():
     assert "choose_prefetch" not in source
 
 
-def test_current_terminal_chain_inherits_v2_without_app_or_nba_reimplementation():
+def test_current_terminal_chain_inherits_page_experience_over_v2_parent():
     v3 = _source("streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py")
     v4 = _source("streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4.py")
     nba = _source("streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py")
     app = _source("app.py")
+    child = _source("universal_page_experience_runtime_v1.py")
 
-    assert "from universal_atomic_navigation_runtime_v2 import render_atomic_app" in v3
+    assert "from universal_page_experience_runtime_v1 import render_page_experience_app" in v3
+    assert "from universal_atomic_navigation_v1 import route_identity" in child
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3 as prior" in v4
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4 as prior" in nba
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1" in app
-    assert "universal_atomic_navigation_runtime_v2" not in app
-    assert "universal_atomic_navigation_runtime_v2" not in nba
+    assert "universal_page_experience_runtime_v1" not in app
+    assert "universal_page_experience_runtime_v1" not in nba
 
 
-def test_v1_owners_remain_present_as_frozen_parent_contract():
-    helper = _source("universal_atomic_navigation_v1.py")
-    runtime = _source("universal_atomic_navigation_runtime_v1.py")
-    assert "MONSTER UNIVERSAL ATOMIC NAVIGATION V1" in helper
-    assert "MONSTER UNIVERSAL ATOMIC NAVIGATION RUNTIME V1" in runtime
-    assert "def transition_markup" in helper
-    assert "def render_atomic_app" in runtime
+def test_v1_v2_owners_remain_present_as_frozen_parent_contract():
+    helper_v1 = _source("universal_atomic_navigation_v1.py")
+    runtime_v1 = _source("universal_atomic_navigation_runtime_v1.py")
+    helper_v2 = _source("universal_atomic_navigation_v2.py")
+    runtime_v2 = _source("universal_atomic_navigation_runtime_v2.py")
+    assert "MONSTER UNIVERSAL ATOMIC NAVIGATION V1" in helper_v1
+    assert "MONSTER UNIVERSAL ATOMIC NAVIGATION RUNTIME V1" in runtime_v1
+    assert "MONSTER UNIVERSAL ATOMIC NAVIGATION V2" in helper_v2
+    assert "MONSTER UNIVERSAL ATOMIC NAVIGATION RUNTIME V2" in runtime_v2
