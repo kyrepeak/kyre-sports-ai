@@ -12,3 +12,7 @@ from . import nba_pra_player_context_enrichment_v2 as _nba_pra_player_context_en
 # history rows without changing the public Kyre Sports API route or fabricating
 # missing source fields.
 from . import nba_pra_live_acceptance_repair_v1 as _nba_pra_live_acceptance_repair_v1  # noqa: E402,F401
+
+# WNBA PRA Page 1 final-polish successor: preserve the frozen one-read route
+# while enriching display identity only from already-verified WNBA projection IDs.
+from . import wnba_pra_page1_final_polish_runtime_v1 as _wnba_pra_page1_final_polish_runtime_v1  # noqa: E402,F401
