@@ -1,0 +1,61 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-nba-pra-slate-completeness-v1.json": "0a38dc61993cd8c71c4ca21f4fe8503ae224f8ff",
+    "devsystem/runless_proof_plans/api2-nba-pra-slate-completeness-v1.json": "567d82c4593f590578e07f7826405d191eab561b",
+    "devsystem/task_ledgers/api2-nba-pra-slate-completeness-v1.json": "306dfe14565014922018e1af3d336e6c56308577",
+    "docs/superpowers/plans/2026-10-21-nba-pra-slate-completeness-v1.md": "720059c96c878850aa9517c60f1dc965b4e549c7",
+    "nba_pra_page1_model_v1.py": "282a6b87ecd326bb1e3da91dafbe194037a8ab32",
+    "nba_pra_page1_ui_v2.py": "d7877560331d14ac1a89a35558ee47932c1c03f7",
+    "nba_pra_page1_v2.py": "273376aa7be460ea494fabe57814c898f751ac68",
+    "nba_pra_player_context_api_v1.py": "8ee6473cc9db9d69cd9db8909aad786314755604",
+    "nba_pra_team_identity_v1.py": "d25a105f57f14eb9d8ddc1b801e385d41bc3eaa1",
+    "runless_v2/nba_pra_player_context_v1.py": "0a5c4fe348bc25d9563634f8f0514f3e11d7dabb",
+    "runless_v2/nba_pra_schedule_v1.py": "eeb3d2281481c96be9774d9ea9bcd3ea81bf5ebe",
+    "tests/test_api2_nba_pra_model_behavior_v1.py": "5f122c6b3675baebbcedf2a1b41ab7dc303db388",
+    "tests/test_api2_nba_pra_page1_hard_analytics_ui_v1.py": "d2de6fea1837e215d6bde9bc690509cb66d32091",
+    "tests/test_api2_nba_pra_page1_s_tier_ui_v1.py": "dbda8bee393bff6f5514f389d0ec5de75a78b78c",
+    "tests/test_api2_nba_pra_page1_v2_ui_contract.py": "a2ecb85c22ae61535b94135efae8801871ebf168",
+    "tests/test_api2_nba_pra_slate_completeness_v1.py": "01289e878bb304c849cab689aefcd1922b740be2"
+  },
+  "candidate_sha": "f20d21aa3f7c391c8964d63ab87daed0d3256321",
+  "created_at": "2026-10-21T15:35:11.959810+00:00",
+  "dependency_map": {
+    "nba_pra_market_api_v1.py": "bb1ff7a910bcf6778d922db6a0d5d09ccc1d0da8",
+    "nba_pra_page1_api_only_v1.py": "fed22da146591dd421326cc95ebcc1f6538f09dd",
+    "requirements.txt": "d6d8b2c30f1ccbac5d65047b389cf392b19d71e6",
+    "runless_v2/nba_pra_market_v1.py": "fcc727d8d4dc8719b13e1b4e397433d8290fbb4a",
+    "runless_v2/requirements.txt": "19eb7674901270fce997ee8bbf597457c570f691"
+  },
+  "digest": "8e841d2424d38f1f0661d030999e12d8a63160807b7baa9f66d64ed16f9fafe3",
+  "evidence_digests": [
+    "b7323f2a4bc9863cdc518188f2e8212f37e0188b9ea13ceaabe10fb5492a783a",
+    "597d9af33ed4b20a7538b16c237558714e73a1d26a2ce10625ace4c12bdb9ffb"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "1a33be8322acb0e5abe79b062803ad8c934c7bc989e7bbd2ec0375a39a9923d9",
+  "proof_id": "api2-nba-pra-slate-completeness-v1-f20d21aa3f7c391c-83ab2354ad54ef94",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "6efd4a3e7b5fe19853071e3a211cc42a66e726255de9335c850f1441ba3dfa5c",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-slate-completeness-v1",
+  "workstream": "api2-nba-pra-slate-completeness-v1"
+}
