@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from wnba_pra_page_snapshot_client_v1 import WNBAPRASnapshotClientError, fetch_page_snapshot
 from wnba_pra_page_snapshot_publish_v1 import WNBAPRASnapshotPublishError, refresh_if_claimed
-from wnba_pra_page_snapshot_renderer_v1 import render_page_snapshot
+from wnba_pra_page1_stier_v1 import render_page_snapshot
 
 MODEL_VERSION = "PRA V3.6.17 • KYRE API-ONLY MARKET ROUTING • MODEL PRESERVED"
 MLB_FROZEN_BASELINE = "6f439a251329c588a097abc9281f0a528c3053be"
