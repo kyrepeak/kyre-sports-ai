@@ -10,6 +10,7 @@ CLIENT_PATH = ROOT / "wnba_api_client_v1.py"
 STEP2_PATH = ROOT / "wnba_pra_speed_v3_step2_transport.py"
 ROUTER_PATH = ROOT / "streamlit_memory_lazy_router_wnba_pra_speed_v3_step2.py"
 PUBLIC_PATH = ROOT / "devsystem" / "wnba_pra_speed_v3_step2_public_profile.py"
+APP_PATH = ROOT / "app.py"
 
 
 def test_step2_pooled_transport_surface_exists():
@@ -86,13 +87,10 @@ def test_step2_layers_over_frozen_step1_and_exposes_deployment_marker():
     assert "MAY_MODIFY_WNBA_MODEL = False" in router
 
 
-def test_step2_keeps_frozen_step1_compatibility_without_owning_global_app():
-    router = ROUTER_PATH.read_text(encoding="utf-8")
-    assert 'FROZEN_SPEED_V3_STEP1_ROUTER = "streamlit_memory_lazy_router_wnba_pra_speed_v3_step1"' in router
-    assert "def record_bootstrap_import_ms(value: float) -> None:" in router
-    assert "return frozen_step1.record_bootstrap_import_ms(value)" in router
-    assert "def render_app()" in router
-    assert "return frozen_step1.render_app()" in router
+def test_app_activates_step2_and_keeps_step1_compatibility():
+    source = APP_PATH.read_text(encoding="utf-8")
+    assert "from streamlit_memory_lazy_router_wnba_pra_speed_v3_step2 import record_bootstrap_import_ms, render_app" in source
+    assert "Frozen WNBA PRA Speed V3 Step 1 compatibility" in source
 
 
 def test_step2_full_redeploy_closeout_contract():
