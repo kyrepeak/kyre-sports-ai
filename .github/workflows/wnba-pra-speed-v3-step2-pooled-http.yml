@@ -22,7 +22,6 @@ on:
       - "devsystem/wnba_pra_speed_v3_step2_public_profile.py"
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step2-pooled-http.json"
       - "tests/test_wnba_pra_speed_v3_step2.py"
-      - "tests/test_wnba_step7f_streamlit_api.py"
       - ".github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml"
       - "requirements.txt"
       - "app.py"
