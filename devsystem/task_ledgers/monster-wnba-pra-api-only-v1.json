@@ -1,0 +1,44 @@
+{
+  "task_id": "monster-wnba-pra-api-only-v1",
+  "workstream": "monster-wnba-pra-api-only-v1",
+  "source_main_sha": "2b70a2b9b07d65602b38f7c1435f11ed0dba2dd3",
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "progress_percent": 95,
+  "step2a": {
+    "active_problem": "Restore the WNBA PRA player board through Kyre Sports API only, with FanDuel primary and approved DraftKings fallback when FanDuel is empty/degraded, while SGO and ESPN/ESPN BET remain prohibited.",
+    "authoritative_branch": "monster-wnba-pra-api-only-v1",
+    "authoritative_pr": null,
+    "scope_lease_id": "SCOPE-LEASE-292663F644F646445D5A120B",
+    "scope_lease_expires_at_utc": "2026-10-21T17:00:00Z",
+    "authorization_id": "AUTH-MONSTER-WNBA-PRA-API-ONLY-V1-R1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "player_props_primary": "FanDuel",
+    "player_props_secondary_when_primary_unusable": "DraftKings",
+    "additional_approved_sources_not_called_unnecessarily": true,
+    "conflicting_lines": "preserve sportsbook, line, American price, market, event identity, and timestamp; never average",
+    "provider_failure": "mark provider degraded/empty and continue to the next approved source",
+    "fabrication": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "evidence": {
+    "tdd_red": "10/10 focused tests failed before successor implementation because the API-only modules/wiring did not yet exist.",
+    "focused_green": "10 passed",
+    "nearby_regression_green": "23 passed",
+    "compile": "PASS",
+    "active_startup_ban_scan": "PASS: importing the active V3.6.12 compatibility route loads no SportsGameOdds/SGO or ESPN module.",
+    "live_fanduel": "Current WNBA PRA primary returned 0 usable PRA offers; classified EMPTY, not fatal.",
+    "live_draftkings": "Step-19A approved fallback returned 30 exact two-sided PRA quote rows across 15 players for the verified 2026-10-21 Finals slate.",
+    "live_api_route": "FastAPI TestClient GET /api/v1/wnba/pra/market-board returned HTTP 200, state READY, selected_provider draftkings, 30 PRA quotes, 15 players, line_averaging false.",
+    "live_bridge": "Kyre API -> Streamlit bridge produced CONNECTED, DraftKings, 30 rows, 15 players, 1 matched game, 0 unmatched games.",
+    "live_pairing": "Preserved same-book/same-line PRA pairing produced 15 DraftKings pairs across 15 players."
+  },
+  "freeze_token": "MONSTER_WNBA_PRA_API_ONLY_V1_FROZEN"
+}
