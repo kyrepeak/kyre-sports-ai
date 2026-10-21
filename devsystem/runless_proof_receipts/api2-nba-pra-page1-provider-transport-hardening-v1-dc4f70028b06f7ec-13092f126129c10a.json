@@ -1,0 +1,62 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page1-provider-transport-hardening-v1.json": "d7ff92da621972b9f1428201d2f02d9c3a809b5a",
+    "devsystem/task_ledgers/api2-nba-pra-page1-provider-transport-hardening-v1.json": "fc3780d31ae61584a205286435d5ec05be5d71ce",
+    "nba_pra_market_api_v1.py": "21f8043ba52b63d1207dc7710b4d6c30f8a05e44",
+    "nba_pra_page1_data_v2.py": "007341818904a19bad54c6860ded69e9b20993b6",
+    "nba_pra_page1_sources_v2.py": "40b6959860ffac1e0a9f7688cbf4b437cf7c9aaf",
+    "runless_v2/app.py": "6d5192b2204ba14b3ac8407b9b6b75c28e7fa752",
+    "runless_v2/nba_pra_market_v1.py": "63f5a79bc9c710b337e0bacdee81f503c4cbe781",
+    "tests/test_api2_nba_pra_page1_provider_transport_hardening_v1.py": "875e6407653e1569069a2a8688f5f6d56e90531a",
+    "tests/test_runless_v2_nba_pra_market_v1.py": "bb755d0fe18338b2a376c6fa73053598efc1d2dd"
+  },
+  "candidate_sha": "dc4f70028b06f7ec5de6c3f20cbbea9c782aaffc",
+  "created_at": "2026-10-21T02:45:40.727652+00:00",
+  "dependency_map": {
+    "nba_pra_page1_common_v1.py": "a7f129f5ab55e01f951a16946656ae434f67f1ce",
+    "nba_pra_page1_data_core_v2.py": "b594b921c637be059bd6755ce94a3e4dabad0351",
+    "nba_pra_page1_sgo_v1.py": "95ba83fae47fef538b3ff599857723f466039850",
+    "nba_pra_page1_ui_v2.py": "d430f08ef00c003833396827aad29ad29881e233",
+    "nba_pra_page1_v2.py": "19355e70efed10e7de8a38608a94a062e136db28",
+    "runless_v2/requirements.txt": "19eb7674901270fce997ee8bbf597457c570f691",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "3284caf40c7c6f460c3b0f84229079eccf3d408d"
+  },
+  "digest": "62e4eb7f75d62b33365d005b3e1ec07ed3f350736c10d7354d658019509e4054",
+  "evidence_digests": [
+    "ee8fc6866fac6988f7b7111c4cde7ba00e4227e2b977f8f3e0fcfc9b812a5044",
+    "7d4d89cc4efd817fe21618ffe86b4414572b7d400d4a8ed0a28c7718fd17b548",
+    "a12d1a2ef224329c30873926fbd35b4717d24d997ab89e9af5167483f4460680",
+    "e4fb1f2e9bd572b31039fd9e3f52ef507e84d58b41a5ffaa37ae43a37fe74320",
+    "e2363dab360d3cdbce7bb69e6d5216bf1d0d86e8f00731cc15fafcf53fd1bcbb",
+    "6d2f7fda996bd5dd287935199a6e8d0cf5c279cd9356f728ccbda22e2d5f0b28"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "99a440f83ced5fa9a078ce147a49f704baf06986aecaa5f2290fb92befaca568",
+  "proof_id": "api2-nba-pra-page1-provider-transport-hardening-v1-dc4f70028b06f7ec-13092f126129c10a",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-STREAMLIT-HEARTBEAT-V1"
+    ],
+    "revision": 469,
+    "state_hash": "2cb563ef6deba3ff0549218611cf0d4df9aa519a8b8e774004b0961addaddd95"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NBA-PRA-PAGE1-STREAMLIT-HEARTBEAT-V1"
+    ],
+    "revision": 469,
+    "state_hash": "2cb563ef6deba3ff0549218611cf0d4df9aa519a8b8e774004b0961addaddd95"
+  },
+  "request_fingerprint": "ce5377802cebf9c0ec8d5a92f4ac6f8c0cb5ea2b25135b1465666339efa0c4c8",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page1-provider-transport-hardening-v1",
+  "workstream": "api2-nba-pra-page1-provider-transport-hardening-v1"
+}
