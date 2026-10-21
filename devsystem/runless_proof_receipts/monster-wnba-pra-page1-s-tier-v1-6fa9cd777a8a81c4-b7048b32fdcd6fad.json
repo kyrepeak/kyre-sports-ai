@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-s-tier-v1.json": "770bde9e407ae5d73a13f812ab65c94528c0e4c7",
+    "devsystem/wnba_pra_page1_stier_source_policy_v1.py": "2b64cc9faddc1f3c11dd60db9f26adcf3187dfe1",
+    "tests/test_wnba_pra_page1_stier_v1.py": "d01ddfe1422a1b8f6c4a1045f77aad900a9fbdc0",
+    "wnba_pra_hub_v3617.py": "6e073b3831c4807dcaf0d38ed2f106369ddfd447",
+    "wnba_pra_page1_stier_v1.py": "8882b1034ee7e05ae3006eaedc0ccd91ab30f51f"
+  },
+  "candidate_sha": "6fa9cd777a8a81c4247e5325f8ce5773cec36b76",
+  "created_at": "2026-10-21T21:47:13.363354+00:00",
+  "dependency_map": {
+    "runless_v2/wnba_pra_market_v1.py": "058175b811e1015ef934b72461e499d25d7041e9",
+    "runless_v2/wnba_pra_page_snapshot_v1.py": "e9159d93a8fb6f6fca754391a5fa52a8d09ef407",
+    "wnba_pra_page_snapshot_client_v1.py": "6bc7126b39bae00b1551f9f3a6f402e0ded6cd12",
+    "wnba_pra_page_snapshot_publish_v1.py": "b25fda63d03e01cc67ba1f3945ea587dc6be43be"
+  },
+  "digest": "6ad6c38c7752410c7c13118976bd5c6645c1d6ca4cd14da57a6473cc053d4c29",
+  "evidence_digests": [
+    "14b2ec5ae10e2d69211dd4a900788af62e0d159863269b78c8f859775c192af0",
+    "e06f169f2bbc8210d0f05f8fca88d95383b44c6575e7aa1a9a0c51edef8c3ac5",
+    "bac2f266f86bc594a0bc313f47672a4091bfda3e4947893cdacd831dc085500e"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6822e08a36fbbf20f2f26f66b12443785ee2b9b55ee40522f60760cab898e150",
+  "proof_id": "monster-wnba-pra-page1-s-tier-v1-6fa9cd777a8a81c4-b7048b32fdcd6fad",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "4887966bb0778bece45cb2df0d30b0192703d5924f8c98f3ef976bc0bbc7cc8a",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-page1-s-tier-v1",
+  "workstream": "monster-wnba-pra-page1-s-tier-v1"
+}
