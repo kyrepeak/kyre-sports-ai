@@ -1,0 +1,56 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-final-polish-v1.json": "cd95027a69603c05a783d6a86911ef1d58720baf",
+    "devsystem/wnba_pra_page1_final_polish_source_policy_v1.py": "f2e4cef6c18482ef68316cd549171c7c2ce2b4cc",
+    "runless_v2/__init__.py": "ef7d22d9e1097f346b5920ac29fe77d606936f8d",
+    "runless_v2/wnba_pra_page1_final_polish_runtime_v1.py": "7973b326709bca3abd813e7a2e35849f51afd4a3",
+    "tests/test_wnba_pra_page1_final_polish_v1.py": "d3a0afa0977ce3e3cd0669d8c943c185aefc6d97",
+    "wnba_pra_hub_v3612.py": "c5c8e61bef5f92cbb2697b192932749e7da8bf4c",
+    "wnba_pra_page1_final_polish_v1.py": "f524cc7e8216372047690c0b61305dbb308640c9",
+    "wnba_pra_page_model_artifact_final_polish_v1.py": "18a3b100228007aa19a63513cfaeedc98f337fbc"
+  },
+  "candidate_sha": "643f2a9ecb691326f81d01c0b60744aefe8c8931",
+  "created_at": "2026-10-21T22:24:20.068217+00:00",
+  "dependency_map": {
+    "runless_v2/wnba_pra_market_v1.py": "058175b811e1015ef934b72461e499d25d7041e9",
+    "runless_v2/wnba_pra_page_snapshot_v1.py": "e9159d93a8fb6f6fca754391a5fa52a8d09ef407",
+    "wnba_pra_hub_v3617.py": "6e073b3831c4807dcaf0d38ed2f106369ddfd447",
+    "wnba_pra_page1_stier_v1.py": "8882b1034ee7e05ae3006eaedc0ccd91ab30f51f",
+    "wnba_pra_page_model_artifact_v1.py": "63f9bfe947c751a64e528d16b58d90d6179f961f",
+    "wnba_pra_page_snapshot_client_v1.py": "6bc7126b39bae00b1551f9f3a6f402e0ded6cd12",
+    "wnba_pra_page_snapshot_publish_v1.py": "b25fda63d03e01cc67ba1f3945ea587dc6be43be"
+  },
+  "digest": "a16a6a702d02fd81a54de9949e1d90c43c8e55ba66bf6dc3b0e83ec5f8fd029d",
+  "evidence_digests": [
+    "d7d06ebf1c55dd26fbff2f73eb767e5485587644afd0e359e6db6a891f0ac84c",
+    "3701f761e7c508cddad434a9c1db267a226a5bdbd684936d9db27b2c64f5fbd0",
+    "4a07c1c31f4e51c3500c27ac1490ca6dc47bddb8ab817da9f44fff7a5303376d"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "1c39bce6f3e00ded27db781aa33409ac104f3483383dc38c1361b0fa46de2eea",
+  "proof_id": "monster-wnba-pra-page1-final-polish-v1-643f2a9ecb691326-877128147e241131",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "5b36634d6319930d51561786047f36b9bbbd0eab7cfa9b3c32cb6808a63bd907",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-wnba-pra-page1-final-polish-v1",
+  "workstream": "monster-wnba-pra-page1-final-polish-v1"
+}
