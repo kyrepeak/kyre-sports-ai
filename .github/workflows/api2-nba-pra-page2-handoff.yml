@@ -1,0 +1,94 @@
+name: API2 NBA PRA Page2 transport handoff
+
+on:
+  push:
+    branches:
+      - api2-nba-pra-page2-v1
+
+permissions:
+  contents: write
+
+jobs:
+  handoff:
+    if: github.ref == 'refs/heads/api2-nba-pra-page2-v1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact staging head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: api2-nba-pra-page2-v1
+      - name: Verify, apply, clean, and publish exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_PARENT='f6de65728fc0126fb67065d5a28415526219e19d'
+          EXPECTED_PATCH_SHA='bdb129c719df0c6cd5b6884bf52af67a748e5c130f47d26b8636921b2cb6e21f'
+          EXPECTED_TREE='99d62a2e28e42b87b10ef9c9d84407ec400905c0'
+          WORKFLOW='.github/workflows/api2-nba-pra-page2-handoff.yml'
+          test "$(git branch --show-current)" = 'api2-nba-pra-page2-v1'
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PARENT"
+          test "$(git diff-tree --no-commit-id --name-only -r HEAD)" = "$WORKFLOW"
+          cat .page2_handoff/chunk* > /tmp/page2.b64
+          base64 -d /tmp/page2.b64 > /tmp/page2.patch.gz
+          gzip -dc /tmp/page2.patch.gz > /tmp/page2.patch
+          test "$(sha256sum /tmp/page2.patch | awk '{print $1}')" = "$EXPECTED_PATCH_SHA"
+          git apply --index --check /tmp/page2.patch
+          git apply --index /tmp/page2.patch
+          python - <<'PY'
+          import subprocess
+          expected = {
+              'nba_pra_page1_v2.py':'c401511a1650b60052e45541f355297123277008',
+              'nba_pra_page2_api_only_v1.py':'e13b04a3985c53788e2a9513ce4546bdb84833e0',
+              'nba_pra_page2_context_v1.py':'383aabbf182dbe79a4baabaabd7089c261f6310b',
+              'nba_pra_page2_line_lab_v1.py':'73e9ebe8094e483d38d3ba9eacf182514828f2df',
+              'nba_pra_page2_matchup_api_v1.py':'ef5f2645073ef0c9276c09dd062f7aa814ba3ae0',
+              'nba_pra_page2_matchup_v1.py':'56af07be48cc3c206f74e7d0473dfa218c26c5c6',
+              'nba_pra_page2_v1.py':'2e89e34ddce7d1d22b1d5c20727a4b6331fe5052',
+              'nba_pra_runtime_v2.py':'1673270b0b9efc8930ab225dfcbee6255e87f6fd',
+              'runless_v2/app.py':'26adaa90855678878e30fd56ea63570e32689912',
+              'runless_v2/nba_pra_matchup_v1.py':'45e178f93a5780a43277c186876208b9bbecea42',
+              'streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py':'fd3af0a42a8fc99ccca71a5f576042d06d2fa2f1',
+              'tests/test_api2_nba_pra_page2_context_v1.py':'b26795844f21e9682da724aeeda592f53c5d2bb4',
+              'tests/test_api2_nba_pra_page2_integration_v1.py':'4f2887d562dee3993302732a185ca8d4c81f9ef2',
+              'tests/test_api2_nba_pra_page2_line_lab_v1.py':'0584322491d63d486dad6cd86850419faf22c6a2',
+              'tests/test_api2_nba_pra_page2_matchup_v1.py':'3e8af8525c72bc7e9065ad0e866338a4771ea397',
+              'tests/test_api2_nba_pra_page2_runtime_v1.py':'b90cf724002b082cf84204868265c3cc6e4da7ed',
+              'tests/test_api2_nba_pra_page2_ui_v1.py':'44bb64a342f45e47494186e64a38a9bfcebab998',
+          }
+          for path, want in expected.items():
+              got = subprocess.check_output(['git','hash-object',path], text=True).strip()
+              if got != want:
+                  raise SystemExit(f'blob mismatch {path}: {got} != {want}')
+          PY
+          git rm -r .page2_handoff "$WORKFLOW"
+          git add -A
+          test "$(git write-tree)" = "$EXPECTED_TREE"
+          cat > /tmp/expected-files <<'EOF'
+          docs/superpowers/plans/2026-10-21-nba-pra-page2-v1.md
+          docs/superpowers/specs/2026-10-21-nba-pra-page2-v1-design.md
+          nba_pra_page1_v2.py
+          nba_pra_page2_api_only_v1.py
+          nba_pra_page2_context_v1.py
+          nba_pra_page2_line_lab_v1.py
+          nba_pra_page2_matchup_api_v1.py
+          nba_pra_page2_matchup_v1.py
+          nba_pra_page2_v1.py
+          nba_pra_runtime_v2.py
+          runless_v2/app.py
+          runless_v2/nba_pra_matchup_v1.py
+          streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py
+          tests/test_api2_nba_pra_page2_context_v1.py
+          tests/test_api2_nba_pra_page2_integration_v1.py
+          tests/test_api2_nba_pra_page2_line_lab_v1.py
+          tests/test_api2_nba_pra_page2_matchup_v1.py
+          tests/test_api2_nba_pra_page2_runtime_v1.py
+          tests/test_api2_nba_pra_page2_ui_v1.py
+          EOF
+          git diff --cached --name-only b7a6641ef5b7fcd84fa9ceb191b8f4e92ef3ee43 | sort > /tmp/actual-files
+          sort /tmp/expected-files -o /tmp/expected-files
+          diff -u /tmp/expected-files /tmp/actual-files
+          git config user.name 'kyrepeak'
+          git config user.email 'kyrewhite15@gmail.com'
+          git commit -m 'Publish NBA PRA Page 2 implementation'
+          git push origin HEAD:api2-nba-pra-page2-v1
