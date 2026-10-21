@@ -1,0 +1,37 @@
+{
+  "task_id": "api2-nba-pra-every-player-analyze-v1",
+  "workstream": "api2-nba-pra-every-player-analyze-v1",
+  "source_main_sha": "736266d864e55beca2d2f491224db3c40d782452",
+  "status": "PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 85,
+  "step2a": {
+    "active_problem": "Every displayed NBA PRA player must have an immediately adjacent Analyze action that opens that exact player on Page 2.",
+    "authoritative_branch": "api2-nba-pra-every-player-analyze-v1",
+    "authoritative_pr": 1722,
+    "scope_lease_id": "SCOPE-LEASE-2F4F0E03D1340087D56B48E0",
+    "scope_lease_generation": 666,
+    "scope_lease_expires_at_utc": "2026-10-21T23:20:25Z",
+    "authorization_id": "AUTH-API2-NBA-PRA-EVERY-PLAYER-ANALYZE-V1-R1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false,
+    "proof_submitted": false
+  },
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "fabrication": false
+  },
+  "evidence": {
+    "tdd_red": "Commit 0a15e61ab0420f13245912b1c3750d7c39c4e725: 2 intended failures because render_market_player_cards did not exist.",
+    "focused_green": "2 passed on product commit 908f07f4c9dd273cd5528ba91002c9b93bdc87e3.",
+    "nba_pra_regression": "157 passed on product commit 908f07f4c9dd273cd5528ba91002c9b93bdc87e3.",
+    "compile": "Production/test files compile cleanly.",
+    "repo_wide_known_blocker": "Bare pytest is pre-blocked during collection by tests/conftest.py asserting an old exact app.py import string; app.py and tests/conftest.py are out of scope and untouched.",
+    "full_gate": "PENDING_RUNLESS_V2_EXACT_HEAD_PROOF"
+  },
+  "freeze_token": "API2_NBA_PRA_EVERY_PLAYER_ANALYZE_V1_FROZEN"
+}
