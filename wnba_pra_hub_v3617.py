@@ -106,11 +106,6 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
         api_market.restore(token)
 
 
-def __getattr__(name):
-    previous = importlib.import_module("wnba_pra_hub_v3616")
-    return getattr(previous, name)
-
-
 __all__ = [
     "MODEL_VERSION", "MLB_FROZEN_BASELINE", "MLB_FROZEN_BRANCH",
     "STEP5_FROZEN_BASELINE", "PRECISION_STEP1_CONTRACT", "PAGE_CLEANUP_CONTRACT",
