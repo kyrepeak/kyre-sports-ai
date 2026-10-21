@@ -1,0 +1,38 @@
+{
+  "task_id": "api2-nba-pra-page1-s-tier-ui-v1",
+  "workstream": "api2-nba-pra-page1-s-tier-ui-v1",
+  "source_main_sha": "fc7195d7370aab6b2f8a35bccfc3e672dbb675a3",
+  "status": "AUTHORITATIVE_PROOF_READY",
+  "progress_percent": 88,
+  "step2a": {
+    "authoritative_branch": "api2-nba-pra-page1-s-tier-ui-v1",
+    "authoritative_pr": 1709,
+    "authoritative_sandbox": "runless-v2-vercel-sandbox",
+    "scope_lease_id": "SCOPE-LEASE-656DD751EF877A783D625091",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "scope": {
+    "active_problem": "NBA PRA Page 1 is functionally working but needs an S-tier analytics presentation with team/player identity while the Page 1 market transport must obey the API 2 rule: only Kyre Sports API, never direct SGO.",
+    "repair": "Upgrade the existing V2 UI in place, add team logos/headshots and Kyre Edge Score, retain separate sportsbook quotes, and route live Page 1 market transport through a thin Kyre-Sports-API-only overlay that cannot execute direct SGO or direct Odds API fallbacks.",
+    "source_contract": "Page-facing market transport is Kyre Sports API only. Approved upstream NBA sources may be routed behind Kyre Sports API by data type. Sportsbook identity, exact line, price and timestamp stay separate; no line averaging, no fabrication, sportsbook projection influence 0.0."
+  },
+  "proof": {
+    "focused_tdd": "PENDING_AUTHORITATIVE_RUNLESS_PROOF",
+    "nba_regression": "PENDING_AUTHORITATIVE_RUNLESS_PROOF",
+    "navigation": "PENDING_AUTHORITATIVE_RUNLESS_PROOF",
+    "runless_v2_regression": "PENDING_AUTHORITATIVE_RUNLESS_PROOF",
+    "exact_head_gate": "PENDING_APP_5204253"
+  },
+  "rulings": [
+    "The previously GREEN_FROZEN PRA transport workstream remains untouched; this redesign has its own branch, PR and proof identity.",
+    "The previous PRA scope lease expired naturally before this workstream acquired its exact 10-path lease; no live holder was force-released.",
+    "The live Page 1 imports the API-only overlay; legacy provider adapters remain regression-compatible but are not reachable for active Page 1 market transport.",
+    "The Streamlit Kyre API client accepts the old api_key parameter only for compatibility and intentionally never transmits it.",
+    "No sportsbook lines are averaged and no missing player/model field is fabricated.",
+    "Render and GitHub Actions are not proof authority; Vercel Runless V2 plus Supabase durable state is the single proof path."
+  ]
+}
