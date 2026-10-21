@@ -2,8 +2,8 @@
   "task_id": "monster-wnba-pra-api-only-v1",
   "workstream": "monster-wnba-pra-api-only-v1",
   "source_main_sha": "2b70a2b9b07d65602b38f7c1435f11ed0dba2dd3",
-  "status": "READY_FOR_EXACT_HEAD_PROOF",
-  "progress_percent": 96,
+  "status": "READY_FOR_SUCCESSOR_EXACT_HEAD_PROOF",
+  "progress_percent": 98,
   "step2a": {
     "active_problem": "Restore the WNBA PRA player board through Kyre Sports API only, with FanDuel primary and approved DraftKings fallback when FanDuel is empty/degraded, while SGO and ESPN/ESPN BET remain prohibited.",
     "authoritative_branch": "monster-wnba-pra-api-only-v1",
@@ -28,11 +28,21 @@
     "fabrication": false,
     "sportsbook_projection_influence": 0.0
   },
+  "failure_ownership": {
+    "failed_candidate_sha": "cd122800c522273024ea80f299aed3085d7c5fc9",
+    "failed_proof_id": "monster-wnba-pra-api-only-v1-cd122800c5222730-abb1022b2d4dd363",
+    "failure_class": "INFRA",
+    "detail": "RUNLESS_V2_PROOF_ENVIRONMENT_DEPENDENCY_MISSING",
+    "root_cause": "WNBA PRA gateway eagerly imported the DraftKings Step-19A secondary transport, which imports optional curl_cffi. Runless intentionally does not install curl_cffi in its fixed proof bootstrap, so deterministic tests failed at module import before exercising provider routing.",
+    "repair": "Move the DraftKings Step-19A import inside _default_draftkings so the secondary network stack loads only if FanDuel is empty/degraded and the real fallback is invoked.",
+    "old_candidate_retry_forbidden": true
+  },
   "evidence": {
     "tdd_red": "10/10 focused tests failed before successor implementation because the API-only modules/wiring did not yet exist.",
-    "focused_green": "10 passed",
-    "nearby_regression_green": "23 passed",
+    "focused_green": "10 passed before proof-environment repair; successor suite now 24 passed.",
+    "nearby_regression_green": "23 passed before proof-environment repair; successor exact Runless bootstrap reproduction now 24 passed.",
     "compile": "PASS",
+    "runless_bootstrap_reproduction": "PASS: exact fixed Runless dependency set without curl_cffi completed 24 tests plus py_compile after lazy secondary-import repair.",
     "active_startup_ban_scan": "PASS: importing the active V3.6.12 compatibility route loads no SportsGameOdds/SGO or ESPN module.",
     "live_fanduel": "Current WNBA PRA primary returned 0 usable PRA offers; classified EMPTY, not fatal.",
     "live_draftkings": "Step-19A approved fallback returned 30 exact two-sided PRA quote rows across 15 players for the verified 2026-10-21 Finals slate.",
