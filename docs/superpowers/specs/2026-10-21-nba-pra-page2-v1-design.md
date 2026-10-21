@@ -9,7 +9,7 @@ User journey:
 1. Page 1 answers **Which PRA play is strongest?**
 2. Page 2 answers **Why should I trust this exact player/line, what makes the matchup favorable or tough, and what could make the play lose?**
 
-Page 2 must feel like a professional analytics terminal, not a second list page. It should give the decision immediately, then organize deeper evidence into clean sections so the user can stop early or drill down.
+Page 2 must feel like a professional analytics terminal, not a second list page. It gives the decision immediately, then organizes deeper evidence into clean sections so the user can stop early or drill down.
 
 Selected design: **Hybrid S-tier (Option C)**.
 
@@ -38,28 +38,39 @@ Approved routing priority by data type:
 
 Create a Page-2 runtime layer that delegates to the existing frozen Page 1 when no player is selected and renders Page 2 when a canonical Page-2 selection is present.
 
-Preferred routing:
+Routing:
 
 - `sport=nba`, `market=pra`, no valid selected player -> Page 1;
-- `sport=nba`, `market=pra`, valid selected player + exact selected PRA quote identity -> Page 2.
+- `sport=nba`, `market=pra`, valid selected player -> Page 2.
 
-The existing Page-1 session key `ks_nba_pra_selected_player` is reused as the starting handoff. Page 2 must verify that selected identity against the current Page-1/Kyre Sports API snapshot rather than trusting stale display text.
+The existing Page-1 session key `ks_nba_pra_selected_player` is reused as the canonical player handoff. Page 2 verifies that identity against the current Kyre Sports API snapshot rather than trusting stale display text.
 
-Prefer a new NBA PRA runtime selector/overlay rather than modifying Page 1 rendering internals. Frozen Page 1 files should remain unchanged unless a proven handoff defect makes a tiny compatibility patch unavoidable.
+Prefer a new NBA PRA runtime selector/overlay rather than modifying Page 1 rendering internals. Frozen Page 1 files remain unchanged unless a proven handoff defect makes a tiny compatibility patch unavoidable.
 
-## Canonical Page-2 identity
+## Canonical Page-2 identity and tapped-quote handoff
 
 Page 2 identity is:
 
 - sport: `nba`;
 - market family: `pra`;
 - slate date;
-- official/canonical player identity;
+- canonical player key / official player identity;
 - player current team;
-- current opponent/game identity;
-- selected sportsbook quote identity when available: sportsbook + line + over price + under price + observed timestamp.
+- current opponent/game identity.
 
-Provider IDs remain provenance, never the primary route identity.
+The Page-1 click handoff additionally preserves the tapped quote snapshot when available:
+
+- sportsbook;
+- line;
+- Over price;
+- Under price;
+- observed timestamp.
+
+The quote snapshot is provenance, not permanent market authority. Page 2 immediately re-reads the current quote through Kyre Sports API.
+
+If the live quote still matches the selected snapshot, render normally. If the sportsbook moved the line/price after the tap, Page 2 must visibly label **LINE MOVED SINCE SELECTION**, show the selected snapshot and the current quote separately, and grade the current market using the current verified quote. It must never silently rewrite the selected snapshot.
+
+Provider IDs remain provenance, never route identity.
 
 A stale or ambiguous player selection must fail closed instead of silently opening another player.
 
@@ -69,9 +80,10 @@ A stale or ambiguous player selection must fail closed instead of silently openi
 
 A visible **← Back to PRA Board** control returns to Page 1.
 
-Back clears only Page-2-local selection state, including:
+Back clears only Page-2-local selection state:
 
 - selected player deep-dive state;
+- selected quote snapshot;
 - Page-2 Line Lab custom line;
 - Page-2 local tab/accordion state when applicable.
 
@@ -81,7 +93,7 @@ It preserves:
 - market `pra`;
 - current slate date / page route.
 
-The return must land on Page 1 for NBA PRA, not another sport or another NBA market.
+The return must land on Page 1 for NBA PRA, never another sport or NBA market.
 
 ### TOP button
 
@@ -90,8 +102,8 @@ A floating **↑ TOP** control remains available throughout the long Page-2 scro
 Requirements:
 
 - one tap scrolls to top;
-- must not open the keyboard;
-- must not mutate player/market route state;
+- no keyboard popup;
+- no player/market route mutation;
 - must not cover the Streamlit management drawer or Line Lab controls on phone/tablet;
 - same behavior across iPhone/iPad/desktop widths.
 
@@ -106,15 +118,14 @@ The top of Page 2 shows:
 - opponent and opponent logo;
 - game date/time in Phoenix time;
 - verified injury/availability state;
-- selected sportsbook + current PRA line + over/under price + freshness.
+- selected/current sportsbook quote, PRA line, Over/Under price, and freshness;
+- line-moved-since-selection state when applicable.
 
-No generic NBA avatar/logo when a verified player/team identity is available.
+No generic NBA avatar/logo when verified player/team identity is available.
 
 ## 1. Kyre AI Verdict
 
-The first analytics section must answer the bet question immediately.
-
-Display:
+Display immediately:
 
 - selected side: OVER / UNDER / PASS;
 - current line;
@@ -125,7 +136,7 @@ Display:
 - confidence/readiness state;
 - short deterministic explanation using verified evidence only.
 
-The explanation may mention recent form, minutes, opponent ranking, role/availability, and line gap. It must not invent causal evidence.
+Explanation may mention recent form, minutes, opponent ranking, role/availability, and line gap. It must not invent causal evidence.
 
 ## 2. Line Lab
 
@@ -148,15 +159,15 @@ Outputs update live:
 
 Rules:
 
-- slider uses 0.5 PRA steps;
-- default is the exact selected sportsbook line;
-- custom line is explicitly labeled as a test line, not a sportsbook quote;
-- changing the slider never feeds the line back into projection math;
-- no free-text numeric input for primary use, avoiding mobile keyboard popups.
+- 0.5 PRA step slider;
+- default = current exact selected sportsbook line;
+- custom line labeled as a test line, never as a sportsbook quote;
+- slider changes threshold only and never feeds back into projection math;
+- no free-text numeric input for primary use.
 
 ## 3. Current sportsbook board + movement
 
-Show each approved sportsbook quote separately:
+Show approved sportsbook quotes separately:
 
 - sportsbook;
 - line;
@@ -164,11 +175,11 @@ Show each approved sportsbook quote separately:
 - Under price;
 - observed timestamp/freshness.
 
-Never create a consensus by averaging conflicting lines.
+Never average conflicting lines.
 
-Movement may be shown only when true same-book historical line observations exist. Session-first values are not labeled as opening lines.
+Movement appears only when same-book historical observations are genuinely stored. Session-first values are not opening lines.
 
-If movement history is unavailable, show `Verified line movement unavailable.`
+If unavailable, show `Verified line movement unavailable.`
 
 ## 4. Recent form
 
@@ -178,59 +189,48 @@ Show verified form using the same history that powers the model:
 - L10 PRA average;
 - season/prior-season sample when current-season sample is not yet meaningful;
 - average minutes;
-- hit count and hit rate versus the currently selected Line Lab line;
+- hit count/rate versus active Line Lab line;
 - sample size beside every hit rate.
 
-Include a game-by-game visual/table with:
+Game-by-game evidence includes date, opponent, PTS, REB, AST, PRA, MIN, and Over/Under result versus the active test line.
 
-- date;
-- opponent;
-- points;
-- rebounds;
-- assists;
-- PRA;
-- minutes;
-- Over/Under result versus the currently selected Line Lab line.
-
-Hit rate is descriptive and is never substituted for model probability.
+Hit rate is descriptive and never substituted for model probability.
 
 ## 5. Opponent ranking against the selected stat
 
-Page 2 must show opponent ranking for the exact selected stat family.
+For PRA, show component and combined opponent rankings when legitimate data exists:
 
-For PRA, show both the combined PRA context and component ranks when legitimate data exists:
+- rank vs points;
+- rank vs rebounds;
+- rank vs assists;
+- rank vs PRA / verified positional PRA allowance when supported.
 
-- opponent rank vs points;
-- opponent rank vs rebounds;
-- opponent rank vs assists;
-- opponent rank vs PRA / aggregated positional allowance if a verified owner supports it.
+Ranking convention is fixed and explicit:
 
-Example presentation:
+- **Rank 1 = toughest / stingiest defense against that stat**;
+- **Rank 30 = most permissive / easiest defense against that stat**.
 
-- Points defense vs position: `16th`;
-- Rebounds defense vs position: `1st`;
-- Assists defense vs position: `24th`;
-- PRA matchup: `8th toughest`.
+The UI should prefer user-readable phrases such as `3rd toughest` or `6th most favorable` rather than an ambiguous raw ordinal alone.
 
-Ranking semantics must be explicit: whether `1st` means stingiest/toughest or most allowed/easiest. The UI should phrase rankings in user-readable terms such as `3rd toughest` or `25th toughest` to avoid ambiguity.
+No component rank may be fabricated from unrelated defensive metrics.
 
 ## 6. Favorable / Medium / Tough matchup label
 
-Create a deterministic stat-specific matchup grade:
+The Page-2 selected-stat matchup grade is deterministic:
 
-- **FAVORABLE** — opponent is meaningfully permissive for the selected stat/profile;
-- **MEDIUM** — middle-of-league matchup;
-- **TOUGH** — opponent is meaningfully restrictive.
+- ranks **1–10 -> TOUGH**;
+- ranks **11–21 -> MEDIUM**;
+- ranks **22–30 -> FAVORABLE**.
 
-The grade must be derived from the same verified opponent-ranking evidence shown on screen.
+For the PRA page, the label uses the verified opponent PRA/positional-PRA rank when available. Points, rebounds, and assists ranks are supporting breakdown evidence.
 
-Do not produce a matchup grade when the ranking evidence is unavailable or stale beyond the accepted contract. Show `MATCHUP GRADE UNAVAILABLE` instead.
+If a verified PRA rank is unavailable, Page 2 must show `MATCHUP GRADE UNAVAILABLE`; it must not synthesize the label by averaging or guessing from unrelated component ranks.
 
-The matchup grade is presentation/context in V1. It does not silently mutate the frozen Page-1 Kyre projection unless a separately approved future model version explicitly introduces that feature.
+The matchup label is presentation/context in V1. It does not alter the frozen Page-1 Kyre projection.
 
 ## 7. Opponent matchup intelligence
 
-Beyond rank, show verified context when available:
+Beyond ranking, show verified context when available:
 
 - opponent pace;
 - points/rebounds/assists allowed to the player position or closest approved role grouping;
@@ -239,19 +239,13 @@ Beyond rank, show verified context when available:
 - relevant paint/perimeter context;
 - matchup difficulty badge.
 
-Only fields backed by approved source data are rendered.
+Only fields backed by approved source data render.
 
 ## 8. Player vs opponent history
 
-Show prior meetings only when exact player + opponent identity can be verified.
+Show prior meetings only when exact player + opponent identity is verified.
 
-Display:
-
-- each prior game PRA;
-- PTS / REB / AST / MIN;
-- average PRA;
-- hit rate versus the currently selected Line Lab line;
-- sample size.
+Display each prior game's PRA, PTS/REB/AST/MIN, average PRA, hit rate versus active Line Lab line, and sample size.
 
 If no exact verified prior meeting exists, show `No verified prior matchup sample.`
 
@@ -259,7 +253,7 @@ If no exact verified prior meeting exists, show `No verified prior matchup sampl
 
 Display verified role/opportunity evidence:
 
-- projected minutes when an approved source/model owner provides it;
+- projected minutes when an approved owner provides it;
 - recent minutes;
 - starter/bench status when verified;
 - recent usage/possessions/touches only when available from approved analytics sources;
@@ -269,36 +263,27 @@ Do not invent touches, usage, starter status, or projected minutes.
 
 ## 10. Injury / lineup impact
 
-Show:
-
-- selected player's verified availability;
-- important teammate availability when approved sources expose it;
-- deterministic role notes only when evidence supports the relationship.
-
-Example allowed language: `Primary ball-handler OUT; verified recent on/off role evidence shows increased assist opportunity.`
+Show selected-player availability, important teammate availability when approved sources expose it, and deterministic role notes only when verified evidence supports the relationship.
 
 Do not infer teammate-impact adjustments from injury labels alone.
 
 ## 11. Projection breakdown
 
-Expose a transparent explanation of the current Kyre projection without pretending unsupported model internals exist.
+Explain the projection without pretending unsupported internals exist.
 
-If the model exposes component adjustments, show them directly.
+If the model exposes component adjustments, display them. Otherwise show traceable evidence:
 
-If not, show a traceable evidence summary instead:
-
-- base recent-form estimate;
-- sample window;
+- base recent-form estimate / sample window;
 - minutes context;
-- opponent context as presentation-only if not in model;
-- role/availability context as presentation-only if not in model;
+- opponent context labeled presentation-only when not a model input;
+- role/availability context labeled presentation-only when not a model input;
 - final frozen Kyre projection.
 
 Never fabricate numeric component adjustments.
 
 ## 12. Risk factors
 
-Compact risk panel using deterministic verified flags such as:
+Use deterministic verified flags such as:
 
 - small history sample;
 - wide model variance;
@@ -310,11 +295,11 @@ Compact risk panel using deterministic verified flags such as:
 - weak opponent-history sample;
 - stale or thin market coverage.
 
-No generic AI prose detached from actual evidence.
+No generic AI prose detached from evidence.
 
 ## 13. Full game log
 
-Expandable detailed table at the bottom:
+Expandable table:
 
 - date;
 - opponent;
@@ -323,9 +308,9 @@ Expandable detailed table at the bottom:
 - AST;
 - PRA;
 - MIN;
-- outcome vs the active Line Lab line.
+- outcome vs active Line Lab line.
 
-Default compact view should not make the top half feel crowded.
+Default compact view keeps the top half clean.
 
 ## Mobile-first layout order
 
@@ -343,9 +328,9 @@ Default compact view should not make the top half feel crowded.
 12. Projection Breakdown / Why.
 13. Risk Factors.
 14. Full Game Log.
-15. Floating TOP remains available throughout.
+15. Floating TOP throughout.
 
-Use progressive disclosure/expanders for deep evidence so Page 2 stays professional rather than becoming a dense spreadsheet.
+Use progressive disclosure/expanders for deep evidence so Page 2 stays professional instead of becoming a dense spreadsheet.
 
 ## Fail-soft / fail-closed behavior
 
@@ -361,8 +346,8 @@ Fail closed:
 
 - unresolved player identity blocks Page 2;
 - wrong/stale selected player cannot silently resolve to another player;
-- model probability remains unavailable without legitimate variance;
-- missing ranking cannot generate Favorable/Medium/Tough;
+- model probability unavailable without legitimate variance;
+- missing PRA rank cannot generate Favorable/Medium/Tough;
 - missing values never become `0`;
 - no fabricated prior matchup history;
 - no averaged sportsbook line;
@@ -370,16 +355,16 @@ Fail closed:
 
 ## Performance
 
-- Reuse the current Page-1 snapshot/cache owners where practical.
-- Page 2 should load only the selected player/game deep-dive data, not all 110 players again when avoidable.
-- Market quotes should be fetched once per refresh cycle and filtered locally.
-- Opponent/team ranking data should be cached by game/team/stat key.
+- Reuse current Page-1 snapshot/cache owners where practical.
+- Load only selected-player/game deep-dive data when avoidable instead of rebuilding all 110 player deep dives.
+- Fetch market quotes once per refresh cycle and filter locally.
+- Cache opponent/team ranking by game/team/stat key.
 - Do not render Page 1 in the background while Page 2 is active.
 - Preserve Line Lab state across safe refreshes when canonical player/game identity remains unchanged.
 
 ## Expected implementation boundaries
 
-New modules should be preferred:
+Prefer new modules:
 
 - `nba_pra_runtime_v2.py` or equivalent NBA PRA page selector;
 - `nba_pra_page2_context_v1.py`;
@@ -392,7 +377,7 @@ New modules should be preferred:
 Modify existing frozen files only if required by a proven compatibility defect:
 
 - NBA PRA Universal Runtime destination overlay;
-- Page-1 handoff code only if the existing session selection cannot trigger the new runtime selector safely.
+- Page-1 handoff code only if the existing player selection cannot safely carry the quote snapshot or trigger Page 2.
 
 Do not modify Page-1 model math.
 
@@ -404,18 +389,19 @@ Tests must pin at minimum:
 - valid selected player -> Page 2 only;
 - Page 1 never background-renders while Page 2 is active;
 - stale/wrong player identity fails closed;
+- exact tapped quote snapshot is preserved as provenance;
+- moved live quote shows selected vs current separately;
 - Back returns to NBA PRA Page 1 and preserves sport/market route;
 - TOP control is present and route-neutral;
-- player headshot and team logo are rendered from verified identity;
-- exact selected quote identity is preserved;
+- verified player headshot and team logo render;
 - multi-book lines remain separate;
 - slider changes threshold only, not projection;
 - sportsbook projection influence remains 0.0;
-- probability unavailable when sigma/variance is unavailable;
-- L5/L10/MIN use the verified model-history bucket;
+- probability unavailable when sigma/variance unavailable;
+- L5/L10/MIN use verified model-history bucket;
 - opponent points/rebounds/assists/PRA ranking semantics are explicit;
-- Favorable/Medium/Tough derives only from verified ranking evidence;
-- missing ranking -> matchup grade unavailable;
+- ranks 1–10/11–21/22–30 map to Tough/Medium/Favorable only from verified selected-stat rank;
+- missing PRA rank -> matchup grade unavailable;
 - opponent context does not silently mutate frozen projection;
 - player-vs-opponent history fails closed;
 - injury/role fields are not fabricated;
