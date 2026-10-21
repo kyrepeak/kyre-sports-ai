@@ -1,0 +1,64 @@
+{
+  "schema_version": 2,
+  "task_id": "api2-nba-pra-slate-completeness-v1",
+  "project": "API2",
+  "workstream": "api2-nba-pra-slate-completeness-v1",
+  "step": "2A/1",
+  "source_main_sha": "2b70a2b9b07d65602b38f7c1435f11ed0dba2dd3",
+  "goal": "Complete NBA PRA Page 1 slate integrity: correct Phoenix tip times, official non-ESPN team logos, full player identity coverage, verified-data projection/edge filling, rate-safe fallback, and fail-closed probability when variance is unavailable.",
+  "write_paths": [
+    "devsystem/execution_plans/api2-nba-pra-slate-completeness-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-slate-completeness-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-slate-completeness-v1.json",
+    "docs/superpowers/plans/2026-10-21-nba-pra-slate-completeness-v1.md",
+    "nba_pra_team_identity_v1.py",
+    "nba_pra_page1_model_v1.py",
+    "nba_pra_page1_ui_v2.py",
+    "nba_pra_page1_v2.py",
+    "nba_pra_player_context_api_v1.py",
+    "runless_v2/nba_pra_player_context_v1.py",
+    "runless_v2/nba_pra_schedule_v1.py",
+    "tests/test_api2_nba_pra_model_behavior_v1.py",
+    "tests/test_api2_nba_pra_page1_hard_analytics_ui_v1.py",
+    "tests/test_api2_nba_pra_page1_s_tier_ui_v1.py",
+    "tests/test_api2_nba_pra_page1_v2_ui_contract.py",
+    "tests/test_api2_nba_pra_slate_completeness_v1.py"
+  ],
+  "protected_dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_market_api_v1.py",
+    "runless_v2/nba_pra_market_v1.py",
+    "requirements.txt",
+    "runless_v2/requirements.txt"
+  ],
+  "scope_lease_id": "SCOPE-LEASE-E25481ACFE2472D4A6DCDCF5",
+  "authorization_id": "AUTH-API2-NBA-PRA-SLATE-COMPLETENESS-V1-R1",
+  "freeze_token": "API2_NBA_PRA_SLATE_COMPLETENESS_V1_FROZEN",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": [
+      "SportsGameOdds",
+      "SGO",
+      "ESPN",
+      "ESPN BET"
+    ],
+    "schedule_primary": "NBA Official",
+    "schedule_backup": "CBS Sports",
+    "player_context_primary": "NBA Stats",
+    "player_context_secondary": "Basketball-Reference",
+    "market_primary": "FanDuel",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "fabrication": false
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "api2-nba-pra-slate-completeness-v1",
+    "authoritative_pr": "PENDING",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "baseline_note": "Repository-wide pytest collection is blocked by the pre-existing tests/conftest.py V157 entrypoint assertion; scoped NBA PRA suite is authoritative for this repair and the unrelated frozen global router is not modified."
+}

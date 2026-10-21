@@ -33,7 +33,9 @@ def test_player_card_is_professional_and_preserves_each_book_quote():
 def test_game_card_is_compact_upcoming_matchup_with_team_logos():
     html=build_game_card_html({"away_tricode":"LAL","home_tricode":"PHX","tip_phoenix":"7:00 PM MST","venue":"Footprint Center","gameStatus":1,"gameStatusText":"Scheduled"})
     assert "LAL" in html and "PHX" in html and "UPCOMING" in html and "7:00 PM MST" in html and "Footprint Center" in html
-    assert "teamlogos/nba/500/lal.png" in html and "teamlogos/nba/500/phx.png" in html
+    assert "cdn.nba.com/logos/nba/1610612747/global/L/logo.svg" in html
+    assert "cdn.nba.com/logos/nba/1610612756/global/L/logo.svg" in html
+    assert "espn" not in html.casefold()
 
 
 def test_dashboard_kpis_surface_market_quality_not_decorative_numbers():

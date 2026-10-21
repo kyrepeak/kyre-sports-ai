@@ -70,6 +70,11 @@ def _status(value: Any) -> str:
     return "FINAL" if code == 3 else "LIVE" if code == 2 else "UPCOMING"
 
 
+def _phoenix_tip_label(value: datetime) -> str:
+    local = value.astimezone(PHOENIX_TZ)
+    return f"{local.strftime('%I:%M %p').lstrip('0')} MST"
+
+
 def _fetch_official() -> Mapping[str, Any]:
     last_error: Exception | None = None
     with httpx.Client(headers=HEADERS, timeout=httpx.Timeout(15.0, connect=3.0), follow_redirects=True) as client:
@@ -123,6 +128,7 @@ def _parse_backup_schedule_html(document: str, slate_date: date, now_utc: dateti
             "home_name": TEAM_NAMES.get(home_code, home_code),
             "tip_utc": tip.isoformat().replace("+00:00", "Z"),
             "tip_iso_phoenix": phoenix.isoformat(),
+            "tip_phoenix": _phoenix_tip_label(phoenix),
             "game_date_phoenix": phoenix.date().isoformat(),
             "gameStatus": 1,
             "status": "UPCOMING",
@@ -179,6 +185,7 @@ def collect_nba_pra_schedule(now_utc: datetime | None = None) -> dict[str, Any]:
                         "away_tricode":away_code,"away_name":_team_name(away,away_code),
                         "home_tricode":home_code,"home_name":_team_name(home,home_code),
                         "tip_utc":tip.isoformat().replace("+00:00","Z"),"tip_iso_phoenix":local.isoformat(),
+                        "tip_phoenix":_phoenix_tip_label(local),
                         "game_date_phoenix":local.date().isoformat(),"gameStatus":1,"status":"UPCOMING",
                         "venue":_text(raw.get("arenaName") or raw.get("arena") or ""),
                     })
