@@ -89,6 +89,16 @@ def _probability_text(grade: Mapping[str, Any]) -> str:
     return f"{shown * 100:.0f}%"
 
 
+def _display_form(model: Mapping[str, Any]) -> Mapping[str, Any]:
+    current = model.get("current") or {}
+    if int(current.get("sample") or 0) > 0:
+        return current
+    prior = model.get("prior") or {}
+    if int(prior.get("sample") or 0) > 0:
+        return prior
+    return current
+
+
 def _edge_score(grade: Mapping[str, Any]) -> tuple[str, str]:
     lean = _text(grade.get("lean")).upper()
     if lean not in {"OVER", "UNDER"}:
@@ -108,7 +118,7 @@ def _edge_score(grade: Mapping[str, Any]) -> tuple[str, str]:
 
 def _why_text(item: Mapping[str, Any]) -> str:
     q, model, grade = item.get("featured_quote") or {}, item.get("model") or {}, item.get("grade") or {}
-    current = model.get("current") or {}
+    current = _display_form(model)
     pieces: list[str] = []
     lean = _text(grade.get("lean")).upper()
     if lean in {"OVER", "UNDER"}:
@@ -173,7 +183,7 @@ def build_leaderboard_row_html(
     featured = item.get("featured_quote") or {}
     model = item.get("model") or {}
     grade = item.get("grade") or {}
-    current = model.get("current") or {}
+    current = _display_form(model)
     lean = _text(grade.get("lean")).upper() if _text(grade.get("lean")) else "PASS"
     confidence = _text(grade.get("confidence")).upper() or "UNAVAILABLE"
     score, tier = _edge_score(grade)
@@ -216,7 +226,7 @@ def build_market_row_html(item: Mapping[str, Any], *, now_utc: datetime | None =
     featured = item.get("featured_quote") or {}
     model = item.get("model") or {}
     grade = item.get("grade") or {}
-    current = model.get("current") or {}
+    current = _display_form(model)
     lean = _text(grade.get("lean")).upper() if _text(grade.get("lean")) else "PASS"
     confidence = _text(grade.get("confidence")).upper() or "UNAVAILABLE"
     score, tier = _edge_score(grade)
@@ -270,7 +280,7 @@ def build_player_card_html(item: Mapping[str, Any], *, rank: int | None = None, 
     featured = item.get("featured_quote") or {}
     model = item.get("model") or {}
     grade = item.get("grade") or {}
-    current = model.get("current") or {}
+    current = _display_form(model)
     lean = _text(grade.get("lean")).upper() or "PASS"
     confidence = _text(grade.get("confidence")).upper() or "UNAVAILABLE"
     freshness, fresh_state = freshness_label(featured.get("observed_at_utc"), now)
