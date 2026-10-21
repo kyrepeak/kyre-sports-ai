@@ -33,5 +33,34 @@ def _extract_profile(document: str, slug: str, expected_name: str):
     return profile
 
 
+def _parse_real_game_rows(document: str):
+    rows = []
+    for row_html in re.findall(r"<tr\b[^>]*>(.*?)</tr>", document, flags=re.I | re.S):
+        cells = {}
+        for stat, body in re.findall(
+            r"<(?:td|th)\b[^>]*data-stat=[\"']([^\"']+)[\"'][^>]*>(.*?)</(?:td|th)>",
+            row_html,
+            flags=re.I | re.S,
+        ):
+            cells[stat] = _core._strip_html(body)
+        game_date = str(cells.get("date_game") or "")[:10]
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", game_date):
+            continue
+        pts = _core._num(cells.get("pts"))
+        reb = _core._num(cells.get("trb"))
+        ast = _core._num(cells.get("ast"))
+        if pts is None or reb is None or ast is None:
+            continue
+        rows.append({
+            "game_date": game_date,
+            "minutes": _core._minutes(cells.get("mp", "")),
+            "points": pts,
+            "rebounds": reb,
+            "assists": ast,
+        })
+    return _core.normalize_history_rows(rows)
+
+
 _core._resolve_bref_slug = _resolve_search_slug
 _core._extract_bref_profile = _extract_profile
+_core._parse_bref_gamelog = _parse_real_game_rows
