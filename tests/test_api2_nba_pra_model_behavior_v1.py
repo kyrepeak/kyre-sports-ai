@@ -51,3 +51,11 @@ def test_model_fails_closed_without_history_or_market():
     assert model.grade_market(35.0, None, 6.0)["lean"] == "PASS"
 
 
+
+def test_grade_preserves_verified_edge_without_inventing_probability_when_sigma_missing():
+    model = _load("nba_pra_page1_model_v1")
+    grade = model.grade_market(35.7, 29.5, None)
+    assert grade["edge"] == 6.2
+    assert grade["over_probability"] is None
+    assert grade["lean"] == "PASS"
+    assert grade["confidence"] == "UNAVAILABLE"

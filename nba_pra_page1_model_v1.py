@@ -62,8 +62,11 @@ def probability_over(projection: float | None, line: float | None, sigma: float 
 
 
 def grade_market(projection: float | None, line: float | None, sigma: float | None) -> dict[str, Any]:
-    p=probability_over(projection,line,sigma)
-    if p is None or projection is None or line is None:
+    if projection is None or line is None:
         return {"edge":None,"over_probability":None,"lean":"PASS","confidence":"UNAVAILABLE"}
-    edge=round(float(projection)-float(line),1); best=max(p,1-p)
+    edge=round(float(projection)-float(line),1)
+    p=probability_over(projection,line,sigma)
+    if p is None:
+        return {"edge":edge,"over_probability":None,"lean":"PASS","confidence":"UNAVAILABLE"}
+    best=max(p,1-p)
     return {"edge":edge,"over_probability":p,"lean":"OVER" if p>=.55 else "UNDER" if p<=.45 else "PASS","confidence":"HIGH" if best>=.64 else "MEDIUM" if best>=.57 else "LOW"}

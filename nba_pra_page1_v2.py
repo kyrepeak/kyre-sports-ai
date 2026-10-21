@@ -47,6 +47,14 @@ def build_items(snapshot: Mapping[str, Any], *, now_utc: datetime | None = None)
             continue
         profile = dict(profiles.get(key) or {"player_name": market.get("player_name")})
         model = project_pra(profile.get("current_games") or [], profile.get("prior_games") or [])
+        baseline = profile.get("season_baseline") if isinstance(profile.get("season_baseline"), Mapping) else {}
+        if model.get("projection") is None and baseline.get("pra") is not None:
+            try:
+                baseline_pra = round(float(baseline.get("pra")), 1)
+            except (TypeError, ValueError):
+                baseline_pra = None
+            if baseline_pra is not None:
+                model = {**model, "projection": baseline_pra, "sigma": None, "basis": "VERIFIED SEASON BASELINE"}
         grade = grade_market(model.get("projection"), featured.get("line"), model.get("sigma"))
         injury = injuries.get(key) or injuries.get(_norm(profile.get("player_name"))) or {}
         items.append({

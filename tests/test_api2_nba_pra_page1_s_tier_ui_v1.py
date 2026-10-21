@@ -75,7 +75,8 @@ def test_player_card_has_headshot_team_logo_and_kyre_edge_score():
     )
 
     assert "1626164.png" in html
-    assert "teamlogos/nba/500/phx.png" in html
+    assert "cdn.nba.com/logos/nba/1610612756/global/L/logo.svg" in html
+    assert "espn" not in html.casefold()
     assert "KYRE EDGE SCORE" in html
     assert "8.2" in html
     assert "STRONG" in html
