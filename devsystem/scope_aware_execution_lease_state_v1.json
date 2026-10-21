@@ -1,11 +1,35 @@
 {
-  "generation": 666,
-  "holders": [],
+  "generation": 667,
+  "holders": [
+    {
+      "acquired_at_utc": "2026-10-21T23:03:41Z",
+      "expires_at_utc": "2026-10-22T00:03:41Z",
+      "generation": 667,
+      "heartbeat_at_utc": "2026-10-21T23:03:41Z",
+      "lease_id": "SCOPE-LEASE-6FC80EC141485F537B8E75A7",
+      "owner_id": "monster-wnba-pra-page1-refresh-handoff-v1",
+      "scope": {
+        "dependency_tokens": [
+          "domain:wnba-pra-page1-refresh-handoff"
+        ],
+        "exclusive": false,
+        "resource_identity": {},
+        "shared_resources": [],
+        "write_paths": [
+          "devsystem/runless_proof_plans/monster-wnba-pra-page1-refresh-handoff-v1.json",
+          "devsystem/wnba_pra_page1_refresh_handoff_source_policy_v1.py",
+          "tests/test_wnba_pra_page1_refresh_handoff_v1.py",
+          "wnba_pra_hub_v3612.py",
+          "wnba_pra_hub_v3618.py"
+        ]
+      }
+    }
+  ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 1222,
+  "revision": 1223,
   "schema_version": 1,
-  "state_hash": "a7fa40dc5e307d8d17c64fc5f57576b4d65764bff1004a6692178640f1ed68c2",
+  "state_hash": "9633d5374198c7bc8dabd3658d6e09b44aff2e5753b041693aa7e4db29c62d81",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
