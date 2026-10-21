@@ -136,9 +136,10 @@ def render_nba_pra_page1_v2() -> None:
                 if st.button(f"Analyze {item['player_name']}", key=f"np2-featured-{item['key']}", use_container_width=True):
                     st.session_state[SESSION_PLAYER] = item["key"]
     st.markdown('<div class="np2-sec"><b>ALL UPCOMING PRA MARKETS</b><span>sportsbook quotes remain separate</span></div>', unsafe_allow_html=True)
-    for start in range(0, len(ranked), 2):
+    market_rows = items if selected == "BEST EDGES" else ranked
+    for start in range(0, len(market_rows), 2):
         columns = st.columns(2)
-        for offset, item in enumerate(ranked[start:start + 2]):
+        for offset, item in enumerate(market_rows[start:start + 2]):
             with columns[offset]:
                 st.markdown(build_player_card_html(item, now_utc=now), unsafe_allow_html=True)
                 if st.button(f"View {item['player_name']} on Page 2", key=f"np2-all-{item['key']}", use_container_width=True):
