@@ -35,7 +35,7 @@
       "scope": {
         "write_paths": [
           "nba_pra_page1_v2.py",
-          "tests/test_api2_nba_pra_every-player-analyze-v1.py"
+          "tests/test_api2_nba_pra_every_player_analyze_v1.py"
         ],
         "dependency_tokens": [],
         "shared_resources": [],
