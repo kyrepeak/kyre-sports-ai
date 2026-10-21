@@ -67,6 +67,139 @@ def _phoenix_window(slate_date):
     return fmt(start), fmt(end)
 
 
+_FANDUEL_SCHEDULE_URL = "https://api.sportsbook.fanduel.com/sbapi/content-managed-page"
+_FANDUEL_PUBLIC_WEB_KEY = "FhMFpcPWXMeyZxOx"
+
+
+def _mapping_rows(value):
+    if isinstance(value, Mapping):
+        return [row for row in value.values() if isinstance(row, Mapping)]
+    if isinstance(value, list):
+        return [row for row in value if isinstance(row, Mapping)]
+    return []
+
+
+def _team_code_from_name(value: Any) -> str | None:
+    token = "".join(ch for ch in str(value or "").casefold() if ch.isalnum())
+    aliases = {
+        "losangelesclippers": "LAC",
+        "laclippers": "LAC",
+        "portlandtrailblazers": "POR",
+    }
+    if token in aliases:
+        return aliases[token]
+    for code, name in _NBA_TEAM_NAME_BY_TRICODE.items():
+        if token == "".join(ch for ch in name.casefold() if ch.isalnum()):
+            return code
+    return None
+
+
+def _recover_quorum_schedule(
+    schedule: Mapping[str, Any],
+    now_utc: datetime,
+    *,
+    request_get=None,
+    timeout: float = 6.0,
+) -> dict[str, Any]:
+    result = dict(schedule or {})
+    if result.get("games") or result.get("diagnostic_state") != "PROVIDER_CONFLICT":
+        return result
+    provider_keys = result.get("provider_game_keys") or {}
+    if not isinstance(provider_keys, Mapping):
+        return result
+    official = set(provider_keys.get("NBA Official") or [])
+    espn = set(provider_keys.get("ESPN NBA") or [])
+    conflict = set(result.get("conflict_game_keys") or [])
+    confirmed = (official & espn) - conflict
+    if not confirmed:
+        return result
+
+    upstream = request_get or _sgo._default_get
+    try:
+        response = upstream(
+            _FANDUEL_SCHEDULE_URL,
+            params={
+                "_ak": _FANDUEL_PUBLIC_WEB_KEY,
+                "page": "CUSTOM",
+                "customPageId": "nba",
+                "timezone": "America/Phoenix",
+            },
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0",
+                "Origin": "https://sportsbook.fanduel.com",
+                "Referer": "https://sportsbook.fanduel.com/",
+                "x-sportsbook-region": "NJ",
+            },
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        document = response.json()
+    except Exception as exc:
+        return {**result, "schedule_recovery_state": f"FANDUEL_ERROR:{type(exc).__name__}"}
+
+    attachments = document.get("attachments") if isinstance(document, Mapping) else None
+    if not isinstance(attachments, Mapping):
+        return {**result, "schedule_recovery_state": "FANDUEL_NO_ATTACHMENTS"}
+    nba_competitions = {
+        str(row.get("competitionId") or row.get("id") or "").strip()
+        for row in _mapping_rows(attachments.get("competitions"))
+        if str(row.get("name") or row.get("competitionName") or "").strip().casefold() == "nba"
+    }
+    now = now_utc if now_utc.tzinfo is not None else now_utc.replace(tzinfo=timezone.utc)
+    now = now.astimezone(timezone.utc)
+    recovered = []
+    for event in _mapping_rows(attachments.get("events")):
+        if nba_competitions and str(event.get("competitionId") or "").strip() not in nba_competitions:
+            continue
+        name = str(event.get("name") or event.get("eventName") or "").strip()
+        if " @ " not in name:
+            continue
+        away_name, home_name = (part.strip() for part in name.split(" @ ", 1))
+        away_code, home_code = _team_code_from_name(away_name), _team_code_from_name(home_name)
+        if not away_code or not home_code:
+            continue
+        raw_tip = str(event.get("openDate") or event.get("startTime") or "").strip()
+        try:
+            tip = datetime.fromisoformat(raw_tip.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if tip.tzinfo is None:
+            tip = tip.replace(tzinfo=timezone.utc)
+        tip = tip.astimezone(timezone.utc)
+        if tip <= now:
+            continue
+        phoenix_day = tip.astimezone(PHOENIX_TZ).date().isoformat()
+        game_key = f"{away_code}@{home_code}:{phoenix_day}"
+        if game_key not in confirmed:
+            continue
+        recovered.append({
+            "game_key": game_key,
+            "source_game_id": str(event.get("eventId") or event.get("id") or ""),
+            "away_tricode": away_code,
+            "home_tricode": home_code,
+            "away_name": _NBA_TEAM_NAME_BY_TRICODE[away_code],
+            "home_name": _NBA_TEAM_NAME_BY_TRICODE[home_code],
+            "status": "UPCOMING",
+            "gameStatus": 1,
+            "tip_utc": tip.isoformat().replace("+00:00", "Z"),
+            "game_date_phoenix": phoenix_day,
+            "confirming_sources": ["NBA Official", "ESPN NBA", "FanDuel schedule recovery"],
+            "source_agreement": 2,
+        })
+    if not recovered:
+        return {**result, "schedule_recovery_state": "FANDUEL_NO_CONFIRMED_FUTURE_GAMES"}
+    recovered.sort(key=lambda game: (game["tip_utc"], game["game_key"]))
+    return {
+        **result,
+        "verification": "VERIFIED",
+        "diagnostic_state": "QUORUM_RECOVERED_AFTER_ISOLATED_CONFLICT",
+        "games": recovered,
+        "source_agreement": 2,
+        "schedule_recovery_state": "RECOVERED",
+    }
+
+
 def _load_sgo_primary(slate_date, *, request_get=None, secret_getter=None, timeout: float = 6.0):
     upstream = request_get or _sgo._default_get
     starts_after, starts_before = _phoenix_window(slate_date)
@@ -152,6 +285,7 @@ def _skipped_secondary():
 def load_page1_snapshot_v2(
     *, now=None, schedule_loader=None, api_loader=None, sgo_loader=None, odds_loader=None,
     official_profile_loader=None, backup_profile_loader=None, injury_loader=None,
+    schedule_recovery_get=None,
 ):
     now_utc = now or datetime.now(timezone.utc)
     if now_utc.tzinfo is None:
@@ -164,6 +298,9 @@ def load_page1_snapshot_v2(
 
     def schedule_proxy(**kwargs):
         result = dict(schedule_impl(**kwargs) or {})
+        result = _recover_quorum_schedule(
+            result, now_utc, request_get=schedule_recovery_get
+        )
         _, games = _core.select_next_upcoming_slate(list(result.get("games") or []), now_utc)
         state["games"] = games
         return result
