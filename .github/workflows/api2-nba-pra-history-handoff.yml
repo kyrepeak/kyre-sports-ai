@@ -47,7 +47,7 @@ jobs:
           fi
           git add -A
           git diff --cached --check
-          unexpected="$(git diff --cached --name-only | grep -Ev '^(nba_pra_page1_ui_v2.py|runless_v2/nba_pra_player_context_v1.py|tests/test_api2_nba_pra_history_coverage_v1.py|\.history_handoff/|\.github/workflows/api2-nba-pra-history-handoff.yml)$' || true)"
+          unexpected="$(git diff --cached --name-only | grep -Ev '^(nba_pra_page1_ui_v2.py|runless_v2/nba_pra_player_context_v1.py|tests/test_api2_nba_pra_history_coverage_v1.py|\.history_handoff/.*|\.github/workflows/api2-nba-pra-history-handoff.yml)$' || true)"
           test -z "$unexpected"
           git config user.name 'kyrepeak'
           git config user.email 'kyrewhite15@gmail.com'
