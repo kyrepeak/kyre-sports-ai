@@ -22,6 +22,7 @@ on:
       - "devsystem/wnba_pra_speed_v3_step2_public_profile.py"
       - "devsystem/task_ledgers/wnba-pra-speed-v3-step2-pooled-http.json"
       - "tests/test_wnba_pra_speed_v3_step2.py"
+      - "tests/test_wnba_step7f_streamlit_api.py"
       - ".github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml"
       - "requirements.txt"
       - "app.py"
@@ -62,17 +63,6 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-
-          # This workflow is shared by later WNBA work because the pooled client
-          # and compatibility tests are reused. The exact Step-2 file-set guard
-          # only owns PRs that actually mutate a Step-2 implementation, ledger,
-          # or public-profile surface. Unrelated WNBA PRs still run the regression
-          # tests above, but they must not be rejected as malformed Step-2 PRs.
-          if ! grep -Eq '^(wnba_pra_speed_v3_step2_transport\.py|streamlit_memory_lazy_router_wnba_pra_speed_v3_step2\.py|devsystem/wnba_pra_speed_v3_step2_public_profile\.py|devsystem/task_ledgers/wnba-pra-speed-v3-step2-pooled-http\.json)$' /tmp/actual.txt; then
-            echo "WNBA_PRA_SPEED_V3_STEP2_SCOPE_NOT_APPLICABLE"
-            exit 0
-          fi
-
           cat > /tmp/expected.txt <<'EOF'
           .github/workflows/wnba-pra-speed-v3-step2-pooled-http.yml
           app.py
