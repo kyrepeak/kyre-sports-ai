@@ -31,16 +31,19 @@ def load_kyre_sports_api_pra_observations(
     base_url: str | None = None,
     timeout: tuple[float, float] = (3.0, 22.0),
 ) -> dict[str, Any]:
-    key = str(api_key or "").strip()
+    """Load NBA PRA markets only through Kyre Sports API.
+
+    ``api_key`` remains in the signature for compatibility with older callers,
+    but it is intentionally ignored and is never transmitted. Page 1 owns no
+    provider credential and never calls a provider directly.
+    """
+    del api_key
     request_post = request_post or requests.post
     base_url = str(base_url or os.getenv("KYRE_NBA_API_BASE_URL") or DEFAULT_API_BASE_URL).rstrip("/")
     try:
-        request_json = {"date": slate_date.isoformat()}
-        if key:
-            request_json["sportsgameodds_api_key"] = key
         response = request_post(
             f"{base_url}/api/v1/nba/pra/market",
-            json=request_json,
+            json={"date": slate_date.isoformat()},
             timeout=timeout,
         )
         response.raise_for_status()
