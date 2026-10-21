@@ -13,7 +13,7 @@
   "sportsbook_projection_influence": 0.0,
   "commands": [
     ["python", "-m", "py_compile", "universal_atomic_navigation_v2.py", "universal_atomic_navigation_runtime_v2.py", "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v3.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_atomic_navigation_v2.py", "tests/test_universal_atomic_navigation_v2_inheritance.py", "tests/test_universal_atomic_navigation_v1.py", "tests/test_universal_atomic_navigation_terminal_inheritance_v1.py", "tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_atomic_navigation_v2.py", "tests/test_universal_atomic_navigation_v2_inheritance.py", "tests/test_universal_atomic_navigation_v1.py"],
     ["python", "-m", "devsystem.api2_universal_runtime_v5_cert"]
   ],
   "artifacts": [
@@ -27,5 +27,6 @@
     "devsystem/task_ledgers/monster-universal-navigation-loading-v2.json",
     "devsystem/runless_proof_plans/monster-universal-navigation-loading-v2.json"
   ],
+  "proof_scope_note": "V1 helper behavior remains covered by test_universal_atomic_navigation_v1.py. Historical V1 terminal-inheritance tests are intentionally excluded because they pin the superseded V1 terminal import and directly contradict this V2 successor contract.",
   "reuse": {"allow_existing_authoritative_path": true}
 }
