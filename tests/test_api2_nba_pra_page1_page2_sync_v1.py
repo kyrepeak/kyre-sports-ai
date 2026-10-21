@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAGE1 = ROOT / "nba_pra_page1_v2.py"
 PAGE2 = ROOT / "nba_pra_page2_v1.py"
+SYNC = ROOT / "nba_pra_page2_sync_v1.py"
 RUNTIME = ROOT / "nba_pra_runtime_v2.py"
 
 
@@ -56,7 +57,7 @@ def test_selection_handoff_preserves_exact_page1_analysis_and_quote() -> None:
 
 
 def test_page2_uses_page1_handoff_for_initial_book_line_parity() -> None:
-    from nba_pra_page2_v1 import resolve_initial_analysis
+    from nba_pra_page2_sync_v1 import resolve_initial_analysis
 
     profile = {
         "current_games": [
@@ -75,7 +76,7 @@ def test_page2_uses_page1_handoff_for_initial_book_line_parity() -> None:
 
 
 def test_page2_does_not_reuse_handoff_for_a_different_player_or_line() -> None:
-    from nba_pra_page2_v1 import resolve_initial_analysis
+    from nba_pra_page2_sync_v1 import resolve_initial_analysis
 
     profile = {
         "current_games": [
@@ -95,6 +96,7 @@ def test_every_page1_market_player_has_analyze_player_action() -> None:
     assert 'f"Analyze {item[\'player_name\']} →"' in source
     assert "View {item['player_name']} on Page 2" not in source
     assert "select_player_for_analysis" in source
+    assert "ALL UPCOMING PRA PLAYERS" in source
 
 
 def test_runtime_has_dedicated_page2_loading_phase_without_rendering_page1_behind_it() -> None:
@@ -103,12 +105,22 @@ def test_runtime_has_dedicated_page2_loading_phase_without_rendering_page1_behin
     assert "render_page2_loading_screen" in source
     loading_block = source.split('if nav_phase == "loading_page2"', 1)[1].split("player_key =", 1)[0]
     assert "render_nba_pra_page1_v2" not in loading_block
+    assert "position:fixed;inset:0" in source
 
 
-def test_active_sync_path_has_no_sgo_or_espn() -> None:
+def test_synced_page2_uses_zero_fetch_local_line_lab_after_parent_load() -> None:
+    source = SYNC.read_text(encoding="utf-8")
+    assert "@st.fragment" in source
+    fragment = source.split("@st.fragment", 1)[1]
+    assert "evaluate_line(" in fragment
+    assert "load_page2_snapshot_v1(" not in fragment
+    assert "load_kyre_sports_api_nba_pra_matchup(" not in fragment
+
+
+def test_active_sync_path_has_no_prohibited_sources() -> None:
     combined = "\n".join(
         path.read_text(encoding="utf-8").casefold()
-        for path in (PAGE1, PAGE2, RUNTIME)
+        for path in (PAGE1, PAGE2, SYNC, RUNTIME)
     )
     assert "sportsgameodds" not in combined
     assert "espn bet" not in combined
