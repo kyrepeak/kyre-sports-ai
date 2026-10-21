@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 
 def _rows(provider="FanDuel"):
@@ -99,6 +100,12 @@ def test_source_diagnostics_surface_only_kyre_sports_api():
     }
 
 
+def test_live_page_imports_api_only_router_not_legacy_market_router():
+    source = Path("nba_pra_page1_v2.py").read_text(encoding="utf-8")
+    assert "from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2" in source
+    assert "from nba_pra_page1_data_v2 import load_page1_snapshot_v2" not in source
+
+
 def test_streamlit_client_never_sends_sgo_credential_even_if_argument_is_supplied():
     import nba_pra_market_api_v1 as client
 
@@ -132,7 +139,7 @@ def test_streamlit_client_never_sends_sgo_credential_even_if_argument_is_supplie
 
 
 def test_page1_does_not_call_direct_sgo_or_direct_odds_when_kyre_api_is_unavailable():
-    import nba_pra_page1_data_v2 as data
+    import nba_pra_page1_api_only_v1 as data
 
     game = {
         "away_tricode": "PHX",
@@ -168,16 +175,16 @@ def test_page1_does_not_call_direct_sgo_or_direct_odds_when_kyre_api_is_unavaila
     assert snapshot["sources"]["kyre_sports_api"]["verification"] == "UNAVAILABLE"
 
 
-def test_kyre_api_endpoint_never_falls_back_to_sgo(monkeypatch):
+def test_active_kyre_api_request_path_never_reaches_sgo_without_provider_key(monkeypatch):
     import runless_v2.nba_pra_market_v1 as api
 
     monkeypatch.setattr(api, "_fetch_fanduel_pra_observations", lambda _day: ([], "FANDUEL_NO_PRA"))
 
     def forbidden(*_args, **_kwargs):
-        raise AssertionError("SGO fallback is forbidden")
+        raise AssertionError("SGO fallback is forbidden on the active Page 1 request path")
 
     monkeypatch.setattr(api, "_fetch_sgo_events", forbidden)
-    payload = api.collect_nba_pra_market(date(2026, 10, 21), api_key="ignored")
+    payload = api.collect_nba_pra_market(date(2026, 10, 21), api_key=None)
 
     assert payload["observations"] == []
     assert payload["verification"] == "UNAVAILABLE"
