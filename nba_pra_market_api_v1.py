@@ -32,14 +32,15 @@ def load_kyre_sports_api_pra_observations(
     timeout: tuple[float, float] = (3.0, 22.0),
 ) -> dict[str, Any]:
     key = str(api_key or "").strip()
-    if not key:
-        return _empty("KYRE_VERCEL_SGO_CREDENTIAL_UNAVAILABLE")
     request_post = request_post or requests.post
     base_url = str(base_url or os.getenv("KYRE_NBA_API_BASE_URL") or DEFAULT_API_BASE_URL).rstrip("/")
     try:
+        request_json = {"date": slate_date.isoformat()}
+        if key:
+            request_json["sportsgameodds_api_key"] = key
         response = request_post(
             f"{base_url}/api/v1/nba/pra/market",
-            json={"date": slate_date.isoformat(), "sportsgameodds_api_key": key},
+            json=request_json,
             timeout=timeout,
         )
         response.raise_for_status()
