@@ -13,7 +13,12 @@ import re
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from curl_cffi import requests as cffi_requests
+try:
+    from curl_cffi import requests as cffi_requests
+except ImportError:  # Runless proof sandbox intentionally uses a minimal bootstrap.
+    cffi_requests = None
+
+import httpx
 from fastapi import APIRouter, HTTPException, Query
 
 from ._wnba_fanduel_direct_v1 import collect_fanduel_wnba_feed
@@ -76,18 +81,27 @@ def _event_teams(event: Mapping[str, Any]) -> tuple[str, str]:
 
 
 def _dk_get(url: str) -> dict[str, Any]:
-    response = cffi_requests.get(
-        url,
-        headers={
-            "Accept": "application/json",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Referer": "https://sportsbook.draftkings.com/leagues/basketball/wnba",
-            "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAPI-WNBA/2.0; read-only)",
-        },
-        impersonate="chrome120",
-        timeout=DK_TIMEOUT,
-        allow_redirects=True,
-    )
+    headers = {
+        "Accept": "application/json",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://sportsbook.draftkings.com/leagues/basketball/wnba",
+        "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAPI-WNBA/2.0; read-only)",
+    }
+    if cffi_requests is not None:
+        response = cffi_requests.get(
+            url,
+            headers=headers,
+            impersonate="chrome120",
+            timeout=DK_TIMEOUT,
+            allow_redirects=True,
+        )
+    else:
+        response = httpx.get(
+            url,
+            headers=headers,
+            timeout=DK_TIMEOUT,
+            follow_redirects=True,
+        )
     if getattr(response, "status_code", None) != 200:
         raise RuntimeError(f"DraftKings GET returned HTTP {getattr(response, 'status_code', 'unknown')}")
     body = response.json()
