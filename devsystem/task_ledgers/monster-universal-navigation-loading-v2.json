@@ -4,8 +4,8 @@
   "source_main_sha": "d81c5bd4080d4498a1cd8e2aa5380ce12f2d6c2a",
   "branch": "monster-universal-navigation-loading-v2",
   "scope_lease_id": "SCOPE-LEASE-DC7F6B7DAA12AB3B270ED426",
-  "status": "IMPLEMENTED_TDD_GREEN_READY_FOR_RECONCILE_AND_PROOF",
-  "progress_percent": 55,
+  "status": "STATIC_PROOF_ROOT_CAUSE_PATCHED_READY_FOR_SUCCESSOR_PROOF",
+  "progress_percent": 82,
   "active_problem": "Slow navigation can leave the outgoing Streamlit page visibly exposed before the next rerun paints the existing server-side transition shield.",
   "root_cause": "Streamlit intentionally retains stale DOM across reruns to avoid flicker; the frozen V1 shield begins only after the next Python rerun has started, leaving a browser-side visibility gap.",
   "implementation": {
@@ -25,7 +25,8 @@
     "single_final_proof": true,
     "anti_loop": true,
     "competing_pr_found": false,
-    "parallel_scope_conflict": false
+    "parallel_scope_conflict": false,
+    "authoritative_pr": 1700
   },
   "tdd": {
     "initial_red": "3 failed: V2 helper absent",
@@ -33,6 +34,15 @@
     "streamlit_state_red": "1 failed: real camel-case script-state normalization absent",
     "focused_green": "6 passed",
     "compile_green": true
+  },
+  "failed_proof": {
+    "candidate_sha": "2dc2c3baa56a98a4b70f35ef1c0a0f3649c74ddf",
+    "proof_id": "monster-universal-navigation-loading-v2-2dc2c3baa56a98a4-a98d743a39b824f5",
+    "failure_class": "STATIC_PROOF",
+    "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "root_cause": "The V2 proof command included two historical V1 terminal-inheritance tests that explicitly require the superseded runtime_v1 import, directly contradicting the V2 successor contract.",
+    "repair": "Removed only the two obsolete terminal-pinning tests from the V2 proof command. Kept V1 helper behavior regression plus all V2 successor regressions. No product behavior changed for this repair.",
+    "same_candidate_retry_forbidden": true
   },
   "freeze_token": "MONSTER_UNIVERSAL_NAVIGATION_LOADING_V2_FROZEN"
 }
