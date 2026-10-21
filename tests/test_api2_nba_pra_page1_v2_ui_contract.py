@@ -11,10 +11,10 @@ def sample_item():
         "key":"devinbooker","player_name":"Devin Booker","team":"PHX","position":"G",
         "headshot":"https://cdn.nba.com/headshots/nba/latest/1040x760/201.png","stats_source":"NBA Stats","availability":"AVAILABLE",
         "quotes":[
-            {"sportsbook":"FanDuel","line":38.5,"over_price":-110,"under_price":-110,"provider":"SportsGameOdds","observed_at_utc":"2026-10-20T20:44:20Z"},
-            {"sportsbook":"DraftKings","line":39.5,"over_price":-105,"under_price":-115,"provider":"Odds-API.io","observed_at_utc":"2026-10-20T20:44:10Z"},
+            {"sportsbook":"FanDuel","line":38.5,"over_price":-110,"under_price":-110,"provider":"FanDuel","observed_at_utc":"2026-10-20T20:44:20Z"},
+            {"sportsbook":"DraftKings","line":39.5,"over_price":-105,"under_price":-115,"provider":"Kyre Sports API","observed_at_utc":"2026-10-20T20:44:10Z"},
         ],
-        "featured_quote":{"sportsbook":"FanDuel","line":38.5,"over_price":-110,"under_price":-110,"provider":"SportsGameOdds","observed_at_utc":"2026-10-20T20:44:20Z"},
+        "featured_quote":{"sportsbook":"FanDuel","line":38.5,"over_price":-110,"under_price":-110,"provider":"FanDuel","observed_at_utc":"2026-10-20T20:44:20Z"},
         "model":{"projection":41.2,"current":{"sample":8,"l5":42.3,"l10":40.6,"minutes":36.4},"prior":{"sample":70,"l10":39.8},"basis":"CURRENT_PLUS_PRIOR"},
         "grade":{"edge":2.7,"over_probability":0.67,"lean":"OVER","confidence":"HIGH"},
     }
@@ -56,21 +56,20 @@ def test_runtime_terminal_hands_nba_pra_to_v2_without_changing_other_routes():
     assert "return _v1_resolve_destination(route)" in text
 
 
-def test_source_diagnostics_are_specific_and_never_expose_secret_material():
+def test_source_diagnostics_are_api_only_and_never_expose_secret_material():
     from nba_pra_page1_v2 import source_diagnostic_summary
     snapshot={"sources":{
-        "kyre_sports_api":{"verification":"UNAVAILABLE","diagnostic_state":"KYRE_VERCEL_SGO_CREDENTIAL_UNAVAILABLE","api_key":"DO-NOT-LEAK"},
-        "sgo":{"verification":"UNAVAILABLE","diagnostic_state":"SGO_CREDENTIAL_UNAVAILABLE","credential":"DO-NOT-LEAK"},
-        "odds_api":{"verification":"VERIFIED","diagnostic_state":"OK","secret":"DO-NOT-LEAK"},
+        "kyre_sports_api":{"verification":"VERIFIED","diagnostic_state":"OK","api_key":"DO-NOT-LEAK"},
+        "sgo":{"verification":"VERIFIED","diagnostic_state":"SHOULD_NOT_SURFACE","credential":"DO-NOT-LEAK"},
+        "odds_api":{"verification":"VERIFIED","diagnostic_state":"SHOULD_NOT_SURFACE","secret":"DO-NOT-LEAK"},
     }}
     diag=source_diagnostic_summary(snapshot)
     assert diag == {
         "runtime_marker":"NBA_PRA_SOURCE_DIAGNOSTICS_V1",
-        "kyre_sports_api":"UNAVAILABLE • KYRE_VERCEL_SGO_CREDENTIAL_UNAVAILABLE",
-        "sgo":"UNAVAILABLE • SGO_CREDENTIAL_UNAVAILABLE",
-        "odds_api":"VERIFIED • OK",
+        "kyre_sports_api":"VERIFIED • OK",
     }
     assert "DO-NOT-LEAK" not in repr(diag)
+    assert "sgo" not in diag and "odds_api" not in diag
 
 
 def test_all_upcoming_markets_render_when_best_edges_is_empty(monkeypatch):
@@ -104,7 +103,7 @@ def test_all_upcoming_markets_render_when_best_edges_is_empty(monkeypatch):
         },
         "profiles": {"testplayer": {"player_name": "Test Player", "team": "ATL"}},
         "injury_players": {},
-        "sources": {},
+        "sources": {"kyre_sports_api": {"verification": "VERIFIED", "diagnostic_state": "OK"}},
     }
 
     monkeypatch.setattr(page, "load_page1_snapshot_v2", lambda now: snapshot)
