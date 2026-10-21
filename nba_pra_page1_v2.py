@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2
 from nba_pra_page1_model_v1 import grade_market, project_pra
+from nba_pra_runtime_v2 import SESSION_SELECTED_QUOTE
 from nba_pra_page1_ui_v2 import (
     FILTER_OPTIONS,
     SESSION_PLAYER,
@@ -170,6 +171,8 @@ def render_nba_pra_page1_v2() -> None:
                 use_container_width=False,
             ):
                 st.session_state[SESSION_PLAYER] = item["key"]
+                st.session_state[SESSION_SELECTED_QUOTE] = dict(item["featured_quote"])
+                st.rerun()
 
     st.markdown(
         '<div class="np3-section"><b>ALL UPCOMING PRA MARKETS</b><span>compact live board • book quotes remain separate</span></div>',
@@ -189,3 +192,5 @@ def render_nba_pra_page1_v2() -> None:
             use_container_width=False,
         ):
             st.session_state[SESSION_PLAYER] = item["key"]
+            st.session_state[SESSION_SELECTED_QUOTE] = dict(item["featured_quote"])
+            st.rerun()

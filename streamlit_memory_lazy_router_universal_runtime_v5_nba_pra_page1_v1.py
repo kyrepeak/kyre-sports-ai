@@ -14,8 +14,10 @@ from universal_runtime_v5_loader_nba_pra_page1_v1 import (
     resolve_destination as _v1_resolve_destination,
 )
 
-MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA PRA PAGE1 V2 TERMINAL"
+MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA PRA PAGE2 V1 TERMINAL"
 FROZEN_RUNTIME = "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4"
+FROZEN_PAGE1_MODULE = "nba_pra_page1_v2"
+FROZEN_PAGE1_RENDERER = "render_nba_pra_page1_v2"
 MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
@@ -24,9 +26,9 @@ def resolve_destination(route):
     if route.sport_id == "nba" and route.market_id == "pra":
         base = _v1_resolve_destination(route)
         def loader():
-            return importlib.import_module("nba_pra_page1_v2")
+            return importlib.import_module("nba_pra_runtime_v2")
         def renderer(page):
-            return page.render_nba_pra_page1_v2()
+            return page.render_nba_pra_runtime_v2()
         return DestinationAdapter(base.route_key, loader, renderer, MODEL_VERSION, 30_000)
     return _v1_resolve_destination(route)
 
