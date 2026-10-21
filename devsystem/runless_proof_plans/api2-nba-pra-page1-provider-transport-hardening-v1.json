@@ -1,0 +1,101 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nba-pra-page1-provider-transport-hardening-v1",
+  "workstream": "api2-nba-pra-page1-provider-transport-hardening-v1",
+  "source_main_sha": "1da8c0b1f591b998d785aa88c35e049d79a20861",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "runless_v2/nba_pra_market_v1.py",
+      "runless_v2/app.py",
+      "nba_pra_market_api_v1.py",
+      "nba_pra_page1_data_v2.py",
+      "nba_pra_page1_sources_v2.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_runless_v2_nba_pra_market_v1.py",
+      "tests/test_api2_nba_pra_page1_provider_transport_hardening_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nba_pra_data_behavior_v1.py",
+      "tests/test_api2_nba_pra_market_behavior_v1.py",
+      "tests/test_api2_nba_pra_model_behavior_v1.py",
+      "tests/test_api2_nba_pra_nav_import_order_repair_v1.py",
+      "tests/test_api2_nba_pra_nav_overlay_v1.py",
+      "tests/test_api2_nba_pra_page1_live_market_routing_repair_v1.py",
+      "tests/test_api2_nba_pra_page1_upcoming_status_repair_v1.py",
+      "tests/test_api2_nba_pra_page1_v1.py",
+      "tests/test_api2_nba_pra_page1_v2_source_routing.py",
+      "tests/test_api2_nba_pra_page1_v2_ui_contract.py",
+      "tests/test_api2_nba_pra_page1_v2_upcoming_only.py",
+      "--deselect=tests/test_api2_nba_pra_page1_live_market_routing_repair_v1.py::test_snapshot_calls_fallback_when_primary_has_no_market",
+      "--deselect=tests/test_api2_nba_pra_page1_v2_source_routing.py::test_snapshot_routes_only_upcoming_slate_and_skips_calls_when_empty"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_runless_v2_api.py",
+      "tests/test_runless_v2_cutover_contract.py",
+      "tests/test_runless_v2_live_hardening.py",
+      "tests/test_runless_v2_nba_pra_market_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
+      "tests/test_universal_sports_nav_registry_v1.py",
+      "tests/test_universal_sports_nav_ui_v1.py",
+      "tests/test_universal_atomic_navigation_v1.py",
+      "--deselect=tests/test_api2_universal_nav_tap_first_handoff_v1.py::test_production_entrypoint_boots_tap_first_overlay"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.api2_universal_runtime_v5_cert"
+    ]
+  ],
+  "artifacts": [
+    "runless_v2/nba_pra_market_v1.py",
+    "runless_v2/app.py",
+    "nba_pra_market_api_v1.py",
+    "nba_pra_page1_data_v2.py",
+    "nba_pra_page1_sources_v2.py",
+    "tests/test_api2_nba_pra_page1_provider_transport_hardening_v1.py",
+    "tests/test_runless_v2_nba_pra_market_v1.py",
+    "devsystem/task_ledgers/api2-nba-pra-page1-provider-transport-hardening-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-page1-provider-transport-hardening-v1.json"
+  ],
+  "dependencies": [
+    "nba_pra_page1_data_core_v2.py",
+    "nba_pra_page1_sgo_v1.py",
+    "nba_pra_page1_common_v1.py",
+    "nba_pra_page1_v2.py",
+    "nba_pra_page1_ui_v2.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "runless_v2/requirements.txt"
+  ],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NBA_PRA_PAGE1_PROVIDER_TRANSPORT_HARDENING_V1_FROZEN"
+}

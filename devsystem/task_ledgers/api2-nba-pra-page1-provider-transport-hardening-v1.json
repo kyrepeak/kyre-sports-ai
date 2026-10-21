@@ -1,0 +1,37 @@
+{
+  "task_id": "api2-nba-pra-page1-provider-transport-hardening-v1",
+  "workstream": "api2-nba-pra-page1-provider-transport-hardening-v1",
+  "source_main_sha": "1da8c0b1f591b998d785aa88c35e049d79a20861",
+  "status": "FINAL_CANDIDATE_BUILDING",
+  "progress_percent": 96,
+  "step2a": {
+    "authoritative_branch": "api2-nba-pra-page1-provider-transport-hardening-v1",
+    "authoritative_pr": null,
+    "authoritative_sandbox": "nba-pra-page1-provider-transport-hardening-v1",
+    "scope_lease_id": "SCOPE-LEASE-00E6572BB881AB5D8BCAC9A5",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "scope": {
+    "active_problem": "NBA PRA Page 1 had the correct upcoming slate but returned zero tracked players/fresh markets despite legitimate sportsbook PRA markets.",
+    "repair": "Use the existing Vercel Runless V2 FastAPI runtime as the first-party Kyre Sports API transport. Streamlit forwards its already-connected SportsGameOdds credential request-scoped; Vercel fetches/normalizes PRA observations; Page 1 admits only observations matching the actual upcoming matchup and calls approved fallback only when needed.",
+    "source_contract": "Sportsbook identity, exact line, price, provider and observed timestamp are preserved. No consensus averaging, no fabrication, sportsbook projection influence 0.0."
+  },
+  "proof": {
+    "focused_tdd": "8/8 GREEN",
+    "nba_regression": "GREEN with two superseded anonymous-fallback direct-injection fixtures deselected",
+    "navigation": "18/18 GREEN; Runtime V5 cert GREEN",
+    "runless_v2_regression": "145/146; sole thaw-retarget failure reproduced identically on untouched main and ruled pre-existing/out-of-scope",
+    "live_acceptance": "REQUIRED_BEFORE_FREEZE: live Page 1 must show non-zero legitimate PRA players/markets for an upcoming NBA game."
+  },
+  "rulings": [
+    "Vercel kyre-runless-proof is the authoritative runtime; Render is not part of this workstream.",
+    "Do not freeze on unit/proof evidence alone if live Page 1 still shows zero players/markets.",
+    "Anonymous fallback rows are rejected because they cannot be safely bound to the upcoming game.",
+    "Odds-API.io fallback rows now preserve provider_event_id, away_team and home_team at ingestion.",
+    "The unrelated Runless thaw-retarget regression is pre-existing on source_main_sha and is not patched from this NBA lane."
+  ]
+}

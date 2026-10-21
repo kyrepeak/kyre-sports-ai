@@ -242,6 +242,36 @@ def _event_date_text(event: Mapping[str, Any]) -> str:
     return ""
 
 
+def _odds_event_team(event: Mapping[str, Any], side: str) -> str:
+    keys = (f"{side}Team", f"{side}_team", side)
+    for key in keys:
+        value = event.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, Mapping):
+            for name_key in ("name", "fullName", "displayName", "long", "short"):
+                text = _text(value.get(name_key))
+                if text:
+                    return text
+    teams = event.get("teams")
+    if isinstance(teams, Mapping):
+        value = teams.get(side)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, Mapping):
+            names = value.get("names")
+            if isinstance(names, Mapping):
+                for name_key in ("long", "display", "medium", "short"):
+                    text = _text(names.get(name_key))
+                    if text:
+                        return text
+            for name_key in ("name", "fullName", "displayName"):
+                text = _text(value.get(name_key))
+                if text:
+                    return text
+    return ""
+
+
 def load_approved_odds_api_pra_observations(slate_date, *, request_get=None, secret_getter=None, timeout: float = 6.0) -> dict[str, Any]:
     from nba_pra_page1_common_v1 import _default_get, _default_secret
     from nba_pra_page1_odds_v1 import ODDS_API_BASE, normalize_odds_api_pra
@@ -260,9 +290,17 @@ def load_approved_odds_api_pra_observations(slate_date, *, request_get=None, sec
         selected = dated if dated else [x for x in events if not _event_date_text(x)]
         rows = []
         for event in selected:
-            odds = request_get(f"{ODDS_API_BASE}/odds", params={"apiKey": key, "eventId": _text(event.get("id")), "bookmakers": ODDS_API_APPROVED_BOOKMAKERS, "markets": "Player Props"}, timeout=timeout)
+            event_id = _text(event.get("id"))
+            odds = request_get(f"{ODDS_API_BASE}/odds", params={"apiKey": key, "eventId": event_id, "bookmakers": ODDS_API_APPROVED_BOOKMAKERS, "markets": "Player Props"}, timeout=timeout)
             odds.raise_for_status()
-            rows.extend(normalize_odds_api_pra(odds.json()))
+            away_team = _odds_event_team(event, "away")
+            home_team = _odds_event_team(event, "home")
+            for row in normalize_odds_api_pra(odds.json()):
+                enriched = dict(row)
+                enriched["provider_event_id"] = event_id
+                enriched["away_team"] = away_team
+                enriched["home_team"] = home_team
+                rows.append(enriched)
     except Exception as exc:
         return {**base, "verification": "UNAVAILABLE", "diagnostic_state": f"ODDS_API_IO_ERROR:{type(exc).__name__}"}
     approved = [r for r in rows if _canonical_book(r.get("sportsbook")) in APPROVED_PRA_BOOKS]
