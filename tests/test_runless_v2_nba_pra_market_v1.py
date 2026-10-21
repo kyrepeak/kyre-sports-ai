@@ -1,5 +1,6 @@
 from datetime import date
 import importlib
+import inspect
 
 
 def _event():
@@ -71,40 +72,33 @@ def _fanduel_event_page_fixture():
     }
 
 
-def test_vercel_market_contract_preserves_quote_identity_and_never_echoes_key(monkeypatch):
-    api=importlib.import_module('runless_v2.nba_pra_market_v1')
-    seen={}
-    def fake_fetch(day, api_key):
-        seen['day']=day; seen['key']=api_key
-        return [_event()], 'OK'
-    monkeypatch.setattr(api, '_fetch_fanduel_pra_observations', lambda day: ([], 'FANDUEL_NO_PRA'))
-    monkeypatch.setattr(api,'_fetch_sgo_events',fake_fetch)
-    payload=api.collect_nba_pra_market(date(2026,10,20),'secret-test-key')
-    assert seen=={'day':date(2026,10,20),'key':'secret-test-key'}
-    assert payload['service']=='Kyre Sports API — Vercel'
-    assert payload['projection_weight']==0.0
+def test_vercel_market_contract_preserves_quote_identity_without_provider_credential(monkeypatch):
+    api = importlib.import_module('runless_v2.nba_pra_market_v1')
+    rows = api._parse_fanduel_pra_page(
+        _fanduel_event_page_fixture(),
+        captured_at_utc='2026-10-21T01:25:00Z',
+    )
+    seen = []
+    def fake_fetch(day):
+        seen.append(day)
+        return rows, 'FANDUEL_OK'
+    monkeypatch.setattr(api, '_fetch_fanduel_pra_observations', fake_fetch)
+    payload = api.collect_nba_pra_market(date(2026, 10, 20))
+    assert seen == [date(2026, 10, 20)]
+    assert payload['service'] == 'Kyre Sports API — Vercel'
+    assert payload['projection_weight'] == 0.0
     assert payload['consensus_averaging'] is False
-    assert payload['player_count']==1
-    assert {r['side'] for r in payload['observations']}=={'over','under'}
-    assert {r['sportsbook'] for r in payload['observations']}=={'FanDuel'}
-    assert {r['provider'] for r in payload['observations']}=={'SportsGameOdds'}
-    assert 'secret-test-key' not in repr(payload)
+    assert payload['player_count'] == 1
+    assert {r['side'] for r in payload['observations']} == {'over','under'}
+    assert {r['sportsbook'] for r in payload['observations']} == {'FanDuel'}
+    assert {r['provider'] for r in payload['observations']} == {'FanDuel'}
 
-
-def test_focused_sgo_request_uses_plural_oddids_filter(monkeypatch):
-    api=importlib.import_module('runless_v2.nba_pra_market_v1')
-    calls=[]
-    def fake_request(params, api_key):
-        calls.append(dict(params))
-        return [_event()]
-    monkeypatch.setattr(api,'_request_events',fake_request)
-    events, diagnostic=api._fetch_sgo_events(date(2026,10,20),'secret-test-key')
-    assert events
-    assert diagnostic=='FOCUSED_OK'
-    assert 'oddIDs' in calls[0]
-    assert calls[0]['oddIDs']==api._odd_filter()
-    assert 'oddID' not in calls[0]
-
+def test_market_module_has_no_prohibited_provider_fallback_symbols():
+    api = importlib.import_module('runless_v2.nba_pra_market_v1')
+    source = inspect.getsource(api).casefold()
+    assert 'sportsgameodds' not in source
+    assert '_fetch_sgo_events' not in source
+    assert 'sgo_base' not in source
 
 def test_runless_app_keeps_authority_routes_and_mounts_nba_market_route():
     source=open('runless_v2/app.py',encoding='utf-8').read()
@@ -133,54 +127,19 @@ def test_fanduel_public_pra_parser_preserves_exact_standard_over_under_market():
     assert all(row['observed_at_utc'] == '2026-10-21T01:25:00Z' for row in rows)
 
 
-def test_fanduel_public_pra_is_primary_and_missing_sgo_key_cannot_block(monkeypatch):
+def test_fanduel_public_pra_is_the_only_active_market_transport(monkeypatch):
     api = importlib.import_module('runless_v2.nba_pra_market_v1')
-    rows = [
-        {
-            'provider': 'FanDuel',
-            'provider_event_id': '35928229',
-            'provider_market_id': '734.192200825',
-            'provider_player_id': 'Jalen Williams',
-            'player_name': 'Jalen Williams',
-            'sportsbook': 'FanDuel',
-            'side': 'over',
-            'line': 28.5,
-            'price': -106,
-            'observed_at_utc': '2026-10-21T01:25:00Z',
-            'away_team': 'Oklahoma City Thunder',
-            'home_team': 'San Antonio Spurs',
-        },
-        {
-            'provider': 'FanDuel',
-            'provider_event_id': '35928229',
-            'provider_market_id': '734.192200825',
-            'provider_player_id': 'Jalen Williams',
-            'player_name': 'Jalen Williams',
-            'sportsbook': 'FanDuel',
-            'side': 'under',
-            'line': 28.5,
-            'price': -114,
-            'observed_at_utc': '2026-10-21T01:25:00Z',
-            'away_team': 'Oklahoma City Thunder',
-            'home_team': 'San Antonio Spurs',
-        },
-    ]
-    calls = {'fanduel': 0, 'sgo': 0}
-
+    rows = api._parse_fanduel_pra_page(
+        _fanduel_event_page_fixture(),
+        captured_at_utc='2026-10-21T01:25:00Z',
+    )
+    calls = []
     def fake_fanduel(day):
-        calls['fanduel'] += 1
-        assert day == date(2026, 10, 20)
+        calls.append(day)
         return rows, 'FANDUEL_OK'
-
-    def fake_sgo(day, key):
-        calls['sgo'] += 1
-        raise AssertionError('SGO must not run when FanDuel already produced legitimate PRA rows')
-
     monkeypatch.setattr(api, '_fetch_fanduel_pra_observations', fake_fanduel)
-    monkeypatch.setattr(api, '_fetch_sgo_events', fake_sgo)
-    payload = api.collect_nba_pra_market(date(2026, 10, 20), None)
-
-    assert calls == {'fanduel': 1, 'sgo': 0}
+    payload = api.collect_nba_pra_market(date(2026, 10, 20))
+    assert calls == [date(2026, 10, 20)]
     assert payload['ready'] is True
     assert payload['diagnostic_state'] == 'OK'
     assert payload['player_count'] == 1

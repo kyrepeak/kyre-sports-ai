@@ -61,45 +61,39 @@ def test_nba_stats_normalizer_and_official_first_backup_only_for_missing():
     assert calls == ["official", ("backup", ("Kevin Durant",))]
 
 
-def test_snapshot_routes_only_upcoming_slate_and_skips_calls_when_empty():
-    from nba_pra_page1_data_v2 import load_page1_snapshot_v2
+def test_snapshot_routes_only_upcoming_slate_and_skips_gateway_calls_when_empty():
+    from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2
     now = datetime(2026,10,20,20,45,tzinfo=timezone.utc)
     calls=[]
     schedule={"verification":"VERIFIED","games":[
-        {"gameStatus":2,"gameStatusText":"Live","tip_utc":"2026-10-20T20:00:00Z","game_date_phoenix":"2026-10-20","away_tricode":"BOS","home_tricode":"NYK"},
-        {"gameStatus":1,"gameStatusText":"Scheduled","tip_utc":"2026-10-21T02:00:00Z","game_date_phoenix":"2026-10-20","away_tricode":"LAL","home_tricode":"PHX"},
+        {"gameStatus":2,"gameStatusText":"Live","tip_utc":"2026-10-20T20:00:00Z","game_date_phoenix":"2026-10-20","away_tricode":"BOS","away_name":"Boston Celtics","home_tricode":"NYK","home_name":"New York Knicks"},
+        {"gameStatus":1,"gameStatusText":"Scheduled","tip_utc":"2026-10-21T02:00:00Z","game_date_phoenix":"2026-10-20","away_tricode":"LAL","away_name":"Los Angeles Lakers","home_tricode":"PHX","home_name":"Phoenix Suns"},
     ]}
-    def sgo(day):
-        calls.append(("sgo",str(day)))
-        return payload([
-            {"provider":"SportsGameOdds","player_name":"Devin Booker","sportsbook":"FanDuel","side":"over","line":38.5,"price":-110,"observed_at_utc":"2026-10-20T20:30:00Z"},
-            {"provider":"SportsGameOdds","player_name":"Devin Booker","sportsbook":"FanDuel","side":"under","line":38.5,"price":-110,"observed_at_utc":"2026-10-20T20:30:00Z"},
-        ])
+    market=payload([
+        {"provider":"FanDuel","player_name":"Devin Booker","sportsbook":"FanDuel","side":"over","line":38.5,"price":-110,"observed_at_utc":"2026-10-20T20:30:00Z","away_team":"Los Angeles Lakers","home_team":"Phoenix Suns"},
+        {"provider":"FanDuel","player_name":"Devin Booker","sportsbook":"FanDuel","side":"under","line":38.5,"price":-110,"observed_at_utc":"2026-10-20T20:30:00Z","away_team":"Los Angeles Lakers","home_team":"Phoenix Suns"},
+    ])
+    context={"verification":"VERIFIED","profiles":{"devinbooker":{"player_name":"Devin Booker","team":"PHX","current_games":[],"prior_games":[],"stats_source":"NBA Stats"}},"provider_health":{"nba_official":{"status":"HEALTHY"}},"requested_players":1,"verified_players":1,"fabrication":False}
     snap=load_page1_snapshot_v2(
         now=now,
         schedule_loader=lambda **_: schedule,
-        sgo_loader=sgo,
-        odds_loader=lambda day: payload([]),
-        official_profile_loader=lambda day: {"devinbooker":{"player_name":"Devin Booker","team":"PHX","current_games":[],"prior_games":[],"stats_source":"NBA Stats"}},
-        backup_profile_loader=lambda names,day: calls.append(("backup",tuple(names))) or {},
-        injury_loader=lambda games,**kwargs: calls.append(("injury",tuple(g["away_tricode"] for g in games))) or {"verification":"VERIFIED","features":[]},
+        api_loader=lambda day: calls.append(("api",str(day))) or market,
+        player_context_loader=lambda day,names: calls.append(("context",tuple(names))) or context,
+        injury_loader=lambda games,**kwargs: calls.append(("injury",tuple(g["away_tricode"] for g in games))) or {"verification":"VERIFIED","players":{},"fabrication":False},
     )
     assert [g["away_tricode"] for g in snap["games"]] == ["LAL"]
     assert snap["market"]["devinbooker"]["featured_quote"]["sportsbook"] == "FanDuel"
     assert ("injury", ("LAL",)) in calls
-    assert not any(call[0] == "backup" for call in calls)
     calls.clear()
     empty=load_page1_snapshot_v2(
         now=now,
         schedule_loader=lambda **_: {"verification":"VERIFIED","games":[schedule["games"][0]]},
-        sgo_loader=lambda day: calls.append(("sgo",day)),
-        odds_loader=lambda day: calls.append(("odds",day)),
-        official_profile_loader=lambda day: calls.append(("official",day)),
-        backup_profile_loader=lambda names,day: calls.append(("backup",names,day)),
+        api_loader=lambda day: calls.append(("api",day)),
+        player_context_loader=lambda day,names: calls.append(("context",names)),
         injury_loader=lambda games,**kwargs: calls.append(("injury",games)),
     )
-    assert empty["games"] == [] and empty["market"] == {} and calls == []
-
+    assert empty["games"] == []
+    assert calls == []
 
 def test_default_injury_route_is_nba_official_only_not_legacy_espn_fallback(monkeypatch):
     import nba_pra_page1_data_v2 as data_v2

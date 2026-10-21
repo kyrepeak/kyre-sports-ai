@@ -1,0 +1,44 @@
+{
+  "task_id": "api2-nba-pra-no-espn-enrichment-v1",
+  "workstream": "api2-nba-pra-no-espn-enrichment-v1",
+  "source_main_sha": "8f6a556e0a8d8cbe148e589433afefe5ee80f313",
+  "status": "PROOF_AUTHORITY_BOUND",
+  "progress_percent": 99,
+  "step2a": {
+    "active_problem": "Restore NBA PRA player identity/history -> projection -> probability/edge while Kyre Sports API remains the only application-facing gateway and SGO/ESPN are prohibited.",
+    "authoritative_branch": "api2-nba-pra-no-espn-enrichment-v1",
+    "authoritative_pr": 1711,
+    "scope_lease_id": "SCOPE-LEASE-69859F01E179CC2EC215764C",
+    "scope_lease_expires_at_utc": "2026-10-21T08:58:29Z",
+    "authorization_id": "AUTH-API2-NBA-PRA-NO-ESPN-ENRICHMENT-V1-R1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "proof_request_submitted": false,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "market_primary": "FanDuel",
+    "schedule_primary": "NBA Official",
+    "schedule_backup_when_primary_degraded": "CBS Sports",
+    "player_context_primary": "NBA Stats",
+    "player_context_backup_when_primary_degraded": "Basketball-Reference",
+    "injury_primary": "NBA Official Injury Report",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "fabrication": false
+  },
+  "evidence": {
+    "tdd_red": "Original no-ESPN/no-SGO enrichment contract observed 5 expected failures before implementation; live BRef current-date/team schema and CBS schedule fallback also pinned RED before fixes.",
+    "nba_pra_suite": "88 passed",
+    "compile": "PASS",
+    "active_path_ban_scan": "PASS: all active Page 1 application/API modules contain no ESPN, SportsGameOdds, or SGO path",
+    "live_schedule": "VERIFIED: 11 upcoming games; NBA Official CDN degraded from Vercel; approved CBS Sports backup healthy",
+    "live_market": "VERIFIED: FanDuel 121 players / 242 observations",
+    "live_context": "VERIFIED: Andrew Wiggins -> Basketball-Reference, MIA, Kyre ID, headshot, 40 history games",
+    "live_decision": "FanDuel 19.5 -130; projection 20.3; over_probability 0.5474; edge 0.8; lean PASS",
+    "root_suite_baseline_exception": "Repository-wide pytest cannot collect because main@8f6a556 already has stale tests/conftest.py V157 entrypoint invariant while unchanged main app.py uses Universal Runtime V5 NBA PRA overlay. This repair does not modify app.py or the global frozen router."
+  }
+}

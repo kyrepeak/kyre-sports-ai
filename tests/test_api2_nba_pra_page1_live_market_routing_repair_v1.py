@@ -65,13 +65,19 @@ def test_snapshot_skips_secondary_when_primary_covers_both_games():
     assert calls==["sgo"]
     assert {"jalenbrunson","shaigilgeousalexander"}<=set(snap["market"])
 
-def test_snapshot_calls_fallback_when_primary_has_no_market():
-    from nba_pra_page1_data_v2 import load_page1_snapshot_v2
+def test_snapshot_does_not_use_application_side_fallback_when_gateway_has_no_market():
+    from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2
     calls=[]
-    fallback=[row("Jalen Brunson","DraftKings",s,36.5,-110,provider="Odds-API.io") for s in ("over","under")]
-    snap=load_page1_snapshot_v2(**kwargs(lambda d:calls.append("sgo") or payload([]),lambda d:calls.append("odds") or payload(fallback)))
-    assert calls==["sgo","odds"]
-    assert snap["market"]["jalenbrunson"]["featured_quote"]["sportsbook"]=="DraftKings"
+    snap=load_page1_snapshot_v2(
+        now=NOW,
+        schedule_loader=lambda **_: schedule(),
+        api_loader=lambda day: calls.append("api") or payload([]),
+        player_context_loader=lambda day,names: calls.append("context") or {"verification":"DATA_UNAVAILABLE","profiles":{},"fabrication":False},
+        injury_loader=lambda games,**kw: calls.append("injury") or {"verification":"UNAVAILABLE","players":{},"fabrication":False},
+        odds_loader=lambda day: (_ for _ in ()).throw(AssertionError("direct fallback must not run")),
+    )
+    assert calls == ["api"]
+    assert snap["market"] == {}
 
 def test_snapshot_uses_secondary_only_to_fill_missing_matchup():
     from nba_pra_page1_data_v2 import load_page1_snapshot_v2

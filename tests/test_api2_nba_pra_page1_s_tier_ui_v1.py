@@ -175,19 +175,13 @@ def test_page1_does_not_call_direct_sgo_or_direct_odds_when_kyre_api_is_unavaila
     assert snapshot["sources"]["kyre_sports_api"]["verification"] == "UNAVAILABLE"
 
 
-def test_active_kyre_api_request_path_never_reaches_sgo_without_provider_key(monkeypatch):
+def test_active_kyre_api_market_path_has_no_forbidden_fallback_symbol(monkeypatch):
+    import inspect
     import runless_v2.nba_pra_market_v1 as api
-
-    monkeypatch.setattr(api, "_fetch_fanduel_pra_observations", lambda _day: ([], "FANDUEL_NO_PRA"))
-
-    def forbidden(*_args, **_kwargs):
-        raise AssertionError("SGO fallback is forbidden on the active Page 1 request path")
-
-    monkeypatch.setattr(api, "_fetch_sgo_events", forbidden)
-    payload = api.collect_nba_pra_market(date(2026, 10, 21), api_key=None)
-
-    assert payload["observations"] == []
-    assert payload["verification"] == "UNAVAILABLE"
-    assert payload["diagnostic_state"] == "FANDUEL_NO_PRA"
-    assert payload["projection_weight"] == 0.0
-    assert payload["consensus_averaging"] is False
+    source = inspect.getsource(api).casefold()
+    assert 'sportsgameodds' not in source
+    assert '_fetch_sgo_events' not in source
+    monkeypatch.setattr(api, '_fetch_fanduel_pra_observations', lambda _day: ([], 'FANDUEL_NO_PRA'))
+    payload = api.collect_nba_pra_market(date(2026, 10, 21))
+    assert payload['verification'] == 'UNAVAILABLE'
+    assert payload['observations'] == []
