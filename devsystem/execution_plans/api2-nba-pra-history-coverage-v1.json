@@ -1,0 +1,67 @@
+{
+  "schema_version": 2,
+  "task_id": "api2-nba-pra-history-coverage-v1",
+  "project": "API2",
+  "workstream": "api2-nba-pra-history-coverage-v1",
+  "step": "2A/1",
+  "source_main_sha": "fd4d36e2693574a68ec57561950dd0ccf8066a6f",
+  "goal": "Restore verified NBA PRA game-history coverage across the full Page 1 slate so eligible players receive L5, L10, minutes, variance, probability, Kyre Score, and Best Over/Under while fail-closed exclusions remain explicit when no recent eligible history exists.",
+  "write_paths": [
+    "devsystem/execution_plans/api2-nba-pra-history-coverage-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-history-coverage-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-history-coverage-v1.json",
+    "nba_pra_page1_ui_v2.py",
+    "runless_v2/nba_pra_player_context_v1.py",
+    "tests/test_api2_nba_pra_history_coverage_v1.py"
+  ],
+  "protected_dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_page1_model_v1.py",
+    "nba_pra_page1_v2.py",
+    "nba_pra_market_api_v1.py",
+    "nba_pra_player_context_api_v1.py",
+    "nba_pra_schedule_api_v1.py",
+    "runless_v2/nba_pra_market_v1.py",
+    "requirements.txt",
+    "runless_v2/requirements.txt"
+  ],
+  "scope_lease_id": "SCOPE-LEASE-D24D2CDB6F9B501487D3EBBB",
+  "authorization_id": "AUTH-API2-NBA-PRA-HISTORY-COVERAGE-V1-R1",
+  "freeze_token": "API2_NBA_PRA_HISTORY_COVERAGE_V1_FROZEN",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "market_primary": "FanDuel",
+    "player_history_primary": "NBA Stats",
+    "player_history_secondary": "Basketball-Reference",
+    "player_history_backup": "CBS Sports game log only after upstream history degradation or rate limiting",
+    "identity_backup": "CBS Sports roster verification only after upstream identity degradation",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "fabrication": false,
+    "stale_history_policy": "do not silently promote two-season-old game logs into normal recent variance"
+  },
+  "step2a": {
+    "one_active_problem": true,
+    "authoritative_branch": "api2-nba-pra-history-coverage-v1",
+    "authoritative_pr": 1714,
+    "authoritative_pr_max": 1,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "one_authoritative_final_proof_chain": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "live_evidence": {
+    "slate": "2026-10-21",
+    "games": 11,
+    "players": 110,
+    "identified_players": 110,
+    "verified_recent_history_players": 106,
+    "explicit_fail_closed_exclusions": ["Damian Lillard", "Kyrie Irving", "Fred VanVleet", "Tyrese Haliburton"],
+    "best_over_edge": 15.5,
+    "best_under_edge": -7.0
+  }
+}

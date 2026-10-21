@@ -1,0 +1,62 @@
+{
+  "task_id": "api2-nba-pra-history-coverage-v1",
+  "workstream": "api2-nba-pra-history-coverage-v1",
+  "commands": [
+    [
+      "python", "-m", "pytest", "-q",
+      "tests/test_api2_nba_pra_data_behavior_v1.py",
+      "tests/test_api2_nba_pra_gateway_only_v1.py",
+      "tests/test_api2_nba_pra_history_coverage_v1.py",
+      "tests/test_api2_nba_pra_market_behavior_v1.py",
+      "tests/test_api2_nba_pra_model_behavior_v1.py",
+      "tests/test_api2_nba_pra_nav_import_order_repair_v1.py",
+      "tests/test_api2_nba_pra_nav_overlay_v1.py",
+      "tests/test_api2_nba_pra_no_espn_enrichment_v1.py",
+      "tests/test_api2_nba_pra_page1_hard_analytics_ui_v1.py",
+      "tests/test_api2_nba_pra_page1_live_market_routing_repair_v1.py",
+      "tests/test_api2_nba_pra_page1_provider_transport_hardening_v1.py",
+      "tests/test_api2_nba_pra_page1_s_tier_ui_v1.py",
+      "tests/test_api2_nba_pra_page1_upcoming_status_repair_v1.py",
+      "tests/test_api2_nba_pra_page1_v1.py",
+      "tests/test_api2_nba_pra_page1_v2_source_routing.py",
+      "tests/test_api2_nba_pra_page1_v2_ui_contract.py",
+      "tests/test_api2_nba_pra_page1_v2_upcoming_only.py",
+      "tests/test_api2_nba_pra_slate_completeness_v1.py",
+      "tests/test_runless_v2_nba_pra_market_v1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "nba_pra_page1_ui_v2.py",
+      "runless_v2/nba_pra_player_context_v1.py",
+      "nba_pra_page1_model_v1.py",
+      "nba_pra_page1_v2.py",
+      "nba_pra_page1_api_only_v1.py",
+      "nba_pra_market_api_v1.py",
+      "nba_pra_player_context_api_v1.py",
+      "nba_pra_schedule_api_v1.py",
+      "runless_v2/nba_pra_market_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/execution_plans/api2-nba-pra-history-coverage-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-history-coverage-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-history-coverage-v1.json",
+    "nba_pra_page1_ui_v2.py",
+    "runless_v2/nba_pra_player_context_v1.py",
+    "tests/test_api2_nba_pra_history_coverage_v1.py"
+  ],
+  "dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_page1_model_v1.py",
+    "nba_pra_page1_v2.py",
+    "nba_pra_market_api_v1.py",
+    "nba_pra_player_context_api_v1.py",
+    "nba_pra_schedule_api_v1.py",
+    "runless_v2/nba_pra_market_v1.py",
+    "requirements.txt",
+    "runless_v2/requirements.txt"
+  ],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "freeze_token": "API2_NBA_PRA_HISTORY_COVERAGE_V1_FROZEN"
+}

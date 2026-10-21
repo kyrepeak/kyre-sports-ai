@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import hashlib
 import html as html_lib
 import re
@@ -19,7 +19,11 @@ router = APIRouter(prefix="/api/v1/nba/pra/player-context", tags=["nba-pra-playe
 
 REFERENCE_ROOT = "https://www.basketball-reference.com"
 REFERENCE_SEARCH = f"{REFERENCE_ROOT}/search/search.fcgi"
-REFERENCE_HISTORY_BUDGET = 8
+REFERENCE_HISTORY_BUDGET = 16
+REFERENCE_BULK_TARGET_GAMES = 10
+REFERENCE_BULK_MAX_DATES = 36
+REFERENCE_DAILY_LEADERS = f"{REFERENCE_ROOT}/friv/dailyleaders.fcgi"
+REFERENCE_SCHEDULE_TEMPLATE = f"{REFERENCE_ROOT}/leagues/NBA_{{season}}_games-{{month}}.html"
 REFERENCE_IDENTITY_SEARCH_BUDGET = 16
 REFERENCE_HEADSHOT_TEMPLATE = f"{REFERENCE_ROOT}/req/202106291/images/headshots/{{slug}}.jpg"
 REFERENCE_HEADERS = {
@@ -40,6 +44,11 @@ CBS_TEAM_ROSTERS = {
     "POR": ("POR", "portland-trail-blazers"), "SAC": ("SAC", "sacramento-kings"), "SAS": ("SA", "san-antonio-spurs"),
     "TOR": ("TOR", "toronto-raptors"), "UTA": ("UTA", "utah-jazz"), "WAS": ("WAS", "washington-wizards"),
 }
+
+
+class ReferenceHistoryRateLimited(RuntimeError):
+    pass
+
 
 
 def _text(value: Any) -> str:
@@ -295,6 +304,177 @@ def _parse_reference_per_game_index(document: str) -> dict[str, dict[str, Any]]:
     return rows
 
 
+
+def _parse_reference_daily_leaders(document: str, game_date: str) -> dict[str, dict[str, Any]]:
+    rows: dict[str, dict[str, Any]] = {}
+    for row_html in re.findall(r"<tr\b[^>]*>(.*?)</tr>", document or "", flags=re.I | re.S):
+        cells: dict[str, str] = {}
+        raw_cells: dict[str, str] = {}
+        for stat, body in re.findall(
+            r"<(?:td|th)\b[^>]*data-stat=[\"']([^\"']+)[\"'][^>]*>(.*?)</(?:td|th)>",
+            row_html,
+            flags=re.I | re.S,
+        ):
+            raw_cells[stat] = body
+            cells[stat] = _strip_tags(body)
+        name = _text(cells.get("player"))
+        pts, reb, ast = _num(cells.get("pts")), _num(cells.get("trb")), _num(cells.get("ast"))
+        minutes = _minutes(cells.get("mp"))
+        if not name or pts is None or reb is None or ast is None:
+            continue
+        slug_match = re.search(r"/players/[a-z]/([a-z0-9]+)\.html", raw_cells.get("player") or "", flags=re.I)
+        slug = slug_match.group(1).casefold() if slug_match else ""
+        rows[_norm(name)] = {
+            "player_name": name,
+            "team": _text(cells.get("team_id")).upper(),
+            "provider_ids": {"basketball_reference": slug} if slug else {},
+            "game": {
+                "game_date": _text(game_date),
+                "minutes": minutes,
+                "points": pts,
+                "rebounds": reb,
+                "assists": ast,
+            },
+        }
+    return rows
+
+
+def _parse_reference_schedule_dates(document: str, *, before: date | None = None) -> list[str]:
+    values: set[str] = set()
+    for row_html in re.findall(r"<tr\b[^>]*>(.*?)</tr>", document or "", flags=re.I | re.S):
+        match = re.search(r"data-stat=[\"']date_game[\"'][^>]*>.*?<a[^>]+href=[\"'][^\"']+[\"'][^>]*>(.*?)</a>", row_html, flags=re.I | re.S)
+        if not match:
+            continue
+        text = _strip_tags(match.group(1))
+        try:
+            parsed = datetime.strptime(text, "%a, %b %d, %Y").date()
+        except ValueError:
+            continue
+        if before is not None and parsed >= before:
+            continue
+        values.add(parsed.isoformat())
+    return sorted(values, reverse=True)
+
+
+def _reference_schedule_game_dates(end_year: int, months: Sequence[str], *, before: date | None = None) -> list[str]:
+    values: set[str] = set()
+    for month in months:
+        try:
+            document, _ = _get_text(REFERENCE_SCHEDULE_TEMPLATE.format(season=end_year, month=month), timeout=10.0)
+        except Exception:
+            continue
+        values.update(_parse_reference_schedule_dates(document, before=before))
+    return sorted(values, reverse=True)
+
+
+def _reference_daily_page(day: str) -> str:
+    parsed = date.fromisoformat(day)
+    try:
+        document, _ = _get_text(
+            REFERENCE_DAILY_LEADERS,
+            params={"month": parsed.month, "day": parsed.day, "year": parsed.year, "type": "all"},
+            timeout=10.0,
+        )
+        return document
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code in {403, 429}:
+            raise ReferenceHistoryRateLimited(str(exc.response.status_code)) from exc
+        raise
+
+
+def _default_reference_bulk_dates(slate_date: date) -> tuple[list[str], list[str]]:
+    season_start_year = slate_date.year if slate_date.month >= 10 else slate_date.year - 1
+    season_floor = date(season_start_year, 10, 15)
+    current_start = max(season_floor, slate_date - timedelta(days=32))
+    current_dates: list[str] = []
+    cursor = slate_date - timedelta(days=1)
+    while cursor >= current_start and len(current_dates) < 32:
+        current_dates.append(cursor.isoformat())
+        cursor -= timedelta(days=1)
+
+    prior_end_year = _season_end_year(slate_date) - 1
+    april_anchor = date(prior_end_year, 4, 8)
+    prior_end = april_anchor + timedelta(days=(6 - april_anchor.weekday()) % 7)
+    prior_dates = [(prior_end - timedelta(days=offset)).isoformat() for offset in range(45)]
+    return current_dates, prior_dates
+
+
+def _reference_bulk_history_profiles(
+    slate_date: date,
+    names: Sequence[str],
+    *,
+    current_game_dates: Sequence[str] | None = None,
+    prior_game_dates: Sequence[str] | None = None,
+    daily_page_loader: Callable[[str], str] | None = None,
+    target_games: int = REFERENCE_BULK_TARGET_GAMES,
+) -> dict[str, Any]:
+    requested = [name for name in names if _norm(name)]
+    wanted = {_norm(name): name for name in requested}
+    if current_game_dates is None or prior_game_dates is None:
+        default_current, default_prior = _default_reference_bulk_dates(slate_date)
+        current_game_dates = default_current if current_game_dates is None else list(current_game_dates)
+        prior_game_dates = default_prior if prior_game_dates is None else list(prior_game_dates)
+    loader = daily_page_loader or _reference_daily_page
+    current: dict[str, list[dict[str, Any]]] = {key: [] for key in wanted}
+    prior: dict[str, list[dict[str, Any]]] = {key: [] for key in wanted}
+    meta: dict[str, dict[str, Any]] = {}
+    attempts = 0
+    rate_limited = False
+
+    def consume(days: Sequence[str], target: dict[str, list[dict[str, Any]]]) -> None:
+        nonlocal attempts, rate_limited
+        for day in list(days)[:REFERENCE_BULK_MAX_DATES]:
+            if rate_limited or (wanted and all(len(current[key]) + len(prior[key]) >= target_games for key in wanted)):
+                break
+            try:
+                document = loader(day)
+            except ReferenceHistoryRateLimited:
+                rate_limited = True
+                break
+            except Exception:
+                continue
+            attempts += 1
+            parsed = _parse_reference_daily_leaders(document, day)
+            for name in requested:
+                key = _norm(name)
+                if len(current[key]) + len(prior[key]) >= target_games:
+                    continue
+                row = parsed.get(key) or _match_reference_identity(name, parsed)
+                if not isinstance(row, Mapping):
+                    continue
+                target[key].append(dict(row["game"]))
+                if key not in meta:
+                    meta[key] = dict(row)
+
+    consume(current_game_dates, current)
+    if not rate_limited:
+        consume(prior_game_dates, prior)
+    profiles: dict[str, dict[str, Any]] = {}
+    for name in requested:
+        key = _norm(name)
+        games = current[key] + prior[key]
+        if not games:
+            continue
+        info = meta.get(key) or {}
+        profiles[key] = {
+            "player_name": name,
+            "team": _text(info.get("team")).upper(),
+            "position": "",
+            "provider_ids": dict(info.get("provider_ids") or {}),
+            "headshot": "",
+            "current_games": sorted(current[key], key=lambda row: str(row.get("game_date") or ""), reverse=True),
+            "prior_games": sorted(prior[key], key=lambda row: str(row.get("game_date") or ""), reverse=True),
+            "stats_source": "Basketball-Reference daily leaders",
+        }
+    resolved = len(profiles)
+    status = "HEALTHY" if requested and resolved == len(requested) else "DEGRADED"
+    return {
+        "status": status,
+        "diagnostic_state": f"BULK_HISTORY_RESOLVED_{resolved}_OF_{len(requested)}_DATES_{attempts}" + (":RATE_LIMITED" if rate_limited else ""),
+        "profiles": profiles,
+    }
+
+
 def _reference_identity_profiles(slate_date: date, names: Sequence[str]) -> dict[str, Any]:
     wanted = {_norm(name) for name in names if _norm(name)}
     resolved: dict[str, dict[str, Any]] = {}
@@ -505,9 +685,11 @@ def _merge_provider_rows(
         combined = dict(existing)
         combined.update(dict(row))
         combined["provider_ids"] = {**dict(existing.get("provider_ids") or {}), **dict(row.get("provider_ids") or {})}
-        for field in ("team", "position", "headshot", "season_baseline"):
-            if not combined.get(field) and existing.get(field):
+        for field in ("team", "position", "headshot"):
+            if existing.get(field):
                 combined[field] = existing[field]
+        if not combined.get("season_baseline") and existing.get("season_baseline"):
+            combined["season_baseline"] = existing["season_baseline"]
         profiles[key] = _normalize_profile(name, combined)
         merged += 1
     return merged
@@ -555,6 +737,118 @@ def _cbs_roster_profiles(team_code: str) -> dict[str, dict[str, Any]]:
     return _parse_cbs_roster_html(document, team)
 
 
+
+def _parse_cbs_game_log_html(document: str) -> list[dict[str, Any]]:
+    games: list[dict[str, Any]] = []
+    for match in re.finditer(r"<h4\b[^>]*>(.*?)</h4>(.*?<table\b[^>]*>.*?</table>)", document or "", flags=re.I | re.S):
+        title = _strip_tags(match.group(1))
+        if "regular season game log" not in title.casefold():
+            continue
+        table = match.group(2)
+        header_match = re.search(r"<thead>(.*?)</thead>", table, flags=re.I | re.S)
+        header_html = header_match.group(1) if header_match else ""
+        headers: list[str] = []
+        for raw in re.findall(r"<th\b[^>]*>(.*?)</th>", header_html, flags=re.I | re.S):
+            text = _strip_tags(raw).casefold().split()
+            headers.append(text[0] if text else "")
+        index = {name: i for i, name in enumerate(headers) if name}
+        if not all(name in index for name in ("date", "min", "pts", "reb", "ast")):
+            continue
+        body_match = re.search(r"<tbody>(.*?)</tbody>", table, flags=re.I | re.S)
+        body = body_match.group(1) if body_match else table
+        for row_html in re.findall(r"<tr\b[^>]*>(.*?)</tr>", body, flags=re.I | re.S):
+            cells = [_strip_tags(value) for value in re.findall(r"<td\b[^>]*>(.*?)</td>", row_html, flags=re.I | re.S)]
+            if not cells or max(index.values()) >= len(cells):
+                continue
+            try:
+                game_day = datetime.strptime(cells[index["date"]], "%b %d, %Y").date().isoformat()
+            except ValueError:
+                continue
+            minutes = _minutes(cells[index["min"]])
+            pts, reb, ast = _num(cells[index["pts"]]), _num(cells[index["reb"]]), _num(cells[index["ast"]])
+            if pts is None or reb is None or ast is None:
+                continue
+            games.append({"game_date": game_day, "minutes": minutes, "points": pts, "rebounds": reb, "assists": ast})
+    games.sort(key=lambda row: str(row.get("game_date") or ""), reverse=True)
+    return games
+
+
+def _cbs_player_slug(player_name: str) -> str:
+    folded = unicodedata.normalize("NFKD", _text(player_name).casefold()).encode("ascii", "ignore").decode("ascii")
+    folded = folded.replace("'", "")
+    return "-".join(re.findall(r"[a-z0-9]+", folded))
+
+
+def _cbs_game_log_document(provider_id: str, player_name: str, season_start_year: int) -> str:
+    slug = _cbs_player_slug(player_name)
+    if not provider_id or not slug:
+        return ""
+    document, _ = _get_text(
+        f"{CBS_ROOT}/nba/players/{provider_id}/{slug}/game-log/{season_start_year}/",
+        timeout=10.0,
+        headers=CBS_HEADERS,
+    )
+    return document
+
+
+def _cbs_player_history(player_name: str, slate_date: date, seed: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    base = dict(seed or {})
+    provider_ids = dict(base.get("provider_ids") or {})
+    provider_id = _text(provider_ids.get("cbs_sports"))
+    if not provider_id:
+        return None
+    canonical_name = _text(base.get("player_name") or player_name)
+    current_start = slate_date.year if slate_date.month >= 10 else slate_date.year - 1
+    current_games: list[dict[str, Any]] = []
+    prior_games: list[dict[str, Any]] = []
+    for season_start, target in ((current_start, current_games), (current_start - 1, prior_games)):
+        try:
+            document = _cbs_game_log_document(provider_id, canonical_name, season_start)
+            target.extend(_parse_cbs_game_log_html(document))
+        except Exception:
+            continue
+        if len(current_games) >= 10:
+            break
+    if not current_games and not prior_games:
+        return None
+    out = dict(base)
+    out.update({
+        "player_name": canonical_name,
+        "provider_ids": provider_ids,
+        "current_games": current_games[:40],
+        "prior_games": prior_games[:40],
+        "stats_source": "CBS Sports game log",
+    })
+    return out
+
+
+def _cbs_history_profiles(
+    slate_date: date,
+    names: Sequence[str],
+    *,
+    seed_profiles: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
+    requested = list(names)
+    seeds = seed_profiles or {}
+    rows: dict[str, dict[str, Any]] = {}
+    if requested:
+        with ThreadPoolExecutor(max_workers=min(12, len(requested))) as pool:
+            jobs = {pool.submit(_cbs_player_history, name, slate_date, seeds.get(_norm(name))): name for name in requested}
+            for future in as_completed(jobs):
+                name = jobs[future]
+                try:
+                    row = future.result()
+                except Exception:
+                    row = None
+                if row and _history_ok(row):
+                    rows[_norm(name)] = row
+    return {
+        "status": "HEALTHY" if requested and len(rows) == len(requested) else "DEGRADED",
+        "diagnostic_state": f"CBS_HISTORY_RESOLVED_{len(rows)}_OF_{len(requested)}",
+        "profiles": rows,
+    }
+
+
 def collect_nba_pra_player_context(
     slate_date: date,
     player_names: Sequence[str],
@@ -564,7 +858,9 @@ def collect_nba_pra_player_context(
     licensed_loaders: Sequence[Any] | None = None,
     basketball_reference_index_loader: Callable[[date, Sequence[str]], Any] | None = None,
     basketball_reference_loader: Callable[[date, Sequence[str]], Any] | None = None,
+    basketball_reference_bulk_history_loader: Callable[..., Any] | None = None,
     cbs_roster_loader: Callable[[str], Any] | None = None,
+    cbs_history_loader: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
     names: list[str] = []
     seen: set[str] = set()
@@ -607,6 +903,42 @@ def collect_nba_pra_player_context(
         missing_history = [name for name in names if not _history_ok(profiles.get(_norm(name)))]
 
     identity_missing = [name for name in names if _norm(name) not in profiles or profiles[_norm(name)].get("data_state") == "DATA_UNAVAILABLE"]
+    codes: list[str] = []
+    seen_codes: set[str] = set()
+    for raw_code in team_codes or []:
+        code = _text(raw_code).upper()
+        if code in CBS_TEAM_ROSTERS and code not in seen_codes:
+            codes.append(code)
+            seen_codes.add(code)
+    cbs_loader = cbs_roster_loader or _cbs_roster_profiles
+    cbs_rows: dict[str, dict[str, Any]] = {}
+    cbs_attempted = False
+    if identity_missing and codes:
+        with ThreadPoolExecutor(max_workers=min(8, len(codes))) as pool:
+            jobs = {pool.submit(cbs_loader, code): code for code in codes}
+            for future in as_completed(jobs):
+                cbs_attempted = True
+                try:
+                    raw_rows = future.result() or {}
+                except Exception:
+                    continue
+                if isinstance(raw_rows, Mapping):
+                    for key, row in raw_rows.items():
+                        if isinstance(row, Mapping):
+                            cbs_rows[str(key)] = dict(row)
+        matched_rows: dict[str, dict[str, Any]] = {}
+        for name in identity_missing:
+            matched = _match_reference_identity(name, cbs_rows)
+            if matched is not None:
+                matched_rows[_norm(name)] = matched
+        _merge_identity_rows(profiles, identity_missing, matched_rows)
+        unresolved_after_cbs = [name for name in identity_missing if _norm(name) not in profiles or profiles[_norm(name)].get("data_state") == "DATA_UNAVAILABLE"]
+        status = "HEALTHY" if not unresolved_after_cbs else "DEGRADED"
+        health["cbs_sports_identity"] = _health(status, f"RESOLVED_{len(identity_missing)-len(unresolved_after_cbs)}_OF_{len(identity_missing)}", cbs_attempted)
+    else:
+        health["cbs_sports_identity"] = _health("HEALTHY", "NOT_NEEDED", False)
+
+    identity_missing = [name for name in names if _norm(name) not in profiles or profiles[_norm(name)].get("data_state") == "DATA_UNAVAILABLE"]
     identity_reference = basketball_reference_index_loader
     if identity_reference is None and basketball_reference_loader is None:
         identity_reference = _reference_identity_profiles
@@ -631,46 +963,42 @@ def collect_nba_pra_player_context(
     else:
         health["basketball_reference_identity_search"] = _health("HEALTHY", "NOT_NEEDED", False)
 
-    unresolved_identity = [name for name in names if _norm(name) not in profiles or profiles[_norm(name)].get("data_state") == "DATA_UNAVAILABLE"]
-    codes = []
-    seen_codes: set[str] = set()
-    for raw_code in team_codes or []:
-        code = _text(raw_code).upper()
-        if code in CBS_TEAM_ROSTERS and code not in seen_codes:
-            codes.append(code)
-            seen_codes.add(code)
-    cbs_loader = cbs_roster_loader or _cbs_roster_profiles
-    cbs_rows: dict[str, dict[str, Any]] = {}
-    cbs_attempted = False
-    if unresolved_identity and codes:
-        for code in codes:
-            try:
-                raw_rows = cbs_loader(code) or {}
-                cbs_attempted = True
-                if isinstance(raw_rows, Mapping):
-                    for key, row in raw_rows.items():
-                        if isinstance(row, Mapping):
-                            cbs_rows[str(key)] = dict(row)
-            except Exception:
-                cbs_attempted = True
-                continue
-        matched_rows: dict[str, dict[str, Any]] = {}
-        for name in unresolved_identity:
-            matched = _match_reference_identity(name, cbs_rows)
-            if matched is not None:
-                matched_rows[_norm(name)] = matched
-        _merge_identity_rows(profiles, unresolved_identity, matched_rows)
-        unresolved_after_cbs = [name for name in unresolved_identity if _norm(name) not in profiles or profiles[_norm(name)].get("data_state") == "DATA_UNAVAILABLE"]
-        status = "HEALTHY" if not unresolved_after_cbs else "DEGRADED"
-        health["cbs_sports_identity"] = _health(status, f"RESOLVED_{len(unresolved_identity)-len(unresolved_after_cbs)}_OF_{len(unresolved_identity)}", cbs_attempted)
+    missing_history = [name for name in names if not _history_ok(profiles.get(_norm(name)))]
+    bulk_history = basketball_reference_bulk_history_loader
+    if bulk_history is None and basketball_reference_loader is None:
+        bulk_history = _reference_bulk_history_profiles
+    if missing_history and bulk_history is not None:
+        try:
+            status, rows, detail = _coerce_provider_payload(bulk_history(slate_date, missing_history))
+            _merge_provider_rows(profiles, missing_history, rows)
+            health["basketball_reference_bulk_history"] = _health(status, detail, True)
+        except Exception as exc:
+            health["basketball_reference_bulk_history"] = _health("DEGRADED", type(exc).__name__, True)
     else:
-        health["cbs_sports_identity"] = _health("HEALTHY", "NOT_NEEDED", False)
+        detail = "EXPLICIT_INDIVIDUAL_OVERRIDE" if missing_history and basketball_reference_loader is not None and basketball_reference_bulk_history_loader is None else "NOT_NEEDED"
+        health["basketball_reference_bulk_history"] = _health("HEALTHY", detail, False)
+
+    missing_history = [name for name in names if not _history_ok(profiles.get(_norm(name)))]
+    bref_bulk_detail = _text((health.get("basketball_reference_bulk_history") or {}).get("detail")).upper()
+    bref_rate_limited = "RATE_LIMITED" in bref_bulk_detail
+
+    cbs_history = cbs_history_loader
+    if cbs_history is None and basketball_reference_loader is None:
+        cbs_history = _cbs_history_profiles
+    if missing_history and cbs_history is not None:
+        try:
+            raw_value = cbs_history(slate_date, missing_history, seed_profiles=profiles)
+            status, rows, detail = _coerce_provider_payload(raw_value)
+            _merge_provider_rows(profiles, missing_history, rows)
+            health["cbs_sports_history"] = _health(status, detail, True)
+        except Exception as exc:
+            health["cbs_sports_history"] = _health("DEGRADED", type(exc).__name__, True)
+    else:
+        health["cbs_sports_history"] = _health("HEALTHY", "NOT_NEEDED", False)
 
     missing_history = [name for name in names if not _history_ok(profiles.get(_norm(name)))]
     bounded_history = missing_history[:REFERENCE_HISTORY_BUDGET]
-    reference_identity_degraded = (health.get("basketball_reference_identity") or {}).get("status") == "DEGRADED"
-    history_allowed = basketball_reference_loader is not None or not reference_identity_degraded
-    if bounded_history and history_allowed:
+    if bounded_history and not bref_rate_limited:
         try:
             if basketball_reference_loader is not None:
                 raw_value = basketball_reference_loader(slate_date, bounded_history)
@@ -681,9 +1009,10 @@ def collect_nba_pra_player_context(
             health["basketball_reference"] = _health(status, detail, True)
         except Exception as exc:
             health["basketball_reference"] = _health("DEGRADED", type(exc).__name__, True)
+    elif bounded_history and bref_rate_limited:
+        health["basketball_reference"] = _health("UNAVAILABLE", "SKIPPED_AFTER_RATE_LIMIT", False)
     else:
-        detail = "SKIPPED_AFTER_IDENTITY_DEGRADED" if bounded_history and not history_allowed else "NOT_NEEDED"
-        health["basketball_reference"] = _health("UNAVAILABLE" if detail != "NOT_NEEDED" else "HEALTHY", detail, False)
+        health["basketball_reference"] = _health("HEALTHY", "NOT_NEEDED", False)
 
     for name in names:
         key = _norm(name)

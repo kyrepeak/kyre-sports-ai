@@ -1,0 +1,49 @@
+{
+  "task_id": "api2-nba-pra-history-coverage-v1",
+  "workstream": "api2-nba-pra-history-coverage-v1",
+  "source_main_sha": "fd4d36e2693574a68ec57561950dd0ccf8066a6f",
+  "status": "PR_BOUND_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 99,
+  "step2a": {
+    "active_problem": "NBA PRA full-slate verified history and visible analytics coverage",
+    "authoritative_branch": "api2-nba-pra-history-coverage-v1",
+    "authoritative_pr": 1714,
+    "scope_lease_id": "SCOPE-LEASE-D24D2CDB6F9B501487D3EBBB",
+    "authorization_id": "AUTH-API2-NBA-PRA-HISTORY-COVERAGE-V1-R1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "proof_request_submitted": false,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "history_primary": "NBA Stats",
+    "history_secondary": "Basketball-Reference",
+    "history_backup": "CBS Sports game log after upstream degradation/rate limit",
+    "conflicting_lines": "preserve sportsbook/line/price/timestamp; never average",
+    "fabrication": false
+  },
+  "evidence": {
+    "tdd": "RED then GREEN for bulk history, BRef rate-limit hard stop, CBS regular-season parser, canonical-name aliases, apostrophe slugs, current-identity preservation, and prior-form UI fallback",
+    "exact_remote_nba_pra_suite": "106 passed",
+    "compile": "PASS",
+    "diff_check": "PASS",
+    "active_path_ban_scan": "PASS",
+    "live_slate": "11 games / 110 players",
+    "live_identity": "110/110 identified",
+    "live_recent_history_analytics": "106/110 visible L5/L10/MIN/probability analytics",
+    "explicit_fail_closed_exclusions": ["Damian Lillard", "Kyrie Irving", "Fred VanVleet", "Tyrese Haliburton"],
+    "best_over_edge": 15.5,
+    "best_under_edge": -7.0,
+    "bref_rate_limit": "429 detected once; downstream BRef fanout stopped",
+    "no_fake_history": "two-season-old logs are not silently promoted into normal recent variance"
+  },
+  "frozen_registry_preflight": {
+    "modified_frozen_paths": [],
+    "thaw_required": false
+  },
+  "freeze_token": "API2_NBA_PRA_HISTORY_COVERAGE_V1_FROZEN"
+}
