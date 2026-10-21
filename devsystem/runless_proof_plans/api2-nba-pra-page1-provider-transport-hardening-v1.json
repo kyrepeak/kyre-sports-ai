@@ -2,7 +2,7 @@
   "mode": "runless",
   "task_id": "api2-nba-pra-page1-provider-transport-hardening-v1",
   "workstream": "api2-nba-pra-page1-provider-transport-hardening-v1",
-  "source_main_sha": "7d4f56b5f01a73f72f613079666f401487871eba",
+  "source_main_sha": "243a3c2a85988f268cb1ad518caea5c0bcc3927b",
   "commands": [
     [
       "python",
