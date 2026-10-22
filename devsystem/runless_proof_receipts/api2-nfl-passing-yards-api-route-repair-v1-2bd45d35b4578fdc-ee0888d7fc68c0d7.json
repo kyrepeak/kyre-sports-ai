@@ -1,0 +1,47 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-api-route-repair-v1.json": "1277517b34fe1ddd85f894e9e004132c5d5cd674",
+    "kyre_sports_api_vercel_v1.py": "6ef9bfe54b0bcc931d5e3f5068accd7ed048c699",
+    "nfl_passing_yards_gateway_v1.py": "9203adefbbca6dc94fc9224bad33023bde714b1c",
+    "tests/test_api2_nfl_passing_yards_vercel_route_repair_v1.py": "99b85ac5c297b9deb860a3b3e7ba123629736cb8"
+  },
+  "candidate_sha": "2bd45d35b4578fdc84acbaa1d65a5bbaa7307cb4",
+  "created_at": "2026-10-22T08:45:00.079466+00:00",
+  "dependency_map": {
+    "nfl_passing_yards_professional_v1.py": "5563782e3772bb69c4852e9f7441f32cf73de06a",
+    "sports_api/api/nfl_passing_yards_page_v1.py": "77619e06f3cfb0e425d4819088d895397e27edc4",
+    "tests/test_api2_nfl_passing_yards_professional_v1.py": "7a302da40954eb961508b2e51886d5606daa9da7"
+  },
+  "digest": "8e1d34528c9940957fbabf77a85398f4aee74e2eeeb277fc9be4f2706747f046",
+  "evidence_digests": [
+    "a0b6246e9fe6d1f02ca7f0a096de7f904a9d89243a6538c5ef9a2ae4a8f07026",
+    "ab977969c32b71b4afbf031453bb3f06ece6f494b27b5c939847e3bca1d09b3c"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "3e85fa8eae2ecfba44afcfa677074c85e63dd460112488e86da66d1c2793e6c3",
+  "proof_id": "api2-nfl-passing-yards-api-route-repair-v1-2bd45d35b4578fdc-ee0888d7fc68c0d7",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "4d1183eaf14209d79caa7f28d21a73d6a618cb2322c1e09191a50b39095a847a",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-passing-yards-api-route-repair-v1",
+  "workstream": "api2-nfl-passing-yards-api-route-repair-v1"
+}
