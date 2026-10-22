@@ -5,7 +5,7 @@
   "authoritative_branch": "api2-universal-header-v3",
   "proof_base_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
   "scope_lease_id": "SCOPE-LEASE-C4BAB8AFAF9929F2F0CA2E6C",
-  "status": "PATCH_READY",
+  "status": "PROOF_READY",
   "single_pr": true,
   "single_proof_path": true,
   "duplicate_submission_forbidden": true,
@@ -23,11 +23,17 @@
     "red_proof_id": "api2-universal-header-v3-d34e1bbdfa3f732d-e377bb707dfa5e77",
     "red_failure_class": "STATIC_PROOF",
     "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
-    "patch_product_sha": "d2d0c7e8c889a4242bce5f3d4edfc58b80ae5281"
+    "first_patch_candidate_sha": "c0077e2310851ee9b0d3158e8a917bce56539e56",
+    "first_patch_proof_id": "api2-universal-header-v3-c0077e2310851ee9-bfc2cee9922edbc8",
+    "first_patch_failure_class": "STATIC_PROOF",
+    "first_patch_root_cause": "The bounded runtime edit normalized the frozen V2 compatibility spelling from `if is_transition and not client_controller :` to `if is_transition and not client_controller:`, tripping the frozen regression even though behavior was unchanged.",
+    "compatibility_patch_sha": "fb7a396a0b136ec17421a006f2d0831d2fb84a78",
+    "duplicate_submissions": 0
   },
   "repair": {
     "position": "Render core._render_destination_shell(runtime.active) before transition_slot and destination_slot creation so Streamlit places the universal nav above all destination content.",
-    "presentation": "Keep existing tap-first st.pills controls, switch sport labels to words only, inject league marks into those same controls, and present KYRE SPORTS AI with Professional Sports Analytics branding in the sticky universal shell."
+    "presentation": "Keep existing tap-first st.pills controls, switch sport labels to words only, inject league marks into those same controls, and present KYRE SPORTS AI with Professional Sports Analytics branding in the sticky universal shell.",
+    "compatibility": "Preserve the frozen V2 fail-closed seam spelling while retaining identical fail-closed behavior."
   },
   "scope": [
     "universal_page_experience_runtime_v1.py",
