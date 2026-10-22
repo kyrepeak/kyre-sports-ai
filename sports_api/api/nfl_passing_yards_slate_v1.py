@@ -9,6 +9,7 @@ conflicting sportsbook lines are never averaged.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import re
 from typing import Any
 
 from fastapi import APIRouter, Query
@@ -123,6 +124,45 @@ def _collect_market_observations(game: dict[str, Any]) -> list[dict[str, Any]]:
     return base.collect_market_observations(game)
 
 
+def _name_key(value: Any) -> tuple[str, str] | None:
+    tokens = [token.lower() for token in re.findall(r"[A-Za-z]+", _text(value))]
+    while tokens and tokens[-1] in {"jr", "sr", "ii", "iii", "iv", "v"}:
+        tokens.pop()
+    if len(tokens) < 2:
+        return None
+    return tokens[0][0], tokens[-1]
+
+
+def _current_rows_for_market_qb(team: str, current_rows: list[dict[str, Any]], observations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    market_names = {
+        _text(row.get("player_name"))
+        for row in observations
+        if _text(row.get("team_abbr")).upper() == _text(team).upper() and _text(row.get("player_name"))
+    }
+    if len(market_names) != 1:
+        return current_rows
+    target_key = _name_key(next(iter(market_names)))
+    if target_key is None:
+        return current_rows
+    candidates: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in current_rows:
+        if _text(row.get("team")).upper() != _text(team).upper():
+            continue
+        player_id = _text(row.get("player_source_id"))
+        qb_name = _text(row.get("qb_name"))
+        if not player_id or not qb_name or _name_key(qb_name) != target_key:
+            continue
+        candidates.setdefault((player_id, qb_name), []).append(row)
+    if len(candidates) != 1:
+        return current_rows
+    (player_id, qb_name), _matches = next(iter(candidates.items()))
+    return [
+        row for row in current_rows
+        if _text(row.get("team")).upper() != _text(team).upper()
+        or (_text(row.get("player_source_id")) == player_id and _text(row.get("qb_name")) == qb_name)
+    ]
+
+
 def _enrich_player(player: dict[str, Any], *, game: dict[str, Any], observations: list[dict[str, Any]]) -> dict[str, Any]:
     projection = (player.get("context_projection") or {}).get("context_projection_yards")
     snapshot = base.build_market_snapshot(observations, qb_name=_text(player.get("qb_name")), projection_yards=projection)
@@ -181,11 +221,12 @@ def build_game_bundles(target_date: str | None = None) -> tuple[str | None, list
                 "recent3_ypa_allowed": None,
                 "sack_rate_generated": None,
             }
+            current_rows = _current_rows_for_market_qb(team, ctx.get("current_rows") or [], observations)
             row = base._legacy._player_bundle(
                 team=team,
                 opponent=opponent,
                 side=side,
-                current_rows=ctx.get("current_rows") or [],
+                current_rows=current_rows,
                 all_history=ctx.get("history") or [],
                 defense=defense,
                 frame=frame,
