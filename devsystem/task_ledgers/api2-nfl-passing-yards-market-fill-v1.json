@@ -1,0 +1,41 @@
+{
+  "task_id": "api2-nfl-passing-yards-market-fill-v1",
+  "workstream": "api2-nfl-passing-yards-market-fill-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "6e821d99351ae84b6ef8577392a0cff1f47c7454",
+  "scope_lease_id": "SCOPE-LEASE-413274848B10AF5C03D13E81",
+  "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-MARKET-FILL-V1-R1",
+  "active_problem": "NFL Passing Yards Page 1 retained all 28 QB cards but current live sportsbook market data was missing or mismatched for most cards because the legacy FanDuel parser did not support the current payload shape and recent-usage QB identity could diverge from the market-listed QB.",
+  "solution": "Add an NFLverse-backed FanDuel Passing Yards collector using current FanDuel result roles, americanOddsInt, dynamic passing tabs, FDX selection-to-QB mapping, team-scoped canonical QB reconciliation, and source-alias normalization before frozen market grading. Keep the existing approved fallback only when direct FanDuel returns no market and never fabricate an absent market.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "banned": ["SGO", "ESPN", "ESPN BET"],
+    "schedule_stats_identity": "NFLverse via Kyre Sports API",
+    "market_primary": "FanDuel direct",
+    "market_secondary": "Existing approved fallback only when needed/configured",
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "no_guessing": true
+  },
+  "tdd": {
+    "parser_red": "3 expected ModuleNotFound failures before successor collector existed",
+    "parser_green": "3/3 parser tests passing",
+    "routing_red": "Expected AttributeError before successor market routing existed",
+    "identity_red": "Expected AttributeError before market-listed QB reconciliation existed",
+    "alias_red": "6 passing, 1 expected failure before canonical alias normalization existed",
+    "final_green": "41/41 affected Passing Yards tests passing"
+  },
+  "verification": {
+    "py_compile": "GREEN",
+    "affected_regression_suite": "41 passed",
+    "frozen_steps_7_to_10": "31 passed, 4 deselected",
+    "live_schedule": "2026 Week 7: 14 games, 28 QB cards",
+    "live_market_fill": "27 VERIFIED FanDuel-published two-way Passing Yards markets across 28 cards",
+    "explicit_unavailable": "BAL L.Jackson vs CIN remains NOT_AVAILABLE because live FanDuel event payload publishes no Baltimore two-way Passing Yards market",
+    "identity_reconciliation": "Market-listed ATL M.Penix, NYG J.McCarthy and PHI T.McKee uniquely reconcile to real NFLverse player IDs before market grading",
+    "source_policy": "GREEN — Kyre Sports API only; new collector contains no ESPN/SGO dependency; no fabricated lines, no missing-to-zero and no sportsbook line averaging",
+    "frozen_v2_api_blob": "a14d8c7f6105d48888e51596dd68cb357e601b63",
+    "frozen_v2_renderer_blob": "eeadb5e5c3be680768916ea9ef8d8b121208c23b"
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_MARKET_FILL_V1_FROZEN"
+}
