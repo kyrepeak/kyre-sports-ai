@@ -14,9 +14,20 @@ def test_runtime_routes_only_cfb_top_picks_to_v16():
 def test_page1_handoff_carries_exact_candidate_identity():
     import cfb_top_picks_page_v16 as page
     href = page._page1_handoff({"candidate_id": "g1", "selected_date": "2026-10-22"}, "game-pick")
+    assert "ks_sport=College+Football" in href
+    assert "ks_cfb_market=Top+Picks" in href
     assert "top_pick_id=g1" in href
     assert "top_pick_kind=game-pick" in href
     assert "top_pick_date=2026-10-22" in href
+
+
+def test_page2_back_link_preserves_cfb_top_picks_route():
+    import cfb_top_picks_page_v16 as page
+    href = page._back_href({"selected_date": "2026-10-22"})
+    assert "ks_sport=College+Football" in href
+    assert "ks_cfb_market=Top+Picks" in href
+    assert "top_pick_date=2026-10-22" in href
+    assert "top_pick_id=" not in href
 
 
 def test_api_resolves_exact_frozen_page1_candidate(monkeypatch):
