@@ -10,6 +10,7 @@ from universal_atomic_navigation_v1 import route_identity
 from universal_page_experience_v1 import (
     page_experience_controller_markup,
     page_experience_fallback_markup,
+    page_experience_native_top_markup,
 )
 
 MODEL_VERSION = "API2 UNIVERSAL PAGE EXPERIENCE RUNTIME V1"
@@ -19,6 +20,7 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 
 def _mount_page_experience_controller(route: object) -> bool:
+    st.markdown(page_experience_native_top_markup(), unsafe_allow_html=True)
     markup = page_experience_controller_markup(route)
     html = getattr(st, "html", None)
     if callable(html):
