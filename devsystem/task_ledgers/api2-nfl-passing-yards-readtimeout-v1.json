@@ -1,0 +1,40 @@
+{
+  "task_id": "api2-nfl-passing-yards-readtimeout-v1",
+  "workstream": "api2-nfl-passing-yards-readtimeout-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "f8976dc9d2cdc34bb18cf3b04125ff4265270dec",
+  "scope_lease_id": "SCOPE-LEASE-EA08E2234C4F6C26FFD33F4A",
+  "scope_lease_generation": 708,
+  "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-READTIMEOUT-V1-R1",
+  "active_problem": "Production Streamlit NFL Passing Yards displayed 'Kyre Sports API request unavailable: ReadTimeout' because the Vercel slate route repeatedly regrouped three seasons of quarterback history for each distinct game date in the weekly slate.",
+  "solution": "Preserve the existing Kyre Sports API and source contracts while building one dated three-season quarterback-history pool per season, slicing it strictly before each game-date cutoff, and using bounded prefetch for unique date contexts and per-game market observations.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "banned": ["SGO", "ESPN", "ESPN BET"],
+    "schedule_stats_identity": "NFLverse via Kyre Sports API",
+    "market_primary": "FanDuel direct",
+    "market_secondary": "Existing approved fallback only when needed/configured",
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "no_guessing": true
+  },
+  "tdd": {
+    "market_prefetch_red": "Expected AttributeError before _prefetch_market_observations existed",
+    "context_prefetch_red": "Expected AttributeError before _prefetch_season_contexts existed",
+    "shared_history_red": "Expected AttributeError before _history_before existed",
+    "final_green": "44/44 affected Passing Yards tests passing"
+  },
+  "verification": {
+    "py_compile": "GREEN",
+    "affected_regression_suite": "44 passed",
+    "frozen_steps_7_to_10": "31 passed, 4 deselected",
+    "pre_repair_production_timing": "13.327s and 11.923s direct Vercel route calls; screenshot showed intermittent >25s Streamlit ReadTimeout",
+    "root_cause_profile": "market prefetch ~0.855s; repeated history derivation 4.239s + 2.318s + 2.231s across three slate dates",
+    "exact_head_candidate_timing": "9.690s cold; 6.138s warm",
+    "live_schedule": "2026 Week 7: 14 games, 28 QB cards",
+    "live_market_fill": "27 VERIFIED FanDuel-published two-way Passing Yards markets across 28 cards",
+    "data_integrity": "Shared history retains strict _game_date < cutoff filtering and strips the internal date field before downstream history summaries",
+    "source_policy": "GREEN — no provider/source changes; no ESPN/SGO dependency; no fabricated lines, missing-to-zero, or sportsbook averaging"
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_READTIMEOUT_V1_FROZEN"
+}
