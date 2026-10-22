@@ -1,0 +1,53 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-simple-qb-grid-v1.json": "eb14d8610283d8e92da93774d2ff06c384666f66",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-simple-qb-grid-v1.json": "28120dacddb56aaf253ca79bbca01172ab9b2ade",
+    "kyre_sports_api_vercel_v1.py": "9e3d0f41aaedd1410ae66da19ed64f271aea548d",
+    "nfl_passing_yards_simple_qb_grid_v1.py": "f8116e16fbbd046eeb2ea9dd07ed3a2ecd9731e9",
+    "nfl_passing_yards_slate_gateway_v1.py": "4df9b36ce53616db192666d0a33f0bd89a944edb",
+    "sports_api/api/nfl_passing_yards_slate_v1.py": "5a850fd44650605181a6ddf11b6fbe9044180376",
+    "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py": "ede69c2f1c54e98654f537082d080b58f7cfa47d",
+    "universal_runtime_v5_loader.py": "30dd06ec0781aa8505e3f0c66179b89f0e1b06a4"
+  },
+  "candidate_sha": "ce7cfdccea903199ebbeef2822d878776497d7b6",
+  "created_at": "2026-10-22T17:50:46.453491+00:00",
+  "dependency_map": {
+    "nfl_passing_yards_gateway_v1.py": "9203adefbbca6dc94fc9224bad33023bde714b1c",
+    "nfl_passing_yards_professional_v1/__init__.py": "eeadb5e5c3be680768916ea9ef8d8b121208c23b",
+    "sports_api/api/nfl_passing_yards_page_v1.py": "26b839f1171d8b39fa828e0e416d9d8972b209b1",
+    "sports_api/api/nfl_passing_yards_page_v1/__init__.py": "a14d8c7f6105d48888e51596dd68cb357e601b63"
+  },
+  "digest": "e4ad53c3c786f9785857fa347d26ec45484fb46845ce712fb6a4f036033e4d33",
+  "evidence_digests": [
+    "50e6197b15f1ff0ccb3cb684db733bd692f4087fce27926a84ebaeb63d9c504d",
+    "11db5249062e13a8a3beb60460cd120c9da6fe508cce3cb4a7099b22d3fa4c9f",
+    "7bf1aa59aee24ee5313ff056727071e235fe232c2dde7bdfab9d3b92bee80993"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "11e8cb265352a47d8882bc848faa84335d62e93c863a513d82992d6fc5345407",
+  "proof_id": "api2-nfl-passing-yards-simple-qb-grid-v1-ce7cfdccea903199-0834b23580023d3a",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 477,
+    "state_hash": "f74fc2ffa3a0f3ee195a5ce7b79e3063acc4c53d3193ced3231b4221953c3319"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 477,
+    "state_hash": "f74fc2ffa3a0f3ee195a5ce7b79e3063acc4c53d3193ced3231b4221953c3319"
+  },
+  "request_fingerprint": "cce0a20bfea715ed1ca402ad99978701d18e9811ec4289258d034229a0f40285",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-passing-yards-simple-qb-grid-v1",
+  "workstream": "api2-nfl-passing-yards-simple-qb-grid-v1"
+}
