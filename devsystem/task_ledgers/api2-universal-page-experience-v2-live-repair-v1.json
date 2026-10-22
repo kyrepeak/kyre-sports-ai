@@ -5,7 +5,7 @@
   "authoritative_branch": "api2-universal-page-experience-v2-live-repair-v1",
   "proof_base_main_sha": "2a28c385b27b075f28b0fcfe75050c1100b0006d",
   "scope_lease_id": "SCOPE-LEASE-03A77E99D152EEE438CCA97B",
-  "status": "GREEN_PROOF_PENDING",
+  "status": "PROOF_READY",
   "single_pr": true,
   "single_proof_path": true,
   "duplicate_submission_forbidden": true,
@@ -23,7 +23,12 @@
     "red_proof_id": "api2-universal-page-experience-v2-live-repair-v1-038bc5639cdef34e-6d544724bf57db3b",
     "red_failure_class": "STATIC_PROOF",
     "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
-    "duplicate_red_submissions": 0
+    "first_patch_candidate_sha": "46ef32c352aabac63a3d75d4e8e341748d8b6ad6",
+    "first_patch_proof_id": "api2-universal-page-experience-v2-live-repair-v1-46ef32c352aabac6-f3498277d65d643a",
+    "first_patch_failure_class": "STATIC_PROOF",
+    "first_patch_root_cause": "Frozen Universal Page Experience V1 regression requires the literal document.scrollingElement fallback contract; first patch narrowed it to doc.scrollingElement.",
+    "compatibility_patch": "Restore document.scrollingElement as a real fallback in scroll-owner resolution while preserving the parent-document owner path.",
+    "duplicate_submissions": 0
   },
   "repair": {
     "top": "Add a real page-top sentinel before the site shell, target it from the native TOP anchor, force pointer/touch ownership, and have the client enhancer prevent default then scroll the actual owner.",
