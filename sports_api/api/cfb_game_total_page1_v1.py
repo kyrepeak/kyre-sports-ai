@@ -21,6 +21,10 @@ from sports_api.collectors.cfb_game_total_market_v1 import (
     collect_the_odds_api_game_markets,
     match_market_rows_to_ncaa_games,
 )
+from sports_api.collectors.cfb_action_network_game_markets_v1 import (
+    collect_action_network_game_markets,
+    match_action_rows_to_games,
+)
 
 router = APIRouter(prefix="/api/v1/cfb/game-total", tags=["cfb"])
 MODEL_VERSION = "CFB GAME TOTAL PAGE1 API V1 • KYRE SPORTS API"
@@ -112,19 +116,46 @@ def collect_primary_market_rows() -> list[dict[str, Any]]:
 
 
 def collect_secondary_market_rows(missing_games: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Use at most two approved secondaries, and only for uncovered games."""
     if not missing_games:
         return []
-    if not _clean(os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")):
-        return []
-    try:
-        rows = collect_the_odds_api_game_markets()
-    except Exception:
-        return []
-    matched = match_market_rows_to_ncaa_games(missing_games, rows)
     accepted: list[dict[str, Any]] = []
-    for game in missing_games:
-        game_id = _clean(game.get("game_id") or game.get("identity_key"))
-        accepted.extend(dict(row) for row in matched.get(game_id, []))
+    remaining = list(missing_games)
+
+    if _clean(os.getenv("THE_ODDS_API_KEY") or os.getenv("ODDS_API_KEY")):
+        try:
+            odds_rows = collect_the_odds_api_game_markets()
+        except Exception:
+            odds_rows = []
+        odds_matched = match_market_rows_to_ncaa_games(remaining, odds_rows)
+        covered: set[str] = set()
+        for game in remaining:
+            game_id = _clean(game.get("game_id") or game.get("identity_key"))
+            quotes = odds_matched.get(game_id, [])
+            if quotes:
+                covered.add(game_id)
+                for raw in quotes:
+                    row = dict(raw)
+                    row["source_provider"] = "The Odds API"
+                    accepted.append(row)
+        if covered:
+            remaining = [
+                game for game in remaining
+                if _clean(game.get("game_id") or game.get("identity_key")) not in covered
+            ]
+
+    if remaining:
+        try:
+            action_rows = collect_action_network_game_markets()
+        except Exception:
+            action_rows = []
+        action_matched = match_action_rows_to_games(remaining, action_rows)
+        for game in remaining:
+            game_id = _clean(game.get("game_id") or game.get("identity_key"))
+            for raw in action_matched.get(game_id, []):
+                row = dict(raw)
+                row["source_provider"] = "Action Network"
+                accepted.append(row)
     return accepted
 
 
@@ -140,11 +171,19 @@ def _market_state(
     ]
     if missing:
         secondary_rows = collect_secondary_market_rows(missing)
+        for provider in ("The Odds API", "Action Network"):
+            if any(_clean(row.get("source_provider")) == provider for row in secondary_rows):
+                consulted.append(provider)
         if secondary_rows:
-            consulted.append("The Odds API")
             secondary = match_market_rows_to_ncaa_games(missing, secondary_rows)
-            for game_id, quotes in secondary.items():
-                matched.setdefault(game_id, []).extend(dict(row) for row in quotes)
+            # Action rows use the same public schema but may need their own
+            # normalization-aware matcher for abbreviated NCAA team names.
+            action_secondary = match_action_rows_to_games(missing, secondary_rows)
+            for game in missing:
+                game_id = _clean(game.get("game_id") or game.get("identity_key"))
+                quotes = secondary.get(game_id, []) or action_secondary.get(game_id, [])
+                if quotes:
+                    matched.setdefault(game_id, []).extend(dict(row) for row in quotes)
     return matched, consulted
 
 
@@ -178,6 +217,7 @@ def _public_quote(raw: Mapping[str, Any]) -> dict[str, Any]:
         "home_moneyline": raw.get("home_moneyline"),
         "observed_at_utc": _clean(raw.get("observed_at_utc")) or None,
         "line_status": _clean(raw.get("line_status")) or None,
+        "source_provider": _clean(raw.get("source_provider")) or None,
     }
     quote["line_integrity"] = _quote_quality(quote)
     return quote
@@ -185,6 +225,11 @@ def _public_quote(raw: Mapping[str, Any]) -> dict[str, Any]:
 
 def _public_game(game: Mapping[str, Any], quotes: list[dict[str, Any]]) -> dict[str, Any]:
     row = dict(game)
+    # Do not leak legacy forbidden-provider identity fields into the new public
+    # contract even when they are empty on the NCAA object.
+    for key in tuple(row):
+        if str(key).casefold().startswith("espn"):
+            row.pop(key, None)
     row["market_quotes"] = [_public_quote(quote) for quote in quotes]
     row["market_quote_count"] = len(row["market_quotes"])
     row["market_integrity"] = (
@@ -234,7 +279,7 @@ def build_page1_payload(
             "schedule_primary": "NCAA",
             "identity_primary": "NCAA",
             "market_primary": "FanDuel",
-            "market_secondary": "The Odds API",
+            "market_secondary": ["The Odds API", "Action Network"],
             "provider_calls": consulted,
             "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_INFLUENCE,
             "consensus_averaging": False,
