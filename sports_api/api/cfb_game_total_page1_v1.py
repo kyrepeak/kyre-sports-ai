@@ -54,7 +54,6 @@ def _kickoff(game: Mapping[str, Any]) -> datetime | None:
 
 
 def _load_ncaa_games(day: str) -> list[dict[str, Any]]:
-    """Load only the current official NCAA date-scoped scoreboard path."""
     selected = date.fromisoformat(day).isoformat()
     payload, _attempts = ncaa_schedule._fetch_ncaa_scoreboard_payload(selected)
     if not payload:
@@ -90,9 +89,7 @@ def _dedupe_games(games: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
-def _resolve_slate_date(
-    *, requested: str | None, now: datetime
-) -> tuple[str, list[dict[str, Any]]]:
+def _resolve_slate_date(*, requested: str | None, now: datetime) -> tuple[str, list[dict[str, Any]]]:
     if requested:
         selected = date.fromisoformat(requested).isoformat()
         return selected, _load_ncaa_games(selected)
@@ -116,7 +113,6 @@ def collect_primary_market_rows() -> list[dict[str, Any]]:
 
 
 def collect_secondary_market_rows(missing_games: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Use at most two approved secondaries, and only for uncovered games."""
     if not missing_games:
         return []
     accepted: list[dict[str, Any]] = []
@@ -139,10 +135,7 @@ def collect_secondary_market_rows(missing_games: list[dict[str, Any]]) -> list[d
                     row["source_provider"] = "The Odds API"
                     accepted.append(row)
         if covered:
-            remaining = [
-                game for game in remaining
-                if _clean(game.get("game_id") or game.get("identity_key")) not in covered
-            ]
+            remaining = [game for game in remaining if _clean(game.get("game_id") or game.get("identity_key")) not in covered]
 
     if remaining:
         try:
@@ -159,16 +152,11 @@ def collect_secondary_market_rows(missing_games: list[dict[str, Any]]) -> list[d
     return accepted
 
 
-def _market_state(
-    games: list[dict[str, Any]],
-) -> tuple[dict[str, list[dict[str, Any]]], list[str]]:
+def _market_state(games: list[dict[str, Any]]) -> tuple[dict[str, list[dict[str, Any]]], list[str]]:
     consulted: list[str] = ["FanDuel"]
     primary_rows = collect_primary_market_rows()
     matched = match_market_rows_to_ncaa_games(games, primary_rows)
-    missing = [
-        game for game in games
-        if _clean(game.get("game_id") or game.get("identity_key")) not in matched
-    ]
+    missing = [game for game in games if _clean(game.get("game_id") or game.get("identity_key")) not in matched]
     if missing:
         secondary_rows = collect_secondary_market_rows(missing)
         for provider in ("The Odds API", "Action Network"):
@@ -176,8 +164,6 @@ def _market_state(
                 consulted.append(provider)
         if secondary_rows:
             secondary = match_market_rows_to_ncaa_games(missing, secondary_rows)
-            # Action rows use the same public schema but may need their own
-            # normalization-aware matcher for abbreviated NCAA team names.
             action_secondary = match_action_rows_to_games(missing, secondary_rows)
             for game in missing:
                 game_id = _clean(game.get("game_id") or game.get("identity_key"))
@@ -193,7 +179,10 @@ def _quote_quality(quote: Mapping[str, Any]) -> str:
     complete = all(
         quote.get(key) is not None
         for key in (
-            "over_price", "under_price", "away_spread", "home_spread",
+            "sportsbook", "provider_event_id", "provider_market_id",
+            "over_price", "under_price",
+            "away_spread", "away_spread_price",
+            "home_spread", "home_spread_price",
             "away_moneyline", "home_moneyline", "observed_at_utc",
         )
     )
@@ -225,8 +214,6 @@ def _public_quote(raw: Mapping[str, Any]) -> dict[str, Any]:
 
 def _public_game(game: Mapping[str, Any], quotes: list[dict[str, Any]]) -> dict[str, Any]:
     row = dict(game)
-    # Do not leak legacy forbidden-provider identity fields into the new public
-    # contract even when they are empty on the NCAA object.
     for key in tuple(row):
         if str(key).casefold().startswith("espn"):
             row.pop(key, None)
@@ -239,10 +226,7 @@ def _public_game(game: Mapping[str, Any], quotes: list[dict[str, Any]]) -> dict[
     return row
 
 
-def build_page1_payload(
-    *, game_date: str | None = None,
-    now_provider: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
-) -> dict[str, Any]:
+def build_page1_payload(*, game_date: str | None = None, now_provider: Callable[[], datetime] = lambda: datetime.now(timezone.utc)) -> dict[str, Any]:
     now = now_provider()
     if now.tzinfo is None or now.utcoffset() is None:
         now = now.replace(tzinfo=timezone.utc)
@@ -291,9 +275,7 @@ def build_page1_payload(
 
 
 @router.get("/page1")
-def page1(
-    game_date: str | None = Query(None, min_length=10, max_length=10),
-) -> dict[str, Any]:
+def page1(game_date: str | None = Query(None, min_length=10, max_length=10)) -> dict[str, Any]:
     try:
         return build_page1_payload(game_date=game_date)
     except ValueError as exc:
