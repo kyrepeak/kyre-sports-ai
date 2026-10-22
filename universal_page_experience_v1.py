@@ -22,7 +22,7 @@ a[data-kyre-universal-top="v2"]{position:fixed;right:max(18px,calc(env(safe-area
 a[data-kyre-universal-top="v2"]:focus-visible{outline:2px solid #7dd3fc;outline-offset:3px}
 @media (prefers-reduced-motion:reduce){a[data-kyre-universal-top="v2"]{scroll-behavior:auto}}
 </style>
-<a data-kyre-universal-top="v2" href="#kyre-universal-page-top" aria-label="Back to top">↑ TOP</a>'''
+<a data-kyre-universal-top="v2" data-no-js-fallback-href="#" href="#kyre-universal-page-top" aria-label="Back to top">↑ TOP</a>'''
 
 _CONTROLLER = r'''<script>
 (() => {
