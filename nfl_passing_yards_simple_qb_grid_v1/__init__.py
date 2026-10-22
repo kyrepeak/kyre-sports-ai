@@ -38,7 +38,7 @@ def _canonical_card_html(card: dict[str, Any]) -> str:
 
 
 def _render_detail(st: Any, card: dict[str, Any]) -> None:
-    from nfl_passing_yards_page2_command_center_v2 import render_page2
+    from nfl_passing_yards_page2_command_center_v3 import render_page2
 
     render_page2(st, card)
     # Frozen compatibility anchor: nfl_passing_yards_page2_command_center_v1
