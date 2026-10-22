@@ -1,0 +1,58 @@
+{
+  "version": "API2_UNIVERSAL_TOP_PRODUCTION_REPAIR_V1",
+  "task_id": "api2-universal-top-production-repair-v1",
+  "workstream": "api2-universal-top-production-repair-v1",
+  "original_source_main_sha": "504c7b239555da4a99fe426a86cf2a92893f11c0",
+  "proof_base_main_sha": "504c7b239555da4a99fe426a86cf2a92893f11c0",
+  "goal": "Repair the live universal TOP control so every Streamlit page has an always-present fixed native fallback even when mobile JavaScript scroll-owner detection fails.",
+  "write_paths": [
+    "docs/superpowers/specs/2026-10-21-api2-universal-top-production-repair-v1.md",
+    "docs/superpowers/plans/2026-10-21-api2-universal-top-production-repair-v1.md",
+    "universal_page_experience_v1.py",
+    "universal_page_experience_runtime_v1.py",
+    "tests/test_universal_top_production_repair_v1.py",
+    "devsystem/execution_plans/api2-universal-top-production-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-universal-top-production-repair-v1.json",
+    "devsystem/task_ledgers/api2-universal-top-production-repair-v1.json"
+  ],
+  "constraints": {
+    "universal_shell_ownership": true,
+    "native_top_always_present": true,
+    "top_min_touch_px": 44,
+    "javascript_may_enhance_but_not_own_visibility": true,
+    "loading_contract_unchanged": true,
+    "page_by_page_patches_forbidden": true,
+    "sports_provider_calls": false,
+    "model_projection_probability_mutation": false,
+    "kyre_sports_api_routing_mutation": false,
+    "sgo_forbidden": true,
+    "espn_forbidden": true,
+    "espn_bet_forbidden": true,
+    "repeated_polling_forbidden": true
+  },
+  "step2a": {
+    "authoritative_branch": "api2-universal-top-production-repair-v1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "proof_base_main_sha": "504c7b239555da4a99fe426a86cf2a92893f11c0"
+  },
+  "acceptance": [
+    "A native fixed TOP control exists without requiring JavaScript",
+    "The native control is mounted before the JavaScript controller",
+    "The JavaScript controller reuses the native control instead of creating a duplicate",
+    "TOP has a minimum 44px mobile touch target and safe-area placement",
+    "Existing universal loading and navigation behavior remains green",
+    "No sports data/model/provider files are changed"
+  ],
+  "evidence": {
+    "live_regression": "User production screenshot at 2026-10-21 18:08 America/Phoenix showed no TOP control on CFB Moneyline",
+    "root_cause": "Original tests asserted JavaScript source tokens but did not execute live mobile Streamlit behavior; visibility depended on JavaScript scroll-owner detection",
+    "tdd_red": "2 intended failures: missing native TOP function and runtime native mount",
+    "focused_green": "2 passed",
+    "universal_regression": "51 passed with --noconftest",
+    "compile": "exit 0"
+  },
+  "freeze_token": "API2_UNIVERSAL_TOP_PRODUCTION_REPAIR_V1_FROZEN"
+}
