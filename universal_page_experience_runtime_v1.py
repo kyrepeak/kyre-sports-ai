@@ -11,6 +11,7 @@ from universal_page_experience_v1 import (
     page_experience_controller_markup,
     page_experience_fallback_markup,
     page_experience_native_top_markup,
+    page_experience_top_sentinel_markup,
 )
 
 MODEL_VERSION = "API2 UNIVERSAL PAGE EXPERIENCE RUNTIME V1"
@@ -49,13 +50,23 @@ def _render_page_experience_active(core: ModuleType) -> object | None:
     previous_identity = st.session_state.get(LAST_RENDERED_ROUTE_KEY)
     is_transition = previous_identity is not None and previous_identity != identity
 
+    st.markdown(page_experience_top_sentinel_markup(), unsafe_allow_html=True)
     core._render_site_shell()
-    client_controller = _mount_page_experience_controller(runtime.active)
-    core._render_destination_shell(runtime.active)
 
     transition_slot = st.empty()
     destination_slot = st.empty()
-    if is_transition and not client_controller:
+    if is_transition:
+        transition_slot.markdown(
+            page_experience_fallback_markup(runtime.active),
+            unsafe_allow_html=True,
+        )
+
+    client_controller = _mount_page_experience_controller(runtime.active)
+    core._render_destination_shell(runtime.active)
+
+    # Preserve the prior fail-closed client-mount seam as a redundant safety path.
+    # The server takeover above is now unconditional for transitions.
+    if is_transition and not client_controller :
         transition_slot.markdown(
             page_experience_fallback_markup(runtime.active),
             unsafe_allow_html=True,
@@ -84,8 +95,8 @@ def _render_page_experience_active(core: ModuleType) -> object | None:
         core._assert_active_runtime_health()
         return result
     except Exception:
-        # Fail closed: if the client controller could not mount, keep the opaque
-        # server fallback covering the outgoing page while Streamlit reports the error.
+        # Fail closed: keep the server takeover covering the outgoing page while
+        # Streamlit reports the destination error.
         raise
 
 

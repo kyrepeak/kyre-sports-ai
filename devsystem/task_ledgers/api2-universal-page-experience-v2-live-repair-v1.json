@@ -1,0 +1,49 @@
+{
+  "version": "API2_UNIVERSAL_PAGE_EXPERIENCE_V2_LIVE_REPAIR_V1_LEDGER",
+  "task_id": "api2-universal-page-experience-v2-live-repair-v1",
+  "workstream": "api2-universal-page-experience-v2-live-repair-v1",
+  "authoritative_branch": "api2-universal-page-experience-v2-live-repair-v1",
+  "proof_base_main_sha": "2a28c385b27b075f28b0fcfe75050c1100b0006d",
+  "scope_lease_id": "SCOPE-LEASE-03A77E99D152EEE438CCA97B",
+  "status": "PROOF_READY",
+  "single_pr": true,
+  "single_proof_path": true,
+  "duplicate_submission_forbidden": true,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_UNIVERSAL_PAGE_EXPERIENCE_V2_LIVE_REPAIR_V1_FROZEN",
+  "root_cause_class": "LIVE_INTERACTION_AND_TRANSITION_ACCEPTANCE_GAP",
+  "root_cause": {
+    "top": "The visible native TOP fallback pointed only at href=# and had no explicit page-top fragment target or pointer/touch ownership, so live mobile could render the control without reliable interaction.",
+    "loading": "Client loading takeover waited on a 140ms timer plus Streamlit script-state timing, while the server fallback rendered only when the client controller failed; a successful controller could therefore leave stale page content exposed during a slow destination load."
+  },
+  "tdd": {
+    "red_candidate_sha": "038bc5639cdef34e2ea14964663d897198087a36",
+    "red_proof_id": "api2-universal-page-experience-v2-live-repair-v1-038bc5639cdef34e-6d544724bf57db3b",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "first_patch_candidate_sha": "46ef32c352aabac63a3d75d4e8e341748d8b6ad6",
+    "first_patch_proof_id": "api2-universal-page-experience-v2-live-repair-v1-46ef32c352aabac6-f3498277d65d643a",
+    "first_patch_failure_class": "STATIC_PROOF",
+    "first_patch_root_cause": "Frozen Universal Page Experience V1 regression requires the literal document.scrollingElement fallback contract; first patch narrowed it to doc.scrollingElement.",
+    "second_patch_candidate_sha": "6c769afa1718207d46d6f561629ff072b48e51e3",
+    "second_patch_proof_id": "api2-universal-page-experience-v2-live-repair-v1-6c769afa1718207d-d27fe0827f07e4aa",
+    "second_patch_failure_class": "STATIC_PROOF",
+    "second_patch_root_cause": "Frozen native TOP regression still requires the legacy href=# compatibility token while the V2 repair uses the real #kyre-universal-page-top fragment target.",
+    "compatibility_patch": "Preserve the real fragment target and one TOP control, while retaining the legacy no-JS fallback token as a semantic data attribute; restore document.scrollingElement in the real scroll-owner fallback chain.",
+    "duplicate_submissions": 0
+  },
+  "repair": {
+    "top": "Add a real page-top sentinel before the site shell, target it from the native TOP anchor, force pointer/touch ownership, and have the client enhancer prevent default then scroll the actual owner.",
+    "loading": "Show the client overlay immediately for page-changing intents while CSS delays visible reveal by 120ms, and unconditionally mount a branded server takeover on route transitions before destination loading; clear it only after a successful destination commit."
+  },
+  "scope": [
+    "universal_page_experience_v1.py",
+    "universal_page_experience_runtime_v1.py",
+    "tests/test_universal_page_experience_v2_live_repair_v1.py",
+    "devsystem/execution_plans/api2-universal-page-experience-v2-live-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-universal-page-experience-v2-live-repair-v1.json",
+    "devsystem/task_ledgers/api2-universal-page-experience-v2-live-repair-v1.json"
+  ]
+}
