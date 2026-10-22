@@ -11,7 +11,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_SHA = "2a28c385b27b075f28b0fcfe75050c1100b0006d"
+BASE_SHA = "e3080ff4dc738f3e024e108af86f73a986e51343"
 ALLOWED = {
     "cfb_moneyline_clean_page_v7.py",
     "universal_runtime_v5_loader_v17.py",
