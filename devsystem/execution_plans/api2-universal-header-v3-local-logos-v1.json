@@ -1,0 +1,42 @@
+{
+  "version": "API2_UNIVERSAL_HEADER_V3_LOCAL_LOGOS_V1",
+  "task_id": "api2-universal-header-v3-local-logos-v1",
+  "workstream": "api2-universal-header-v3-local-logos-v1",
+  "original_source_main_sha": "cdab7916dc5e862aa272158ebc57aa1bb0e01e31",
+  "proof_base_main_sha": "cdab7916dc5e862aa272158ebc57aa1bb0e01e31",
+  "goal": "Close the approved Universal Header V3 with five self-contained local league marks and zero runtime image-host dependency while preserving top placement, tap-first navigation, universal loading, TOP behavior, and sports data contracts.",
+  "write_paths": [
+    "universal_sports_nav_ui_v1.py",
+    "tests/test_api2_universal_header_v3.py",
+    "assets/league_logos/league_marks_v1.b64part0",
+    "assets/league_logos/league_marks_v1.b64part1",
+    "assets/league_logos/league_marks_v1.b64part2",
+    "assets/league_logos/league_marks_v1.b64part3",
+    "assets/league_logos/league_marks_v1.b64part4",
+    "assets/league_logos/league_marks_v1.b64part5",
+    "assets/league_logos/league_marks_v1.b64part6",
+    "devsystem/execution_plans/api2-universal-header-v3-local-logos-v1.json",
+    "devsystem/runless_proof_plans/api2-universal-header-v3-local-logos-v1.json",
+    "devsystem/task_ledgers/api2-universal-header-v3-local-logos-v1.json"
+  ],
+  "constraints": {
+    "same_header_owner": true,
+    "local_svg_bundle_only": true,
+    "runtime_logo_hotlinks_forbidden": true,
+    "espn_forbidden": true,
+    "sgo_forbidden": true,
+    "sports_provider_calls": false,
+    "model_projection_probability_mutation": false,
+    "kyre_sports_api_routing_mutation": false,
+    "github_actions_fallback": 0,
+    "anti_loop": true
+  },
+  "acceptance": [
+    "Exactly NFL, CFB, NBA, MLB, WNBA SVG marks reconstruct locally",
+    "Header CSS embeds data:image/svg+xml;base64 URIs and contains no runtime http/https logo URL",
+    "KYRE SPORTS AI and Professional Sports Analytics branding remain",
+    "Header remains before page content, sticky, and mobile horizontally usable",
+    "Tap-first navigation, loader, TOP, and sports data behavior remain unchanged"
+  ],
+  "freeze_token": "API2_UNIVERSAL_HEADER_V3_LOCAL_LOGOS_V1_FROZEN"
+}
