@@ -1,0 +1,37 @@
+{
+  "mode": "runless",
+  "task_id": "api2-cfb-top-picks-page2-analytics-lab-v1",
+  "workstream": "api2-cfb-top-picks-page2-analytics-lab-v1-r1",
+  "source_main_sha": "97f20e155ed040ec95dea2ab89fd522fd990cd72",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page1_cleanup_v4.py", "tests/test_api2_cfb_top_picks_page1_stier_v3.py", "tests/test_api2_universal_nav_tap_first_handoff_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py"],
+    ["python", "-m", "py_compile", "app.py", "kyre_sports_api_vercel_v1.py", "cfb_top_picks_page_v16.py", "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1.py", "sports_api/api/cfb_top_picks_page2_v1.py"]
+  ],
+  "artifacts": [
+    "app.py",
+    "cfb_top_picks_page_v16.py",
+    "kyre_sports_api_vercel_v1.py",
+    "sports_api/api/cfb_top_picks_page2_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1.py",
+    "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py",
+    "devsystem/runless_proof_plans/api2-cfb-top-picks-page2-analytics-lab-v1.json",
+    "devsystem/task_ledgers/api2-cfb-top-picks-page2-analytics-lab-v1.json"
+  ],
+  "dependencies": [
+    "sports_api/api/cfb_top_picks_page1_v4.py",
+    "sports_api/api/cfb_moneyline_page1_v1.py",
+    "sports_api/api/cfb_game_total_page1_v1.py",
+    "cfb_over_under_model_v1.py",
+    "cfb_player_props_fanduel_bound_v2.py",
+    "cfb_player_props_odds_api_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": ["API2_CFB_TOP_PICKS_PAGE1_CLEANUP_V4_FROZEN"],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_ANALYTICS_LAB_V1_FROZEN"
+}

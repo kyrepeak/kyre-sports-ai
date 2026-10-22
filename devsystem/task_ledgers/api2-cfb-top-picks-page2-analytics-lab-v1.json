@@ -1,0 +1,10 @@
+{
+  "task_id": "api2-cfb-top-picks-page2-analytics-lab-v1",
+  "workstream": "api2-cfb-top-picks-page2-analytics-lab-v1-r1",
+  "state": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "97f20e155ed040ec95dea2ab89fd522fd990cd72",
+  "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_ANALYTICS_LAB_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "github_actions_fallback": 0,
+  "next_legal_action": "AUTHORITATIVE_RUNLESS_PROOF_AFTER_SCOPE_THAW_PREVIEW"
+}
