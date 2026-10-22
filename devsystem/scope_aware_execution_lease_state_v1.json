@@ -1,6 +1,34 @@
 {
-  "generation": 680,
+  "generation": 681,
   "holders": [
+    {
+      "owner_id": "api2-universal-header-v3",
+      "lease_id": "SCOPE-LEASE-34F936EF2CA2DCC57042423F",
+      "generation": 681,
+      "acquired_at_utc": "2026-10-22T03:52:19Z",
+      "heartbeat_at_utc": "2026-10-22T03:52:19Z",
+      "expires_at_utc": "2026-10-22T04:52:19Z",
+      "scope": {
+        "write_paths": [
+          "assets/league_logos/cfb.svg",
+          "assets/league_logos/mlb.svg",
+          "assets/league_logos/nba.svg",
+          "assets/league_logos/nfl.svg",
+          "assets/league_logos/wnba.svg",
+          "devsystem/execution_plans/api2-universal-header-v3.json",
+          "devsystem/runless_proof_plans/api2-universal-header-v3.json",
+          "devsystem/task_ledgers/api2-universal-header-v3.json",
+          "tests/test_api2_universal_header_v3.py",
+          "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
+          "universal_page_experience_runtime_v1.py",
+          "universal_sports_nav_ui_v1.py"
+        ],
+        "dependency_tokens": ["domain:api2-universal-header-v3"],
+        "shared_resources": ["streamlit:universal-page-experience", "streamlit:universal-sports-nav"],
+        "resource_identity": {"source_main_sha": "cdab7916dc5e862aa272158ebc57aa1bb0e01e31"},
+        "exclusive": false
+      }
+    },
     {
       "acquired_at_utc": "2026-10-22T03:34:30Z",
       "expires_at_utc": "2026-10-22T04:34:30Z",
@@ -21,36 +49,13 @@
           "tests/test_monster_cfb_moneyline_stier_live_api_repair_v1.py"
         ]
       }
-    },
-    {
-      "owner_id": "api2-universal-header-v3",
-      "lease_id": "SCOPE-LEASE-6E7A9FDBA42FFE131FF23B9E",
-      "generation": 680,
-      "acquired_at_utc": "2026-10-22T03:42:20Z",
-      "heartbeat_at_utc": "2026-10-22T03:42:20Z",
-      "expires_at_utc": "2026-10-22T04:42:20Z",
-      "scope": {
-        "write_paths": [
-          "devsystem/execution_plans/api2-universal-header-v3.json",
-          "devsystem/runless_proof_plans/api2-universal-header-v3.json",
-          "devsystem/task_ledgers/api2-universal-header-v3.json",
-          "tests/test_api2_universal_header_v3.py",
-          "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
-          "universal_page_experience_runtime_v1.py",
-          "universal_sports_nav_ui_v1.py"
-        ],
-        "dependency_tokens": ["domain:api2-universal-header-v3"],
-        "shared_resources": ["streamlit:universal-page-experience", "streamlit:universal-sports-nav"],
-        "resource_identity": {"source_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b"},
-        "exclusive": false
-      }
     }
   ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 1246,
+  "revision": 1248,
   "schema_version": 1,
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
-  "state_hash": "2ce4007c7c5425d7cf640fbf3961926fb04f8da62ba2b705a1c36a971e7cf9dc"
+  "state_hash": "74d64621ef1768b6b38c0e8ca39d9638ad435d525e8620a0c63faed1b419b416"
 }
