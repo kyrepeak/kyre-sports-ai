@@ -100,3 +100,36 @@ def test_slate_prefers_successor_fanduel_parser_and_falls_back_only_when_needed(
     monkeypatch.setattr(slate.market_fill, "collect_fanduel_game_markets", lambda game: [])
     monkeypatch.setattr(slate.base, "collect_market_observations", lambda game: [{"sportsbook":"The Odds API", "line":245.5}])
     assert slate._collect_market_observations(game) == [{"sportsbook":"The Odds API", "line":245.5}]
+
+
+def test_market_listed_qb_reconciliation_uses_unique_team_nflverse_identity():
+    slate = importlib.import_module("sports_api.api.nfl_passing_yards_slate_v1")
+    rows = [
+        {"team":"ATL", "qb_name":"C.Rush", "player_source_id":"00-1", "attempts":20},
+        {"team":"ATL", "qb_name":"M.Penix", "player_source_id":"00-2", "attempts":35},
+        {"team":"PHI", "qb_name":"J.Hurts", "player_source_id":"00-3", "attempts":31},
+        {"team":"PHI", "qb_name":"T.McKee", "player_source_id":"00-4", "attempts":48},
+        {"team":"NYG", "qb_name":"J.Winston", "player_source_id":"00-5", "attempts":30},
+        {"team":"NYG", "qb_name":"J.McCarthy", "player_source_id":"00-6", "attempts":24},
+    ]
+    observations = [
+        {"team_abbr":"ATL", "player_name":"Michael Penix Jr."},
+        {"team_abbr":"PHI", "player_name":"Tanner McKee"},
+        {"team_abbr":"NYG", "player_name":"J.J McCarthy"},
+    ]
+    atl = slate._current_rows_for_market_qb("ATL", rows, observations)
+    phi = slate._current_rows_for_market_qb("PHI", rows, observations)
+    nyg = slate._current_rows_for_market_qb("NYG", rows, observations)
+    assert {r["player_source_id"] for r in atl if r["team"] == "ATL"} == {"00-2"}
+    assert {r["player_source_id"] for r in phi if r["team"] == "PHI"} == {"00-4"}
+    assert {r["player_source_id"] for r in nyg if r["team"] == "NYG"} == {"00-6"}
+
+
+def test_market_qb_reconciliation_fails_closed_on_ambiguous_identity():
+    slate = importlib.import_module("sports_api.api.nfl_passing_yards_slate_v1")
+    rows = [
+        {"team":"ATL", "qb_name":"M.Penix", "player_source_id":"00-2", "attempts":35},
+        {"team":"ATL", "qb_name":"M.Penix", "player_source_id":"00-9", "attempts":1},
+    ]
+    observations = [{"team_abbr":"ATL", "player_name":"Michael Penix Jr."}]
+    assert slate._current_rows_for_market_qb("ATL", rows, observations) == rows
