@@ -1,0 +1,57 @@
+{
+  "artifact_map": {
+    "app.py": "0da0bcda77add64387074ae1391f09e71e419322",
+    "cfb_top_picks_page_v14.py": "ca6e5f63a24ed7de8592455be962e96eb8989b10",
+    "devsystem/cfb_top_picks_page1_stier_source_policy_v3.py": "e9b075d20b79550319f7d681c1fdf48e50291ab4",
+    "devsystem/runless_proof_plans/api2-cfb-top-picks-page1-stier-v3.json": "449540a55c8a5a209c2eee0237c46e0bd9adb01c",
+    "kyre_sports_api_vercel_v1.py": "a5f9e0a54d8824e546a69bd5fe44b291d9ca4c23",
+    "sports_api/api/cfb_top_picks_page1_v3.py": "d540b96f354da9fb4b7a2d6605e70ca5d8b7f6bc",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v3.py": "d323e6239580a3cad431cf19335c184e88bdb4dc",
+    "tests/test_api2_cfb_top_picks_page1_stier_v3.py": "fc0c7b038e6ef730ffe1717cf09a844e6852f76a"
+  },
+  "candidate_sha": "a6c1ff66873f1f172d729702f952cff98d7b5aef",
+  "created_at": "2026-10-22T17:08:52.983088+00:00",
+  "dependency_map": {
+    "cfb_over_under_model_v1.py": "d81c32b3f48df950820c2746c4e575204a987d43",
+    "cfb_player_props_fanduel_bound_v2.py": "a147504ca8a1c6734fd3eeb77ee77f45d5b343bc",
+    "cfb_player_props_odds_api_v1.py": "788bf6e025cc4d9c8ee8772bb81eacaac2fe4968",
+    "sports_api/api/cfb_moneyline_page1_v1.py": "608eaf4ba9ca4ccd44dbee779eac43694dc351e3",
+    "sports_api/api/cfb_top_picks_page1_v2.py": "40ae38b930e34f36b254400361b3ce43ef61fac7"
+  },
+  "digest": "0ae76def05a60d15b54972edc375e4f867d11f7d9b1f0f781833df023c4ca607",
+  "evidence_digests": [
+    "4335bde60a9e7c8404f0faa94b46323e8b504a22d4dd92eed43829771f2ca05a",
+    "94cabf13ee03ae1b38e0a8d495a6276e220040b0847700b17d8f2fbae5235f07",
+    "b97a80902166b99541af2dc5f2ea70da97481fcb60a7c6dc7e900cc1601f84c0",
+    "ec113b3569d88c1908a6b905501c8c3dd63268a6db0147dc9005f1d687374e4d"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "0f68137998996119b60dc5dbf39a9cab2134c8ebdf91f66a21d618c6f18d8764",
+  "proof_id": "api2-cfb-top-picks-page1-stier-v3-a6c1ff66873f1f17-9e72f4d6a9c708d2",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-CFB-TOP-PICKS-V3-APP-R1"
+    ],
+    "revision": 476,
+    "state_hash": "73007492c1d68e9beb049af6ee53a8177609707f69a978a8da36fd62eba2b162"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-CFB-TOP-PICKS-V3-APP-R1"
+    ],
+    "revision": 476,
+    "state_hash": "73007492c1d68e9beb049af6ee53a8177609707f69a978a8da36fd62eba2b162"
+  },
+  "request_fingerprint": "45faabca87deb916dd0c1925ef872ca8de0d6473c5e2065d97b8213a44f6eb6f",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-top-picks-page1-stier-v3",
+  "workstream": "api2-cfb-top-picks-page1-stier-v3-r1"
+}
