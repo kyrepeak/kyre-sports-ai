@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-readtimeout-v1.json": "6790165b8c8ccaa7986b7cf174466642c7a89d7b",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-readtimeout-v1.json": "b0ffeaacf833e6b13484677045e2ba30eb451db1",
+    "sports_api/api/nfl_passing_yards_slate_v1.py": "80b555f6ea83a2c91ad0835d377bf840a504e1df",
+    "tests/test_api2_nfl_passing_yards_readtimeout_v1.py": "3f148a33ac870f16d893f20d004f90157cfe215e"
+  },
+  "candidate_sha": "3f9f6df637d1794cee1a5f380ff8148d479eb290",
+  "created_at": "2026-10-22T20:10:53.418892+00:00",
+  "dependency_map": {
+    "nfl_passing_yards_simple_qb_grid_v1.py": "f8116e16fbbd046eeb2ea9dd07ed3a2ecd9731e9",
+    "nfl_passing_yards_slate_gateway_v1.py": "4df9b36ce53616db192666d0a33f0bd89a944edb",
+    "sports_api/api/nfl_passing_yards_page_v1.py": "26b839f1171d8b39fa828e0e416d9d8972b209b1",
+    "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py": "7da3af433d8f1e8b92ea3c5d11c84c0a936dd3a9"
+  },
+  "digest": "a557e907016392e50796a77a5360a6e5fce12ee0632a189926964c48bc7adf36",
+  "evidence_digests": [
+    "002f5cd1f994c633d30aecacfb21f669af1cb9c4ba633e016695d11224dc05d5",
+    "ff25582128dc62b660a45930ef15d42adf9e9a07d5ffcaa03cc5658040799f80",
+    "9a4ef0a0152b3dd2d0813d28d0aca9cbfad1447d9e352f3ea1702e608f7cc349"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f970c9d2c28ea8ed7725a419ad257eba7059108c790d5bae5452f2ef53fe5dbb",
+  "proof_id": "api2-nfl-passing-yards-readtimeout-v1-3f9f6df637d1794c-d500ad0b40df93d5",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 480,
+    "state_hash": "6914b7220c21d40b34f0a4b41f33f7c9b10d2546befd6db4c3a1699ae315d7a6"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 480,
+    "state_hash": "6914b7220c21d40b34f0a4b41f33f7c9b10d2546befd6db4c3a1699ae315d7a6"
+  },
+  "request_fingerprint": "b52b3201e883ceb75401106d49c607f8f45f4a1f8871eb2e072d2787d933a617",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-passing-yards-readtimeout-v1",
+  "workstream": "api2-nfl-passing-yards-readtimeout-v1"
+}
