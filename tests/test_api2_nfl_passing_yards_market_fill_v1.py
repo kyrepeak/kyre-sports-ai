@@ -133,3 +133,17 @@ def test_market_qb_reconciliation_fails_closed_on_ambiguous_identity():
     ]
     observations = [{"team_abbr":"ATL", "player_name":"Michael Penix Jr."}]
     assert slate._current_rows_for_market_qb("ATL", rows, observations) == rows
+
+
+def test_player_market_alias_normalization_is_team_scoped_and_preserves_source_name():
+    slate = importlib.import_module("sports_api.api.nfl_passing_yards_slate_v1")
+    observations = [
+        {"team_abbr":"ATL", "player_name":"Michael Penix Jr.", "line":227.5, "sportsbook":"FanDuel"},
+        {"team_abbr":"SF", "player_name":"Michael Penix Jr.", "line":999.5, "sportsbook":"Other"},
+    ]
+    player = {"team_abbr":"ATL", "qb_name":"M.Penix"}
+    normalized = slate._observations_for_player(player, observations)
+    assert normalized[0]["player_name"] == "M.Penix"
+    assert normalized[0]["source_player_name"] == "Michael Penix Jr."
+    assert normalized[1]["player_name"] == "Michael Penix Jr."
+    assert observations[0]["player_name"] == "Michael Penix Jr."
