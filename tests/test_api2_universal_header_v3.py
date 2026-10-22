@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from base64 import b64decode
+from io import BytesIO
 import inspect
 from pathlib import Path
+import tarfile
 
 import universal_page_experience_runtime_v1 as runtime
 import universal_sports_nav_ui_v1 as nav
@@ -23,13 +26,20 @@ def test_header_brand_is_professional_and_sport_labels_are_words_only() -> None:
 
 
 def test_every_sport_logo_is_local_and_embedded_without_runtime_hotlinks() -> None:
-    assert set(nav._SPORT_LOGO_ASSET_PATHS) == {"nfl", "cfb", "nba", "mlb", "wnba"}
-    assert set(nav._SPORT_LOGO_DATA_URIS) == {"nfl", "cfb", "nba", "mlb", "wnba"}
-    for sport_id, relative_path in nav._SPORT_LOGO_ASSET_PATHS.items():
-        asset = Path(nav.__file__).resolve().parent / relative_path
-        assert asset.is_file(), f"missing local {sport_id} league mark"
-        assert "<svg" in asset.read_text(encoding="utf-8").lower()
-        assert nav._SPORT_LOGO_DATA_URIS[sport_id].startswith("data:image/svg+xml;base64,")
+    expected = {"nfl", "cfb", "nba", "mlb", "wnba"}
+    assert len(nav._SPORT_LOGO_BUNDLE_PARTS) == 7
+    root = Path(nav.__file__).resolve().parent
+    encoded = "".join((root / part).read_text(encoding="ascii").strip() for part in nav._SPORT_LOGO_BUNDLE_PARTS)
+    archive = b64decode(encoded)
+    with tarfile.open(fileobj=BytesIO(archive), mode="r:gz") as bundle:
+        assert set(bundle.getnames()) == {f"{sport_id}.svg" for sport_id in expected}
+        for sport_id in expected:
+            member = bundle.extractfile(f"{sport_id}.svg")
+            assert member is not None
+            assert "<svg" in member.read().decode("utf-8").lower()
+
+    assert set(nav._SPORT_LOGO_DATA_URIS) == expected
+    assert all(uri.startswith("data:image/svg+xml;base64,") for uri in nav._SPORT_LOGO_DATA_URIS.values())
     joined = " ".join(nav._SPORT_LOGO_DATA_URIS.values()).lower()
     assert "http://" not in joined
     assert "https://" not in joined
