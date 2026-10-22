@@ -163,9 +163,30 @@ def _current_rows_for_market_qb(team: str, current_rows: list[dict[str, Any]], o
     ]
 
 
+def _observations_for_player(player: dict[str, Any], observations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    team = _text(player.get("team_abbr")).upper()
+    qb_name = _text(player.get("qb_name"))
+    target_key = _name_key(qb_name)
+    normalized: list[dict[str, Any]] = []
+    for raw in observations:
+        row = dict(raw)
+        source_name = _text(row.get("player_name"))
+        if (
+            team
+            and target_key is not None
+            and _text(row.get("team_abbr")).upper() == team
+            and _name_key(source_name) == target_key
+        ):
+            row["source_player_name"] = source_name
+            row["player_name"] = qb_name
+        normalized.append(row)
+    return normalized
+
+
 def _enrich_player(player: dict[str, Any], *, game: dict[str, Any], observations: list[dict[str, Any]]) -> dict[str, Any]:
     projection = (player.get("context_projection") or {}).get("context_projection_yards")
-    snapshot = base.build_market_snapshot(observations, qb_name=_text(player.get("qb_name")), projection_yards=projection)
+    player_observations = _observations_for_player(player, observations)
+    snapshot = base.build_market_snapshot(player_observations, qb_name=_text(player.get("qb_name")), projection_yards=projection)
     player = dict(player)
     player["market"] = snapshot if snapshot.get("ready") else None
     player["market_evaluation"] = base._market_evaluation(player, snapshot)
