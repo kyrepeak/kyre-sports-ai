@@ -2,7 +2,7 @@
   "mode": "runless",
   "task_id": "api2-universal-header-v3",
   "workstream": "api2-universal-header-v3",
-  "source_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
+  "source_main_sha": "cdab7916dc5e862aa272158ebc57aa1bb0e01e31",
   "commands": [
     ["python", "-m", "pytest", "--noconftest", "-q",
       "tests/test_api2_universal_header_v3.py",
@@ -25,6 +25,13 @@
     "universal_sports_nav_ui_v1.py",
     "tests/test_api2_universal_header_v3.py",
     "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
+    "assets/league_logos/league_marks_v1.b64part0",
+    "assets/league_logos/league_marks_v1.b64part1",
+    "assets/league_logos/league_marks_v1.b64part2",
+    "assets/league_logos/league_marks_v1.b64part3",
+    "assets/league_logos/league_marks_v1.b64part4",
+    "assets/league_logos/league_marks_v1.b64part5",
+    "assets/league_logos/league_marks_v1.b64part6",
     "devsystem/execution_plans/api2-universal-header-v3.json",
     "devsystem/runless_proof_plans/api2-universal-header-v3.json",
     "devsystem/task_ledgers/api2-universal-header-v3.json"
