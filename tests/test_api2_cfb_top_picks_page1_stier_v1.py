@@ -73,7 +73,7 @@ def _analysis(idx: int, *, ready: bool = True) -> dict:
 def test_top_picks_api_dedupes_by_canonical_ncaa_game_id_and_backfills_to_ten():
     api = _load_api()
     games = [_fake_game(i) for i in range(1, 12)]
-    games.insert(5, _fake_game(99, game_id="ncaa-03"))  # same canonical game, conflicting display row
+    games.insert(5, _fake_game(99, game_id="ncaa-03"))
     analyses = {f"ncaa-{i:02d}": _analysis(i) for i in range(1, 12)}
 
     picks = api.rank_moneyline_games(games, analyses, limit=10)
@@ -108,6 +108,27 @@ def test_missing_market_data_stays_null_not_zero_and_does_not_fabricate_edge():
     assert pick["best_price"] is None
     assert pick["market_implied_probability"] is None
     assert pick["model_edge_pp"] is None
+
+
+def test_fanduel_matcher_normalizes_ncaa_display_aliases_without_fuzzy_guessing():
+    from sports_api.collectors.cfb_fanduel_moneyline_v1 import match_moneylines_to_ncaa_games
+
+    games = [
+        {"game_id": "fa", "away_team": "Rice", "home_team": "Fla. Atlantic"},
+        {"game_id": "mia", "away_team": "Pittsburgh", "home_team": "Miami (FL)"},
+        {"game_id": "troy", "away_team": "ULM", "home_team": "Troy"},
+    ]
+    rows = [
+        {"sportsbook": "FanDuel", "provider_event_id": "1", "provider_market_id": "m1", "away_team": "Rice", "home_team": "Florida Atlantic", "away_price": 255, "home_price": -320},
+        {"sportsbook": "FanDuel", "provider_event_id": "2", "provider_market_id": "m2", "away_team": "Pittsburgh", "home_team": "Miami Florida", "away_price": 980, "home_price": -2000},
+        {"sportsbook": "FanDuel", "provider_event_id": "3", "provider_market_id": "m3", "away_team": "UL Monroe", "home_team": "Troy", "away_price": 460, "home_price": -650},
+    ]
+
+    matched = match_moneylines_to_ncaa_games(games, rows)
+    assert set(matched) == {"fa", "mia", "troy"}
+    assert matched["fa"][0]["home_price"] == -320
+    assert matched["mia"][0]["home_price"] == -2000
+    assert matched["troy"][0]["home_price"] == -650
 
 
 def test_page_is_kyre_api_only_and_exposes_professional_decision_metrics():
