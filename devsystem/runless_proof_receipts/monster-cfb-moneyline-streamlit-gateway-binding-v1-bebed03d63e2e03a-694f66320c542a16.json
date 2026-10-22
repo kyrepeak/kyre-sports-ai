@@ -1,0 +1,44 @@
+{
+  "artifact_map": {
+    "devsystem/cfb_moneyline_streamlit_gateway_binding_source_policy_v1.py": "f280cd759cbbcf4a6d17e64dfac9fa7c1cb0d594",
+    "devsystem/runless_proof_plans/monster-cfb-moneyline-streamlit-gateway-binding-v1.json": "cfbc76677345c246203b138e202427bd4bc0fed0",
+    "tests/test_monster_cfb_moneyline_streamlit_gateway_binding_v1.py": "84b4247a8383875a8534c3fd8958af395c699e97",
+    "universal_runtime_v5_loader_v17.py": "0c1db40122aefe0f65b9543bd84cece10e6724fe"
+  },
+  "candidate_sha": "bebed03d63e2e03a93b7c78d08eab87665b6f4bf",
+  "created_at": "2026-10-22T07:09:35.243531+00:00",
+  "dependency_map": {},
+  "digest": "7d9bde2c534e35e98142e2ab134313a21e07ad08397c4a9fd5296dea921c9282",
+  "evidence_digests": [
+    "e7ff46a05344ecb00f1200e37f6f158854b21c10a4b7fe2cdd54eb4bf7cb1246",
+    "68bb7f5ee2955c542b17079b3ccae0c7790d989b51352084212eb48760f23ac6",
+    "b57140443fea506d2d4aa3c44fe41d5c38ca66d99eab8373bbb2ebd7aad792e1"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "04d1c7dd36d71a328579ef54ab47721c8846a8744967c480a5c3e9845159bec2",
+  "proof_id": "monster-cfb-moneyline-streamlit-gateway-binding-v1-bebed03d63e2e03a-694f66320c542a16",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "28c1aecb3e81a0c66c1c68591f5b8c4eac029e10856d119b063121e9906374c6",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-moneyline-streamlit-gateway-binding-v1",
+  "workstream": "monster-cfb-moneyline-streamlit-gateway-binding-v1"
+}
