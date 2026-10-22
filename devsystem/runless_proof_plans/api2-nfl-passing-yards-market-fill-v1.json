@@ -1,0 +1,64 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-market-fill-v1",
+  "workstream": "api2-nfl-passing-yards-market-fill-v1",
+  "source_main_sha": "6e821d99351ae84b6ef8577392a0cff1f47c7454",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "sports_api/api/nfl_passing_yards_slate_v1.py",
+      "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py",
+      "tests/test_api2_nfl_passing_yards_market_fill_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_passing_yards_market_fill_v1.py",
+      "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py",
+      "tests/test_api2_nfl_passing_yards_page1_stier_v2.py",
+      "tests/test_api2_nfl_passing_yards_identity_visuals_v1.py",
+      "tests/test_api2_nfl_passing_yards_professional_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_nfl_passing_yards_step7_projection_v1.py",
+      "tests/test_nfl_passing_yards_step8_context_v1.py",
+      "tests/test_nfl_passing_yards_step9_distribution_v1.py",
+      "tests/test_nfl_passing_yards_step10_market_v1.py",
+      "-k",
+      "not route"
+    ]
+  ],
+  "artifacts": [
+    "sports_api/api/nfl_passing_yards_slate_v1.py",
+    "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py",
+    "tests/test_api2_nfl_passing_yards_market_fill_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-market-fill-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-market-fill-v1.json"
+  ],
+  "dependencies": [
+    "sports_api/api/nfl_passing_yards_page_v1/__init__.py",
+    "sports_api/api/nfl_passing_yards_page_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1.py",
+    "nfl_passing_yards_professional_v1/__init__.py"
+  ],
+  "dependency_tokens": [
+    "domain:api2-nfl-passing-yards-market-fill-v1"
+  ],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_MARKET_FILL_V1_FROZEN",
+  "notes": "All-player NFL Passing Yards market-fill successor. Kyre Sports API only; no SGO/ESPN/ESPN BET. NFLverse owns schedule/stats/canonical player identity. FanDuel direct parser supports current result.type roles, americanOddsInt, dynamic passing tabs and FDX selection-to-QB mapping. Team-scoped unique NFLverse reconciliation prevents stale recent-usage QB cards and normalizes verified source aliases without changing the source name. Live candidate evidence on 2026-10-22: 14 games, 28 cards, 27 verified FanDuel-published two-way markets; Lamar Jackson remains explicit NOT_AVAILABLE because FanDuel publishes no two-way Passing Yards market for Baltimore in that event. No fabricated lines, no missing-to-zero, no sportsbook line averaging."
+}
