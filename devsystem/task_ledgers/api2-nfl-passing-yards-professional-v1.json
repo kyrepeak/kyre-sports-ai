@@ -1,0 +1,22 @@
+{
+  "task_id": "api2-nfl-passing-yards-professional-v1",
+  "workstream": "api2-nfl-passing-yards-professional-v1",
+  "status": "RED_PENDING",
+  "source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d",
+  "scope_lease_id": "SCOPE-LEASE-5D261942CA162395DEE017FB",
+  "active_problem": "NFL Passing Yards live page is visually overloaded and its active request path still depends on prohibited ESPN-era identity/data transport.",
+  "root_cause": "Universal Runtime V5 targets nfl_passing_yards_hub_v42, whose inherited slate/context/market path is built on legacy ESPN identities; presentation wrappers cannot satisfy the zero-ESPN gateway contract.",
+  "required_outcomes": [
+    "decision-first S-tier page",
+    "QB vs team history",
+    "pass-defense ranking grade",
+    "Kyre Sports API only application gateway",
+    "no SGO/ESPN/ESPN BET active path",
+    "projection math parity",
+    "missing data fail closed"
+  ],
+  "tdd": {"red_verified": false, "green_verified": false},
+  "proof": {"proof_id": null, "state": null, "failure_class": null},
+  "merge": {"pr": null, "merged_main_sha": null},
+  "freeze_token": "API2_NFL_PASSING_YARDS_PROFESSIONAL_V1_FROZEN"
+}
