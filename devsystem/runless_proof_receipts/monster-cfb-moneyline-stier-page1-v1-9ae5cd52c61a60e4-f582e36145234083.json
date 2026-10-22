@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "cfb_moneyline_clean_page_v7.py": "f6eed57f05f7337e6b4b31854a125345ba2b4c27",
+    "devsystem/cfb_moneyline_stier_page1_source_policy_v1.py": "bdc7f2dc05f2ebe8ae45c6ae6fbef520101820a7",
+    "devsystem/runless_proof_plans/monster-cfb-moneyline-stier-page1-v1.json": "0feb0a69224f912201443b6dc63e31ac25b3120e",
+    "sports_api/api/cfb_moneyline_page1_v1.py": "608eaf4ba9ca4ccd44dbee779eac43694dc351e3",
+    "sports_api/api/health.py": "ceb2a052af218c4fd9ed41022946d6759e118262",
+    "sports_api/collectors/cfb_fanduel_moneyline_v1.py": "44be1398cfa35774de5041058dabcb11247681bb",
+    "sports_api/tests/test_cfb_moneyline_page1_v1.py": "4f4f6123bcbb2e2acc668c1b30290972e5d960af",
+    "tests/test_monster_cfb_moneyline_stier_page1_v1.py": "43a7267a45ec34187f4f0a1e4cdc1e4867ba0fc4",
+    "universal_runtime_v5_loader_v17.py": "cbde58bfda8335e4b1ecdde16fa678dcd60bca38"
+  },
+  "candidate_sha": "9ae5cd52c61a60e46bffdcec90901c61a48f76b9",
+  "created_at": "2026-10-22T03:19:54.224743+00:00",
+  "dependency_map": {
+    "cfb_moneyline_clean_page_v1.py": "f166bf356584a8588e7a3b771d2f08144b0cb2c8",
+    "cfb_moneyline_clean_page_v3.py": "1e064d591212f0d793f327abca6a14ff3b81c9c1",
+    "cfb_moneyline_clean_page_v4.py": "fb8f070080b3fa17c1ecf1641c3fd27a0b8ed9d7",
+    "cfb_moneyline_clean_page_v5.py": "8209181103015ed1fdde2810c38cd8c418fc8c69",
+    "cfb_moneyline_clean_page_v6.py": "0a93fa0ccc8c301934e9618273bceaaa9eab543f",
+    "cfb_moneyline_final_v1.py": "5ab8184b966166a80e0f49e18a5a4d03fb3cb4b1",
+    "cfb_moneyline_model_v1.py": "fe8f14fd10a56373c05a2d86b76e4154b8dad6ba",
+    "cfb_schedule_v3.py": "17ad7f7c530f1459652a27204279746cae1edce7",
+    "cfb_team_data_v1.py": "146963ce5fe51409a84c8681ffab90d2512d4950",
+    "sports_api/collectors/cfb_fanduel_direct.py": "e9f747c793e80595070100724aa0ea802a08e252"
+  },
+  "digest": "cb0c0a842608c3fd95a85312d7676b5b88920ae41f8b587a617326295d3396ba",
+  "evidence_digests": [
+    "5c79431d9a0e092b4842439f7d3cf25489e575d6b4bcf34aca87d92c56884137",
+    "6050fb1e403c5c42d0adc95830734624b29cf5a9547ab67fe0b5da1a8492e326",
+    "d533b2145e2d716de6f2324c931e3cc52f603a2496f45cb3c9bc606662eed450"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "80199cdac22227d90c84e16a6edad6b8857a6a36b6ea5d5a62c2dd52dc68e0ce",
+  "proof_id": "monster-cfb-moneyline-stier-page1-v1-9ae5cd52c61a60e4-f582e36145234083",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "abf07ed1e1232c44bfa091d10c6c89e9745363f8a9322c1f7febb109a3622440",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-moneyline-stier-page1-v1",
+  "workstream": "monster-cfb-moneyline-stier-page1-v1"
+}
