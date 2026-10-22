@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-finalizer-import-repair-v1.json": "34be0f276a56e644527afeae2622152629d208e5",
+    "vercel_finalizer/publish_gate_build.py": "aa3fc0b1bb3e46abdb8354e6ce7cadae78fc21cf",
+    "vercel_finalizer/receipt_binding.py": "014173229ae328de2b16b09d94a60b76c1f8737a",
+    "vercel_finalizer/receipt_contract.py": "e655901f57c63b107f54d512ca80999ef588b928",
+    "vercel_finalizer/test_publish_gate_build.py": "6684e42712b256a63e2ee9ea69993d6c633b8bee",
+    "vercel_finalizer/test_vercel_subdir_bootstrap.py": "5197eacb9c476fa1266b4a6f1ce17358025bf935",
+    "vercel_finalizer/vercel_finalizer.py": "c95a0a338c80ea426c42293f59e2e3383ea08c98"
+  },
+  "candidate_sha": "472db7eb97b1aa807f8d1139b9bccc5f429561d2",
+  "created_at": "2026-10-22T08:03:02.521071+00:00",
+  "dependency_map": {
+    "runless_v2/receipt_contract.py": "8ff66c09746e54aa52f5aaecb3b28ead020679e3",
+    "tests/test_api2_nfl_passing_yards_professional_v1.py": "7a302da40954eb961508b2e51886d5606daa9da7",
+    "vercel_finalizer/app.py": "155102625e38862a0d77c6776858f1261615cab7",
+    "vercel_finalizer/authority.py": "9e6052b11690772bc8f1091e97f550af9efeeb0e",
+    "vercel_finalizer/gate_publication.py": "ade1f0111fe9ff85d3da278d7d259442b9ea65c2"
+  },
+  "digest": "16cd263fae2ec38c2f0255b25f898f5ced94a048f48059e1c32b9088b154a92a",
+  "evidence_digests": [
+    "adb4f2e15f0977f8dc9d6ef1150469fc35587304d196e9e6ab0cb3456ec9a2f7",
+    "ecaf9aa7257f30803232d410fccc3d53ccbd2c63e6545762072b8309a91e77ca",
+    "bd65096b46c06893bf1dc3503ee6457acd3defc9763375dc305794219fbc19a3",
+    "423f6947b8fad2b1134cb3c56501bf4dc627ba1736e744486b5254f581d5a9ee"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "bffe8fa57fa819017ae1c5cb66147e999e8291940d1cce588d314e86bc2bb163",
+  "proof_id": "api2-nfl-passing-yards-finalizer-import-repair-v1-472db7eb97b1aa80-f3f7fd86cf01843b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "18c3cf20d814c117e4289086bd6628ebda68724f441815342a128e42d65b2505",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-passing-yards-finalizer-import-repair-v1",
+  "workstream": "api2-nfl-passing-yards-finalizer-import-repair-v1"
+}
