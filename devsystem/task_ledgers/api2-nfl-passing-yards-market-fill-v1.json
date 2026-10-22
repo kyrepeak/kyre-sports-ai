@@ -3,7 +3,8 @@
   "workstream": "api2-nfl-passing-yards-market-fill-v1",
   "status": "IMPLEMENTED_PROOF_PENDING",
   "source_main_sha": "6e821d99351ae84b6ef8577392a0cff1f47c7454",
-  "scope_lease_id": "SCOPE-LEASE-413274848B10AF5C03D13E81",
+  "scope_lease_id": "SCOPE-LEASE-BDF29156F3BED568BB18C610",
+  "scope_lease_generation": 707,
   "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-MARKET-FILL-V1-R1",
   "active_problem": "NFL Passing Yards Page 1 retained all 28 QB cards but current live sportsbook market data was missing or mismatched for most cards because the legacy FanDuel parser did not support the current payload shape and recent-usage QB identity could diverge from the market-listed QB.",
   "solution": "Add an NFLverse-backed FanDuel Passing Yards collector using current FanDuel result roles, americanOddsInt, dynamic passing tabs, FDX selection-to-QB mapping, team-scoped canonical QB reconciliation, and source-alias normalization before frozen market grading. Keep the existing approved fallback only when direct FanDuel returns no market and never fabricate an absent market.",
@@ -37,5 +38,15 @@
     "frozen_v2_api_blob": "a14d8c7f6105d48888e51596dd68cb357e601b63",
     "frozen_v2_renderer_blob": "eeadb5e5c3be680768916ea9ef8d8b121208c23b"
   },
+  "control_plane_failures": [
+    {
+      "candidate_sha": "3bab3a2d341eacb8ac63e651a300434ee588bced",
+      "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
+      "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
+      "proof_created": false,
+      "product_patch": false,
+      "resolution": "Acquired one canonical disjoint live Passing Yards proof lease and continued the same branch/authorization chain"
+    }
+  ],
   "freeze_token": "API2_NFL_PASSING_YARDS_MARKET_FILL_V1_FROZEN"
 }
