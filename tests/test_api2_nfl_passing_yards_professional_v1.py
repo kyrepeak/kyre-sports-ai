@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import nfl_passing_yards_projection_v1 as frozen_projection
@@ -7,8 +8,23 @@ import nfl_passing_yards_projection_v1 as frozen_projection
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _path(path: str) -> Path:
+    target = ROOT / path
+    assert target.exists(), f"required successor artifact missing: {path}"
+    return target
+
+
 def _read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
+    return _path(path).read_text(encoding="utf-8")
+
+
+def _load(path: str, name: str):
+    target = _path(path)
+    spec = importlib.util.spec_from_file_location(name, target)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_live_passing_yards_route_uses_professional_gateway_only() -> None:
@@ -45,21 +61,21 @@ def test_server_bundle_uses_approved_sources_and_never_guesses_missing_data() ->
 
 
 def test_rank_grade_contract() -> None:
-    from sports_api.api.nfl_passing_yards_page_v1 import pass_defense_grade
-
-    assert pass_defense_grade(1) == "TOUGH"
-    assert pass_defense_grade(8) == "TOUGH"
-    assert pass_defense_grade(9) == "MEDIUM"
-    assert pass_defense_grade(20) == "MEDIUM"
-    assert pass_defense_grade(21) == "FAVORABLE"
-    assert pass_defense_grade(32) == "FAVORABLE"
-    assert pass_defense_grade(None) == "CHECK"
+    page_api = _load("sports_api/api/nfl_passing_yards_page_v1.py", "py_page_api_rank")
+    grade = page_api.pass_defense_grade
+    assert grade(1) == "TOUGH"
+    assert grade(8) == "TOUGH"
+    assert grade(9) == "MEDIUM"
+    assert grade(20) == "MEDIUM"
+    assert grade(21) == "FAVORABLE"
+    assert grade(32) == "FAVORABLE"
+    assert grade(None) == "CHECK"
 
 
 def test_qb_vs_opponent_history_is_explicitly_fail_closed() -> None:
-    from sports_api.api.nfl_passing_yards_page_v1 import summarize_qb_vs_opponent
-
-    empty = summarize_qb_vs_opponent([], qb_name="Test QB", opponent="CHI")
+    page_api = _load("sports_api/api/nfl_passing_yards_page_v1.py", "py_page_api_history")
+    summarize = page_api.summarize_qb_vs_opponent
+    empty = summarize([], qb_name="Test QB", opponent="CHI")
     assert empty["games"] == 0
     assert empty["available"] is False
     assert empty["avg_passing_yards"] is None
@@ -67,7 +83,7 @@ def test_qb_vs_opponent_history_is_explicitly_fail_closed() -> None:
         {"qb_name": "Test QB", "opponent": "CHI", "passing_yards": 240, "attempts": 31, "completions": 20, "pass_tds": 2, "interceptions": 1},
         {"qb_name": "Test QB", "opponent": "CHI", "passing_yards": 280, "attempts": 35, "completions": 24, "pass_tds": 1, "interceptions": 0},
     ]
-    out = summarize_qb_vs_opponent(rows, qb_name="Test QB", opponent="CHI")
+    out = summarize(rows, qb_name="Test QB", opponent="CHI")
     assert out["available"] is True
     assert out["games"] == 2
     assert out["avg_passing_yards"] == 260.0
@@ -75,8 +91,7 @@ def test_qb_vs_opponent_history_is_explicitly_fail_closed() -> None:
 
 
 def test_projection_v2_preserves_frozen_numeric_formula() -> None:
-    import nfl_passing_yards_projection_v2 as v2
-
+    v2 = _load("nfl_passing_yards_projection_v2.py", "py_projection_v2")
     attempt_values = {
         "qb_season_attempts_per_game": 35.0,
         "qb_recent3_attempts": 33.0,
