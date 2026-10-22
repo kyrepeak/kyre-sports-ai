@@ -126,6 +126,13 @@ def test_callbacks_do_not_force_a_second_manual_rerun():
     assert 'st.rerun(' not in source
 
 
-def test_production_entrypoint_boots_tap_first_overlay():
-    source = (ROOT / 'app.py').read_text(encoding='utf-8')
-    assert 'from streamlit_memory_lazy_router_universal_nav_v2 import record_bootstrap_import_ms, render_app' in source
+def test_production_entrypoint_preserves_tap_first_owner_through_terminal_runtime_chain():
+    app_source = (ROOT / 'app.py').read_text(encoding='utf-8')
+    terminal_source = (ROOT / 'streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py').read_text(encoding='utf-8')
+    runtime_source = (ROOT / 'streamlit_memory_lazy_router_universal_runtime_v5.py').read_text(encoding='utf-8')
+
+    assert 'streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1' in app_source
+    assert 'render_app()' in app_source
+    assert 'import streamlit_memory_lazy_router_universal_runtime_v5 as frozen_runtime' in terminal_source
+    assert 'return prior.render_app()' in terminal_source
+    assert 'import universal_sports_nav_ui_v2 as nav_ui' in runtime_source
