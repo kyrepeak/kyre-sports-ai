@@ -3,7 +3,7 @@
   "workstream": "api2-nfl-passing-yards-finalizer-import-repair-v1",
   "status": "GREEN_PROOF_PENDING",
   "source_main_sha": "5cb75a57ed2cdbd7d168eebd6eb88089adf4fb9f",
-  "scope_lease_id": "SCOPE-LEASE-A137BF99A6C1865CC737BB87",
+  "scope_lease_id": "SCOPE-LEASE-42EBE3C6B3C5824CE780B67D",
   "authoritative_pr": 1735,
   "active_problem": "Passing Yards live-route repair was merged, but the Vercel finalizer used for exact-head proof crashed when its subdirectory-root Lambda omitted sibling runless_v2 runtime modules.",
   "root_cause": "Vercel packages vercel_finalizer as /var/task, so absolute package imports and the sibling runless_v2 receipt contract were unavailable at Lambda runtime; preview builds also incorrectly required production-only finalizer proof identity.",
