@@ -1,11 +1,11 @@
 {
   "task_id": "api2-nfl-passing-yards-professional-v1",
   "workstream": "api2-nfl-passing-yards-professional-v1",
-  "status": "RED_PENDING",
+  "status": "GREEN_PROOF_PENDING",
   "source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d",
   "scope_lease_id": "SCOPE-LEASE-5D261942CA162395DEE017FB",
-  "active_problem": "NFL Passing Yards live page is visually overloaded and its active request path still depends on prohibited ESPN-era identity/data transport.",
-  "root_cause": "Universal Runtime V5 targets nfl_passing_yards_hub_v42, whose inherited slate/context/market path is built on legacy ESPN identities; presentation wrappers cannot satisfy the zero-ESPN gateway contract.",
+  "active_problem": "NFL Passing Yards live page is visually overloaded and its active request path still depends on prohibited provider-specific identity/data transport.",
+  "root_cause": "Universal Runtime V5 routed Passing Yards through the generic legacy NFL slate adapter and hub_v42 inheritance chain; presentation-only cleanup could not satisfy the Kyre-only gateway contract.",
   "required_outcomes": [
     "decision-first S-tier page",
     "QB vs team history",
@@ -15,7 +15,26 @@
     "projection math parity",
     "missing data fail closed"
   ],
-  "tdd": {"red_verified": false, "green_verified": false},
+  "tdd": {
+    "red_verified": true,
+    "red_candidate": "f16486a05f657ca2e86f258d07c2b0419466795f",
+    "red_proof_id": "api2-nfl-passing-yards-professional-v1-f16486a05f657ca2-323f66f5858c4cba",
+    "red_failure_class": "STATIC_PROOF",
+    "green_verified": false
+  },
+  "repair_history": [
+    {"candidate":"7c8dafaad46bb86d254800aedc577bfd211b02fb","failure_class":"INFRA","detail":"RUNLESS_V2_PROOF_ENVIRONMENT_DEPENDENCY_MISSING","resolution":"Changed RED harness so successor files fail by assertion rather than import dependency; no production code was added before valid RED."},
+    {"candidate":"f16486a05f657ca2e86f258d07c2b0419466795f","failure_class":"STATIC_PROOF","detail":"RUNLESS_V2_STATIC_PROOF_FAILED","resolution":"Valid TDD RED established; implementation began only afterward."}
+  ],
+  "implementation": {
+    "gateway":"nfl_passing_yards_gateway_v1.py",
+    "api_bundle":"sports_api/api/nfl_passing_yards_page_v1.py",
+    "projection_parity":"nfl_passing_yards_projection_v2.py",
+    "page":"nfl_passing_yards_professional_v1.py",
+    "live_route":"universal_runtime_v5_loader.py",
+    "api_registration":"sports_api/api/health.py",
+    "sportsbook_projection_influence":0.0
+  },
   "proof": {"proof_id": null, "state": null, "failure_class": null},
   "merge": {"pr": null, "merged_main_sha": null},
   "freeze_token": "API2_NFL_PASSING_YARDS_PROFESSIONAL_V1_FROZEN"
