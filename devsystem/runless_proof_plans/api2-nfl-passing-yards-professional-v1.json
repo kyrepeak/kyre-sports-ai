@@ -5,7 +5,7 @@
   "source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d",
   "commands": [
     ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_professional_v1.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not router"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not route"],
     ["python", "-m", "py_compile", "sports_api/api/nfl_passing_yards_page_v1.py", "sports_api/api/health.py", "nfl_passing_yards_gateway_v1.py", "nfl_passing_yards_projection_v2.py", "nfl_passing_yards_professional_v1.py", "universal_runtime_v5_loader.py", "tests/test_api2_nfl_passing_yards_professional_v1.py"]
   ],
   "artifacts": [
