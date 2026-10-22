@@ -1,0 +1,55 @@
+{
+  "version": "API2_NFL_PASSING_YARDS_PROFESSIONAL_V1",
+  "task_id": "api2-nfl-passing-yards-professional-v1",
+  "workstream": "api2-nfl-passing-yards-professional-v1",
+  "original_source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d",
+  "proof_base_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d",
+  "goal": "Replace the live NFL Passing Yards route with a decision-first professional analytics page routed only through Kyre Sports API, preserve certified projection math, add QB-vs-opponent history and opponent pass-yards rank grading, and eliminate ESPN/SGO from the active request path.",
+  "write_paths": [
+    "sports_api/api/nfl_passing_yards_page_v1.py",
+    "sports_api/api/health.py",
+    "nfl_passing_yards_gateway_v1.py",
+    "nfl_passing_yards_projection_v2.py",
+    "nfl_passing_yards_professional_v1.py",
+    "universal_runtime_v5_loader.py",
+    "tests/test_api2_nfl_passing_yards_professional_v1.py",
+    "devsystem/execution_plans/api2-nfl-passing-yards-professional-v1.json",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-professional-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-professional-v1.json"
+  ],
+  "constraints": {
+    "application_gateway": "KYRE SPORTS API ONLY",
+    "sgo_forbidden": true,
+    "espn_forbidden": true,
+    "espn_bet_forbidden": true,
+    "direct_provider_calls_from_streamlit_forbidden": true,
+    "sportsbook_line_averaging_forbidden": true,
+    "null_to_zero_forbidden": true,
+    "guessed_data_forbidden": true,
+    "projection_formula_change_forbidden": true,
+    "sportsbook_projection_influence": 0.0,
+    "rank_grade": {"1-8": "TOUGH", "9-20": "MEDIUM", "21-32": "FAVORABLE"},
+    "history_missing_state": "No verified prior matchup history",
+    "github_actions_fallback": 0,
+    "repeated_polling_forbidden": true
+  },
+  "step2a": {
+    "authoritative_branch": "api2-nfl-passing-yards-professional-v1",
+    "scope_lease_id": "SCOPE-LEASE-5D261942CA162395DEE017FB",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true
+  },
+  "acceptance": [
+    "Universal Runtime V5 routes NFL Passing Yards to one professional page adapter that does not import the legacy NFL/ESPN slate owner",
+    "Streamlit page calls only Kyre Sports API gateway",
+    "Kyre Sports API server owns NFLverse/FanDuel acquisition and returns provenance/timestamps",
+    "QB-vs-opponent history fails closed when unavailable",
+    "Opponent pass-yards rank renders TOUGH/MEDIUM/FAVORABLE with exact 1-8/9-20/21-32 bands",
+    "Frozen Step 7 numeric weighting/formula remains identical",
+    "No user-facing Step 7/8/9/10 methodology chrome",
+    "Decision-first hero, matchup intelligence, probability ladder, and collapsed model details render without giant dead space"
+  ],
+  "freeze_token": "API2_NFL_PASSING_YARDS_PROFESSIONAL_V1_FROZEN"
+}
