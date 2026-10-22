@@ -9,7 +9,7 @@ V3 keeps Page 1 deliberately simple while the gateway performs the hard work:
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import math
 from typing import Any, Callable, Mapping, Sequence
 
@@ -27,6 +27,7 @@ MODEL_VERSION = "CFB TOP PICKS PAGE1 API V3 • SIMPLE TOP 10 + PROP TOP 10"
 SCHEMA_VERSION = "cfb_top_picks_page1_v3"
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 10
+SLATE_BACKFILL_SCAN_DAYS = 14
 SPREAD_SIGMA = 14.0
 APPROVED_PROP_BOOKS = {
     "fanduel",
@@ -198,6 +199,7 @@ def rank_game_candidates(candidates: Sequence[Mapping[str, Any]], *, limit: int 
         key=lambda row: (
             -float(row.get("probability") or 0.0),
             -_price_sort(row.get("american_odds")),
+            _clean(row.get("kickoff_iso")),
             _clean(row.get("event_id")),
             _clean(row.get("market_type")),
         ),
@@ -246,6 +248,7 @@ def rank_player_props(candidates: Sequence[Mapping[str, Any]], *, limit: int = D
             -float(row.get("probability") or 0.0),
             -(1 if _clean(row.get("source_provider")) == "FanDuel" else 0),
             -_price_sort(row.get("american_odds")),
+            _clean(row.get("kickoff_iso")),
             _clean(row.get("player_name")),
         ),
     )[: max(0, min(MAX_LIMIT, int(limit)))]
@@ -552,6 +555,17 @@ def _collect_player_prop_candidates(
     }
 
 
+def _ordered_unique(values: Sequence[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for raw in values:
+        value = _clean(raw)
+        if value and value not in seen:
+            seen.add(value)
+            out.append(value)
+    return out
+
+
 def build_page1_payload(
     *,
     game_date: str | None = None,
@@ -563,35 +577,94 @@ def build_page1_payload(
         now = now.replace(tzinfo=timezone.utc)
     requested_limit = max(1, min(MAX_LIMIT, int(limit)))
     try:
-        market_payload = game_market_api.build_page1_payload(game_date=game_date, now_provider=lambda: now)
+        first_payload = game_market_api.build_page1_payload(game_date=game_date, now_provider=lambda: now)
     except ValueError as exc:
         raise ValueError("game_date must be YYYY-MM-DD") from exc
 
-    selected_day = _clean(market_payload.get("selected_date"))
-    games = [dict(row) for row in list(market_payload.get("games") or []) if isinstance(row, Mapping)]
-    analyses, analysis_failures = _analysis_profiles(games, selected_day)
-    game_candidates = _game_candidates(games, analyses)
-    game_picks = rank_game_candidates(game_candidates, limit=requested_limit)
-    player_props, prop_providers, prop_diag = _collect_player_prop_candidates(
-        games, analyses, limit=requested_limit
-    )
+    selected_day = _clean(first_payload.get("selected_date"))
+    try:
+        selected_date = date.fromisoformat(selected_day)
+    except ValueError as exc:
+        raise ValueError("resolved slate date must be YYYY-MM-DD") from exc
 
-    market_routing = market_payload.get("routing") if isinstance(market_payload.get("routing"), Mapping) else {}
+    game_candidates: list[dict[str, Any]] = []
+    prop_candidates: list[dict[str, Any]] = []
+    analysis_failures: list[dict[str, Any]] = []
+    game_market_providers: list[str] = []
+    player_prop_providers: list[str] = []
+    slate_dates: list[str] = []
+    total_games = 0
+    total_analysis_ready = 0
+    primary_prop_candidates = 0
+    secondary_prop_candidates = 0
+    rankable_prop_candidates = 0
+
+    def consume_slate(payload: Mapping[str, Any], *, need_props: bool) -> None:
+        nonlocal total_games, total_analysis_ready
+        nonlocal primary_prop_candidates, secondary_prop_candidates, rankable_prop_candidates
+        slate_day = _clean(payload.get("selected_date"))
+        games = [dict(row) for row in list(payload.get("games") or []) if isinstance(row, Mapping)]
+        if not slate_day or not games:
+            return
+        analyses, failures = _analysis_profiles(games, slate_day)
+        slate_dates.append(slate_day)
+        total_games += len(games)
+        total_analysis_ready += len(analyses)
+        for failure in failures:
+            item = dict(failure)
+            item.setdefault("slate_date", slate_day)
+            analysis_failures.append(item)
+        game_candidates.extend(_game_candidates(games, analyses))
+        routing = payload.get("routing") if isinstance(payload.get("routing"), Mapping) else {}
+        game_market_providers.extend(_clean(value) for value in list(routing.get("provider_calls") or []))
+        if need_props:
+            needed = max(1, requested_limit - len(rank_player_props(prop_candidates, limit=requested_limit)))
+            slate_props, providers, diag = _collect_player_prop_candidates(games, analyses, limit=needed)
+            prop_candidates.extend(slate_props)
+            player_prop_providers.extend(providers)
+            primary_prop_candidates += int(diag.get("primary_prop_candidates") or 0)
+            secondary_prop_candidates += int(diag.get("secondary_prop_candidates") or 0)
+            rankable_prop_candidates += int(diag.get("rankable_prop_candidates") or 0)
+
+    consume_slate(first_payload, need_props=True)
+    game_picks = rank_game_candidates(game_candidates, limit=requested_limit)
+    player_props = rank_player_props(prop_candidates, limit=requested_limit)
+
+    if len(game_picks) < requested_limit or len(player_props) < requested_limit:
+        for offset in range(1, SLATE_BACKFILL_SCAN_DAYS + 1):
+            scan_day = (selected_date + timedelta(days=offset)).isoformat()
+            try:
+                payload = game_market_api.build_page1_payload(game_date=scan_day, now_provider=lambda: now)
+            except Exception:
+                continue
+            games = [row for row in list(payload.get("games") or []) if isinstance(row, Mapping)]
+            if not games:
+                continue
+            consume_slate(payload, need_props=len(player_props) < requested_limit)
+            game_picks = rank_game_candidates(game_candidates, limit=requested_limit)
+            player_props = rank_player_props(prop_candidates, limit=requested_limit)
+            if len(game_picks) >= requested_limit and len(player_props) >= requested_limit:
+                break
+
+    game_market_providers = _ordered_unique(game_market_providers)
+    player_prop_providers = _ordered_unique(player_prop_providers)
+    slate_dates = _ordered_unique(slate_dates)
     return {
         "service": "Kyre Sports API",
         "schema_version": SCHEMA_VERSION,
         "model_version": MODEL_VERSION,
         "selected_date": selected_day,
+        "slate_dates": slate_dates,
         "generated_at_utc": now.astimezone(timezone.utc).isoformat(),
         "game_picks": game_picks,
         "player_props": player_props,
         "routing": {
             "application_gateway": "Kyre Sports API",
             "game_schedule_primary": "NCAA",
-            "game_market_providers": list(market_routing.get("provider_calls") or []),
-            "player_prop_providers": prop_providers,
+            "game_market_providers": game_market_providers,
+            "player_prop_providers": player_prop_providers,
             "player_props_primary": "FanDuel",
-            "player_props_secondary": "The Odds API" if "The Odds API" in prop_providers else None,
+            "player_props_secondary": "The Odds API" if "The Odds API" in player_prop_providers else None,
             "approved_secondary_only_when_needed": True,
             "sportsbook_projection_weight": 0.0,
             "consensus_averaging": False,
@@ -599,8 +672,10 @@ def build_page1_payload(
             "fabrication": False,
         },
         "diagnostics": {
-            "slate_games": len(games),
-            "analysis_ready_games": len(analyses),
+            "slate_games": total_games,
+            "slate_dates": slate_dates,
+            "slate_backfill_used": len(slate_dates) > 1,
+            "analysis_ready_games": total_analysis_ready,
             "analysis_failures": analysis_failures,
             "game_candidate_count": len(game_candidates),
             "game_pick_count": len(game_picks),
@@ -609,7 +684,9 @@ def build_page1_payload(
             "player_props_10_of_10": len(player_props) == requested_limit,
             "all_requested_slots_verified": len(game_picks) == requested_limit and len(player_props) == requested_limit,
             "unverified_slot_fill": False,
-            **prop_diag,
+            "primary_prop_candidates": primary_prop_candidates,
+            "secondary_prop_candidates": secondary_prop_candidates,
+            "rankable_prop_candidates": rankable_prop_candidates,
         },
     }
 
