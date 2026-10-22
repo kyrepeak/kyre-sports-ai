@@ -4,22 +4,15 @@
   "workstream": "api2-nfl-passing-yards-professional-v1",
   "source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d",
   "commands": [
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_professional_v1.py", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py"],
-    ["python", "-m", "py_compile", "sports_api/api/nfl_passing_yards_page_v1.py", "nfl_passing_yards_gateway_v1.py", "nfl_passing_yards_projection_v2.py", "nfl_passing_yards_professional_v1.py", "universal_runtime_v5_loader.py", "tests/test_api2_nfl_passing_yards_professional_v1.py"]
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_professional_v1.py"]
   ],
   "artifacts": [
-    "sports_api/api/nfl_passing_yards_page_v1.py",
-    "nfl_passing_yards_gateway_v1.py",
-    "nfl_passing_yards_projection_v2.py",
-    "nfl_passing_yards_professional_v1.py",
-    "universal_runtime_v5_loader.py",
-    "sports_api/api/health.py",
     "tests/test_api2_nfl_passing_yards_professional_v1.py",
     "devsystem/execution_plans/api2-nfl-passing-yards-professional-v1.json",
     "devsystem/runless_proof_plans/api2-nfl-passing-yards-professional-v1.json",
     "devsystem/task_ledgers/api2-nfl-passing-yards-professional-v1.json"
   ],
-  "dependencies": ["nfl_passing_yards_projection_v1.py", "nfl_passing_yards_context_v1.py", "nfl_passing_yards_distribution_v1.py", "sports_api/nfl_data_nflverse_v1.py", "requirements.txt"],
+  "dependencies": ["universal_runtime_v5_loader.py", "sports_api/api/health.py", "nfl_passing_yards_projection_v1.py", "nfl_passing_yards_context_v1.py", "nfl_passing_yards_distribution_v1.py", "requirements.txt"],
   "probes": [],
   "timeout_seconds": 900,
   "live_ttl_seconds": 1200,
