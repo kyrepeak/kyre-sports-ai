@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE_SHA = "1ee4c7ea027f3e2c4c8e88c26653343adb7d1aff"
 ALLOWED = {
     "sports_api/api/cfb_top_picks_page1_v1.py",
+    "sports_api/collectors/cfb_fanduel_moneyline_v1.py",
     "cfb_top_picks_page_v12.py",
     "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
     "kyre_sports_api_vercel_v1.py",
@@ -49,11 +50,11 @@ def _changed_paths() -> list[str] | None:
 def main() -> int:
     failures: list[str] = []
     api = _text("sports_api/api/cfb_top_picks_page1_v1.py")
+    collector = _text("sports_api/collectors/cfb_fanduel_moneyline_v1.py")
     page = _text("cfb_top_picks_page_v12.py")
     terminal = _text("streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py")
     gateway = _text("kyre_sports_api_vercel_v1.py")
 
-    # The customer-facing page may communicate only with the Kyre gateway.
     page_low = page.casefold()
     for token in ("sportsgameodds", "sgo", "espn"):
         if token in page_low:
@@ -69,7 +70,6 @@ def main() -> int:
         if token not in page:
             failures.append(f"missing_page_contract:{token}")
 
-    # The API owns canonical identity, exact quote selection, and null-safe edge.
     for token in (
         'router = APIRouter(prefix="/api/v1/cfb/top-picks"',
         'return _clean(game.get("game_id") or game.get("identity_key"))',
@@ -85,6 +85,17 @@ def main() -> int:
         failures.append("sportsbook_prices_must_not_be_averaged")
     if "game.get(\"espn_event_id\")" in api.casefold():
         failures.append("legacy_event_identity_reintroduced")
+
+    for token in (
+        '"fla atlantic": "florida atlantic"',
+        '"miami fl": "miami"',
+        '"ulm": "ul monroe"',
+        "match_moneylines_to_ncaa_games",
+    ):
+        if token not in collector:
+            failures.append(f"missing_exact_alias_contract:{token}")
+    if "average(" in collector.casefold() or "statistics.mean" in collector.casefold():
+        failures.append("collector_must_preserve_book_specific_prices")
 
     if 'route.sport_id == "cfb" and route.market_id == "top-picks"' not in terminal:
         failures.append("terminal_route_missing")
