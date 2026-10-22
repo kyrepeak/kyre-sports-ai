@@ -1,39 +1,11 @@
 {
   "generation": 686,
-  "holders": [
-    {
-      "acquired_at_utc": "2026-10-22T06:07:23Z",
-      "expires_at_utc": "2026-10-22T07:07:23Z",
-      "generation": 686,
-      "heartbeat_at_utc": "2026-10-22T06:07:23Z",
-      "lease_id": "SCOPE-LEASE-78DBB458A826FB77D9E4A39D",
-      "owner_id": "monster-cfb-moneyline-stier-live-api-repair-v1",
-      "scope": {
-        "dependency_tokens": [
-          "domain:cfb-moneyline-page1-live-api",
-          "domain:kyre-sports-api-moneyline-service"
-        ],
-        "exclusive": false,
-        "resource_identity": {
-          "source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d"
-        },
-        "shared_resources": [
-          "vercel:kyre-sports-api-project"
-        ],
-        "write_paths": [
-          "cfb_moneyline_clean_page_v7.py",
-          "devsystem/cfb_moneyline_stier_live_api_source_policy_v1.py",
-          "devsystem/runless_proof_plans/monster-cfb-moneyline-stier-live-api-repair-v1.json",
-          "tests/test_monster_cfb_moneyline_stier_live_api_repair_v1.py"
-        ]
-      }
-    }
-  ],
+  "holders": [],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 1257,
+  "revision": 1258,
   "schema_version": 1,
-  "state_hash": "e1d4276fc2d723313e53f976166d690d09ea832a1f43f1d004d7a7b80bdea87d",
+  "state_hash": "90ed11349b43477be01ee135a900da38891e30da48ec8c449b928c101b44942b",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
