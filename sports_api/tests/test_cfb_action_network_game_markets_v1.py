@@ -80,3 +80,23 @@ def test_action_matcher_handles_ncaa_abbreviation_without_guessing_game_id():
     matched = match_action_rows_to_games([game], [quote])
     assert list(matched) == ["6603830"]
     assert matched["6603830"][0]["provider_event_id"] == "777"
+
+
+def test_action_matcher_normalizes_ncaa_ulm_to_sportsbook_ul_monroe():
+    game = {
+        "game_id": "6603705",
+        "away_team": "ULM",
+        "home_team": "Troy",
+        "kickoff_iso": "2026-10-24T16:00:00-04:00",
+    }
+    quote = {
+        "sportsbook": "BetMGM",
+        "provider_event_id": "ulm-troy",
+        "provider_market_id": "event",
+        "away_team": "UL Monroe",
+        "home_team": "Troy",
+        "start_time_utc": "2026-10-24T20:00:00Z",
+        "total_line": 51.5,
+    }
+    matched = match_action_rows_to_games([game], [quote])
+    assert list(matched) == ["6603705"]
