@@ -99,6 +99,20 @@ def _root_adapter(route: RuntimeRoute, *, ttl_ms: int) -> DestinationAdapter:
     )
 
 
+def _nfl_passing_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated Kyre-gateway adapter; legacy NFL slate/data owners are not imported."""
+    def loader():
+        return _import("nfl_passing_yards_professional_v1")
+
+    def renderer(page):
+        return page.render_nfl_passing_yards_professional()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id), loader, renderer,
+        "nfl_passing_yards_professional_v1", 20_000,
+    )
+
+
 def _nfl_adapter(route: RuntimeRoute, target: str, *, ttl_ms: int) -> DestinationAdapter:
     market_label = _market_label(route)
 
@@ -220,9 +234,10 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
         if route.market_id == "top-picks":
             return _cfb_page_adapter(route, "cfb_top_picks_page_v10", ttl_ms=30_000)
     if route.sport_id == "nfl":
+        if route.market_id == "passing-yards":
+            return _nfl_passing_yards_adapter(route)
         targets = {
             "spread": "nfl_spread_hub_v8",
-            "passing-yards": "nfl_passing_yards_hub_v42",
             "rushing-yards": "nfl_rushing_yards_hub_v17",
             "receiving-yards": "nfl_receiving_yards_hub_v21",
         }
