@@ -55,15 +55,14 @@ def _fake_game(idx: int, *, game_id: str | None = None, with_market: bool = True
 
 def _analysis(idx: int, *, ready: bool = True) -> dict:
     away_wins = idx % 2 == 0
-    away_p = 0.60 + idx / 100.0
-    home_p = 1.0 - away_p
+    winner_p = 0.60 + idx / 100.0
     return {
         "final": {
             "ready": ready,
             "final_pick_ready": ready,
             "winner_side": "away" if away_wins else "home",
             "winner_team": f"Away {idx}" if away_wins else f"Home {idx}",
-            "winner_probability_final": away_p if away_wins else home_p,
+            "winner_probability_final": winner_p,
             "away_fair_moneyline": -200 - idx,
             "home_fair_moneyline": 150 + idx,
             "reliability": 0.80 + idx / 1000.0,
