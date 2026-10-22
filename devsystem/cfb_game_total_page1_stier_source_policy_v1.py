@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "cfb_game_total_page1_stier_v1.py"
 API = ROOT / "sports_api" / "api" / "cfb_game_total_page1_v1.py"
 COLLECTOR = ROOT / "sports_api" / "collectors" / "cfb_game_total_market_v1.py"
+ACTION = ROOT / "sports_api" / "collectors" / "cfb_action_network_game_markets_v1.py"
 TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py"
 ENTRY = ROOT / "kyre_sports_api_vercel_v1.py"
 
@@ -21,10 +22,12 @@ def main() -> int:
     page_lower = page.casefold()
     api = _text(API)
     api_lower = api.casefold()
-    collector_lower = _text(COLLECTOR).casefold()
+    backend_lower = (_text(COLLECTOR) + "\n" + _text(ACTION)).casefold()
     terminal = _text(TERMINAL)
     entry = _text(ENTRY)
 
+    # Application surface must never reach a provider directly. Action Network
+    # is approved only behind Kyre Sports API as a missing-game secondary.
     for token in (
         "actionnetwork", "action network", "site.api.espn", "espn bet",
         "sportsgameodds", "sports-game-odds", "cfb_fanduel_direct",
@@ -33,8 +36,8 @@ def main() -> int:
         if token in page_lower:
             failures.append(f"frontend forbidden direct provider token: {token}")
 
-    for token in ("actionnetwork", "site.api.espn", "sportsgameodds", "sports-game-odds"):
-        if token in api_lower or token in collector_lower:
+    for token in ("site.api.espn", "espn bet", "sportsgameodds", "sports-game-odds"):
+        if token in api_lower or token in backend_lower:
             failures.append(f"backend forbidden provider path: {token}")
 
     required_page = (
@@ -52,6 +55,7 @@ def main() -> int:
         '"application_gateway": "Kyre Sports API"',
         '"schedule_primary": "NCAA"',
         '"market_primary": "FanDuel"',
+        '"market_secondary": ["The Odds API", "Action Network"]',
         '"consensus_averaging": False',
         '"null_to_zero": False',
         'FORBIDDEN_PROVIDERS = ["SGO", "ESPN", "ESPN BET"]',
@@ -60,6 +64,8 @@ def main() -> int:
         if marker not in api:
             failures.append(f"missing API routing marker: {marker}")
 
+    if "ACTION_ODDS_URL" not in _text(ACTION) or '"source_provider": "Action Network"' not in _text(ACTION):
+        failures.append("approved Action Network secondary collector missing")
     if 'route.sport_id == "cfb" and route.market_id == "game-total"' not in terminal:
         failures.append("terminal CFB Game Total route activation missing")
     if 'importlib.import_module("cfb_game_total_page2_market_completeness_r1")' not in terminal:
