@@ -15,7 +15,7 @@ from universal_runtime_v5_loader_nba_pra_page1_v1 import (
     resolve_destination as _v1_resolve_destination,
 )
 
-MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA PRA PAGE2 + CFB GAME TOTAL PAGE1 V1 TERMINAL"
+MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA PRA PAGE2 V1 TERMINAL"
 FROZEN_RUNTIME = "streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4"
 FROZEN_PAGE1_MODULE = "nba_pra_page1_v2"
 FROZEN_PAGE1_RENDERER = "render_nba_pra_page1_v2"
@@ -23,47 +23,9 @@ MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 
-def _game_total_destination(route):
-    base = canonical_loader.resolve_destination(route)
-
-    def loader():
-        return (
-            importlib.import_module("cfb_game_total_page1_stier_v1"),
-            importlib.import_module("cfb_game_total_page2_market_completeness_r1"),
-        )
-
-    def renderer(bundle):
-        import streamlit as st
-
-        page1, page2 = bundle
-        event_id = ""
-        for key in ("game_id", "ks_cfb_game_total_event_id", "ks_cfb_game_total_selector_sync"):
-            raw = st.query_params.get(key)
-            if isinstance(raw, (list, tuple)):
-                raw = raw[-1] if raw else ""
-            event_id = str(raw or "").strip()
-            if event_id:
-                break
-        if not event_id:
-            event_id = str(st.session_state.get("ks_cfb_game_total_event_id") or "").strip()
-        if event_id:
-            return page2.render_cfb_hub("Game Total")
-        return page1.render_cfb_hub("Game Total")
-
-    return DestinationAdapter(
-        base.route_key,
-        loader,
-        renderer,
-        "cfb_game_total_page1_stier_v1+cfb_game_total_page2_market_completeness_r1",
-        30_000,
-    )
-
-
 def resolve_destination(route):
     if route.sport_id == "nfl" and route.market_id == "passing-yards":
         return canonical_loader.resolve_destination(route)
-    if route.sport_id == "cfb" and route.market_id == "game-total":
-        return _game_total_destination(route)
     if route.sport_id == "nba" and route.market_id == "pra":
         base = _v1_resolve_destination(route)
         def loader():
