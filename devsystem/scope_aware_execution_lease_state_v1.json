@@ -25,8 +25,8 @@
           "domain:api2-nfl-passing-yards-professional-v1"
         ],
         "shared_resources": [
-          "streamlit:nfl-passing-yards",
-          "kyre-sports-api:nfl-passing-yards"
+          "kyre-sports-api:nfl-passing-yards",
+          "streamlit:nfl-passing-yards"
         ],
         "resource_identity": {
           "source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d"
@@ -41,5 +41,5 @@
   "revision": 1259,
   "schema_version": 1,
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1",
-  "state_hash": "f43d4b77ad37c8954350cc76cfb7dc0b474517e6143af88b6c16181bf49c1423"
+  "state_hash": "236b6dabba644c409e4ea7b0cf095af27e866ff0a273e472da85d7a9f1f7789c"
 }
