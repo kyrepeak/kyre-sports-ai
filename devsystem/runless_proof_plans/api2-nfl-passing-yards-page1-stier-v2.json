@@ -1,0 +1,37 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-page1-stier-v2",
+  "workstream": "api2-nfl-passing-yards-page1-stier-v2",
+  "source_main_sha": "7552831984732ccd3c460ce84c6cad2ec0dd09bf",
+  "commands": [
+    ["python", "-m", "py_compile", "sports_api/api/nfl_passing_yards_page_v1/__init__.py", "nfl_passing_yards_professional_v1/__init__.py", "tests/test_api2_nfl_passing_yards_page1_stier_v2.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_page1_stier_v2.py", "tests/test_api2_nfl_passing_yards_identity_visuals_v1.py", "tests/test_api2_nfl_passing_yards_professional_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not route"]
+  ],
+  "artifacts": [
+    "sports_api/api/nfl_passing_yards_page_v1/__init__.py",
+    "nfl_passing_yards_professional_v1/__init__.py",
+    "tests/test_api2_nfl_passing_yards_page1_stier_v2.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-page1-stier-v2.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-page1-stier-v2.json"
+  ],
+  "dependencies": [
+    "nfl_passing_yards_gateway_v1.py",
+    "sports_api/api/nfl_passing_yards_page_v1.py",
+    "nfl_passing_yards_professional_v1.py",
+    "nfl_passing_yards_projection_v2.py",
+    "nfl_passing_yards_context_v1.py",
+    "nfl_passing_yards_distribution_v1.py",
+    "nfl_passing_yards_market_v1.py"
+  ],
+  "dependency_tokens": [
+    "domain:api2-nfl-passing-yards-page1-stier-v2"
+  ],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE1_STIER_V2_FROZEN",
+  "notes": "Successor overlay keeps the frozen V1 API and renderer backing files byte-for-byte unchanged. Kyre Sports API remains the only application-facing gateway. FanDuel direct is the primary Passing Yards market source and The Odds API is the single optional secondary verification/fill source when configured. Sportsbook observations remain book-specific; conflicting lines are never averaged. No SGO, ESPN or ESPN BET. Missing availability/weather remains CHECK rather than guessed or converted to zero. Projection, context, distribution, probability and sportsbook projection influence remain unchanged."
+}

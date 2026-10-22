@@ -1,0 +1,67 @@
+{
+  "task_id": "api2-nfl-passing-yards-page1-stier-v2",
+  "workstream": "api2-nfl-passing-yards-page1-stier-v2",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "7552831984732ccd3c460ce84c6cad2ec0dd09bf",
+  "scope_lease_id": "SCOPE-LEASE-5EDD53DEFCA90CB42DCB831D",
+  "active_problem": "NFL Passing Yards Page 1 had strong projections and identity visuals but still lacked a compact S-tier decision layer with book-specific market comparison, same-book movement, recent-form visualization, verified environment/availability context, risk flags, a direct Page 2 handoff, and a narrative explaining why an exact Over or Under line is supported.",
+  "root_cause": "The frozen V1 page exposed projection/profile/matchup/probability outputs but did not have a separate market decision-support successor layer. Direct market data was limited to one snapshot, repeated identity cards consumed excess layout space, and the page had no evidence-grounded betting thesis that could fail soft when market, injury or weather evidence was unavailable.",
+  "repair_scope": "Add same-name Python successor packages that load the frozen V1 API and renderer under internal aliases, enrich the Kyre Sports API bundle with FanDuel-primary plus optional The Odds API market observations, preserve sportsbook-specific lines, derive same-book movement, build an evidence-grounded Over/Under/No-Strong-Side thesis, expose verified NFLverse venue/roof/surface/rest with missing weather left CHECK, keep unavailable injury context CHECK, compact identity plus analytics into one player unit, and link Page 1 to the existing Page 2 query contract. Do not change frozen projection/context/distribution/market math or the frozen backing files.",
+  "tdd": {
+    "red_verified": true,
+    "red_failures": [
+      "book-specific market snapshot and same-book movement helpers did not exist",
+      "evidence-grounded Over/Under thesis did not exist",
+      "Page 1 decision support and Page 2 handoff did not exist",
+      "verified NFLverse environment surface did not exist",
+      "repeated identity strips were separate grid cells instead of compact analytics units"
+    ]
+  },
+  "candidate": {
+    "product_commit": "9898a3dfd39709ff3902db9970eb991389d3b1e1",
+    "api_successor_blob": "a14d8c7f6105d48888e51596dd68cb357e601b63",
+    "renderer_successor_blob": "eeadb5e5c3be680768916ea9ef8d8b121208c23b",
+    "test_blob": "5099c1c35a98671cdbbe644f69caeb6eba69fee1"
+  },
+  "verification": {
+    "page1_stier_v2": "9 passed",
+    "identity_and_professional_regression": "13 passed",
+    "passing_yards_steps_7_to_10_regression": "31 passed, 4 deselected",
+    "total_bounded": "53 passed, 4 deselected",
+    "py_compile": "GREEN",
+    "diff_check": "GREEN",
+    "source_policy": "GREEN — Kyre Sports API only; no SGO/ESPN; FanDuel primary; The Odds API optional secondary; no line averaging; missing data stays explicit",
+    "legacy_backing_files_unchanged": "GREEN",
+    "current_main_reconciliation": "GREEN at 7552831984732ccd3c460ce84c6cad2ec0dd09bf",
+    "full_repository_suite": "UNRELATED_COLLECTION_HARNESS_BLOCKER — tests/conftest.py:203 expects app.py to import streamlit_memory_lazy_router_v157 while current main uses the newer universal runtime; this workstream does not modify app.py or that router"
+  },
+  "preview_evidence": {
+    "deployment_id": null,
+    "endpoint": "/api/v1/nfl/passing-yards/page",
+    "http": null,
+    "decision_support": null
+  },
+  "proof": {
+    "proof_id": null,
+    "state": null,
+    "failure_class": null
+  },
+  "merge": {
+    "pr": null,
+    "merged_main_sha": null
+  },
+  "live_acceptance": {
+    "quick_verdict_required": true,
+    "book_specific_market_required": true,
+    "same_book_movement_required": true,
+    "strong_why_over_under_required": true,
+    "recent_form_required": true,
+    "environment_fail_soft_required": true,
+    "availability_fail_soft_required": true,
+    "risk_flags_required": true,
+    "compact_identity_required": true,
+    "page2_handoff_required": true,
+    "projection_math_unchanged": true
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE1_STIER_V2_FROZEN"
+}
