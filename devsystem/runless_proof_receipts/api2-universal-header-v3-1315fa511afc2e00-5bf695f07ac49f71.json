@@ -1,0 +1,52 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-universal-header-v3.json": "79212839d5dd9404d0337f5d9f08dcafed1aa4f3",
+    "devsystem/runless_proof_plans/api2-universal-header-v3.json": "3ffc30d332c7d2ec182998b8e5e2aaa3ada688e9",
+    "devsystem/task_ledgers/api2-universal-header-v3.json": "bfb26fb89ef404b5b844d44f69e4d87e3bfff596",
+    "tests/test_api2_universal_header_v3.py": "e757710906b58d365f7495ab3b0957da5e0f5cae",
+    "tests/test_api2_universal_nav_tap_first_handoff_v1.py": "061eb4d2466e9f5e8244f803b06d4fecf3f7bcea",
+    "universal_page_experience_runtime_v1.py": "80df5bcc26f8e36c583784fc56234693a6a35583",
+    "universal_sports_nav_ui_v1.py": "f92724ffd16367091612f5799aad7f5c6c17e0ea"
+  },
+  "candidate_sha": "1315fa511afc2e0006a18ad97ffc48d7e9bf5ae4",
+  "created_at": "2026-10-22T03:46:10.375843+00:00",
+  "dependency_map": {
+    "app.py": "0a9e2da8c9cc264d52fcbe725314b4a0e410b58f",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "962612ab07db77a010b5c3d96ee0fed6ac418c5b",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "fd3af0a42a8fc99ccca71a5f576042d06d2fa2f1",
+    "universal_page_experience_v1.py": "37341d4d9980eb5d66d380151c31d301471edea7",
+    "universal_sports_nav_ui_v2.py": "f08d77a4e7c2638237d504a2a627c53ee369da04"
+  },
+  "digest": "80f5018b044d55c8f752d96dcacaec497c62144273c9ab6f9b6b279e59520f7d",
+  "evidence_digests": [
+    "758c39d548716d82738b8da8a3ea495374c2fcf31760d06d60b7f687a69ff0c4",
+    "fa42eb714ae69658ad821014e37fee107e63589b4e55c231fa733435f3bfc37e"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "51ac3dfeb4222be32ac85d42d8fcaa7ea5b09caaaf1b685c63d605b973d6ef44",
+  "proof_id": "api2-universal-header-v3-1315fa511afc2e00-5bf695f07ac49f71",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "03b88749fe9cbb5ee5abf73bed094e806c5730086121c868c64ba6e6afdea6dd",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-header-v3",
+  "workstream": "api2-universal-header-v3"
+}
