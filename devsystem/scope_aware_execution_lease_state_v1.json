@@ -1,27 +1,31 @@
 {
-  "generation": 684,
+  "generation": 685,
   "holders": [
     {
-      "acquired_at_utc": "2026-10-22T05:06:12Z",
-      "expires_at_utc": "2026-10-22T06:06:12Z",
-      "generation": 684,
-      "heartbeat_at_utc": "2026-10-22T05:06:12Z",
-      "lease_id": "SCOPE-LEASE-1286B065A30DDDE7B55430B9",
+      "acquired_at_utc": "2026-10-22T05:33:40Z",
+      "expires_at_utc": "2026-10-22T06:33:40Z",
+      "generation": 685,
+      "heartbeat_at_utc": "2026-10-22T05:33:40Z",
+      "lease_id": "SCOPE-LEASE-A9478CFD3930F80DB71723FD",
       "owner_id": "monster-cfb-moneyline-stier-live-api-repair-v1",
       "scope": {
         "dependency_tokens": [
-          "domain:cfb-moneyline-page1-live-api"
+          "domain:cfb-moneyline-page1-live-api",
+          "domain:kyre-sports-api-moneyline-service"
         ],
         "exclusive": false,
         "resource_identity": {
           "source_main_sha": "241547bd2dc1a43ad425670551a104a9fcc76e66"
         },
         "shared_resources": [
+          "vercel:kyre-sports-api-project",
           "vercel:runless-v2-router"
         ],
         "write_paths": [
           "devsystem/cfb_moneyline_stier_live_api_source_policy_v1.py",
           "devsystem/runless_proof_plans/monster-cfb-moneyline-stier-live-api-repair-v1.json",
+          "kyre_sports_api_vercel_v1.py",
+          "pyproject.toml",
           "runless_v2/cfb_moneyline_public_v1.py",
           "runless_v2/wnba_schedule_v1.py",
           "tests/test_monster_cfb_moneyline_stier_live_api_repair_v1.py"
@@ -32,8 +36,8 @@
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 1253,
+  "revision": 1255,
   "schema_version": 1,
-  "state_hash": "18bf7bacbd4f7acdb5377d55c5ac06f128c9bd5e6427c992e0ddfe3b9b3a2354",
+  "state_hash": "ea1b77ff33e0c72bbc9eef1f8defd5af5f4eeadc6a12f49d4dac0503f930223b",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
