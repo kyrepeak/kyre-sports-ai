@@ -46,7 +46,7 @@ def test_season_context_prefetch_runs_unique_dates_in_parallel(monkeypatch):
     max_active = 0
     calls: list[tuple[int, str]] = []
 
-    def fake_context(season, cutoff):
+    def fake_context(season, cutoff, history_pool=None):
         nonlocal active, max_active
         with lock:
             active += 1
@@ -63,3 +63,15 @@ def test_season_context_prefetch_runs_unique_dates_in_parallel(monkeypatch):
     assert max_active >= 2
     assert calls.count((2026, "2026-10-25")) == 1
     assert list(out) == [(2026, "2026-10-22"), (2026, "2026-10-25"), (2026, "2026-10-26")]
+
+
+def test_shared_history_cutoff_excludes_future_games_and_hides_internal_date():
+    slate = importlib.import_module("sports_api.api.nfl_passing_yards_slate_v1")
+    pool = [
+        {"game_id": "g1", "qb_name": "A.Qb", "passing_yards": 210.0, "_game_date": "2026-10-20"},
+        {"game_id": "g2", "qb_name": "B.Qb", "passing_yards": 220.0, "_game_date": "2026-10-25"},
+    ]
+
+    rows = slate._history_before(pool, "2026-10-22")
+
+    assert rows == [{"game_id": "g1", "qb_name": "A.Qb", "passing_yards": 210.0}]
