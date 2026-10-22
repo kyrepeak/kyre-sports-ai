@@ -7,12 +7,13 @@
     ["python","-m","pytest","--noconftest","-q","tests/test_api2_cfb_top_picks_page1_stier_v2.py"],
     ["python","-m","pytest","--noconftest","-q","tests/test_api2_cfb_top_picks_page1_stier_v1.py","sports_api/tests/test_cfb_moneyline_page1_v1.py","tests/test_api2_cfb_game_total_page1_stier_v1.py","tests/test_api2_universal_nav_tap_first_handoff_v1.py"],
     ["python","-m","devsystem.cfb_top_picks_page1_stier_source_policy_v2"],
-    ["python","-m","py_compile","sports_api/api/cfb_top_picks_page1_v2.py","cfb_top_picks_page_v13.py","streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py","kyre_sports_api_vercel_v1.py","devsystem/cfb_top_picks_page1_stier_source_policy_v2.py"]
+    ["python","-m","py_compile","sports_api/api/cfb_top_picks_page1_v2.py","cfb_top_picks_page_v13.py","streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v2.py","streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py","app.py","kyre_sports_api_vercel_v1.py","devsystem/cfb_top_picks_page1_stier_source_policy_v2.py"]
   ],
   "artifacts":[
     "sports_api/api/cfb_top_picks_page1_v2.py",
     "cfb_top_picks_page_v13.py",
-    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v2.py",
+    "app.py",
     "kyre_sports_api_vercel_v1.py",
     "tests/test_api2_cfb_top_picks_page1_stier_v2.py",
     "devsystem/cfb_top_picks_page1_stier_source_policy_v2.py",
@@ -21,6 +22,7 @@
   "dependencies":[
     "sports_api/api/cfb_top_picks_page1_v1.py",
     "sports_api/api/cfb_moneyline_page1_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
     "cfb_moneyline_model_v1.py",
     "cfb_moneyline_final_v1.py",
     "cfb_team_data_v1.py",
