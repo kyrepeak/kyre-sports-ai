@@ -1,0 +1,115 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import nfl_passing_yards_projection_v1 as frozen_projection
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _read(path: str) -> str:
+    return (ROOT / path).read_text(encoding="utf-8")
+
+
+def test_live_passing_yards_route_uses_professional_gateway_only() -> None:
+    loader = _read("universal_runtime_v5_loader.py")
+    assert '"passing-yards": "nfl_passing_yards_professional_v1"' in loader
+    assert "def _nfl_passing_yards_adapter" in loader
+    block = loader.split("def _nfl_passing_yards_adapter", 1)[1].split("def ", 1)[0].lower()
+    assert "nfl_hub_v1" not in block
+    assert "espn" not in block
+
+
+def test_application_page_is_kyre_gateway_only_and_has_no_banned_provider() -> None:
+    page = _read("nfl_passing_yards_professional_v1.py").lower()
+    gateway = _read("nfl_passing_yards_gateway_v1.py").lower()
+    for banned in ("espn", "sgo", "sgodata"):
+        assert banned not in page
+        assert banned not in gateway
+    assert "nfl_passing_yards_gateway_v1" in page
+    assert "/api/v1/nfl/passing-yards/page" in gateway
+    assert "requests.get" in gateway
+    assert "nflverse" not in gateway
+    assert "fanduel" not in gateway
+
+
+def test_server_bundle_uses_approved_sources_and_never_guesses_missing_data() -> None:
+    source = _read("sports_api/api/nfl_passing_yards_page_v1.py").lower()
+    for banned in ("espn", "sgo", "sgodata"):
+        assert banned not in source
+    assert "nflverse" in source
+    assert "fanduel" in source
+    assert "canonical" in source
+    assert "source_timestamp" in source
+    assert "return none" in source
+
+
+def test_rank_grade_contract() -> None:
+    from sports_api.api.nfl_passing_yards_page_v1 import pass_defense_grade
+
+    assert pass_defense_grade(1) == "TOUGH"
+    assert pass_defense_grade(8) == "TOUGH"
+    assert pass_defense_grade(9) == "MEDIUM"
+    assert pass_defense_grade(20) == "MEDIUM"
+    assert pass_defense_grade(21) == "FAVORABLE"
+    assert pass_defense_grade(32) == "FAVORABLE"
+    assert pass_defense_grade(None) == "CHECK"
+
+
+def test_qb_vs_opponent_history_is_explicitly_fail_closed() -> None:
+    from sports_api.api.nfl_passing_yards_page_v1 import summarize_qb_vs_opponent
+
+    empty = summarize_qb_vs_opponent([], qb_name="Test QB", opponent="CHI")
+    assert empty["games"] == 0
+    assert empty["available"] is False
+    assert empty["avg_passing_yards"] is None
+    rows = [
+        {"qb_name": "Test QB", "opponent": "CHI", "passing_yards": 240, "attempts": 31, "completions": 20, "pass_tds": 2, "interceptions": 1},
+        {"qb_name": "Test QB", "opponent": "CHI", "passing_yards": 280, "attempts": 35, "completions": 24, "pass_tds": 1, "interceptions": 0},
+    ]
+    out = summarize_qb_vs_opponent(rows, qb_name="Test QB", opponent="CHI")
+    assert out["available"] is True
+    assert out["games"] == 2
+    assert out["avg_passing_yards"] == 260.0
+    assert round(out["completion_pct"], 6) == round(44 / 66 * 100, 6)
+
+
+def test_projection_v2_preserves_frozen_numeric_formula() -> None:
+    import nfl_passing_yards_projection_v2 as v2
+
+    attempt_values = {
+        "qb_season_attempts_per_game": 35.0,
+        "qb_recent3_attempts": 33.0,
+        "opponent_attempts_allowed_per_game": 38.0,
+        "team_pass_attempts_per_game": 36.0,
+    }
+    ypa_values = {
+        "qb_season_ypa": 7.8,
+        "qb_recent3_ypa": 7.4,
+        "opponent_season_ypa_allowed": 7.1,
+        "opponent_recent3_ypa_allowed": 7.3,
+    }
+    old_a = frozen_projection.weighted_blend(attempt_values, frozen_projection.ATTEMPT_WEIGHTS)
+    old_y = frozen_projection.weighted_blend(ypa_values, frozen_projection.YPA_WEIGHTS)
+    new = v2.project_from_canonical_inputs(attempt_values, ypa_values)
+    assert new["expected_attempts"] == old_a["value"]
+    assert new["expected_ypa"] == old_y["value"]
+    assert new["projection_yards"] == old_a["value"] * old_y["value"]
+    assert new["sportsbook_influence"] == 0.0
+
+
+def test_professional_page_is_decision_first_and_hides_internal_step_chrome() -> None:
+    page = _read("nfl_passing_yards_professional_v1.py")
+    for token in (
+        "KYRE AI PASSING YARDS",
+        "QB VS TEAM HISTORY",
+        "PASS DEFENSE RANK",
+        "WHY THIS PROJECTION",
+        "PROBABILITY LADDER",
+        "MODEL DETAILS & METHODOLOGY",
+    ):
+        assert token in page
+    assert "Step 7 methodology" not in page
+    assert "Step 8 methodology" not in page
+    assert "Step 9 methodology" not in page
+    assert "Step 10 methodology" not in page
