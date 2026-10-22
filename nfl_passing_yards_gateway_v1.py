@@ -8,7 +8,7 @@ from typing import Any
 import requests
 
 SCHEMA_VERSION = "nfl_passing_yards_professional_v1"
-DEFAULT_API_BASE_URL = "https://kyre-sports-api.onrender.com"
+DEFAULT_API_BASE_URL = "https://kyre-sports-api.vercel.app"
 CONNECT_TIMEOUT = 3.0
 READ_TIMEOUT = 18.0
 
