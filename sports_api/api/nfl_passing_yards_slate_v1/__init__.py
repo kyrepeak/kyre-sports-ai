@@ -1,9 +1,8 @@
-"""NFL Passing Yards slate successor overlay for Page 2 completeness.
+"""Passing Yards slate successor overlay for Page 2 completeness.
 
-The frozen/verified slate implementation remains the data and model owner. This
-overlay reuses that implementation and only enriches each selected QB detail
-with a verified current-season game log built from the same NFLverse rows that
-already power the slate. Identity joins require exact source player ID + team.
+The verified slate remains the model/data owner. This layer only adds a
+current-season game log from the NFLverse rows already loaded by the slate.
+Exact source player ID + team identity is mandatory.
 """
 from __future__ import annotations
 
@@ -13,10 +12,7 @@ from pathlib import Path
 from typing import Any
 
 _LEGACY_PATH = Path(__file__).resolve().parent.parent / "nfl_passing_yards_slate_v1.py"
-_SPEC = importlib.util.spec_from_file_location(
-    "sports_api.api._nfl_passing_yards_slate_v1_verified",
-    _LEGACY_PATH,
-)
+_SPEC = importlib.util.spec_from_file_location("sports_api.api._nfl_passing_yards_slate_v1_verified", _LEGACY_PATH)
 if _SPEC is None or _SPEC.loader is None:
     raise ImportError("NFL Passing Yards verified slate implementation unavailable")
 _legacy = importlib.util.module_from_spec(_SPEC)
@@ -27,18 +23,17 @@ for _name, _value in vars(_legacy).items():
     if _name not in {"__name__", "__package__", "__loader__", "__spec__", "__file__", "__cached__"}:
         globals().setdefault(_name, _value)
 
+_ORIGINAL_BUILD_SLATE_BUNDLE = _legacy.build_slate_bundle
+
 
 def _game_id_context(game_id: Any, team: Any) -> tuple[int | None, str | None]:
-    raw = str(game_id or "").strip()
+    parts = str(game_id or "").strip().split("_")
     team_abbr = _legacy.base._legacy.canonical_team_abbr(team)
-    parts = raw.split("_")
-    week: int | None = None
-    if len(parts) >= 2:
-        try:
-            week = int(parts[1])
-        except (TypeError, ValueError):
-            week = None
-    home_away: str | None = None
+    try:
+        week = int(parts[1]) if len(parts) >= 2 else None
+    except (TypeError, ValueError):
+        week = None
+    home_away = None
     if len(parts) >= 4:
         away = _legacy.base._legacy.canonical_team_abbr(parts[-2])
         home = _legacy.base._legacy.canonical_team_abbr(parts[-1])
@@ -49,17 +44,12 @@ def _game_id_context(game_id: Any, team: Any) -> tuple[int | None, str | None]:
     return week, home_away
 
 
-def _season_game_log_for_player(
-    player: dict[str, Any],
-    current_rows: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Return only verified current-season QB rows for the exact canonical identity."""
+def _season_game_log_for_player(player: dict[str, Any], current_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     visuals = player.get("identity_visuals") or {}
     source_player_id = str(visuals.get("source_player_id") or "").strip()
     team = _legacy._text(player.get("team_abbr")).upper()
     if not source_player_id or not team:
         return []
-
     output: list[dict[str, Any]] = []
     for raw in current_rows:
         row = dict(raw)
@@ -84,10 +74,7 @@ def _season_game_log_for_player(
             "pass_tds": row.get("pass_tds"),
             "interceptions": row.get("interceptions"),
         })
-    output.sort(key=lambda row: (
-        int(row["week"]) if row.get("week") is not None else 999,
-        str(row.get("game_id") or ""),
-    ))
+    output.sort(key=lambda row: (int(row["week"]) if row.get("week") is not None else 999, str(row.get("game_id") or "")))
     return output
 
 
@@ -101,24 +88,19 @@ def build_game_bundles(target_date: str | None = None):
     }
     if not resolved_date or not games:
         return resolved_date, [], provenance
-
     contexts = _legacy._prefetch_season_contexts(games)
     markets_by_game = _legacy._prefetch_market_observations(games)
     bundles: list[dict[str, Any]] = []
     for game in games:
         season = int(game["season"])
         game_date = _legacy._text(game.get("date")) or str(resolved_date or "")
-        context_key = (season, game_date)
-        ctx = contexts.get(context_key) or {"frame": None, "current_rows": [], "defenses": {}, "history": []}
+        ctx = contexts.get((season, game_date)) or {"frame": None, "current_rows": [], "defenses": {}, "history": []}
         frame = ctx.get("frame")
         if frame is None:
             continue
         observations = markets_by_game.get(_legacy._text(game.get("game_id")), [])
         players: list[dict[str, Any]] = []
-        for team, opponent, side in (
-            (game["away"], game["home"], "away"),
-            (game["home"], game["away"], "home"),
-        ):
+        for team, opponent, side in ((game["away"], game["home"], "away"), (game["home"], game["away"], "home")):
             defense = (ctx.get("defenses") or {}).get(opponent) or {
                 "team_id": _legacy.base._legacy._canonical_team_id(opponent),
                 "team_abbr": opponent,
@@ -133,55 +115,33 @@ def build_game_bundles(target_date: str | None = None):
                 "recent3_ypa_allowed": None,
                 "sack_rate_generated": None,
             }
-            current_rows = _legacy._current_rows_for_market_qb(
-                team,
-                ctx.get("current_rows") or [],
-                observations,
-            )
+            current_rows = _legacy._current_rows_for_market_qb(team, ctx.get("current_rows") or [], observations)
             row = _legacy.base._legacy._player_bundle(
-                team=team,
-                opponent=opponent,
-                side=side,
-                current_rows=current_rows,
-                all_history=ctx.get("history") or [],
-                defense=defense,
-                frame=frame,
-                markets=observations,
-                season=season,
-                week=game.get("week"),
+                team=team, opponent=opponent, side=side, current_rows=current_rows,
+                all_history=ctx.get("history") or [], defense=defense, frame=frame,
+                markets=observations, season=season, week=game.get("week"),
             )
             if row:
-                enriched_source = dict(row)
-                enriched_source["season_game_log"] = _season_game_log_for_player(
-                    enriched_source,
-                    current_rows,
-                )
-                players.append(
-                    _legacy._enrich_player(
-                        enriched_source,
-                        game=game,
-                        observations=observations,
-                    )
-                )
+                source = dict(row)
+                source["season_game_log"] = _season_game_log_for_player(source, current_rows)
+                players.append(_legacy._enrich_player(source, game=game, observations=observations))
         bundles.append({"game": game, "players": players})
     return resolved_date, bundles, provenance
 
 
-# The verified endpoint resolves build_game_bundles from its module globals.
-_legacy.build_game_bundles = build_game_bundles
+def build_slate_bundle(target_date: str | None = None):
+    # Preserve the verified module's dependency-injection behavior: consumers may
+    # replace this package-level build_game_bundles during tests or controlled runs.
+    _legacy.build_game_bundles = globals()["build_game_bundles"]
+    return _ORIGINAL_BUILD_SLATE_BUNDLE(target_date)
 
-# Expose the verified router and functions; build_slate_bundle remains the verified
-# implementation and automatically consumes the enriched build_game_bundles above.
+
+_legacy.build_game_bundles = build_game_bundles
+_legacy.build_slate_bundle = build_slate_bundle
 router = _legacy.router
-build_slate_bundle = _legacy.build_slate_bundle
 slate = _legacy.slate
 status = _legacy.status
 
 __all__ = sorted(set(getattr(_legacy, "__all__", [])) | {
-    "_season_game_log_for_player",
-    "build_game_bundles",
-    "build_slate_bundle",
-    "router",
-    "slate",
-    "status",
+    "_season_game_log_for_player", "build_game_bundles", "build_slate_bundle", "router", "slate", "status",
 })
