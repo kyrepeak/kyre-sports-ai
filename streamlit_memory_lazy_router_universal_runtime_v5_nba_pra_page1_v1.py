@@ -29,7 +29,7 @@ def resolve_destination(route):
     if route.sport_id == "cfb" and route.market_id == "top-picks":
         base = _v1_resolve_destination(route)
         def loader():
-            return importlib.import_module("cfb_top_picks_page_v13")
+            return importlib.import_module("cfb_top_picks_page_v12")
         def renderer(page):
             return page.render_cfb_hub("Top Picks")
         return DestinationAdapter(base.route_key, loader, renderer, MODEL_VERSION, 30_000)
