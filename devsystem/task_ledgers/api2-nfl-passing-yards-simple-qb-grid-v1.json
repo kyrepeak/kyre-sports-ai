@@ -1,0 +1,46 @@
+{
+  "task_id": "api2-nfl-passing-yards-simple-qb-grid-v1",
+  "workstream": "api2-nfl-passing-yards-simple-qb-grid-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "6d4255e86777d8922ce8e26dec6a599742acd3f8",
+  "scope_lease_id": "SCOPE-LEASE-9058A4C563C8A46255DDCAA1",
+  "active_problem": "NFL Passing Yards Page 1 required a simpler S-tier experience showing every verified starting quarterback for the active NFL week without selecting games first.",
+  "solution": "Add a Kyre Sports API weekly Passing Yards slate contract, a gateway-only application client, and a two-column team-colored QB card grid with headshot/logo, opponent, kickoff, book-specific line, Kyre projection, edge, Over/Under probabilities, confidence and exact-player deep-analysis handoff. Keep Page 2 analytics deep and keep frozen Page 1 V2 backing artifacts unchanged.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "banned": [
+      "SGO",
+      "ESPN",
+      "ESPN BET"
+    ],
+    "schedule_stats_identity": "NFLverse via Kyre Sports API",
+    "market_primary": "FanDuel",
+    "market_secondary": "The Odds API only when needed/configured",
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "no_guessing": true
+  },
+  "tdd": {
+    "initial_red": "7 expected failures, 1 frozen-blob pass",
+    "weekly_red": "1 expected failure proving date-only slate returned one game instead of the active week",
+    "green": "9 passing new tests",
+    "route_registration_red": "1 expected failure proving Kyre Sports API slate router was not yet registered",
+    "chronology_red": "1 expected failure proving week cards needed date+time ordering",
+    "final_green": "12/12 new tests passing"
+  },
+  "verification": {
+    "new_plus_page1_compatibility": "34 passed",
+    "frozen_steps_7_to_10": "31 passed, 4 deselected",
+    "py_compile": "GREEN",
+    "diff_check": "GREEN",
+    "source_policy": "GREEN \u2014 application-facing Kyre Sports API only; banned-source scan clean; no sportsbook line averaging; missing-to-zero false; no guessing",
+    "route_status": "GREEN \u2014 /api/v1/nfl/passing-yards/slate/status returns schema nfl_passing_yards_simple_qb_grid_v1 through Kyre Sports API",
+    "real_schedule": "2026 Week 7: 14 games, 28 QB cards, Oct 22\u201326",
+    "local_market_state": "28 explicit NOT_AVAILABLE/PARTIAL market states because sportsbook feed is not configured in isolated sandbox; no fabricated line/probability values",
+    "starter_truth": "MARKET_LISTED when verified market exists, otherwise PROJECTED_RECENT_USAGE; never falsely VERIFIED_STARTER",
+    "frozen_v2_api_blob": "a14d8c7f6105d48888e51596dd68cb357e601b63",
+    "frozen_v2_renderer_blob": "eeadb5e5c3be680768916ea9ef8d8b121208c23b",
+    "full_repository_suite": "UNRELATED_COLLECTION_HARNESS_BLOCKER \u2014 tests/conftest.py:203 expects legacy streamlit_memory_lazy_router_v157; bounded affected/frozen suites are authoritative"
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_SIMPLE_QB_GRID_V1_FROZEN"
+}

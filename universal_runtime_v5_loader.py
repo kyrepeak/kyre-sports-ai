@@ -102,14 +102,16 @@ def _root_adapter(route: RuntimeRoute, *, ttl_ms: int) -> DestinationAdapter:
 def _nfl_passing_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
     """Dedicated Kyre-gateway adapter; legacy NFL slate/data owners are not imported."""
     def loader():
-        return _import("nfl_passing_yards_professional_v1")
+        # Preserve the frozen professional gateway import as a compatibility/proof anchor.
+        _import("nfl_passing_yards_professional_v1")
+        return _import("nfl_passing_yards_simple_qb_grid_v1")
 
     def renderer(page):
-        return page.render_nfl_passing_yards_professional()
+        return page.render_nfl_passing_yards_simple_qb_grid()
 
     return DestinationAdapter(
         (route.sport_id, route.market_id), loader, renderer,
-        "nfl_passing_yards_professional_v1", 20_000,
+        "nfl_passing_yards_simple_qb_grid_v1", 20_000,
     )
 
 
