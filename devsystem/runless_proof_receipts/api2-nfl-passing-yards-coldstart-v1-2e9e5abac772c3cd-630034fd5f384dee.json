@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-coldstart-v1.json": "21528b004edc808125ab5c92e4f30ce43330dab3",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-coldstart-v1.json": "1ba842a323cd0ae2c73a2b54dbe4bb17bf02ddc9",
+    "nfl_passing_yards_slate_gateway_v1.py": "25b298cd91f4bd110c60ebd415d7172c0bad3231",
+    "tests/test_api2_nfl_passing_yards_coldstart_v1.py": "1dde4285d9fe9c4e973aff9d9fc993a976812404"
+  },
+  "candidate_sha": "2e9e5abac772c3cd511a9d6eb212e04e9582829f",
+  "created_at": "2026-10-22T20:25:13.478009+00:00",
+  "dependency_map": {
+    "nfl_passing_yards_professional_v1/__init__.py": "eeadb5e5c3be680768916ea9ef8d8b121208c23b",
+    "nfl_passing_yards_simple_qb_grid_v1.py": "f8116e16fbbd046eeb2ea9dd07ed3a2ecd9731e9",
+    "sports_api/api/nfl_passing_yards_slate_v1.py": "80b555f6ea83a2c91ad0835d377bf840a504e1df"
+  },
+  "digest": "97724d6eb3340f1521c7ec9501078c6233d87a61abae11e71adc064f0506f78b",
+  "evidence_digests": [
+    "96eab802d548c51e0dd7f4ea8471e6899737bfb1e81077e800370287871a7ed3",
+    "e8a6f58448de777b901923410e615749a800b4470dab99f3919f4991e4e35b3e",
+    "203275476bc71b45bc226e071cc8dfd6c80c6596b4ccffbfcaf7019ea3b5f996"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "80c02eb01d75686f4f86184c705f9d09a5a8129e5a908a94a6cd56379f1f46e1",
+  "proof_id": "api2-nfl-passing-yards-coldstart-v1-2e9e5abac772c3cd-630034fd5f384dee",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 480,
+    "state_hash": "6914b7220c21d40b34f0a4b41f33f7c9b10d2546befd6db4c3a1699ae315d7a6"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 480,
+    "state_hash": "6914b7220c21d40b34f0a4b41f33f7c9b10d2546befd6db4c3a1699ae315d7a6"
+  },
+  "request_fingerprint": "36fc1e0782a16c28cdb2d4a8ab53bf18d415ce7b0a014f2bfa3bc818050ec4e9",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-passing-yards-coldstart-v1",
+  "workstream": "api2-nfl-passing-yards-coldstart-v1"
+}
