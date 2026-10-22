@@ -139,8 +139,8 @@ def test_v3_page_is_deliberately_simple():
     low = text.casefold()
     for token in (
         'PAGE1_ENDPOINT = "/api/v3/cfb/top-picks/page1"',
-        "TOP 10 GAME PICKS",
-        "TOP 10 PLAYER PROPS",
+        '<h2>TOP 10 <span>GAME PICKS</span></h2>',
+        '<h2>TOP 10 <span>PLAYER PROPS</span></h2>',
         "HIT PROBABILITY",
         "ODDS",
         "RECORD",
