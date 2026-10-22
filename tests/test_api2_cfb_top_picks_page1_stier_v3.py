@@ -115,7 +115,7 @@ def test_same_book_devig_uses_only_the_two_exact_sides_not_cross_book_average():
     over = {"american_odds": -120, "sportsbook": "FanDuel", "line": 249.5, "side": "OVER"}
     under = {"american_odds": 100, "sportsbook": "FanDuel", "line": 249.5, "side": "UNDER"}
     p = api.same_book_devig_probability(over, under)
-    assert 0.53 < p < 0.56
+    assert 0.52 < p < 0.53
     assert api.same_book_devig_probability(over, {**under, "sportsbook": "DraftKings"}) is None
     assert api.same_book_devig_probability(over, {**under, "line": 250.5}) is None
 
