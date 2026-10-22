@@ -1,0 +1,57 @@
+{
+  "mode": "runless",
+  "task_id": "monster-cfb-moneyline-streamlit-gateway-binding-v1",
+  "workstream": "monster-cfb-moneyline-streamlit-gateway-binding-v1",
+  "source_main_sha": "321f59c4d9f1e8d02951c688fb7053ad329e1a7d",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_monster_cfb_moneyline_streamlit_gateway_binding_v1.py",
+      "tests/test_monster_cfb_moneyline_stier_live_api_repair_v1.py",
+      "sports_api/tests/test_cfb_moneyline_page1_v1.py",
+      "tests/test_monster_cfb_moneyline_stier_page1_v1.py",
+      "tests/test_api2_cfb_moneyline_detail_redesign_v5.py",
+      "tests/test_api2_cfb_moneyline_market_value_v3.py",
+      "tests/test_api2_cfb_moneyline_premium_v2.py",
+      "tests/test_api2_cfb_moneyline_streamlit_redesign_v4.py",
+      "tests/test_api2_cfb_moneyline_v5_runtime_base_repair.py",
+      "tests/test_cfb_moneyline_app_v148.py",
+      "tests/test_cfb_moneyline_mixed_division_wrapper.py",
+      "tests/test_cfb_moneyline_refresh_v1.py",
+      "tests/test_cfb_moneyline_router_v148.py",
+      "tests/test_cfb_step4_moneyline_page_ui.py",
+      "tests/test_cfb_step5_moneyline_model_v1.py",
+      "tests/test_cfb_step6_moneyline_final_v1.py",
+      "tests/test_cfb_step6_moneyline_slate_v1.py",
+      "-k",
+      "not test_loader_v17_routes_only_cfb_moneyline_to_v5_and_router_advances and not test_runtime_handoff_points_to_v15 and not test_runtime_v5_hands_off_to_loader_v14 and not test_runtime_handoff_points_to_v16 and not test_app_bootstraps_router_v148 and not test_receiving_yards_v147_history_remains_present"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "universal_runtime_v5_loader_v17.py",
+      "tests/test_monster_cfb_moneyline_streamlit_gateway_binding_v1.py",
+      "devsystem/cfb_moneyline_streamlit_gateway_binding_source_policy_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "devsystem.cfb_moneyline_streamlit_gateway_binding_source_policy_v1"
+    ]
+  ],
+  "artifacts": [
+    "universal_runtime_v5_loader_v17.py",
+    "tests/test_monster_cfb_moneyline_streamlit_gateway_binding_v1.py",
+    "devsystem/cfb_moneyline_streamlit_gateway_binding_source_policy_v1.py",
+    "devsystem/runless_proof_plans/monster-cfb-moneyline-streamlit-gateway-binding-v1.json"
+  ],
+  "dependency_tokens": [
+    "domain:cfb-moneyline-page1-gateway-binding"
+  ],
+  "freeze_token": "MONSTER_CFB_MONEYLINE_STREAMLIT_GATEWAY_BINDING_V1_FROZEN"
+}
