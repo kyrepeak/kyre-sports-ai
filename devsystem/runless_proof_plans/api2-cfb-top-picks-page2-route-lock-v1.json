@@ -1,0 +1,34 @@
+{
+  "mode": "runless",
+  "task_id": "api2-cfb-top-picks-page2-route-lock-v1",
+  "workstream": "api2-cfb-top-picks-page2-route-lock-v1",
+  "source_main_sha": "f4b7d6a034a3f57268263faa9d55040496d3bab7",
+  "commands": [
+    ["python", "-m", "py_compile", "cfb_top_picks_page_v17.py", "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1.py", "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page1_cleanup_v4.py", "tests/test_api2_cfb_top_picks_page1_stier_v3.py", "tests/test_api2_universal_nav_tap_first_handoff_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py"]
+  ],
+  "artifacts": [
+    "cfb_top_picks_page_v17.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1.py",
+    "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py",
+    "devsystem/runless_proof_plans/api2-cfb-top-picks-page2-route-lock-v1.json",
+    "devsystem/task_ledgers/api2-cfb-top-picks-page2-route-lock-v1.json"
+  ],
+  "dependencies": [
+    "cfb_top_picks_page_v16.py",
+    "cfb_top_picks_page_v15.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v4.py",
+    "universal_runtime_v5_loader.py",
+    "universal_runtime_v5_state.py"
+  ],
+  "dependency_tokens": ["domain:api2-cfb-top-picks-page2-route-lock-v1"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 2400,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": ["API2_CFB_TOP_PICKS_PAGE2_ANALYTICS_LAB_V1_FROZEN"],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_ROUTE_LOCK_V1_FROZEN",
+  "notes": "Successor-only route lock over frozen CFB Top Picks Page 2 V16. Page 1 card handoff and Page 2 Back link explicitly preserve ks_sport=College Football and ks_cfb_market=Top Picks while retaining exact candidate identity, preventing stale universal-router sport state from redirecting a CFB Top Picks tap to MLB or another sport. No model, sportsbook, provider, projection, or Kyre Sports API ownership behavior changes. Candidate lineage includes merged main f4b7d6a034a3f57268263faa9d55040496d3bab7 before authoritative proof."
+}

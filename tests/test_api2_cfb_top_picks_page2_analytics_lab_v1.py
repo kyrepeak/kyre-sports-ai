@@ -3,20 +3,31 @@ from pathlib import Path
 from universal_runtime_v5_state import RuntimeRoute
 
 
-def test_runtime_routes_only_cfb_top_picks_to_v16():
+def test_runtime_routes_only_cfb_top_picks_to_v17():
     import streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1 as runtime
     adapter = runtime.resolve_destination(RuntimeRoute("cfb", "top-picks", {}, 1, "tap"))
     assert adapter.route_key == ("cfb", "top-picks")
     assert adapter.source_version == runtime.MODEL_VERSION
-    assert adapter.loader().MODEL_VERSION.startswith("CFB TOP PICKS V16")
+    assert adapter.loader().MODEL_VERSION.startswith("CFB TOP PICKS V17")
 
 
-def test_page1_handoff_carries_exact_candidate_identity():
-    import cfb_top_picks_page_v16 as page
+def test_page1_handoff_carries_route_and_exact_candidate_identity():
+    import cfb_top_picks_page_v17 as page
     href = page._page1_handoff({"candidate_id": "g1", "selected_date": "2026-10-22"}, "game-pick")
+    assert "ks_sport=College+Football" in href
+    assert "ks_cfb_market=Top+Picks" in href
     assert "top_pick_id=g1" in href
     assert "top_pick_kind=game-pick" in href
     assert "top_pick_date=2026-10-22" in href
+
+
+def test_page2_back_link_preserves_cfb_top_picks_route():
+    import cfb_top_picks_page_v17 as page
+    href = page._back_href({"selected_date": "2026-10-22"})
+    assert "ks_sport=College+Football" in href
+    assert "ks_cfb_market=Top+Picks" in href
+    assert "top_pick_date=2026-10-22" in href
+    assert "top_pick_id=" not in href
 
 
 def test_api_resolves_exact_frozen_page1_candidate(monkeypatch):
@@ -50,7 +61,7 @@ def test_model_market_separation_and_zero_preservation():
 
 
 def test_ui_contains_deep_page2_modules_without_raw_none():
-    import cfb_top_picks_page_v16 as page
+    import cfb_top_picks_page_v17 as page
     payload = {
         "selection_snapshot": {"kind": "game-pick", "candidate_id": "g1", "selected_date": "2026-10-22", "away_team": "East Carolina", "home_team": "Memphis", "market_type": "MONEYLINE", "selection": "Memphis ML", "sportsbook": "FanDuel", "american_odds": -200, "probability": .70},
         "kyre_verdict": {"status": "READY", "outcome_confidence": .70, "market_implied_probability": .667, "market_value_edge": .033, "model_fair_price": -233, "selected_price": -200, "verdict": "BETTABLE EDGE"},
@@ -64,6 +75,8 @@ def test_ui_contains_deep_page2_modules_without_raw_none():
     html = page.render_page2_html(payload)
     for text in ("KYRE VERDICT", "WHY THIS PICK", "LIVE MARKET BOARD", "SOURCE + FRESHNESS AUDIT", "Back to Top Picks"):
         assert text in html
+    assert "ks_sport=College+Football" in html
+    assert "ks_cfb_market=Top+Picks" in html
     assert ">None<" not in html
 
 
