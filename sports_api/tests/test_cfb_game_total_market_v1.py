@@ -81,7 +81,7 @@ def test_fanduel_quote_keeps_total_prices_spread_and_moneyline_together():
 def test_matching_uses_canonical_ncaa_id_and_suppresses_duplicate_quote_rows():
     game = {
         "game_id": "ncaa-1",
-        "away_team": "Michigan State",
+        "away_team": "Michigan St.",
         "home_team": "UCLA",
         "kickoff_iso": "2026-10-24T19:30:00+00:00",
     }
@@ -89,8 +89,8 @@ def test_matching_uses_canonical_ncaa_id_and_suppresses_duplicate_quote_rows():
         "sportsbook": "FanDuel",
         "provider_event_id": "fd-1",
         "provider_market_id": "tot",
-        "away_team": "Michigan State Spartans",
-        "home_team": "UCLA Bruins",
+        "away_team": "Michigan State",
+        "home_team": "UCLA",
         "start_time_utc": "2026-10-24T19:30:00Z",
         "total_line": 43.5,
     }
