@@ -28,6 +28,8 @@ from sports_api.nfl_data_nflverse_v1 import canonical_team_abbr, _load_games_csv
 router = APIRouter(prefix="/api/v1/nfl/passing-yards/page", tags=["nfl-passing-yards-page"])
 SCHEMA_VERSION = "nfl_passing_yards_professional_v1"
 PBP_URL = "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{season}.csv.gz"
+NFLVERSE_WEEKLY_ROSTER_URL = "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_{season}.csv"
+NFL_OFFICIAL_LOGO_BASE = "https://static.www.nfl.com/t_q-best/league/api/clubs/logos"
 FANDUEL_BASE = "https://api.sportsbook.fanduel.com"
 FANDUEL_KEY = "FhMFpcPWXMeyZxOx"
 REQUEST_TIMEOUT = 14
@@ -327,6 +329,7 @@ def _schedule_game(target_date: str | None) -> dict[str, Any] | None:
         "date": str(row.get("_date")), "season": season, "week": week,
         "away": away, "home": home, "away_team_id": _canonical_team_id(away), "home_team_id": _canonical_team_id(home),
         "away_name": TEAM_NAMES.get(away, away), "home_name": TEAM_NAMES.get(home, home),
+        "away_logo_url": _official_team_logo_url(away), "home_logo_url": _official_team_logo_url(home),
         "kickoff": _safe(row.get("gametime")),
     }
 
@@ -464,7 +467,7 @@ def _history_rows(seasons: list[int], cutoff: str) -> list[dict[str, Any]]:
 
 def _player_bundle(
     *, team: str, opponent: str, side: str, current_rows: list[dict[str, Any]], all_history: list[dict[str, Any]],
-    defense: dict[str, Any], frame: pd.DataFrame, markets: list[dict[str, Any]],
+    defense: dict[str, Any], frame: pd.DataFrame, markets: list[dict[str, Any]], season: int, week: int | None,
 ) -> dict[str, Any] | None:
     qb = _select_qb(team, current_rows)
     if not qb:
@@ -498,10 +501,15 @@ def _player_bundle(
         source=(market or {}).get("sportsbook") or "", market_timestamp=(market or {}).get("source_timestamp") or "",
     ) if market else {"ready":False,"grade_ready":False,"lean":"MARKET PENDING","grade":"CHECK","reason":"No verified two-way Passing Yards market available","sportsbook_projection_influence":0.0}
     history = summarize_qb_vs_opponent(all_history, qb_name=str(profile.get("qb_name") or ""), opponent=opponent)
+    identity_visuals = build_identity_visuals(
+        team=team, opponent=opponent, player_source_id=qb.get("player_source_id"),
+        qb_name=str(profile.get("qb_name") or ""), season=int(season), week=week,
+    )
     return {
         "team_id":_canonical_team_id(team), "team_abbr":team, "team_name":TEAM_NAMES.get(team,team),
         "opponent_team_id":_canonical_team_id(opponent), "opponent_abbr":opponent, "side":side,
         "player_id":profile.get("player_id"), "qb_name":profile.get("qb_name"), "profile":profile,
+        "identity_visuals":identity_visuals,
         "pass_defense":defense, "qb_vs_team_history":history,
         "projection":step7, "context_projection":step8, "distribution":step9, "market":market, "market_evaluation":evaluation,
         "why": {
@@ -512,6 +520,71 @@ def _player_bundle(
         },
     }
 
+
+
+def _official_team_logo_url(team: str) -> str:
+    return f"{NFL_OFFICIAL_LOGO_BASE}/{canonical_team_abbr(team)}.png"
+
+
+@lru_cache(maxsize=8)
+def _load_nflverse_identity_rows(season: int) -> list[dict[str, Any]]:
+    try:
+        response = requests.get(NFLVERSE_WEEKLY_ROSTER_URL.format(season=int(season)), timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        frame = pd.read_csv(BytesIO(response.content), low_memory=False)
+    except Exception:
+        return []
+    wanted = {"season", "week", "team", "full_name", "gsis_id", "headshot_url"}
+    if not wanted.issubset(frame.columns):
+        return []
+    rows: list[dict[str, Any]] = []
+    for _, row in frame[list(wanted)].iterrows():
+        gsis_id = _safe(row.get("gsis_id"))
+        team = canonical_team_abbr(row.get("team"))
+        if not gsis_id or not team:
+            continue
+        rows.append({
+            "season": int(row.get("season")) if _number(row.get("season")) is not None else None,
+            "week": int(row.get("week")) if _number(row.get("week")) is not None else None,
+            "team": team,
+            "full_name": _safe(row.get("full_name")),
+            "gsis_id": gsis_id,
+            "headshot_url": _safe(row.get("headshot_url")) or None,
+        })
+    return rows
+
+
+def build_identity_visuals(
+    *, team: str, opponent: str, player_source_id: Any, qb_name: str, season: int, week: int | None,
+    roster_rows: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    team = canonical_team_abbr(team)
+    opponent = canonical_team_abbr(opponent)
+    source_player_id = _safe(player_source_id)
+    rows = list(roster_rows) if roster_rows is not None else _load_nflverse_identity_rows(int(season))
+    exact = [
+        row for row in rows
+        if _safe(row.get("gsis_id")) == source_player_id
+        and canonical_team_abbr(row.get("team")) == team
+        and (_number(row.get("season")) is None or int(float(row.get("season"))) == int(season))
+        and (week is None or _number(row.get("week")) is None or int(float(row.get("week"))) == int(week))
+    ]
+    verified = len(exact) == 1
+    matched = exact[0] if verified else {}
+    headshot = _safe(matched.get("headshot_url")) or None
+    return {
+        "canonical_player_id": _canonical_player_id(source_player_id),
+        "source_player_id": source_player_id or None,
+        "identity_verified": verified,
+        "identity_reason": "Exact NFLverse GSIS/team identity verified" if verified else "Exact NFLverse GSIS/team identity unavailable",
+        "qb_name": qb_name,
+        "headshot_url": headshot if verified else None,
+        "headshot_provider": "NFLverse" if verified and headshot else None,
+        "team_logo_url": _official_team_logo_url(team),
+        "team_logo_provider": "NFL Official",
+        "opponent_logo_url": _official_team_logo_url(opponent),
+        "opponent_logo_provider": "NFL Official",
+    }
 
 def build_page_bundle(target_date: str | None = None) -> dict[str, Any]:
     captured = _utc_now()
@@ -534,7 +607,7 @@ def build_page_bundle(target_date: str | None = None) -> dict[str, Any]:
             "completion_pct_allowed":None,"yards_per_attempt_allowed":None,"recent3_pass_yards_allowed":None,
             "recent3_ypa_allowed":None,"sack_rate_generated":None,
         }
-        row = _player_bundle(team=team,opponent=opponent,side=side,current_rows=current_rows,all_history=history,defense=defense,frame=frame,markets=markets)
+        row = _player_bundle(team=team,opponent=opponent,side=side,current_rows=current_rows,all_history=history,defense=defense,frame=frame,markets=markets,season=game["season"],week=game.get("week"))
         if row:
             players.append(row)
     return {
@@ -553,4 +626,4 @@ def nfl_passing_yards_page(date: str | None = Query(default=None, pattern=r"^\d{
     return build_page_bundle(date)
 
 
-__all__ = ["SCHEMA_VERSION","build_page_bundle","nfl_passing_yards_page","pass_defense_grade","router","summarize_qb_vs_opponent"]
+__all__ = ["SCHEMA_VERSION","build_identity_visuals","build_page_bundle","nfl_passing_yards_page","pass_defense_grade","router","summarize_qb_vs_opponent"]

@@ -22,7 +22,7 @@ _CSS = r"""
 .kpy-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}.kpy-metric{border:1px solid #193a50;background:#05111a;border-radius:10px;padding:8px 7px;min-width:0}.kpy-metric b{font-size:.9rem;color:#fff;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpy-metric span{font-size:.38rem;color:#6f8799;text-transform:uppercase;display:block;margin-top:3px}.kpy-verdict{margin-top:7px;border-top:1px solid #193348;padding-top:7px;display:flex;justify-content:space-between;align-items:center;gap:7px}.kpy-lean{font-size:.66rem;font-weight:950;color:#eaf6fc}.kpy-marketmeta{font-size:.43rem;color:#748da0;margin-top:2px}
 .kpy-compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 10px}.kpy-card{border:1px solid #20465e;background:#07131e;border-radius:14px;padding:10px}.kpy-cardtitle{font-size:.66rem;font-weight:950;color:#f1f7fa;margin-bottom:7px}.kpy-statrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.kpy-small{border:1px solid #17364a;border-radius:9px;padding:7px;background:#061019}.kpy-small b{display:block;color:#f7fbfd;font-size:.72rem}.kpy-small span{display:block;color:#71899b;font-size:.37rem;margin-top:2px;text-transform:uppercase}.kpy-note{font-size:.47rem;line-height:1.45;color:#7b93a5;margin-top:7px}.kpy-drivers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.kpy-driver{border:1px solid #1c4258;border-radius:10px;padding:8px;background:#06121c}.kpy-driver b{display:block;color:#f7fbfd;font-size:.72rem}.kpy-driver span{display:block;color:#7590a3;font-size:.39rem;margin-top:2px}.kpy-ladder{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.kpy-rung{border:1px solid #1b3b50;border-radius:9px;padding:7px 5px;text-align:center;background:#06121b}.kpy-rung b{display:block;color:#fff;font-size:.68rem}.kpy-rung span{font-size:.38rem;color:#7190a5}.kpy-method{font-size:.55rem;line-height:1.55;color:#93a6b4}.kpy-method strong{color:#edf7fc}
 @media(max-width:760px){.kpy-grid2,.kpy-compare{grid-template-columns:1fr}.kpy-drivers{grid-template-columns:repeat(2,minmax(0,1fr))}.kpy-ladder{grid-template-columns:repeat(3,minmax(0,1fr))}.kpy-title{font-size:1.16rem}}
-</style>
+.kpy-ident{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:7px 8px;border:1px solid rgba(105,214,255,.16);border-radius:11px;background:#071724}.kpy-face{width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid #31536a;background:#0a1b29}.kpy-identmeta{min-width:0}.kpy-identname{font-size:.62rem;font-weight:950;color:#fff}.kpy-identid{font-size:.42rem;color:#7894a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kpy-mini-logo{width:22px;height:22px;object-fit:contain;margin-left:auto}.kpy-logo img{width:29px;height:29px;object-fit:contain}</style>
 """
 
 
@@ -63,7 +63,37 @@ def _grade_class(value: Any) -> str:
     return token if token in {"a","b","c","pass","favorable","medium","tough"} else ""
 
 
+
+def _team_badge(*, team_name: str, team_abbr: str, logo_url: str | None) -> str:
+    name = escape(_safe(team_name, team_abbr or "Team"))
+    abbr = escape(_safe(team_abbr, ""))
+    if logo_url:
+        visual = f'<span class="kpy-logo"><img src="{escape(str(logo_url), quote=True)}" alt="{name} logo"></span>'
+    else:
+        visual = f'<span class="kpy-logo">{abbr}</span>'
+    return f'<div class="kpy-team">{visual}{name}</div>'
+
+
+def _identity_strip(player: dict[str, Any], *, opponent: bool = False) -> str:
+    identity = player.get("identity_visuals") or {}
+    player_id = _safe(identity.get("canonical_player_id") or player.get("player_id"), "ID unavailable")
+    qb_name = escape(_safe(player.get("qb_name"), "Quarterback"))
+    headshot = identity.get("headshot_url") if identity.get("identity_verified") else None
+    if headshot:
+        face = f'<img class="kpy-face" src="{escape(str(headshot), quote=True)}" alt="{qb_name} headshot">'
+    else:
+        face = '<span class="kpy-face"></span>'
+    team_logo = identity.get("team_logo_url")
+    opponent_logo = identity.get("opponent_logo_url") if opponent else None
+    logos = []
+    if team_logo:
+        logos.append(f'<img class="kpy-mini-logo" src="{escape(str(team_logo), quote=True)}" alt="team logo">')
+    if opponent_logo:
+        logos.append(f'<img class="kpy-mini-logo" src="{escape(str(opponent_logo), quote=True)}" alt="opponent logo">')
+    return f'<div class="kpy-ident">{face}<div class="kpy-identmeta"><div class="kpy-identname">{qb_name}</div><div class="kpy-identid">{escape(player_id)}</div></div>{"".join(logos)}</div>'
+
 def _market_board(player: dict[str, Any]) -> str:
+    identity = _identity_strip(player, opponent=False)
     ctx = player.get("context_projection") or {}
     dist = player.get("distribution") or {}
     market = player.get("market") or {}
@@ -77,7 +107,7 @@ def _market_board(player: dict[str, Any]) -> str:
     grade = _safe(ev.get("grade"), "CHECK")
     confidence = _safe(dist.get("confidence"), "CHECK")
     matchup_grade = _safe(defense.get("grade"), "CHECK")
-    return f'''<article class="kpy-qb">
+    return identity + f'''<article class="kpy-qb">
       <div class="kpy-qbtop"><div><div class="kpy-name">{escape(_safe(player.get("qb_name"),"Quarterback"))}</div><div class="kpy-teamline">{escape(_safe(player.get("team_abbr")))} vs {escape(_safe(player.get("opponent_abbr")))} • {escape(confidence)} confidence</div></div><span class="kpy-grade {_grade_class(grade)}">{escape(grade)}</span></div>
       <div class="kpy-metrics"><div class="kpy-metric"><b>{_fmt(projection)}</b><span>Kyre Projection</span></div><div class="kpy-metric"><b>{_fmt(line)}</b><span>Market Line</span></div><div class="kpy-metric"><b>{_pct(under)}</b><span>Under Probability</span></div></div>
       <div class="kpy-verdict"><div><div class="kpy-lean">{escape(lean)}</div><div class="kpy-marketmeta">Over {_pct(over)} • Under {_pct(under)} • {_rank(defense.get("rank"))}</div></div><span class="kpy-grade {_grade_class(matchup_grade)}">{escape(matchup_grade)} MATCHUP</span></div>
@@ -85,11 +115,13 @@ def _market_board(player: dict[str, Any]) -> str:
 
 
 def _profile_card(player: dict[str, Any]) -> str:
+    identity = _identity_strip(player, opponent=False)
     p = player.get("profile") or {}
-    return f'''<article class="kpy-card"><div class="kpy-cardtitle">{escape(_safe(player.get("qb_name")))} • PASSING PROFILE</div><div class="kpy-statrow"><div class="kpy-small"><b>{_fmt(p.get("passing_yards_per_game"))}</b><span>Yards / Game</span></div><div class="kpy-small"><b>{_fmt(p.get("attempts_per_game"))}</b><span>Attempts / Game</span></div><div class="kpy-small"><b>{_fmt(p.get("yards_per_attempt"),2)}</b><span>Yards / Attempt</span></div></div><div class="kpy-note">Recent 3: {_fmt((p.get("recent3_yards") or 0) / min(3,p.get("games") or 1) if p.get("recent3_yards") is not None else None)} yds/game • {_fmt(p.get("completion_pct"),1,"%")} completion • {_safe(p.get("games"),"0")} verified games.</div></article>'''
+    return identity + f'''<article class="kpy-card"><div class="kpy-cardtitle">{escape(_safe(player.get("qb_name")))} • PASSING PROFILE</div><div class="kpy-statrow"><div class="kpy-small"><b>{_fmt(p.get("passing_yards_per_game"))}</b><span>Yards / Game</span></div><div class="kpy-small"><b>{_fmt(p.get("attempts_per_game"))}</b><span>Attempts / Game</span></div><div class="kpy-small"><b>{_fmt(p.get("yards_per_attempt"),2)}</b><span>Yards / Attempt</span></div></div><div class="kpy-note">Recent 3: {_fmt((p.get("recent3_yards") or 0) / min(3,p.get("games") or 1) if p.get("recent3_yards") is not None else None)} yds/game • {_fmt(p.get("completion_pct"),1,"%")} completion • {_safe(p.get("games"),"0")} verified games.</div></article>'''
 
 
 def _matchup_card(player: dict[str, Any]) -> str:
+    identity = _identity_strip(player, opponent=True)
     d = player.get("pass_defense") or {}
     h = player.get("qb_vs_team_history") or {}
     grade = _safe(d.get("grade"), "CHECK")
@@ -97,10 +129,11 @@ def _matchup_card(player: dict[str, Any]) -> str:
         history = f'{h.get("games")} meetings • {_fmt(h.get("avg_passing_yards"))} avg yds • {_fmt(h.get("avg_attempts"))} avg attempts • {_fmt(h.get("completion_pct"),1,"%")} completion'
     else:
         history = escape(_safe(h.get("message"), "No verified prior matchup history"))
-    return f'''<article class="kpy-card"><div class="kpy-cardtitle">PASS DEFENSE RANK • <span class="kpy-grade {_grade_class(grade)}">{escape(grade)}</span></div><div class="kpy-statrow"><div class="kpy-small"><b>{escape(_rank(d.get("rank")))}</b><span>Pass Yards Rank</span></div><div class="kpy-small"><b>{_fmt(d.get("pass_yards_allowed_per_game"))}</b><span>Yds Allowed / Game</span></div><div class="kpy-small"><b>{_fmt(d.get("recent3_pass_yards_allowed"))}</b><span>Recent 3 Allowed</span></div></div><div class="kpy-note"><strong>QB VS TEAM HISTORY:</strong> {history}</div></article>'''
+    return identity + f'''<article class="kpy-card"><div class="kpy-cardtitle">PASS DEFENSE RANK • <span class="kpy-grade {_grade_class(grade)}">{escape(grade)}</span></div><div class="kpy-statrow"><div class="kpy-small"><b>{escape(_rank(d.get("rank")))}</b><span>Pass Yards Rank</span></div><div class="kpy-small"><b>{_fmt(d.get("pass_yards_allowed_per_game"))}</b><span>Yds Allowed / Game</span></div><div class="kpy-small"><b>{_fmt(d.get("recent3_pass_yards_allowed"))}</b><span>Recent 3 Allowed</span></div></div><div class="kpy-note"><strong>QB VS TEAM HISTORY:</strong> {history}</div></article>'''
 
 
 def _drivers(player: dict[str, Any]) -> str:
+    identity = _identity_strip(player, opponent=False)
     why = player.get("why") or {}
     pieces = []
     for key in ("volume","efficiency","pressure","defense"):
@@ -108,15 +141,16 @@ def _drivers(player: dict[str, Any]) -> str:
         value = row.get("value")
         shown = _fmt(value,2) if key == "efficiency" else _fmt(value)
         pieces.append(f'<div class="kpy-driver"><b>{shown}</b><span>{escape(_safe(row.get("label"),key.title()))}</span></div>')
-    return "".join(pieces)
+    return identity + "".join(pieces)
 
 
 def _ladder(player: dict[str, Any]) -> str:
+    identity = _identity_strip(player, opponent=False)
     rows = (player.get("distribution") or {}).get("thresholds") or []
     useful = [row for row in rows if row.get("ready") and int(float(row.get("threshold") or 0)) in {200,225,250,275,300}]
     if not useful:
-        return '<div class="kpy-note">Probability ladder unavailable until at least three verified recent games establish observed variance.</div>'
-    return '<div class="kpy-ladder">' + ''.join(f'<div class="kpy-rung"><b>{_pct(row.get("over_probability"))}</b><span>{int(float(row.get("threshold")))}+ yards</span></div>' for row in useful) + '</div>'
+        return identity + '<div class="kpy-note">Probability ladder unavailable until at least three verified recent games establish observed variance.</div>'
+    return identity + '<div class="kpy-ladder">' + ''.join(f'<div class="kpy-rung"><b>{_pct(row.get("over_probability"))}</b><span>{int(float(row.get("threshold")))}+ yards</span></div>' for row in useful) + '</div>'
 
 
 def render_nfl_passing_yards_professional() -> None:
@@ -132,7 +166,7 @@ def render_nfl_passing_yards_professional() -> None:
     players = list(payload.get("players") or [])
     provenance = payload.get("provenance") or {}
     source_time = _safe(payload.get("source_timestamp"), "timestamp unavailable")
-    st.markdown(f'''<div class="kpy-pro"><section class="kpy-hero"><div class="kpy-kicker">KYRE SPORTS AI • NFL PLAYER PROPS</div><div class="kpy-title">KYRE AI PASSING YARDS</div><div class="kpy-sub">Decision-first quarterback analytics • projection math completes before sportsbook comparison</div><div class="kpy-match"><div class="kpy-team"><span class="kpy-logo">{escape(_safe(game.get("away")))}</span>{escape(_safe(game.get("away_name")))}</div><div class="kpy-vs">@</div><div class="kpy-team"><span class="kpy-logo">{escape(_safe(game.get("home")))}</span>{escape(_safe(game.get("home_name")))}</div><div class="kpy-kick">{escape(_safe(game.get("date")))}<br>{escape(_safe(game.get("kickoff"),"Kickoff TBD"))}</div></div></section></div>''', unsafe_allow_html=True)
+    st.markdown(f'''<div class="kpy-pro"><section class="kpy-hero"><div class="kpy-kicker">KYRE SPORTS AI • NFL PLAYER PROPS</div><div class="kpy-title">KYRE AI PASSING YARDS</div><div class="kpy-sub">Decision-first quarterback analytics • projection math completes before sportsbook comparison</div><div class="kpy-match">{_team_badge(team_name=_safe(game.get("away_name")), team_abbr=_safe(game.get("away")), logo_url=game.get("away_logo_url"))}<div class="kpy-vs">@</div>{_team_badge(team_name=_safe(game.get("home_name")), team_abbr=_safe(game.get("home")), logo_url=game.get("home_logo_url"))}<div class="kpy-kick">{escape(_safe(game.get("date")))}<br>{escape(_safe(game.get("kickoff"),"Kickoff TBD"))}</div></div></section></div>''', unsafe_allow_html=True)
     st.markdown('<div class="kpy-pro"><section class="kpy-board"><div class="kpy-sectionhead"><div><div class="kpy-sectiontitle">KYRE AI MARKET BOARD</div><div class="kpy-sectionsub">Projection • market line • probability • confidence • matchup</div></div><div class="kpy-source">Freshness '+escape(source_time)+'</div></div><div class="kpy-grid2">'+''.join(_market_board(p) for p in players)+'</div></section></div>', unsafe_allow_html=True)
     st.markdown('<div class="kpy-pro"><div class="kpy-compare">'+''.join(_profile_card(p) for p in players)+'</div><div class="kpy-compare">'+''.join(_matchup_card(p) for p in players)+'</div></div>', unsafe_allow_html=True)
     st.markdown('<div class="kpy-pro"><section class="kpy-board"><div class="kpy-sectiontitle">WHY THIS PROJECTION</div><div class="kpy-sectionsub">The strongest model drivers, without the raw engineering tables</div></section></div>', unsafe_allow_html=True)
