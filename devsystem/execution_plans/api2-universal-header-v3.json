@@ -1,0 +1,49 @@
+{
+  "version": "API2_UNIVERSAL_HEADER_V3",
+  "task_id": "api2-universal-header-v3",
+  "workstream": "api2-universal-header-v3",
+  "original_source_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
+  "proof_base_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
+  "goal": "Move the universal KYRE SPORTS navigation above all destination content and upgrade it into a compact premium header with league-logo sport controls while preserving tap-first navigation, loading takeover, TOP behavior, and sports-data contracts.",
+  "write_paths": [
+    "universal_page_experience_runtime_v1.py",
+    "universal_sports_nav_ui_v1.py",
+    "tests/test_api2_universal_header_v3.py",
+    "devsystem/execution_plans/api2-universal-header-v3.json",
+    "devsystem/runless_proof_plans/api2-universal-header-v3.json",
+    "devsystem/task_ledgers/api2-universal-header-v3.json"
+  ],
+  "constraints": {
+    "one_universal_header_owner": true,
+    "header_before_destination_slot": true,
+    "sticky_top_header": true,
+    "real_league_marks_with_text": true,
+    "tap_first_navigation_preserved": true,
+    "universal_loader_preserved": true,
+    "universal_top_preserved": true,
+    "sports_provider_calls": false,
+    "model_projection_probability_mutation": false,
+    "kyre_sports_api_routing_mutation": false,
+    "sgo_forbidden": true,
+    "espn_data_forbidden": true,
+    "espn_bet_forbidden": true,
+    "github_actions_fallback": 0,
+    "repeated_polling_forbidden": true
+  },
+  "step2a": {
+    "authoritative_branch": "api2-universal-header-v3",
+    "scope_lease_id": "SCOPE-LEASE-C4BAB8AFAF9929F2F0CA2E6C",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true
+  },
+  "acceptance": [
+    "Universal nav renders before transition and destination placeholders so it remains above page content",
+    "Header title is KYRE SPORTS AI with Professional Sports Analytics subtitle",
+    "Sport controls show NFL, CFB, NBA, MLB, WNBA words with league marks instead of emoji labels",
+    "Header remains sticky and horizontally usable on mobile",
+    "No sports data/model/provider behavior changes"
+  ],
+  "freeze_token": "API2_UNIVERSAL_HEADER_V3_FROZEN"
+}
