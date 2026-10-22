@@ -6,7 +6,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 API = ROOT / "sports_api/api/cfb_top_picks_page1_v2.py"
 PAGE = ROOT / "cfb_top_picks_page_v13.py"
-TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py"
+FROZEN_TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py"
+OVERLAY = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v2.py"
+APP = ROOT / "app.py"
 VERCEL = ROOT / "kyre_sports_api_vercel_v1.py"
 
 
@@ -151,11 +153,17 @@ def test_v2_page_has_s_tier_identity_value_health_filters_and_dynamic_whys():
         assert forbidden not in low
 
 
-def test_v2_terminal_and_gateway_switch_only_the_top_picks_successor():
-    terminal = TERMINAL.read_text(encoding="utf-8")
+def test_v2_successor_overlay_keeps_frozen_v1_terminal_byte_contract():
+    frozen_terminal = FROZEN_TERMINAL.read_text(encoding="utf-8")
+    overlay = OVERLAY.read_text(encoding="utf-8")
+    app = APP.read_text(encoding="utf-8")
     gateway = VERCEL.read_text(encoding="utf-8")
-    assert 'route.sport_id == "cfb" and route.market_id == "top-picks"' in terminal
-    assert 'importlib.import_module("cfb_top_picks_page_v13")' in terminal
+
+    assert 'importlib.import_module("cfb_top_picks_page_v12")' in frozen_terminal
+    assert 'importlib.import_module("cfb_top_picks_page_v13")' not in frozen_terminal
+    assert 'importlib.import_module("cfb_top_picks_page_v13")' in overlay
+    assert 'route.sport_id == "cfb" and route.market_id == "top-picks"' in overlay
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v2" in app
     assert "cfb_top_picks_page1_v2" in gateway
     assert "cfb_top_picks_page1_v1" in gateway
     assert '"cfb_top_picks_page1_v2": True' in gateway
