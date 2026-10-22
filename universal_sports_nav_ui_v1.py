@@ -1,6 +1,11 @@
 """Sticky KYRE SPORTS renderer for Universal Sports Navigation V1."""
 from __future__ import annotations
 
+from base64 import b64decode, b64encode
+from io import BytesIO
+from pathlib import Path
+import tarfile
+
 import streamlit as st
 
 from universal_sports_nav_controller_v1 import RouteIntent, RouteState
@@ -14,17 +19,35 @@ HEADER_TITLE = "KYRE SPORTS AI"
 HEADER_SUBTITLE = "Professional Sports Analytics"
 
 # Presentation-only league marks. They never participate in sports data routing.
-# NFL/NCAA/NBA/MLB use Wikimedia-hosted official league marks; WNBA uses the
-# league vector mark exposed by the logo asset host. No ESPN asset or data path.
-_SPORT_LOGO_URLS = {
-    "nfl": "https://upload.wikimedia.org/wikipedia/en/a/a2/National_Football_League_logo.svg",
-    "cfb": "https://upload.wikimedia.org/wikipedia/commons/d/dd/NCAA_logo.svg",
-    "nba": "https://upload.wikimedia.org/wikipedia/commons/3/3c/National_Basketball_Association_logo_2017-present.svg",
-    "mlb": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Major_League_Baseball_logo.svg",
-    "wnba": "https://logotyp.us/file/wnba.svg",
-}
+# The optimized SVG bundle is vendored with the app in connector-safe fragments,
+# reconstructed locally at import time, then embedded into CSS as data URIs.
+_SPORT_IDS_WITH_LOGOS = ("nfl", "cfb", "nba", "mlb", "wnba")
+_SPORT_LOGO_BUNDLE_PARTS = tuple(
+    f"assets/league_logos/league_marks_v1.b64part{index}" for index in range(7)
+)
 
-_NAV_CSS = r"""
+
+def _load_sport_logo_data_uris() -> dict[str, str]:
+    root = Path(__file__).resolve().parent
+    encoded = "".join(
+        (root / relative_path).read_text(encoding="ascii").strip()
+        for relative_path in _SPORT_LOGO_BUNDLE_PARTS
+    )
+    archive_bytes = b64decode(encoded)
+    logos: dict[str, str] = {}
+    with tarfile.open(fileobj=BytesIO(archive_bytes), mode="r:gz") as bundle:
+        for sport_id in _SPORT_IDS_WITH_LOGOS:
+            member = bundle.extractfile(f"{sport_id}.svg")
+            if member is None:
+                raise RuntimeError(f"Missing local league mark for {sport_id}")
+            svg_bytes = member.read()
+            logos[sport_id] = "data:image/svg+xml;base64," + b64encode(svg_bytes).decode("ascii")
+    return logos
+
+
+_SPORT_LOGO_DATA_URIS = _load_sport_logo_data_uris()
+
+_NAV_CSS_TEMPLATE = r"""
 <style>
 .st-key-ks_universal_nav_shell{
     position: sticky;
@@ -120,11 +143,11 @@ _NAV_CSS = r"""
     background-size: contain;
     filter: drop-shadow(0 2px 5px rgba(0,0,0,.28));
 }
-[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(1)::before{background-image:url("https://upload.wikimedia.org/wikipedia/en/a/a2/National_Football_League_logo.svg")}
-[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(2)::before{background-image:url("https://upload.wikimedia.org/wikipedia/commons/d/dd/NCAA_logo.svg")}
-[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(3)::before{background-image:url("https://upload.wikimedia.org/wikipedia/commons/3/3c/National_Basketball_Association_logo_2017-present.svg")}
-[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(4)::before{background-image:url("https://upload.wikimedia.org/wikipedia/commons/a/a6/Major_League_Baseball_logo.svg")}
-[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(5)::before{background-image:url("https://logotyp.us/file/wnba.svg")}
+[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(1)::before{background-image:url("__NFL_LOGO__")}
+[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(2)::before{background-image:url("__CFB_LOGO__")}
+[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(3)::before{background-image:url("__NBA_LOGO__")}
+[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(4)::before{background-image:url("__MLB_LOGO__")}
+[class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(5)::before{background-image:url("__WNBA_LOGO__")}
 [class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(3)::before,
 [class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(5)::before{width:17px;flex-basis:17px}
 [class*="st-key-ks_universal_sport_pills__"] button:nth-of-type(4)::before{width:29px;flex-basis:29px}
@@ -137,6 +160,15 @@ _NAV_CSS = r"""
 }
 </style>
 """
+
+_NAV_CSS = (
+    _NAV_CSS_TEMPLATE
+    .replace("__NFL_LOGO__", _SPORT_LOGO_DATA_URIS["nfl"])
+    .replace("__CFB_LOGO__", _SPORT_LOGO_DATA_URIS["cfb"])
+    .replace("__NBA_LOGO__", _SPORT_LOGO_DATA_URIS["nba"])
+    .replace("__MLB_LOGO__", _SPORT_LOGO_DATA_URIS["mlb"])
+    .replace("__WNBA_LOGO__", _SPORT_LOGO_DATA_URIS["wnba"])
+)
 
 # Registry metadata is immutable for the lifetime of this module. Build the
 # option/label maps once instead of reconstructing them on every Streamlit rerun.
