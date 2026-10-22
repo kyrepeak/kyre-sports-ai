@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-nfl-passing-yards-live-route-repair-v1.json": "2fa2bc861f3a25c3627bb7583b3fcd772b7762f4",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-live-route-repair-v1.json": "d3395f36752d79280e01c14b366fd8cddb6c97ef",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-live-route-repair-v1.json": "505dab5f16f281e330a7a00e211710bd28c430ad",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "e804618fb4593806dc25384462a802084ca96e30",
+    "tests/test_api2_nfl_passing_yards_live_route_repair_v1.py": "365b71c5f5286c42da6f8a91393a1c9787ee47db"
+  },
+  "candidate_sha": "61d934bc43aa05dc8a8269a6917e139d40825951",
+  "created_at": "2026-10-22T07:26:27.027765+00:00",
+  "dependency_map": {
+    "app.py": "0a9e2da8c9cc264d52fcbe725314b4a0e410b58f",
+    "nfl_passing_yards_professional_v1.py": "5563782e3772bb69c4852e9f7441f32cf73de06a",
+    "tests/test_api2_nfl_passing_yards_professional_v1.py": "7a302da40954eb961508b2e51886d5606daa9da7",
+    "universal_runtime_v5_loader.py": "f7689d0702be436c647897b9280936d4f0663082"
+  },
+  "digest": "6762655a6fa853bfa221d4954faec402e07e50afb9f94e5fe257c282e15a0b5b",
+  "evidence_digests": [
+    "f8026571bf24c54eeca83d99efef64fabb605fc776d7bf632441e1ea9875d107",
+    "c8cfa0170ed87ae5eba9987d4504379d14d7b871233da190de39a6d126f906e9",
+    "e48e9f5b5b7212a8ee4a7bde050e5ce946c2d6a65424e63ebc95a347d414256a"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "33f6ac1d1e9feee5b0a014659d85714e358f5087d3c2ebb87bb2537c8c0b7913",
+  "proof_id": "api2-nfl-passing-yards-live-route-repair-v1-61d934bc43aa05dc-afb15a61bfaa9d0e",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "9ff362700a44d39e805443f07057f87ed94f361e52add41607a139b578755466",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-passing-yards-live-route-repair-v1",
+  "workstream": "api2-nfl-passing-yards-live-route-repair-v1"
+}
