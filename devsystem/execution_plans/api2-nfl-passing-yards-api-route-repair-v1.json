@@ -1,0 +1,34 @@
+{
+  "version": "API2_NFL_PASSING_YARDS_API_ROUTE_REPAIR_V1",
+  "task_id": "api2-nfl-passing-yards-api-route-repair-v1",
+  "workstream": "api2-nfl-passing-yards-api-route-repair-v1",
+  "source_main_sha": "f86fc85a86b3abe1be29c831545d0d4eb4dcfe39",
+  "active_problem": "Live NFL Passing Yards reaches the professional Streamlit route but its Kyre Sports API request fails because the Vercel API entrypoint does not register the existing Passing Yards page router and the app-side gateway still defaults to the retired Render host.",
+  "authoritative_branch": "api2-nfl-passing-yards-api-route-repair-v1",
+  "scope_lease_id": "SCOPE-LEASE-884553985125395DF4DAF8D2",
+  "write_paths": [
+    "kyre_sports_api_vercel_v1.py",
+    "nfl_passing_yards_gateway_v1.py",
+    "tests/test_api2_nfl_passing_yards_vercel_route_repair_v1.py",
+    "devsystem/execution_plans/api2-nfl-passing-yards-api-route-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-api-route-repair-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-api-route-repair-v1.json"
+  ],
+  "repair": "Register sports_api.api.nfl_passing_yards_page_v1 in the minimal Vercel Kyre Sports API entrypoint and point the Streamlit Passing Yards gateway default at kyre-sports-api.vercel.app. Preserve the existing router, model, probability, source-selection and professional UI implementations unchanged.",
+  "constraints": {
+    "single_problem": true,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "no_model_changes": true,
+    "no_probability_changes": true,
+    "no_provider_selection_changes": true,
+    "no_sgo": true,
+    "no_espn": true,
+    "no_espn_bet": true,
+    "render_dependency": false,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_API_ROUTE_REPAIR_V1_FROZEN"
+}

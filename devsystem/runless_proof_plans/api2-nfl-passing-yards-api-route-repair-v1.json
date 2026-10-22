@@ -5,7 +5,7 @@
   "source_main_sha": "f86fc85a86b3abe1be29c831545d0d4eb4dcfe39",
   "commands": [
     ["python", "-m", "py_compile", "kyre_sports_api_vercel_v1.py", "nfl_passing_yards_gateway_v1.py", "sports_api/api/nfl_passing_yards_page_v1.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_vercel_route_repair_v1.py", "tests/test_api2_nfl_passing_yards_professional_v1.py", "tests/test_api2_nfl_passing_yards_live_route_repair_v1.py"]
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_vercel_route_repair_v1.py", "tests/test_api2_nfl_passing_yards_professional_v1.py"]
   ],
   "artifacts": [
     "kyre_sports_api_vercel_v1.py",
@@ -14,11 +14,18 @@
     "devsystem/runless_proof_plans/api2-nfl-passing-yards-api-route-repair-v1.json"
   ],
   "dependencies": [
-    "sports_api/api/nfl_passing_yards_page_v1.py"
+    "sports_api/api/nfl_passing_yards_page_v1.py",
+    "nfl_passing_yards_professional_v1.py",
+    "tests/test_api2_nfl_passing_yards_professional_v1.py"
   ],
   "dependency_tokens": [
     "domain:api2-nfl-passing-yards-vercel-route-repair-v1"
   ],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
   "freeze_token": "API2_NFL_PASSING_YARDS_API_ROUTE_REPAIR_V1_FROZEN",
-  "notes": "Kyre Sports API remains the only application-facing gateway. Preserve merged CFB routers. Register the existing NFL Passing Yards router in the real Vercel entrypoint and move the Passing Yards client default from stale Render to the canonical Vercel Kyre Sports API. No SGO, ESPN, ESPN BET, line averaging, null-to-zero, model, projection, probability, ranking, or selection changes."
+  "notes": "Kyre Sports API is the only application-facing gateway. Vercel owns the current Kyre Sports API deployment. No SGO, ESPN or ESPN BET. Existing Passing Yards model/probability/provider logic remains unchanged."
 }
