@@ -1,0 +1,30 @@
+{
+  "version": "API2_NFL_PASSING_YARDS_LIVE_ROUTE_REPAIR_V1",
+  "task_id": "api2-nfl-passing-yards-live-route-repair-v1",
+  "workstream": "api2-nfl-passing-yards-live-route-repair-v1",
+  "source_main_sha": "8051059a476b0fb91f75b009b328f67b26ee96e7",
+  "active_problem": "Live Streamlit terminal overlay still delegates NFL Passing Yards into a stale layered resolver chain, so production renders the old V42/Step 7-10 page despite the canonical V5 loader owning the professional successor.",
+  "authoritative_branch": "api2-nfl-passing-yards-live-route-repair-v1",
+  "scope_lease_id": "SCOPE-LEASE-A137BF99A6C1865CC737BB87",
+  "write_paths": [
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "tests/test_api2_nfl_passing_yards_live_route_repair_v1.py",
+    "devsystem/execution_plans/api2-nfl-passing-yards-live-route-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-live-route-repair-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-live-route-repair-v1.json"
+  ],
+  "repair": "At the exact terminal production overlay imported by app.py, intercept only sport_id=nfl + market_id=passing-yards and delegate to universal_runtime_v5_loader.resolve_destination(route). Preserve NBA PRA override and all other upstream routes unchanged.",
+  "constraints": {
+    "single_problem": true,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "no_model_changes": true,
+    "no_provider_changes": true,
+    "no_sgo": true,
+    "no_espn": true,
+    "github_actions_fallback": 0
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_LIVE_ROUTE_REPAIR_V1_FROZEN"
+}
