@@ -82,3 +82,21 @@ def test_successor_has_no_banned_provider_dependency():
     text = open(source, encoding="utf-8").read()
     assert "ESPN" not in text.upper()
     assert "SGO" not in text.upper()
+
+
+def test_slate_prefers_successor_fanduel_parser_and_falls_back_only_when_needed(monkeypatch):
+    slate = importlib.import_module("sports_api.api.nfl_passing_yards_slate_v1")
+    direct = [{
+        "player_name": "Drake Maye", "team_abbr": "NE", "sportsbook": "FanDuel",
+        "market": "Passing Yards", "line": 244.5, "over_odds": -110, "under_odds": -110,
+        "source_timestamp": "2026-10-22T18:50:00Z", "provider_market_id": "m1",
+        "source_provider": "FanDuel direct",
+    }]
+    game = {"away":"NE", "home":"CHI", "away_name":"New England Patriots", "home_name":"Chicago Bears"}
+    monkeypatch.setattr(slate.market_fill, "collect_fanduel_game_markets", lambda game: direct)
+    monkeypatch.setattr(slate.base, "collect_market_observations", lambda game: (_ for _ in ()).throw(AssertionError("fallback should not run")))
+    assert slate._collect_market_observations(game) == direct
+
+    monkeypatch.setattr(slate.market_fill, "collect_fanduel_game_markets", lambda game: [])
+    monkeypatch.setattr(slate.base, "collect_market_observations", lambda game: [{"sportsbook":"The Odds API", "line":245.5}])
+    assert slate._collect_market_observations(game) == [{"sportsbook":"The Odds API", "line":245.5}]
