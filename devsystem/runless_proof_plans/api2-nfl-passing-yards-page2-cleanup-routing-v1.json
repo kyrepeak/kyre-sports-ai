@@ -1,0 +1,32 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-page2-cleanup-routing-v1",
+  "workstream": "api2-nfl-passing-yards-page2-cleanup-routing-v1",
+  "source_main_sha": "44d220d77138fef55bc413ba2158f99fb22bd5f7",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_passing_yards_page2_command_center_v2.py", "nfl_passing_yards_simple_qb_grid_v1/__init__.py", "tests/test_api2_nfl_passing_yards_page2_cleanup_routing_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_page2_cleanup_routing_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py"]
+  ],
+  "artifacts": [
+    "nfl_passing_yards_page2_command_center_v2.py",
+    "nfl_passing_yards_simple_qb_grid_v1/__init__.py",
+    "tests/test_api2_nfl_passing_yards_page2_cleanup_routing_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-page2-cleanup-routing-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-page2-cleanup-routing-v1.json"
+  ],
+  "dependencies": [
+    "nfl_passing_yards_page2_command_center_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1.py",
+    "nfl_passing_yards_slate_gateway_v1.py",
+    "universal_runtime_v5_loader.py",
+    "universal_sports_nav_url_v1.py"
+  ],
+  "dependency_tokens": ["domain:api2-nfl-passing-yards-page2-cleanup-routing-v1"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 2400,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE2_CLEANUP_ROUTING_V1_FROZEN",
+  "notes": "Presentation-only successor over the frozen NFL Passing Yards Page 2 contract. Preserves the frozen Page 1 implementation while the successor package overlay emits canonical Universal Runtime links so every selected QB opens NFL Passing Yards Page 2 instead of inheriting another sport route. Page 2 V2 reduces duplicated market/model presentation, compacts hierarchy, renders verified QB-vs-defense game rows whenever supplied, and classifies legitimate empty states such as first matchup, no prior meetings, indoor weather not applicable, pending availability, and same-book history building. Kyre Sports API remains the only application-facing gateway. No provider calls, sportsbook averaging, missing-to-zero conversion, SGO, ESPN, or ESPN BET dependency is added."
+}

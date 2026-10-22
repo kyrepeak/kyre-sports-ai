@@ -1,0 +1,39 @@
+{
+  "task_id": "api2-nfl-passing-yards-page2-cleanup-routing-v1",
+  "workstream": "api2-nfl-passing-yards-page2-cleanup-routing-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "44d220d77138fef55bc413ba2158f99fb22bd5f7",
+  "scope_lease_id": "SCOPE-LEASE-03E6B9781CD2D54AF7127AF0",
+  "scope_lease_generation": 714,
+  "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-PAGE2-CLEANUP-ROUTING-V1-R1",
+  "active_problem": "The Page 1 selected-player link still used legacy ks_py_detail query parameters, allowing Universal Runtime route memory to win and send an NFL Passing Yards player tap to MLB. Page 2 also had avoidable vertical repetition, generic unavailable states, and needed explicit verified matchup-history rendering for every player when history exists.",
+  "solution": "Preserve the frozen Page 1 implementation byte-for-byte. Use its successor package overlay to rewrite player links into canonical sport=nfl, market=passing-yards, player_id, game_id and date parameters and hand the exact selected card to a presentation-only Page 2 V2. Keep verified V1 analytics/data helpers, compact the hierarchy, surface verified QB-vs-defense game rows, and replace legitimate absence states with semantic explanations without fabricating inputs.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "banned_dependencies_added": false,
+    "provider_calls_added": 0,
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "no_guessing": true,
+    "canonical_identity_required": true,
+    "canonical_player_route": true,
+    "matchup_history_when_verified": true,
+    "semantic_empty_states": true
+  },
+  "tdd": {
+    "red": "The focused cleanup/routing contract failed before implementation because Page 1 emitted ks_py_detail links and Page 2 V2 did not exist.",
+    "root_cause": "Universal Runtime V5 only owns canonical sport/market/date/game_id/player_id parameters; the old ks_py_detail link did not assert the NFL Passing Yards route.",
+    "green": "12/12 owned cleanup plus existing Page 2 command-center tests passed on exact branch head before proof-plan addition.",
+    "legacy_baseline": "Legacy wildcard Passing Yards baseline had 50 failures / 360 passes before this step; the implementation comparison had 44 failures / 366 passes, introducing no new baseline failures."
+  },
+  "verification": {
+    "focused_regression": "12 passed",
+    "exact_head_before_plan": "edbd3171af74c9de3c3e03abb9efd2bbe5b68459",
+    "page1_preserved": "GREEN — legacy nfl_passing_yards_simple_qb_grid_v1.py remains unchanged; successor overlay owns navigation only",
+    "canonical_navigation": "GREEN — every generated player link asserts sport=nfl and market=passing-yards with canonical player/game/date parameters",
+    "matchup_history": "GREEN — verified games_detail rows render; first/no-prior matchup states are semantic",
+    "indoor_conditions": "GREEN — wind/temperature use NOT APPLICABLE for indoor venues instead of generic unavailable",
+    "source_policy": "GREEN — Page 2 V2 performs no provider calls and adds no SGO, ESPN, or ESPN BET dependency"
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE2_CLEANUP_ROUTING_V1_FROZEN"
+}
