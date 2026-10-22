@@ -1,5 +1,5 @@
 {
-  "generation": 671,
+  "generation": 672,
   "holders": [
     {
       "acquired_at_utc": "2026-10-22T01:32:04Z",
@@ -25,13 +25,43 @@
           "universal_runtime_v5_loader_v17.py"
         ]
       }
+    },
+    {
+      "acquired_at_utc": "2026-10-22T01:39:12Z",
+      "expires_at_utc": "2026-10-22T02:39:12Z",
+      "generation": 672,
+      "heartbeat_at_utc": "2026-10-22T01:39:12Z",
+      "lease_id": "SCOPE-LEASE-CC58C92E81B32F895803A8E2",
+      "owner_id": "api2-universal-top-production-repair-v1",
+      "scope": {
+        "dependency_tokens": [
+          "domain:api2-universal-top-production-repair-v1"
+        ],
+        "exclusive": false,
+        "resource_identity": {
+          "source_main_sha": "504c7b239555da4a99fe426a86cf2a92893f11c0"
+        },
+        "shared_resources": [
+          "streamlit:universal-page-experience"
+        ],
+        "write_paths": [
+          "devsystem/execution_plans/api2-universal-top-production-repair-v1.json",
+          "devsystem/runless_proof_plans/api2-universal-top-production-repair-v1.json",
+          "devsystem/task_ledgers/api2-universal-top-production-repair-v1.json",
+          "docs/superpowers/plans/2026-10-21-api2-universal-top-production-repair-v1.md",
+          "docs/superpowers/specs/2026-10-21-api2-universal-top-production-repair-v1.md",
+          "tests/test_universal_top_production_repair_v1.py",
+          "universal_page_experience_runtime_v1.py",
+          "universal_page_experience_v1.py"
+        ]
+      }
     }
   ],
   "lease_ref": "refs/heads/monster-scope-aware-execution-leases",
   "lease_state_path": "devsystem/scope_aware_execution_lease_state_v1.json",
   "repository": "kyrepeak/kyre-sports-ai",
-  "revision": 1230,
+  "revision": 1231,
   "schema_version": 1,
-  "state_hash": "f2c56d7e5bb54df240504c2decd922a0ebe07f0cd41e4f4ac96f6694ae675df9",
+  "state_hash": "e4260c69f5dca069cf1a0d4f76f8827efd58689e69eeaa251fd59890c6a4db45",
   "version": "MONSTER_V5_SCOPE_AWARE_EXECUTION_LEASE_V1"
 }
