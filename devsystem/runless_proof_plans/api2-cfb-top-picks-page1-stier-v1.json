@@ -4,10 +4,19 @@
   "workstream":"api2-cfb-top-picks-page1-stier-v1",
   "source_main_sha":"1ee4c7ea027f3e2c4c8e88c26653343adb7d1aff",
   "commands":[
-    ["python","-m","pytest","--noconftest","-q","tests/test_api2_cfb_top_picks_page1_stier_v1.py"]
+    ["python","-m","pytest","--noconftest","-q","tests/test_api2_cfb_top_picks_page1_stier_v1.py"],
+    ["python","-m","pytest","--noconftest","-q","tests/test_cfb_top_picks_professional_v11_r1.py","tests/test_cfb_top_picks_market_tabs_r1.py","tests/test_cfb_top_picks_selected_game_loading_r3.py","tests/test_cfb_top_picks_repair_step4_detail_integrity_v1.py","sports_api/tests/test_cfb_moneyline_page1_v1.py","tests/test_api2_nba_pra_page1_v1.py","tests/test_api2_cfb_game_total_page1_stier_v1.py","tests/test_api2_nfl_passing_yards_live_route_repair_v1.py","tests/test_api2_universal_nav_tap_first_handoff_v1.py"],
+    ["python","-m","devsystem.cfb_top_picks_page1_stier_source_policy_v1"],
+    ["python","-m","py_compile","sports_api/api/cfb_top_picks_page1_v1.py","sports_api/collectors/cfb_fanduel_moneyline_v1.py","cfb_top_picks_page_v12.py","streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py","kyre_sports_api_vercel_v1.py","devsystem/cfb_top_picks_page1_stier_source_policy_v1.py"]
   ],
   "artifacts":[
+    "sports_api/api/cfb_top_picks_page1_v1.py",
+    "sports_api/collectors/cfb_fanduel_moneyline_v1.py",
+    "cfb_top_picks_page_v12.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "kyre_sports_api_vercel_v1.py",
     "tests/test_api2_cfb_top_picks_page1_stier_v1.py",
+    "devsystem/cfb_top_picks_page1_stier_source_policy_v1.py",
     "devsystem/runless_proof_plans/api2-cfb-top-picks-page1-stier-v1.json"
   ],
   "dependencies":[
@@ -16,9 +25,8 @@
     "cfb_moneyline_final_v1.py",
     "cfb_team_data_v1.py",
     "cfb_schedule_v3.py",
-    "sports_api/collectors/cfb_fanduel_moneyline_v1.py",
-    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
-    "kyre_sports_api_vercel_v1.py"
+    "sports_api/collectors/cfb_fanduel_direct.py",
+    "universal_runtime_v5_loader_nba_pra_page1_v1.py"
   ],
   "probes":[],
   "timeout_seconds":900,
@@ -39,6 +47,7 @@
     "null_to_zero":false,
     "fabrication":false,
     "canonical_event_dedupe":true,
+    "exact_alias_normalization":true,
     "required_unique_top_picks":10
   },
   "known_baseline_red_tests":[]
