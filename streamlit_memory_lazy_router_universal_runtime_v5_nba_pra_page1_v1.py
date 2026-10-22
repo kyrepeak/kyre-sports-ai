@@ -7,6 +7,7 @@ nav_overlay.activate()
 
 import streamlit_memory_lazy_router_universal_runtime_v5 as frozen_runtime
 import streamlit_memory_lazy_router_universal_runtime_v5_nfl_daily_picks_v4 as prior
+import universal_runtime_v5_loader as canonical_loader
 from universal_runtime_v5_loader import DestinationAdapter
 from universal_runtime_v5_loader_nba_pra_page1_v1 import (
     choose_prefetch,
@@ -23,6 +24,8 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 
 def resolve_destination(route):
+    if route.sport_id == "nfl" and route.market_id == "passing-yards":
+        return canonical_loader.resolve_destination(route)
     if route.sport_id == "nba" and route.market_id == "pra":
         base = _v1_resolve_destination(route)
         def loader():
