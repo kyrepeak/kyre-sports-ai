@@ -1,0 +1,24 @@
+{
+  "version": "API2_UNIVERSAL_HEADER_V3_LOCAL_LOGOS_V1_LEDGER",
+  "task_id": "api2-universal-header-v3-local-logos-v1",
+  "workstream": "api2-universal-header-v3-local-logos-v1",
+  "authoritative_branch": "api2-universal-header-v3-local-logos-v1",
+  "proof_base_main_sha": "cdab7916dc5e862aa272158ebc57aa1bb0e01e31",
+  "status": "PROOF_READY",
+  "single_pr": true,
+  "single_proof_path": true,
+  "duplicate_submission_forbidden": true,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_UNIVERSAL_HEADER_V3_LOCAL_LOGOS_V1_FROZEN",
+  "root_cause_class": "MERGED_HEADER_RUNTIME_LOGO_HOTLINK_GAP",
+  "root_cause": "The original Header V3 was merged before the approved local-logo requirement was fully materialized; the renderer still depended on runtime league-logo URLs. The successor keeps the same header owner and reconstructs five vendored SVG marks locally into embedded data URIs.",
+  "implementation": {
+    "bundle_parts": 7,
+    "sports": ["nfl", "cfb", "nba", "mlb", "wnba"],
+    "runtime_hotlinks": 0,
+    "header_owner_changed": false,
+    "sports_data_changed": false
+  }
+}
