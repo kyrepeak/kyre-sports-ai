@@ -1,0 +1,50 @@
+{
+  "task_id": "api2-nfl-passing-yards-identity-visuals-v1",
+  "workstream": "api2-nfl-passing-yards-identity-visuals-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "9826cd7a1ba20c78752a830b711b1fa717970b89",
+  "scope_lease_id": "SCOPE-LEASE-4C10265322696712DA98E1A2",
+  "active_problem": "The professional NFL Passing Yards page used text abbreviations and names without verified team-logo and quarterback-headshot identity, making cards harder to identify quickly.",
+  "root_cause": "The Kyre Sports API already owned canonical GSIS-derived player and team identities, but its Passing Yards bundle did not expose verified visual identity assets and the Streamlit renderer had no identity-strip component.",
+  "repair_scope": "Add exact GSIS-plus-team NFLverse headshot binding and NFL Official team-logo URLs inside the Kyre Sports API bundle, then render fail-soft identity strips on the game hero, Market Board, Passing Profile, matchup, projection-driver and Probability Ladder surfaces without changing projection or sportsbook math.",
+  "base_reconciliation": {
+    "prior_expected_main_sha": "1ee4c7ea027f3e2c4c8e88c26653343adb7d1aff",
+    "reconciled_main_sha": "9826cd7a1ba20c78752a830b711b1fa717970b89",
+    "prior_proof_result": "RUNLESS_V2_MAIN_IDENTITY_DRIFT",
+    "durable_proof_row_created": false,
+    "unrelated_main_change_preserved": "CFB Top Picks Page 1 S-tier + Kyre API routing"
+  },
+  "tdd": {
+    "red_verified": true,
+    "red_source_main_sha": "1ee4c7ea027f3e2c4c8e88c26653343adb7d1aff",
+    "authoritative_red_contract_commit": "652eea5e0ac696352faa33bc1fd9449bf0dd5c3a",
+    "red_failures": [
+      "build_identity_visuals did not exist",
+      "professional renderer did not expose verified QB headshot/team-logo/canonical-ID identity strips"
+    ]
+  },
+  "candidate": {
+    "product_commit": "806703d1c9a65828a95e5e41abb2d71b516c98c4",
+    "renderer_blob": "da59df2e84b0bad44dadde9ebccff52d928318ee",
+    "api_blob": "26b839f1171d8b39fa828e0e416d9d8972b209b1"
+  },
+  "verification": {
+    "focused_identity_and_professional_regression": "GREEN",
+    "passing_yards_steps_7_to_10_regression": "GREEN",
+    "latest_combined_result": "42 passed, 6 deselected",
+    "py_compile": "GREEN",
+    "diff_check": "GREEN",
+    "banned_provider_scan": "GREEN"
+  },
+  "preview_evidence": {"deployment_id": null, "endpoint": "/api/v1/nfl/passing-yards/page", "http": null, "identity_visuals": null},
+  "proof": {"proof_id": null, "state": null, "failure_class": null},
+  "merge": {"pr": 1741, "merged_main_sha": null},
+  "live_acceptance": {
+    "team_logos_required": true,
+    "qb_identity_required": true,
+    "canonical_player_id_required": true,
+    "fail_soft_headshot_required": true,
+    "projection_math_unchanged": true
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_IDENTITY_VISUALS_V1_FROZEN"
+}
