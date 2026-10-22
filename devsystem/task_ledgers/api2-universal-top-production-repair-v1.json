@@ -1,0 +1,35 @@
+{
+  "version": "API2_UNIVERSAL_TOP_PRODUCTION_REPAIR_V1_LEDGER",
+  "task_id": "api2-universal-top-production-repair-v1",
+  "workstream": "api2-universal-top-production-repair-v1",
+  "authoritative_branch": "api2-universal-top-production-repair-v1",
+  "proof_base_main_sha": "504c7b239555da4a99fe426a86cf2a92893f11c0",
+  "status": "PROOF_READY",
+  "candidate_policy": "branch head after control artifacts; immutable unless classified proof failure",
+  "single_pr": true,
+  "single_proof_path": true,
+  "duplicate_submission_forbidden": true,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_UNIVERSAL_TOP_PRODUCTION_REPAIR_V1_FROZEN",
+  "verification": {
+    "red": "2 intended failures before production patch",
+    "focused_green": "2 passed",
+    "universal_regression": "51 passed",
+    "compile": "exit 0"
+  },
+  "root_cause_class": "LIVE_ACCEPTANCE_GAP",
+  "root_cause": "TOP existence depended on JavaScript/mobile scroll-owner behavior that static source-token tests did not execute.",
+  "repair": "Mount one native fixed no-JavaScript TOP fallback before the controller and let JavaScript reuse/enhance it.",
+  "scope": [
+    "docs/superpowers/specs/2026-10-21-api2-universal-top-production-repair-v1.md",
+    "docs/superpowers/plans/2026-10-21-api2-universal-top-production-repair-v1.md",
+    "universal_page_experience_v1.py",
+    "universal_page_experience_runtime_v1.py",
+    "tests/test_universal_top_production_repair_v1.py",
+    "devsystem/execution_plans/api2-universal-top-production-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-universal-top-production-repair-v1.json",
+    "devsystem/task_ledgers/api2-universal-top-production-repair-v1.json"
+  ]
+}
