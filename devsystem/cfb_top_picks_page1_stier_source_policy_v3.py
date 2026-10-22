@@ -62,8 +62,9 @@ def main() -> int:
 
     for token in (
         'PAGE1_ENDPOINT = "/api/v3/cfb/top-picks/page1"',
-        "TOP 10 GAME PICKS", "TOP 10 PLAYER PROPS", "HIT PROBABILITY",
-        "ODDS", "RECORD", "GAME TIME", "PLAYER ID", "team-logo",
+        '<h2>TOP 10 <span>GAME PICKS</span></h2>',
+        '<h2>TOP 10 <span>PLAYER PROPS</span></h2>',
+        "HIT PROBABILITY", "ODDS", "RECORD", "GAME TIME", "PLAYER ID", "team-logo",
     ):
         if token not in page:
             failures.append(f"missing_simple_page_contract:{token}")
