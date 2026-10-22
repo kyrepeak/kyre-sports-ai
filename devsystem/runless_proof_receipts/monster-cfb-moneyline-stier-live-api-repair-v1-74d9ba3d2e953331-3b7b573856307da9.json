@@ -1,0 +1,45 @@
+{
+  "artifact_map": {
+    "devsystem/cfb_moneyline_stier_live_api_source_policy_v1.py": "7684f4c75a008b6b5f988f47045686310f7275ab",
+    "devsystem/runless_proof_plans/monster-cfb-moneyline-stier-live-api-repair-v1.json": "3b760afc74a1e5d31f4942adffa7b32bc71db7b9",
+    "kyre_sports_api_vercel_v1.py": "09b8809c8eb199230101f3405d311d379af538c6",
+    "pyproject.toml": "13899ac46641a42aa1deccc51d19a3dcf3bcebf8",
+    "tests/test_monster_cfb_moneyline_stier_live_api_repair_v1.py": "f268c45a71c01bc2107cdca5aeb2bda8a7b17bd5"
+  },
+  "candidate_sha": "74d9ba3d2e953331905876bef2764339ca95c750",
+  "created_at": "2026-10-22T06:01:47.323173+00:00",
+  "dependency_map": {},
+  "digest": "3020898d682b2702211dfeda2ddb93e23fb86d9bde6ed08e70badee5a7099a24",
+  "evidence_digests": [
+    "9ff5818661e8ac5e373d273b05421f5da538fe5d7ee1551ad02bbca16aeab517",
+    "fdb816d811a462cac39688f2342efe2b5455edf5e2a63d36296585dd7c07a824",
+    "f71ed9fe838382921a53486d921db95f700c2135cd1bafcf4b40c58540e0f017"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "b3de4acaf397f8f4c7522decc4e15024bcbd3f477f89d32dfd1317087e732f4e",
+  "proof_id": "monster-cfb-moneyline-stier-live-api-repair-v1-74d9ba3d2e953331-3b7b573856307da9",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 470,
+    "state_hash": "37cea3f503c5c4db8de4a1cde5780253efccaf4666d145546fb39e312a7f9a5a"
+  },
+  "request_fingerprint": "d024b0291ffe9c7f9beff6c8c3ca1b56e010d705fbe560c4691f3e3fec67d698",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-cfb-moneyline-stier-live-api-repair-v1",
+  "workstream": "monster-cfb-moneyline-stier-live-api-repair-v1"
+}
