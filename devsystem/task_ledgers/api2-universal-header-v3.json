@@ -5,7 +5,7 @@
   "authoritative_branch": "api2-universal-header-v3",
   "proof_base_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
   "scope_lease_id": "SCOPE-LEASE-C4BAB8AFAF9929F2F0CA2E6C",
-  "status": "RED_READY",
+  "status": "PATCH_READY",
   "single_pr": true,
   "single_proof_path": true,
   "duplicate_submission_forbidden": true,
@@ -15,8 +15,19 @@
   "freeze_token": "API2_UNIVERSAL_HEADER_V3_FROZEN",
   "root_cause_class": "STREAMLIT_SLOT_ORDER_AND_LEGACY_EMOJI_HEADER",
   "root_cause": {
-    "position": "destination_slot is created before core._render_destination_shell(), so destination content occupies an earlier Streamlit output position and the universal nav can appear below page content.",
-    "presentation": "Universal sports navigation still formats sports with registry emoji icons and the legacy single-line KYRE SPORTS brand instead of league-mark controls and a professional header treatment."
+    "position": "destination_slot was created before core._render_destination_shell(), so destination content occupied an earlier Streamlit output position and the universal nav could appear below page content.",
+    "presentation": "Universal sports navigation formatted sports with registry emoji icons and the legacy single-line KYRE SPORTS brand instead of league-mark controls and a professional header treatment."
+  },
+  "tdd": {
+    "red_candidate_sha": "d34e1bbdfa3f732d44a58e6c1185ce6198de5720",
+    "red_proof_id": "api2-universal-header-v3-d34e1bbdfa3f732d-e377bb707dfa5e77",
+    "red_failure_class": "STATIC_PROOF",
+    "red_detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+    "patch_product_sha": "d2d0c7e8c889a4242bce5f3d4edfc58b80ae5281"
+  },
+  "repair": {
+    "position": "Render core._render_destination_shell(runtime.active) before transition_slot and destination_slot creation so Streamlit places the universal nav above all destination content.",
+    "presentation": "Keep existing tap-first st.pills controls, switch sport labels to words only, inject league marks into those same controls, and present KYRE SPORTS AI with Professional Sports Analytics branding in the sticky universal shell."
   },
   "scope": [
     "universal_page_experience_runtime_v1.py",
