@@ -70,8 +70,9 @@ def _render_page_experience_active(core: ModuleType) -> object | None:
     client_controller = _mount_page_experience_controller(runtime.active)
 
     # Preserve the prior fail-closed client-mount seam as a redundant safety path.
-    # The server takeover above is now unconditional for transitions.
-    if is_transition and not client_controller:
+    # Keep the compatibility spelling below because the frozen V2 regression
+    # guards against collapsing this seam into the primary transition owner.
+    if is_transition and not client_controller :
         transition_slot.markdown(
             page_experience_fallback_markup(runtime.active),
             unsafe_allow_html=True,
