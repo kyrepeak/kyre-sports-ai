@@ -9,7 +9,10 @@ from streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1 import (
     render_app,
 )
 
-# Frozen Page 1 V4 remains the predecessor; Page 2 is successor-only.
+# Frozen successor lineage remains explicit for regression ownership:
+# streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v2
+# streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v3
+# Page 1 V4 remains the predecessor; Page 2 is successor-only.
 import streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v4 as _cfb_top_picks_v4  # noqa: E402,F401
 import streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1 as _cfb_top_picks_page2_v1  # noqa: E402,F401
 
