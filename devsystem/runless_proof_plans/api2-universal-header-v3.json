@@ -1,0 +1,44 @@
+{
+  "mode": "runless",
+  "task_id": "api2-universal-header-v3",
+  "workstream": "api2-universal-header-v3",
+  "source_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_api2_universal_header_v3.py",
+      "tests/test_universal_sports_nav_ui_v1.py",
+      "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
+      "tests/test_universal_page_experience_v2_live_repair_v1.py",
+      "tests/test_universal_page_experience_runtime_v1.py",
+      "tests/test_universal_page_experience_coverage_v1.py"
+    ],
+    ["python", "-m", "py_compile",
+      "universal_sports_nav_ui_v1.py",
+      "universal_sports_nav_ui_v2.py",
+      "universal_page_experience_runtime_v1.py",
+      "tests/test_api2_universal_header_v3.py"
+    ]
+  ],
+  "artifacts": [
+    "universal_page_experience_runtime_v1.py",
+    "universal_sports_nav_ui_v1.py",
+    "tests/test_api2_universal_header_v3.py",
+    "devsystem/execution_plans/api2-universal-header-v3.json",
+    "devsystem/runless_proof_plans/api2-universal-header-v3.json",
+    "devsystem/task_ledgers/api2-universal-header-v3.json"
+  ],
+  "dependencies": [
+    "universal_sports_nav_ui_v2.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py",
+    "universal_page_experience_v1.py",
+    "app.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_UNIVERSAL_HEADER_V3_FROZEN"
+}
