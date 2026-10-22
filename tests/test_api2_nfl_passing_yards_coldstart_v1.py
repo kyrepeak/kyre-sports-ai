@@ -11,8 +11,20 @@ def _valid_payload() -> dict:
         "schema_version": "nfl_passing_yards_simple_qb_grid_v1",
         "service": "kyre-sports-api",
         "gateway": "Kyre Sports API",
-        "quarterback_count": 0,
-        "quarterbacks": [],
+        "quarterback_count": 1,
+        "quarterbacks": [
+            {
+                "player_id": "kyre:nfl:player:test-qb",
+                "game_id": "kyre:nfl:game:test-game",
+                "qb_name": "Test Quarterback",
+                "team_abbr": "AAA",
+                "opponent_abbr": "BBB",
+                "game_time": "13:00",
+                "market": {"status": "NOT_AVAILABLE", "line": None},
+                "over_probability": None,
+                "under_probability": None,
+            }
+        ],
         "routing": {
             "canonical_ids": True,
             "sportsbook_line_averaging": False,
