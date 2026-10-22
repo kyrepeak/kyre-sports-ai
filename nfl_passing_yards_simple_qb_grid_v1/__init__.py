@@ -35,13 +35,17 @@ def _render_detail(st: Any, card: dict[str, Any]) -> None:
 # The verified Page 1 renderer resolves _render_detail from its module globals.
 _legacy._render_detail = _render_detail
 
-render_simple_qb_grid = _legacy.render_simple_qb_grid
+render_nfl_passing_yards_simple_qb_grid = _legacy.render_nfl_passing_yards_simple_qb_grid
+render_nfl_hub = _legacy.render_nfl_hub
 build_qb_card_html = _legacy.build_qb_card_html
+sort_qb_cards = _legacy.sort_qb_cards
 CSS = _legacy.CSS
 
 __all__ = sorted(set(getattr(_legacy, "__all__", [])) | {
     "CSS",
     "_render_detail",
     "build_qb_card_html",
-    "render_simple_qb_grid",
+    "render_nfl_hub",
+    "render_nfl_passing_yards_simple_qb_grid",
+    "sort_qb_cards",
 })
