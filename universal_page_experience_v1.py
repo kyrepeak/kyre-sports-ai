@@ -9,6 +9,13 @@ from universal_atomic_navigation_v2 import LOADER_DELAY_MS, destination_page_nam
 PAGE_EXPERIENCE_VERSION = "API2 UNIVERSAL PAGE EXPERIENCE V1"
 TOP_REVEAL_PX = 320
 
+_NATIVE_TOP = r'''<style id="kyre-universal-top-native-v2-style">
+a[data-kyre-universal-top="v2"]{position:fixed;right:max(18px,calc(env(safe-area-inset-right,0px) + 14px));bottom:max(22px,calc(env(safe-area-inset-bottom,0px) + 18px));z-index:2147483646;min-width:44px;min-height:44px;padding:0 14px;border:1px solid rgba(125,211,252,.5);border-radius:999px;background:rgba(6,11,19,.96);color:#7dd3fc;font:900 12px/44px system-ui,-apple-system,sans-serif;letter-spacing:.08em;text-align:center;text-decoration:none;box-sizing:border-box;box-shadow:0 10px 30px rgba(0,0,0,.38),0 0 20px rgba(125,211,252,.12);cursor:pointer;-webkit-tap-highlight-color:transparent}
+a[data-kyre-universal-top="v2"]:focus-visible{outline:2px solid #7dd3fc;outline-offset:3px}
+@media (prefers-reduced-motion:reduce){a[data-kyre-universal-top="v2"]{scroll-behavior:auto}}
+</style>
+<a data-kyre-universal-top="v2" href="#" aria-label="Back to top">↑ TOP</a>'''
+
 _CONTROLLER = r'''<script>
 (() => {
   const host = window.parent;
@@ -38,7 +45,7 @@ _CONTROLLER = r'''<script>
     doc.head.appendChild(style);
   }
 
-  let topButton = doc.querySelector('[data-kyre-universal-top="v1"]');
+  let topButton = doc.querySelector('[data-kyre-universal-top="v2"]') || doc.querySelector('[data-kyre-universal-top="v1"]');
   if (!topButton) {
     topButton = doc.createElement("button");
     topButton.type = "button";
@@ -76,7 +83,13 @@ _CONTROLLER = r'''<script>
     if (owner === doc.documentElement || owner === doc.body || owner === document.scrollingElement) return host.scrollY || owner.scrollTop || 0;
     return owner.scrollTop || 0;
   }
-  function syncTop() { topButton.setAttribute("aria-hidden", scrollY() >= TOP_REVEAL_PX ? "false" : "true"); }
+  function syncTop() {
+    if (topButton.getAttribute("data-kyre-universal-top") === "v2") {
+      topButton.setAttribute("aria-hidden", "false");
+      return;
+    }
+    topButton.setAttribute("aria-hidden", scrollY() >= TOP_REVEAL_PX ? "false" : "true");
+  }
   function bindScroll() {
     const next = resolveScrollOwner();
     if (scrollOwner === next) { syncTop(); return; }
@@ -132,6 +145,7 @@ _CONTROLLER = r'''<script>
   function onPointerDown(event) {
     const node = event.target && event.target.closest ? event.target.closest('button,a,[role="button"],input,textarea,select') : null;
     if (!node) return;
+    if (node.matches && node.matches('[data-kyre-universal-top="v2"],[data-kyre-universal-top="v1"]')) return;
     const appView = doc.querySelector('[data-testid="stAppViewContainer"]');
     if (appView && !appView.contains(node)) return;
     const kind = classify(node);
@@ -179,6 +193,11 @@ _CONTROLLER = r'''<script>
 </script>'''
 
 
+def page_experience_native_top_markup() -> str:
+    """Always-visible, no-JavaScript TOP fallback for live Streamlit pages."""
+    return _NATIVE_TOP.strip()
+
+
 def page_experience_controller_markup(route: Any | None = None) -> str:
     initial = destination_page_name(route) if route is not None else "Sports"
     return _CONTROLLER.replace("__INITIAL_PAGE__", json.dumps(initial)).strip()
@@ -192,6 +211,7 @@ __all__ = [
     "LOADER_DELAY_MS",
     "PAGE_EXPERIENCE_VERSION",
     "TOP_REVEAL_PX",
+    "page_experience_native_top_markup",
     "page_experience_controller_markup",
     "page_experience_fallback_markup",
 ]
