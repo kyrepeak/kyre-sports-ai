@@ -203,3 +203,63 @@ def test_moneyline_flip_condition_is_derived_from_model_price_lab_not_guessed():
     assert item["title"] == "Price threshold"
     assert "-320" in item["text"]
     assert "positive" in item["text"].casefold()
+
+
+def test_turnover_margin_total_is_safely_normalized_by_verified_games():
+    import sports_api.api.cfb_top_picks_page2_v1 as api
+
+    profile = {
+        "record": {"games": 8},
+        "official_stats": {
+            "turnover_margin": {
+                "value_numeric": 29.0,
+                "headers": ["Rank", "Team", "G", "Margin"],
+                "row": ["1", "Memphis", "8", "29"],
+            }
+        },
+    }
+    value, derived = api._turnover_margin_per_game(profile)
+    assert derived is True
+    assert value == 29.0 / 8.0
+    assert value != 29.0
+
+
+def test_page2_ncaa_context_does_not_invoke_forbidden_espn_schedule_fallback(monkeypatch):
+    import cfb_schedule_v2
+    import sports_api.api.cfb_top_picks_page2_v1 as api
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("forbidden ESPN path was invoked")
+
+    monkeypatch.setattr(cfb_schedule_v2, "_fetch_espn_fbs_payload", forbidden)
+    monkeypatch.setattr(api.game_api, "_load_ncaa_games", lambda _day: [
+        {"game_id": "e1", "identity_key": "e1", "away_team": "East Carolina", "home_team": "Memphis"}
+    ])
+    monkeypatch.setattr(api.ml_api, "_analysis", lambda _game, _day: {
+        "away": {}, "home": {}, "final": {}, "raw": {}, "team_diag": {}
+    })
+    game, analysis = api._game_context({"event_id": "e1", "selected_date": "2026-10-22"})
+    assert game["game_id"] == "e1"
+    assert isinstance(analysis, dict)
+
+
+def test_page2_market_metadata_keeps_current_observation_separate_from_unverified_opener(monkeypatch):
+    import sports_api.api.cfb_top_picks_page2_v1 as api
+
+    monkeypatch.setattr(api, "_game_context", lambda _s: ({"game_id": "e1"}, {}))
+    monkeypatch.setattr(api.game_api, "_market_state", lambda _games: ({"e1": [{
+        "sportsbook": "FanDuel",
+        "home_moneyline": -420,
+        "away_moneyline": 330,
+        "observed_at_utc": "2026-10-22T21:58:00Z",
+        "source_provider": "FanDuel",
+    }]}, ["FanDuel"]))
+    snapshot = {
+        "kind": "game-pick", "event_id": "e1", "market_type": "MONEYLINE",
+        "side": "HOME", "sportsbook": "FanDuel", "american_odds": -420,
+        "market_timestamp": "2026-10-22T21:58:00Z",
+    }
+    out = api._market(snapshot)
+    assert out["market_board"]["status"] == "READY"
+    assert out["line_movement"]["semantic_state"] == "OPENING_LINE_NOT_VERIFIED"
+    assert "opening" in out["line_movement"]["reason"].casefold()
