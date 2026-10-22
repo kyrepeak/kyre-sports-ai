@@ -14,6 +14,7 @@ from typing import Any
 from fastapi import APIRouter, Query
 
 from sports_api.api import nfl_passing_yards_page_v1 as base
+from sports_api.collectors import nfl_fanduel_passing_yards_nflverse_v1 as market_fill
 
 SCHEMA_VERSION = "nfl_passing_yards_simple_qb_grid_v1"
 router = APIRouter(prefix="/api/v1/nfl/passing-yards/slate", tags=["nfl-passing-yards-slate"])
@@ -112,6 +113,16 @@ def _season_context(season: int, cutoff: str) -> dict[str, Any]:
     }
 
 
+def _collect_market_observations(game: dict[str, Any]) -> list[dict[str, Any]]:
+    try:
+        direct = market_fill.collect_fanduel_game_markets(game)
+    except Exception:
+        direct = []
+    if direct:
+        return direct
+    return base.collect_market_observations(game)
+
+
 def _enrich_player(player: dict[str, Any], *, game: dict[str, Any], observations: list[dict[str, Any]]) -> dict[str, Any]:
     projection = (player.get("context_projection") or {}).get("context_projection_yards")
     snapshot = base.build_market_snapshot(observations, qb_name=_text(player.get("qb_name")), projection_yards=projection)
@@ -153,7 +164,7 @@ def build_game_bundles(target_date: str | None = None) -> tuple[str | None, list
         frame = ctx.get("frame")
         if frame is None:
             continue
-        observations = base.collect_market_observations(game)
+        observations = _collect_market_observations(game)
         players: list[dict[str, Any]] = []
         for team, opponent, side in ((game["away"], game["home"], "away"), (game["home"], game["away"], "home")):
             defense = (ctx.get("defenses") or {}).get(opponent) or {
