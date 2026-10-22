@@ -1,0 +1,31 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-readtimeout-v1",
+  "workstream": "api2-nfl-passing-yards-readtimeout-v1",
+  "source_main_sha": "f8976dc9d2cdc34bb18cf3b04125ff4265270dec",
+  "commands": [
+    ["python", "-m", "py_compile", "sports_api/api/nfl_passing_yards_slate_v1.py", "nfl_passing_yards_slate_gateway_v1.py", "tests/test_api2_nfl_passing_yards_readtimeout_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_readtimeout_v1.py", "tests/test_api2_nfl_passing_yards_market_fill_v1.py", "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py", "tests/test_api2_nfl_passing_yards_page1_stier_v2.py", "tests/test_api2_nfl_passing_yards_identity_visuals_v1.py", "tests/test_api2_nfl_passing_yards_professional_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not route"]
+  ],
+  "artifacts": [
+    "sports_api/api/nfl_passing_yards_slate_v1.py",
+    "tests/test_api2_nfl_passing_yards_readtimeout_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-readtimeout-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-readtimeout-v1.json"
+  ],
+  "dependencies": [
+    "nfl_passing_yards_slate_gateway_v1.py",
+    "sports_api/api/nfl_passing_yards_page_v1.py",
+    "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1.py"
+  ],
+  "dependency_tokens": ["domain:api2-nfl-passing-yards-readtimeout-v1"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_READTIMEOUT_V1_FROZEN",
+  "notes": "Production ReadTimeout repair for NFL Passing Yards slate. Root cause was repeated three-season QB history regrouping for each distinct slate game date, not FanDuel market collection. Candidate builds one shared dated history pool per season, slices it strictly before each cutoff date, and uses bounded context/market prefetch without changing providers, odds, projections, or the no-future-data rule. Exact-head live candidate evidence: 14 games, 28 QB cards, 27 real FanDuel markets; 9.69s cold and 6.14s warm versus pre-repair production calls around 11.9-13.3s. Kyre Sports API only; no SGO, ESPN, ESPN BET, fabricated lines, missing-to-zero, or sportsbook averaging."
+}
