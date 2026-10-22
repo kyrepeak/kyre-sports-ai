@@ -9,6 +9,7 @@
     "universal_page_experience_runtime_v1.py",
     "universal_sports_nav_ui_v1.py",
     "tests/test_api2_universal_header_v3.py",
+    "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
     "devsystem/execution_plans/api2-universal-header-v3.json",
     "devsystem/runless_proof_plans/api2-universal-header-v3.json",
     "devsystem/task_ledgers/api2-universal-header-v3.json"
@@ -32,7 +33,7 @@
   },
   "step2a": {
     "authoritative_branch": "api2-universal-header-v3",
-    "scope_lease_id": "SCOPE-LEASE-C4BAB8AFAF9929F2F0CA2E6C",
+    "scope_lease_id": "SCOPE-LEASE-6E7A9FDBA42FFE131FF23B9E",
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
@@ -43,6 +44,7 @@
     "Header title is KYRE SPORTS AI with Professional Sports Analytics subtitle",
     "Sport controls show NFL, CFB, NBA, MLB, WNBA words with league marks instead of emoji labels",
     "Header remains sticky and horizontally usable on mobile",
+    "Tap-first regression follows the current terminal runtime chain instead of an obsolete direct app import",
     "No sports data/model/provider behavior changes"
   ],
   "freeze_token": "API2_UNIVERSAL_HEADER_V3_FROZEN"
