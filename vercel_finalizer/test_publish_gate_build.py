@@ -62,3 +62,21 @@ def test_main_runs_proof_without_publishing_gate(monkeypatch):
     monkeypatch.setattr(target, "_run_exact_proof", lambda: [["pytest"]])
     monkeypatch.setattr(target, "_proof_digest", lambda sha, commands: "sha256:" + "1" * 64)
     assert target.main() == 0
+
+
+def test_preview_without_identity_skips_build_proof(monkeypatch):
+    for key in ("FINALIZER_TASK_ID", "FINALIZER_WORKSTREAM", "FINALIZER_FENCING_GENERATION"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("VERCEL_ENV", "preview")
+    monkeypatch.setenv("VERCEL_GIT_COMMIT_SHA", SHA)
+    monkeypatch.setattr(target, "_run_exact_proof", lambda: pytest.fail("preview must not execute task proof"))
+    assert target.main() == 0
+
+
+def test_production_without_identity_still_fails_closed(monkeypatch):
+    for key in ("FINALIZER_TASK_ID", "FINALIZER_WORKSTREAM", "FINALIZER_FENCING_GENERATION"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("VERCEL_ENV", "production")
+    monkeypatch.setenv("VERCEL_GIT_COMMIT_SHA", SHA)
+    with pytest.raises(RuntimeError, match="FINALIZER_TASK_ID_REQUIRED"):
+        target.main()

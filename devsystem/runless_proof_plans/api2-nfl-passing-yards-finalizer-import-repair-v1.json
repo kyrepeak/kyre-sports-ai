@@ -1,0 +1,34 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-finalizer-import-repair-v1",
+  "workstream": "api2-nfl-passing-yards-finalizer-import-repair-v1",
+  "source_main_sha": "5cb75a57ed2cdbd7d168eebd6eb88089adf4fb9f",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "vercel_finalizer/test_vercel_subdir_bootstrap.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "vercel_finalizer/test_receipt_binding.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_professional_v1.py"],
+    ["python", "-m", "py_compile", "vercel_finalizer/app.py", "vercel_finalizer/authority.py", "vercel_finalizer/gate_publication.py", "vercel_finalizer/receipt_binding.py", "vercel_finalizer/receipt_contract.py", "vercel_finalizer/publish_gate_build.py", "vercel_finalizer/vercel_finalizer.py"]
+  ],
+  "artifacts": [
+    "vercel_finalizer/publish_gate_build.py",
+    "vercel_finalizer/receipt_binding.py",
+    "vercel_finalizer/receipt_contract.py",
+    "vercel_finalizer/test_publish_gate_build.py",
+    "vercel_finalizer/test_vercel_subdir_bootstrap.py",
+    "vercel_finalizer/vercel_finalizer.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-finalizer-import-repair-v1.json"
+  ],
+  "dependencies": [
+    "vercel_finalizer/app.py",
+    "vercel_finalizer/authority.py",
+    "vercel_finalizer/gate_publication.py",
+    "runless_v2/receipt_contract.py",
+    "tests/test_api2_nfl_passing_yards_professional_v1.py"
+  ],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_FINALIZER_IMPORT_REPAIR_V1_FROZEN"
+}
