@@ -10,17 +10,20 @@ def resolve_destination(route: RuntimeRoute):
     if route.sport_id == "cfb" and route.market_id == "moneyline":
         base = prior.resolve_destination(route)
         def renderer(payload):
-            import streamlit as st
             selector = importlib.import_module("universal_tap_only_selector_v2")
-            nav = importlib.import_module("cfb_universal_next_slate_navigation_v1")
-            schedule = importlib.import_module("cfb_schedule_v1")
-            page = importlib.import_module("cfb_moneyline_clean_page_v6")
-            resolved = nav.resolve_runtime_cfb_slate_date(games_loader=schedule.games_for_date)
-            session_key = getattr(nav, "SESSION_DATE_KEY", "cfb_universal_next_slate_date")
-            st.session_state[session_key] = resolved.isoformat() if resolved else ""
-            with selector.install_universal_tap_only_selectboxes():
-                with nav.install_cfb_next_slate_date_bridge(resolved):
+            page = importlib.import_module("cfb_moneyline_clean_page_v6")  # frozen compatibility bootstrap
+            page = importlib.import_module("cfb_moneyline_clean_page_v7")  # S-tier Kyre API successor
+            native_caption = page.st.caption
+            def normalized_caption(body, *args, **kwargs):
+                if isinstance(body, str):
+                    body = body.replace("price-indepent", "price-independent")
+                return native_caption(body, *args, **kwargs)
+            page.st.caption = normalized_caption
+            try:
+                with selector.install_universal_tap_only_selectboxes():
                     return page.render_moneyline_hub()
+            finally:
+                page.st.caption = native_caption
         return DestinationAdapter(base.route_key, base.loader, renderer, MODEL_VERSION, base.ttl_ms)
     return prior.resolve_destination(route)
 

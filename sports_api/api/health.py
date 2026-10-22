@@ -14,6 +14,7 @@ from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_
 from sports_api.api.cfb_odds_v1 import router as cfb_odds_router
 from sports_api.api.cfb_team_identity_v1 import router as cfb_team_identity_router
 from sports_api.api.cfb_daily_slate_v1 import router as cfb_daily_slate_router
+from sports_api.api.cfb_moneyline_page1_v1 import router as cfb_moneyline_page1_router
 from sports_api.api.nfl_moneyline_market_v1 import router as nfl_moneyline_market_router
 from sports_api.api.nfl_passing_yards_market_v1 import router as nfl_passing_yards_market_router
 from sports_api.api.nfl_receiving_yards_context_v1 import router as nfl_receiving_yards_context_router
@@ -36,6 +37,7 @@ router.routes.extend(cfb_market_identity_router.routes)
 router.routes.extend(cfb_odds_router.routes)
 router.routes.extend(cfb_team_identity_router.routes)
 router.routes.extend(cfb_daily_slate_router.routes)
+router.routes.extend(cfb_moneyline_page1_router.routes)
 router.routes.extend(nfl_moneyline_market_router.routes)
 router.routes.extend(nfl_passing_yards_market_router.routes)
 router.routes.extend(nfl_receiving_yards_context_router.routes)
