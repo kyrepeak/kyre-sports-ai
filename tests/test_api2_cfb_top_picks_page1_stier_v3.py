@@ -186,6 +186,8 @@ def test_v3_api_contract_declares_completeness_and_safe_fallbacks():
         '"application_gateway": "Kyre Sports API"',
         '"game_picks_10_of_10"',
         '"player_props_10_of_10"',
+        '"slate_backfill_used"',
+        '"slate_dates"',
         '"FanDuel"',
         '"The Odds API"',
         '"consensus_averaging": False',
