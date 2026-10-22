@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "cfb_game_total_page1_stier_v1.py"
+LOADER = ROOT / "universal_runtime_v5_loader_nba_pra_page1_v1.py"
 TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py"
 API_ENTRY = ROOT / "kyre_sports_api_vercel_v1.py"
 
@@ -39,13 +40,20 @@ def test_page_has_professional_game_total_command_center_surfaces():
         assert marker in source
 
 
-def test_terminal_runtime_routes_only_cfb_game_total_to_successor():
-    source = TERMINAL.read_text(encoding="utf-8")
+def test_delegated_loader_routes_only_cfb_game_total_to_successor():
+    source = LOADER.read_text(encoding="utf-8")
     assert 'route.sport_id == "cfb" and route.market_id == "game-total"' in source
     assert 'importlib.import_module("cfb_game_total_page1_stier_v1")' in source
     assert 'importlib.import_module("cfb_game_total_page2_market_completeness_r1")' in source
+    assert 'route.sport_id == "nba" and route.market_id == "pra"' in source
+
+
+def test_active_terminal_owner_is_untouched_and_still_delegates():
+    source = TERMINAL.read_text(encoding="utf-8")
     assert 'route.sport_id == "nfl" and route.market_id == "passing-yards"' in source
     assert 'route.sport_id == "nba" and route.market_id == "pra"' in source
+    assert 'resolve_destination as _v1_resolve_destination' in source
+    assert 'route.sport_id == "cfb" and route.market_id == "game-total"' not in source
 
 
 def test_dedicated_kyre_api_registers_game_total_router():
