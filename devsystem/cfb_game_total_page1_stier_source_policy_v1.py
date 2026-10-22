@@ -8,6 +8,7 @@ PAGE = ROOT / "cfb_game_total_page1_stier_v1.py"
 API = ROOT / "sports_api" / "api" / "cfb_game_total_page1_v1.py"
 COLLECTOR = ROOT / "sports_api" / "collectors" / "cfb_game_total_market_v1.py"
 ACTION = ROOT / "sports_api" / "collectors" / "cfb_action_network_game_markets_v1.py"
+LOADER = ROOT / "universal_runtime_v5_loader_nba_pra_page1_v1.py"
 TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py"
 ENTRY = ROOT / "kyre_sports_api_vercel_v1.py"
 
@@ -23,6 +24,7 @@ def main() -> int:
     api = _text(API)
     api_lower = api.casefold()
     backend_lower = (_text(COLLECTOR) + "\n" + _text(ACTION)).casefold()
+    loader = _text(LOADER)
     terminal = _text(TERMINAL)
     entry = _text(ENTRY)
 
@@ -66,10 +68,12 @@ def main() -> int:
 
     if "ACTION_ODDS_URL" not in _text(ACTION) or '"source_provider": "Action Network"' not in _text(ACTION):
         failures.append("approved Action Network secondary collector missing")
-    if 'route.sport_id == "cfb" and route.market_id == "game-total"' not in terminal:
-        failures.append("terminal CFB Game Total route activation missing")
-    if 'importlib.import_module("cfb_game_total_page2_market_completeness_r1")' not in terminal:
+    if 'route.sport_id == "cfb" and route.market_id == "game-total"' not in loader:
+        failures.append("delegated CFB Game Total route activation missing")
+    if 'importlib.import_module("cfb_game_total_page2_market_completeness_r1")' not in loader:
         failures.append("selected-game Page 2 preservation missing")
+    if 'route.sport_id == "cfb" and route.market_id == "game-total"' in terminal:
+        failures.append("active Passing Yards terminal owner must remain untouched by CFB route")
     if "sports_api.api.cfb_game_total_page1_v1" not in entry or "app.include_router(cfb_game_total_router)" not in entry:
         failures.append("dedicated Kyre Sports API route registration missing")
 
