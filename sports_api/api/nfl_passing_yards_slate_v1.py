@@ -115,6 +115,30 @@ def _season_context(season: int, cutoff: str) -> dict[str, Any]:
     }
 
 
+def _prefetch_season_contexts(
+    games: list[dict[str, Any]],
+    *,
+    max_workers: int = 3,
+) -> dict[tuple[int, str], dict[str, Any]]:
+    keys: list[tuple[int, str]] = []
+    for game in games:
+        key = (int(game["season"]), _text(game.get("date")))
+        if key not in keys:
+            keys.append(key)
+    if not keys:
+        return {}
+    worker_count = max(1, min(int(max_workers), len(keys)))
+    with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="passing-yards-context") as pool:
+        futures = [pool.submit(_season_context, season, cutoff) for season, cutoff in keys]
+        contexts: dict[tuple[int, str], dict[str, Any]] = {}
+        for key, future in zip(keys, futures):
+            try:
+                contexts[key] = future.result()
+            except Exception:
+                contexts[key] = {"frame": None, "current_rows": [], "defenses": {}, "history": []}
+        return contexts
+
+
 def _collect_market_observations(game: dict[str, Any]) -> list[dict[str, Any]]:
     try:
         direct = market_fill.collect_fanduel_game_markets(game)
@@ -227,19 +251,14 @@ def build_game_bundles(target_date: str | None = None) -> tuple[str | None, list
     }
     if not resolved_date or not games:
         return resolved_date, [], provenance
-    contexts: dict[tuple[int, str], dict[str, Any]] = {}
-    bundles: list[dict[str, Any]] = []
+    contexts = _prefetch_season_contexts(games)
     markets_by_game = _prefetch_market_observations(games)
+    bundles: list[dict[str, Any]] = []
     for game in games:
         season = int(game["season"])
         game_date = _text(game.get("date")) or str(resolved_date or "")
         context_key = (season, game_date)
-        if context_key not in contexts:
-            try:
-                contexts[context_key] = _season_context(season, game_date)
-            except Exception:
-                contexts[context_key] = {"frame": None, "current_rows": [], "defenses": {}, "history": []}
-        ctx = contexts[context_key]
+        ctx = contexts.get(context_key) or {"frame": None, "current_rows": [], "defenses": {}, "history": []}
         frame = ctx.get("frame")
         if frame is None:
             continue
