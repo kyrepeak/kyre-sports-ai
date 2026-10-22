@@ -27,7 +27,11 @@
     "first_patch_proof_id": "api2-universal-page-experience-v2-live-repair-v1-46ef32c352aabac6-f3498277d65d643a",
     "first_patch_failure_class": "STATIC_PROOF",
     "first_patch_root_cause": "Frozen Universal Page Experience V1 regression requires the literal document.scrollingElement fallback contract; first patch narrowed it to doc.scrollingElement.",
-    "compatibility_patch": "Restore document.scrollingElement as a real fallback in scroll-owner resolution while preserving the parent-document owner path.",
+    "second_patch_candidate_sha": "6c769afa1718207d46d6f561629ff072b48e51e3",
+    "second_patch_proof_id": "api2-universal-page-experience-v2-live-repair-v1-6c769afa1718207d-d27fe0827f07e4aa",
+    "second_patch_failure_class": "STATIC_PROOF",
+    "second_patch_root_cause": "Frozen native TOP regression still requires the legacy href=# compatibility token while the V2 repair uses the real #kyre-universal-page-top fragment target.",
+    "compatibility_patch": "Preserve the real fragment target and one TOP control, while retaining the legacy no-JS fallback token as a semantic data attribute; restore document.scrollingElement in the real scroll-owner fallback chain.",
     "duplicate_submissions": 0
   },
   "repair": {
