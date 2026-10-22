@@ -19,18 +19,21 @@ setattr(sports_api_pkg, "api", sys.modules["sports_api.api"])
 
 import sports_api.api.cfb_moneyline_page1_v1 as cfb_moneyline_module
 import sports_api.api.cfb_game_total_page1_v1 as cfb_game_total_module
+import sports_api.api.cfb_top_picks_page1_v1 as cfb_top_picks_page1_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 
 cfb_moneyline_router = cfb_moneyline_module.router
 cfb_game_total_router = cfb_game_total_module.router
+cfb_top_picks_page1_router = cfb_top_picks_page1_module.router
 nfl_passing_yards_page_router = nfl_passing_yards_page_module.router
 app = FastAPI(
     title="Kyre Sports API",
-    version="KYRE_GATEWAY_V3",
+    version="KYRE_GATEWAY_V4",
     description="Kyre Sports AI application-facing sports data gateway.",
 )
 app.include_router(cfb_moneyline_router)
 app.include_router(cfb_game_total_router)
+app.include_router(cfb_top_picks_page1_router)
 app.include_router(nfl_passing_yards_page_router)
 
 
@@ -41,6 +44,7 @@ def health() -> dict[str, object]:
         "service": "Kyre Sports API",
         "cfb_moneyline_page1": True,
         "cfb_game_total_page1": True,
+        "cfb_top_picks_page1": True,
         "nfl_passing_yards_page": True,
         "direct_app_provider_fallback": False,
     }
