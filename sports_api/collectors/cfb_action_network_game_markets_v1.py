@@ -33,6 +33,7 @@ _APPROVED_BOOKS = {"FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fana
 _EXTRA_ALIASES = {
     "western mich": "western michigan",
     "western michigan broncos": "western michigan",
+    "toledo rockets": "toledo",
     "central mich": "central michigan",
     "central michigan chippewas": "central michigan",
     "eastern mich": "eastern michigan",
@@ -41,12 +42,16 @@ _EXTRA_ALIASES = {
     "florida atlantic owls": "florida atlantic",
     "northern ill": "northern illinois",
     "northern illinois huskies": "northern illinois",
+    "niu": "northern illinois",
     "niu huskies": "northern illinois",
     "la monroe": "louisiana monroe",
     "louisiana monroe warhawks": "louisiana monroe",
+    "ulm": "louisiana monroe",
     "ulm warhawks": "louisiana monroe",
     "pitt": "pittsburgh",
+    "pitt panthers": "pittsburgh",
     "pittsburgh panthers": "pittsburgh",
+    "miami fl": "miami",
     "miami fl hurricanes": "miami",
     "miami hurricanes": "miami",
     "rutgers scarlet knights": "rutgers",
@@ -154,7 +159,11 @@ def parse_action_network_html(text: str, *, observed_at_utc: str) -> list[dict[s
             away_moneyline, home_moneyline = _american(away_ml.get("odds")), _american(home_ml.get("odds"))
             over_price, under_price = _american(over.get("odds")), _american(under.get("odds"))
             away_spread_price, home_spread_price = _american(away_sp.get("odds")), _american(home_sp.get("odds"))
-            if None in {total_line, under_line, away_spread, home_spread, away_moneyline, home_moneyline, over_price, under_price}:
+            if None in {
+                total_line, under_line, away_spread, home_spread,
+                away_spread_price, home_spread_price,
+                away_moneyline, home_moneyline, over_price, under_price,
+            }:
                 continue
             if abs(float(total_line) - float(under_line)) > 1e-6 or abs(float(away_spread) + float(home_spread)) > 1e-6:
                 continue
