@@ -1,0 +1,21 @@
+{
+  "version": "API2_NFL_PASSING_YARDS_FINALIZER_IMPORT_REPAIR_V1",
+  "task_id": "api2-nfl-passing-yards-finalizer-import-repair-v1",
+  "workstream": "api2-nfl-passing-yards-finalizer-import-repair-v1",
+  "source_main_sha": "5cb75a57ed2cdbd7d168eebd6eb88089adf4fb9f",
+  "active_problem": "Vercel finalizer runtime could not import its package and receipt contract from the project-root Lambda bundle, blocking the Runless proof and closeout path for NFL Passing Yards.",
+  "authoritative_branch": "api2-nfl-passing-yards-finalizer-import-repair-v1",
+  "authoritative_pr": 1735,
+  "proof_mode": "runless",
+  "scope_lease_id": "SCOPE-LEASE-42EBE3C6B3C5824CE780B67D",
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "acceptance": [
+    "Exact candidate finalizer preview /health returns HTTP 200 with service kyre-sports-finalizer.",
+    "Isolated Vercel bundle regression and receipt-binding regression pass.",
+    "Runless exact-head proof reaches MERGE_AUTHORIZED and publishes runless-final-gate.",
+    "PR #1735 merges at the exact authorized head and post-merge finalizer and NFL Passing Yards acceptance remain green."
+  ],
+  "freeze_token": "API2_NFL_PASSING_YARDS_FINALIZER_IMPORT_REPAIR_V1_FROZEN"
+}
