@@ -145,8 +145,9 @@ def parse_action_network_html(text: str, *, observed_at_utc: str) -> list[dict[s
             home_sp = _normal_row(event_markets.get("spread"), "home")
             over = _normal_row(event_markets.get("total"), "over")
             under = _normal_row(event_markets.get("total"), "under")
-            if None in {away_ml, home_ml, away_sp, home_sp, over, under}:
+            if any(row is None for row in (away_ml, home_ml, away_sp, home_sp, over, under)):
                 continue
+            assert away_ml is not None and home_ml is not None and away_sp is not None and home_sp is not None and over is not None and under is not None
             total_line = _num(over.get("value"))
             under_line = _num(under.get("value"))
             away_spread, home_spread = _num(away_sp.get("value")), _num(home_sp.get("value"))
