@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 
 import universal_page_experience_runtime_v1 as runtime
 import universal_sports_nav_ui_v1 as nav
@@ -28,15 +29,18 @@ def test_header_brand_is_professional_and_sport_labels_are_words_only() -> None:
     assert all(icon not in "".join(nav._SPORT_LABELS.values()) for icon in ("🏈", "🏟️", "🏀", "⚾"))
 
 
-def test_every_sport_has_real_logo_asset_without_espn_dependency() -> None:
-    assert set(nav._SPORT_LOGO_URLS) == {"nfl", "cfb", "nba", "mlb", "wnba"}
-    joined = " ".join(nav._SPORT_LOGO_URLS.values()).lower()
+def test_every_sport_logo_is_local_and_embedded_without_runtime_hotlinks() -> None:
+    assert set(nav._SPORT_LOGO_ASSET_PATHS) == {"nfl", "cfb", "nba", "mlb", "wnba"}
+    assert set(nav._SPORT_LOGO_DATA_URIS) == {"nfl", "cfb", "nba", "mlb", "wnba"}
+    for sport_id, relative_path in nav._SPORT_LOGO_ASSET_PATHS.items():
+        asset = Path(nav.__file__).resolve().parent / relative_path
+        assert asset.is_file(), f"missing local {sport_id} league mark"
+        assert "<svg" in asset.read_text(encoding="utf-8").lower()
+        assert nav._SPORT_LOGO_DATA_URIS[sport_id].startswith("data:image/svg+xml;base64,")
+    joined = " ".join(nav._SPORT_LOGO_DATA_URIS.values()).lower()
+    assert "http://" not in joined
+    assert "https://" not in joined
     assert "espn" not in joined
-    assert "wikimedia" in nav._SPORT_LOGO_URLS["nfl"].lower()
-    assert "wikimedia" in nav._SPORT_LOGO_URLS["cfb"].lower()
-    assert "wikimedia" in nav._SPORT_LOGO_URLS["nba"].lower()
-    assert "wikimedia" in nav._SPORT_LOGO_URLS["mlb"].lower()
-    assert nav._SPORT_LOGO_URLS["wnba"].startswith("https://")
 
 
 def test_header_css_is_top_sticky_premium_and_logo_backed() -> None:
@@ -47,6 +51,8 @@ def test_header_css_is_top_sticky_premium_and_logo_backed() -> None:
     assert "ks-universal-brand-title" in css
     assert "ks-universal-brand-subtitle" in css
     assert "background-image:url(" in css
+    assert "data:image/svg+xml;base64," in css
+    assert "https://" not in css
     assert "data-testid=\"stpills\"" in css
 
 
