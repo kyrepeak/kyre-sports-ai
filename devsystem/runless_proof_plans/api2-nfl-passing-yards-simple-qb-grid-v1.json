@@ -1,0 +1,69 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-simple-qb-grid-v1",
+  "workstream": "api2-nfl-passing-yards-simple-qb-grid-v1",
+  "source_main_sha": "6d4255e86777d8922ce8e26dec6a599742acd3f8",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "sports_api/api/nfl_passing_yards_slate_v1.py",
+      "nfl_passing_yards_slate_gateway_v1.py",
+      "nfl_passing_yards_simple_qb_grid_v1.py",
+      "universal_runtime_v5_loader.py",
+      "kyre_sports_api_vercel_v1.py",
+      "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py",
+      "tests/test_api2_nfl_passing_yards_page1_stier_v2.py",
+      "tests/test_api2_nfl_passing_yards_identity_visuals_v1.py",
+      "tests/test_api2_nfl_passing_yards_professional_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_nfl_passing_yards_step7_projection_v1.py",
+      "tests/test_nfl_passing_yards_step8_context_v1.py",
+      "tests/test_nfl_passing_yards_step9_distribution_v1.py",
+      "tests/test_nfl_passing_yards_step10_market_v1.py",
+      "-k",
+      "not route"
+    ]
+  ],
+  "artifacts": [
+    "sports_api/api/nfl_passing_yards_slate_v1.py",
+    "nfl_passing_yards_slate_gateway_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1.py",
+    "universal_runtime_v5_loader.py",
+    "kyre_sports_api_vercel_v1.py",
+    "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-simple-qb-grid-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-simple-qb-grid-v1.json"
+  ],
+  "dependencies": [
+    "sports_api/api/nfl_passing_yards_page_v1/__init__.py",
+    "sports_api/api/nfl_passing_yards_page_v1.py",
+    "nfl_passing_yards_professional_v1/__init__.py",
+    "nfl_passing_yards_gateway_v1.py"
+  ],
+  "dependency_tokens": [
+    "domain:api2-nfl-passing-yards-simple-qb-grid-v1"
+  ],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_SIMPLE_QB_GRID_V1_FROZEN",
+  "notes": "Simple all-QB Page 1 successor for the active NFL week. Kyre Sports API only; no SGO/ESPN/ESPN BET in the production route. NFLverse-backed schedule/stats/identity, FanDuel-primary market routing with approved optional secondary fallback. Book-specific markets are preserved; missing market data remains explicit and never becomes zero or fabricated. Starter truth is MARKET_LISTED when a verified market confirms the QB, otherwise PROJECTED_RECENT_USAGE; no unverified official-starter claim. Frozen Page 1 V2 successor blobs remain unchanged. Runless R2 removes the raw git diff command because the Runless sandbox allowlist accepts pytest/approved python modules only; diff check remains independently GREEN in candidate evidence."
+}
