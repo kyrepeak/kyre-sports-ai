@@ -1,0 +1,36 @@
+{
+  "mode": "runless",
+  "task_id": "api2-cfb-game-total-page1-stier-v1",
+  "workstream": "api2-cfb-game-total-page1-stier-v1",
+  "source_main_sha": "72a1e22c88b64090064cad3d48d92d6f35e0f270",
+  "commands": [
+    ["python", "-m", "py_compile", "sports_api/collectors/cfb_game_total_market_v1.py", "sports_api/collectors/cfb_action_network_game_markets_v1.py", "sports_api/api/cfb_game_total_page1_v1.py", "cfb_game_total_page1_stier_v1.py", "kyre_sports_api_vercel_v1.py", "universal_runtime_v5_loader_nba_pra_page1_v1.py", "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py", "devsystem/cfb_game_total_page1_stier_source_policy_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "sports_api/tests/test_cfb_game_total_market_v1.py", "sports_api/tests/test_cfb_action_network_game_markets_v1.py", "sports_api/tests/test_cfb_game_total_page1_v1.py", "tests/test_api2_cfb_game_total_page1_stier_v1.py", "tests/test_api2_nfl_passing_yards_live_route_repair_v1.py"],
+    ["python", "-m", "devsystem.cfb_game_total_page1_stier_source_policy_v1"]
+  ],
+  "artifacts": [
+    "sports_api/collectors/cfb_game_total_market_v1.py",
+    "sports_api/collectors/cfb_action_network_game_markets_v1.py",
+    "sports_api/api/cfb_game_total_page1_v1.py",
+    "sports_api/tests/test_cfb_game_total_market_v1.py",
+    "sports_api/tests/test_cfb_action_network_game_markets_v1.py",
+    "sports_api/tests/test_cfb_game_total_page1_v1.py",
+    "cfb_game_total_page1_stier_v1.py",
+    "tests/test_api2_cfb_game_total_page1_stier_v1.py",
+    "devsystem/cfb_game_total_page1_stier_source_policy_v1.py",
+    "kyre_sports_api_vercel_v1.py",
+    "universal_runtime_v5_loader_nba_pra_page1_v1.py",
+    "devsystem/runless_proof_plans/api2-cfb-game-total-page1-stier-v1.json"
+  ],
+  "dependencies": [
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "cfb_game_total_page2_market_completeness_r1.py"
+  ],
+  "dependency_tokens": [
+    "domain:cfb-game-total-page1",
+    "domain:kyre-sports-api-cfb-game-total",
+    "domain:universal-runtime-v5-cfb-game-total"
+  ],
+  "freeze_token": "API2_CFB_GAME_TOTAL_PAGE1_STIER_V1_FROZEN",
+  "notes": "Kyre Sports API is the only application-facing gateway. NCAA canonical identity; FanDuel primary sportsbook; The Odds API then Action Network are approved backend-only secondaries for uncovered games; no SGO/ESPN/ESPN BET; no line averaging; no null-to-zero; Page 2/model ownership unchanged; active Passing Yards terminal owner remains byte-identical to main and is dependency-only."
+}
