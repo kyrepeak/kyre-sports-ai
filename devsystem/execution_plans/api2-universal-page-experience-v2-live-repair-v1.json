@@ -1,0 +1,51 @@
+{
+  "version": "API2_UNIVERSAL_PAGE_EXPERIENCE_V2_LIVE_REPAIR_V1",
+  "task_id": "api2-universal-page-experience-v2-live-repair-v1",
+  "workstream": "api2-universal-page-experience-v2-live-repair-v1",
+  "original_source_main_sha": "2a28c385b27b075f28b0fcfe75050c1100b0006d",
+  "proof_base_main_sha": "2a28c385b27b075f28b0fcfe75050c1100b0006d",
+  "goal": "Repair live Universal Page Experience behavior so TOP is actually tappable and every non-instant page transition fully covers stale content with a universal KYRE SPORTS AI loading takeover until the destination commits.",
+  "write_paths": [
+    "universal_page_experience_v1.py",
+    "universal_page_experience_runtime_v1.py",
+    "tests/test_universal_page_experience_v2_live_repair_v1.py",
+    "devsystem/execution_plans/api2-universal-page-experience-v2-live-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-universal-page-experience-v2-live-repair-v1.json",
+    "devsystem/task_ledgers/api2-universal-page-experience-v2-live-repair-v1.json"
+  ],
+  "constraints": {
+    "one_universal_owner": true,
+    "top_requires_real_fragment_target": true,
+    "mobile_pointer_touch_ownership": true,
+    "client_loader_immediate_on_transition_tap": true,
+    "server_loader_held_until_destination_commit": true,
+    "instant_loads_may_avoid_visible_loader_via_css_delay": true,
+    "page_specific_patches_forbidden": true,
+    "sports_provider_calls": false,
+    "model_projection_probability_mutation": false,
+    "kyre_sports_api_routing_mutation": false,
+    "sgo_forbidden": true,
+    "espn_forbidden": true,
+    "espn_bet_forbidden": true,
+    "github_actions_fallback": 0,
+    "repeated_polling_forbidden": true
+  },
+  "step2a": {
+    "authoritative_branch": "api2-universal-page-experience-v2-live-repair-v1",
+    "scope_lease_id": "SCOPE-LEASE-03A77E99D152EEE438CCA97B",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true
+  },
+  "acceptance": [
+    "TOP has a real page-top target, explicit mobile pointer/touch ownership, and JavaScript enhancement prevents default then scrolls the actual scroll owner",
+    "Universal TOP sentinel mounts before the site shell",
+    "Any route transition always gets a server-held full-screen loader before destination loading begins",
+    "Client transition takeover does not depend on Streamlit script-state timing",
+    "Loader uses a short visual delay so instant loads avoid flicker, while non-instant loads fully cover stale content",
+    "Loader remains until destination commit succeeds",
+    "No sports data/model/provider files change"
+  ],
+  "freeze_token": "API2_UNIVERSAL_PAGE_EXPERIENCE_V2_LIVE_REPAIR_V1_FROZEN"
+}
