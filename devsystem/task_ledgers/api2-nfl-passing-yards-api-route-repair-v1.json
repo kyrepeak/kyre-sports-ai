@@ -1,0 +1,42 @@
+{
+  "task_id": "api2-nfl-passing-yards-api-route-repair-v1",
+  "workstream": "api2-nfl-passing-yards-api-route-repair-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "f86fc85a86b3abe1be29c831545d0d4eb4dcfe39",
+  "scope_lease_id": "SCOPE-LEASE-884553985125395DF4DAF8D2",
+  "active_problem": "Public NFL Passing Yards reached its professional shell but failed closed on the Kyre Sports API page request.",
+  "root_cause": "The minimal Vercel Kyre Sports API entrypoint registered only CFB routes, so /api/v1/nfl/passing-yards/page returned 404; the Streamlit gateway also still defaulted to the retired Render hostname.",
+  "repair_scope": "Register only the existing NFL Passing Yards page router in kyre_sports_api_vercel_v1.py and change only the Passing Yards gateway default base URL to kyre-sports-api.vercel.app.",
+  "tdd": {
+    "red_verified": true,
+    "red_source_main_sha": "f86fc85a86b3abe1be29c831545d0d4eb4dcfe39",
+    "authoritative_red_contract_commit": "c9b6434870467d36e46ee192ad52536336d90a18",
+    "red_failures": [
+      "Vercel app route table missing /api/v1/nfl/passing-yards/page",
+      "Passing Yards gateway default still pointed to kyre-sports-api.onrender.com"
+    ]
+  },
+  "preview_evidence": {
+    "code_equivalent_candidate": "eb92a6a9154cf8e52e21a03aa1119ad7b164ea67",
+    "deployment_id": "dpl_4Y1ZgPLA6vmcave7R2Q871L7nd5j",
+    "endpoint": "/api/v1/nfl/passing-yards/page",
+    "http": 200,
+    "schema_version": "nfl_passing_yards_professional_v1",
+    "ready": true
+  },
+  "proof": {"proof_id": null, "state": null, "failure_class": null},
+  "merge": {"pr": null, "merged_main_sha": null},
+  "live_acceptance": {
+    "before": "Kyre Sports API Passing Yards request failed",
+    "after": null,
+    "professional_tokens_required": [
+      "KYRE AI PASSING YARDS",
+      "QB VS TEAM HISTORY",
+      "PASS DEFENSE RANK",
+      "WHY THIS PROJECTION",
+      "PROBABILITY LADDER"
+    ],
+    "legacy_tokens_forbidden": ["STEP 7", "STEP 8", "STEP 9", "STEP 10"]
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_API_ROUTE_REPAIR_V1_FROZEN"
+}
