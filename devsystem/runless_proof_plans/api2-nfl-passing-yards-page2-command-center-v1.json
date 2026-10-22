@@ -1,0 +1,33 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-page2-command-center-v1",
+  "workstream": "api2-nfl-passing-yards-page2-command-center-v1",
+  "source_main_sha": "505b0b70ee88a0100284423b0c02967a5fce131e",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_passing_yards_page2_command_center_v1.py", "nfl_passing_yards_simple_qb_grid_v1/__init__.py", "sports_api/api/nfl_passing_yards_slate_v1/__init__.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py", "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py", "tests/test_api2_nfl_passing_yards_page1_stier_v2.py", "tests/test_api2_nfl_passing_yards_identity_visuals_v1.py", "tests/test_api2_nfl_passing_yards_professional_v1.py", "tests/test_api2_nfl_passing_yards_market_fill_v1.py", "tests/test_api2_nfl_passing_yards_coldstart_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not route"]
+  ],
+  "artifacts": [
+    "nfl_passing_yards_page2_command_center_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1/__init__.py",
+    "sports_api/api/nfl_passing_yards_slate_v1/__init__.py",
+    "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-page2-command-center-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-page2-command-center-v1.json"
+  ],
+  "dependencies": [
+    "nfl_passing_yards_simple_qb_grid_v1.py",
+    "sports_api/api/nfl_passing_yards_slate_v1.py",
+    "sports_api/api/nfl_passing_yards_page_v1/__init__.py",
+    "nfl_passing_yards_slate_gateway_v1.py"
+  ],
+  "dependency_tokens": ["domain:api2-nfl-passing-yards-page2-command-center-v1"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 2400,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE2_COMMAND_CENTER_V1_FROZEN",
+  "notes": "Selected-QB Page 2 successor. Page 1 remains unchanged. The new command center consumes only normalized Kyre Sports API detail data and renders market/model, current-season/recent game logs, hit rates, matchup defense, direct history, sportsbook-specific lines and same-book movement, volume/efficiency, environment, availability state, verified Kyre thesis factors, risk flags and final decision. A slate successor overlay enriches the detail payload with the full verified current-season QB game log using rows already loaded from NFLverse and exact source player ID + team matching; no additional provider calls are introduced. Missing or unverified values remain explicit and are never converted to fake zeroes. Sportsbook lines remain independent and are never averaged. No banned provider dependency is added."
+}

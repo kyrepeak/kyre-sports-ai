@@ -1,0 +1,38 @@
+{
+  "task_id": "api2-nfl-passing-yards-page2-command-center-v1",
+  "workstream": "api2-nfl-passing-yards-page2-command-center-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "505b0b70ee88a0100284423b0c02967a5fce131e",
+  "scope_lease_id": "SCOPE-LEASE-B588ADA77BF4EE2F8A0095D3",
+  "scope_lease_generation": 712,
+  "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-PAGE2-COMMAND-CENTER-V1-R1",
+  "active_problem": "The existing selected-quarterback drilldown is an older shallow analysis view and does not provide the professional Page 2 command center requested by the user. The normalized slate also exposes only the recent five individual game rows, making Last 10/Season/Home-Away hit-rate views incomplete even though verified current-season NFLverse rows are already loaded upstream.",
+  "solution": "Keep Page 1 unchanged. Route only the selected-QB detail handoff into a new Page 2 renderer that consumes normalized Kyre Sports API data. Add a successor slate overlay that enriches the selected-player detail with the exact current-season game log from already-loaded NFLverse rows using source player ID + team matching. Render verified values or explicit unavailable states, keep sportsbook observations independent, and never synthesize missing values.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "banned_dependencies_added": false,
+    "provider_calls_added": 0,
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "no_guessing": true,
+    "canonical_identity_required": true,
+    "provider_failure_fallback_preserved": true
+  },
+  "tdd": {
+    "page2_red": "5/5 focused tests failed before implementation because the command-center module and detail handoff did not exist.",
+    "season_log_red": "Season-log contract failed with AttributeError before API enrichment existed.",
+    "integration_failure_classification": "Initial successor overlays exposed two adapter-only regressions: wrong legacy Page 1 entrypoint name and lost build_game_bundles monkeypatch injection. Both were corrected without changing Page 1 UI, models, lines or data semantics.",
+    "final_green": "50/50 affected Passing Yards tests passing"
+  },
+  "verification": {
+    "py_compile": "GREEN",
+    "affected_regression_suite": "50 passed",
+    "frozen_steps_7_to_10": "31 passed, 4 deselected",
+    "live_slate": "ready=true, 14 games, 28 QBs, 27 VERIFIED markets, 6.83 seconds",
+    "live_page2": "Selected live QB detail rendered all command-center sections from normalized payload",
+    "season_log_identity": "Selected live QB profile games=3 and enriched season log contains the exact same three verified game IDs",
+    "page1_regression": "GREEN — existing Page 1, identity visuals, market fill, professional analytics and cold-start tests preserved",
+    "source_policy": "GREEN — successor renderer performs no provider calls; slate enrichment reuses already-loaded NFLverse rows and introduces no banned provider dependency"
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE2_COMMAND_CENTER_V1_FROZEN"
+}
