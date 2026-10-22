@@ -124,10 +124,11 @@ def collect_secondary_market_rows(missing_games: list[dict[str, Any]]) -> list[d
         except Exception:
             odds_rows = []
         odds_matched = match_market_rows_to_ncaa_games(remaining, odds_rows)
+        odds_alias_matched = match_action_rows_to_games(remaining, odds_rows)
         covered: set[str] = set()
         for game in remaining:
             game_id = _clean(game.get("game_id") or game.get("identity_key"))
-            quotes = odds_matched.get(game_id, [])
+            quotes = odds_matched.get(game_id, []) or odds_alias_matched.get(game_id, [])
             if quotes:
                 covered.add(game_id)
                 for raw in quotes:
@@ -156,6 +157,18 @@ def _market_state(games: list[dict[str, Any]]) -> tuple[dict[str, list[dict[str,
     consulted: list[str] = ["FanDuel"]
     primary_rows = collect_primary_market_rows()
     matched = match_market_rows_to_ncaa_games(games, primary_rows)
+    # Re-run identity only through the stricter alias map; the quote itself is
+    # still the same direct FanDuel observation, so source priority is preserved.
+    primary_alias = match_action_rows_to_games(games, primary_rows)
+    for game_id, quotes in primary_alias.items():
+        matched.setdefault(game_id, []).extend(
+            dict(row) for row in quotes
+            if all(
+                (_clean(row.get("sportsbook")), _clean(row.get("provider_event_id")), _clean(row.get("provider_market_id")))
+                != (_clean(existing.get("sportsbook")), _clean(existing.get("provider_event_id")), _clean(existing.get("provider_market_id")))
+                for existing in matched.get(game_id, [])
+            )
+        )
     missing = [game for game in games if _clean(game.get("game_id") or game.get("identity_key")) not in matched]
     if missing:
         secondary_rows = collect_secondary_market_rows(missing)
