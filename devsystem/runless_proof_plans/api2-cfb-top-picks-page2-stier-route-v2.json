@@ -1,0 +1,41 @@
+{
+  "mode": "runless",
+  "task_id": "api2-cfb-top-picks-page2-stier-route-v2",
+  "workstream": "api2-cfb-top-picks-page2-stier-route-v2",
+  "source_main_sha": "1c36f5ed8a10b7b4948e9151c01ad4b389f6c35b",
+  "commands": [
+    ["python", "-m", "py_compile", "app.py", "cfb_top_picks_page_v18.py", "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v2.py", "sports_api/api/cfb_top_picks_page2_v1.py", "tests/test_api2_cfb_top_picks_page2_stier_route_v2.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page2_stier_route_v2.py", "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py", "tests/test_api2_cfb_top_picks_page1_cleanup_v4.py", "tests/test_api2_cfb_top_picks_page1_stier_v3.py", "tests/test_api2_universal_nav_tap_first_handoff_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py"]
+  ],
+  "artifacts": [
+    "app.py",
+    "cfb_top_picks_page_v18.py",
+    "sports_api/api/cfb_top_picks_page2_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v2.py",
+    "tests/test_api2_cfb_top_picks_page2_stier_route_v2.py",
+    "devsystem/runless_proof_plans/api2-cfb-top-picks-page2-stier-route-v2.json",
+    "devsystem/task_ledgers/api2-cfb-top-picks-page2-stier-route-v2.json"
+  ],
+  "dependencies": [
+    "cfb_top_picks_page_v17.py",
+    "cfb_top_picks_page_v16.py",
+    "cfb_top_picks_page_v15.py",
+    "sports_api/api/cfb_top_picks_page1_v4.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1.py",
+    "universal_sports_nav_url_v1.py",
+    "universal_runtime_v5_state.py",
+    "kyre_sports_api_vercel_v1.py"
+  ],
+  "dependency_tokens": ["domain:api2-cfb-top-picks-page2-stier-route-v2"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 2400,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [
+    "API2_CFB_TOP_PICKS_PAGE2_ANALYTICS_LAB_V1_FROZEN",
+    "API2_CFB_TOP_PICKS_PAGE2_ROUTE_LOCK_V1_FROZEN"
+  ],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_STIER_ROUTE_V2_FROZEN",
+  "notes": "Supersedes the behaviorally insufficient V17 route lock after production evidence showed it could still inherit stale MLB state. V18 uses canonical Universal Runtime sport=cfb&market=top-picks handoffs, preserves exact candidate/date/kind identity, activates a compact six-section Page 2 decision command center, normalizes verified turnover totals safely, exposes NCAA recent-form/history when verified, preserves exact-book market rows, separates current price from unverified opener, emits semantic empty states instead of blanks, and keeps Kyre Sports API as the only application-facing gateway. No SGO, ESPN, or ESPN BET request/fallback/enrichment route is authorized; sportsbook projection influence remains 0.0 and null is never converted to zero."
+}
