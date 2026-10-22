@@ -1,0 +1,30 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-live-route-repair-v1",
+  "workstream": "api2-nfl-passing-yards-live-route-repair-v1",
+  "source_main_sha": "8051059a476b0fb91f75b009b328f67b26ee96e7",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_live_route_repair_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_professional_v1.py"],
+    ["python", "-m", "py_compile", "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py", "universal_runtime_v5_loader.py", "nfl_passing_yards_professional_v1.py", "tests/test_api2_nfl_passing_yards_live_route_repair_v1.py"]
+  ],
+  "artifacts": [
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "tests/test_api2_nfl_passing_yards_live_route_repair_v1.py",
+    "devsystem/execution_plans/api2-nfl-passing-yards-live-route-repair-v1.json",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-live-route-repair-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-live-route-repair-v1.json"
+  ],
+  "dependencies": [
+    "app.py",
+    "universal_runtime_v5_loader.py",
+    "nfl_passing_yards_professional_v1.py",
+    "tests/test_api2_nfl_passing_yards_professional_v1.py"
+  ],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_LIVE_ROUTE_REPAIR_V1_FROZEN"
+}

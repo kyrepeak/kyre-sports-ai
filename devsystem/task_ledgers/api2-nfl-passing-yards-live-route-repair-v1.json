@@ -1,0 +1,21 @@
+{
+  "task_id": "api2-nfl-passing-yards-live-route-repair-v1",
+  "workstream": "api2-nfl-passing-yards-live-route-repair-v1",
+  "status": "GREEN_PROOF_PENDING",
+  "source_main_sha": "8051059a476b0fb91f75b009b328f67b26ee96e7",
+  "scope_lease_id": "SCOPE-LEASE-A137BF99A6C1865CC737BB87",
+  "active_problem": "Production terminal overlay bypasses the canonical NFL Passing Yards professional resolver and still renders the old debug-heavy page.",
+  "live_evidence": "User iPad screenshots on 2026-10-22 show header V3 live while Passing Yards body still contains Step 7/8/9/10 panels and ESPN-facing copy.",
+  "root_cause": "app.py imports streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1, whose resolver delegates non-NBA-PRA routes through an older layered loader chain instead of the patched canonical universal_runtime_v5_loader resolver.",
+  "repair_scope": "Intercept NFL passing-yards only at the terminal overlay and delegate to canonical universal_runtime_v5_loader.resolve_destination(route).",
+  "tdd": {
+    "red_verified": true,
+    "red_candidate": "b51f431917f9ea8f61606dd79093833726b18526",
+    "red_proof_id": "api2-nfl-passing-yards-live-route-repair-v1-b51f431917f9ea8f-44140d6cd3d4ee8b",
+    "red_failure_class": "STATIC_PROOF",
+    "green_verified": false
+  },
+  "proof": {"proof_id": null, "state": null, "failure_class": null},
+  "merge": {"pr": null, "merged_main_sha": null},
+  "freeze_token": "API2_NFL_PASSING_YARDS_LIVE_ROUTE_REPAIR_V1_FROZEN"
+}
