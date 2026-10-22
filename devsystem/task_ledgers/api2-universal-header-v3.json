@@ -4,7 +4,7 @@
   "workstream": "api2-universal-header-v3",
   "authoritative_branch": "api2-universal-header-v3",
   "proof_base_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
-  "scope_lease_id": "SCOPE-LEASE-C4BAB8AFAF9929F2F0CA2E6C",
+  "scope_lease_id": "SCOPE-LEASE-6E7A9FDBA42FFE131FF23B9E",
   "status": "PROOF_READY",
   "single_pr": true,
   "single_proof_path": true,
@@ -28,17 +28,23 @@
     "first_patch_failure_class": "STATIC_PROOF",
     "first_patch_root_cause": "The bounded runtime edit normalized the frozen V2 compatibility spelling from `if is_transition and not client_controller :` to `if is_transition and not client_controller:`, tripping the frozen regression even though behavior was unchanged.",
     "compatibility_patch_sha": "fb7a396a0b136ec17421a006f2d0831d2fb84a78",
+    "second_patch_candidate_sha": "ead4be4de5fa6dc043ca76685482d9ef1d8aeffe",
+    "second_patch_proof_id": "api2-universal-header-v3-ead4be4de5fa6dc0-905816e57c9aa69a",
+    "second_patch_failure_class": "STATIC_PROOF",
+    "second_patch_root_cause": "Protected main had already moved beyond the original tap-first app.py entrypoint. The frozen tap-first regression still demanded a direct universal_nav_v2 import even though current production boots the NBA-PRA terminal wrapper, which preserves universal_sports_nav_ui_v2 through Runtime V5.",
+    "baseline_test_format_drift_patch_sha": "53ba1986b4d1557e8674eefa87770c697c519582",
     "duplicate_submissions": 0
   },
   "repair": {
     "position": "Render core._render_destination_shell(runtime.active) before transition_slot and destination_slot creation so Streamlit places the universal nav above all destination content.",
     "presentation": "Keep existing tap-first st.pills controls, switch sport labels to words only, inject league marks into those same controls, and present KYRE SPORTS AI with Professional Sports Analytics branding in the sticky universal shell.",
-    "compatibility": "Preserve the frozen V2 fail-closed seam spelling while retaining identical fail-closed behavior."
+    "compatibility": "Preserve the frozen V2 fail-closed seam spelling and update the stale tap-first production-entrypoint regression to follow the current terminal Runtime V5 chain rather than an obsolete direct import."
   },
   "scope": [
     "universal_page_experience_runtime_v1.py",
     "universal_sports_nav_ui_v1.py",
     "tests/test_api2_universal_header_v3.py",
+    "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
     "devsystem/execution_plans/api2-universal-header-v3.json",
     "devsystem/runless_proof_plans/api2-universal-header-v3.json",
     "devsystem/task_ledgers/api2-universal-header-v3.json"
