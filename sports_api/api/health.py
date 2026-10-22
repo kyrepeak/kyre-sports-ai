@@ -1,12 +1,16 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from sports_api.observability_v1 import (
     OBSERVABILITY_VERSION,
     diagnostics_snapshot,
     readiness_snapshot,
     runtime_metadata,
+)
+from sports_api.monster_telemetry_probe_v1 import (
+    run_telemetry_probe_once,
+    telemetry_probe_enabled,
 )
 from sports_api.api.cfb_render_fanduel_transport_v1 import install_hosted_transport
 from sports_api.api.cfb_markets import router as cfb_markets_router
@@ -49,6 +53,8 @@ router.routes.extend(nfl_spread_market_router.routes)
 @router.get("/health")
 def health_check():
     """Fast liveness probe kept intentionally lightweight for Render."""
+    if telemetry_probe_enabled():
+        run_telemetry_probe_once()
     runtime = runtime_metadata()
     return {
         "status": "ok",
@@ -78,3 +84,11 @@ def health_details():
     snapshot = diagnostics_snapshot()
     snapshot["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
     return snapshot
+
+
+@router.get("/health/telemetry/probe", include_in_schema=False)
+def monster_telemetry_probe():
+    """Return the cached one-shot certification probe result while enabled."""
+    if not telemetry_probe_enabled():
+        raise HTTPException(status_code=404, detail="Not found")
+    return run_telemetry_probe_once()
