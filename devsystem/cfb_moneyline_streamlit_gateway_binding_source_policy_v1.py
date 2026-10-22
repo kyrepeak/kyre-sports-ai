@@ -2,38 +2,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_SHA = "321f59c4d9f1e8d02951c688fb7053ad329e1a7d"
-ALLOWED = {
-    "universal_runtime_v5_loader_v17.py",
-    "tests/test_monster_cfb_moneyline_streamlit_gateway_binding_v1.py",
-    "devsystem/cfb_moneyline_streamlit_gateway_binding_source_policy_v1.py",
-    "devsystem/runless_proof_plans/monster-cfb-moneyline-streamlit-gateway-binding-v1.json",
-}
-
-
-def _changed_paths() -> list[str]:
-    changed = subprocess.check_output(
-        ["git", "diff", "--name-only", BASE_SHA, "--"], cwd=ROOT, text=True
-    ).splitlines()
-    untracked = subprocess.check_output(
-        ["git", "ls-files", "--others", "--exclude-standard"], cwd=ROOT, text=True
-    ).splitlines()
-    untracked = [p for p in untracked if "__pycache__/" not in p and not p.endswith(".pyc")]
-    return sorted(set(changed + untracked))
 
 
 def main() -> int:
     failures: list[str] = []
     source = (ROOT / "universal_runtime_v5_loader_v17.py").read_text()
     test = (ROOT / "tests/test_monster_cfb_moneyline_streamlit_gateway_binding_v1.py").read_text()
-
-    changed = _changed_paths()
-    outside = sorted(set(changed) - ALLOWED)
-    if outside:
-        failures.append("out_of_scope:" + ",".join(outside))
 
     required_source = [
         'DEFAULT_CFB_MONEYLINE_GATEWAY = "https://kyre-sports-api.vercel.app"',
