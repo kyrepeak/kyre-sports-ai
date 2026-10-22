@@ -8,6 +8,7 @@ conflicting sportsbook lines are never averaged.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import re
 from typing import Any
@@ -124,6 +125,22 @@ def _collect_market_observations(game: dict[str, Any]) -> list[dict[str, Any]]:
     return base.collect_market_observations(game)
 
 
+def _prefetch_market_observations(
+    games: list[dict[str, Any]],
+    *,
+    max_workers: int = 4,
+) -> dict[str, list[dict[str, Any]]]:
+    if not games:
+        return {}
+    worker_count = max(1, min(int(max_workers), len(games)))
+    with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="passing-yards-market") as pool:
+        futures = [pool.submit(_collect_market_observations, game) for game in games]
+        return {
+            _text(game.get("game_id")): future.result()
+            for game, future in zip(games, futures)
+        }
+
+
 def _name_key(value: Any) -> tuple[str, str] | None:
     tokens = [token.lower() for token in re.findall(r"[A-Za-z]+", _text(value))]
     while tokens and tokens[-1] in {"jr", "sr", "ii", "iii", "iv", "v"}:
@@ -212,6 +229,7 @@ def build_game_bundles(target_date: str | None = None) -> tuple[str | None, list
         return resolved_date, [], provenance
     contexts: dict[tuple[int, str], dict[str, Any]] = {}
     bundles: list[dict[str, Any]] = []
+    markets_by_game = _prefetch_market_observations(games)
     for game in games:
         season = int(game["season"])
         game_date = _text(game.get("date")) or str(resolved_date or "")
@@ -225,7 +243,7 @@ def build_game_bundles(target_date: str | None = None) -> tuple[str | None, list
         frame = ctx.get("frame")
         if frame is None:
             continue
-        observations = _collect_market_observations(game)
+        observations = markets_by_game.get(_text(game.get("game_id")), [])
         players: list[dict[str, Any]] = []
         for team, opponent, side in ((game["away"], game["home"], "away"), (game["home"], game["away"], "home")):
             defense = (ctx.get("defenses") or {}).get(opponent) or {
