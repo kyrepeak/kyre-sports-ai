@@ -1,0 +1,45 @@
+{
+  "task_id": "api2-cfb-top-picks-page2-stier-route-v2",
+  "workstream": "api2-cfb-top-picks-page2-stier-route-v2",
+  "state": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "1c36f5ed8a10b7b4948e9151c01ad4b389f6c35b",
+  "scope_lease_id": "SCOPE-LEASE-AC062A17EAAF404976DB868C",
+  "scope_lease_generation": 716,
+  "authorization_id": "AUTH-API2-CFB-TOP-PICKS-PAGE2-STIER-ROUTE-V2-R1",
+  "active_problem": "The previous V17 route fix used only legacy ks_sport/ks_cfb_market parameters while Universal Runtime V5 reconciles canonical sport/market parameters. A stale MLB route could therefore still win. Page 2 also needed the approved S-tier hierarchy, semantic zero-blank states, verified recent/history data, price/freshness cleanup, and safe normalization of suspicious turnover totals.",
+  "root_cause": "The active universal parser reads canonical sport=cfb and market=top-picks. V17 did not assert those keys. Presentation also exposed backend-shaped module stacking and generic unavailable states instead of a decision-first hierarchy.",
+  "solution": "Preserve prior frozen CFB Top Picks owners and add V18 plus a V2 runtime overlay. Emit canonical CFB Top Picks URLs forward/back, keep exact candidate identity, render six compact Page 2 sections, use Kyre Sports API field-first evidence, preserve exact sportsbook observations, derive only mathematically supported fields, and return specific semantic empty states when verified evidence does not exist.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "canonical_sport": "cfb",
+    "canonical_market": "top-picks",
+    "stale_mlb_override_verified": true,
+    "sgo_allowed": false,
+    "espn_allowed": false,
+    "espn_bet_allowed": false,
+    "sportsbook_projection_influence": 0.0,
+    "sportsbook_averaging": false,
+    "null_to_zero": false,
+    "semantic_empty_states": true,
+    "opening_current_separated": true
+  },
+  "tdd": {
+    "red": "7 failed / 1 passed before V18 and semantic contract implementation.",
+    "green_focused": "11/11 passed on exact product head after forbidden-provider traps, turnover normalization, canonical stale-MLB route assertion, semantic state checks, and market opener/current separation.",
+    "green_regression": "46/46 passed across V2 contract, prior CFB Page 2, frozen CFB Page 1, universal tap handoff, and NFL Passing Yards Page 2 neighbor tests.",
+    "compile": "python -m py_compile passed for app, V18, V2 overlay, Page 2 API, and V2 tests.",
+    "anti_loop": "One branch, one workstream, one proof identity, one PR. Failures are classified before repair; no alternate proof path is authorized."
+  },
+  "page2_sections": [
+    "GAME DECISION",
+    "PRICE + MARKET LAB",
+    "MODEL PROJECTION",
+    "MATCHUP INTELLIGENCE",
+    "WHY / RISKS / FLIP CONDITIONS",
+    "DATA INTEGRITY"
+  ],
+  "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_STIER_ROUTE_V2_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "github_actions_fallback": 0,
+  "next_legal_action": "EXACT_HEAD_FROZEN_ARTIFACT_THAW_THEN_AUTHORITATIVE_RUNLESS_PROOF"
+}
