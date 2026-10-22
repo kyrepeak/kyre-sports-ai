@@ -2,7 +2,7 @@
   "mode": "runless",
   "task_id": "api2-cfb-top-picks-page2-route-lock-v1",
   "workstream": "api2-cfb-top-picks-page2-route-lock-v1",
-  "source_main_sha": "44d220d77138fef55bc413ba2158f99fb22bd5f7",
+  "source_main_sha": "f4b7d6a034a3f57268263faa9d55040496d3bab7",
   "commands": [
     ["python", "-m", "py_compile", "cfb_top_picks_page_v17.py", "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1.py", "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py"],
     ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py"],
@@ -30,5 +30,5 @@
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
   "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_ROUTE_LOCK_V1_FROZEN",
-  "notes": "Successor-only route lock over frozen CFB Top Picks Page 2 V16. Page 1 card handoff and Page 2 Back link explicitly preserve ks_sport=College Football and ks_cfb_market=Top Picks while retaining exact candidate identity, preventing stale universal-router sport state from redirecting a CFB Top Picks tap to MLB or another sport. No model, sportsbook, provider, projection, or Kyre Sports API ownership behavior changes."
+  "notes": "Successor-only route lock over frozen CFB Top Picks Page 2 V16. Page 1 card handoff and Page 2 Back link explicitly preserve ks_sport=College Football and ks_cfb_market=Top Picks while retaining exact candidate identity, preventing stale universal-router sport state from redirecting a CFB Top Picks tap to MLB or another sport. No model, sportsbook, provider, projection, or Kyre Sports API ownership behavior changes. Candidate lineage includes merged main f4b7d6a034a3f57268263faa9d55040496d3bab7 before authoritative proof."
 }
