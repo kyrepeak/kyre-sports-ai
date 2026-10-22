@@ -29,6 +29,36 @@ def text(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
+def _base_commit_available() -> bool:
+    return subprocess.run(
+        ["git", "cat-file", "-e", f"{BASE_SHA}^{{commit}}"],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    ).returncode == 0
+
+
+def _changed_paths() -> list[str]:
+    """Return candidate-vs-base paths even inside Runless depth=1 clones."""
+    if not _base_commit_available():
+        fetched = subprocess.run(
+            ["git", "fetch", "origin", BASE_SHA, "--depth=1"],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        if fetched.returncode != 0 or not _base_commit_available():
+            raise RuntimeError("source_policy_base_fetch_failed")
+    return subprocess.check_output(
+        ["git", "diff", "--name-only", BASE_SHA, "--"],
+        cwd=ROOT,
+        text=True,
+    ).splitlines()
+
+
 def main() -> int:
     failures: list[str] = []
     page = text("cfb_top_picks_page_v15.py")
@@ -52,7 +82,11 @@ def main() -> int:
         if token not in page:
             failures.append(f"page_cleanup_token_missing:{token}")
 
-    changed = subprocess.check_output(["git", "diff", "--name-only", BASE_SHA, "--"], cwd=ROOT, text=True).splitlines()
+    try:
+        changed = _changed_paths()
+    except (OSError, RuntimeError, subprocess.SubprocessError):
+        failures.append("scope_base_unavailable")
+        changed = []
     outside = sorted(set(changed) - ALLOWED)
     frozen = sorted(set(changed) & FROZEN_V3)
     if outside:
