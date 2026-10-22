@@ -1,0 +1,14 @@
+[project]
+name = "kyre-sports-api"
+version = "1.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "fastapi",
+  "streamlit",
+  "requests",
+  "httpx",
+  "tzdata>=2025.2",
+]
+
+[tool.vercel]
+entrypoint = "kyre_sports_api_vercel_v1:app"
