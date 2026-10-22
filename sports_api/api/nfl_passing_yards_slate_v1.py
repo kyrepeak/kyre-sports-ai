@@ -8,6 +8,7 @@ conflicting sportsbook lines are never averaged.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import re
 from typing import Any
@@ -103,15 +104,81 @@ def _schedule_games(target_date: str | None = None) -> tuple[str | None, list[di
     return anchor_date, games
 
 
-def _season_context(season: int, cutoff: str) -> dict[str, Any]:
+def _build_history_pool(season: int) -> list[dict[str, Any]]:
+    legacy = base._legacy
+    out: list[dict[str, Any]] = []
+    for history_season in range(max(1999, season - 2), season + 1):
+        try:
+            frame = legacy._completed_before(legacy._load_pbp(history_season), "9999-12-31")
+            if frame is None or frame.empty:
+                continue
+            date_by_game = {}
+            if "game_id" in frame.columns and "game_date" in frame.columns:
+                date_by_game = (
+                    frame.dropna(subset=["game_id", "game_date"])
+                    .groupby("game_id")["game_date"]
+                    .first()
+                    .astype(str)
+                    .str[:10]
+                    .to_dict()
+                )
+            for raw in legacy._qb_game_rows(frame):
+                row = dict(raw)
+                game_date = _text(date_by_game.get(str(row.get("game_id"))))
+                if game_date:
+                    row["_game_date"] = game_date
+                    out.append(row)
+        except Exception:
+            continue
+    return out
+
+
+def _history_before(history_pool: list[dict[str, Any]], cutoff: str) -> list[dict[str, Any]]:
+    return [
+        {key: value for key, value in row.items() if key != "_game_date"}
+        for row in history_pool
+        if _text(row.get("_game_date")) and _text(row.get("_game_date")) < cutoff
+    ]
+
+
+def _season_context(
+    season: int,
+    cutoff: str,
+    history_pool: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     legacy = base._legacy
     frame = legacy._completed_before(legacy._load_pbp(season), cutoff)
     return {
         "frame": frame,
         "current_rows": legacy._qb_game_rows(frame),
         "defenses": legacy._defense_profiles(frame),
-        "history": legacy._history_rows(list(range(max(1999, season - 2), season + 1)), cutoff),
+        "history": _history_before(history_pool, cutoff) if history_pool is not None else legacy._history_rows(list(range(max(1999, season - 2), season + 1)), cutoff),
     }
+
+
+def _prefetch_season_contexts(
+    games: list[dict[str, Any]],
+    *,
+    max_workers: int = 3,
+) -> dict[tuple[int, str], dict[str, Any]]:
+    keys: list[tuple[int, str]] = []
+    for game in games:
+        key = (int(game["season"]), _text(game.get("date")))
+        if key not in keys:
+            keys.append(key)
+    if not keys:
+        return {}
+    history_pools = {season: _build_history_pool(season) for season in dict.fromkeys(season for season, _ in keys)}
+    worker_count = max(1, min(int(max_workers), len(keys)))
+    with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="passing-yards-context") as pool:
+        futures = [pool.submit(_season_context, season, cutoff, history_pools.get(season)) for season, cutoff in keys]
+        contexts: dict[tuple[int, str], dict[str, Any]] = {}
+        for key, future in zip(keys, futures):
+            try:
+                contexts[key] = future.result()
+            except Exception:
+                contexts[key] = {"frame": None, "current_rows": [], "defenses": {}, "history": []}
+        return contexts
 
 
 def _collect_market_observations(game: dict[str, Any]) -> list[dict[str, Any]]:
@@ -122,6 +189,22 @@ def _collect_market_observations(game: dict[str, Any]) -> list[dict[str, Any]]:
     if direct:
         return direct
     return base.collect_market_observations(game)
+
+
+def _prefetch_market_observations(
+    games: list[dict[str, Any]],
+    *,
+    max_workers: int = 4,
+) -> dict[str, list[dict[str, Any]]]:
+    if not games:
+        return {}
+    worker_count = max(1, min(int(max_workers), len(games)))
+    with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="passing-yards-market") as pool:
+        futures = [pool.submit(_collect_market_observations, game) for game in games]
+        return {
+            _text(game.get("game_id")): future.result()
+            for game, future in zip(games, futures)
+        }
 
 
 def _name_key(value: Any) -> tuple[str, str] | None:
@@ -210,22 +293,18 @@ def build_game_bundles(target_date: str | None = None) -> tuple[str | None, list
     }
     if not resolved_date or not games:
         return resolved_date, [], provenance
-    contexts: dict[tuple[int, str], dict[str, Any]] = {}
+    contexts = _prefetch_season_contexts(games)
+    markets_by_game = _prefetch_market_observations(games)
     bundles: list[dict[str, Any]] = []
     for game in games:
         season = int(game["season"])
         game_date = _text(game.get("date")) or str(resolved_date or "")
         context_key = (season, game_date)
-        if context_key not in contexts:
-            try:
-                contexts[context_key] = _season_context(season, game_date)
-            except Exception:
-                contexts[context_key] = {"frame": None, "current_rows": [], "defenses": {}, "history": []}
-        ctx = contexts[context_key]
+        ctx = contexts.get(context_key) or {"frame": None, "current_rows": [], "defenses": {}, "history": []}
         frame = ctx.get("frame")
         if frame is None:
             continue
-        observations = _collect_market_observations(game)
+        observations = markets_by_game.get(_text(game.get("game_id")), [])
         players: list[dict[str, Any]] = []
         for team, opponent, side in ((game["away"], game["home"], "away"), (game["home"], game["away"], "home")):
             defense = (ctx.get("defenses") or {}).get(opponent) or {
