@@ -29,11 +29,15 @@ def _load(path: str, name: str):
 
 def test_live_passing_yards_route_uses_professional_gateway_only() -> None:
     loader = _read("universal_runtime_v5_loader.py")
-    assert '"passing-yards": "nfl_passing_yards_professional_v1"' in loader
     assert "def _nfl_passing_yards_adapter" in loader
-    block = loader.split("def _nfl_passing_yards_adapter", 1)[1].split("def ", 1)[0].lower()
+    block = loader.split("def _nfl_passing_yards_adapter", 1)[1].split("def _nfl_adapter", 1)[0].lower()
+    assert '_import("nfl_passing_yards_professional_v1")' in block
     assert "nfl_hub_v1" not in block
+    assert "nfl_active_slate_runtime_v1" not in block
     assert "espn" not in block
+    resolve = loader.split("def resolve_destination", 1)[1]
+    assert 'route.market_id == "passing-yards"' in resolve
+    assert "_nfl_passing_yards_adapter(route)" in resolve
 
 
 def test_application_page_is_kyre_gateway_only_and_has_no_banned_provider() -> None:
@@ -49,6 +53,14 @@ def test_application_page_is_kyre_gateway_only_and_has_no_banned_provider() -> N
     assert "fanduel" not in gateway
 
 
+def test_api_registration_replaces_legacy_passing_yards_market_route() -> None:
+    source = _read("sports_api/api/health.py")
+    assert "nfl_passing_yards_page_v1" in source
+    assert "nfl_passing_yards_page_router.routes" in source
+    assert "nfl_passing_yards_market_v1" not in source
+    assert "nfl_passing_yards_market_router.routes" not in source
+
+
 def test_server_bundle_uses_approved_sources_and_never_guesses_missing_data() -> None:
     source = _read("sports_api/api/nfl_passing_yards_page_v1.py").lower()
     for banned in ("espn", "sgo", "sgodata"):
@@ -58,6 +70,8 @@ def test_server_bundle_uses_approved_sources_and_never_guesses_missing_data() ->
     assert "canonical" in source
     assert "source_timestamp" in source
     assert "return none" in source
+    assert '"sportsbook_line_averaging":false' in source.replace(" ", "")
+    assert '"missing_to_zero":false' in source.replace(" ", "")
 
 
 def test_rank_grade_contract() -> None:
@@ -79,6 +93,7 @@ def test_qb_vs_opponent_history_is_explicitly_fail_closed() -> None:
     assert empty["games"] == 0
     assert empty["available"] is False
     assert empty["avg_passing_yards"] is None
+    assert "No verified prior matchup history" in empty["message"]
     rows = [
         {"qb_name": "Test QB", "opponent": "CHI", "passing_yards": 240, "attempts": 31, "completions": 20, "pass_tds": 2, "interceptions": 1},
         {"qb_name": "Test QB", "opponent": "CHI", "passing_yards": 280, "attempts": 35, "completions": 24, "pass_tds": 1, "interceptions": 0},
@@ -128,3 +143,4 @@ def test_professional_page_is_decision_first_and_hides_internal_step_chrome() ->
     assert "Step 8 methodology" not in page
     assert "Step 9 methodology" not in page
     assert "Step 10 methodology" not in page
+    assert "st.date_input" not in page
