@@ -1,0 +1,63 @@
+{
+  "mode":"runless",
+  "task_id":"api2-cfb-top-picks-page1-cleanup-v4",
+  "workstream":"api2-cfb-top-picks-page1-cleanup-v4",
+  "source_main_sha":"0506bc838118eb6a429eacdf1e3c73089ce63bdf",
+  "commands":[
+    ["python","-m","pytest","--noconftest","-q","tests/test_api2_cfb_top_picks_page1_cleanup_v4.py"],
+    ["python","-m","pytest","--noconftest","-q","tests/test_api2_cfb_top_picks_page1_stier_v3.py","tests/test_api2_cfb_top_picks_page1_stier_v2.py","tests/test_api2_cfb_top_picks_page1_stier_v1.py","sports_api/tests/test_cfb_moneyline_page1_v1.py","tests/test_api2_universal_nav_tap_first_handoff_v1.py"],
+    ["python","-m","devsystem.cfb_top_picks_page1_cleanup_source_policy_v4"],
+    ["python","-m","py_compile","sports_api/api/cfb_top_picks_page1_v4.py","sports_api/collectors/cfb_top_picks_identity_v1.py","cfb_top_picks_page_v15.py","streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v4.py","app.py","kyre_sports_api_vercel_v1.py","devsystem/cfb_top_picks_page1_cleanup_source_policy_v4.py"]
+  ],
+  "artifacts":[
+    "sports_api/api/cfb_top_picks_page1_v4.py",
+    "sports_api/collectors/cfb_top_picks_identity_v1.py",
+    "cfb_top_picks_page_v15.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v4.py",
+    "app.py",
+    "kyre_sports_api_vercel_v1.py",
+    "tests/test_api2_cfb_top_picks_page1_cleanup_v4.py",
+    "devsystem/cfb_top_picks_page1_cleanup_source_policy_v4.py",
+    "devsystem/runless_proof_plans/api2-cfb-top-picks-page1-cleanup-v4.json"
+  ],
+  "dependencies":[
+    "sports_api/api/cfb_top_picks_page1_v3.py",
+    "sports_api/api/cfb_moneyline_page1_v1.py",
+    "cfb_over_under_model_v1.py",
+    "cfb_player_props_fanduel_bound_v2.py",
+    "cfb_player_props_odds_api_v1.py"
+  ],
+  "probes":[],
+  "timeout_seconds":900,
+  "live_ttl_seconds":1200,
+  "github_actions_fallback":0,
+  "reuse_frozen_proof":["API2_CFB_TOP_PICKS_PAGE1_STIER_V3_FROZEN"],
+  "required_check":"runless-final-gate",
+  "required_check_app_id":5204253,
+  "freeze_token":"API2_CFB_TOP_PICKS_PAGE1_CLEANUP_V4_FROZEN",
+  "routing_policy":{
+    "application_gateway":"Kyre Sports API only",
+    "team_identity_primary":"NCAA",
+    "team_record_primary":"NCAA Winning Percentage",
+    "team_logo_primary":"NCAA",
+    "player_identity_primary":"current official team athletics roster",
+    "player_identity_queries_final_props_only":true,
+    "game_markets_primary":"sportsbooks",
+    "player_props_primary":"FanDuel",
+    "player_props_secondary":"The Odds API only when needed",
+    "approved_secondary_only_when_needed":true,
+    "forbidden_in_top_picks_path":["SGO","SportsGameOdds","ESPN","ESPN BET"],
+    "sportsbook_projection_weight":0.0,
+    "ranking_math_changed":false,
+    "line_averaging":false,
+    "null_to_zero":false,
+    "fabrication":false,
+    "preserve_book_specific_quotes":true,
+    "field_level_fallback":true,
+    "game_top10_combines":["MONEYLINE","SPREAD","TOTAL"],
+    "player_prop_top10_separate":true,
+    "page1_why_content":false,
+    "never_fill_missing_slot_with_unverified_candidate":true
+  },
+  "known_baseline_red_tests":[]
+}
