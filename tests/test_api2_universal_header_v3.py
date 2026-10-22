@@ -12,20 +12,13 @@ def test_universal_nav_is_mounted_before_transition_and_destination_slots() -> N
     nav_pos = source.index("core._render_destination_shell(runtime.active)")
     transition_pos = source.index("transition_slot = st.empty()")
     destination_pos = source.index("destination_slot = st.empty()")
-
     assert nav_pos < transition_pos < destination_pos
 
 
 def test_header_brand_is_professional_and_sport_labels_are_words_only() -> None:
     assert nav.HEADER_TITLE == "KYRE SPORTS AI"
     assert nav.HEADER_SUBTITLE == "Professional Sports Analytics"
-    assert nav._SPORT_LABELS == {
-        "nfl": "NFL",
-        "cfb": "CFB",
-        "nba": "NBA",
-        "mlb": "MLB",
-        "wnba": "WNBA",
-    }
+    assert nav._SPORT_LABELS == {"nfl": "NFL", "cfb": "CFB", "nba": "NBA", "mlb": "MLB", "wnba": "WNBA"}
     assert all(icon not in "".join(nav._SPORT_LABELS.values()) for icon in ("🏈", "🏟️", "🏀", "⚾"))
 
 
