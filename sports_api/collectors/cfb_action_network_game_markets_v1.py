@@ -45,6 +45,8 @@ _EXTRA_ALIASES = {
     "niu": "northern illinois",
     "niu huskies": "northern illinois",
     "la monroe": "louisiana monroe",
+    "ul monroe": "louisiana monroe",
+    "louisiana monroe": "louisiana monroe",
     "louisiana monroe warhawks": "louisiana monroe",
     "ulm": "louisiana monroe",
     "ulm warhawks": "louisiana monroe",
