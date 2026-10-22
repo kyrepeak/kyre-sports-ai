@@ -1,0 +1,30 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-coldstart-v1",
+  "workstream": "api2-nfl-passing-yards-coldstart-v1",
+  "source_main_sha": "745124f3999ac1691223086b810a9ffe9e3e245b",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_passing_yards_slate_gateway_v1.py", "tests/test_api2_nfl_passing_yards_coldstart_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_coldstart_v1.py", "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py", "tests/test_api2_nfl_passing_yards_page1_stier_v2.py", "tests/test_api2_nfl_passing_yards_identity_visuals_v1.py", "tests/test_api2_nfl_passing_yards_professional_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not route"]
+  ],
+  "artifacts": [
+    "nfl_passing_yards_slate_gateway_v1.py",
+    "tests/test_api2_nfl_passing_yards_coldstart_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-coldstart-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-coldstart-v1.json"
+  ],
+  "dependencies": [
+    "sports_api/api/nfl_passing_yards_slate_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1.py",
+    "nfl_passing_yards_professional_v1/__init__.py"
+  ],
+  "dependency_tokens": ["domain:api2-nfl-passing-yards-coldstart-v1"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_COLDSTART_V1_FROZEN",
+  "notes": "Cold-start resilience successor after post-merge public verification exposed one production request exceeding Streamlit's 25-second read timeout while the next warmed request returned the complete 14-game/28-QB/27-market slate in 6.88s. Gateway now retries exactly once only on requests.ReadTimeout using a bounded 10s + 15s read budget; non-ReadTimeout failures remain fail-fast and there is no third attempt. No server model, data source, line, projection, market, or routing changes. Kyre Sports API only; no SGO, ESPN, ESPN BET, fabricated lines, missing-to-zero, or sportsbook averaging."
+}

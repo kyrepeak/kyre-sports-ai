@@ -9,7 +9,9 @@ import requests
 SCHEMA_VERSION = "nfl_passing_yards_simple_qb_grid_v1"
 DEFAULT_API_BASE_URL = "https://kyre-sports-api.vercel.app"
 CONNECT_TIMEOUT = 3.0
-READ_TIMEOUT = 25.0
+COLD_READ_TIMEOUT = 10.0
+RETRY_READ_TIMEOUT = 15.0
+READ_TIMEOUT = RETRY_READ_TIMEOUT
 
 
 def _text(value: Any) -> str:
@@ -61,10 +63,20 @@ def load_passing_yards_slate(target_date: str | None = None) -> dict[str, Any]:
             return _fail("Invalid Passing Yards slate date")
     base = _text(os.environ.get("KYRE_SPORTS_API_BASE_URL")) or DEFAULT_API_BASE_URL
     url = f"{base.rstrip('/')}/api/v1/nfl/passing-yards/slate"
-    try:
-        response = requests.get(url, params=params, timeout=(CONNECT_TIMEOUT, READ_TIMEOUT), headers={"Accept": "application/json"})
-    except requests.RequestException as exc:
-        return _fail(f"Kyre Sports API request unavailable: {type(exc).__name__}")
+    response = None
+    read_timeouts = (COLD_READ_TIMEOUT, RETRY_READ_TIMEOUT)
+    for attempt, read_timeout in enumerate(read_timeouts):
+        try:
+            response = requests.get(url, params=params, timeout=(CONNECT_TIMEOUT, read_timeout), headers={"Accept": "application/json"})
+            break
+        except requests.ReadTimeout as exc:
+            if attempt + 1 < len(read_timeouts):
+                continue
+            return _fail(f"Kyre Sports API request unavailable: {type(exc).__name__}")
+        except requests.RequestException as exc:
+            return _fail(f"Kyre Sports API request unavailable: {type(exc).__name__}")
+    if response is None:
+        return _fail("Kyre Sports API request unavailable")
     if response.status_code != 200:
         return _fail("Kyre Sports API Passing Yards slate request failed", http=response.status_code)
     try:
