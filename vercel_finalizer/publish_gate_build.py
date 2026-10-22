@@ -17,6 +17,7 @@ from devsystem.runless_proof_plan_v1 import load_plan
 GATE_NAME = "runless-final-gate"
 APP_ID_EXPECTED = "5204253"
 _TASK_ID = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+_IDENTITY_KEYS = ("FINALIZER_TASK_ID", "FINALIZER_WORKSTREAM", "FINALIZER_FENCING_GENERATION")
 
 
 def _required(name: str) -> str:
@@ -46,6 +47,12 @@ def _fencing_generation() -> int:
     if value < 0:
         raise RuntimeError("FINALIZER_FENCING_GENERATION_INVALID")
     return value
+
+
+def _preview_without_identity() -> bool:
+    if os.getenv("VERCEL_ENV", "").strip().lower() != "preview":
+        return False
+    return all(not os.getenv(key, "").strip() for key in _IDENTITY_KEYS)
 
 
 def _proof_plan_path() -> Path:
@@ -88,6 +95,9 @@ def _proof_digest(candidate_sha: str, commands: list[list[str]]) -> str:
 
 def main() -> int:
     """Build-time exact proof only. Gate publication is owned by dynamic /prove authority."""
+    if _preview_without_identity():
+        print("RUNLESS_EXACT_PROOF_SKIPPED=preview-without-finalizer-identity", flush=True)
+        return 0
     candidate_sha = _require_candidate()
     commands = _run_exact_proof()
     digest = _proof_digest(candidate_sha, commands)

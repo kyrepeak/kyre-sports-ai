@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
 
-from runless_v2.receipt_contract import finalization_proof_digest, validate_receipt
+from vercel_finalizer.receipt_contract import finalization_proof_digest, validate_receipt
 from vercel_finalizer.authority import AuthoritySnapshot
 
 
