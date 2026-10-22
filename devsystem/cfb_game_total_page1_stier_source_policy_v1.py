@@ -38,7 +38,10 @@ def main() -> int:
         if token in page_lower:
             failures.append(f"frontend forbidden direct provider token: {token}")
 
-    for token in ("site.api.espn", "espn bet", "sportsgameodds", "sports-game-odds"):
+    # Scan backend implementation paths/hosts, not policy labels. The API must
+    # literally expose "ESPN BET" in forbidden_providers, so rejecting that
+    # policy string here would make this checker contradict its required_api gate.
+    for token in ("site.api.espn", "sportsgameodds", "sports-game-odds"):
         if token in api_lower or token in backend_lower:
             failures.append(f"backend forbidden provider path: {token}")
 
