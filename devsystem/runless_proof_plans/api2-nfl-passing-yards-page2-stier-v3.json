@@ -1,0 +1,33 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-page2-stier-v3",
+  "workstream": "api2-nfl-passing-yards-page2-stier-v3",
+  "source_main_sha": "0b363648c26d7b85938ee73ff78821fc1b857858",
+  "commands": [
+    ["python", "-m", "py_compile", "nfl_passing_yards_page2_command_center_v3.py", "nfl_passing_yards_simple_qb_grid_v1/__init__.py", "tests/test_api2_nfl_passing_yards_page2_stier_v3.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_page2_stier_v3.py", "tests/test_api2_nfl_passing_yards_page2_cleanup_routing_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py", "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py", "tests/test_api2_nfl_passing_yards_coldstart_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not route"]
+  ],
+  "artifacts": [
+    "nfl_passing_yards_page2_command_center_v3.py",
+    "nfl_passing_yards_simple_qb_grid_v1/__init__.py",
+    "tests/test_api2_nfl_passing_yards_page2_stier_v3.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-page2-stier-v3.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-page2-stier-v3.json"
+  ],
+  "dependencies": [
+    "nfl_passing_yards_page2_command_center_v2.py",
+    "nfl_passing_yards_page2_command_center_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1.py",
+    "universal_page_experience_v1.py",
+    "kyre_universal_shell_runtime_v2.py"
+  ],
+  "dependency_tokens": ["domain:api2-nfl-passing-yards-page2-stier-v3"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE2_STIER_V3_FROZEN",
+  "notes": "Presentation-only NFL Passing Yards Page 2 S-tier successor. Preserves verified Kyre Sports API payloads, canonical player/game identity, existing projections/probabilities/market observations/history/source routing, and the frozen ReadTimeout isolation path. Compacts tablet/mobile hierarchy; humanizes timestamps; adds semantic compact states; suppresses duplicate TOP; displays PASS for negligible CHECK-grade edges while preserving strong verified directional decisions. No frontend provider calls, no fake values, no null-to-zero conversion, and no sportsbook averaging."
+}

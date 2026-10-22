@@ -1,0 +1,43 @@
+{
+  "task_id": "api2-nfl-passing-yards-page2-stier-v3",
+  "workstream": "api2-nfl-passing-yards-page2-stier-v3",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "0b363648c26d7b85938ee73ff78821fc1b857858",
+  "scope_lease_id": "SCOPE-LEASE-A1D63A9D46A45B24E3B14678",
+  "scope_lease_generation": 722,
+  "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-PAGE2-STIER-V3-R1",
+  "active_problem": "NFL Passing Yards Page 2 is data-correct but visually too tall and text-heavy on tablet/mobile: hit rates form a vertical wall, QB form versus defense is raw text, market timestamps expose ISO strings, single-game matchup history is oversized, environment/availability consume too much height, risks lack severity hierarchy, duplicate universal TOP controls appear, and a 50% probability / +0.2 yard edge can visually present as an OVER recommendation even though the evidence says there is no strong side.",
+  "solution": "Add a presentation-only Page 2 V3 successor over the same verified Kyre Sports API payload. Compact recent hit rates into one horizontal strip with progress bars, add visual passing-yard bars to the game log, render QB form and opponent defense as metric tiles, compact single-game matchup history, humanize market freshness, compact environment and availability states, add evidence chips and risk severity, suppress the duplicate native TOP control while retaining the site-wide shell control, and classify weak CHECK-grade near-50% / negligible-edge cases as PASS while preserving genuinely actionable verified directional decisions.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "frontend_provider_calls": false,
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "semantic_empty_states": true,
+    "canonical_identity_preserved": true,
+    "source_lineage_preserved": true,
+    "no_guessing": true
+  },
+  "decision_display_contract": {
+    "presentation_only": true,
+    "model_probability_mutation": false,
+    "projection_mutation": false,
+    "market_mutation": false,
+    "weak_case": "PASS when directional probability is below 55%, absolute edge is below 3.0 yards, or verified strength is CHECK/PASS/LOW/WEAK",
+    "strong_case": "Preserve verified OVER/UNDER display when probability, edge, and strength clear the presentation actionability guard"
+  },
+  "tdd": {
+    "red": "9/9 V3 acceptance tests failed on the frozen baseline because the V3 successor did not exist and the V2 page retained the uncompressed presentation/decision behavior.",
+    "green": "9/9 V3 acceptance tests passed after the presentation-only successor and Page 2 handoff were implemented."
+  },
+  "verification": {
+    "owned_regression_suite": "9 passed",
+    "current_page_routing_coldstart_suite": "36 passed",
+    "model_context_market_suite": "31 passed, 4 intentionally deselected",
+    "py_compile": "GREEN",
+    "tested_renderer_blob": "05528baf04b4fa90277008fb3d150e323de2a099",
+    "tested_handoff_blob": "e8b0b86e607dfc3da9d0adec4aa0ba4b1618be08",
+    "tested_test_blob": "49971a47ab4ef329b779b4b65952ec392a6dbc2e"
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_PAGE2_STIER_V3_FROZEN"
+}
