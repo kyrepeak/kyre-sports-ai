@@ -22,6 +22,7 @@ import sports_api.api.cfb_game_total_page1_v1 as cfb_game_total_module
 import sports_api.api.cfb_top_picks_page1_v1 as cfb_top_picks_page1_module
 import sports_api.api.cfb_top_picks_page1_v2 as cfb_top_picks_page1_v2_module
 import sports_api.api.cfb_top_picks_page1_v3 as cfb_top_picks_page1_v3_module
+import sports_api.api.cfb_top_picks_page1_v4 as cfb_top_picks_page1_v4_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 import sports_api.api.nfl_passing_yards_slate_v1 as nfl_passing_yards_slate_module
 
@@ -30,6 +31,7 @@ cfb_game_total_router = cfb_game_total_module.router
 cfb_top_picks_page1_router = cfb_top_picks_page1_module.router
 cfb_top_picks_page1_v2_router = cfb_top_picks_page1_v2_module.router
 cfb_top_picks_page1_v3_router = cfb_top_picks_page1_v3_module.router
+cfb_top_picks_page1_v4_router = cfb_top_picks_page1_v4_module.router
 nfl_passing_yards_page_router = nfl_passing_yards_page_module.router
 nfl_passing_yards_slate_router = nfl_passing_yards_slate_module.router
 app = FastAPI(
@@ -42,6 +44,7 @@ app.include_router(cfb_game_total_router)
 app.include_router(cfb_top_picks_page1_router)
 app.include_router(cfb_top_picks_page1_v2_router)
 app.include_router(cfb_top_picks_page1_v3_router)
+app.include_router(cfb_top_picks_page1_v4_router)
 app.include_router(nfl_passing_yards_page_router)
 app.include_router(nfl_passing_yards_slate_router)
 
@@ -56,6 +59,7 @@ def health() -> dict[str, object]:
         "cfb_top_picks_page1": True,
         "cfb_top_picks_page1_v2": True,
         "cfb_top_picks_page1_v3": True,
+        "cfb_top_picks_page1_v4": True,
         "nfl_passing_yards_page": True,
         "nfl_passing_yards_slate": True,
         "direct_app_provider_fallback": False,
