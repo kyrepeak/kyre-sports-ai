@@ -16,13 +16,15 @@
       "universal_sports_nav_ui_v1.py",
       "universal_sports_nav_ui_v2.py",
       "universal_page_experience_runtime_v1.py",
-      "tests/test_api2_universal_header_v3.py"
+      "tests/test_api2_universal_header_v3.py",
+      "tests/test_api2_universal_nav_tap_first_handoff_v1.py"
     ]
   ],
   "artifacts": [
     "universal_page_experience_runtime_v1.py",
     "universal_sports_nav_ui_v1.py",
     "tests/test_api2_universal_header_v3.py",
+    "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
     "devsystem/execution_plans/api2-universal-header-v3.json",
     "devsystem/runless_proof_plans/api2-universal-header-v3.json",
     "devsystem/task_ledgers/api2-universal-header-v3.json"
@@ -30,6 +32,7 @@
   "dependencies": [
     "universal_sports_nav_ui_v2.py",
     "streamlit_memory_lazy_router_universal_runtime_v5.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
     "universal_page_experience_v1.py",
     "app.py"
   ],
