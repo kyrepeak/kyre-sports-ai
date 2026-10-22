@@ -1,0 +1,29 @@
+{
+  "version": "API2_UNIVERSAL_HEADER_V3_LEDGER",
+  "task_id": "api2-universal-header-v3",
+  "workstream": "api2-universal-header-v3",
+  "authoritative_branch": "api2-universal-header-v3",
+  "proof_base_main_sha": "acf7b0fe990c8fd508db75889ad12ec3a152079b",
+  "scope_lease_id": "SCOPE-LEASE-C4BAB8AFAF9929F2F0CA2E6C",
+  "status": "RED_READY",
+  "single_pr": true,
+  "single_proof_path": true,
+  "duplicate_submission_forbidden": true,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_UNIVERSAL_HEADER_V3_FROZEN",
+  "root_cause_class": "STREAMLIT_SLOT_ORDER_AND_LEGACY_EMOJI_HEADER",
+  "root_cause": {
+    "position": "destination_slot is created before core._render_destination_shell(), so destination content occupies an earlier Streamlit output position and the universal nav can appear below page content.",
+    "presentation": "Universal sports navigation still formats sports with registry emoji icons and the legacy single-line KYRE SPORTS brand instead of league-mark controls and a professional header treatment."
+  },
+  "scope": [
+    "universal_page_experience_runtime_v1.py",
+    "universal_sports_nav_ui_v1.py",
+    "tests/test_api2_universal_header_v3.py",
+    "devsystem/execution_plans/api2-universal-header-v3.json",
+    "devsystem/runless_proof_plans/api2-universal-header-v3.json",
+    "devsystem/task_ledgers/api2-universal-header-v3.json"
+  ]
+}
