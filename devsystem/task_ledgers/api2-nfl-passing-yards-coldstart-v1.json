@@ -1,0 +1,35 @@
+{
+  "task_id": "api2-nfl-passing-yards-coldstart-v1",
+  "workstream": "api2-nfl-passing-yards-coldstart-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "745124f3999ac1691223086b810a9ffe9e3e245b",
+  "scope_lease_id": "SCOPE-LEASE-C814369BC1F750EB9A0B0E8D",
+  "scope_lease_generation": 709,
+  "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-COLDSTART-V1-R1",
+  "active_problem": "Post-merge production verification reproduced the user's Streamlit ReadTimeout on the first cold Kyre Sports API slate request even though the immediately following warmed request returned the full slate in 6.88 seconds. The Streamlit gateway made only one request and therefore surfaced the transient cold start directly as an error.",
+  "solution": "Keep the optimized server/data path frozen and add exactly one bounded gateway retry only for requests.ReadTimeout: 10-second cold attempt followed by one 15-second retry. Preserve fail-fast behavior for other request errors and never allow a third attempt.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "banned": ["SGO", "ESPN", "ESPN BET"],
+    "server_runtime_change": false,
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "no_guessing": true
+  },
+  "tdd": {
+    "retry_red": "First ReadTimeout returned ready=false and second-timeout test observed only one request before implementation",
+    "fixture_failure_classification": "Test harness payload used zero QB cards and was corrected to one valid explicit NOT_AVAILABLE QB card; no product logic change",
+    "final_green": "37/37 affected Passing Yards tests passing"
+  },
+  "verification": {
+    "py_compile": "GREEN",
+    "affected_regression_suite": "37 passed",
+    "frozen_steps_7_to_10": "31 passed, 4 deselected",
+    "post_merge_public_failure": "First production request exceeded 25.00 seconds with zero bytes after PR #1748 deployment",
+    "steady_state_production": "Next production request HTTP 200 in 6.881 seconds with 14 games, 28 QBs and 27 VERIFIED markets",
+    "retry_recovery_integration": "Forced first ReadTimeout then real production second request: ready=true, 2 calls, 28 QBs, 27 VERIFIED markets",
+    "retry_budget": "10s + 15s read timeouts; exactly one retry only on ReadTimeout",
+    "source_policy": "GREEN — gateway-only resilience change; no source/provider/model/market changes"
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_COLDSTART_V1_FROZEN"
+}
