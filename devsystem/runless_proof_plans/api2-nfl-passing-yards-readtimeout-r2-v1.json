@@ -1,0 +1,31 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-passing-yards-readtimeout-r2-v1",
+  "workstream": "api2-nfl-passing-yards-readtimeout-r2-v1",
+  "source_main_sha": "7ad81a4f267ffa9b25e1e6aa0f0e48dcefbe2dbc",
+  "commands": [
+    ["python", "-m", "py_compile", "sports_api/api/nfl_passing_yards_slate_v1/__init__.py", "tests/test_api2_nfl_passing_yards_readtimeout_r2_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_passing_yards_readtimeout_r2_v1.py", "tests/test_api2_nfl_passing_yards_coldstart_v1.py", "tests/test_api2_nfl_passing_yards_simple_qb_grid_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py", "tests/test_api2_nfl_passing_yards_page2_cleanup_routing_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_nfl_passing_yards_step7_projection_v1.py", "tests/test_nfl_passing_yards_step8_context_v1.py", "tests/test_nfl_passing_yards_step9_distribution_v1.py", "tests/test_nfl_passing_yards_step10_market_v1.py", "-k", "not route"]
+  ],
+  "artifacts": [
+    "sports_api/api/nfl_passing_yards_slate_v1/__init__.py",
+    "tests/test_api2_nfl_passing_yards_readtimeout_r2_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-passing-yards-readtimeout-r2-v1.json",
+    "devsystem/task_ledgers/api2-nfl-passing-yards-readtimeout-r2-v1.json"
+  ],
+  "dependencies": [
+    "sports_api/api/nfl_passing_yards_slate_v1.py",
+    "nfl_passing_yards_slate_gateway_v1.py",
+    "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py",
+    "nfl_passing_yards_simple_qb_grid_v1.py"
+  ],
+  "dependency_tokens": ["domain:api2-nfl-passing-yards-readtimeout-r2-v1"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 1800,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_PASSING_YARDS_READTIMEOUT_R2_V1_FROZEN",
+  "notes": "Intermittent production ReadTimeout recurrence after the prior history-pool and one-retry repairs. The public Passing Yards slate overlay now starts verified NFL context and market work concurrently and bounds the complete per-game market fanout to a six-second aggregate deadline. Completed sportsbook results are preserved; unfinished market work degrades only its market field so verified stats/history are not blocked. Verified lower-layer model/data/source logic is unchanged. The superseded V1 timeout harness is intentionally not a proof command because it monkeypatches wrapper-level symbols that are no longer the public runtime owner; baseline comparison separately proves R2 adds zero legacy failures. Kyre Sports API only; no SGO, ESPN, ESPN BET, fabricated lines, missing-to-zero, or sportsbook averaging."
+}

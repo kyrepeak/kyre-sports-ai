@@ -7,6 +7,7 @@ Exact source player ID + team identity is mandatory.
 from __future__ import annotations
 
 import importlib.util
+from concurrent.futures import ThreadPoolExecutor, wait
 import sys
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,37 @@ for _name, _value in vars(_legacy).items():
         globals().setdefault(_name, _value)
 
 _ORIGINAL_BUILD_SLATE_BUNDLE = _legacy.build_slate_bundle
+MARKET_PREFETCH_DEADLINE_SECONDS = 6.0
+
+
+def _bounded_market_prefetch(
+    games: list[dict[str, Any]],
+    *,
+    max_workers: int = 4,
+    deadline_seconds: float = MARKET_PREFETCH_DEADLINE_SECONDS,
+) -> dict[str, list[dict[str, Any]]]:
+    if not games:
+        return {}
+    worker_count = max(1, min(int(max_workers), len(games)))
+    results = {_legacy._text(game.get("game_id")): [] for game in games}
+    pool = ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="passing-yards-market")
+    futures = {
+        pool.submit(_legacy._collect_market_observations, game): _legacy._text(game.get("game_id"))
+        for game in games
+    }
+    try:
+        done, pending = wait(futures, timeout=max(0.01, float(deadline_seconds)))
+        for future in done:
+            game_id = futures[future]
+            try:
+                results[game_id] = future.result()
+            except Exception:
+                results[game_id] = []
+        for future in pending:
+            future.cancel()
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+    return results
 
 
 def _game_id_context(game_id: Any, team: Any) -> tuple[int | None, str | None]:
@@ -88,8 +120,11 @@ def build_game_bundles(target_date: str | None = None):
     }
     if not resolved_date or not games:
         return resolved_date, [], provenance
-    contexts = _legacy._prefetch_season_contexts(games)
-    markets_by_game = _legacy._prefetch_market_observations(games)
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="passing-yards-fields") as field_pool:
+        contexts_future = field_pool.submit(_legacy._prefetch_season_contexts, games)
+        markets_future = field_pool.submit(_bounded_market_prefetch, games)
+        contexts = contexts_future.result()
+        markets_by_game = markets_future.result()
     bundles: list[dict[str, Any]] = []
     for game in games:
         season = int(game["season"])

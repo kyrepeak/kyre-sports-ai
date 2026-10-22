@@ -1,0 +1,39 @@
+{
+  "task_id": "api2-nfl-passing-yards-readtimeout-r2-v1",
+  "workstream": "api2-nfl-passing-yards-readtimeout-r2-v1",
+  "status": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "7ad81a4f267ffa9b25e1e6aa0f0e48dcefbe2dbc",
+  "scope_lease_id": "SCOPE-LEASE-583C7354CCAF39806EF2B620",
+  "scope_lease_generation": 719,
+  "authorization_id": "AUTH-API2-NFL-PASSING-YARDS-READTIMEOUT-R2-V1-R1",
+  "active_problem": "Production Streamlit intermittently displayed 'Kyre Sports API request unavailable: ReadTimeout' even after the prior history-pool and one-retry repairs. The public Passing Yards slate overlay still ran verified NFL context work and per-game sportsbook market work sequentially, while market collection had no slate-level aggregate deadline. A single slow game-market request could therefore hold the entire 28-QB slate beyond the frontend read budget.",
+  "solution": "Keep the verified lower-layer model/data implementation unchanged. In the public Passing Yards successor overlay, start verified NFL context prefetch and sportsbook market prefetch concurrently, and bound the entire game-market fanout to a 6-second aggregate deadline. Preserve completed market results; cancel or semantically degrade unfinished market fields to empty observations so verified stats/history remain renderable. Do not increase the frontend timeout.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "banned": ["SGO", "ESPN", "ESPN BET"],
+    "schedule_stats_identity": "NFLverse via Kyre Sports API",
+    "market_primary": "FanDuel direct",
+    "market_secondary": "The Odds API when configured and needed",
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "no_guessing": true,
+    "provider_failure_scope": "A slow market request may degrade only its market field; it must not block unrelated verified stats/history."
+  },
+  "tdd": {
+    "red": "2/2 R2 regressions failed on untouched baseline: no bounded market-prefetch API existed and the public slate overlay started context/market work sequentially.",
+    "green": "2/2 R2 regressions passed after the overlay-only implementation.",
+    "baseline_comparison": "Untouched Passing Yards wildcard baseline: 46 failed / 366 passed. R2 patched comparable suite: 44 failed / 368 passed. R2 introduced zero new legacy failures."
+  },
+  "verification": {
+    "py_compile": "GREEN",
+    "owned_regression_suite": "2 passed",
+    "proof_plan_current_runtime": "29 passed",
+    "proof_plan_model_context_market": "31 passed, 4 deselected",
+    "pre_fix_live_measurement": "One controlled production request returned HTTP 200, ready=true, 28 QBs in 7.255s; the user screenshot proves the failure is intermittent rather than a permanently unavailable API.",
+    "root_cause": "FanDuel market lookup can perform multiple individually bounded provider calls per game, while the public slate previously waited on all game-market futures without an aggregate deadline and only started that phase after context/history work completed.",
+    "implementation_scope": "Only sports_api/api/nfl_passing_yards_slate_v1/__init__.py plus the R2 regression test; the verified lower-layer slate implementation remains unchanged.",
+    "market_deadline_seconds": 6.0,
+    "source_policy": "GREEN — Kyre Sports API only; no SGO/ESPN/ESPN BET; no fabricated lines; no missing-to-zero; no sportsbook averaging."
+  },
+  "freeze_token": "API2_NFL_PASSING_YARDS_READTIMEOUT_R2_V1_FROZEN"
+}
