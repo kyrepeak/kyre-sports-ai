@@ -1,0 +1,31 @@
+{
+  "task_id": "api2-cfb-top-picks-page2-route-lock-v1",
+  "workstream": "api2-cfb-top-picks-page2-route-lock-v1",
+  "state": "IMPLEMENTED_PROOF_PENDING",
+  "source_main_sha": "44d220d77138fef55bc413ba2158f99fb22bd5f7",
+  "scope_lease_id": "SCOPE-LEASE-4148F46360592C0476BEEDF0",
+  "authorization_id": "AUTH-API2-CFB-TOP-PICKS-PAGE2-ROUTE-LOCK-V1-AAA96A12",
+  "active_problem": "CFB Top Picks Page 1 detail links carried the exact top-pick candidate identity but omitted the canonical CFB Top Picks route identity. Universal Runtime could therefore reuse stale sport state and route the selected CFB card to MLB or another sport instead of CFB Top Picks Page 2.",
+  "root_cause": "The Page 1 handoff and Page 2 back link omitted ks_sport=College Football and ks_cfb_market=Top Picks. Exact candidate identity alone was insufficient to assert the universal sport/market destination.",
+  "solution": "Keep frozen V16 intact and add successor V17. V17 asserts College Football + Top Picks on forward and back links, preserves exact candidate/kind/date identity, and changes only the CFB Top Picks destination adapter to V17.",
+  "tdd": {
+    "red": "Regression contract requires forward and back URLs to preserve CFB Top Picks route identity; frozen V16 omitted those parameters.",
+    "green": "Exact-head isolated Vercel verification passed 8/8 Page 2 tests plus 27/27 frozen-neighbor regressions, with Python compile exit 0 before proof-plan/ledger addition.",
+    "anti_loop": "One branch, one PR, one candidate lineage, one Runless proof identity; no duplicate proof or alternate PR is authorized."
+  },
+  "routing_contract": {
+    "sport": "cfb",
+    "market": "top-picks",
+    "canonical_route_required": true,
+    "exact_candidate_required": true,
+    "mlb_fallback_allowed": false,
+    "other_sport_fallback_allowed": false,
+    "model_changes": 0,
+    "provider_changes": 0,
+    "sportsbook_changes": 0
+  },
+  "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_ROUTE_LOCK_V1_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "github_actions_fallback": 0,
+  "next_legal_action": "AUTHORITATIVE_RUNLESS_EXACT_HEAD_PROOF"
+}
