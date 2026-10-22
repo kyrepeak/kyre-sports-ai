@@ -42,12 +42,14 @@ def _team_from_event(raw: Mapping[str, Any] | None, fallback_name: Any, team_ind
     raw = raw if isinstance(raw, Mapping) else {}
     slug = _clean(raw.get("school_slug") or raw.get("slug")).casefold()
     if slug and slug in team_index:
-        return dict(team_index[slug])
+        row = dict(team_index[slug])
+        row.setdefault("school_slug", slug)
+        row.setdefault("team_name", _clean(raw.get("team_name") or raw.get("name") or fallback_name))
+        return row
     name = _clean(raw.get("team_name") or raw.get("name") or fallback_name)
     matched = identity.find_team_identity(name, team_index)
     if matched:
         return matched
-    # A fully canonical event team may already carry enriched fields.
     if raw.get("school_slug") and raw.get("team_name"):
         return dict(raw)
     return _unavailable_team(name)
