@@ -67,4 +67,4 @@ def test_terminal_preserves_server_authoritative_loading_runtime():
 def test_production_entrypoint_activates_cfb_game_total_successor():
     source = APP.read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_game_total_bootstrap_repair_r1" in source
-    assert '_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-cfb-game-total-api-bootstrap-repair-r1-20261023"' in source
+    assert '_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"' in source

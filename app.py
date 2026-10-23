@@ -1,7 +1,7 @@
 """KYRE Sports AI production entrypoint — CFB Game Total API bootstrap repair R1."""
 from time import perf_counter
 
-_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-cfb-game-total-api-bootstrap-repair-r1-20261023"
+_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"
 _BOOTSTRAP_STARTED = perf_counter()
 
 # Frozen ancestry markers retained for regression/documentation only:
