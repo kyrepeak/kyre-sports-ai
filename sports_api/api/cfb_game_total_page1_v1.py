@@ -1,13 +1,14 @@
 """Kyre Sports API CFB Game Total Page 1 contract.
 
 Application-facing Game Total discovery data is delivered only through Kyre
-Sports API. NCAA owns canonical schedule/identity. FanDuel is the primary
-sportsbook market source; approved secondary books are requested only for games
-with no primary total quote. Quotes remain sportsbook-specific and never enter
-projection/model math.
+Sports API. NCAA owns canonical schedule/team identity and official logo assets.
+Sportsbook quotes remain book-specific; exact-line consensus is a safe derived
+field and is never an average. Opening/current lines remain separate and line
+movement is emitted only when a true opener is independently verified.
 """
 from __future__ import annotations
 
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 import os
 from typing import Any, Callable, Mapping
@@ -27,17 +28,27 @@ from sports_api.collectors.cfb_action_network_game_markets_v1 import (
 )
 
 router = APIRouter(prefix="/api/v1/cfb/game-total", tags=["cfb"])
-MODEL_VERSION = "CFB GAME TOTAL PAGE1 API V1 • KYRE SPORTS API"
+MODEL_VERSION = "CFB GAME TOTAL PAGE1 API V1 • KYRE SPORTS API • FINAL POLISH R1"
 SCHEMA_VERSION = "cfb_game_total_page1_v1"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 PHOENIX = ZoneInfo("America/Phoenix")
 MAX_AUTO_SCAN_DAYS = 14
 FORBIDDEN_PROVIDERS = ["SGO", "ESPN", "ESPN BET"]
+NCAA_LOGO_TEMPLATE = "https://www.ncaa.com/sites/default/files/images/logos/schools/bgl/{slug}.svg"
 
 
 def _clean(value: Any) -> str:
     return str(value or "").strip()
+
+
+def _num(value: Any) -> float | None:
+    if value is None or value == "" or isinstance(value, bool):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
 
 
 def _kickoff(game: Mapping[str, Any]) -> datetime | None:
@@ -157,8 +168,6 @@ def _market_state(games: list[dict[str, Any]]) -> tuple[dict[str, list[dict[str,
     consulted: list[str] = ["FanDuel"]
     primary_rows = collect_primary_market_rows()
     matched = match_market_rows_to_ncaa_games(games, primary_rows)
-    # Re-run identity only through the stricter alias map; the quote itself is
-    # still the same direct FanDuel observation, so source priority is preserved.
     primary_alias = match_action_rows_to_games(games, primary_rows)
     for game_id, quotes in primary_alias.items():
         matched.setdefault(game_id, []).extend(
@@ -184,6 +193,24 @@ def _market_state(games: list[dict[str, Any]]) -> tuple[dict[str, list[dict[str,
                 if quotes:
                     matched.setdefault(game_id, []).extend(dict(row) for row in quotes)
     return matched, consulted
+
+
+def collect_consensus_market_rows(games: list[dict[str, Any]]) -> tuple[dict[str, list[dict[str, Any]]], list[str]]:
+    """Collect only the extra verification rows needed for exact-book consensus.
+
+    Action Network is an approved verification source. It is called once for the
+    consensus field family; failures are isolated and never break Page 1.
+    """
+    if not games:
+        return {}, []
+    try:
+        rows = collect_action_network_game_markets()
+    except Exception:
+        return {}, []
+    matched = match_action_rows_to_games(games, rows)
+    if not matched:
+        return {}, []
+    return matched, ["Action Network"]
 
 
 def _quote_quality(quote: Mapping[str, Any]) -> str:
@@ -221,11 +248,138 @@ def _public_quote(raw: Mapping[str, Any]) -> dict[str, Any]:
         "line_status": _clean(raw.get("line_status")) or None,
         "source_provider": _clean(raw.get("source_provider")) or None,
     }
+    if raw.get("opening_total_verified") is True and _num(raw.get("opening_total")) is not None:
+        quote["opening_total"] = _num(raw.get("opening_total"))
+        quote["opening_total_verified"] = True
+        quote["opening_observed_at_utc"] = _clean(raw.get("opening_observed_at_utc")) or None
     quote["line_integrity"] = _quote_quality(quote)
     return quote
 
 
-def _public_game(game: Mapping[str, Any], quotes: list[dict[str, Any]]) -> dict[str, Any]:
+def _team_identity(game: Mapping[str, Any], side: str) -> dict[str, Any]:
+    slug = _clean(game.get(f"{side}_team_slug")).strip("/")
+    name = _clean(game.get(f"{side}_team")) or side.title()
+    if not slug:
+        initials = "".join(part[:1] for part in name.split()[:3]).upper() or "CFB"
+        return {
+            "kyre_team_id": None,
+            "ncaa_school_slug": None,
+            "logo_url": None,
+            "logo_status": "TEAM_IDENTITY_PENDING",
+            "fallback_monogram": initials,
+        }
+    initials = "".join(part[:1] for part in name.split()[:3]).upper() or slug[:3].upper()
+    return {
+        "kyre_team_id": f"KYRE-CFB-{slug}",
+        "ncaa_school_slug": slug,
+        "logo_url": NCAA_LOGO_TEMPLATE.format(slug=slug),
+        "logo_status": "VERIFIED_NCAA_ASSET",
+        "fallback_monogram": initials,
+    }
+
+
+def _dedupe_book_quotes(quotes: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    latest: dict[str, dict[str, Any]] = {}
+    for raw in quotes:
+        book = _clean(raw.get("sportsbook"))
+        line = _num(raw.get("total_line"))
+        if not book or line is None:
+            continue
+        row = dict(raw)
+        previous = latest.get(book)
+        if previous is None or _clean(row.get("observed_at_utc")) >= _clean(previous.get("observed_at_utc")):
+            latest[book] = row
+    return [latest[key] for key in sorted(latest)]
+
+
+def _market_consensus(quotes: list[Mapping[str, Any]]) -> dict[str, Any]:
+    rows = _dedupe_book_quotes(quotes)
+    public_rows = [
+        {
+            "sportsbook": _clean(row.get("sportsbook")),
+            "total_line": _num(row.get("total_line")),
+            "over_price": row.get("over_price"),
+            "under_price": row.get("under_price"),
+            "observed_at_utc": _clean(row.get("observed_at_utc")) or None,
+        }
+        for row in rows
+    ]
+    if not public_rows:
+        return {
+            "status": "MARKET_NOT_POSTED_YET",
+            "consensus_line": None,
+            "books_reporting": 0,
+            "method": "EXACT_MODE_NO_AVERAGE",
+            "book_lines": [],
+        }
+    counts = Counter(float(row["total_line"]) for row in public_rows if row["total_line"] is not None)
+    ranked = counts.most_common()
+    if len(public_rows) == 1:
+        return {
+            "status": "SINGLE_BOOK_ONLY",
+            "consensus_line": public_rows[0]["total_line"],
+            "books_reporting": 1,
+            "method": "EXACT_MODE_NO_AVERAGE",
+            "book_lines": public_rows,
+        }
+    if len(ranked) > 1 and ranked[0][1] == ranked[1][1]:
+        consensus_line = None
+        status = "NO_CLEAR_CONSENSUS"
+    else:
+        consensus_line = ranked[0][0]
+        status = "VERIFIED_EXACT_CLUSTER"
+    return {
+        "status": status,
+        "consensus_line": consensus_line,
+        "books_reporting": len(public_rows),
+        "method": "EXACT_MODE_NO_AVERAGE",
+        "book_lines": public_rows,
+    }
+
+
+def _line_movement(current_quote: Mapping[str, Any], quotes: list[Mapping[str, Any]]) -> dict[str, Any]:
+    current_total = _num(current_quote.get("total_line"))
+    if current_total is None:
+        return {
+            "status": "CURRENT_LINE_NOT_POSTED",
+            "opening_total": None,
+            "current_total": None,
+            "move": None,
+            "opening_observed_at_utc": None,
+        }
+    current_book = _clean(current_quote.get("sportsbook"))
+    candidates = [current_quote] + [row for row in quotes if _clean(row.get("sportsbook")) == current_book]
+    verified = next(
+        (
+            row for row in candidates
+            if row.get("opening_total_verified") is True and _num(row.get("opening_total")) is not None
+        ),
+        None,
+    )
+    if verified is None:
+        return {
+            "status": "OPENING_LINE_NOT_VERIFIED",
+            "opening_total": None,
+            "current_total": current_total,
+            "move": None,
+            "opening_observed_at_utc": None,
+        }
+    opening_total = _num(verified.get("opening_total"))
+    assert opening_total is not None
+    return {
+        "status": "VERIFIED_MOVEMENT",
+        "opening_total": opening_total,
+        "current_total": current_total,
+        "move": round(current_total - opening_total, 1),
+        "opening_observed_at_utc": _clean(verified.get("opening_observed_at_utc")) or None,
+    }
+
+
+def _public_game(
+    game: Mapping[str, Any],
+    quotes: list[dict[str, Any]],
+    consensus_quotes: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     row = dict(game)
     for key in tuple(row):
         if str(key).casefold().startswith("espn"):
@@ -236,6 +390,18 @@ def _public_game(game: Mapping[str, Any], quotes: list[dict[str, Any]]) -> dict[
         "VERIFIED" if any(q["line_integrity"] == "VERIFIED" for q in row["market_quotes"])
         else "PARTIAL" if row["market_quotes"] else "UNAVAILABLE"
     )
+    row["team_identity"] = {
+        "away": _team_identity(row, "away"),
+        "home": _team_identity(row, "home"),
+    }
+    extra = [_public_quote(quote) for quote in (consensus_quotes or [])]
+    combined = list(row["market_quotes"]) + extra
+    row["market_consensus"] = _market_consensus(combined)
+    current_quote = next(
+        (quote for quote in row["market_quotes"] if _num(quote.get("total_line")) is not None),
+        {},
+    )
+    row["line_movement"] = _line_movement(current_quote, combined)
     return row
 
 
@@ -250,10 +416,20 @@ def build_page1_payload(*, game_date: str | None = None, now_provider: Callable[
 
     games = _dedupe_games([dict(game) for game in resolved_games if isinstance(game, Mapping)])
     market_map, consulted = _market_state(games)
+    consensus_map, consensus_consulted = collect_consensus_market_rows(games)
+    for provider in consensus_consulted:
+        if provider not in consulted:
+            consulted.append(provider)
     public_games: list[dict[str, Any]] = []
     for game in games:
         game_id = _clean(game.get("game_id") or game.get("identity_key"))
-        public_games.append(_public_game(game, market_map.get(game_id, [])))
+        public_games.append(
+            _public_game(
+                game,
+                market_map.get(game_id, []),
+                consensus_map.get(game_id, []),
+            )
+        )
 
     verified = sum(1 for game in public_games if game.get("market_integrity") == "VERIFIED")
     partial = sum(1 for game in public_games if game.get("market_integrity") == "PARTIAL")
@@ -275,11 +451,15 @@ def build_page1_payload(*, game_date: str | None = None, now_provider: Callable[
             "application_gateway": "Kyre Sports API",
             "schedule_primary": "NCAA",
             "identity_primary": "NCAA",
+            "team_logo_primary": "NCAA official school asset",
             "market_primary": "FanDuel",
             "market_secondary": ["The Odds API", "Action Network"],
+            "consensus_verification": "Action Network exact current book lines when available",
             "provider_calls": consulted,
             "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_INFLUENCE,
             "consensus_averaging": False,
+            "frontend_provider_selection": False,
+            "line_movement_requires_verified_opener": True,
             "fabrication": False,
             "null_to_zero": False,
             "forbidden_providers": list(FORBIDDEN_PROVIDERS),
@@ -299,9 +479,14 @@ __all__ = [
     "FORBIDDEN_PROVIDERS",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
+    "NCAA_LOGO_TEMPLATE",
     "SCHEMA_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_line_movement",
+    "_market_consensus",
+    "_public_game",
     "build_page1_payload",
+    "collect_consensus_market_rows",
     "collect_primary_market_rows",
     "collect_secondary_market_rows",
     "page1",
