@@ -1,18 +1,1 @@
-{
-  "version": "RUNLESS_V2_PROOF_PLAN_V1",
-  "task_id": "api2-nba-pra-terminal-route-restore-r1",
-  "workstream": "api2-nba-pra-terminal-route-restore-r1",
-  "candidate_sha": "01e4afb4dd46183cfb42156b897f47585068d7de",
-  "proof_commands": [
-    "python -m pytest -q tests/test_api2_nba_pra_terminal_route_restore_r1.py tests/test_api2_nba_pra_page1_page2_sync_v1.py tests/test_api2_nba_pra_page2_runtime_v1.py",
-    "python -m pytest -q tests/test_api2_nba_pra*.py",
-    "python -m py_compile streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py nba_pra_runtime_v2.py nba_pra_page1_v2.py nba_pra_page1_api_only_v1.py nba_pra_market_api_v1.py runless_v2/nba_pra_market_v1.py"
-  ],
-  "constraints": {
-    "application_gateway": "Kyre Sports API only",
-    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
-    "sportsbook_line_averaging": false,
-    "missing_to_zero": false,
-    "projection_weight_from_sportsbooks": 0.0
-  }
-}
+{"mode":"runless","task_id":"api2-nba-pra-terminal-route-restore-r1","workstream":"api2-nba-pra-terminal-route-restore-r1","source_main_sha":"398ab1b5ca468b2a3efdc9b036875e2e0f579c18","commands":[["python","-m","py_compile","streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py","nba_pra_runtime_v2.py","nba_pra_page1_v2.py","nba_pra_page1_api_only_v1.py","nba_pra_market_api_v1.py","runless_v2/nba_pra_market_v1.py"],["python","-m","pytest","--noconftest","-q","tests/test_api2_nba_pra_terminal_route_restore_r1.py","tests/test_api2_nba_pra_page1_page2_sync_v1.py","tests/test_api2_nba_pra_page2_runtime_v1.py"],["python","-m","pytest","--noconftest","-q","tests/test_api2_nba_pra_page1_api_only_v1.py","tests/test_api2_nba_pra_live_acceptance_repair_v1.py"]],"artifacts":["streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py","tests/test_api2_nba_pra_terminal_route_restore_r1.py","devsystem/runless_proof_plans/api2-nba-pra-terminal-route-restore-r1.json"],"dependencies":["nba_pra_runtime_v2.py","nba_pra_page1_v2.py","nba_pra_page1_api_only_v1.py","nba_pra_market_api_v1.py","nba_pra_schedule_api_v1.py","nba_pra_player_context_api_v1.py","nba_pra_injury_api_v1.py","runless_v2/nba_pra_market_v1.py"],"timeout_seconds":600,"live_ttl_seconds":900,"github_actions_fallback":0,"required_check":"runless-final-gate","required_check_app_id":5204253,"freeze_token":"API2_NBA_PRA_TERMINAL_ROUTE_RESTORE_R1_FROZEN"}
