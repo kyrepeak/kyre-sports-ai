@@ -1,0 +1,29 @@
+{
+  "version": "API2_UNIVERSAL_STREAMLIT_NAVIGATION_SPEED_V1",
+  "task_id": "api2-universal-streamlit-navigation-speed-v1",
+  "workstream": "api2-universal-streamlit-navigation-speed-v1",
+  "source_main_sha": "e9a979922fd455620eebded877b2bcfc78b356bd",
+  "goal": "Keep internal Streamlit navigation in one tab, make newest navigation intent authoritative, and reduce universal bootstrap overhead without changing sports semantics.",
+  "step2a": {
+    "authoritative_branch": "api2-universal-streamlit-navigation-speed-v1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "scope_lease_id": "SCOPE-LEASE-8E33A6E2FADE22FA702A2064",
+    "scope_lease_generation": 726,
+    "base_drift_reconciled_once": true,
+    "reconciled_from_main_sha": "e9a979922fd455620eebded877b2bcfc78b356bd"
+  },
+  "constraints": {
+    "same_tab_internal_navigation": true,
+    "external_links_unchanged": true,
+    "latest_tap_wins": true,
+    "background_prefetch_forbidden": true,
+    "repeated_polling_forbidden": true,
+    "model_projection_probability_mutation": false,
+    "sports_provider_mutation": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "API2_UNIVERSAL_STREAMLIT_NAVIGATION_SPEED_V1_FROZEN"
+}
