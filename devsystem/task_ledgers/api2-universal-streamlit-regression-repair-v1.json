@@ -1,0 +1,34 @@
+{
+  "task_id": "api2-universal-streamlit-regression-repair-v1",
+  "workstream": "api2-universal-streamlit-regression-repair-v1",
+  "source_main_sha": "80b1604a99ab8ea7bdf2fb7d9ae4ed2c38c29140",
+  "status": "TDD_RED_PENDING",
+  "progress_percent": 34,
+  "step2a": {
+    "active_problem": "Restore NBA PRA nav ownership and route-transition loading after Universal Navigation Speed V1.",
+    "authoritative_branch": "api2-universal-streamlit-regression-repair-v1",
+    "scope_lease_id": "SCOPE-LEASE-C18AC4A3CCDC79E8906195C8",
+    "scope_lease_generation": 728,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "evidence": {
+    "root_cause": [
+      "V1 speed terminal imports frozen Runtime V5 before the NBA PRA terminal overlay, so nav UI initializes before PRA is registered.",
+      "Runtime V2 renders transition fallback only when client controller mount fails, unlike V1 which shows it on every real route transition."
+    ]
+  },
+  "remaining": [
+    "commit RED tests",
+    "execute RED proof",
+    "implement forward-only successors",
+    "obtain app.py thaw",
+    "execute comprehensive exact-head GREEN proof",
+    "open one PR and merge exact authorized SHA",
+    "verify merged deployment and close GREEN_FROZEN"
+  ],
+  "freeze_token": "API2_UNIVERSAL_STREAMLIT_REGRESSION_REPAIR_V1_FROZEN"
+}

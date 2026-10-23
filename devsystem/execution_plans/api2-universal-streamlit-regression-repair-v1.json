@@ -1,0 +1,32 @@
+{
+  "version": "API2_UNIVERSAL_STREAMLIT_REGRESSION_REPAIR_V1",
+  "task_id": "api2-universal-streamlit-regression-repair-v1",
+  "workstream": "api2-universal-streamlit-regression-repair-v1",
+  "source_main_sha": "80b1604a99ab8ea7bdf2fb7d9ae4ed2c38c29140",
+  "goal": "Restore NBA PRA navigation and route-transition loading without rolling back same-tab/latest-tap speed behavior.",
+  "step2a": {
+    "authoritative_branch": "api2-universal-streamlit-regression-repair-v1",
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "scope_lease_id": "SCOPE-LEASE-C18AC4A3CCDC79E8906195C8",
+    "scope_lease_generation": 728,
+    "entrypoint_thaw_required": true
+  },
+  "root_causes": [
+    "NBA PRA overlay activation occurs after frozen Runtime V5 import in the V1 speed terminal.",
+    "Runtime V2 suppresses the transition loading surface when the browser controller mounts successfully."
+  ],
+  "constraints": {
+    "same_tab_internal_navigation": true,
+    "latest_tap_wins": true,
+    "transition_loading_restored": true,
+    "nba_pra_navigation_restored": true,
+    "background_prefetch_forbidden": true,
+    "model_projection_probability_mutation": false,
+    "sports_provider_mutation": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "API2_UNIVERSAL_STREAMLIT_REGRESSION_REPAIR_V1_FROZEN"
+}
