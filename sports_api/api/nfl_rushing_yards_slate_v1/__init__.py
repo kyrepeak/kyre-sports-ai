@@ -22,6 +22,13 @@ _legacy = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = _legacy
 _SPEC.loader.exec_module(_legacy)
 
+# The canonical builder stays authoritative, but its request-time transport is
+# bounded so a cold serverless request cannot download multi-season PBP or wait
+# indefinitely on direct-book enrichment before Page 1 can render.
+from sports_api import nfl_rushing_yards_fastpath_v1 as _fastpath
+
+_fastpath.install(_legacy)
+
 for _name, _value in vars(_legacy).items():
     if _name not in {"__name__", "__package__", "__loader__", "__spec__", "__file__", "__cached__", "router", "slate", "status", "build_slate_bundle"}:
         globals().setdefault(_name, _value)
@@ -95,6 +102,14 @@ def _postprocess_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "sportsbook_line_averaging": False,
         "unposted_market_state": "MARKET_NOT_POSTED",
     }
+    routing["request_time_transport_policy"] = {
+        "full_pbp_downloads": False,
+        "weekly_player_summaries": True,
+        "history_budget_seconds": _fastpath.HISTORY_BUDGET_SECONDS,
+        "market_budget_seconds": _fastpath.MARKET_BUDGET_SECONDS,
+        "market_call_timeout_seconds": _fastpath.MARKET_CALL_TIMEOUT_SECONDS,
+        "slow_enrichment_blocks_slate": False,
+    }
     out["routing"] = routing
     return out
 
@@ -115,6 +130,14 @@ def status() -> dict[str, Any]:
         "provider_audit": [dict(row) for row in INJURY_PROVIDER_AUDIT],
     }
     base["market_provider_audit"] = [dict(row) for row in MARKET_PROVIDER_AUDIT]
+    base["request_time_transport_policy"] = {
+        "full_pbp_downloads": False,
+        "weekly_player_summaries": True,
+        "history_budget_seconds": _fastpath.HISTORY_BUDGET_SECONDS,
+        "market_budget_seconds": _fastpath.MARKET_BUDGET_SECONDS,
+        "market_call_timeout_seconds": _fastpath.MARKET_CALL_TIMEOUT_SECONDS,
+        "slow_enrichment_blocks_slate": False,
+    }
     return base
 
 
