@@ -1,10 +1,9 @@
-"""CFB Game Total Page 1 API bootstrap repair R1.
+"""CFB Game Total Page 1 API bootstrap repair R1 + A-tier Page 1 activation.
 
-Additive successor around the frozen S-tier Page 1. It changes only the
-application-facing Kyre Sports API base resolution: explicit environment and
-Streamlit secret overrides still win; otherwise the canonical production Kyre
-Sports API Vercel gateway is used. No provider, market, model, projection,
-probability, ranking, selection, or Page 2 logic is owned here.
+The application-facing API base resolver remains unchanged. This wrapper now
+hands only Page 1 presentation to the approved A-tier successor. Page 2,
+provider routing, model/projection math, rankings, and the production app
+entrypoint remain outside this module's ownership.
 """
 from __future__ import annotations
 
@@ -14,7 +13,7 @@ import streamlit as st
 
 import cfb_game_total_page1_stier_v1 as prior
 
-MODEL_VERSION = "CFB GAME TOTAL PAGE1 API BOOTSTRAP REPAIR R1"
+MODEL_VERSION = "CFB GAME TOTAL PAGE1 API BOOTSTRAP REPAIR R1 • A-TIER ACTIVATION R1"
 MARKET = prior.MARKET
 PAGE1_ENDPOINT = prior.PAGE1_ENDPOINT
 KYRE_SPORTS_API_BASE_URL = prior.KYRE_SPORTS_API_BASE_URL
@@ -43,12 +42,9 @@ def _api_base() -> str:
 
 
 def render_game_total_page1() -> None:
-    original = prior._api_base
-    prior._api_base = _api_base
-    try:
-        return prior.render_game_total_page1()
-    finally:
-        prior._api_base = original
+    import cfb_game_total_page1_atier_v1 as atier
+
+    return atier.render_game_total_page1()
 
 
 def render_cfb_hub(market: str, *args, **kwargs) -> None:
