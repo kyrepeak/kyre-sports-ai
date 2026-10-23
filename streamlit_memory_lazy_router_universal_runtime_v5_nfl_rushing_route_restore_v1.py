@@ -25,8 +25,6 @@ _prior_resolve_destination = prior.resolve_destination
 def resolve_destination(route):
     """Restore NBA PRA + NFL Rushing while preserving every other terminal route."""
     if route.sport_id == "nba" and route.market_id == "pra":
-        base = _prior_resolve_destination(route)
-
         def loader():
             return importlib.import_module("nba_pra_runtime_v2")
 
@@ -34,7 +32,7 @@ def resolve_destination(route):
             return page.render_nba_pra_runtime_v2()
 
         return DestinationAdapter(
-            base.route_key,
+            (route.sport_id, route.market_id),
             loader,
             renderer,
             "nba_pra_runtime_v2_api_only_terminal_restore_r1",
