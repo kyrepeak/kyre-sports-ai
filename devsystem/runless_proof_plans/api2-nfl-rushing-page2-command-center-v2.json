@@ -1,0 +1,52 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-rushing-page2-command-center-v2",
+  "workstream": "api2-nfl-rushing-page2-command-center-v2",
+  "source_main_sha": "1d98cd6f7449cdb9fbe561caa0c5804087c7db8b",
+  "commands": [
+    [
+      "python", "-m", "py_compile",
+      "sports_api/api/nfl_rushing_yards_detail_v2.py",
+      "nfl_rushing_yards_detail_gateway_v2.py",
+      "nfl_rushing_yards_professional_v1.py",
+      "nfl_rushing_yards_professional_v2.py",
+      "kyre_sports_api_vercel_v1.py",
+      "tests/test_api2_nfl_rushing_page2_command_center_v2.py"
+    ],
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_api2_nfl_rushing_page2_command_center_v2.py",
+      "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py",
+      "tests/test_api2_nfl_rushing_page1_cleanup_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "sports_api/api/nfl_rushing_yards_detail_v2.py",
+    "nfl_rushing_yards_detail_gateway_v2.py",
+    "nfl_rushing_yards_professional_v1.py",
+    "nfl_rushing_yards_professional_v2.py",
+    "kyre_sports_api_vercel_v1.py",
+    "tests/test_api2_nfl_rushing_page2_command_center_v2.py",
+    "docs/superpowers/specs/2026-10-22-nfl-rushing-page2-command-center-v2-design.md",
+    "docs/superpowers/plans/2026-10-22-nfl-rushing-page2-command-center-v2.md",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-page2-command-center-v2.json",
+    "devsystem/task_ledgers/api2-nfl-rushing-page2-command-center-v2.json"
+  ],
+  "dependencies": [
+    "sports_api/api/nfl_rushing_yards_slate_v1.py",
+    "nfl_rushing_yards_slate_gateway_v1.py",
+    "nfl_rushing_yards_simple_rb_grid_v1.py",
+    "nfl_rushing_yards_projection_v2.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py"
+  ],
+  "dependency_tokens": [
+    "domain:api2-nfl-rushing-page2-command-center-v2"
+  ],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_RUSHING_PAGE2_COMMAND_CENTER_V2_FROZEN",
+  "notes": "Page 2-only decision cockpit. Kyre Sports API remains the sole application-facing gateway. Deep analytics use a dedicated Kyre detail endpoint so Page 1 retains its frozen lightweight league-wide slate. No projection-model mutation, no RB1/RB2 mutation, no sportsbook averaging, no missing-to-zero conversion, no banned provider dependency."
+}
