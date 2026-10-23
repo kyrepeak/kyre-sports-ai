@@ -10,10 +10,11 @@
     "single_pr": true,
     "single_proof_path": true,
     "anti_loop": true,
-    "scope_lease_id": "SCOPE-LEASE-8E33A6E2FADE22FA702A2064",
-    "scope_lease_generation": 726,
+    "scope_lease_id": "SCOPE-LEASE-FC7E063243FD040E82D9DEDB",
+    "scope_lease_generation": 727,
     "base_drift_reconciled_once": true,
-    "reconciled_from_main_sha": "e9a979922fd455620eebded877b2bcfc78b356bd"
+    "reconciled_main_sha": "e9a979922fd455620eebded877b2bcfc78b356bd",
+    "entrypoint_thaw_required": true
   },
   "constraints": {
     "same_tab_internal_navigation": true,
