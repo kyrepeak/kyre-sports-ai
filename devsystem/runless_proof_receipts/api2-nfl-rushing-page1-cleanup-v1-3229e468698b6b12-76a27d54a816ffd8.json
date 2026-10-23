@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-rushing-page1-cleanup-v1.json": "e3bd38534f727f2248ca6a836373bc7db2c84106",
+    "devsystem/task_ledgers/api2-nfl-rushing-page1-cleanup-v1.json": "24576802ea9e21b366b02ab5ee8ceadbad5f9684",
+    "nfl_rushing_yards_simple_rb_grid_v1.py": "4f3c2b0d21f108c863fff7fc4e6135723db3cbf4",
+    "tests/test_api2_nfl_rushing_page1_cleanup_v1.py": "b5a106d45cb9b234f188abe85d11cbfa246fde35"
+  },
+  "candidate_sha": "3229e468698b6b1218842325a07e0669c44a48d1",
+  "created_at": "2026-10-23T06:14:23.749402+00:00",
+  "dependency_map": {
+    "nfl_rushing_yards_professional_v1.py": "f2cc7c25e4d9a916525a954bb076d6c5c9445d9f",
+    "nfl_rushing_yards_slate_gateway_v1.py": "12259fff93cdad88a900247fa01e51c912232273",
+    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py": "dfda510b094de77d67a6033256ea1213d2126084",
+    "universal_runtime_v5_loader/__init__.py": "f5e301e3e4da70bdbda7f2cfb70da2160efac121"
+  },
+  "digest": "0de66b09572250e0127d05c6097c2b57c4cbec23493425d513f6d6f7eddaf603",
+  "evidence_digests": [
+    "76498d379163cf7a1dadacaf4b0ed8ebeb53efd022b75d884cc224eab2686ad9",
+    "dbc34459e8fd162107a9a644587346c4ef3af8dac72f74d344a7321a8ca1d584"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "a6ba6cde83e936722edefbc5d700a35cf23333834e402e4f9a72543d99bf3a85",
+  "proof_id": "api2-nfl-rushing-page1-cleanup-v1-3229e468698b6b12-76a27d54a816ffd8",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 497,
+    "state_hash": "710df7a26bd853313bf6e9d1a2df2c8f038b028feb292bf63208f1b3b73efa4f"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 497,
+    "state_hash": "710df7a26bd853313bf6e9d1a2df2c8f038b028feb292bf63208f1b3b73efa4f"
+  },
+  "request_fingerprint": "ae9c6597972c5eb67c3e919c926cddb397c71eaf92f4ed30d85bf4a35d9082d9",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-page1-cleanup-v1",
+  "workstream": "api2-nfl-rushing-page1-cleanup-v1"
+}
