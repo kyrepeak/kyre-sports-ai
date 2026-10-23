@@ -1,0 +1,43 @@
+{
+  "task_id": "api2-nfl-rushing-page1-cleanup-v1",
+  "workstream": "api2-nfl-rushing-page1-cleanup-v1",
+  "source_main_sha": "b30731fc50337a86e445937fc29ef1d2ce3a42cf",
+  "status": "TDD_RED_PENDING",
+  "progress_percent": 24,
+  "step2a": {
+    "active_problem": "NFL Rushing Yards Page 1 is visually dense and lacks team-specific identity while the user wants a cleaner S-tier board.",
+    "authoritative_branch": "api2-nfl-rushing-page1-cleanup-v1",
+    "authoritative_pr": null,
+    "scope_lease_id": "SCOPE-LEASE-A2EEE8012C296CE148CCE0DC",
+    "scope_lease_generation": 733,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "design": {
+    "approach": "Restrained team accents on the Kyre dark/glacier shell, one compact analytics strip, one scouting strip, intentional pending-market state.",
+    "data_contract_mutation": false,
+    "projection_mutation": false,
+    "provider_mutation": false,
+    "sportsbook_mutation": false,
+    "page2_mutation": false
+  },
+  "evidence": {
+    "baseline_renderer_blob": "4b278b83c8bffdb892e6f4150aab6d78382ef9e1",
+    "frozen_record": "API2_NFL_RUSHING_YARDS_SIMPLE_RB_GRID_V1_FROZEN",
+    "tdd_red": "pending exact-head test-only Runless terminal result"
+  },
+  "remaining": [
+    "observe RED on the new visual contract",
+    "implement team themes and compact card hierarchy",
+    "obtain exact-head thaw for the frozen renderer blob transition",
+    "execute one final exact-head Runless V2 proof",
+    "require App 5204253 runless-final-gate success",
+    "merge exact authorized head",
+    "verify merged-main UI contract",
+    "finalize freeze evidence and release scope lease"
+  ],
+  "freeze_token": "API2_NFL_RUSHING_PAGE1_CLEANUP_V1_FROZEN"
+}
