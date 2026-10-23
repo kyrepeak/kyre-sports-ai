@@ -1,0 +1,40 @@
+{
+  "task_id": "api2-nfl-rushing-yards-simple-rb-grid-v1",
+  "workstream": "api2-nfl-rushing-yards-simple-rb-grid-v1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "branch": "api2-nfl-rushing-yards-simple-rb-grid-v1",
+  "pull_request": 1758,
+  "base_main_sha": "e3e5f65401388ff2cc7279a287a2b1797d7fb3b7",
+  "status": "IMPLEMENTED_AWAITING_EXACT_HEAD_PROOF",
+  "freeze_token": "API2_NFL_RUSHING_YARDS_SIMPLE_RB_GRID_V1_FROZEN",
+  "red_checkpoint": {
+    "candidate_sha": "18ffe7ae458dfbecbf763674beb93663714eff19",
+    "preview_path": "/api/v1/nfl/rushing-yards/slate/status",
+    "http_status": 404,
+    "classification": "EXPECTED_TDD_RED_MISSING_SUCCESSOR_ROUTE"
+  },
+  "scope": {
+    "page1": "simple league-wide RB1/RB2 upcoming-game board",
+    "page2": "deep rushing analytics",
+    "upcoming_only": true,
+    "remove_at_kickoff": true,
+    "auto_roll_next_week": true,
+    "application_gateway": "Kyre Sports API"
+  },
+  "safety_contract": {
+    "canonical_ids": true,
+    "sportsbook_line_averaging": false,
+    "missing_to_zero": false,
+    "semantic_empty_states": true,
+    "source_lineage": true,
+    "market_blind_projection": true,
+    "sportsbook_projection_influence": 0.0
+  },
+  "proof": {
+    "required_check": "runless-final-gate",
+    "required_check_app_id": 5204253,
+    "github_actions_fallback": 0,
+    "exact_head_required": true,
+    "merge_before_proof": false
+  }
+}

@@ -14,12 +14,16 @@ def _source(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def test_runtime_uses_dedicated_rushing_adapter_not_legacy_game_selector():
-    source = _source("universal_runtime_v5_loader.py")
-    assert "def _nfl_rushing_yards_adapter" in source
-    assert 'return _nfl_rushing_yards_adapter(route)' in source
-    assert '"rushing-yards": "nfl_rushing_yards_hub_v17"' not in source
-    assert "nfl_rushing_yards_simple_rb_grid_v1" in source
+def test_runtime_uses_dedicated_rushing_adapter_without_mutating_frozen_base():
+    overlay = _source("universal_runtime_v5_loader/__init__.py")
+    frozen_base = _source("universal_runtime_v5_loader.py")
+    assert "def _nfl_rushing_yards_adapter" in overlay
+    assert 'route.market_id == "rushing-yards"' in overlay
+    assert "nfl_rushing_yards_simple_rb_grid_v1" in overlay
+    assert "_ORIGINAL_RESOLVE_DESTINATION" in overlay
+    # The inherited frozen base remains byte-for-byte architecturally owned by its old path;
+    # the successor package shadows only the rushing route at import time.
+    assert '"rushing-yards": "nfl_rushing_yards_hub_v17"' in frozen_base
 
 
 def test_page1_is_simple_all_rb_board_without_game_selector():
@@ -31,6 +35,7 @@ def test_page1_is_simple_all_rb_board_without_game_selector():
     assert "selectbox(" not in source
     assert '"🏈 Game"' not in source
     assert "load_rushing_yards_slate" in source
+    assert "upcoming games only" in source.lower()
 
 
 def test_gateway_is_kyre_sports_api_only_and_fail_closed():

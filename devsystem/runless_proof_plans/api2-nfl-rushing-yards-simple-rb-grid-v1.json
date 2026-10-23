@@ -4,13 +4,44 @@
   "workstream": "api2-nfl-rushing-yards-simple-rb-grid-v1",
   "source_main_sha": "e3e5f65401388ff2cc7279a287a2b1797d7fb3b7",
   "commands": [
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py"]
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "nfl_rushing_yards_projection_v2.py",
+      "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py",
+      "sports_api/api/nfl_rushing_yards_slate_v1.py",
+      "nfl_rushing_yards_slate_gateway_v1.py",
+      "nfl_rushing_yards_simple_rb_grid_v1.py",
+      "nfl_rushing_yards_professional_v1.py",
+      "universal_runtime_v5_loader/__init__.py",
+      "kyre_sports_api_vercel_v1.py",
+      "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py"
+    ],
+    [
+      "python",
+      "-m",
+      "pytest",
+      "--noconftest",
+      "-q",
+      "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py"
+    ]
   ],
   "artifacts": [
+    "nfl_rushing_yards_projection_v2.py",
+    "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py",
+    "sports_api/api/nfl_rushing_yards_slate_v1.py",
+    "nfl_rushing_yards_slate_gateway_v1.py",
+    "nfl_rushing_yards_simple_rb_grid_v1.py",
+    "nfl_rushing_yards_professional_v1.py",
+    "universal_runtime_v5_loader/__init__.py",
+    "kyre_sports_api_vercel_v1.py",
     "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py"
   ],
   "dependencies": [
     "universal_runtime_v5_loader.py",
+    "sports_api/nfl_data_nflverse_v1.py",
+    "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py",
     "kyre_sports_api_vercel_v1.py"
   ],
   "dependency_tokens": [
@@ -22,5 +53,5 @@
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
   "freeze_token": "API2_NFL_RUSHING_YARDS_SIMPLE_RB_GRID_V1_FROZEN",
-  "notes": "RED-first acceptance plan for a Passing-Yards-style Rushing Yards successor. Kyre Sports API is the only application-facing gateway. Page 1 is an all-RB1/RB2 upcoming-game board with no game selector; Page 2 is deep rushing analytics. No banned provider dependency, no sportsbook averaging, no missing-to-zero conversion, no fabricated identities or markets."
+  "notes": "Passing-Yards-style Rushing Yards successor. Kyre Sports API is the only application-facing gateway. Page 1 is an all-RB1/RB2 upcoming-game board with no game selector; Page 2 is deep rushing analytics. Strict kickoff exclusion and automatic next-week rollover. New production path contains no banned provider dependency, no sportsbook averaging, no missing-to-zero conversion, no fabricated identities or markets."
 }
