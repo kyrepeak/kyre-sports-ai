@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "app.py": "26b54bf378c0d9a477729fafd944036ab8215eda",
+    "cfb_game_total_page1_api_bootstrap_repair_r1.py": "030e890727d24681a9e319fa0b8a3629bb7f6583",
+    "devsystem/execution_plans/api2-cfb-game-total-api-bootstrap-repair-r1.json": "7a731bb6cddd4c778bc4ef6374ac2a6d3747a813",
+    "devsystem/runless_proof_plans/api2-cfb-game-total-api-bootstrap-repair-r1.json": "f22846ca662c1f13ec1decc0a4bb67f4667a228e",
+    "devsystem/task_ledgers/api2-cfb-game-total-api-bootstrap-repair-r1.json": "1df9bc5f1acfb1d1e97160e173cce8bc69417e25",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_game_total_bootstrap_repair_r1.py": "45a4bc2551ccd91e11a9c7444d15933cc1107491",
+    "tests/test_api2_cfb_game_total_api_bootstrap_repair_r1.py": "df0b260324aae0e5ef28f91be6bb24229cdf08f6",
+    "universal_runtime_v5_loader_cfb_game_total_bootstrap_repair_r1.py": "d7a1471b000f3964a05230bc30bc7583194381cf"
+  },
+  "candidate_sha": "8703a4266e9091ac40a8e329120c032997474d75",
+  "created_at": "2026-10-23T07:30:07.131154+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_stier_v1.py": "244a9861714bfd67b223c45852782644cdf9af8d",
+    "cfb_game_total_page2_market_completeness_r1.py": "4c6adc52e6888e91a678eaad877af15132a539a1",
+    "kyre_sports_api_vercel_v1.py": "45818d2de12bf58564484ecc1df183533f1301ed",
+    "sports_api/api/cfb_game_total_page1_v1.py": "f7350edc85c978ba50147d8425a239db7abb3288",
+    "sports_api/collectors/cfb_action_network_game_markets_v1.py": "4cfb18a3a88c215ecf7dae8cb3ea66ede8782df7",
+    "sports_api/collectors/cfb_game_total_market_v1.py": "455a7172d41ca344999484e2d9145b2213119123",
+    "streamlit_memory_lazy_router_universal_runtime_v5_loading_progress_repair_r1.py": "f00731b789abe53bcc0e9c7118ed575551cfefbe",
+    "universal_page_experience_runtime_v5.py": "de5ae478327eb8d94b22cc6df808c1b88081458c",
+    "universal_runtime_v5_loader_nba_pra_page1_v1.py": "c0a9afb00c4e35068934ae3a0e0562f4caeaada8"
+  },
+  "digest": "d8fef022aea809d33515686e666de9c379d8048c0e0e21a90efc060af0ef7eb9",
+  "evidence_digests": [
+    "652bb0705d2c990a82eaddd0616fd59deda58a11a90a49eb64db327e41724986",
+    "52d4df2dddfc314b3b102191b1577656938a758b57c7d973ab0da314a5571ea6",
+    "90d1b61e8ab1955804749f572c20d850c6fe0c48e1a6d7cbf426e7a103ccdd60"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "e15cd0562666b669e8daeb1dd03f51a4cc2a681b62175183335625e52b31f2be",
+  "proof_id": "api2-cfb-game-total-api-bootstrap-repair-r1-8703a4266e9091ac-94e1199a56daff45",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-CFB-GAME-TOTAL-API-BOOTSTRAP-REPAIR-R1-APP"
+    ],
+    "revision": 504,
+    "state_hash": "359849d90c76484dfff11d48b6ab9d766147167e20acb370a31d8a051b513f5e"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-CFB-GAME-TOTAL-API-BOOTSTRAP-REPAIR-R1-APP"
+    ],
+    "revision": 504,
+    "state_hash": "359849d90c76484dfff11d48b6ab9d766147167e20acb370a31d8a051b513f5e"
+  },
+  "request_fingerprint": "903f6903a0aa0a5ea2e70ff2f8f0d08a052c2e6edfcf9eabf93c587920399d3f",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-game-total-api-bootstrap-repair-r1",
+  "workstream": "api2-cfb-game-total-api-bootstrap-repair-r1"
+}
