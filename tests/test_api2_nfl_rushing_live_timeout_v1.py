@@ -120,6 +120,12 @@ def test_slow_sportsbook_cannot_block_entire_slate(monkeypatch):
     assert all(rows == [] for rows in result.values())
 
 
+def test_live_slate_wrapper_activates_request_prewarm():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "sports_api" / "api" / "nfl_rushing_yards_slate_v1" / "__init__.py").read_text(encoding="utf-8")
+    assert "_fastpath.prewarm_request_inputs(" in source
+
+
 def test_vercel_entrypoint_activates_rushing_fastpath():
     source = (Path(__file__).resolve().parents[1] / "kyre_sports_api_vercel_v1.py").read_text(encoding="utf-8")
     assert "nfl_rushing_yards_fastpath_v1" in source
