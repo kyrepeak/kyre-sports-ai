@@ -1,0 +1,51 @@
+{
+  "task_id": "api2-universal-streamlit-navigation-speed-v1",
+  "workstream": "api2-universal-streamlit-navigation-speed-v1",
+  "source_main_sha": "e9a979922fd455620eebded877b2bcfc78b356bd",
+  "status": "TDD_RED_READY",
+  "progress_percent": 46,
+  "step2a": {
+    "active_problem": "Universal same-tab navigation, latest-tap convergence, and reduced shared Streamlit bootstrap overhead.",
+    "authoritative_branch": "api2-universal-streamlit-navigation-speed-v1",
+    "scope_lease_id": "SCOPE-LEASE-8E33A6E2FADE22FA702A2064",
+    "scope_lease_generation": 726,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false,
+    "base_drift_reconciled_once": true
+  },
+  "evidence": {
+    "tests_written_first": [
+      "tests/test_universal_page_experience_v2.py",
+      "tests/test_universal_page_experience_runtime_v2.py",
+      "tests/test_universal_navigation_speed_terminal_v1.py"
+    ],
+    "control_plane_failures": [
+      {
+        "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
+        "detail": "RUNLESS_V2_SCOPE_LEASE_NOT_LIVE",
+        "proof_created": false,
+        "product_patch": false
+      },
+      {
+        "failure_class": "CONTROL_PLANE_BASE_DRIFT",
+        "detail": "RUNLESS_V2_MAIN_IDENTITY_DRIFT",
+        "proof_created": false,
+        "product_patch": false,
+        "resolution": "Force-with-lease reconciled the same branch once onto main e9a979922fd455620eebded877b2bcfc78b356bd and rotated the scope lease identity."
+      }
+    ]
+  },
+  "remaining": [
+    "execute RED proof once on reconciled candidate",
+    "implement minimal universal successor",
+    "authorize exact frozen app.py successor delta",
+    "execute GREEN exact-head proof",
+    "open one PR",
+    "merge exact authorized candidate",
+    "finalize GREEN_FROZEN"
+  ],
+  "freeze_token": "API2_UNIVERSAL_STREAMLIT_NAVIGATION_SPEED_V1_FROZEN"
+}
