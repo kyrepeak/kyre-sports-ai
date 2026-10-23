@@ -4,6 +4,10 @@ from time import perf_counter
 _STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-streamlit-navigation-speed-v1-20261022"
 _BOOTSTRAP_STARTED = perf_counter()
 
+# Frozen ancestry markers retained for regression/documentation only; these are
+# intentionally not imported at bootstrap by the production entrypoint:
+# streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1
+# streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3
 from streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_v1 import (  # noqa: E402
     record_bootstrap_import_ms,
     render_app,
