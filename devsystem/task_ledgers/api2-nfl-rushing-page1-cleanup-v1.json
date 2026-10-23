@@ -2,8 +2,8 @@
   "task_id": "api2-nfl-rushing-page1-cleanup-v1",
   "workstream": "api2-nfl-rushing-page1-cleanup-v1",
   "source_main_sha": "4bde8013c76a7ef1af73b344750721fd7feb72cc",
-  "status": "GREEN_LOCAL_AWAITING_EXACT_HEAD_THAW_AND_PROOF",
-  "progress_percent": 62,
+  "status": "GREEN_LOCAL_AWAITING_EXACT_HEAD_PROOF",
+  "progress_percent": 72,
   "step2a": {
     "active_problem": "NFL Rushing Yards Page 1 is visually dense and lacks team-specific identity while the user wants a cleaner S-tier board.",
     "authoritative_branch": "api2-nfl-rushing-page1-cleanup-v1",
@@ -28,23 +28,34 @@
     "baseline_renderer_blob": "4b278b83c8bffdb892e6f4150aab6d78382ef9e1",
     "candidate_renderer_blob": "4f3c2b0d21f108c863fff7fc4e6135723db3cbf4",
     "frozen_record": "API2_NFL_RUSHING_YARDS_SIMPLE_RB_GRID_V1_FROZEN",
+    "freeze_authority": "FINALIZATION_LEDGER_V2",
+    "legacy_registry_owner": false,
+    "legacy_registry_thaw_attempt": {
+      "thaw_id": "THAW-API2-NFL-RUSHING-PAGE1-CLEANUP-V1-R1",
+      "state": "FAILED_CLOSED",
+      "failure_class": "REGISTRY",
+      "detail": "REGISTRY_THAW_FROZEN_OWNER_MISSING",
+      "classification": "legacy thaw route is not applicable because the existing Page 1 freeze is Finalization Ledger V2 authoritative and explicitly legacy_registry_mutation=false",
+      "duplicate_retry": false
+    },
     "tdd_red_head": "87df1dc9b71b48e8b1b332d557b30a70105439a4",
     "tdd_red_result": "4 failed, 1 passed; failures were exactly missing team themes, compact card contract, pending-market contract, and new header/CSS contract",
     "tdd_green_head_before_base_reconcile": "fe703c5c77c62d5e5cc7780730a337695610047b",
     "tdd_green_result": "16 passed in 1.25s after repository requirements were installed in the same isolated sandbox",
+    "exact_candidate_pre_ledger_classification": "b14a9477960835783152983e80a7bd06d5c2132d",
+    "exact_candidate_pre_ledger_tests": "py_compile PASS; 16 passed in 1.15s",
     "base_drift_from": "b30731fc50337a86e445937fc29ef1d2ce3a42cf",
     "base_drift_to": "4bde8013c76a7ef1af73b344750721fd7feb72cc",
     "base_reconcile_commit": "1c01a52598a0dfe6a1d6f072c480745071498ec6",
     "old_scope_lease_released": "SCOPE-LEASE-A2EEE8012C296CE148CCE0DC"
   },
   "remaining": [
-    "obtain exact-head thaw for the frozen renderer blob transition",
     "execute one final exact-head Runless V2 proof",
     "require App 5204253 runless-final-gate success",
     "merge exact authorized head",
     "verify merged-main UI contract",
-    "forward-port and retire the one-file thaw",
-    "finalize freeze evidence and release scope lease"
+    "append the new immutable Finalization Ledger V2 freeze record",
+    "close out durable GREEN_FROZEN and release scope lease"
   ],
   "freeze_token": "API2_NFL_RUSHING_PAGE1_CLEANUP_V1_FROZEN"
 }
