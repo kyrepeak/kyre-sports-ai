@@ -42,9 +42,7 @@
     "nfl_rushing_yards_slate_gateway_v1.py",
     "sports_api/api/nfl_rushing_yards_slate_v1.py"
   ],
-  "probes": [
-    "https://kyre-sports-api.vercel.app/api/v1/nfl/rushing-yards/slate/status"
-  ],
+  "probes": [],
   "timeout_seconds": 900,
   "live_ttl_seconds": 1200,
   "github_actions_fallback": 0,
