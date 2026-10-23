@@ -1,0 +1,57 @@
+{
+  "artifact_map": {
+    "app.py": "c3e1f6fa7a1bae4648dacd9b9d8c65e970eb7ba3",
+    "devsystem/execution_plans/api2-universal-loading-progress-v1-activation-r1.json": "1dbe86bb3580ebf952c838c8ad6ec95783ecb050",
+    "devsystem/runless_proof_plans/api2-universal-loading-progress-v1-activation-r1.json": "1bf7a4aedb9ef1d0e1bb30b23eab30538421a6b7",
+    "devsystem/task_ledgers/api2-universal-loading-progress-v1-activation-r1.json": "bfe75173dc9cc338337d6d809966d40b9a364213",
+    "tests/test_universal_loading_progress_activation_r1.py": "f8626f804296ef156313220eec4c4f9f3dcc7eea"
+  },
+  "candidate_sha": "fdcb8fa7fbdbbcba9a8850ec854f28b5a67f35fa",
+  "created_at": "2026-10-23T04:34:08.326386+00:00",
+  "dependency_map": {
+    "cfb_top_picks_page_v19.py": "4fef28cf3a5f840ac73f20488093628d2b7cd352",
+    "streamlit_memory_lazy_router_universal_runtime_v5_loading_progress_v1.py": "162500b850dd0d8f6cd4125755bd97796707c4b5",
+    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py": "dfda510b094de77d67a6033256ea1213d2126084",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "1b53c2749464cbb743ab171900f277efcc4f9893",
+    "universal_page_experience_runtime_v3.py": "0eaa095ed1699ebed3c0c494e8a627c3ab093b8f",
+    "universal_page_experience_runtime_v4.py": "986177a01ebc57c6519fc67e0ed20b49ff29b606",
+    "universal_page_experience_v1.py": "37341d4d9980eb5d66d380151c31d301471edea7",
+    "universal_page_experience_v2.py": "dc2d9f43dad1dac844fb26f2bd7abb999b869760",
+    "universal_page_experience_v3.py": "fe7a801920984180b6b110a1b03ecd62f9356908",
+    "universal_runtime_v5_loader.py": "30dd06ec0781aa8505e3f0c66179b89f0e1b06a4"
+  },
+  "digest": "cc6cb04e8ec9a4dfc04ac997e3e4b6ae0fa8be8664afa87b1068c62105981fab",
+  "evidence_digests": [
+    "04e9b89f6b8d2a77616db79ddc1333c2ef4d7f093cf38aec5633a5637e0dd040",
+    "2f5e4f7f526972a6c272ff6f21579b8c6713ca4b79ad888856e12a5848c6cfa8"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "984bce9839852c225c119cd6e4ee9cf5d487e17d6b1d6e8d27f0a2675cc96b22",
+  "proof_id": "api2-universal-loading-progress-v1-activation-r1-fdcb8fa7fbdbbcba-78c8aca0240931da",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-LOADING-PROGRESS-V1-APP-R1"
+    ],
+    "revision": 494,
+    "state_hash": "b63c56322e50cb7e720854eff75d103e0de8fbf051432678087780749ce346df"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-LOADING-PROGRESS-V1-APP-R1"
+    ],
+    "revision": 494,
+    "state_hash": "b63c56322e50cb7e720854eff75d103e0de8fbf051432678087780749ce346df"
+  },
+  "request_fingerprint": "4e29cba4a5c38aa098fdf9e62a06971209dd7b0ef300a839a9f57cd3ce670b34",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-loading-progress-v1-activation-r1",
+  "workstream": "api2-universal-loading-progress-v1-activation-r1"
+}
