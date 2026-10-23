@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "app.py": "d0a0d2beebb6b1ef7a950d9c0be41307a4e454eb",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-production-route-restore-v1.json": "70cdddb046a92357f186e2994126f9cf61d63368",
+    "devsystem/task_ledgers/api2-nfl-rushing-production-route-restore-v1.json": "6f4b78a3ee70f852fd2c5a335efdc005055eacd4",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py": "4a9aec74eda039629f8b25134717b23ae010c78d",
+    "tests/test_api2_nfl_rushing_production_route_restore_v1.py": "c45bf007af6b2a2f5fc5358feb8f11009641832d"
+  },
+  "candidate_sha": "8a72a98d09cf256f8eafb86e2df69c400dad991b",
+  "created_at": "2026-10-23T14:54:03.617094+00:00",
+  "dependency_map": {
+    "nfl_rushing_yards_professional_v1.py": "bd2244b19767bab1a66de671dd95fa11767e991b",
+    "nfl_rushing_yards_professional_v2.py": "793c141a02925204c533085d1e64d3a36790d8b2",
+    "nfl_rushing_yards_simple_rb_grid_v1.py": "4f3c2b0d21f108c863fff7fc4e6135723db3cbf4",
+    "nfl_rushing_yards_slate_gateway_v1.py": "12259fff93cdad88a900247fa01e51c912232273",
+    "sports_api/api/nfl_rushing_yards_slate_v1.py": "e944ef079257b25f7d14628931c92f53150050f5",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_game_total_bootstrap_repair_r1.py": "45a4bc2551ccd91e11a9c7444d15933cc1107491",
+    "universal_runtime_v5_loader/__init__.py": "f5e301e3e4da70bdbda7f2cfb70da2160efac121"
+  },
+  "digest": "521cd948c7d2bf83d10337340271ebebb391a24a691eee89c5e0bb772b34f41a",
+  "evidence_digests": [
+    "714385637b3f880a78b967b008e70eab4ebd57f13c957f7f6c3023883570c4b0",
+    "f9bee46fe97689eaa3aac9453a6f8a4f725c4affd3c05d1734f5d4c37dbfdd8c"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "9b010ceb7dfe29e7442b759bcd5ba68239467d98f95a0708b8fee335c4ef1d83",
+  "proof_id": "api2-nfl-rushing-production-route-restore-v1-8a72a98d09cf256f-c9266b624e689b11",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NFL-RUSHING-PRODUCTION-ROUTE-RESTORE-V1-APP-R1"
+    ],
+    "revision": 507,
+    "state_hash": "cdea98b1db71ae36cd4a0f3a2a4a4b3fdc87cf704ff7121b3a4a583d57974a03"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-NFL-RUSHING-PRODUCTION-ROUTE-RESTORE-V1-APP-R1"
+    ],
+    "revision": 507,
+    "state_hash": "cdea98b1db71ae36cd4a0f3a2a4a4b3fdc87cf704ff7121b3a4a583d57974a03"
+  },
+  "request_fingerprint": "23c349071720cae207c3cde289445bc4c65a8c9b2836a91cde8102e4cea2c812",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-production-route-restore-v1",
+  "workstream": "api2-nfl-rushing-production-route-restore-v1"
+}
