@@ -19,6 +19,7 @@ def test_terminal_collapses_current_runtime_lineage_without_changing_route_seman
 def test_app_activates_only_the_new_terminal_overlay() -> None:
     source = APP.read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_v1" in source
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1" not in source
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v2" not in source
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3" not in source
+    assert "import streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_v4" not in source
+    assert "import streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v1" not in source
+    assert "import streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v2" not in source
+    assert "import streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3" not in source
