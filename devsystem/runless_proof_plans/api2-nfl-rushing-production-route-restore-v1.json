@@ -1,0 +1,56 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-rushing-production-route-restore-v1",
+  "workstream": "api2-nfl-rushing-production-route-restore-v1",
+  "source_main_sha": "2089c00f662a67996c772d8dd94bbf7ef7867334",
+  "commands": [
+    [
+      "python", "-m", "py_compile",
+      "app.py",
+      "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py",
+      "streamlit_memory_lazy_router_universal_runtime_v5_cfb_game_total_bootstrap_repair_r1.py",
+      "universal_runtime_v5_loader/__init__.py",
+      "nfl_rushing_yards_simple_rb_grid_v1.py",
+      "nfl_rushing_yards_professional_v1.py",
+      "nfl_rushing_yards_professional_v2.py"
+    ],
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_api2_nfl_rushing_production_route_restore_v1.py",
+      "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py",
+      "tests/test_api2_nfl_rushing_yards_field_fallback_v1.py",
+      "tests/test_api2_nfl_rushing_page1_cleanup_v1.py",
+      "tests/test_api2_nfl_rushing_page2_command_center_v2.py",
+      "tests/test_api2_nfl_rushing_fanduel_only_v1.py",
+      "tests/test_api2_cfb_game_total_api_bootstrap_repair_r1.py",
+      "tests/test_universal_loading_progress_production_repair_r1.py"
+    ]
+  ],
+  "artifacts": [
+    "app.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py",
+    "tests/test_api2_nfl_rushing_production_route_restore_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-production-route-restore-v1.json",
+    "devsystem/task_ledgers/api2-nfl-rushing-production-route-restore-v1.json"
+  ],
+  "dependencies": [
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_game_total_bootstrap_repair_r1.py",
+    "universal_runtime_v5_loader/__init__.py",
+    "nfl_rushing_yards_simple_rb_grid_v1.py",
+    "nfl_rushing_yards_professional_v1.py",
+    "nfl_rushing_yards_professional_v2.py",
+    "nfl_rushing_yards_slate_gateway_v1.py",
+    "sports_api/api/nfl_rushing_yards_slate_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "scope_lease_id": "SCOPE-LEASE-271D6483122979CE345B",
+  "github_pr_number": 1768,
+  "branch": "api2-nfl-rushing-production-route-restore-v1",
+  "freeze_token": "API2_NFL_RUSHING_PRODUCTION_ROUTE_RESTORE_V1_FROZEN"
+}
