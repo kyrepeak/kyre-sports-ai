@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page1_api_bootstrap_repair_r1.py": "a1c9be318144e20bc6f8ea854238d224d3b766fd",
+    "cfb_game_total_page1_atier_v2.py": "264755a8850894f2b1894892dee759a40103446d",
+    "devsystem/execution_plans/api2-cfb-game-total-page1-mobile-composition-r1.json": "47d7fa2b93c71583587e9fc0f9b8d34bfd98c4e4",
+    "devsystem/runless_proof_plans/api2-cfb-game-total-page1-mobile-composition-r1.json": "0eea76203304cae851d7ddaac3d6a005952c4bfd",
+    "devsystem/task_ledgers/api2-cfb-game-total-page1-mobile-composition-r1.json": "1589a06bd12b7aeed6211b59a3504039c7c9cb33",
+    "tests/test_api2_cfb_game_total_page1_mobile_composition_r1.py": "d54f7ef1b2a51de709f88be3eab9ee7de9c7966e"
+  },
+  "candidate_sha": "3d2dd1d9e73d74f18ce152f0135e8ca1d641c30c",
+  "created_at": "2026-10-23T15:52:16.515843+00:00",
+  "dependency_map": {
+    "app.py": "d0a0d2beebb6b1ef7a950d9c0be41307a4e454eb",
+    "cfb_game_total_page1_atier_v1.py": "6172cdda86090a06d6230b82bfcc4d7f0207a2a5",
+    "kyre_sports_api_vercel_v1.py": "45818d2de12bf58564484ecc1df183533f1301ed",
+    "sports_api/api/cfb_game_total_page1_v1.py": "f7350edc85c978ba50147d8425a239db7abb3288"
+  },
+  "digest": "fa96db90a49a3743e58dbe7fff655af57a35518101385e0e26f96cc568b8b28b",
+  "evidence_digests": [
+    "96087ee1d5130cc654ead434cb990a818cb78be8e96292f4328377a6f9b5397b"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "13a1962bac2d9a4398a371d87a2873068684591bf0b18a9dfdbaac9061541197",
+  "proof_id": "api2-cfb-game-total-page1-mobile-composition-r1-3d2dd1d9e73d74f1-78c84afcb821aea8",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "request_fingerprint": "80b3364ffc0bb3cc7464d1273bd7b7d83217efbe2063cb5bfc68db89d2db9628",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-game-total-page1-mobile-composition-r1",
+  "workstream": "api2-cfb-game-total-page1-mobile-composition-r1"
+}
