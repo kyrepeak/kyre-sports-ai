@@ -28,6 +28,13 @@ def test_repair_terminal_preserves_nba_pra_and_cfb_top_picks_routes() -> None:
     assert "nba_pra_runtime_v2" in prior_source
 
 
+def test_repair_terminal_routes_nfl_rushing_yards_through_canonical_frozen_successor() -> None:
+    source = TERMINAL.read_text(encoding="utf-8")
+    assert 'route.sport_id == "nfl" and route.market_id == "rushing-yards"' in source
+    assert "return canonical_loader.resolve_destination(route)" in source
+    assert "nfl_rushing_yards_hub_v17" not in source
+
+
 def test_app_activates_repair_terminal_only() -> None:
     source = APP.read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1" in source
