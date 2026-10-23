@@ -1,0 +1,58 @@
+{
+  "artifact_map": {
+    "app.py": "9e2a7cea9fb6aa2e78200a5816388ee33eb315be",
+    "cfb_top_picks_page_v19.py": "4fef28cf3a5f840ac73f20488093628d2b7cd352",
+    "devsystem/runless_proof_plans/api2-cfb-top-picks-page2-identity-market-v3.json": "94648915b097dcf64cfeb491c8006298ff4add8b",
+    "devsystem/task_ledgers/api2-cfb-top-picks-page2-identity-market-v3.json": "340ed055df0799874e7d68eb947ec28e35b6f898",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3.py": "40fe0e2dd212b8361ab47536925bf8638372c2a7",
+    "tests/test_api2_cfb_top_picks_page2_identity_market_v3.py": "613ff6df4f8cfea0b82bcd95294955d2a28aef7f"
+  },
+  "candidate_sha": "1216e2d1866ab1b611b243700e35edecadf58494",
+  "created_at": "2026-10-23T00:37:26.727392+00:00",
+  "dependency_map": {
+    "cfb_top_picks_page_v15.py": "db4f80d2f591e86f4266963b5d488d7ff344ccd6",
+    "cfb_top_picks_page_v16.py": "296ca9ae2429c5083dd85196365f770e098d546e",
+    "cfb_top_picks_page_v18.py": "f0cf58409e7bb5604d666ec4b21d38cd80276494",
+    "sports_api/api/cfb_top_picks_page1_v4.py": "c7191c1b04c5ebc90694e126e45f77c6b861ba8b",
+    "sports_api/api/cfb_top_picks_page2_v1.py": "c0e6bc5e617c86373ac10be0184d9273690c4f8c",
+    "sports_api/collectors/cfb_top_picks_identity_v1.py": "59d8af1cb467d15556dc21e4d0ae7ab94fc8c2e1",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v2.py": "0d4166aca8506906cd8004a9799e6c6c7e5aa2bc",
+    "universal_runtime_v5_state.py": "395f1c03b8106c4c568c63714bf1e8850dab520d",
+    "universal_sports_nav_url_v1.py": "13d03b082245f6cbbc645e115e7b2d0e0e97c9db"
+  },
+  "digest": "9ca7f7e09a5ce781337f4828194ffeeb3af3a6a86eeb90ecb09b4cc82ca92663",
+  "evidence_digests": [
+    "9ad69fba57a5d46de335f9a881895c7e666b9ab0e84af337c95f5b8a40eecc1a",
+    "8c8e996ef766693e076b160eb17292b88b3846535c28405240d878810a258476",
+    "9cdd4325090fad82e9dc4f885dde5baefa8075e6201349dd4719790e4cf5db9f"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "6a2112ac6a77eaf75f3f3617ea9bfb6149067a5504f58e1f5b421dc1b0b0832c",
+  "proof_id": "api2-cfb-top-picks-page2-identity-market-v3-1216e2d1866ab1b6-5e59849ab1dc79d0",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-CFB-TOP-PICKS-PAGE2-IDENTITY-MARKET-V3-APP-R1"
+    ],
+    "revision": 486,
+    "state_hash": "f023d827db3bee79681beaa9dc07923ca367e422cde32c449ba8957b095763fd"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-CFB-TOP-PICKS-PAGE2-IDENTITY-MARKET-V3-APP-R1"
+    ],
+    "revision": 486,
+    "state_hash": "f023d827db3bee79681beaa9dc07923ca367e422cde32c449ba8957b095763fd"
+  },
+  "request_fingerprint": "43b3b15bebe19fa9f288fce296f21e0e92cec39e4bb413fa5fac68b8db315c80",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-top-picks-page2-identity-market-v3",
+  "workstream": "api2-cfb-top-picks-page2-identity-market-v3"
+}
