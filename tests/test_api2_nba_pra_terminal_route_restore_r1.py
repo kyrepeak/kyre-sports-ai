@@ -19,6 +19,15 @@ def test_terminal_restores_nba_pra_to_api_only_runtime():
     assert 'importlib.import_module("nba_pra_page1_v1")' not in source
 
 
+def test_nba_pra_terminal_path_never_consults_legacy_resolver():
+    source = TERMINAL.read_text()
+    nba_block = source.split('if route.sport_id == "nba" and route.market_id == "pra":', 1)[1].split(
+        'if route.sport_id == "nfl" and route.market_id == "rushing-yards":', 1
+    )[0]
+    assert "_prior_resolve_destination(route)" not in nba_block
+    assert "DestinationAdapter(" in nba_block
+
+
 def test_active_nba_pra_path_has_no_banned_sources_or_direct_legacy_gateway():
     banned = ("SportsGameOdds", "sportsgameodds", "ESPN BET", "ESPN NBA")
     for path in ACTIVE_NBA_PRA_FILES:
