@@ -1,0 +1,38 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-rushing-page1-cleanup-v1",
+  "workstream": "api2-nfl-rushing-page1-cleanup-v1",
+  "source_main_sha": "4bde8013c76a7ef1af73b344750721fd7feb72cc",
+  "commands": [
+    [
+      "python", "-m", "py_compile",
+      "nfl_rushing_yards_simple_rb_grid_v1.py",
+      "tests/test_api2_nfl_rushing_page1_cleanup_v1.py"
+    ],
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_api2_nfl_rushing_page1_cleanup_v1.py",
+      "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "nfl_rushing_yards_simple_rb_grid_v1.py",
+    "tests/test_api2_nfl_rushing_page1_cleanup_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-page1-cleanup-v1.json",
+    "devsystem/task_ledgers/api2-nfl-rushing-page1-cleanup-v1.json"
+  ],
+  "dependencies": [
+    "nfl_rushing_yards_slate_gateway_v1.py",
+    "nfl_rushing_yards_professional_v1.py",
+    "universal_runtime_v5_loader/__init__.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_RUSHING_PAGE1_CLEANUP_V1_FROZEN"
+}
