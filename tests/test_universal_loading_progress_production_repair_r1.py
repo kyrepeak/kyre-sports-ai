@@ -1,6 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+APP = ROOT / "app.py"
 RUNTIME = ROOT / "universal_page_experience_runtime_v5.py"
 TERMINAL = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_loading_progress_repair_r1.py"
 
@@ -44,3 +45,9 @@ def test_terminal_uses_server_authoritative_runtime_successor() -> None:
     assert "import streamlit_memory_lazy_router_universal_runtime_v5_loading_progress_v1 as prior" in source
     assert "from universal_page_experience_runtime_v5 import render_page_experience_app_v5" in source
     assert "return render_page_experience_app_v5(frozen_runtime)" in source
+
+
+def test_production_entrypoint_activates_repaired_terminal() -> None:
+    source = APP.read_text(encoding="utf-8")
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_loading_progress_repair_r1" in source
+    assert '_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"' in source
