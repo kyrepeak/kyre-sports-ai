@@ -105,6 +105,10 @@ def _postprocess_payload(payload: dict[str, Any]) -> dict[str, Any]:
     routing["request_time_transport_policy"] = {
         "full_pbp_downloads": False,
         "weekly_player_summaries": True,
+        "current_stats_roster_history_prewarm": "CONCURRENT",
+        "prefetch_budget_seconds": _fastpath.PREFETCH_BUDGET_SECONDS,
+        "player_stats_timeout_seconds": _fastpath.PLAYER_STATS_TIMEOUT_SECONDS,
+        "roster_timeout_seconds": _fastpath.ROSTER_TIMEOUT_SECONDS,
         "history_budget_seconds": _fastpath.HISTORY_BUDGET_SECONDS,
         "market_budget_seconds": _fastpath.MARKET_BUDGET_SECONDS,
         "market_call_timeout_seconds": _fastpath.MARKET_CALL_TIMEOUT_SECONDS,
@@ -115,6 +119,7 @@ def _postprocess_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_slate_bundle(*, target_date: str | None = None, now_et: Any = None) -> dict[str, Any]:
+    _fastpath.prewarm_request_inputs(_legacy, target_date=target_date, now_et=now_et)
     return _postprocess_payload(_legacy.build_slate_bundle(target_date=target_date, now_et=now_et))
 
 
@@ -133,6 +138,10 @@ def status() -> dict[str, Any]:
     base["request_time_transport_policy"] = {
         "full_pbp_downloads": False,
         "weekly_player_summaries": True,
+        "current_stats_roster_history_prewarm": "CONCURRENT",
+        "prefetch_budget_seconds": _fastpath.PREFETCH_BUDGET_SECONDS,
+        "player_stats_timeout_seconds": _fastpath.PLAYER_STATS_TIMEOUT_SECONDS,
+        "roster_timeout_seconds": _fastpath.ROSTER_TIMEOUT_SECONDS,
         "history_budget_seconds": _fastpath.HISTORY_BUDGET_SECONDS,
         "market_budget_seconds": _fastpath.MARKET_BUDGET_SECONDS,
         "market_call_timeout_seconds": _fastpath.MARKET_CALL_TIMEOUT_SECONDS,
