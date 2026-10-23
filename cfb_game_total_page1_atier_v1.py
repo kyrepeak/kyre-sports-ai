@@ -172,18 +172,14 @@ def _market_read(over: float | None, under: float | None, *, has_total: bool) ->
 
 
 def _quote(game: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Consume Kyre Sports API quote order; provider selection is not a UI concern."""
     quotes = [row for row in game.get("market_quotes") or [] if isinstance(row, Mapping)]
     if not quotes:
         return {}
-    priority = {"FanDuel": 0, "DraftKings": 1, "BetMGM": 2, "Caesars": 3, "bet365": 4, "Fanatics": 5}
-    return sorted(
-        quotes,
-        key=lambda row: (
-            row.get("total_line") is None,
-            priority.get(_clean(row.get("sportsbook")), 99),
-            _clean(row.get("sportsbook")),
-        ),
-    )[0]
+    for row in quotes:
+        if row.get("total_line") is not None and row.get("total_line") != "":
+            return row
+    return quotes[0]
 
 
 def _selected_date(payload: Mapping[str, Any]) -> date:
@@ -298,7 +294,7 @@ def render_game_total_page1() -> None:
 
     st.markdown(
         '<div class="cfbgt1-board"><b>GAME TOTAL DECISION BOARD</b>'
-        f'<span>{len(games)} games • generated {escape(generated)} • one selected sportsbook quote per card • no consensus averaging</span></div>',
+        f'<span>{len(games)} games • generated {escape(generated)} • one normalized Kyre Sports API quote per card • no consensus averaging</span></div>',
         unsafe_allow_html=True,
     )
 
