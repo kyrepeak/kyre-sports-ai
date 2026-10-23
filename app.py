@@ -1,14 +1,15 @@
-"""KYRE Sports AI production entrypoint — universal navigation regression repair terminal."""
+"""KYRE Sports AI production entrypoint — universal loading progress V1 activation."""
 from time import perf_counter
 
-_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-streamlit-regression-repair-v1-20261022"
+_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-activation-r1-20261022"
 _BOOTSTRAP_STARTED = perf_counter()
 
 # Frozen ancestry markers retained for regression/documentation only:
 # streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1
 # streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3
 # streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_v1
-from streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1 import (  # noqa: E402
+# streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1
+from streamlit_memory_lazy_router_universal_runtime_v5_loading_progress_v1 import (  # noqa: E402
     record_bootstrap_import_ms,
     render_app,
 )
