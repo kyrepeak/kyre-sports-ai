@@ -1,0 +1,54 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-rushing-terminal-route-hotfix-v1.json": "6c688f392dc5c0ba13d77850bf7c61dfc41c6730",
+    "devsystem/task_ledgers/api2-nfl-rushing-terminal-route-hotfix-v1.json": "efe537eddd807ae87a54ef6bd86139b2a4d5d5a3",
+    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py": "dfda510b094de77d67a6033256ea1213d2126084",
+    "tests/test_universal_navigation_speed_repair_terminal_v1.py": "405f5ca1d9b3303bff72660995d35ec8dd674424"
+  },
+  "candidate_sha": "6574f40b7e98998e47fe7c261a76d783352de5e6",
+  "created_at": "2026-10-23T04:17:37.669562+00:00",
+  "dependency_map": {
+    "app.py": "d9c2c81f10da7742edf1d3d06a54500e4d9764ea",
+    "nfl_rushing_yards_professional_v1.py": "f2cc7c25e4d9a916525a954bb076d6c5c9445d9f",
+    "nfl_rushing_yards_simple_rb_grid_v1.py": "4b278b83c8bffdb892e6f4150aab6d78382ef9e1",
+    "nfl_rushing_yards_slate_gateway_v1.py": "12259fff93cdad88a900247fa01e51c912232273",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "962612ab07db77a010b5c3d96ee0fed6ac418c5b",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "1b53c2749464cbb743ab171900f277efcc4f9893",
+    "universal_page_experience_runtime_v3.py": "0eaa095ed1699ebed3c0c494e8a627c3ab093b8f",
+    "universal_runtime_v5_loader.py": "30dd06ec0781aa8505e3f0c66179b89f0e1b06a4",
+    "universal_runtime_v5_loader/__init__.py": "f5e301e3e4da70bdbda7f2cfb70da2160efac121"
+  },
+  "digest": "50899702c878b4f8862a23762df1f82fcdfbaf05a4f4987c11b9e313114ecd88",
+  "evidence_digests": [
+    "ef2146934a55e6fa597bd7670b1548d5d940b96fca26fa849455a6b7c0cd7a12",
+    "1febfa1f32540edce5e74b7acca69d81fd24981cc0e4dd682ee403b4ba37885d",
+    "dad951bddf605b085f8ccec756b1201e7728f99344ee86aad17870794f838bb5"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "8138b389c7d1082f7ccd497806cde9b4016074cbf50f2cd2b5e2626aeb31faa6",
+  "proof_id": "api2-nfl-rushing-terminal-route-hotfix-v1-6574f40b7e98998e-dce84f22b8c2d61d",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 492,
+    "state_hash": "edd1e8a7e4aaeb0c29dfe6da801c80d3de6744e1b8a6653e201a52e05bf3bc1d"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 492,
+    "state_hash": "edd1e8a7e4aaeb0c29dfe6da801c80d3de6744e1b8a6653e201a52e05bf3bc1d"
+  },
+  "request_fingerprint": "98d766b59ef2a893779f86cfd79fcf6166f2654e28ec80055f01c2e4fb804863",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-terminal-route-hotfix-v1",
+  "workstream": "api2-nfl-rushing-terminal-route-hotfix-v1"
+}
