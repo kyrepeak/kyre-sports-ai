@@ -121,9 +121,20 @@ def test_v3_presentation_contract_and_live_wrapper_activation():
     folded = source.casefold()
     assert "cfbgt3-team-logo" in source
     assert "cfbgt3-prob-labels" in source
+    assert "cfbgt3-marketrow" in source
+    assert "grid-template-columns:repeat(3,minmax(0,1fr))" in source.replace(" ", "")
+    assert "cfbgt3-total" in source
+    assert "cfbgt3-over" in source
+    assert "cfbgt3-under" in source
+    assert "cfbgt3-probbar" in source
+    assert "cfbgt3-probfill" in source
     assert "consensus" in folded
     assert "opening line" in folded
     assert 'target="_self"' in source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
+    assert "MAY_MODIFY_PROJECTION = False" in source
+    assert "MAY_MODIFY_PROBABILITY = False" in source
+    assert "MAY_MODIFY_RANKING = False" in source
     assert "requests." not in folded
     assert "actionnetwork.com" not in folded
     assert "the-odds-api" not in folded
