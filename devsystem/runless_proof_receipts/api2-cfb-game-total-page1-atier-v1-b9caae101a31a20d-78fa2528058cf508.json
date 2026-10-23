@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "cfb_game_total_page1_atier_v1.py": "6172cdda86090a06d6230b82bfcc4d7f0207a2a5",
+    "devsystem/execution_plans/api2-cfb-game-total-page1-atier-v1.json": "f5e5a8e9d245ebcc95bb9774d165dcd4a7688f6c",
+    "devsystem/runless_proof_plans/api2-cfb-game-total-page1-atier-v1.json": "cd8b192f2b9122aa3548948c2fd21e7d73f4230c",
+    "devsystem/task_ledgers/api2-cfb-game-total-page1-atier-v1.json": "b9730b99e86924c173d042a1181b84eacd1a8f91",
+    "docs/superpowers/designs/2026-10-23-cfb-game-total-page1-atier-v1.md": "5b8b419a3593afb4f297ce30678725c19243ad4d",
+    "docs/superpowers/plans/2026-10-23-cfb-game-total-page1-atier-v1.md": "1e42847ba0cbb5380917efdb7502b4bbae3dea8c",
+    "tests/test_api2_cfb_game_total_page1_atier_v1.py": "d4cf3d9acf8be6fcf991986085692a57ddaeaa8e"
+  },
+  "candidate_sha": "b9caae101a31a20d5758b1e83a7980d2738492e4",
+  "created_at": "2026-10-23T14:46:53.268566+00:00",
+  "dependency_map": {
+    "cfb_game_total_page1_api_bootstrap_repair_r1.py": "030e890727d24681a9e319fa0b8a3629bb7f6583",
+    "cfb_game_total_page1_stier_v1.py": "244a9861714bfd67b223c45852782644cdf9af8d"
+  },
+  "digest": "3c8a077138f917771b0172337e33d844faa03f60d00757aa807d8a85cfdd98dc",
+  "evidence_digests": [
+    "cf23307efb8f582c85a664c4ec32792c42760044fb536bc050f118ff470596ee"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "8a7d0b80826e74a5fd8426a62ce7cb76756d4067f60c703a03244fbf3501fcb6",
+  "proof_id": "api2-cfb-game-total-page1-atier-v1-b9caae101a31a20d-78fa2528058cf508",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 505,
+    "state_hash": "ae0a4dbe5d2aec75283ab589113ddcad6b7f157f9c303f28b4fcbf1e4300632e"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 505,
+    "state_hash": "ae0a4dbe5d2aec75283ab589113ddcad6b7f157f9c303f28b4fcbf1e4300632e"
+  },
+  "request_fingerprint": "3ed606410c5628f2dd35161cfb541bf0d629abfc35fc8995bd94cfa25ec943b3",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-game-total-page1-atier-v1",
+  "workstream": "api2-cfb-game-total-page1-atier-v1"
+}
