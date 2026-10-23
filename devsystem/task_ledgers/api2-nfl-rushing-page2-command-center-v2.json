@@ -1,0 +1,59 @@
+{
+  "task_id": "api2-nfl-rushing-page2-command-center-v2",
+  "workstream": "api2-nfl-rushing-page2-command-center-v2",
+  "source_main_sha": "1d98cd6f7449cdb9fbe561caa0c5804087c7db8b",
+  "status": "GREEN_LOCAL_AWAITING_EXACT_HEAD_PROOF",
+  "progress_percent": 80,
+  "step2a": {
+    "active_problem": "NFL Rushing Yards Page 2 needs an S-tier professional decision-first analytical command center without changing the frozen Page 1 architecture.",
+    "authoritative_branch": "api2-nfl-rushing-page2-command-center-v2",
+    "authoritative_pr": null,
+    "scope_lease_id": "SCOPE-LEASE-NFL-RUSHING-PAGE2-COMMAND-CENTER-V2",
+    "scope_lease_generation": 739,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "rulings": [
+    "Ruling: Page 2 advanced analytics run through a dedicated Kyre Sports API /api/v1/nfl/rushing-yards/detail endpoint rather than expanding every league-wide Page 1 slate card. This preserves field-first source efficiency and the frozen Page 1 performance contract; cost if wrong is one extra Kyre API request only when a player detail page opens.",
+    "Ruling: unsupported opening-line, movement, personnel, spread, total, and weather inputs remain explicit semantic verification states until approved verified feeds are present. They are never fabricated or converted to zero.",
+    "Ruling: prior frozen Page 2 semantic section labels remain in an aria-hidden compatibility index while the visible V2 hierarchy uses the new professional names. This preserves frozen regression contracts without duplicating UI sections."
+  ],
+  "design": {
+    "approach": "Decision-first Page 2 cockpit followed by workload, recent form, opponent run defense, game script, matchup/comparables, advanced efficiency, market/personnel, and final Kyre read.",
+    "page1_mutation": false,
+    "application_gateway": "Kyre Sports API",
+    "dedicated_detail_endpoint": "/api/v1/nfl/rushing-yards/detail",
+    "projection_model_mutation": false,
+    "rb_role_mutation": false,
+    "sportsbook_averaging": false,
+    "missing_to_zero": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "evidence": {
+    "tdd_red_head": "47f7147c2213c8cbdd52aa339ddd6b1a920f4f55",
+    "tdd_red_result": "6 failed, 1 passed; failures were exactly missing advanced rushing context, Page 2 summary helpers, detail decision blocks, and command-center renderer sections.",
+    "architecture_ruling_test_alignment_head": "bf2fee3dade9c9702db5e4543123e2bda2c5f72c",
+    "focused_green_result": "7 passed in 0.89s",
+    "inherited_regression_first_result": "1 failed, 22 passed; only frozen legacy section vocabulary was missing from V2 output.",
+    "compatibility_fix_head": "d68a78ca10038b3e889dc28434499457090fc4f5",
+    "full_green_result": "23 passed in 1.41s",
+    "base_drift": false,
+    "verified_main_sha_before_proof_package": "1d98cd6f7449cdb9fbe561caa0c5804087c7db8b",
+    "lease_registry_revision": 1356,
+    "lease_state_hash": "c97080908a74b9e732efb677fc6f81762e2aae4400f71a4b977d44d07b21b9c0"
+  },
+  "remaining": [
+    "open one authoritative PR",
+    "run exact-head compile and 23-test suite after proof-package commits",
+    "request one Runless V2 proof",
+    "require App 5204253 runless-final-gate success",
+    "merge exact authorized head",
+    "verify merged-main API route, Page 2 renderer, and inherited Rushing suite",
+    "append Finalization Ledger V2 freeze record and close out durable GREEN_FROZEN",
+    "release only the NFL Rushing Page 2 scope lease"
+  ],
+  "freeze_token": "API2_NFL_RUSHING_PAGE2_COMMAND_CENTER_V2_FROZEN"
+}
