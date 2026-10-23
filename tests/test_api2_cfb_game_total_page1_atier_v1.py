@@ -11,10 +11,12 @@ APP = ROOT / "app.py"
 
 
 def _page():
+    assert PAGE.exists(), "A-tier Page 1 successor has not been implemented yet"
     return importlib.import_module("cfb_game_total_page1_atier_v1")
 
 
 def test_page1_successor_exists_and_is_kyre_api_only():
+    assert PAGE.exists(), "A-tier Page 1 successor has not been implemented yet"
     src = PAGE.read_text(encoding="utf-8")
     assert 'PAGE1_ENDPOINT = "/api/v1/cfb/game-total/page1"' in src
     assert "cfb_game_total_page1_api_bootstrap_repair_r1" in src
@@ -56,6 +58,7 @@ def test_market_read_never_fabricates_missing_data():
 
 
 def test_page1_card_is_compact_game_total_only():
+    assert PAGE.exists(), "A-tier Page 1 successor has not been implemented yet"
     src = PAGE.read_text(encoding="utf-8")
     for label in (
         "MARKET TOTAL",
@@ -74,6 +77,7 @@ def test_page1_card_is_compact_game_total_only():
 
 
 def test_loader_replaces_only_page1_owner_and_preserves_page2():
+    assert LOADER.exists(), "A-tier runtime loader has not been implemented yet"
     src = LOADER.read_text(encoding="utf-8")
     assert 'importlib.import_module("cfb_game_total_page1_atier_v1")' in src
     assert 'importlib.import_module("cfb_game_total_page2_market_completeness_r1")' in src
@@ -81,6 +85,7 @@ def test_loader_replaces_only_page1_owner_and_preserves_page2():
 
 
 def test_terminal_and_app_activate_atier_successor():
+    assert TERMINAL.exists(), "A-tier terminal has not been implemented yet"
     terminal = TERMINAL.read_text(encoding="utf-8")
     assert "universal_runtime_v5_loader_cfb_game_total_page1_atier_v1" in terminal
     app = APP.read_text(encoding="utf-8")
