@@ -2,13 +2,13 @@
   "task_id": "api2-universal-streamlit-navigation-speed-v1",
   "workstream": "api2-universal-streamlit-navigation-speed-v1",
   "source_main_sha": "e9a979922fd455620eebded877b2bcfc78b356bd",
-  "status": "TDD_RED_READY",
-  "progress_percent": 46,
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "progress_percent": 78,
   "step2a": {
     "active_problem": "Universal same-tab navigation, latest-tap convergence, and reduced shared Streamlit bootstrap overhead.",
     "authoritative_branch": "api2-universal-streamlit-navigation-speed-v1",
-    "scope_lease_id": "SCOPE-LEASE-8E33A6E2FADE22FA702A2064",
-    "scope_lease_generation": 726,
+    "scope_lease_id": "SCOPE-LEASE-FC7E063243FD040E82D9DEDB",
+    "scope_lease_generation": 727,
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
@@ -17,11 +17,24 @@
     "base_drift_reconciled_once": true
   },
   "evidence": {
-    "tests_written_first": [
-      "tests/test_universal_page_experience_v2.py",
-      "tests/test_universal_page_experience_runtime_v2.py",
-      "tests/test_universal_navigation_speed_terminal_v1.py"
+    "tdd_red": {
+      "candidate_sha": "fc2ab97f3ca0f9bb6caba773202f1975854e6568",
+      "proof_id": "api2-universal-streamlit-navigation-speed-v1-fc2ab97f3ca0f9bb-e06e1b2ffb8c2d6b",
+      "failure_class": "STATIC_PROOF",
+      "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+      "expected": true
+    },
+    "implementation": [
+      "universal_page_experience_v2.py",
+      "universal_page_experience_runtime_v2.py",
+      "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_v1.py",
+      "app.py"
     ],
+    "initial_entrypoint_thaw": {
+      "thaw_id": "THAW-API2-UNIVERSAL-STREAMLIT-NAV-SPEED-V1-APP-R1",
+      "target_head_sha": "45221dbcc694d7501c63d4c26310e23aa18e3eb0",
+      "status": "SUPERSEDED_BY_FINAL_HEAD_REQUIRED"
+    },
     "control_plane_failures": [
       {
         "failure_class": "CONTROL_PLANE_SCOPE_LEASE_ADMISSION",
@@ -39,13 +52,12 @@
     ]
   },
   "remaining": [
-    "execute RED proof once on reconciled candidate",
-    "implement minimal universal successor",
-    "authorize exact frozen app.py successor delta",
-    "execute GREEN exact-head proof",
+    "bind exact-head app.py thaw to final candidate",
+    "execute comprehensive GREEN Runless proof",
     "open one PR",
     "merge exact authorized candidate",
-    "finalize GREEN_FROZEN"
+    "verify merged main and deployment checks",
+    "finalize ledger and closeout GREEN_FROZEN"
   ],
   "freeze_token": "API2_UNIVERSAL_STREAMLIT_NAVIGATION_SPEED_V1_FROZEN"
 }
