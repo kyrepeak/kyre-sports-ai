@@ -4,14 +4,9 @@
   "workstream": "api2-universal-streamlit-regression-repair-v1",
   "source_main_sha": "80b1604a99ab8ea7bdf2fb7d9ae4ed2c38c29140",
   "commands": [
-    ["python", "-m", "py_compile", "app.py", "universal_page_experience_runtime_v3.py", "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py", "tests/test_universal_page_experience_runtime_v3_regression_repair.py", "tests/test_universal_navigation_speed_repair_terminal_v1.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_page_experience_runtime_v3_regression_repair.py", "tests/test_universal_navigation_speed_repair_terminal_v1.py"],
-    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_page_experience_v2.py", "tests/test_universal_page_experience_runtime_v2.py", "tests/test_universal_navigation_speed_terminal_v1.py", "tests/test_universal_page_experience_v1.py", "tests/test_universal_page_experience_runtime_v1.py", "tests/test_universal_atomic_navigation_v2.py", "tests/test_api2_nba_pra_page1_v1.py", "tests/test_api2_cfb_top_picks_page2_identity_market_v3.py", "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py"]
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_universal_page_experience_runtime_v3_regression_repair.py", "tests/test_universal_navigation_speed_repair_terminal_v1.py"]
   ],
   "artifacts": [
-    "app.py",
-    "universal_page_experience_runtime_v3.py",
-    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py",
     "tests/test_universal_page_experience_runtime_v3_regression_repair.py",
     "tests/test_universal_navigation_speed_repair_terminal_v1.py",
     "devsystem/execution_plans/api2-universal-streamlit-regression-repair-v1.json",
@@ -21,6 +16,7 @@
     "docs/superpowers/plans/2026-10-22-universal-streamlit-regression-repair-v1.md"
   ],
   "dependencies": [
+    "app.py",
     "universal_page_experience_v2.py",
     "universal_page_experience_runtime_v2.py",
     "streamlit_memory_lazy_router_universal_runtime_v5.py",
