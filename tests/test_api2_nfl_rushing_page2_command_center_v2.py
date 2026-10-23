@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from importlib import import_module
+from pathlib import Path
 
 import pandas as pd
 
 
-slate = import_module("sports_api.api.nfl_rushing_yards_slate_v1")
+detail_api = import_module("sports_api.api.nfl_rushing_yards_detail_v2")
 page2 = import_module("nfl_rushing_yards_professional_v1")
 
 
@@ -51,13 +52,13 @@ def _market(line: float | None = 50.0) -> dict:
     return {"status":"VERIFIED","sportsbook":"FanDuel","line":line,"over_odds":-110,"under_odds":-110,"timestamp":"2026-10-23T00:00:00Z"}
 
 
-def test_pbp_optional_advanced_columns_are_requested():
+def test_detail_endpoint_requests_optional_advanced_pbp_columns():
     for name in ("epa", "success", "yardline_100", "qtr", "score_differential"):
-        assert name in slate.PBP_COLUMNS
+        assert name in detail_api.DETAIL_PBP_COLUMNS
 
 
 def test_player_game_rows_derive_verified_advanced_rushing_context():
-    rows = slate._player_game_rows(_play_rows())
+    rows = detail_api._player_game_rows(_play_rows())
     assert len(rows) == 1
     row = rows[0]
     assert row["attempts"] == 5
@@ -75,14 +76,14 @@ def test_player_game_rows_derive_verified_advanced_rushing_context():
 
 def test_page2_summary_helpers_are_field_safe_and_market_aware():
     rows = _game_rows()
-    workload = slate.build_workload_intelligence("p1", "ATL", rows)
+    workload = detail_api.build_workload_intelligence("p1", "ATL", rows)
     assert workload["season_carries_per_game"] == 14.0
     assert workload["l3_carries_per_game"] == 16.0
     assert workload["l5_carries_per_game"] == 14.0
     assert round(workload["team_rush_attempt_share"], 3) == round(70 / 95, 3)
     assert workload["workload_trend"] == "RISING"
 
-    recent = slate.build_recent_form("p1", rows, _market(50.0))
+    recent = detail_api.build_recent_form("p1", rows, _market(50.0))
     assert recent["season_average"] == 56.0
     assert recent["l3_average"] == 60.0
     assert recent["l5_average"] == 56.0
@@ -91,7 +92,7 @@ def test_page2_summary_helpers_are_field_safe_and_market_aware():
     assert recent["ceiling"] == 80.0
     assert recent["current_line_hit_rate"] == 0.6
 
-    pending = slate.build_recent_form("p1", rows, _market(None))
+    pending = detail_api.build_recent_form("p1", rows, _market(None))
     assert pending["current_line_hit_rate"] is None
     assert pending["hit_rate_status"] == "MARKET_NOT_POSTED"
 
@@ -103,13 +104,13 @@ def test_comparable_matchups_and_advanced_efficiency_use_verified_context():
         "TB": {"grade":"FAVORABLE"},
         "NO": {"grade":"TOUGH"},
     }
-    comps = slate.build_comparable_matchups("p1", "CAR", rows, defenses)
+    comps = detail_api.build_comparable_matchups("p1", "CAR", rows, defenses)
     assert comps["status"] == "VERIFIED"
     assert comps["target_grade"] == "FAVORABLE"
     assert comps["games"] == 3
     assert all(row["opponent_abbr"] == "TB" for row in comps["games_detail"])
 
-    advanced = slate.build_advanced_efficiency("p1", rows)
+    advanced = detail_api.build_advanced_efficiency("p1", rows)
     assert advanced["status"] == "VERIFIED_DERIVED"
     assert round(advanced["explosive_run_rate"], 3) == round(10 / 70, 3)
     assert round(advanced["stuff_rate"], 3) == round(5 / 70, 3)
@@ -125,7 +126,7 @@ def test_page2_detail_blocks_include_decision_evidence_and_semantic_states():
         "TB": {"grade":"FAVORABLE"},
         "NO": {"grade":"TOUGH"},
     }
-    blocks = slate.build_page2_detail_blocks(
+    blocks = detail_api.build_page2_detail_blocks(
         player={"player_source_id":"p1","player_name":"Lead Back","role":"RB1","team_abbr":"ATL"},
         opponent="CAR",
         game_rows=rows,
@@ -171,7 +172,7 @@ def test_renderer_is_decision_first_professional_and_zero_blank_safe():
         "market_intelligence":{"status":"VERIFIED","sportsbook":"FanDuel","current_line":50.0,"over_odds":-110,"under_odds":-110,"opening_line_status":"OPENING_LINE_NOT_CAPTURED","movement_status":"MOVEMENT_HISTORY_NOT_CAPTURED"},
         "personnel":{"status":"PERSONNEL_VERIFICATION_PENDING","display":"Personnel verification pending"},
         "final_read":{"supporting_factors":["Kyre projection is 15.0 yards above the verified market line."],"risk_factors":["Personnel verification is still pending."],"unresolved":["Weather verification pending."],"summary":"Kyre leans OVER from verified workload, efficiency, and matchup evidence."},
-        "source_lineage":{"workload":"nflverse play-by-play derived","market":"FanDuel","projection":"market-blind model"},
+        "source_lineage":{"workload":"verified play-by-play derived","market":"FanDuel","projection":"market-blind model"},
     }
     html = page2.build_rushing_detail_html(detail)
     for label in (
@@ -186,10 +187,20 @@ def test_renderer_is_decision_first_professional_and_zero_blank_safe():
     assert "Kyre projection is 15.0 yards above the verified market line." in html
 
 
-def test_modified_production_path_has_no_banned_provider_dependency():
-    from pathlib import Path
+def test_gateway_registration_and_modified_path_have_no_banned_provider_dependency():
     root = Path(__file__).resolve().parents[1]
-    for path in (root / "sports_api/api/nfl_rushing_yards_slate_v1.py", root / "nfl_rushing_yards_professional_v1.py"):
+    api_entry = (root / "kyre_sports_api_vercel_v1.py").read_text(encoding="utf-8")
+    assert "nfl_rushing_yards_detail_module" in api_entry
+    assert "app.include_router(nfl_rushing_yards_detail_router)" in api_entry
+    assert '"nfl_rushing_yards_detail_v2": True' in api_entry
+
+    production_files = (
+        root / "sports_api/api/nfl_rushing_yards_detail_v2.py",
+        root / "nfl_rushing_yards_detail_gateway_v2.py",
+        root / "nfl_rushing_yards_professional_v1.py",
+        root / "nfl_rushing_yards_professional_v2.py",
+    )
+    for path in production_files:
         source = path.read_text(encoding="utf-8").upper()
         for token in ("SGO", "ESPN", "ESPN BET"):
-            assert token not in source
+            assert token not in source, (path, token)
