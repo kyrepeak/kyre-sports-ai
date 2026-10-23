@@ -3,7 +3,7 @@
   "workstream": "api2-nfl-rushing-production-route-restore-v1",
   "source_main_sha": "2089c00f662a67996c772d8dd94bbf7ef7867334",
   "status": "READY_FOR_EXACT_HEAD_PROOF",
-  "progress_percent": 76,
+  "progress_percent": 93,
   "step2a": {
     "active_problem": "Production NFL Rushing Yards is routed to legacy Ground Game Lab / V17 and its timed-out context request instead of the frozen Running Back Board and Page 2 path.",
     "authoritative_branch": "api2-nfl-rushing-production-route-restore-v1",
@@ -24,11 +24,15 @@
     "tdd_green": "4 passed on the unchanged route-restore contract.",
     "regression": "py_compile clean plus 47 passed across NFL Rushing route/Page1/Page2/fallback/FanDuel integrity and current CFB/loading-progress ancestry guards.",
     "product_change": "One terminal successor shadows only nfl/rushing-yards to the existing canonical loader; app.py activates that successor while preserving the frozen loading-progress heartbeat. No model, projection, provider, sportsbook, Page1, Page2, or Kyre API calculation changes.",
-    "banned_providers": "Successor contains no legacy V17 owner, Ground Game Lab, ESPN, ESPN BET, or SGO references."
+    "banned_providers": "Successor contains no legacy V17 owner, Ground Game Lab, ESPN, ESPN BET, or SGO references.",
+    "frozen_registry_thaw": "THAW-API2-NFL-RUSHING-PRODUCTION-ROUTE-RESTORE-V1-APP-R1 opened only app.py from frozen blob 26b54bf378c0d9a477729fafd944036ab8215eda to candidate blob d0a0d2beebb6b1ef7a950d9c0be41307a4e454eb; registry revision 506.",
+    "failed_proof_classification": "Proof api2-nfl-rushing-production-route-restore-v1-fd286ee7ed43606c-92948fd9e3d7e5ad reached PUBLIC_CHECK_IF_REQUIRED after sandbox proof, then a malformed string public-probe entry caused a TypeError. It was terminally classified PLAN with RUNLESS_V2_PUBLIC_PROBE_PLAN_SHAPE_INVALID and its internal lease was released before this corrected candidate was created.",
+    "plan_repair": "Optional public probe removed from the Runless execution plan. Canonical API health remains separately verified outside proof; product code is unchanged."
   },
   "remaining": [
-    "run exact-head compile + 47-test verification after sidecar sealing",
-    "execute one exact-head Runless V2 proof",
+    "retarget the existing exact app.py thaw to the final corrected candidate",
+    "run exact-head compile + 47-test verification on the corrected candidate",
+    "execute one corrected exact-head Runless V2 proof on the same workstream",
     "require App 5204253 runless-final-gate success",
     "merge exact authorized PR head",
     "verify merged-main route ownership, canonical API health, and available production deployment evidence",
