@@ -1,0 +1,39 @@
+{
+  "task_id": "api2-nfl-rushing-production-route-restore-v1",
+  "workstream": "api2-nfl-rushing-production-route-restore-v1",
+  "source_main_sha": "2089c00f662a67996c772d8dd94bbf7ef7867334",
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "progress_percent": 76,
+  "step2a": {
+    "active_problem": "Production NFL Rushing Yards is routed to legacy Ground Game Lab / V17 and its timed-out context request instead of the frozen Running Back Board and Page 2 path.",
+    "authoritative_branch": "api2-nfl-rushing-production-route-restore-v1",
+    "authoritative_pr": 1768,
+    "scope_lease_id": "SCOPE-LEASE-271D6483122979CE345B",
+    "scope_lease_generation": 743,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false,
+    "base_drift_reconciled_once": false
+  },
+  "evidence": {
+    "root_cause": "The current CFB Game Total bootstrap terminal delegates through an older generic loader chain that bypasses the previously proven NFL Rushing canonical handoff, allowing nfl_rushing_yards_hub_v17 to render Ground Game Lab and its legacy context request.",
+    "canonical_api_health": "Kyre Sports API /api/v1/nfl/rushing-yards/slate/status returned HTTP 200 with the frozen simple RB1/RB2 board + deep Page 2 contract, confirming the screenshot timeout belongs to the legacy V17 path rather than the canonical slate status service.",
+    "tdd_red": "3 failed, 1 passed: production entrypoint still activated the CFB terminal and the NFL Rushing route-restore successor did not exist; canonical frozen loader ownership test already passed.",
+    "tdd_green": "4 passed on the unchanged route-restore contract.",
+    "regression": "py_compile clean plus 47 passed across NFL Rushing route/Page1/Page2/fallback/FanDuel integrity and current CFB/loading-progress ancestry guards.",
+    "product_change": "One terminal successor shadows only nfl/rushing-yards to the existing canonical loader; app.py activates that successor while preserving the frozen loading-progress heartbeat. No model, projection, provider, sportsbook, Page1, Page2, or Kyre API calculation changes.",
+    "banned_providers": "Successor contains no legacy V17 owner, Ground Game Lab, ESPN, ESPN BET, or SGO references."
+  },
+  "remaining": [
+    "run exact-head compile + 47-test verification after sidecar sealing",
+    "execute one exact-head Runless V2 proof",
+    "require App 5204253 runless-final-gate success",
+    "merge exact authorized PR head",
+    "verify merged-main route ownership, canonical API health, and available production deployment evidence",
+    "append Finalization Ledger V2 freeze evidence",
+    "close out durable GREEN_FROZEN and release scope lease"
+  ],
+  "freeze_token": "API2_NFL_RUSHING_PRODUCTION_ROUTE_RESTORE_V1_FROZEN"
+}
