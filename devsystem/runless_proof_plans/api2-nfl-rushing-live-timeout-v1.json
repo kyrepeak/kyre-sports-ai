@@ -1,0 +1,52 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-rushing-live-timeout-v1",
+  "workstream": "api2-nfl-rushing-live-timeout-v1",
+  "source_main_sha": "398ab1b5ca468b2a3efdc9b036875e2e0f579c18",
+  "commands": [
+    [
+      "python", "-m", "py_compile",
+      "kyre_sports_api_vercel_v1.py",
+      "sports_api/nfl_rushing_yards_fastpath_v1.py",
+      "sports_api/api/nfl_rushing_yards_slate_v1/__init__.py",
+      "devsystem/api2_nfl_rushing_live_timeout_proof_v1.py",
+      "tests/test_api2_nfl_rushing_live_timeout_v1.py"
+    ],
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_api2_nfl_rushing_live_timeout_v1.py"
+    ],
+    [
+      "python", "-m", "devsystem.api2_nfl_rushing_live_timeout_proof_v1"
+    ]
+  ],
+  "artifacts": [
+    "kyre_sports_api_vercel_v1.py",
+    "sports_api/nfl_rushing_yards_fastpath_v1.py",
+    "sports_api/api/nfl_rushing_yards_slate_v1/__init__.py",
+    "tests/test_api2_nfl_rushing_live_timeout_v1.py",
+    "devsystem/api2_nfl_rushing_live_timeout_proof_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-live-timeout-v1.json",
+    "devsystem/task_ledgers/api2-nfl-rushing-live-timeout-v1.json"
+  ],
+  "dependencies": [
+    "nfl_rushing_yards_slate_gateway_v1.py",
+    "sports_api/nfl_data_nflverse_v1.py",
+    "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 180,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "proof_contract": {
+    "route": "/api/v1/nfl/rushing-yards/slate",
+    "ceiling_seconds": 15.0,
+    "status_code": 200,
+    "candidate_local_http_route": true,
+    "status_route_is_not_accepted": true
+  },
+  "freeze_token": "API2_NFL_RUSHING_LIVE_TIMEOUT_V1_FROZEN"
+}
