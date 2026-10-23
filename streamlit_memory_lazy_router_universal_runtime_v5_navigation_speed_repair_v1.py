@@ -11,6 +11,7 @@ import importlib
 # overlay activates before universal_sports_nav_ui_v2 snapshots the registry.
 import streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1 as prior
 import streamlit_memory_lazy_router_universal_runtime_v5 as frozen_runtime
+import universal_runtime_v5_loader as canonical_loader
 from universal_page_experience_runtime_v3 import render_page_experience_app_v3
 from universal_runtime_v5_loader import DestinationAdapter
 
@@ -23,6 +24,8 @@ _prior_resolve_destination = prior.resolve_destination
 
 def resolve_destination(route):
     """Preserve prior route ownership and the frozen CFB Top Picks V19 successor."""
+    if route.sport_id == "nfl" and route.market_id == "rushing-yards":
+        return canonical_loader.resolve_destination(route)
     if route.sport_id == "cfb" and route.market_id == "top-picks":
         base = _prior_resolve_destination(route)
         return DestinationAdapter(
