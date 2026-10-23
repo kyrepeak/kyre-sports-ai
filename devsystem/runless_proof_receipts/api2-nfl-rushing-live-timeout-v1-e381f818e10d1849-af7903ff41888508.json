@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/api2_nfl_rushing_live_timeout_proof_v1.py": "4b1aebb4be53d0c67f66e1d08c8d9183846c12ed",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-live-timeout-v1.json": "4c542ef70e30e15657ae29a076e6a45e681c511c",
+    "devsystem/task_ledgers/api2-nfl-rushing-live-timeout-v1.json": "bb6b4756732f220276da620a7e5570fb38568418",
+    "kyre_sports_api_vercel_v1.py": "38a93c5232254f7d6a41de5393dc66e8df986fee",
+    "sports_api/api/nfl_rushing_yards_slate_v1/__init__.py": "fc09ecaf912589a45d8b640d8033e920cddb390a",
+    "sports_api/nfl_rushing_yards_fastpath_v1.py": "88086c3e1855266d62cd747a9bd379d2ba741ff4",
+    "tests/test_api2_nfl_rushing_live_timeout_v1.py": "d758f52ea96d478adc8b4eac7763391a7213450e"
+  },
+  "candidate_sha": "e381f818e10d1849804b2552d159838eeaeebe43",
+  "created_at": "2026-10-23T22:40:55.879567+00:00",
+  "dependency_map": {
+    "nfl_rushing_yards_slate_gateway_v1.py": "12259fff93cdad88a900247fa01e51c912232273",
+    "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py": "44196a5773f3ff5cf2d600606c22c3da85ce3232",
+    "sports_api/nfl_data_nflverse_v1.py": "0ace653fb9abf68a4f454c6c3d6bcfcf3f941a8c"
+  },
+  "digest": "13e10e72faa6a857e4c707e27ffb1ec4fd6770611abd835cd6ed0ca243cb0e6f",
+  "evidence_digests": [
+    "6b5d3a346dbf70e1788dc36e6e08446f2a22ae320ed019b5ea39aaa870e4eef0",
+    "d1d13d6516a773b15299581ad6aaa62146ec49076fcaea5be2a318e00a878d1b",
+    "d699a43f6f21422294a7eab16e19dd04c8dbc2b9f5359824ee93bf9002e8b523"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4dd68fb738b3bd0fb497e46bf81e22d34a0f70e9b7945d9f39b15661bd052300",
+  "proof_id": "api2-nfl-rushing-live-timeout-v1-e381f818e10d1849-af7903ff41888508",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "request_fingerprint": "6864f676559b006934c22a1bb94c6fdddbc893051dc08a281054c7611fc0a589",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-live-timeout-v1",
+  "workstream": "api2-nfl-rushing-live-timeout-v1"
+}
