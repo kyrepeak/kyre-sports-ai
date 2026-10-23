@@ -1,0 +1,63 @@
+{
+  "artifact_map": {
+    "app.py": "3a5f58ca008996a4733f9748ecf31819212279a8",
+    "devsystem/execution_plans/api2-universal-streamlit-navigation-speed-v1.json": "8f5fc97d996fd6d1e51302535923bddea2459e56",
+    "devsystem/runless_proof_plans/api2-universal-streamlit-navigation-speed-v1.json": "69005de9bba9eebc78cbe9d34bda16fdd2b1d418",
+    "devsystem/task_ledgers/api2-universal-streamlit-navigation-speed-v1.json": "f5f6c78d715c70da3ff26f9e7171a40fbb126d4f",
+    "docs/superpowers/plans/2026-10-22-universal-streamlit-navigation-speed-v1.md": "b58fb2cf4d855a655b6a206890d141274cdff217",
+    "docs/superpowers/specs/2026-10-22-universal-streamlit-navigation-speed-v1.md": "dde7eefde88538f8844d1e06f80d98ca747f4935",
+    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_v1.py": "f57595eeb13273f96965987a3b456d40540285dd",
+    "tests/test_universal_navigation_speed_terminal_v1.py": "29a7a1461972137d143ae0145cd8db55123e3f3d",
+    "tests/test_universal_page_experience_runtime_v2.py": "289de0d5a6a59188b1504741b71fb4989869a6f5",
+    "tests/test_universal_page_experience_v2.py": "46afbae8b391a8f9832bf96f55130c1f61794dc7",
+    "universal_page_experience_runtime_v2.py": "360b0674e8a6b13d46bcda25579597be39449cf8",
+    "universal_page_experience_v2.py": "dc2d9f43dad1dac844fb26f2bd7abb999b869760"
+  },
+  "candidate_sha": "1183b0efcf98ad2aaa544432a17251723aa13ce0",
+  "created_at": "2026-10-23T03:29:30.642687+00:00",
+  "dependency_map": {
+    "cfb_top_picks_page_v19.py": "4fef28cf3a5f840ac73f20488093628d2b7cd352",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py": "962612ab07db77a010b5c3d96ee0fed6ac418c5b",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3.py": "40fe0e2dd212b8361ab47536925bf8638372c2a7",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py": "1b53c2749464cbb743ab171900f277efcc4f9893",
+    "universal_atomic_navigation_v2.py": "7b2cf42aaf50e66d2cc57a7c29cc47f96a9385a6",
+    "universal_page_experience_runtime_v1.py": "80df5bcc26f8e36c583784fc56234693a6a35583",
+    "universal_page_experience_v1.py": "37341d4d9980eb5d66d380151c31d301471edea7",
+    "universal_runtime_v5_loader.py": "30dd06ec0781aa8505e3f0c66179b89f0e1b06a4"
+  },
+  "digest": "8bc74229b257d3077e28be931ab19961eece2ceb6aa69e1ea2884a2fa5b01cbe",
+  "evidence_digests": [
+    "4723006f407ec54da3afc9144f4a19712725c36130c69f6307d9dea132844456",
+    "56403dc2626274c434c02b96cc3d701cc57bf64c020fb8b8537b3c192941bc95",
+    "7ab51208f81d960e2e3501382e422a3cbc8715807c47f7b0e6fbad9cc9d7d5d8"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "9520a6856cbf6d1f63df59f1d810732b9717cf59d9b513fa05b15c6577541651",
+  "proof_id": "api2-universal-streamlit-navigation-speed-v1-1183b0efcf98ad2a-f5169dcb81bf1dff",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-STREAMLIT-NAV-SPEED-V1-APP-R1"
+    ],
+    "revision": 489,
+    "state_hash": "2f926bf75aebe9b9269373ec5144c53803894ff0f8af6bea220b93eae0e160b4"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-API2-UNIVERSAL-STREAMLIT-NAV-SPEED-V1-APP-R1"
+    ],
+    "revision": 489,
+    "state_hash": "2f926bf75aebe9b9269373ec5144c53803894ff0f8af6bea220b93eae0e160b4"
+  },
+  "request_fingerprint": "4291750cdca9f34006a36c500789b54cd99c6743f7c2a6537a77e843a274632e",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-universal-streamlit-navigation-speed-v1",
+  "workstream": "api2-universal-streamlit-navigation-speed-v1"
+}
