@@ -1,0 +1,55 @@
+{
+  "artifact_map": {
+    "kyre_sports_api_vercel_v1.py": "8cc7454fde0e900b9f45e20fa48d252358808926",
+    "nfl_rushing_yards_professional_v1.py": "f2cc7c25e4d9a916525a954bb076d6c5c9445d9f",
+    "nfl_rushing_yards_projection_v2.py": "0c32218113f9fadbc1327cc3d40bd7f7af47378e",
+    "nfl_rushing_yards_simple_rb_grid_v1.py": "4b278b83c8bffdb892e6f4150aab6d78382ef9e1",
+    "nfl_rushing_yards_slate_gateway_v1.py": "12259fff93cdad88a900247fa01e51c912232273",
+    "sports_api/api/nfl_rushing_yards_slate_v1.py": "e944ef079257b25f7d14628931c92f53150050f5",
+    "sports_api/api/nfl_rushing_yards_slate_v1/__init__.py": "937a9bb15cc6de0b5a3a5a34d646c1acd9eff315",
+    "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py": "44196a5773f3ff5cf2d600606c22c3da85ce3232",
+    "tests/test_api2_nfl_rushing_yards_field_fallback_v1.py": "579a04e9e3694c6ad37656d46d4e0a3649622ef8",
+    "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py": "c354756ba0eb63451213426d92befd2a28880c55",
+    "universal_runtime_v5_loader/__init__.py": "f5e301e3e4da70bdbda7f2cfb70da2160efac121"
+  },
+  "candidate_sha": "792c3eb19dddbb9b340bc2e2f13f257db3eb0368",
+  "created_at": "2026-10-23T03:18:18.480233+00:00",
+  "dependency_map": {
+    "kyre_sports_api_vercel_v1.py": "8cc7454fde0e900b9f45e20fa48d252358808926",
+    "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py": "7da3af433d8f1e8b92ea3c5d11c84c0a936dd3a9",
+    "sports_api/nfl_data_nflverse_v1.py": "0ace653fb9abf68a4f454c6c3d6bcfcf3f941a8c",
+    "universal_runtime_v5_loader.py": "30dd06ec0781aa8505e3f0c66179b89f0e1b06a4"
+  },
+  "digest": "83eb21097158070a5a4595f556bded976ecce3c6c362c01ac02222c19616ba85",
+  "evidence_digests": [
+    "b9df15fe434c65bedf1e82bdfdef9e8a6b8a626c0c0e1393ee4375d642e4f069",
+    "9b57f22d5efc8a524caacb9a86ef24835de5c08dd5efa7e53ad54068d71cf54d"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "4e3aa26e82eab888ab7cf251bd69d5e85669dda585d92c5864ad2f4bc12ef6d4",
+  "proof_id": "api2-nfl-rushing-yards-simple-rb-grid-v1-792c3eb19dddbb9b-8be3ae6813dd748d",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 487,
+    "state_hash": "461e709bda26cdbc7b34e6290732a3b9abac43261ac36b289253b99b3be771ca"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 487,
+    "state_hash": "461e709bda26cdbc7b34e6290732a3b9abac43261ac36b289253b99b3be771ca"
+  },
+  "request_fingerprint": "8a438cd555243b22ee7a7c51878689fa7ba17b55c7d1ecb1b7bad52240b4fb09",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-yards-simple-rb-grid-v1",
+  "workstream": "api2-nfl-rushing-yards-simple-rb-grid-v1"
+}
