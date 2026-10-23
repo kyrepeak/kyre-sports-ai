@@ -1,0 +1,52 @@
+{
+  "task_id": "api2-universal-streamlit-regression-repair-v1",
+  "workstream": "api2-universal-streamlit-regression-repair-v1",
+  "source_main_sha": "80b1604a99ab8ea7bdf2fb7d9ae4ed2c38c29140",
+  "status": "IMPLEMENTED_WAITING_EXACT_HEAD_THAW_AND_PROOF",
+  "progress_percent": 60,
+  "step2a": {
+    "active_problem": "Restore NBA PRA nav ownership and route-transition loading after Universal Navigation Speed V1.",
+    "authoritative_branch": "api2-universal-streamlit-regression-repair-v1",
+    "scope_lease_id": "SCOPE-LEASE-C18AC4A3CCDC79E8906195C8",
+    "scope_lease_generation": 728,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "evidence": {
+    "control_plane_admission_failure": {
+      "candidate_sha": "26025c5c53294b2ebddbeac16047e53e299948a9",
+      "detail": "Runless preflight rejected missing implementation artifacts in the initial RED packaging.",
+      "product_failure": false,
+      "product_patch": false,
+      "retry_same_request": false
+    },
+    "tdd_red": {
+      "candidate_sha": "f4efaa479193d5059b37bad4a9c9718fc2a61dc1",
+      "proof_id": "api2-universal-streamlit-regression-repair-v1-f4efaa479193d505-9281658f8b2753f1",
+      "failure_class": "STATIC_PROOF",
+      "detail": "RUNLESS_V2_STATIC_PROOF_FAILED",
+      "expected": true
+    },
+    "root_cause": [
+      "V1 speed terminal imports frozen Runtime V5 before the NBA PRA terminal overlay, so nav UI initializes before PRA is registered.",
+      "Runtime V2 renders transition fallback only when client controller mount fails, unlike V1 which shows it on every real route transition."
+    ],
+    "implementation": [
+      "universal_page_experience_runtime_v3.py",
+      "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py",
+      "app.py"
+    ]
+  },
+  "remaining": [
+    "bind exact-head app.py thaw",
+    "execute comprehensive exact-head GREEN proof",
+    "open one PR",
+    "merge exact authorized candidate",
+    "verify merged deployment checks",
+    "finalize ledger and closeout GREEN_FROZEN"
+  ],
+  "freeze_token": "API2_UNIVERSAL_STREAMLIT_REGRESSION_REPAIR_V1_FROZEN"
+}
