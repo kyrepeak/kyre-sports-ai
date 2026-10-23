@@ -3,11 +3,11 @@
   "workstream": "api2-nfl-rushing-page2-command-center-v2",
   "source_main_sha": "1d98cd6f7449cdb9fbe561caa0c5804087c7db8b",
   "status": "GREEN_LOCAL_AWAITING_EXACT_HEAD_PROOF",
-  "progress_percent": 80,
+  "progress_percent": 84,
   "step2a": {
     "active_problem": "NFL Rushing Yards Page 2 needs an S-tier professional decision-first analytical command center without changing the frozen Page 1 architecture.",
     "authoritative_branch": "api2-nfl-rushing-page2-command-center-v2",
-    "authoritative_pr": null,
+    "authoritative_pr": 1766,
     "scope_lease_id": "SCOPE-LEASE-NFL-RUSHING-PAGE2-COMMAND-CENTER-V2",
     "scope_lease_generation": 739,
     "single_branch": true,
@@ -43,10 +43,10 @@
     "base_drift": false,
     "verified_main_sha_before_proof_package": "1d98cd6f7449cdb9fbe561caa0c5804087c7db8b",
     "lease_registry_revision": 1356,
-    "lease_state_hash": "c97080908a74b9e732efb677fc6f81762e2aae4400f71a4b977d44d07b21b9c0"
+    "lease_state_hash": "c97080908a74b9e732efb677fc6f81762e2aae4400f71a4b977d44d07b21b9c0",
+    "authoritative_pr": 1766
   },
   "remaining": [
-    "open one authoritative PR",
     "run exact-head compile and 23-test suite after proof-package commits",
     "request one Runless V2 proof",
     "require App 5204253 runless-final-gate success",
