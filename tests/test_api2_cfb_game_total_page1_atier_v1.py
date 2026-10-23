@@ -44,6 +44,17 @@ def test_no_vig_market_probability_is_safe_and_deterministic():
     assert page._no_vig_probabilities(0, -110) == (None, None)
 
 
+def test_frontend_uses_api_quote_order_and_has_no_provider_priority_table():
+    page = _page()
+    first = {"sportsbook": "Book B", "total_line": 51.5, "over_price": -110, "under_price": -110}
+    second = {"sportsbook": "Book A", "total_line": 52.5, "over_price": -105, "under_price": -115}
+    assert page._quote({"market_quotes": [first, second]}) is first
+    src = PAGE.read_text(encoding="utf-8")
+    assert "priority =" not in src
+    for provider in ("FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fanatics"):
+        assert provider not in src
+
+
 def test_market_read_never_fabricates_missing_data():
     page = _page()
     assert page._market_read(None, None, has_total=False) == (
