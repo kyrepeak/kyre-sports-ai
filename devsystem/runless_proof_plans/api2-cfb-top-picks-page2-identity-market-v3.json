@@ -1,0 +1,41 @@
+{
+  "mode": "runless",
+  "task_id": "api2-cfb-top-picks-page2-identity-market-v3",
+  "workstream": "api2-cfb-top-picks-page2-identity-market-v3",
+  "source_main_sha": "15f31b8625d98df8b89be0488e1c0baf3ac498e9",
+  "commands": [
+    ["python", "-m", "py_compile", "app.py", "cfb_top_picks_page_v19.py", "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3.py", "tests/test_api2_cfb_top_picks_page2_identity_market_v3.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page2_identity_market_v3.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_cfb_top_picks_page2_identity_market_v3.py", "tests/test_api2_cfb_top_picks_page2_stier_route_v2.py", "tests/test_api2_cfb_top_picks_page2_analytics_lab_v1.py", "tests/test_api2_cfb_top_picks_page1_cleanup_v4.py", "tests/test_api2_cfb_top_picks_page1_stier_v3.py", "tests/test_api2_universal_nav_tap_first_handoff_v1.py", "tests/test_api2_nfl_passing_yards_page2_command_center_v1.py"]
+  ],
+  "artifacts": [
+    "app.py",
+    "cfb_top_picks_page_v19.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v3.py",
+    "tests/test_api2_cfb_top_picks_page2_identity_market_v3.py",
+    "devsystem/runless_proof_plans/api2-cfb-top-picks-page2-identity-market-v3.json",
+    "devsystem/task_ledgers/api2-cfb-top-picks-page2-identity-market-v3.json"
+  ],
+  "dependencies": [
+    "cfb_top_picks_page_v18.py",
+    "cfb_top_picks_page_v16.py",
+    "cfb_top_picks_page_v15.py",
+    "sports_api/api/cfb_top_picks_page2_v1.py",
+    "sports_api/api/cfb_top_picks_page1_v4.py",
+    "sports_api/collectors/cfb_top_picks_identity_v1.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_cfb_top_picks_page2_v2.py",
+    "universal_sports_nav_url_v1.py",
+    "universal_runtime_v5_state.py"
+  ],
+  "dependency_tokens": ["domain:api2-cfb-top-picks-page2-identity-market-v3"],
+  "timeout_seconds": 1200,
+  "live_ttl_seconds": 3600,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [
+    "API2_CFB_TOP_PICKS_PAGE2_STIER_ROUTE_V2_FROZEN"
+  ],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_CFB_TOP_PICKS_PAGE2_IDENTITY_MARKET_V3_FROZEN",
+  "notes": "Additive presentation-only successor above frozen V18. V19 consumes only normalized fields already delivered by Kyre Sports API: NCAA-owned team names/records/logos, exact sportsbook quotes, API-owned best_available_price, certified line/price sensitivity scenarios, Kyre model verdict/projection/drivers, recent form/history/environment, risk/flip modules, and freshness/audit metadata. It adds team identity marks throughout the hero, projection, matchup, recent-form, and why sections; exact-book consensus with best-price emphasis; model-vs-market edge decomposition; probability sensitivity; readable reliability; image fallback; and freshness chips. It does not alter CFB model math or sports_api/api/cfb_top_picks_page2_v1.py, does not add a direct external fetch route, does not average sportsbook lines, does not guess opening lines, does not convert null to zero, and preserves canonical sport=cfb&market=top-picks routing. SGO, ESPN, and ESPN BET remain forbidden in every request/fallback/enrichment path. The proof base was forward-ported from 0b363648c26d7b85938ee73ff78821fc1b857858 to 15f31b8625d98df8b89be0488e1c0baf3ac498e9 after unrelated PR #1757 advanced main; no stale-base proof is authorized."
+}
