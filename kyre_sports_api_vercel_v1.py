@@ -27,6 +27,7 @@ import sports_api.api.cfb_top_picks_page2_v1 as cfb_top_picks_page2_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 import sports_api.api.nfl_passing_yards_slate_v1 as nfl_passing_yards_slate_module
 import sports_api.api.nfl_rushing_yards_slate_v1 as nfl_rushing_yards_slate_module
+import sports_api.api.nfl_rushing_yards_detail_v2 as nfl_rushing_yards_detail_module
 
 cfb_moneyline_router = cfb_moneyline_module.router
 cfb_game_total_router = cfb_game_total_module.router
@@ -38,9 +39,10 @@ cfb_top_picks_page2_router = cfb_top_picks_page2_module.router
 nfl_passing_yards_page_router = nfl_passing_yards_page_module.router
 nfl_passing_yards_slate_router = nfl_passing_yards_slate_module.router
 nfl_rushing_yards_slate_router = nfl_rushing_yards_slate_module.router
+nfl_rushing_yards_detail_router = nfl_rushing_yards_detail_module.router
 app = FastAPI(
     title="Kyre Sports API",
-    version="KYRE_GATEWAY_V7",
+    version="KYRE_GATEWAY_V8",
     description="Kyre Sports AI application-facing sports data gateway.",
 )
 app.include_router(cfb_moneyline_router)
@@ -53,6 +55,7 @@ app.include_router(cfb_top_picks_page2_router)
 app.include_router(nfl_passing_yards_page_router)
 app.include_router(nfl_passing_yards_slate_router)
 app.include_router(nfl_rushing_yards_slate_router)
+app.include_router(nfl_rushing_yards_detail_router)
 
 
 @app.get("/health")
@@ -70,5 +73,6 @@ def health() -> dict[str, object]:
         "nfl_passing_yards_page": True,
         "nfl_passing_yards_slate": True,
         "nfl_rushing_yards_slate": True,
+        "nfl_rushing_yards_detail_v2": True,
         "direct_app_provider_fallback": False,
     }
