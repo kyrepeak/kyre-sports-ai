@@ -1,0 +1,34 @@
+{
+  "task_id": "api2-nfl-rushing-terminal-route-hotfix-v1",
+  "workstream": "api2-nfl-rushing-terminal-route-hotfix-v1",
+  "source_main_sha": "2fcad974b2afdca48fcaa91da0c6f6f43a80ef13",
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "progress_percent": 92,
+  "step2a": {
+    "active_problem": "NFL Rushing Yards production terminal routes to legacy Ground Game Lab instead of the frozen RB1/RB2 successor.",
+    "authoritative_branch": "api2-nfl-rushing-terminal-route-hotfix-v1",
+    "authoritative_pr": 1760,
+    "scope_lease_id": "SCOPE-LEASE-25546F0CE793FA7829FF09D5",
+    "scope_lease_generation": 729,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false,
+    "base_drift_reconciled_once": true
+  },
+  "evidence": {
+    "root_cause": "After Universal Navigation Speed V1 and its NBA PRA regression repair, the live terminal delegates NFL Rushing Yards through the prior resolver chain, which resolves to legacy nfl_rushing_yards_hub_v17. The frozen canonical loader already owns nfl/rushing-yards -> nfl_rushing_yards_simple_rb_grid_v1.",
+    "tdd_red": "1 failed, 3 passed: missing canonical rushing-yards handoff on current live terminal.",
+    "tdd_green": "4 passed: current live terminal keeps NBA PRA/CFB guards and routes NFL Rushing Yards through canonical loader.",
+    "product_change": "One explicit resolver branch plus canonical-loader import on the current production terminal; no model, projection, probability, provider, sportsbook, or RB-board contract changes."
+  },
+  "remaining": [
+    "execute one exact-head Runless V2 proof",
+    "require App 5204253 runless-final-gate success",
+    "merge exact authorized head",
+    "verify merged-main route ownership and deployment",
+    "close out freeze evidence and release scope lease"
+  ],
+  "freeze_token": "API2_NFL_RUSHING_TERMINAL_ROUTE_HOTFIX_V1_FROZEN"
+}

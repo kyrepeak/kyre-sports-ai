@@ -1,0 +1,56 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nfl-rushing-terminal-route-hotfix-v1",
+  "workstream": "api2-nfl-rushing-terminal-route-hotfix-v1",
+  "source_main_sha": "2fcad974b2afdca48fcaa91da0c6f6f43a80ef13",
+  "commands": [
+    [
+      "python", "-m", "py_compile",
+      "app.py",
+      "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py",
+      "universal_runtime_v5_loader/__init__.py",
+      "nfl_rushing_yards_simple_rb_grid_v1.py",
+      "tests/test_universal_navigation_speed_repair_terminal_v1.py",
+      "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py",
+      "tests/test_api2_nfl_rushing_yards_field_fallback_v1.py"
+    ],
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_universal_navigation_speed_repair_terminal_v1.py",
+      "tests/test_universal_page_experience_v2.py",
+      "tests/test_universal_page_experience_runtime_v2.py",
+      "tests/test_universal_page_experience_runtime_v3_regression_repair.py"
+    ],
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_api2_universal_nav_tap_first_handoff_v1.py",
+      "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py",
+      "tests/test_api2_nfl_rushing_yards_field_fallback_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "streamlit_memory_lazy_router_universal_runtime_v5_navigation_speed_repair_v1.py",
+    "tests/test_universal_navigation_speed_repair_terminal_v1.py",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-terminal-route-hotfix-v1.json",
+    "devsystem/task_ledgers/api2-nfl-rushing-terminal-route-hotfix-v1.json"
+  ],
+  "dependencies": [
+    "app.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5.py",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nba_pra_page1_v1.py",
+    "universal_page_experience_runtime_v3.py",
+    "universal_runtime_v5_loader/__init__.py",
+    "universal_runtime_v5_loader.py",
+    "nfl_rushing_yards_simple_rb_grid_v1.py",
+    "nfl_rushing_yards_professional_v1.py",
+    "nfl_rushing_yards_slate_gateway_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NFL_RUSHING_TERMINAL_ROUTE_HOTFIX_V1_FROZEN"
+}
