@@ -1,0 +1,40 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nba-pra-real-market-restore-r3",
+  "workstream": "api2-nba-pra-real-market-restore-r3",
+  "source_main_sha": "51db732c47585a1625e8b840ae59b289ab19829a",
+  "commands": [
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_api_only_market_routing_r3.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_gateway_only_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_no_espn_enrichment_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_real_market_restore_r2.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_market_posting_state_r1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_provider_independence_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_universal_gateway_v1.py"],
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_api2_nba_pra_page2_runtime_v1.py"],
+    ["python", "-m", "py_compile", "nba_pra_runtime_v2.py", "nba_pra_page1_provider_independence_v1.py", "nba_pra_page1_api_only_provider_independence_v1.py", "nba_pra_page1_api_only_v1.py", "nba_pra_market_api_v1.py", "nba_pra_schedule_api_v1.py", "nba_pra_player_context_api_v1.py", "nba_pra_injury_api_v1.py"]
+  ],
+  "artifacts": [
+    "devsystem/execution_plans/api2-nba-pra-real-market-restore-r3.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-real-market-restore-r3.json",
+    "devsystem/task_ledgers/api2-nba-pra-real-market-restore-r3.json",
+    "tests/test_api2_nba_pra_api_only_market_routing_r3.py"
+  ],
+  "dependencies": [
+    "nba_pra_runtime_v2.py",
+    "nba_pra_page1_provider_independence_v1.py",
+    "nba_pra_page1_api_only_provider_independence_v1.py",
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_market_api_v1.py",
+    "nba_pra_schedule_api_v1.py",
+    "nba_pra_player_context_api_v1.py",
+    "nba_pra_injury_api_v1.py",
+    "sports_api/api/nba_pra_market_real_restore_v1.py"
+  ],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "API2_NBA_PRA_REAL_MARKET_RESTORE_R3_FROZEN"
+}
