@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 
 import sports_api.api.cfb_game_total_page1_v1 as api
@@ -102,7 +103,10 @@ def test_payload_enriches_only_through_kyre_api(monkeypatch):
     monkeypatch.setattr(api, "_resolve_slate_date", lambda requested, now: ("2026-10-23", [game]))
     monkeypatch.setattr(api, "_market_state", lambda games: ({"ncaa-1": [primary]}, ["FanDuel"]))
     monkeypatch.setattr(api, "collect_consensus_market_rows", lambda games: ({"ncaa-1": consensus_rows}, ["Action Network"]))
-    payload = api.build_page1_payload(game_date="2026-10-23")
+    payload = api.build_page1_payload(
+        game_date="2026-10-23",
+        now_provider=lambda: datetime(2026, 10, 23, 18, 0, tzinfo=timezone.utc),
+    )
     row = payload["games"][0]
     assert row["team_identity"]["away"]["kyre_team_id"] == "KYRE-CFB-duke"
     assert row["market_consensus"]["consensus_line"] == 46.5
@@ -114,7 +118,7 @@ def test_payload_enriches_only_through_kyre_api(monkeypatch):
     assert payload["routing"]["forbidden_providers"] == ["SGO", "ESPN", "ESPN BET"]
 
 
-def test_v3_presentation_contract_and_live_wrapper_activation():
+def test_v3_presentation_contract_is_preserved_under_v5_activation():
     path = ROOT / "cfb_game_total_page1_atier_v3.py"
     assert path.exists(), "V3 final-polish successor has not been implemented yet"
     source = path.read_text(encoding="utf-8")
@@ -139,6 +143,9 @@ def test_v3_presentation_contract_and_live_wrapper_activation():
     assert "actionnetwork.com" not in folded
     assert "the-odds-api" not in folded
     assert "espncdn" not in folded
+
+    successor = (ROOT / "cfb_game_total_page1_atier_v5.py").read_text(encoding="utf-8")
+    assert "import cfb_game_total_page1_atier_v3 as card" in successor
     wrapper = (ROOT / "cfb_game_total_page1_api_bootstrap_repair_r1.py").read_text(encoding="utf-8")
-    assert "cfb_game_total_page1_atier_v3" in wrapper
+    assert "cfb_game_total_page1_atier_v5" in wrapper
     assert "cfb_game_total_page1_atier_v2" not in wrapper
