@@ -15,7 +15,7 @@ def _page():
 
 def test_live_wrapper_delegates_only_page1_to_atier_successor():
     source = WRAPPER.read_text(encoding="utf-8")
-    assert "import cfb_game_total_page1_atier_v1 as atier" in source
+    assert "import cfb_game_total_page1_atier_v6 as atier" in source
     assert "return atier.render_game_total_page1()" in source
     assert "prior.render_game_total_page1()" not in source
     assert "https://kyre-sports-api.vercel.app" in source
