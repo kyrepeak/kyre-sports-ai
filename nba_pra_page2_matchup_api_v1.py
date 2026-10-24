@@ -6,7 +6,7 @@ import os
 from typing import Any, Callable
 import requests
 
-DEFAULT_API_BASE_URL = "https://kyre-runless-proof.vercel.app"
+DEFAULT_API_BASE_URL = "https://kyre-sports-api.vercel.app"
 
 
 def load_kyre_sports_api_nba_pra_matchup(
@@ -21,7 +21,7 @@ def load_kyre_sports_api_nba_pra_matchup(
     if not team:
         return {"source":"Kyre Sports API — Vercel","verification":"UNAVAILABLE","diagnostic_state":"INVALID_OPPONENT","fabrication":False}
     post = request_post or requests.post
-    root = str(base_url or os.getenv("KYRE_SPORTS_API_BASE_URL") or DEFAULT_API_BASE_URL).rstrip("/")
+    root = str(base_url or os.getenv("KYRE_NBA_API_BASE_URL") or DEFAULT_API_BASE_URL).rstrip("/")
     payload: dict[str, Any] = {"opponent": team}
     if now_utc is not None:
         payload["now_utc"] = now_utc.isoformat()
