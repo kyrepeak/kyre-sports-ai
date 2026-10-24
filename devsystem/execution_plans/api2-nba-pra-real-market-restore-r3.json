@@ -4,7 +4,7 @@
   "step": "2A/1",
   "source_main_sha": "51db732c47585a1625e8b840ae59b289ab19829a",
   "authoritative_branch": "api2-nba-pra-real-market-restore-r3",
-  "scope_lease_id": "SCOPE-LEASE-8BF8F8BDA1768548752B8857",
+  "scope_lease_id": "SCOPE-LEASE-55A69BE233087F3A9438AA58",
   "goal": "Certify and freeze the already-merged NBA PRA real-market restore only after the actual Page 1 runtime proves Kyre Sports API-only routing and real sportsbook line/price delivery.",
   "write_paths": [
     "devsystem/execution_plans/api2-nba-pra-real-market-restore-r3.json",
