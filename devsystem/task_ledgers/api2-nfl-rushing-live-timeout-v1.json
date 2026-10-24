@@ -1,0 +1,37 @@
+{
+  "task_id": "api2-nfl-rushing-live-timeout-v1",
+  "workstream": "api2-nfl-rushing-live-timeout-v1",
+  "source_main_sha": "398ab1b5ca468b2a3efdc9b036875e2e0f579c18",
+  "status": "READY_FOR_EXACT_HEAD_PROOF",
+  "progress_percent": 99,
+  "step2a": {
+    "active_problem": "NFL Rushing Yards full /api/v1/nfl/rushing-yards/slate can exceed the frontend 15-second read timeout.",
+    "authoritative_branch": "fix/nfl-rushing-live-timeout-v1",
+    "authoritative_pr": 1772,
+    "scope_lease_id": "SCOPE-LEASE-4E713492F99C6F8C3B6BA5C3",
+    "scope_lease_generation": 749,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "evidence": {
+    "root_cause": "The full rushing slate synchronously combined current stats, roster, multi-season history and direct-book enrichment; full PBP/history/provider waits could stack beyond the frontend 15-second timeout.",
+    "repair": "Use compact weekly player summaries, bounded current roster loading, concurrent current-stats/roster/history prewarming, bounded history, and bounded concurrent sportsbook enrichment while preserving semantic empty states instead of inventing data.",
+    "regression_test": "tests/test_api2_nfl_rushing_live_timeout_v1.py",
+    "exact_candidate_route_proof": "python -m devsystem.api2_nfl_rushing_live_timeout_proof_v1",
+    "proof_route": "/api/v1/nfl/rushing-yards/slate",
+    "latency_ceiling_seconds": 15.0,
+    "status_route_accepted": false
+  },
+  "remaining": [
+    "execute one exact-head Runless V2 proof using this task id and live scope lease",
+    "require runless-final-gate success and immutable receipt",
+    "merge exact authorized head of PR 1772",
+    "verify merged-main production deployment",
+    "verify production full /api/v1/nfl/rushing-yards/slate under 15 seconds",
+    "freeze final evidence and release scope lease"
+  ],
+  "freeze_token": "API2_NFL_RUSHING_LIVE_TIMEOUT_V1_FROZEN"
+}

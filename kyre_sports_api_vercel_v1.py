@@ -28,6 +28,9 @@ import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 import sports_api.api.nfl_passing_yards_slate_v1 as nfl_passing_yards_slate_module
 import sports_api.api.nfl_rushing_yards_slate_v1 as nfl_rushing_yards_slate_module
 import sports_api.api.nfl_rushing_yards_detail_v2 as nfl_rushing_yards_detail_module
+import sports_api.nfl_rushing_yards_fastpath_v1 as nfl_rushing_yards_fastpath
+
+nfl_rushing_yards_fastpath.install(nfl_rushing_yards_slate_module)
 
 cfb_moneyline_router = cfb_moneyline_module.router
 cfb_game_total_router = cfb_game_total_module.router
