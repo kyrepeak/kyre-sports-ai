@@ -1,0 +1,43 @@
+{
+  "version": "API2_TASK_LEDGER_V1",
+  "task_id": "api2-nba-pra-real-market-restore-r3",
+  "workstream": "api2-nba-pra-real-market-restore-r3",
+  "source_main_sha": "51db732c47585a1625e8b840ae59b289ab19829a",
+  "status": "READY_FOR_RUNLESS_PROOF",
+  "active_problem": "R2 restored the real-market fallback architecture but intentionally withheld GREEN + FROZEN until production Page 1 itself returned real approved sportsbook PRA pairs and the active runtime path was proven Kyre Sports API-only.",
+  "authoritative_branch": "api2-nba-pra-real-market-restore-r3",
+  "scope_lease_id": "SCOPE-LEASE-55A69BE233087F3A9438AA58",
+  "ruling": "R3 is certification-only. Do not modify product code because the active terminal runtime already uses nba_pra_page1_provider_independence_v1 -> nba_pra_page1_api_only_provider_independence_v1 -> nba_pra_page1_api_only_v1 and the live Page 1 now has verified real markets.",
+  "constraints": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SGO", "SportsGameOdds", "ESPN", "ESPN BET"],
+    "fabrication": false,
+    "line_averaging": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "verification": {
+    "active_runtime_closure": "CLEAN",
+    "r3_certification": "2/2",
+    "legacy_regression": "44/44",
+    "total": "46/46",
+    "compile_green": true,
+    "diff_check_green": true
+  },
+  "live_acceptance": {
+    "captured_at_utc": "2026-10-24T05:28:00Z",
+    "slate_date": "2026-10-24",
+    "game_count": 8,
+    "market_players": 17,
+    "profile_count": 17,
+    "observation_count": 34,
+    "verification": "VERIFIED",
+    "diagnostic_state": "OK",
+    "sample": [
+      {"player":"Khaman Maluach","sportsbook":"FanDuel","line":19.5,"over_price":-125,"under_price":-106},
+      {"player":"Devin Booker","sportsbook":"FanDuel","line":33.5,"over_price":-118,"under_price":-112}
+    ],
+    "fabrication": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_token": "API2_NBA_PRA_REAL_MARKET_RESTORE_R3_FROZEN"
+}
