@@ -6,6 +6,14 @@ import types
 from pathlib import Path
 
 from fastapi import FastAPI
+
+from sports_api.runtime.streamlit_api_compat_v1 import install_streamlit_api_compat
+
+# The FastAPI runtime must not load Streamlit's UI dependency tree. Legacy
+# shared modules still import `streamlit`, so provide the small server-only
+# compatibility surface before any API routers are imported.
+install_streamlit_api_compat()
+
 import sports_api as sports_api_pkg
 
 _REPO_ROOT = Path(__file__).resolve().parent
