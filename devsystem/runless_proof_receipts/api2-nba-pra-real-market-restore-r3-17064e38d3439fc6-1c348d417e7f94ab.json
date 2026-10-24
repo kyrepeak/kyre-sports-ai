@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-nba-pra-real-market-restore-r3.json": "ffa336c207f5c1fca4d90873e90ae1cb1b4de506",
+    "devsystem/runless_proof_plans/api2-nba-pra-real-market-restore-r3.json": "43e6eac2de3bf9850acad9f504f6520af39bc9b2",
+    "devsystem/task_ledgers/api2-nba-pra-real-market-restore-r3.json": "a81ac7da0ea92d8a95ce0b2408fbc89cafde9b81",
+    "tests/test_api2_nba_pra_api_only_market_routing_r3.py": "0200fc63b1e85fc54ef23f5ad0431fab0d473b4b"
+  },
+  "candidate_sha": "17064e38d3439fc656feca1645ccc1d928adf1c6",
+  "created_at": "2026-10-24T05:40:01.540173+00:00",
+  "dependency_map": {
+    "nba_pra_injury_api_v1.py": "0ccf195015869a745d062a94161767ed96516316",
+    "nba_pra_market_api_v1.py": "a4d439ec795405db92e7dde890b276a8ee8009d6",
+    "nba_pra_page1_api_only_provider_independence_v1.py": "05f2ef282dcb69c56c37a66aa0ee0c6209302b50",
+    "nba_pra_page1_api_only_v1.py": "fed22da146591dd421326cc95ebcc1f6538f09dd",
+    "nba_pra_page1_provider_independence_v1.py": "53e1aaaa880a3cf757a0e5b35894902fbda416c0",
+    "nba_pra_player_context_api_v1.py": "e3ddd995813d82c8e2da20782c6999bba48cb064",
+    "nba_pra_runtime_v2.py": "494878eba99923f08ec30880638594862537bc09",
+    "nba_pra_schedule_api_v1.py": "d3647fa83f78b7adc93dc92a31ac6c0d22db7609",
+    "sports_api/api/nba_pra_market_real_restore_v1.py": "bad557611b29407e7e8c8b71b373e297db0c2f94"
+  },
+  "digest": "4044b8bfc4177810e085917b586c27332caf30cfac8112607c81031d8159ece1",
+  "evidence_digests": [
+    "17c7844d8e265fe5bff09ca6db7395374353a4fa7199199052380293f8353879",
+    "a131860ec49f8de51d80edd1a0f121532293c5a88b51dd1a0ea8d03a3b433838",
+    "ab167c3f13f4ce8bf0a1088a5de2e35a1455da4970aa24c5d590139930fb4b8c",
+    "afc4b6f72451da88cf0c0227e020074ffaa632b32d167dd5ff841bb9bef7b85e",
+    "4149ca75aeca8feb2d35acd6a1899479597b93155ef17d8eeccbea29d303c7b2",
+    "16b287a0ada17ceba14fe9fe421db7adae9e0d295310b89889cb853b282b8dac",
+    "da12ff4679db0e42a5d1b875201236dac1cf9a3ba0a705d087b9a8c10d6eee17",
+    "f650dace11a9d2d353a0fee391d6d7f1b1f3bd01bb36e4902e5f636f6ebe664b",
+    "4a0cb39789302dbb6c2ade1f3b7da9c69f6cab17e7550b4c7e5a6352a972f2ae"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "d4d6ad23a58721845e8e54a47b594f27219c56e99a1e044f2b917cb11a0351f8",
+  "proof_id": "api2-nba-pra-real-market-restore-r3-17064e38d3439fc6-1c348d417e7f94ab",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "request_fingerprint": "f9684bdf1cfa27e3d45bbcfa7b338bf2b05fcf7390996f75728cf7fb8c956fef",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-real-market-restore-r3",
+  "workstream": "api2-nba-pra-real-market-restore-r3"
+}
