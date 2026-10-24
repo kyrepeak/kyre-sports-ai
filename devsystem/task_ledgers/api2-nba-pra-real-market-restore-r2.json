@@ -1,0 +1,31 @@
+{
+  "version": "API2_TASK_LEDGER_V1",
+  "task_id": "api2-nba-pra-real-market-restore-r2",
+  "workstream": "api2-nba-pra-real-market-restore-r2",
+  "source_main_sha": "b58ba48638d5edcd050177ced35bb0140f8644a8",
+  "status": "READY_FOR_RUNLESS_PROOF",
+  "active_problem": "Live NBA PRA Page 1 has projections and player history but no real sportsbook line, edge, or probability because FanDuel has zero PRA on all eight active slate games while DraftKings and other direct-book routes are blocked from Vercel.",
+  "root_cause": {
+    "fan_duel": "8/8 upcoming events returned HTTP 200 but only Moneyline, Spread, and Total Points; PRA count 0",
+    "draftkings": "Arizona, New Jersey, and Illinois direct routes returned HTTP 403 from Vercel",
+    "betmgm": "Arizona direct route returned HTTP 403 from Vercel",
+    "architecture_gap": "API-only migration removed access to an approved aggregator credential/fallback"
+  },
+  "repair": "Preserve the frozen direct provider route, then route through official The Odds API per-event player_points_rebounds_assists only when direct books have no PRA. Forward an official The Odds API key from server-side Streamlit config to Kyre Sports API in a private header only.",
+  "scope_lease_id": "SCOPE-LEASE-3CAF17722396E0819BB51A96",
+  "constraints": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SGO", "SportsGameOdds", "ESPN", "ESPN BET"],
+    "fabrication": false,
+    "line_averaging": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "tdd": {
+    "red_observed": true,
+    "focused_green": "4/4",
+    "regression_green": "29/29",
+    "compile_green": true
+  },
+  "live_acceptance_state": "PENDING_PRODUCTION_CREDENTIAL_AND_REAL_QUOTE_PROOF",
+  "freeze_token": "API2_NBA_PRA_REAL_MARKET_RESTORE_R2_FROZEN"
+}
