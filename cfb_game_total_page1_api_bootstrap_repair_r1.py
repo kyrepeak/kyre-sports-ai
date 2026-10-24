@@ -1,4 +1,4 @@
-"""CFB Game Total Page 1 API bootstrap repair R1 + A-tier Page 1 V5 activation.
+"""CFB Game Total Page 1 API bootstrap repair R1 + A-tier Page 1 V6 decision-card activation.
 
 The application-facing API base resolver remains unchanged. This wrapper hands
 only Page 1 presentation to the approved premium logo-rail successor. Page 2,
@@ -13,7 +13,7 @@ import streamlit as st
 
 import cfb_game_total_page1_stier_v1 as prior
 
-MODEL_VERSION = "CFB GAME TOTAL PAGE1 API BOOTSTRAP REPAIR R1 • A-TIER V5 PREMIUM LOGO RAIL ACTIVATION"
+MODEL_VERSION = "CFB GAME TOTAL PAGE1 API BOOTSTRAP REPAIR R1 • A-TIER V6 S-TIER DECISION CARD ACTIVATION"
 MARKET = prior.MARKET
 PAGE1_ENDPOINT = prior.PAGE1_ENDPOINT
 KYRE_SPORTS_API_BASE_URL = prior.KYRE_SPORTS_API_BASE_URL
@@ -42,7 +42,7 @@ def _api_base() -> str:
 
 
 def render_game_total_page1() -> None:
-    import cfb_game_total_page1_atier_v5 as atier
+    import cfb_game_total_page1_atier_v6 as atier
 
     return atier.render_game_total_page1()
 
