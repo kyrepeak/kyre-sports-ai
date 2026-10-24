@@ -1,0 +1,55 @@
+{
+  "artifact_map": {
+    "cfb_moneyline_clean_page_v8.py": "40e345f5a93ab03991aa6e0784ba1878fccd7fb1",
+    "devsystem/execution_plans/api2-cfb-moneyline-logo-rail-r1.json": "190b2c65f3d3f7c242286c5561fa7e63130794e9",
+    "devsystem/runless_proof_plans/api2-cfb-moneyline-logo-rail-r1.json": "06d4680e2356e996ca8efaed2568a0e98a2b12bd",
+    "devsystem/task_ledgers/api2-cfb-moneyline-logo-rail-r1.json": "3dffb18c87b8b71fe86ed96ae4abd7f3ef9a0e43",
+    "docs/superpowers/plans/2026-10-24-api2-cfb-moneyline-logo-rail-r1.md": "0bcdad9e4cc0499763d0377625b36a5ff30ee048",
+    "docs/superpowers/specs/2026-10-24-api2-cfb-moneyline-logo-rail-r1-design.md": "985334cfd28adbe5e406a9aa09eab977fbfe6d20",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py": "5ead2a808df889cfb6fe14b4886dd264868cb210",
+    "tests/test_api2_cfb_moneyline_logo_rail_r1.py": "44d8b6f4a744af770d5ded573d74ae8e2e310d93"
+  },
+  "candidate_sha": "48daec3397c10122f52aa3ffc98c3106f707c8e7",
+  "created_at": "2026-10-24T21:35:52.483985+00:00",
+  "dependency_map": {
+    "app.py": "d0a0d2beebb6b1ef7a950d9c0be41307a4e454eb",
+    "cfb_moneyline_clean_page_v7.py": "f6eed57f05f7337e6b4b31854a125345ba2b4c27",
+    "sports_api/api/cfb_game_total_page1_v1.py": "00a70a45f0c4f0e6c2dacdc3309fb13beefe7034",
+    "sports_api/api/cfb_moneyline_page1_v1.py": "608eaf4ba9ca4ccd44dbee779eac43694dc351e3",
+    "universal_runtime_v5_loader_v17.py": "0c1db40122aefe0f65b9543bd84cece10e6724fe"
+  },
+  "digest": "1cc0e682a414c482e29e3b8696cb1b5054e7fef78797497e805841686416fbca",
+  "evidence_digests": [
+    "2802e587532bb5e917b19e2ee1f5147d398b8b6e84b51c85f4bbcb908063ead1",
+    "04d66e5e9e7cbf5e5508fa525c149e4bbd5b8ef7339f442246f52c8ad7d0e3d1",
+    "d533b2145e2d716de6f2324c931e3cc52f603a2496f45cb3c9bc606662eed450",
+    "b57140443fea506d2d4aa3c44fe41d5c38ca66d99eab8373bbb2ebd7aad792e1"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f97d4ba47606ec1569805c7a1ca2c388da15d28f69065d01d345e135ffef6b27",
+  "proof_id": "api2-cfb-moneyline-logo-rail-r1-48daec3397c10122-5cf6136e0f653cb5",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "request_fingerprint": "7e7ac6e8662b7d4174a535538a37ba04b822696e84bfa4bfaf26e837e2f1cbb5",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-cfb-moneyline-logo-rail-r1",
+  "workstream": "api2-cfb-moneyline-logo-rail-r1"
+}
