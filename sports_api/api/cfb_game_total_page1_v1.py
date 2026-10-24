@@ -28,7 +28,7 @@ from sports_api.collectors.cfb_action_network_game_markets_v1 import (
 )
 
 router = APIRouter(prefix="/api/v1/cfb/game-total", tags=["cfb"])
-MODEL_VERSION = "CFB GAME TOTAL PAGE1 API V1 • KYRE SPORTS API • FINAL POLISH R1"
+MODEL_VERSION = "CFB GAME TOTAL PAGE1 API V1 • KYRE SPORTS API • UPCOMING RAIL STEP1 R1"
 SCHEMA_VERSION = "cfb_game_total_page1_v1"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
@@ -36,6 +36,21 @@ PHOENIX = ZoneInfo("America/Phoenix")
 MAX_AUTO_SCAN_DAYS = 14
 FORBIDDEN_PROVIDERS = ["SGO", "ESPN", "ESPN BET"]
 NCAA_LOGO_TEMPLATE = "https://www.ncaa.com/sites/default/files/images/logos/schools/bgl/{slug}.svg"
+_STARTED_OR_TERMINAL_STATES = (
+    "in progress",
+    "inprogress",
+    "live",
+    "halftime",
+    "final",
+    "completed",
+    "complete",
+    "closed",
+    "ended",
+    "game over",
+    "canceled",
+    "cancelled",
+    "postponed",
+)
 
 
 def _clean(value: Any) -> str:
@@ -62,6 +77,37 @@ def _kickoff(game: Mapping[str, Any]) -> datetime | None:
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         return None
     return parsed.astimezone(timezone.utc)
+
+
+def _status_text(game: Mapping[str, Any]) -> str:
+    values: list[str] = []
+    for key in ("status", "game_status", "state", "status_state", "game_state"):
+        value = game.get(key)
+        if isinstance(value, Mapping):
+            for nested_key in ("state", "type", "name", "description", "detail", "short_detail", "shortDetail"):
+                nested = _clean(value.get(nested_key))
+                if nested:
+                    values.append(nested)
+        else:
+            text = _clean(value)
+            if text:
+                values.append(text)
+    return " ".join(values).casefold().replace("_", " ").replace("-", " ")
+
+
+def _is_upcoming_game(game: Mapping[str, Any], now: datetime) -> bool:
+    """Return True only while a game is still actionable as a pregame matchup."""
+    status = _status_text(game)
+    if any(marker in status for marker in _STARTED_OR_TERMINAL_STATES):
+        return False
+
+    current = now
+    if current.tzinfo is None or current.utcoffset() is None:
+        current = current.replace(tzinfo=timezone.utc)
+    kickoff = _kickoff(game)
+    if kickoff is not None and kickoff <= current.astimezone(timezone.utc):
+        return False
+    return True
 
 
 def _load_ncaa_games(day: str) -> list[dict[str, Any]]:
@@ -110,7 +156,7 @@ def _resolve_slate_date(*, requested: str | None, now: datetime) -> tuple[str, l
         games = _load_ncaa_games(day)
         if not games:
             continue
-        upcoming = [game for game in games if _kickoff(game) is None or _kickoff(game) >= now.astimezone(timezone.utc)]
+        upcoming = [game for game in games if _is_upcoming_game(game, now)]
         if upcoming:
             return day, upcoming
     return local_now.date().isoformat(), []
@@ -415,6 +461,7 @@ def build_page1_payload(*, game_date: str | None = None, now_provider: Callable[
         raise ValueError("game_date must be YYYY-MM-DD") from exc
 
     games = _dedupe_games([dict(game) for game in resolved_games if isinstance(game, Mapping)])
+    games = [game for game in games if _is_upcoming_game(game, now)]
     market_map, consulted = _market_state(games)
     consensus_map, consensus_consulted = collect_consensus_market_rows(games)
     for provider in consensus_consulted:
@@ -460,6 +507,7 @@ def build_page1_payload(*, game_date: str | None = None, now_provider: Callable[
             "consensus_averaging": False,
             "frontend_provider_selection": False,
             "line_movement_requires_verified_opener": True,
+            "pregame_visibility": "UPCOMING_ONLY",
             "fabrication": False,
             "null_to_zero": False,
             "forbidden_providers": list(FORBIDDEN_PROVIDERS),
@@ -482,6 +530,7 @@ __all__ = [
     "NCAA_LOGO_TEMPLATE",
     "SCHEMA_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_is_upcoming_game",
     "_line_movement",
     "_market_consensus",
     "_public_game",
