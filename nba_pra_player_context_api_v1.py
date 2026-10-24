@@ -9,7 +9,7 @@ from typing import Any, Callable, Mapping, Sequence
 
 import requests
 
-DEFAULT_API_BASE_URL = "https://kyre-runless-proof.vercel.app"
+DEFAULT_API_BASE_URL = "https://kyre-sports-api.vercel.app"
 PLAYER_CONTEXT_CACHE_TTL_SECONDS = 300.0
 _PLAYER_CONTEXT_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
 

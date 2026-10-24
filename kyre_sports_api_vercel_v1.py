@@ -24,6 +24,12 @@ import sports_api.api.cfb_top_picks_page1_v2 as cfb_top_picks_page1_v2_module
 import sports_api.api.cfb_top_picks_page1_v3 as cfb_top_picks_page1_v3_module
 import sports_api.api.cfb_top_picks_page1_v4 as cfb_top_picks_page1_v4_module
 import sports_api.api.cfb_top_picks_page2_v1 as cfb_top_picks_page2_module
+import sports_api.api.nba_gateway_v1 as nba_gateway_module
+import sports_api.api.nba_pra_market_v1 as nba_pra_market_module
+import sports_api.api.nba_pra_schedule_v1 as nba_pra_schedule_module
+import sports_api.api.nba_pra_player_context_v1 as nba_pra_player_context_module
+import sports_api.api.nba_pra_injury_v1 as nba_pra_injury_module
+import sports_api.api.nba_pra_matchup_v1 as nba_pra_matchup_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 import sports_api.api.nfl_passing_yards_slate_v1 as nfl_passing_yards_slate_module
 import sports_api.api.nfl_rushing_yards_slate_v1 as nfl_rushing_yards_slate_module
@@ -39,13 +45,20 @@ cfb_top_picks_page1_v2_router = cfb_top_picks_page1_v2_module.router
 cfb_top_picks_page1_v3_router = cfb_top_picks_page1_v3_module.router
 cfb_top_picks_page1_v4_router = cfb_top_picks_page1_v4_module.router
 cfb_top_picks_page2_router = cfb_top_picks_page2_module.router
+nba_gateway_router = nba_gateway_module.router
+nba_pra_market_router = nba_pra_market_module.router
+nba_pra_schedule_router = nba_pra_schedule_module.router
+nba_pra_player_context_router = nba_pra_player_context_module.router
+nba_pra_injury_router = nba_pra_injury_module.router
+nba_pra_matchup_router = nba_pra_matchup_module.router
 nfl_passing_yards_page_router = nfl_passing_yards_page_module.router
 nfl_passing_yards_slate_router = nfl_passing_yards_slate_module.router
 nfl_rushing_yards_slate_router = nfl_rushing_yards_slate_module.router
 nfl_rushing_yards_detail_router = nfl_rushing_yards_detail_module.router
+
 app = FastAPI(
     title="Kyre Sports API",
-    version="KYRE_GATEWAY_V8",
+    version="KYRE_GATEWAY_V9",
     description="Kyre Sports AI application-facing sports data gateway.",
 )
 app.include_router(cfb_moneyline_router)
@@ -55,6 +68,12 @@ app.include_router(cfb_top_picks_page1_v2_router)
 app.include_router(cfb_top_picks_page1_v3_router)
 app.include_router(cfb_top_picks_page1_v4_router)
 app.include_router(cfb_top_picks_page2_router)
+app.include_router(nba_gateway_router)
+app.include_router(nba_pra_market_router)
+app.include_router(nba_pra_schedule_router)
+app.include_router(nba_pra_player_context_router)
+app.include_router(nba_pra_injury_router)
+app.include_router(nba_pra_matchup_router)
 app.include_router(nfl_passing_yards_page_router)
 app.include_router(nfl_passing_yards_slate_router)
 app.include_router(nfl_rushing_yards_slate_router)
@@ -73,6 +92,13 @@ def health() -> dict[str, object]:
         "cfb_top_picks_page1_v3": True,
         "cfb_top_picks_page1_v4": True,
         "cfb_top_picks_page2_v1": True,
+        "nba_universal_gateway_v1": True,
+        "nba_pra_market_v1": True,
+        "nba_pra_schedule_v1": True,
+        "nba_pra_player_context_v1": True,
+        "nba_pra_injury_v1": True,
+        "nba_pra_matchup_v1": True,
+        "nba_runless_product_transport": False,
         "nfl_passing_yards_page": True,
         "nfl_passing_yards_slate": True,
         "nfl_rushing_yards_slate": True,

@@ -7,7 +7,7 @@ from typing import Any, Callable, Mapping
 
 import requests
 
-DEFAULT_API_BASE_URL = "https://kyre-runless-proof.vercel.app"
+DEFAULT_API_BASE_URL = "https://kyre-sports-api.vercel.app"
 
 
 def load_kyre_sports_api_nba_schedule(*, now_utc: datetime | None = None, request_post: Callable[..., Any] | None = None, base_url: str | None = None, timeout=(3.0, 20.0)) -> dict[str, Any]:
