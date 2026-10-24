@@ -303,6 +303,10 @@ def collect_nba_pra_market(slate_date: date) -> dict[str, Any]:
         {prior._norm(row.get("player_name")) for row in rows if row.get("player_name")}
     )
     ready = bool(rows)
+    local_states = {str(row.get("state") or "").strip().upper() for row in provider_health}
+    market_not_posted = not ready and any(state.endswith("_NO_PRA") for state in local_states)
+    diagnostic_state = "OK" if ready else ("MARKET_NOT_POSTED_YET" if market_not_posted else "NO_APPROVED_PROVIDER_CURRENTLY_OFFERS_PRA")
+    global_reason = "MARKET_AVAILABLE" if ready else ("UPCOMING_MARKET_NOT_POSTED_YET" if market_not_posted else "ALL_CURRENTLY_ELIGIBLE_APPROVED_ROUTES_EXHAUSTED")
     return {
         "service": "Kyre Sports API — Vercel",
         "schema_version": "nba_pra_market_v2_provider_independence",
@@ -311,8 +315,8 @@ def collect_nba_pra_market(slate_date: date) -> dict[str, Any]:
         "date": slate_date.isoformat(),
         "ready": ready,
         "verification": "VERIFIED" if ready else "UNAVAILABLE",
-        "diagnostic_state": "OK" if ready else "NO_APPROVED_PROVIDER_CURRENTLY_OFFERS_PRA",
-        "global_market_state_reason": "MARKET_AVAILABLE" if ready else "ALL_CURRENTLY_ELIGIBLE_APPROVED_ROUTES_EXHAUSTED",
+        "diagnostic_state": diagnostic_state,
+        "global_market_state_reason": global_reason,
         "player_count": player_count,
         "observation_count": len(rows),
         "observations": rows,
