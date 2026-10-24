@@ -12,6 +12,23 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 APPROVED_BOOKS = {"FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fanatics Sportsbook"}
 
 
+def _default_the_odds_api_key() -> str | None:
+    """Read only official The Odds API credentials from server-side config."""
+    for name in ("THE_ODDS_API_KEY", "KYRE_THE_ODDS_API_KEY"):
+        value = str(os.getenv(name) or "").strip()
+        if value:
+            return value
+    try:
+        import streamlit as st
+        for name in ("THE_ODDS_API_KEY", "KYRE_THE_ODDS_API_KEY"):
+            value = str(st.secrets.get(name) or "").strip()
+            if value:
+                return value
+    except Exception:
+        pass
+    return None
+
+
 def _empty(state: str) -> dict[str, Any]:
     return {
         "source": "Kyre Sports API — Vercel",
@@ -52,17 +69,19 @@ def load_kyre_sports_api_pra_observations(
 ) -> dict[str, Any]:
     """Load NBA PRA only through Kyre Sports API.
 
-    ``api_key`` remains only for compatibility with older callers. It is ignored
-    and never transmitted. Provider routing, fallbacks, provider-local health,
-    and semantic global market state remain server-side Kyre Sports API duties.
+    Provider credentials stay server-side and are forwarded only to Kyre Sports
+    API in a request header; the browser never receives them. Kyre Sports API
+    remains the sole application-facing gateway and owns provider fallback.
     """
-    del api_key
+    provider_key = str(api_key or _default_the_odds_api_key() or "").strip()
     request_post = request_post or requests.post
     base_url = str(base_url or os.getenv("KYRE_NBA_API_BASE_URL") or DEFAULT_API_BASE_URL).rstrip("/")
     try:
+        headers = {"X-Kyre-The-Odds-Api-Key": provider_key} if provider_key else {}
         response = request_post(
             f"{base_url}/api/v1/nba/pra/market",
             json={"date": slate_date.isoformat()},
+            headers=headers,
             timeout=timeout,
         )
         response.raise_for_status()
