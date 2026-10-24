@@ -21,6 +21,7 @@ from nba_pra_page1_ui_provider_independence_v1 import (
 MODEL_VERSION = "NBA PRA PAGE 1/3 • PROVIDER INDEPENDENCE V1"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 SOURCE_DIAGNOSTICS_MARKER = "NBA_PRA_SOURCE_DIAGNOSTICS_V2_PROVIDER_LOCAL"
+MARKET_RECHECK_INTERVAL_MS = 60_000
 
 
 def source_diagnostic_summary(snapshot: Mapping[str, Any]) -> dict[str, Any]:
@@ -34,6 +35,14 @@ def source_diagnostic_summary(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         "provider_health": list(payload.get("provider_health") or []),
         "recent_participant_state": str(payload.get("recent_participant_state") or ""),
     }
+
+
+def should_auto_refresh_market(snapshot: Mapping[str, Any]) -> bool:
+    if snapshot.get("market"):
+        return False
+    sources = dict(snapshot.get("sources") or {})
+    payload = dict(sources.get("kyre_sports_api") or {})
+    return str(payload.get("diagnostic_state") or "").strip().upper() == "MARKET_NOT_POSTED_YET"
 
 
 def _norm(value: Any) -> str:
@@ -141,6 +150,18 @@ def render_nba_pra_page1_v2() -> None:
     with st.spinner("Loading verified NBA PRA intelligence…"):
         snapshot = load_page1_snapshot_v2(now=now)
 
+    if should_auto_refresh_market(snapshot):
+        try:
+            from streamlit_autorefresh import st_autorefresh
+        except Exception:
+            st_autorefresh = None
+        if st_autorefresh is not None:
+            st_autorefresh(
+                interval=MARKET_RECHECK_INTERVAL_MS,
+                limit=None,
+                key="nba-pra-market-posting-state-r1",
+            )
+
     games = list(snapshot.get("games") or [])
     if not games:
         st.info("No upcoming NBA games are currently eligible. Live, completed, canceled, postponed, and ambiguous games are intentionally hidden.")
@@ -194,4 +215,4 @@ def render_nba_pra_page1_v2() -> None:
     render_market_player_cards(st, market_rows, now_utc=now)
 
 
-__all__ = ["build_items", "render_nba_pra_page1_v2", "source_diagnostic_summary"]
+__all__ = ["build_items", "render_nba_pra_page1_v2", "should_auto_refresh_market", "source_diagnostic_summary"]
