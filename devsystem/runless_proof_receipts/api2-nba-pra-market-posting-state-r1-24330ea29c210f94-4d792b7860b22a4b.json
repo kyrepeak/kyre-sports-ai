@@ -1,0 +1,48 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-market-posting-state-r1.json": "779129ccbbfe894a52c738afdf541df0f3e7d4c6",
+    "devsystem/task_ledgers/api2-nba-pra-market-posting-state-r1.json": "54c36af93ad3c6d9e555db99684c218517d5149c",
+    "nba_pra_page1_provider_independence_v1.py": "53e1aaaa880a3cf757a0e5b35894902fbda416c0",
+    "sports_api/api/nba_pra_market_provider_independence_v1.py": "0dbc7d3759d62cc62dc55e13121d3d95758dec36",
+    "tests/test_api2_nba_pra_market_posting_state_r1.py": "4d91e941038a7a18c0b9421a4cc25d609c093ce9"
+  },
+  "candidate_sha": "24330ea29c210f94ce781db771e83d97143c3d63",
+  "created_at": "2026-10-24T04:46:17.825884+00:00",
+  "dependency_map": {
+    "nba_pra_page1_ui_provider_independence_v1.py": "35af62f564f8ed94f023b72f2a49c0aa28fe1e5f",
+    "requirements.txt": "d6d8b2c30f1ccbac5d65047b389cf392b19d71e6",
+    "sports_api/api/nba_pra_market_v1.py": "67cebaf05b092a84fd8d19824e70e7a3fc9089f1"
+  },
+  "digest": "8173cc5984c9163fbee2b782eeccd4ea1a5a0de231b69b26be9ceb6a1d2c4d12",
+  "evidence_digests": [
+    "2379caca01c5e2ee9dca0f6370a1db71164b09bfdf0d98b8338ca27cccb748c4",
+    "10c50ca3760d4c0ff254a9558bf3433433a46d4efb775bf1b4b76a7c87330069"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c252f38acf4a8e78fc718a02ed40e9c7c74dcba1b44fb1f15b09a01ce49dafcc",
+  "proof_id": "api2-nba-pra-market-posting-state-r1-24330ea29c210f94-4d792b7860b22a4b",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "request_fingerprint": "8cebc69d5bbeb29a66aaf6847f8fbfeabbaf59843626c90edecb14662bdf14d3",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-market-posting-state-r1",
+  "workstream": "api2-nba-pra-market-posting-state-r1"
+}
