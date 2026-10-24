@@ -304,7 +304,12 @@ def collect_nba_pra_market(slate_date: date) -> dict[str, Any]:
     )
     ready = bool(rows)
     local_states = {str(row.get("state") or "").strip().upper() for row in provider_health}
-    market_not_posted = not ready and any(state.endswith("_NO_PRA") for state in local_states)
+    all_reached_routes_confirm_no_pra = bool(local_states) and all(state.endswith("_NO_PRA") for state in local_states)
+    market_not_posted = (
+        not ready
+        and any(state.endswith("_NO_PRA") for state in local_states)
+        and not all_reached_routes_confirm_no_pra
+    )
     diagnostic_state = "OK" if ready else ("MARKET_NOT_POSTED_YET" if market_not_posted else "NO_APPROVED_PROVIDER_CURRENTLY_OFFERS_PRA")
     global_reason = "MARKET_AVAILABLE" if ready else ("UPCOMING_MARKET_NOT_POSTED_YET" if market_not_posted else "ALL_CURRENTLY_ELIGIBLE_APPROVED_ROUTES_EXHAUSTED")
     return {
