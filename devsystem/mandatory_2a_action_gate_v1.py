@@ -5,6 +5,8 @@ Fail-closed front door for MONSTER control-plane actions.
 Every covered action must be authorized here before execution:
 - while one authoritative async run is live, Step 2A / Automatic Loop Kill owns
   the decision and duplicate observations are autonomously skipped;
+- active implementation-producing mutations must first pass Step 2B reliability
+  preflight before Step 2A can authorize execution;
 - outside live async work, a matching Forward Motion V2 authorization receipt
   is required;
 - unknown actions, missing authorization, mismatched receipts, and stale async
@@ -34,6 +36,10 @@ from devsystem.automatic_loop_kill_v1 import (
     fingerprint_control_cycle,
 )
 from devsystem.forward_motion_v2 import fingerprint_action
+from devsystem.mandatory_2b_reliability_gate_v1 import (
+    IMPLEMENTATION_ACTION_TYPES,
+    authorize_implementation,
+)
 from devsystem.persistent_execution_brain_v1 import (
     BrainStateInput,
     build_state,
@@ -207,6 +213,23 @@ def authorize_action(
             next_legal_action=brain["next_legal_action"],
         )
 
+    reliability_result = None
+    if action_type in IMPLEMENTATION_ACTION_TYPES:
+        reliability_result = authorize_implementation(proposed)
+        if reliability_result.get("allowed") is not True:
+            return _base_result(
+                "TWO_A_TWO_B_BLOCKED",
+                str(reliability_result.get("reason") or "Step 2B reliability gate denied implementation"),
+                allowed=False,
+                action_type=action_type,
+                authorization_source="mandatory_2b_reliability_gate_v1",
+                two_b_enforced=True,
+                reliability_decision=reliability_result.get("decision"),
+                implementation_attempt=reliability_result.get("implementation_attempt"),
+                anti_loop_handoff=reliability_result.get("anti_loop_handoff", False),
+                next_legal_action=reliability_result.get("next_legal_action"),
+            )
+
     ok, reason, receipt_hash = _validate_forward_authorization(
         proposed,
         forward_decision,
@@ -218,6 +241,9 @@ def authorize_action(
             allowed=False,
             action_type=action_type,
             authorization_source="forward_motion_v2",
+            two_b_enforced=bool(reliability_result),
+            reliability_decision=(reliability_result or {}).get("decision"),
+            reliability_receipt_hash=(reliability_result or {}).get("reliability_receipt_hash"),
             next_legal_action=brain["next_legal_action"],
         )
 
@@ -228,6 +254,10 @@ def authorize_action(
         action_type=action_type,
         authorization_source="forward_motion_v2",
         forward_receipt_hash=receipt_hash,
+        two_b_enforced=bool(reliability_result),
+        reliability_decision=(reliability_result or {}).get("decision"),
+        reliability_receipt_hash=(reliability_result or {}).get("reliability_receipt_hash"),
+        implementation_attempt=(reliability_result or {}).get("implementation_attempt"),
         next_legal_action=brain["next_legal_action"],
     )
 
@@ -301,6 +331,28 @@ def _forward_decision(action: Mapping[str, Any]) -> dict[str, Any]:
     return {"decision": "AUTHORIZED", "receipt": receipt}
 
 
+def _reliability_preflight() -> dict[str, Any]:
+    return {
+        "finished_state": "self-test implementation succeeds",
+        "current_state_inspected": True,
+        "root_cause_proven": True,
+        "authoritative_path": {
+            "repository": "owner/repo",
+            "branch": "mandatory-2a-gate",
+            "target": "github:mutation",
+            "proof_path": "production",
+        },
+        "acceptance_criteria": [{
+            "id": "self-test",
+            "requirement": "Step 2B authorizes exact patch",
+            "source": "control-plane",
+            "verification": "contract_self_test",
+            "expected_result": "authorized",
+        }],
+        "dependency_checks": [],
+    }
+
+
 def contract_self_test() -> dict[str, Any]:
     active = _active_brain()
     mutation = {
@@ -336,6 +388,25 @@ def contract_self_test() -> dict[str, Any]:
     }
     patch_blocked = authorize_action(waiting, patch, [])
 
+    active_patch = dict(patch)
+    missing_two_b = authorize_action(
+        active,
+        active_patch,
+        [],
+        forward_decision=_forward_decision(active_patch),
+    )
+    reliable_patch = {
+        **active_patch,
+        "reliability_preflight": _reliability_preflight(),
+        "implementation_attempt_history": [],
+    }
+    reliable_allowed = authorize_action(
+        active,
+        reliable_patch,
+        [],
+        forward_decision=_forward_decision(reliable_patch),
+    )
+
     observe = {
         "task_id": "self-test",
         "checkpoint_id": "1",
@@ -367,6 +438,15 @@ def contract_self_test() -> dict[str, Any]:
         "matching_forward_receipt_authorizes": allowed["allowed"] is True,
         "receipt_action_mismatch_blocked": mismatch["allowed"] is False,
         "live_async_mutation_blocked": patch_blocked["source_decision"] == "ASYNC_LOCKED",
+        "step2b_missing_preflight_blocked": (
+            missing_two_b["decision"] == "TWO_A_TWO_B_BLOCKED"
+            and missing_two_b["reliability_decision"] == "TWO_B_PREFLIGHT_REQUIRED"
+        ),
+        "step2b_reliable_patch_authorized": (
+            reliable_allowed["allowed"] is True
+            and reliable_allowed["two_b_enforced"] is True
+            and reliable_allowed["reliability_decision"] == "TWO_B_ATTEMPT_1_AUTHORIZED"
+        ),
         "first_async_observation_authorized": first_observe["allowed"] is True,
         "duplicate_poll_autonomously_skipped": (
             duplicate["source_decision"] == "LOOP_SKIPPED_CONTINUE"
@@ -384,6 +464,8 @@ def contract_self_test() -> dict[str, Any]:
         "matching_forward_receipt_authorizes",
         "receipt_action_mismatch_blocked",
         "live_async_mutation_blocked",
+        "step2b_missing_preflight_blocked",
+        "step2b_reliable_patch_authorized",
         "first_async_observation_authorized",
         "duplicate_poll_autonomously_skipped",
         "unknown_action_fails_closed",
