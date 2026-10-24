@@ -1,0 +1,42 @@
+{
+  "project": "API2",
+  "workstream": "api2-nba-pra-real-market-restore-r3",
+  "step": "2A/1",
+  "source_main_sha": "51db732c47585a1625e8b840ae59b289ab19829a",
+  "authoritative_branch": "api2-nba-pra-real-market-restore-r3",
+  "scope_lease_id": "SCOPE-LEASE-8BF8F8BDA1768548752B8857",
+  "goal": "Certify and freeze the already-merged NBA PRA real-market restore only after the actual Page 1 runtime proves Kyre Sports API-only routing and real sportsbook line/price delivery.",
+  "write_paths": [
+    "devsystem/execution_plans/api2-nba-pra-real-market-restore-r3.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-real-market-restore-r3.json",
+    "devsystem/task_ledgers/api2-nba-pra-real-market-restore-r3.json",
+    "tests/test_api2_nba_pra_api_only_market_routing_r3.py"
+  ],
+  "ruling": "No product mutation is justified in R3 because the active Streamlit Page 1 runtime already routes through the API-only successor chain; the legacy nba_pra_page1_data_v2 module is not on the rendered runtime path.",
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "line_averaging": false,
+    "sportsbook_projection_influence": 0.0,
+    "fabrication": false
+  },
+  "verification": {
+    "r3_certification": "2/2",
+    "legacy_regression": "44/44",
+    "total": "46/46",
+    "compile_green": true,
+    "diff_check_green": true,
+    "live_page1": {
+      "slate_date": "2026-10-24",
+      "game_count": 8,
+      "market_players": 17,
+      "profile_count": 17,
+      "observation_count": 34,
+      "verification": "VERIFIED",
+      "diagnostic_state": "OK",
+      "sportsbook_projection_influence": 0.0,
+      "fabrication": false
+    }
+  },
+  "freeze_token": "API2_NBA_PRA_REAL_MARKET_RESTORE_R3_FROZEN"
+}
