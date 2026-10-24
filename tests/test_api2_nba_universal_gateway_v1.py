@@ -26,9 +26,21 @@ ACTIVE_NBA_ROUTE_FILES = (
 )
 
 
+def _source(relative: str) -> str:
+    path = ROOT / relative
+    assert path.exists(), f"required NBA gateway file is not implemented yet: {relative}"
+    return path.read_text()
+
+
+def _market_module():
+    path = ROOT / "sports_api/api/nba_pra_market_v1.py"
+    assert path.exists(), "NBA PRA market router has not been migrated to Kyre Sports API yet"
+    return importlib.import_module("sports_api.api.nba_pra_market_v1")
+
+
 def test_all_nba_application_clients_default_to_kyre_sports_api_not_runless():
     for relative in CLIENTS:
-        source = (ROOT / relative).read_text()
+        source = _source(relative)
         assert f'DEFAULT_API_BASE_URL = "{KYRE_HOST}"' in source, relative
         assert RUNLESS_HOST not in source, relative
         assert "KYRE_NBA_API_BASE_URL" in source, relative
@@ -123,7 +135,7 @@ def _fanduel_document(market_name: str, *, market_type: str = "PLAYER_COMBO"):
 
 
 def test_fanduel_pra_parser_normalizes_singular_plural_and_full_market_names():
-    market = importlib.import_module("sports_api.api.nba_pra_market_v1")
+    market = _market_module()
     variants = (
         "LeBron James - Pts + Reb + Ast",
         "LeBron James - Pts + Rebs + Asts",
@@ -141,7 +153,7 @@ def test_fanduel_pra_parser_normalizes_singular_plural_and_full_market_names():
 
 
 def test_fanduel_pra_parser_keeps_alternative_lines_out_of_standard_market():
-    market = importlib.import_module("sports_api.api.nba_pra_market_v1")
+    market = _market_module()
     rows = market._parse_fanduel_pra_page(
         _fanduel_document(
             "LeBron James - Points + Rebounds + Assists",
@@ -155,7 +167,7 @@ def test_fanduel_pra_parser_keeps_alternative_lines_out_of_standard_market():
 def test_active_kyre_nba_routes_do_not_embed_banned_sources_or_runless_transport():
     banned = ("SportsGameOdds", "sportsgameodds", "ESPN BET", "ESPN.com", "espn.com")
     for relative in ACTIVE_NBA_ROUTE_FILES:
-        source = (ROOT / relative).read_text()
+        source = _source(relative)
         assert "runless_v2" not in source, relative
         for token in banned:
             assert token not in source, f"{token!r} leaked into {relative}"
