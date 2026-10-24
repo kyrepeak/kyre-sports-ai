@@ -1,0 +1,57 @@
+{
+  "artifact_map": {
+    ".github/workflows/monster-step2b-reliability-gate-v1.yml": "6d79c948dff160647b4acb2d33051581d63700a7",
+    "devsystem/mandatory_2a_action_gate_v1.py": "bfc8357af14dca3d66741f757ba565fafdf38e18",
+    "devsystem/mandatory_2b_reliability_gate_v1.py": "524b269c4a2645577acf1fd296be16ad9101e783",
+    "devsystem/runless_proof_plans/monster-step2b-reliability-gate-v1-pr1785.json": "c2fa531f50b722127a5d3e27226d4a99a5468692",
+    "docs/superpowers/plans/2026-10-24-monster-step2b-first-second-pass-reliability-gate-v1.md": "0da3cf8a4c9cac1bec85e96c6c55eac2a36db835",
+    "docs/superpowers/specs/2026-10-24-monster-step2b-first-second-pass-reliability-gate-v1-design.md": "58a97462a1eefae2f047932f5e6fbd4d59513abd",
+    "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py": "59caed738772bdf09287e97f8321b0f242228ac5",
+    "tests/test_devsystem_step2b_step2a_integration_v1.py": "b427f7d9f024861d3da763c00af11d9c60ccd7bc"
+  },
+  "candidate_sha": "608a8f01be792bd65f9ebaf881b6e1d7a88f3122",
+  "created_at": "2026-10-24T23:58:36.340721+00:00",
+  "dependency_map": {
+    "devsystem/automatic_loop_kill_v1.py": "2b38ea7a4c498001743704055ef47d681b8a4359",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "tests/test_devsystem_automatic_loop_kill_v1.py": "6095013f260c4c329b043e61dba50067d7e85681",
+    "tests/test_devsystem_mandatory_2a_action_gate_v1.py": "c6f50716c48fb94edcefc1fc96c0659198ea033e"
+  },
+  "digest": "93f9dd0bb3351459080f182cbc80acd32bea0d36be906b8c1d8f4b09e72c867e",
+  "evidence_digests": [
+    "a884109e180e2045130338a4a2f61302b3df12ae7b9821df0c0cf93aa05753f0",
+    "ee745783b257e0981fd31cee4522d427b497ac35ae717c25376ef7eefe576f60",
+    "798b42c7a3206ec060764956e72f39fe61b060ac01f494c1a5421d70c6cd2787",
+    "d37522dc15c2a41971ade0205186619d53b113589c903e42dfe16d632ea78897"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "1254e5db55c290cd72f961c836f97e61769e678e036b4de680b9f1cab151e052",
+  "proof_id": "monster-step2b-reliability-gate-v1-pr1785-608a8f01be792bd6-e746978e27291211",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-2B-PR1785-CFCE522A"
+    ],
+    "revision": 513,
+    "state_hash": "6971319880a1de2e9290e5a0d82fa925f4628908193ab33b5c4e3b44f35781fa"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1",
+      "THAW-MONSTER-2B-PR1785-CFCE522A"
+    ],
+    "revision": 513,
+    "state_hash": "6971319880a1de2e9290e5a0d82fa925f4628908193ab33b5c4e3b44f35781fa"
+  },
+  "request_fingerprint": "882c2c163b29c1436c3534734019be17b7425fe8480e9a23bfeb1d0cd1ab2e9c",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-step2b-reliability-gate-v1-pr1785",
+  "workstream": "monster-step2b-reliability-gate-v1"
+}
