@@ -8,7 +8,7 @@ from typing import Any, MutableMapping, Mapping
 from nba_pra_page1_ui_v2 import SESSION_PLAYER
 from nba_pra_page2_line_lab_v1 import _score as _line_lab_score
 
-MODEL_VERSION = "NBA PRA RUNTIME V4 • LIVE ACCEPTANCE REPAIR"
+MODEL_VERSION = "NBA PRA RUNTIME V5 • PROVIDER INDEPENDENCE"
 SESSION_SELECTED_QUOTE = "ks_nba_pra_page2_selected_quote"
 SESSION_LINE_LAB = "ks_nba_pra_page2_line_lab"
 SESSION_PAGE2_TAB = "ks_nba_pra_page2_tab"
@@ -96,7 +96,7 @@ def render_nba_pra_runtime_v2() -> None:
 
     player_key = selected_player_key(st.session_state)
     if player_key is None:
-        from nba_pra_page1_v2 import render_nba_pra_page1_v2
+        from nba_pra_page1_provider_independence_v1 import render_nba_pra_page1_v2
         render_nba_pra_page1_v2()
         return
 

@@ -1,4 +1,4 @@
-"""Server-side Streamlit client for the Vercel Kyre NBA PRA transport."""
+"""Server-side Streamlit client for the Kyre Sports API NBA PRA transport."""
 from __future__ import annotations
 
 from datetime import date
@@ -15,11 +15,30 @@ APPROVED_BOOKS = {"FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fanat
 def _empty(state: str) -> dict[str, Any]:
     return {
         "source": "Kyre Sports API — Vercel",
+        "ready": False,
         "verification": "UNAVAILABLE",
         "diagnostic_state": state,
         "observations": [],
+        "provider_health": [],
+        "provider_route_audit": [],
+        "recent_participant_profiles": {},
+        "recent_participant_state": "UNAVAILABLE",
         "fabrication": False,
         "sportsbook_projection_influence": 0.0,
+    }
+
+
+def _mapping_rows(value: Any) -> list[dict[str, Any]]:
+    return [dict(row) for row in (value or []) if isinstance(row, Mapping)]
+
+
+def _profile_map(value: Any) -> dict[str, dict[str, Any]]:
+    if not isinstance(value, Mapping):
+        return {}
+    return {
+        str(key): dict(row)
+        for key, row in value.items()
+        if isinstance(row, Mapping)
     }
 
 
@@ -31,11 +50,11 @@ def load_kyre_sports_api_pra_observations(
     base_url: str | None = None,
     timeout: tuple[float, float] = (3.0, 22.0),
 ) -> dict[str, Any]:
-    """Load NBA PRA markets only through Kyre Sports API.
+    """Load NBA PRA only through Kyre Sports API.
 
-    ``api_key`` remains in the signature for compatibility with older callers,
-    but it is intentionally ignored and is never transmitted. Page 1 owns no
-    provider credential and never calls a provider directly.
+    ``api_key`` remains only for compatibility with older callers. It is ignored
+    and never transmitted. Provider routing, fallbacks, provider-local health,
+    and semantic global market state remain server-side Kyre Sports API duties.
     """
     del api_key
     request_post = request_post or requests.post
@@ -56,7 +75,8 @@ def load_kyre_sports_api_pra_observations(
         or payload.get("consensus_averaging") is not False
     ):
         return _empty("KYRE_VERCEL_CONTRACT_INVALID")
-    rows = []
+
+    rows: list[dict[str, Any]] = []
     for raw in payload.get("observations") or []:
         if not isinstance(raw, Mapping):
             continue
@@ -71,11 +91,20 @@ def load_kyre_sports_api_pra_observations(
         row = dict(raw)
         row["line"] = line
         rows.append(row)
+
     return {
         "source": "Kyre Sports API — Vercel",
+        "ready": bool(rows),
         "verification": "VERIFIED" if rows else "UNAVAILABLE",
         "diagnostic_state": "OK" if rows else str(payload.get("diagnostic_state") or "KYRE_VERCEL_NO_PRA"),
+        "global_market_state_reason": str(payload.get("global_market_state_reason") or ""),
+        "player_count": int(payload.get("player_count") or 0),
+        "observation_count": len(rows),
         "observations": rows,
+        "provider_health": _mapping_rows(payload.get("provider_health")),
+        "provider_route_audit": _mapping_rows(payload.get("provider_route_audit")),
+        "recent_participant_profiles": _profile_map(payload.get("recent_participant_profiles")),
+        "recent_participant_state": str(payload.get("recent_participant_state") or ""),
         "fabrication": False,
         "sportsbook_projection_influence": 0.0,
     }

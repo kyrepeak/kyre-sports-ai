@@ -25,7 +25,7 @@ import sports_api.api.cfb_top_picks_page1_v3 as cfb_top_picks_page1_v3_module
 import sports_api.api.cfb_top_picks_page1_v4 as cfb_top_picks_page1_v4_module
 import sports_api.api.cfb_top_picks_page2_v1 as cfb_top_picks_page2_module
 import sports_api.api.nba_gateway_v1 as nba_gateway_module
-import sports_api.api.nba_pra_market_v1 as nba_pra_market_module
+import sports_api.api.nba_pra_market_provider_independence_v1 as nba_pra_market_module
 import sports_api.api.nba_pra_schedule_v1 as nba_pra_schedule_module
 import sports_api.api.nba_pra_player_context_v1 as nba_pra_player_context_module
 import sports_api.api.nba_pra_injury_v1 as nba_pra_injury_module
@@ -58,7 +58,7 @@ nfl_rushing_yards_detail_router = nfl_rushing_yards_detail_module.router
 
 app = FastAPI(
     title="Kyre Sports API",
-    version="KYRE_GATEWAY_V9",
+    version="KYRE_GATEWAY_V10",
     description="Kyre Sports AI application-facing sports data gateway.",
 )
 app.include_router(cfb_moneyline_router)
@@ -93,7 +93,7 @@ def health() -> dict[str, object]:
         "cfb_top_picks_page1_v4": True,
         "cfb_top_picks_page2_v1": True,
         "nba_universal_gateway_v1": True,
-        "nba_pra_market_v1": True,
+        "nba_pra_market_provider_independence_v1": True,
         "nba_pra_schedule_v1": True,
         "nba_pra_player_context_v1": True,
         "nba_pra_injury_v1": True,

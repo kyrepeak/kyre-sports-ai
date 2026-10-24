@@ -5,6 +5,8 @@ import types
 
 import nba_pra_page1_ui_v2 as page1_ui
 
+PAGE1_MODULE = "nba_pra_page1_provider_independence_v1"
+
 
 def _load_runtime():
     import importlib
@@ -26,7 +28,7 @@ def test_no_selection_renders_page1_only(monkeypatch):
     fake_p1 = types.SimpleNamespace(render_nba_pra_page1_v2=lambda: calls.append("page1"))
     fake_sync = types.SimpleNamespace(render_nba_pra_page2_sync_v1=lambda: calls.append("page2"))
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
-    monkeypatch.setitem(sys.modules, "nba_pra_page1_v2", fake_p1)
+    monkeypatch.setitem(sys.modules, PAGE1_MODULE, fake_p1)
     monkeypatch.setitem(sys.modules, "nba_pra_page2_sync_v1", fake_sync)
     runtime = _load_runtime()
     runtime.render_nba_pra_runtime_v2()
@@ -39,7 +41,7 @@ def test_valid_selection_renders_synced_page2_only(monkeypatch):
     fake_p1 = types.SimpleNamespace(render_nba_pra_page1_v2=lambda: calls.append("page1"))
     fake_sync = types.SimpleNamespace(render_nba_pra_page2_sync_v1=lambda: calls.append("page2"))
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
-    monkeypatch.setitem(sys.modules, "nba_pra_page1_v2", fake_p1)
+    monkeypatch.setitem(sys.modules, PAGE1_MODULE, fake_p1)
     monkeypatch.setitem(sys.modules, "nba_pra_page2_sync_v1", fake_sync)
     runtime = _load_runtime()
     runtime.render_nba_pra_runtime_v2()
@@ -61,7 +63,7 @@ def test_loading_phase_hands_page2_full_fetch_overlay_without_page1_or_rerun(mon
 
     fake_sync = types.SimpleNamespace(render_nba_pra_page2_sync_v1=render_page2)
     monkeypatch.setitem(sys.modules, "streamlit", fake_st)
-    monkeypatch.setitem(sys.modules, "nba_pra_page1_v2", fake_p1)
+    monkeypatch.setitem(sys.modules, PAGE1_MODULE, fake_p1)
     monkeypatch.setitem(sys.modules, "nba_pra_page2_sync_v1", fake_sync)
     runtime = _load_runtime()
     runtime.render_nba_pra_runtime_v2()
@@ -109,7 +111,7 @@ def test_page2_state_clear_includes_selected_quote():
 
 def test_page1_click_source_uses_atomic_exact_analysis_handoff():
     from pathlib import Path
-    text = Path('nba_pra_page1_v2.py').read_text()
+    text = Path(PAGE1_MODULE + '.py').read_text()
     runtime = Path('nba_pra_runtime_v2.py').read_text()
     assert 'select_player_for_analysis' in text
     assert 'featured_quote' in runtime
