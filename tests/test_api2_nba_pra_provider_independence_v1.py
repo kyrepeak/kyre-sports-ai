@@ -133,7 +133,9 @@ def test_zero_market_does_not_zero_player_model_layer():
     assert items[0]["market_state"] == "NO_APPROVED_PROVIDER_CURRENTLY_OFFERS_PRA"
     assert items[0]["featured_quote"]["line"] is None
     assert items[0]["model"]["projection"] == 26.0
+    assert items[0]["grade"]["edge"] is None
     assert items[0]["grade"]["over_probability"] is None
-    assert items[0]["grade"]["under_probability"] is None
+    assert items[0]["grade"]["lean"] == "PASS"
+    assert items[0]["grade"]["confidence"] == "UNAVAILABLE"
     assert kpis["players_tracked"] == 1
     assert kpis["markets_verified"] == 0
