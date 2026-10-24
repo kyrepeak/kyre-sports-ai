@@ -16,8 +16,7 @@ CLIENTS = (
     "nba_pra_injury_api_v1.py",
     "nba_pra_page2_matchup_api_v1.py",
 )
-ACTIVE_NBA_ROUTE_FILES = (
-    "sports_api/api/nba_gateway_v1.py",
+PRODUCT_NBA_ROUTE_FILES = (
     "sports_api/api/nba_pra_market_v1.py",
     "sports_api/api/nba_pra_schedule_v1.py",
     "sports_api/api/nba_pra_player_context_v1.py",
@@ -164,13 +163,20 @@ def test_fanduel_pra_parser_keeps_alternative_lines_out_of_standard_market():
     assert rows == []
 
 
-def test_active_kyre_nba_routes_do_not_embed_banned_sources_or_runless_transport():
+def test_active_kyre_nba_product_routes_do_not_embed_banned_provider_dependencies_or_runless_transport():
     banned = ("SportsGameOdds", "sportsgameodds", "ESPN BET", "ESPN.com", "espn.com")
-    for relative in ACTIVE_NBA_ROUTE_FILES:
+    for relative in PRODUCT_NBA_ROUTE_FILES:
         source = _source(relative)
         assert "runless_v2" not in source, relative
         for token in banned:
             assert token not in source, f"{token!r} leaked into {relative}"
+
+
+def test_nba_gateway_manifest_is_policy_only_and_has_no_runless_transport_import():
+    source = _source("sports_api/api/nba_gateway_v1.py")
+    assert "runless_v2" not in source
+    assert "httpx" not in source
+    assert "requests" not in source
 
 
 def test_existing_non_nba_gateway_routes_remain_registered():
