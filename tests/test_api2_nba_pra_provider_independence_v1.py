@@ -23,14 +23,25 @@ def _dk_rows():
     ]
 
 
+def _participant_pool():
+    return {
+        "bamadebayo": {
+            "player_name": "Bam Adebayo",
+            "team": "MIA",
+            "position": "C",
+            "headshot": "",
+            "provider_ids": {},
+            "current_games": [],
+            "prior_games": [],
+            "season_baseline": {"games": 1, "points": 15.0, "rebounds": 7.0, "assists": 4.0, "pra": 26.0},
+            "stats_source": "Basketball-Reference current-season per-game index",
+        }
+    }
+
+
 def test_fanduel_no_pra_does_not_gate_global_pra_market(monkeypatch):
     monkeypatch.setattr(api, "_fetch_fanduel_pra_observations", lambda _day: ([], "FANDUEL_NO_PRA"))
-    monkeypatch.setattr(
-        api,
-        "_fetch_draftkings_pra_observations",
-        lambda _day: (_dk_rows(), "DRAFTKINGS_OK"),
-        raising=False,
-    )
+    monkeypatch.setattr(api, "_fetch_draftkings_pra_observations", lambda _day: (_dk_rows(), "DRAFTKINGS_OK"))
 
     payload = api.collect_nba_pra_market(date(2026, 10, 24))
 
@@ -47,12 +58,8 @@ def test_fanduel_no_pra_does_not_gate_global_pra_market(monkeypatch):
 
 def test_global_unavailable_requires_all_approved_configured_routes_to_miss(monkeypatch):
     monkeypatch.setattr(api, "_fetch_fanduel_pra_observations", lambda _day: ([], "FANDUEL_NO_PRA"))
-    monkeypatch.setattr(
-        api,
-        "_fetch_draftkings_pra_observations",
-        lambda _day: ([], "DRAFTKINGS_NO_PRA"),
-        raising=False,
-    )
+    monkeypatch.setattr(api, "_fetch_draftkings_pra_observations", lambda _day: ([], "DRAFTKINGS_NO_PRA"))
+    monkeypatch.setattr(api, "_reference_recent_participant_profiles", lambda _day: ({}, "NO_RECENT_PARTICIPANTS"))
 
     payload = api.collect_nba_pra_market(date(2026, 10, 24))
 
@@ -63,45 +70,23 @@ def test_global_unavailable_requires_all_approved_configured_routes_to_miss(monk
     assert health == {"FanDuel": "FANDUEL_NO_PRA", "DraftKings": "DRAFTKINGS_NO_PRA"}
 
 
-def test_player_context_accepts_team_only_request_and_returns_recent_participant_pool(monkeypatch):
-    from runless_v2 import nba_pra_player_context_v1 as context
+def test_global_market_miss_keeps_recent_participant_pool(monkeypatch):
+    monkeypatch.setattr(api, "_fetch_fanduel_pra_observations", lambda _day: ([], "FANDUEL_NO_PRA"))
+    monkeypatch.setattr(api, "_fetch_draftkings_pra_observations", lambda _day: ([], "DRAFTKINGS_ACCESS_FAILURE"))
+    monkeypatch.setattr(api, "_reference_recent_participant_profiles", lambda _day: (_participant_pool(), "RECENT_PARTICIPANTS_1"))
 
-    pool = {
-        "bamadebayo": {
-            "player_name": "Bam Adebayo",
-            "team": "MIA",
-            "position": "C",
-            "headshot": "",
-            "provider_ids": {},
-            "current_games": [],
-            "prior_games": [],
-            "season_baseline": {"games": 1, "points": 15.0, "rebounds": 7.0, "assists": 4.0, "pra": 26.0},
-            "stats_source": "Basketball-Reference current-season per-game index",
-        }
-    }
-    monkeypatch.setattr(
-        context,
-        "_reference_team_player_pool",
-        lambda _day, codes: {
-            "status": "HEALTHY",
-            "diagnostic_state": "RECENT_PARTICIPANTS_1",
-            "profiles": pool if "MIA" in codes else {},
-        },
-        raising=False,
-    )
+    payload = api.collect_nba_pra_market(date(2026, 10, 24))
 
-    payload = context.collect_nba_pra_player_context(date(2026, 10, 24), [], team_codes=["MIA", "CHA"])
-
-    assert payload["verification"] in {"VERIFIED", "PARTIAL"}
-    assert payload["requested_players"] == 0
-    assert payload["identified_players"] == 1
-    assert payload["profiles"]["bamadebayo"]["season_baseline"]["pra"] == 26.0
-    assert payload["provider_health"]["basketball_reference_team_pool"]["status"] == "HEALTHY"
+    assert payload["ready"] is False
+    assert payload["recent_participant_state"] == "RECENT_PARTICIPANTS_1"
+    assert payload["recent_participant_profiles"]["bamadebayo"]["season_baseline"]["pra"] == 26.0
+    assert payload["observations"] == []
 
 
 def test_zero_market_does_not_zero_player_model_layer():
-    from nba_pra_page1_api_only_v1 import load_page1_snapshot_v2
-    from nba_pra_page1_v2 import build_items
+    from nba_pra_page1_api_only_provider_independence_v1 import load_page1_snapshot_v2
+    from nba_pra_page1_provider_independence_v1 import build_items
+    from nba_pra_page1_ui_provider_independence_v1 import dashboard_kpis
 
     schedule = {
         "verification": "VERIFIED",
@@ -126,42 +111,20 @@ def test_zero_market_does_not_zero_player_model_layer():
             {"provider": "FanDuel", "state": "FANDUEL_NO_PRA"},
             {"provider": "DraftKings", "state": "DRAFTKINGS_ACCESS_FAILURE"},
         ],
+        "recent_participant_profiles": _participant_pool(),
+        "recent_participant_state": "RECENT_PARTICIPANTS_1",
         "fabrication": False,
     }
-
-    def player_context(_day, names):
-        assert names == []
-        return {
-            "source": "Kyre Sports API — Vercel",
-            "verification": "PARTIAL",
-            "diagnostic_state": "RECENT_PARTICIPANT_POOL",
-            "profiles": {
-                "bamadebayo": {
-                    "player_name": "Bam Adebayo",
-                    "team": "MIA",
-                    "position": "C",
-                    "headshot": "",
-                    "current_games": [],
-                    "prior_games": [],
-                    "season_baseline": {"pra": 26.0},
-                    "stats_source": "Basketball-Reference current-season per-game index",
-                }
-            },
-            "provider_health": {},
-            "requested_players": 0,
-            "verified_players": 0,
-            "identified_players": 1,
-            "fabrication": False,
-        }
 
     snapshot = load_page1_snapshot_v2(
         now=datetime(2026, 10, 24, 1, 0, tzinfo=timezone.utc),
         schedule_loader=lambda **_: schedule,
         api_loader=lambda _day: market,
-        player_context_loader=player_context,
+        player_context_loader=lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("market miss must not require market-name context")),
         injury_loader=lambda *_args, **_kwargs: {"players": {}, "fabrication": False},
     )
     items = build_items(snapshot)
+    kpis = dashboard_kpis(items, now_utc=datetime(2026, 10, 24, 1, 0, tzinfo=timezone.utc))
 
     assert snapshot["market"] == {}
     assert "bamadebayo" in snapshot["profiles"]
@@ -172,3 +135,5 @@ def test_zero_market_does_not_zero_player_model_layer():
     assert items[0]["model"]["projection"] == 26.0
     assert items[0]["grade"]["over_probability"] is None
     assert items[0]["grade"]["under_probability"] is None
+    assert kpis["players_tracked"] == 1
+    assert kpis["markets_verified"] == 0
