@@ -123,6 +123,7 @@ def normalize_the_odds_api_pra_event(
                     "home_team": home_team,
                 })
 
+    # Fail closed unless one exact book/player/line has both sides.
     groups: dict[tuple[str, str, float], list[dict[str, Any]]] = {}
     for row in raw_rows:
         key = (row["sportsbook"], "".join(ch for ch in row["player_name"].casefold() if ch.isalnum()), row["line"])
