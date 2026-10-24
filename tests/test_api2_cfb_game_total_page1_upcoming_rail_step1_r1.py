@@ -92,20 +92,21 @@ def test_v4_horizontal_rail_contract_and_page1_selection():
     assert "_render_card(selected,1,selected_day)" in compact
 
 
-def test_bootstrap_activates_v4_without_page2_or_model_mutation():
+def test_v5_successor_preserves_v4_boundaries_without_page2_or_model_mutation():
     wrapper = (ROOT / "cfb_game_total_page1_api_bootstrap_repair_r1.py").read_text(encoding="utf-8")
-    assert "cfb_game_total_page1_atier_v4" in wrapper
-    assert "cfb_game_total_page1_atier_v3 as atier" not in wrapper
+    assert "cfb_game_total_page1_atier_v5" in wrapper
+    assert "cfb_game_total_page1_atier_v4 as atier" not in wrapper
 
-    page = (ROOT / "cfb_game_total_page1_atier_v4.py").read_text(encoding="utf-8")
-    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page
-    assert "MAY_MODIFY_MODEL = False" in page
-    assert "MAY_MODIFY_PROJECTION = False" in page
-    assert "MAY_MODIFY_PROBABILITY = False" in page
-    assert "MAY_MODIFY_RANKING = False" in page
-    assert "MAY_MODIFY_SELECTION = False" in page
-    assert "MAY_MODIFY_SELECTED_GAME_RUNTIME = False" in page
-    folded = page.casefold()
+    successor = (ROOT / "cfb_game_total_page1_atier_v5.py").read_text(encoding="utf-8")
+    assert "import cfb_game_total_page1_atier_v4 as prior" in successor
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in successor
+    assert "MAY_MODIFY_MODEL = False" in successor
+    assert "MAY_MODIFY_PROJECTION = False" in successor
+    assert "MAY_MODIFY_PROBABILITY = False" in successor
+    assert "MAY_MODIFY_RANKING = False" in successor
+    assert "MAY_MODIFY_SELECTION = False" in successor
+    assert "MAY_MODIFY_SELECTED_GAME_RUNTIME = False" in successor
+    folded = successor.casefold()
     assert "sgo" not in folded
     assert "espn" not in folded
     assert "espn bet" not in folded
