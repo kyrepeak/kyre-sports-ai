@@ -1,0 +1,55 @@
+{
+  "project": "API2",
+  "workstream": "api2-nba-pra-real-market-restore-r2",
+  "step": "2A/1",
+  "source_main_sha": "b58ba48638d5edcd050177ced35bb0140f8644a8",
+  "authoritative_branch": "api2-nba-pra-real-market-restore-r2",
+  "scope_lease_id": "SCOPE-LEASE-3CAF17722396E0819BB51A96",
+  "goal": "Restore real NBA PRA sportsbook lines on the live Page 1 when the frozen FanDuel/DraftKings path has no usable PRA market by adding The Odds API as the next Kyre Sports API-owned fallback.",
+  "write_paths": [
+    "devsystem/execution_plans/api2-nba-pra-real-market-restore-r2.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-real-market-restore-r2.json",
+    "devsystem/task_ledgers/api2-nba-pra-real-market-restore-r2.json",
+    "kyre_sports_api_vercel_v1.py",
+    "nba_pra_market_api_v1.py",
+    "sports_api/api/nba_pra_market_real_restore_v1.py",
+    "tests/test_api2_nba_pra_real_market_restore_r2.py"
+  ],
+  "routing_contract": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "direct_priority": ["FanDuel", "DraftKings"],
+    "next_fallback": "The Odds API",
+    "approved_books": ["FanDuel", "DraftKings", "BetMGM", "Caesars", "bet365", "Fanatics Sportsbook"],
+    "the_odds_api_market": "player_points_rebounds_assists",
+    "credential_transport": "server-side header only",
+    "line_averaging": false,
+    "sportsbook_projection_influence": 0.0,
+    "fabrication": false
+  },
+  "tdd": {
+    "red_observed": true,
+    "focused_green": "4/4",
+    "regression_green": "29/29",
+    "compile_green": true
+  },
+  "live_acceptance": {
+    "required": true,
+    "production_exact_merge_required": true,
+    "minimum_real_observations": 2,
+    "requires_over_under_pair": true,
+    "requires_approved_sportsbook": true,
+    "requires_non_null_line": true,
+    "requires_non_null_price": true,
+    "green_frozen_forbidden_if_credential_unavailable": true,
+    "green_frozen_forbidden_if_market_still_empty": true
+  },
+  "anti_loop": {
+    "single_branch": true,
+    "single_pr": true,
+    "single_runless_proof": true,
+    "duplicate_provider_probe_forbidden": true,
+    "merge_before_exact_head_proof_forbidden": true
+  },
+  "freeze_token": "API2_NBA_PRA_REAL_MARKET_RESTORE_R2_FROZEN"
+}
