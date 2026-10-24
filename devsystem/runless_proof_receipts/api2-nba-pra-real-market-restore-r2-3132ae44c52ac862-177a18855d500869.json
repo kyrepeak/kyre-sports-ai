@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-nba-pra-real-market-restore-r2.json": "f3880fbff9fb9aa7e0f480173455410d5ca1b8c4",
+    "devsystem/runless_proof_plans/api2-nba-pra-real-market-restore-r2.json": "e332c244c5b485fcad91fef8233a0a9118dfd459",
+    "devsystem/task_ledgers/api2-nba-pra-real-market-restore-r2.json": "cec71679c2edcc3913884acd0be4d2f0e23d7c81",
+    "kyre_sports_api_vercel_v1.py": "34e0dfebd8280eb9486c4730ec3909dd29ad2957",
+    "nba_pra_market_api_v1.py": "a4d439ec795405db92e7dde890b276a8ee8009d6",
+    "sports_api/api/nba_pra_market_real_restore_v1.py": "bad557611b29407e7e8c8b71b373e297db0c2f94",
+    "tests/test_api2_nba_pra_real_market_restore_r2.py": "012b3b6fb2d3e60d5e2a7117dac98a47f593ef7e"
+  },
+  "candidate_sha": "3132ae44c52ac8628f16e0694fd411cbc3f9fade",
+  "created_at": "2026-10-24T05:15:38.882533+00:00",
+  "dependency_map": {
+    "requirements.txt": "d6d8b2c30f1ccbac5d65047b389cf392b19d71e6",
+    "sports_api/api/nba_pra_market_provider_independence_v1.py": "0dbc7d3759d62cc62dc55e13121d3d95758dec36",
+    "sports_api/api/nba_pra_market_v1.py": "67cebaf05b092a84fd8d19824e70e7a3fc9089f1"
+  },
+  "digest": "5d0118a3977f3cd1919d2c3841e8b2aa530b99a07911307adc282b49f34d90e0",
+  "evidence_digests": [
+    "6c25df495b16a4f77e6fdada24e72a22f19478bc8d47cad03388c479bc69734b",
+    "d52b05b14d705932fd9946991c4013e94995e8841149b2a5bdd9432aace6a0c1"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "caa82bd6c67e1c138d101e53307b13534f4a1ca7282fe3b18d914304b3d35b4c",
+  "proof_id": "api2-nba-pra-real-market-restore-r2-3132ae44c52ac862-177a18855d500869",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 508,
+    "state_hash": "5cf04bb687227c8947c2999bf6486a8ed0d4135acf53b3864f3b00b42c83ee87"
+  },
+  "request_fingerprint": "dd2c11c20b72a5979dcb1ba11711991cc9248b81d1c68dfb8efb44b3bb461691",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-real-market-restore-r2",
+  "workstream": "api2-nba-pra-real-market-restore-r2"
+}
