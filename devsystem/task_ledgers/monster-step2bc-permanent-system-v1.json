@@ -3,8 +3,8 @@
   "task_id": "monster-step2bc-permanent-system-v1",
   "workstream": "monster-step2bc-permanent-system-v1",
   "active_problem": "Make the completed Step 2B and Step 2C architecture a permanent fail-closed MONSTER execution behavior with hard independent-system isolation.",
-  "status": "PENDING_EXACT_HEAD_PROOF",
-  "progress_percent": 93,
+  "status": "PENDING_FINAL_EXACT_HEAD_PROOF",
+  "progress_percent": 97,
   "source_monster_sha": "1d82e4ab09acfc8000247b1aa95bc5707092be7e",
   "authoritative_base": "monster-main",
   "authoritative_branch": "monster-step2bc-permanent-system-v1",
@@ -15,7 +15,7 @@
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
-    "authorization_status": "AUTHORIZED_ONE_EVIDENCE_BACKED_REPAIR"
+    "authorization_status": "AUTHORIZED_ONE_ATOMIC_EVIDENCE_BACKED_REPAIR"
   },
   "anti_loop": {
     "enabled": true,
@@ -24,54 +24,44 @@
     "failed_action_repeated_without_new_evidence": false
   },
   "step2c": {
-    "status": "ROOT_CAUSES_PROVEN_AND_REPAIRED",
-    "first_finding": "The completed reliability and autonomous-recovery controls existed but were not owned by a dedicated MONSTER system-level permanence boundary.",
-    "infra_finding": "The first remote RED lane stalled before test execution, so it was classified as infrastructure evidence and not treated as a product result.",
-    "architecture_ruling": "Use a dedicated MONSTER canonical branch, isolation guard, execution front door, permanent gate, and certification lane rather than extending a shared system boundary.",
-    "first_front_door_failure": "The first dedicated front-door run invoked a stale mandatory_2a_global_enforcement_v1 self-test fixture that predates mandatory Step 2B preflight.",
-    "first_front_door_repair": "Bind the MONSTER front door to the live enforce_action callable instead of the stale global self-test fixture.",
-    "isolation_audit_finding": "The first MONSTER permanent-gate wrapper invoked the broader legacy permanent_gate_v1 validator, which owns unrelated product/domain workflow topology including a main-anchored contract.",
-    "isolation_audit_repair": "Do not execute the broader legacy permanent validator. Compose only mandatory_2bc_permanent_enforcement_v1 scoped baseline, MONSTER isolation, MONSTER front door, and the MONSTER-only proof contract.",
-    "second_front_door_failure": "Fresh MONSTER certification proved Anti-Loop, Step 2A, Step 2B, Step 2C, integration, and Step 2BC GREEN independently, but the MONSTER front-door self-test still invoked mandatory_2a_action_gate_v1.contract_self_test, whose stale implementation fixture omits the now-mandatory Step 2B preflight.",
-    "second_front_door_root_cause": "The front-door self-test was over-coupled to legacy component self-test fixtures. That coupling is not required to prove the front-door boundary and caused a false failure despite the component certification lanes being GREEN.",
-    "second_front_door_repair": "Front-door self-test now proves only hard isolation-before-delegation and binding to the live Step 2A execution entrypoint. Anti-Loop, Step 2A, Step 2B, Step 2C, and their integrations remain independently certified by the MONSTER workflow."
+    "status": "NEW_ROOT_CAUSE_PROVEN_AND_REPAIR_APPLIED",
+    "prior_component_state": "Step 2C exact-head certification GREEN on 3e7932f1b8d62d0fea615b1b432fd96c4a2f00e6.",
+    "permanent_gate_failure": "Dedicated permanent-system certification failed at MONSTER canonical execution front door after compile and MONSTER isolation succeeded.",
+    "direct_execution_root_cause": "The workflow executed python devsystem/monster_execution_front_door_v1.py. Direct path execution makes the devsystem directory sys.path[0], so absolute package import from devsystem.mandatory_2a_global_enforcement_v1 fails with ModuleNotFoundError.",
+    "direct_execution_repair": "Execute MONSTER package-aware control modules with python -m devsystem.<module> so repository root is the package import base.",
+    "checkout_isolation_finding": "The proof workflows used fetch-depth: 0. Checkout therefore fetched and logged repository refs outside the authoritative MONSTER path, including foreign-system refs. Under the hard isolation rule, that proof transport is unacceptable even when MONSTER code does not consume those refs.",
+    "checkout_isolation_repair": "Both authoritative MONSTER proof workflows now checkout only the exact event candidate SHA with fetch-depth: 1 and persist-credentials: false. Full-ref checkout is permanently rejected by the MONSTER permanent gate and regression tests."
   },
   "step2b": {
     "status": "PASS",
     "acceptance_criteria_locked": true,
     "authoritative_path_verified": true,
-    "root_cause_verified": true,
+    "actual_root_cause_verified": true,
     "requirement_to_implementation_mapped": true,
     "requirement_to_proof_mapped": true,
-    "regression_scope": "MONSTER control plane only",
-    "materially_different_from_failed_hypothesis": true,
-    "legacy_global_module_mutation_required": false,
-    "full_legacy_permanent_gate_execution_allowed": false,
-    "front_door_component_self_test_coupling_allowed": false
+    "production_dependencies_verified": true,
+    "configuration_environment_assumptions_verified": true,
+    "regression_risk": "MONSTER proof transport and package invocation only",
+    "expected_verification": "Both MONSTER exact-head workflows must succeed on the same candidate; checkout logs must not enumerate full repository refs; post-merge permanent certification must succeed on monster-main.",
+    "materially_different_from_failed_action": true
   },
   "implementation": {
     "isolation_guard": "devsystem/monster_system_isolation_v1.py",
     "canonical_front_door": "devsystem/monster_execution_front_door_v1.py",
     "permanent_gate": "devsystem/monster_system_permanent_gate_v1.py",
     "certification_workflow": ".github/workflows/monster-step2bc-permanent-system-v1.yml",
+    "recovery_workflow": ".github/workflows/monster-step2c-autonomous-recovery-v1.yml",
+    "proof_plan": "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json",
     "contract_test": "tests/test_devsystem_monster_step2bc_global_permanence_v1.py"
   },
   "verification": {
-    "compile_before_repairs": "GREEN",
-    "isolation_before_repairs": "GREEN",
-    "anti_loop_component_suite": "GREEN",
-    "step2a_component_suite": "GREEN",
-    "step2b_component_suite": "GREEN",
-    "step2c_component_suite": "GREEN",
-    "step2c_integration_suite": "GREEN",
-    "step2bc_permanent_suite": "GREEN",
-    "front_door_first_run": "FAILED_STALE_GLOBAL_FIXTURE",
-    "front_door_second_run": "FAILED_STALE_STEP2A_FIXTURE",
+    "step2c_exact_head_3e7932f1": "GREEN",
+    "permanent_gate_3e7932f1": "FAILED_DIRECT_PACKAGE_EXECUTION_AND_UNCLEAN_FULL_REF_CHECKOUT",
     "premerge_required_check": "step2c-autonomous-recovery-certification",
     "postmerge_required_check": "monster-step2bc-permanent-system-certification",
-    "focused_control_suite": "PENDING_FINAL_EXACT_HEAD",
-    "exact_head_proof": "PENDING_FINAL_EXACT_HEAD",
+    "final_exact_head_proof": "PENDING",
     "merge_readback": "PENDING",
+    "postmerge_gate": "PENDING",
     "freeze_readback": "PENDING"
   }
 }

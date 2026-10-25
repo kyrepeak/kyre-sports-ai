@@ -60,7 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -78,9 +80,9 @@ jobs:
             devsystem/mandatory_2c_autonomous_recovery_v1.py \
             devsystem/mandatory_2bc_permanent_enforcement_v1.py
       - name: MONSTER hard isolation contract
-        run: python devsystem/monster_system_isolation_v1.py
+        run: python -m devsystem.monster_system_isolation_v1
       - name: MONSTER canonical execution front door
-        run: python devsystem/monster_execution_front_door_v1.py
+        run: python -m devsystem.monster_execution_front_door_v1
       - name: MONSTER Anti-Loop contract
         run: python devsystem/automatic_loop_kill_v1.py
       - name: MONSTER Step 2A contract
@@ -92,7 +94,7 @@ jobs:
       - name: MONSTER Step 2B Step 2C permanent enforcement
         run: python devsystem/mandatory_2bc_permanent_enforcement_v1.py
       - name: MONSTER system permanent gate
-        run: python devsystem/monster_system_permanent_gate_v1.py
+        run: python -m devsystem.monster_system_permanent_gate_v1
       - name: MONSTER focused control regressions
         run: |
           python -m pytest --noconftest -q \

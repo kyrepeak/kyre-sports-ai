@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+EXACT_HEAD_REF = "ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
 
 
 def _load(name: str, path: str):
@@ -31,6 +32,8 @@ def test_monster_permanent_system_gate_composes_full_control_chain():
     assert result["step2bc_permanent_enforcement_green"] is True
     assert result["isolation_guard_green"] is True
     assert result["canonical_front_door_green"] is True
+    assert result["proof_workflows_exact_head_only"] is True
+    assert result["proof_workflows_full_ref_fetch_blocked"] is True
     assert result["step2a_step2b_step2c_chain_permanent"] is True
     assert result["anti_loop_permanent"] is True
     assert result["human_only_blocker_rule_permanent"] is True
@@ -45,11 +48,24 @@ def test_monster_permanent_gate_does_not_execute_full_legacy_permanent_gate():
 def test_monster_permanent_workflow_is_scoped_to_monster_main_only():
     workflow = (ROOT / ".github/workflows/monster-step2bc-permanent-system-v1.yml").read_text(encoding="utf-8")
     assert "branches: [monster-main]" in workflow
-    assert "python devsystem/monster_system_permanent_gate_v1.py" in workflow
-    assert "python devsystem/monster_execution_front_door_v1.py" in workflow
-    assert "python devsystem/monster_system_isolation_v1.py" in workflow
+    assert "python -m devsystem.monster_system_permanent_gate_v1" in workflow
+    assert "python -m devsystem.monster_execution_front_door_v1" in workflow
+    assert "python -m devsystem.monster_system_isolation_v1" in workflow
     assert "tests/test_devsystem_monster_step2bc_global_permanence_v1.py" in workflow
     assert "api2" not in workflow.lower()
+
+
+def test_monster_proof_workflows_checkout_only_exact_candidate_without_full_ref_fetch():
+    for relative_path in (
+        ".github/workflows/monster-step2bc-permanent-system-v1.yml",
+        ".github/workflows/monster-step2c-autonomous-recovery-v1.yml",
+    ):
+        workflow = (ROOT / relative_path).read_text(encoding="utf-8")
+        assert EXACT_HEAD_REF in workflow
+        assert "fetch-depth: 1" in workflow
+        assert "fetch-depth: 0" not in workflow
+        assert "persist-credentials: false" in workflow
+        assert "api2" not in workflow.lower()
 
 
 def test_monster_hard_isolation_rejects_foreign_api2_state():

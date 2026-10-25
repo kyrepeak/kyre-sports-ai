@@ -48,19 +48,35 @@ REQUIRED_MONSTER_FILES = (
     "tests/test_devsystem_step2bc_permanent_gate_v1.py",
     "tests/test_devsystem_monster_step2bc_global_permanence_v1.py",
     ".github/workflows/monster-step2bc-permanent-system-v1.yml",
+    ".github/workflows/monster-step2c-autonomous-recovery-v1.yml",
 )
 
-WORKFLOW_REQUIRED_MARKERS = (
+PROOF_WORKFLOW_FILES = (
+    ".github/workflows/monster-step2bc-permanent-system-v1.yml",
+    ".github/workflows/monster-step2c-autonomous-recovery-v1.yml",
+)
+
+PERMANENT_WORKFLOW_REQUIRED_MARKERS = (
     "branches: [monster-main]",
+    "ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}",
+    "fetch-depth: 1",
+    "persist-credentials: false",
     "python -m py_compile",
-    "python devsystem/monster_system_isolation_v1.py",
-    "python devsystem/monster_execution_front_door_v1.py",
+    "python -m devsystem.monster_system_isolation_v1",
+    "python -m devsystem.monster_execution_front_door_v1",
     "python devsystem/mandatory_2a_action_gate_v1.py",
     "python devsystem/mandatory_2b_reliability_gate_v1.py",
     "python devsystem/mandatory_2c_autonomous_recovery_v1.py",
     "python devsystem/mandatory_2bc_permanent_enforcement_v1.py",
-    "python devsystem/monster_system_permanent_gate_v1.py",
+    "python -m devsystem.monster_system_permanent_gate_v1",
     "tests/test_devsystem_monster_step2bc_global_permanence_v1.py",
+)
+
+PROOF_WORKFLOW_ISOLATION_MARKERS = (
+    "branches: [monster-main]",
+    "ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}",
+    "fetch-depth: 1",
+    "persist-credentials: false",
 )
 
 
@@ -76,17 +92,28 @@ def _require_files() -> None:
         )
 
 
-def _validate_workflow() -> None:
-    path = ROOT / ".github/workflows/monster-step2bc-permanent-system-v1.yml"
-    source = path.read_text(encoding="utf-8")
-    if "api2" in source.lower():
-        raise MonsterSystemPermanentGateFailure(
-            "MONSTER certification workflow contains forbidden foreign-system identity"
-        )
-    missing = [marker for marker in WORKFLOW_REQUIRED_MARKERS if marker not in source]
+def _validate_workflows() -> None:
+    for relative_path in PROOF_WORKFLOW_FILES:
+        source = (ROOT / relative_path).read_text(encoding="utf-8")
+        if "api2" in source.lower():
+            raise MonsterSystemPermanentGateFailure(
+                f"MONSTER proof workflow contains forbidden foreign-system identity: {relative_path}"
+            )
+        if "fetch-depth: 0" in source:
+            raise MonsterSystemPermanentGateFailure(
+                f"MONSTER proof workflow may not fetch all repository refs: {relative_path}"
+            )
+        missing = [marker for marker in PROOF_WORKFLOW_ISOLATION_MARKERS if marker not in source]
+        if missing:
+            raise MonsterSystemPermanentGateFailure(
+                f"MONSTER proof workflow isolation markers missing in {relative_path}: " + " | ".join(missing)
+            )
+
+    permanent_source = (ROOT / ".github/workflows/monster-step2bc-permanent-system-v1.yml").read_text(encoding="utf-8")
+    missing = [marker for marker in PERMANENT_WORKFLOW_REQUIRED_MARKERS if marker not in permanent_source]
     if missing:
         raise MonsterSystemPermanentGateFailure(
-            "MONSTER certification workflow markers missing: " + " | ".join(missing)
+            "MONSTER permanent certification workflow markers missing: " + " | ".join(missing)
         )
 
 
@@ -108,6 +135,10 @@ def _validate_proof_plan() -> None:
         "freeze_token": "MONSTER_STEP2BC_PERMANENT_SYSTEM_V1_FROZEN",
         "freeze_requires_postmerge_gate": True,
         "foreign_system_evidence_allowed": False,
+        "foreign_repository_refs_allowed": False,
+        "checkout_ref_policy": "EXACT_EVENT_HEAD_SHA",
+        "checkout_fetch_depth": 1,
+        "checkout_persist_credentials": False,
         "blind_retry_allowed": False,
     }
     for key, value in expected.items():
@@ -117,7 +148,7 @@ def _validate_proof_plan() -> None:
 
 def validate() -> dict[str, Any]:
     _require_files()
-    _validate_workflow()
+    _validate_workflows()
     _validate_proof_plan()
 
     step2bc = validate_step2bc()
@@ -144,6 +175,9 @@ def validate() -> dict[str, Any]:
         "step2bc_permanent_enforcement_green": True,
         "isolation_guard_green": True,
         "canonical_front_door_green": True,
+        "proof_workflows_exact_head_only": True,
+        "proof_workflows_full_ref_fetch_blocked": True,
+        "proof_workflows_persist_credentials": False,
         "step2a_step2b_step2c_chain_permanent": True,
         "anti_loop_permanent": True,
         "human_only_blocker_rule_permanent": True,
