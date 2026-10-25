@@ -4,11 +4,26 @@ on:
   pull_request:
     branches: [api2-main]
     paths:
+      - 'api2_step2a_active_problem_lock_v2.py'
+      - 'sports_api/provider_router.py'
+      - 'sports_api/normalizer.py'
+      - 'sports_api/data_truth.py'
+      - 'sports_api/source_registry.py'
+      - 'sports_api/live_*_logic.py'
+      - 'sports_api/nfl_rushing_yards_transport_v1.py'
+      - 'api2_universal_sports_router_registry_v1.py'
+      - 'universal_sports_nav_registry_v1.py'
+      - 'universal_runtime_v5_loader.py'
+      - 'streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py'
       - 'api2_step2f_stable_production_parity_v1.py'
       - 'sports_api/api/step2f_deployment_receipt_v1.py'
       - 'kyre_sports_api_vercel_v1.py'
-      - 'universal_sports_nav_registry_v1.py'
-      - 'api2_universal_sports_router_registry_v1.py'
+      - 'tests/test_api2_step2a_active_problem_lock_v2.py'
+      - 'tests/test_api2_step2d_data_truth.py'
+      - 'tests/test_provider_router.py'
+      - 'tests/test_data_truth_layer.py'
+      - 'tests/test_nfl_rushing_yards_transport.py'
+      - 'tests/test_api2_step2e_universal_router_completion_v1.py'
       - 'tests/test_api2_step2f_stable_production_parity_v1.py'
       - '.github/workflows/api2-step2f-stable-production-parity-v1.yml'
   workflow_dispatch:
@@ -23,9 +38,9 @@ permissions:
 
 jobs:
   step2f-static-contract:
-    name: Step 2F static contract
+    name: Step 2A + 2D + 2E + 2F exact-head contract
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,13 +48,33 @@ jobs:
           python-version: '3.12'
       - name: Install focused proof dependencies
         run: python -m pip install --disable-pip-version-check pytest fastapi
-      - name: Compile Step 2F authority
+      - name: Compile Step 2A, Step 2D, Step 2E and Step 2F authorities
         run: |
           python -m py_compile \
+            api2_step2a_active_problem_lock_v2.py \
+            sports_api/provider_router.py \
+            sports_api/normalizer.py \
+            sports_api/data_truth.py \
+            sports_api/source_registry.py \
+            sports_api/nfl_rushing_yards_transport_v1.py \
+            api2_universal_sports_router_registry_v1.py \
+            universal_sports_nav_registry_v1.py \
+            universal_runtime_v5_loader.py \
+            streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py \
             api2_step2f_stable_production_parity_v1.py \
             sports_api/api/step2f_deployment_receipt_v1.py \
             kyre_sports_api_vercel_v1.py
-      - name: Prove 39-page stable-production contract
+      - name: Prove Step 2A + Anti-Loop and Step 2D data truth
+        run: >-
+          python -m pytest -q
+          tests/test_provider_router.py
+          tests/test_data_truth_layer.py
+          tests/test_api2_step2d_data_truth.py
+          tests/test_api2_step2a_active_problem_lock_v2.py
+          tests/test_nfl_rushing_yards_transport.py
+      - name: Prove Step 2E universal router coverage
+        run: python -m pytest -q --noconftest tests/test_api2_step2e_universal_router_completion_v1.py
+      - name: Prove Step 2F 39-page stable-production contract
         run: python -m pytest -q tests/test_api2_step2f_stable_production_parity_v1.py
 
   step2f-strict-production:
