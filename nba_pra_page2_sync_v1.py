@@ -82,6 +82,33 @@ def resolve_initial_analysis(
     return model, evaluate_line(model.get("projection"), model.get("sigma"), float(active_line))
 
 
+def build_handoff_loader_kwargs(
+    player_key: str,
+    handoff: Mapping[str, Any] | None,
+    selected_quote: Mapping[str, Any] | None,
+    *,
+    now: datetime,
+) -> dict[str, Any]:
+    """Forward Page 1 evidence only when it belongs to this exact player."""
+    kwargs: dict[str, Any] = {"now": now}
+    payload = dict(handoff or {})
+    if _text(payload.get("player_key")) != _text(player_key):
+        return kwargs
+    quote = (
+        dict(selected_quote)
+        if isinstance(selected_quote, Mapping)
+        else dict(payload.get("quote") or {})
+        if isinstance(payload.get("quote"), Mapping)
+        else None
+    )
+    kwargs.update(
+        selected_player_name=_text(payload.get("player_name")) or None,
+        selected_team=_text(payload.get("team")) or None,
+        selected_quote=quote,
+    )
+    return kwargs
+
+
 def render_nba_pra_page2_sync_v1(*, show_loading_overlay: bool = False) -> None:
     import streamlit as st
 
@@ -108,10 +135,14 @@ def render_nba_pra_page2_sync_v1(*, show_loading_overlay: bool = False) -> None:
         return
 
     now = datetime.now(timezone.utc)
-    snapshot = load_page2_snapshot_v1(key, now=now)
-
     selected = st.session_state.get(SESSION_SELECTED_QUOTE)
-    context = build_page2_context(snapshot, key, selected_quote=selected if isinstance(selected, Mapping) else None)
+    selected_map = selected if isinstance(selected, Mapping) else None
+    snapshot = load_page2_snapshot_v1(
+        key,
+        **build_handoff_loader_kwargs(key, handoff_map, selected_map, now=now),
+    )
+
+    context = build_page2_context(snapshot, key, selected_quote=selected_map)
     context = apply_handoff_context(context, handoff_map, key)
     if context.get("state") not in {"ready", "line_moved"}:
         if show_loading_overlay:

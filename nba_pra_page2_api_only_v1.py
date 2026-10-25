@@ -57,6 +57,9 @@ def load_page2_snapshot_v1(
     selected_player_key: str,
     *,
     now: datetime | None = None,
+    selected_player_name: str | None = None,
+    selected_team: str | None = None,
+    selected_quote: Mapping[str, Any] | None = None,
     schedule_loader=None,
     api_loader=None,
     player_context_loader=None,
@@ -82,14 +85,34 @@ def load_page2_snapshot_v1(
     board=_build_board(market_payload)
     market_key=_find_key(board,selected_player_key)
     if market_key is None:
-        return {"slate_date":slate_text,"games":[],"market":{},"profiles":{},"injury_players":{},"sources":{"schedule":schedule,"kyre_sports_api":market_payload}}
-    selected_market=dict(board[market_key])
-    selected_name=str(selected_market.get("player_name") or selected_player_key).strip()
+        handoff_name=str(selected_player_name or "").strip()
+        handoff_quote=dict(selected_quote or {}) if isinstance(selected_quote,Mapping) else {}
+        handoff_book=str(handoff_quote.get("sportsbook") or "").strip()
+        try:
+            handoff_line=float(handoff_quote.get("line"))
+        except (TypeError,ValueError):
+            handoff_line=None
+        if not handoff_name or not handoff_book or handoff_line is None:
+            return {"slate_date":slate_text,"games":[],"market":{},"profiles":{},"injury_players":{},"sources":{"schedule":schedule,"kyre_sports_api":market_payload}}
+        market_key=str(selected_player_key or "").strip()
+        selected_market={
+            "player_name":handoff_name,
+            "quotes":[handoff_quote],
+            "featured_quote":handoff_quote,
+            "handoff_source":"VERIFIED_PAGE1_HANDOFF",
+        }
+        selected_name=handoff_name
+    else:
+        selected_market=dict(board[market_key])
+        selected_name=str(selected_market.get("player_name") or selected_player_key).strip()
     team_codes=sorted({str(code).upper() for game in games for code in (game.get("away_tricode"),game.get("home_tricode")) if code})
     context=dict(context_impl(slate_date,[selected_name],team_codes=team_codes) or {})
     profile_key,profile=_profile_for(context,market_key)
     if not profile:
         return {"slate_date":slate_text,"games":[],"market":{market_key:selected_market},"profiles":{},"injury_players":{},"sources":{"schedule":schedule,"kyre_sports_api":market_payload,"player_context":context}}
+    handoff_team=str(selected_team or "").strip().upper()
+    if handoff_team and not str(profile.get("team") or "").strip():
+        profile={**profile,"team":handoff_team}
     selected_game=_game_for_team(games,profile.get("team"))
     selected_games=[selected_game] if selected_game else []
     try:
