@@ -89,3 +89,67 @@ def test_monster_canonical_front_door_blocks_foreign_state_before_step2a():
     assert result["step2b_chain_preserved"] is True
     assert result["step2c_chain_preserved"] is True
     assert result["anti_loop_preserved"] is True
+    assert result["global_execution_entrypoint_bound"] is True
+
+
+def test_front_door_contract_does_not_depend_on_stale_global_self_test_fixture(monkeypatch):
+    front = _load(
+        "monster_execution_front_door_fixture_independence_v1",
+        "devsystem/monster_execution_front_door_v1.py",
+    )
+
+    def stale_fixture():
+        raise RuntimeError("legacy fixture should never be part of MONSTER front-door proof")
+
+    monkeypatch.setattr(front, "global_2a_self_test", stale_fixture, raising=False)
+    result = front.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["global_execution_entrypoint_bound"] is True
+
+
+def test_front_door_clean_monster_payload_delegates_to_exact_step2a_entrypoint(monkeypatch):
+    front = _load(
+        "monster_execution_front_door_delegation_v1",
+        "devsystem/monster_execution_front_door_v1.py",
+    )
+    observed = {}
+
+    def fake_step2a(brain_state, action, history, replay_ledger, consumption_ledger, *, forward_decision=None):
+        observed["task_id"] = action["task_id"]
+        observed["branch"] = action["authoritative_path"]["branch"]
+        return {
+            "result": {
+                "decision": "GLOBAL_EXECUTION_AUTHORIZED",
+                "allowed": True,
+                "execution_authorized": True,
+            },
+            "replay_ledger": dict(replay_ledger),
+            "consumption_ledger": dict(consumption_ledger),
+        }
+
+    monkeypatch.setattr(front, "enforce_step2a_action", fake_step2a)
+    action = {
+        "task_id": "monster-step2bc-permanent-system-v1",
+        "checkpoint_id": "2BC",
+        "action_type": "patch",
+        "target": "monster:control-plane",
+        "authoritative_path": {
+            "repository": "kyrepeak/kyre-sports-ai",
+            "branch": "monster-step2bc-permanent-system-v1",
+            "target": "monster:control-plane",
+            "proof_path": "monster-runless-v2",
+        },
+    }
+    result = front.enforce_monster_action(
+        {"program_id": "monster-step2bc-permanent-system-v1"},
+        action,
+        [],
+        {},
+        {},
+    )
+    assert observed == {
+        "task_id": "monster-step2bc-permanent-system-v1",
+        "branch": "monster-step2bc-permanent-system-v1",
+    }
+    assert result["result"]["monster_only"] is True
+    assert result["result"]["monster_front_door_version"] == front.VERSION
