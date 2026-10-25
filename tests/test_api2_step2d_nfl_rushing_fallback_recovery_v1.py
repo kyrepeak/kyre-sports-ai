@@ -61,7 +61,12 @@ def test_unverified_primary_empty_invokes_one_field_specific_fallback_and_stops(
 
     def primary(_game, timeout=8):
         calls.append("FanDuel")
-        return []
+        return {
+            "state": "MARKET_MAPPING_FAILURE",
+            "observations": [],
+            "reason": "standard market evidence incomplete",
+            "evidence": {},
+        }
 
     def fallback(_game, timeout=8):
         assert timeout == 8
@@ -83,9 +88,9 @@ def test_unverified_primary_empty_invokes_one_field_specific_fallback_and_stops(
             ],
         }
 
-    original = truth.direct_book.collect_fanduel_game_markets
+    original = truth.direct_book.collect_fanduel_game_market_bundle
     try:
-        truth.direct_book.collect_fanduel_game_markets = primary
+        truth.direct_book.collect_fanduel_game_market_bundle = primary
         bundles = truth.collect_markets(
             [{"source_game_id": "g2", "away": "PIT", "home": "NO"}],
             budget_seconds=1.0,
@@ -93,7 +98,7 @@ def test_unverified_primary_empty_invokes_one_field_specific_fallback_and_stops(
             fallback_collectors=(("The Odds API", fallback),),
         )
     finally:
-        truth.direct_book.collect_fanduel_game_markets = original
+        truth.direct_book.collect_fanduel_game_market_bundle = original
 
     assert calls == ["FanDuel", "The Odds API"]
     assert bundles["g2"]["state"] == "AVAILABLE"
