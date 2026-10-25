@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from sports_api.collectors import nfl_fanduel_receiving_yards_nflverse_v2 as market_adapter
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,21 +51,45 @@ def test_market_reconciliation_still_fails_closed_on_ambiguous_exact_identity() 
     assert market_adapter.reconcile_observation_to_roster(observation, roster) is None
 
 
-def test_direct_book_transport_has_bounded_transient_retry_and_production_timeout() -> None:
-    source = (ROOT / "sports_api/collectors/nfl_fanduel_receiving_yards_nflverse_v2.py").read_text(encoding="utf-8")
-    assert "MARKET_READ_TIMEOUT_SECONDS = 8" in source
-    assert "MAX_MARKET_READ_ATTEMPTS = 2" in source
-    assert "def _get_json_reliable(" in source
-    assert "for attempt in range(1, MAX_MARKET_READ_ATTEMPTS + 1):" in source
-    assert '"read failed" not in message.lower()' in source
-    assert "base._get_json(" in source
+def test_transient_read_retries_once_and_timeout_is_floored(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[int] = []
+
+    def fake_get_json(_url, _params=None, *, timeout):
+        calls.append(int(timeout))
+        if len(calls) == 1:
+            raise market_adapter.base.FanDuelPassingYardsError("FanDuel read failed: TimeoutError")
+        return {"ok": True}
+
+    monkeypatch.setattr(market_adapter.base, "_get_json", fake_get_json)
+    assert market_adapter._get_json_reliable("https://provider.test", timeout=4) == {"ok": True}
+    assert calls == [8, 8]
 
 
-def test_api_market_failure_preserves_provider_reason_and_uses_adapter_timeout() -> None:
+def test_deterministic_provider_error_is_not_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = 0
+
+    def fake_get_json(_url, _params=None, *, timeout):
+        nonlocal calls
+        calls += 1
+        raise market_adapter.base.FanDuelPassingYardsError("FanDuel GET returned HTTP 403")
+
+    monkeypatch.setattr(market_adapter.base, "_get_json", fake_get_json)
+    with pytest.raises(market_adapter.base.FanDuelPassingYardsError, match="HTTP 403"):
+        market_adapter._get_json_reliable("https://provider.test", timeout=4)
+    assert calls == 1
+
+
+def test_direct_book_transport_has_bounded_retry_constants() -> None:
+    assert market_adapter.MARKET_READ_TIMEOUT_SECONDS == 8
+    assert market_adapter.MAX_MARKET_READ_ATTEMPTS == 2
+
+
+def test_api_keeps_provider_failures_semantic_not_verified_absence() -> None:
     source = (ROOT / "sports_api/api/nfl_receiving_yards_slate_v2.py").read_text(encoding="utf-8")
-    assert "timeout=direct_book.MARKET_READ_TIMEOUT_SECONDS" in source
-    assert 'detail = str(exc).strip()' in source
-    assert 'f"direct market read failed: {detail or type(exc).__name__}"' in source
+    assert '"state": "DATA_UNAVAILABLE"' in source
+    assert '"verified_absence": False' in source
+    assert '"state": "VERIFIED_NO_STANDARD_MARKET"' in source
+    assert '"verified_absence": True' in source
 
 
 def test_live_source_policy_and_projection_isolation_remain_unchanged() -> None:
