@@ -42,13 +42,11 @@ def test_v10_preserves_native_slider_and_frozen_settlement_math():
     assert "spread_mc.simulate" not in source
 
 
-def test_runtime_v23_owns_only_nfl_spread_and_preserves_v22_without_touching_frozen_app():
-    loader = (ROOT / "universal_runtime_v5_loader_v23.py").read_text(encoding="utf-8")
-    overlay = (ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v6.py").read_text(encoding="utf-8")
+def test_current_api2_production_chain_routes_spread_canonically_without_repointing_app():
+    terminal = (ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py").read_text(encoding="utf-8")
+    density = (ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1.py").read_text(encoding="utf-8")
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert "import universal_runtime_v5_loader_v22 as prior" in loader
-    assert 'route.sport_id == "nfl" and route.market_id == "spread"' in loader
-    assert '"nfl_spread_hub_v10"' in loader
-    assert "from universal_runtime_v5_loader_v23 import" in overlay
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_nba_spread_v6" in app
-    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_spread_v10" not in app
+    assert 'route.sport_id == "nfl" and route.market_id in {"rushing-yards", "spread"}' in terminal
+    assert "return canonical_loader.resolve_destination(route)" in terminal
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1 as prior" in density
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1" in app
