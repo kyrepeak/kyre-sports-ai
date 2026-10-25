@@ -2,11 +2,11 @@
 
 This is the MONSTER-only permanence contract above the existing DevSystem
 baseline. It requires the completed Anti-Loop + Step 2A + Step 2B + Step 2C
-stack, the hard system-isolation guard, and the canonical MONSTER execution
-front door. It also requires a dedicated certification workflow scoped to the
-MONSTER canonical branch.
+stack, the hard system-isolation guard, the canonical MONSTER execution front
+door, and the dedicated MONSTER proof/freeze contract.
 
-No API 2 state is read or accepted as evidence. This validator is read-only.
+Foreign-system state is never accepted as MONSTER evidence. This validator is
+read-only and performs no network or product/runtime mutation.
 """
 from __future__ import annotations
 
@@ -34,6 +34,8 @@ REQUIRED_MONSTER_FILES = (
     "devsystem/monster_system_isolation_v1.py",
     "devsystem/monster_execution_front_door_v1.py",
     "devsystem/monster_system_permanent_gate_v1.py",
+    "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json",
+    "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json",
     "tests/test_devsystem_automatic_loop_kill_v1.py",
     "tests/test_devsystem_mandatory_2a_action_gate_v1.py",
     "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py",
@@ -47,6 +49,7 @@ REQUIRED_MONSTER_FILES = (
 
 WORKFLOW_REQUIRED_MARKERS = (
     "branches: [monster-main]",
+    "python -m py_compile",
     "python devsystem/monster_system_isolation_v1.py",
     "python devsystem/monster_execution_front_door_v1.py",
     "python devsystem/mandatory_2a_action_gate_v1.py",
@@ -84,9 +87,30 @@ def _validate_workflow() -> None:
         )
 
 
+def _validate_proof_plan() -> None:
+    path = ROOT / "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    expected = {
+        "task_id": "monster-step2bc-permanent-system-v1",
+        "workstream": "monster-step2bc-permanent-system-v1",
+        "authoritative_base": "monster-main",
+        "authoritative_branch": "monster-step2bc-permanent-system-v1",
+        "authoritative_pr": 1791,
+        "required_check": "monster-step2bc-permanent-system-certification",
+        "merge_target": "monster-main",
+        "freeze_token": "MONSTER_STEP2BC_PERMANENT_SYSTEM_V1_FROZEN",
+        "foreign_system_evidence_allowed": False,
+        "blind_retry_allowed": False,
+    }
+    for key, value in expected.items():
+        if payload.get(key) != value:
+            raise MonsterSystemPermanentGateFailure(f"MONSTER proof plan drift: {key}")
+
+
 def validate() -> dict[str, Any]:
     _require_files()
     _validate_workflow()
+    _validate_proof_plan()
 
     base = permanent_gate_v1.validate()
     step2bc = validate_step2bc()
@@ -102,7 +126,7 @@ def validate() -> dict[str, Any]:
     if front_door.get("status") != "GREEN" or front_door.get("monster_only") is not True:
         raise MonsterSystemPermanentGateFailure("MONSTER canonical execution front door is not GREEN")
 
-    result: dict[str, Any] = {
+    return {
         "status": "GREEN",
         "version": VERSION,
         "monster_only": True,
@@ -116,11 +140,11 @@ def validate() -> dict[str, Any]:
         "human_only_blocker_rule_permanent": True,
         "no_blind_retry_permanent": True,
         "own_evidence_required": True,
+        "proof_plan_bound": True,
         "network_calls": NETWORK_CALLS,
         "auto_mutate": AUTO_MUTATE,
         "product_runtime_mutation": MAY_MODIFY_PRODUCT_RUNTIME,
     }
-    return result
 
 
 def contract_self_test() -> dict[str, Any]:
