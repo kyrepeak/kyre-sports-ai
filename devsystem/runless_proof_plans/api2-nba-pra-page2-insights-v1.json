@@ -1,0 +1,68 @@
+{
+  "mode": "runless",
+  "task_id": "api2-nba-pra-page2-insights-v1",
+  "workstream": "api2-nba-pra-page2-insights-v1",
+  "source_main_sha": "372c4313aaab390c1d8fd7c72de9563dba666f93",
+  "authoritative_branch": "api2-nba-pra-page2-insights-v1",
+  "authoritative_pr": 1814,
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_api2_nba_pra_page2_insights_v1.py",
+      "tests/test_api2_nba_pra_page2_s_tier_v2.py",
+      "tests/test_api2_nba_pra_page2_source_guard_v2.py",
+      "tests/test_api2_nba_pra_page1_page2_sync_v1.py",
+      "tests/test_api2_nba_pra_page2_runtime_v1.py",
+      "tests/test_api2_nba_pra_page2_context_v1.py",
+      "tests/test_api2_nba_pra_page2_integration_v1.py",
+      "tests/test_api2_nba_pra_page2_line_lab_v1.py",
+      "tests/test_api2_nba_pra_page2_matchup_v1.py",
+      "tests/test_api2_nba_pra_gateway_only_v1.py",
+      "tests/test_api2_nba_pra_model_behavior_v1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "nba_pra_page2_insights_v1.py",
+      "nba_pra_page2_v1.py",
+      "nba_pra_page2_core_v2.py"
+    ]
+  ],
+  "artifacts": [
+    ".github/workflows/api2-nba-pra-page2-insights-v1.yml",
+    "docs/superpowers/specs/2026-10-25-nba-pra-page2-insights-v1-design.md",
+    "docs/superpowers/plans/2026-10-25-nba-pra-page2-insights-v1.md",
+    "nba_pra_page2_insights_v1.py",
+    "nba_pra_page2_core_v2.py",
+    "nba_pra_page2_v1.py",
+    "tests/test_api2_nba_pra_page2_insights_v1.py",
+    "devsystem/execution_plans/api2-nba-pra-page2-insights-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-insights-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-page2-insights-v1.json"
+  ],
+  "dependencies": [
+    "nba_pra_page2_api_only_v1.py",
+    "nba_pra_page2_context_v1.py",
+    "nba_pra_page2_line_lab_v1.py",
+    "nba_pra_page2_matchup_api_v1.py",
+    "nba_pra_page2_matchup_v1.py",
+    "nba_pra_page2_sync_v1.py",
+    "nba_pra_runtime_v2.py"
+  ],
+  "proof_requirements": {
+    "tdd_red_before_green": true,
+    "focused_and_protected_tests": "all pass",
+    "compile": "exit 0",
+    "anti_loop_guard": "success on exact candidate",
+    "step2d_data_truth": "success on exact candidate",
+    "base_head_unchanged_or_reconciled": true,
+    "expected_head_merge": true,
+    "production_deployment_sha_equals_merged_main_sha": true,
+    "production_target": "production",
+    "stable_alias": "kyre-sports-api.vercel.app",
+    "live_health": "HTTP 200 and status healthy",
+    "exact_sha_production_deployment_count": 1
+  },
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "freeze_token": "API2_NBA_PRA_PAGE2_INSIGHTS_V1_FROZEN"
+}
