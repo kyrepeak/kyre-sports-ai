@@ -252,9 +252,9 @@ def _nfl_spread_adapter(route: RuntimeRoute) -> DestinationAdapter:
 
 
 def _nfl_receiving_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Receiving Yards V21 adapter with no generic NFL hub fallback."""
+    """Dedicated API2 Receiving Yards V22 adapter with no legacy page fallback."""
     def loader():
-        return _import("nfl_receiving_yards_hub_v21")
+        return _import("nfl_receiving_yards_hub_v22")
 
     def renderer(page):
         return page.render_nfl_receiving_yards_hub()
@@ -263,7 +263,7 @@ def _nfl_receiving_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
         (route.sport_id, route.market_id),
         loader,
         renderer,
-        "nfl_receiving_yards_hub_v21",
+        "nfl_receiving_yards_hub_v22",
         20_000,
     )
 
