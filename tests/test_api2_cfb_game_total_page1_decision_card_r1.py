@@ -85,9 +85,9 @@ def test_v6_decision_card_is_simple_logo_rich_and_model_first():
     assert "line lab" not in source.casefold()
 
 
-def test_bootstrap_activates_v6_and_frozen_boundaries_remain():
+def test_bootstrap_activates_v7_and_frozen_boundaries_remain():
     source = (ROOT / "cfb_game_total_page1_api_bootstrap_repair_r1.py").read_text(encoding="utf-8")
-    assert "cfb_game_total_page1_atier_v6" in source
+    assert "cfb_game_total_page1_atier_v7" in source
     assert "MAY_MODIFY_MODEL = False" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
     assert "MAY_MODIFY_PROBABILITY = False" in source
