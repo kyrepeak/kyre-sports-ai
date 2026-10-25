@@ -1,0 +1,62 @@
+{
+  "artifact_map": {
+    ".github/workflows/monster-step2c-autonomous-recovery-v1.yml": "87edff7135499615bfe4a0631307875070368ad7",
+    "devsystem/mandatory_2b_reliability_gate_v1.py": "c24371e39fa3aaf3598574ba0aaaad19484b3e4d",
+    "devsystem/mandatory_2bc_permanent_enforcement_v1.py": "00c9af2a5904a1d7d452148bd41fb3cb3d9b6096",
+    "devsystem/mandatory_2c_autonomous_recovery_v1.py": "0cd2b76814727eb6f27b244a9c0b757c22ccbba9",
+    "devsystem/runless_proof_plans/monster-step2c-autonomous-recovery-v1-pr1787.json": "d400e7a875e395898b418dd7018eb90e8cc9bebb",
+    "docs/superpowers/plans/2026-10-24-monster-step2c-autonomous-recovery-v1.md": "063fbe75abcc4855bbe60b1e6507666f5b07d7c5",
+    "docs/superpowers/specs/2026-10-24-monster-step2c-autonomous-recovery-v1-design.md": "b46fbcf96a8e20ff7c5b31b0ab6dc05617f8ce72",
+    "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py": "5f5c4592598b01925ac87c13b9f9110407965344",
+    "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py": "1690568622430c0d2de8a802751891fc53d705ab",
+    "tests/test_devsystem_step2b_step2a_integration_v1.py": "1b4a23714eaf48226ca6752749aad3203a4e00f7",
+    "tests/test_devsystem_step2bc_permanent_gate_v1.py": "94d8f5dc5c0212f7363f6fbe6b6d880ad8ad2869",
+    "tests/test_devsystem_step2c_step2b_step2a_integration_v1.py": "a1ab55d56648d45b27cc42a3d968a7081216ced4"
+  },
+  "candidate_sha": "130e6a6588631a407be31db240227320b3f17fc5",
+  "created_at": "2026-10-25T01:16:32.937916+00:00",
+  "dependency_map": {
+    "devsystem/automatic_loop_kill_v1.py": "2b38ea7a4c498001743704055ef47d681b8a4359",
+    "devsystem/frozen_artifact_registry_v1.py": "ede316bb19a900b544abe4d652d6cfbcde6a9f82",
+    "devsystem/mandatory_2a_action_gate_v1.py": "bfc8357af14dca3d66741f757ba565fafdf38e18",
+    "devsystem/scope_aware_execution_lease_v1.py": "71383fa4ca36b0b4d80a6c87617912df6d52e4cf",
+    "tests/test_devsystem_automatic_loop_kill_v1.py": "6095013f260c4c329b043e61dba50067d7e85681",
+    "tests/test_devsystem_mandatory_2a_action_gate_v1.py": "c6f50716c48fb94edcefc1fc96c0659198ea033e"
+  },
+  "digest": "aba2a0122640fa674c7523d9e7f294808ed038f6c76c5fca177379d2dd5a5380",
+  "evidence_digests": [
+    "bc2b57f5abf1167322bbe74397ed734356277bba6b0831bcefb10549484ea9ac",
+    "d35f8122353f43ddd920de0fa1e2c5cbdcd82c709b48f2fb842a55cdac5a721e",
+    "95b3735de27b2714c9892fb63a4bdbd79e021ba63d16dde3ff6a2231c0ce5412",
+    "798b42c7a3206ec060764956e72f39fe61b060ac01f494c1a5421d70c6cd2787",
+    "13cfe46281e12abb85b29584ee34ce66de9ee0b3bcdb6035afb34d21a95051eb",
+    "d6cb6f6405af101f1d93dc70e183c60c182f6fb98ac39234f0b6d61517d3e987"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "fa00f541427df13aa8da77f95446a66d70285b02faa57f37faf203fbf0b2596e",
+  "proof_id": "monster-step2c-autonomous-recovery-v1-pr1787-130e6a6588631a40-41d5020fc036e6b1",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "request_fingerprint": "076bce9cf9caacc7e587f6268e90070b4435cea56af7207020ca8973332080a9",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-step2c-autonomous-recovery-v1-pr1787",
+  "workstream": "monster-step2c-autonomous-recovery-v1"
+}
