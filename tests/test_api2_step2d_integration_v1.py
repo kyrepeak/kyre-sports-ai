@@ -135,7 +135,8 @@ def test_rushing_provider_failure_cannot_be_market_not_posted():
         {"state": "PROVIDER_FETCH_FAILURE", "observations": [], "provider": "FanDuel"},
         player={"player_name": "Kendre Miller", "team_abbr": "NO"},
     )
-    assert result["status"] == "PROVIDER_FETCH_FAILURE"
+    assert result["status"] == "DATA_UNAVAILABLE"
+    assert result["diagnostic_state"] == "PROVIDER_FETCH_FAILURE"
     assert result["line"] is None
     assert result["status"] != "MARKET_NOT_POSTED"
 
@@ -162,5 +163,6 @@ def test_rushing_successful_provider_value_survives_to_market_state():
     }
     result = truth.market_state_from_bundle(bundle, player={"player_name": "Kendre Miller", "team_abbr": "NO"})
     assert result["status"] == "VERIFIED"
+    assert result["diagnostic_state"] == "AVAILABLE"
     assert result["line"] == 37.5
     assert result["sportsbook"] == "FanDuel"
