@@ -1,0 +1,65 @@
+name: API2 Step 2F Stable Production Parity V1
+
+on:
+  pull_request:
+    branches: [api2-main]
+    paths:
+      - 'api2_step2f_stable_production_parity_v1.py'
+      - 'sports_api/api/step2f_deployment_receipt_v1.py'
+      - 'kyre_sports_api_vercel_v1.py'
+      - 'universal_sports_nav_registry_v1.py'
+      - 'api2_universal_sports_router_registry_v1.py'
+      - 'tests/test_api2_step2f_stable_production_parity_v1.py'
+      - '.github/workflows/api2-step2f-stable-production-parity-v1.yml'
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: 'Exact production commit SHA required for strict live proof'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  step2f-static-contract:
+    name: Step 2F static contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Step 2F authority
+        run: |
+          python -m py_compile \
+            api2_step2f_stable_production_parity_v1.py \
+            sports_api/api/step2f_deployment_receipt_v1.py \
+            kyre_sports_api_vercel_v1.py
+      - name: Prove 39-page stable-production contract
+        run: python -m pytest -q tests/test_api2_step2f_stable_production_parity_v1.py
+
+  step2f-strict-production:
+    name: Step 2F strict stable production
+    if: github.event_name == 'workflow_dispatch'
+    needs: step2f-static-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify stable production alias and full page matrix
+        env:
+          API2_STEP2F_EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          python api2_step2f_stable_production_parity_v1.py \
+            --live \
+            --expected-sha "$API2_STEP2F_EXPECTED_SHA" \
+            --receipt-out api2-step2f-stable-production-receipt.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api2-step2f-stable-production-receipt
+          path: api2-step2f-stable-production-receipt.json
