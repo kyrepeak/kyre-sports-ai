@@ -8,6 +8,7 @@ against nflverse roster identity in the Kyre Sports API layer.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import math
 import re
 from typing import Any, Mapping
 
@@ -17,6 +18,8 @@ MODEL_VERSION = "NFL RECEIVING YARDS DIRECT BOOK NFLVERSE V2"
 PLAYER_NAME_MATCHING = False
 FUZZY_MATCHING = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+MARKET_READ_TIMEOUT_SECONDS = 8
+MAX_MARKET_READ_ATTEMPTS = 2
 KNOWN_PROP_TABS = (
     "receiving-props",
     "player-receiving-props",
@@ -24,11 +27,74 @@ KNOWN_PROP_TABS = (
     "receiving",
     "popular",
 )
-_ALLOWED_POSITIONS = {"WR", "WIDE RECEIVER", "TE", "TIGHT END", "RB", "RUNNING BACK", "FB", "FULLBACK"}
+_ALLOWED_POSITIONS = {"WR", "TE", "RB", "FB"}
+_TEAM_ALIASES = {"JAC": "JAX", "WSH": "WAS", "LA": "LAR"}
+_POSITION_ALIASES = {
+    "WR": "WR",
+    "WIDE RECEIVER": "WR",
+    "WIDERECEIVER": "WR",
+    "TE": "TE",
+    "TIGHT END": "TE",
+    "TIGHTEND": "TE",
+    "RB": "RB",
+    "RUNNING BACK": "RB",
+    "RUNNINGBACK": "RB",
+    "HB": "RB",
+    "HALFBACK": "RB",
+    "FB": "FB",
+    "FULLBACK": "FB",
+    "FULL BACK": "FB",
+}
 
 
 def _text(value: Any) -> str:
     return str(value if value is not None else "").strip()
+
+
+def _normalize_team(value: Any) -> str:
+    team = _text(value).upper()
+    return _TEAM_ALIASES.get(team, team)
+
+
+def _normalize_position(value: Any) -> str:
+    raw = re.sub(r"\s+", " ", _text(value).upper()).strip()
+    compact = raw.replace(" ", "")
+    return _POSITION_ALIASES.get(raw, _POSITION_ALIASES.get(compact, raw))
+
+
+def _normalize_jersey(value: Any) -> str:
+    raw = _text(value).lstrip("#").strip()
+    if not raw:
+        return ""
+    try:
+        numeric = float(raw)
+    except (TypeError, ValueError):
+        return raw
+    if math.isfinite(numeric) and numeric.is_integer() and 0 <= numeric <= 99:
+        return str(int(numeric))
+    return raw
+
+
+def _get_json_reliable(
+    url: str,
+    params: Mapping[str, Any] | None = None,
+    *,
+    timeout: int = MARKET_READ_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """Retry one transient read failure; deterministic provider/HTTP errors fail immediately."""
+    effective_timeout = max(MARKET_READ_TIMEOUT_SECONDS, int(timeout or 0))
+    last_error: base.FanDuelPassingYardsError | None = None
+    for attempt in range(1, MAX_MARKET_READ_ATTEMPTS + 1):
+        try:
+            return base._get_json(url, params, timeout=effective_timeout)
+        except base.FanDuelPassingYardsError as exc:
+            last_error = exc
+            message = str(exc).strip()
+            if "read failed" not in message.lower() or attempt >= MAX_MARKET_READ_ATTEMPTS:
+                raise
+    if last_error is not None:
+        raise last_error
+    raise base.FanDuelPassingYardsError("FanDuel read failed without a terminal result")
 
 
 def _market_text(market: Mapping[str, Any]) -> str:
@@ -141,9 +207,9 @@ def parse_event_market_observations(
         if resolved is None:
             continue
         provider_player_id, player = resolved
-        team_abbr = _text(player.get("team") or player.get("teamAbbreviation")).upper()
-        position = _text(player.get("position")).upper()
-        jersey_number = _text(player.get("number") or player.get("jersey") or player.get("jerseyNumber"))
+        team_abbr = _normalize_team(player.get("team") or player.get("teamAbbreviation"))
+        position = _normalize_position(player.get("position"))
+        jersey_number = _normalize_jersey(player.get("number") or player.get("jersey") or player.get("jerseyNumber"))
         player_name = _text(player.get("name") or player.get("displayName") or player.get("fullName"))
         if not team_abbr or position not in _ALLOWED_POSITIONS or not jersey_number:
             continue
@@ -165,10 +231,14 @@ def parse_event_market_observations(
     return observations
 
 
-def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = 10) -> list[dict[str, Any]]:
+def collect_fanduel_game_markets(
+    game: Mapping[str, Any],
+    *,
+    timeout: int = MARKET_READ_TIMEOUT_SECONDS,
+) -> list[dict[str, Any]]:
     if not _text(game.get("away_name")) or not _text(game.get("home_name")):
         return []
-    landing = base._get_json(
+    landing = _get_json_reliable(
         f"{base.FANDUEL_BASE_URL}/sbapi/content-managed-page",
         {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "page": "CUSTOM", "customPageId": "nfl", "timezone": "America/New_York"},
         timeout=timeout,
@@ -176,7 +246,7 @@ def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = 10) 
     event_id = base._match_event(landing, game)
     if not event_id:
         return []
-    selected = base._get_json(
+    selected = _get_json_reliable(
         f"{base.FANDUEL_BASE_URL}/sbapi/event-page",
         {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "eventId": event_id},
         timeout=timeout,
@@ -184,7 +254,7 @@ def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = 10) 
     if not _standard_markets(selected):
         for tab in _discover_tabs(selected):
             try:
-                candidate = base._get_json(
+                candidate = _get_json_reliable(
                     f"{base.FANDUEL_BASE_URL}/sbapi/event-page",
                     {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "eventId": event_id, "tab": tab},
                     timeout=timeout,
@@ -196,12 +266,15 @@ def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = 10) 
                 break
     if not _standard_markets(selected):
         return []
-    fdx = base._get_json(f"{base.FANDUEL_FDX_BASE_URL}/v1/live/event/{event_id}/players", timeout=timeout)
+    fdx = _get_json_reliable(
+        f"{base.FANDUEL_FDX_BASE_URL}/v1/live/event/{event_id}/players",
+        timeout=timeout,
+    )
     timestamp = datetime.now(timezone.utc).isoformat()
-    allowed_teams = {_text(game.get("away")).upper(), _text(game.get("home")).upper()}
+    allowed_teams = {_normalize_team(game.get("away")), _normalize_team(game.get("home"))}
     return [
         row for row in parse_event_market_observations(selected, fdx, source_timestamp=timestamp)
-        if row.get("team_abbr") in allowed_teams
+        if _normalize_team(row.get("team_abbr")) in allowed_teams
     ]
 
 
@@ -209,15 +282,17 @@ def reconcile_observation_to_roster(
     observation: Mapping[str, Any],
     roster_rows: list[dict[str, Any]],
 ) -> dict[str, Any] | None:
-    """Resolve one market observation to one roster row without name matching."""
-    team_abbr = _text(observation.get("team_abbr")).upper()
-    jersey_number = _text(observation.get("jersey_number"))
-    position = _text(observation.get("position")).upper()
+    """Resolve one market observation to one unique active roster row without name matching."""
+    team_abbr = _normalize_team(observation.get("team_abbr"))
+    jersey_number = _normalize_jersey(observation.get("jersey_number"))
+    position = _normalize_position(observation.get("position"))
+    if not team_abbr or not jersey_number or position not in _ALLOWED_POSITIONS:
+        return None
     matches = [
         dict(row) for row in roster_rows
-        if _text(row.get("team_abbr")).upper() == team_abbr
-        and _text(row.get("jersey_number")) == jersey_number
-        and _text(row.get("position")).upper() == position
+        if _normalize_team(row.get("team_abbr")) == team_abbr
+        and _normalize_jersey(row.get("jersey_number")) == jersey_number
+        and _normalize_position(row.get("position")) == position
         and row.get("active") is True
     ]
     if len(matches) != 1:
@@ -227,6 +302,8 @@ def reconcile_observation_to_roster(
 
 __all__ = [
     "FUZZY_MATCHING",
+    "MARKET_READ_TIMEOUT_SECONDS",
+    "MAX_MARKET_READ_ATTEMPTS",
     "MODEL_VERSION",
     "PLAYER_NAME_MATCHING",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
