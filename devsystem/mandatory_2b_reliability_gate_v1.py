@@ -2,8 +2,8 @@
 
 Fail-closed pre-implementation gate for implementation-producing actions.
 It requires a complete preflight before attempt 1, requires classified new
-evidence before attempt 2, and hands control to Anti-Loop / root-cause reset
-after two failed implementation attempts.
+evidence before attempt 2, and hands exhausted diagnosis generations to
+Step 2C autonomous recovery instead of allowing a blind third patch.
 
 This module performs no network calls and no repository/product mutations.
 """
@@ -13,6 +13,12 @@ import hashlib
 import json
 from copy import deepcopy
 from typing import Any, Mapping, Sequence
+
+from devsystem.mandatory_2c_autonomous_recovery_v1 import (
+    Mandatory2CAutonomousRecoveryFailure,
+    decide_recovery,
+    validate_recovery_receipt,
+)
 
 VERSION = "MONSTER_2B_FIRST_SECOND_PASS_RELIABILITY_GATE_V1"
 NETWORK_CALLS = False
@@ -153,13 +159,137 @@ def _validate_preflight(preflight: Mapping[str, Any]) -> tuple[bool, str, dict[s
     return True, "preflight complete", normalized
 
 
-def authorize_implementation(action: Mapping[str, Any]) -> dict[str, Any]:
-    """Authorize implementation attempt 1 or 2, or fail closed.
+def _failure_fingerprints(failed: Sequence[Mapping[str, Any]]) -> list[str]:
+    return sorted(
+        str(item.get("evidence_fingerprint") or "").strip()
+        for item in failed
+        if str(item.get("evidence_fingerprint") or "").strip()
+    )
 
-    The action carries `reliability_preflight` and optional
-    `implementation_attempt_history`. This keeps the proof bound to the exact
-    Step-2A action rather than to an out-of-band chat instruction.
-    """
+
+def _authorize_recovery_generation(
+    action: Mapping[str, Any],
+    identity: Mapping[str, Any],
+    normalized_preflight: Mapping[str, Any],
+    failed: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    context = action.get("autonomous_recovery_context")
+    if not isinstance(context, Mapping):
+        recovery = decide_recovery({
+            "task_id": identity["task_id"],
+            "checkpoint_id": identity["checkpoint_id"],
+            "authoritative_path": normalized_preflight["authoritative_path"],
+            "failed_generation": 1,
+            "failed_attempts": list(failed),
+            "diagnostic_history": [],
+            "evidence_candidates": [],
+        })
+        return _result(
+            "TWO_B_TWO_C_RECOVERY_REQUIRED",
+            "two implementation attempts failed; Step 2C must continue autonomous diagnosis before another repair generation",
+            allowed=False,
+            implementation_attempt=3,
+            anti_loop_handoff=True,
+            two_c_enforced=True,
+            recovery_decision=recovery["decision"],
+            recovery_receipt_hash=None,
+            requires_user_intervention=False,
+            next_legal_action=recovery["next_legal_action"],
+            recheck_policy="ONLY_AFTER_MATERIALLY_NEW_EVIDENCE",
+        )
+
+    supplied_path = context.get("authoritative_path")
+    expected_path = dict(normalized_preflight["authoritative_path"])
+    supplied_failed = context.get("failed_attempts", [])
+    supplied_fps = _failure_fingerprints(supplied_failed) if isinstance(supplied_failed, Sequence) and not isinstance(supplied_failed, (str, bytes, bytearray)) else []
+    expected_fps = _failure_fingerprints(failed)
+    identity_matches = (
+        str(context.get("task_id") or "") == str(identity["task_id"])
+        and str(context.get("checkpoint_id") or "") == str(identity["checkpoint_id"])
+        and isinstance(supplied_path, Mapping)
+        and {field: str(supplied_path.get(field) or "") for field in _PATH_FIELDS} == expected_path
+        and supplied_fps == expected_fps
+    )
+    if not identity_matches:
+        return _result(
+            "TWO_B_TWO_C_RECOVERY_REQUIRED",
+            "Step 2C recovery context is not bound to this exact failed generation and authoritative path",
+            allowed=False,
+            implementation_attempt=3,
+            anti_loop_handoff=True,
+            two_c_enforced=True,
+            recovery_decision="TWO_C_RECOVERY_RECEIPT_INVALID",
+            recovery_receipt_hash=None,
+            requires_user_intervention=False,
+            next_legal_action="REBUILD_RECOVERY_CONTEXT_FROM_AUTHORITATIVE_STATE",
+            recheck_policy="ONLY_AFTER_MATERIALLY_NEW_EVIDENCE",
+        )
+
+    recovery = decide_recovery(context)
+    if recovery.get("allowed") is not True:
+        return _result(
+            "TWO_B_TWO_C_RECOVERY_REQUIRED",
+            str(recovery.get("reason") or "Step 2C has not proven a new repair generation"),
+            allowed=False,
+            implementation_attempt=3,
+            anti_loop_handoff=True,
+            two_c_enforced=True,
+            recovery_decision=recovery.get("decision"),
+            recovery_receipt_hash=recovery.get("recovery_receipt_hash"),
+            recovery_generation=recovery.get("recovery_generation"),
+            requires_user_intervention=recovery.get("requires_user_intervention", False),
+            human_blocker_type=recovery.get("human_blocker_type"),
+            next_legal_action=recovery.get("next_legal_action"),
+            recheck_policy="ONLY_AFTER_MATERIALLY_NEW_EVIDENCE",
+        )
+
+    try:
+        validated = validate_recovery_receipt(recovery.get("recovery_receipt"), action)
+    except Mandatory2CAutonomousRecoveryFailure:
+        return _result(
+            "TWO_B_TWO_C_RECOVERY_REQUIRED",
+            "Step 2C recovery receipt is not valid for this exact action/path",
+            allowed=False,
+            implementation_attempt=3,
+            anti_loop_handoff=True,
+            two_c_enforced=True,
+            recovery_decision="TWO_C_RECOVERY_RECEIPT_INVALID",
+            recovery_receipt_hash=None,
+            requires_user_intervention=False,
+            next_legal_action="REBUILD_RECOVERY_CONTEXT_FROM_AUTHORITATIVE_STATE",
+            recheck_policy="ONLY_AFTER_MATERIALLY_NEW_EVIDENCE",
+        )
+
+    receipt_payload = {
+        "version": VERSION,
+        "identity": dict(identity),
+        "implementation_attempt": 1,
+        "preflight": dict(normalized_preflight),
+        "failed_attempt_count": len(failed),
+        "recovery_generation": validated["recovery_generation"],
+        "recovery_receipt_hash": validated["receipt_hash"],
+    }
+    receipt_hash = _hash(receipt_payload)
+    return _result(
+        "TWO_B_RECOVERY_ATTEMPT_AUTHORIZED",
+        "Step 2C proved a materially new root cause; a new diagnosis generation may implement attempt 1",
+        allowed=True,
+        implementation_attempt=1,
+        reliability_receipt_hash=receipt_hash,
+        reliability_receipt={"payload": receipt_payload, "receipt_hash": receipt_hash},
+        anti_loop_handoff=True,
+        two_c_enforced=True,
+        recovery_decision=recovery["decision"],
+        recovery_receipt_hash=validated["receipt_hash"],
+        recovery_generation=validated["recovery_generation"],
+        requires_user_intervention=False,
+        next_legal_action="IMPLEMENT_RECOVERY_GENERATION_REPAIR",
+        recheck_policy="ONLY_AFTER_MATERIALLY_NEW_EVIDENCE",
+    )
+
+
+def authorize_implementation(action: Mapping[str, Any]) -> dict[str, Any]:
+    """Authorize implementation attempt 1/2 or an evidence-bound recovery generation."""
     identity = _validate_action_identity(action)
     action_type = identity["action_type"]
     if action_type not in IMPLEMENTATION_ACTION_TYPES:
@@ -208,15 +338,7 @@ def authorize_implementation(action: Mapping[str, Any]) -> dict[str, Any]:
     failed = _failed_attempts(history)
 
     if len(failed) >= 2:
-        return _result(
-            "TWO_B_ROOT_CAUSE_RESET_REQUIRED",
-            "two implementation attempts already failed; no third patch without root-cause reset",
-            allowed=False,
-            implementation_attempt=3,
-            anti_loop_handoff=True,
-            next_legal_action="ROOT_CAUSE_RESET",
-            recheck_policy="ONLY_AFTER_MATERIALLY_NEW_EVIDENCE",
-        )
+        return _authorize_recovery_generation(action, identity, normalized, failed)
 
     attempt = len(failed) + 1
     if attempt == 2:
@@ -301,18 +423,42 @@ def contract_self_test() -> dict[str, Any]:
         "reliability_preflight": base_preflight,
         "implementation_attempt_history": [],
     }
+    failed_history = [
+        {"attempt": 1, "outcome": "FAILED", "evidence_fingerprint": "e1"},
+        {"attempt": 2, "outcome": "FAILED", "evidence_fingerprint": "e2"},
+    ]
     attempt1 = authorize_implementation(action)
-    attempt3 = authorize_implementation({
+    handoff = authorize_implementation({
         **action,
-        "implementation_attempt_history": [
-            {"attempt": 1, "outcome": "FAILED", "evidence_fingerprint": "e1"},
-            {"attempt": 2, "outcome": "FAILED", "evidence_fingerprint": "e2"},
-        ],
+        "implementation_attempt_history": failed_history,
+    })
+    recovery_context = {
+        "task_id": "self-test",
+        "checkpoint_id": "2B",
+        "authoritative_path": base_preflight["authoritative_path"],
+        "failed_generation": 1,
+        "failed_attempts": failed_history,
+        "diagnostic_history": [],
+        "evidence_candidates": [],
+        "root_cause": {
+            "proven": True,
+            "classification": "verification/test",
+            "failed_assumption": "old proof assumption",
+            "evidence_fingerprint": "e3-new",
+            "repair_summary": "repair the proof contract",
+        },
+    }
+    recovered = authorize_implementation({
+        **action,
+        "implementation_attempt_history": failed_history,
+        "autonomous_recovery_context": recovery_context,
     })
     if attempt1["decision"] != "TWO_B_ATTEMPT_1_AUTHORIZED" or attempt1["allowed"] is not True:
         raise Mandatory2BReliabilityGateFailure("attempt-1 self-test failed")
-    if attempt3["decision"] != "TWO_B_ROOT_CAUSE_RESET_REQUIRED" or attempt3["allowed"] is not False:
-        raise Mandatory2BReliabilityGateFailure("two-attempt anti-loop self-test failed")
+    if handoff["decision"] != "TWO_B_TWO_C_RECOVERY_REQUIRED" or handoff["allowed"] is not False:
+        raise Mandatory2BReliabilityGateFailure("Step 2C handoff self-test failed")
+    if recovered["decision"] != "TWO_B_RECOVERY_ATTEMPT_AUTHORIZED" or recovered["allowed"] is not True:
+        raise Mandatory2BReliabilityGateFailure("Step 2C recovery-generation self-test failed")
     return {
         "status": "GREEN",
         "version": VERSION,
@@ -320,6 +466,8 @@ def contract_self_test() -> dict[str, Any]:
         "second_pass_requires_new_evidence": True,
         "third_patch_blocked": True,
         "anti_loop_root_cause_reset": True,
+        "step2c_autonomous_recovery": True,
+        "recovery_requires_materially_new_evidence": True,
         "network_calls": NETWORK_CALLS,
         "auto_mutate": AUTO_MUTATE,
         "product_runtime_mutation": MAY_MODIFY_PRODUCT_RUNTIME,
