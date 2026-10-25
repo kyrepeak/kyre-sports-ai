@@ -34,6 +34,8 @@ jobs:
           python -m pytest -q
           tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py
           tests/test_api2_nfl_rushing_live_timeout_v1.py
+          tests/test_api2_nfl_rushing_yards_field_fallback_v1.py
+          tests/test_api2_step2d_nfl_rushing_fallback_recovery_v1.py
       - name: Compile Step 2D authority
         run: >-
           python -m py_compile
@@ -42,3 +44,4 @@ jobs:
           devsystem/api2_execution_plan_compiler_cert_v1.py
           devsystem/api2_step2bc_cert_v1.py
           sports_api/nfl_rushing_yards_data_truth_v1.py
+          sports_api/collectors/nfl_the_odds_api_rushing_yards_v1.py
