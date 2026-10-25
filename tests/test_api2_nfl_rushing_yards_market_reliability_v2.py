@@ -204,6 +204,39 @@ def test_identity_offered_but_quote_not_normalized_stays_data_unavailable() -> N
     assert state["line"] is None
 
 
+def test_duplicate_provider_identity_rows_with_no_offered_market_are_verified_absence() -> None:
+    player = {"team_abbr": "GB", "jersey_number": "2.0", "position": "RB", "active": True}
+    bundle = {
+        "provider": "FanDuel",
+        "state": "AVAILABLE",
+        "observations": [{
+            "provider_player_id": "other-rb",
+            "team_abbr": "GB",
+            "jersey_number": "32",
+            "position": "RB",
+            "sportsbook": "FanDuel",
+            "market": "Rushing Yards",
+            "line": 10.5,
+            "over_odds": -113,
+            "under_odds": -113,
+        }],
+        "evidence": {
+            "identity_catalog": [
+                {"provider_player_id": "dup-a", "team_abbr": "GB", "jersey_number": "2", "position": "RB", "active": True},
+                {"provider_player_id": "dup-b", "team_abbr": "GB", "jersey_number": "2.0", "position": "Running Back", "active": True},
+                {"provider_player_id": "other-rb", "team_abbr": "GB", "jersey_number": "32", "position": "RB", "active": True},
+            ],
+            "offered_provider_player_ids": ["other-rb"],
+        },
+    }
+    state = data_truth.market_state_from_bundle(bundle, player=player)
+    assert state["status"] == "MARKET_NOT_POSTED"
+    assert state["state"] == "VERIFIED_NO_STANDARD_MARKET"
+    assert state["verified_absence"] is True
+    assert state["identity_verified"] is True
+    assert state["line"] is None
+
+
 def test_live_source_policy_and_projection_isolation_remain_clean() -> None:
     paths = [
         ROOT / "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py",
