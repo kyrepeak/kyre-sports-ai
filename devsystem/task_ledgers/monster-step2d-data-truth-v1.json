@@ -2,55 +2,62 @@
   "version": "MONSTER_STEP2D_TASK_LEDGER_V1",
   "task_id": "monster-step2d-data-truth-v1",
   "active_problem": "Create a permanent MONSTER-only post-execution data-truth gate that prevents false blanks, unverified absence, technical-failure negative caching, fabricated values, and end-to-end truth drift.",
-  "status": "SUCCESSOR_CANDIDATE_PENDING_EXACT_HEAD_PROOF",
-  "progress_percent": 68,
+  "status": "GREEN_FROZEN",
+  "progress_percent": 100,
   "authoritative_base": "monster-main",
   "source_monster_sha": "127db7ca1f23400055ff130f54704386823b4947",
   "authoritative_branch": "monster-step2d-data-truth-v1",
   "authoritative_pr": 1794,
+  "certified_candidate_sha": "07d509858403da496ef871e915a3d5200df01e63",
+  "verified_merge_sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+  "verified_merge_tree_sha": "a01530f257565d9db35f049c12f9f21579eadc4d",
   "one_authoritative_proof_workflow": true,
   "proof_workflow": "MONSTER Step 2D Data Truth V1",
   "step2a": {
+    "status": "GREEN",
     "one_active_problem": true,
     "single_branch": true,
     "single_pr": true,
     "single_proof_path": true,
-    "authorization_status": "AUTHORIZED_ONE_TEST_FIXTURE_SUCCESSOR_AFTER_NEW_EVIDENCE"
+    "exact_head_merge_lease_honored": true
   },
   "anti_loop": {
+    "status": "GREEN",
     "enabled": true,
     "blind_retry_allowed": false,
     "duplicate_execution_path": false,
     "failed_action_repeated_without_new_evidence": false,
-    "failed_candidate_sha": "1060e8fd59b54f7b649de685ddfba933b59564bd"
+    "failed_candidate_sha": "1060e8fd59b54f7b649de685ddfba933b59564bd",
+    "successor_candidate_sha": "07d509858403da496ef871e915a3d5200df01e63"
   },
   "step2c": {
-    "status": "SECOND_ROOT_CAUSE_PROVEN",
+    "status": "GREEN",
     "architecture_root_cause": "The frozen MONSTER Step 2B/Step 2C baseline had no permanent post-execution field-truth authority between execution and final verification.",
     "architecture_evidence": "Authoritative TDD RED run 40158158839 failed at Step 2D compile because the required Step 2D production module did not exist.",
     "verification_root_cause": "The parser-failure regression fixture retained downstream VALUE_PRESENT truth after injecting PARSER_FAILURE, so the Step 2D gate correctly classified the mixed fixture as FABRICATED_VALUE instead of the test's expected TECHNICAL_FAILURE.",
     "verification_evidence": "Exact-head run 40158316766 reached GREEN for Step 2D self-test and permanence, then finished 78 passed / 1 failed; the only failure was TECHNICAL_FAILURE expected versus FABRICATED_VALUE actual.",
-    "repair_ruling": "Keep production Step 2D logic unchanged. Remove invented downstream values from the parser-failure fixture and require the separate fabrication regression to classify FABRICATED_VALUE exactly."
+    "repair_ruling": "Production Step 2D logic remained unchanged. The parser-failure fixture was corrected to remove invented downstream truth, and the separate fabrication regression was strengthened to require FABRICATED_VALUE exactly."
   },
   "step2b": {
-    "status": "PASS_SUCCESSOR",
+    "status": "GREEN",
     "acceptance_criteria_locked": true,
     "authoritative_path_verified": true,
     "requirement_to_implementation_mapped": true,
     "requirement_to_proof_mapped": true,
     "regression_scope": "MONSTER control plane plus Step 2D field-truth contracts",
     "exact_verification_plan_locked": true,
-    "production_logic_change_required": false,
+    "production_logic_change_required_for_successor": false,
     "materially_new_evidence_required_and_present": true
   },
   "step2d": {
-    "status": "IMPLEMENTED_PENDING_SUCCESSOR_REMOTE_PROOF",
+    "status": "GREEN",
     "verified_absence_required": true,
     "technical_failure_preservation_required": true,
     "field_specific_fallback_required": true,
     "fabrication_blocked": true,
     "negative_cache_technical_failure_blocked": true,
     "end_to_end_truth_required": true,
+    "real_zero_preserved_as_data": true,
     "autonomous_recovery_route": "ANTI_LOOP->STEP_2C->STEP_2B->STEP_2A->EXECUTE->STEP_2D"
   },
   "verification": {
@@ -60,9 +67,15 @@
     "first_implementation_run_id": 40158316766,
     "first_implementation_job_id": 121064338616,
     "first_implementation_result": "78_PASSED_1_FAILED_TEST_FIXTURE_CLASSIFICATION",
-    "exact_head_proof": "PENDING_SUCCESSOR",
-    "merge_readback": "PENDING",
-    "postmerge_proof": "PENDING",
-    "freeze_readback": "PENDING"
-  }
+    "premerge_green_run_id": 40158424607,
+    "premerge_green_job_id": 121064661775,
+    "premerge_regressions": "79_PASSED",
+    "merge_readback": "MATCHED_C9BE8571401A0B07F34C28FDAA86056202D5E26A",
+    "postmerge_green_run_id": 40158478430,
+    "postmerge_green_job_id": 121064806627,
+    "postmerge_regressions": "79_PASSED",
+    "deployment_proof": "NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE_NO_PRODUCT_RUNTIME_MUTATION",
+    "freeze_readback": "PENDING_CONTENT_ADDRESSED_READBACK"
+  },
+  "freeze_token": "MONSTER_STEP2D_DATA_TRUTH_V1_FROZEN"
 }

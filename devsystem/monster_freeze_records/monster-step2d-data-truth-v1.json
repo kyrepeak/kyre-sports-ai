@@ -1,0 +1,66 @@
+{
+  "version": "MONSTER_STEP2D_FREEZE_RECORD_V1",
+  "status": "FROZEN",
+  "freeze_token": "MONSTER_STEP2D_DATA_TRUTH_V1_FROZEN",
+  "task_id": "monster-step2d-data-truth-v1",
+  "authoritative_base": "monster-main",
+  "authoritative_pr": 1794,
+  "certified_candidate_sha": "07d509858403da496ef871e915a3d5200df01e63",
+  "verified_state_sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+  "verified_state_tree_sha": "a01530f257565d9db35f049c12f9f21579eadc4d",
+  "proof_authority": "MONSTER_ONLY",
+  "premerge_proof": {
+    "run_id": 40158424607,
+    "job_id": 121064661775,
+    "status": "GREEN",
+    "regressions": "79_PASSED"
+  },
+  "postmerge_proof": {
+    "run_id": 40158478430,
+    "job_id": 121064806627,
+    "status": "GREEN",
+    "regressions": "79_PASSED"
+  },
+  "verified_controls": {
+    "system_isolation": "GREEN",
+    "anti_loop": "GREEN",
+    "step2c": "GREEN",
+    "step2b": "GREEN",
+    "step2a": "GREEN",
+    "step2d": "GREEN",
+    "prior_permanent_baseline": "GREEN",
+    "step2d_permanent_enforcement": "GREEN",
+    "exact_head_verification": "GREEN",
+    "postmerge_verification": "GREEN"
+  },
+  "step2d_truth_contract": {
+    "empty_is_not_absence": true,
+    "technical_failure_states_preserved": true,
+    "verified_absence_required": true,
+    "field_specific_approved_fallback_required": true,
+    "blind_fanout_blocked": true,
+    "fabricated_values_blocked": true,
+    "technical_failure_negative_cache_blocked": true,
+    "source_authoritative_final_truth_match_required": true,
+    "real_zero_preserved_as_data": true,
+    "autonomous_recovery_route": "ANTI_LOOP->STEP_2C->STEP_2B->STEP_2A->EXECUTE->STEP_2D"
+  },
+  "proof_transport": {
+    "exact_sha_checkout": true,
+    "checkout_fetch_depth": 1,
+    "persist_credentials": false,
+    "full_repository_ref_fetch": false
+  },
+  "deployment": {
+    "required": false,
+    "reason": "Step 2D is a read-only MONSTER control-plane verifier with network_calls=false, auto_mutate=false, and product_runtime_mutation=false."
+  },
+  "freeze_protection": {
+    "registry_owned_by_monster": true,
+    "content_addressed_verified_state": true,
+    "content_addressed_freeze_record": true,
+    "freeze_ref": "monster-frozen-step2d-data-truth-v1",
+    "later_canonical_branch_changes_do_not_rewrite_verified_state_sha": true,
+    "later_canonical_branch_changes_do_not_rewrite_freeze_record_commit": true
+  }
+}
