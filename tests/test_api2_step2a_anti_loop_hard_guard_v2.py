@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 import devsystem.api2_anti_loop_v1 as anti
+import devsystem.api2_execution_controller_v3 as controller
 import devsystem.api2_step2a_authority_v1 as step2a
 
 
@@ -15,11 +16,8 @@ BASE_SHA = "a" * 40
 DEPLOYMENT_ID = "dpl_" + "A" * 28
 
 
-def _begin(**overrides):
+def _identity(**overrides):
     payload = {
-        "problem_id": PROBLEM_ID,
-        "branch": BRANCH,
-        "proof_path": PROOF_PATH,
         "repository": REPOSITORY,
         "base_ref": BASE_REF,
         "base_sha": BASE_SHA,
@@ -28,7 +26,18 @@ def _begin(**overrides):
         "deployment_id": DEPLOYMENT_ID,
     }
     payload.update(overrides)
-    return step2a.begin_problem({}, **payload)
+    return payload
+
+
+def _begin(**overrides):
+    identity = _identity(**overrides)
+    return step2a.begin_problem(
+        {},
+        problem_id=PROBLEM_ID,
+        branch=BRANCH,
+        proof_path=PROOF_PATH,
+        **identity,
+    )
 
 
 def test_step2a_binds_complete_authoritative_path_identity():
@@ -64,12 +73,7 @@ def test_step2a_existing_authority_cannot_be_reset_to_another_path():
             problem_id=PROBLEM_ID,
             branch=BRANCH,
             proof_path=PROOF_PATH,
-            repository=REPOSITORY,
-            base_ref=BASE_REF,
-            base_sha=BASE_SHA,
-            pr_number=1796,
-            run_id="api2-proof-run-1796-r1",
-            deployment_id="dpl_" + "B" * 28,
+            **_identity(deployment_id="dpl_" + "B" * 28),
         )
 
 
@@ -174,3 +178,53 @@ def test_anti_loop_snapshot_tampering_is_rejected():
     tampered["failures"] = {}
     with pytest.raises(anti.AntiLoopError, match="API2_ANTI_LOOP_SNAPSHOT_DIGEST_MISMATCH"):
         anti.restore_state(tampered)
+
+
+def test_controller_handoff_restores_same_authority_and_failed_method_exclusion():
+    state = controller.new_state(
+        problem_id=PROBLEM_ID,
+        branch=BRANCH,
+        proof_path=PROOF_PATH,
+        acceptance_criteria=["hard authority", "anti loop"],
+        authority_identity=_identity(),
+    )
+    action = {
+        "type": "READBACK",
+        "target": "production-rushing-values",
+        "method": "protected-preview-raw-http",
+        "deployment_id": DEPLOYMENT_ID,
+    }
+    state = controller.record_failure(
+        state,
+        action=action,
+        evidence=["redirected to authentication"],
+        hypothesis="protected deployment requires authenticated path",
+        classification="ACCESS_PATH_FAILURE",
+    )
+    snapshot = controller.state_snapshot(state)
+    resumed = controller.restore_state(snapshot)
+
+    assert resumed["authority"]["authority_digest"] == state["authority"]["authority_digest"]
+    assert resumed["authority"]["active_problem"] == state["authority"]["active_problem"]
+    decision = anti.authorize_retry(
+        resumed["anti_loop"],
+        action=action,
+        evidence=["same method with different words"],
+        hypothesis="same access failure rephrased",
+    )
+    assert decision["allowed"] is False
+    assert decision["decision"] == "FAILED_ACTION_PERMANENTLY_EXCLUDED"
+
+
+def test_controller_handoff_rejects_tampered_authority_snapshot():
+    state = controller.new_state(
+        problem_id=PROBLEM_ID,
+        branch=BRANCH,
+        proof_path=PROOF_PATH,
+        acceptance_criteria=["hard authority"],
+        authority_identity=_identity(),
+    )
+    snapshot = controller.state_snapshot(state)
+    snapshot["authority_snapshot"]["active_problem"]["deployment_id"] = "dpl_" + "Z" * 28
+    with pytest.raises(controller.ControllerError, match="API2_CONTROLLER_RESUME_AUTHORITY_INVALID"):
+        controller.restore_state(snapshot)
