@@ -94,7 +94,7 @@ def test_v4_horizontal_rail_contract_and_page1_selection():
 
 def test_v5_successor_preserves_v4_boundaries_without_page2_or_model_mutation():
     wrapper = (ROOT / "cfb_game_total_page1_api_bootstrap_repair_r1.py").read_text(encoding="utf-8")
-    assert "cfb_game_total_page1_atier_v6" in wrapper
+    assert "cfb_game_total_page1_atier_v7" in wrapper
     assert "cfb_game_total_page1_atier_v4 as atier" not in wrapper
 
     successor = (ROOT / "cfb_game_total_page1_atier_v5.py").read_text(encoding="utf-8")
