@@ -1,27 +1,27 @@
 """NFL Rushing Yards runtime data-truth overlay.
 
 This module prevents direct-book transport/parser/mapping failures from being
-collapsed into MARKET_NOT_POSTED. It is deliberately generic at the source-chain
-boundary: a primary provider may fail, an approved fallback may satisfy the
-field, and only an explicitly VERIFIED_NOT_POSTED source result may become a
-true unposted market state.
+collapsed into a verified unposted market state. FanDuel remains the primary
+field source; approved fallbacks may satisfy a missing field, but only explicit
+absence proof can become a true no-market state.
 
 No value is fabricated and sportsbook data never influences Kyre projections.
 """
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, wait
-import re
 from typing import Any, Callable, Mapping, Sequence
 
 from sports_api.collectors import nfl_fanduel_rushing_yards_nflverse_v1 as direct_book
 from sports_api.collectors import nfl_the_odds_api_rushing_yards_v1 as odds_api_fallback
-from sports_api.nfl_data_nflverse_v1 import canonical_team_abbr
 
-VERSION = "NFL_RUSHING_YARDS_DATA_TRUTH_V1"
+VERSION = "NFL_RUSHING_YARDS_DATA_TRUTH_V2"
 PRIMARY_PROVIDER = "FanDuel"
-DEFAULT_MARKET_BUDGET_SECONDS = 4.0
-DEFAULT_CALL_TIMEOUT_SECONDS = 2
+DEFAULT_MARKET_BUDGET_SECONDS = 18.0
+DEFAULT_CALL_TIMEOUT_SECONDS = 8
+PLAYER_NAME_MATCHING = False
+FUZZY_MATCHING = False
+SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 # Field-specific recovery chain. FanDuel direct remains primary; The Odds API is
 # invoked only after primary failure/unverified absence, then routing stops once
@@ -35,6 +35,7 @@ _FAILURE_STATES = {
     "PARSER_FAILURE",
     "EVENT_MAPPING_FAILURE",
     "PLAYER_MAPPING_FAILURE",
+    "PLAYER_MAPPING_UNAVAILABLE",
     "MARKET_MAPPING_FAILURE",
     "STALE_DATA",
     "SOURCE_CONFLICT",
@@ -44,10 +45,6 @@ _FAILURE_STATES = {
 
 def _text(value: Any) -> str:
     return str(value if value is not None else "").strip()
-
-
-def _norm(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", _text(value).lower()).strip()
 
 
 def _bundle(provider: str, state: str, observations: Sequence[Mapping[str, Any]] | None = None, *, reason: str = "", evidence: Mapping[str, Any] | None = None) -> dict[str, Any]:
@@ -67,7 +64,7 @@ def _normalize_provider_result(provider: str, raw: Any) -> dict[str, Any]:
         observations = [dict(row) for row in (raw.get("observations") or []) if isinstance(row, Mapping)]
         if state == "AVAILABLE" and observations:
             return _bundle(provider, "AVAILABLE", observations, reason=_text(raw.get("reason")), evidence=raw.get("evidence") if isinstance(raw.get("evidence"), Mapping) else None)
-        if state == "VERIFIED_NOT_POSTED" and not observations:
+        if state in {"VERIFIED_NOT_POSTED", "VERIFIED_NO_STANDARD_MARKET"} and not observations:
             return _bundle(provider, "VERIFIED_NOT_POSTED", [], reason=_text(raw.get("reason")), evidence=raw.get("evidence") if isinstance(raw.get("evidence"), Mapping) else None)
         if state in _FAILURE_STATES:
             return _bundle(provider, state, observations, reason=_text(raw.get("reason")), evidence=raw.get("evidence") if isinstance(raw.get("evidence"), Mapping) else None)
@@ -79,14 +76,14 @@ def _normalize_provider_result(provider: str, raw: Any) -> dict[str, Any]:
         if observations:
             return _bundle(provider, "AVAILABLE", observations)
         # A legacy empty list contains no evidence that the sportsbook did not
-        # post the market. Treat it as an unresolved mapping/parse outcome.
+        # post the market. Treat it as unresolved rather than fabricating absence.
         return _bundle(provider, "MARKET_MAPPING_FAILURE", [], reason="legacy collector returned empty without absence proof")
     return _bundle(provider, "PARSER_FAILURE", [], reason=f"unexpected provider result type: {type(raw).__name__}")
 
 
 def _call_provider(provider: str, collector: Callable[..., Any], game: Mapping[str, Any], timeout: int) -> dict[str, Any]:
     try:
-        return _normalize_provider_result(provider, collector(game, timeout=int(timeout)))
+        return _normalize_provider_result(provider, collector(game, timeout=max(DEFAULT_CALL_TIMEOUT_SECONDS, int(timeout))))
     except Exception as exc:
         return _bundle(
             provider,
@@ -109,9 +106,6 @@ def _apply_fallbacks(game: Mapping[str, Any], current: dict[str, Any], *, timeou
             out["fallback_used"] = True
             out["provider_attempts"] = attempts
             return out
-    # VERIFIED_NOT_POSTED is only accepted when every successfully reached,
-    # parsed and matched provider in the supplied approved chain explicitly
-    # certifies absence and no technical failure is present.
     states = [str(item.get("state") or "") for item in attempts]
     if states and all(state == "VERIFIED_NOT_POSTED" for state in states):
         return _bundle(
@@ -133,7 +127,7 @@ def collect_markets(
     call_timeout_seconds: int = DEFAULT_CALL_TIMEOUT_SECONDS,
     fallback_collectors: Sequence[tuple[str, Callable[..., Any]]] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Collect per-game markets while preserving transport/parser truth."""
+    """Collect per-game markets concurrently while preserving transport truth."""
     fallback_collectors = tuple(fallback_collectors if fallback_collectors is not None else APPROVED_FALLBACK_COLLECTORS)
     valid_games = [dict(game) for game in (games or []) if game.get("source_game_id")]
     results: dict[str, dict[str, Any]] = {
@@ -148,12 +142,14 @@ def collect_markets(
     if not valid_games:
         return results
 
+    effective_timeout = max(DEFAULT_CALL_TIMEOUT_SECONDS, int(call_timeout_seconds or 0))
+    effective_budget = max(float(budget_seconds or 0.0), float(effective_timeout * direct_book.MAX_MARKET_READ_ATTEMPTS + 2))
     pool = ThreadPoolExecutor(max_workers=min(12, max(1, len(valid_games))))
     futures = {
-        pool.submit(_call_provider, PRIMARY_PROVIDER, direct_book.collect_fanduel_game_markets, game, int(call_timeout_seconds)): game
+        pool.submit(_call_provider, PRIMARY_PROVIDER, direct_book.collect_fanduel_game_markets, game, effective_timeout): game
         for game in valid_games
     }
-    done, pending = wait(futures, timeout=max(0.0, float(budget_seconds)))
+    done, pending = wait(futures, timeout=effective_budget)
 
     for future in done:
         game = futures[future]
@@ -165,7 +161,7 @@ def collect_markets(
         results[game_id] = _apply_fallbacks(
             game,
             primary,
-            timeout=int(call_timeout_seconds),
+            timeout=effective_timeout,
             fallback_collectors=fallback_collectors,
         )
 
@@ -177,13 +173,13 @@ def collect_markets(
             PRIMARY_PROVIDER,
             "PROVIDER_FETCH_FAILURE",
             [],
-            reason="primary sportsbook collection exceeded slate-wide time budget",
-            evidence={"timeout": True},
+            reason="primary sportsbook collection exceeded bounded slate-wide time budget",
+            evidence={"timeout": True, "budget_seconds": effective_budget},
         )
         results[game_id] = _apply_fallbacks(
             game,
             timeout_result,
-            timeout=int(call_timeout_seconds),
+            timeout=effective_timeout,
             fallback_collectors=fallback_collectors,
         )
 
@@ -193,8 +189,11 @@ def collect_markets(
 
 def market_state(observation: Mapping[str, Any] | None, *, diagnostic_state: str = "MARKET_MAPPING_FAILURE", reason: str = "") -> dict[str, Any]:
     if not observation:
+        state = "PLAYER_MAPPING_UNAVAILABLE" if _text(diagnostic_state).upper() in {"PLAYER_MAPPING_FAILURE", "PLAYER_MAPPING_UNAVAILABLE"} else "DATA_UNAVAILABLE"
         return {
             "status": "DATA_UNAVAILABLE",
+            "state": state,
+            "verified_absence": False,
             "diagnostic_state": _text(diagnostic_state).upper() or "MARKET_MAPPING_FAILURE",
             "reason": _text(reason),
             "sportsbook": None,
@@ -203,9 +202,12 @@ def market_state(observation: Mapping[str, Any] | None, *, diagnostic_state: str
             "over_odds": None,
             "under_odds": None,
             "timestamp": None,
+            "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         }
     return {
         "status": "VERIFIED",
+        "state": "AVAILABLE",
+        "verified_absence": False,
         "diagnostic_state": "AVAILABLE",
         "reason": "",
         "sportsbook": _text(observation.get("sportsbook")) or None,
@@ -214,67 +216,53 @@ def market_state(observation: Mapping[str, Any] | None, *, diagnostic_state: str
         "over_odds": observation.get("over_odds"),
         "under_odds": observation.get("under_odds"),
         "timestamp": _text(observation.get("source_timestamp")) or None,
+        "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
     }
 
 
 def market_state_from_bundle(bundle: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None, *, player: Mapping[str, Any]) -> dict[str, Any]:
     if isinstance(bundle, Mapping):
-        state = _text(bundle.get("state")).upper() or "ALL_SOURCES_UNAVAILABLE"
+        source_state = _text(bundle.get("state")).upper() or "ALL_SOURCES_UNAVAILABLE"
         observations = [dict(row) for row in (bundle.get("observations") or []) if isinstance(row, Mapping)]
         reason = _text(bundle.get("reason"))
-        bundle_provider = _text(bundle.get("provider"))
-        bundle_evidence = dict(bundle.get("evidence") or {}) if isinstance(bundle.get("evidence"), Mapping) else {}
+        provider = _text(bundle.get("provider"))
     else:
         observations = [dict(row) for row in (bundle or []) if isinstance(row, Mapping)]
-        state = "AVAILABLE" if observations else "MARKET_MAPPING_FAILURE"
+        source_state = "AVAILABLE" if observations else "MARKET_MAPPING_FAILURE"
         reason = "legacy observation list without explicit source state"
-        bundle_provider = ""
-        bundle_evidence = {}
+        provider = ""
 
-    if state == "VERIFIED_NOT_POSTED":
+    if source_state == "VERIFIED_NOT_POSTED":
         return {
             "status": "MARKET_NOT_POSTED",
-            "diagnostic_state": "VERIFIED_NOT_POSTED",
+            "state": "VERIFIED_NO_STANDARD_MARKET",
+            "verified_absence": True,
+            "diagnostic_state": "VERIFIED_NO_STANDARD_MARKET",
             "reason": reason,
-            "sportsbook": _text(bundle.get("provider")) if isinstance(bundle, Mapping) else None,
+            "sportsbook": provider or None,
             "market": "Rushing Yards",
             "line": None,
             "over_odds": None,
             "under_odds": None,
             "timestamp": None,
+            "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         }
-    if state != "AVAILABLE":
-        return market_state(None, diagnostic_state=state, reason=reason)
+    if source_state != "AVAILABLE":
+        return market_state(None, diagnostic_state=source_state, reason=reason)
 
-    team = canonical_team_abbr(player.get("team_abbr"))
-    name = _norm(player.get("player_name"))
-    exact_event_fallback = (
-        bundle_provider == "The Odds API"
-        and _text(bundle_evidence.get("event_match")) == "exact_home_away"
-    )
     matched: list[dict[str, Any]] = []
     for row in observations:
-        if _norm(row.get("player_name")) != name:
-            continue
-        row_team = canonical_team_abbr(row.get("team_abbr")) if _text(row.get("team_abbr")) else ""
-        row_position = _text(row.get("position")).upper()
-        if row_team and row_team != team:
-            continue
-        if row_position and row_position not in {"RB", "RUNNING BACK"}:
-            continue
-        if (not row_team or not row_position) and not (
-            exact_event_fallback
-            and _text(row.get("source_provider")) == "The Odds API"
-            and _text(row.get("provider_event_id"))
-        ):
-            continue
-        matched.append(row)
+        resolved = direct_book.reconcile_observation_to_roster(row, [player])
+        if resolved is not None:
+            matched.append(row)
 
     if len(matched) == 1:
-        return market_state(matched[0])
+        out = market_state(matched[0])
+        out["identity_verified"] = True
+        return out
     if len(matched) > 1:
-        return market_state(None, diagnostic_state="SOURCE_CONFLICT", reason="multiple exact player market observations survived normalization")
-    return market_state(None, diagnostic_state="MARKET_MAPPING_FAILURE", reason="provider market bundle did not contain one exact player match with sufficient identity proof")
+        return market_state(None, diagnostic_state="SOURCE_CONFLICT", reason="multiple exact team + jersey + position market observations survived canonical reconciliation")
+    return market_state(None, diagnostic_state="PLAYER_MAPPING_UNAVAILABLE", reason="provider market bundle did not contain one unique active team + jersey + position match")
 
 
 def _market_for_player(player: Mapping[str, Any], bundle: Any) -> dict[str, Any]:
@@ -293,7 +281,10 @@ __all__ = [
     "APPROVED_FALLBACK_COLLECTORS",
     "DEFAULT_CALL_TIMEOUT_SECONDS",
     "DEFAULT_MARKET_BUDGET_SECONDS",
+    "FUZZY_MATCHING",
+    "PLAYER_NAME_MATCHING",
     "PRIMARY_PROVIDER",
+    "SPORTSBOOK_PROJECTION_INFLUENCE",
     "VERSION",
     "collect_markets",
     "install",
