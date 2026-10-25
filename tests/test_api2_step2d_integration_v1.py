@@ -151,6 +151,7 @@ def test_rushing_successful_provider_value_survives_to_market_state():
             {
                 "player_name": "Kendre Miller",
                 "team_abbr": "NO",
+                "jersey_number": "25",
                 "position": "RB",
                 "sportsbook": "FanDuel",
                 "market": "Rushing Yards",
@@ -161,8 +162,12 @@ def test_rushing_successful_provider_value_survives_to_market_state():
             }
         ],
     }
-    result = truth.market_state_from_bundle(bundle, player={"player_name": "Kendre Miller", "team_abbr": "NO"})
+    result = truth.market_state_from_bundle(
+        bundle,
+        player={"player_name": "Kendre Miller", "team_abbr": "NO", "jersey_number": "25.0", "position": "Running Back", "active": True},
+    )
     assert result["status"] == "VERIFIED"
     assert result["diagnostic_state"] == "AVAILABLE"
     assert result["line"] == 37.5
     assert result["sportsbook"] == "FanDuel"
+    assert result["identity_verified"] is True

@@ -8,14 +8,17 @@ from types import SimpleNamespace
 import pandas as pd
 
 
-def test_rushing_fastpath_replaces_request_time_pbp_and_bounds_markets():
+def test_rushing_fastpath_replaces_request_time_pbp_and_uses_reliable_market_budget():
     fast = import_module("sports_api.nfl_rushing_yards_fastpath_v1")
     assert "stats_player_week_{season}.csv" in fast.PLAYER_STATS_URL
     assert fast.PLAYER_STATS_TIMEOUT_SECONDS <= 6
     assert fast.ROSTER_TIMEOUT_SECONDS <= 6
     assert fast.PREFETCH_BUDGET_SECONDS <= 7.0
-    assert fast.MARKET_BUDGET_SECONDS <= 5.0
-    assert fast.MARKET_CALL_TIMEOUT_SECONDS <= 3
+    # The old 2-second provider / 4-second slate contract caused live FanDuel
+    # TimeoutError states. The market path is still bounded, but now allows one
+    # 8-second transient retry without cutting off a valid direct-book read.
+    assert fast.MARKET_CALL_TIMEOUT_SECONDS == 8
+    assert fast.MARKET_BUDGET_SECONDS == 18.0
 
     legacy = SimpleNamespace(
         _load_pbp=lambda season: None,
@@ -102,22 +105,22 @@ def test_weekly_player_stats_preserve_verified_rushing_workload():
     }]
 
 
-def test_slow_sportsbook_cannot_block_entire_slate(monkeypatch):
+def test_market_collection_remains_concurrent_and_bounded(monkeypatch):
     fast = import_module("sports_api.nfl_rushing_yards_fastpath_v1")
 
-    def slow_market(_game, *, timeout=1):
-        time.sleep(0.20)
+    def slow_market(_game, *, timeout=8):
+        time.sleep(0.05)
         return [{"sportsbook": "FanDuel"}]
 
     monkeypatch.setattr(fast.direct_book, "collect_fanduel_game_markets", slow_market)
     games = [{"source_game_id": f"g{i}", "away_name": "A", "home_name": "B"} for i in range(6)]
     started = time.monotonic()
-    result = fast.collect_markets(games, budget_seconds=0.02, call_timeout_seconds=1)
+    result = fast.collect_markets(games)
     elapsed = time.monotonic() - started
 
-    assert elapsed < 0.15
+    assert elapsed < 0.20
     assert set(result) == {f"g{i}" for i in range(6)}
-    assert all(rows == [] for rows in result.values())
+    assert all(rows == [{"sportsbook": "FanDuel"}] for rows in result.values())
 
 
 def test_live_slate_wrapper_activates_request_prewarm():

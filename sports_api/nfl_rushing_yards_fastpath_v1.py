@@ -7,7 +7,8 @@ expensive request-time transport helpers:
   defense and matchup-history aggregation;
 * current stats, current roster and prior-season summaries prewarm concurrently;
 * historical enrichment is best-effort behind a small total budget;
-* direct-book market collection is best-effort behind a hard slate-wide budget.
+* direct-book market collection is concurrent and bounded while allowing one
+  production-safe transient retry.
 
 No numeric value is invented. If enrichment misses its budget, the existing
 canonical builder emits its semantic empty states instead of blocking Page 1.
@@ -37,8 +38,8 @@ WEEKLY_ROSTER_URL = (
 PLAYER_STATS_TIMEOUT_SECONDS = 6
 ROSTER_TIMEOUT_SECONDS = 6
 PREFETCH_BUDGET_SECONDS = 6.5
-MARKET_CALL_TIMEOUT_SECONDS = 2
-MARKET_BUDGET_SECONDS = 4.0
+MARKET_CALL_TIMEOUT_SECONDS = 8
+MARKET_BUDGET_SECONDS = 18.0
 HISTORY_BUDGET_SECONDS = 3.0
 
 _PLAYER_STATS_COLUMNS = {
@@ -84,7 +85,6 @@ def _first(row: Mapping[str, Any], *keys: str) -> Any:
 
 @lru_cache(maxsize=8)
 def load_player_stats(season: int) -> pd.DataFrame:
-    """Load compact weekly player summaries instead of full season PBP."""
     response = requests.get(
         PLAYER_STATS_URL.format(season=int(season)),
         timeout=PLAYER_STATS_TIMEOUT_SECONDS,
@@ -99,7 +99,6 @@ def load_player_stats(season: int) -> pd.DataFrame:
 
 @lru_cache(maxsize=4)
 def load_weekly_roster(season: int) -> pd.DataFrame:
-    """Load the verified weekly roster with the same bounded request policy."""
     response = requests.get(
         WEEKLY_ROSTER_URL.format(season=int(season)),
         timeout=ROSTER_TIMEOUT_SECONDS,
@@ -108,12 +107,7 @@ def load_weekly_roster(season: int) -> pd.DataFrame:
     return pd.read_csv(BytesIO(response.content), low_memory=False)
 
 
-def prewarm_season_inputs(
-    season: int,
-    *,
-    budget_seconds: float = PREFETCH_BUDGET_SECONDS,
-) -> dict[str, bool]:
-    """Warm independent season inputs concurrently before the canonical build."""
+def prewarm_season_inputs(season: int, *, budget_seconds: float = PREFETCH_BUDGET_SECONDS) -> dict[str, bool]:
     season = int(season)
     labels = {
         "current_stats": (load_player_stats, season),
@@ -123,10 +117,7 @@ def prewarm_season_inputs(
     }
     state = {label: False for label in labels}
     pool = ThreadPoolExecutor(max_workers=len(labels))
-    futures = {
-        pool.submit(func, value): label
-        for label, (func, value) in labels.items()
-    }
+    futures = {pool.submit(func, value): label for label, (func, value) in labels.items()}
     done, pending = wait(futures, timeout=max(0.0, float(budget_seconds)))
     for future in done:
         label = futures[future]
@@ -141,14 +132,7 @@ def prewarm_season_inputs(
     return state
 
 
-def prewarm_request_inputs(
-    legacy: Any,
-    *,
-    target_date: str | None = None,
-    now_et: Any = None,
-    budget_seconds: float = PREFETCH_BUDGET_SECONDS,
-) -> dict[str, bool]:
-    """Resolve the upcoming season and prewarm only the inputs that build needs."""
+def prewarm_request_inputs(legacy: Any, *, target_date: str | None = None, now_et: Any = None, budget_seconds: float = PREFETCH_BUDGET_SECONDS) -> dict[str, bool]:
     try:
         games_frame = legacy._load_games_csv()
         games = legacy.select_upcoming_week(games_frame, now_et=now_et)
@@ -163,7 +147,6 @@ def prewarm_request_inputs(
 
 
 def completed_rush_rows(frame: pd.DataFrame, cutoff_day: str) -> pd.DataFrame:
-    """Return completed regular-season player-game rushing summaries."""
     if not isinstance(frame, pd.DataFrame) or frame.empty:
         return pd.DataFrame()
     rows = frame.copy()
@@ -180,7 +163,6 @@ def completed_rush_rows(frame: pd.DataFrame, cutoff_day: str) -> pd.DataFrame:
 
 
 def player_game_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
-    """Normalize one weekly-stat row into the canonical player-game shape."""
     if not isinstance(frame, pd.DataFrame) or frame.empty:
         return []
     out: list[dict[str, Any]] = []
@@ -217,14 +199,7 @@ def _load_history_season(season: int) -> list[dict[str, Any]]:
     return player_game_rows(completed_rush_rows(load_player_stats(season), "9999-12-31"))
 
 
-def history_rows(
-    season: int,
-    cutoff_day: str,
-    current_rows: list[dict[str, Any]],
-    *,
-    budget_seconds: float = HISTORY_BUDGET_SECONDS,
-) -> tuple[list[dict[str, Any]], bool]:
-    """Best-effort two-season matchup history without blocking the live slate."""
+def history_rows(season: int, cutoff_day: str, current_rows: list[dict[str, Any]], *, budget_seconds: float = HISTORY_BUDGET_SECONDS) -> tuple[list[dict[str, Any]], bool]:
     rows = list(current_rows)
     prior_seasons = [int(season) - 2, int(season) - 1]
     pool = ThreadPoolExecutor(max_workers=len(prior_seasons))
@@ -242,33 +217,23 @@ def history_rows(
     return rows, complete
 
 
-def collect_markets(
-    games: list[dict[str, Any]],
-    *,
-    budget_seconds: float = MARKET_BUDGET_SECONDS,
-    call_timeout_seconds: int = MARKET_CALL_TIMEOUT_SECONDS,
-) -> dict[str, list[dict[str, Any]]]:
-    """Collect direct-book markets without allowing the provider to block Page 1."""
-    results: dict[str, list[dict[str, Any]]] = {
-        str(game.get("source_game_id")): [] for game in games or [] if game.get("source_game_id")
-    }
+def collect_markets(games: list[dict[str, Any]], *, budget_seconds: float = MARKET_BUDGET_SECONDS, call_timeout_seconds: int = MARKET_CALL_TIMEOUT_SECONDS) -> dict[str, list[dict[str, Any]]]:
+    """Legacy bounded collector; Step 2D data-truth overlay owns production semantics."""
+    results: dict[str, list[dict[str, Any]]] = {str(game.get("source_game_id")): [] for game in games or [] if game.get("source_game_id")}
     if not games:
         return results
     pool = ThreadPoolExecutor(max_workers=min(12, max(1, len(games))))
     futures = {
-        pool.submit(
-            direct_book.collect_fanduel_game_markets,
-            game,
-            timeout=int(call_timeout_seconds),
-        ): str(game.get("source_game_id"))
+        pool.submit(direct_book.collect_fanduel_game_markets, game, timeout=max(MARKET_CALL_TIMEOUT_SECONDS, int(call_timeout_seconds))): str(game.get("source_game_id"))
         for game in games
         if game.get("source_game_id")
     }
-    done, pending = wait(futures, timeout=max(0.0, float(budget_seconds)))
+    done, pending = wait(futures, timeout=max(MARKET_BUDGET_SECONDS, float(budget_seconds)))
     for future in done:
         game_id = futures[future]
         try:
-            results[game_id] = list(future.result() or [])
+            raw = future.result() or []
+            results[game_id] = list(raw) if isinstance(raw, list) else list(raw.get("observations") or []) if isinstance(raw, Mapping) else []
         except Exception:
             results[game_id] = []
     for future in pending:
@@ -278,7 +243,6 @@ def collect_markets(
 
 
 def install(legacy: Any) -> Any:
-    """Install the bounded transport helpers into the canonical legacy builder."""
     legacy._load_pbp = load_player_stats
     legacy._load_weekly_roster = load_weekly_roster
     legacy._completed_rush_rows = completed_rush_rows
