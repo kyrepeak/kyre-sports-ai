@@ -132,6 +132,23 @@ def _nfl_receptions_adapter(route: RuntimeRoute) -> DestinationAdapter:
     )
 
 
+def _nfl_passing_tds_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 Passing TDs adapter with no legacy NFL hub fallback."""
+    def loader():
+        return _import("nfl_passing_tds_runtime_v1")
+
+    def renderer(page):
+        return page.render_nfl_passing_tds_runtime()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id),
+        loader,
+        renderer,
+        "nfl_passing_tds_runtime_v1",
+        20_000,
+    )
+
+
 def _nfl_adapter(route: RuntimeRoute, target: str, *, ttl_ms: int) -> DestinationAdapter:
     market_label = _market_label(route)
 
@@ -293,6 +310,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
             return _nfl_passing_yards_adapter(route)
         if route.market_id == "receptions":
             return _nfl_receptions_adapter(route)
+        if route.market_id == "passing-tds":
+            return _nfl_passing_tds_adapter(route)
         if registration is None:
             return _fail_closed_adapter(route, "NFL route registration missing.")
         ttl = 60_000 if route.market_id == "slate" else 20_000
