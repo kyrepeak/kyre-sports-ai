@@ -251,6 +251,23 @@ def _nfl_spread_adapter(route: RuntimeRoute) -> DestinationAdapter:
     )
 
 
+def _nfl_receiving_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 Receiving Yards V21 adapter with no generic NFL hub fallback."""
+    def loader():
+        return _import("nfl_receiving_yards_hub_v21")
+
+    def renderer(page):
+        return page.render_nfl_receiving_yards_hub()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id),
+        loader,
+        renderer,
+        "nfl_receiving_yards_hub_v21",
+        20_000,
+    )
+
+
 def _nfl_adapter(route: RuntimeRoute, target: str, *, ttl_ms: int) -> DestinationAdapter:
     market_label = _market_label(route)
 
@@ -418,6 +435,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
             return _nfl_game_total_adapter(route)
         if route.market_id == "passing-yards":
             return _nfl_passing_yards_adapter(route)
+        if route.market_id == "receiving-yards":
+            return _nfl_receiving_yards_adapter(route)
         if route.market_id == "receptions":
             return _nfl_receptions_adapter(route)
         if route.market_id == "passing-tds":
