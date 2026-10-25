@@ -41,7 +41,7 @@ _REGISTRATIONS = (
     # NFL — every live route is explicit; there is no generic market fallback.
     _r("nfl", "slate", "nfl-slate", "nfl_slate_runtime_v1"),
     _r("nfl", "moneyline", "nfl-moneyline", "nfl_moneyline_hub_v19"),
-    _r("nfl", "spread", "nfl-dedicated-hub", "nfl_spread_hub_v8"),
+    _r("nfl", "spread", "nfl-spread", "nfl_spread_hub_v10"),
     _r("nfl", "game-total", "nfl-game-total", "nfl_game_totals_compact_layout_v1"),
     _r("nfl", "passing-yards", "nfl-passing-yards", "nfl_passing_yards_simple_qb_grid_v1"),
     _r("nfl", "rushing-yards", "nfl-dedicated-hub", "nfl_rushing_yards_hub_v17"),

@@ -234,6 +234,23 @@ def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
     )
 
 
+def _nfl_spread_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 Spread V10 adapter with no generic NFL hub fallback."""
+    def loader():
+        return _import("nfl_spread_hub_v10")
+
+    def renderer(page):
+        return page.render_nfl_hub("Spread")
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id),
+        loader,
+        renderer,
+        "nfl_spread_hub_v10",
+        20_000,
+    )
+
+
 def _nfl_adapter(route: RuntimeRoute, target: str, *, ttl_ms: int) -> DestinationAdapter:
     market_label = _market_label(route)
 
@@ -395,6 +412,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
             return _nfl_slate_adapter(route)
         if route.market_id == "moneyline":
             return _nfl_moneyline_adapter(route)
+        if route.market_id == "spread":
+            return _nfl_spread_adapter(route)
         if route.market_id == "game-total":
             return _nfl_game_total_adapter(route)
         if route.market_id == "passing-yards":
