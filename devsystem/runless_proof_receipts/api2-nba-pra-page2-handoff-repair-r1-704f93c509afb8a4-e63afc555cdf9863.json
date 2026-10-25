@@ -1,0 +1,53 @@
+{
+  "artifact_map": {
+    "devsystem/execution_plans/api2-nba-pra-page2-handoff-repair-r1.json": "65908ccfbe129d03387195a1cc07569026e73867",
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-handoff-repair-r1.json": "5c5e9e387895fb5fa70848c9604c1ad226c4d4c9",
+    "devsystem/task_ledgers/api2-nba-pra-page2-handoff-repair-r1.json": "775703938cf1bb772eee6ef09c2f6293afee9ae6",
+    "nba_pra_page2_api_only_v1.py": "792559328219be95b7567467f31f3dc4764d5826",
+    "nba_pra_page2_sync_v1.py": "37df0e05f8662173d98d5eb8066d21b4ace285c1",
+    "tests/test_api2_nba_pra_page2_handoff_repair_r1.py": "b4431c6a9f8e2f2e57097130c89043944dd3fdf0"
+  },
+  "candidate_sha": "704f93c509afb8a48ad7ca377a32603380d0998b",
+  "created_at": "2026-10-25T02:02:05.496322+00:00",
+  "dependency_map": {
+    "nba_pra_injury_api_v1.py": "0ccf195015869a745d062a94161767ed96516316",
+    "nba_pra_market_api_v1.py": "a4d439ec795405db92e7dde890b276a8ee8009d6",
+    "nba_pra_page1_provider_independence_v1.py": "53e1aaaa880a3cf757a0e5b35894902fbda416c0",
+    "nba_pra_page2_context_v1.py": "383aabbf182dbe79a4baabaabd7089c261f6310b",
+    "nba_pra_player_context_api_v1.py": "e3ddd995813d82c8e2da20782c6999bba48cb064",
+    "nba_pra_runtime_v2.py": "494878eba99923f08ec30880638594862537bc09",
+    "nba_pra_schedule_api_v1.py": "d3647fa83f78b7adc93dc92a31ac6c0d22db7609"
+  },
+  "digest": "c1349c2fda0b971d060718e366de17e3b9c76dd8fcea2c7dd867daa32f1ab32f",
+  "evidence_digests": [
+    "3a06b80e9e9e49e71bb6433d3a9350ffbe0f0b26eb7ca30ca36e584690302a24",
+    "8633c825f780c95cab299ebedd338bdb2f74852801e9111624d8c5ed945d78a4"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "950a4c8ecc517cfbf48118ebf7f680b4ccdc800ea2cd1889d9ec3b488deb8648",
+  "proof_id": "api2-nba-pra-page2-handoff-repair-r1-704f93c509afb8a4-e63afc555cdf9863",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "request_fingerprint": "ba4d15a3dc74f8d7fe902b7e45b1d05014976c6554a203f881fffc5d74c33314",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page2-handoff-repair-r1",
+  "workstream": "api2-nba-pra-page2-handoff-repair-r1"
+}
