@@ -10,6 +10,7 @@ import requests
 
 SCHEMA_VERSION = "nfl_slate_v1"
 DEFAULT_API_BASE_URL = "https://kyre-sports-api.vercel.app"
+SLATE_PATH = "/api/v1/nfl/slate"
 CONNECT_TIMEOUT = 3.0
 COLD_READ_TIMEOUT = 8.0
 RETRY_READ_TIMEOUT = 12.0
@@ -63,7 +64,7 @@ def load_nfl_slate(target_date: str | None = None) -> dict[str, Any]:
         except ValueError:
             return _fail("Invalid NFL slate date")
     base = _text(os.environ.get("KYRE_SPORTS_API_BASE_URL")) or DEFAULT_API_BASE_URL
-    url = f"{base.rstrip('/')}/api/v1/nfl/slate"
+    url = f"{base.rstrip('/')}{SLATE_PATH}"
     response = None
     for attempt, read_timeout in enumerate((COLD_READ_TIMEOUT, RETRY_READ_TIMEOUT)):
         try:
@@ -90,4 +91,4 @@ def load_nfl_slate(target_date: str | None = None) -> dict[str, Any]:
         return _fail("Kyre Sports API returned invalid JSON", http=response.status_code)
 
 
-__all__ = ["SCHEMA_VERSION", "load_nfl_slate", "validate_payload"]
+__all__ = ["SCHEMA_VERSION", "SLATE_PATH", "load_nfl_slate", "validate_payload"]
