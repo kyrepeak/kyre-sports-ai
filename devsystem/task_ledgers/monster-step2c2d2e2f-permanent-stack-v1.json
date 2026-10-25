@@ -1,0 +1,68 @@
+{
+  "version": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_LEDGER_V1",
+  "task_id": "monster-step2c2d2e2f-permanent-stack-v1",
+  "active_problem": "Permanently enforce MONSTER-owned Step 2C, Step 2D, Step 2E canonical router ownership, and Step 2F live production consumption/stable-alias verification as one fail-closed control stack.",
+  "status": "STEP2A_LOCKED_TDD_RED_PENDING",
+  "progress_percent": 12,
+  "authoritative_base": "monster-main",
+  "authoritative_base_sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+  "authoritative_branch": "monster-step2c2d2e2f-permanent-stack-v1",
+  "authoritative_pr": null,
+  "authoritative_proof_namespace": "monster-step2c2d2e2f-permanent-stack-v1",
+  "deployment_path": "UNBOUND_UNTIL_STEP2F_DISCOVERY",
+  "scope_lease": {
+    "owner": "MONSTER",
+    "scope": [
+      "devsystem/mandatory_2e_canonical_router_ownership_v1.py",
+      "devsystem/mandatory_2f_live_production_consumption_v1.py",
+      "devsystem/mandatory_2c2d2e2f_permanent_enforcement_v1.py",
+      "devsystem/monster_router_registry_v1.json",
+      "devsystem/monster_production_registry_v1.json",
+      "tests/test_devsystem_mandatory_2e_canonical_router_ownership_v1.py",
+      "tests/test_devsystem_mandatory_2f_live_production_consumption_v1.py",
+      "tests/test_devsystem_monster_step2c2d2e2f_permanent_stack_v1.py",
+      ".github/workflows/monster-step2c2d2e2f-permanent-stack-v1.yml",
+      "devsystem/monster_proof_plans/monster-step2c2d2e2f-permanent-stack-v1.json",
+      "devsystem/task_ledgers/monster-step2c2d2e2f-permanent-stack-v1.json"
+    ],
+    "base_sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+    "one_use_authorization": true,
+    "competing_lane_allowed": false
+  },
+  "step2a": {
+    "status": "GREEN_LOCKED",
+    "one_active_problem": true,
+    "one_branch": true,
+    "one_pr": true,
+    "one_proof_path": true,
+    "one_deployment_path": true,
+    "one_scope_lease": true,
+    "authorization_replay_allowed": false
+  },
+  "anti_loop": {
+    "status": "GREEN_HARD_ACTIVE",
+    "blind_retry_allowed": false,
+    "duplicate_async_lane_allowed": false,
+    "failed_fingerprint": "SEARCH_ONLY_NO_MUTATION:monster-step2c2d2e2f-permanent-stack-v1@c9be8571401a0b07f34c28fdaa86056202d5e26a",
+    "material_change_required_before_successor": true,
+    "next_legal_action": "TDD_RED_ON_SINGLE_AUTHORITATIVE_BRANCH"
+  },
+  "isolation": {
+    "system": "MONSTER_ONLY",
+    "foreign_system_state_allowed_as_evidence": false,
+    "foreign_branches_allowed": false,
+    "foreign_prs_allowed": false,
+    "foreign_runs_allowed": false,
+    "foreign_deployments_allowed": false,
+    "foreign_ledgers_allowed": false,
+    "foreign_receipts_allowed": false,
+    "foreign_registry_allowed": false,
+    "foreign_green_frozen_allowed": false
+  },
+  "resume": {
+    "last_completed_gate": "STEP2A_AND_ANTI_LOOP_LOCK",
+    "current_root_cause": "MONSTER has frozen Step 2C/2D controls but does not yet have permanent Step 2E router ownership and Step 2F live production parity gates composed into one final control stack.",
+    "remaining_proof": "TDD RED -> implement 2E/2F -> MONSTER proof receipt -> exact-head merge -> production parity -> freeze registry readback",
+    "freeze_target": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_V1_FROZEN"
+  }
+}
