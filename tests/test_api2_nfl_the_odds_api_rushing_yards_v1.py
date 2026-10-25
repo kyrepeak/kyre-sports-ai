@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+import requests
+
 from sports_api.collectors import nfl_the_odds_api_rushing_yards_v1 as collector
 
 
@@ -23,6 +25,21 @@ def test_missing_credential_is_technical_unavailable_not_verified_absence(monkey
     assert result["observations"] == []
     assert result["evidence"]["configured"] is False
     assert result["fabricated"] is False
+
+
+def test_transport_failure_never_leaks_provider_api_key(monkeypatch):
+    monkeypatch.setenv("THE_ODDS_API_KEY", "super-secret-key")
+
+    def explode(*_args, **_kwargs):
+        raise requests.HTTPError(
+            "401 Client Error for url: https://api.the-odds-api.com/v4/sports/americanfootball_nfl/events?apiKey=super-secret-key"
+        )
+
+    monkeypatch.setattr(collector.requests, "get", explode)
+    result = collector.collect_the_odds_api_game_markets(_game(), timeout=1)
+    assert result["state"] == "PROVIDER_FETCH_FAILURE"
+    assert "super-secret-key" not in result["reason"]
+    assert "apiKey=" not in result["reason"]
 
 
 def test_exact_event_player_rush_market_uses_one_priority_book_without_fabricated_identity(monkeypatch):
