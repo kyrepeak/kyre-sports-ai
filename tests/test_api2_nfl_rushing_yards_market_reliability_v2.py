@@ -140,6 +140,70 @@ def test_data_truth_uses_exact_identity_not_player_name() -> None:
     assert state["identity_verified"] is True
 
 
+def test_identity_present_but_not_offered_is_verified_player_market_absence() -> None:
+    player = {"team_abbr": "ARI", "jersey_number": "4.0", "position": "RB", "active": True, "player_name": "Canonical RB"}
+    bundle = {
+        "provider": "FanDuel",
+        "state": "AVAILABLE",
+        "observations": [{
+            "provider_player_id": "fd-22",
+            "team_abbr": "ARI",
+            "jersey_number": "22",
+            "position": "RB",
+            "sportsbook": "FanDuel",
+            "market": "Rushing Yards",
+            "line": 32.5,
+            "over_odds": -113,
+            "under_odds": -113,
+        }],
+        "evidence": {
+            "identity_catalog": [
+                {"provider_player_id": "fd-4", "team_abbr": "ARI", "jersey_number": "4", "position": "RB", "active": True},
+                {"provider_player_id": "fd-22", "team_abbr": "ARI", "jersey_number": "22", "position": "RB", "active": True},
+            ],
+            "offered_provider_player_ids": ["fd-22"],
+        },
+    }
+    state = data_truth.market_state_from_bundle(bundle, player=player)
+    assert state["status"] == "MARKET_NOT_POSTED"
+    assert state["state"] == "VERIFIED_NO_STANDARD_MARKET"
+    assert state["diagnostic_state"] == "VERIFIED_NO_STANDARD_MARKET"
+    assert state["verified_absence"] is True
+    assert state["identity_verified"] is True
+    assert state["line"] is None
+
+
+def test_identity_offered_but_quote_not_normalized_stays_data_unavailable() -> None:
+    player = {"team_abbr": "ARI", "jersey_number": "4.0", "position": "RB", "active": True}
+    bundle = {
+        "provider": "FanDuel",
+        "state": "AVAILABLE",
+        "observations": [{
+            "provider_player_id": "fd-22",
+            "team_abbr": "ARI",
+            "jersey_number": "22",
+            "position": "RB",
+            "sportsbook": "FanDuel",
+            "market": "Rushing Yards",
+            "line": 32.5,
+            "over_odds": -113,
+            "under_odds": -113,
+        }],
+        "evidence": {
+            "identity_catalog": [
+                {"provider_player_id": "fd-4", "team_abbr": "ARI", "jersey_number": "4", "position": "RB", "active": True},
+                {"provider_player_id": "fd-22", "team_abbr": "ARI", "jersey_number": "22", "position": "RB", "active": True},
+            ],
+            "offered_provider_player_ids": ["fd-4", "fd-22"],
+        },
+    }
+    state = data_truth.market_state_from_bundle(bundle, player=player)
+    assert state["status"] == "DATA_UNAVAILABLE"
+    assert state["diagnostic_state"] == "MARKET_MAPPING_FAILURE"
+    assert state["verified_absence"] is False
+    assert state["line"] is None
+
+
 def test_live_source_policy_and_projection_isolation_remain_clean() -> None:
     paths = [
         ROOT / "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py",
@@ -150,6 +214,8 @@ def test_live_source_policy_and_projection_isolation_remain_clean() -> None:
         assert "espn" not in source
         assert "sgo" not in source
         assert "espn bet" not in source
+    data_truth_source = (ROOT / "sports_api/nfl_rushing_yards_data_truth_v1.py").read_text(encoding="utf-8")
+    assert "collect_fanduel_game_market_bundle" in data_truth_source
     wrapper = (ROOT / "sports_api/api/nfl_rushing_yards_slate_v1/__init__.py").read_text(encoding="utf-8")
     assert '"market_budget_seconds": _data_truth.DEFAULT_MARKET_BUDGET_SECONDS' in wrapper
     assert '"market_call_timeout_seconds": _data_truth.DEFAULT_CALL_TIMEOUT_SECONDS' in wrapper
