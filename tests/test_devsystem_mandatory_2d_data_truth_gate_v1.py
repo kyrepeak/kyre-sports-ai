@@ -63,7 +63,14 @@ def test_step2d_preserves_parser_failure_and_never_turns_it_into_absence():
     gate = _gate()
     trace = _trace()
     trace["stages"]["parser"] = {"state": "PARSER_FAILURE", "detail": "schema drift"}
-    trace["stages"]["final_output"] = {"state": "NOT_AVAILABLE"}
+    for stage_name in (
+        "identification_mapping",
+        "normalization",
+        "monster_authoritative",
+        "consumer",
+        "final_output",
+    ):
+        trace["stages"][stage_name] = {"state": "NOT_AVAILABLE"}
     result = gate.verify_post_execution(_execution(), [trace])
     assert result["status"] == "BLOCKED"
     assert result["failure_kind"] == "TECHNICAL_FAILURE"
@@ -134,7 +141,7 @@ def test_step2d_blocks_fabricated_downstream_value_after_source_failure():
     trace["stages"]["source"] = {"state": "PROVIDER_FETCH_FAILURE", "detail": "timeout"}
     result = gate.verify_post_execution(_execution(), [trace])
     assert result["status"] == "BLOCKED"
-    assert result["failure_kind"] in {"FABRICATED_VALUE", "TECHNICAL_FAILURE"}
+    assert result["failure_kind"] == "FABRICATED_VALUE"
     assert result["preserved_failure_state"] == "PROVIDER_FETCH_FAILURE"
 
 
