@@ -12,7 +12,7 @@ from api2_universal_sports_router_registry_v1 import (
 
 ROOT = Path(__file__).resolve().parents[1]
 LOADER_PATH = ROOT / "universal_runtime_v5_loader.py"
-PAGE_PATH = ROOT / "nfl_receiving_yards_hub_v21.py"
+PAGE_PATH = ROOT / "nfl_receiving_yards_hub_v22.py"
 
 
 def _function_source(path: Path, function_name: str) -> str:
@@ -29,7 +29,7 @@ def test_receiving_yards_registry_has_first_class_canonical_ownership() -> None:
     registration = get_router_registration("nfl", "receiving-yards")
     assert registration is not None
     assert registration.adapter_kind == "nfl-receiving-yards"
-    assert registration.target == "nfl_receiving_yards_hub_v21"
+    assert registration.target == "nfl_receiving_yards_hub_v22"
     assert registration.data_gateway == DATA_GATEWAY == "kyre_sports_api"
     assert registration.data_truth_gate == DATA_TRUTH_GATE == "api2_step2d_data_truth_gate_v1"
     assert registration.frontend_direct_provider is False
@@ -44,9 +44,10 @@ def test_receiving_yards_registry_does_not_point_at_generic_nfl_hub() -> None:
 
 def test_receiving_yards_has_dedicated_runtime_adapter() -> None:
     adapter = _function_source(LOADER_PATH, "_nfl_receiving_yards_adapter")
-    assert '_import("nfl_receiving_yards_hub_v21")' in adapter
+    assert '_import("nfl_receiving_yards_hub_v22")' in adapter
     assert "render_nfl_receiving_yards_hub()" in adapter
-    assert '"nfl_receiving_yards_hub_v21"' in adapter
+    assert '"nfl_receiving_yards_hub_v22"' in adapter
+    assert "nfl_receiving_yards_hub_v21" not in adapter
     assert "nfl_hub_v1" not in adapter
     assert "nfl_active_slate_runtime_v1" not in adapter
     assert "nfl_passing_yards_next_slate_v1" not in adapter
@@ -59,13 +60,16 @@ def test_receiving_yards_resolver_uses_dedicated_adapter_before_generic_fallback
     assert resolver.index(dedicated) < resolver.index("return _nfl_adapter(route, registration.target, ttl_ms=ttl)")
 
 
-def test_frozen_receiving_yards_v21_page_contract_is_preserved() -> None:
+def test_receiving_yards_v22_page_contract_is_canonical_and_projection_isolated() -> None:
     page = PAGE_PATH.read_text(encoding="utf-8")
-    assert 'FROZEN_PRIOR = "nfl_receiving_yards_hub_v20"' in page
+    lower = page.lower()
+    assert 'DATA_GATEWAY = "kyre_sports_api"' in page
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page
-    assert "MULTI_SOURCE_REQUIRED = True" in page
     assert "DISPLAY_ONLY = True" in page
     assert "def render_nfl_receiving_yards_hub()" in page
+    assert "nfl_receiving_yards_gateway_v2" in page
+    assert "nfl_receiving_yards_hub_v21" not in page
+    assert "espn" not in lower
 
 
 def test_step2e_registry_remains_complete_after_receiving_yards_promotion() -> None:

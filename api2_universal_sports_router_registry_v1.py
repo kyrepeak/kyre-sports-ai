@@ -45,7 +45,7 @@ _REGISTRATIONS = (
     _r("nfl", "game-total", "nfl-game-total", "nfl_game_totals_compact_layout_v1"),
     _r("nfl", "passing-yards", "nfl-passing-yards", "nfl_passing_yards_simple_qb_grid_v1"),
     _r("nfl", "rushing-yards", "nfl-dedicated-hub", "nfl_rushing_yards_hub_v17"),
-    _r("nfl", "receiving-yards", "nfl-receiving-yards", "nfl_receiving_yards_hub_v21"),
+    _r("nfl", "receiving-yards", "nfl-receiving-yards", "nfl_receiving_yards_hub_v22"),
     _r("nfl", "receptions", "nfl-receptions", "nfl_receptions_runtime_v1"),
     _r("nfl", "passing-tds", "nfl-passing-tds", "nfl_passing_tds_runtime_v1"),
     _r("nfl", "anytime-td", "nfl-anytime-td", "nfl_anytime_td_runtime_v1"),
