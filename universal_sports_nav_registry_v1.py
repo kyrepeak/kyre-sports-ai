@@ -88,7 +88,10 @@ SPORTS: tuple[SportRoute, ...] = (
     ),
     SportRoute(
         id="nba", label="NBA", icon="🏀", legacy_sport="NBA", default_market_id="spread",
-        markets=(_market("spread", "Spread", "Spread", _NBA_KEY, page_params=("date", "game_id")),),
+        markets=(
+            _market("spread", "Spread", "Spread", _NBA_KEY, page_params=("date", "game_id")),
+            _market("pra", "PRA", "PRA", _NBA_KEY, page_params=("date", "game_id", "player_id")),
+        ),
     ),
     SportRoute(
         id="mlb", label="MLB", icon="⚾", legacy_sport="MLB", default_market_id="slate",
