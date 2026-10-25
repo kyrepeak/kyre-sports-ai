@@ -5,6 +5,8 @@ on:
     branches: [api2-main]
     paths:
       - "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py"
+      - "sports_api/nfl_rushing_yards_data_truth_v1.py"
+      - "sports_api/nfl_rushing_yards_fastpath_v1.py"
       - "sports_api/api/nfl_rushing_yards_slate_v1.py"
       - "tests/test_api2_nfl_rushing_yards_market_reliability_v2.py"
       - ".github/workflows/api2-nfl-rushing-yards-market-reliability-v2.yml"
@@ -30,7 +32,49 @@ jobs:
         run: |
           python -m py_compile \
             sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py \
+            sports_api/nfl_rushing_yards_data_truth_v1.py \
+            sports_api/nfl_rushing_yards_fastpath_v1.py \
             sports_api/api/nfl_rushing_yards_slate_v1.py \
             tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
       - name: Prove exact market reconciliation and bounded transport recovery
         run: python -m pytest --noconftest -q tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
+      - name: Inspect provider-neutral live identity fields
+        run: |
+          python - <<'PY'
+          from sports_api.collectors import nfl_fanduel_rushing_yards_nflverse_v1 as rushing
+          from sports_api.collectors import nfl_fanduel_passing_yards_nflverse_v1 as base
+
+          game = {
+              "away": "DEN",
+              "home": "ARI",
+              "away_name": "Denver Broncos",
+              "home_name": "Arizona Cardinals",
+          }
+          landing = rushing._get_json_reliable(
+              f"{base.FANDUEL_BASE_URL}/sbapi/content-managed-page",
+              {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "page": "CUSTOM", "customPageId": "nfl", "timezone": "America/New_York"},
+              timeout=8,
+          )
+          event_id = base._match_event(landing, game)
+          assert event_id, "exact DEN @ ARI FanDuel event not found"
+          fdx = rushing._get_json_reliable(f"{base.FANDUEL_FDX_BASE_URL}/v1/live/event/{event_id}/players", timeout=8)
+          player_map = fdx.get("playerMap") or {}
+          rows = []
+          for provider_id, player in player_map.items():
+              if not isinstance(player, dict):
+                  continue
+              if str(player.get("team") or player.get("teamAbbreviation") or "").upper() != "ARI":
+                  continue
+              position = str(player.get("position") or "").upper()
+              if position not in {"RB", "RUNNING BACK", "HALFBACK", "FB", "FULLBACK"}:
+                  continue
+              safe = {"provider_player_id": str(provider_id)}
+              for key, value in player.items():
+                  lower = str(key).lower()
+                  if key in {"team", "teamAbbreviation", "position", "jerseyNumber", "jersey", "number"} or lower in {
+                      "sportradarid", "sportradar_id", "gsisid", "gsis_id", "smartid", "smart_id", "fantasydataid", "fantasy_data_id"
+                  }:
+                      safe[str(key)] = value
+              rows.append(safe)
+          print("SANITIZED_ARI_RB_IDENTITY_ROWS=", rows)
+          PY
