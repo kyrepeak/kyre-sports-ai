@@ -1,0 +1,47 @@
+name: API2 Step 2E Universal Router Completion V1
+
+on:
+  push:
+    branches:
+      - api2-step2e-universal-router-completion-v1
+      - api2-main
+  pull_request:
+    branches:
+      - api2-main
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install repository test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest -r requirements.txt
+      - name: Step 2E universal router contract
+        run: >-
+          python -m pytest -q
+          tests/test_api2_step2e_universal_router_completion_v1.py
+      - name: Router compatibility regressions
+        run: >-
+          python -m pytest -q
+          tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py
+          tests/test_cfb_player_props_runtime_v3.py
+      - name: Step 2A + Step 2B/2C + Step 2D inherited controls
+        run: >-
+          python -m pytest -q
+          tests/test_api2_step2bc_cert_v1.py
+          tests/test_api2_step2bc_control_plane_v1.py
+          tests/test_api2_step2d_data_truth_gate_v1.py
+          tests/test_api2_step2d_integration_v1.py
+      - name: Compile Step 2E authority
+        run: >-
+          python -m py_compile
+          api2_universal_sports_router_registry_v1.py
+          universal_sports_nav_registry_v1.py
+          universal_runtime_v5_loader.py
+          streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py
