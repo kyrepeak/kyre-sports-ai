@@ -1,0 +1,78 @@
+{
+  "task_id": "api2-nba-pra-page2-insights-v1",
+  "workstream": "api2-nba-pra-page2-insights-v1",
+  "source_main_sha": "372c4313aaab390c1d8fd7c72de9563dba666f93",
+  "status": "CANDIDATE_GREEN_PENDING_EXACT_HEAD_CONTROL_PROOF",
+  "progress_percent": 84,
+  "step2a": {
+    "active_problem": "Add detailed evidence-backed Insights to NBA PRA Page 2 without changing frozen projection or provider ownership.",
+    "authoritative_branch": "api2-nba-pra-page2-insights-v1",
+    "authoritative_pr": 1814,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "anti_loop": true,
+    "duplicate_authority": false
+  },
+  "step2b": {
+    "preflight_complete": true,
+    "acceptance_locked": true,
+    "existing_inputs_verified_before_build": true,
+    "new_provider_calls": 0,
+    "design_doc": "docs/superpowers/specs/2026-10-25-nba-pra-page2-insights-v1-design.md",
+    "implementation_plan": "docs/superpowers/plans/2026-10-25-nba-pra-page2-insights-v1.md"
+  },
+  "step2c": {
+    "autonomous_root_cause_recovery": true,
+    "events": [
+      {"class": "SETUP_ORDER", "detail": "Pre-branch PR creation returned HTTP 422; no PR was created and no duplicate authority existed."},
+      {"class": "ANTI_LOOP_CONTROL", "detail": "Repeated unfinished workflow lookup was detected and stopped; no duplicate workflow was created."},
+      {"class": "PROOF_LANE_CONFIG", "detail": "Initial RED run referenced a stale nonexistent regression file; only that path was removed."},
+      {"class": "CI_ENVIRONMENT", "detail": "Focused runner initially lacked requests/httpx and then fastapi; only existing project dependencies were added to the runner."},
+      {"class": "TOOL_TIMEOUT", "detail": "GitHub create-commit timed out once; branch head remained unchanged on inspection before the same prepared tree was safely committed."}
+    ]
+  },
+  "step2d": {
+    "gateway": "Kyre Sports API only",
+    "banned_sources": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "sportsbook_projection_influence": 0.0,
+    "insights_network_io": 0,
+    "fabrication": false,
+    "sparse_evidence": "omit unsupported claims"
+  },
+  "step2e": {
+    "red_proof": {
+      "run_id": 40241430699,
+      "result": "FAIL_EXPECTED",
+      "reason": "nba_pra_page2_insights_v1.py intentionally missing before implementation"
+    },
+    "green_proof": {
+      "candidate_sha": "3a325f823e8138b82ed6ba2bd16faefe77bc5539",
+      "run_id": 40241981494,
+      "result": "SUCCESS",
+      "tests": "62 passed",
+      "compile": "PASS"
+    },
+    "final_exact_head_control_proof": "PENDING_AFTER_LEDGER_BIND"
+  },
+  "step2f": {
+    "merge": "PENDING",
+    "exact_merged_sha_production_deployment": "PENDING",
+    "stable_alias_parity": "PENDING",
+    "live_health": "PENDING",
+    "freeze": "PENDING"
+  },
+  "implementation": {
+    "insights_module": "nba_pra_page2_insights_v1.py",
+    "frozen_core": "nba_pra_page2_core_v2.py",
+    "presentation_overlay": "nba_pra_page2_v1.py",
+    "placement": "after KYRE AI VERDICT, before FAST LINE LAB",
+    "sections": ["RECENT FORM", "ROLE & USAGE", "MATCHUP", "PLAYER VS OPPONENT", "MARKET & MODEL EDGE", "AVAILABILITY & RISK", "GAME SITUATION", "KYRE FINAL INSIGHT"],
+    "line_lab_provider_fetches": 0
+  },
+  "baseline": {
+    "freeze_token": "API2_NBA_PRA_PAGE2_S_TIER_V2_FROZEN",
+    "state": "GREEN_FROZEN_SUCCESSOR_BASELINE"
+  },
+  "freeze_token": "API2_NBA_PRA_PAGE2_INSIGHTS_V1_FROZEN"
+}

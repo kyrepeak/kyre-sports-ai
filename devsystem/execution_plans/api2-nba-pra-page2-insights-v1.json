@@ -1,0 +1,103 @@
+{
+  "schema_version": 2,
+  "task_id": "api2-nba-pra-page2-insights-v1",
+  "project": "API2",
+  "workstream": "api2-nba-pra-page2-insights-v1",
+  "step": "2A-2F",
+  "source_main_sha": "372c4313aaab390c1d8fd7c72de9563dba666f93",
+  "goal": "Add a substantial evidence-backed Insights analyst report to NBA PRA Page 2 immediately after KYRE AI VERDICT and before FAST LINE LAB while preserving the frozen projection, provider ownership, exact sportsbook quote identity, and zero-fetch Line Lab contract.",
+  "write_paths": [
+    ".github/workflows/api2-nba-pra-page2-insights-v1.yml",
+    "docs/superpowers/specs/2026-10-25-nba-pra-page2-insights-v1-design.md",
+    "docs/superpowers/plans/2026-10-25-nba-pra-page2-insights-v1.md",
+    "nba_pra_page2_insights_v1.py",
+    "nba_pra_page2_core_v2.py",
+    "nba_pra_page2_v1.py",
+    "tests/test_api2_nba_pra_page2_insights_v1.py",
+    "devsystem/execution_plans/api2-nba-pra-page2-insights-v1.json",
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-insights-v1.json",
+    "devsystem/task_ledgers/api2-nba-pra-page2-insights-v1.json"
+  ],
+  "protected_dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_page1_model_v1.py",
+    "nba_pra_page1_v2.py",
+    "nba_pra_page2_api_only_v1.py",
+    "nba_pra_page2_context_v1.py",
+    "nba_pra_page2_line_lab_v1.py",
+    "nba_pra_page2_matchup_api_v1.py",
+    "nba_pra_page2_matchup_v1.py",
+    "nba_pra_page2_sync_v1.py",
+    "nba_pra_runtime_v2.py",
+    "requirements.txt",
+    "runless_v2/requirements.txt"
+  ],
+  "authorization_id": "AUTH-API2-NBA-PRA-PAGE2-INSIGHTS-V1-R1",
+  "freeze_token": "API2_NBA_PRA_PAGE2_INSIGHTS_V1_FROZEN",
+  "step2a": {
+    "active_problem": "NBA PRA Page 2 lacks a detailed analyst-style explanation of why the selected PRA pick is supported, neutral, or risky.",
+    "authoritative_branch": "api2-nba-pra-page2-insights-v1",
+    "authoritative_pr": 1814,
+    "single_branch": true,
+    "single_pr": true,
+    "single_proof_path": true,
+    "duplicate_async_runs_allowed": false,
+    "blind_retries_allowed": false,
+    "anti_loop": true
+  },
+  "step2b": {
+    "acceptance_locked_before_implementation": true,
+    "tdd_required": true,
+    "verified_inputs": ["recent PRA history", "minutes", "usage/rank", "opponent ranks", "exact-opponent history", "availability", "sportsbook quote", "Kyre projection/probability/edge", "existing risk flags", "verified scheduled venue identity"],
+    "new_provider_calls_allowed": 0,
+    "requirement_to_proof_mapping": true
+  },
+  "step2c": {
+    "root_cause_before_patch": true,
+    "autonomous_recovery": true,
+    "recorded_failures": [
+      "Initial CI proof lane referenced a stale nonexistent regression filename; repaired by removing only that path.",
+      "Focused CI runner lacked requests/httpx, then fastapi; repaired only the runner dependencies already present in project requirements.",
+      "GitHub commit creation timed out once; branch head was inspected before the same tree commit was safely retried.",
+      "Pre-branch PR creation attempts returned HTTP 422 and created no PR; no duplicate authority existed.",
+      "Repeated unfinished run lookup was detected and stopped; no duplicate run was created."
+    ]
+  },
+  "step2d": {
+    "application_gateway": "Kyre Sports API only",
+    "prohibited": ["SportsGameOdds", "SGO", "ESPN", "ESPN BET"],
+    "sportsbook_projection_influence": 0.0,
+    "conflicting_lines": "preserve sportsbook, line, price, and timestamp; never average",
+    "missing_data": "omit unsupported insight claims instead of guessing or filling with generic copy",
+    "fabrication": false
+  },
+  "step2e": {
+    "proof_before_merge": true,
+    "exact_head_required": true,
+    "expected_head_merge_required": true,
+    "protected_regression_lane_required": true,
+    "compile_required": true,
+    "candidate_must_not_be_behind_source_base": true
+  },
+  "step2f": {
+    "production_target_required": true,
+    "exact_merged_sha_deployment_required": true,
+    "stable_alias_parity_required": true,
+    "live_health_200_required": true,
+    "single_production_deployment_per_exact_sha": true,
+    "rollback_anchor_preserved": true
+  },
+  "insights_contract": {
+    "placement": "immediately after KYRE AI VERDICT and before FAST LINE LAB",
+    "sections": ["RECENT FORM", "ROLE & USAGE", "MATCHUP", "PLAYER VS OPPONENT", "MARKET & MODEL EDGE", "AVAILABILITY & RISK", "GAME SITUATION", "KYRE FINAL INSIGHT"],
+    "provider_calls": 0,
+    "threshold_interaction_provider_fetches": 0,
+    "projection_contract": "unchanged frozen Kyre projection; Insights are explanatory only",
+    "sparse_evidence_policy": "omit unsupported sections/claims"
+  },
+  "frozen_successor_contract": {
+    "baseline_freeze_token": "API2_NBA_PRA_PAGE2_S_TIER_V2_FROZEN",
+    "successor_freeze_token": "API2_NBA_PRA_PAGE2_INSIGHTS_V1_FROZEN",
+    "thaw_required": false
+  }
+}
