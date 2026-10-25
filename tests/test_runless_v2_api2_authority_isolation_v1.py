@@ -1,3 +1,6 @@
+import copy
+import hashlib
+import json
 from datetime import datetime, timedelta, timezone
 
 from runless_v2.config import Settings
@@ -21,34 +24,57 @@ def _settings():
     )
 
 
+def _with_state_hash(value):
+    out = copy.deepcopy(value)
+    raw = json.dumps(out, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    out["state_hash"] = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    return out
+
+
 def test_api2_workstream_reads_only_api2_authority_sources():
     authority = GithubAuthority(_settings())
     calls = []
     expires = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
 
+    lease_state = _with_state_hash(
+        {
+            "schema_version": 1,
+            "version": "API2_SCOPE_AWARE_EXECUTION_LEASE_V1",
+            "system": "api2",
+            "repository": "kyrepeak/kyre-sports-ai",
+            "lease_ref": f"refs/heads/{API2_LEASE_BRANCH}",
+            "lease_state_path": API2_LEASE_PATH,
+            "revision": 1,
+            "generation": 1,
+            "holders": [
+                {
+                    "lease_id": "SCOPE-LEASE-API2-TEST",
+                    "owner_id": "chatgpt:api2:test",
+                    "expires_at_utc": expires,
+                    "scope": {"dependency_tokens": ["system:api2"]},
+                }
+            ],
+        }
+    )
+    registry_state = _with_state_hash(
+        {
+            "system": "api2",
+            "repository": "kyrepeak/kyre-sports-ai",
+            "registry_ref": f"refs/heads/{API2_REGISTRY_BRANCH}",
+            "registry_path": API2_REGISTRY_PATH,
+            "version": "API2_FROZEN_ARTIFACT_REGISTRY_V1",
+            "revision": 5,
+            "entries": {},
+            "active_thaws": [],
+        }
+    )
+
     def fake_content(path, ref):
         calls.append((path, ref))
         if (path, ref) == (API2_LEASE_PATH, API2_LEASE_BRANCH):
-            return {
-                "system": "api2",
-                "holders": [
-                    {
-                        "lease_id": "SCOPE-LEASE-API2-TEST",
-                        "owner_id": "chatgpt:api2:test",
-                        "expires_at_utc": expires,
-                    }
-                ],
-            }
+            return lease_state
         if (path, ref) == (API2_REGISTRY_PATH, API2_REGISTRY_BRANCH):
-            return {
-                "system": "api2",
-                "repository": "kyrepeak/kyre-sports-ai",
-                "version": "API2_FROZEN_ARTIFACT_REGISTRY_V1",
-                "revision": 5,
-                "state_hash": "x" * 64,
-                "entries": {},
-                "active_thaws": [],
-            }
+            return registry_state
         raise AssertionError(f"foreign authority read: {ref}:{path}")
 
     authority._content_json = fake_content
