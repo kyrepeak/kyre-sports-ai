@@ -3,17 +3,108 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import re
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from sports_api.collectors import nfl_fanduel_passing_yards_nflverse_v1 as base
 
-MODEL_VERSION = "NFL RUSHING YARDS DIRECT BOOK ADAPTER V1"
+MODEL_VERSION = "NFL RUSHING YARDS DIRECT BOOK ADAPTER V2"
+MARKET_READ_TIMEOUT_SECONDS = 8
+MAX_MARKET_READ_ATTEMPTS = 2
+PLAYER_NAME_MATCHING = False
+FUZZY_MATCHING = False
+SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+
 _STANDARD_TYPE_RE = re.compile(r"^PLAYER_X_RUSHING_YARDS(?:_(?:LOW|MEDIUM|HIGH))?$")
 KNOWN_PROP_TABS = ("rushing-props", "player-rushing-props", "player-props", "rushing", "popular")
+_TEAM_ALIASES = {
+    "ARZ": "ARI",
+    "JAC": "JAX",
+    "LA": "LAR",
+    "OAK": "LV",
+    "SD": "LAC",
+    "STL": "LAR",
+    "WSH": "WAS",
+}
+_POSITION_ALIASES = {
+    "RUNNING BACK": "RB",
+    "HALFBACK": "RB",
+    "HALF BACK": "RB",
+    "TAILBACK": "RB",
+    "FULLBACK": "FB",
+    "FULL BACK": "FB",
+}
 
 
 def _text(value: Any) -> str:
     return str(value if value is not None else "").strip()
+
+
+def _normalize_team(value: Any) -> str:
+    team = _text(value).upper()
+    return _TEAM_ALIASES.get(team, team)
+
+
+def _normalize_jersey(value: Any) -> str:
+    text = _text(value)
+    if not text:
+        return ""
+    try:
+        number = float(text)
+    except (TypeError, ValueError):
+        return text.upper()
+    if not number.is_integer():
+        return text
+    return str(int(number))
+
+
+def _normalize_position(value: Any) -> str:
+    position = re.sub(r"\s+", " ", _text(value).upper()).strip()
+    return _POSITION_ALIASES.get(position, position)
+
+
+def _is_transient_read_failure(exc: Exception) -> bool:
+    text = f"{type(exc).__name__}: {exc}".lower()
+    return any(token in text for token in ("timeouterror", "readtimeout", "read timed out", "timed out", "timeout")) and "http " not in text
+
+
+def _get_json_reliable(url: str, params: Mapping[str, Any] | None = None, *, timeout: int = MARKET_READ_TIMEOUT_SECONDS) -> Any:
+    """Use a production-safe read floor and retry one transient timeout only."""
+    effective_timeout = max(MARKET_READ_TIMEOUT_SECONDS, int(timeout or 0))
+    last_error: Exception | None = None
+    for attempt in range(MAX_MARKET_READ_ATTEMPTS):
+        try:
+            return base._get_json(url, params, timeout=effective_timeout)
+        except base.FanDuelPassingYardsError as exc:
+            last_error = exc
+            if attempt + 1 >= MAX_MARKET_READ_ATTEMPTS or not _is_transient_read_failure(exc):
+                raise
+    if last_error is not None:
+        raise last_error
+    raise base.FanDuelPassingYardsError("FanDuel read failed without a provider result")
+
+
+def reconcile_observation_to_roster(observation: Mapping[str, Any], roster_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
+    """Return one active exact team + jersey + position match; ambiguity fails closed."""
+    team = _normalize_team(observation.get("team_abbr"))
+    jersey = _normalize_jersey(observation.get("jersey_number"))
+    position = _normalize_position(observation.get("position"))
+    if not team or not jersey or position not in {"RB", "FB"}:
+        return None
+    matched: list[dict[str, Any]] = []
+    for raw in roster_rows or []:
+        if not isinstance(raw, Mapping):
+            continue
+        active = raw.get("active")
+        if active is False or _text(raw.get("status")).upper() in {"CUT", "INACTIVE", "RES", "RET"}:
+            continue
+        if _normalize_team(raw.get("team_abbr") or raw.get("team")) != team:
+            continue
+        if _normalize_jersey(raw.get("jersey_number") or raw.get("jersey")) != jersey:
+            continue
+        if _normalize_position(raw.get("position")) != position:
+            continue
+        matched.append(dict(raw))
+    return matched[0] if len(matched) == 1 else None
 
 
 def _market_type(market: Mapping[str, Any]) -> str:
@@ -103,16 +194,18 @@ def parse_event_market_observations(event_page: Mapping[str, Any], fdx_players: 
             continue
         provider_player_id = keys[0]
         player = players.get(provider_player_id) or {}
-        position = _text(player.get("position")).upper()
+        position = _normalize_position(player.get("position"))
         player_name = _text(player.get("name") or player.get("displayName") or player.get("fullName"))
-        team_abbr = _text(player.get("team") or player.get("teamAbbreviation")).upper()
-        if position not in {"RB", "RUNNING BACK", "FB", "FULLBACK"} or not player_name or not team_abbr:
+        team_abbr = _normalize_team(player.get("team") or player.get("teamAbbreviation"))
+        jersey_number = _normalize_jersey(player.get("jerseyNumber") or player.get("jersey") or player.get("number"))
+        if position not in {"RB", "FB"} or not player_name or not team_abbr or not jersey_number:
             continue
         observations.append({
             "provider_player_id": provider_player_id,
             "player_name": player_name,
             "position": position,
             "team_abbr": team_abbr,
+            "jersey_number": jersey_number,
             "sportsbook": "FanDuel",
             "market": "Rushing Yards",
             "line": over_line,
@@ -121,14 +214,15 @@ def parse_event_market_observations(event_page: Mapping[str, Any], fdx_players: 
             "source_timestamp": _text(source_timestamp),
             "provider_market_id": _text(market.get("marketId") or market.get("id") or market.get("_attachment_key")),
             "source_provider": "FanDuel direct",
+            "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         })
     return observations
 
 
-def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = 8) -> list[dict[str, Any]]:
+def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = MARKET_READ_TIMEOUT_SECONDS) -> list[dict[str, Any]]:
     if not _text(game.get("away_name")) or not _text(game.get("home_name")):
         return []
-    landing = base._get_json(
+    landing = _get_json_reliable(
         f"{base.FANDUEL_BASE_URL}/sbapi/content-managed-page",
         {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "page": "CUSTOM", "customPageId": "nfl", "timezone": "America/New_York"},
         timeout=timeout,
@@ -136,11 +230,11 @@ def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = 8) -
     event_id = base._match_event(landing, game)
     if not event_id:
         return []
-    selected = base._get_json(f"{base.FANDUEL_BASE_URL}/sbapi/event-page", {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "eventId": event_id}, timeout=timeout)
+    selected = _get_json_reliable(f"{base.FANDUEL_BASE_URL}/sbapi/event-page", {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "eventId": event_id}, timeout=timeout)
     if not _standard_markets(selected):
         for tab in _discover_tabs(selected):
             try:
-                candidate = base._get_json(
+                candidate = _get_json_reliable(
                     f"{base.FANDUEL_BASE_URL}/sbapi/event-page",
                     {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "eventId": event_id, "tab": tab},
                     timeout=timeout,
@@ -152,10 +246,21 @@ def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = 8) -
                 break
     if not _standard_markets(selected):
         return []
-    fdx = base._get_json(f"{base.FANDUEL_FDX_BASE_URL}/v1/live/event/{event_id}/players", timeout=timeout)
+    fdx = _get_json_reliable(f"{base.FANDUEL_FDX_BASE_URL}/v1/live/event/{event_id}/players", timeout=timeout)
     timestamp = datetime.now(timezone.utc).isoformat()
-    allowed_teams = {_text(game.get("away")).upper(), _text(game.get("home")).upper()}
-    return [row for row in parse_event_market_observations(selected, fdx, source_timestamp=timestamp) if row.get("team_abbr") in allowed_teams]
+    allowed_teams = {_normalize_team(game.get("away")), _normalize_team(game.get("home"))}
+    return [row for row in parse_event_market_observations(selected, fdx, source_timestamp=timestamp) if _normalize_team(row.get("team_abbr")) in allowed_teams]
 
 
-__all__ = ["MODEL_VERSION", "collect_fanduel_game_markets", "is_standard_rushing_yards_market", "parse_event_market_observations"]
+__all__ = [
+    "FUZZY_MATCHING",
+    "MARKET_READ_TIMEOUT_SECONDS",
+    "MAX_MARKET_READ_ATTEMPTS",
+    "MODEL_VERSION",
+    "PLAYER_NAME_MATCHING",
+    "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "collect_fanduel_game_markets",
+    "is_standard_rushing_yards_market",
+    "parse_event_market_observations",
+    "reconcile_observation_to_roster",
+]
