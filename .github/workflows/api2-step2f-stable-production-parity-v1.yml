@@ -31,6 +31,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install focused proof dependencies
+        run: python -m pip install --disable-pip-version-check pytest fastapi
       - name: Compile Step 2F authority
         run: |
           python -m py_compile \
