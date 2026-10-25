@@ -34,7 +34,7 @@ def test_v5_logo_rail_successor_exists_and_bootstrap_activates_it():
     page = ROOT / "cfb_game_total_page1_atier_v5.py"
     assert page.exists(), "V5 premium logo rail successor has not been implemented yet"
     wrapper = (ROOT / "cfb_game_total_page1_api_bootstrap_repair_r1.py").read_text(encoding="utf-8")
-    assert "cfb_game_total_page1_atier_v6" in wrapper
+    assert "cfb_game_total_page1_atier_v7" in wrapper
     assert "cfb_game_total_page1_atier_v4 as atier" not in wrapper
 
 

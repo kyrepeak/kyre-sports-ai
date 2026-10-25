@@ -11,9 +11,9 @@ def test_successor_exists_and_live_wrapper_activates_it_without_app_mutation():
     assert V2.exists(), "STATIC_PROOF: compact mobile successor not implemented"
     wrapper = WRAPPER.read_text(encoding="utf-8")
     app = APP.read_text(encoding="utf-8")
-    assert "import cfb_game_total_page1_atier_v2 as atier" in wrapper
+    assert "import cfb_game_total_page1_atier_v7 as atier" in wrapper
     assert "return atier.render_game_total_page1()" in wrapper
-    assert "cfb_game_total_page1_atier_v2" not in app
+    assert "cfb_game_total_page1_atier_v7" not in app
 
 
 def test_mobile_card_is_one_compact_three_metric_decision_row():
