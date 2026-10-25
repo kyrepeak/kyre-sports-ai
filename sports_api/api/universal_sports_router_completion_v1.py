@@ -94,7 +94,7 @@ _DEDICATED_PATHS: dict[tuple[str, str], str] = {
     ("nfl", "spread"): "/api/v1/nfl/spread/market",
     ("nfl", "passing-yards"): "/api/v1/nfl/passing-yards",
     ("nfl", "rushing-yards"): "/api/v1/nfl/rushing-yards/slate",
-    ("nfl", "receiving-yards"): "/api/v1/nfl/receiving-yards/market",
+    ("nfl", "receiving-yards"): "/api/v1/nfl/receiving-yards/slate-v2",
     ("cfb", "moneyline"): "/api/v1/cfb/moneyline",
     ("cfb", "over-under"): "/api/v1/cfb/markets",
     ("cfb", "game-total"): "/api/v1/cfb/game-total",
