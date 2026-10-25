@@ -1,8 +1,9 @@
 """API2-isolated Step 2A authority routing for Runless V2.
 
-For api2-* workstreams only, route scope-lease and frozen-registry reads to
-API2-owned control-state branches. Legacy/non-API2 workstreams retain the
-existing Runless authority methods unchanged.
+For api2-* workstreams targeting protected ``main``, route scope-lease and
+frozen-registry reads only to API2-owned live-main control-state branches.
+Legacy/non-API2 workstreams retain the existing Runless authority methods
+unchanged.
 """
 from __future__ import annotations
 
@@ -17,9 +18,10 @@ from .models import ProofRequest
 
 API2_LEASE_BRANCH = "api2-scope-aware-execution-leases"
 API2_LEASE_PATH = "devsystem/api2_scope_lease_state_v1.json"
-API2_REGISTRY_BRANCH = "api2-frozen-registry"
-API2_REGISTRY_PATH = "devsystem/api2_frozen_registry_state_v1.json"
+API2_REGISTRY_BRANCH = "api2-live-main-frozen-registry"
+API2_REGISTRY_PATH = "devsystem/api2_live_main_frozen_registry_state_v1.json"
 API2_REGISTRY_VERSION = "API2_FROZEN_ARTIFACT_REGISTRY_V1"
+API2_TARGET_BASE_REF = "refs/heads/main"
 
 
 def _is_api2_workstream(workstream: str) -> bool:
@@ -72,7 +74,9 @@ def _read_frozen_registry_for_workstream(self, workstream: str) -> dict[str, Any
 
     registry = self._content_json(API2_REGISTRY_PATH, API2_REGISTRY_BRANCH)
     if (
-        str(registry.get("repository") or "") != self.settings.repository
+        str(registry.get("system") or "") != "api2"
+        or str(registry.get("repository") or "") != self.settings.repository
+        or str(registry.get("base_ref") or "") != API2_TARGET_BASE_REF
         or str(registry.get("registry_ref") or "") != f"refs/heads/{API2_REGISTRY_BRANCH}"
         or str(registry.get("registry_path") or "") != API2_REGISTRY_PATH
         or str(registry.get("version") or "") != API2_REGISTRY_VERSION
