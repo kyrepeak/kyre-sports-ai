@@ -91,26 +91,34 @@ def test_monster_canonical_front_door_blocks_foreign_state_before_step2a():
     assert result["status"] == "GREEN"
     assert result["monster_only"] is True
     assert result["foreign_state_blocked"] is True
-    assert result["step2a_chain_preserved"] is True
-    assert result["step2b_chain_preserved"] is True
-    assert result["step2c_chain_preserved"] is True
-    assert result["anti_loop_preserved"] is True
+    assert result["isolation_precedes_step2a"] is True
     assert result["global_execution_entrypoint_bound"] is True
+    assert result["component_self_tests_delegated_to_certification_workflow"] is True
+    assert result["legacy_component_self_test_fixtures_required"] is False
 
 
-def test_front_door_contract_does_not_depend_on_stale_global_self_test_fixture(monkeypatch):
+def test_front_door_contract_does_not_depend_on_stale_component_self_test_fixtures(monkeypatch):
     front = _load(
         "monster_execution_front_door_fixture_independence_v1",
         "devsystem/monster_execution_front_door_v1.py",
     )
 
     def stale_fixture():
-        raise RuntimeError("legacy fixture should never be part of MONSTER front-door proof")
+        raise RuntimeError("legacy component fixture should never be part of MONSTER front-door proof")
 
-    monkeypatch.setattr(front, "global_2a_self_test", stale_fixture, raising=False)
+    for name in (
+        "global_2a_self_test",
+        "step2a_self_test",
+        "step2b_self_test",
+        "step2c_self_test",
+        "anti_loop_self_test",
+    ):
+        monkeypatch.setattr(front, name, stale_fixture, raising=False)
+
     result = front.contract_self_test()
     assert result["status"] == "GREEN"
     assert result["global_execution_entrypoint_bound"] is True
+    assert result["legacy_component_self_test_fixtures_required"] is False
 
 
 def test_front_door_clean_monster_payload_delegates_to_exact_step2a_entrypoint(monkeypatch):

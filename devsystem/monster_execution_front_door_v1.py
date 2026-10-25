@@ -1,10 +1,15 @@
 """Canonical MONSTER-only execution front door V1.
 
 Every MONSTER control action enters here before the existing Step 2A global
-execution chain. Foreign API 2-owned identity/state is rejected before Step 2A,
+execution chain. Foreign-system identity/state is rejected before Step 2A,
 Step 2B, Step 2C, Anti-Loop, replay locks, or execution proof logic may consume
 it. Clean MONSTER input delegates unchanged to the existing fail-closed global
-Step 2A execution chain.
+Step 2A execution entrypoint.
+
+The front-door self-test intentionally proves only this module's own boundary:
+hard isolation precedes delegation and the real Step 2A entrypoint is bound.
+Component semantics for Anti-Loop, Step 2A, Step 2B, and Step 2C are certified
+independently by the MONSTER permanent certification lane.
 
 This module is read-only; it authorizes control actions but performs no network
 calls or product/runtime mutation itself.
@@ -15,11 +20,7 @@ import json
 from copy import deepcopy
 from typing import Any, Mapping, Sequence
 
-from devsystem.automatic_loop_kill_v1 import contract_self_test as anti_loop_self_test
-from devsystem.mandatory_2a_action_gate_v1 import contract_self_test as step2a_self_test
 from devsystem.mandatory_2a_global_enforcement_v1 import enforce_action as enforce_step2a_action
-from devsystem.mandatory_2b_reliability_gate_v1 import contract_self_test as step2b_self_test
-from devsystem.mandatory_2c_autonomous_recovery_v1 import contract_self_test as step2c_self_test
 from devsystem.monster_system_isolation_v1 import (
     MonsterSystemIsolationFailure,
     assert_monster_only,
@@ -95,11 +96,9 @@ def enforce_monster_action(
 
 
 def contract_self_test() -> dict[str, Any]:
-    anti_loop = anti_loop_self_test()
-    step2a = step2a_self_test()
-    step2b = step2b_self_test()
-    step2c = step2c_self_test()
     global_entrypoint_bound = callable(enforce_step2a_action)
+    if not global_entrypoint_bound:
+        raise RuntimeError("MONSTER canonical front door is not bound to Step 2A execution entrypoint")
 
     foreign = enforce_monster_action(
         {"program_id": "monster-self-test"},
@@ -114,31 +113,18 @@ def contract_self_test() -> dict[str, Any]:
         {},
     )
     foreign_result = foreign["result"]
-
-    required_green = (
-        anti_loop.get("status") == "GREEN",
-        step2a.get("status") == "GREEN",
-        step2b.get("status") == "GREEN",
-        step2c.get("status") == "GREEN",
-        global_entrypoint_bound,
-    )
-    if not all(required_green):
-        raise RuntimeError("MONSTER canonical front door dependency contract is not GREEN")
     if foreign_result.get("decision") != "MONSTER_ISOLATION_BLOCKED":
-        raise RuntimeError("MONSTER canonical front door did not block foreign state")
+        raise RuntimeError("MONSTER canonical front door did not block foreign state before Step 2A")
 
     return {
         "status": "GREEN",
         "version": VERSION,
         "monster_only": True,
         "foreign_state_blocked": True,
-        "step2a_chain_preserved": True,
-        "step2b_chain_preserved": True,
-        "step2c_chain_preserved": True,
-        "anti_loop_preserved": True,
+        "isolation_precedes_step2a": True,
         "global_execution_entrypoint_bound": True,
-        "global_execution_tripwire_preserved": True,
-        "legacy_global_self_test_fixture_required": False,
+        "component_self_tests_delegated_to_certification_workflow": True,
+        "legacy_component_self_test_fixtures_required": False,
         "network_calls": NETWORK_CALLS,
         "auto_mutate": AUTO_MUTATE,
         "product_runtime_mutation": MAY_MODIFY_PRODUCT_RUNTIME,
