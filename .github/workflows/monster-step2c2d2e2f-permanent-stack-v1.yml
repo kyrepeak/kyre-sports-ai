@@ -1,0 +1,81 @@
+name: MONSTER Step 2C-2F Permanent Stack V1
+
+on:
+  pull_request:
+    branches: [monster-main]
+    paths:
+      - "devsystem/mandatory_2e_canonical_router_ownership_v1.py"
+      - "devsystem/mandatory_2f_live_production_consumption_v1.py"
+      - "devsystem/monster_authoritative_proof_receipt_v1.py"
+      - "devsystem/mandatory_2c2d2e2f_permanent_enforcement_v1.py"
+      - "devsystem/monster_router_registry_v1.json"
+      - "devsystem/monster_production_registry_v1.json"
+      - "devsystem/monster_proof_plans/monster-step2c2d2e2f-permanent-stack-v1.json"
+      - "devsystem/task_ledgers/monster-step2c2d2e2f-permanent-stack-v1.json"
+      - "tests/test_devsystem_mandatory_2e_canonical_router_ownership_v1.py"
+      - "tests/test_devsystem_mandatory_2f_live_production_consumption_v1.py"
+      - "tests/test_devsystem_monster_step2c2d2e2f_permanent_stack_v1.py"
+      - ".github/workflows/monster-step2c2d2e2f-permanent-stack-v1.yml"
+  push:
+    branches: [monster-main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-step2c2d2e2f-permanent-stack-${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  monster-step2c2d2e2f-certification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install narrow test dependency
+        run: python -m pip install -q pytest
+      - name: Compile MONSTER Step 2C-2F control stack
+        run: |
+          python -m py_compile \
+            devsystem/monster_system_isolation_v1.py \
+            devsystem/automatic_loop_kill_v1.py \
+            devsystem/mandatory_2a_action_gate_v1.py \
+            devsystem/mandatory_2b_reliability_gate_v1.py \
+            devsystem/mandatory_2c_autonomous_recovery_v1.py \
+            devsystem/mandatory_2d_data_truth_gate_v1.py \
+            devsystem/mandatory_2e_canonical_router_ownership_v1.py \
+            devsystem/mandatory_2f_live_production_consumption_v1.py \
+            devsystem/monster_authoritative_proof_receipt_v1.py \
+            devsystem/mandatory_2c2d2e2f_permanent_enforcement_v1.py
+      - name: Existing MONSTER controls
+        run: |
+          python -m devsystem.monster_system_isolation_v1
+          python devsystem/automatic_loop_kill_v1.py
+          python devsystem/mandatory_2c_autonomous_recovery_v1.py
+          python devsystem/mandatory_2b_reliability_gate_v1.py
+          python devsystem/mandatory_2a_action_gate_v1.py
+          python -m devsystem.mandatory_2d_data_truth_gate_v1
+      - name: MONSTER Step 2E / Step 2F / permanent stack
+        run: |
+          python -m devsystem.mandatory_2e_canonical_router_ownership_v1
+          python -m devsystem.mandatory_2f_live_production_consumption_v1
+          python -m devsystem.monster_authoritative_proof_receipt_v1
+          python -m devsystem.mandatory_2c2d2e2f_permanent_enforcement_v1
+      - name: supporting-evidence-only regressions
+        run: |
+          python -m pytest --noconftest -q \
+            tests/test_devsystem_automatic_loop_kill_v1.py \
+            tests/test_devsystem_mandatory_2a_action_gate_v1.py \
+            tests/test_devsystem_mandatory_2b_reliability_gate_v1.py \
+            tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py \
+            tests/test_devsystem_mandatory_2d_data_truth_gate_v1.py \
+            tests/test_devsystem_mandatory_2e_canonical_router_ownership_v1.py \
+            tests/test_devsystem_mandatory_2f_live_production_consumption_v1.py \
+            tests/test_devsystem_monster_step2c2d2e2f_permanent_stack_v1.py
