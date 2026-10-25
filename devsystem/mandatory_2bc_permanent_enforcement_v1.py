@@ -1,10 +1,15 @@
 """Permanent Step 2B/2C control-stack enforcement extension.
 
-This module composes with the existing permanent DevSystem validator instead of
-rewriting it. It fails closed unless the base permanent contract is GREEN and
-the Step 2A / Anti-Loop / Step 2B / Step 2C recovery stack, targeted tests, and
-dedicated certification workflows are all present with required control
-markers.
+This module fails closed unless the Step 2A / Anti-Loop baseline remains both
+functionally GREEN and permanently wired, and the Step 2B / Step 2C recovery
+stack, targeted tests, and dedicated certification workflows are present with
+required control markers.
+
+The baseline check is deliberately scoped to the control stack extended here.
+It does not invoke the entire legacy permanent gate because that validator also
+owns unrelated sport/domain CI markers. Coupling Step 2B/2C certification to an
+unrelated domain marker would make control-plane permanence depend on product
+workflow topology rather than on the controls being certified.
 
 The extension is read-only: no network calls, repository writes, deployments,
 or product/runtime mutation.
@@ -19,7 +24,8 @@ from typing import Iterable
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from devsystem import permanent_gate_v1 as base_permanent_gate
+from devsystem import automatic_loop_kill_v1
+from devsystem import mandatory_2a_action_gate_v1
 
 VERSION = "MONSTER_STEP2BC_PERMANENT_ENFORCEMENT_V1"
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +34,8 @@ AUTO_MUTATE = False
 MAY_MODIFY_PRODUCT_RUNTIME = False
 
 REQUIRED_CONTROL_FILES = (
+    "devsystem/permanent_gate_v1.py",
+    ".github/workflows/devsystem-targeted-ci.yml",
     "devsystem/automatic_loop_kill_v1.py",
     "tests/test_devsystem_automatic_loop_kill_v1.py",
     "devsystem/mandatory_2a_action_gate_v1.py",
@@ -43,6 +51,16 @@ REQUIRED_CONTROL_FILES = (
     "tests/test_devsystem_step2bc_permanent_gate_v1.py",
 )
 
+_BASE_PERMANENT_GATE_MARKERS = (
+    "automatic_loop_kill_v1_permanent",
+    "mandatory_2a_action_gate_v1_permanent",
+)
+_BASE_TARGETED_CI_MARKERS = (
+    "python devsystem/automatic_loop_kill_v1.py",
+    "tests/test_devsystem_automatic_loop_kill_v1.py",
+    "python devsystem/mandatory_2a_action_gate_v1.py",
+    "tests/test_devsystem_mandatory_2a_action_gate_v1.py",
+)
 _STEP2A_MARKERS = (
     "MONSTER_2A_MANDATORY_ACTION_GATE_V1",
     "automatic_loop_kill_v1",
@@ -107,16 +125,37 @@ def _require_markers(source: str, markers: Iterable[str], label: str) -> None:
         )
 
 
-def validate() -> dict[str, object]:
-    base = base_permanent_gate.validate()
-    if base.get("status") != "GREEN":
-        raise Step2BCPermanentEnforcementFailure("base permanent DevSystem contract is not GREEN")
+def _validate_base_control_baseline() -> None:
+    anti_loop = automatic_loop_kill_v1.contract_self_test()
+    if anti_loop.get("status") != "GREEN":
+        raise Step2BCPermanentEnforcementFailure("Anti-Loop baseline contract is not GREEN")
 
+    step2a = mandatory_2a_action_gate_v1.contract_self_test()
+    if step2a.get("status") != "GREEN":
+        raise Step2BCPermanentEnforcementFailure("Step 2A baseline contract is not GREEN")
+
+    permanent_gate_source = _read("devsystem/permanent_gate_v1.py")
+    targeted_ci_source = _read(".github/workflows/devsystem-targeted-ci.yml")
+    _require_markers(
+        permanent_gate_source,
+        _BASE_PERMANENT_GATE_MARKERS,
+        "base Step 2A/Anti-Loop permanent gate",
+    )
+    _require_markers(
+        targeted_ci_source,
+        _BASE_TARGETED_CI_MARKERS,
+        "base Step 2A/Anti-Loop targeted CI",
+    )
+
+
+def validate() -> dict[str, object]:
     missing = [path for path in REQUIRED_CONTROL_FILES if not (ROOT / path).is_file()]
     if missing:
         raise Step2BCPermanentEnforcementFailure(
             "Step 2B/2C permanent control files missing: " + " | ".join(missing)
         )
+
+    _validate_base_control_baseline()
 
     step2a_source = _read("devsystem/mandatory_2a_action_gate_v1.py")
     anti_loop_source = _read("devsystem/automatic_loop_kill_v1.py")
@@ -136,6 +175,7 @@ def validate() -> dict[str, object]:
         "status": "GREEN",
         "version": VERSION,
         "base_permanent_contract_green": True,
+        "base_permanent_scope": "step2a+anti-loop",
         "step2a_permanent_chain_preserved": True,
         "automatic_loop_kill_permanent": True,
         "mandatory_2b_reliability_gate_v1_permanent": True,
