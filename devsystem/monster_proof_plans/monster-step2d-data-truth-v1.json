@@ -1,0 +1,31 @@
+{
+  "version": "MONSTER_STEP2D_PROOF_PLAN_V1",
+  "task_id": "monster-step2d-data-truth-v1",
+  "workstream": "monster-step2d-data-truth-v1",
+  "source_monster_sha": "127db7ca1f23400055ff130f54704386823b4947",
+  "authoritative_base": "monster-main",
+  "authoritative_branch": "monster-step2d-data-truth-v1",
+  "authoritative_pr": 1794,
+  "proof_authority": "MONSTER_ONLY",
+  "required_workflow": "MONSTER Step 2D Data Truth V1",
+  "required_check": "monster-step2d-data-truth-certification",
+  "premerge_red_run_id": 40158158839,
+  "premerge_red_job_id": 121063863769,
+  "recovery_sequence": [
+    "ANTI_LOOP",
+    "STEP_2C",
+    "STEP_2B",
+    "STEP_2A",
+    "EXECUTE",
+    "STEP_2D"
+  ],
+  "merge_target": "monster-main",
+  "freeze_token": "MONSTER_STEP2D_DATA_TRUTH_V1_FROZEN",
+  "freeze_requires_postmerge_gate": true,
+  "foreign_system_evidence_allowed": false,
+  "foreign_repository_refs_allowed": false,
+  "checkout_ref_policy": "EXACT_EVENT_HEAD_SHA",
+  "checkout_fetch_depth": 1,
+  "checkout_persist_credentials": false,
+  "blind_retry_allowed": false
+}

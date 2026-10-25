@@ -76,9 +76,17 @@ jobs:
         run: python -m devsystem.monster_system_permanent_gate_v1
       - name: MONSTER Step 2D permanent enforcement
         run: python -m devsystem.mandatory_2d_permanent_enforcement_v1
-      - name: MONSTER Step 2D focused regressions
+      - name: MONSTER Step 2D and prior-control regressions
         run: |
           python -m pytest --noconftest -q \
+            tests/test_devsystem_automatic_loop_kill_v1.py \
+            tests/test_devsystem_mandatory_2a_action_gate_v1.py \
+            tests/test_devsystem_mandatory_2b_reliability_gate_v1.py \
+            tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py \
+            tests/test_devsystem_step2b_step2a_integration_v1.py \
+            tests/test_devsystem_step2c_step2b_step2a_integration_v1.py \
+            tests/test_devsystem_step2bc_permanent_gate_v1.py \
+            tests/test_devsystem_monster_step2bc_global_permanence_v1.py \
             tests/test_devsystem_mandatory_2d_data_truth_gate_v1.py \
             tests/test_devsystem_step2d_recovery_integration_v1.py \
             tests/test_devsystem_monster_step2d_global_permanence_v1.py
