@@ -1,4 +1,4 @@
-"""Runtime V5 loader V23 — NFL Spread visual hierarchy V10 override."""
+"""Runtime V5 loader V23 — NFL Spread visual hierarchy V10 compatibility override."""
 from __future__ import annotations
 
 import universal_runtime_v5_loader as base_loader
@@ -11,7 +11,7 @@ MODEL_VERSION = "MONSTER UNIVERSAL RUNTIME V5 LOADER V23 • NFL SPREAD VISUAL H
 
 def resolve_destination(route: RuntimeRoute):
     if route.sport_id == "nfl" and route.market_id == "spread":
-        return base_loader._nfl_adapter(route, "nfl_spread_hub_v10", ttl_ms=20_000)
+        return base_loader.resolve_destination(route)
     return prior.resolve_destination(route)
 
 
