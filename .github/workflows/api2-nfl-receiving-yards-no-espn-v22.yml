@@ -1,0 +1,50 @@
+name: API2 NFL Receiving Yards No ESPN V22
+
+on:
+  pull_request:
+    branches: [api2-main]
+    paths:
+      - "api2_universal_sports_router_registry_v1.py"
+      - "universal_runtime_v5_loader.py"
+      - "kyre_sports_api_vercel_v1.py"
+      - "sports_api/api/universal_sports_router_completion_v1.py"
+      - "sports_api/api/nfl_receiving_yards_slate_v2.py"
+      - "sports_api/collectors/nfl_fanduel_receiving_yards_nflverse_v2.py"
+      - "nfl_receiving_yards_projection_v2.py"
+      - "nfl_receiving_yards_gateway_v2.py"
+      - "nfl_receiving_yards_hub_v22.py"
+      - "tests/test_api2_nfl_receiving_yards_no_espn_v22.py"
+      - ".github/workflows/api2-nfl-receiving-yards-no-espn-v22.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  receiving-yards-no-espn-v22:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install proof dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile live ownership boundary
+        run: |
+          python -m py_compile \
+            api2_universal_sports_router_registry_v1.py \
+            universal_runtime_v5_loader.py \
+            kyre_sports_api_vercel_v1.py \
+            sports_api/api/universal_sports_router_completion_v1.py \
+            sports_api/api/nfl_receiving_yards_slate_v2.py \
+            sports_api/collectors/nfl_fanduel_receiving_yards_nflverse_v2.py \
+            nfl_receiving_yards_projection_v2.py \
+            nfl_receiving_yards_gateway_v2.py \
+            nfl_receiving_yards_hub_v22.py \
+            tests/test_api2_nfl_receiving_yards_no_espn_v22.py
+      - name: Prove no-ESPN live Receiving Yards ownership
+        run: python -m pytest --noconftest -q tests/test_api2_nfl_receiving_yards_no_espn_v22.py
