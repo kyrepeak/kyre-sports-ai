@@ -49,6 +49,7 @@ import sports_api.api.nba_pra_matchup_v1 as nba_pra_matchup_module
 
 # NFL dedicated routes.  Step 2E mounts the already-implemented market/context
 # routers that previously existed in-repo without Vercel ownership.
+import sports_api.api.nfl_slate_v1 as nfl_slate_module
 import sports_api.api.nfl_moneyline_market_v1 as nfl_moneyline_market_module
 import sports_api.api.nfl_spread_market_v1 as nfl_spread_market_module
 import sports_api.api.nfl_passing_yards_market_v1 as nfl_passing_yards_market_module
@@ -86,6 +87,7 @@ nba_pra_schedule_router = nba_pra_schedule_module.router
 nba_pra_player_context_router = nba_pra_player_context_module.router
 nba_pra_injury_router = nba_pra_injury_module.router
 nba_pra_matchup_router = nba_pra_matchup_module.router
+nfl_slate_router = nfl_slate_module.router
 nfl_moneyline_market_router = nfl_moneyline_market_module.router
 nfl_spread_market_router = nfl_spread_market_module.router
 nfl_passing_yards_market_router = nfl_passing_yards_market_module.router
@@ -124,6 +126,7 @@ app.include_router(nba_pra_schedule_router)
 app.include_router(nba_pra_player_context_router)
 app.include_router(nba_pra_injury_router)
 app.include_router(nba_pra_matchup_router)
+app.include_router(nfl_slate_router)
 app.include_router(nfl_moneyline_market_router)
 app.include_router(nfl_spread_market_router)
 app.include_router(nfl_passing_yards_market_router)
@@ -163,6 +166,7 @@ def health() -> dict[str, object]:
         "nba_pra_injury_v1": True,
         "nba_pra_matchup_v1": True,
         "nba_runless_product_transport": False,
+        "nfl_slate_v1": True,
         "nfl_moneyline_market_v1": True,
         "nfl_spread_market_v1": True,
         "nfl_passing_yards_market_v1": True,
