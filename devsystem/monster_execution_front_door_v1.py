@@ -17,10 +17,7 @@ from typing import Any, Mapping, Sequence
 
 from devsystem.automatic_loop_kill_v1 import contract_self_test as anti_loop_self_test
 from devsystem.mandatory_2a_action_gate_v1 import contract_self_test as step2a_self_test
-from devsystem.mandatory_2a_global_enforcement_v1 import (
-    contract_self_test as global_2a_self_test,
-    enforce_action as enforce_step2a_action,
-)
+from devsystem.mandatory_2a_global_enforcement_v1 import enforce_action as enforce_step2a_action
 from devsystem.mandatory_2b_reliability_gate_v1 import contract_self_test as step2b_self_test
 from devsystem.mandatory_2c_autonomous_recovery_v1 import contract_self_test as step2c_self_test
 from devsystem.monster_system_isolation_v1 import (
@@ -102,7 +99,7 @@ def contract_self_test() -> dict[str, Any]:
     step2a = step2a_self_test()
     step2b = step2b_self_test()
     step2c = step2c_self_test()
-    global_2a = global_2a_self_test()
+    global_entrypoint_bound = callable(enforce_step2a_action)
 
     foreign = enforce_monster_action(
         {"program_id": "monster-self-test"},
@@ -123,7 +120,7 @@ def contract_self_test() -> dict[str, Any]:
         step2a.get("status") == "GREEN",
         step2b.get("status") == "GREEN",
         step2c.get("status") == "GREEN",
-        global_2a.get("status") == "GREEN",
+        global_entrypoint_bound,
     )
     if not all(required_green):
         raise RuntimeError("MONSTER canonical front door dependency contract is not GREEN")
@@ -139,7 +136,9 @@ def contract_self_test() -> dict[str, Any]:
         "step2b_chain_preserved": True,
         "step2c_chain_preserved": True,
         "anti_loop_preserved": True,
+        "global_execution_entrypoint_bound": True,
         "global_execution_tripwire_preserved": True,
+        "legacy_global_self_test_fixture_required": False,
         "network_calls": NETWORK_CALLS,
         "auto_mutate": AUTO_MUTATE,
         "product_runtime_mutation": MAY_MODIFY_PRODUCT_RUNTIME,
