@@ -1,0 +1,46 @@
+name: API2 NFL Spread Dedicated Canonical Router V1
+
+on:
+  pull_request:
+    branches:
+      - api2-main
+    paths:
+      - 'api2_universal_sports_router_registry_v1.py'
+      - 'universal_runtime_v5_loader.py'
+      - 'universal_runtime_v5_loader_v23.py'
+      - 'streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py'
+      - 'nfl_spread_hub_v10.py'
+      - 'tests/test_api2_nfl_spread_dedicated_canonical_router_v1.py'
+      - 'tests/test_nfl_spread_visual_hierarchy_v10.py'
+      - 'tests/test_api2_step2e_universal_router_completion_v1.py'
+      - '.github/workflows/api2-nfl-spread-dedicated-canonical-router-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  nfl-spread-router-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --upgrade pip
+          python -m pip install --disable-pip-version-check pytest -r requirements.txt
+      - name: Compile canonical Spread route boundary
+        run: |
+          python -m py_compile \
+            api2_universal_sports_router_registry_v1.py \
+            universal_runtime_v5_loader.py \
+            universal_runtime_v5_loader_v23.py \
+            streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py \
+            nfl_spread_hub_v10.py
+      - name: Spread canonical ownership + V10 + Step 2E proof
+        run: |
+          python -m pytest -q --noconftest \
+            tests/test_api2_nfl_spread_dedicated_canonical_router_v1.py \
+            tests/test_nfl_spread_visual_hierarchy_v10.py \
+            tests/test_api2_step2e_universal_router_completion_v1.py
