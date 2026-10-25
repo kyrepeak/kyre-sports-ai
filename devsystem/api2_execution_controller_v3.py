@@ -6,14 +6,17 @@ from typing import Any, Mapping, Sequence
 
 import devsystem.api2_anti_loop_v1 as anti
 from devsystem.api2_step2a_authority_v1 import (
+    Step2AError,
+    authority_snapshot,
     authorize_repair as step2a_authorize,
     begin_problem,
     consume_authorization,
+    restore_authority,
 )
 from devsystem.api2_step2b_reliability_gate_v1 import validate_repair
 from devsystem.api2_step2d_data_truth_gate_v1 import evaluate_field
 
-VERSION = "API2_EXECUTION_CONTROLLER_V3"
+VERSION = "API2_EXECUTION_CONTROLLER_V4_HARD_AUTHORITY"
 
 
 class ControllerError(RuntimeError):
@@ -26,8 +29,16 @@ def new_state(
     branch: str,
     proof_path: str,
     acceptance_criteria: Sequence[str] | None = None,
+    authority_identity: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    authority = begin_problem({}, problem_id=problem_id, branch=branch, proof_path=proof_path)
+    identity = dict(authority_identity or {})
+    authority = begin_problem(
+        {},
+        problem_id=problem_id,
+        branch=branch,
+        proof_path=proof_path,
+        **identity,
+    )
     return {
         "system": "api2",
         "authority": authority,
@@ -48,12 +59,52 @@ def new_state(
     }
 
 
+def state_snapshot(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Create a handoff snapshot that cannot silently reset authority or failures."""
+    out = deepcopy(dict(state))
+    try:
+        out["authority_snapshot"] = authority_snapshot(out.get("authority") or {})
+        out["anti_loop_snapshot"] = anti.state_snapshot(out.get("anti_loop") or {})
+    except (Step2AError, anti.AntiLoopError) as exc:
+        raise ControllerError("API2_CONTROLLER_SNAPSHOT_INVALID") from exc
+    return out
+
+
+def restore_state(snapshot: Mapping[str, Any]) -> dict[str, Any]:
+    """Resume exactly the snapshotted API2 execution identity; never create a new path."""
+    out = deepcopy(dict(snapshot))
+    if out.get("system") != "api2":
+        raise ControllerError("API2_CONTROLLER_RESUME_SYSTEM_INVALID")
+    try:
+        restored_authority = restore_authority(out.get("authority_snapshot") or {})
+        restored_anti_loop = anti.restore_state(out.get("anti_loop_snapshot") or {})
+    except Step2AError as exc:
+        raise ControllerError("API2_CONTROLLER_RESUME_AUTHORITY_INVALID") from exc
+    except anti.AntiLoopError as exc:
+        raise ControllerError("API2_CONTROLLER_RESUME_ANTI_LOOP_INVALID") from exc
+
+    active = dict(restored_authority.get("active_problem") or {})
+    expected = {
+        "problem_id": out.get("problem_id"),
+        "branch": out.get("branch"),
+        "proof_path": out.get("proof_path"),
+    }
+    observed = {key: active.get(key) for key in expected}
+    if observed != expected:
+        raise ControllerError("API2_CONTROLLER_RESUME_PATH_MISMATCH")
+
+    out["authority"] = restored_authority
+    out["anti_loop"] = restored_anti_loop
+    return out
+
+
 def record_failure(
     state: Mapping[str, Any],
     *,
     action: Mapping[str, Any],
     evidence: Sequence[Any],
     hypothesis: str,
+    classification: str | None = None,
 ) -> dict[str, Any]:
     out = deepcopy(dict(state))
     out["anti_loop"] = anti.record_failure(
@@ -61,10 +112,12 @@ def record_failure(
         action=action,
         evidence=evidence,
         hypothesis=hypothesis,
+        classification=classification,
     )
     out["failed_action"] = dict(action)
     out["failure_evidence"] = list(evidence)
     out["failure_hypothesis"] = hypothesis
+    out["failure_classification"] = classification or "UNCLASSIFIED"
     out["phase"] = "STEP_2C"
     out["step2c_status"] = "REQUIRED"
     out["step2b_status"] = "WAITING"
@@ -260,6 +313,7 @@ def status_snapshot(state: Mapping[str, Any]) -> dict[str, Any]:
         "authoritative_api2_path": {
             "branch": state.get("branch"),
             "proof_path": state.get("proof_path"),
+            "authority_digest": (state.get("authority") or {}).get("authority_digest"),
         },
         "current_root_cause_hypothesis": root,
         "step_2c_status": state.get("step2c_status", "NOT_REQUIRED"),
