@@ -1,9 +1,13 @@
 """MONSTER permanent Step 2B/Step 2C system gate V1.
 
-This is the MONSTER-only permanence contract above the existing DevSystem
-baseline. It requires the completed Anti-Loop + Step 2A + Step 2B + Step 2C
-stack, the hard system-isolation guard, the canonical MONSTER execution front
-door, and the dedicated MONSTER proof/freeze contract.
+This is the MONSTER-only permanence contract for the Anti-Loop + Step 2A +
+Step 2B + Step 2C stack, the hard system-isolation guard, the canonical MONSTER
+execution front door, and the dedicated MONSTER proof/freeze contract.
+
+The gate deliberately does not execute the broader legacy permanent validator:
+that validator owns unrelated product/domain workflow topology. MONSTER's
+Step 2B/2C permanent enforcement already performs the scoped Step 2A/Anti-Loop
+baseline checks required here.
 
 Foreign-system state is never accepted as MONSTER evidence. This validator is
 read-only and performs no network or product/runtime mutation.
@@ -14,7 +18,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from devsystem import permanent_gate_v1
 from devsystem.mandatory_2bc_permanent_enforcement_v1 import validate as validate_step2bc
 from devsystem.monster_execution_front_door_v1 import contract_self_test as front_door_self_test
 from devsystem.monster_system_isolation_v1 import contract_self_test as isolation_self_test
@@ -117,15 +120,14 @@ def validate() -> dict[str, Any]:
     _validate_workflow()
     _validate_proof_plan()
 
-    base = permanent_gate_v1.validate()
     step2bc = validate_step2bc()
     isolation = isolation_self_test()
     front_door = front_door_self_test()
 
-    if base.get("status") != "GREEN":
-        raise MonsterSystemPermanentGateFailure("MONSTER base permanent gate is not GREEN")
     if step2bc.get("status") != "GREEN":
         raise MonsterSystemPermanentGateFailure("MONSTER Step 2B/2C permanent enforcement is not GREEN")
+    if step2bc.get("base_permanent_contract_green") is not True:
+        raise MonsterSystemPermanentGateFailure("MONSTER scoped Step 2A/Anti-Loop baseline is not GREEN")
     if isolation.get("status") != "GREEN" or isolation.get("monster_only") is not True:
         raise MonsterSystemPermanentGateFailure("MONSTER hard isolation contract is not GREEN")
     if front_door.get("status") != "GREEN" or front_door.get("monster_only") is not True:
@@ -136,7 +138,9 @@ def validate() -> dict[str, Any]:
         "version": VERSION,
         "monster_only": True,
         "canonical_branch": "monster-main",
-        "base_permanent_gate_green": True,
+        "base_control_contract_green": True,
+        "base_control_scope": "step2a+anti-loop",
+        "full_legacy_permanent_gate_executed": False,
         "step2bc_permanent_enforcement_green": True,
         "isolation_guard_green": True,
         "canonical_front_door_green": True,
