@@ -53,7 +53,7 @@ INJURY_PROVIDER_AUDIT = (
 )
 MARKET_PROVIDER_AUDIT = (
     {"provider": "OpticOdds", "state": "APPROVED_FALLBACK_NOT_CONFIGURED"},
-    {"provider": "The Odds API", "state": "APPROVED_FALLBACK_NOT_CONFIGURED"},
+    {"provider": "The Odds API", "state": "CONFIGURED_APPROVED_FALLBACK"},
     {"provider": "SportsDataIO", "state": "APPROVED_FALLBACK_NOT_CONFIGURED"},
     {"provider": "Direct sportsbook", "state": "ACTIVE_FIELD_SOURCE"},
 )
@@ -104,6 +104,8 @@ def _postprocess_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
     routing["market_field_policy"] = {
         "provider_audit": [dict(row) for row in MARKET_PROVIDER_AUDIT],
+        "provider_order": ["FanDuel direct", "The Odds API"],
+        "fallback_query_mode": "FIELD_SPECIFIC_STOP_ON_SATISFIED",
         "book_specific_records": True,
         "sportsbook_line_averaging": False,
         "data_truth_gate": _data_truth.VERSION,
@@ -160,6 +162,8 @@ def status() -> dict[str, Any]:
         "empty_equals_not_posted": False,
         "verified_absence_required_for_market_not_posted": True,
         "failed_ingestion_negative_cache_allowed": False,
+        "provider_order": ["FanDuel direct", "The Odds API"],
+        "fallback_query_mode": "FIELD_SPECIFIC_STOP_ON_SATISFIED",
     }
     base["request_time_transport_policy"] = {
         "full_pbp_downloads": False,

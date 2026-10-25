@@ -59,14 +59,16 @@ def test_postprocessor_preserves_verified_card_and_adds_field_level_fallback_aud
     assert out["routing"]["availability_field_policy"]["active_roster_is_not_injury_clearance"] is True
     assert out["routing"]["market_field_policy"]["book_specific_records"] is True
     assert out["routing"]["market_field_policy"]["sportsbook_line_averaging"] is False
+    assert out["routing"]["market_field_policy"]["provider_order"] == ["FanDuel direct", "The Odds API"]
+    assert out["routing"]["market_field_policy"]["fallback_query_mode"] == "FIELD_SPECIFIC_STOP_ON_SATISFIED"
 
 
 def test_market_provider_audit_is_field_specific_and_does_not_claim_unconfigured_sources_were_used():
     slate = import_module("sports_api.api.nfl_rushing_yards_slate_v1")
     audit = {row["provider"]: row["state"] for row in slate.MARKET_PROVIDER_AUDIT}
-    assert audit["OpticOdds"] == "NOT_CONFIGURED_IN_CURRENT_DEPLOYMENT"
-    assert audit["The Odds API"] == "NOT_CONFIGURED_IN_CURRENT_DEPLOYMENT"
-    assert audit["SportsDataIO"] == "NOT_CONFIGURED_IN_CURRENT_DEPLOYMENT"
+    assert audit["OpticOdds"] == "APPROVED_FALLBACK_NOT_CONFIGURED"
+    assert audit["The Odds API"] == "CONFIGURED_APPROVED_FALLBACK"
+    assert audit["SportsDataIO"] == "APPROVED_FALLBACK_NOT_CONFIGURED"
     assert audit["Direct sportsbook"] == "ACTIVE_FIELD_SOURCE"
 
 
