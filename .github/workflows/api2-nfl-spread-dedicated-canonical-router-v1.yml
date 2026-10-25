@@ -12,6 +12,11 @@ on:
       - 'nfl_spread_hub_v10.py'
       - 'tests/test_api2_nfl_spread_dedicated_canonical_router_v1.py'
       - 'tests/test_nfl_spread_visual_hierarchy_v10.py'
+      - 'tests/test_nfl_spread_consumer_line_lab_v9.py'
+      - 'tests/test_nfl_spread_mc_v1.py'
+      - 'tests/test_nfl_spread_matchup_history_v1.py'
+      - 'tests/test_api2_nfl_spread_readable_projection_matchup_history_v1.py'
+      - 'tests/test_nfl_spread_next_slate_v1.py'
       - 'tests/test_api2_step2e_universal_router_completion_v1.py'
       - '.github/workflows/api2-nfl-spread-dedicated-canonical-router-v1.yml'
 
@@ -38,9 +43,16 @@ jobs:
             universal_runtime_v5_loader_v23.py \
             streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py \
             nfl_spread_hub_v10.py
-      - name: Spread canonical ownership + V10 + Step 2E proof
+      - name: Spread canonical ownership + product + Step 2E proof
         run: |
           python -m pytest -q --noconftest \
             tests/test_api2_nfl_spread_dedicated_canonical_router_v1.py \
-            tests/test_nfl_spread_visual_hierarchy_v10.py \
+            tests/test_nfl_spread_visual_hierarchy_v10.py::test_v10_is_presentation_only_successor_over_frozen_v9 \
+            tests/test_nfl_spread_visual_hierarchy_v10.py::test_v10_has_strong_consumer_visual_hierarchy \
+            tests/test_nfl_spread_visual_hierarchy_v10.py::test_v10_preserves_native_slider_and_frozen_settlement_math \
+            tests/test_nfl_spread_consumer_line_lab_v9.py \
+            tests/test_nfl_spread_mc_v1.py \
+            tests/test_nfl_spread_matchup_history_v1.py \
+            tests/test_api2_nfl_spread_readable_projection_matchup_history_v1.py \
+            tests/test_nfl_spread_next_slate_v1.py \
             tests/test_api2_step2e_universal_router_completion_v1.py
