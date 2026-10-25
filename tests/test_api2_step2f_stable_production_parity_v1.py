@@ -22,7 +22,8 @@ def _load_receipt_module():
     return module
 
 
-deployment_receipt_from_env = _load_receipt_module().deployment_receipt_from_env
+_receipt_module = _load_receipt_module()
+deployment_receipt_from_env = _receipt_module.deployment_receipt_from_env
 
 
 EXPECTED_COUNTS = {"nfl": 11, "cfb": 5, "nba": 2, "mlb": 12, "wnba": 9}
@@ -112,6 +113,7 @@ def test_vercel_entrypoint_mounts_step2f_receipt_router() -> None:
     source = Path("kyre_sports_api_vercel_v1.py").read_text()
     assert "step2f_deployment_receipt_v1" in source
     assert "app.include_router(step2f_deployment_receipt_router)" in source
-    assert '"/api/v1/system/deployment-receipt"' in Path(
-        "sports_api/api/step2f_deployment_receipt_v1.py"
-    ).read_text()
+    assert any(
+        getattr(route, "path", "") == "/api/v1/system/deployment-receipt"
+        for route in _receipt_module.router.routes
+    )
