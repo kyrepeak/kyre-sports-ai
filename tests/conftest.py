@@ -199,9 +199,9 @@ def pytest_collection_modifyitems(session, config, items):
     assert "import streamlit_memory_lazy_router_v156 as prior" in cache_bust_router_source
     assert "return prior.render_app()" in cache_bust_router_source
 
-    # Production entrypoint must activate V157/V161 while preserving the frozen global heartbeat.
-    assert "from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app" in app_source
-    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in app_source
+    # Production now activates the Universal Runtime V5 terminal; the frozen V157/V161 lane above remains regression-checked beneath it.
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1" in app_source
+    assert '_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-nfl-rushing-page1-density-r1-20261025"' in app_source
 
     # Frozen V160 browser proof remains part of the inherited tablet regression contract.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
