@@ -156,19 +156,24 @@ def test_mismatched_recovery_path_fails_closed():
     assert result["recovery_decision"] == "TWO_C_RECOVERY_RECEIPT_INVALID"
 
 
-def test_step2a_authorizes_recovery_generation_only_after_step2b_and_forward_motion():
+def test_step2a_authorizes_only_after_step2b_enforces_step2c_and_forward_motion():
     action = _patch(recovery_context=_recovery_context())
+    reliability = authorize_implementation(action)
     result = authorize_action(_brain(), action, [], forward_decision=_forward(action))
+
+    assert reliability["allowed"] is True
+    assert reliability["decision"] == "TWO_B_RECOVERY_ATTEMPT_AUTHORIZED"
+    assert reliability["two_c_enforced"] is True
+    assert reliability["recovery_decision"] == "TWO_C_RECOVERY_AUTHORIZED"
+    assert reliability["recovery_generation"] == 2
+    assert reliability["recovery_receipt_hash"]
 
     assert result["allowed"] is True
     assert result["decision"] == "TWO_A_AUTHORIZED"
     assert result["two_b_enforced"] is True
-    assert result["two_c_enforced"] is True
     assert result["reliability_decision"] == "TWO_B_RECOVERY_ATTEMPT_AUTHORIZED"
-    assert result["recovery_decision"] == "TWO_C_RECOVERY_AUTHORIZED"
     assert result["implementation_attempt"] == 1
-    assert result["recovery_generation"] == 2
-    assert result["recovery_receipt_hash"]
+    assert result["reliability_receipt_hash"]
 
 
 def test_live_async_anti_loop_still_blocks_before_step2c_recovery_mutation():
@@ -186,10 +191,16 @@ def test_verified_human_only_blocker_is_the_only_recovery_stop():
         "type": "missing_credentials",
         "evidence": "required provider credential is not configured",
     }))
+    reliability = authorize_implementation(action)
     result = authorize_action(_brain(), action, [], forward_decision=_forward(action))
+
+    assert reliability["allowed"] is False
+    assert reliability["decision"] == "TWO_B_TWO_C_RECOVERY_REQUIRED"
+    assert reliability["two_c_enforced"] is True
+    assert reliability["recovery_decision"] == "TWO_C_HUMAN_BLOCKER"
+    assert reliability["requires_user_intervention"] is True
 
     assert result["allowed"] is False
     assert result["decision"] == "TWO_A_TWO_B_BLOCKED"
-    assert result["two_c_enforced"] is True
-    assert result["recovery_decision"] == "TWO_C_HUMAN_BLOCKER"
-    assert result["requires_user_intervention"] is True
+    assert result["reliability_decision"] == "TWO_B_TWO_C_RECOVERY_REQUIRED"
+    assert result["next_legal_action"] == "USER_INTERVENTION_REQUIRED"

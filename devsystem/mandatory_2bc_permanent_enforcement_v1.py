@@ -65,9 +65,6 @@ _STEP2A_MARKERS = (
     "MONSTER_2A_MANDATORY_ACTION_GATE_V1",
     "automatic_loop_kill_v1",
     "mandatory_2b_reliability_gate_v1",
-    "two_c_enforced",
-    "recovery_decision",
-    "recovery_receipt_hash",
 )
 _ANTI_LOOP_MARKERS = (
     "MONSTER_AUTOMATIC_LOOP_KILL_V1",
