@@ -5,13 +5,13 @@ from pathlib import Path
 
 
 def test_projection_formula_stays_market_blind():
-    model = import_module("sports_api.projections.nfl_rushing_yards_projection_v1")
+    model = import_module("nfl_rushing_yards_projection_v2")
     result = model.build_projection(
-        player={"carries_per_game": 16.0, "yards_per_carry": 4.5},
-        opponent={"rush_attempts_allowed_per_game": 30.0, "yards_per_carry_allowed": 4.8},
+        player={"carries_per_game": 16.0, "yards_per_carry": 4.5, "sample_games": 8},
+        opponent={"yards_per_carry_allowed": 4.8},
     )
     assert result["ready"] is True
-    assert round(result["projection_yards"], 1) == 69.2
+    assert round(result["projection_yards"], 1) == 73.7
     assert result["sportsbook_influence"] == 0.0
     assert "market" not in result["inputs"]
 
