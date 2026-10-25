@@ -183,6 +183,23 @@ def _nfl_anytime_td_adapter(route: RuntimeRoute) -> DestinationAdapter:
     )
 
 
+def _nfl_daily_picks_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 Daily Picks V4 adapter with no generic NFL hub fallback."""
+    def loader():
+        return _import("nfl_daily_picks_command_center_v4")
+
+    def renderer(page):
+        return page.render_nfl_daily_picks_command_center()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id),
+        loader,
+        renderer,
+        "nfl_daily_picks_command_center_v4",
+        20_000,
+    )
+
+
 def _nfl_adapter(route: RuntimeRoute, target: str, *, ttl_ms: int) -> DestinationAdapter:
     market_label = _market_label(route)
 
@@ -350,6 +367,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
             return _nfl_passing_tds_adapter(route)
         if route.market_id == "anytime-td":
             return _nfl_anytime_td_adapter(route)
+        if route.market_id == "daily-picks":
+            return _nfl_daily_picks_adapter(route)
         if registration is None:
             return _fail_closed_adapter(route, "NFL route registration missing.")
         ttl = 60_000 if route.market_id == "slate" else 20_000

@@ -1,0 +1,35 @@
+name: API2 NFL Daily Picks Canonical Router V1
+
+on:
+  pull_request:
+    branches:
+      - api2-main
+    paths:
+      - 'api2_universal_sports_router_registry_v1.py'
+      - 'universal_runtime_v5_loader.py'
+      - 'nfl_daily_picks_command_center_v4.py'
+      - 'tests/test_api2_nfl_daily_picks_canonical_router_v1.py'
+      - 'tests/test_api2_step2e_universal_router_completion_v1.py'
+      - '.github/workflows/api2-nfl-daily-picks-canonical-router-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  nfl-daily-picks-router-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install proof dependencies
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile canonical route boundary
+        run: |
+          python -m py_compile api2_universal_sports_router_registry_v1.py universal_runtime_v5_loader.py nfl_daily_picks_command_center_v4.py
+      - name: Daily Picks canonical ownership + Step 2E proof
+        run: |
+          python -m pytest -q --noconftest \
+            tests/test_api2_nfl_daily_picks_canonical_router_v1.py \
+            tests/test_api2_step2e_universal_router_completion_v1.py
