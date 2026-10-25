@@ -105,7 +105,7 @@ def test_step2a_authorizes_patch_only_after_step2b_and_forward_motion_both_pass(
     assert result["forward_receipt_hash"]
 
 
-def test_two_failed_attempts_are_handed_to_anti_loop_root_cause_reset_before_patch():
+def test_two_failed_attempts_handoff_to_step2c_autonomous_diagnosis_before_patch():
     action = _patch(
         preflight=_preflight(),
         history=[
@@ -116,9 +116,9 @@ def test_two_failed_attempts_are_handed_to_anti_loop_root_cause_reset_before_pat
     result = authorize_action(_brain(), action, [], forward_decision=_forward(action))
     assert result["allowed"] is False
     assert result["decision"] == "TWO_A_TWO_B_BLOCKED"
-    assert result["reliability_decision"] == "TWO_B_ROOT_CAUSE_RESET_REQUIRED"
+    assert result["reliability_decision"] == "TWO_B_TWO_C_RECOVERY_REQUIRED"
     assert result["anti_loop_handoff"] is True
-    assert result["next_legal_action"] == "ROOT_CAUSE_RESET"
+    assert result["next_legal_action"] == "GATHER_EVIDENCE_NEW_SOURCE"
 
 
 def test_live_async_lock_still_precedes_step2b_and_blocks_competing_patch():
