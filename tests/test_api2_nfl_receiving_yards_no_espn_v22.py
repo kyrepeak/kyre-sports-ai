@@ -124,11 +124,13 @@ def test_market_adapter_requires_exact_team_jersey_position_reconciliation() -> 
     assert "sportsbook_projection_influence" in source
 
 
-def test_api_successor_uses_nflverse_and_official_nfl_assets_and_upcoming_only() -> None:
+def test_api_successor_uses_nflverse_fastpath_official_assets_and_upcoming_only() -> None:
     source = _read("sports_api/api/nfl_receiving_yards_slate_v2.py").lower()
     assert "nflverse" in source
+    assert "stats_player_week" in source
+    assert "receiving_yards" in source
+    assert "opponent_team" in source
     assert "static.www.nfl.com" in source
-    assert "receiver_player_id" in source
     assert "kickoff <= now" in source
     assert "sportsbook_projection_influence" in source
     assert '"kyre sports api"' in source
