@@ -100,6 +100,23 @@ def _root_adapter(route: RuntimeRoute, *, ttl_ms: int) -> DestinationAdapter:
     )
 
 
+def _nfl_slate_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 NFL Slate adapter backed only by the Kyre Sports API gateway."""
+    def loader():
+        return _import("nfl_slate_runtime_v1")
+
+    def renderer(page):
+        return page.render_nfl_slate_runtime()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id),
+        loader,
+        renderer,
+        "nfl_slate_runtime_v1",
+        60_000,
+    )
+
+
 def _nfl_passing_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
     """Dedicated Kyre-gateway adapter; legacy NFL slate/data owners are not imported."""
     def loader():
@@ -323,6 +340,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
         if route.market_id == "player-props":
             return _cfb_player_props_adapter(route)
     if route.sport_id == "nfl":
+        if route.market_id == "slate":
+            return _nfl_slate_adapter(route)
         if route.market_id == "passing-yards":
             return _nfl_passing_yards_adapter(route)
         if route.market_id == "receptions":
