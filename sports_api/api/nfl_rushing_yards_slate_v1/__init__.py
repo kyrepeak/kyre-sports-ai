@@ -1,9 +1,10 @@
 """Rushing Yards V1 successor overlay for field-level availability semantics.
 
 The underlying slate implementation remains the authoritative data builder. This
-package post-processes only availability/routing metadata so an active RB card
-never exposes a vague blank when no approved injury provider is wired into the
-current deployment. It does not invent an injury designation.
+package post-processes availability/routing metadata and installs the permanent
+Step 2D runtime data-truth boundary so provider failures cannot masquerade as a
+verified unposted sportsbook market. It does not invent an injury designation or
+sportsbook value.
 """
 from __future__ import annotations
 
@@ -26,8 +27,12 @@ _SPEC.loader.exec_module(_legacy)
 # bounded so a cold serverless request cannot download multi-season PBP or wait
 # indefinitely on direct-book enrichment before Page 1 can render.
 from sports_api import nfl_rushing_yards_fastpath_v1 as _fastpath
+from sports_api import nfl_rushing_yards_data_truth_v1 as _data_truth
 
 _fastpath.install(_legacy)
+# Step 2D installs after the transport fastpath so it owns the final market
+# collection + semantic-state boundary used by the canonical builder.
+_data_truth.install(_legacy)
 
 for _name, _value in vars(_legacy).items():
     if _name not in {"__name__", "__package__", "__loader__", "__spec__", "__file__", "__cached__", "router", "slate", "status", "build_slate_bundle"}:
@@ -47,9 +52,9 @@ INJURY_PROVIDER_AUDIT = (
     {"provider": "RotoWire", "state": "NOT_CONFIGURED_IN_CURRENT_DEPLOYMENT"},
 )
 MARKET_PROVIDER_AUDIT = (
-    {"provider": "OpticOdds", "state": "NOT_CONFIGURED_IN_CURRENT_DEPLOYMENT"},
-    {"provider": "The Odds API", "state": "NOT_CONFIGURED_IN_CURRENT_DEPLOYMENT"},
-    {"provider": "SportsDataIO", "state": "NOT_CONFIGURED_IN_CURRENT_DEPLOYMENT"},
+    {"provider": "OpticOdds", "state": "APPROVED_FALLBACK_NOT_CONFIGURED"},
+    {"provider": "The Odds API", "state": "APPROVED_FALLBACK_NOT_CONFIGURED"},
+    {"provider": "SportsDataIO", "state": "APPROVED_FALLBACK_NOT_CONFIGURED"},
     {"provider": "Direct sportsbook", "state": "ACTIVE_FIELD_SOURCE"},
 )
 
@@ -84,6 +89,7 @@ def _postprocess_payload(payload: dict[str, Any]) -> dict[str, Any]:
         lineage = dict(detail.get("source_lineage") or {})
         lineage["availability_roster"] = "nflverse weekly roster active-status verification"
         lineage["injury_designation"] = "no configured approved injury provider; no designation fabricated"
+        lineage["market_data_truth"] = _data_truth.VERSION
         detail["source_lineage"] = lineage
         card["detail"] = detail
         cards.append(card)
@@ -100,7 +106,20 @@ def _postprocess_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "provider_audit": [dict(row) for row in MARKET_PROVIDER_AUDIT],
         "book_specific_records": True,
         "sportsbook_line_averaging": False,
-        "unposted_market_state": "MARKET_NOT_POSTED",
+        "data_truth_gate": _data_truth.VERSION,
+        "empty_equals_not_posted": False,
+        "verified_absence_required_for_market_not_posted": True,
+        "technical_failure_public_state": "DATA_UNAVAILABLE",
+        "technical_failure_diagnostic_states": [
+            "PROVIDER_FETCH_FAILURE",
+            "PARSER_FAILURE",
+            "EVENT_MAPPING_FAILURE",
+            "PLAYER_MAPPING_FAILURE",
+            "MARKET_MAPPING_FAILURE",
+            "STALE_DATA",
+            "SOURCE_CONFLICT",
+            "ALL_SOURCES_UNAVAILABLE",
+        ],
     }
     routing["request_time_transport_policy"] = {
         "full_pbp_downloads": False,
@@ -110,9 +129,10 @@ def _postprocess_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "player_stats_timeout_seconds": _fastpath.PLAYER_STATS_TIMEOUT_SECONDS,
         "roster_timeout_seconds": _fastpath.ROSTER_TIMEOUT_SECONDS,
         "history_budget_seconds": _fastpath.HISTORY_BUDGET_SECONDS,
-        "market_budget_seconds": _fastpath.MARKET_BUDGET_SECONDS,
-        "market_call_timeout_seconds": _fastpath.MARKET_CALL_TIMEOUT_SECONDS,
+        "market_budget_seconds": _data_truth.DEFAULT_MARKET_BUDGET_SECONDS,
+        "market_call_timeout_seconds": _data_truth.DEFAULT_CALL_TIMEOUT_SECONDS,
         "slow_enrichment_blocks_slate": False,
+        "failed_ingestion_negative_cache_allowed": False,
     }
     out["routing"] = routing
     return out
@@ -135,6 +155,12 @@ def status() -> dict[str, Any]:
         "provider_audit": [dict(row) for row in INJURY_PROVIDER_AUDIT],
     }
     base["market_provider_audit"] = [dict(row) for row in MARKET_PROVIDER_AUDIT]
+    base["market_data_truth"] = {
+        "version": _data_truth.VERSION,
+        "empty_equals_not_posted": False,
+        "verified_absence_required_for_market_not_posted": True,
+        "failed_ingestion_negative_cache_allowed": False,
+    }
     base["request_time_transport_policy"] = {
         "full_pbp_downloads": False,
         "weekly_player_summaries": True,
@@ -143,8 +169,8 @@ def status() -> dict[str, Any]:
         "player_stats_timeout_seconds": _fastpath.PLAYER_STATS_TIMEOUT_SECONDS,
         "roster_timeout_seconds": _fastpath.ROSTER_TIMEOUT_SECONDS,
         "history_budget_seconds": _fastpath.HISTORY_BUDGET_SECONDS,
-        "market_budget_seconds": _fastpath.MARKET_BUDGET_SECONDS,
-        "market_call_timeout_seconds": _fastpath.MARKET_CALL_TIMEOUT_SECONDS,
+        "market_budget_seconds": _data_truth.DEFAULT_MARKET_BUDGET_SECONDS,
+        "market_call_timeout_seconds": _data_truth.DEFAULT_CALL_TIMEOUT_SECONDS,
         "slow_enrichment_blocks_slate": False,
     }
     return base

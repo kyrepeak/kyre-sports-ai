@@ -1,0 +1,44 @@
+name: API2 Step 2D Data Truth V1
+
+on:
+  push:
+    branches:
+      - api2-step2d-data-truth-gate-v1
+      - api2-main
+  pull_request:
+    branches:
+      - api2-main
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install repository test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest -r requirements.txt
+      - name: Step 2D contract + integration proof
+        run: >-
+          python -m pytest -q
+          tests/test_api2_step2d_data_truth_gate_v1.py
+          tests/test_api2_step2d_integration_v1.py
+          tests/test_api2_step2bc_cert_v1.py
+          tests/test_api2_step2bc_control_plane_v1.py
+      - name: NFL rushing regression proof
+        run: >-
+          python -m pytest -q
+          tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py
+          tests/test_api2_nfl_rushing_live_timeout_v1.py
+      - name: Compile Step 2D authority
+        run: >-
+          python -m py_compile
+          devsystem/api2_step2d_data_truth_gate_v1.py
+          devsystem/api2_execution_controller_v3.py
+          devsystem/api2_execution_plan_compiler_cert_v1.py
+          devsystem/api2_step2bc_cert_v1.py
+          sports_api/nfl_rushing_yards_data_truth_v1.py
