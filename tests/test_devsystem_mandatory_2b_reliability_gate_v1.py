@@ -18,7 +18,7 @@ def _preflight():
         "authoritative_path": {
             "repository": "owner/repo",
             "branch": "work-branch",
-            "target": "sports-page",
+            "target": "github:mutation",
             "proof_path": "production",
         },
         "acceptance_criteria": [

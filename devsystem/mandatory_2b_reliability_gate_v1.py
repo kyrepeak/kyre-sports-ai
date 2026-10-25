@@ -11,8 +11,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Mapping, Sequence
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from devsystem.mandatory_2c_autonomous_recovery_v1 import (
     Mandatory2CAutonomousRecoveryFailure,
