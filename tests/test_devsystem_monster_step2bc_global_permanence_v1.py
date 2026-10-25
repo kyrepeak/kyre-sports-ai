@@ -19,22 +19,31 @@ def _load(name: str, path: str):
     return module
 
 
-def test_global_monster_permanent_gate_requires_step2bc_and_isolation():
-    permanent_gate = (ROOT / "devsystem/permanent_gate_v1.py").read_text(encoding="utf-8")
-    targeted_ci = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+def test_monster_permanent_system_gate_composes_full_control_chain():
+    gate = _load(
+        "monster_system_permanent_gate_v1",
+        "devsystem/monster_system_permanent_gate_v1.py",
+    )
+    result = gate.validate()
+    assert result["status"] == "GREEN"
+    assert result["monster_only"] is True
+    assert result["base_permanent_gate_green"] is True
+    assert result["step2bc_permanent_enforcement_green"] is True
+    assert result["isolation_guard_green"] is True
+    assert result["canonical_front_door_green"] is True
+    assert result["step2a_step2b_step2c_chain_permanent"] is True
+    assert result["anti_loop_permanent"] is True
+    assert result["human_only_blocker_rule_permanent"] is True
 
-    for marker in (
-        '"devsystem/mandatory_2b_reliability_gate_v1.py"',
-        '"devsystem/mandatory_2c_autonomous_recovery_v1.py"',
-        '"devsystem/mandatory_2bc_permanent_enforcement_v1.py"',
-        '"devsystem/monster_system_isolation_v1.py"',
-    ):
-        assert marker in permanent_gate
 
-    assert "python devsystem/monster_system_isolation_v1.py" in permanent_gate
-    assert "python devsystem/mandatory_2bc_permanent_enforcement_v1.py" in permanent_gate
-    assert "python devsystem/monster_system_isolation_v1.py" in targeted_ci
-    assert "python devsystem/mandatory_2bc_permanent_enforcement_v1.py" in targeted_ci
+def test_monster_permanent_workflow_is_scoped_to_monster_main_only():
+    workflow = (ROOT / ".github/workflows/monster-step2bc-permanent-system-v1.yml").read_text(encoding="utf-8")
+    assert "branches: [monster-main]" in workflow
+    assert "python devsystem/monster_system_permanent_gate_v1.py" in workflow
+    assert "python devsystem/monster_execution_front_door_v1.py" in workflow
+    assert "python devsystem/monster_system_isolation_v1.py" in workflow
+    assert "tests/test_devsystem_monster_step2bc_global_permanence_v1.py" in workflow
+    assert "api2" not in workflow.lower()
 
 
 def test_monster_hard_isolation_rejects_foreign_api2_state():
@@ -65,3 +74,18 @@ def test_monster_hard_isolation_rejects_foreign_api2_state():
     for payload in contaminated:
         with pytest.raises(isolation.MonsterSystemIsolationFailure):
             isolation.assert_monster_only(payload)
+
+
+def test_monster_canonical_front_door_blocks_foreign_state_before_step2a():
+    front = _load(
+        "monster_execution_front_door_v1",
+        "devsystem/monster_execution_front_door_v1.py",
+    )
+    result = front.contract_self_test()
+    assert result["status"] == "GREEN"
+    assert result["monster_only"] is True
+    assert result["foreign_state_blocked"] is True
+    assert result["step2a_chain_preserved"] is True
+    assert result["step2b_chain_preserved"] is True
+    assert result["step2c_chain_preserved"] is True
+    assert result["anti_loop_preserved"] is True
