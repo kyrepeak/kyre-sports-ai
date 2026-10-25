@@ -15,7 +15,7 @@ from devsystem.api2_proof_convergence_v1 import (
     contract_self_test,
     validate_authoritative_registry,
 )
-from devsystem.frozen_artifact_registry_v1 import _hash, _payload_without_hash
+from devsystem.api2_frozen_artifact_registry_v1 import _hash, _payload_without_hash
 
 
 def _registry() -> dict:
@@ -30,10 +30,10 @@ def _registry() -> dict:
         }
     payload = {
         "schema_version": 1,
-        "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1",
+        "version": "API2_FROZEN_ARTIFACT_REGISTRY_V1",
         "repository": "kyrepeak/kyre-sports-ai",
-        "registry_ref": "refs/heads/monster-frozen-artifact-registry",
-        "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
+        "registry_ref": "refs/heads/api2-frozen-registry",
+        "registry_path": "devsystem/api2_frozen_registry_state_v1.json",
         "revision": 83,
         "source_main_sha": "a" * 40,
         "entries": entries,
