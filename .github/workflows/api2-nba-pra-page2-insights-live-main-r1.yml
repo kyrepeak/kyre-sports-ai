@@ -1,0 +1,32 @@
+name: API2 NBA PRA Page 2 Insights Live Main R1
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "nba_pra_page2_v1.py"
+      - "nba_pra_page2_core_v2.py"
+      - "nba_pra_page2_insights_v1.py"
+      - "runless_v2/__init__.py"
+      - "runless_v2/api2_authority_isolation_v1.py"
+      - "tests/test_api2_nba_pra_page2_insights_v1.py"
+      - "tests/test_runless_v2_api2_authority_isolation_v1.py"
+      - "devsystem/runless_proof_plans/api2-nba-pra-page2-insights-live-main-r1.json"
+      - "devsystem/task_ledgers/api2-nba-pra-page2-insights-live-main-r1.json"
+      - ".github/workflows/api2-nba-pra-page2-insights-live-main-r1.yml"
+
+jobs:
+  live-main-insights-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused dependencies
+        run: python -m pip install --disable-pip-version-check pytest requests httpx fastapi pyjwt
+      - name: Run live-main Insights + API2 authority regressions
+        run: python -m pytest --noconftest -q tests/test_api2_nba_pra_page2_insights_v1.py tests/test_runless_v2_api2_authority_isolation_v1.py
+      - name: Compile API2 authority adapter
+        run: python -m py_compile runless_v2/api2_authority_isolation_v1.py runless_v2/__init__.py
