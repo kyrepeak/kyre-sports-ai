@@ -1,8 +1,7 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
-
-import pytest
 
 from api2_step2f_stable_production_parity_v1 import (
     MLB_STABLE_SERVICE,
@@ -12,7 +11,18 @@ from api2_step2f_stable_production_parity_v1 import (
     validate_static_contract,
     visible_page_keys,
 )
-from sports_api.api.step2f_deployment_receipt_v1 import deployment_receipt_from_env
+
+
+def _load_receipt_module():
+    path = Path("sports_api/api/step2f_deployment_receipt_v1.py")
+    spec = importlib.util.spec_from_file_location("api2_step2f_receipt_isolated", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+deployment_receipt_from_env = _load_receipt_module().deployment_receipt_from_env
 
 
 EXPECTED_COUNTS = {"nfl": 11, "cfb": 5, "nba": 2, "mlb": 12, "wnba": 9}
