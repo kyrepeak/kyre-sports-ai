@@ -1,0 +1,40 @@
+name: API2 Step 2A Anti-Loop Hard Guard V2
+
+on:
+  push:
+    branches:
+      - api2-step2a-anti-loop-hard-guard-v2
+  pull_request:
+    branches:
+      - api2-main
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install repository test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest -r requirements.txt
+      - name: Hard Step 2A + Anti-Loop regression contract
+        run: >-
+          python -m pytest -q
+          tests/test_api2_step2a_anti_loop_hard_guard_v2.py
+      - name: Existing API2 control-plane regression
+        run: >-
+          python -m pytest -q
+          tests/test_api2_step2bc_cert_v1.py
+          tests/test_api2_step2bc_control_plane_v1.py
+      - name: Compile API2 authority controls
+        run: >-
+          python -m py_compile
+          devsystem/api2_isolation_guard_v1.py
+          devsystem/api2_anti_loop_v1.py
+          devsystem/api2_step2a_authority_v1.py
+          devsystem/api2_execution_controller_v3.py
+          devsystem/api2_step2bc_cert_v1.py
