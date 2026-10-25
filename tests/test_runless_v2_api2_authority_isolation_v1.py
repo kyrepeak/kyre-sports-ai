@@ -60,10 +60,12 @@ def test_api2_workstream_reads_only_api2_authority_sources():
         {
             "system": "api2",
             "repository": "kyrepeak/kyre-sports-ai",
+            "base_ref": "refs/heads/main",
             "registry_ref": f"refs/heads/{API2_REGISTRY_BRANCH}",
             "registry_path": API2_REGISTRY_PATH,
             "version": "API2_FROZEN_ARTIFACT_REGISTRY_V1",
-            "revision": 5,
+            "revision": 0,
+            "source_main_sha": "b" * 40,
             "entries": {},
             "active_thaws": [],
         }
@@ -88,6 +90,7 @@ def test_api2_workstream_reads_only_api2_authority_sources():
 
     assert lease["lease_id"] == "SCOPE-LEASE-API2-TEST"
     assert registry["system"] == "api2"
+    assert registry["base_ref"] == "refs/heads/main"
     assert calls == [
         (API2_LEASE_PATH, API2_LEASE_BRANCH),
         (API2_REGISTRY_PATH, API2_REGISTRY_BRANCH),
