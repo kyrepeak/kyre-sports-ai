@@ -7,7 +7,7 @@ on:
       - "devsystem/mandatory_2b_reliability_gate_v1.py"
       - "devsystem/mandatory_2a_action_gate_v1.py"
       - "devsystem/automatic_loop_kill_v1.py"
-      - "devsystem/permanent_gate_v1.py"
+      - "devsystem/mandatory_2bc_permanent_enforcement_v1.py"
       - "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py"
       - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
       - "tests/test_devsystem_step2c_step2b_step2a_integration_v1.py"
@@ -23,7 +23,7 @@ on:
       - "devsystem/mandatory_2b_reliability_gate_v1.py"
       - "devsystem/mandatory_2a_action_gate_v1.py"
       - "devsystem/automatic_loop_kill_v1.py"
-      - "devsystem/permanent_gate_v1.py"
+      - "devsystem/mandatory_2bc_permanent_enforcement_v1.py"
       - "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py"
       - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
       - "tests/test_devsystem_step2c_step2b_step2a_integration_v1.py"
@@ -72,5 +72,7 @@ jobs:
       - name: Step 2C end-to-end integration tests
         if: ${{ hashFiles('tests/test_devsystem_step2c_step2b_step2a_integration_v1.py') != '' }}
         run: python -m pytest -q tests/test_devsystem_step2c_step2b_step2a_integration_v1.py
+      - name: Step 2B + Step 2C permanent enforcement self-test
+        run: python devsystem/mandatory_2bc_permanent_enforcement_v1.py
       - name: Step 2B + Step 2C permanent DevSystem contract
         run: python -m pytest -q tests/test_devsystem_step2bc_permanent_gate_v1.py

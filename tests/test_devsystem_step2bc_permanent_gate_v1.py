@@ -19,15 +19,30 @@ def _load(name: str, path: str):
 
 
 def test_step2b_and_step2c_are_permanent_devsystem_requirements():
-    gate = _load("permanent_gate_step2bc", "devsystem/permanent_gate_v1.py")
+    gate = _load(
+        "mandatory_2bc_permanent_enforcement_v1",
+        "devsystem/mandatory_2bc_permanent_enforcement_v1.py",
+    )
     result = gate.validate()
 
+    assert result["status"] == "GREEN"
+    assert result["base_permanent_contract_green"] is True
+    assert result["step2a_permanent_chain_preserved"] is True
+    assert result["automatic_loop_kill_permanent"] is True
     assert result["mandatory_2b_reliability_gate_v1_permanent"] is True
     assert result["mandatory_2c_autonomous_recovery_v1_permanent"] is True
     assert result["step2b_step2c_workflows_permanent"] is True
+    assert result["no_blind_attempt_three"] is True
+    assert result["autonomous_diagnosis_after_two_failures"] is True
+    assert result["human_intervention_only_for_verified_blocker"] is True
+    assert result["network_calls"] is False
+    assert result["auto_mutate"] is False
+    assert result["product_runtime_mutation"] is False
 
-    required = set(gate.REQUIRED_DEVSYSTEM_FILES)
+    required = set(gate.REQUIRED_CONTROL_FILES)
     for path in (
+        "devsystem/automatic_loop_kill_v1.py",
+        "devsystem/mandatory_2a_action_gate_v1.py",
         "devsystem/mandatory_2b_reliability_gate_v1.py",
         "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py",
         ".github/workflows/monster-step2b-reliability-gate-v1.yml",
@@ -35,11 +50,19 @@ def test_step2b_and_step2c_are_permanent_devsystem_requirements():
         "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py",
         "tests/test_devsystem_step2c_step2b_step2a_integration_v1.py",
         ".github/workflows/monster-step2c-autonomous-recovery-v1.yml",
+        "tests/test_devsystem_step2bc_permanent_gate_v1.py",
     ):
         assert path in required
 
 
 def test_step2b_and_step2c_permanent_markers_cannot_drift():
+    gate = _load(
+        "mandatory_2bc_permanent_enforcement_markers_v1",
+        "devsystem/mandatory_2bc_permanent_enforcement_v1.py",
+    )
+    result = gate.contract_self_test()
+    assert result["status"] == "GREEN"
+
     step2b = (ROOT / "devsystem/mandatory_2b_reliability_gate_v1.py").read_text(encoding="utf-8")
     step2c = (ROOT / "devsystem/mandatory_2c_autonomous_recovery_v1.py").read_text(encoding="utf-8")
     workflow2b = (ROOT / ".github/workflows/monster-step2b-reliability-gate-v1.yml").read_text(encoding="utf-8")
@@ -66,3 +89,4 @@ def test_step2b_and_step2c_permanent_markers_cannot_drift():
     assert "python devsystem/mandatory_2c_autonomous_recovery_v1.py" in workflow2c
     assert "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py" in workflow2c
     assert "tests/test_devsystem_step2c_step2b_step2a_integration_v1.py" in workflow2c
+    assert "python devsystem/mandatory_2bc_permanent_enforcement_v1.py" in workflow2c
