@@ -88,3 +88,18 @@ def test_v5_frame_persistence_requires_selected_card_and_frame_query_match():
     assert "outer_event == expected_event" not in source
     assert '"frame_event_persistence_verified": True' in source
     assert '"deeplink_reload_verified": True' in source
+
+
+def test_v5_cfb_selector_identity_endpoint_is_mounted_in_production_api():
+    main_source = (ROOT / "sports_api" / "main.py").read_text(encoding="utf-8")
+    cfb_source = (ROOT / "sports_api" / "api" / "cfb_odds_v1.py").read_text(
+        encoding="utf-8"
+    )
+    assert (
+        "from sports_api.api.cfb_odds_v1 import router as cfb_odds_router"
+        in main_source
+    )
+    assert "app.include_router(cfb_odds_router)" in main_source
+    assert '@router.get("/selector/verified-games")' in cfb_source
+    assert '"synthetic_ids": False' in cfb_source
+    assert '"projection_weight": 0.0' in cfb_source
