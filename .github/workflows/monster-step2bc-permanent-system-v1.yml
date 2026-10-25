@@ -12,6 +12,8 @@ on:
       - "devsystem/monster_system_isolation_v1.py"
       - "devsystem/monster_execution_front_door_v1.py"
       - "devsystem/monster_system_permanent_gate_v1.py"
+      - "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json"
+      - "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json"
       - "tests/test_devsystem_automatic_loop_kill_v1.py"
       - "tests/test_devsystem_mandatory_2a_action_gate_v1.py"
       - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
@@ -32,6 +34,8 @@ on:
       - "devsystem/monster_system_isolation_v1.py"
       - "devsystem/monster_execution_front_door_v1.py"
       - "devsystem/monster_system_permanent_gate_v1.py"
+      - "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json"
+      - "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json"
       - "tests/test_devsystem_automatic_loop_kill_v1.py"
       - "tests/test_devsystem_mandatory_2a_action_gate_v1.py"
       - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
@@ -62,6 +66,17 @@ jobs:
           python-version: "3.11"
       - name: Install narrow test dependency
         run: python -m pip install -q pytest
+      - name: Compile MONSTER control chain
+        run: |
+          python -m py_compile \
+            devsystem/monster_system_isolation_v1.py \
+            devsystem/monster_execution_front_door_v1.py \
+            devsystem/monster_system_permanent_gate_v1.py \
+            devsystem/automatic_loop_kill_v1.py \
+            devsystem/mandatory_2a_action_gate_v1.py \
+            devsystem/mandatory_2b_reliability_gate_v1.py \
+            devsystem/mandatory_2c_autonomous_recovery_v1.py \
+            devsystem/mandatory_2bc_permanent_enforcement_v1.py
       - name: MONSTER hard isolation contract
         run: python devsystem/monster_system_isolation_v1.py
       - name: MONSTER canonical execution front door
