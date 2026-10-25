@@ -66,6 +66,10 @@ import sports_api.nfl_rushing_yards_fastpath_v1 as nfl_rushing_yards_fastpath
 # dedicated transport module and enforces semantic non-blank states.
 import sports_api.api.universal_sports_router_completion_v1 as universal_router_module
 
+# Step 2F production parity receipt. This is deliberately metadata-only and
+# exposes no secrets; the stable alias uses it to prove exact SHA/environment.
+import sports_api.api.step2f_deployment_receipt_v1 as step2f_deployment_receipt_module
+
 nfl_rushing_yards_fastpath.install(nfl_rushing_yards_slate_module)
 
 cfb_markets_router = cfb_markets_module.router
@@ -97,6 +101,7 @@ nfl_rushing_yards_market_router = nfl_rushing_yards_market_module.router
 nfl_rushing_yards_slate_router = nfl_rushing_yards_slate_module.router
 nfl_rushing_yards_detail_router = nfl_rushing_yards_detail_module.router
 universal_router = universal_router_module.router
+step2f_deployment_receipt_router = step2f_deployment_receipt_module.router
 
 app = FastAPI(
     title="Kyre Sports API",
@@ -135,6 +140,7 @@ app.include_router(nfl_rushing_yards_market_router)
 app.include_router(nfl_rushing_yards_slate_router)
 app.include_router(nfl_rushing_yards_detail_router)
 app.include_router(universal_router)
+app.include_router(step2f_deployment_receipt_router)
 
 
 @app.get("/health")
@@ -175,5 +181,6 @@ def health() -> dict[str, object]:
         "nfl_rushing_yards_detail_v2": True,
         "universal_router_completion_v1": not router_failures,
         "universal_router_failures": list(router_failures),
+        "api2_step2f_deployment_receipt_v1": True,
         "direct_app_provider_fallback": False,
     }
