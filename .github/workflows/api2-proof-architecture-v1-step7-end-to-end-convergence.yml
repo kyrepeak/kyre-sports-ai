@@ -54,14 +54,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin monster-frozen-artifact-registry --depth=1
-          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/api2-step7-registry.json
+          git fetch origin api2-frozen-registry --depth=1
+          git show FETCH_HEAD:devsystem/api2_frozen_registry_state_v1.json > /tmp/api2-step7-registry.json
           python devsystem/api2_proof_convergence_v1.py audit-registry             --registry-file /tmp/api2-step7-registry.json             --json-out /tmp/api2-step7-registry-audit.json
           cat /tmp/api2-step7-registry-audit.json
 
       - name: Verify exact candidate head against authoritative frozen registry
         run: |
-          python devsystem/frozen_artifact_registry_v1.py verify-head             --registry-file /tmp/api2-step7-registry.json             --head HEAD
+          python devsystem/api2_frozen_artifact_registry_v1.py verify-head             --registry-file /tmp/api2-step7-registry.json             --head HEAD
           echo "API2_PROOF_ARCHITECTURE_V1_STEP7_FROZEN_PARENT_CHAIN_GREEN"
 
       - name: Certify exact head
