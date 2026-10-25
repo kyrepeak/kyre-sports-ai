@@ -33,18 +33,17 @@ def test_base_runtime_has_dedicated_spread_adapter_without_generic_nfl_hub_depen
     assert 'nfl_passing_yards_next_slate_v1' not in adapter
 
 
-def test_legacy_v23_spread_overlay_delegates_to_canonical_base_resolution():
-    source = _read("universal_runtime_v5_loader_v23.py")
-    spread_branch = source.split('route.sport_id == "nfl" and route.market_id == "spread"', 1)[1]
-    spread_branch = spread_branch.split("return prior.resolve_destination(route)", 1)[0]
-    assert "base_loader.resolve_destination(route)" in spread_branch
-    assert "base_loader._nfl_adapter" not in spread_branch
-
-
-def test_current_production_terminal_delegates_spread_to_canonical_loader():
+def test_current_api2_terminal_delegates_spread_to_canonical_loader():
     source = _read("streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py")
     assert 'route.sport_id == "nfl" and route.market_id in {"rushing-yards", "spread"}' in source
     assert "return canonical_loader.resolve_destination(route)" in source
+
+
+def test_current_production_chain_preserves_rushing_density_and_reaches_route_restore():
+    density = _read("streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1.py")
+    app = _read("app.py")
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1 as prior" in density
+    assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1" in app
 
 
 def test_spread_v10_product_and_model_boundaries_remain_frozen():
