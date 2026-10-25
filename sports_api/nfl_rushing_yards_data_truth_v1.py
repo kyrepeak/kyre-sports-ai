@@ -179,8 +179,8 @@ def collect_markets(
         )
         results[game_id] = _apply_fallbacks(
             game,
-            timeout_result,
             timeout=effective_timeout,
+            current=timeout_result,
             fallback_collectors=fallback_collectors,
         )
 
@@ -271,35 +271,49 @@ def market_state_from_bundle(bundle: Mapping[str, Any] | Sequence[Mapping[str, A
     if len(matched) > 1:
         return market_state(None, diagnostic_state="SOURCE_CONFLICT", reason="multiple exact team + jersey + position market observations survived canonical reconciliation")
 
-    # FanDuel exposes a separate event player identity catalog. If the canonical
-    # RB is uniquely present there, identity is verified even when that player is
-    # not attached to an open standard Rushing Yards market. That is explicit
-    # per-player absence evidence, not a mapping failure and not a fabricated line.
+    # FanDuel exposes a separate event player identity catalog. Provider feeds can
+    # contain duplicate rows for the same exact team + jersey + position. Market
+    # membership is the deciding evidence: duplicates with no offered provider ID
+    # still prove absence for that canonical identity, while offered duplicates
+    # remain fail-closed until a quote can be normalized uniquely.
     identity_catalog = [dict(row) for row in (evidence.get("identity_catalog") or []) if isinstance(row, Mapping)]
     catalog_matches = [
         row
         for row in identity_catalog
         if direct_book.reconcile_observation_to_roster(row, [player]) is not None
     ]
-    if len(catalog_matches) > 1:
-        return market_state(None, diagnostic_state="SOURCE_CONFLICT", reason="multiple provider identity rows matched the canonical team + jersey + position")
-    if len(catalog_matches) == 1:
-        provider_player_id = _text(catalog_matches[0].get("provider_player_id"))
-        offered_ids = {_text(value) for value in (evidence.get("offered_provider_player_ids") or []) if _text(value)}
-        if provider_player_id and provider_player_id not in offered_ids:
+    if catalog_matches:
+        catalog_ids = {
+            _text(row.get("provider_player_id"))
+            for row in catalog_matches
+            if _text(row.get("provider_player_id"))
+        }
+        offered_ids = {
+            _text(value)
+            for value in (evidence.get("offered_provider_player_ids") or [])
+            if _text(value)
+        }
+        offered_catalog_ids = catalog_ids & offered_ids
+        if catalog_ids and not offered_catalog_ids:
             return _verified_no_market(
                 provider=provider or PRIMARY_PROVIDER,
                 reason="verified provider player identity is present, but no open standard rushing-yards market is attached",
                 identity_verified=True,
             )
-        if provider_player_id and provider_player_id in offered_ids:
+        if len(offered_catalog_ids) == 1:
             return market_state(
                 None,
                 diagnostic_state="MARKET_MAPPING_FAILURE",
                 reason="provider offered a standard rushing-yards market for the exact player identity, but no complete quote survived normalization",
             )
+        if len(offered_catalog_ids) > 1:
+            return market_state(
+                None,
+                diagnostic_state="SOURCE_CONFLICT",
+                reason="multiple offered provider identities matched the same canonical team + jersey + position",
+            )
 
-    return market_state(None, diagnostic_state="PLAYER_MAPPING_UNAVAILABLE", reason="provider market bundle did not contain one unique active team + jersey + position match")
+    return market_state(None, diagnostic_state="PLAYER_MAPPING_UNAVAILABLE", reason="provider market bundle did not contain one resolvable active team + jersey + position identity")
 
 
 def _market_for_player(player: Mapping[str, Any], bundle: Any) -> dict[str, Any]:
