@@ -14,14 +14,17 @@ def _source(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def test_runtime_uses_dedicated_rushing_adapter_without_mutating_frozen_base():
+def test_runtime_uses_dedicated_rushing_adapter_with_canonical_step2e_registry():
     overlay = _source("universal_runtime_v5_loader/__init__.py")
-    frozen_base = _source("universal_runtime_v5_loader.py")
+    registry = import_module("api2_universal_sports_router_registry_v1")
     assert "def _nfl_rushing_yards_adapter" in overlay
     assert 'route.market_id == "rushing-yards"' in overlay
     assert "nfl_rushing_yards_simple_rb_grid_v1" in overlay
     assert "_ORIGINAL_RESOLVE_DESTINATION" in overlay
-    assert '"rushing-yards": "nfl_rushing_yards_hub_v17"' in frozen_base
+    registration = registry.get_router_registration("nfl", "rushing-yards")
+    assert registration is not None
+    assert registration.adapter_kind == "nfl-dedicated-hub"
+    assert registration.target == "nfl_rushing_yards_hub_v17"
 
 
 def test_page1_is_simple_all_rb_board_without_game_selector():

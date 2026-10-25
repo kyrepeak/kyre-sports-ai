@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib
 
+from api2_universal_sports_router_registry_v1 import require_registered_route
 import streamlit_memory_lazy_router_universal_runtime_v5_cfb_game_total_bootstrap_repair_r1 as prior
 import universal_runtime_v5_loader as canonical_loader
 from universal_page_experience_runtime_v5 import render_page_experience_app_v5
@@ -24,7 +25,10 @@ _prior_resolve_destination = prior.resolve_destination
 
 
 def resolve_destination(route):
-    """Shadow only approved successor routes while preserving every other terminal route."""
+    """Resolve approved overlays only after canonical Step 2E registration."""
+    if route.sport_id in {"nfl", "cfb", "nba", "wnba"}:
+        require_registered_route(route.sport_id, route.market_id)
+
     if route.sport_id == "cfb" and route.market_id == "moneyline":
         base = _prior_resolve_destination(route)
 
