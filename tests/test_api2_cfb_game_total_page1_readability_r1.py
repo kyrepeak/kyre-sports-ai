@@ -33,7 +33,7 @@ def test_v7_matchup_rail_has_tablet_readability_scale():
     folded = _compact(source)
     assert ".cfbgt5-chip{flex-basis:228px!important;width:228px!important;height:104px!important" in folded
     assert ".cfbgt5-team-logo{width:46px!important;height:46px!important;flex-basis:46px!important" in folded
-    assert ".cfbgt5-team-logoimg{width:42px!important;height:42px!important" in folded
+    assert ".cfbgt5-team-logoimg{inset:2px!important;width:42px!important;height:42px!important" in folded
     assert ".cfbgt5-abbr{font-size:17px!important" in folded
     assert ".cfbgt5-time{font-size:13px!important" in folded
     assert ".cfbgt5-at{font-size:14px!important" in folded
@@ -43,7 +43,7 @@ def test_v7_selected_card_has_s_tier_primary_hierarchy():
     source = (ROOT / "cfb_game_total_page1_atier_v7.py").read_text(encoding="utf-8")
     folded = _compact(source)
     assert ".cfbgt6-team-logo{width:52px!important;height:52px!important;flex-basis:52px!important" in folded
-    assert ".cfbgt6-team-logoimg{width:46px!important;height:46px!important" in folded
+    assert ".cfbgt6-team-logoimg{inset:3px!important;width:46px!important;height:46px!important" in folded
     assert ".cfbgt6-team{font-size:20px!important" in folded
     assert ".cfbgt6-kick{font-size:13px!important" in folded
     assert ".cfbgt6-metricsmall{font-size:12px!important" in folded
