@@ -49,7 +49,7 @@ _REGISTRATIONS = (
     _r("nfl", "receptions", "nfl-receptions", "nfl_receptions_runtime_v1"),
     _r("nfl", "passing-tds", "nfl-passing-tds", "nfl_passing_tds_runtime_v1"),
     _r("nfl", "anytime-td", "nfl-anytime-td", "nfl_anytime_td_runtime_v1"),
-    _r("nfl", "daily-picks", "nfl-hub", "nfl_hub_v18"),
+    _r("nfl", "daily-picks", "nfl-daily-picks", "nfl_daily_picks_command_center_v4"),
 
     # CFB — player props now has a first-class runtime adapter.
     _r("cfb", "moneyline", "terminal-overlay", "cfb_moneyline_clean_page_v8"),
