@@ -10,12 +10,14 @@ The frozen V21 presentation chain still depends on legacy ESPN event/team/player
 Create a successor live path rather than mutating frozen V1-V21 history:
 - nflverse games -> canonical Kyre game/team identity and upcoming-only schedule
 - nflverse weekly rosters -> GSIS player identity, active roster, jersey, position, headshot
-- nflverse play-by-play -> receiving workload, efficiency, opponent pass-defense context, direct player-vs-opponent history
+- nflverse weekly player summaries (`stats_player_week`) -> receiving workload, efficiency, opponent pass-defense context, and direct player-vs-opponent history with a bounded request-time footprint
 - NFL official CDN -> team logos
 - FanDuel direct -> display-only Receiving Yards market observations, reconciled to nflverse by exact team + jersey + position; no fuzzy player matching
 - Kyre Sports API -> sole frontend data gateway
 - projection V2 -> same formula discipline as V1 (expected receptions × weighted YPR, 65% player / 35% opponent) with canonical Kyre/GSIS identity instead of numeric ESPN IDs
 - Streamlit V22 -> compact successor page; no direct provider network access
+
+The weekly-summary transport follows the already-proven Rushing Yards fast-path philosophy rather than downloading full-season play-by-play on every cold request.
 
 ## Permanent invariants
 - No SGO.
