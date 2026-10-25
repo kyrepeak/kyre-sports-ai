@@ -200,6 +200,23 @@ def _nfl_daily_picks_adapter(route: RuntimeRoute) -> DestinationAdapter:
     )
 
 
+def _nfl_moneyline_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 Moneyline V19 adapter with no generic NFL hub fallback."""
+    def loader():
+        return _import("nfl_moneyline_hub_v19")
+
+    def renderer(page):
+        return page.render_nfl_moneyline_hub()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id),
+        loader,
+        renderer,
+        "nfl_moneyline_hub_v19",
+        20_000,
+    )
+
+
 def _nfl_adapter(route: RuntimeRoute, target: str, *, ttl_ms: int) -> DestinationAdapter:
     market_label = _market_label(route)
 
@@ -359,6 +376,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
     if route.sport_id == "nfl":
         if route.market_id == "slate":
             return _nfl_slate_adapter(route)
+        if route.market_id == "moneyline":
+            return _nfl_moneyline_adapter(route)
         if route.market_id == "passing-yards":
             return _nfl_passing_yards_adapter(route)
         if route.market_id == "receptions":
