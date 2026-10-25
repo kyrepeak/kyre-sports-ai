@@ -15,6 +15,7 @@ import re
 from typing import Any, Callable, Mapping, Sequence
 
 from sports_api.collectors import nfl_fanduel_rushing_yards_nflverse_v1 as direct_book
+from sports_api.collectors import nfl_the_odds_api_rushing_yards_v1 as odds_api_fallback
 from sports_api.nfl_data_nflverse_v1 import canonical_team_abbr
 
 VERSION = "NFL_RUSHING_YARDS_DATA_TRUTH_V1"
@@ -22,10 +23,12 @@ PRIMARY_PROVIDER = "FanDuel"
 DEFAULT_MARKET_BUDGET_SECONDS = 4.0
 DEFAULT_CALL_TIMEOUT_SECONDS = 2
 
-# Runtime may register additional approved providers without changing the page.
-# Each collector must accept (game, timeout=...) and return either a list of
-# canonical observations or a structured {state, observations} result.
-APPROVED_FALLBACK_COLLECTORS: tuple[tuple[str, Callable[..., Any]], ...] = ()
+# Field-specific recovery chain. FanDuel direct remains primary; The Odds API is
+# invoked only after primary failure/unverified absence, then routing stops once
+# the field is reliably satisfied.
+APPROVED_FALLBACK_COLLECTORS: tuple[tuple[str, Callable[..., Any]], ...] = (
+    ("The Odds API", odds_api_fallback.collect_the_odds_api_game_markets),
+)
 
 _FAILURE_STATES = {
     "PROVIDER_FETCH_FAILURE",
@@ -219,10 +222,14 @@ def market_state_from_bundle(bundle: Mapping[str, Any] | Sequence[Mapping[str, A
         state = _text(bundle.get("state")).upper() or "ALL_SOURCES_UNAVAILABLE"
         observations = [dict(row) for row in (bundle.get("observations") or []) if isinstance(row, Mapping)]
         reason = _text(bundle.get("reason"))
+        bundle_provider = _text(bundle.get("provider"))
+        bundle_evidence = dict(bundle.get("evidence") or {}) if isinstance(bundle.get("evidence"), Mapping) else {}
     else:
         observations = [dict(row) for row in (bundle or []) if isinstance(row, Mapping)]
         state = "AVAILABLE" if observations else "MARKET_MAPPING_FAILURE"
         reason = "legacy observation list without explicit source state"
+        bundle_provider = ""
+        bundle_evidence = {}
 
     if state == "VERIFIED_NOT_POSTED":
         return {
@@ -241,18 +248,33 @@ def market_state_from_bundle(bundle: Mapping[str, Any] | Sequence[Mapping[str, A
 
     team = canonical_team_abbr(player.get("team_abbr"))
     name = _norm(player.get("player_name"))
-    matched = [
-        row
-        for row in observations
-        if canonical_team_abbr(row.get("team_abbr")) == team
-        and _norm(row.get("player_name")) == name
-        and _text(row.get("position")).upper() in {"RB", "RUNNING BACK"}
-    ]
+    exact_event_fallback = (
+        bundle_provider == "The Odds API"
+        and _text(bundle_evidence.get("event_match")) == "exact_home_away"
+    )
+    matched: list[dict[str, Any]] = []
+    for row in observations:
+        if _norm(row.get("player_name")) != name:
+            continue
+        row_team = canonical_team_abbr(row.get("team_abbr")) if _text(row.get("team_abbr")) else ""
+        row_position = _text(row.get("position")).upper()
+        if row_team and row_team != team:
+            continue
+        if row_position and row_position not in {"RB", "RUNNING BACK"}:
+            continue
+        if (not row_team or not row_position) and not (
+            exact_event_fallback
+            and _text(row.get("source_provider")) == "The Odds API"
+            and _text(row.get("provider_event_id"))
+        ):
+            continue
+        matched.append(row)
+
     if len(matched) == 1:
         return market_state(matched[0])
     if len(matched) > 1:
         return market_state(None, diagnostic_state="SOURCE_CONFLICT", reason="multiple exact player market observations survived normalization")
-    return market_state(None, diagnostic_state="MARKET_MAPPING_FAILURE", reason="provider market bundle did not contain an exact player/team match")
+    return market_state(None, diagnostic_state="MARKET_MAPPING_FAILURE", reason="provider market bundle did not contain one exact player match with sufficient identity proof")
 
 
 def _market_for_player(player: Mapping[str, Any], bundle: Any) -> dict[str, Any]:
