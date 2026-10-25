@@ -117,3 +117,11 @@ def test_vercel_entrypoint_mounts_step2f_receipt_router() -> None:
         getattr(route, "path", "") == "/api/v1/system/deployment-receipt"
         for route in _receipt_module.router.routes
     )
+
+
+def test_step2f_strict_live_proof_runs_only_after_canonical_promotion_dispatch() -> None:
+    source = Path(".github/workflows/api2-step2f-stable-production-parity-v1.yml").read_text()
+    assert "push:" in source
+    assert "if: github.event_name == 'workflow_dispatch'" in source
+    assert "|| github.event_name == 'push'" not in source
+    assert "API2_STEP2F_EXPECTED_SHA: ${{ inputs.expected_sha }}" in source
