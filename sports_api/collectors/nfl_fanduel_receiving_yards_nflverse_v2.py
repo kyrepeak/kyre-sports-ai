@@ -82,10 +82,11 @@ def _get_json_reliable(
     timeout: int = MARKET_READ_TIMEOUT_SECONDS,
 ) -> dict[str, Any]:
     """Retry one transient read failure; deterministic provider/HTTP errors fail immediately."""
+    effective_timeout = max(MARKET_READ_TIMEOUT_SECONDS, int(timeout or 0))
     last_error: base.FanDuelPassingYardsError | None = None
     for attempt in range(1, MAX_MARKET_READ_ATTEMPTS + 1):
         try:
-            return base._get_json(url, params, timeout=timeout)
+            return base._get_json(url, params, timeout=effective_timeout)
         except base.FanDuelPassingYardsError as exc:
             last_error = exc
             message = str(exc).strip()
