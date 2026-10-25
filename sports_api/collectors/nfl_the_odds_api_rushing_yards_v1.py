@@ -92,6 +92,18 @@ def _parse_stamp(value: Any) -> datetime | None:
     return stamp.astimezone(timezone.utc)
 
 
+def _safe_transport_error(exc: Exception) -> str:
+    """Serialize transport failure type/status without leaking URL/query secrets."""
+    response = getattr(exc, "response", None)
+    status_code = getattr(response, "status_code", None)
+    if status_code is not None:
+        try:
+            return f"{type(exc).__name__}: HTTP {int(status_code)}"
+        except (TypeError, ValueError):
+            pass
+    return type(exc).__name__
+
+
 def _get_json(url: str, *, params: Mapping[str, Any], timeout: int) -> tuple[Any | None, str | None]:
     try:
         response = requests.get(
@@ -102,11 +114,15 @@ def _get_json(url: str, *, params: Mapping[str, Any], timeout: int) -> tuple[Any
         )
         response.raise_for_status()
     except Exception as exc:
-        return None, f"{type(exc).__name__}: {_text(exc)}"[:300]
+        # Never serialize request URLs/query strings into diagnostics: apiKey is
+        # intentionally sent as a query parameter by this provider.
+        return None, _safe_transport_error(exc)
     try:
         return response.json(), None
     except Exception as exc:
-        return None, f"JSON {type(exc).__name__}: {_text(exc)}"[:300]
+        # Parser diagnostics retain failure class only; raw bodies/messages may
+        # contain provider internals or credentials and are not evidence we need.
+        return None, f"JSON {type(exc).__name__}"
 
 
 def _event_match(events: Any, game: Mapping[str, Any]) -> dict[str, Any] | None:
