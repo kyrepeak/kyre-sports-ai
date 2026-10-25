@@ -8,9 +8,9 @@ def test_default_rushing_fallback_chain_registers_the_odds_api_only_after_primar
     assert names == ["The Odds API"]
 
 
-def test_exact_event_fallback_quote_survives_without_fabricated_team_or_position():
-    def fallback(_game, timeout=1):
-        assert timeout == 1
+def test_identity_incomplete_fallback_quote_cannot_be_promoted_to_player_market():
+    def fallback(_game, timeout=8):
+        assert timeout == 8
         return {
             "state": "AVAILABLE",
             "observations": [
@@ -48,24 +48,23 @@ def test_exact_event_fallback_quote_survives_without_fabricated_team_or_position
 
     market = truth.market_state_from_bundle(
         resolved,
-        player={"player_name": "Kendre Miller", "team_abbr": "NO"},
+        player={"player_name": "Kendre Miller", "team_abbr": "NO", "jersey_number": "25", "position": "RB", "active": True},
     )
-    assert market["status"] == "VERIFIED"
-    assert market["diagnostic_state"] == "AVAILABLE"
-    assert market["sportsbook"] == "DraftKings"
-    assert market["line"] == 37.5
-    assert market["over_odds"] == -113
-    assert market["under_odds"] == -113
+    assert market["status"] == "DATA_UNAVAILABLE"
+    assert market["state"] == "PLAYER_MAPPING_UNAVAILABLE"
+    assert market["verified_absence"] is False
+    assert market["line"] is None
 
 
 def test_unverified_primary_empty_invokes_one_field_specific_fallback_and_stops():
     calls: list[str] = []
 
-    def primary(_game, timeout=1):
+    def primary(_game, timeout=8):
         calls.append("FanDuel")
         return []
 
-    def fallback(_game, timeout=1):
+    def fallback(_game, timeout=8):
+        assert timeout == 8
         calls.append("The Odds API")
         return {
             "state": "AVAILABLE",
