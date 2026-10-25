@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - api2-step2d-data-truth-gate-v1
+      - api2-main
   pull_request:
     branches:
       - api2-main
