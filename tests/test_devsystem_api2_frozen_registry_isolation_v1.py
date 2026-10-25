@@ -50,3 +50,30 @@ def test_api2_registry_self_test_is_green():
     assert result["wrong_head_thaw_blocked"] is True
     assert result["registry_tamper_blocked"] is True
     assert result["separate_authoritative_registry_ref"] is True
+
+
+def test_all_api2_workflows_use_only_api2_frozen_registry_authority():
+    offenders = []
+    for workflow in sorted((ROOT / ".github/workflows").glob("api2*.yml")):
+        text = workflow.read_text(encoding="utf-8")
+        if "monster-frozen-artifact-registry" in text:
+            offenders.append(f"{workflow.name}: monster registry ref")
+        if "FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json" in text:
+            offenders.append(f"{workflow.name}: monster registry state path")
+        needle = "python devsystem/frozen_artifact_registry_v1.py verify-head"
+        if needle in text:
+            offenders.append(f"{workflow.name}: monster registry verifier")
+    assert offenders == []
+
+
+def test_active_api2_control_modules_do_not_import_monster_registry():
+    modules = [
+        ROOT / "devsystem/api2_frozen_registry_lifecycle_v1.py",
+        ROOT / "devsystem/api2_proof_convergence_v1.py",
+        ROOT / "devsystem/frozen_registry_auto_reconciler_v1.py",
+    ]
+    for module in modules:
+        text = module.read_text(encoding="utf-8")
+        assert "from devsystem.frozen_artifact_registry_v1 import" not in text, module.name
+        assert "monster-frozen-artifact-registry" not in text, module.name
+        assert "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1" not in text, module.name
