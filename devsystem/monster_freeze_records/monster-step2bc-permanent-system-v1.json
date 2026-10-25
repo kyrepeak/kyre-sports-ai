@@ -1,0 +1,51 @@
+{
+  "version": "MONSTER_FREEZE_RECORD_V1",
+  "status": "FROZEN",
+  "freeze_token": "MONSTER_STEP2BC_PERMANENT_SYSTEM_V1_FROZEN",
+  "task_id": "monster-step2bc-permanent-system-v1",
+  "authoritative_branch": "monster-main",
+  "authoritative_pr": 1791,
+  "certified_candidate_sha": "8cefd7c0760c4d411a8e86c1caf7e40644072c72",
+  "verified_state_sha": "127db7ca1f23400055ff130f54704386823b4947",
+  "verified_state_tree_sha": "7cb27ddba00a51497d7862c6266aab2fbccdba32",
+  "premerge_proof": {
+    "step2c_run_id": 40156182396,
+    "step2c_job_id": 121057974233,
+    "step2c_status": "GREEN",
+    "permanent_system_run_id": 40156182463,
+    "permanent_system_job_id": 121057974403,
+    "permanent_system_status": "GREEN"
+  },
+  "postmerge_proof": {
+    "step2c_run_id": 40156215909,
+    "step2c_job_id": 121058071784,
+    "step2c_status": "GREEN",
+    "permanent_system_run_id": 40156215889,
+    "permanent_system_job_id": 121058071556,
+    "permanent_system_status": "GREEN"
+  },
+  "verified_controls": {
+    "anti_loop": "GREEN",
+    "step2a": "GREEN",
+    "step2b": "GREEN",
+    "step2c": "GREEN",
+    "step2bc_permanent_enforcement": "GREEN",
+    "monster_isolation": "GREEN",
+    "monster_execution_front_door": "GREEN",
+    "monster_permanent_system_gate": "GREEN",
+    "focused_regressions": "GREEN"
+  },
+  "proof_transport": {
+    "exact_sha_checkout": true,
+    "checkout_fetch_depth": 1,
+    "persist_credentials": false,
+    "full_repository_ref_fetch": false
+  },
+  "freeze_protection": {
+    "content_addressed_verified_state": true,
+    "content_addressed_freeze_record": true,
+    "freeze_ref": "monster-frozen-step2bc-permanent-system-v1",
+    "later_canonical_branch_changes_do_not_rewrite_verified_state_sha": true,
+    "later_canonical_branch_changes_do_not_rewrite_freeze_record_commit": true
+  }
+}
