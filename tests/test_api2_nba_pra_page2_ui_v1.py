@@ -50,11 +50,13 @@ def test_page2_html_contains_hybrid_s_tier_contract():
 
 
 def test_page2_source_has_back_top_touch_slider_and_no_keyboard_primary_input():
-    text=Path('nba_pra_page2_v1.py').read_text()
-    assert '← Back to PRA Board' in text
-    assert '↑ TOP' in text
-    assert 'position:fixed' in text.replace(' ','')
-    assert 'select_slider' in text
+    sync=Path('nba_pra_page2_sync_v1.py').read_text()
+    presentation=Path('nba_pra_page2_command_center_v1.py').read_text()
+    text=sync+'\n'+presentation
+    assert '← Back to PRA Board' in sync
+    assert '↑ TOP' in sync
+    assert 'position:fixed' in presentation.replace(' ','')
+    assert 'select_slider' in sync
     assert 'text_input' not in text
     assert 'number_input' not in text
 
@@ -64,6 +66,7 @@ def test_game_log_marks_over_under_against_active_line():
     rows=game_log_rows(_context()['player'],36.5)
     assert rows[0]['pra']==36.0 and rows[0]['result']=='UNDER'
     assert rows[1]['pra']==31.0 and rows[1]['result']=='UNDER'
+
 
 def test_line_lab_default_prefers_exact_tapped_quote_over_moved_live_quote():
     from nba_pra_page2_v1 import default_line_for_context
