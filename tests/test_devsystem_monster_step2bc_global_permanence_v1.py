@@ -27,13 +27,19 @@ def test_monster_permanent_system_gate_composes_full_control_chain():
     result = gate.validate()
     assert result["status"] == "GREEN"
     assert result["monster_only"] is True
-    assert result["base_permanent_gate_green"] is True
+    assert result["base_control_contract_green"] is True
     assert result["step2bc_permanent_enforcement_green"] is True
     assert result["isolation_guard_green"] is True
     assert result["canonical_front_door_green"] is True
     assert result["step2a_step2b_step2c_chain_permanent"] is True
     assert result["anti_loop_permanent"] is True
     assert result["human_only_blocker_rule_permanent"] is True
+
+
+def test_monster_permanent_gate_does_not_execute_full_legacy_permanent_gate():
+    source = (ROOT / "devsystem/monster_system_permanent_gate_v1.py").read_text(encoding="utf-8")
+    assert "from devsystem import permanent_gate_v1" not in source
+    assert "permanent_gate_v1.validate()" not in source
 
 
 def test_monster_permanent_workflow_is_scoped_to_monster_main_only():
