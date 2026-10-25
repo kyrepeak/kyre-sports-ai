@@ -51,7 +51,7 @@ def test_v7_selected_card_has_s_tier_primary_hierarchy():
     assert ".cfbgt6-probstrong{font-size:22px!important" in folded
     assert ".cfbgt6-secondarysmall{font-size:11px!important" in folded
     assert ".cfbgt6-secondarystrong{font-size:14px!important" in folded
-    assert ".cfbgt6-opendisplay:inline-flex" in folded
+    assert ".cfbgt6-open{display:inline-flex" in folded
     assert "min-width:150px!important" in folded
     assert "min-height:42px!important" in folded
     assert "font-size:12px!important" in folded
