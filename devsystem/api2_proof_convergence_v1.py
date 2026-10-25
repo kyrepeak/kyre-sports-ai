@@ -22,7 +22,7 @@ from typing import Any, Mapping
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from devsystem.frozen_artifact_registry_v1 import validate_registry
+from devsystem.api2_frozen_artifact_registry_v1 import validate_registry
 
 VERSION = "API2_PROOF_ARCHITECTURE_V1_STEP7_END_TO_END_PROOF_CONVERGENCE_V1"
 NETWORK_CALLS = False

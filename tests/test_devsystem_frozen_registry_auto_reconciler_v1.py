@@ -34,7 +34,7 @@ def test_exact_newly_merged_thaw_can_plan_atomic_reconciliation():
     assert result["apply_allowed"] is True
     assert result["authorized_mismatch_count"] == 1
     assert len(result["updated_entries"]) == 2
-    assert result["retired_empty_thaw_grants"] == ["THAW-SHARED-OLD"]
+    assert result["retired_empty_thaw_grants"] == ["API2-THAW-SHARED-OLD"]
     assert result["retained_thaw_count"] == 1
 
 

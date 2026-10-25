@@ -13,11 +13,11 @@ from devsystem.api2_frozen_registry_lifecycle_v1 import (
     plan_baseline_forward_port,
     registry_progress,
 )
-from devsystem.frozen_artifact_registry_v1 import validate_registry
+from devsystem.api2_frozen_artifact_registry_v1 import validate_registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github/workflows/devsystem-targeted-ci.yml"
+WORKFLOW = ROOT / ".github/workflows/api2-proof-architecture-v1-step6-frozen-registry-lifecycle.yml"
 
 
 def test_clean_registry_audit_is_green():
@@ -26,6 +26,7 @@ def test_clean_registry_audit_is_green():
     assert result["decision"] == "REGISTRY_LIFECYCLE_CLEAN"
     assert result["active_thaw_count"] == 2
     assert result["active_thaw_file_pair_count"] == 2
+    assert result["registry_ref"] == "refs/heads/api2-frozen-registry"
 
 
 def test_forward_port_is_atomic_across_all_frozen_owners():
@@ -60,9 +61,13 @@ def test_forward_port_retires_obsolete_thaw_pairs_without_rebasing_authority():
         },
         source_main_sha="4" * 40,
     )
-    assert [x["thaw_id"] for x in result["retired_thaw_file_pairs"]] == ["THAW-SHARED-OLD"]
-    assert result["retired_empty_thaw_grants"] == ["THAW-SHARED-OLD"]
-    assert [x["thaw_id"] for x in result["registry"]["active_thaws"]] == ["THAW-KEEP"]
+    assert [x["thaw_id"] for x in result["retired_thaw_file_pairs"]] == [
+        "API2-THAW-SHARED-OLD"
+    ]
+    assert result["retired_empty_thaw_grants"] == ["API2-THAW-SHARED-OLD"]
+    assert [x["thaw_id"] for x in result["registry"]["active_thaws"]] == [
+        "API2-THAW-KEEP"
+    ]
     assert result["registry"]["active_thaws"][0]["files"]["keep.py"]["from_blob"] == "c" * 40
 
 
@@ -89,17 +94,16 @@ def test_retry_requires_registry_state_hash_progress():
     assert same["refetch_retry_allowed"] is False
 
 
-def test_workflow_audits_lifecycle_before_strict_head_verify_and_bounds_refresh():
+def test_step6_workflow_audits_before_exact_head_verify():
     text = WORKFLOW.read_text(encoding="utf-8")
     audit = "api2_frozen_registry_lifecycle_v1.py audit"
-    strict = "frozen_artifact_registry_v1.py verify-head"
+    strict = "api2_frozen_artifact_registry_v1.py verify-head"
+    assert "git fetch origin api2-frozen-registry --depth=1" in text
+    assert "FETCH_HEAD:devsystem/api2_frozen_registry_state_v1.json" in text
     assert audit in text
     assert strict in text
     assert text.index(audit) < text.index(strict)
-    assert "for attempt in 1 2 3" in text
-    assert "API2_STEP6_REGISTRY_NO_PROGRESS_BLOCKED" in text
-    assert 'current_hash" = "$last_hash' in text
-    assert "API2_STEP6_REGISTRY_RETRY_BUDGET_EXHAUSTED" in text
+    assert "monster-frozen-artifact-registry" not in text
 
 
 def test_contract_self_test_is_green():

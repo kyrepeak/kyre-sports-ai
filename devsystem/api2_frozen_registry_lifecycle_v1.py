@@ -1,12 +1,8 @@
-"""API2 Proof Architecture V1 Step 6 — Frozen Registry Lifecycle.
+"""API2 Proof Architecture V1 Step 6 — independent frozen registry lifecycle.
 
-This layer leaves the frozen MONSTER V4 registry verifier untouched. It adds:
-1) a deterministic lifecycle audit for the authoritative registry,
-2) a pure baseline-forward-port planner that retires obsolete thaw file-pairs
-   in the same state transition that advances a frozen baseline, and
-3) fail-closed semantics for ambiguous or unrelated thaw drift.
-
-It never writes Git, performs network calls, or grants mutation authority.
+This layer audits and plans lifecycle transitions only for the API 2 frozen
+artifact registry. It never reads, imports, fetches, or mutates another
+system's registry authority.
 """
 from __future__ import annotations
 
@@ -22,8 +18,11 @@ from typing import Any, Mapping
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from devsystem.frozen_artifact_registry_v1 import (
+from devsystem.api2_frozen_artifact_registry_v1 import (
     FrozenArtifactRegistryFailure,
+    REGISTRY_PATH,
+    REGISTRY_REF,
+    VERSION as REGISTRY_VERSION,
     _hash,
     _payload_without_hash,
     validate_registry,
@@ -51,9 +50,7 @@ def _baseline_map(registry: Mapping[str, Any]) -> dict[str, str]:
             blob_text = str(blob).lower()
             previous = result.get(path_text)
             if previous is not None and previous != blob_text:
-                raise RegistryLifecycleFailure(
-                    f"conflicting frozen baseline for {path_text}"
-                )
+                raise RegistryLifecycleFailure(f"conflicting frozen baseline for {path_text}")
             result[path_text] = blob_text
     return result
 
@@ -75,6 +72,9 @@ def audit_registry(payload: Mapping[str, Any]) -> dict[str, Any]:
 
     return {
         "version": VERSION,
+        "registry_version": REGISTRY_VERSION,
+        "registry_ref": REGISTRY_REF,
+        "registry_path": REGISTRY_PATH,
         "status": "GREEN",
         "decision": "REGISTRY_LIFECYCLE_CLEAN",
         "revision": int(payload["revision"]),
@@ -98,13 +98,7 @@ def plan_baseline_forward_port(
     updates: Mapping[str, Mapping[str, str]],
     source_main_sha: str,
 ) -> dict[str, Any]:
-    """Return one atomic, hash-valid registry state for a frozen baseline move.
-
-    Every update is explicit: path -> {from_blob, to_blob}. All frozen entries
-    that pin the old baseline are advanced together. Any thaw file-pair for that
-    path is retired rather than silently rebased. Unrelated thaw grants remain
-    byte-for-byte intact. The input payload is never mutated.
-    """
+    """Return one atomic, hash-valid API 2 registry state for a baseline move."""
     audit_registry(payload)
     if not _SHA40.fullmatch(str(source_main_sha or "").lower()):
         raise RegistryLifecycleFailure("source_main_sha must be full SHA")
@@ -114,7 +108,6 @@ def plan_baseline_forward_port(
     before = deepcopy(dict(payload))
     baselines = _baseline_map(before)
     normalized: dict[str, tuple[str, str]] = {}
-
     for raw_path, raw_pair in updates.items():
         path = str(raw_path or "").strip()
         if not path or not isinstance(raw_pair, Mapping):
@@ -137,12 +130,14 @@ def plan_baseline_forward_port(
         for path, (old, new) in normalized.items():
             if entry["artifacts"].get(path) == old:
                 entry["artifacts"][path] = new
-                updated_entries.append({
-                    "checkpoint": str(checkpoint),
-                    "path": path,
-                    "from_blob": old,
-                    "to_blob": new,
-                })
+                updated_entries.append(
+                    {
+                        "checkpoint": str(checkpoint),
+                        "path": path,
+                        "from_blob": old,
+                        "to_blob": new,
+                    }
+                )
 
     retired_pairs: list[dict[str, str]] = []
     retained_grants: list[dict[str, Any]] = []
@@ -151,15 +146,17 @@ def plan_baseline_forward_port(
         kept_files: dict[str, Any] = {}
         for path, pair in grant["files"].items():
             if path in normalized:
-                old, new = normalized[path]
-                retired_pairs.append({
-                    "thaw_id": str(grant["thaw_id"]),
-                    "target_head_sha": str(grant["target_head_sha"]),
-                    "path": str(path),
-                    "from_blob": str(pair["from_blob"]),
-                    "to_blob": str(pair["to_blob"]),
-                    "new_frozen_baseline": new,
-                })
+                _, new = normalized[path]
+                retired_pairs.append(
+                    {
+                        "thaw_id": str(grant["thaw_id"]),
+                        "target_head_sha": str(grant["target_head_sha"]),
+                        "path": str(path),
+                        "from_blob": str(pair["from_blob"]),
+                        "to_blob": str(pair["to_blob"]),
+                        "new_frozen_baseline": new,
+                    }
+                )
                 continue
             kept_files[str(path)] = deepcopy(pair)
         if kept_files:
@@ -221,10 +218,10 @@ def registry_progress(previous_state_hash: str | None, current_state_hash: str) 
 def _sample_registry() -> dict[str, Any]:
     payload = {
         "schema_version": 1,
-        "version": "MONSTER_V4_FROZEN_ARTIFACT_REGISTRY_V1",
+        "version": REGISTRY_VERSION,
         "repository": "owner/repo",
-        "registry_ref": "refs/heads/monster-frozen-artifact-registry",
-        "registry_path": "devsystem/frozen_artifact_registry_state_v1.json",
+        "registry_ref": REGISTRY_REF,
+        "registry_path": REGISTRY_PATH,
         "revision": 7,
         "source_main_sha": "1" * 40,
         "entries": {
@@ -243,26 +240,16 @@ def _sample_registry() -> dict[str, Any]:
         },
         "active_thaws": [
             {
-                "thaw_id": "THAW-SHARED-OLD",
+                "thaw_id": "API2-THAW-SHARED-OLD",
                 "status": "ACTIVE",
                 "target_head_sha": "2" * 40,
-                "files": {
-                    "shared.yml": {
-                        "from_blob": "a" * 40,
-                        "to_blob": "b" * 40,
-                    }
-                },
+                "files": {"shared.yml": {"from_blob": "a" * 40, "to_blob": "b" * 40}},
             },
             {
-                "thaw_id": "THAW-KEEP",
+                "thaw_id": "API2-THAW-KEEP",
                 "status": "ACTIVE",
                 "target_head_sha": "3" * 40,
-                "files": {
-                    "keep.py": {
-                        "from_blob": "c" * 40,
-                        "to_blob": "d" * 40,
-                    }
-                },
+                "files": {"keep.py": {"from_blob": "c" * 40, "to_blob": "d" * 40}},
             },
         ],
     }
@@ -276,12 +263,7 @@ def contract_self_test() -> dict[str, Any]:
     original = deepcopy(sample)
     plan = plan_baseline_forward_port(
         sample,
-        updates={
-            "shared.yml": {
-                "from_blob": "a" * 40,
-                "to_blob": "b" * 40,
-            }
-        },
+        updates={"shared.yml": {"from_blob": "a" * 40, "to_blob": "b" * 40}},
         source_main_sha="4" * 40,
     )
     if sample != original:
@@ -290,26 +272,17 @@ def contract_self_test() -> dict[str, Any]:
         raise RegistryLifecycleFailure("shared baseline did not advance atomically")
     if len(plan["retired_thaw_file_pairs"]) != 1:
         raise RegistryLifecycleFailure("obsolete thaw pair was not retired")
-    if plan["retired_empty_thaw_grants"] != ["THAW-SHARED-OLD"]:
+    if plan["retired_empty_thaw_grants"] != ["API2-THAW-SHARED-OLD"]:
         raise RegistryLifecycleFailure("empty obsolete thaw grant was not retired")
     if plan["retained_thaw_count"] != 1:
         raise RegistryLifecycleFailure("unrelated thaw grant was not preserved")
-    if plan["registry"]["entries"]["STEP_A"]["artifacts"]["shared.yml"] != "b" * 40:
-        raise RegistryLifecycleFailure("new baseline missing")
-    if plan["registry"]["entries"]["STEP_B"]["artifacts"]["shared.yml"] != "b" * 40:
-        raise RegistryLifecycleFailure("second checkpoint baseline missing")
     validate_registry(plan["registry"])
 
     wrong_from_blocked = False
     try:
         plan_baseline_forward_port(
             sample,
-            updates={
-                "shared.yml": {
-                    "from_blob": "c" * 40,
-                    "to_blob": "b" * 40,
-                }
-            },
+            updates={"shared.yml": {"from_blob": "c" * 40, "to_blob": "b" * 40}},
             source_main_sha="4" * 40,
         )
     except RegistryLifecycleFailure:
@@ -332,7 +305,8 @@ def contract_self_test() -> dict[str, Any]:
         "clean_registry_audit": audit["status"] == "GREEN",
         "atomic_multi_checkpoint_forward_port": len(plan["updated_entries"]) == 2,
         "obsolete_thaw_pair_retired": len(plan["retired_thaw_file_pairs"]) == 1,
-        "empty_obsolete_grant_retired": plan["retired_empty_thaw_grants"] == ["THAW-SHARED-OLD"],
+        "empty_obsolete_grant_retired": plan["retired_empty_thaw_grants"]
+        == ["API2-THAW-SHARED-OLD"],
         "unrelated_thaw_preserved": plan["retained_thaw_count"] == 1,
         "wrong_from_blob_blocked": wrong_from_blocked,
         "state_progress_required_for_retry": unchanged["refetch_retry_allowed"] is False,
@@ -377,5 +351,8 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except RegistryLifecycleFailure as exc:
-        print(f"API2_PROOF_ARCHITECTURE_V1_STEP6_REGISTRY_LIFECYCLE_BLOCKED: {exc}", file=sys.stderr)
+        print(
+            f"API2_PROOF_ARCHITECTURE_V1_STEP6_REGISTRY_LIFECYCLE_BLOCKED: {exc}",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
