@@ -10,7 +10,8 @@
 ## Task 2 — No-ESPN source owners
 - Add direct FanDuel Receiving Yards adapter using canonical game context and exact team+jersey+position reconciliation metadata.
 - Add Receiving projection V2 with V1-equivalent 65/35 efficiency formula and canonical Kyre/GSIS identity.
-- Add Kyre Sports API Receiving Yards slate V2 using nflverse games, rosters and PBP plus NFL official team logos.
+- Add Kyre Sports API Receiving Yards slate V2 using nflverse games, weekly rosters, and compact weekly player summaries (`stats_player_week`) plus NFL official team logos.
+- Use those summaries for receiving workload, opponent defense, and verified player-vs-opponent history without a full-season play-by-play cold-path dependency.
 - Exclude started/final games.
 - Expose semantic market/provider states and 0.0 sportsbook projection influence.
 
@@ -23,6 +24,7 @@
 - Repoint Step 2E registry and dedicated runtime adapter from V21 to V22.
 - Mount slate V2 in `kyre_sports_api_vercel_v1.py` and remove legacy Receiving context/market mounts.
 - Update universal router coverage dedicated path.
+- Advance the existing Receiving canonical-router regression from the superseded V21 literal to V22.
 
 ## Task 5 — Exact-head verification and freeze
 - Focused tests must pass.
