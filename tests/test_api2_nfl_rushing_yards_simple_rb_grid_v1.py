@@ -21,8 +21,6 @@ def test_runtime_uses_dedicated_rushing_adapter_without_mutating_frozen_base():
     assert 'route.market_id == "rushing-yards"' in overlay
     assert "nfl_rushing_yards_simple_rb_grid_v1" in overlay
     assert "_ORIGINAL_RESOLVE_DESTINATION" in overlay
-    # The inherited frozen base remains byte-for-byte architecturally owned by its old path;
-    # the successor package shadows only the rushing route at import time.
     assert '"rushing-yards": "nfl_rushing_yards_hub_v17"' in frozen_base
 
 
@@ -58,7 +56,11 @@ def test_gateway_is_kyre_sports_api_only_and_fail_closed():
                 "opponent_abbr": "Y",
                 "game_time": "13:00",
                 "role": "RB1",
-                "market": {"status": "MARKET_NOT_POSTED", "line": None},
+                "market": {
+                    "status": "MARKET_NOT_POSTED",
+                    "diagnostic_state": "VERIFIED_NOT_POSTED",
+                    "line": None,
+                },
             }
         ],
         "routing": {
@@ -127,18 +129,25 @@ def test_projection_is_market_blind_and_uses_verified_workload_plus_run_defense(
     assert "market" not in result["inputs"]
 
 
-def test_semantic_market_state_never_fabricates_zero():
+def test_semantic_market_failure_never_fabricates_zero_or_false_not_posted():
     slate = import_module("sports_api.api.nfl_rushing_yards_slate_v1")
     state = slate.market_state(None)
-    assert state == {
-        "status": "MARKET_NOT_POSTED",
-        "sportsbook": None,
-        "market": "Rushing Yards",
-        "line": None,
-        "over_odds": None,
-        "under_odds": None,
-        "timestamp": None,
-    }
+    assert state["status"] == "DATA_UNAVAILABLE"
+    assert state["diagnostic_state"] == "MARKET_MAPPING_FAILURE"
+    assert state["line"] is None
+    assert state["sportsbook"] is None
+    assert state["status"] != "MARKET_NOT_POSTED"
+
+
+def test_verified_absence_is_the_only_path_to_market_not_posted():
+    truth = import_module("sports_api.nfl_rushing_yards_data_truth_v1")
+    state = truth.market_state_from_bundle(
+        {"state": "VERIFIED_NOT_POSTED", "provider": "FanDuel", "observations": [], "reason": "verified absence"},
+        player={"player_name": "Lead Back", "team_abbr": "ATL"},
+    )
+    assert state["status"] == "MARKET_NOT_POSTED"
+    assert state["diagnostic_state"] == "VERIFIED_NOT_POSTED"
+    assert state["line"] is None
 
 
 def test_page2_contains_deep_rushing_sections_and_semantic_empty_states():
@@ -151,7 +160,7 @@ def test_page2_contains_deep_rushing_sections_and_semantic_empty_states():
         "profile": {"carries_per_game": 16.0, "rushing_yards_per_game": 72.0, "yards_per_carry": 4.5, "recent_games": []},
         "opponent_run_defense": {"rush_yards_allowed_per_game": 130.0, "yards_per_carry_allowed": 4.6, "rank": 27, "grade": "FAVORABLE"},
         "matchup_history": {"status": "FIRST_CAREER_MATCHUP", "games_detail": []},
-        "market": {"status": "MARKET_NOT_POSTED", "line": None},
+        "market": {"status": "MARKET_NOT_POSTED", "diagnostic_state": "VERIFIED_NOT_POSTED", "line": None},
         "availability": {"status": "NO_INJURY_DESIGNATION"},
         "environment": {"status": "PREGAME"},
     }
@@ -167,6 +176,8 @@ def test_page2_contains_deep_rushing_sections_and_semantic_empty_states():
 def test_new_production_path_contains_no_banned_provider_dependency():
     production_files = [
         "sports_api/api/nfl_rushing_yards_slate_v1.py",
+        "sports_api/api/nfl_rushing_yards_slate_v1/__init__.py",
+        "sports_api/nfl_rushing_yards_data_truth_v1.py",
         "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py",
         "nfl_rushing_yards_projection_v2.py",
         "nfl_rushing_yards_slate_gateway_v1.py",
@@ -186,6 +197,15 @@ def test_fanduel_collector_excludes_alt_and_combo_markets():
     assert collector.is_standard_rushing_yards_market({"marketType": "PLAYER_X_RUSHING_YARDS_LOW", "marketName": "Rushing Yards"})
     assert not collector.is_standard_rushing_yards_market({"marketType": "PLAYER_X_RUSHING_YARDS_ALTERNATE", "marketName": "Alt Rushing Yards"})
     assert not collector.is_standard_rushing_yards_market({"marketType": "PLAYER_X_RUSHING_RECEIVING_YARDS", "marketName": "Rushing + Receiving Yards"})
+
+
+def test_step2d_data_truth_overlay_is_installed_after_fastpath():
+    source = _source("sports_api/api/nfl_rushing_yards_slate_v1/__init__.py")
+    assert "nfl_rushing_yards_fastpath_v1" in source
+    assert "nfl_rushing_yards_data_truth_v1" in source
+    assert source.index("_fastpath.install(_legacy)") < source.index("_data_truth.install(_legacy)")
+    assert '"empty_equals_not_posted": False' in source
+    assert '"verified_absence_required_for_market_not_posted": True' in source
 
 
 def test_vercel_api_registers_rushing_slate_router():
