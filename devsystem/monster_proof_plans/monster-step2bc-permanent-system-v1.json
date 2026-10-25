@@ -6,7 +6,11 @@
   "source_monster_sha": "1d82e4ab09acfc8000247b1aa95bc5707092be7e",
   "authoritative_branch": "monster-step2bc-permanent-system-v1",
   "authoritative_pr": 1791,
-  "proof_authority": "monster-step2bc-permanent-system-certification",
+  "proof_authority": "MONSTER_ONLY",
+  "premerge_required_workflow": "MONSTER Step 2C Autonomous Recovery V1",
+  "premerge_required_check": "step2c-autonomous-recovery-certification",
+  "postmerge_required_workflow": "MONSTER Step 2B Step 2C Permanent System V1",
+  "postmerge_required_check": "monster-step2bc-permanent-system-certification",
   "required_commands": [
     "python devsystem/monster_system_isolation_v1.py",
     "python devsystem/monster_execution_front_door_v1.py",
@@ -27,9 +31,9 @@
     "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json",
     "docs/superpowers/plans/2026-10-24-monster-step2bc-permanent-system-v1.md"
   ],
-  "required_check": "monster-step2bc-permanent-system-certification",
   "merge_target": "monster-main",
   "freeze_token": "MONSTER_STEP2BC_PERMANENT_SYSTEM_V1_FROZEN",
+  "freeze_requires_postmerge_gate": true,
   "foreign_system_evidence_allowed": false,
   "blind_retry_allowed": false
 }
