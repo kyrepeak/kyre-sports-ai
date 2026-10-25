@@ -25,7 +25,7 @@ from devsystem.api2_frozen_registry_lifecycle_v1 import (
     plan_baseline_forward_port,
     registry_progress,
 )
-from devsystem.frozen_artifact_registry_v1 import (
+from devsystem.api2_frozen_artifact_registry_v1 import (
     git_blob_map,
     git_head_sha,
     validate_registry,
@@ -286,7 +286,7 @@ def self_test() -> dict[str, Any]:
         raise AutoReconciliationFailure("authorized mismatch count drift")
     if len(planned["updated_entries"]) != 2:
         raise AutoReconciliationFailure("all frozen owners did not move atomically")
-    if planned["retired_empty_thaw_grants"] != ["THAW-SHARED-OLD"]:
+    if planned["retired_empty_thaw_grants"] != ["API2-THAW-SHARED-OLD"]:
         raise AutoReconciliationFailure("obsolete thaw grant was not retired")
     if planned["retained_thaw_count"] != 1:
         raise AutoReconciliationFailure("unrelated thaw was not preserved")
@@ -323,7 +323,7 @@ def self_test() -> dict[str, Any]:
         "version": VERSION,
         "authorized_drift_planned": planned["apply_allowed"] is True,
         "atomic_all_owner_move": len(planned["updated_entries"]) == 2,
-        "obsolete_thaw_retired": planned["retired_empty_thaw_grants"] == ["THAW-SHARED-OLD"],
+        "obsolete_thaw_retired": planned["retired_empty_thaw_grants"] == ["API2-THAW-SHARED-OLD"],
         "unrelated_thaw_preserved": planned["retained_thaw_count"] == 1,
         "state_hash_advanced": planned["previous_state_hash"] != planned["next_state_hash"],
         "one_retry_after_state_change_only": planned["retry_after_apply_allowed"] is True,
