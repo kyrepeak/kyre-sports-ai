@@ -203,4 +203,4 @@ def test_verified_human_only_blocker_is_the_only_recovery_stop():
     assert result["allowed"] is False
     assert result["decision"] == "TWO_A_TWO_B_BLOCKED"
     assert result["reliability_decision"] == "TWO_B_TWO_C_RECOVERY_REQUIRED"
-    assert result["next_legal_action"] == "USER_INTERVENTION_REQUIRED"
+    assert result["next_legal_action"] == "REQUEST_EXACT_HUMAN_INPUT"
