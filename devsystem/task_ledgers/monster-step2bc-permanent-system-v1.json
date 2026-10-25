@@ -4,7 +4,7 @@
   "workstream": "monster-step2bc-permanent-system-v1",
   "active_problem": "Make the completed Step 2B and Step 2C architecture a permanent fail-closed MONSTER execution behavior with hard independent-system isolation.",
   "status": "PENDING_EXACT_HEAD_PROOF",
-  "progress_percent": 84,
+  "progress_percent": 91,
   "source_monster_sha": "1d82e4ab09acfc8000247b1aa95bc5707092be7e",
   "authoritative_base": "monster-main",
   "authoritative_branch": "monster-step2bc-permanent-system-v1",
@@ -24,13 +24,15 @@
     "failed_action_repeated_without_new_evidence": false
   },
   "step2c": {
-    "status": "ROOT_CAUSE_PROVEN_AND_REPAIRED",
+    "status": "ROOT_CAUSES_PROVEN_AND_REPAIRED",
     "first_finding": "The completed reliability and autonomous-recovery controls existed but were not owned by a dedicated MONSTER system-level permanence boundary.",
     "infra_finding": "The first remote RED lane stalled before test execution, so it was classified as infrastructure evidence and not treated as a product result.",
     "architecture_ruling": "Use a dedicated MONSTER canonical branch, isolation guard, execution front door, permanent gate, and certification lane rather than extending a shared system boundary.",
     "verification_failure": "The first dedicated front-door run failed because monster_execution_front_door_v1.contract_self_test invoked a stale mandatory_2a_global_enforcement_v1 self-test fixture that predates mandatory Step 2B preflight.",
     "verification_root_cause": "Legacy self-test fixture incompatibility, not isolation, compile, Step 2A runtime entrypoint, or Step 2B/Step 2C logic failure.",
-    "materially_new_repair": "Bind the MONSTER front door to the live enforce_action callable and prove delegation directly; do not use the stale global self-test fixture as front-door evidence."
+    "verification_repair": "Bind the MONSTER front door to the live enforce_action callable and prove delegation directly; do not use the stale global self-test fixture as front-door evidence.",
+    "isolation_audit_finding": "The first MONSTER permanent-gate wrapper invoked the broader legacy permanent_gate_v1 validator, which owns unrelated product/domain workflow topology including a main-anchored contract.",
+    "isolation_audit_repair": "Do not execute the broader legacy permanent validator. Compose only mandatory_2bc_permanent_enforcement_v1 scoped baseline, MONSTER isolation, MONSTER front door, and the MONSTER-only proof contract."
   },
   "step2b": {
     "status": "PASS",
@@ -41,7 +43,8 @@
     "requirement_to_proof_mapped": true,
     "regression_scope": "MONSTER control plane only",
     "materially_different_from_failed_hypothesis": true,
-    "legacy_global_module_mutation_required": false
+    "legacy_global_module_mutation_required": false,
+    "full_legacy_permanent_gate_execution_allowed": false
   },
   "implementation": {
     "isolation_guard": "devsystem/monster_system_isolation_v1.py",
@@ -56,8 +59,8 @@
     "front_door_first_run": "FAILED_STALE_LEGACY_FIXTURE",
     "premerge_required_check": "step2c-autonomous-recovery-certification",
     "postmerge_required_check": "monster-step2bc-permanent-system-certification",
-    "focused_control_suite": "PENDING_NEW_EXACT_HEAD",
-    "exact_head_proof": "PENDING_NEW_EXACT_HEAD",
+    "focused_control_suite": "PENDING_FINAL_EXACT_HEAD",
+    "exact_head_proof": "PENDING_FINAL_EXACT_HEAD",
     "merge_readback": "PENDING",
     "freeze_readback": "PENDING"
   }
