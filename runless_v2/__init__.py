@@ -16,3 +16,8 @@ from . import nba_pra_live_acceptance_repair_v1 as _nba_pra_live_acceptance_repa
 # WNBA PRA Page 1 final-polish successor: preserve the frozen one-read route
 # while enriching display identity only from already-verified WNBA projection IDs.
 from . import wnba_pra_page1_final_polish_runtime_v1 as _wnba_pra_page1_final_polish_runtime_v1  # noqa: E402,F401
+
+# API2 hard-isolation repair: api2-* proof workstreams must resolve Step 2A
+# lease/registry authority only from API2-owned control-state branches. Legacy
+# and non-API2 Runless proof behavior is preserved by the additive adapter.
+from . import api2_authority_isolation_v1 as _api2_authority_isolation_v1  # noqa: E402,F401
