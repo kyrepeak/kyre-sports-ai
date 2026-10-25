@@ -1,0 +1,17 @@
+{
+  "version": "MONSTER_ROUTER_REGISTRY_POLICY_V1",
+  "authority": "MONSTER_ONLY",
+  "inventory_mode": "CANONICAL_NAV_PLUS_AUTHORITATIVE_RUNTIME_DISCOVERY",
+  "canonical_nav_registry": "universal_sports_nav_registry_v1.py",
+  "canonical_runtime_entrypoint": "app.py",
+  "canonical_runtime_owner": "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py",
+  "canonical_backend_mount": "sports_api/main.py",
+  "new_live_page_requires_registration": true,
+  "duplicate_owner_allowed": false,
+  "cross_sport_owner_allowed": false,
+  "generic_fallthrough_allowed": false,
+  "hidden_legacy_override_allowed": false,
+  "backend_required_route_must_prove_mount": true,
+  "required_route_params_must_survive": true,
+  "failure_route": "ANTI_LOOP->STEP_2C->STEP_2B->STEP_2A->EXECUTE->STEP_2D->STEP_2E"
+}
