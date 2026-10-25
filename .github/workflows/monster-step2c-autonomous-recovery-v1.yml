@@ -2,6 +2,7 @@ name: MONSTER Step 2C Autonomous Recovery V1
 
 on:
   pull_request:
+    branches: [monster-main]
     paths:
       - "devsystem/mandatory_2c_autonomous_recovery_v1.py"
       - "devsystem/mandatory_2b_reliability_gate_v1.py"
@@ -9,8 +10,12 @@ on:
       - "devsystem/automatic_loop_kill_v1.py"
       - "devsystem/mandatory_2bc_permanent_enforcement_v1.py"
       - "devsystem/monster_system_isolation_v1.py"
+      - "devsystem/monster_execution_front_door_v1.py"
+      - "devsystem/monster_system_permanent_gate_v1.py"
+      - "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json"
+      - "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json"
+      - ".github/workflows/monster-step2bc-permanent-system-v1.yml"
       - "devsystem/permanent_gate_v1.py"
-      - ".github/workflows/devsystem-targeted-ci.yml"
       - "devsystem/runless_proof_plans/monster-step2c-autonomous-recovery-v1-pr1787.json"
       - "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py"
       - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
@@ -22,7 +27,7 @@ on:
       - "tests/test_devsystem_monster_step2bc_global_permanence_v1.py"
       - ".github/workflows/monster-step2c-autonomous-recovery-v1.yml"
   push:
-    branches: [main]
+    branches: [monster-main]
     paths:
       - "devsystem/mandatory_2c_autonomous_recovery_v1.py"
       - "devsystem/mandatory_2b_reliability_gate_v1.py"
@@ -30,8 +35,12 @@ on:
       - "devsystem/automatic_loop_kill_v1.py"
       - "devsystem/mandatory_2bc_permanent_enforcement_v1.py"
       - "devsystem/monster_system_isolation_v1.py"
+      - "devsystem/monster_execution_front_door_v1.py"
+      - "devsystem/monster_system_permanent_gate_v1.py"
+      - "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json"
+      - "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json"
+      - ".github/workflows/monster-step2bc-permanent-system-v1.yml"
       - "devsystem/permanent_gate_v1.py"
-      - ".github/workflows/devsystem-targeted-ci.yml"
       - "devsystem/runless_proof_plans/monster-step2c-autonomous-recovery-v1-pr1787.json"
       - "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py"
       - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
