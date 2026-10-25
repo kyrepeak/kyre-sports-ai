@@ -167,13 +167,13 @@ def test_step2a_authorizes_only_after_step2b_enforces_step2c_and_forward_motion(
     assert reliability["recovery_decision"] == "TWO_C_RECOVERY_AUTHORIZED"
     assert reliability["recovery_generation"] == 2
     assert reliability["recovery_receipt_hash"]
+    assert reliability["reliability_receipt_hash"]
 
     assert result["allowed"] is True
     assert result["decision"] == "TWO_A_AUTHORIZED"
     assert result["two_b_enforced"] is True
     assert result["reliability_decision"] == "TWO_B_RECOVERY_ATTEMPT_AUTHORIZED"
     assert result["implementation_attempt"] == 1
-    assert result["reliability_receipt_hash"]
 
 
 def test_live_async_anti_loop_still_blocks_before_step2c_recovery_mutation():
