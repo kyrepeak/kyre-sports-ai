@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from sports_api import nfl_rushing_yards_data_truth_v1 as data_truth
+from sports_api import nfl_rushing_yards_fastpath_v1 as fastpath
 from sports_api.collectors import nfl_fanduel_rushing_yards_nflverse_v1 as market_adapter
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,20 +24,14 @@ def test_exact_identity_normalizers_bridge_provider_and_roster_serialization_onl
 
 
 def test_market_reconciliation_accepts_unique_exact_identity_after_canonical_normalization() -> None:
-    observation = {
-        "team_abbr": "WSH",
-        "jersey_number": "24",
-        "position": "Running Back",
-    }
-    roster = [
-        {
-            "team_abbr": "WAS",
-            "jersey_number": "24.0",
-            "position": "RB",
-            "active": True,
-            "canonical_player_id": "kyre:nfl:player:00-TEST",
-        }
-    ]
+    observation = {"team_abbr": "WSH", "jersey_number": "24", "position": "Running Back"}
+    roster = [{
+        "team_abbr": "WAS",
+        "jersey_number": "24.0",
+        "position": "RB",
+        "active": True,
+        "canonical_player_id": "kyre:nfl:player:00-TEST",
+    }]
     match = market_adapter.reconcile_observation_to_roster(observation, roster)
     assert match is not None
     assert match["canonical_player_id"] == "kyre:nfl:player:00-TEST"
@@ -78,31 +74,82 @@ def test_deterministic_provider_error_is_not_retried(monkeypatch: pytest.MonkeyP
     assert calls == 1
 
 
-def test_direct_book_transport_has_bounded_retry_constants() -> None:
+def test_direct_book_and_runtime_transport_have_bounded_reliability_budget() -> None:
     assert market_adapter.MARKET_READ_TIMEOUT_SECONDS == 8
     assert market_adapter.MAX_MARKET_READ_ATTEMPTS == 2
+    assert data_truth.DEFAULT_CALL_TIMEOUT_SECONDS == 8
+    assert data_truth.DEFAULT_MARKET_BUDGET_SECONDS == 18.0
+    assert fastpath.MARKET_CALL_TIMEOUT_SECONDS == 8
+    assert fastpath.MARKET_BUDGET_SECONDS == 18.0
     assert market_adapter.PLAYER_NAME_MATCHING is False
     assert market_adapter.FUZZY_MATCHING is False
+    assert data_truth.PLAYER_NAME_MATCHING is False
+    assert data_truth.FUZZY_MATCHING is False
     assert market_adapter.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+    assert data_truth.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
 
-def test_api_keeps_provider_failure_mapping_failure_and_verified_absence_distinct() -> None:
-    source = (ROOT / "sports_api/api/nfl_rushing_yards_slate_v1.py").read_text(encoding="utf-8")
-    assert '"state": "DATA_UNAVAILABLE"' in source
-    assert '"state": "VERIFIED_NO_STANDARD_MARKET"' in source
-    assert '"state": "PLAYER_MAPPING_UNAVAILABLE"' in source
-    assert '"verified_absence": False' in source
-    assert '"verified_absence": True' in source
-    assert "reconcile_observation_to_roster" in source
+def test_data_truth_keeps_provider_mapping_and_verified_absence_distinct() -> None:
+    player = {"team_abbr": "WAS", "jersey_number": "24.0", "position": "RB", "active": True}
+
+    failure = data_truth.market_state_from_bundle(
+        {"provider": "FanDuel", "state": "PROVIDER_FETCH_FAILURE", "observations": [], "reason": "TimeoutError"},
+        player=player,
+    )
+    assert failure["status"] == "DATA_UNAVAILABLE"
+    assert failure["state"] == "DATA_UNAVAILABLE"
+    assert failure["verified_absence"] is False
+
+    mapping = data_truth.market_state_from_bundle(
+        {"provider": "FanDuel", "state": "AVAILABLE", "observations": [{"team_abbr": "WAS", "jersey_number": "99", "position": "RB"}]},
+        player=player,
+    )
+    assert mapping["status"] == "DATA_UNAVAILABLE"
+    assert mapping["state"] == "PLAYER_MAPPING_UNAVAILABLE"
+    assert mapping["verified_absence"] is False
+
+    absent = data_truth.market_state_from_bundle(
+        {"provider": "FanDuel", "state": "VERIFIED_NOT_POSTED", "observations": [], "reason": "standard market absent"},
+        player=player,
+    )
+    assert absent["status"] == "MARKET_NOT_POSTED"
+    assert absent["state"] == "VERIFIED_NO_STANDARD_MARKET"
+    assert absent["verified_absence"] is True
+
+
+def test_data_truth_uses_exact_identity_not_player_name() -> None:
+    player = {"team_abbr": "WAS", "jersey_number": "24.0", "position": "RB", "active": True, "player_name": "Canonical Back"}
+    bundle = {
+        "provider": "FanDuel",
+        "state": "AVAILABLE",
+        "observations": [{
+            "team_abbr": "WSH",
+            "jersey_number": "24",
+            "position": "Running Back",
+            "player_name": "Different Provider Display Name",
+            "sportsbook": "FanDuel",
+            "market": "Rushing Yards",
+            "line": 51.5,
+            "over_odds": -110,
+            "under_odds": -110,
+        }],
+    }
+    state = data_truth.market_state_from_bundle(bundle, player=player)
+    assert state["status"] == "VERIFIED"
+    assert state["line"] == 51.5
+    assert state["identity_verified"] is True
 
 
 def test_live_source_policy_and_projection_isolation_remain_clean() -> None:
-    adapter_source = (ROOT / "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py").read_text(encoding="utf-8").lower()
-    api_source = (ROOT / "sports_api/api/nfl_rushing_yards_slate_v1.py").read_text(encoding="utf-8").lower()
-    for source in (adapter_source, api_source):
+    paths = [
+        ROOT / "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py",
+        ROOT / "sports_api/nfl_rushing_yards_data_truth_v1.py",
+    ]
+    for path in paths:
+        source = path.read_text(encoding="utf-8").lower()
         assert "espn" not in source
         assert "sgo" not in source
         assert "espn bet" not in source
-    assert '"sportsbook_projection_influence": 0.0' in api_source
-    assert '"player_name_matching": false' in api_source
-    assert '"fuzzy_matching": false' in api_source
+    wrapper = (ROOT / "sports_api/api/nfl_rushing_yards_slate_v1/__init__.py").read_text(encoding="utf-8")
+    assert '"market_budget_seconds": _data_truth.DEFAULT_MARKET_BUDGET_SECONDS' in wrapper
+    assert '"market_call_timeout_seconds": _data_truth.DEFAULT_CALL_TIMEOUT_SECONDS' in wrapper
