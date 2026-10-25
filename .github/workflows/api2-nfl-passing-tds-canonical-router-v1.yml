@@ -1,0 +1,46 @@
+name: API2 NFL Passing TDs Canonical Router V1
+
+on:
+  push:
+    branches:
+      - api2-nfl-passing-tds-canonical-router-v1
+    paths:
+      - 'nfl_passing_tds_runtime_v1.py'
+      - 'api2_universal_sports_router_registry_v1.py'
+      - 'universal_runtime_v5_loader.py'
+      - 'tests/test_api2_nfl_passing_tds_canonical_router_v1.py'
+      - 'tests/test_api2_step2e_universal_router_completion_v1.py'
+      - '.github/workflows/api2-nfl-passing-tds-canonical-router-v1.yml'
+  pull_request:
+    branches:
+      - api2-main
+    paths:
+      - 'nfl_passing_tds_runtime_v1.py'
+      - 'api2_universal_sports_router_registry_v1.py'
+      - 'universal_runtime_v5_loader.py'
+      - 'tests/test_api2_nfl_passing_tds_canonical_router_v1.py'
+      - 'tests/test_api2_step2e_universal_router_completion_v1.py'
+      - '.github/workflows/api2-nfl-passing-tds-canonical-router-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  passing-tds-router-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install proof dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile route boundary
+        run: |
+          python -m py_compile api2_universal_sports_router_registry_v1.py universal_runtime_v5_loader.py
+          if [ -f nfl_passing_tds_runtime_v1.py ]; then python -m py_compile nfl_passing_tds_runtime_v1.py; fi
+      - name: Passing TDs canonical ownership + Step 2E regression proof
+        run: |
+          python -m pytest -q --noconftest \
+            tests/test_api2_nfl_passing_tds_canonical_router_v1.py \
+            tests/test_api2_step2e_universal_router_completion_v1.py
