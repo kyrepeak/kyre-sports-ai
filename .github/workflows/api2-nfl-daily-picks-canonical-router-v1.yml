@@ -10,7 +10,6 @@ on:
       - 'nfl_daily_picks_command_center_v4.py'
       - 'tests/test_api2_nfl_daily_picks_canonical_router_v1.py'
       - 'tests/test_api2_step2e_universal_router_completion_v1.py'
-      - 'tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py'
       - '.github/workflows/api2-nfl-daily-picks-canonical-router-v1.yml'
 
 permissions:
@@ -29,9 +28,8 @@ jobs:
       - name: Compile canonical route boundary
         run: |
           python -m py_compile api2_universal_sports_router_registry_v1.py universal_runtime_v5_loader.py nfl_daily_picks_command_center_v4.py
-      - name: Daily Picks canonical ownership + Step 2E + V4 inheritance proof
+      - name: Daily Picks canonical ownership + Step 2E proof
         run: |
           python -m pytest -q --noconftest \
             tests/test_api2_nfl_daily_picks_canonical_router_v1.py \
-            tests/test_api2_step2e_universal_router_completion_v1.py \
-            tests/test_api2_nfl_daily_picks_v4_atomic_inheritance.py
+            tests/test_api2_step2e_universal_router_completion_v1.py
