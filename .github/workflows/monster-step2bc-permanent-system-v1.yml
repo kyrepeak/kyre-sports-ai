@@ -1,0 +1,108 @@
+name: MONSTER Step 2B Step 2C Permanent System V1
+
+on:
+  pull_request:
+    branches: [monster-main]
+    paths:
+      - "devsystem/automatic_loop_kill_v1.py"
+      - "devsystem/mandatory_2a_action_gate_v1.py"
+      - "devsystem/mandatory_2b_reliability_gate_v1.py"
+      - "devsystem/mandatory_2c_autonomous_recovery_v1.py"
+      - "devsystem/mandatory_2bc_permanent_enforcement_v1.py"
+      - "devsystem/monster_system_isolation_v1.py"
+      - "devsystem/monster_execution_front_door_v1.py"
+      - "devsystem/monster_system_permanent_gate_v1.py"
+      - "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json"
+      - "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json"
+      - "tests/test_devsystem_automatic_loop_kill_v1.py"
+      - "tests/test_devsystem_mandatory_2a_action_gate_v1.py"
+      - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
+      - "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py"
+      - "tests/test_devsystem_step2b_step2a_integration_v1.py"
+      - "tests/test_devsystem_step2c_step2b_step2a_integration_v1.py"
+      - "tests/test_devsystem_step2bc_permanent_gate_v1.py"
+      - "tests/test_devsystem_monster_step2bc_global_permanence_v1.py"
+      - ".github/workflows/monster-step2bc-permanent-system-v1.yml"
+  push:
+    branches: [monster-main]
+    paths:
+      - "devsystem/automatic_loop_kill_v1.py"
+      - "devsystem/mandatory_2a_action_gate_v1.py"
+      - "devsystem/mandatory_2b_reliability_gate_v1.py"
+      - "devsystem/mandatory_2c_autonomous_recovery_v1.py"
+      - "devsystem/mandatory_2bc_permanent_enforcement_v1.py"
+      - "devsystem/monster_system_isolation_v1.py"
+      - "devsystem/monster_execution_front_door_v1.py"
+      - "devsystem/monster_system_permanent_gate_v1.py"
+      - "devsystem/monster_proof_plans/monster-step2bc-permanent-system-v1.json"
+      - "devsystem/task_ledgers/monster-step2bc-permanent-system-v1.json"
+      - "tests/test_devsystem_automatic_loop_kill_v1.py"
+      - "tests/test_devsystem_mandatory_2a_action_gate_v1.py"
+      - "tests/test_devsystem_mandatory_2b_reliability_gate_v1.py"
+      - "tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py"
+      - "tests/test_devsystem_step2b_step2a_integration_v1.py"
+      - "tests/test_devsystem_step2c_step2b_step2a_integration_v1.py"
+      - "tests/test_devsystem_step2bc_permanent_gate_v1.py"
+      - "tests/test_devsystem_monster_step2bc_global_permanence_v1.py"
+      - ".github/workflows/monster-step2bc-permanent-system-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-step2bc-permanent-system-${{ github.event_name == 'push' && github.sha || github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  monster-step2bc-permanent-system-certification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install narrow test dependency
+        run: python -m pip install -q pytest
+      - name: Compile MONSTER control chain
+        run: |
+          python -m py_compile \
+            devsystem/monster_system_isolation_v1.py \
+            devsystem/monster_execution_front_door_v1.py \
+            devsystem/monster_system_permanent_gate_v1.py \
+            devsystem/automatic_loop_kill_v1.py \
+            devsystem/mandatory_2a_action_gate_v1.py \
+            devsystem/mandatory_2b_reliability_gate_v1.py \
+            devsystem/mandatory_2c_autonomous_recovery_v1.py \
+            devsystem/mandatory_2bc_permanent_enforcement_v1.py
+      - name: MONSTER hard isolation contract
+        run: python -m devsystem.monster_system_isolation_v1
+      - name: MONSTER canonical execution front door
+        run: python -m devsystem.monster_execution_front_door_v1
+      - name: MONSTER Anti-Loop contract
+        run: python devsystem/automatic_loop_kill_v1.py
+      - name: MONSTER Step 2A contract
+        run: python devsystem/mandatory_2a_action_gate_v1.py
+      - name: MONSTER Step 2B contract
+        run: python devsystem/mandatory_2b_reliability_gate_v1.py
+      - name: MONSTER Step 2C contract
+        run: python devsystem/mandatory_2c_autonomous_recovery_v1.py
+      - name: MONSTER Step 2B Step 2C permanent enforcement
+        run: python devsystem/mandatory_2bc_permanent_enforcement_v1.py
+      - name: MONSTER system permanent gate
+        run: python -m devsystem.monster_system_permanent_gate_v1
+      - name: MONSTER focused control regressions
+        run: |
+          python -m pytest --noconftest -q \
+            tests/test_devsystem_automatic_loop_kill_v1.py \
+            tests/test_devsystem_mandatory_2a_action_gate_v1.py \
+            tests/test_devsystem_mandatory_2b_reliability_gate_v1.py \
+            tests/test_devsystem_mandatory_2c_autonomous_recovery_v1.py \
+            tests/test_devsystem_step2b_step2a_integration_v1.py \
+            tests/test_devsystem_step2c_step2b_step2a_integration_v1.py \
+            tests/test_devsystem_step2bc_permanent_gate_v1.py \
+            tests/test_devsystem_monster_step2bc_global_permanence_v1.py
