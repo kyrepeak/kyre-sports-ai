@@ -48,7 +48,7 @@ _REGISTRATIONS = (
     _r("nfl", "receiving-yards", "nfl-dedicated-hub", "nfl_receiving_yards_hub_v21"),
     _r("nfl", "receptions", "nfl-receptions", "nfl_receptions_runtime_v1"),
     _r("nfl", "passing-tds", "nfl-passing-tds", "nfl_passing_tds_runtime_v1"),
-    _r("nfl", "anytime-td", "nfl-hub", "nfl_hub_v18"),
+    _r("nfl", "anytime-td", "nfl-anytime-td", "nfl_anytime_td_runtime_v1"),
     _r("nfl", "daily-picks", "nfl-hub", "nfl_hub_v18"),
 
     # CFB — player props now has a first-class runtime adapter.
