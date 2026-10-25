@@ -38,7 +38,7 @@ jobs:
             tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
       - name: Prove exact market reconciliation and bounded transport recovery
         run: python -m pytest --noconftest -q tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
-      - name: Inspect provider-neutral live identity fields
+      - name: Inspect provider-neutral live identity and market membership
         run: |
           python - <<'PY'
           from sports_api.collectors import nfl_fanduel_rushing_yards_nflverse_v1 as rushing
@@ -59,7 +59,7 @@ jobs:
           assert event_id, "exact DEN @ ARI FanDuel event not found"
           fdx = rushing._get_json_reliable(f"{base.FANDUEL_FDX_BASE_URL}/v1/live/event/{event_id}/players", timeout=8)
           player_map = fdx.get("playerMap") or {}
-          rows = []
+          identity_rows = []
           for provider_id, player in player_map.items():
               if not isinstance(player, dict):
                   continue
@@ -75,6 +75,19 @@ jobs:
                       "sportradarid", "sportradar_id", "gsisid", "gsis_id", "smartid", "smart_id", "fantasydataid", "fantasy_data_id"
                   }:
                       safe[str(key)] = value
-              rows.append(safe)
-          print("SANITIZED_ARI_RB_IDENTITY_ROWS=", rows)
+              identity_rows.append(safe)
+          observations = rushing.collect_fanduel_game_markets(game, timeout=8)
+          market_rows = [
+              {
+                  "provider_player_id": str(row.get("provider_player_id") or ""),
+                  "team": row.get("team_abbr"),
+                  "position": row.get("position"),
+                  "jersey": row.get("jersey_number"),
+                  "line": row.get("line"),
+              }
+              for row in observations
+              if str(row.get("team_abbr") or "").upper() == "ARI"
+          ]
+          print("SANITIZED_ARI_RB_IDENTITY_ROWS=", identity_rows)
+          print("SANITIZED_ARI_RUSH_MARKET_ROWS=", market_rows)
           PY
