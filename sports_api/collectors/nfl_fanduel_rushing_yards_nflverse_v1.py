@@ -85,8 +85,8 @@ def _get_json_reliable(url: str, params: Mapping[str, Any] | None = None, *, tim
 
 def reconcile_observation_to_roster(observation: Mapping[str, Any], roster_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
     """Return one active exact team + jersey + position match; ambiguity fails closed."""
-    team = _normalize_team(observation.get("team_abbr"))
-    jersey = _normalize_jersey(observation.get("jersey_number"))
+    team = _normalize_team(observation.get("team_abbr") or observation.get("team"))
+    jersey = _normalize_jersey(observation.get("jersey_number") or observation.get("jersey") or observation.get("number"))
     position = _normalize_position(observation.get("position"))
     if not team or not jersey or position not in {"RB", "FB"}:
         return None
@@ -99,7 +99,7 @@ def reconcile_observation_to_roster(observation: Mapping[str, Any], roster_rows:
             continue
         if _normalize_team(raw.get("team_abbr") or raw.get("team")) != team:
             continue
-        if _normalize_jersey(raw.get("jersey_number") or raw.get("jersey")) != jersey:
+        if _normalize_jersey(raw.get("jersey_number") or raw.get("jersey") or raw.get("number")) != jersey:
             continue
         if _normalize_position(raw.get("position")) != position:
             continue
@@ -164,6 +164,41 @@ def _discover_tabs(payload: Mapping[str, Any]) -> list[str]:
     return found[:8]
 
 
+def _identity_catalog(fdx_players: Mapping[str, Any], *, allowed_teams: set[str]) -> list[dict[str, Any]]:
+    """Provider identity evidence only; player names are intentionally excluded."""
+    players, _ = base._provider_player_maps(fdx_players)
+    rows: list[dict[str, Any]] = []
+    for provider_player_id, player in players.items():
+        team_abbr = _normalize_team(player.get("team") or player.get("teamAbbreviation"))
+        position = _normalize_position(player.get("position"))
+        jersey_number = _normalize_jersey(player.get("jerseyNumber") or player.get("jersey") or player.get("number"))
+        if team_abbr not in allowed_teams or position not in {"RB", "FB"} or not jersey_number:
+            continue
+        rows.append({
+            "provider_player_id": _text(provider_player_id),
+            "team_abbr": team_abbr,
+            "position": position,
+            "jersey_number": jersey_number,
+            "active": True,
+        })
+    rows.sort(key=lambda row: (row["team_abbr"], row["position"], row["jersey_number"], row["provider_player_id"]))
+    return rows
+
+
+def _offered_provider_player_ids(event_page: Mapping[str, Any], fdx_players: Mapping[str, Any]) -> list[str]:
+    """Return player IDs attached to open standard rushing markets before quote parsing."""
+    _players, by_selection = base._provider_player_maps(fdx_players)
+    found: set[str] = set()
+    for market in _standard_markets(event_page):
+        for runner in base._rows(market.get("runners")):
+            if _text(runner.get("runnerStatus")).upper() not in {"", "ACTIVE"}:
+                continue
+            mapped = by_selection.get(_text(runner.get("selectionId"))) or []
+            if len(mapped) == 1:
+                found.add(_text(mapped[0]))
+    return sorted(player_id for player_id in found if player_id)
+
+
 def parse_event_market_observations(event_page: Mapping[str, Any], fdx_players: Mapping[str, Any], *, source_timestamp: str) -> list[dict[str, Any]]:
     attachments = event_page.get("attachments") if isinstance(event_page, Mapping) else None
     if not isinstance(attachments, Mapping):
@@ -219,9 +254,11 @@ def parse_event_market_observations(event_page: Mapping[str, Any], fdx_players: 
     return observations
 
 
-def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = MARKET_READ_TIMEOUT_SECONDS) -> list[dict[str, Any]]:
+def collect_fanduel_game_market_bundle(game: Mapping[str, Any], *, timeout: int = MARKET_READ_TIMEOUT_SECONDS) -> dict[str, Any]:
+    """Collect observations plus exact identity/market-membership evidence for one game."""
     if not _text(game.get("away_name")) or not _text(game.get("home_name")):
-        return []
+        return {"state": "EVENT_MAPPING_FAILURE", "observations": [], "reason": "canonical game names unavailable", "evidence": {}}
+
     landing = _get_json_reliable(
         f"{base.FANDUEL_BASE_URL}/sbapi/content-managed-page",
         {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "page": "CUSTOM", "customPageId": "nfl", "timezone": "America/New_York"},
@@ -229,8 +266,13 @@ def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = MARK
     )
     event_id = base._match_event(landing, game)
     if not event_id:
-        return []
-    selected = _get_json_reliable(f"{base.FANDUEL_BASE_URL}/sbapi/event-page", {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "eventId": event_id}, timeout=timeout)
+        return {"state": "EVENT_MAPPING_FAILURE", "observations": [], "reason": "exact FanDuel event match unavailable", "evidence": {"event_match": "failed"}}
+
+    selected = _get_json_reliable(
+        f"{base.FANDUEL_BASE_URL}/sbapi/event-page",
+        {"_ak": base.FANDUEL_PUBLIC_WEB_KEY, "eventId": event_id},
+        timeout=timeout,
+    )
     if not _standard_markets(selected):
         for tab in _discover_tabs(selected):
             try:
@@ -244,12 +286,48 @@ def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = MARK
             if _standard_markets(candidate):
                 selected = candidate
                 break
-    if not _standard_markets(selected):
-        return []
+
     fdx = _get_json_reliable(f"{base.FANDUEL_FDX_BASE_URL}/v1/live/event/{event_id}/players", timeout=timeout)
-    timestamp = datetime.now(timezone.utc).isoformat()
     allowed_teams = {_normalize_team(game.get("away")), _normalize_team(game.get("home"))}
-    return [row for row in parse_event_market_observations(selected, fdx, source_timestamp=timestamp) if _normalize_team(row.get("team_abbr")) in allowed_teams]
+    identity_catalog = _identity_catalog(fdx, allowed_teams=allowed_teams)
+    offered_provider_player_ids = _offered_provider_player_ids(selected, fdx)
+    standard_markets = _standard_markets(selected)
+    timestamp = datetime.now(timezone.utc).isoformat()
+    observations = [
+        row
+        for row in parse_event_market_observations(selected, fdx, source_timestamp=timestamp)
+        if _normalize_team(row.get("team_abbr")) in allowed_teams
+    ]
+    evidence = {
+        "provider_event_id": event_id,
+        "event_match": "exact_home_away",
+        "identity_catalog": identity_catalog,
+        "offered_provider_player_ids": offered_provider_player_ids,
+        "standard_market_count": len(standard_markets),
+        "player_name_matching": False,
+        "fuzzy_matching": False,
+    }
+    if observations:
+        return {"state": "AVAILABLE", "observations": observations, "reason": "", "evidence": evidence}
+    if standard_markets and offered_provider_player_ids:
+        return {
+            "state": "MARKET_MAPPING_FAILURE",
+            "observations": [],
+            "reason": "standard rushing markets were offered but no complete quote survived normalization",
+            "evidence": evidence,
+        }
+    return {
+        "state": "VERIFIED_NOT_POSTED",
+        "observations": [],
+        "reason": "exact FanDuel event parsed successfully with no open standard rushing-yards market",
+        "evidence": evidence,
+    }
+
+
+def collect_fanduel_game_markets(game: Mapping[str, Any], *, timeout: int = MARKET_READ_TIMEOUT_SECONDS) -> list[dict[str, Any]]:
+    """Compatibility wrapper for callers that only need complete quote rows."""
+    bundle = collect_fanduel_game_market_bundle(game, timeout=timeout)
+    return [dict(row) for row in bundle.get("observations") or [] if isinstance(row, Mapping)]
 
 
 __all__ = [
@@ -259,6 +337,7 @@ __all__ = [
     "MODEL_VERSION",
     "PLAYER_NAME_MATCHING",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "collect_fanduel_game_market_bundle",
     "collect_fanduel_game_markets",
     "is_standard_rushing_yards_market",
     "parse_event_market_observations",
