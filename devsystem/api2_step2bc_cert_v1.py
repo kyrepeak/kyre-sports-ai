@@ -10,6 +10,7 @@ import devsystem.api2_execution_controller_v2 as controller
 import devsystem.api2_execution_plan_compiler_cert_v1 as compiler
 import devsystem.api2_frozen_registry_v1 as frozen
 import devsystem.api2_isolation_guard_v1 as isolation
+import devsystem.api2_proof_registry_v1 as proof_registry
 import devsystem.api2_step2a_authority_v1 as step2a
 import devsystem.api2_step2b_reliability_gate_v1 as step2b
 import devsystem.api2_step2c_root_cause_v1 as step2c
@@ -26,6 +27,7 @@ def authoritative_module_paths() -> list[str]:
         "devsystem/api2_step2a_authority_v1.py",
         "devsystem/api2_execution_controller_v2.py",
         "devsystem/api2_frozen_registry_v1.py",
+        "devsystem/api2_proof_registry_v1.py",
         "devsystem/api2_execution_plan_compiler_cert_v1.py",
         "devsystem/api2_step2bc_cert_v1.py",
     ]
@@ -48,14 +50,12 @@ def _imports_are_api2_only() -> bool:
 def _good_reliability(evidence_digest: str) -> dict[str, Any]:
     criteria = ["repair control chain", "prove recovery"]
     return {
-        "system": "api2",
-        "acceptance_criteria": criteria,
+        "system": "api2", "acceptance_criteria": criteria,
         "authoritative_path": {"problem_id": "api2-step2bc-cert-problem", "branch": "api2-step2bc-cert-r1", "proof_path": "api2-step2bc-cert-proof-r1"},
         "root_cause": {"finding": "configuration precedence bug", "evidence_digest": evidence_digest},
         "requirement_to_implementation": {criteria[0]: ["devsystem/api2_execution_controller_v2.py"], criteria[1]: ["devsystem/api2_step2bc_cert_v1.py"]},
         "requirement_to_proof": {criteria[0]: ["test_control_chain"], criteria[1]: ["test_recovery_cycle"]},
-        "production_dependencies": [{"name": "python", "verified": True}],
-        "provider_reachability": [],
+        "production_dependencies": [{"name": "python", "verified": True}], "provider_reachability": [],
         "configuration_assumptions": [{"name": "api2-main", "verified": True}],
         "regression_risks": [{"risk": "blind retry", "proof": "test_recovery_cycle"}],
         "verification": ["pytest -q tests/test_api2_step2bc_control_plane_v1.py"],
@@ -102,8 +102,10 @@ def self_test() -> dict[str, Any]:
     snapshot = controller.status_snapshot(state)
     required_status = {"current_phase","progress_percent","active_problem","authoritative_api2_path","current_root_cause_hypothesis","step_2c_status","step_2b_status","step_2a_authorization_status","anti_loop_status","verification_status","blocker","green_frozen_checkpoint"}
     live_status_complete = required_status.issubset(snapshot) and snapshot["progress_percent"] == 100
+    proof_state = proof_registry.record_green_proof(proof_registry.new_registry(), proof_id="api2-step2bc-cert-proof-v1", candidate_sha="5" * 40, base_sha="6" * 40, evidence_digest="7" * 64, artifacts={"devsystem/api2_execution_controller_v2.py": "8" * 40}, acceptance_proofs={"isolation": True, "recovery": True, "verification": True}, certification={"status": "GREEN"})
+    proof_registry_green = proof_registry.verify_proof(proof_state, "api2-step2bc-cert-proof-v1").get("state") == "GREEN"
     compiler_green = compiler.self_test().get("status") == "GREEN"
-    result = {"status": "GREEN", "version": VERSION, "isolation_green": isolation_green, "anti_loop_blind_retry_blocked": anti_loop_blind_retry_blocked, "step2c_autonomous_recovery_green": step2c_autonomous_recovery_green, "step2b_fail_closed_green": step2b_fail_closed_green, "step2a_one_use_green": step2a_one_use_green, "green_requires_proof": green_requires_proof, "freeze_readback_green": freeze_readback_green, "live_status_complete": live_status_complete, "compiler_green": compiler_green}
+    result = {"status": "GREEN", "version": VERSION, "isolation_green": isolation_green, "anti_loop_blind_retry_blocked": anti_loop_blind_retry_blocked, "step2c_autonomous_recovery_green": step2c_autonomous_recovery_green, "step2b_fail_closed_green": step2b_fail_closed_green, "step2a_one_use_green": step2a_one_use_green, "green_requires_proof": green_requires_proof, "freeze_readback_green": freeze_readback_green, "live_status_complete": live_status_complete, "proof_registry_green": proof_registry_green, "compiler_green": compiler_green}
     required_true = [key for key, value in result.items() if key not in {"status", "version"} and value is not True]
     if required_true: raise RuntimeError("API2_STEP2BC_CERT_FAILED:" + ",".join(sorted(required_true)))
     return result

@@ -18,6 +18,7 @@ def test_whole_stack_certification_proves_recovery_and_freeze():
     assert result["green_requires_proof"] is True
     assert result["freeze_readback_green"] is True
     assert result["live_status_complete"] is True
+    assert result["proof_registry_green"] is True
 
 
 def test_authoritative_modules_do_not_import_non_api2_devsystem_authority():

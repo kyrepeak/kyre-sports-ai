@@ -24,6 +24,7 @@ API 2 authority accepts only API2-owned identities, paths, evidence, proof recor
 - `api2_execution_controller_v2.py`: permanent ordered state machine and truthful live status.
 - `api2_execution_plan_compiler_cert_v1.py`: API2-native deterministic plan compiler rooted at `api2-main`.
 - `api2_frozen_registry_v1.py`: API2-owned FROZEN registry; GREEN does not imply FROZEN.
+- `api2_proof_registry_v1.py`: API2-owned exact-candidate GREEN proof registry with acceptance/artifact/readback validation.
 - `api2_step2bc_cert_v1.py`: whole-stack adversarial certification.
 
 ## Human-only blockers

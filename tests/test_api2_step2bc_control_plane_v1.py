@@ -60,3 +60,35 @@ def test_controller_freeze_requires_api2_registry_readback():
     from devsystem.api2_execution_controller_v2 import record_freeze_readback, ControllerError
     with pytest.raises(ControllerError): record_freeze_readback({"system":"api2","green":False,"phase":"VERIFY"},{"status":"FROZEN"})
     frozen=record_freeze_readback({"system":"api2","green":True,"phase":"GREEN"},{"status":"FROZEN","checkpoint_id":"API2_X_FROZEN"}); assert frozen["frozen"] is True and frozen["phase"]=="FROZEN"
+
+def test_api2_proof_registry_requires_complete_acceptance_and_exact_evidence():
+    from devsystem.api2_proof_registry_v1 import new_registry, record_green_proof, verify_proof
+    acceptance = {"isolation": True, "anti_loop": True, "step2c": True, "step2b": True, "step2a": True}
+    registry = record_green_proof(
+        new_registry(),
+        proof_id="api2-proof-step2bc-v1",
+        candidate_sha="1" * 40,
+        base_sha="2" * 40,
+        evidence_digest="3" * 64,
+        artifacts={"devsystem/api2_execution_controller_v2.py": "4" * 40},
+        acceptance_proofs=acceptance,
+        certification={"status": "GREEN"},
+    )
+    proof = verify_proof(registry, "api2-proof-step2bc-v1")
+    assert proof["state"] == "GREEN"
+
+
+def test_api2_proof_registry_rejects_incomplete_acceptance():
+    import pytest
+    from devsystem.api2_proof_registry_v1 import new_registry, record_green_proof, ProofError
+    with pytest.raises(ProofError):
+        record_green_proof(
+            new_registry(),
+            proof_id="api2-proof-step2bc-v1",
+            candidate_sha="1" * 40,
+            base_sha="2" * 40,
+            evidence_digest="3" * 64,
+            artifacts={"x.py": "4" * 40},
+            acceptance_proofs={"isolation": True, "step2c": False},
+            certification={"status": "GREEN"},
+        )
