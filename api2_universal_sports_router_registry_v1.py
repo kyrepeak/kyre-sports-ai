@@ -40,7 +40,7 @@ def _r(sport: str, market: str, kind: str, target: str) -> RouterRegistration:
 _REGISTRATIONS = (
     # NFL — every live route is explicit; there is no generic market fallback.
     _r("nfl", "slate", "nfl-slate", "nfl_slate_runtime_v1"),
-    _r("nfl", "moneyline", "nfl-hub", "nfl_hub_v18"),
+    _r("nfl", "moneyline", "nfl-moneyline", "nfl_moneyline_hub_v19"),
     _r("nfl", "spread", "nfl-dedicated-hub", "nfl_spread_hub_v8"),
     _r("nfl", "game-total", "nfl-hub", "nfl_hub_v18"),
     _r("nfl", "passing-yards", "nfl-passing-yards", "nfl_passing_yards_simple_qb_grid_v1"),
