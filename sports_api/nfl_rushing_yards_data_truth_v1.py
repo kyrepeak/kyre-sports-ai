@@ -62,15 +62,16 @@ def _normalize_provider_result(provider: str, raw: Any) -> dict[str, Any]:
     if isinstance(raw, Mapping):
         state = _text(raw.get("state")).upper()
         observations = [dict(row) for row in (raw.get("observations") or []) if isinstance(row, Mapping)]
+        evidence = raw.get("evidence") if isinstance(raw.get("evidence"), Mapping) else None
         if state == "AVAILABLE" and observations:
-            return _bundle(provider, "AVAILABLE", observations, reason=_text(raw.get("reason")), evidence=raw.get("evidence") if isinstance(raw.get("evidence"), Mapping) else None)
+            return _bundle(provider, "AVAILABLE", observations, reason=_text(raw.get("reason")), evidence=evidence)
         if state in {"VERIFIED_NOT_POSTED", "VERIFIED_NO_STANDARD_MARKET"} and not observations:
-            return _bundle(provider, "VERIFIED_NOT_POSTED", [], reason=_text(raw.get("reason")), evidence=raw.get("evidence") if isinstance(raw.get("evidence"), Mapping) else None)
+            return _bundle(provider, "VERIFIED_NOT_POSTED", [], reason=_text(raw.get("reason")), evidence=evidence)
         if state in _FAILURE_STATES:
-            return _bundle(provider, state, observations, reason=_text(raw.get("reason")), evidence=raw.get("evidence") if isinstance(raw.get("evidence"), Mapping) else None)
+            return _bundle(provider, state, observations, reason=_text(raw.get("reason")), evidence=evidence)
         if observations:
-            return _bundle(provider, "AVAILABLE", observations, reason=_text(raw.get("reason")))
-        return _bundle(provider, "MARKET_MAPPING_FAILURE", [], reason="provider returned an unverified empty result")
+            return _bundle(provider, "AVAILABLE", observations, reason=_text(raw.get("reason")), evidence=evidence)
+        return _bundle(provider, "MARKET_MAPPING_FAILURE", [], reason="provider returned an unverified empty result", evidence=evidence)
     if isinstance(raw, list):
         observations = [dict(row) for row in raw if isinstance(row, Mapping)]
         if observations:
@@ -146,7 +147,7 @@ def collect_markets(
     effective_budget = max(float(budget_seconds or 0.0), float(effective_timeout * direct_book.MAX_MARKET_READ_ATTEMPTS + 2))
     pool = ThreadPoolExecutor(max_workers=min(12, max(1, len(valid_games))))
     futures = {
-        pool.submit(_call_provider, PRIMARY_PROVIDER, direct_book.collect_fanduel_game_markets, game, effective_timeout): game
+        pool.submit(_call_provider, PRIMARY_PROVIDER, direct_book.collect_fanduel_game_market_bundle, game, effective_timeout): game
         for game in valid_games
     }
     done, pending = wait(futures, timeout=effective_budget)
@@ -220,12 +221,32 @@ def market_state(observation: Mapping[str, Any] | None, *, diagnostic_state: str
     }
 
 
+def _verified_no_market(*, provider: str, reason: str, identity_verified: bool = False) -> dict[str, Any]:
+    return {
+        "status": "MARKET_NOT_POSTED",
+        "state": "VERIFIED_NO_STANDARD_MARKET",
+        "verified_absence": True,
+        "diagnostic_state": "VERIFIED_NO_STANDARD_MARKET",
+        "reason": _text(reason),
+        "sportsbook": _text(provider) or None,
+        "market": "Rushing Yards",
+        "line": None,
+        "over_odds": None,
+        "under_odds": None,
+        "timestamp": None,
+        "identity_verified": bool(identity_verified),
+        "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
+    }
+
+
 def market_state_from_bundle(bundle: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None, *, player: Mapping[str, Any]) -> dict[str, Any]:
+    evidence: dict[str, Any] = {}
     if isinstance(bundle, Mapping):
         source_state = _text(bundle.get("state")).upper() or "ALL_SOURCES_UNAVAILABLE"
         observations = [dict(row) for row in (bundle.get("observations") or []) if isinstance(row, Mapping)]
         reason = _text(bundle.get("reason"))
         provider = _text(bundle.get("provider"))
+        evidence = dict(bundle.get("evidence") or {}) if isinstance(bundle.get("evidence"), Mapping) else {}
     else:
         observations = [dict(row) for row in (bundle or []) if isinstance(row, Mapping)]
         source_state = "AVAILABLE" if observations else "MARKET_MAPPING_FAILURE"
@@ -233,20 +254,7 @@ def market_state_from_bundle(bundle: Mapping[str, Any] | Sequence[Mapping[str, A
         provider = ""
 
     if source_state == "VERIFIED_NOT_POSTED":
-        return {
-            "status": "MARKET_NOT_POSTED",
-            "state": "VERIFIED_NO_STANDARD_MARKET",
-            "verified_absence": True,
-            "diagnostic_state": "VERIFIED_NO_STANDARD_MARKET",
-            "reason": reason,
-            "sportsbook": provider or None,
-            "market": "Rushing Yards",
-            "line": None,
-            "over_odds": None,
-            "under_odds": None,
-            "timestamp": None,
-            "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
-        }
+        return _verified_no_market(provider=provider, reason=reason)
     if source_state != "AVAILABLE":
         return market_state(None, diagnostic_state=source_state, reason=reason)
 
@@ -262,6 +270,35 @@ def market_state_from_bundle(bundle: Mapping[str, Any] | Sequence[Mapping[str, A
         return out
     if len(matched) > 1:
         return market_state(None, diagnostic_state="SOURCE_CONFLICT", reason="multiple exact team + jersey + position market observations survived canonical reconciliation")
+
+    # FanDuel exposes a separate event player identity catalog. If the canonical
+    # RB is uniquely present there, identity is verified even when that player is
+    # not attached to an open standard Rushing Yards market. That is explicit
+    # per-player absence evidence, not a mapping failure and not a fabricated line.
+    identity_catalog = [dict(row) for row in (evidence.get("identity_catalog") or []) if isinstance(row, Mapping)]
+    catalog_matches = [
+        row
+        for row in identity_catalog
+        if direct_book.reconcile_observation_to_roster(row, [player]) is not None
+    ]
+    if len(catalog_matches) > 1:
+        return market_state(None, diagnostic_state="SOURCE_CONFLICT", reason="multiple provider identity rows matched the canonical team + jersey + position")
+    if len(catalog_matches) == 1:
+        provider_player_id = _text(catalog_matches[0].get("provider_player_id"))
+        offered_ids = {_text(value) for value in (evidence.get("offered_provider_player_ids") or []) if _text(value)}
+        if provider_player_id and provider_player_id not in offered_ids:
+            return _verified_no_market(
+                provider=provider or PRIMARY_PROVIDER,
+                reason="verified provider player identity is present, but no open standard rushing-yards market is attached",
+                identity_verified=True,
+            )
+        if provider_player_id and provider_player_id in offered_ids:
+            return market_state(
+                None,
+                diagnostic_state="MARKET_MAPPING_FAILURE",
+                reason="provider offered a standard rushing-yards market for the exact player identity, but no complete quote survived normalization",
+            )
+
     return market_state(None, diagnostic_state="PLAYER_MAPPING_UNAVAILABLE", reason="provider market bundle did not contain one unique active team + jersey + position match")
 
 
