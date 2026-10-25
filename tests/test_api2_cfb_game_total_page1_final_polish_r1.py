@@ -118,7 +118,7 @@ def test_payload_enriches_only_through_kyre_api(monkeypatch):
     assert payload["routing"]["forbidden_providers"] == ["SGO", "ESPN", "ESPN BET"]
 
 
-def test_v3_presentation_contract_is_preserved_under_v5_activation():
+def test_v3_presentation_contract_is_preserved_under_v7_activation():
     path = ROOT / "cfb_game_total_page1_atier_v3.py"
     assert path.exists(), "V3 final-polish successor has not been implemented yet"
     source = path.read_text(encoding="utf-8")
@@ -147,5 +147,5 @@ def test_v3_presentation_contract_is_preserved_under_v5_activation():
     successor = (ROOT / "cfb_game_total_page1_atier_v5.py").read_text(encoding="utf-8")
     assert "import cfb_game_total_page1_atier_v3 as card" in successor
     wrapper = (ROOT / "cfb_game_total_page1_api_bootstrap_repair_r1.py").read_text(encoding="utf-8")
-    assert "cfb_game_total_page1_atier_v6" in wrapper
+    assert "cfb_game_total_page1_atier_v7" in wrapper
     assert "cfb_game_total_page1_atier_v2" not in wrapper
