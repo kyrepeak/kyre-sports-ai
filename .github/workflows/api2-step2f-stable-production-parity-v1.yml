@@ -4,13 +4,15 @@ on:
   pull_request:
     branches: [api2-main]
     paths:
-      - 'api2_step2a_active_problem_lock_v2.py'
-      - 'sports_api/provider_router.py'
-      - 'sports_api/normalizer.py'
-      - 'sports_api/data_truth.py'
-      - 'sports_api/source_registry.py'
-      - 'sports_api/live_*_logic.py'
-      - 'sports_api/nfl_rushing_yards_transport_v1.py'
+      - 'devsystem/api2_isolation_guard_v1.py'
+      - 'devsystem/api2_anti_loop_v1.py'
+      - 'devsystem/api2_step2a_authority_v1.py'
+      - 'devsystem/api2_execution_controller_v3.py'
+      - 'devsystem/api2_execution_plan_compiler_cert_v1.py'
+      - 'devsystem/api2_step2bc_cert_v1.py'
+      - 'devsystem/api2_step2d_data_truth_gate_v1.py'
+      - 'sports_api/nfl_rushing_yards_data_truth_v1.py'
+      - 'sports_api/collectors/nfl_the_odds_api_rushing_yards_v1.py'
       - 'api2_universal_sports_router_registry_v1.py'
       - 'universal_sports_nav_registry_v1.py'
       - 'universal_runtime_v5_loader.py'
@@ -18,11 +20,11 @@ on:
       - 'api2_step2f_stable_production_parity_v1.py'
       - 'sports_api/api/step2f_deployment_receipt_v1.py'
       - 'kyre_sports_api_vercel_v1.py'
-      - 'tests/test_api2_step2a_active_problem_lock_v2.py'
-      - 'tests/test_api2_step2d_data_truth.py'
-      - 'tests/test_provider_router.py'
-      - 'tests/test_data_truth_layer.py'
-      - 'tests/test_nfl_rushing_yards_transport.py'
+      - 'tests/test_api2_step2a_anti_loop_hard_guard_v2.py'
+      - 'tests/test_api2_step2bc_cert_v1.py'
+      - 'tests/test_api2_step2bc_control_plane_v1.py'
+      - 'tests/test_api2_step2d_data_truth_gate_v1.py'
+      - 'tests/test_api2_step2d_integration_v1.py'
       - 'tests/test_api2_step2e_universal_router_completion_v1.py'
       - 'tests/test_api2_step2f_stable_production_parity_v1.py'
       - '.github/workflows/api2-step2f-stable-production-parity-v1.yml'
@@ -38,25 +40,30 @@ permissions:
 
 jobs:
   step2f-static-contract:
-    name: Step 2A + 2D + 2E + 2F exact-head contract
+    name: Step 2A + 2B + 2C + 2D + 2E + 2F exact-head contract
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - name: Install focused proof dependencies
-        run: python -m pip install --disable-pip-version-check pytest fastapi
-      - name: Compile Step 2A, Step 2D, Step 2E and Step 2F authorities
+          python-version: '3.11'
+      - name: Install repository proof dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest -r requirements.txt
+      - name: Compile authoritative control plane and Step 2F
         run: |
           python -m py_compile \
-            api2_step2a_active_problem_lock_v2.py \
-            sports_api/provider_router.py \
-            sports_api/normalizer.py \
-            sports_api/data_truth.py \
-            sports_api/source_registry.py \
-            sports_api/nfl_rushing_yards_transport_v1.py \
+            devsystem/api2_isolation_guard_v1.py \
+            devsystem/api2_anti_loop_v1.py \
+            devsystem/api2_step2a_authority_v1.py \
+            devsystem/api2_execution_controller_v3.py \
+            devsystem/api2_execution_plan_compiler_cert_v1.py \
+            devsystem/api2_step2bc_cert_v1.py \
+            devsystem/api2_step2d_data_truth_gate_v1.py \
+            sports_api/nfl_rushing_yards_data_truth_v1.py \
+            sports_api/collectors/nfl_the_odds_api_rushing_yards_v1.py \
             api2_universal_sports_router_registry_v1.py \
             universal_sports_nav_registry_v1.py \
             universal_runtime_v5_loader.py \
@@ -64,14 +71,19 @@ jobs:
             api2_step2f_stable_production_parity_v1.py \
             sports_api/api/step2f_deployment_receipt_v1.py \
             kyre_sports_api_vercel_v1.py
-      - name: Prove Step 2A + Anti-Loop and Step 2D data truth
+      - name: Prove Step 2A + Anti-Loop + Step 2B/2C control plane
         run: >-
           python -m pytest -q
-          tests/test_provider_router.py
-          tests/test_data_truth_layer.py
-          tests/test_api2_step2d_data_truth.py
-          tests/test_api2_step2a_active_problem_lock_v2.py
-          tests/test_nfl_rushing_yards_transport.py
+          tests/test_api2_step2a_anti_loop_hard_guard_v2.py
+          tests/test_api2_step2bc_cert_v1.py
+          tests/test_api2_step2bc_control_plane_v1.py
+      - name: Prove Step 2D data truth
+        run: >-
+          python -m pytest -q
+          tests/test_api2_step2d_data_truth_gate_v1.py
+          tests/test_api2_step2d_integration_v1.py
+          tests/test_api2_step2bc_cert_v1.py
+          tests/test_api2_step2bc_control_plane_v1.py
       - name: Prove Step 2E universal router coverage
         run: python -m pytest -q --noconftest tests/test_api2_step2e_universal_router_completion_v1.py
       - name: Prove Step 2F 39-page stable-production contract
@@ -87,7 +99,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
       - name: Verify stable production alias and full page matrix
         env:
           API2_STEP2F_EXPECTED_SHA: ${{ inputs.expected_sha }}
