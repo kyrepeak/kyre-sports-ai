@@ -48,9 +48,9 @@ jobs:
       - name: Prove exact head preserves frozen artifacts
         if: github.event_name == 'pull_request'
         run: |
-          git fetch origin monster-frozen-artifact-registry --depth=1
-          git show FETCH_HEAD:devsystem/frozen_artifact_registry_state_v1.json > /tmp/frozen-registry.json
-          python devsystem/frozen_artifact_registry_v1.py verify-head             --registry-file /tmp/frozen-registry.json             --head HEAD
+          git fetch origin api2-frozen-registry --depth=1
+          git show FETCH_HEAD:devsystem/api2_frozen_registry_state_v1.json > /tmp/frozen-registry.json
+          python devsystem/api2_frozen_artifact_registry_v1.py verify-head             --registry-file /tmp/frozen-registry.json             --head HEAD
           echo "API2_CONTROL_PLANE_EFFICIENCY_V1_STEP3_FROZEN_PARENTS_GREEN"
       - name: Certify exact PR head
         if: github.event_name == 'pull_request'
