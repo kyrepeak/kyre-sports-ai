@@ -1,0 +1,46 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nba-pra-page2-insights-live-main-r1.yml": "ece55a12d2c35b9d9bf74305a272f30d728bbc13",
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-insights-live-main-r1.json": "8969f582807ccf7502dd50a6488b92dc2eae6fb4",
+    "devsystem/task_ledgers/api2-nba-pra-page2-insights-live-main-r1.json": "4dea44c1a7df51be3df212aec9f3ad945a2a175d",
+    "nba_pra_page2_core_v2.py": "0176f6238da73e9b5f73d6f31e083e05948dd48e",
+    "nba_pra_page2_insights_v1.py": "f1b09aed0a8c10ad94d97f3a167c06f8a6eb15bb",
+    "nba_pra_page2_v1.py": "799a1711fa4f7818c6c09a9f8c422f960b434c48",
+    "runless_v2/__init__.py": "6dc4b2151420d41ffffc008a14300bd813506c0c",
+    "runless_v2/api2_authority_isolation_v1.py": "9b3c44c833ee408c625a3ef1a56156d583c5f62d",
+    "tests/test_api2_nba_pra_page2_insights_v1.py": "bed02f4e8c7680ae85f8e74970911e1009536a69",
+    "tests/test_runless_v2_api2_authority_isolation_v1.py": "fd85942502f36fc181cd2c44838ff5438d258728"
+  },
+  "candidate_sha": "a48dca94a3f524dbfd9ab82c5ae559e9ec8e5b8b",
+  "created_at": "2026-10-25T23:37:02.438413+00:00",
+  "dependency_map": {
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/github_authority.py": "50272688dd62461638a342938bb3b2b398f540cc",
+    "runless_v2/models.py": "1f63ff94ff702597430f3fbf2050d799150c516a",
+    "runless_v2/proof_service.py": "0dd0660e4858d665222847693cc26441fd783ba3"
+  },
+  "digest": "347f93d3857eef03ca6cbcda6cb67f8c2bacd4d67979627475985dc6a046466b",
+  "evidence_digests": [
+    "aeb14f5463638efc84d53fb9efd742c0ae531cea41a83df2487d88c370ce2fae",
+    "9b8077c9c150252489ff5376a051a82907fe5061f0e5536e586502693f315697"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "0eb2ad3311b2005e45aafb7fbe391d8f1bd53d98a3343b5410b17f5cfe7eb1e2",
+  "proof_id": "api2-nba-pra-page2-insights-live-main-r1-a48dca94a3f524db-0e124d9e1fdb9728",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 0,
+    "state_hash": "060ce9895733dc4831145bb09ec0256eafe68e7729713c40167813c84daa6a22"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 0,
+    "state_hash": "060ce9895733dc4831145bb09ec0256eafe68e7729713c40167813c84daa6a22"
+  },
+  "request_fingerprint": "eae31806595846666483543f35eb31526ae4fd532abacff2c7d3067a7b4cb3e5",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page2-insights-live-main-r1",
+  "workstream": "api2-nba-pra-page2-insights-live-main-r1"
+}
