@@ -227,6 +227,12 @@ def authorize_action(
                 reliability_decision=reliability_result.get("decision"),
                 implementation_attempt=reliability_result.get("implementation_attempt"),
                 anti_loop_handoff=reliability_result.get("anti_loop_handoff", False),
+                two_c_enforced=reliability_result.get("two_c_enforced", False),
+                recovery_decision=reliability_result.get("recovery_decision"),
+                recovery_receipt_hash=reliability_result.get("recovery_receipt_hash"),
+                recovery_generation=reliability_result.get("recovery_generation"),
+                requires_user_intervention=reliability_result.get("requires_user_intervention", False),
+                human_blocker_type=reliability_result.get("human_blocker_type"),
                 next_legal_action=reliability_result.get("next_legal_action"),
             )
 
@@ -244,6 +250,12 @@ def authorize_action(
             two_b_enforced=bool(reliability_result),
             reliability_decision=(reliability_result or {}).get("decision"),
             reliability_receipt_hash=(reliability_result or {}).get("reliability_receipt_hash"),
+            two_c_enforced=(reliability_result or {}).get("two_c_enforced", False),
+            recovery_decision=(reliability_result or {}).get("recovery_decision"),
+            recovery_receipt_hash=(reliability_result or {}).get("recovery_receipt_hash"),
+            recovery_generation=(reliability_result or {}).get("recovery_generation"),
+            requires_user_intervention=(reliability_result or {}).get("requires_user_intervention", False),
+            human_blocker_type=(reliability_result or {}).get("human_blocker_type"),
             next_legal_action=brain["next_legal_action"],
         )
 
@@ -258,6 +270,12 @@ def authorize_action(
         reliability_decision=(reliability_result or {}).get("decision"),
         reliability_receipt_hash=(reliability_result or {}).get("reliability_receipt_hash"),
         implementation_attempt=(reliability_result or {}).get("implementation_attempt"),
+        two_c_enforced=(reliability_result or {}).get("two_c_enforced", False),
+        recovery_decision=(reliability_result or {}).get("recovery_decision"),
+        recovery_receipt_hash=(reliability_result or {}).get("recovery_receipt_hash"),
+        recovery_generation=(reliability_result or {}).get("recovery_generation"),
+        requires_user_intervention=(reliability_result or {}).get("requires_user_intervention", False),
+        human_blocker_type=(reliability_result or {}).get("human_blocker_type"),
         next_legal_action=brain["next_legal_action"],
     )
 
