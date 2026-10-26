@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
@@ -43,7 +44,37 @@ def production_base_url() -> str:
     return url
 
 
-def evaluate_rendered_body(body: str, *, required_markers: list[str] | tuple[str, ...]) -> dict[str, object]:
+def _canonical_route_id(value: str, *, label: str) -> str:
+    text = str(value or "").strip().lower()
+    text = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+    if not text:
+        raise Step2GStreamlitCertificationFailure(f"STEP2G_{label.upper()}_REQUIRED")
+    return text
+
+
+def production_route_url(sport: str, market: str) -> str:
+    """Build the Universal Runtime V5 canonical route URL.
+
+    Runtime V5 owns ``sport`` + ``market``. Legacy ``ks_jump_*`` helper keys are
+    intentionally forbidden here because they can coexist with stale canonical
+    state and therefore cannot certify the rendered destination.
+    """
+    base = production_base_url()
+    query = urlencode(
+        {
+            "sport": _canonical_route_id(sport, label="sport"),
+            "market": _canonical_route_id(market, label="market"),
+        }
+    )
+    return base + "/?" + query
+
+
+def evaluate_rendered_body(
+    body: str,
+    *,
+    required_markers: list[str] | tuple[str, ...],
+    forbidden_markers: list[str] | tuple[str, ...] = (),
+) -> dict[str, object]:
     text = str(body or "")
     required = [str(marker) for marker in required_markers if str(marker)]
     if not required:
@@ -54,7 +85,8 @@ def evaluate_rendered_body(body: str, *, required_markers: list[str] | tuple[str
         raise Step2GStreamlitCertificationFailure(
             "STEP2G_REQUIRED_MARKER_MISSING:" + ",".join(missing)
         )
-    forbidden = [marker for marker in FORBIDDEN_MARKERS if marker in text]
+    combined_forbidden = tuple(dict.fromkeys((*FORBIDDEN_MARKERS, *(str(item) for item in forbidden_markers if str(item)))))
+    forbidden = [marker for marker in combined_forbidden if marker in text]
     if forbidden:
         raise Step2GStreamlitCertificationFailure(
             "STEP2G_FORBIDDEN_MARKER:" + ",".join(forbidden)
@@ -68,14 +100,21 @@ def evaluate_rendered_body(body: str, *, required_markers: list[str] | tuple[str
     }
 
 
-def certify(*, required_markers: list[str], artifact_dir: str | Path) -> dict[str, object]:
+def certify(
+    *,
+    sport: str,
+    market: str,
+    required_markers: list[str],
+    forbidden_markers: list[str] | None,
+    artifact_dir: str | Path,
+) -> dict[str, object]:
     from playwright.sync_api import sync_playwright
 
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
     base = production_base_url()
-    query = urlencode({"ks_jump_sport": "NFL", "ks_jump_market": "Game Total"})
-    target = base + "/?" + query
+    target = production_route_url(sport, market)
+    screenshot = artifacts / "api2_step2g_streamlit_render.png"
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
@@ -90,19 +129,23 @@ def certify(*, required_markers: list[str], artifact_dir: str | Path) -> dict[st
                 except Exception:
                     continue
             body = "\n".join(bodies)
-            evaluated = evaluate_rendered_body(body, required_markers=required_markers)
-            screenshot = artifacts / "api2_step2g_streamlit_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
+            evaluated = evaluate_rendered_body(
+                body,
+                required_markers=required_markers,
+                forbidden_markers=forbidden_markers or [],
+            )
         finally:
             browser.close()
 
     result = {
         "version": VERSION,
         "url": base,
+        "target_url": target,
         "source_branch": "main",
         **evaluated,
         "observed_at_utc": datetime.now(timezone.utc).isoformat(),
-        "route": "NFL -> Game Total",
+        "route": f"{sport} -> {market}",
         "screenshot": str(screenshot),
     }
     path = artifacts / "api2_step2g_streamlit_cert.json"
@@ -115,11 +158,21 @@ def certify(*, required_markers: list[str], artifact_dir: str | Path) -> dict[st
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifact-dir", default="artifacts/api2-step2g-streamlit")
+    parser.add_argument("--sport", default="NFL")
+    parser.add_argument("--market", default="Game Total")
     parser.add_argument("--required-marker", action="append", default=[])
+    parser.add_argument("--forbidden-marker", action="append", default=[])
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = _args()
     markers = args.required_marker or list(DEFAULT_MARKERS)
-    certify(required_markers=markers, artifact_dir=args.artifact_dir)
+    target = production_route_url(args.sport, args.market)
+    certify(
+        sport=args.sport,
+        market=args.market,
+        required_markers=markers,
+        forbidden_markers=args.forbidden_marker,
+        artifact_dir=args.artifact_dir,
+    )
