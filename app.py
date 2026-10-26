@@ -20,9 +20,8 @@ _API2_SITEWIDE_HTML_RENDER_COMPAT_R2_HEARTBEAT = "API2_SITEWIDE_HTML_RENDER_COMP
 _BOOTSTRAP_STARTED = perf_counter()
 
 # Install before any presentation heartbeat or lazily imported page renders. The
-# wrapper is stateless/idempotent and affects only pure HTML/CSS strings passed
-# through st.markdown(..., unsafe_allow_html=True). Normal Markdown and scripts
-# preserve their original renderer semantics.
+# wrapper is stateless/idempotent and affects only pure HTML/CSS unsafe-Markdown
+# payloads. Normal Markdown and scripts preserve their original renderer semantics.
 install_sitewide_html_compat(st)
 
 # These pages are lazily imported by Universal Runtime V5. Streamlit can keep a
