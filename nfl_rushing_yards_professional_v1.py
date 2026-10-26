@@ -26,8 +26,19 @@ _LEGACY_SECTION_INDEX = (
 )
 
 
+def _compat_detail(detail: Mapping[str, Any]) -> dict[str, Any]:
+    payload = dict(detail or {})
+    history = payload.get("matchup_history")
+    if isinstance(history, Mapping):
+        normalized = dict(history)
+        if str(normalized.get("status") or "").upper() == "FIRST_CAREER_MATCHUP" and not str(normalized.get("display") or "").strip():
+            normalized["display"] = "First career matchup"
+        payload["matchup_history"] = normalized
+    return payload
+
+
 def build_rushing_detail_html(detail: Mapping[str, Any]) -> str:
-    return _build_rushing_detail_html_v3(detail) + _LEGACY_SECTION_INDEX
+    return _build_rushing_detail_html_v3(_compat_detail(detail)) + _LEGACY_SECTION_INDEX
 
 
 __all__ = ["CSS", "MODEL_VERSION", "build_rushing_detail_html", "render_page2"]
