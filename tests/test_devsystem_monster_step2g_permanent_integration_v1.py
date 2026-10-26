@@ -92,6 +92,21 @@ def test_authoritative_receipt_blocks_non_green_convergence():
     assert "convergence" in result["reason"].lower()
 
 
+def test_authoritative_receipt_forbids_step2g_production_not_applicable_shortcut():
+    receipt = _load(
+        "monster_authoritative_proof_receipt_v1_no_na",
+        "devsystem/monster_authoritative_proof_receipt_v1.py",
+    )
+    payload = _receipt_payload()
+    payload["production"] = {
+        "deployment_applicable": False,
+        "proof": "NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE",
+    }
+    result = receipt.build_receipt(payload)
+    assert result["status"] == "BLOCKED"
+    assert "production" in result["reason"].lower()
+
+
 def test_authoritative_receipt_binds_step2g_digest_and_authorizes_freeze_checkpoint():
     receipt = _load(
         "monster_authoritative_proof_receipt_v1_c",
