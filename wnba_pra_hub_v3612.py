@@ -12,6 +12,9 @@ import wnba_pra_page1_final_polish_v1 as _page1_final_polish
 
 active.render_page_snapshot = _page1_final_polish.render_page_snapshot
 
+import wnba_pra_page1_ultra_stier_v2 as _page1_ultra_stier_v2
+active.render_page_snapshot = _page1_ultra_stier_v2.render_page_snapshot
+
 import wnba_pra_hub_v3618 as refresh_handoff
 
 MODEL_VERSION = active.MODEL_VERSION
