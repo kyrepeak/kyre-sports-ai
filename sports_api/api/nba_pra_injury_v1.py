@@ -6,7 +6,8 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from nba_spread_injury_availability_v1 import _fetch_official_rows
+from nba_spread_injury_availability_v1 import _fetch_official_rows  # noqa: F401 — frozen compatibility receipt
+from sports_api.api.nba_pra_injury_official_v2 import fetch_official_rows_v2
 
 router = APIRouter(prefix="/api/v1/nba/pra/injuries", tags=["nba-pra-injuries"])
 
@@ -25,7 +26,7 @@ def collect_nba_pra_injuries(games: list[dict[str, Any]], now_utc: datetime | No
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     try:
-        rows, meta = _fetch_official_rows(games, now.astimezone(timezone.utc))
+        rows, meta = fetch_official_rows_v2(games, now.astimezone(timezone.utc))
     except Exception as exc:
         rows, meta = [], {"available": False, "error": type(exc).__name__}
     available = bool(meta.get("available"))
