@@ -86,7 +86,7 @@ jobs:
       - name: Install browser proof dependency
         run: |
           python -m pip install -q playwright==1.62.0
-          python -m playwright install --with-deps chromium
+          python -m playwright install chromium
       - name: Prove exact live MONSTER convergence
         run: |
           CERTIFIED_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
