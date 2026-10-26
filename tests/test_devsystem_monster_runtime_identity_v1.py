@@ -62,7 +62,7 @@ def test_app_uses_runtime_identity_and_has_no_legacy_heartbeat_constant():
 def test_live_probe_uses_browser_transport_not_urllib_health_redirect_chain():
     text = PROBE.read_text(encoding="utf-8")
     assert "urllib.request" not in text
-    assert "page.goto(url" in text
+    assert "page.goto(" in text
     assert '"transport": "chromium_root"' in text
 
 
@@ -95,3 +95,22 @@ def test_live_probe_installer_avoids_slow_os_dependency_reinstall():
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert "playwright install --with-deps chromium" not in workflow
     assert "python -m playwright install chromium" in workflow
+
+
+def test_live_probe_refreshes_fresh_browser_sessions_until_marker_arrives():
+    # One authoritative browser job may refresh, but it may never spawn a second proof lane.
+    text = PROBE.read_text(encoding="utf-8")
+    assert "FRESHNESS_MAX_ATTEMPTS" in text
+    assert "FRESHNESS_SETTLE_SECONDS" in text
+    assert "browser.new_context()" in text
+    assert "context.close()" in text
+    assert "freshness_attempts" in text
+    assert "MONSTER runtime identity marker missing after bounded fresh-session convergence" in text
+
+
+def test_live_workflow_reads_frozen_certification_identity_not_witness_tooling_sha():
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "production-main/devsystem/monster_runtime_certification_v1.json" in workflow
+    assert '--expected-sha "${CERTIFIED_MONSTER_SHA}"' in workflow
+    assert '--expected-tree-sha "${CERTIFIED_MONSTER_TREE_SHA}"' in workflow
+    assert '--expected-sha "${GITHUB_SHA}"' not in workflow

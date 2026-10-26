@@ -6,6 +6,7 @@ on:
     paths:
       - "app.py"
       - "devsystem/monster_runtime_identity_v1.py"
+      - "devsystem/monster_runtime_certification_v1.json"
       - "devsystem/monster_step2g_live_convergence_probe_v1.py"
       - "devsystem/monster_step2g_frozen_checkpoint_v1.py"
       - "devsystem/mandatory_2g_final_production_convergence_v1.py"
@@ -67,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Checkout certified MONSTER state
+      - name: Checkout MONSTER witness tooling
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -89,13 +90,14 @@ jobs:
           python -m playwright install chromium
       - name: Prove exact live MONSTER convergence
         run: |
-          CERTIFIED_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          CERTIFIED_MONSTER_SHA="$(python -c 'import json; p=json.load(open("production-main/devsystem/monster_runtime_certification_v1.json")); assert p["authority"] == "MONSTER_ONLY"; print(p["certified_monster_sha"])')"
+          CERTIFIED_MONSTER_TREE_SHA="$(python -c 'import json; p=json.load(open("production-main/devsystem/monster_runtime_certification_v1.json")); assert p["authority"] == "MONSTER_ONLY"; print(p["certified_monster_tree_sha"])')"
           RUNTIME_SHA="$(git -C production-main rev-parse HEAD)"
           RUNTIME_TREE_SHA="$(git -C production-main rev-parse 'HEAD^{tree}')"
           python devsystem/monster_step2g_live_convergence_probe_v1.py \
             --url "https://pickvault.streamlit.app" \
-            --expected-sha "${GITHUB_SHA}" \
-            --expected-tree-sha "${CERTIFIED_TREE_SHA}" \
+            --expected-sha "${CERTIFIED_MONSTER_SHA}" \
+            --expected-tree-sha "${CERTIFIED_MONSTER_TREE_SHA}" \
             --expected-runtime-sha "${RUNTIME_SHA}" \
             --expected-runtime-tree-sha "${RUNTIME_TREE_SHA}" \
             --output "devsystem/evidence/monster_step2g_live_convergence_v1.json"
