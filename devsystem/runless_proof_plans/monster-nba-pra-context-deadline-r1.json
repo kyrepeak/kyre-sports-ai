@@ -6,7 +6,8 @@
   "commands": [
     [
       "python", "-m", "pytest", "--noconftest", "-q",
-      "tests/test_monster_nba_pra_context_deadline_r1.py"
+      "tests/test_monster_nba_pra_context_deadline_r1.py",
+      "tests/test_monster_nba_pra_context_deadline_proof_r1.py"
     ],
     [
       "python", "-m", "py_compile",
@@ -15,19 +16,25 @@
       "sports_api/api/nba_pra_usage_v1.py",
       "sports_api/api/nba_pra_player_context_history_v1.py",
       "sports_api/api/nba_gateway_v1.py",
-      "kyre_sports_api_vercel_v1.py"
+      "kyre_sports_api_vercel_v1.py",
+      "runless_v2/__init__.py",
+      "runless_v2/monster_nba_pra_context_deadline_proof_r1.py"
     ]
   ],
   "artifacts": [
     "devsystem/runless_proof_plans/monster-nba-pra-context-deadline-r1.json",
     "nba_pra_player_context_api_v1.py",
     "nba_pra_page2_api_only_v1.py",
+    "runless_v2/__init__.py",
+    "runless_v2/monster_nba_pra_context_deadline_proof_r1.py",
     "sports_api/api/nba_pra_usage_v1.py",
     "sports_api/api/nba_pra_player_context_history_v1.py",
     "sports_api/api/nba_gateway_v1.py",
+    "tests/test_monster_nba_pra_context_deadline_proof_r1.py",
     "tests/test_monster_nba_pra_context_deadline_r1.py"
   ],
   "dependencies": [
+    "kyre_sports_api_vercel_v1.py",
     "nba_pra_page1_api_only_v1.py",
     "sports_api/api/nba_pra_player_context_v1.py",
     "sports_api/api/nba_pra_player_context_enrichment_v2.py",
