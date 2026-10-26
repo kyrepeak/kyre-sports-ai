@@ -1,0 +1,51 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-nba-pra-context-deadline-r1.json": "a239589a618cee8a9092a0abb69b68806c228646",
+    "nba_pra_page2_api_only_v1.py": "6e9a90cca880a033796eaf600643a78b52b56eee",
+    "nba_pra_player_context_api_v1.py": "d27fd806a76eea207c662bfdf8698a98e1ece877",
+    "sports_api/api/nba_gateway_v1.py": "1da19780832b8447f62a667e3a19b6d88c017ab3",
+    "sports_api/api/nba_pra_player_context_history_v1.py": "2a08fd680f302a80a001d652711befa9ab37cd0e",
+    "sports_api/api/nba_pra_usage_v1.py": "0c96a0602070b9cd8d1e36a68de358be1292bfec",
+    "tests/test_monster_nba_pra_context_deadline_r1.py": "31f319fdfef839317f882ab6f92c7a7a3cb4844c"
+  },
+  "candidate_sha": "b6f8103340d48d5e7fd4383c2ada0207c26a17c8",
+  "created_at": "2026-10-26T23:29:04.672096+00:00",
+  "dependency_map": {
+    "nba_pra_page1_api_only_v1.py": "fed22da146591dd421326cc95ebcc1f6538f09dd",
+    "sports_api/api/nba_pra_player_context_enrichment_v2.py": "5b3661e1907c37c236afc90defdb3383ea8821ef",
+    "sports_api/api/nba_pra_player_context_v1.py": "3b75eca7752a5203e8f0bb325911342c4409bffb",
+    "sports_api/api/nba_pra_usage_fallback_v2.py": "3490fe2829cb030b7723b1910b23fae562862c42"
+  },
+  "digest": "d4c5ba87a61e658512363f78790e5a0b2679d1d86ec7a3544aace0e8ab2aeda0",
+  "evidence_digests": [
+    "018d9aedd83a3c922fda9bf72eb82c1f9fc68da5533bf6c81ee8c5204991162f",
+    "b62e57210053f620602bfe1ef58156fef40119626cccc619bef161975dd50f81"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "b1b71069d6950f67e7cd6aeb5009de62cf829120fb8b51d82ea11f299fda085a",
+  "proof_id": "monster-nba-pra-context-deadline-r1-b6f8103340d48d5e-9ec8fee7ae38befa",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "request_fingerprint": "f55eb1a9b786dac8cdbad5f3c6780385498a14b6c2f0bd8ae009550b2fee0467",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-nba-pra-context-deadline-r1",
+  "workstream": "monster-nba-pra-context-deadline-r1"
+}
