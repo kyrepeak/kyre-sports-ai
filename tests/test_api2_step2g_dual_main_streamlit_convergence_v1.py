@@ -163,7 +163,8 @@ def test_step2g_github_readback_requires_branch_specific_integration_markers():
     assert '"app.py"' in authority
     assert '"runless_v2/__init__.py"' in authority
     assert "STEP2G_BRANCH_INTEGRATION_MARKER_MISSING" in authority
-    assert 'for branch in ("main", "api2-main")' in authority
+    assert '_verify_branch_integration(self, "main")' in authority
+    assert '_verify_branch_integration(self, "api2-main")' in authority
 
 
 def test_runless_closeout_permanently_invokes_step2g_for_api2_only():
