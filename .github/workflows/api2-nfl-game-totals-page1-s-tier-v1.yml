@@ -8,7 +8,7 @@ on:
       - "nfl_hub_v36.py"
       - "tests/test_api2_nfl_game_totals_page1_s_tier_v1.py"
       - "tests/test_nfl_game_totals_compact_layout_v1.py"
-      - "tests/test_nfl_game_totals_page_step10.py"
+      - "tests/test_nfl_game_totals_task15.py"
       - "devsystem/runless_proof_plans/api2-nfl-game-totals-page1-s-tier-v1.json"
       - "devsystem/task_ledgers/api2-nfl-game-totals-page1-s-tier-v1.json"
       - ".github/workflows/api2-nfl-game-totals-page1-s-tier-v1.yml"
@@ -28,6 +28,6 @@ jobs:
           python -m pytest --noconftest -q
           tests/test_api2_nfl_game_totals_page1_s_tier_v1.py
           tests/test_nfl_game_totals_compact_layout_v1.py
-          tests/test_nfl_game_totals_page_step10.py
+          tests/test_nfl_game_totals_task15.py
       - name: Compile presentation chain
         run: python -m py_compile nfl_game_totals_page1_s_tier_v1.py nfl_game_totals_compact_layout_v1.py nfl_game_totals_hub_v10.py nfl_hub_v36.py
