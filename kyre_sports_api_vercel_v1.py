@@ -9,16 +9,11 @@ from fastapi import FastAPI
 
 from sports_api.runtime.streamlit_api_compat_v1 import install_streamlit_api_compat
 
-# The FastAPI runtime must not load Streamlit's UI dependency tree. Legacy
-# shared modules still import `streamlit`, so provide the small server-only
-# compatibility surface before any API routers are imported.
 install_streamlit_api_compat()
 
 import sports_api as sports_api_pkg
 
 _REPO_ROOT = Path(__file__).resolve().parent
-# Avoid sports_api.api.__init__ because it owns unrelated historical bootstrap
-# behavior. Expose only the real package path needed by the dedicated API routes.
 _api_pkg = types.ModuleType("sports_api.api")
 _api_pkg.__path__ = [str(_REPO_ROOT / "sports_api" / "api")]  # type: ignore[attr-defined]
 _api_pkg.__package__ = "sports_api.api"
@@ -34,7 +29,6 @@ import sports_api.api.cfb_top_picks_page1_v3 as cfb_top_picks_page1_v3_module
 import sports_api.api.cfb_top_picks_page1_v4 as cfb_top_picks_page1_v4_module
 import sports_api.api.cfb_top_picks_page2_v1 as cfb_top_picks_page2_module
 import sports_api.api.nba_gateway_v1 as nba_gateway_module
-# Successor wraps the frozen nba_pra_market_provider_independence_v1 route.
 import sports_api.api.nba_pra_market_real_restore_v1 as nba_pra_market_module
 import sports_api.api.nba_pra_schedule_v1 as nba_pra_schedule_module
 import sports_api.api.nba_pra_player_context_v1 as nba_pra_player_context_module
@@ -43,7 +37,9 @@ import sports_api.api.nba_pra_matchup_v1 as nba_pra_matchup_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 import sports_api.api.nfl_passing_yards_slate_v1 as nfl_passing_yards_slate_module
 import sports_api.api.nfl_rushing_yards_slate_v1 as nfl_rushing_yards_slate_module
-import sports_api.api.nfl_rushing_yards_detail_v4 as nfl_rushing_yards_detail_module
+# Preserve the certified V3 import contract; V4 is the additive live successor.
+import sports_api.api.nfl_rushing_yards_detail_v3 as nfl_rushing_yards_detail_module
+import sports_api.api.nfl_rushing_yards_detail_v4 as nfl_rushing_yards_detail_v4_module
 import sports_api.nfl_rushing_yards_fastpath_v1 as nfl_rushing_yards_fastpath
 
 nfl_rushing_yards_fastpath.install(nfl_rushing_yards_slate_module)
@@ -65,7 +61,7 @@ nba_pra_matchup_router = nba_pra_matchup_module.router
 nfl_passing_yards_page_router = nfl_passing_yards_page_module.router
 nfl_passing_yards_slate_router = nfl_passing_yards_slate_module.router
 nfl_rushing_yards_slate_router = nfl_rushing_yards_slate_module.router
-nfl_rushing_yards_detail_router = nfl_rushing_yards_detail_module.router
+nfl_rushing_yards_detail_router = nfl_rushing_yards_detail_v4_module.router
 
 app = FastAPI(
     title="Kyre Sports API",
