@@ -1,6 +1,0 @@
-MONSTER_ONLY
-TASK=monster-wnba-pra-page1-ultra-stier-v2
-BASE=monster-main@1cde29067429516cb488e1438f9b1465fbd77b21
-BRANCH=monster-wnba-pra-page1-ultra-stier-v2
-REQUIRED_CHECK=runless-final-gate
-FREEZE_TOKEN=MONSTER_WNBA_PRA_PAGE1_ULTRA_STIER_V2_FROZEN
