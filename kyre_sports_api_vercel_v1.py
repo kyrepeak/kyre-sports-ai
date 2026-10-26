@@ -43,7 +43,7 @@ import sports_api.api.nba_pra_matchup_v1 as nba_pra_matchup_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 import sports_api.api.nfl_passing_yards_slate_v1 as nfl_passing_yards_slate_module
 import sports_api.api.nfl_rushing_yards_slate_v1 as nfl_rushing_yards_slate_module
-import sports_api.api.nfl_rushing_yards_detail_v2 as nfl_rushing_yards_detail_module
+import sports_api.api.nfl_rushing_yards_detail_v3 as nfl_rushing_yards_detail_module
 import sports_api.nfl_rushing_yards_fastpath_v1 as nfl_rushing_yards_fastpath
 
 nfl_rushing_yards_fastpath.install(nfl_rushing_yards_slate_module)
@@ -117,5 +117,6 @@ def health() -> dict[str, object]:
         "nfl_passing_yards_slate": True,
         "nfl_rushing_yards_slate": True,
         "nfl_rushing_yards_detail_v2": True,
+        "nfl_rushing_yards_detail_v3": True,
         "direct_app_provider_fallback": False,
     }
