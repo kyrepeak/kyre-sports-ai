@@ -5,13 +5,17 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from . import nba_pra_player_context_history_v1 as player_context_history
+
 
 router = APIRouter(prefix="/api/v1/nba", tags=["nba-gateway"])
+router.include_router(player_context_history.router)
 
 LIVE_CAPABILITIES = (
     "pra.market",
     "pra.schedule",
     "pra.player-context",
+    "pra.player-context-history",
     "pra.injuries",
     "pra.matchup",
 )

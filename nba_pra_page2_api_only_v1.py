@@ -106,7 +106,10 @@ def load_page2_snapshot_v1(
         selected_market=dict(board[market_key])
         selected_name=str(selected_market.get("player_name") or selected_player_key).strip()
     team_codes=sorted({str(code).upper() for game in games for code in (game.get("away_tricode"),game.get("home_tricode")) if code})
-    context=dict(context_impl(slate_date,[selected_name],team_codes=team_codes) or {})
+    if player_context_loader is None:
+        context=dict(context_impl(slate_date,[selected_name],team_codes=team_codes,include_usage=True) or {})
+    else:
+        context=dict(context_impl(slate_date,[selected_name],team_codes=team_codes) or {})
     profile_key,profile=_profile_for(context,market_key)
     if not profile:
         return {"slate_date":slate_text,"games":[],"market":{market_key:selected_market},"profiles":{},"injury_players":{},"sources":{"schedule":schedule,"kyre_sports_api":market_payload,"player_context":context}}

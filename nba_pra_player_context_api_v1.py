@@ -55,6 +55,7 @@ def load_kyre_sports_api_player_context(
     player_names: Sequence[str],
     *,
     team_codes: Sequence[str] | None = None,
+    include_usage: bool = False,
     request_post: Callable[..., Any] | None = None,
     base_url: str | None = None,
     timeout: tuple[float, float] = (3.0, 24.0),
@@ -73,13 +74,14 @@ def load_kyre_sports_api_player_context(
             seen_codes.add(code)
     request_post = request_post or requests.post
     base_url = str(base_url or os.getenv("KYRE_NBA_API_BASE_URL") or DEFAULT_API_BASE_URL).rstrip("/")
-    cache_key = (slate_date.isoformat(), tuple(names), tuple(codes), base_url, id(request_post))
+    cache_key = (slate_date.isoformat(), tuple(names), tuple(codes), bool(include_usage), base_url, id(request_post))
     cached = _cache_get(cache_key, PLAYER_CONTEXT_CACHE_TTL_SECONDS)
     if cached is not None:
         return cached
     try:
+        route = "/api/v1/nba/pra/player-context" if include_usage else "/api/v1/nba/pra/player-context/history"
         response = request_post(
-            f"{base_url}/api/v1/nba/pra/player-context",
+            f"{base_url}{route}",
             json={"date": slate_date.isoformat(), "player_names": names, "team_codes": codes},
             timeout=timeout,
         )

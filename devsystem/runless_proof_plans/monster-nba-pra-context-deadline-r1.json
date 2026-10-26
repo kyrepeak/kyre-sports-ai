@@ -1,0 +1,44 @@
+{
+  "mode": "runless",
+  "task_id": "monster-nba-pra-context-deadline-r1",
+  "workstream": "monster-nba-pra-context-deadline-r1",
+  "source_main_sha": "0fce8407d027651224665e413c42aa556565b3ae",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_nba_pra_context_deadline_r1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "nba_pra_player_context_api_v1.py",
+      "nba_pra_page2_api_only_v1.py",
+      "sports_api/api/nba_pra_usage_v1.py",
+      "sports_api/api/nba_pra_player_context_history_v1.py",
+      "sports_api/api/nba_gateway_v1.py",
+      "kyre_sports_api_vercel_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/monster-nba-pra-context-deadline-r1.json",
+    "nba_pra_player_context_api_v1.py",
+    "nba_pra_page2_api_only_v1.py",
+    "sports_api/api/nba_pra_usage_v1.py",
+    "sports_api/api/nba_pra_player_context_history_v1.py",
+    "sports_api/api/nba_gateway_v1.py",
+    "tests/test_monster_nba_pra_context_deadline_r1.py"
+  ],
+  "dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "sports_api/api/nba_pra_player_context_v1.py",
+    "sports_api/api/nba_pra_player_context_enrichment_v2.py",
+    "sports_api/api/nba_pra_usage_fallback_v2.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_NBA_PRA_PAGE1_PAGE2_CONTEXT_DEADLINE_R1_FROZEN"
+}

@@ -168,8 +168,16 @@ def load_nba_usage_context(
     end_year = _season_end_year(slate_date)
     profiles: dict[str, dict[str, Any]] = {}
     errors: list[str] = []
+    transport_failed = False
+
+    def _transport_failure(exc: Exception) -> bool:
+        name = type(exc).__name__.casefold()
+        return isinstance(exc, (TimeoutError, ConnectionError)) or "timeout" in name or "connection" in name
 
     def merge_period(year: int, season_type: str, label: str) -> None:
+        nonlocal transport_failed
+        if transport_failed:
+            return
         missing = [key for key, _name in requested if key not in profiles]
         if not missing:
             return
@@ -177,6 +185,8 @@ def load_nba_usage_context(
             rows = _load_season(year, season_type=season_type, request_get=request_get, timeout=timeout)
         except Exception as exc:
             errors.append(f"{label}_{type(exc).__name__}")
+            if _transport_failure(exc):
+                transport_failed = True
             return
         for key in missing:
             if key in rows:
