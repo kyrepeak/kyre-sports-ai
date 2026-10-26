@@ -1,0 +1,31 @@
+{
+  "mode":"runless",
+  "task_id":"monster-wnba-pra-page1-ultra-stier-v2",
+  "workstream":"monster-wnba-pra-page1-ultra-stier-v2",
+  "source_main_sha":"1cde29067429516cb488e1438f9b1465fbd77b21",
+  "commands":[
+    ["python","-m","pytest","--noconftest","-q","tests/test_monster_wnba_pra_page1_ultra_stier_v2.py"]
+  ],
+  "artifacts":[
+    "docs/superpowers/specs/2026-10-26-monster-wnba-pra-page1-ultra-stier-v2-design.md",
+    "docs/superpowers/plans/2026-10-26-monster-wnba-pra-page1-ultra-stier-v2.md",
+    "tests/test_monster_wnba_pra_page1_ultra_stier_v2.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-ultra-stier-v2.json"
+  ],
+  "dependencies":[
+    "wnba_pra_page1_stier_v1.py",
+    "wnba_pra_page1_final_polish_v1.py",
+    "wnba_pra_page_model_artifact_final_polish_v1.py",
+    "runless_v2/wnba_pra_page1_final_polish_runtime_v1.py",
+    "wnba_pra_hub_v3612.py",
+    "wnba_pra_hub_v3618.py"
+  ],
+  "probes":[],
+  "timeout_seconds":900,
+  "live_ttl_seconds":1200,
+  "github_actions_fallback":0,
+  "reuse_frozen_proof":[],
+  "required_check":"runless-final-gate",
+  "required_check_app_id":5204253,
+  "freeze_token":"MONSTER_WNBA_PRA_PAGE1_ULTRA_STIER_V2_FROZEN"
+}
