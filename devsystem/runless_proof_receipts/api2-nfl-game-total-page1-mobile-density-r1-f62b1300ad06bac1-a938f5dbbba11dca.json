@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-game-total-page1-mobile-density-r1.yml": "bb8fc4a5b33bf62f5d397578e42a096d9a13b15e",
+    "devsystem/runless_proof_plans/api2-nfl-game-total-page1-mobile-density-r1.json": "c0215f07c50c59895698af41b9338f789fbaa407",
+    "devsystem/task_ledgers/api2-nfl-game-total-page1-mobile-density-r1.json": "bf59b109a6c85213999d8678ac0b6ae16da16d10",
+    "nfl_game_totals_page1_s_tier_v1.py": "348f17f3d0a21b47627bb3e3abde16447304021f",
+    "tests/test_api2_nfl_game_total_page1_mobile_density_r1.py": "5ead017964333174d5095329250e2fbd33c1d895"
+  },
+  "candidate_sha": "f62b1300ad06bac1dff1ae5ee66a565b4dee0016",
+  "created_at": "2026-10-26T14:32:30.787590+00:00",
+  "dependency_map": {
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_game_totals_hub_v10.py": "c22485c186e2f53c3b0a6b1302375dd9bb25468a",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py": "821ffb8daeb3934694e41d216e62c8b4ecd4c27c",
+    "universal_runtime_v5_loader.py": "0d7afdf5405ea68d817e00d6c3726154137cee5c"
+  },
+  "digest": "379f3ceb33cffa6033a0cf95866c642301f6578e9364170b82581f2294a7a953",
+  "evidence_digests": [
+    "443173308611be88bf8794960f95ee2c4bc2ef46eec1b12126ede4b38c0f7af9",
+    "2e724b4896502b7f7e7b0011f4557b504b0537af2c1d88e3e95fe6dc700c7df3"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "40fca229de1696141528a907130c31eb20383985308cccfce95af4660d36b5c4",
+  "proof_id": "api2-nfl-game-total-page1-mobile-density-r1-f62b1300ad06bac1-a938f5dbbba11dca",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "70ac4626b1acab4d561c5fc1b32abbf8223112034b5c662014510a542c0b6167",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-game-total-page1-mobile-density-r1",
+  "workstream": "api2-nfl-game-total-page1-mobile-density-r1"
+}
