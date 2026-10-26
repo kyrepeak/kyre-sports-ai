@@ -4,40 +4,17 @@
   "task_id": "monster-step2g-prerender-runtime-identity-r1",
   "workstream": "monster-step2g-prerender-runtime-identity-r1",
   "active_problem": "Live production source contains the MONSTER runtime identity surface, but the stable Streamlit DOM does not expose it before page rendering can interrupt execution.",
-  "status": "RED_CONTRACT_PENDING",
+  "status": "RED_CONTRACT_ARMED",
   "progress_percent": 99,
   "authoritative_base": "main",
   "authoritative_base_sha": "e7af6a71018e43d08fff445b5c719aa256217bd5",
   "authoritative_branch": "monster-step2g-prerender-runtime-identity-r1",
-  "authoritative_pr": "PENDING_SINGLE_PR",
-  "proof_authority": "RUNLESS_V2_EXACT_HEAD",
+  "authoritative_pr": 1857,
+  "proof_authority": "MONSTER_ONLY_ISOLATED_RUNLESS",
   "failure_fingerprint": "RUN_40368369128:RUNTIME_IDENTITY_REACHABILITY_GAP:MONSTER_MARKER_MISSING",
-  "step2a": {
-    "status": "GREEN",
-    "one_active_problem": true,
-    "one_branch": true,
-    "one_pr": true,
-    "one_authoritative_proof_path": true
-  },
-  "anti_loop": {
-    "status": "GREEN",
-    "blind_retry_allowed": false,
-    "duplicate_lane_allowed": false,
-    "same_failed_witness_replay_allowed": false,
-    "materially_different_correction_required": true
-  },
-  "step2b": {
-    "status": "GREEN",
-    "acceptance_locked": true,
-    "acceptance": "MONSTER runtime identity mounts before render_app and exact candidate earns App-5204253 runless-final-gate."
-  },
-  "step2c": {
-    "status": "GREEN_ROOT_CAUSE_PROVEN",
-    "failure_class": "RUNTIME_IDENTITY_REACHABILITY_GAP",
-    "boundary": "IDENTITY_CALL_AFTER_PAGE_RENDER"
-  },
-  "resume": {
-    "next_required_action": "PROVE_RED_THEN_MOVE_IDENTITY_CALL_BEFORE_RENDER",
-    "final_freeze_target": "MONSTER_STEP2G_FINAL_PRODUCTION_CONVERGENCE_V1_FROZEN"
-  }
+  "step2a": {"status": "GREEN", "one_active_problem": true, "one_branch": true, "one_pr": true, "one_authoritative_proof_path": true},
+  "anti_loop": {"status": "GREEN", "blind_retry_allowed": false, "duplicate_lane_allowed": false, "same_failed_witness_replay_allowed": false, "materially_different_correction_required": true},
+  "step2b": {"status": "GREEN", "acceptance_locked": true, "acceptance": "MONSTER runtime identity mounts before render_app and exact candidate earns App-5204253 runless-final-gate."},
+  "step2c": {"status": "GREEN_ROOT_CAUSE_PROVEN", "failure_class": "RUNTIME_IDENTITY_REACHABILITY_GAP", "boundary": "IDENTITY_CALL_AFTER_PAGE_RENDER"},
+  "resume": {"next_required_action": "OBSERVE_FOCUSED_RED_THEN_MOVE_IDENTITY_CALL_BEFORE_RENDER", "final_freeze_target": "MONSTER_STEP2G_FINAL_PRODUCTION_CONVERGENCE_V1_FROZEN"}
 }

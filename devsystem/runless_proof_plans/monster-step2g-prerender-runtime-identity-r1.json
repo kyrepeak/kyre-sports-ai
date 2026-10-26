@@ -4,25 +4,24 @@
   "workstream": "monster-step2g-prerender-runtime-identity-r1",
   "source_main_sha": "e7af6a71018e43d08fff445b5c719aa256217bd5",
   "commands": [
-    [
-      "python", "-m", "pytest", "--noconftest", "-q",
-      "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"
-    ],
-    [
-      "python", "-m", "py_compile",
-      "app.py",
-      "devsystem/monster_runtime_identity_v1.py"
-    ]
+    ["python", "-m", "pytest", "--noconftest", "-q", "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"],
+    ["python", "-m", "py_compile", "app.py", "devsystem/monster_runtime_identity_v1.py", "runless_v2/monster_step2g_prerender_proof_r1.py", "runless_v2/__init__.py"]
   ],
   "artifacts": [
     "app.py",
     "devsystem/monster_runtime_identity_v1.py",
     "devsystem/monster_runtime_certification_v1.json",
     "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py",
+    "runless_v2/monster_step2g_prerender_proof_r1.py",
+    "runless_v2/__init__.py",
+    ".github/workflows/monster-step2g-prerender-runtime-identity-r1.yml",
     "devsystem/runless_proof_plans/monster-step2g-prerender-runtime-identity-r1.json",
     "devsystem/task_ledgers/monster-step2g-prerender-runtime-identity-r1.json"
   ],
   "dependencies": [
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py",
     "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_route_restore_r1.py",
     "universal_page_experience_runtime_v5.py"
   ],
