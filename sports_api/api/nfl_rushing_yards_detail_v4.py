@@ -89,7 +89,11 @@ def build_detail_bundle(*, player_id: str, game_id: str, target_date: str | None
     return enrich_live_payload(_BASE_BUILD(player_id=player_id, game_id=game_id, target_date=target_date))
 
 
+# V3 wraps the V2 module, and the FastAPI route itself was originally declared
+# inside V2. Bind both module-global builder seams so the reused public router
+# resolves the V4 successor at request time rather than stopping at V3.
 base.build_detail_bundle = build_detail_bundle
+base.base.build_detail_bundle = build_detail_bundle
 router = base.router
 SCHEMA_VERSION = base.SCHEMA_VERSION
 SERVICE = base.SERVICE

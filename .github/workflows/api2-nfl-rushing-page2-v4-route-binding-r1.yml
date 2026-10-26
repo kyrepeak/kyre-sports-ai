@@ -1,0 +1,36 @@
+name: API2 NFL Rushing Page2 V4 Route Binding R1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/api/nfl_rushing_yards_detail_v4.py"
+      - "tests/test_api2_nfl_rushing_page2_v4_route_binding_r1.py"
+      - "tests/test_api2_nfl_rushing_page2_live_acceptance_repair_v1.py"
+      - "tests/test_api2_nfl_rushing_page2_data_completeness_v1.py"
+      - "tests/test_api2_nfl_rushing_page2_s_tier_v3.py"
+      - "tests/test_api2_nfl_rushing_yards_market_reliability_v2.py"
+      - ".github/workflows/api2-nfl-rushing-page2-v4-route-binding-r1.yml"
+      - "devsystem/runless_proof_plans/api2-nfl-rushing-page2-v4-route-binding-r1.json"
+      - "devsystem/task_ledgers/api2-nfl-rushing-page2-v4-route-binding-r1.json"
+
+jobs:
+  route-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install focused dependencies
+        run: python -m pip install --disable-pip-version-check pytest pytest-asyncio fastapi httpx requests pypdf PyJWT cryptography pandas numpy streamlit
+      - name: Run route-binding and frozen regressions
+        run: >-
+          python -m pytest --noconftest -q
+          tests/test_api2_nfl_rushing_page2_v4_route_binding_r1.py
+          tests/test_api2_nfl_rushing_page2_live_acceptance_repair_v1.py
+          tests/test_api2_nfl_rushing_page2_data_completeness_v1.py
+          tests/test_api2_nfl_rushing_page2_s_tier_v3.py
+          tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
+      - name: Compile V4 binding
+        run: python -m py_compile sports_api/api/nfl_rushing_yards_detail_v4.py kyre_sports_api_vercel_v1.py
