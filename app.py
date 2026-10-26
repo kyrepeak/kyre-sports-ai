@@ -1,7 +1,6 @@
-"""KYRE Sports AI production entrypoint — NFL Rushing route restore V1."""
+"""KYRE Sports AI production entrypoint — MONSTER Step 2G runtime identity."""
 from time import perf_counter
 
-_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"
 _BOOTSTRAP_STARTED = perf_counter()
 
 # Frozen ancestry markers retained for regression/documentation only:
@@ -16,6 +15,8 @@ from streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore
     record_bootstrap_import_ms,
     render_app,
 )
+from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker  # noqa: E402
 
 record_bootstrap_import_ms((perf_counter() - _BOOTSTRAP_STARTED) * 1000.0)
 render_app()
+emit_runtime_identity_marker()
