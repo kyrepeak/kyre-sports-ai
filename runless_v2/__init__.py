@@ -87,5 +87,42 @@ def _monster_step2g_prerender_maybe_auto_prove() -> None:
         print("MONSTER_STEP2G_PRERENDER_AUTO_PROOF_BLOCKED:" + type(exc).__name__ + ":" + safe_detail[:200])
 
 
+def _monster_nba_pra_context_deadline_maybe_auto_prove() -> None:
+    """Publish PR #1877 MONSTER-only proof from its exact Vercel preview head."""
+    import asyncio
+    import os
+
+    if os.environ.get("VERCEL_ENV", "").strip() != "preview":
+        return
+    branch = os.environ.get("VERCEL_GIT_COMMIT_REF", "").strip()
+    preview_sha = os.environ.get("VERCEL_GIT_COMMIT_SHA", "").strip().lower()
+    authorized_branch = "monster-nba-pra-context-deadline-r1"
+    if branch != authorized_branch or len(preview_sha) != 40:
+        return
+    try:
+        from .config import Settings
+        from .github_authority import GithubAuthority
+        from .monster_nba_pra_context_deadline_proof_r1 import BRANCH, prove_nba_pra_context_deadline
+        from .sandbox_executor import SandboxExecutor
+        if BRANCH != authorized_branch:
+            raise RuntimeError("MONSTER_NBA_PRA_PREVIEW_BRANCH_CONTRACT_DRIFT")
+        settings = Settings.from_env()
+        if not settings.authority_enabled:
+            raise RuntimeError("MONSTER_NBA_PRA_PREVIEW_AUTHORITY_DISABLED")
+        result = asyncio.run(
+            prove_nba_pra_context_deadline(
+                github=GithubAuthority(settings),
+                sandbox=SandboxExecutor(),
+                expected_preview_sha=preview_sha,
+            )
+        )
+        print("MONSTER_NBA_PRA_AUTO_PROOF_GREEN:" + str(result.get("receipt_digest") or ""))
+    except Exception as exc:
+        detail = str(exc)
+        safe_detail = detail if detail.startswith("MONSTER_") else type(exc).__name__
+        print("MONSTER_NBA_PRA_AUTO_PROOF_BLOCKED:" + type(exc).__name__ + ":" + safe_detail[:200])
+
+
 _monster_step2g_maybe_auto_prove()
 _monster_step2g_prerender_maybe_auto_prove()
+_monster_nba_pra_context_deadline_maybe_auto_prove()
