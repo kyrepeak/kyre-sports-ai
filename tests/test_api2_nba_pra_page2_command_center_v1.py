@@ -158,6 +158,12 @@ def test_matchup_and_market_are_visual_but_quotes_remain_independent() -> None:
     assert "CONSENSUS LINE" not in html
 
 
+def test_hero_evidence_coverage_counts_verified_matchup() -> None:
+    page = _load_module()
+    html = page.build_page2_html(_context(), _model(), _result(), _matchup(), active_line=26.0)
+    assert "6/6 VERIFIED DATA AREAS" in html
+
+
 def test_sparse_data_fails_closed_into_compact_data_gaps() -> None:
     page = _load_module()
     context = {
