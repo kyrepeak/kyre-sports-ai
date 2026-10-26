@@ -1,10 +1,9 @@
 """MONSTER-owned authoritative proof receipt V1.
 
-GitHub Actions can contribute regression evidence, but this receipt is the
-MONSTER control-plane authority that binds exact candidate identity, every
-required gate through Step 2G, live-convergence identity/digest, regression
-evidence, production identity, rollback anchor, and freeze target.
-Foreign-system evidence is rejected fail-closed.
+The receipt binds exact candidate identity, every required gate through Step 2G,
+real production identity, live-convergence identity/digest, regression evidence,
+rollback anchor, and freeze target. Foreign-system evidence is rejected
+fail-closed. Step 2G final closeout never accepts production as not applicable.
 """
 from __future__ import annotations
 
@@ -78,6 +77,7 @@ def build_receipt(payload: Mapping[str, Any]) -> dict[str, Any]:
     rollback_anchor = payload.get("rollback_anchor")
     freeze_target = str(payload.get("freeze_target") or "").strip()
     evidence = payload.get("evidence")
+
     if not task_id or not _SHA_RE.fullmatch(candidate_sha):
         return _blocked("task identity and exact candidate SHA are required")
     if not isinstance(gates, Mapping):
@@ -87,26 +87,29 @@ def build_receipt(payload: Mapping[str, Any]) -> dict[str, Any]:
         return _blocked("every required MONSTER gate including step2g must be explicitly GREEN: " + ", ".join(missing_or_red))
     if not isinstance(regressions, Mapping) or regressions.get("status") != "GREEN":
         return _blocked("regression evidence must be GREEN")
-    if not isinstance(production, Mapping) or "deployment_applicable" not in production:
-        return _blocked("production applicability must be explicit")
-    if production.get("deployment_applicable") is False and production.get("proof") != "NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE":
-        return _blocked("deployment N/A requires the read-only control-plane Step 2F proof")
-    if production.get("deployment_applicable") is True:
-        if not production.get("deployment_id") or not production.get("stable_alias_target"):
-            return _blocked("applicable production proof requires deployment and stable alias identity")
+
+    if not isinstance(production, Mapping) or production.get("deployment_applicable") is not True:
+        return _blocked("Step 2G final production proof is mandatory; production cannot be not applicable")
+    production_deployment_id = str(production.get("deployment_id") or "").strip()
+    production_alias = str(production.get("stable_alias_target") or "").strip()
+    if not production_deployment_id or not production_alias:
+        return _blocked("applicable production proof requires deployment and stable alias identity")
+
     if not isinstance(convergence, Mapping) or convergence.get("status") != "GREEN":
         return _blocked("Step 2G convergence proof must be GREEN")
     step2g_digest = str(convergence.get("evidence_digest") or "").strip().lower()
     final_sha = str(convergence.get("final_sha") or "").strip().lower()
     runtime_sha = str(convergence.get("runtime_sha") or "").strip().lower()
+    convergence_deployment_id = str(convergence.get("deployment_id") or "").strip()
+    convergence_alias = str(convergence.get("stable_alias") or "").strip()
     if not _DIGEST_RE.fullmatch(step2g_digest):
         return _blocked("Step 2G convergence evidence digest is required")
     if not _SHA_RE.fullmatch(final_sha) or runtime_sha != final_sha:
         return _blocked("Step 2G live runtime SHA must match the exact final MONSTER SHA")
-    if not str(convergence.get("deployment_id") or "").strip():
-        return _blocked("Step 2G convergence deployment identity is required")
-    if not str(convergence.get("stable_alias") or "").strip():
-        return _blocked("Step 2G convergence stable alias identity is required")
+    if not convergence_deployment_id or convergence_deployment_id != production_deployment_id:
+        return _blocked("Step 2G deployment identity must match production proof")
+    if not convergence_alias or convergence_alias != production_alias:
+        return _blocked("Step 2G stable alias identity must match production proof")
     if not isinstance(rollback_anchor, Mapping) or not _SHA_RE.fullmatch(str(rollback_anchor.get("sha") or "").strip()):
         return _blocked("rollback anchor with exact SHA is required")
     if not freeze_target.startswith("MONSTER_") or not freeze_target.endswith("_FROZEN"):
@@ -155,9 +158,12 @@ def validate_receipt(receipt: Mapping[str, Any]) -> dict[str, Any]:
     if receipt.get("proof_authority") != PROOF_AUTHORITY or receipt.get("github_actions_role") != GITHUB_ACTIONS_ROLE:
         return _blocked("proof authority mismatch")
     gates = receipt.get("gates")
+    production = receipt.get("production")
     convergence = receipt.get("convergence")
     if not isinstance(gates, Mapping) or gates.get("step2g") != "GREEN":
         return _blocked("validated receipt is missing GREEN Step 2G")
+    if not isinstance(production, Mapping) or production.get("deployment_applicable") is not True:
+        return _blocked("validated receipt is missing mandatory production proof")
     if not isinstance(convergence, Mapping) or convergence.get("status") != "GREEN":
         return _blocked("validated receipt is missing GREEN live convergence")
     if str(receipt.get("step2g_evidence_digest") or "") != str(convergence.get("evidence_digest") or ""):
@@ -178,19 +184,21 @@ def validate_receipt(receipt: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def contract_self_test() -> dict[str, Any]:
+    deployment_id = "monster-self-test-deployment"
+    alias = "https://pickvault.streamlit.app"
     payload = {
         "task_id": "monster-receipt-self-test",
         "candidate_sha": "a" * 40,
         "gates": {name: "GREEN" for name in _REQUIRED_GATES},
         "regressions": {"status": "GREEN", "count": 1},
-        "production": {"deployment_applicable": False, "proof": "NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE"},
+        "production": {"deployment_applicable": True, "deployment_id": deployment_id, "stable_alias_target": alias},
         "convergence": {
             "status": "GREEN",
             "evidence_digest": "c" * 64,
             "final_sha": "d" * 40,
             "runtime_sha": "d" * 40,
-            "deployment_id": "monster-self-test-deployment",
-            "stable_alias": "https://pickvault.streamlit.app",
+            "deployment_id": deployment_id,
+            "stable_alias": alias,
         },
         "rollback_anchor": {"sha": "b" * 40},
         "freeze_target": "MONSTER_RECEIPT_SELF_TEST_FROZEN",
