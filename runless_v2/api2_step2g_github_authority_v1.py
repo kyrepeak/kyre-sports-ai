@@ -19,7 +19,7 @@ EVIDENCE_DIR = "devsystem/step2g_convergence_evidence"
 PRODUCTION_TARGETS_PATH = "devsystem/production_targets_v1.json"
 INTEGRATION_MARKERS: dict[str, tuple[str, ...]] = {
     "app.py": (STEP2G_MARKER,),
-    "runless_v2/__init__.py": (
+    "runless_v2/finalization_readback.py": (
         "api2_step2g_github_authority_v1",
         "api2_step2g_closeout_enforcement_v1",
     ),
