@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-rushing-page2-live-acceptance-repair-v1.yml": "6a9593d840cb94cb35d77e76b82c4a58d051d772",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-page2-live-acceptance-repair-v1.json": "aad5e60cc42ba7cb08ec28951de0fbfc4d53f4a4",
+    "devsystem/task_ledgers/api2-nfl-rushing-page2-live-acceptance-repair-v1.json": "2e87cd84e9ae3d0b625068ae3747bc422eb1e324",
+    "kyre_sports_api_vercel_v1.py": "40d080cd6d381dd240caf91408c599e54278024d",
+    "sports_api/api/nfl_rushing_yards_detail_v4.py": "74c300d64bbcc45623cdcdcb431019f2ecc6b990",
+    "sports_api/nfl_rushing_yards_page2_live_repair_v1.py": "551a40bda1a7f36712683f7c403cd19b3f3bf650",
+    "tests/test_api2_nfl_rushing_page2_live_acceptance_repair_v1.py": "dc3cdefb5e7e45dd2f1c98bd94b5ea4be2b4589d"
+  },
+  "candidate_sha": "a7168177a5b3ae4a9851e98577261f45cb9b628b",
+  "created_at": "2026-10-26T04:33:59.575498+00:00",
+  "dependency_map": {
+    "nfl_rushing_yards_professional_v3.py": "2b32f1869fa237d24116fda639bd66a5b8cb2e84",
+    "runless_v2/api2_authority_isolation_v1.py": "656ef5ae7bebd602035a1e1a9715ec35b0a82b57",
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/github_authority.py": "50272688dd62461638a342938bb3b2b398f540cc",
+    "runless_v2/models.py": "1f63ff94ff702597430f3fbf2050d799150c516a",
+    "runless_v2/proof_service.py": "0dd0660e4858d665222847693cc26441fd783ba3",
+    "sports_api/api/nfl_rushing_yards_detail_v3.py": "159e9489cc904535016acc892d5ac95736ab37de",
+    "sports_api/collectors/nfl_fanduel_passing_yards_nflverse_v1.py": "7da3af433d8f1e8b92ea3c5d11c84c0a936dd3a9",
+    "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py": "94657a1286554c74e1c68dd47d5d209485640c1e",
+    "sports_api/nfl_rushing_yards_page2_enrichment_v1.py": "72b42e7dda8a3dd85bdb7251e81284e1dffbdccc"
+  },
+  "digest": "ae3a3d4417cdc345a8db70e930a74a5adf4f6b7db9c0e262c9985bfc3d0c6bac",
+  "evidence_digests": [
+    "0b2f06291a37115e18c63f9c4983edbcf7e3efa30280e9a10ec12b22dbe88707",
+    "0972e5a75f4eb3b6568447cbf4fdc87172955ab31bbc322ae884db39e0497028"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "ffd38cd88c1c3f0c59d05c2620787088787a38c3d4139c342a5957a6497d3952",
+  "proof_id": "api2-nfl-rushing-page2-live-acceptance-repair-v1-a7168177a5b3ae4a-3e2e707f00fcf643",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "1acc8b355d135bda76b64070bd5a7ffd9696e44c802f926e98e68d0dc6ab65f6",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-page2-live-acceptance-repair-v1",
+  "workstream": "api2-nfl-rushing-page2-live-acceptance-repair-v1"
+}
