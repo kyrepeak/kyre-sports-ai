@@ -7,10 +7,16 @@ on:
     paths:
       - "nba_pra_page2_command_center_v1.py"
       - "nba_pra_page2_command_center_v2.py"
+      - "nba_pra_page2_command_center_v3.py"
+      - "nba_pra_page2_context_v2.py"
+      - "nba_pra_page2_data_completeness_v1.py"
       - "nba_pra_page2_sync_v1.py"
+      - "runless_v2/nba_pra_usage_fallback_v2.py"
+      - "runless_v2/__init__.py"
       - "tests/test_api2_nba_pra_page2_command_center_v1.py"
       - "tests/test_api2_nba_pra_page2_command_center_activation_v1.py"
       - "tests/test_api2_nba_pra_page2_s_tier_polish_v1.py"
+      - "tests/test_api2_nba_pra_page2_role_log_completeness_v1.py"
       - "tests/test_api2_nba_pra_page2_insights_v1.py"
       - "tests/test_api2_nba_pra_page2_s_tier_v2.py"
       - "tests/test_api2_nba_pra_page2_ui_v1.py"
@@ -21,6 +27,8 @@ on:
       - "devsystem/task_ledgers/api2-nba-pra-page2-command-center-v1.json"
       - "devsystem/runless_proof_plans/api2-nba-pra-page2-s-tier-polish-v1.json"
       - "devsystem/task_ledgers/api2-nba-pra-page2-s-tier-polish-v1.json"
+      - "devsystem/runless_proof_plans/api2-nba-pra-page2-role-log-completeness-v1.json"
+      - "devsystem/task_ledgers/api2-nba-pra-page2-role-log-completeness-v1.json"
       - "docs/superpowers/specs/2026-10-25-nba-pra-page2-s-tier-command-center-v1-design.md"
       - "docs/superpowers/plans/2026-10-25-nba-pra-page2-s-tier-command-center-v1.md"
       - ".github/workflows/api2-nba-pra-page2-command-center-v1.yml"
@@ -41,6 +49,7 @@ jobs:
           tests/test_api2_nba_pra_page2_command_center_v1.py
           tests/test_api2_nba_pra_page2_command_center_activation_v1.py
           tests/test_api2_nba_pra_page2_s_tier_polish_v1.py
+          tests/test_api2_nba_pra_page2_role_log_completeness_v1.py
           tests/test_api2_nba_pra_page2_insights_v1.py
           tests/test_api2_nba_pra_page2_s_tier_v2.py
           tests/test_api2_nba_pra_page2_ui_v1.py
@@ -48,4 +57,4 @@ jobs:
           tests/test_api2_nba_pra_page1_page2_sync_v1.py
           tests/test_api2_nba_pra_page2_integration_v1.py
       - name: Compile Page 2 command center
-        run: python -m py_compile nba_pra_page2_command_center_v1.py nba_pra_page2_command_center_v2.py nba_pra_page2_sync_v1.py
+        run: python -m py_compile nba_pra_page2_command_center_v1.py nba_pra_page2_command_center_v2.py nba_pra_page2_command_center_v3.py nba_pra_page2_context_v2.py nba_pra_page2_data_completeness_v1.py nba_pra_page2_sync_v1.py runless_v2/nba_pra_usage_fallback_v2.py

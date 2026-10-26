@@ -134,10 +134,13 @@ def test_v2_css_tightens_top_space_and_visually_integrates_slider() -> None:
     assert "@media(max-width:760px)" in css.replace(" ", "")
 
 
-def test_live_sync_activates_v2_but_v1_stays_untouched() -> None:
+def test_live_sync_activates_v3_but_v1_and_v2_stay_preserved() -> None:
     sync = SYNC.read_text(encoding="utf-8")
-    assert "from nba_pra_page2_command_center_v2 import _css, build_page2_html" in sync
-    assert "nba_pra_page2_command_center_v1" not in sync
+    assert "from nba_pra_page2_command_center_v3 import _css, build_page2_html" in sync
+    assert "from nba_pra_page2_command_center_v2 import _css, build_page2_html" not in sync
+    assert "from nba_pra_page2_command_center_v1 import _css, build_page2_html" not in sync
     v1 = V1.read_text(encoding="utf-8")
+    v2 = V2.read_text(encoding="utf-8")
     assert 'VERSION = "API2_NBA_PRA_PAGE2_S_TIER_COMMAND_CENTER_V1"' in v1
+    assert 'VERSION = "API2_NBA_PRA_PAGE2_S_TIER_POLISH_V2"' in v2
     assert "WHY THIS PICK WORKS" not in v1
