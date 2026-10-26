@@ -1,0 +1,44 @@
+name: API2 NFL Rushing Yards Market Reliability V2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py"
+      - "sports_api/nfl_rushing_yards_data_truth_v1.py"
+      - "sports_api/nfl_rushing_yards_fastpath_v1.py"
+      - "sports_api/api/nfl_rushing_yards_slate_v1.py"
+      - "tests/test_api2_nfl_rushing_yards_market_reliability_v2.py"
+      - "tests/test_api2_nfl_rushing_live_timeout_v1.py"
+      - "tests/test_api2_nfl_rushing_yards_simple_rb_grid_v1.py"
+      - "tests/test_api2_step2d_nfl_rushing_fallback_recovery_v1.py"
+      - "tests/test_api2_step2d_integration_v1.py"
+      - ".github/workflows/api2-nfl-rushing-yards-market-reliability-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rushing-yards-market-reliability:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install proof dependencies
+        run: python -m pip install --disable-pip-version-check pytest pandas fastapi requests
+      - name: Compile market reliability boundary
+        run: |
+          python -m py_compile \
+            sports_api/collectors/nfl_fanduel_rushing_yards_nflverse_v1.py \
+            sports_api/nfl_rushing_yards_data_truth_v1.py \
+            sports_api/nfl_rushing_yards_fastpath_v1.py \
+            sports_api/api/nfl_rushing_yards_slate_v1.py \
+            tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
+      - name: Prove exact identity, semantic absence, and bounded transport recovery
+        run: python -m pytest --noconftest -q tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
