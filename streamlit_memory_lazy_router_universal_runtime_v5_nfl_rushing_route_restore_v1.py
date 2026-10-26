@@ -73,7 +73,7 @@ def resolve_destination(route):
             "nba_pra_runtime_v2_api_only_terminal_restore_r1",
             30_000,
         )
-    if route.sport_id == "nfl" and route.market_id in {"rushing-yards", "spread"}:
+    if route.sport_id == "nfl" and route.market_id in {"rushing-yards", "spread", "game-total"}:
         return canonical_loader.resolve_destination(route)
     return _prior_resolve_destination(route)
 
