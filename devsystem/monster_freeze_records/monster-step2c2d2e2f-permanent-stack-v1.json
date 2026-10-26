@@ -1,0 +1,75 @@
+{
+  "version": "MONSTER_STEP2C2D2E2F_FREEZE_RECORD_V1",
+  "status": "GREEN_PENDING_FREEZE_READBACK",
+  "freeze_token": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_V1_FROZEN",
+  "task_id": "monster-step2c2d2e2f-permanent-stack-v1",
+  "authoritative_base": "monster-main",
+  "authoritative_pr": 1816,
+  "certified_candidate_sha": "11417f1c958f75997db6cfa25ac8a4d12b762cd4",
+  "verified_merge_sha": "1cfc638a734c2216ba45cecf05c8363d0677b387",
+  "verified_merge_tree_sha": "b50e211afbbab4ff5b9ed3a2f3d4e61783c95d08",
+  "proof_authority": "MONSTER_ONLY",
+  "checkpoint_payload_digest": "8f830b4a2d0db70873f0436c59a7d31f3974fc400fb9d9a7afee423aa47f49e9",
+  "premerge_proof": {
+    "run_id": 40247567753,
+    "job_id": 121332283736,
+    "status": "GREEN",
+    "regressions": 67,
+    "step2e_evidence_digest": "f1704cff69232e3848d281a1d1536a6b6c7cde7f86ce13a0d6b005cf17c3e501",
+    "step2f_evidence_digest": "d3d83d1486b809f964158d6feaa7ac61c398e9a6b08dde33699c1d614ccfd8ca"
+  },
+  "premerge_receipt": {
+    "commit": "427a0dd4af9a4bbdde6ece11f2c93b594f4d3da4",
+    "blob_sha": "616fda271e420b03719ba66a6ba2257c98f365d2",
+    "evidence_digest": "1bbb95eff83d42a7db593a6670d56a8d2b23c031ab32ebe711f3cfcc7b8d7111",
+    "receipt_digest": "7c8d354ca011f43dda0396c239cbff8b6e6af3c9f433c666bef387123a92b8ac"
+  },
+  "postmerge_proof": {
+    "run_id": 40247710030,
+    "job_id": 121332709860,
+    "status": "GREEN",
+    "regressions": 67,
+    "route_count": 38,
+    "step2e_evidence_digest": "f1704cff69232e3848d281a1d1536a6b6c7cde7f86ce13a0d6b005cf17c3e501",
+    "step2f_evidence_digest": "d3d83d1486b809f964158d6feaa7ac61c398e9a6b08dde33699c1d614ccfd8ca"
+  },
+  "postmerge_receipt": {
+    "commit": "44284b66c2b9bf7fa54b80143084544690ff9800",
+    "blob_sha": "fa57348afe0d1d15556c73e2e82de07d882382ce",
+    "evidence_digest": "60074ecc1b8bd3a9e7119c69a10124971e969f1c69b4d095b4fdbd20d1a92880",
+    "receipt_digest": "c096e34efbe0b80c1f50ec8c4ed813b2e3ea48cc6c8a981928c0e34987197a37"
+  },
+  "verified_controls": {
+    "step2a": "GREEN",
+    "anti_loop": "GREEN",
+    "step2c": "GREEN",
+    "step2b": "GREEN",
+    "execution": "GREEN",
+    "step2d": "GREEN",
+    "step2e": "GREEN",
+    "step2f": "GREEN",
+    "final_verify": "GREEN"
+  },
+  "router_audit": {
+    "registered_live_routes": 38,
+    "verified_live_routes": 38,
+    "repository_wide_audit": true,
+    "kyre_sports_api_mount_surface": true
+  },
+  "deployment": {
+    "required_for_this_implementation": false,
+    "proof": "NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE",
+    "reason": "This implementation adds read-only MONSTER verifier/control artifacts only; network_calls=false, auto_mutate=false, product_runtime_mutation=false. Future product/runtime changes remain subject to full Step 2F deployment and stable-alias proof."
+  },
+  "rollback_anchor": {
+    "sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+    "kind": "verified-parent"
+  },
+  "proof_transport": {
+    "exact_sha_checkout": true,
+    "checkout_fetch_depth": 1,
+    "persist_credentials": false,
+    "github_actions_role": "SUPPORTING_EVIDENCE_ONLY"
+  },
+  "freeze_readback": "PENDING_EXACT_COMMIT_READBACK"
+}
