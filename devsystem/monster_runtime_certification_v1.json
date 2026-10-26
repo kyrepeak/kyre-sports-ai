@@ -1,0 +1,7 @@
+{
+  "schema_version": "MONSTER_STEP2G_RUNTIME_CERTIFICATION_V1",
+  "authority": "MONSTER_ONLY",
+  "certified_monster_sha": "b3724b245257c32c7e51f69bd7f340575712e528",
+  "certified_monster_tree_sha": "11108c69983273ecd79de3bc1a94a6ca58aee11a",
+  "certified_artifact_digest": "d20804fdbb4bd1bc99259c0e2256f12a863d9e6293d32ca687cea18157e8f2f5"
+}

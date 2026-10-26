@@ -32,6 +32,7 @@ from streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route
     record_bootstrap_import_ms,
     render_app,
 )
+from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker  # noqa: E402
 
 # Off-screen but browser-visible production identity markers for Step 2G proof.
 st.markdown(
@@ -41,3 +42,4 @@ st.markdown(
 
 record_bootstrap_import_ms((perf_counter() - _BOOTSTRAP_STARTED) * 1000.0)
 render_app()
+emit_runtime_identity_marker()
