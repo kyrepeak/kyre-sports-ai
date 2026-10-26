@@ -6,9 +6,11 @@ on:
       - main
     paths:
       - "nba_pra_page2_command_center_v1.py"
+      - "nba_pra_page2_command_center_v2.py"
       - "nba_pra_page2_sync_v1.py"
       - "tests/test_api2_nba_pra_page2_command_center_v1.py"
       - "tests/test_api2_nba_pra_page2_command_center_activation_v1.py"
+      - "tests/test_api2_nba_pra_page2_s_tier_polish_v1.py"
       - "tests/test_api2_nba_pra_page2_insights_v1.py"
       - "tests/test_api2_nba_pra_page2_s_tier_v2.py"
       - "tests/test_api2_nba_pra_page2_ui_v1.py"
@@ -36,6 +38,7 @@ jobs:
           python -m pytest --noconftest -q
           tests/test_api2_nba_pra_page2_command_center_v1.py
           tests/test_api2_nba_pra_page2_command_center_activation_v1.py
+          tests/test_api2_nba_pra_page2_s_tier_polish_v1.py
           tests/test_api2_nba_pra_page2_insights_v1.py
           tests/test_api2_nba_pra_page2_s_tier_v2.py
           tests/test_api2_nba_pra_page2_ui_v1.py
@@ -43,4 +46,4 @@ jobs:
           tests/test_api2_nba_pra_page1_page2_sync_v1.py
           tests/test_api2_nba_pra_page2_integration_v1.py
       - name: Compile Page 2 command center
-        run: python -m py_compile nba_pra_page2_command_center_v1.py nba_pra_page2_sync_v1.py
+        run: python -m py_compile nba_pra_page2_command_center_v1.py nba_pra_page2_command_center_v2.py nba_pra_page2_sync_v1.py
