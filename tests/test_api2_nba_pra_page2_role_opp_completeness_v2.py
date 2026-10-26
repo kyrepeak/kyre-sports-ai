@@ -7,13 +7,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_player_context_module():
-    path = ROOT / "sports_api" / "api" / "nba_pra_player_context_v1.py"
-    spec = importlib.util.spec_from_file_location("api2_prod_nba_pra_player_context_v1_test", path)
+def _load_module(path: Path, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _load_player_context_module():
+    base = _load_module(
+        ROOT / "sports_api" / "api" / "nba_pra_player_context_v1.py",
+        "api2_prod_nba_pra_player_context_v1_test",
+    )
+    patch = _load_module(
+        ROOT / "sports_api" / "api" / "nba_pra_player_context_completeness_v2.py",
+        "api2_prod_nba_pra_player_context_completeness_v2_test",
+    )
+    patch.install(base)
+    return base
 
 
 def test_production_reference_game_log_preserves_opponent() -> None:
@@ -43,10 +55,12 @@ def test_production_cbs_game_log_preserves_opponent() -> None:
     assert rows[0]["opponent"] == "MIA"
 
 
-def test_production_gateway_activates_usage_successors() -> None:
+def test_production_gateway_activates_completeness_and_usage_successors() -> None:
     source = (ROOT / "kyre_sports_api_vercel_v1.py").read_text(encoding="utf-8")
+    assert "sports_api.api.nba_pra_player_context_completeness_v2" in source
     assert "sports_api.api.nba_pra_player_context_enrichment_v2" in source
     assert "sports_api.api.nba_pra_usage_fallback_v2" in source
+    assert "nba_pra_player_context_completeness_module.install(nba_pra_player_context_module)" in source
     assert (ROOT / "sports_api" / "api" / "nba_pra_usage_v1.py").exists()
     assert (ROOT / "sports_api" / "api" / "nba_pra_player_context_enrichment_v2.py").exists()
     assert (ROOT / "sports_api" / "api" / "nba_pra_usage_fallback_v2.py").exists()
