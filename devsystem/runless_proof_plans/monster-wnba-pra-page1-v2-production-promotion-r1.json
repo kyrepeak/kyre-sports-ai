@@ -1,0 +1,29 @@
+{
+  "mode":"runless",
+  "task_id":"monster-wnba-pra-page1-v2-production-promotion-r1",
+  "workstream":"monster-wnba-pra-page1-v2-production-promotion-r1",
+  "source_main_sha":"67c2cc217491be6f9c13f499283cfc050168d25a",
+  "commands":[
+    ["python","-m","py_compile","wnba_pra_page1_ultra_stier_v2.py","wnba_pra_hub_v3612.py"],
+    ["python","-c","from pathlib import Path; import subprocess; v2=subprocess.check_output(['git','hash-object','wnba_pra_page1_ultra_stier_v2.py'],text=True).strip(); compat=subprocess.check_output(['git','hash-object','wnba_pra_hub_v3612.py'],text=True).strip(); assert v2=='7c277efa78e64f4bf7b4a6197bcc44b578cc8f15'; assert compat=='d217776ece1dc3756ffc6e5fc73b0094ebf9c292'; s=Path('wnba_pra_page1_ultra_stier_v2.py').read_text(); c=Path('wnba_pra_hub_v3612.py').read_text(); assert 'p1v2-leaderboard' in s and 'Top 3 Model Edges' in s and 'Player Discovery' in s and 'Market Movement' in s and 'CERTIFIED PRA PICK' in s; assert 'import requests' not in s and 'import httpx' not in s and 'curl_cffi' not in s; old='active.render_page_snapshot = _page1_final_polish.render_page_snapshot'; new='active.render_page_snapshot = _page1_ultra_stier_v2.render_page_snapshot'; refresh='import wnba_pra_hub_v3618 as refresh_handoff'; assert c.index(old)<c.index(new)<c.index(refresh); print('MONSTER_WNBA_PRA_V2_PRODUCTION_PROMOTION_GREEN')"]
+  ],
+  "artifacts":[
+    "wnba_pra_page1_ultra_stier_v2.py",
+    "wnba_pra_hub_v3612.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-v2-production-promotion-r1.json"
+  ],
+  "dependencies":[
+    "wnba_pra_page1_stier_v1.py",
+    "wnba_pra_page1_final_polish_v1.py",
+    "wnba_pra_hub_v3617.py",
+    "wnba_pra_hub_v3618.py"
+  ],
+  "probes":[],
+  "timeout_seconds":600,
+  "live_ttl_seconds":1200,
+  "github_actions_fallback":0,
+  "reuse_frozen_proof":[],
+  "required_check":"runless-final-gate",
+  "required_check_app_id":5204253,
+  "freeze_token":"MONSTER_WNBA_PRA_PAGE1_V2_PRODUCTION_PROMOTION_R1_FROZEN"
+}
