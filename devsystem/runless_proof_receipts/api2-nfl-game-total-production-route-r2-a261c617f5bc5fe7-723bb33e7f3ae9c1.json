@@ -1,0 +1,49 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-game-total-production-route-r2.yml": "ed4acd889d42b9720834f2be4fba62d8cc2e09e8",
+    "devsystem/runless_proof_plans/api2-nfl-game-total-production-route-r2.json": "e4b0708960047c2c830eefa5690385d9c202e93c",
+    "devsystem/task_ledgers/api2-nfl-game-total-production-route-r2.json": "492e991e0af2c3b9b5a4b6258e16432a346f9015",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py": "821ffb8daeb3934694e41d216e62c8b4ecd4c27c",
+    "tests/test_api2_nfl_game_total_production_route_r2.py": "3333a1ca920b7056cc79c140477fc2fa8280535c",
+    "universal_runtime_v5_loader.py": "0d7afdf5405ea68d817e00d6c3726154137cee5c"
+  },
+  "candidate_sha": "a261c617f5bc5fe76ab95d93c7dd0fdfe4e82abe",
+  "created_at": "2026-10-26T06:05:08.622084+00:00",
+  "dependency_map": {
+    "app.py": "d0a0d2beebb6b1ef7a950d9c0be41307a4e454eb",
+    "nfl_game_totals_compact_layout_v1.py": "21da145bd4c0802ef3d4963aac6b8253b07a3a49",
+    "nfl_game_totals_hub_v10.py": "c22485c186e2f53c3b0a6b1302375dd9bb25468a",
+    "nfl_game_totals_hub_v8.py": "61d011f51ef186987a0d69ea33982b94413a8e97",
+    "nfl_game_totals_hub_v9.py": "0f9e48384daf8b4f79f2edabdf9d234f90d19076",
+    "nfl_game_totals_page1_s_tier_v1.py": "4f03cfd55c635bdd3befbc590841dbf6f07691e0",
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/github_authority.py": "50272688dd62461638a342938bb3b2b398f540cc",
+    "runless_v2/models.py": "1f63ff94ff702597430f3fbf2050d799150c516a",
+    "runless_v2/proof_service.py": "0dd0660e4858d665222847693cc26441fd783ba3",
+    "sports_api/nfl_game_totals_total_projection_v1.py": "0738d4f9e995c9d1423118b8fc9a95a799c8c55d"
+  },
+  "digest": "735b3e93120bf0b5750d833ba8d0b5f79593cab39ca97b31b600a6fe82ae77d5",
+  "evidence_digests": [
+    "5824a9bc2343684cdf294b7265b80a7b9478f66a6257468b4a3fc246b392bf3e",
+    "fe4e80100ca5a80b7cabc0457c0902729280e06f2f78c37e3b258cd6e2056011"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c1897f2b372dc47cd2be55fa56e7e203949c2a49a215c4d1c391743a22bce718",
+  "proof_id": "api2-nfl-game-total-production-route-r2-a261c617f5bc5fe7-723bb33e7f3ae9c1",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "bdee440ed4fb4228664e4b5b8974099390a0132521a9be1f1f38c95376501126",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-game-total-production-route-r2",
+  "workstream": "api2-nfl-game-total-production-route-r2"
+}
