@@ -75,7 +75,22 @@ def _role_availability_html(context: Mapping[str, Any], games: list[dict[str, An
             '</article>'
         )
     else:
-        gaps.append("Usage / team role not currently verified")
+        recent_minutes = [_num(row.get("minutes")) for row in games[:5]]
+        recent_minutes = [value for value in recent_minutes if value is not None]
+        if recent_minutes:
+            avg_minutes = mean(recent_minutes)
+            role = _role_label(profile, games)
+            sample = len(recent_minutes)
+            cards.append(
+                '<article class="p2cc-context-card">'
+                '<small>ROLE & MINUTES</small>'
+                f'<b>{escape(role)}</b>'
+                f'<span>{avg_minutes:.1f} AVG MIN • {sample} VERIFIED RECENT GAME{"S" if sample != 1 else ""}</span>'
+                '<em>Verified game history • minutes-based role fallback</em>'
+                '</article>'
+            )
+        else:
+            gaps.append("Usage / team role not currently verified")
 
     status = _text(context.get("availability")).upper()
     verification = _text(context.get("availability_verification")).upper()
@@ -146,7 +161,7 @@ def _role_availability_html(context: Mapping[str, Any], games: list[dict[str, An
     return (
         '<section class="p2cc-panel" data-ks-section="role">'
         '<div class="p2cc-section-kicker">ROLE & AVAILABILITY</div>'
-        f'<div class="p2cc-context-grid">{"".join(cards)}</div>'
+        f'<div class="p2cc-context-grid'>{"".join(cards)}</div>'
         + (f'<div class="p2cc-data-gaps"><b>DATA GAPS</b>{gap_html}</div>' if gaps else '')
         + '</section>'
     )
