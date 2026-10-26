@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE = ROOT / "devsystem" / "monster_runtime_identity_v1.py"
+PROBE = ROOT / "devsystem" / "monster_step2g_live_convergence_probe_v1.py"
 APP = ROOT / "app.py"
 
 
@@ -55,3 +56,10 @@ def test_app_uses_runtime_identity_and_has_no_legacy_heartbeat_constant():
     text = APP.read_text(encoding="utf-8")
     assert "emit_runtime_identity_marker" in text
     assert "_STREAMLIT_DEPLOYMENT_HEARTBEAT" not in text
+
+
+def test_live_probe_uses_browser_transport_not_urllib_health_redirect_chain():
+    text = PROBE.read_text(encoding="utf-8")
+    assert "urllib.request" not in text
+    assert "page.goto(url" in text
+    assert '"transport": "chromium_root"' in text
