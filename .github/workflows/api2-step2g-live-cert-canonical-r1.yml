@@ -1,0 +1,33 @@
+name: API2 Step 2G Live Cert Canonical R1
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'devsystem/api2_step2g_streamlit_cert_v1.py'
+      - 'tests/test_api2_step2g_streamlit_cert_canonical_r1.py'
+      - '.github/workflows/api2-step2g-live-cert-canonical-r1.yml'
+      - 'devsystem/runless_proof_plans/api2-step2g-live-cert-canonical-r1.json'
+      - 'devsystem/task_ledgers/api2-step2g-live-cert-canonical-r1.json'
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-browser-cert-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile certificate
+        run: python -m py_compile devsystem/api2_step2g_streamlit_cert_v1.py
+      - name: Canonical cert regressions
+        run: |
+          python -m pytest --noconftest -q \
+            tests/test_api2_step2g_streamlit_cert_canonical_r1.py \
+            tests/test_api2_step2g_dual_main_streamlit_convergence_v1.py
