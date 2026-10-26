@@ -1,6 +1,26 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
+
+
+def _verified_payload():
+    return {
+        "fabrication": False,
+        "verification": "VERIFIED",
+        "profiles": {
+            "aarongordon": {
+                "player_name": "Aaron Gordon",
+                "team": "DEN",
+                "current_games": [{"points": 10, "rebounds": 5, "assists": 3}],
+                "prior_games": [],
+            }
+        },
+        "provider_health": {},
+        "requested_players": 1,
+        "verified_players": 1,
+        "identified_players": 1,
+    }
 
 
 def test_nba_usage_stops_after_first_transport_failure():
@@ -25,36 +45,20 @@ def test_nba_usage_stops_after_first_transport_failure():
     assert "PRIOR_REGULAR" not in out["diagnostic_state"]
 
 
-def test_player_context_client_forwards_include_usage_false():
+def test_player_context_client_defaults_to_history_only_route():
     import nba_pra_player_context_api_v1 as client
 
     captured: dict[str, object] = {}
 
     class Response:
-        status_code = 200
-
         def raise_for_status(self):
             return None
 
         def json(self):
-            return {
-                "fabrication": False,
-                "verification": "VERIFIED",
-                "profiles": {
-                    "aarongordon": {
-                        "player_name": "Aaron Gordon",
-                        "team": "DEN",
-                        "current_games": [{"points": 10, "rebounds": 5, "assists": 3}],
-                        "prior_games": [],
-                    }
-                },
-                "provider_health": {},
-                "requested_players": 1,
-                "verified_players": 1,
-                "identified_players": 1,
-            }
+            return _verified_payload()
 
-    def fake_post(_url, **kwargs):
+    def fake_post(url, **kwargs):
+        captured["url"] = url
         captured.update(kwargs)
         return Response()
 
@@ -62,88 +66,82 @@ def test_player_context_client_forwards_include_usage_false():
         date(2026, 10, 26),
         ["Aaron Gordon"],
         team_codes=["DEN"],
-        include_usage=False,
         request_post=fake_post,
     )
 
     assert out["verified_players"] == 1
-    assert (captured["json"] or {})["include_usage"] is False
+    assert str(captured["url"]).endswith("/api/v1/nba/pra/player-context/history")
 
 
-def test_player_context_route_forwards_include_usage_false():
-    from sports_api.api import nba_pra_player_context_v1 as api
+def test_player_context_client_full_mode_uses_full_route():
+    import nba_pra_player_context_api_v1 as client
 
     captured: dict[str, object] = {}
-    original = api.collect_nba_pra_player_context
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return _verified_payload()
+
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        return Response()
+
+    client._clear_player_context_cache()
+    client.load_kyre_sports_api_player_context(
+        date(2026, 10, 26),
+        ["Aaron Gordon"],
+        team_codes=["DEN"],
+        include_usage=True,
+        request_post=fake_post,
+    )
+
+    assert str(captured["url"]).endswith("/api/v1/nba/pra/player-context")
+
+
+def test_history_router_calls_captured_history_collector():
+    from sports_api.api import nba_pra_player_context_history_v1 as history
+
+    captured: dict[str, object] = {}
+    original = history._HISTORY_COLLECT
 
     def fake_collect(slate_date, player_names, **kwargs):
         captured["date"] = slate_date
-        captured["player_names"] = list(player_names)
+        captured["players"] = list(player_names)
         captured.update(kwargs)
         return {"fabrication": False, "profiles": {}}
 
-    api.collect_nba_pra_player_context = fake_collect
+    history._HISTORY_COLLECT = fake_collect
     try:
-        request = api.NbaPraPlayerContextRequest(
+        request = history.NbaPraPlayerContextHistoryRequest(
             date=date(2026, 10, 26),
             player_names=["Aaron Gordon"],
             team_codes=["DEN"],
-            include_usage=False,
         )
-        api.player_context(request)
+        out = history.player_context_history(request)
     finally:
-        api.collect_nba_pra_player_context = original
+        history._HISTORY_COLLECT = original
 
-    assert captured["include_usage"] is False
-
-
-def test_usage_enrichment_skips_provider_when_field_not_requested():
-    from sports_api.api import nba_pra_player_context_enrichment_v2 as enrichment
-
-    original = enrichment._BASE_COLLECT
-    calls = {"usage": 0}
-
-    def base_collect(_slate_date, player_names, **_kwargs):
-        name = player_names[0]
-        return {
-            "fabrication": False,
-            "profiles": {
-                "aarongordon": {
-                    "player_name": name,
-                    "current_games": [{"points": 10, "rebounds": 5, "assists": 3}],
-                    "prior_games": [],
-                }
-            },
-            "provider_health": {},
-        }
-
-    def usage_loader(*_args, **_kwargs):
-        calls["usage"] += 1
-        raise AssertionError("usage provider must not run")
-
-    enrichment._BASE_COLLECT = base_collect
-    try:
-        out = enrichment.collect_nba_pra_player_context(
-            date(2026, 10, 26),
-            ["Aaron Gordon"],
-            team_codes=["DEN"],
-            include_usage=False,
-            usage_loader=usage_loader,
-        )
-    finally:
-        enrichment._BASE_COLLECT = original
-
-    assert calls["usage"] == 0
-    assert out["provider_health"]["nba_usage"]["attempted"] is False
-    assert out["provider_health"]["nba_usage"]["detail"] == "FIELD_NOT_REQUESTED"
+    assert out["fabrication"] is False
+    assert captured["players"] == ["Aaron Gordon"]
+    assert captured["team_codes"] == ["DEN"]
 
 
-def test_page1_requests_history_without_usage_but_page2_keeps_usage():
-    import nba_pra_page1_api_only_v1 as page1
-    import nba_pra_page2_api_only_v1 as page2
+def test_nba_gateway_registers_history_only_capability():
+    from sports_api.api import nba_gateway_v1 as gateway
 
-    page1_source = open(page1.__file__, encoding="utf-8").read()
-    page2_source = open(page2.__file__, encoding="utf-8").read()
+    assert "pra.player-context-history" in gateway.LIVE_CAPABILITIES
+    paths = {getattr(route, "path", "") for route in gateway.router.routes}
+    assert "/api/v1/nba/pra/player-context/history" in paths
 
-    assert "include_usage=False" in page1_source
-    assert "include_usage=True" in page2_source
+
+def test_page1_uses_safe_default_and_page2_explicitly_requests_full_context():
+    page1 = Path("nba_pra_page1_api_only_v1.py").read_text(encoding="utf-8")
+    page2 = Path("nba_pra_page2_api_only_v1.py").read_text(encoding="utf-8")
+    client = Path("nba_pra_player_context_api_v1.py").read_text(encoding="utf-8")
+
+    assert "include_usage: bool = False" in client
+    assert "include_usage=True" not in page1
+    assert "include_usage=True" in page2
