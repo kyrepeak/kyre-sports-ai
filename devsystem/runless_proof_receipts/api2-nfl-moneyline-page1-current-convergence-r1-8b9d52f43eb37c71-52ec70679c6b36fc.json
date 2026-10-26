@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    "app.py": "d4a868c18d92d7e14ad3a2f83fa57a53cd6f8d63",
+    "devsystem/runless_proof_plans/api2-nfl-moneyline-page1-current-convergence-r1.json": "8b45a79c667b5545b7a544463082549332b04e5d",
+    "devsystem/task_ledgers/api2-nfl-moneyline-page1-current-convergence-r1.json": "92a49a9065ccf92f80a82ea305773e5654d81e83",
+    "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py": "5a3d25f2267fde102ffd2624e8e2361e7b6456da"
+  },
+  "candidate_sha": "8b9d52f43eb37c7169b2b37483f31b9371f7558f",
+  "created_at": "2026-10-26T18:43:53.960303+00:00",
+  "dependency_map": {
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_moneyline_hub_v20.py": "0d9b06a86bb3a9a78b95fd0bdc761a7ef6174b4c",
+    "nfl_moneyline_page2_war_room_v1.py": "3c448824cb99352afc391a37e349864f8d944fd6",
+    "sports_api/nfl_moneyline_page2_v1.py": "dfc152ee33a229c57bcb83da88deb06492001599",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_route_restore_r1.py": "1fe809f42017c531015912a9d6223f2c3d6efb04"
+  },
+  "digest": "5c4d5d054ac796dfa5e7aa5416d98b9a576825c3a20b9401efa60476a41f6534",
+  "evidence_digests": [
+    "3bbc76916a675e798509a72ee21dfb88ab880020c0fa78670c5f99b2c128e6b5",
+    "7729c110b4ae41124c3cfbca661b4f8c2405090c6c86769bd29bd106cba52c6e"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "0a896d2209a99633b7d18819d2fb0e2c1b897f966119abef4711020af6280659",
+  "proof_id": "api2-nfl-moneyline-page1-current-convergence-r1-8b9d52f43eb37c71-52ec70679c6b36fc",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "5e888b042cc14560704406d7b07005133a89d4d6bfd8399d35c91f4c6c15b217",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-moneyline-page1-current-convergence-r1",
+  "workstream": "api2-nfl-moneyline-page1-current-convergence-r1"
+}
