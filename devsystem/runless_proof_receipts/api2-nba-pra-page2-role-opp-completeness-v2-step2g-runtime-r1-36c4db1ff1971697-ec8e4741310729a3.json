@@ -1,0 +1,40 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-role-opp-completeness-v2-step2g-runtime-r1.json": "a34286ab8d36072512b4a640f33fa7f3da7fc9cf",
+    "devsystem/task_ledgers/api2-nba-pra-page2-role-opp-completeness-v2-step2g-runtime-r1.json": "143789373cb72260565ca7310b33c43fd791e857",
+    "pyproject.toml": "d9942eebbc162a2c150c2e435e753475428e3e2f",
+    "tests/test_api2_nba_pra_page2_role_opp_step2g_runtime_r1.py": "8bfaddd497fe6f80c33e2f71475e4fd05f318920"
+  },
+  "candidate_sha": "36c4db1ff1971697844d2fc7d4a8c6750cf06afc",
+  "created_at": "2026-10-26T21:26:26.613967+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-role-opp-completeness-v2.json": "d93edf9100675e6e11a30acc312549d21f551468",
+    "kyre_sports_api_vercel_v1.py": "e72729c882d9d72442d183c74d2eed35255edc95",
+    "nba_spread_injury_availability_v1.py": "15c6988e5cd51d43e27820c145393b52352136f3",
+    "sports_api/api/nba_pra_injury_v1.py": "96007c87cd4c4bcd60f58270f9c3da05f8e1fb90"
+  },
+  "digest": "2d4c23da0fe9f204d2b1765fcba3fcd8e14a001947cab015f9ee16a936176c1a",
+  "evidence_digests": [
+    "7d2cd6ff0d5d6a1c4d1e9716459631718c70b68a20cbdee48cc0e8faed09dd0b",
+    "44fae8b339ea951be51614d8221a7401e68cec631dc32c7a48c625ffbf650eb5"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "525a2f14275310a6e555d4669c51e50112a94c8b0d1d19ad93fe6ce37f123637",
+  "proof_id": "api2-nba-pra-page2-role-opp-completeness-v2-step2g-runtime-r1-36c4db1ff1971697-ec8e4741310729a3",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "080878f3e0b3c51e53f29725681b2449f8778a3dd37ba72a2d6f1506350e2b73",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page2-role-opp-completeness-v2-step2g-runtime-r1",
+  "workstream": "api2-nba-pra-page2-role-opp-completeness-v2-step2g-runtime-r1"
+}
