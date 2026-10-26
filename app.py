@@ -1,10 +1,12 @@
-"""KYRE Sports AI production entrypoint — NFL Moneyline Page 1 simple live-route restore R1."""
+"""KYRE Sports AI production entrypoint — sitewide HTML render compatibility R2."""
 from time import perf_counter
 
 import importlib
 import sys
 
 import streamlit as st
+
+from streamlit_html_compat_v1 import install_sitewide_html_compat
 
 _STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"
 _STEP2G_DEPLOYMENT_MARKER = "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1"
@@ -15,7 +17,13 @@ _NFL_MONEYLINE_PAGE1_SIMPLE_LIVE_ROUTE_RESTORE_HEARTBEAT = "API2_NFL_MONEYLINE_P
 _NFL_MONEYLINE_PAGE1_CURRENT_CONVERGENCE_HEARTBEAT = "API2_NFL_MONEYLINE_PAGE1_CURRENT_CONVERGENCE_R1_20261026"
 _API2_SITEWIDE_RENDER_REPAIR_HEARTBEAT = "API2_SITEWIDE_RENDER_REPAIR_R1_20261026"
 _API2_SITEWIDE_DEPLOYMENT_CONVERGENCE_R2_HEARTBEAT = "API2_SITEWIDE_RENDER_DEPLOYMENT_CONVERGENCE_R2_20261026"
+_API2_SITEWIDE_HTML_RENDER_COMPAT_R2_HEARTBEAT = "API2_SITEWIDE_HTML_RENDER_COMPAT_R2_20261026"
 _BOOTSTRAP_STARTED = perf_counter()
+
+# Install before any presentation heartbeat or lazily imported page renders. The
+# wrapper is stateless/idempotent and affects only pure HTML/CSS unsafe-Markdown
+# payloads. Normal Markdown and scripts preserve their original renderer semantics.
+install_sitewide_html_compat(st)
 
 # These pages are lazily imported by Universal Runtime V5. Streamlit can keep a
 # prior module object alive across source-only deploys. Evict only the exact page
@@ -41,8 +49,10 @@ from streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_
 from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker  # noqa: E402
 
 # Off-screen but browser-visible production identity markers for Step 2G proof.
+# The compatibility shim routes this pure HTML payload through st.html so the
+# R2 marker itself proves the repaired HTML path is active in production.
 st.markdown(
-    f'<span style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden">{_STEP2G_DEPLOYMENT_MARKER} {_NFL_GAME_TOTAL_DENSITY_DEPLOYMENT_HEARTBEAT} {_NFL_GAME_TOTAL_CACHE_BUST_DEPLOYMENT_HEARTBEAT} {_NFL_MONEYLINE_PAGE2_ROUTE_RESTORE_HEARTBEAT} {_NFL_MONEYLINE_PAGE1_SIMPLE_LIVE_ROUTE_RESTORE_HEARTBEAT} {_NFL_MONEYLINE_PAGE1_CURRENT_CONVERGENCE_HEARTBEAT} {_API2_SITEWIDE_RENDER_REPAIR_HEARTBEAT} {_API2_SITEWIDE_DEPLOYMENT_CONVERGENCE_R2_HEARTBEAT}</span>',
+    f'<span style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden">{_STEP2G_DEPLOYMENT_MARKER} {_NFL_GAME_TOTAL_DENSITY_DEPLOYMENT_HEARTBEAT} {_NFL_GAME_TOTAL_CACHE_BUST_DEPLOYMENT_HEARTBEAT} {_NFL_MONEYLINE_PAGE2_ROUTE_RESTORE_HEARTBEAT} {_NFL_MONEYLINE_PAGE1_SIMPLE_LIVE_ROUTE_RESTORE_HEARTBEAT} {_NFL_MONEYLINE_PAGE1_CURRENT_CONVERGENCE_HEARTBEAT} {_API2_SITEWIDE_RENDER_REPAIR_HEARTBEAT} {_API2_SITEWIDE_DEPLOYMENT_CONVERGENCE_R2_HEARTBEAT} {_API2_SITEWIDE_HTML_RENDER_COMPAT_R2_HEARTBEAT}</span>',
     unsafe_allow_html=True,
 )
 
