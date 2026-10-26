@@ -5,6 +5,7 @@ resolution without replacing legacy/non-API2 authority behavior.
 """
 from __future__ import annotations
 
+import base64
 from copy import deepcopy
 from typing import Any, Mapping
 from urllib.parse import quote
@@ -12,14 +13,57 @@ from urllib.parse import quote
 from . import github_authority as _gha
 
 VERSION = "API2_STEP2G_GITHUB_AUTHORITY_V1"
+STEP2G_MARKER = "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1"
 EVIDENCE_BRANCH = "api2-step2g-convergence-evidence"
 EVIDENCE_DIR = "devsystem/step2g_convergence_evidence"
 PRODUCTION_TARGETS_PATH = "devsystem/production_targets_v1.json"
+INTEGRATION_MARKERS: dict[str, tuple[str, ...]] = {
+    "app.py": (STEP2G_MARKER,),
+    "runless_v2/__init__.py": (
+        "api2_step2g_github_authority_v1",
+        "api2_step2g_closeout_enforcement_v1",
+    ),
+}
 
 
 def _branch_sha(self, branch: str) -> str:
     raw = self._request("GET", f"/git/ref/heads/{quote(branch, safe='')}")
     return str(((raw or {}).get("object") or {}).get("sha") or "").lower()
+
+
+def _content_text(self, path: str, branch: str) -> str:
+    raw = self._request(
+        "GET",
+        f"/contents/{quote(path, safe='/')}?ref={quote(branch, safe='')}",
+    )
+    if not isinstance(raw, Mapping) or raw.get("encoding") != "base64":
+        raise _gha.GithubAuthorityError(
+            f"RUNLESS_V2_STEP2G_BRANCH_INTEGRATION_READ_FAILED:{branch}:{path}"
+        )
+    try:
+        return base64.b64decode(str(raw.get("content") or "")).decode("utf-8")
+    except Exception as exc:
+        raise _gha.GithubAuthorityError(
+            f"RUNLESS_V2_STEP2G_BRANCH_INTEGRATION_DECODE_FAILED:{branch}:{path}"
+        ) from exc
+
+
+def _verify_branch_integration(self, branch: str) -> dict[str, Any]:
+    verified: dict[str, list[str]] = {}
+    for path, markers in INTEGRATION_MARKERS.items():
+        source = _content_text(self, path, branch)
+        missing = [marker for marker in markers if marker not in source]
+        if missing:
+            raise _gha.GithubAuthorityError(
+                "RUNLESS_V2_STEP2G_BRANCH_INTEGRATION_MARKER_MISSING:"
+                + branch
+                + ":"
+                + path
+                + ":"
+                + ",".join(missing)
+            )
+        verified[path] = list(markers)
+    return {"branch": branch, "verified": verified}
 
 
 def _read_step2g_convergence_evidence(self, freeze_token: str) -> dict[str, Any]:
@@ -52,6 +96,10 @@ def _read_step2g_convergence_evidence(self, freeze_token: str) -> dict[str, Any]
         "branch": "api2-main",
         "sha": api2_main_sha,
         "artifacts": {path: str(api2_tree.get(path) or "").lower() for path in paths},
+    }
+    evidence["branch_integration"] = {
+        "main": _verify_branch_integration(self, "main"),
+        "api2_main": _verify_branch_integration(self, "api2-main"),
     }
 
     targets = self._content_json(PRODUCTION_TARGETS_PATH, "main")
