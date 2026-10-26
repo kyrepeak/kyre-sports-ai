@@ -1,9 +1,8 @@
-"""API2-isolated Step 2A authority routing for Runless V2.
+"""API2-isolated authority routing for Runless V2.
 
-For api2-* workstreams targeting protected ``main``, route scope-lease and
-frozen-registry reads only to API2-owned live-main control-state branches.
-Legacy/non-API2 workstreams retain the existing Runless authority methods
-unchanged.
+For api2-* workstreams targeting protected ``main``, route scope-lease,
+frozen-registry, and finalization reads only to API2-owned control-state
+branches. Legacy/non-API2 Runless behavior remains unchanged.
 """
 from __future__ import annotations
 
@@ -12,6 +11,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import quote
 
 from . import github_authority as _gha
 from .models import ProofRequest
@@ -22,10 +22,17 @@ API2_REGISTRY_BRANCH = "api2-live-main-frozen-registry"
 API2_REGISTRY_PATH = "devsystem/api2_live_main_frozen_registry_state_v1.json"
 API2_REGISTRY_VERSION = "API2_FROZEN_ARTIFACT_REGISTRY_V1"
 API2_TARGET_BASE_REF = "refs/heads/main"
+API2_FINALIZATION_BRANCH = "api2-finalization-ledger-v2"
+API2_FINALIZATION_MANIFEST_PATH = "devsystem/finalization_ledger_v2/manifest.json"
+LEGACY_FINALIZATION_BRANCH = "monster-finalization-ledger-v2"
 
 
 def _is_api2_workstream(workstream: str) -> bool:
     return str(workstream or "").startswith("api2-")
+
+
+def _is_api2_freeze_token(freeze_token: str) -> bool:
+    return str(freeze_token or "").startswith("API2_")
 
 
 def _api2_state_hash(payload: dict[str, Any]) -> str:
@@ -87,6 +94,33 @@ def _read_frozen_registry_for_workstream(self, workstream: str) -> dict[str, Any
     return registry
 
 
+def _read_finalization_evidence_isolated(self, freeze_token: str) -> dict[str, Any]:
+    token = str(freeze_token or "").strip()
+    if not token:
+        raise _gha.GithubAuthorityError("RUNLESS_V2_FINALIZATION_FREEZE_TOKEN_REQUIRED")
+
+    branch = API2_FINALIZATION_BRANCH if _is_api2_freeze_token(token) else LEGACY_FINALIZATION_BRANCH
+    record_path = f"devsystem/finalization_ledger_v2/records/{token}.json"
+    record = self._content_json(record_path, branch)
+    manifest = self._content_json(API2_FINALIZATION_MANIFEST_PATH, branch)
+    history = self._request(
+        "GET",
+        f"/commits?sha={quote(branch, safe='')}&path={quote(API2_FINALIZATION_MANIFEST_PATH, safe='/')}&per_page=2",
+    )
+    previous_manifest = None
+    if int(manifest.get("revision", 0)) > 1:
+        if not isinstance(history, list) or len(history) < 2:
+            raise _gha.GithubAuthorityError("RUNLESS_V2_FINALIZATION_HISTORY_REQUIRED")
+        previous_manifest = self._content_json(API2_FINALIZATION_MANIFEST_PATH, str(history[1]["sha"]))
+    return {
+        "record": record,
+        "manifest": manifest,
+        "previous_manifest": previous_manifest,
+        "authority_system": "api2" if _is_api2_freeze_token(token) else "legacy",
+        "ledger_branch": branch,
+    }
+
+
 def _verify_step2a_api2_isolated(
     self,
     request: ProofRequest,
@@ -138,6 +172,9 @@ _gha.API2_LEASE_BRANCH = API2_LEASE_BRANCH
 _gha.API2_LEASE_PATH = API2_LEASE_PATH
 _gha.API2_REGISTRY_BRANCH = API2_REGISTRY_BRANCH
 _gha.API2_REGISTRY_PATH = API2_REGISTRY_PATH
+_gha.API2_FINALIZATION_BRANCH = API2_FINALIZATION_BRANCH
+_gha.API2_FINALIZATION_MANIFEST_PATH = API2_FINALIZATION_MANIFEST_PATH
 _gha.GithubAuthority._read_live_scope_lease_for_workstream = _read_live_scope_lease_for_workstream
 _gha.GithubAuthority._read_frozen_registry_for_workstream = _read_frozen_registry_for_workstream
+_gha.GithubAuthority.read_finalization_evidence = _read_finalization_evidence_isolated
 _gha.GithubAuthority.verify_step2a = _verify_step2a_api2_isolated
