@@ -1,0 +1,40 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-step2g-live-cert-canonical-r1.yml": "826ff935fffb19166c36da6c46ace7eb465ca66e",
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "devsystem/runless_proof_plans/api2-step2g-live-cert-canonical-r1.json": "671f1ec7428390261374aed1ee151b03e47876dd",
+    "devsystem/task_ledgers/api2-step2g-live-cert-canonical-r1.json": "33262a5f97be9f347b41b6411dc61b078a5d3352",
+    "tests/test_api2_step2g_streamlit_cert_canonical_r1.py": "f6ed183a2f8e29d29820ce4a23a510e5a3296c6e"
+  },
+  "candidate_sha": "dccf7ac15fbed41d80fd46fa5a77d8971493c064",
+  "created_at": "2026-10-26T07:06:39.573918+00:00",
+  "dependency_map": {
+    "devsystem/production_targets_v1.json": "efc77b4b2056aeeb03c098f31cad5fbad0eca911",
+    "runless_v2/api2_step2g_convergence_v1.py": "2c4f6d27abce3b32e14a921fc16d5426e7d8a5d1",
+    "universal_sports_nav_url_v1.py": "13d03b082245f6cbbc645e115e7b2d0e0e97c9db"
+  },
+  "digest": "667aae56e4180738e657a2a9a3a676ccf7bf963712589d4c5d63970fa7a1a8e2",
+  "evidence_digests": [
+    "57a98156f7424ea3a227d449926cd50e9940b2dea7d0a287f0a1d10c289bdbdc",
+    "949369e0086e98fd016315d4ca9578bb665d452b1259bcc735ce6ce893548ffa"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f2c5cc59c8c1106b6039fe66edddd5367717620419bf22d05e19d121bd3dd5e4",
+  "proof_id": "api2-step2g-live-cert-canonical-r1-dccf7ac15fbed41d-acf2194903cf3995",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "269e6d3ad8480d11397d3a0c4636fa173e7e866c25f76bd9307659681d78795b",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-step2g-live-cert-canonical-r1",
+  "workstream": "api2-step2g-live-cert-canonical-r1"
+}
