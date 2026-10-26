@@ -1,0 +1,51 @@
+name: API2 Step 2G Dual-Main Streamlit Convergence V1
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'runless_v2/api2_step2g_convergence_v1.py'
+      - 'runless_v2/api2_step2g_github_authority_v1.py'
+      - 'runless_v2/api2_step2g_closeout_enforcement_v1.py'
+      - 'runless_v2/finalization_readback.py'
+      - 'devsystem/api2_step2g_streamlit_cert_v1.py'
+      - 'app.py'
+      - 'tests/test_api2_step2g_dual_main_streamlit_convergence_v1.py'
+      - '.github/workflows/api2-step2g-dual-main-streamlit-convergence-v1.yml'
+      - 'devsystem/runless_proof_plans/api2-step2g-dual-main-streamlit-convergence-v1.json'
+      - 'devsystem/task_ledgers/api2-step2g-dual-main-streamlit-convergence-v1.json'
+      - 'docs/superpowers/specs/2026-10-26-api2-step2g-dual-main-streamlit-convergence-v1-design.md'
+      - 'docs/superpowers/plans/2026-10-26-api2-step2g-dual-main-streamlit-convergence-v1.md'
+
+permissions:
+  contents: read
+
+jobs:
+  step2g-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install proof dependencies
+        run: python -m pip install --disable-pip-version-check pytest pytest-asyncio fastapi httpx requests PyJWT cryptography pydantic
+      - name: Compile Step 2G boundary
+        run: |
+          python -m py_compile \
+            runless_v2/api2_step2g_convergence_v1.py \
+            runless_v2/api2_step2g_github_authority_v1.py \
+            runless_v2/api2_step2g_closeout_enforcement_v1.py \
+            runless_v2/finalization_readback.py \
+            devsystem/api2_step2g_streamlit_cert_v1.py \
+            runless_v2/__init__.py \
+            app.py
+      - name: Step 2G + Runless isolation regression
+        run: |
+          python -m pytest --noconftest -q \
+            tests/test_api2_step2g_dual_main_streamlit_convergence_v1.py \
+            tests/test_runless_v2_api2_authority_isolation_v1.py \
+            tests/test_runless_v2_api2_finalization_isolation_v1.py \
+            tests/test_runless_v2_finalization_readback.py \
+            tests/test_runless_terminal_completion_latch_v1_contract.py
