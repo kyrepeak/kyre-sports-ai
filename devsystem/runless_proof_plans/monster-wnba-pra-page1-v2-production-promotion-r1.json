@@ -1,0 +1,35 @@
+{
+  "mode":"runless",
+  "task_id":"monster-wnba-pra-page1-v2-production-promotion-r1",
+  "workstream":"monster-wnba-pra-page1-v2-production-promotion-r1",
+  "source_main_sha":"67c2cc217491be6f9c13f499283cfc050168d25a",
+  "commands":[
+    ["python","-m","pytest","--noconftest","-q","tests/test_wnba_pra_page1_final_polish_v1.py","tests/test_wnba_pra_page1_stier_v1.py","tests/test_wnba_pra_max_speed_snapshot_v1.py","tests/test_wnba_pra_max_speed_streamlit_v1.py","tests/test_monster_wnba_pra_vercel_gateway_v1.py","tests/test_monster_wnba_pra_api_only_v1.py"],
+    ["python","-m","py_compile","wnba_pra_page1_ultra_stier_v2.py","wnba_pra_hub_v3612.py","wnba_pra_page1_final_polish_v1.py","wnba_pra_page1_stier_v1.py"]
+  ],
+  "artifacts":[
+    "devsystem/runless_proof_plans/monster-wnba-pra-page1-v2-production-promotion-r1.json",
+    "wnba_pra_page1_ultra_stier_v2.py",
+    "wnba_pra_hub_v3612.py"
+  ],
+  "dependencies":[
+    "wnba_pra_page1_final_polish_v1.py",
+    "wnba_pra_page1_stier_v1.py",
+    "wnba_pra_hub_v3617.py",
+    "wnba_pra_hub_v3618.py",
+    "tests/test_wnba_pra_page1_final_polish_v1.py",
+    "tests/test_wnba_pra_page1_stier_v1.py",
+    "tests/test_wnba_pra_max_speed_snapshot_v1.py",
+    "tests/test_wnba_pra_max_speed_streamlit_v1.py",
+    "tests/test_monster_wnba_pra_vercel_gateway_v1.py",
+    "tests/test_monster_wnba_pra_api_only_v1.py"
+  ],
+  "probes":[],
+  "timeout_seconds":900,
+  "live_ttl_seconds":1200,
+  "github_actions_fallback":0,
+  "reuse_frozen_proof":[],
+  "required_check":"runless-final-gate",
+  "required_check_app_id":5204253,
+  "freeze_token":"MONSTER_WNBA_PRA_PAGE1_V2_PRODUCTION_PROMOTION_R1_FROZEN"
+}
