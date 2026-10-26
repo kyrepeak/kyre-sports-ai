@@ -9,6 +9,8 @@ on:
       - "sports_api/nfl_rushing_yards_page2_enrichment_v1.py"
       - "kyre_sports_api_vercel_v1.py"
       - "tests/test_api2_nfl_rushing_page2_data_completeness_v1.py"
+      - "devsystem/runless_proof_plans/api2-nfl-rushing-page2-data-completeness-v1.json"
+      - "devsystem/task_ledgers/api2-nfl-rushing-page2-data-completeness-v1.json"
       - ".github/workflows/api2-nfl-rushing-page2-data-completeness-v1.yml"
 
 jobs:
@@ -21,7 +23,12 @@ jobs:
           python-version: "3.13"
       - name: Install focused dependencies
         run: python -m pip install --disable-pip-version-check pytest requests httpx fastapi pandas numpy pypdf
-      - name: Run Page 2 completeness contract
-        run: python -m pytest --noconftest -q tests/test_api2_nfl_rushing_page2_data_completeness_v1.py
+      - name: Run final Page 2 completeness + regression bundle
+        run: >-
+          python -m pytest --noconftest -q
+          tests/test_api2_nfl_rushing_page2_data_completeness_v1.py
+          tests/test_api2_nfl_rushing_page2_s_tier_v3.py
+          tests/test_api2_nfl_rushing_page2_command_center_v2.py
+          tests/test_api2_nfl_rushing_yards_market_reliability_v2.py
       - name: Compile enrichment path
         run: python -m py_compile sports_api/nfl_rushing_yards_page2_enrichment_v1.py sports_api/api/nfl_rushing_yards_detail_v2.py sports_api/api/nfl_rushing_yards_detail_v3.py kyre_sports_api_vercel_v1.py
