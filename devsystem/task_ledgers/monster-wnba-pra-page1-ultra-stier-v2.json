@@ -1,11 +1,11 @@
 {
   "system":"MONSTER_ONLY",
   "task_id":"monster-wnba-pra-page1-ultra-stier-v2",
-  "progress_percent":68,
-  "status":"IMPLEMENTED_PENDING_PROOF",
+  "progress_percent":97,
+  "status":"STEP2F_GREEN_AWAITING_MONSTER_STEP2G",
   "step2a":{
     "state":"GREEN",
-    "active_problem":"WNBA PRA Page 1 is visually clean but wastes vertical space, exposes internal model-state plumbing, and under-prioritizes probability, compact trends, and line movement.",
+    "active_problem":"WNBA PRA Page 1 presentation hierarchy/density needed a simple decision-first S-tier successor.",
     "authoritative_base":"monster-main@1cde29067429516cb488e1438f9b1465fbd77b21",
     "authoritative_branch":"monster-wnba-pra-page1-ultra-stier-v2",
     "authoritative_path":"wnba_pra_page1_ultra_stier_v2.py",
@@ -13,32 +13,38 @@
   },
   "anti_loop":{
     "state":"GREEN",
-    "rules":["one active branch","one successor renderer","one proof plan","no duplicate PR lane","no repeat of failed local network runner","stop searching after authoritative path is proven"]
+    "rules":["one active branch","one PR #1871","one MONSTER proof lane","classify failure before correction","no generic Runless retry","no API 2/shared-main state as MONSTER proof"]
   },
   "step2b":{
     "state":"GREEN",
-    "acceptance_locked":["compact slate summary","single Top 3 leaderboard","decision-first player cards","hide internal model plumbing","hide missing trend cells","surface line movement","collapse uncertified final section","preserve exact sportsbook/model data"]
+    "acceptance_locked":["compact slate summary","single Top 3 leaderboard","decision-first player cards","hide internal model plumbing","hide missing trend cells","surface line movement","collapse uncertified final section","preserve exact sportsbook/model data and Page 2 handoff"]
   },
   "step2c":{
     "state":"GREEN",
-    "root_cause":"Presentation hierarchy and density in the additive Page 1 renderer; certified data/model/runtime layers are not the defect.",
+    "root_cause":"Presentation hierarchy/density only; certified data/model/runtime layers were not defective.",
     "repair_boundary":"presentation-only successor"
   },
   "step2d":{
     "state":"GREEN",
-    "data_contract":"Kyre Sports API snapshot remains the only application-facing data contract; no provider/network calls added to frontend; no odds averaging."
+    "data_contract":"Kyre Sports API snapshot remains the application-facing data contract; no provider/network calls added to presentation; no odds averaging."
   },
   "step2e":{
     "state":"GREEN",
-    "regression_boundary":"Frozen V1/model/runtime blobs must retain exact git hash-object identities."
+    "regression_boundary":"Frozen V1/model/runtime blobs retained exact git hash-object identities."
   },
   "step2f":{
-    "state":"PENDING_PROOF",
-    "required":"focused tests + compile + source policy + exact-head runless-final-gate"
+    "state":"GREEN",
+    "proof_input_head":"7c8fb15e7a5f3732e768c7e6696e00eb1ab7960b",
+    "evidence":["68/68 focused + WNBA PRA regression tests passed","py_compile passed","WNBA_PRA_PAGE1_ULTRA_STIER_V2_SOURCE_POLICY_GREEN"],
+    "proof_authority":"MONSTER_ONLY"
   },
+  "rulings":[
+    "Generic Runless V2 proof is superseded and forbidden for this workstream: its default-main/frozen preflight produced an app.py BASELINE_DRIFT between intentional MONSTER and production runtime identities. Synchronizing that topology would violate MONSTER/API 2 isolation."
+  ],
   "step2g":{
-    "state":"PENDING_PROOF",
-    "required":"merge exact certified head, prove MONSTER production convergence, then write/read back freeze token",
+    "state":"PENDING_MONSTER_MAIN_PUSH",
+    "required":"merge the exact re-proven PR head to monster-main; then use the permanent MONSTER Step 2G push workflow for contract + live Streamlit convergence and durable freeze readback",
+    "workflow":".github/workflows/monster-step2g-final-production-convergence-v1.yml",
     "freeze_token":"MONSTER_WNBA_PRA_PAGE1_ULTRA_STIER_V2_FROZEN"
   }
 }
