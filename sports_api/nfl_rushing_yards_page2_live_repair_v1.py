@@ -20,7 +20,7 @@ import requests
 from sports_api import nfl_rushing_yards_page2_enrichment_v1 as v1
 from sports_api.collectors import nfl_fanduel_rushing_yards_nflverse_v1 as rushing_book
 
-VERSION = "NFL_RUSHING_PAGE2_LIVE_ACCEPTANCE_REPAIR_V1"
+VERSION = "NFL_RUSHING_PAGE2_LIVE_ACCEPTANCE_REPAIR_V2_ACTION_HISTORY"
 ACTION_RUSHING_URL = "https://www.actionnetwork.com/nfl/props/rushing"
 ACTION_BASE = "https://www.actionnetwork.com"
 
@@ -56,9 +56,6 @@ def _nickname_map() -> dict[str, str]:
 
 
 def parse_official_weekly_injuries(html: str) -> dict[str, dict[str, Any]]:
-    # The NFL page labels report tables with nicknames ("Cowboys", "Eagles")
-    # while the frozen parser intentionally recognizes full canonical names.
-    # Expand exact heading text before delegating so row parsing stays unchanged.
     text = str(html or "")
     for nickname, full_name in sorted(_nickname_map().items(), key=lambda item: -len(item[0])):
         text = re.sub(
@@ -104,7 +101,6 @@ def parse_fanduel_game_lines(payload: Mapping[str, Any], *, away_name: str, home
         if not rushing_book.base._market_open(market):
             continue
         key, name = _market_key(market), _market_name(market)
-        # Fail closed on halves, quarters, alternates and team totals.
         blocked = ("1ST_HALF", "FIRST_HALF", "QUARTER", "ALTERNATE", "ALTERNATIVE", "TEAM_TOTAL")
         if any(token in key for token in blocked) or any(token.replace("_", " ").lower() in name for token in blocked):
             continue
@@ -198,17 +194,44 @@ def parse_action_rushing_open_current(text: str, *, player_name: str) -> dict[st
     }
 
 
+def _player_slug(player_name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", _text(player_name).casefold()).strip("-")
+
+
 def _discover_action_player_url(board_html: str, *, player_name: str) -> str:
+    """Resolve an Action player link without assuming a trailing slash.
+
+    Action's props board emits player hrefs both with and without a final `/`.
+    Prefer the deterministic name slug, then fall back to nearby anchor text.
+    """
     text = str(board_html or "")
-    name_positions = [m.start() for m in re.finditer(re.escape(player_name), text, flags=re.I)]
+    slug = _player_slug(player_name)
+    if not slug:
+        return ""
+
+    href_pattern = re.compile(r'href=["\'](?P<href>/nfl/players/[^"\'#?]+/?)(?:["\'])', flags=re.I)
+    hrefs = [match.group("href") for match in href_pattern.finditer(text)]
+
+    exact_prefix = f"/nfl/players/{slug}-"
+    exact = [href for href in hrefs if href.casefold().startswith(exact_prefix)]
+    if len(set(exact)) == 1:
+        return ACTION_BASE + exact[0].rstrip("/")
+
+    wanted = _norm(player_name)
     candidates: list[tuple[int, str]] = []
-    for match in re.finditer(r'href=["\'](?P<href>/nfl/players/[^"\']+/)["\']', text, flags=re.I):
+    for match in href_pattern.finditer(text):
         href = match.group("href")
-        distance = min((abs(match.start() - pos) for pos in name_positions), default=10**9)
-        if distance <= 6000:
-            candidates.append((distance, href))
-    candidates.sort(key=lambda item: item[0])
-    return ACTION_BASE + candidates[0][1] if candidates else ""
+        start = max(0, match.start() - 1200)
+        end = min(len(text), match.end() + 1800)
+        window = _norm(_visible_text(text[start:end]))
+        if wanted and wanted in window:
+            candidates.append((len(window), href))
+    unique = []
+    for _score, href in sorted(candidates):
+        normalized = href.rstrip("/")
+        if normalized not in unique:
+            unique.append(normalized)
+    return ACTION_BASE + unique[0] if len(unique) == 1 else ""
 
 
 def collect_action_prop_history(*, player_name: str, timeout: int = 8) -> dict[str, Any]:
