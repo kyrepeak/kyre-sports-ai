@@ -129,12 +129,14 @@ def test_history_router_calls_captured_history_collector():
     assert captured["team_codes"] == ["DEN"]
 
 
-def test_nba_gateway_registers_history_only_capability():
+def test_nba_gateway_registers_history_only_capability_on_compiled_app():
     from sports_api.api import nba_gateway_v1 as gateway
+    from kyre_sports_api_vercel_v1 import app
 
     assert "pra.player-context-history" in gateway.LIVE_CAPABILITIES
-    paths = {getattr(route, "path", "") for route in gateway.router.routes}
+    paths = set(app.openapi().get("paths") or {})
     assert "/api/v1/nba/pra/player-context/history" in paths
+    assert "/api/v1/nba/pra/player-context" in paths
 
 
 def test_page1_uses_safe_default_and_page2_explicitly_requests_full_context():
