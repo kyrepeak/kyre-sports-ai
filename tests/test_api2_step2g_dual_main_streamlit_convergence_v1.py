@@ -9,8 +9,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "runless_v2" / "api2_step2g_convergence_v1.py"
 CERT_PATH = ROOT / "devsystem" / "api2_step2g_streamlit_cert_v1.py"
-APP_PATH = ROOT / "runless_v2" / "app.py"
-AUTHORITY_PATH = ROOT / "runless_v2" / "api2_authority_isolation_v1.py"
+ENFORCEMENT_PATH = ROOT / "runless_v2" / "api2_step2g_closeout_enforcement_v1.py"
+AUTHORITY_PATH = ROOT / "runless_v2" / "api2_step2g_github_authority_v1.py"
+INIT_PATH = ROOT / "runless_v2" / "__init__.py"
+STREAMLIT_APP_PATH = ROOT / "app.py"
 PRODUCTION_TARGETS = ROOT / "devsystem" / "production_targets_v1.json"
 
 
@@ -44,7 +46,7 @@ def _evidence() -> dict:
         "merged_main_sha": _sha("b"),
         "proof_digest": _digest("c"),
         "approved_artifacts": artifacts,
-        "main": {"branch": "main", "sha": _sha("d"), "artifacts": dict(artifacts)},
+        "main": {"branch": "main", "sha": _sha("b"), "artifacts": dict(artifacts)},
         "api2_main": {"branch": "api2-main", "sha": _sha("e"), "artifacts": dict(artifacts)},
         "streamlit": {
             "url": "https://pickvault.streamlit.app",
@@ -156,10 +158,14 @@ def test_streamlit_cert_reads_only_canonical_production_target():
 
 
 def test_runless_closeout_permanently_invokes_step2g_for_api2_only():
-    source = APP_PATH.read_text(encoding="utf-8")
+    enforcement = ENFORCEMENT_PATH.read_text(encoding="utf-8")
     authority = AUTHORITY_PATH.read_text(encoding="utf-8")
-    assert "require_api2_step2g_closeout" in source
-    assert "req.workstream.startswith(\"api2-\")" in source
+    init_source = INIT_PATH.read_text(encoding="utf-8")
+    streamlit_app = STREAMLIT_APP_PATH.read_text(encoding="utf-8")
+    assert "require_api2_step2g_closeout" in enforcement
+    assert 'workstream.startswith("api2-")' in enforcement
+    assert "DurableStateStore.closeout_green_frozen = closeout_green_frozen_with_step2g" in enforcement
     assert "read_step2g_convergence_evidence" in authority
     assert "api2-step2g-convergence-evidence" in authority
-    assert "GREEN_FROZEN" in source
+    assert "api2_step2g_closeout_enforcement_v1" in init_source
+    assert "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1" in streamlit_app
