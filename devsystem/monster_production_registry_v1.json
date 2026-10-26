@@ -1,0 +1,27 @@
+{
+  "version": "MONSTER_PRODUCTION_REGISTRY_POLICY_V1",
+  "authority": "MONSTER_ONLY",
+  "frontend": {
+    "project": "kyre-sports-ai",
+    "stable_alias": "https://pickvault.streamlit.app",
+    "health_path": "/_stcore/health",
+    "environment": "production"
+  },
+  "backend_gateway": {
+    "name": "Kyre Sports API",
+    "stable_alias": "REQUIRED_AT_PRODUCT_PROOF_TIME",
+    "required_when_route_backend_required": true
+  },
+  "preview_may_satisfy_production": false,
+  "exact_candidate_sha_required": true,
+  "stable_alias_parity_required": true,
+  "canonical_endpoint_required": true,
+  "router_schema_owner_match_required": true,
+  "every_page_smoke_required_when_relevant": true,
+  "rollback_anchor_required": true,
+  "promotion_lanes": 1,
+  "this_control_plane_implementation": {
+    "deployment_applicable": false,
+    "reason": "read-only verifier modules only; no product runtime mutation"
+  }
+}

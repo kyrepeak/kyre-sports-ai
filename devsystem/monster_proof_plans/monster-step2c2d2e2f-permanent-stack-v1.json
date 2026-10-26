@@ -1,0 +1,21 @@
+{
+  "version": "MONSTER_STEP2C2D2E2F_PROOF_PLAN_V1",
+  "task_id": "monster-step2c2d2e2f-permanent-stack-v1",
+  "workstream": "monster-step2c2d2e2f-permanent-stack-v1",
+  "proof_authority": "MONSTER_ONLY",
+  "github_actions_role": "SUPPORTING_EVIDENCE_ONLY",
+  "authoritative_base": "monster-main",
+  "authoritative_base_sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+  "authoritative_branch": "monster-step2c2d2e2f-permanent-stack-v1",
+  "authoritative_pr": 1816,
+  "supporting_workflow": "MONSTER Step 2C-2F Permanent Stack V1",
+  "supporting_check": "monster-step2c2d2e2f-certification",
+  "required_gates": ["step2a", "anti_loop", "step2c", "step2b", "execution", "step2d", "step2e", "step2f", "final_verify"],
+  "deployment_applicable_for_this_implementation": false,
+  "deployment_na_reason": "read-only control-plane verifier implementation; network_calls=false, auto_mutate=false, product_runtime_mutation=false",
+  "rollback_anchor": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+  "receipt_module": "devsystem/monster_authoritative_proof_receipt_v1.py",
+  "freeze_target": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_V1_FROZEN",
+  "foreign_system_evidence_allowed": false,
+  "blind_retry_allowed": false
+}
