@@ -8,6 +8,7 @@ on:
       - 'app.py'
       - 'nfl_game_totals_page1_s_tier_v1.py'
       - 'tests/test_api2_nfl_game_total_page1_mobile_density_r1.py'
+      - 'tests/test_api2_nfl_game_total_page1_mobile_density_deploy_r1.py'
       - '.github/workflows/api2-nfl-game-total-page1-mobile-density-r1.yml'
       - 'devsystem/runless_proof_plans/api2-nfl-game-total-page1-mobile-density-r1.json'
       - 'devsystem/task_ledgers/api2-nfl-game-total-page1-mobile-density-r1.json'
@@ -27,11 +28,10 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest pandas streamlit
       - name: Compile Page 1 and entrypoint
         run: python -m py_compile nfl_game_totals_page1_s_tier_v1.py app.py
-      - name: Page 1 density and route regressions
+      - name: Page 1 density, route, and deployment regressions
         run: |
           python -m pytest --noconftest -q \
             tests/test_api2_nfl_game_total_page1_mobile_density_r1.py \
             tests/test_api2_nfl_game_totals_page1_s_tier_v1.py \
-            tests/test_api2_nfl_game_total_production_route_r2.py
-      - name: Deployment heartbeat contract
-        run: python -c "from pathlib import Path; s=Path('app.py').read_text(); assert 'API2_NFL_GAME_TOTAL_PAGE1_MOBILE_DENSITY_R1_20261026' in s; assert 'streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1' in s"
+            tests/test_api2_nfl_game_total_production_route_r2.py \
+            tests/test_api2_nfl_game_total_page1_mobile_density_deploy_r1.py
