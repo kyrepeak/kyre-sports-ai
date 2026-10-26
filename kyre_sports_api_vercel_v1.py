@@ -37,9 +37,14 @@ import sports_api.api.nba_pra_player_context_completeness_v2 as nba_pra_player_c
 nba_pra_player_context_completeness_module.install(nba_pra_player_context_module)
 
 # Order is intentional: NBA Stats enriches the stable production route first;
-# Basketball-Reference only fills usage fields that remain missing.
+# Basketball-Reference only fills usage fields that remain missing. PBP Stats
+# then fills verified game history only for profiles that still have no history.
 import sports_api.api.nba_pra_player_context_enrichment_v2 as nba_pra_player_context_enrichment_module  # noqa: F401,E402
 import sports_api.api.nba_pra_usage_fallback_v2 as nba_pra_usage_fallback_module  # noqa: F401,E402
+import sports_api.api.nba_pra_pbpstats_history_fallback_v1 as nba_pra_pbpstats_history_fallback_module  # noqa: E402
+
+nba_pra_pbpstats_history_fallback_module.install(nba_pra_player_context_module)
+
 import sports_api.api.nba_pra_injury_v1 as nba_pra_injury_module
 import sports_api.api.nba_pra_matchup_v1 as nba_pra_matchup_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
@@ -114,6 +119,7 @@ def health() -> dict[str, object]:
         "nba_pra_market_real_restore_v1": True,
         "nba_pra_schedule_v1": True,
         "nba_pra_player_context_v1": True,
+        "nba_pra_pbpstats_history_fallback_v1": True,
         "nba_pra_injury_v1": True,
         "nba_pra_matchup_v1": True,
         "nba_runless_product_transport": False,
