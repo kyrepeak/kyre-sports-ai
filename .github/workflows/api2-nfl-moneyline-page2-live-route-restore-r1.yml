@@ -1,0 +1,41 @@
+name: API2 NFL Moneyline Page2 Live Route Restore R1
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route_restore_v1.py'
+      - 'tests/test_api2_nfl_moneyline_page2_live_route_restore_r1.py'
+      - '.github/workflows/api2-nfl-moneyline-page2-live-route-restore-r1.yml'
+      - 'devsystem/runless_proof_plans/api2-nfl-moneyline-page2-live-route-restore-r1.json'
+      - 'devsystem/task_ledgers/api2-nfl-moneyline-page2-live-route-restore-r1.json'
+
+permissions:
+  contents: read
+
+jobs:
+  live-route-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check pytest pandas requests streamlit numpy
+      - name: Moneyline Page2 live-route contracts
+        run: |
+          python -m pytest --noconftest -q \
+            tests/test_api2_nfl_moneyline_page2_live_route_restore_r1.py \
+            tests/test_api2_nfl_moneyline_page2_war_room_v1.py \
+            tests/test_nfl_moneyline_consumer_cleanup_v19.py
+      - name: Compile runtime integration
+        run: |
+          python -m py_compile \
+            app.py \
+            streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route_restore_v1.py \
+            nfl_moneyline_hub_v20.py \
+            nfl_moneyline_page2_war_room_v1.py \
+            sports_api/nfl_moneyline_page2_v1.py
