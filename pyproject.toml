@@ -8,6 +8,7 @@ dependencies = [
   "httpx",
   "numpy",
   "pandas",
+  "pypdf",
   "tzdata>=2025.2",
 ]
 
