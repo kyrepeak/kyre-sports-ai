@@ -22,6 +22,29 @@ def test_page1_handoff_is_real_same_tab_navigation_not_details_disclosure():
     assert "<details" not in source
 
 
+def test_handoff_runtime_replaces_disclosure_with_selected_game_link(monkeypatch):
+    import nfl_game_totals_hub_v11 as module
+
+    frozen = (
+        '<article class="kgt-s1-card"><div>perfect page one</div>'
+        '<details class="kgt-s1-details"><summary>VIEW FULL ANALYSIS →</summary>'
+        '<div>old inline deep content</div></details></article>'
+    )
+    monkeypatch.setattr(module.page1, "build_decision_card_html", lambda *args, **kwargs: frozen)
+    item = {
+        "row": {"game_id": "DAL@PHI"},
+        "snapshot": {}, "scoring": {}, "pace": {}, "explosive": {},
+        "red_zone": {}, "environment": {}, "projection": {}, "read": {},
+    }
+    html = module._with_page2_handoff(item, "2026-10-26")
+    assert "perfect page one" in html
+    assert "old inline deep content" not in html
+    assert "<details" not in html
+    assert 'href="?sport=nfl&amp;market=game-total&amp;view=analysis&amp;game=DAL%40PHI&amp;date=2026-10-26"' in html
+    assert 'target="_self"' in html
+    assert html.endswith("</article>")
+
+
 def test_successor_reuses_frozen_page1_and_existing_v10_v9_analysis_owners():
     source = _read("nfl_game_totals_hub_v11.py")
     assert "import nfl_game_totals_page1_s_tier_v1 as page1" in source
