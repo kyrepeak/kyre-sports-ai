@@ -130,15 +130,17 @@ def test_projection_is_market_blind_and_uses_verified_workload_plus_run_defense(
 def test_semantic_market_state_never_fabricates_zero():
     slate = import_module("sports_api.api.nfl_rushing_yards_slate_v1")
     state = slate.market_state(None)
-    assert state == {
-        "status": "MARKET_NOT_POSTED",
-        "sportsbook": None,
-        "market": "Rushing Yards",
-        "line": None,
-        "over_odds": None,
-        "under_odds": None,
-        "timestamp": None,
-    }
+    assert state["status"] == "DATA_UNAVAILABLE"
+    assert state["state"] == "DATA_UNAVAILABLE"
+    assert state["verified_absence"] is False
+    assert state["diagnostic_state"] == "MARKET_MAPPING_FAILURE"
+    assert state["sportsbook"] is None
+    assert state["market"] == "Rushing Yards"
+    assert state["line"] is None
+    assert state["over_odds"] is None
+    assert state["under_odds"] is None
+    assert state["timestamp"] is None
+    assert state["sportsbook_projection_influence"] == 0.0
 
 
 def test_page2_contains_deep_rushing_sections_and_semantic_empty_states():
