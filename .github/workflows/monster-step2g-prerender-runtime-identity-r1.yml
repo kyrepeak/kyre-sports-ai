@@ -1,0 +1,41 @@
+name: MONSTER Step 2G Pre-Render Runtime Identity R1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "devsystem/monster_runtime_identity_v1.py"
+      - "devsystem/monster_runtime_certification_v1.json"
+      - "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"
+      - "runless_v2/monster_step2g_prerender_proof_r1.py"
+      - "runless_v2/__init__.py"
+      - "devsystem/runless_proof_plans/monster-step2g-prerender-runtime-identity-r1.json"
+      - "devsystem/task_ledgers/monster-step2g-prerender-runtime-identity-r1.json"
+      - ".github/workflows/monster-step2g-prerender-runtime-identity-r1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-step2g-prerender-runtime-identity-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  prerender-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -q pytest
+      - name: MONSTER pre-render identity contract
+        run: |
+          python -m pytest --noconftest -q tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py
+          python -m py_compile app.py devsystem/monster_runtime_identity_v1.py runless_v2/monster_step2g_prerender_proof_r1.py runless_v2/__init__.py
