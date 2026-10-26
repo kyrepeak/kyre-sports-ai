@@ -1,0 +1,44 @@
+{
+  "system":"MONSTER_ONLY",
+  "task_id":"monster-wnba-pra-page1-ultra-stier-v2",
+  "progress_percent":68,
+  "status":"IMPLEMENTED_PENDING_PROOF",
+  "step2a":{
+    "state":"GREEN",
+    "active_problem":"WNBA PRA Page 1 is visually clean but wastes vertical space, exposes internal model-state plumbing, and under-prioritizes probability, compact trends, and line movement.",
+    "authoritative_base":"monster-main@1cde29067429516cb488e1438f9b1465fbd77b21",
+    "authoritative_branch":"monster-wnba-pra-page1-ultra-stier-v2",
+    "authoritative_path":"wnba_pra_page1_ultra_stier_v2.py",
+    "single_lane":true
+  },
+  "anti_loop":{
+    "state":"GREEN",
+    "rules":["one active branch","one successor renderer","one proof plan","no duplicate PR lane","no repeat of failed local network runner","stop searching after authoritative path is proven"]
+  },
+  "step2b":{
+    "state":"GREEN",
+    "acceptance_locked":["compact slate summary","single Top 3 leaderboard","decision-first player cards","hide internal model plumbing","hide missing trend cells","surface line movement","collapse uncertified final section","preserve exact sportsbook/model data"]
+  },
+  "step2c":{
+    "state":"GREEN",
+    "root_cause":"Presentation hierarchy and density in the additive Page 1 renderer; certified data/model/runtime layers are not the defect.",
+    "repair_boundary":"presentation-only successor"
+  },
+  "step2d":{
+    "state":"GREEN",
+    "data_contract":"Kyre Sports API snapshot remains the only application-facing data contract; no provider/network calls added to frontend; no odds averaging."
+  },
+  "step2e":{
+    "state":"GREEN",
+    "regression_boundary":"Frozen V1/model/runtime blobs must retain exact git hash-object identities."
+  },
+  "step2f":{
+    "state":"PENDING_PROOF",
+    "required":"focused tests + compile + source policy + exact-head runless-final-gate"
+  },
+  "step2g":{
+    "state":"PENDING_PROOF",
+    "required":"merge exact certified head, prove MONSTER production convergence, then write/read back freeze token",
+    "freeze_token":"MONSTER_WNBA_PRA_PAGE1_ULTRA_STIER_V2_FROZEN"
+  }
+}
