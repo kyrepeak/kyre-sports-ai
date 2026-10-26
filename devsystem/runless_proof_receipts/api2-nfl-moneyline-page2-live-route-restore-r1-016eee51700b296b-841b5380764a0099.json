@@ -1,0 +1,43 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-moneyline-page2-live-route-restore-r1.yml": "0865e6730460796d89d750fbc7354b5b34aabeae",
+    "devsystem/runless_proof_plans/api2-nfl-moneyline-page2-live-route-restore-r1.json": "8008ebf9997d4aadad20ba86e8ee1716cbe9b5e9",
+    "devsystem/task_ledgers/api2-nfl-moneyline-page2-live-route-restore-r1.json": "9982e9dc4e85a65a0e0d5ffd6aac6a8ee9f7b5c3",
+    "tests/test_api2_nfl_moneyline_page2_live_route_restore_r1.py": "7f6dc75bc8866a5a7f23488d141c0761d685be99"
+  },
+  "candidate_sha": "016eee51700b296b6541a7a60c3e8fc7b5119b3e",
+  "created_at": "2026-10-26T16:53:56.762318+00:00",
+  "dependency_map": {
+    "app.py": "9c8e4675866762f2378b760e16c9c44f81bf5223",
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_moneyline_hub_v20.py": "b7db9639eb35aa562f0ccfc77dc5dea9275a1f6c",
+    "nfl_moneyline_page2_war_room_v1.py": "3c448824cb99352afc391a37e349864f8d944fd6",
+    "sports_api/nfl_moneyline_page2_v1.py": "dfc152ee33a229c57bcb83da88deb06492001599",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route_restore_v1.py": "77734c487c3faa1f18c023f1094e2919956006bc",
+    "universal_runtime_v5_loader.py": "0d7afdf5405ea68d817e00d6c3726154137cee5c"
+  },
+  "digest": "3987bfa53ae61bdce2bf429cb3575d960b192c124b7932e0517e7a21d29cb715",
+  "evidence_digests": [
+    "53c804122bd33892112eb592a09c7680a70e4d3cc8d436c703cdb2aa930cd0fe",
+    "834cfd7d3060c0c1f2ba5764bbec98860a290eb25c4e1e79f5a502a0be5a0373"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "c3d2a7c89522f31b96eaf2b155f9423ec99c7b1bcc897a7bc131211fbef689a8",
+  "proof_id": "api2-nfl-moneyline-page2-live-route-restore-r1-016eee51700b296b-841b5380764a0099",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "e228b00be155e0dadaa5723e7546bfce51b65cc6367dfa2974bece0b85abbad6",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-moneyline-page2-live-route-restore-r1",
+  "workstream": "api2-nfl-moneyline-page2-live-route-restore-r1"
+}
