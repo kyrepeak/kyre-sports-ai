@@ -114,3 +114,11 @@ def test_live_workflow_reads_frozen_certification_identity_not_witness_tooling_s
     assert '--expected-sha "${CERTIFIED_MONSTER_SHA}"' in workflow
     assert '--expected-tree-sha "${CERTIFIED_MONSTER_TREE_SHA}"' in workflow
     assert '--expected-sha "${GITHUB_SHA}"' not in workflow
+
+
+def test_live_probe_scans_streamlit_frames_for_monster_runtime_marker():
+    text = PROBE.read_text(encoding="utf-8")
+    assert "for frame_index, frame in enumerate(page.frames)" in text
+    assert "marker_frame_index" in text
+    assert "marker_frame_url" in text
+    assert "frame.locator(\"#monster-runtime-identity\")" in text
