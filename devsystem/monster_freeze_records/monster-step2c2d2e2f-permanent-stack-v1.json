@@ -1,6 +1,6 @@
 {
   "version": "MONSTER_STEP2C2D2E2F_FREEZE_RECORD_V1",
-  "status": "GREEN_PENDING_FREEZE_READBACK",
+  "status": "FROZEN",
   "freeze_token": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_V1_FROZEN",
   "task_id": "monster-step2c2d2e2f-permanent-stack-v1",
   "authoritative_base": "monster-main",
@@ -71,5 +71,12 @@
     "persist_credentials": false,
     "github_actions_role": "SUPPORTING_EVIDENCE_ONLY"
   },
-  "freeze_readback": "PENDING_EXACT_COMMIT_READBACK"
+  "checkpoint_readback": {
+    "status": "MATCHED",
+    "checkpoint_commit": "d54d7750727580aaa4bf41d1413e8e9c17731064",
+    "freeze_record_blob_sha": "9e072d163feaf7ed96f3af4fd660208991153aa9",
+    "ledger_blob_sha": "b5fff164580e278b5452e9e689f94527fe4e296c"
+  },
+  "freeze_ref": "monster-frozen-step2c2d2e2f-permanent-stack-v1",
+  "final_ref_readback_required_before_external_declaration": true
 }

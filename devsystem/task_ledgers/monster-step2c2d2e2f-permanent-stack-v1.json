@@ -1,8 +1,8 @@
 {
   "version": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_LEDGER_V1",
   "task_id": "monster-step2c2d2e2f-permanent-stack-v1",
-  "status": "GREEN_PENDING_FREEZE_READBACK",
-  "progress_percent": 99.7,
+  "status": "GREEN_FROZEN",
+  "progress_percent": 100,
   "active_problem": "Permanent MONSTER-owned Step 2C/2D/2E/2F control stack",
   "authoritative_base": "monster-main",
   "authoritative_branch": "monster-step2c2d2e2f-permanent-stack-v1",
@@ -21,9 +21,12 @@
   "premerge_receipt_digest": "7c8d354ca011f43dda0396c239cbff8b6e6af3c9f433c666bef387123a92b8ac",
   "postmerge_receipt_digest": "c096e34efbe0b80c1f50ec8c4ed813b2e3ea48cc6c8a981928c0e34987197a37",
   "checkpoint_payload_digest": "8f830b4a2d0db70873f0436c59a7d31f3974fc400fb9d9a7afee423aa47f49e9",
+  "checkpoint_commit": "d54d7750727580aaa4bf41d1413e8e9c17731064",
+  "checkpoint_readback": "MATCHED",
   "rollback_anchor": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
-  "last_completed_gate": "POSTMERGE_FINAL_VERIFY",
+  "last_completed_gate": "FREEZE_CHECKPOINT_READBACK",
   "blocker": null,
-  "remaining_proof": "READ_BACK_EXACT_CHECKPOINT_THEN_FINALIZE_FROZEN_REF",
+  "remaining_proof": "FINAL_FREEZE_REF_READBACK_BEFORE_EXTERNAL_DECLARATION",
+  "freeze_ref": "monster-frozen-step2c2d2e2f-permanent-stack-v1",
   "freeze_target": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_V1_FROZEN"
 }
