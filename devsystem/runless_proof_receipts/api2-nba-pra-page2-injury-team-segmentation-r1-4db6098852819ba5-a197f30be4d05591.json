@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-injury-team-segmentation-r1.json": "9e1a0710d4f4069887b037ce517de77ab7796cdc",
+    "devsystem/task_ledgers/api2-nba-pra-page2-injury-team-segmentation-r1.json": "30badd3ff294527526960defc22d9f082ad1c611",
+    "sports_api/api/nba_pra_injury_official_v2.py": "a87a30452f7fdbcd2d569317f6ccf1cc6b7140e2",
+    "sports_api/api/nba_pra_injury_v1.py": "2bf27d3feb3b63c82155d2f1a12877b2446fcc0f",
+    "tests/test_api2_nba_pra_injury_team_segmentation_r1.py": "5b6f6246d9c8d6a5c1226b5e166980f501966d07"
+  },
+  "candidate_sha": "4db6098852819ba5c5ec2886270718835e1fe195",
+  "created_at": "2026-10-26T22:13:34.953949+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-role-opp-runtime-v3.json": "212136c656639daf9adf2397102e78dbd21f214f",
+    "nba_pra_page2_data_completeness_v1.py": "550899cbef9081e55555bcf3b1c83c7a34e39a48",
+    "nba_pra_page2_role_runtime_v4.py": "c1bdc35196b1c4c11c183d5f51ebd7eacf4f1c37",
+    "pyproject.toml": "d9942eebbc162a2c150c2e435e753475428e3e2f"
+  },
+  "digest": "acc0cc7bc4ba3cb6a8b508ad2e17a77270c0d1fb15b32ba7452553f12ce3fb38",
+  "evidence_digests": [
+    "bbe1ac4445d85599af042ac5d7584db10ca80f7f5ce1ee8a16362f284098daed",
+    "933228d0c48366cd15fc86c7e9e07ae71f183d728b329b1505b013587ed7f6c9"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "12107fce9715932cdfce0a4a214cb6e567c731c29522ec03ed8d57d920997979",
+  "proof_id": "api2-nba-pra-page2-injury-team-segmentation-r1-4db6098852819ba5-a197f30be4d05591",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "98d0ba718c58ce574f311a07d95111dfc06ed422eb3c32dcb3f0a2a1065a8845",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page2-injury-team-segmentation-r1",
+  "workstream": "api2-nba-pra-page2-injury-team-segmentation-r1"
+}
