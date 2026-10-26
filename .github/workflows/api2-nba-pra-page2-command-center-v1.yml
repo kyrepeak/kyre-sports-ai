@@ -27,6 +27,8 @@ on:
       - "devsystem/task_ledgers/api2-nba-pra-page2-command-center-v1.json"
       - "devsystem/runless_proof_plans/api2-nba-pra-page2-s-tier-polish-v1.json"
       - "devsystem/task_ledgers/api2-nba-pra-page2-s-tier-polish-v1.json"
+      - "devsystem/runless_proof_plans/api2-nba-pra-page2-role-log-completeness-v1.json"
+      - "devsystem/task_ledgers/api2-nba-pra-page2-role-log-completeness-v1.json"
       - "docs/superpowers/specs/2026-10-25-nba-pra-page2-s-tier-command-center-v1-design.md"
       - "docs/superpowers/plans/2026-10-25-nba-pra-page2-s-tier-command-center-v1.md"
       - ".github/workflows/api2-nba-pra-page2-command-center-v1.yml"
