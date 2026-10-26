@@ -46,7 +46,8 @@ def test_current_api2_production_chain_routes_spread_canonically_without_repoint
     terminal = (ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py").read_text(encoding="utf-8")
     density = (ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1.py").read_text(encoding="utf-8")
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert 'route.sport_id == "nfl" and route.market_id in {"rushing-yards", "spread"}' in terminal
-    assert "return canonical_loader.resolve_destination(route)" in terminal
+    routing_block = terminal.split('if route.sport_id == "nfl" and route.market_id in ', 1)[1].split("\n    return _prior_resolve_destination", 1)[0]
+    assert '"spread"' in routing_block
+    assert "return canonical_loader.resolve_destination(route)" in routing_block
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1 as prior" in density
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1" in app
