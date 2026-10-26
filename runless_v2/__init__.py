@@ -26,3 +26,8 @@ from . import wnba_pra_page1_final_polish_runtime_v1 as _wnba_pra_page1_final_po
 # lease/registry authority only from API2-owned control-state branches. Legacy
 # and non-API2 Runless proof behavior is preserved by the additive adapter.
 from . import api2_authority_isolation_v1 as _api2_authority_isolation_v1  # noqa: E402,F401
+
+# API2 Step 2G: add dual-main + Streamlit evidence readback, then wrap the
+# durable GREEN_FROZEN transition so API2 cannot report 100% without convergence.
+from . import api2_step2g_github_authority_v1 as _api2_step2g_github_authority_v1  # noqa: E402,F401
+from . import api2_step2g_closeout_enforcement_v1 as _api2_step2g_closeout_enforcement_v1  # noqa: E402,F401
