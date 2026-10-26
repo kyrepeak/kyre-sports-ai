@@ -3,10 +3,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_universal_runtime_routes_nfl_moneyline_to_consumer_v19():
+def test_universal_runtime_routes_nfl_moneyline_to_v20_successor_preserving_v19_page1():
     source = (ROOT / "universal_runtime_v5_loader_v21.py").read_text(encoding="utf-8")
+    successor = (ROOT / "nfl_moneyline_hub_v20.py").read_text(encoding="utf-8")
     assert 'route.sport_id == "nfl" and route.market_id == "moneyline"' in source
-    assert '"nfl_moneyline_hub_v19"' in source
+    assert '"nfl_moneyline_hub_v20"' in source
+    assert 'import nfl_moneyline_hub_v19 as prior' in successor
 
 
 def test_consumer_v19_exists_and_owns_headless_legacy_execution():
