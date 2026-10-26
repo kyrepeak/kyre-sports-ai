@@ -62,7 +62,7 @@ def test_app_uses_runtime_identity_and_has_no_legacy_heartbeat_constant():
 def test_live_probe_uses_browser_transport_not_urllib_health_redirect_chain():
     text = PROBE.read_text(encoding="utf-8")
     assert "urllib.request" not in text
-    assert "page.goto(url" in text
+    assert "page.goto(" in text
     assert '"transport": "chromium_root"' in text
 
 
@@ -105,3 +105,11 @@ def test_live_probe_refreshes_fresh_browser_sessions_until_marker_arrives():
     assert "context.close()" in text
     assert "freshness_attempts" in text
     assert "MONSTER runtime identity marker missing after bounded fresh-session convergence" in text
+
+
+def test_live_workflow_reads_frozen_certification_identity_not_witness_tooling_sha():
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "production-main/devsystem/monster_runtime_certification_v1.json" in workflow
+    assert '--expected-sha "${CERTIFIED_MONSTER_SHA}"' in workflow
+    assert '--expected-tree-sha "${CERTIFIED_MONSTER_TREE_SHA}"' in workflow
+    assert '--expected-sha "${GITHUB_SHA}"' not in workflow

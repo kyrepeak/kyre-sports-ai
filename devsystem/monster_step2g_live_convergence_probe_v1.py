@@ -10,12 +10,17 @@ import argparse
 import hashlib
 import html
 import json
+import time
 from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "MONSTER_STEP2G_LIVE_CONVERGENCE_PROOF_V1"
 RUNTIME_SCHEMA = "MONSTER_STEP2G_RUNTIME_IDENTITY_V1"
 ROUTER_OWNER = "MONSTER_CANONICAL_ROUTER"
+FRESHNESS_MAX_ATTEMPTS = 15
+FRESHNESS_SETTLE_SECONDS = 8.0
+FRESHNESS_MARKER_WAIT_MS = 3_000
+FRESHNESS_NAVIGATION_TIMEOUT_MS = 20_000
 
 
 def _digest(value: Any) -> str:
@@ -56,6 +61,69 @@ def expected_identity(
     }
 
 
+def _fresh_runtime_observation(browser: Any, url: str) -> dict[str, Any]:
+    from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+    last_status: int | None = None
+    last_final_url = url
+    last_body_digest = ""
+    last_error_surface = False
+
+    for attempt in range(1, FRESHNESS_MAX_ATTEMPTS + 1):
+        context = browser.new_context()
+        page = context.new_page()
+        try:
+            try:
+                response = page.goto(
+                    url,
+                    wait_until="domcontentloaded",
+                    timeout=FRESHNESS_NAVIGATION_TIMEOUT_MS,
+                )
+            except PlaywrightTimeoutError:
+                response = None
+
+            if response is not None:
+                last_status = int(response.status)
+                last_final_url = page.url
+                if last_status < 400:
+                    marker = page.locator("#monster-runtime-identity")
+                    try:
+                        marker.wait_for(state="attached", timeout=FRESHNESS_MARKER_WAIT_MS)
+                    except PlaywrightTimeoutError:
+                        pass
+                    else:
+                        encoded = marker.get_attribute("data-monster-runtime-identity")
+                        if encoded:
+                            body_text = page.locator("body").inner_text(timeout=10_000)
+                            return {
+                                "encoded": encoded,
+                                "body_text": body_text,
+                                "health_status": last_status,
+                                "final_url": last_final_url,
+                                "freshness_attempts": attempt,
+                            }
+
+            try:
+                body_text = page.locator("body").inner_text(timeout=5_000)
+            except Exception:
+                body_text = ""
+            lowered = body_text.lower()
+            last_error_surface = "encountered an error" in lowered or "traceback" in lowered
+            last_body_digest = hashlib.sha256(body_text.encode("utf-8")).hexdigest()
+        finally:
+            context.close()
+
+        if attempt < FRESHNESS_MAX_ATTEMPTS:
+            time.sleep(FRESHNESS_SETTLE_SECONDS)
+
+    raise RuntimeError(
+        "MONSTER runtime identity marker missing after bounded fresh-session convergence: "
+        f"attempts={FRESHNESS_MAX_ATTEMPTS} status={last_status!r} "
+        f"final_url={last_final_url!r} body_digest={last_body_digest!r} "
+        f"error_surface={last_error_surface!r}"
+    )
+
+
 def probe(
     *,
     url: str,
@@ -68,21 +136,17 @@ def probe(
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page()
-        response = page.goto(url, wait_until="domcontentloaded", timeout=120_000)
-        if response is None or response.status >= 400:
-            raise RuntimeError("MONSTER stable production alias did not load successfully")
-        health_status = response.status
-        health_body = "stable production alias root loaded"
-        final_url = page.url
-        marker = page.locator("#monster-runtime-identity")
-        marker.wait_for(state="attached", timeout=120_000)
-        encoded = marker.get_attribute("data-monster-runtime-identity")
-        if not encoded:
-            raise RuntimeError("MONSTER runtime identity marker is missing payload")
-        live_identity = json.loads(html.unescape(encoded))
-        body_text = page.locator("body").inner_text(timeout=30_000)
-        browser.close()
+        try:
+            observed = _fresh_runtime_observation(browser, url)
+        finally:
+            browser.close()
+
+    encoded = str(observed["encoded"])
+    live_identity = json.loads(html.unescape(encoded))
+    body_text = str(observed["body_text"])
+    health_status = int(observed["health_status"])
+    final_url = str(observed["final_url"])
+    freshness_attempts = int(observed["freshness_attempts"])
 
     expected = expected_identity(
         expected_sha,
@@ -130,9 +194,10 @@ def probe(
         "stable_alias": url.rstrip("/"),
         "health": {
             "status": health_status,
-            "body": health_body,
+            "body": "stable production alias root loaded",
             "transport": "chromium_root",
             "final_url": final_url,
+            "freshness_attempts": freshness_attempts,
         },
         "certified_monster_identity": {
             "sha": expected_sha.lower(),
