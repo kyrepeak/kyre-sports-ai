@@ -7,6 +7,7 @@ import sys
 import streamlit as st
 
 from streamlit_html_compat_v1 import install_sitewide_html_compat
+from nba_pra_page2_role_runtime_v4 import install as install_nba_pra_page2_role_runtime_v4
 
 _STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"
 _STEP2G_DEPLOYMENT_MARKER = "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1"
@@ -21,9 +22,9 @@ _API2_SITEWIDE_HTML_RENDER_COMPAT_R2_HEARTBEAT = "API2_SITEWIDE_HTML_RENDER_COMP
 _BOOTSTRAP_STARTED = perf_counter()
 
 # Install before any presentation heartbeat or lazily imported page renders. The
-# wrapper is stateless/idempotent and affects only pure HTML/CSS unsafe-Markdown
-# payloads. Normal Markdown and scripts preserve their original renderer semantics.
+# wrappers are stateless/idempotent presentation successors only.
 install_sitewide_html_compat(st)
+install_nba_pra_page2_role_runtime_v4()
 
 # These pages are lazily imported by Universal Runtime V5. Streamlit can keep a
 # prior module object alive across source-only deploys. Evict only the exact page
