@@ -1,0 +1,46 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-runless-finalization-isolation-r1.json": "8ffc33f8a200abf4e4a3c7d1a6ca6dcc1f247c63",
+    "runless_v2/api2_authority_isolation_v1.py": "656ef5ae7bebd602035a1e1a9715ec35b0a82b57",
+    "tests/test_runless_v2_api2_finalization_isolation_v1.py": "e3db9cfc3c192cddbd3477521b10f0a0719bee4b"
+  },
+  "candidate_sha": "e1a7fb6ce5d0b9c4087da85fd92f6bcbc334c718",
+  "created_at": "2026-10-26T02:14:39.677368+00:00",
+  "dependency_map": {
+    "runless_v2/__init__.py": "144774330105beb44b8bba9df88562f5ed9da467",
+    "runless_v2/app.py": "476f3d76d57ed33638197f75cec156b4de60aebc",
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/finalization_readback.py": "11c58d1e1c3a284c488c15986f457525d9408ebd",
+    "runless_v2/github_authority.py": "50272688dd62461638a342938bb3b2b398f540cc",
+    "runless_v2/models.py": "1f63ff94ff702597430f3fbf2050d799150c516a",
+    "runless_v2/proof_service.py": "0dd0660e4858d665222847693cc26441fd783ba3"
+  },
+  "digest": "7fc441c105b03577c3d42af04b384605386d3e26d941db73aace8cd25a417b77",
+  "evidence_digests": [
+    "ac656a4c2b2c42ac078a8c22d45c08e63c20fa5c112fa7f4c67704916c99e0be",
+    "231cc1ce71285ed23daf7245d956a02a89ed93b24e412ad8ee58921645b5b217"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "55a395e6d723c7951ac9272a994bc2217be87126ef0f082b82448ddaebdbfd61",
+  "proof_id": "api2-runless-finalization-isolation-r1-e1a7fb6ce5d0b9c4-6bd5e71649ebce9f",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-API2-RUNLESS-FINALIZATION-ISO-1822-R1"
+    ],
+    "revision": 9,
+    "state_hash": "6f4e6b2714b89330b7d900ca713b88409975d1ae97cae1c08a5ebf4f56535f12"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-API2-RUNLESS-FINALIZATION-ISO-1822-R1"
+    ],
+    "revision": 9,
+    "state_hash": "6f4e6b2714b89330b7d900ca713b88409975d1ae97cae1c08a5ebf4f56535f12"
+  },
+  "request_fingerprint": "33be536e5da8ffcb33351827fdd2f6f93c9844e882ab61f3e7e532c6c8340f91",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-runless-finalization-isolation-r1",
+  "workstream": "api2-runless-finalization-isolation-r1"
+}
