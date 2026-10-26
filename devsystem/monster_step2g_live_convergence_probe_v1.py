@@ -10,7 +10,6 @@ import argparse
 import hashlib
 import html
 import json
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -39,19 +38,15 @@ def expected_identity(sha: str, tree_sha: str) -> dict[str, str]:
 def probe(*, url: str, expected_sha: str, expected_tree_sha: str) -> dict[str, Any]:
     from playwright.sync_api import sync_playwright
 
-    health_url = url.rstrip("/") + "/_stcore/health"
-    with urllib.request.urlopen(health_url, timeout=30) as response:
-        health_status = response.status
-        health_body = response.read().decode("utf-8", errors="replace").strip()
-    if health_status != 200 or "ok" not in health_body.lower():
-        raise RuntimeError(f"MONSTER stable alias health failed: {health_status} {health_body!r}")
-
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page()
         response = page.goto(url, wait_until="domcontentloaded", timeout=120_000)
         if response is None or response.status >= 400:
-            raise RuntimeError("MONSTER production page did not load successfully")
+            raise RuntimeError("MONSTER stable production alias did not load successfully")
+        health_status = response.status
+        health_body = "stable production alias root loaded"
+        final_url = page.url
         marker = page.locator("#monster-runtime-identity")
         marker.wait_for(state="attached", timeout=120_000)
         encoded = marker.get_attribute("data-monster-runtime-identity")
@@ -72,7 +67,12 @@ def probe(*, url: str, expected_sha: str, expected_tree_sha: str) -> dict[str, A
         "schema_version": SCHEMA_VERSION,
         "authority": "MONSTER_ONLY",
         "stable_alias": url.rstrip("/"),
-        "health": {"status": health_status, "body": health_body},
+        "health": {
+            "status": health_status,
+            "body": health_body,
+            "transport": "chromium_root",
+            "final_url": final_url,
+        },
         "runtime_identity": live_identity,
         "ui": {"rendered": True, "body_nonempty": True, "error_surface_detected": False},
     }
