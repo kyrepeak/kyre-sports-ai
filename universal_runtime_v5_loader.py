@@ -99,6 +99,23 @@ def _root_adapter(route: RuntimeRoute, *, ttl_ms: int) -> DestinationAdapter:
     )
 
 
+def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 Game Totals S-tier adapter with frozen V10 projection semantics."""
+    def loader():
+        return _import("nfl_game_totals_page1_s_tier_v1")
+
+    def renderer(page):
+        return page.render_nfl_game_totals_hub()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id),
+        loader,
+        renderer,
+        "nfl_game_totals_page1_s_tier_v1",
+        20_000,
+    )
+
+
 def _nfl_passing_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
     """Dedicated Kyre-gateway adapter; legacy NFL slate/data owners are not imported."""
     def loader():
@@ -236,6 +253,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
         if route.market_id == "top-picks":
             return _cfb_page_adapter(route, "cfb_top_picks_page_v10", ttl_ms=30_000)
     if route.sport_id == "nfl":
+        if route.market_id == "game-total":
+            return _nfl_game_total_adapter(route)
         if route.market_id == "passing-yards":
             return _nfl_passing_yards_adapter(route)
         targets = {
