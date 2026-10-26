@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MODULE = ROOT / "devsystem" / "monster_runtime_identity_v1.py"
 PROBE = ROOT / "devsystem" / "monster_step2g_live_convergence_probe_v1.py"
+WORKFLOW = ROOT / ".github" / "workflows" / "monster-step2g-final-production-convergence-v1.yml"
 APP = ROOT / "app.py"
 
 
@@ -88,3 +89,9 @@ def test_live_probe_requires_exact_certified_monster_and_actual_production_runti
     assert "certified_monster_sha" in text
     assert "runtime_sha" in text
     assert "PRODUCTION_RUNTIME_MISMATCH" in text
+
+
+def test_live_probe_installer_avoids_slow_os_dependency_reinstall():
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    assert "playwright install --with-deps chromium" not in workflow
+    assert "python -m playwright install chromium" in workflow
