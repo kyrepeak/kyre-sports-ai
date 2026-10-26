@@ -100,9 +100,9 @@ def _root_adapter(route: RuntimeRoute, *, ttl_ms: int) -> DestinationAdapter:
 
 
 def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Game Totals S-tier adapter with frozen V10 projection semantics."""
+    """Dedicated API2 Game Totals Page1 + selected-game Page2 adapter."""
     def loader():
-        return _import("nfl_game_totals_page1_s_tier_v1")
+        return _import("nfl_game_totals_hub_v11")
 
     def renderer(page):
         return page.render_nfl_game_totals_hub()
@@ -111,7 +111,7 @@ def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
         (route.sport_id, route.market_id),
         loader,
         renderer,
-        "nfl_game_totals_page1_s_tier_v1",
+        "nfl_game_totals_hub_v11",
         20_000,
     )
 
