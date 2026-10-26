@@ -1,13 +1,9 @@
 """MONSTER Step 2G — Final Production Convergence Gate V1.
 
-Fail-closed, MONSTER-only convergence verifier. Step 2G is the terminal proof
-that the exact certified MONSTER implementation has converged through the final
-MONSTER state, production deployment and stable alias into the runtime,
-canonical router/backend path, and user-facing UI.
-
-This module is read-only. It performs no network calls, deployments, cache
-clears, restarts, repository mutations, or product mutations. Evidence is
-collected by the authoritative MONSTER execution lane and validated here.
+Fail-closed MONSTER-only verifier for exact live production convergence.
+It validates evidence collected by the authoritative MONSTER lane; this module
+itself performs no network calls, deployments, restarts, cache clears, repo
+mutations, or product mutations.
 """
 from __future__ import annotations
 
@@ -18,6 +14,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 VERSION = "MONSTER_STEP2G_FINAL_PRODUCTION_CONVERGENCE_V1"
+RUNTIME_IDENTITY_SCHEMA = "MONSTER_STEP2G_RUNTIME_IDENTITY_V1"
 NETWORK_CALLS = False
 AUTO_MUTATE = False
 MAY_MODIFY_PRODUCT_RUNTIME = False
@@ -79,13 +76,7 @@ def _mapping(value: Any) -> Mapping[str, Any] | None:
 
 
 def _blocked(failure_kind: str, reason: str, *, detail: Any = None) -> dict[str, Any]:
-    proof = {
-        "version": VERSION,
-        "failure_kind": failure_kind,
-        "reason": reason,
-        "detail": detail,
-    }
-    fingerprint = _digest(proof)
+    fingerprint = _digest({"version": VERSION, "failure_kind": failure_kind, "reason": reason, "detail": detail})
     return {
         "status": "BLOCKED",
         "version": VERSION,
@@ -128,7 +119,7 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(evidence, Mapping):
         return _blocked("UNKNOWN_CONVERGENCE_FAILURE", "Step 2G evidence must be an object")
     if _contains_foreign(evidence):
-        return _blocked("FOREIGN_SYSTEM_EVIDENCE", "API 2 state/evidence is forbidden in MONSTER Step 2G")
+        return _blocked("FOREIGN_SYSTEM_EVIDENCE", "foreign-system state/evidence is forbidden in MONSTER Step 2G")
     if evidence.get("authority") != "MONSTER_ONLY":
         return _blocked("WRONG_ENVIRONMENT", "Step 2G authority must be MONSTER_ONLY")
 
@@ -137,27 +128,28 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
     deployment = _mapping(evidence.get("deployment"))
     alias = _mapping(evidence.get("stable_alias"))
     runtime = _mapping(evidence.get("runtime"))
+    heartbeat = _mapping(evidence.get("heartbeat"))
     router = _mapping(evidence.get("router"))
     backend = _mapping(evidence.get("backend"))
     ui = _mapping(evidence.get("ui"))
     rollback = _mapping(evidence.get("rollback_anchor"))
-    missing = [
-        name
-        for name, value in (
-            ("certified", certified),
-            ("final", final),
-            ("deployment", deployment),
-            ("stable_alias", alias),
-            ("runtime", runtime),
-            ("router", router),
-            ("backend", backend),
-            ("ui", ui),
-            ("rollback_anchor", rollback),
-        )
-        if value is None
-    ]
+
+    required = {
+        "certified": certified,
+        "final": final,
+        "deployment": deployment,
+        "stable_alias": alias,
+        "runtime": runtime,
+        "router": router,
+        "backend": backend,
+        "ui": ui,
+        "rollback_anchor": rollback,
+    }
+    missing = [name for name, value in required.items() if value is None]
     if missing:
         return _blocked("UNKNOWN_CONVERGENCE_FAILURE", "required Step 2G evidence boundary missing", detail=missing)
+    if heartbeat is None:
+        return _blocked("PRODUCTION_NOT_UPDATED", "MONSTER live heartbeat/version identity is required")
 
     certified_sha = str(certified.get("sha") or "").strip().lower()
     certified_digest = str(certified.get("artifact_digest") or "").strip().lower()
@@ -186,20 +178,29 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
         return _blocked("WRONG_PROJECT", "production deployment belongs to the wrong project")
     if str(deployment.get("environment") or "").strip() != EXPECTED_ENVIRONMENT:
         return _blocked("WRONG_ENVIRONMENT", "deployment is not the MONSTER production environment")
+    if deployment.get("production") is not True or deployment.get("preview") is True:
+        return _blocked("WRONG_ENVIRONMENT", "Step 2G requires the real production deployment, never preview")
     if deployment.get("stale") is True:
         return _blocked("DEPLOYMENT_STALE", "deployment is explicitly stale")
     if deployment.get("healthy") is not True:
         return _blocked("PRODUCTION_NOT_UPDATED", "expected production deployment is not healthy")
 
     alias_url = str(alias.get("url") or "").strip()
+    expected_alias_url = str(alias.get("expected_url") or "").strip()
     if not alias_url or alias.get("healthy") is not True:
         return _blocked("ALIAS_STALE", "stable MONSTER production alias is missing or unhealthy")
+    if alias.get("stale") is True:
+        return _blocked("ALIAS_STALE", "stable MONSTER production alias is stale")
+    if not expected_alias_url or alias_url != expected_alias_url:
+        return _blocked("ALIAS_DRIFT", "stable production alias URL differs from the expected MONSTER alias")
     if str(alias.get("target_deployment_id") or "").strip() != deployment_id:
         return _blocked("ALIAS_DRIFT", "stable production alias targets the wrong deployment")
     if str(alias.get("target_sha") or "").strip().lower() != final_sha:
         return _blocked("ALIAS_DRIFT", "stable production alias targets the wrong SHA")
 
-    if str(runtime.get("entrypoint") or "") != str(runtime.get("expected_entrypoint") or ""):
+    runtime_entrypoint = str(runtime.get("entrypoint") or "")
+    expected_entrypoint = str(runtime.get("expected_entrypoint") or "")
+    if runtime_entrypoint != expected_entrypoint:
         return _blocked("ENTRYPOINT_DRIFT", "live runtime loaded the wrong MONSTER application entrypoint")
     if str(runtime.get("sha") or "").strip().lower() != final_sha:
         return _blocked("PROCESS_STALE", "live runtime SHA differs from final/deployed MONSTER SHA")
@@ -209,10 +210,35 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
         return _blocked("PRODUCTION_NOT_UPDATED", "live runtime artifact differs from the certified MONSTER artifact")
     if runtime.get("module_cache_fresh") is not True:
         return _blocked("STREAMLIT_STALE_MODULE", "live Streamlit/Python module cache is stale")
+    if runtime.get("streamlit_cache_fresh") is not True:
+        return _blocked("STREAMLIT_STALE_CACHE", "live Streamlit cache is stale")
     if runtime.get("process_fresh") is not True:
         return _blocked("PROCESS_STALE", "live production process is stale")
     if runtime.get("application_state_fresh") is not True:
         return _blocked("FRONTEND_STALE_STATE", "live browser-facing application state is stale")
+    if runtime.get("route_resolution_fresh") is not True:
+        return _blocked("ROUTER_DRIFT", "live route resolution is stale")
+    if runtime.get("bootstrap_fresh") is not True:
+        return _blocked("PROCESS_STALE", "live application bootstrap is stale")
+
+    heartbeat_expected = {
+        "owner": "MONSTER",
+        "sha": final_sha,
+        "deployment_id": deployment_id,
+        "entrypoint": runtime_entrypoint,
+        "router_owner": str(router.get("expected_owner") or ""),
+        "schema_version": RUNTIME_IDENTITY_SCHEMA,
+    }
+    heartbeat_actual = {
+        "owner": heartbeat.get("owner"),
+        "sha": str(heartbeat.get("sha") or "").strip().lower(),
+        "deployment_id": str(heartbeat.get("deployment_id") or "").strip(),
+        "entrypoint": heartbeat.get("entrypoint"),
+        "router_owner": heartbeat.get("router_owner"),
+        "schema_version": heartbeat.get("schema_version"),
+    }
+    if heartbeat_actual != heartbeat_expected:
+        return _blocked("PRODUCTION_NOT_UPDATED", "MONSTER live heartbeat/version identity does not match final production", detail={"actual": heartbeat_actual, "expected": heartbeat_expected})
 
     router_fields = (
         ("owner", "expected_owner", "ROUTER_DRIFT", "canonical router owner drift"),
@@ -220,30 +246,22 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
         ("market", "expected_market", "ROUTER_DRIFT", "canonical market/page route drift"),
         ("module", "expected_module", "ROUTER_DRIFT", "canonical module route drift"),
         ("backend_endpoint", "expected_backend_endpoint", "BACKEND_ROUTE_DRIFT", "router backend endpoint drift"),
+        ("parameters", "expected_parameters", "ROUTER_DRIFT", "canonical router parameter drift"),
+        ("production_owner", "expected_production_owner", "ROUTER_DRIFT", "canonical production owner drift"),
     )
     for actual_key, expected_key, kind, reason in router_fields:
         mismatch = _require_equal(router.get(actual_key), router.get(expected_key), kind, reason)
         if mismatch:
             return mismatch
 
-    mismatch = _require_equal(
-        backend.get("endpoint"), backend.get("expected_endpoint"),
-        "BACKEND_ROUTE_DRIFT", "live backend endpoint differs from the certified endpoint",
-    )
-    if mismatch:
-        return mismatch
-    mismatch = _require_equal(
-        backend.get("schema"), backend.get("expected_schema"),
-        "API_SCHEMA_DRIFT", "live backend schema differs from the certified schema",
-    )
-    if mismatch:
-        return mismatch
-    mismatch = _require_equal(
-        backend.get("data_truth_contract"), backend.get("expected_data_truth_contract"),
-        "API_SCHEMA_DRIFT", "live backend data-truth contract differs from the certified Step 2D contract",
-    )
-    if mismatch:
-        return mismatch
+    for actual_key, expected_key, kind, reason in (
+        ("endpoint", "expected_endpoint", "BACKEND_ROUTE_DRIFT", "live backend endpoint differs from the certified endpoint"),
+        ("schema", "expected_schema", "API_SCHEMA_DRIFT", "live backend schema differs from the certified schema"),
+        ("data_truth_contract", "expected_data_truth_contract", "API_SCHEMA_DRIFT", "live backend data-truth contract differs from certified Step 2D"),
+    ):
+        mismatch = _require_equal(backend.get(actual_key), backend.get(expected_key), kind, reason)
+        if mismatch:
+            return mismatch
 
     required_markers = {str(item) for item in ui.get("expected_markers", [])}
     observed_markers = {str(item) for item in ui.get("observed_markers", [])}
@@ -273,15 +291,18 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
         "runtime": {
             "sha": final_sha,
             "deployment_id": deployment_id,
-            "entrypoint": runtime.get("entrypoint"),
+            "entrypoint": runtime_entrypoint,
             "artifact_digest": certified_digest,
         },
+        "heartbeat": heartbeat_actual,
         "router": {
             "owner": router.get("owner"),
             "sport": router.get("sport"),
             "market": router.get("market"),
             "module": router.get("module"),
             "backend_endpoint": router.get("backend_endpoint"),
+            "parameters": router.get("parameters"),
+            "production_owner": router.get("production_owner"),
         },
         "backend": {
             "endpoint": backend.get("endpoint"),
@@ -303,6 +324,7 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
         "deployment_id": deployment_id,
         "stable_alias": alias_url,
         "live_runtime_identity": dict(proof["runtime"]),
+        "live_heartbeat_identity": dict(proof["heartbeat"]),
         "live_router_identity": dict(proof["router"]),
         "live_backend_identity": dict(proof["backend"]),
         "live_ui_parity": True,
@@ -321,66 +343,20 @@ def validate_convergence(evidence: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def contract_self_test() -> dict[str, Any]:
+    final_sha = "2" * 40
+    deployment_id = "monster-self-test"
+    alias_url = "https://pickvault.streamlit.app"
     evidence = {
         "authority": "MONSTER_ONLY",
         "certified": {"sha": "1" * 40, "artifact_digest": "a" * 64},
-        "final": {
-            "branch": EXPECTED_FINAL_BRANCH,
-            "sha": "2" * 40,
-            "contains_certified_sha": True,
-            "artifact_digest": "a" * 64,
-        },
-        "deployment": {
-            "id": "monster-self-test",
-            "sha": "2" * 40,
-            "project": EXPECTED_PROJECT,
-            "environment": EXPECTED_ENVIRONMENT,
-            "healthy": True,
-            "stale": False,
-        },
-        "stable_alias": {
-            "url": "https://pickvault.streamlit.app",
-            "target_deployment_id": "monster-self-test",
-            "target_sha": "2" * 40,
-            "healthy": True,
-        },
-        "runtime": {
-            "entrypoint": "app.py",
-            "expected_entrypoint": "app.py",
-            "sha": "2" * 40,
-            "deployment_id": "monster-self-test",
-            "artifact_digest": "a" * 64,
-            "process_fresh": True,
-            "module_cache_fresh": True,
-            "application_state_fresh": True,
-        },
-        "router": {
-            "owner": "MONSTER_CANONICAL_ROUTER",
-            "expected_owner": "MONSTER_CANONICAL_ROUTER",
-            "sport": "nfl",
-            "expected_sport": "nfl",
-            "market": "game-total",
-            "expected_market": "game-total",
-            "module": "self-test-module",
-            "expected_module": "self-test-module",
-            "backend_endpoint": "/api/self-test",
-            "expected_backend_endpoint": "/api/self-test",
-        },
-        "backend": {
-            "endpoint": "/api/self-test",
-            "expected_endpoint": "/api/self-test",
-            "schema": "self-test-v1",
-            "expected_schema": "self-test-v1",
-            "data_truth_contract": "STEP2D_GREEN",
-            "expected_data_truth_contract": "STEP2D_GREEN",
-        },
-        "ui": {
-            "expected_markers": ["MONSTER_STEP2G_SELF_TEST"],
-            "observed_markers": ["MONSTER_STEP2G_SELF_TEST"],
-            "forbidden_markers": [],
-            "observed_forbidden_markers": [],
-            "behavior_verified": True,
-        },
+        "final": {"branch": EXPECTED_FINAL_BRANCH, "sha": final_sha, "contains_certified_sha": True, "artifact_digest": "a" * 64},
+        "deployment": {"id": deployment_id, "sha": final_sha, "project": EXPECTED_PROJECT, "environment": EXPECTED_ENVIRONMENT, "production": True, "preview": False, "healthy": True, "stale": False},
+        "stable_alias": {"url": alias_url, "expected_url": alias_url, "target_deployment_id": deployment_id, "target_sha": final_sha, "healthy": True, "stale": False},
+        "runtime": {"entrypoint": "app.py", "expected_entrypoint": "app.py", "sha": final_sha, "deployment_id": deployment_id, "artifact_digest": "a" * 64, "process_fresh": True, "module_cache_fresh": True, "streamlit_cache_fresh": True, "application_state_fresh": True, "route_resolution_fresh": True, "bootstrap_fresh": True},
+        "heartbeat": {"owner": "MONSTER", "sha": final_sha, "deployment_id": deployment_id, "entrypoint": "app.py", "router_owner": "MONSTER_CANONICAL_ROUTER", "schema_version": RUNTIME_IDENTITY_SCHEMA},
+        "router": {"owner": "MONSTER_CANONICAL_ROUTER", "expected_owner": "MONSTER_CANONICAL_ROUTER", "sport": "nfl", "expected_sport": "nfl", "market": "game-total", "expected_market": "game-total", "module": "self-test-module", "expected_module": "self-test-module", "backend_endpoint": "/api/self-test", "expected_backend_endpoint": "/api/self-test", "parameters": {"date": "self-test"}, "expected_parameters": {"date": "self-test"}, "production_owner": "MONSTER", "expected_production_owner": "MONSTER"},
+        "backend": {"endpoint": "/api/self-test", "expected_endpoint": "/api/self-test", "schema": "self-test-v1", "expected_schema": "self-test-v1", "data_truth_contract": "STEP2D_GREEN", "expected_data_truth_contract": "STEP2D_GREEN"},
+        "ui": {"expected_markers": ["MONSTER_STEP2G_SELF_TEST"], "observed_markers": ["MONSTER_STEP2G_SELF_TEST"], "forbidden_markers": [], "observed_forbidden_markers": [], "behavior_verified": True},
         "rollback_anchor": {"sha": "0" * 40},
         "promotion_lanes": 1,
     }
