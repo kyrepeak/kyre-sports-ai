@@ -8,14 +8,14 @@ import universal_runtime_v5_loader_v20 as prior
 from universal_runtime_v5_loader import DestinationAdapter, choose_prefetch, load_destination, run_prefetch
 from universal_runtime_v5_state import RuntimeRoute
 
-MODEL_VERSION = "UNIVERSAL RUNTIME V5 LOADER V21 • NFL MONEYLINE V19 + SPREAD V9 + CFB GT REPAIR"
+MODEL_VERSION = "UNIVERSAL RUNTIME V5 LOADER V21 • NFL MONEYLINE V20 + SPREAD V9 + CFB GT REPAIR"
 
 
 def resolve_destination(route: RuntimeRoute):
     if route.sport_id == "nfl" and route.market_id == "spread":
         return base_loader._nfl_adapter(route, "nfl_spread_hub_v9", ttl_ms=20_000)
     if route.sport_id == "nfl" and route.market_id == "moneyline":
-        return base_loader._nfl_adapter(route, "nfl_moneyline_hub_v19", ttl_ms=20_000)
+        return base_loader._nfl_adapter(route, "nfl_moneyline_hub_v20", ttl_ms=20_000)
     if route.sport_id == "cfb" and route.market_id == "game-total":
         base = prior.resolve_destination(route)
 
