@@ -24,29 +24,35 @@ def test_step2f_accepts_exact_candidate_live_at_stable_alias():
     assert result["status"]=="GREEN" and result["step2f_enforced"] is True and result["exact_head_deployed"] is True and result["stable_alias_parity"] is True and result["real_website_consumption_verified"] is True and result["final_verification_authorized"] is True
 
 
-def test_step2f_blocks_sha_alias_preview_health_schema_smoke_and_lane_drift():
+def test_step2f_blocks_sha_alias_preview_health_schema_smoke_project_environment_and_lane_drift():
     mod=_load(); mutations=[]
     a=_green(); a["deployment"]["sha"]="c"*40; mutations.append(a)
     a=_green(); a["stable_alias"]["target_sha"]="c"*40; mutations.append(a)
     a=_green(); a["deployment"]["preview"]=True; mutations.append(a)
     a=_green(); a["deployment"]["stale"]=True; mutations.append(a)
+    a=_green(); a["deployment"]["project"]="wrong-project"; mutations.append(a)
+    a=_green(); a["deployment"]["environment"]="preview"; mutations.append(a)
     a=_green(); a["canonical_endpoint"]["healthy"]=False; mutations.append(a)
     a=_green(); a["canonical_endpoint"]["router_owner"]="wrong"; mutations.append(a)
     a=_green(); a["canonical_endpoint"]["schema"]="wrong"; mutations.append(a)
     a=_green(); a["canonical_endpoint"]["consumer_verified"]=False; mutations.append(a)
     a=_green(); a["smoke"]["passed"]=[]; mutations.append(a)
     a=_green(); a["rollback_anchor"]={}; mutations.append(a)
+    a=_green(); a["rollback_anchor"]={"sha":"not-a-sha"}; mutations.append(a)
     a=_green(); a["promotion_lanes"]=2; mutations.append(a)
     for attestation in mutations:
         result=mod.validate_production_attestation(attestation)
         assert result["status"]=="BLOCKED" and result["next_legal_action"]=="RETURN_TO_MONSTER_STEP_2C" and result["failure_fingerprint"]
 
 
-def test_step2f_allows_control_plane_n_a_only_when_explicit_and_read_only():
+def test_step2f_allows_control_plane_n_a_only_when_explicit_read_only_and_rollback_valid():
     mod=_load(); result=mod.validate_production_attestation({"task_id":"monster-control-only","candidate_sha":"d"*40,"deployment_applicable":False,"control_plane_only":True,"network_calls":False,"auto_mutate":False,"product_runtime_mutation":False,"rollback_anchor":{"sha":"e"*40,"kind":"verified-parent"}})
     assert result["status"]=="GREEN" and result["deployment_applicable"] is False and result["deployment_proof"]=="NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE"
-    bad=mod.validate_production_attestation({"task_id":"monster-control-only","candidate_sha":"d"*40,"deployment_applicable":False,"control_plane_only":True,"network_calls":True,"auto_mutate":False,"product_runtime_mutation":False,"rollback_anchor":{"sha":"e"*40}})
-    assert bad["status"]=="BLOCKED"
+    for bad in (
+        {"task_id":"monster-control-only","candidate_sha":"d"*40,"deployment_applicable":False,"control_plane_only":True,"network_calls":True,"auto_mutate":False,"product_runtime_mutation":False,"rollback_anchor":{"sha":"e"*40}},
+        {"task_id":"monster-control-only","candidate_sha":"d"*40,"deployment_applicable":False,"control_plane_only":True,"network_calls":False,"auto_mutate":False,"product_runtime_mutation":False,"rollback_anchor":{"sha":"bad"}},
+    ):
+        assert mod.validate_production_attestation(bad)["status"]=="BLOCKED"
 
 
 def test_step2f_contract_self_test_is_green():
