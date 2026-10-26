@@ -1,0 +1,39 @@
+{
+  "status": "GREEN",
+  "version": "MONSTER_AUTHORITATIVE_PROOF_RECEIPT_V1",
+  "proof_authority": "MONSTER_ONLY",
+  "github_actions_role": "SUPPORTING_EVIDENCE_ONLY",
+  "task_id": "monster-step2c2d2e2f-permanent-stack-v1",
+  "candidate_sha": "1cfc638a734c2216ba45cecf05c8363d0677b387",
+  "gates": {
+    "step2a": "GREEN",
+    "anti_loop": "GREEN",
+    "step2c": "GREEN",
+    "step2b": "GREEN",
+    "execution": "GREEN",
+    "step2d": "GREEN",
+    "step2e": "GREEN",
+    "step2f": "GREEN",
+    "final_verify": "GREEN"
+  },
+  "regressions": {
+    "status": "GREEN",
+    "count": 67,
+    "supporting_run_id": 40247710030,
+    "supporting_job_id": 121332709860
+  },
+  "production": {
+    "deployment_applicable": false,
+    "proof": "NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE",
+    "registry": "devsystem/monster_production_registry_v1.json"
+  },
+  "rollback_anchor": {
+    "sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+    "kind": "verified-parent"
+  },
+  "freeze_target": "MONSTER_STEP2C2D2E2F_PERMANENT_STACK_V1_FROZEN",
+  "evidence_digest": "60074ecc1b8bd3a9e7119c69a10124971e969f1c69b4d095b4fdbd20d1a92880",
+  "receipt_digest": "c096e34efbe0b80c1f50ec8c4ed813b2e3ea48cc6c8a981928c0e34987197a37",
+  "green_authorized": true,
+  "frozen_authorized": false
+}
