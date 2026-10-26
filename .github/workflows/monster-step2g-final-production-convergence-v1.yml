@@ -7,12 +7,14 @@ on:
       - "app.py"
       - "devsystem/monster_runtime_identity_v1.py"
       - "devsystem/monster_step2g_live_convergence_probe_v1.py"
+      - "devsystem/monster_step2g_frozen_checkpoint_v1.py"
       - "devsystem/mandatory_2g_final_production_convergence_v1.py"
       - "devsystem/mandatory_2c2d2e2f_permanent_enforcement_v1.py"
       - "devsystem/monster_authoritative_proof_receipt_v1.py"
       - "devsystem/monster_proof_plans/monster-step2g-final-production-convergence-v1.json"
       - "devsystem/task_ledgers/monster-step2g-final-production-convergence-v1.json"
       - "tests/test_devsystem_monster_runtime_identity_v1.py"
+      - "tests/test_devsystem_monster_step2g_frozen_checkpoint_v1.py"
       - "tests/test_devsystem_mandatory_2g_final_production_convergence_v1.py"
       - "tests/test_devsystem_monster_step2g_permanent_integration_v1.py"
       - ".github/workflows/monster-step2g-final-production-convergence-v1.yml"
@@ -50,10 +52,12 @@ jobs:
           python -m py_compile devsystem/mandatory_2g_final_production_convergence_v1.py
           python -m py_compile devsystem/monster_runtime_identity_v1.py
           python -m py_compile devsystem/monster_step2g_live_convergence_probe_v1.py
+          python -m py_compile devsystem/monster_step2g_frozen_checkpoint_v1.py
       - name: Step 2G focused + permanent integration contracts
         run: |
           python -m pytest --noconftest -q \
             tests/test_devsystem_monster_runtime_identity_v1.py \
+            tests/test_devsystem_monster_step2g_frozen_checkpoint_v1.py \
             tests/test_devsystem_mandatory_2g_final_production_convergence_v1.py \
             tests/test_devsystem_monster_step2g_permanent_integration_v1.py
 
@@ -63,9 +67,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout certified MONSTER state
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout protected production main read-only
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: production-main
           fetch-depth: 1
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -77,11 +89,15 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Prove exact live MONSTER convergence
         run: |
-          TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          CERTIFIED_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          RUNTIME_SHA="$(git -C production-main rev-parse HEAD)"
+          RUNTIME_TREE_SHA="$(git -C production-main rev-parse 'HEAD^{tree}')"
           python devsystem/monster_step2g_live_convergence_probe_v1.py \
             --url "https://pickvault.streamlit.app" \
             --expected-sha "${GITHUB_SHA}" \
-            --expected-tree-sha "${TREE_SHA}" \
+            --expected-tree-sha "${CERTIFIED_TREE_SHA}" \
+            --expected-runtime-sha "${RUNTIME_SHA}" \
+            --expected-runtime-tree-sha "${RUNTIME_TREE_SHA}" \
             --output "devsystem/evidence/monster_step2g_live_convergence_v1.json"
       - uses: actions/upload-artifact@v4
         if: always()

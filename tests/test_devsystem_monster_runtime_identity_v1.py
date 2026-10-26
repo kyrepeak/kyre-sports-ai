@@ -63,3 +63,28 @@ def test_live_probe_uses_browser_transport_not_urllib_health_redirect_chain():
     assert "urllib.request" not in text
     assert "page.goto(url" in text
     assert '"transport": "chromium_root"' in text
+
+
+def test_shared_main_identity_separates_certified_monster_from_runtime_head():
+    mod = _load()
+    identity = mod.build_runtime_identity(
+        certified_sha="5" * 40,
+        certified_tree_sha="6" * 40,
+        runtime_sha="7" * 40,
+        runtime_tree_sha="8" * 40,
+        deployment_id="monster-streamlit-" + "7" * 12,
+    )
+    assert identity["owner"] == "MONSTER"
+    assert identity["certified_monster_sha"] == "5" * 40
+    assert identity["certified_monster_tree_sha"] == "6" * 40
+    assert identity["runtime_sha"] == "7" * 40
+    assert identity["runtime_tree_sha"] == "8" * 40
+    assert identity["certified_artifact_digest"] != identity["runtime_artifact_digest"]
+
+
+def test_live_probe_requires_exact_certified_monster_and_actual_production_runtime():
+    text = PROBE.read_text(encoding="utf-8")
+    assert "--expected-runtime-sha" in text
+    assert "certified_monster_sha" in text
+    assert "runtime_sha" in text
+    assert "PRODUCTION_RUNTIME_MISMATCH" in text
