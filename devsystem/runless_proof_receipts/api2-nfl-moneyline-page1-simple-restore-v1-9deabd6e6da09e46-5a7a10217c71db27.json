@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-moneyline-page1-simple-restore-v1.json": "71b17c31cb09085d0e3b493a1cf72e7a24634391",
+    "devsystem/task_ledgers/api2-nfl-moneyline-page1-simple-restore-v1.json": "462c0f3e6460fb714af8cd96b7b2593eda17e921",
+    "nfl_moneyline_hub_v20.py": "0d9b06a86bb3a9a78b95fd0bdc761a7ef6174b4c",
+    "tests/test_api2_nfl_moneyline_page1_simple_restore_v1.py": "f789a2a8d8d8bfaf9b3ad4fb4588d94d9bfa61ad"
+  },
+  "candidate_sha": "9deabd6e6da09e46b0ef152c8aa3157a4c73c27b",
+  "created_at": "2026-10-26T17:41:05.243574+00:00",
+  "dependency_map": {
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_moneyline_hub_v17.py": "1c0a751bbab54e280ddbb3f607b474f48c71bc26",
+    "nfl_moneyline_hub_v19.py": "4d9b7f7caa5af89544e8a0602394745e334263fd",
+    "nfl_moneyline_page2_war_room_v1.py": "3c448824cb99352afc391a37e349864f8d944fd6",
+    "sports_api/nfl_moneyline_page2_v1.py": "dfc152ee33a229c57bcb83da88deb06492001599"
+  },
+  "digest": "44fb255b3f6a7134457c94d3c5b3cc561fda8f27871df110c592c96355478abf",
+  "evidence_digests": [
+    "09da95f0d3eb8ca7f284f25f61112e7c39b26f2abec5f6cd1b8fc1c65cc795ee",
+    "5897a4e4d6b13e2c265ea47f054dd1b011c26b9ba6f74013d8ae6a08463f5bdc"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "92ebc216edff0dd8f0df24e1db3277935124c4b1cc98e1626bee28ae04dc48a8",
+  "proof_id": "api2-nfl-moneyline-page1-simple-restore-v1-9deabd6e6da09e46-5a7a10217c71db27",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "59c29bef08e9394ff7bb3d6f638963c04877c457ca13f79b0b0652e9895e9b21",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-moneyline-page1-simple-restore-v1",
+  "workstream": "api2-nfl-moneyline-page1-simple-restore-v1"
+}
