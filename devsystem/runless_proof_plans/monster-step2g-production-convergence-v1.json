@@ -1,0 +1,38 @@
+{
+  "mode": "runless",
+  "task_id": "monster-step2g-production-convergence-v1",
+  "workstream": "monster-step2g-production-convergence-v1",
+  "source_main_sha": "477ec52179a1f3ba78e5a4bb06a81ed7bcd8e126",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_devsystem_monster_step2g_production_convergence_v1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "app.py",
+      "devsystem/monster_runtime_identity_v1.py",
+      "devsystem/monster_step2g_production_live_probe_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "app.py",
+    "devsystem/monster_runtime_identity_v1.py",
+    "devsystem/monster_step2g_production_live_probe_v1.py",
+    "tests/test_devsystem_monster_step2g_production_convergence_v1.py",
+    ".github/workflows/monster-step2g-production-convergence-v1.yml",
+    "devsystem/runless_proof_plans/monster-step2g-production-convergence-v1.json",
+    "devsystem/task_ledgers/monster-step2g-production-convergence-v1.json"
+  ],
+  "dependencies": [
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route_restore_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_STEP2G_PRODUCTION_IDENTITY_PROMOTION_V1_FROZEN"
+}
