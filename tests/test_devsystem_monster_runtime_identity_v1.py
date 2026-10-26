@@ -98,6 +98,7 @@ def test_live_probe_installer_avoids_slow_os_dependency_reinstall():
 
 
 def test_live_probe_refreshes_fresh_browser_sessions_until_marker_arrives():
+    # One authoritative browser job may refresh, but it may never spawn a second proof lane.
     text = PROBE.read_text(encoding="utf-8")
     assert "FRESHNESS_MAX_ATTEMPTS" in text
     assert "FRESHNESS_SETTLE_SECONDS" in text
