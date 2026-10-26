@@ -148,20 +148,39 @@ def _simple_matchup_html(
 
 
 def _page1() -> None:
-    """Render the compact Page 1 while V19 continues to own frozen engine execution."""
-    original_matchup = prior.market_visual._market_matchup_html
-    original_diagnostics = prior._diagnostics
-    original_css = prior._composed_css
+    """Render the compact Page 1 directly over the frozen V19 engine state."""
+    st.markdown(prior._composed_css() + _PAGE1_SIMPLE_CSS, unsafe_allow_html=True)
 
-    prior.market_visual._market_matchup_html = _simple_matchup_html
-    prior._diagnostics = lambda *args, **kwargs: None
-    prior._composed_css = lambda: original_css() + _PAGE1_SIMPLE_CSS
-    try:
-        prior.render_nfl_moneyline_hub()
-    finally:
-        prior._composed_css = original_css
-        prior._diagnostics = original_diagnostics
-        prior.market_visual._market_matchup_html = original_matchup
+    selected = _selected_date()
+    prior.presentation._sync_frozen_date(selected)
+    with st.spinner("Building verified Moneyline matchup intelligence…"):
+        prior._silent_frozen_engine()
+
+    pregame = list(st.session_state.get("nfl_moneyline_v3_pregame") or st.session_state.get("nfl_moneyline_v1_pregame") or [])
+    contexts = st.session_state.get("nfl_moneyline_v3_team_context") or st.session_state.get("nfl_moneyline_v2_team_context") or {}
+    gameplans = st.session_state.get("nfl_moneyline_v3_gameplan_context") or {}
+    edges = st.session_state.get("nfl_moneyline_v7_edge_outputs") or {}
+    mc_outputs = st.session_state.get("nfl_moneyline_v6_mc_outputs") or {}
+    snapshots = st.session_state.get("nfl_moneyline_v5_market_snapshots") or {}
+    profiles = st.session_state.get("nfl_moneyline_v4_strength_profiles") or {}
+
+    if not pregame:
+        st.info("No verified pregame NFL matchup is available on the active slate. The page will advance with the shared NFL active-slate runtime.")
+        return
+
+    calibration = prior.presentation.frozen.v431.v43._fit_calibration_model()
+    for game in pregame:
+        gid = prior.presentation._gid(game)
+        edge_out = edges.get(gid, {})
+        mc_out = mc_outputs.get(gid, {})
+        snap = snapshots.get(gid, {})
+        final = prior.presentation.frozen._build_final(game, gid, edge_out, mc_out, snap, profiles, calibration)
+        st.markdown(
+            _simple_matchup_html(game, final, edge_out, mc_out, snap, contexts, gameplans),
+            unsafe_allow_html=True,
+        )
+
+    st.caption("Model probabilities are estimates, not guarantees. Frozen analytical ownership remains authoritative.")
 
 
 def _selected_date() -> date:

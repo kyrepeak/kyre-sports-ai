@@ -10,14 +10,15 @@ ROUTER = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline
 HEARTBEAT = "API2_NFL_MONEYLINE_PAGE1_CURRENT_CONVERGENCE_R1_20261026"
 
 
-def test_current_convergence_heartbeat_is_browser_visible_and_prerender_identity_is_preserved():
+def test_current_convergence_heartbeat_is_browser_visible_and_api2_renders_before_monster_sidecar():
     text = APP.read_text(encoding="utf-8")
     assert HEARTBEAT in text
     assert "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1" in text
     assert "API2_NFL_MONEYLINE_PAGE1_SIMPLE_LIVE_ROUTE_RESTORE_R1_20261026" in text
     assert 'sys.modules.pop("nfl_moneyline_hub_v20", None)' in text
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_route_restore_r1" in text
-    assert text.index("emit_runtime_identity_marker()") < text.index("render_app()")
+    assert "API2_SITEWIDE_RENDER_REPAIR_R1_20261026" in text
+    assert text.index("render_app()") < text.index("emit_runtime_identity_marker()")
 
 
 def test_page1_compact_decision_contract_remains_active():
@@ -32,7 +33,8 @@ def test_page1_compact_decision_contract_remains_active():
         "_simple_matchup_html",
     ):
         assert marker in text
-    assert "prior._diagnostics = lambda *args, **kwargs: None" in text
+    assert "prior._silent_frozen_engine()" in text
+    assert "prior.market_visual._market_matchup_html = _simple_matchup_html" not in text
     assert "war_room.render_context(context)" in text
     assert "page2_api.build_page2_context" in text
 
