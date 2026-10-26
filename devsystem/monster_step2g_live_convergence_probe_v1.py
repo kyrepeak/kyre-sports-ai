@@ -1,8 +1,8 @@
 """Live MONSTER Step 2G production convergence probe.
 
-Runs only as supporting evidence after a monster-main push. It loads the stable
-production alias once in Chromium, waits for the MONSTER runtime identity marker,
-and fails closed unless live runtime identity equals the exact pushed SHA/tree.
+Runs only as MONSTER supporting evidence. It proves two independent identities:
+(1) the exact certified MONSTER state and (2) the actual protected shared-main
+runtime executing behind the stable Streamlit alias.
 """
 from __future__ import annotations
 
@@ -22,20 +22,48 @@ def _digest(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
-def expected_identity(sha: str, tree_sha: str) -> dict[str, str]:
+def _artifact_digest(tree_sha: str) -> str:
+    return hashlib.sha256(tree_sha.lower().encode("ascii")).hexdigest()
+
+
+def expected_identity(
+    certified_sha: str,
+    certified_tree_sha: str,
+    runtime_sha: str,
+    runtime_tree_sha: str,
+) -> dict[str, str]:
+    certified_sha = certified_sha.lower()
+    certified_tree_sha = certified_tree_sha.lower()
+    runtime_sha = runtime_sha.lower()
+    runtime_tree_sha = runtime_tree_sha.lower()
+    certified_digest = _artifact_digest(certified_tree_sha)
+    runtime_digest = _artifact_digest(runtime_tree_sha)
     return {
         "owner": "MONSTER",
-        "sha": sha.lower(),
-        "tree_sha": tree_sha.lower(),
-        "artifact_digest": hashlib.sha256(tree_sha.lower().encode("ascii")).hexdigest(),
-        "deployment_id": f"monster-streamlit-{sha[:12].lower()}",
+        "sha": certified_sha,
+        "tree_sha": certified_tree_sha,
+        "artifact_digest": certified_digest,
+        "certified_monster_sha": certified_sha,
+        "certified_monster_tree_sha": certified_tree_sha,
+        "certified_artifact_digest": certified_digest,
+        "runtime_sha": runtime_sha,
+        "runtime_tree_sha": runtime_tree_sha,
+        "runtime_artifact_digest": runtime_digest,
+        "deployment_id": f"monster-streamlit-{runtime_sha[:12]}",
         "entrypoint": "app.py",
         "router_owner": ROUTER_OWNER,
         "schema_version": RUNTIME_SCHEMA,
     }
 
 
-def probe(*, url: str, expected_sha: str, expected_tree_sha: str) -> dict[str, Any]:
+def probe(
+    *,
+    url: str,
+    expected_sha: str,
+    expected_tree_sha: str,
+    expected_runtime_sha: str,
+    expected_runtime_tree_sha: str,
+) -> dict[str, Any]:
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
@@ -56,9 +84,42 @@ def probe(*, url: str, expected_sha: str, expected_tree_sha: str) -> dict[str, A
         body_text = page.locator("body").inner_text(timeout=30_000)
         browser.close()
 
-    expected = expected_identity(expected_sha, expected_tree_sha)
-    if live_identity != expected:
-        raise RuntimeError(f"PRODUCTION_NOT_UPDATED: live identity {live_identity!r} != expected {expected!r}")
+    expected = expected_identity(
+        expected_sha,
+        expected_tree_sha,
+        expected_runtime_sha,
+        expected_runtime_tree_sha,
+    )
+
+    certified_keys = (
+        "owner",
+        "sha",
+        "tree_sha",
+        "artifact_digest",
+        "certified_monster_sha",
+        "certified_monster_tree_sha",
+        "certified_artifact_digest",
+        "entrypoint",
+        "router_owner",
+        "schema_version",
+    )
+    certified_mismatch = {
+        key: {"actual": live_identity.get(key), "expected": expected.get(key)}
+        for key in certified_keys
+        if live_identity.get(key) != expected.get(key)
+    }
+    if certified_mismatch:
+        raise RuntimeError(f"PRODUCTION_NOT_UPDATED: certified MONSTER identity mismatch {certified_mismatch!r}")
+
+    runtime_keys = ("runtime_sha", "runtime_tree_sha", "runtime_artifact_digest", "deployment_id")
+    runtime_mismatch = {
+        key: {"actual": live_identity.get(key), "expected": expected.get(key)}
+        for key in runtime_keys
+        if live_identity.get(key) != expected.get(key)
+    }
+    if runtime_mismatch:
+        raise RuntimeError(f"PRODUCTION_RUNTIME_MISMATCH: {runtime_mismatch!r}")
+
     lowered = body_text.lower()
     if not body_text.strip() or "encountered an error" in lowered or "traceback" in lowered:
         raise RuntimeError("USER_FACING_PARITY_FAILURE: production body is blank or errored")
@@ -73,7 +134,17 @@ def probe(*, url: str, expected_sha: str, expected_tree_sha: str) -> dict[str, A
             "transport": "chromium_root",
             "final_url": final_url,
         },
+        "certified_monster_identity": {
+            "sha": expected_sha.lower(),
+            "tree_sha": expected_tree_sha.lower(),
+            "artifact_digest": _artifact_digest(expected_tree_sha),
+        },
         "runtime_identity": live_identity,
+        "production_runtime": {
+            "sha": expected_runtime_sha.lower(),
+            "tree_sha": expected_runtime_tree_sha.lower(),
+            "artifact_digest": _artifact_digest(expected_runtime_tree_sha),
+        },
         "ui": {"rendered": True, "body_nonempty": True, "error_surface_detected": False},
     }
     proof["evidence_digest"] = _digest(proof)
@@ -85,9 +156,17 @@ def main() -> None:
     parser.add_argument("--url", required=True)
     parser.add_argument("--expected-sha", required=True)
     parser.add_argument("--expected-tree-sha", required=True)
+    parser.add_argument("--expected-runtime-sha", required=True)
+    parser.add_argument("--expected-runtime-tree-sha", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
-    result = probe(url=args.url, expected_sha=args.expected_sha, expected_tree_sha=args.expected_tree_sha)
+    result = probe(
+        url=args.url,
+        expected_sha=args.expected_sha,
+        expected_tree_sha=args.expected_tree_sha,
+        expected_runtime_sha=args.expected_runtime_sha,
+        expected_runtime_tree_sha=args.expected_runtime_tree_sha,
+    )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
