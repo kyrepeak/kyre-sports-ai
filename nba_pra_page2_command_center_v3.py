@@ -161,7 +161,7 @@ def _role_availability_html(context: Mapping[str, Any], games: list[dict[str, An
     return (
         '<section class="p2cc-panel" data-ks-section="role">'
         '<div class="p2cc-section-kicker">ROLE & AVAILABILITY</div>'
-        f'<div class="p2cc-context-grid'>{"".join(cards)}</div>'
+        f'<div class="p2cc-context-grid">{"".join(cards)}</div>'
         + (f'<div class="p2cc-data-gaps"><b>DATA GAPS</b>{gap_html}</div>' if gaps else '')
         + '</section>'
     )
