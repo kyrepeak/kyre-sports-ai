@@ -1,14 +1,23 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_production_reference_game_log_preserves_opponent() -> None:
-    from sports_api.api import nba_pra_player_context_v1 as ctx
+def _load_player_context_module():
+    path = ROOT / "sports_api" / "api" / "nba_pra_player_context_v1.py"
+    spec = importlib.util.spec_from_file_location("api2_prod_nba_pra_player_context_v1_test", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
+
+def test_production_reference_game_log_preserves_opponent() -> None:
+    ctx = _load_player_context_module()
     html = '''
     <table><tbody><tr>
       <td data-stat="date_game">2026-10-23</td>
@@ -24,8 +33,7 @@ def test_production_reference_game_log_preserves_opponent() -> None:
 
 
 def test_production_cbs_game_log_preserves_opponent() -> None:
-    from sports_api.api import nba_pra_player_context_v1 as ctx
-
+    ctx = _load_player_context_module()
     headers = ["date", "opponent", "result", "min", "pts", "reb", "ast"]
     values = ["Oct 23, 2026", "@ MIA", "W", "24", "17", "4", "3"]
     head = "".join(f"<th>{item}</th>" for item in headers)
