@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
+from nba_spread_injury_availability_v1 import _fetch_official_rows
 
 router = APIRouter(prefix="/api/v1/nba/pra/injuries", tags=["nba-pra-injuries"])
 
@@ -24,7 +25,6 @@ def collect_nba_pra_injuries(games: list[dict[str, Any]], now_utc: datetime | No
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     try:
-        from nba_spread_injury_availability_v1 import _fetch_official_rows
         rows, meta = _fetch_official_rows(games, now.astimezone(timezone.utc))
     except Exception as exc:
         rows, meta = [], {"available": False, "error": type(exc).__name__}
