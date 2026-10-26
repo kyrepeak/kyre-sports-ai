@@ -10,6 +10,7 @@ on:
       - "devsystem/monster_proof_plans/monster-step2g-final-production-convergence-v1.json"
       - "devsystem/task_ledgers/monster-step2g-final-production-convergence-v1.json"
       - "tests/test_devsystem_mandatory_2g_final_production_convergence_v1.py"
+      - "tests/test_devsystem_monster_step2g_permanent_integration_v1.py"
       - ".github/workflows/monster-step2g-final-production-convergence-v1.yml"
   push:
     branches: [monster-main]
@@ -40,5 +41,10 @@ jobs:
         run: |
           python devsystem/automatic_loop_kill_v1.py
           python devsystem/mandatory_2a_action_gate_v1.py
-      - name: Step 2G RED/GREEN contract
-        run: python -m pytest --noconftest -q tests/test_devsystem_mandatory_2g_final_production_convergence_v1.py
+      - name: Compile Step 2G control
+        run: python -m py_compile devsystem/mandatory_2g_final_production_convergence_v1.py
+      - name: Step 2G focused + permanent integration contracts
+        run: |
+          python -m pytest --noconftest -q \
+            tests/test_devsystem_mandatory_2g_final_production_convergence_v1.py \
+            tests/test_devsystem_monster_step2g_permanent_integration_v1.py
