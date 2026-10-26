@@ -22,7 +22,61 @@ from . import nba_pra_usage_fallback_v2 as _nba_pra_usage_fallback_v2  # noqa: E
 # while enriching display identity only from already-verified WNBA projection IDs.
 from . import wnba_pra_page1_final_polish_runtime_v1 as _wnba_pra_page1_final_polish_runtime_v1  # noqa: E402,F401
 
-# API2 hard-isolation repair: api2-* proof workstreams must resolve Step 2A
-# lease/registry authority only from API2-owned control-state branches. Legacy
-# and non-API2 Runless proof behavior is preserved by the additive adapter.
+# Existing shared-service compatibility adapter. The MONSTER proof below does not
+# consume this adapter's control state, receipts, leases, registries, or evidence.
 from . import api2_authority_isolation_v1 as _api2_authority_isolation_v1  # noqa: E402,F401
+
+
+def _monster_step2g_maybe_auto_prove() -> None:
+    """Publish PR #1853 proof only from its exact Vercel preview head.
+
+    The preview's configured GitHub App and Vercel Sandbox are transport only.
+    The proof publisher owns its MONSTER receipt/checkpoint data independently.
+    Production and every unrelated preview are no-ops.
+    """
+    import asyncio
+    import os
+
+    if os.environ.get("VERCEL_ENV", "").strip() != "preview":
+        return
+
+    branch = os.environ.get("VERCEL_GIT_COMMIT_REF", "").strip()
+    preview_sha = os.environ.get("VERCEL_GIT_COMMIT_SHA", "").strip().lower()
+    authorized_branch = "monster-step2g-production-identity-promotion-v1"
+    if branch != authorized_branch or len(preview_sha) != 40:
+        return
+
+    try:
+        from .config import Settings
+        from .github_authority import GithubAuthority
+        from .monster_step2g_proof_v1 import BRANCH, prove_production_promotion
+        from .sandbox_executor import SandboxExecutor
+
+        if BRANCH != authorized_branch:
+            raise RuntimeError("MONSTER_STEP2G_PREVIEW_BRANCH_CONTRACT_DRIFT")
+        settings = Settings.from_env()
+        if not settings.authority_enabled:
+            raise RuntimeError("MONSTER_STEP2G_PREVIEW_AUTHORITY_DISABLED")
+        result = asyncio.run(
+            prove_production_promotion(
+                github=GithubAuthority(settings),
+                sandbox=SandboxExecutor(),
+                expected_preview_sha=preview_sha,
+            )
+        )
+        print(
+            "MONSTER_STEP2G_AUTO_PROOF_GREEN:"
+            + str(result.get("receipt_digest") or "")
+        )
+    except Exception as exc:
+        detail = str(exc)
+        safe_detail = detail if detail.startswith("MONSTER_") else type(exc).__name__
+        print(
+            "MONSTER_STEP2G_AUTO_PROOF_BLOCKED:"
+            + type(exc).__name__
+            + ":"
+            + safe_detail[:200]
+        )
+
+
+_monster_step2g_maybe_auto_prove()
