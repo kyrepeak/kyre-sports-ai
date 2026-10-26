@@ -101,7 +101,7 @@ def test_player_context_client_full_mode_uses_full_route():
     assert str(captured["url"]).endswith("/api/v1/nba/pra/player-context")
 
 
-def test_history_router_calls_captured_history_collector():
+def test_history_router_uses_field_first_cbs_path_without_redundant_bulk_sweep():
     from sports_api.api import nba_pra_player_context_history_v1 as history
 
     captured: dict[str, object] = {}
@@ -127,6 +127,10 @@ def test_history_router_calls_captured_history_collector():
     assert out["fabrication"] is False
     assert captured["players"] == ["Aaron Gordon"]
     assert captured["team_codes"] == ["DEN"]
+    skip = captured["basketball_reference_bulk_history_loader"]
+    state = skip(date(2026, 10, 26), ["Aaron Gordon"])
+    assert state["profiles"] == {}
+    assert state["diagnostic_state"] == "FIELD_FIRST_SKIP_BULK_HISTORY_1"
 
 
 def test_nba_gateway_registers_history_only_capability_on_compiled_app():
