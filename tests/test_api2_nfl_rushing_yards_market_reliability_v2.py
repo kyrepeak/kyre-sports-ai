@@ -79,8 +79,10 @@ def test_direct_book_and_runtime_transport_have_bounded_reliability_budget() -> 
     assert market_adapter.MAX_MARKET_READ_ATTEMPTS == 2
     assert data_truth.DEFAULT_CALL_TIMEOUT_SECONDS == 8
     assert data_truth.DEFAULT_MARKET_BUDGET_SECONDS == 18.0
-    assert fastpath.MARKET_CALL_TIMEOUT_SECONDS == 8
-    assert fastpath.MARKET_BUDGET_SECONDS == 18.0
+    # The compatibility fastpath stays independently latency-bounded. The data-truth
+    # overlay installs after it and owns the production sportsbook read semantics.
+    assert fastpath.MARKET_CALL_TIMEOUT_SECONDS <= 3
+    assert fastpath.MARKET_BUDGET_SECONDS <= 5.0
     assert market_adapter.PLAYER_NAME_MATCHING is False
     assert market_adapter.FUZZY_MATCHING is False
     assert data_truth.PLAYER_NAME_MATCHING is False
