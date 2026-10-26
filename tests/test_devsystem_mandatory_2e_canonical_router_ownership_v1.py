@@ -55,6 +55,15 @@ def test_step2e_blocks_orphans_missing_modules_mounts_params_and_overrides():
         assert result["status"]=="BLOCKED" and result["final_verification_authorized"] is False
 
 
+def test_step2e_repository_audit_covers_every_current_live_route():
+    mod=_load(); result=mod.audit_current_repository()
+    assert result["status"]=="GREEN"
+    assert result["repository_audit"] is True
+    assert result["route_count"] == 38
+    assert len(result["canonical_owners"]) == 38
+    assert result["kyre_sports_api_mount_surface"] is True
+
+
 def test_step2e_contract_self_test_is_green():
     mod=_load(); result=mod.contract_self_test()
     assert result["status"]=="GREEN" and result["monster_only"] is True and result["network_calls"] is False and result["auto_mutate"] is False
