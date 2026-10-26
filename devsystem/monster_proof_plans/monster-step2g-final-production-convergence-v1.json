@@ -1,0 +1,47 @@
+{
+  "version": "MONSTER_STEP2G_FINAL_PRODUCTION_CONVERGENCE_PROOF_PLAN_V1",
+  "task_id": "monster-step2g-final-production-convergence-v1",
+  "proof_authority": "MONSTER_ONLY",
+  "github_actions_role": "SUPPORTING_EVIDENCE_ONLY",
+  "authoritative_branch": "monster-step2g-final-production-convergence-v1",
+  "base_branch": "monster-main",
+  "base_sha": "1cfc638a734c2216ba45cecf05c8363d0677b387",
+  "single_lane": true,
+  "api2_evidence_allowed": false,
+  "required_chain": [
+    "STEP_2A",
+    "ANTI_LOOP",
+    "STEP_2C_IF_REQUIRED",
+    "STEP_2B",
+    "EXECUTE",
+    "STEP_2D_IF_INVALIDATED",
+    "STEP_2E_IF_INVALIDATED",
+    "STEP_2F_IF_INVALIDATED",
+    "STEP_2G",
+    "FINAL_VERIFY",
+    "GREEN",
+    "FROZEN"
+  ],
+  "step2g_required_boundaries": [
+    "certified_candidate",
+    "final_branch_and_sha",
+    "deployment",
+    "stable_production_alias",
+    "application_entrypoint",
+    "runtime_identity",
+    "canonical_router",
+    "backend_endpoint_and_schema",
+    "live_data_contract",
+    "live_ui_behavior",
+    "cache_module_process_freshness",
+    "rollback_anchor"
+  ],
+  "failure_policy": {
+    "blind_redeploy_allowed": false,
+    "blind_cache_clear_allowed": false,
+    "duplicate_pr_allowed": false,
+    "duplicate_proof_lane_allowed": false,
+    "route": ["ANTI_LOOP", "STEP_2C", "STEP_2B", "STEP_2A", "CORRECT", "INVALIDATED_DOWNSTREAM_GATES", "STEP_2G"]
+  },
+  "freeze_target": "MONSTER_STEP2G_FINAL_PRODUCTION_CONVERGENCE_V1_FROZEN"
+}
