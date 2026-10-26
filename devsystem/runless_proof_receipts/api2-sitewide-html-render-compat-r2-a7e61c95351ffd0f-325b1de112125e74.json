@@ -1,0 +1,42 @@
+{
+  "artifact_map": {
+    "app.py": "2f133e6d7d576c6fd9b441b09b3c17e221462126",
+    "devsystem/runless_proof_plans/api2-sitewide-html-render-compat-r2.json": "898eeb61d3fc8db5e9d0a7b9e693d3b88b184695",
+    "devsystem/task_ledgers/api2-sitewide-html-render-compat-r2.json": "62dcbeb130bceccfef77aeed4e703d8bf693389d",
+    "streamlit_html_compat_v1.py": "644d2fe4338026ac52b626df739dba863608c687",
+    "tests/test_api2_sitewide_html_render_compat_r2.py": "6006df04e1d047bdf412f5dfeade15e04484869c"
+  },
+  "candidate_sha": "a7e61c95351ffd0fb8c158dacf717518ab58c7ba",
+  "created_at": "2026-10-26T19:52:26.629788+00:00",
+  "dependency_map": {
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nba_pra_page1_ui_v2.py": "c3d0c56d6dfb876a0938b48f37e6406d10c2d1fb",
+    "nba_pra_page1_v2.py": "973fd6bce79bec8e00060161fa909fd5b68d9288",
+    "nfl_moneyline_hub_v20.py": "be03db35c37a3a19b6fe28bdbb267f64d699cffb",
+    "runless_v2/api2_step2g_convergence_v1.py": "2c4f6d27abce3b32e14a921fc16d5426e7d8a5d1"
+  },
+  "digest": "1e0d3a03e504d8f594e73d6b1b9fae4137ffc717a98dde2d4b669e2026093fe6",
+  "evidence_digests": [
+    "6a7ff0b9a26cab3d6394eb878c513821b9812c7eaac290b7e6b61c7bc912bfc9",
+    "7e8af96700d13054b5ff611d30d82b04f08c30bf70b542a2cae73a76463340c5"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "f240ee36c4c9dc18801c70ffdc6c7ba26082a0fd995fe996f8e654896e4a41e3",
+  "proof_id": "api2-sitewide-html-render-compat-r2-a7e61c95351ffd0f-325b1de112125e74",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "5400701898db85dfa8d35f9550caf3ba6df9252bf7065f92825ed7f2c0653c1c",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-sitewide-html-render-compat-r2",
+  "workstream": "api2-sitewide-html-render-compat-r2"
+}
