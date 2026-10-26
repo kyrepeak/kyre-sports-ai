@@ -75,21 +75,7 @@ def _role_availability_html(context: Mapping[str, Any], games: list[dict[str, An
             '</article>'
         )
     else:
-        recent_minutes = [_num(row.get("minutes")) for row in games[:5]]
-        recent_minutes = [value for value in recent_minutes if value is not None]
-        if recent_minutes:
-            avg_minutes = mean(recent_minutes)
-            role = _role_label(profile, games)
-            cards.append(
-                '<article class="p2cc-context-card">'
-                '<small>ROLE & USAGE</small>'
-                f'<b>{avg_minutes:.1f} MIN</b>'
-                f'<span>{escape(role)} • USG% PENDING</span>'
-                '<em>Verified recent game minutes • role fallback</em>'
-                '</article>'
-            )
-        else:
-            gaps.append("Usage / team role not currently verified")
+        gaps.append("Usage / team role not currently verified")
 
     status = _text(context.get("availability")).upper()
     verification = _text(context.get("availability_verification")).upper()
