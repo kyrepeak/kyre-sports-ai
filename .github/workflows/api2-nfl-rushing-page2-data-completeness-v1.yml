@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - "sports_api/api/nfl_rushing_yards_detail_v2.py"
+      - "sports_api/api/nfl_rushing_yards_detail_v3.py"
       - "sports_api/nfl_rushing_yards_page2_enrichment_v1.py"
+      - "kyre_sports_api_vercel_v1.py"
       - "tests/test_api2_nfl_rushing_page2_data_completeness_v1.py"
       - ".github/workflows/api2-nfl-rushing-page2-data-completeness-v1.yml"
 
@@ -22,4 +24,4 @@ jobs:
       - name: Run Page 2 completeness contract
         run: python -m pytest --noconftest -q tests/test_api2_nfl_rushing_page2_data_completeness_v1.py
       - name: Compile enrichment path
-        run: python -m py_compile sports_api/nfl_rushing_yards_page2_enrichment_v1.py sports_api/api/nfl_rushing_yards_detail_v2.py
+        run: python -m py_compile sports_api/nfl_rushing_yards_page2_enrichment_v1.py sports_api/api/nfl_rushing_yards_detail_v2.py sports_api/api/nfl_rushing_yards_detail_v3.py kyre_sports_api_vercel_v1.py
