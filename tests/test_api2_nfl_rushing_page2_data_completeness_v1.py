@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 
 import sports_api.nfl_rushing_yards_page2_enrichment_v1 as enrich
@@ -12,9 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_official_nfl_injury_html_resolves_player_and_trench_context() -> None:
     html = '''
     <h3>Dallas Cowboys</h3><table><tr><th>Player</th><th>Position</th><th>Injuries</th><th>Practice Status</th><th>Game Status</th></tr>
-    <tr><td>Tyler Guyton</td><td>OT</td><td>Calf</td><td>Limited Participation in Practice</td><td>Questionable</td></tr></table>
+    <tr><td>Dee Winters</td><td>LB</td><td>Calf</td><td>Did Not Participate In Practice</td><td>Questionable</td></tr></table>
     <h3>Philadelphia Eagles</h3><table><tr><th>Player</th><th>Position</th><th>Injuries</th><th>Practice Status</th><th>Game Status</th></tr>
-    <tr><td>Jalen Carter</td><td>DT</td><td>Wrist</td><td>Full Participation in Practice</td><td></td></tr>
+    <tr><td>Landon Dickerson</td><td>G</td><td>Knee</td><td>Limited Participation in Practice</td><td>Questionable</td></tr>
     <tr><td>Saquon Barkley</td><td>RB</td><td>Hamstring</td><td>Limited Participation in Practice</td><td>Questionable</td></tr></table>
     '''
     report = enrich.parse_official_nfl_injury_html(html)
@@ -27,9 +26,8 @@ def test_official_nfl_injury_html_resolves_player_and_trench_context() -> None:
     assert context["availability"]["verification"] == "VERIFIED"
     assert context["availability"]["game_status"] == "QUESTIONABLE"
     assert context["availability"]["injury"] == "Hamstring"
-    assert context["offensive_line"]["verification"] == "VERIFIED"
-    assert context["defensive_front"]["verification"] == "VERIFIED"
-    assert context["defensive_front"]["flagged"][0]["player_name"] == "Tyler Guyton" or True
+    assert context["offensive_line"]["flagged"][0]["player_name"] == "Landon Dickerson"
+    assert context["defensive_front"]["flagged"][0]["player_name"] == "Dee Winters"
 
 
 def test_no_player_row_on_verified_team_report_means_no_official_designation() -> None:
@@ -81,7 +79,7 @@ def test_player_prop_history_yields_earliest_verified_line_and_movement() -> Non
     out = enrich.build_line_history(current, snapshots)
     assert out["opening_line"] == 61.5
     assert out["movement"] == 3.0
-    assert out["movement_status"] == "VERIFIED"
+    assert out["movement_status"].startswith("UP +3.0")
 
 
 def test_history_date_repair_uses_schedule_by_source_game_id() -> None:
@@ -107,10 +105,12 @@ def test_weather_normalizer_handles_outdoor_and_indoor() -> None:
     assert indoor["display"] == "INDOORS — WEATHER IMPACT NONE"
 
 
-def test_detail_service_uses_enrichment_instead_of_hardcoded_pending_fields() -> None:
-    source = (ROOT / "sports_api" / "api" / "nfl_rushing_yards_detail_v2.py").read_text(encoding="utf-8")
-    assert "nfl_rushing_yards_page2_enrichment_v1" in source
-    assert '"opening_line": None' not in source
-    assert '"spread_status": "GAME_SPREAD_NOT_VERIFIED"' not in source
-    assert '"weather_status": "WEATHER_VERIFICATION_PENDING"' not in source
-    assert '"status": "PERSONNEL_VERIFICATION_PENDING"' not in source
+def test_detail_v3_successor_is_live_without_mutating_frozen_v2() -> None:
+    successor = (ROOT / "sports_api" / "api" / "nfl_rushing_yards_detail_v3.py").read_text(encoding="utf-8")
+    entry = (ROOT / "kyre_sports_api_vercel_v1.py").read_text(encoding="utf-8")
+    frozen_v2 = (ROOT / "sports_api" / "api" / "nfl_rushing_yards_detail_v2.py").read_text(encoding="utf-8")
+    assert "nfl_rushing_yards_page2_enrichment_v1" in successor
+    assert "import sports_api.api.nfl_rushing_yards_detail_v3 as nfl_rushing_yards_detail_module" in entry
+    assert '"nfl_rushing_yards_detail_v3": True' in entry
+    assert '"opening_line": None' in frozen_v2
+    assert '"spread_status": "GAME_SPREAD_NOT_VERIFIED"' in frozen_v2
