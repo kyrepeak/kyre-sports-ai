@@ -35,8 +35,9 @@ def test_base_runtime_has_dedicated_spread_adapter_without_generic_nfl_hub_depen
 
 def test_current_api2_terminal_delegates_spread_to_canonical_loader():
     source = _read("streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py")
-    assert 'route.sport_id == "nfl" and route.market_id in {"rushing-yards", "spread"}' in source
-    assert "return canonical_loader.resolve_destination(route)" in source
+    routing_block = source.split('if route.sport_id == "nfl" and route.market_id in ', 1)[1].split("\n    return _prior_resolve_destination", 1)[0]
+    assert '"spread"' in routing_block
+    assert "return canonical_loader.resolve_destination(route)" in routing_block
 
 
 def test_current_production_chain_preserves_rushing_density_and_reaches_route_restore():

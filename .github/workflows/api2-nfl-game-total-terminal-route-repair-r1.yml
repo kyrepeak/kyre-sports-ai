@@ -1,0 +1,43 @@
+name: API2 NFL Game Total Terminal Route Repair R1
+
+on:
+  pull_request:
+    branches:
+      - api2-main
+    paths:
+      - 'app.py'
+      - 'streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1.py'
+      - 'streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py'
+      - 'universal_runtime_v5_loader.py'
+      - 'nfl_game_totals_compact_layout_v1.py'
+      - 'nfl_game_totals_hub_v10.py'
+      - 'tests/test_api2_nfl_game_total_terminal_route_repair_r1.py'
+      - 'tests/test_api2_nfl_game_total_canonical_router_v1.py'
+      - '.github/workflows/api2-nfl-game-total-terminal-route-repair-r1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  nfl-game-total-terminal-route-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install proof dependencies
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Compile routing boundary
+        run: |
+          python -m py_compile \
+            streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_page1_density_r1.py \
+            streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py \
+            universal_runtime_v5_loader.py \
+            nfl_game_totals_compact_layout_v1.py \
+            nfl_game_totals_hub_v10.py
+      - name: Terminal route + canonical Game Total proof
+        run: |
+          python -m pytest -q --noconftest \
+            tests/test_api2_nfl_game_total_terminal_route_repair_r1.py \
+            tests/test_api2_nfl_game_total_canonical_router_v1.py
