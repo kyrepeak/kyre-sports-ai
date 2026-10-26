@@ -53,9 +53,11 @@ def test_compact_card_keeps_all_certified_sections_inside_one_matchup_article():
     assert '<div class="kgt-compact-analysis-grid">' in compact
 
 
-def test_game_total_router_activates_compact_wrapper_only_for_game_total():
+def test_game_total_router_activates_s_tier_successor_and_keeps_compact_wrapper_addressable():
     hub = _text(HUB)
     assert 'if market == "Game Total":' in hub
+    assert "from nfl_game_totals_page1_s_tier_v1 import render_nfl_game_totals_hub" in hub
+    assert "def _render_compact_game_totals_v1():" in hub
     assert "from nfl_game_totals_compact_layout_v1 import render_nfl_game_totals_hub" in hub
     assert "return base.render_nfl_hub(market)" in hub
 
