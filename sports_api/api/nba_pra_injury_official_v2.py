@@ -86,6 +86,7 @@ def _reason(value: str) -> str:
     for marker in (" Injury Report:", " Page "):
         if marker in text:
             text = text.split(marker, 1)[0].strip()
+    text = re.split(r"\b[A-Z]{2,4}@[A-Z]{2,4}\b", text, maxsplit=1)[0].strip()
     return text
 
 
@@ -111,7 +112,6 @@ def _all_team_anchors(flat: str) -> list[tuple[int, int, str]]:
         for alias in aliases:
             for match in re.finditer(re.escape(alias), flat, flags=re.I):
                 candidates.append((match.start(), match.end(), code))
-    # Prefer the longest alias when aliases overlap at the same position.
     by_start: dict[int, tuple[int, int, str]] = {}
     for item in candidates:
         prior = by_start.get(item[0])
@@ -145,7 +145,7 @@ def parse_official_injury_report_text_v2(
         segment = flat[end_of_header:segment_end].strip()
         player_matches = list(
             re.finditer(
-                rf"([A-Za-z .'-]+,\s*[A-Za-z .'-]+)\s+({_STATUS_PATTERN})\b",
+                rf"([A-Za-z][A-Za-z .'-]*,\s*[A-Za-z][A-Za-z .'-]*)\s+({_STATUS_PATTERN})\b",
                 segment,
                 flags=re.I,
             )
