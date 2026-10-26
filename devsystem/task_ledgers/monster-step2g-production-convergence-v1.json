@@ -1,0 +1,52 @@
+{
+  "version": "MONSTER_STEP2G_PRODUCTION_CONVERGENCE_LEDGER_V1",
+  "task_id": "monster-step2g-production-convergence-v1",
+  "active_problem": "Live Streamlit production loads successfully but does not expose the required MONSTER Step 2G runtime identity marker.",
+  "status": "RED_CONTRACT_PENDING",
+  "progress_percent": 99,
+  "authoritative_base": "main",
+  "authoritative_base_sha": "477ec52179a1f3ba78e5a4bb06a81ed7bcd8e126",
+  "authoritative_branch": "monster-step2g-production-convergence-v1",
+  "authoritative_pr": "PENDING_SINGLE_PR",
+  "proof_authority": "MONSTER_ONLY_RUNLESS",
+  "github_actions_role": "SUPPORTING_EVIDENCE_ONLY",
+  "failure_fingerprint": "RUN_40363725769:PRODUCTION_NOT_UPDATED:MONSTER_RUNTIME_IDENTITY_MISSING",
+  "scope": [
+    "app.py additive MONSTER marker only",
+    "devsystem/monster_runtime_identity_v1.py",
+    "devsystem/monster_step2g_production_live_probe_v1.py",
+    "focused test/proof/workflow metadata"
+  ],
+  "step2a": {
+    "status": "GREEN",
+    "one_active_problem": true,
+    "one_branch": true,
+    "one_pr": true,
+    "one_authoritative_proof_path": true,
+    "competing_lane_allowed": false
+  },
+  "anti_loop": {
+    "status": "GREEN",
+    "blind_redeploy_allowed": false,
+    "duplicate_pr_allowed": false,
+    "duplicate_production_lane_allowed": false,
+    "same_failed_probe_replay_allowed": false,
+    "material_new_evidence_required": true
+  },
+  "step2c": {
+    "status": "GREEN_ROOT_CAUSE_PROVEN",
+    "failure_class": "PRODUCTION_NOT_UPDATED",
+    "boundary": "MONSTER_RUNTIME_IDENTITY_MISSING",
+    "source_run": 40363725769
+  },
+  "step2b": {
+    "status": "GREEN",
+    "acceptance_locked": true,
+    "minimal_correction": "Add MONSTER-owned hidden runtime identity to shared main without changing existing sports/router/product behavior."
+  },
+  "resume": {
+    "last_completed_gate": "STEP_2B_PRODUCTION_PROMOTION_LOCK",
+    "next_required_action": "OBSERVE_RED_THEN_IMPLEMENT_IDENTITY_SURFACE",
+    "final_freeze_target": "MONSTER_STEP2G_FINAL_PRODUCTION_CONVERGENCE_V1_FROZEN"
+  }
+}
