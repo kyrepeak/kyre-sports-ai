@@ -95,3 +95,13 @@ def test_live_probe_installer_avoids_slow_os_dependency_reinstall():
     workflow = WORKFLOW.read_text(encoding="utf-8")
     assert "playwright install --with-deps chromium" not in workflow
     assert "python -m playwright install chromium" in workflow
+
+
+def test_live_probe_refreshes_fresh_browser_sessions_until_marker_arrives():
+    text = PROBE.read_text(encoding="utf-8")
+    assert "FRESHNESS_MAX_ATTEMPTS" in text
+    assert "FRESHNESS_SETTLE_SECONDS" in text
+    assert "browser.new_context()" in text
+    assert "context.close()" in text
+    assert "freshness_attempts" in text
+    assert "MONSTER runtime identity marker missing after bounded fresh-session convergence" in text
