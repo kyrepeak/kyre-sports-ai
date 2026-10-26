@@ -55,7 +55,7 @@ def load_kyre_sports_api_player_context(
     player_names: Sequence[str],
     *,
     team_codes: Sequence[str] | None = None,
-    include_usage: bool = True,
+    include_usage: bool = False,
     request_post: Callable[..., Any] | None = None,
     base_url: str | None = None,
     timeout: tuple[float, float] = (3.0, 24.0),
