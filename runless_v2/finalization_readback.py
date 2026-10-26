@@ -129,3 +129,10 @@ def validate_finalization_closeout(
         "manifest_state_hash": man["state_hash"],
         "manifest_revision": man["revision"],
     }
+
+
+# API2 Step 2G permanent terminal convergence enforcement. This module is
+# already loaded by every Runless closeout path, so the additive adapters install
+# without mutating the frozen package initializer. Non-API2 closeout remains unchanged.
+from . import api2_step2g_github_authority_v1 as _api2_step2g_github_authority_v1  # noqa: E402,F401
+from . import api2_step2g_closeout_enforcement_v1 as _api2_step2g_closeout_enforcement_v1  # noqa: E402,F401

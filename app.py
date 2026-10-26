@@ -1,7 +1,10 @@
 """KYRE Sports AI production entrypoint — NFL Rushing route restore V1."""
 from time import perf_counter
 
+import streamlit as st
+
 _STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"
+_STEP2G_DEPLOYMENT_MARKER = "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1"
 _BOOTSTRAP_STARTED = perf_counter()
 
 # Frozen ancestry markers retained for regression/documentation only:
@@ -15,6 +18,12 @@ _BOOTSTRAP_STARTED = perf_counter()
 from streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1 import (  # noqa: E402
     record_bootstrap_import_ms,
     render_app,
+)
+
+# Off-screen but browser-visible production identity marker for Step 2G proof.
+st.markdown(
+    f'<span style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden">{_STEP2G_DEPLOYMENT_MARKER}</span>',
+    unsafe_allow_html=True,
 )
 
 record_bootstrap_import_ms((perf_counter() - _BOOTSTRAP_STARTED) * 1000.0)
