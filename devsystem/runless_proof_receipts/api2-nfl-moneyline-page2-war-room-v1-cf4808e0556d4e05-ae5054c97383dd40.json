@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-moneyline-page2-war-room-v1.yml": "05a5150a3632aae08e8cdb4afdae5492cdf4bfc9",
+    "devsystem/runless_proof_plans/api2-nfl-moneyline-page2-war-room-v1.json": "9d7459ddc5d253368f514e7560b3c496d1e2c72f",
+    "devsystem/task_ledgers/api2-nfl-moneyline-page2-war-room-v1.json": "ab37938155d3697f5d52c01c2aa2c3513d521e78",
+    "nfl_moneyline_hub_v20.py": "b7db9639eb35aa562f0ccfc77dc5dea9275a1f6c",
+    "nfl_moneyline_page2_war_room_v1.py": "3c448824cb99352afc391a37e349864f8d944fd6",
+    "sports_api/api/nfl_moneyline_page2_v1.py": "45db6702c99a950878ae307ac6279054d533dc4c",
+    "sports_api/nfl_moneyline_page2_v1.py": "dfc152ee33a229c57bcb83da88deb06492001599",
+    "tests/test_api2_nfl_moneyline_page2_war_room_v1.py": "29227c2d0b0ba6b144a8d4bb452dd2d70cad2f39",
+    "tests/test_nfl_moneyline_consumer_cleanup_v19.py": "e44ee55da25025ea6df612c495c9ea5b96712faa",
+    "universal_runtime_v5_loader_v21.py": "e7a504e93ba50156387caeb83776382c2d81922e"
+  },
+  "candidate_sha": "cf4808e0556d4e05c793e83c021598bf7d381d88",
+  "created_at": "2026-10-26T16:33:25.565164+00:00",
+  "dependency_map": {
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_moneyline_hub_v17.py": "1c0a751bbab54e280ddbb3f607b474f48c71bc26",
+    "nfl_moneyline_hub_v19.py": "4d9b7f7caa5af89544e8a0602394745e334263fd",
+    "nfl_moneyline_hub_v8.py": "ffd46f2afe574c7104eb4c80c3e305d8c74a8a86",
+    "nfl_moneyline_hub_v9.py": "fae03ae3d6af610bb7cabd2a254aef657a030deb",
+    "sports_api/nfl_data_nflverse_v1.py": "0ace653fb9abf68a4f454c6c3d6bcfcf3f941a8c",
+    "universal_runtime_v5_loader.py": "0d7afdf5405ea68d817e00d6c3726154137cee5c",
+    "universal_runtime_v5_state.py": "395f1c03b8106c4c568c63714bf1e8850dab520d"
+  },
+  "digest": "f60f60fdc25ea1f20ce0f43116ee762e74ea38c91bbc803828cbcc02c5d4da1d",
+  "evidence_digests": [
+    "7539ad7dc0a000e14d0b8348c44d067f3b23c556941a9c840ccb40a427acc17e",
+    "d309d748750a125d20ffb0ccc5126bc17ea500b94fbf1193427c1a2c6ba2339f"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "65b26908f6c444f873e290418ed03faa5dd54dca2dcc945943fe17d1f67528d4",
+  "proof_id": "api2-nfl-moneyline-page2-war-room-v1-cf4808e0556d4e05-ae5054c97383dd40",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "d5d7476d7e0d526462056fc259ff55ad8b32d432000a00b28b59f59f1049a231",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-moneyline-page2-war-room-v1",
+  "workstream": "api2-nfl-moneyline-page2-war-room-v1"
+}
