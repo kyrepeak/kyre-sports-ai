@@ -2,7 +2,7 @@
   "mode": "runless",
   "task_id": "monster-step2g-production-identity-promotion-v1",
   "workstream": "monster-step2g-production-identity-promotion-v1",
-  "source_main_sha": "477ec52179a1f3ba78e5a4bb06a81ed7bcd8e126",
+  "source_main_sha": "ac1dde25f9f760485fcf485fe9f3de5ec99362a6",
   "commands": [
     [
       "python", "-m", "pytest", "--noconftest", "-q",
