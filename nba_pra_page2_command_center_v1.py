@@ -129,7 +129,7 @@ def _evidence_coverage(context: Mapping[str, Any], model: Mapping[str, Any], mat
     return sum(1 for item in checks if item), len(checks)
 
 
-def _hero_html(context: Mapping[str, Any], model: Mapping[str, Any], result: Mapping[str, Any], active_line: float | None) -> str:
+def _hero_html(context: Mapping[str, Any], model: Mapping[str, Any], result: Mapping[str, Any], matchup: Mapping[str, Any], active_line: float | None) -> str:
     profile = context.get("player") if isinstance(context.get("player"), Mapping) else {}
     name = _text(context.get("player_name") or profile.get("player_name")) or "NBA Player"
     team = _text(context.get("team")) or "NBA"
@@ -144,7 +144,7 @@ def _hero_html(context: Mapping[str, Any], model: Mapping[str, Any], result: Map
     lean = _text(result.get("lean")).upper() or "PASS"
     tier = _text(result.get("tier")) or _text(result.get("confidence")) or ""
     score = _fmt(result.get("score"), 1)
-    evidence, total = _evidence_coverage(context, model, {})
+    evidence, total = _evidence_coverage(context, model, matchup)
     face = f'<img class="p2cc-face" src="{escape(headshot)}" alt="{escape(name)}">' if headshot else '<div class="p2cc-face p2cc-face-empty">NBA</div>'
     team_img = f'<img class="p2cc-mini-logo" src="{escape(team_logo)}" alt="{escape(team)} logo">' if team_logo else ""
     opp_img = f'<img class="p2cc-mini-logo" src="{escape(opponent_logo)}" alt="{escape(opponent)} logo">' if opponent_logo else ""
@@ -411,7 +411,7 @@ def build_page2_html(
     return "\n".join(
         (
             '<div id="ks-nba-pra-page2-top"></div>',
-            _hero_html(context, model, line_result, active_line),
+            _hero_html(context, model, line_result, matchup, active_line),
             _distribution_html(context, model, active_line),
             _insights_html(context, model, line_result, matchup, active_line),
             _recent_performance_html(games, active_line),
