@@ -1,0 +1,43 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-game-total-page1-mobile-density-r1.yml": "23a2a146d13a583dbcdb30ef9f1c4696c5b47af8",
+    "devsystem/runless_proof_plans/api2-nfl-game-total-page1-mobile-density-r1.json": "11f76424b38dec00132f5254182249db8cd93e82",
+    "devsystem/task_ledgers/api2-nfl-game-total-page1-mobile-density-r1.json": "19a347da51f10919f9c060bcb0424b612b71a8b9",
+    "nfl_game_totals_page1_s_tier_v1.py": "348f17f3d0a21b47627bb3e3abde16447304021f",
+    "tests/test_api2_nfl_game_total_page1_mobile_density_r1.py": "5ead017964333174d5095329250e2fbd33c1d895"
+  },
+  "candidate_sha": "4e067e4fa9b78543e5361dcaf82b9c9f71af4a04",
+  "created_at": "2026-10-26T14:48:53.572554+00:00",
+  "dependency_map": {
+    "app.py": "19bb6a176b665bd3bbcf4843c4423311258928e6",
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_game_totals_hub_v10.py": "c22485c186e2f53c3b0a6b1302375dd9bb25468a",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py": "821ffb8daeb3934694e41d216e62c8b4ecd4c27c",
+    "tests/test_api2_nfl_game_total_page1_mobile_density_deploy_r1.py": "e4f1df267cc87218822ca44470eaf1dc0ef21e7b",
+    "universal_runtime_v5_loader.py": "0d7afdf5405ea68d817e00d6c3726154137cee5c"
+  },
+  "digest": "66c3d7748f5c8a3c3fee6d312bc0b34c403fb21740153907316ec31d40d4a21f",
+  "evidence_digests": [
+    "b7ce5f788f3250f2e036d5708e93936fd67dd253d8a9756a54dc1e00d88a6ffc",
+    "f7c63beb288aa605c13e387ddcccfdb8f62a4e238dd5cba397bb986e2b863d48"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "e9209245294c6f6ca5bc499246382d31583886e782653b6f932286632333c8cf",
+  "proof_id": "api2-nfl-game-total-page1-mobile-density-r1-4e067e4fa9b78543-ceab8ffa1ed45cc1",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "9412741e153c42d096f29435ec8f7dd231c324812ec03a9b6d98894db510efcb",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-game-total-page1-mobile-density-r1",
+  "workstream": "api2-nfl-game-total-page1-mobile-density-r1"
+}
