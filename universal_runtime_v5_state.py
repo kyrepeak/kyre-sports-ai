@@ -8,7 +8,7 @@ from typing import Mapping
 from universal_sports_nav_controller_v1 import RouteIntent, RouteState, resolve_route
 from universal_sports_nav_registry_v1 import get_market
 
-_PAGE_KEYS = ("date", "game_id", "player_id")
+_PAGE_KEYS = ("date", "game_id", "player_id", "prop")
 
 
 def _strings(values: Mapping[str, object] | None) -> dict[str, str]:

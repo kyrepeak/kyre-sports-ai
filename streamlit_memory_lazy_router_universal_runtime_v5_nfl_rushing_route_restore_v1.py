@@ -14,7 +14,7 @@ import universal_runtime_v5_loader as canonical_loader
 from universal_page_experience_runtime_v5 import render_page_experience_app_v5
 from universal_runtime_v5_loader import DestinationAdapter
 
-MODEL_VERSION = "API2 UNIVERSAL RUNTIME V5 • NBA PRA + NFL RUSHING + CFB MONEYLINE LOGO RAIL R1"
+MODEL_VERSION = "MONSTER UNIVERSAL RUNTIME V5 • CANONICAL ROUTER OWNERSHIP R1"
 FROZEN_RUNTIME = prior.FROZEN_RUNTIME
 MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -56,19 +56,7 @@ def resolve_destination(route):
             base.ttl_ms,
         )
     if route.sport_id == "nba" and route.market_id == "pra":
-        def loader():
-            return importlib.import_module("nba_pra_runtime_v2")
-
-        def renderer(page):
-            return page.render_nba_pra_runtime_v2()
-
-        return DestinationAdapter(
-            (route.sport_id, route.market_id),
-            loader,
-            renderer,
-            "nba_pra_runtime_v2_api_only_terminal_restore_r1",
-            30_000,
-        )
+        return canonical_loader.resolve_destination(route)
     if route.sport_id == "nfl" and route.market_id == "rushing-yards":
         return canonical_loader.resolve_destination(route)
     return _prior_resolve_destination(route)

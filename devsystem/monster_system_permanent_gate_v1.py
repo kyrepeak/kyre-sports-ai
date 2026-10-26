@@ -19,6 +19,10 @@ from pathlib import Path
 from typing import Any
 
 from devsystem.mandatory_2bc_permanent_enforcement_v1 import validate as validate_step2bc
+from devsystem.mandatory_2d_data_truth_gate_v1 import contract_self_test as step2d_self_test
+from devsystem.mandatory_2e_router_ownership_gate_v1 import contract_self_test as step2e_self_test
+from devsystem.mandatory_2f_live_production_gate_v1 import contract_self_test as step2f_self_test
+from devsystem.monster_permanent_control_stack_v1 import contract_self_test as control_stack_self_test
 from devsystem.monster_execution_front_door_v1 import contract_self_test as front_door_self_test
 from devsystem.monster_system_isolation_v1 import contract_self_test as isolation_self_test
 
@@ -33,6 +37,13 @@ REQUIRED_MONSTER_FILES = (
     "devsystem/mandatory_2a_action_gate_v1.py",
     "devsystem/mandatory_2b_reliability_gate_v1.py",
     "devsystem/mandatory_2c_autonomous_recovery_v1.py",
+    "devsystem/mandatory_2d_data_truth_gate_v1.py",
+    "devsystem/mandatory_2e_router_ownership_gate_v1.py",
+    "devsystem/mandatory_2f_live_production_gate_v1.py",
+    "devsystem/monster_permanent_control_stack_v1.py",
+    "devsystem/runless_proof_plans/monster-step2cdef-permanent-v1.json",
+    "devsystem/task_ledgers/monster-step2cdef-permanent-v1.json",
+    "tests/test_monster_step2cdef_permanent_v1.py",
     "devsystem/mandatory_2bc_permanent_enforcement_v1.py",
     "devsystem/monster_system_isolation_v1.py",
     "devsystem/monster_execution_front_door_v1.py",
@@ -154,6 +165,10 @@ def validate() -> dict[str, Any]:
     step2bc = validate_step2bc()
     isolation = isolation_self_test()
     front_door = front_door_self_test()
+    step2d = step2d_self_test()
+    step2e = step2e_self_test(ROOT)
+    step2f = step2f_self_test()
+    control_stack = control_stack_self_test(ROOT)
 
     if step2bc.get("status") != "GREEN":
         raise MonsterSystemPermanentGateFailure("MONSTER Step 2B/2C permanent enforcement is not GREEN")
@@ -163,6 +178,14 @@ def validate() -> dict[str, Any]:
         raise MonsterSystemPermanentGateFailure("MONSTER hard isolation contract is not GREEN")
     if front_door.get("status") != "GREEN" or front_door.get("monster_only") is not True:
         raise MonsterSystemPermanentGateFailure("MONSTER canonical execution front door is not GREEN")
+    if step2d.get("status") != "GREEN":
+        raise MonsterSystemPermanentGateFailure("MONSTER Step 2D permanent gate is not GREEN")
+    if step2e.get("status") != "GREEN" or step2e.get("monster_only") is not True:
+        raise MonsterSystemPermanentGateFailure("MONSTER Step 2E router ownership gate is not GREEN")
+    if step2f.get("status") != "GREEN" or step2f.get("monster_only") is not True:
+        raise MonsterSystemPermanentGateFailure("MONSTER Step 2F production-consumption contract is not GREEN")
+    if control_stack.get("status") != "GREEN" or control_stack.get("monster_only") is not True:
+        raise MonsterSystemPermanentGateFailure("MONSTER composed 2A-through-2F control stack is not GREEN")
 
     return {
         "status": "GREEN",
@@ -179,6 +202,12 @@ def validate() -> dict[str, Any]:
         "proof_workflows_full_ref_fetch_blocked": True,
         "proof_workflows_persist_credentials": False,
         "step2a_step2b_step2c_chain_permanent": True,
+        "step2d_permanent": True,
+        "step2e_permanent": True,
+        "step2f_permanent": True,
+        "step2a_through_step2f_control_order_permanent": True,
+        "step2e_route_count": step2e.get("route_count"),
+        "step2f_alias_drift_fail_closed": step2f.get("alias_drift_fail_closed") is True,
         "anti_loop_permanent": True,
         "human_only_blocker_rule_permanent": True,
         "no_blind_retry_permanent": True,

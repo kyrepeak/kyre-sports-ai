@@ -1,0 +1,22 @@
+{
+  "version": "MONSTER_STEP2CDEF_PERMANENT_TASK_LEDGER_V1",
+  "task_id": "monster-step2cdef-permanent-v1",
+  "workstream": "monster-step2cdef-permanent-v1",
+  "active_problem": "Permanently extend MONSTER-only control authority through canonical router ownership and exact live-production consumption without importing foreign control state.",
+  "status": "IMPLEMENTATION_GREEN_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 72,
+  "authoritative_base": "monster-main",
+  "authoritative_branch": "monster-step2cdef-permanent-v1",
+  "authoritative_pr": null,
+  "source_monster_sha": "c9be8571401a0b07f34c28fdaa86056202d5e26a",
+  "proof_path": "RUNLESS_V2_MONSTER_ONLY",
+  "freeze_token": "MONSTER_STEP2CDEF_PERMANENT_V1_FROZEN",
+  "step2a": {"single_branch": true, "single_pr": true, "single_proof_path": true, "one_use_authorization": true},
+  "anti_loop": {"enabled": true, "blind_retry_allowed": false, "preserved_failed_fingerprints": ["DUPLICATE_BRANCH_CREATE_422", "LOCAL_GITHUB_DNS_UNAVAILABLE", "SANDBOX_ROOT_PATH_MISMATCH", "STREAMLIT_AUTH_REDIRECT_303"]},
+  "step2c": {"root_cause": "MONSTER permanent stack ended at Step 2D; canonical live route ownership had an orphan CFB player-props path, NBA PRA was terminal-routed but absent from the canonical registry, route prop was not preserved, terminal ownership labels were foreign, and no permanent exact-production-consumption gate existed."},
+  "step2b": {"acceptance_criteria_locked": true, "requirement_to_proof_mapping_complete": true, "repair_materially_different": true},
+  "step2d": {"status": "FROZEN_BASELINE_PRESERVED"},
+  "step2e": {"status": "IMPLEMENTED_PENDING_PROOF", "registry_driven": true},
+  "step2f": {"status": "IMPLEMENTED_PENDING_PROOF", "fail_closed_on_authentication_barrier": true, "render_dependency": false},
+  "isolation": {"foreign_state_as_evidence": false, "foreign_branch_inspection": false, "foreign_deployment_as_evidence": false}
+}

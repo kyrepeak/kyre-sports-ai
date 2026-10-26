@@ -1,7 +1,7 @@
 """KYRE Sports AI production entrypoint — NFL Rushing route restore V1."""
 from time import perf_counter
 
-_STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"
+_STREAMLIT_DEPLOYMENT_HEARTBEAT = "monster-step2cdef-permanent-v1-production"
 _BOOTSTRAP_STARTED = perf_counter()
 
 # Frozen ancestry markers retained for regression/documentation only:

@@ -184,6 +184,32 @@ def _cfb_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
     )
 
 
+def _nba_pra_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    def loader():
+        return _import("nba_pra_runtime_v2")
+
+    def renderer(page):
+        return page.render_nba_pra_runtime_v2()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id), loader, renderer,
+        "nba_pra_runtime_v2", 30_000,
+    )
+
+
+def _cfb_player_props_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    def loader():
+        return _import("cfb_player_props_runtime_v3")
+
+    def renderer(page):
+        return page.render_cfb_player_props_runtime()
+
+    return DestinationAdapter(
+        (route.sport_id, route.market_id), loader, renderer,
+        "cfb_player_props_runtime_v3", 30_000,
+    )
+
+
 def _nba_spread_adapter(route: RuntimeRoute) -> DestinationAdapter:
     def loader():
         return (
@@ -226,6 +252,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
         return _root_adapter(route, ttl_ms=15_000)
     if route.sport_id == "nba" and route.market_id == "spread":
         return _nba_spread_adapter(route)
+    if route.sport_id == "nba" and route.market_id == "pra":
+        return _nba_pra_adapter(route)
     if route.sport_id == "cfb":
         if route.market_id == "moneyline":
             return _cfb_page_adapter(route, "cfb_moneyline_clean_page_v1", ttl_ms=30_000)
@@ -235,6 +263,8 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
             return _cfb_game_total_adapter(route)
         if route.market_id == "top-picks":
             return _cfb_page_adapter(route, "cfb_top_picks_page_v10", ttl_ms=30_000)
+        if route.market_id == "player-props":
+            return _cfb_player_props_adapter(route)
     if route.sport_id == "nfl":
         if route.market_id == "passing-yards":
             return _nfl_passing_yards_adapter(route)
