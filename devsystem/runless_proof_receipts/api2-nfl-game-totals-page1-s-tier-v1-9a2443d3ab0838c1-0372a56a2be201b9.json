@@ -1,0 +1,50 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-game-totals-page1-s-tier-v1.yml": "8b9a755dc6edb6f4eb35cb5a8472ee21886279c2",
+    "devsystem/runless_proof_plans/api2-nfl-game-totals-page1-s-tier-v1.json": "8e3896fd8c5854fbdee56c08ad071c05d73b3161",
+    "devsystem/task_ledgers/api2-nfl-game-totals-page1-s-tier-v1.json": "9bde028a2ff4cf5241f95bef8d3e583233c44435",
+    "nfl_game_totals_page1_s_tier_v1.py": "4f03cfd55c635bdd3befbc590841dbf6f07691e0",
+    "nfl_hub_v36.py": "a8f429155bac0c8cb087a56bcad406134693c54b",
+    "tests/test_api2_nfl_game_totals_page1_s_tier_v1.py": "7650d7a075d1756710e28518a03f8ff0630f9f23",
+    "tests/test_nfl_game_totals_compact_layout_v1.py": "29ee3360b2302db44371968740e86dfb24460f3b"
+  },
+  "candidate_sha": "9a2443d3ab0838c1deb1d19471f6ac25e6456362",
+  "created_at": "2026-10-26T05:05:25.528192+00:00",
+  "dependency_map": {
+    "nfl_game_totals_compact_layout_v1.py": "21da145bd4c0802ef3d4963aac6b8253b07a3a49",
+    "nfl_game_totals_hub_v10.py": "c22485c186e2f53c3b0a6b1302375dd9bb25468a",
+    "nfl_game_totals_hub_v8.py": "61d011f51ef186987a0d69ea33982b94413a8e97",
+    "nfl_game_totals_hub_v9.py": "0f9e48384daf8b4f79f2edabdf9d234f90d19076",
+    "nfl_game_totals_market_read_v1.py": "ca86561ffbb329f686df752afdfc95da1f210ba3",
+    "runless_v2/api2_authority_isolation_v1.py": "656ef5ae7bebd602035a1e1a9715ec35b0a82b57",
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/github_authority.py": "50272688dd62461638a342938bb3b2b398f540cc",
+    "runless_v2/models.py": "1f63ff94ff702597430f3fbf2050d799150c516a",
+    "runless_v2/proof_service.py": "0dd0660e4858d665222847693cc26441fd783ba3",
+    "sports_api/nfl_game_totals_total_projection_v1.py": "0738d4f9e995c9d1423118b8fc9a95a799c8c55d"
+  },
+  "digest": "49beb7399e1609041285d323e81291ca1942680d499d1992996d5cd439aa21ce",
+  "evidence_digests": [
+    "04d6af53304b1efe5a31a6754a4b1e49dd132811578fdfb61f859e4bca76e08d",
+    "3d5267954e0684128989c5315f05662787704bbfc6c126def00a75af8fa794f7"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "90c4e2e044da50c88961f77bf682e2b9dce05e7405d96c77fd9febb76583a7da",
+  "proof_id": "api2-nfl-game-totals-page1-s-tier-v1-9a2443d3ab0838c1-0372a56a2be201b9",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "c021240067879d20904f3741516f3d930894e7a31f4334768dccd66d09445e88",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-game-totals-page1-s-tier-v1",
+  "workstream": "api2-nfl-game-totals-page1-s-tier-v1"
+}
