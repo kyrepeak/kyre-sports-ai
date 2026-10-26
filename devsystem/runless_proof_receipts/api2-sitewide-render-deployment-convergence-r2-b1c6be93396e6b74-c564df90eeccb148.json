@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    "app.py": "49107db17f9223fc58a726985e6a63147f164e16",
+    "devsystem/runless_proof_plans/api2-sitewide-render-deployment-convergence-r2.json": "2a5e3fc01d2ffc8398d797ac43042a6a37462498",
+    "devsystem/task_ledgers/api2-sitewide-render-deployment-convergence-r2.json": "cbb4adcbbf1da1f413d0a59a2134ad9219f6a4b9",
+    "tests/test_api2_sitewide_render_deployment_convergence_r2.py": "f3f8dba5e6d20fb1a392582c690c4463d5353c34"
+  },
+  "candidate_sha": "b1c6be93396e6b741afb65fabd8b0d2f4c06b50f",
+  "created_at": "2026-10-26T19:36:53.944526+00:00",
+  "dependency_map": {
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_moneyline_hub_v20.py": "be03db35c37a3a19b6fe28bdbb267f64d699cffb",
+    "nfl_moneyline_page2_war_room_v1.py": "3c448824cb99352afc391a37e349864f8d944fd6",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_route_restore_r1.py": "1fe809f42017c531015912a9d6223f2c3d6efb04",
+    "universal_page_experience_v1.py": "37341d4d9980eb5d66d380151c31d301471edea7"
+  },
+  "digest": "ee50273f674b079fde5e6bc2025d829c16d8a2e610cec2d25469d217fe794fff",
+  "evidence_digests": [
+    "accad5f9f080ae4c701ca8284294580f3c1a39626d1e8c4f0a95bea3fad8a881",
+    "c2d692b20a04f3c831ef12512bc3dee26f594cb3ffa559a266d7a6ce534e6a88"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "a52dc85bbc7a9ecc3229cf955810b5b383c0cce3c5820d77d177a73f2c3e7bbe",
+  "proof_id": "api2-sitewide-render-deployment-convergence-r2-b1c6be93396e6b74-c564df90eeccb148",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "9917e7daea74dcc6434d649e85a992de1e4e2976779999aa33ee1ec88d29945f",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-sitewide-render-deployment-convergence-r2",
+  "workstream": "api2-sitewide-render-deployment-convergence-r2"
+}
