@@ -81,11 +81,13 @@ def test_page1_maps_frozen_final_state_to_display_action_only():
     assert page._display_action("GATED") == "PASS"
 
 
-def test_page1_owns_a_dedicated_renderer_and_suppresses_v19_diagnostics():
+def test_page1_owns_a_dedicated_renderer_without_v19_runtime_monkey_patch():
     source = inspect.getsource(page._page1)
     assert "_simple_matchup_html" in source
-    assert "prior._diagnostics" in source
-    assert "original(game" not in source
+    assert "prior._silent_frozen_engine()" in source
+    assert "prior._diagnostics" not in source
+    assert "prior.market_visual" not in source
+    assert "prior.render_nfl_moneyline_hub()" not in source
 
 
 def test_page2_route_remains_separate_from_page1_renderer():
