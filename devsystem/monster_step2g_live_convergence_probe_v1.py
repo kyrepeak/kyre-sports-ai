@@ -1,8 +1,8 @@
 """Live MONSTER Step 2G production convergence probe.
 
-Runs only as supporting evidence after a monster-main push. It loads the stable
-production alias once in Chromium, waits for the MONSTER runtime identity marker,
-and fails closed unless live runtime identity equals the exact pushed SHA/tree.
+Uses one Chromium document load as both stable-alias health evidence and the
+runtime-identity/UI proof. This avoids a separate urllib health request whose
+redirect semantics do not match Streamlit's browser flow.
 """
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import argparse
 import hashlib
 import html
 import json
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -36,26 +35,31 @@ def expected_identity(sha: str, tree_sha: str) -> dict[str, str]:
     }
 
 
+def browser_health_evidence(*, document_status: int, document_url: str) -> dict[str, Any]:
+    status = int(document_status)
+    url = str(document_url or "").strip()
+    if not url or status < 200 or status >= 400:
+        raise RuntimeError(f"MONSTER stable alias browser health failed: status={status} url={url!r}")
+    return {"source": "browser_document", "status": status, "url": url, "healthy": True}
+
+
 def probe(*, url: str, expected_sha: str, expected_tree_sha: str) -> dict[str, Any]:
     from playwright.sync_api import sync_playwright
 
-    health_url = url.rstrip("/") + "/_stcore/health"
-    with urllib.request.urlopen(health_url, timeout=30) as response:
-        health_status = response.status
-        health_body = response.read().decode("utf-8", errors="replace").strip()
-    if health_status != 200 or "ok" not in health_body.lower():
-        raise RuntimeError(f"MONSTER stable alias health failed: {health_status} {health_body!r}")
-
+    stable_alias = url.rstrip("/")
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page()
-        response = page.goto(url, wait_until="domcontentloaded", timeout=120_000)
-        if response is None or response.status >= 400:
-            raise RuntimeError("MONSTER production page did not load successfully")
+        response = page.goto(stable_alias, wait_until="domcontentloaded", timeout=120_000)
+        if response is None:
+            browser.close()
+            raise RuntimeError("MONSTER stable alias returned no browser document response")
+        health = browser_health_evidence(document_status=response.status, document_url=page.url)
         marker = page.locator("#monster-runtime-identity")
         marker.wait_for(state="attached", timeout=120_000)
         encoded = marker.get_attribute("data-monster-runtime-identity")
         if not encoded:
+            browser.close()
             raise RuntimeError("MONSTER runtime identity marker is missing payload")
         live_identity = json.loads(html.unescape(encoded))
         body_text = page.locator("body").inner_text(timeout=30_000)
@@ -71,8 +75,8 @@ def probe(*, url: str, expected_sha: str, expected_tree_sha: str) -> dict[str, A
     proof = {
         "schema_version": SCHEMA_VERSION,
         "authority": "MONSTER_ONLY",
-        "stable_alias": url.rstrip("/"),
-        "health": {"status": health_status, "body": health_body},
+        "stable_alias": stable_alias,
+        "health": health,
         "runtime_identity": live_identity,
         "ui": {"rendered": True, "body_nonempty": True, "error_surface_detected": False},
     }
