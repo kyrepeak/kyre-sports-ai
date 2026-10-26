@@ -10,7 +10,7 @@ import streamlit as st
 
 import nfl_moneyline_hub_v19 as prior
 import nfl_moneyline_page2_war_room_v1 as war_room
-from sports_api.api import nfl_moneyline_page2_v1 as page2_api
+from sports_api import nfl_moneyline_page2_v1 as page2_api
 
 MODEL_VERSION = "NFL MONEYLINE V20 • PAGE2 WAR ROOM"
 FROZEN_PRIOR = "nfl_moneyline_hub_v19"
@@ -97,7 +97,7 @@ def _page2(game_id: str) -> None:
     mc_out = mc_outputs.get(gid, {})
     snap = snapshots.get(gid, {})
     final = prior.presentation.frozen._build_final(game, gid, edge_out, mc_out, snap, profiles, calibration)
-    history = page2_api.load_matchup_history(game, limit=5, full_limit=50)
+    history = page2_api.load_matchup_history(game, limit=5, full_limit=100)
     context = page2_api.build_page2_context(
         game=game, final=final, edge_out=edge_out, mc_out=mc_out, snap=snap,
         profiles=profiles, contexts=contexts, gameplans=gameplans, history=history,
