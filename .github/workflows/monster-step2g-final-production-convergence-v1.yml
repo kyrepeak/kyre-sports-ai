@@ -13,6 +13,7 @@ on:
       - "devsystem/monster_proof_plans/monster-step2g-final-production-convergence-v1.json"
       - "devsystem/task_ledgers/monster-step2g-final-production-convergence-v1.json"
       - "tests/test_devsystem_monster_runtime_identity_v1.py"
+      - "tests/test_devsystem_monster_step2g_live_convergence_probe_v1.py"
       - "tests/test_devsystem_mandatory_2g_final_production_convergence_v1.py"
       - "tests/test_devsystem_monster_step2g_permanent_integration_v1.py"
       - ".github/workflows/monster-step2g-final-production-convergence-v1.yml"
@@ -54,6 +55,7 @@ jobs:
         run: |
           python -m pytest --noconftest -q \
             tests/test_devsystem_monster_runtime_identity_v1.py \
+            tests/test_devsystem_monster_step2g_live_convergence_probe_v1.py \
             tests/test_devsystem_mandatory_2g_final_production_convergence_v1.py \
             tests/test_devsystem_monster_step2g_permanent_integration_v1.py
 
