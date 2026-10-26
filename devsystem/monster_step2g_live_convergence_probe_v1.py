@@ -21,6 +21,7 @@ FRESHNESS_MAX_ATTEMPTS = 15
 FRESHNESS_SETTLE_SECONDS = 8.0
 FRESHNESS_MARKER_WAIT_MS = 3_000
 FRESHNESS_NAVIGATION_TIMEOUT_MS = 20_000
+FRAME_SCAN_SLEEP_MS = 250
 
 
 def _digest(value: Any) -> str:
@@ -61,6 +62,45 @@ def expected_identity(
     }
 
 
+def _scan_frames_for_runtime_marker(page: Any) -> dict[str, Any] | None:
+    deadline = time.monotonic() + (FRESHNESS_MARKER_WAIT_MS / 1000.0)
+    while time.monotonic() < deadline:
+        for frame_index, frame in enumerate(page.frames):
+            try:
+                marker = frame.locator("#monster-runtime-identity")
+                if marker.count() < 1:
+                    continue
+                encoded = marker.first.get_attribute("data-monster-runtime-identity")
+            except Exception:
+                continue
+            if not encoded:
+                continue
+            try:
+                body_text = frame.locator("body").inner_text(timeout=5_000)
+            except Exception:
+                body_text = ""
+            return {
+                "encoded": encoded,
+                "body_text": body_text,
+                "marker_frame_index": frame_index,
+                "marker_frame_url": frame.url,
+            }
+        page.wait_for_timeout(FRAME_SCAN_SLEEP_MS)
+    return None
+
+
+def _best_frame_body(page: Any) -> str:
+    bodies: list[str] = []
+    for frame in page.frames:
+        try:
+            body = frame.locator("body").inner_text(timeout=2_000)
+        except Exception:
+            body = ""
+        if body:
+            bodies.append(body)
+    return max(bodies, key=len, default="")
+
+
 def _fresh_runtime_observation(browser: Any, url: str) -> dict[str, Any]:
     from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
@@ -68,6 +108,7 @@ def _fresh_runtime_observation(browser: Any, url: str) -> dict[str, Any]:
     last_final_url = url
     last_body_digest = ""
     last_error_surface = False
+    last_frame_count = 0
 
     for attempt in range(1, FRESHNESS_MAX_ATTEMPTS + 1):
         context = browser.new_context()
@@ -82,31 +123,22 @@ def _fresh_runtime_observation(browser: Any, url: str) -> dict[str, Any]:
             except PlaywrightTimeoutError:
                 response = None
 
+            last_frame_count = len(page.frames)
             if response is not None:
                 last_status = int(response.status)
                 last_final_url = page.url
                 if last_status < 400:
-                    marker = page.locator("#monster-runtime-identity")
-                    try:
-                        marker.wait_for(state="attached", timeout=FRESHNESS_MARKER_WAIT_MS)
-                    except PlaywrightTimeoutError:
-                        pass
-                    else:
-                        encoded = marker.get_attribute("data-monster-runtime-identity")
-                        if encoded:
-                            body_text = page.locator("body").inner_text(timeout=10_000)
-                            return {
-                                "encoded": encoded,
-                                "body_text": body_text,
-                                "health_status": last_status,
-                                "final_url": last_final_url,
-                                "freshness_attempts": attempt,
-                            }
+                    found = _scan_frames_for_runtime_marker(page)
+                    if found is not None:
+                        return {
+                            **found,
+                            "health_status": last_status,
+                            "final_url": last_final_url,
+                            "freshness_attempts": attempt,
+                            "frame_count": len(page.frames),
+                        }
 
-            try:
-                body_text = page.locator("body").inner_text(timeout=5_000)
-            except Exception:
-                body_text = ""
+            body_text = _best_frame_body(page)
             lowered = body_text.lower()
             last_error_surface = "encountered an error" in lowered or "traceback" in lowered
             last_body_digest = hashlib.sha256(body_text.encode("utf-8")).hexdigest()
@@ -119,8 +151,8 @@ def _fresh_runtime_observation(browser: Any, url: str) -> dict[str, Any]:
     raise RuntimeError(
         "MONSTER runtime identity marker missing after bounded fresh-session convergence: "
         f"attempts={FRESHNESS_MAX_ATTEMPTS} status={last_status!r} "
-        f"final_url={last_final_url!r} body_digest={last_body_digest!r} "
-        f"error_surface={last_error_surface!r}"
+        f"final_url={last_final_url!r} frame_count={last_frame_count!r} "
+        f"body_digest={last_body_digest!r} error_surface={last_error_surface!r}"
     )
 
 
@@ -147,6 +179,9 @@ def probe(
     health_status = int(observed["health_status"])
     final_url = str(observed["final_url"])
     freshness_attempts = int(observed["freshness_attempts"])
+    marker_frame_index = int(observed["marker_frame_index"])
+    marker_frame_url = str(observed["marker_frame_url"])
+    frame_count = int(observed["frame_count"])
 
     expected = expected_identity(
         expected_sha,
@@ -186,7 +221,7 @@ def probe(
 
     lowered = body_text.lower()
     if not body_text.strip() or "encountered an error" in lowered or "traceback" in lowered:
-        raise RuntimeError("USER_FACING_PARITY_FAILURE: production body is blank or errored")
+        raise RuntimeError("USER_FACING_PARITY_FAILURE: production app frame is blank or errored")
 
     proof = {
         "schema_version": SCHEMA_VERSION,
@@ -198,6 +233,9 @@ def probe(
             "transport": "chromium_root",
             "final_url": final_url,
             "freshness_attempts": freshness_attempts,
+            "frame_count": frame_count,
+            "marker_frame_index": marker_frame_index,
+            "marker_frame_url": marker_frame_url,
         },
         "certified_monster_identity": {
             "sha": expected_sha.lower(),
