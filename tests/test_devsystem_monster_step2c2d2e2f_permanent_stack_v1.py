@@ -17,19 +17,21 @@ def _load(name,rel):
 
 def test_authoritative_receipt_is_deterministic_and_rejects_foreign_evidence():
     receipt=_load("monster_authoritative_proof_receipt_v1","devsystem/monster_authoritative_proof_receipt_v1.py")
+    alias="https://pickvault.streamlit.app"
+    deployment_id="monster-regression"
     payload={
         "task_id":"monster-step2c2d2e2f-permanent-stack-v1",
         "candidate_sha":"1"*40,
         "gates":{name:"GREEN" for name in ("step2a","anti_loop","step2c","step2b","execution","step2d","step2e","step2f","step2g","final_verify")},
         "regressions":{"status":"GREEN","count":99},
-        "production":{"deployment_applicable":False,"proof":"NOT_APPLICABLE_READ_ONLY_CONTROL_PLANE"},
+        "production":{"deployment_applicable":True,"deployment_id":deployment_id,"stable_alias_target":alias},
         "convergence":{
             "status":"GREEN",
             "evidence_digest":"c"*64,
             "final_sha":"2"*40,
             "runtime_sha":"2"*40,
-            "deployment_id":"monster-regression",
-            "stable_alias":"https://pickvault.streamlit.app"
+            "deployment_id":deployment_id,
+            "stable_alias":alias
         },
         "rollback_anchor":{"sha":"0"*40},
         "freeze_target":"MONSTER_STEP2C2D2E2F_PERMANENT_STACK_V1_FROZEN",
