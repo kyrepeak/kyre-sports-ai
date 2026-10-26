@@ -1,0 +1,46 @@
+{
+  "artifact_map": {
+    ".github/workflows/api2-nfl-rushing-page2-action-history-r1.yml": "62f5d2fe1d542e313432c499c5060634514418b7",
+    "devsystem/runless_proof_plans/api2-nfl-rushing-page2-action-history-r1.json": "02aee220f88f0b49b29e1c0c0b773d42df8a66b4",
+    "devsystem/task_ledgers/api2-nfl-rushing-page2-action-history-r1.json": "a7131274dfa502a547fa0d05816704fdd8793c0e",
+    "sports_api/nfl_rushing_yards_page2_live_repair_v1.py": "14926e00a0d3234064f5567aab65c3ba3e967cf1",
+    "tests/test_api2_nfl_rushing_page2_action_history_r1.py": "63257b486dd59d95e4bc17fda9f9c75f2022c5e0"
+  },
+  "candidate_sha": "95abacb9043ad04c39305f5dcda62f2e522a763e",
+  "created_at": "2026-10-26T04:47:35.222236+00:00",
+  "dependency_map": {
+    "kyre_sports_api_vercel_v1.py": "40d080cd6d381dd240caf91408c599e54278024d",
+    "runless_v2/api2_authority_isolation_v1.py": "656ef5ae7bebd602035a1e1a9715ec35b0a82b57",
+    "runless_v2/config.py": "b26d4af77211b757bc85a98ce79e97a9afd24f0f",
+    "runless_v2/github_authority.py": "50272688dd62461638a342938bb3b2b398f540cc",
+    "runless_v2/models.py": "1f63ff94ff702597430f3fbf2050d799150c516a",
+    "runless_v2/proof_service.py": "0dd0660e4858d665222847693cc26441fd783ba3",
+    "sports_api/api/nfl_rushing_yards_detail_v3.py": "159e9489cc904535016acc892d5ac95736ab37de",
+    "sports_api/api/nfl_rushing_yards_detail_v4.py": "e16d3cb45a8d56c45e9eafe9004daf5244fe88ae",
+    "sports_api/nfl_rushing_yards_page2_enrichment_v1.py": "72b42e7dda8a3dd85bdb7251e81284e1dffbdccc"
+  },
+  "digest": "19de6fd9c142a8ca326575c217658eed7bcdb9904ca090e6747bcbf7c2c257ad",
+  "evidence_digests": [
+    "f669115294bf2ffb74c89910a3f2d6b6c48238e8a90312eba2d1dc8e6bfe8838",
+    "d36786f5e67ecb3856c422cc5aaf57ffc2cd7db9f38a03f150b3283691c790d3"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "51767791fb7c4e105087708d70fa3f596031ca74aa10a59386c7db15d2894f8a",
+  "proof_id": "api2-nfl-rushing-page2-action-history-r1-95abacb9043ad04c-ef212cf8eb218875",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "caa267110441ab273a789b52743e3f410171c9cf0d469c5241c58905c6e0c57f",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-rushing-page2-action-history-r1",
+  "workstream": "api2-nfl-rushing-page2-action-history-r1"
+}
