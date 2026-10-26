@@ -1,11 +1,8 @@
 """Isolated MONSTER Step 2G production-promotion proof publisher V1.
 
-This authority uses the existing GitHub App and Vercel Sandbox strictly as
-transport. It never reads shared lease, frozen-registry, receipt, proof-state,
-or finalization-ledger evidence. The only admissible state is the exact MONSTER
-production-promotion PR, its MONSTER proof plan, Git object identity, sandbox
-command evidence, and a dedicated MONSTER receipt ref written and read back by
-this module.
+GitHub App and Vercel Sandbox are transport only. This module never consumes
+shared lease, frozen-registry, receipt, proof-state, finalization-ledger, or
+foreign-system evidence. It proves exactly PR #1853 and nothing else.
 """
 from __future__ import annotations
 
@@ -25,8 +22,8 @@ WORKSTREAM = TASK_ID
 PR_NUMBER = 1853
 BRANCH = "monster-step2g-production-identity-promotion-v1"
 BASE_BRANCH = "main"
-EXPECTED_MAIN_SHA = "477ec52179a1f3ba78e5a4bb06a81ed7bcd8e126"
-AUTHORIZATION_ID = "AUTH-MONSTER-STEP2G-PRODUCTION-PROMOTION-1853-R1"
+EXPECTED_MAIN_SHA = "ac1dde25f9f760485fcf485fe9f3de5ec99362a6"
+AUTHORIZATION_ID = "AUTH-MONSTER-STEP2G-PRODUCTION-PROMOTION-1853-R2"
 GATE_NAME = "runless-final-gate"
 GITHUB_APP_ID = "5204253"
 RECEIPT_REF = "monster-step2g-proof-receipts-v1"
@@ -86,13 +83,13 @@ def _sha(value: Any, label: str) -> str:
 
 
 def _blob_map(tree: Mapping[str, Any], paths: Sequence[str], label: str) -> dict[str, str]:
-    result: dict[str, str] = {}
+    out: dict[str, str] = {}
     for path in sorted(set(str(item) for item in paths)):
         blob = str(tree.get(path) or "").strip().lower()
         if not _SHA_RE.fullmatch(blob):
             raise MonsterStep2GProofFailure(f"MONSTER_PROOF_{label.upper()}_MISSING:{path}")
-        result[path] = blob
-    return result
+        out[path] = blob
+    return out
 
 
 def build_receipt(
@@ -112,10 +109,11 @@ def build_receipt(
         raise MonsterStep2GProofFailure("MONSTER_PROOF_CHANGED_PATH_SCOPE_VIOLATION")
     if candidate == main_sha:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_CANDIDATE_MUST_DIFFER_FROM_MAIN")
-    if str(plan.get("task_id") or "") != TASK_ID or str(plan.get("workstream") or "") != WORKSTREAM:
+    if plan.get("task_id") != TASK_ID or plan.get("workstream") != WORKSTREAM:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_PLAN_IDENTITY_MISMATCH")
     if str(plan.get("source_main_sha") or "").lower() != main_sha:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_PLAN_MAIN_IDENTITY_MISMATCH")
+
     normalized_evidence = [deepcopy(dict(item)) for item in evidence]
     if not normalized_evidence or any(item.get("ok") is not True for item in normalized_evidence):
         raise MonsterStep2GProofFailure("MONSTER_PROOF_SANDBOX_EVIDENCE_NOT_GREEN")
@@ -138,10 +136,7 @@ def build_receipt(
             "one_branch": BRANCH,
             "one_pr": PR_NUMBER,
         },
-        "anti_loop": {
-            "duplicate_proof_lane_allowed": False,
-            "blind_retry_allowed": False,
-        },
+        "anti_loop": {"duplicate_proof_lane_allowed": False, "blind_retry_allowed": False},
         "changed_paths": paths,
         "artifact_map": dict(sorted((str(k), str(v).lower()) for k, v in artifact_map.items())),
         "dependency_map": dict(sorted((str(k), str(v).lower()) for k, v in dependency_map.items())),
@@ -194,11 +189,7 @@ def _receipt_path(candidate_sha: str) -> str:
 
 def _read_receipt(github: Any, candidate_sha: str) -> dict[str, Any] | None:
     path = _receipt_path(candidate_sha)
-    raw = github._request(
-        "GET",
-        f"/contents/{quote(path, safe='/')}?ref={quote(RECEIPT_REF, safe='/')}",
-        allow_404=True,
-    )
+    raw = github._request("GET", f"/contents/{quote(path, safe='/')}?ref={quote(RECEIPT_REF, safe='/')}", allow_404=True)
     if raw is None:
         return None
     if not isinstance(raw, dict) or raw.get("encoding") != "base64":
@@ -211,55 +202,46 @@ def _read_receipt(github: Any, candidate_sha: str) -> dict[str, Any] | None:
 
 
 def _write_or_read_receipt(github: Any, receipt: Mapping[str, Any]) -> dict[str, Any]:
-    candidate_sha = _sha(receipt.get("candidate_sha"), "candidate_sha")
-    existing = _read_receipt(github, candidate_sha)
+    candidate = _sha(receipt.get("candidate_sha"), "candidate_sha")
+    existing = _read_receipt(github, candidate)
     if existing is not None:
         if existing != dict(receipt):
             raise MonsterStep2GProofFailure("MONSTER_PROOF_RECEIPT_IDENTITY_COLLISION")
         return existing
 
-    ref = github._request(
-        "GET",
-        f"/git/ref/heads/{quote(RECEIPT_REF, safe='/')}",
-        allow_404=True,
-    )
+    ref = github._request("GET", f"/git/ref/heads/{quote(RECEIPT_REF, safe='/')}", allow_404=True)
     if ref is None:
-        github._request(
-            "POST",
-            "/git/refs",
-            json={"ref": f"refs/heads/{RECEIPT_REF}", "sha": candidate_sha},
-        )
+        github._request("POST", "/git/refs", json={"ref": f"refs/heads/{RECEIPT_REF}", "sha": candidate})
     content = base64.b64encode((_canonical(receipt) + "\n").encode("utf-8")).decode("ascii")
     github._request(
         "PUT",
-        f"/contents/{quote(_receipt_path(candidate_sha), safe='/')}",
-        json={
-            "message": f"MONSTER Step 2G proof receipt {candidate_sha[:12]}",
-            "content": content,
-            "branch": RECEIPT_REF,
-        },
+        f"/contents/{quote(_receipt_path(candidate), safe='/')}",
+        json={"message": f"MONSTER Step 2G proof receipt {candidate[:12]}", "content": content, "branch": RECEIPT_REF},
     )
-    readback = _read_receipt(github, candidate_sha)
+    readback = _read_receipt(github, candidate)
     if readback != dict(receipt):
         raise MonsterStep2GProofFailure("MONSTER_PROOF_RECEIPT_READBACK_MISMATCH")
     return readback
 
 
+def _matching_gate(check: Mapping[str, Any], candidate: str, digest: str) -> bool:
+    output = dict(check.get("output") or {})
+    return (
+        check.get("name") == GATE_NAME
+        and check.get("conclusion") == "success"
+        and str(check.get("head_sha") or "") == candidate
+        and str((check.get("app") or {}).get("id")) == GITHUB_APP_ID
+        and digest in str(output.get("summary") or "")
+        and "MONSTER_ONLY" in str(output.get("summary") or "")
+    )
+
+
 def _publish_gate_and_readback(github: Any, candidate_sha: str, receipt: Mapping[str, Any]) -> dict[str, Any]:
     candidate = _sha(candidate_sha, "candidate_sha")
     digest = str(receipt.get("digest") or "")
-    summary = f"authority=MONSTER_ONLY receipt={digest} task={TASK_ID}"
     checks = github._request("GET", f"/commits/{candidate}/check-runs")
     for check in list((checks or {}).get("check_runs", [])):
-        output = dict(check.get("output") or {})
-        if (
-            check.get("name") == GATE_NAME
-            and check.get("conclusion") == "success"
-            and str(check.get("head_sha") or "") == candidate
-            and str((check.get("app") or {}).get("id")) == GITHUB_APP_ID
-            and digest in str(output.get("summary") or "")
-            and "MONSTER_ONLY" in str(output.get("summary") or "")
-        ):
+        if _matching_gate(check, candidate, digest):
             return check
 
     github._request(
@@ -272,40 +254,26 @@ def _publish_gate_and_readback(github: Any, candidate_sha: str, receipt: Mapping
             "conclusion": "success",
             "output": {
                 "title": "MONSTER Step 2G Proof Authority",
-                "summary": summary,
+                "summary": f"authority=MONSTER_ONLY receipt={digest} task={TASK_ID}",
             },
         },
     )
     checks = github._request("GET", f"/commits/{candidate}/check-runs")
     for check in list((checks or {}).get("check_runs", [])):
-        output = dict(check.get("output") or {})
-        if (
-            check.get("name") == GATE_NAME
-            and check.get("conclusion") == "success"
-            and str(check.get("head_sha") or "") == candidate
-            and str((check.get("app") or {}).get("id")) == GITHUB_APP_ID
-            and digest in str(output.get("summary") or "")
-            and "MONSTER_ONLY" in str(output.get("summary") or "")
-        ):
+        if _matching_gate(check, candidate, digest):
             return check
     raise MonsterStep2GProofFailure("MONSTER_PROOF_GATE_READBACK_FAILED")
 
 
-async def prove_production_promotion(
-    *,
-    github: Any,
-    sandbox: Any,
-    expected_preview_sha: str,
-) -> dict[str, Any]:
-    """Prove PR #1853 and publish the required protected-main check."""
+async def prove_production_promotion(*, github: Any, sandbox: Any, expected_preview_sha: str) -> dict[str, Any]:
     preview_sha = _sha(expected_preview_sha, "preview_sha")
     pr = github._request("GET", f"/pulls/{PR_NUMBER}")
     if str(pr.get("state") or "") != "open":
         raise MonsterStep2GProofFailure("MONSTER_PROOF_PR_NOT_OPEN")
     head = dict(pr.get("head") or {})
     base = dict(pr.get("base") or {})
-    candidate_sha = _sha(head.get("sha"), "candidate_sha")
-    if candidate_sha != preview_sha:
+    candidate = _sha(head.get("sha"), "candidate_sha")
+    if candidate != preview_sha:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_PREVIEW_HEAD_DRIFT")
     if str(head.get("ref") or "") != BRANCH or str(base.get("ref") or "") != BASE_BRANCH:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_PR_IDENTITY_MISMATCH")
@@ -314,30 +282,30 @@ async def prove_production_promotion(
     if _sha(github.main_sha(), "current_main_sha") != EXPECTED_MAIN_SHA:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_MAIN_IDENTITY_DRIFT")
 
-    plan = github._content_json(PLAN_PATH, candidate_sha)
-    if str(plan.get("task_id") or "") != TASK_ID or str(plan.get("workstream") or "") != WORKSTREAM:
+    plan = github._content_json(PLAN_PATH, candidate)
+    if plan.get("task_id") != TASK_ID or plan.get("workstream") != WORKSTREAM:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_PLAN_IDENTITY_MISMATCH")
     if _sha(plan.get("source_main_sha"), "plan_main_sha") != EXPECTED_MAIN_SHA:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_PLAN_MAIN_DRIFT")
 
-    compare = github._request("GET", f"/compare/{EXPECTED_MAIN_SHA}...{candidate_sha}")
+    compare = github._request("GET", f"/compare/{EXPECTED_MAIN_SHA}...{candidate}")
     if str(compare.get("status") or "") != "ahead":
         raise MonsterStep2GProofFailure("MONSTER_PROOF_CANDIDATE_ANCESTRY_MISMATCH")
     changed_paths = sorted(str(item.get("filename") or "") for item in compare.get("files", []))
     if not changed_paths or not set(changed_paths).issubset(ALLOWED_CHANGED_PATHS):
         raise MonsterStep2GProofFailure("MONSTER_PROOF_CHANGED_PATH_SCOPE_VIOLATION")
 
-    candidate_tree = github.tree_blobs(candidate_sha)
-    artifact_map = _blob_map(candidate_tree, plan.get("artifacts") or [], "artifact")
-    dependency_map = _blob_map(candidate_tree, plan.get("dependencies") or [], "dependency")
+    tree = github.tree_blobs(candidate)
+    artifact_map = _blob_map(tree, plan.get("artifacts") or [], "artifact")
+    dependency_map = _blob_map(tree, plan.get("dependencies") or [], "dependency")
 
     sandbox_result = await sandbox.execute(
-        candidate_sha=candidate_sha,
+        candidate_sha=candidate,
         task_id=TASK_ID,
         github_token=github.installation_token(),
         timeout_seconds=int(plan.get("timeout_seconds", 900)),
     )
-    if sandbox_result.candidate_sha != candidate_sha or sandbox_result.task_id != TASK_ID:
+    if sandbox_result.candidate_sha != candidate or sandbox_result.task_id != TASK_ID:
         raise MonsterStep2GProofFailure("MONSTER_PROOF_SANDBOX_IDENTITY_MISMATCH")
     if _canonical(sandbox_result.plan) != _canonical(plan):
         raise MonsterStep2GProofFailure("MONSTER_PROOF_SANDBOX_PLAN_DRIFT")
@@ -346,7 +314,7 @@ async def prove_production_promotion(
         raise MonsterStep2GProofFailure("MONSTER_PROOF_SANDBOX_NOT_GREEN")
 
     receipt = build_receipt(
-        candidate_sha=candidate_sha,
+        candidate_sha=candidate,
         expected_main_sha=EXPECTED_MAIN_SHA,
         changed_paths=changed_paths,
         artifact_map=artifact_map,
@@ -356,13 +324,13 @@ async def prove_production_promotion(
     )
     readback = _write_or_read_receipt(github, receipt)
     validate_receipt(readback)
-    check = _publish_gate_and_readback(github, candidate_sha, readback)
+    check = _publish_gate_and_readback(github, candidate, readback)
     return {
         "status": "GREEN",
         "authority": AUTHORITY,
         "version": VERSION,
         "task_id": TASK_ID,
-        "candidate_sha": candidate_sha,
+        "candidate_sha": candidate,
         "expected_main_sha": EXPECTED_MAIN_SHA,
         "receipt_ref": RECEIPT_REF,
         "receipt_digest": readback["digest"],
