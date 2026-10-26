@@ -36,16 +36,18 @@ mobile = v9.mobile
 _CSS = r'''
 <style>
 .kgt-s1{max-width:980px;margin:0 auto;color:#edf5fa}.kgt-s1 *{box-sizing:border-box}
-.kgt-s1-head{display:flex;justify-content:space-between;gap:14px;align-items:end;margin:4px 0 12px}.kgt-s1-title{font-size:1.65rem;font-weight:950;letter-spacing:.04em}.kgt-s1-sub{color:#91a8b8;font-size:.74rem;margin-top:3px}
-.kgt-s1-card{border:1px solid #22516b;border-radius:20px;background:linear-gradient(180deg,#071a25,#08141c);padding:16px;margin:12px 0;box-shadow:0 16px 38px rgba(0,0,0,.22)}
-.kgt-s1-match{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px solid #1e4052}.kgt-s1-team{display:flex;align-items:center;gap:10px}.kgt-s1-team.right{justify-content:flex-end;text-align:right}.kgt-s1-team img{width:58px;height:58px;object-fit:contain}.kgt-s1-team b{display:block;font-size:.88rem}.kgt-s1-team span{display:block;color:#7890a0;font-size:.60rem;margin-top:2px}.kgt-s1-at{color:#4daee2;font-weight:950}.kgt-s1-meta{text-align:center;color:#91a8b8;font-size:.61rem;margin:8px 0 12px}
-.kgt-s1-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.kgt-s1-stat{border:1px solid #274c60;border-radius:13px;background:#081720;padding:10px;min-height:83px}.kgt-s1-stat span{display:block;color:#7895a7;font-size:.49rem;font-weight:950;letter-spacing:.08em}.kgt-s1-stat b{display:block;font-size:1.15rem;margin-top:5px}.kgt-s1-stat.kyre{border-color:#625393}.kgt-s1-stat.kyre b{color:#c0a9ff}.kgt-s1-stat.edge b{color:#61e6bd}.kgt-s1-stat.lean.over b{color:#ffb85f}.kgt-s1-stat.lean.under b{color:#75e5c6}.kgt-s1-stat.lean.pass b{color:#d0c7dd}
-.kgt-s1-market{display:grid;grid-template-columns:1.3fr .9fr;gap:8px;margin-top:8px}.kgt-s1-strip{border:1px solid #274c60;border-radius:12px;background:#07151d;padding:9px 11px;color:#a9bac5;font-size:.63rem}.kgt-s1-strip b{color:#f1f6f9}.kgt-s1-over{color:#ffb35e!important}.kgt-s1-under{color:#67dfbd!important}.kgt-s1-weather{margin-top:8px}
-.kgt-s1-why{border:1px solid #274c60;border-radius:13px;background:#07151d;padding:11px;margin-top:9px}.kgt-s1-why h4{margin:0 0 7px;font-size:.70rem;letter-spacing:.05em}.kgt-s1-reason{display:flex;gap:9px;align-items:center;border-top:1px solid #163747;padding:7px 0;font-size:.62rem}.kgt-s1-reason:first-of-type{border-top:0}.kgt-s1-n{display:grid;place-items:center;width:23px;height:23px;border:1px solid #2aa3e8;border-radius:50%;color:#7dd4ff;font-size:.55rem;font-weight:950;flex:0 0 auto}
-.kgt-s1-meter{border:1px solid #274c60;border-radius:13px;background:#07151d;padding:10px 11px;margin-top:9px}.kgt-s1-meter-top{display:flex;justify-content:space-between;color:#8ca6b5;font-size:.53rem;font-weight:900}.kgt-s1-track{height:7px;border-radius:999px;margin:9px 0 4px;background:linear-gradient(90deg,#3297d3,#66727c 48%,#f8a943)}.kgt-s1-dot{width:17px;height:17px;border-radius:50%;background:#ffad4f;border:2px solid #3b2a13;transform:translate(-50%,-12px)}.kgt-s1-axis{display:flex;justify-content:space-between;color:#7890a0;font-size:.50rem}
-.kgt-s1-details{margin-top:10px;border:1px solid #2aa3e8;border-radius:12px;overflow:hidden}.kgt-s1-details summary{cursor:pointer;list-style:none;text-align:center;padding:11px;color:#eff8fc;font-weight:950;font-size:.69rem}.kgt-s1-details summary::-webkit-details-marker{display:none}.kgt-s1-deep{padding:0 11px 11px}.kgt-s1-deep-card{border-top:1px solid #173846;padding:8px 0}.kgt-s1-deep-card b{display:block;font-size:.59rem;color:#b9d7e5}.kgt-s1-deep-card span{display:block;font-size:.52rem;color:#829baa;margin-top:3px;line-height:1.45}
-[data-testid="stRadio"] label{font-size:.68rem!important}[data-testid="stRadio"]{margin-top:-6px;margin-bottom:4px}
-@media(max-width:760px){.kgt-s1-head{align-items:flex-start}.kgt-s1-title{font-size:1.35rem}.kgt-s1-card{padding:12px}.kgt-s1-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.kgt-s1-market{grid-template-columns:1fr}.kgt-s1-match{grid-template-columns:1fr}.kgt-s1-team.right{justify-content:flex-start;text-align:left}.kgt-s1-at{text-align:left;padding-left:68px}.kgt-s1-team img{width:48px;height:48px}}
+.kgt-s1-head{display:flex;justify-content:space-between;gap:12px;align-items:end;margin:2px 0 9px}.kgt-s1-title{font-size:1.55rem;font-weight:950;letter-spacing:.04em}.kgt-s1-sub{color:#91a8b8;font-size:.70rem;margin-top:2px}
+.kgt-s1-card{border:1px solid #22516b;border-radius:18px;background:linear-gradient(180deg,#071a25,#08141c);padding:13px;margin:9px 0;box-shadow:0 12px 28px rgba(0,0,0,.20)}
+.kgt-s1-match{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding-bottom:8px;border-bottom:1px solid #1e4052}.kgt-s1-team{display:flex;align-items:center;gap:8px;min-width:0}.kgt-s1-team.right{justify-content:flex-end;text-align:right}.kgt-s1-team img{width:36px;height:36px;object-fit:contain;flex:0 0 auto}.kgt-s1-team b{display:block;font-size:.78rem;line-height:1.15}.kgt-s1-team span{display:block;color:#7890a0;font-size:.54rem;margin-top:1px}.kgt-s1-at{color:#4daee2;font-weight:950;font-size:.76rem}.kgt-s1-meta{text-align:center;color:#91a8b8;font-size:.57rem;margin:6px 0 8px}
+.kgt-s1-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.kgt-s1-primary-stat{border:1px solid #274c60;border-radius:11px;background:#081720;padding:8px;min-height:62px}.kgt-s1-primary-stat span,.kgt-s1-secondary-stat span{display:block;color:#7895a7;font-size:.44rem;font-weight:950;letter-spacing:.08em}.kgt-s1-primary-stat b{display:block;font-size:1.02rem;margin-top:4px}.kgt-s1-primary-stat.kyre{border-color:#625393}.kgt-s1-primary-stat.kyre b{color:#c0a9ff}.kgt-s1-primary-stat.edge b{color:#61e6bd}
+.kgt-s1-decision{margin-top:7px;border:1px solid #375769;border-radius:11px;background:#0a1821;padding:8px 10px}.kgt-s1-decision strong{display:block;font-size:.69rem;letter-spacing:.03em}.kgt-s1-decision span{display:block;margin-top:2px;color:#91a8b8;font-size:.54rem}.kgt-s1-decision.pass{border-color:#4d6172}.kgt-s1-decision.over{border-color:#8a6032}.kgt-s1-decision.under{border-color:#34705f}
+.kgt-s1-secondary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}.kgt-s1-secondary-stat{border:1px solid #223f50;border-radius:10px;background:#07151d;padding:7px 9px}.kgt-s1-secondary-stat b{display:block;font-size:.78rem;margin-top:2px;color:#e5edf2}
+.kgt-s1-context{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border:1px solid #274c60;border-radius:10px;background:#07151d;padding:7px 9px;margin-top:6px;color:#9fb2be;font-size:.55rem}.kgt-s1-context b{color:#f1f6f9}.kgt-s1-over{color:#ffb35e!important}.kgt-s1-under{color:#67dfbd!important}
+.kgt-s1-why{border:1px solid #274c60;border-radius:11px;background:#07151d;padding:8px 9px;margin-top:7px}.kgt-s1-why h4{margin:0 0 4px;font-size:.62rem;letter-spacing:.05em}.kgt-s1-reason{display:flex;gap:7px;align-items:center;border-top:1px solid #163747;padding:5px 0;font-size:.56rem}.kgt-s1-reason:first-of-type{border-top:0}.kgt-s1-n{display:grid;place-items:center;width:20px;height:20px;border:1px solid #2aa3e8;border-radius:50%;color:#7dd4ff;font-size:.49rem;font-weight:950;flex:0 0 auto}
+.kgt-s1-meter{border:1px solid #274c60;border-radius:11px;background:#07151d;padding:8px 9px;margin-top:7px}.kgt-s1-meter-top{display:flex;justify-content:space-between;color:#8ca6b5;font-size:.48rem;font-weight:900}.kgt-s1-track{height:6px;border-radius:999px;margin:7px 0 2px;background:linear-gradient(90deg,#3297d3,#66727c 48%,#f8a943)}.kgt-s1-dot{width:14px;height:14px;border-radius:50%;background:#ffad4f;border:2px solid #3b2a13;transform:translate(-50%,-10px)}.kgt-s1-axis{display:flex;justify-content:space-between;color:#7890a0;font-size:.45rem;margin-top:-1px}
+.kgt-s1-details{margin-top:7px;border:1px solid #2a7fb0;border-radius:10px;overflow:hidden}.kgt-s1-details summary{cursor:pointer;list-style:none;text-align:center;padding:8px;color:#dcebf3;font-weight:900;font-size:.60rem}.kgt-s1-details summary::-webkit-details-marker{display:none}.kgt-s1-deep{padding:0 9px 9px}.kgt-s1-deep-card{border-top:1px solid #173846;padding:7px 0}.kgt-s1-deep-card b{display:block;font-size:.56rem;color:#b9d7e5}.kgt-s1-deep-card span{display:block;font-size:.50rem;color:#829baa;margin-top:2px;line-height:1.4}
+[data-testid="stRadio"] label{font-size:.64rem!important}[data-testid="stRadio"]{margin-top:-8px;margin-bottom:2px}
+@media(max-width:760px){.kgt-s1-head{align-items:flex-start;margin-bottom:7px}.kgt-s1-title{font-size:1.22rem}.kgt-s1-card{padding:10px;border-radius:16px;margin:7px 0}.kgt-s1-match{gap:5px;padding-bottom:7px}.kgt-s1-team{gap:6px}.kgt-s1-team img{width:32px;height:32px}.kgt-s1-team b{font-size:.68rem}.kgt-s1-team span{font-size:.49rem}.kgt-s1-meta{font-size:.52rem;margin:5px 0 7px}.kgt-s1-primary{gap:5px}.kgt-s1-primary-stat{padding:7px 6px;min-height:56px}.kgt-s1-primary-stat span,.kgt-s1-secondary-stat span{font-size:.40rem}.kgt-s1-primary-stat b{font-size:.90rem}.kgt-s1-decision{padding:7px 8px}.kgt-s1-decision strong{font-size:.61rem}.kgt-s1-decision span{font-size:.49rem}.kgt-s1-secondary{gap:5px}.kgt-s1-secondary-stat{padding:6px 7px}.kgt-s1-secondary-stat b{font-size:.69rem}.kgt-s1-context{padding:6px 7px;font-size:.49rem}.kgt-s1-why{padding:7px 8px}.kgt-s1-reason{padding:4px 0;font-size:.51rem}.kgt-s1-meter{padding:7px 8px}.kgt-s1-details summary{padding:7px}}
 </style>
 '''
 
@@ -248,8 +250,38 @@ def build_decision_card_html(
     labels = foundation._phoenix_kickoff(row)
     clock = labels["clock"] if labels else model["clock"]
     deep = _deep_analysis_html(scoring_context, pace_context, explosive_context, red_zone_drive_context, environment_context)
-    reasons = ''.join(f'<div class="kgt-s1-reason"><span class="kgt-s1-n">{idx}</span><span>{escape(reason)}</span></div>' for idx, reason in enumerate(model["reasons"], 1))
+
+    if lean == "PASS":
+        if edge is None:
+            separation = "No verified separation from market"
+        elif edge > 0:
+            separation = f"Only {abs(edge):.1f} pts above market"
+        elif edge < 0:
+            separation = f"Only {abs(edge):.1f} pts below market"
+        else:
+            separation = "No separation from market"
+        adjustments = (projection or {}).get("adjustments") if isinstance((projection or {}).get("adjustments"), Mapping) else {}
+        pace_adjustment = _num(adjustments.get("pace"))
+        if pace_adjustment is None:
+            pace_reason = "Pace context verified"
+        elif pace_adjustment > 0:
+            pace_reason = f"Pace adds total {abs(pace_adjustment):.1f} pts"
+        elif pace_adjustment < 0:
+            pace_reason = f"Pace suppresses total {abs(pace_adjustment):.1f} pts"
+        else:
+            pace_reason = "Pace is neutral"
+        pass_reasons = [separation, pace_reason, f'Market remains inside {model["model_range"]} model range']
+        reason_title = "💡 WHY PASS?"
+        decision_title = "PASS — EDGE NOT STRONG ENOUGH"
+    else:
+        pass_reasons = list(model["reasons"])
+        reason_title = f"💡 WHY {lean}?" if lean in {"OVER", "UNDER"} else "💡 WHY WAIT?"
+        decision_title = f"{lean} — QUALIFIED EDGE" if lean in {"OVER", "UNDER"} else "WAIT — INCOMPLETE SIGNAL"
+
+    reasons = ''.join(f'<div class="kgt-s1-reason"><span class="kgt-s1-n">{idx}</span><span>{escape(reason)}</span></div>' for idx, reason in enumerate(pass_reasons[:3], 1))
     meter_label = "PASS / INSIDE RANGE" if lean == "PASS" else (f"LEANS {lean}" if lean in {"OVER", "UNDER"} else "WAIT")
+    decision_detail = f'Kyre {_fmt(model["kyre_total"])} · Market {_fmt(model["market_total"])} · Difference {edge_text}'
+
     return (
         '<article class="kgt-s1-card">'
         '<div class="kgt-s1-match">'
@@ -258,26 +290,25 @@ def build_decision_card_html(
         f'<div class="kgt-s1-team right"><div><b>{escape(model["home_team"])}</b><span>{escape(model["home_record"])}</span></div>{_logo(model["home_logo"], model["home_team"])}</div>'
         '</div>'
         f'<div class="kgt-s1-meta">{escape(clock)} · {escape(model["venue"])}</div>'
-        '<div class="kgt-s1-grid">'
-        f'<div class="kgt-s1-stat"><span>MARKET TOTAL</span><b>{_fmt(model["market_total"])}</b></div>'
-        f'<div class="kgt-s1-stat kyre"><span>KYRE TOTAL</span><b>{_fmt(model["kyre_total"])}</b></div>'
-        f'<div class="kgt-s1-stat edge"><span>EDGE</span><b>{escape(edge_text)}</b></div>'
-        f'<div class="kgt-s1-stat lean {lean_class}"><span>LEAN</span><b>{escape(lean)}</b></div>'
-        f'<div class="kgt-s1-stat"><span>MODEL RANGE</span><b>{escape(model["model_range"])}</b></div>'
-        f'<div class="kgt-s1-stat"><span>CONFIDENCE</span><b>{escape(model["confidence"])}</b></div>'
+        '<div class="kgt-s1-primary">'
+        f'<div class="kgt-s1-primary-stat"><span>MARKET TOTAL</span><b>{_fmt(model["market_total"])}</b></div>'
+        f'<div class="kgt-s1-primary-stat kyre"><span>KYRE TOTAL</span><b>{_fmt(model["kyre_total"])}</b></div>'
+        f'<div class="kgt-s1-primary-stat edge"><span>EDGE</span><b>{escape(edge_text)}</b></div>'
         '</div>'
-        '<div class="kgt-s1-market">'
-        f'<div class="kgt-s1-strip"><b>{escape(model["sportsbook"])}</b> · O <b class="kgt-s1-over">{escape(_american(model["over_price"]))}</b> · U <b class="kgt-s1-under">{escape(_american(model["under_price"]))}</b></div>'
-        f'<div class="kgt-s1-strip kgt-s1-weather">{escape(model["weather"])} · <b>{escape(model["weather_pressure"])} impact</b></div>'
+        f'<div class="kgt-s1-decision {lean_class}" aria-label="LEAN {escape(lean)}"><strong>{escape(decision_title)}</strong><span>{escape(decision_detail)}</span></div>'
+        '<div class="kgt-s1-secondary">'
+        f'<div class="kgt-s1-secondary-stat"><span>MODEL RANGE</span><b>{escape(model["model_range"])}</b></div>'
+        f'<div class="kgt-s1-secondary-stat"><span>CONFIDENCE</span><b>{escape(model["confidence"])}</b></div>'
         '</div>'
-        f'<div class="kgt-s1-why"><h4>💡 WHY KYRE {"WAITS" if lean == "PASS" else "LEANS " + escape(lean) if lean in {"OVER","UNDER"} else "WAITS"}</h4>{reasons}</div>'
+        f'<div class="kgt-s1-context"><span><b>{escape(model["sportsbook"])}</b> · O <b class="kgt-s1-over">{escape(_american(model["over_price"]))}</b> · U <b class="kgt-s1-under">{escape(_american(model["under_price"]))}</b></span><span>{escape(model["weather"])} · <b>{escape(model["weather_pressure"])} impact</b></span></div>'
+        f'<div class="kgt-s1-why" aria-label="WHY KYRE"><h4>{escape(reason_title)}</h4>{reasons}</div>'
         '<div class="kgt-s1-meter">'
         f'<div class="kgt-s1-meter-top"><span>TOTAL ENVIRONMENT</span><span>{escape(meter_label)}</span></div>'
         '<div class="kgt-s1-track"></div>'
         f'<div class="kgt-s1-dot" style="margin-left:{meter:.1f}%"></div>'
         '<div class="kgt-s1-axis"><span>Under</span><span>Neutral</span><span>Over</span></div>'
         '</div>'
-        f'<details class="kgt-s1-details"><summary>FULL ANALYSIS →</summary>{deep}</details>'
+        f'<details class="kgt-s1-details"><summary>VIEW FULL ANALYSIS →</summary>{deep}</details>'
         '</article>'
     )
 
