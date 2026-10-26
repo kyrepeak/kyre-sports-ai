@@ -1,0 +1,42 @@
+{
+  "mode": "runless",
+  "task_id": "monster-nba-pra-page1-history-batching-r2",
+  "workstream": "monster-nba-pra-page1-history-batching-r2",
+  "source_main_sha": "fcb158850dc55486113780c7cee27da8725e2379",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_nba_pra_page1_history_batching_r2.py",
+      "tests/test_monster_nba_pra_page1_history_batching_proof_r2.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "nba_pra_player_context_api_v1.py",
+      "runless_v2/__init__.py",
+      "runless_v2/monster_nba_pra_page1_history_batching_proof_r2.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/monster-nba-pra-page1-history-batching-r2.json",
+    "nba_pra_player_context_api_v1.py",
+    "runless_v2/__init__.py",
+    "runless_v2/monster_nba_pra_page1_history_batching_proof_r2.py",
+    "tests/test_monster_nba_pra_page1_history_batching_proof_r2.py",
+    "tests/test_monster_nba_pra_page1_history_batching_r2.py"
+  ],
+  "dependencies": [
+    "nba_pra_page1_api_only_v1.py",
+    "nba_pra_page2_api_only_v1.py",
+    "sports_api/api/nba_gateway_v1.py",
+    "sports_api/api/nba_pra_player_context_history_v1.py",
+    "sports_api/api/nba_pra_player_context_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_NBA_PRA_PAGE1_HISTORY_BATCHING_R2_FROZEN"
+}
