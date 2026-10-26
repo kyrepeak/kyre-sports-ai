@@ -6,6 +6,8 @@ import sys
 
 import streamlit as st
 
+from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker
+
 _STREAMLIT_DEPLOYMENT_HEARTBEAT = "api2-universal-loading-progress-v1-production-repair-r1-20261022"
 _STEP2G_DEPLOYMENT_MARKER = "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1"
 _NFL_GAME_TOTAL_DENSITY_DEPLOYMENT_HEARTBEAT = "API2_NFL_GAME_TOTAL_PAGE1_MOBILE_DENSITY_R1_20261026"
@@ -33,7 +35,7 @@ from streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route
     render_app,
 )
 
-# Off-screen but browser-visible production identity markers for Step 2G proof.
+# Off-screen but browser-visible production identity markers for existing consumers.
 st.markdown(
     f'<span style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden">{_STEP2G_DEPLOYMENT_MARKER} {_NFL_GAME_TOTAL_DENSITY_DEPLOYMENT_HEARTBEAT} {_NFL_GAME_TOTAL_CACHE_BUST_DEPLOYMENT_HEARTBEAT} {_NFL_MONEYLINE_PAGE2_ROUTE_RESTORE_HEARTBEAT}</span>',
     unsafe_allow_html=True,
@@ -41,3 +43,4 @@ st.markdown(
 
 record_bootstrap_import_ms((perf_counter() - _BOOTSTRAP_STARTED) * 1000.0)
 render_app()
+emit_runtime_identity_marker()
