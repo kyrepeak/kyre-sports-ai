@@ -8,7 +8,7 @@ on:
       - 'runless_v2/api2_step2g_convergence_v1.py'
       - 'runless_v2/api2_step2g_github_authority_v1.py'
       - 'runless_v2/api2_step2g_closeout_enforcement_v1.py'
-      - 'runless_v2/__init__.py'
+      - 'runless_v2/finalization_readback.py'
       - 'devsystem/api2_step2g_streamlit_cert_v1.py'
       - 'app.py'
       - 'tests/test_api2_step2g_dual_main_streamlit_convergence_v1.py'
@@ -37,6 +37,7 @@ jobs:
             runless_v2/api2_step2g_convergence_v1.py \
             runless_v2/api2_step2g_github_authority_v1.py \
             runless_v2/api2_step2g_closeout_enforcement_v1.py \
+            runless_v2/finalization_readback.py \
             devsystem/api2_step2g_streamlit_cert_v1.py \
             runless_v2/__init__.py \
             app.py
