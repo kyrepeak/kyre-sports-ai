@@ -11,7 +11,7 @@ MODULE_PATH = ROOT / "runless_v2" / "api2_step2g_convergence_v1.py"
 CERT_PATH = ROOT / "devsystem" / "api2_step2g_streamlit_cert_v1.py"
 ENFORCEMENT_PATH = ROOT / "runless_v2" / "api2_step2g_closeout_enforcement_v1.py"
 AUTHORITY_PATH = ROOT / "runless_v2" / "api2_step2g_github_authority_v1.py"
-INIT_PATH = ROOT / "runless_v2" / "__init__.py"
+FINALIZATION_PATH = ROOT / "runless_v2" / "finalization_readback.py"
 STREAMLIT_APP_PATH = ROOT / "app.py"
 PRODUCTION_TARGETS = ROOT / "devsystem" / "production_targets_v1.json"
 
@@ -154,7 +154,7 @@ def test_step2g_github_readback_requires_branch_specific_integration_markers():
     authority = AUTHORITY_PATH.read_text(encoding="utf-8")
     assert "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1" in authority
     assert '"app.py"' in authority
-    assert '"runless_v2/__init__.py"' in authority
+    assert '"runless_v2/finalization_readback.py"' in authority
     assert "STEP2G_BRANCH_INTEGRATION_MARKER_MISSING" in authority
     assert '_verify_branch_integration(self, "main")' in authority
     assert '_verify_branch_integration(self, "api2-main")' in authority
@@ -163,12 +163,13 @@ def test_step2g_github_readback_requires_branch_specific_integration_markers():
 def test_runless_closeout_permanently_invokes_step2g_for_api2_only():
     enforcement = ENFORCEMENT_PATH.read_text(encoding="utf-8")
     authority = AUTHORITY_PATH.read_text(encoding="utf-8")
-    init_source = INIT_PATH.read_text(encoding="utf-8")
+    finalization_source = FINALIZATION_PATH.read_text(encoding="utf-8")
     streamlit_app = STREAMLIT_APP_PATH.read_text(encoding="utf-8")
     assert "require_api2_step2g_closeout" in enforcement
     assert 'workstream.startswith("api2-")' in enforcement
     assert "DurableStateStore.closeout_green_frozen = closeout_green_frozen_with_step2g" in enforcement
     assert "read_step2g_convergence_evidence" in authority
     assert "api2-step2g-convergence-evidence" in authority
-    assert "api2_step2g_closeout_enforcement_v1" in init_source
+    assert "api2_step2g_github_authority_v1" in finalization_source
+    assert "api2_step2g_closeout_enforcement_v1" in finalization_source
     assert "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1" in streamlit_app
