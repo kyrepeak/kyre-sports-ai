@@ -21,7 +21,8 @@ def _git_blob_sha(path: Path) -> str:
 def test_live_sync_uses_successor_presentation_but_frozen_model_helpers() -> None:
     source = SYNC.read_text(encoding="utf-8")
     assert "from nba_pra_page2_v1 import _baseline_model, default_line_for_context" in source
-    assert "from nba_pra_page2_command_center_v2 import _css, build_page2_html" in source
+    assert "from nba_pra_page2_command_center_v3 import _css, build_page2_html" in source
+    assert "from nba_pra_page2_command_center_v2 import _css, build_page2_html" not in source
     assert "from nba_pra_page2_command_center_v1 import _css, build_page2_html" not in source
     assert "from nba_pra_page2_v1 import _baseline_model, _css, build_page2_html, default_line_for_context" not in source
 
