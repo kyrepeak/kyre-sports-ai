@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from . import nba_pra_player_context_v1 as base
 
-router = APIRouter(prefix="/api/v1/nba/pra/player-context/history", tags=["nba-pra-player-context"])
+router = APIRouter(prefix="/pra/player-context/history", tags=["nba-pra-player-context"])
 _HISTORY_COLLECT = base.collect_nba_pra_player_context
 
 
