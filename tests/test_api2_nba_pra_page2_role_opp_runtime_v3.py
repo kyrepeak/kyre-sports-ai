@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 
@@ -76,3 +77,14 @@ def test_frozen_v3_and_model_ownership_remain_unchanged() -> None:
     successor = (ROOT / "nba_pra_page2_role_runtime_v4.py").read_text(encoding="utf-8")
     assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in successor
     assert "Verified recent game minutes" in successor
+
+
+def test_step2g_freezes_feature_artifacts_not_shared_app_entrypoint() -> None:
+    plan = json.loads(
+        (ROOT / "devsystem/runless_proof_plans/api2-nba-pra-page2-role-opp-runtime-v3.json")
+        .read_text(encoding="utf-8")
+    )
+    assert "app.py" not in plan["artifacts"]
+    assert "app.py" in plan["dependencies"]
+    assert "nba_pra_page2_role_runtime_v4.py" in plan["artifacts"]
+    assert "tests/test_api2_nba_pra_page2_role_opp_runtime_v3.py" in plan["artifacts"]
