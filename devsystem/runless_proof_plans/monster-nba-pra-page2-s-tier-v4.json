@@ -1,8 +1,8 @@
 {
   "mode": "runless",
-  "task_id": "monster-nba-pra-page2-s-tier-v4",
-  "workstream": "monster-nba-pra-page2-s-tier-v4",
-  "source_main_sha": "75aef81d6141c3baf16cbf8a19ef760b4640d51d",
+  "task_id": "monster-nba-pra-page2-s-tier-v4-step2g",
+  "workstream": "monster-nba-pra-page2-s-tier-v4-step2g",
+  "source_main_sha": "8d47079900f34cbacac4976402ca3332908322b4",
   "commands": [
     [
       "python", "-m", "pytest", "--noconftest", "-q",
@@ -48,12 +48,18 @@
     "nba_pra_page2_insights_v1.py",
     "nba_pra_page2_context_v2.py"
   ],
-  "probes": [],
+  "probes": [
+    {
+      "url": "https://pickvault.streamlit.app/?ks_jump_sport=NBA&ks_jump_market=PRA",
+      "kind": "browser",
+      "timeout_seconds": 120
+    }
+  ],
   "timeout_seconds": 900,
   "live_ttl_seconds": 1200,
   "github_actions_fallback": 0,
   "reuse_frozen_proof": [],
   "required_check": "runless-final-gate",
   "required_check_app_id": 5204253,
-  "freeze_token": "MONSTER_NBA_PRA_PAGE2_S_TIER_V4_FROZEN"
+  "freeze_token": "MONSTER_NBA_PRA_PAGE2_S_TIER_V4_STEP2G_FROZEN"
 }
