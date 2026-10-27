@@ -46,7 +46,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install focused proof dependencies
-        run: python -m pip install --disable-pip-version-check -q pytest pandas requests httpx fastapi streamlit
+        run: python -m pip install --disable-pip-version-check -q pytest pandas requests httpx fastapi streamlit PyJWT
       - name: Compile active-path repair and closeout
         run: |
           python -m py_compile \
