@@ -39,6 +39,9 @@ def test_v162_router_uses_new_page_and_preserves_v161_browser_heartbeat():
     assert "MAY_MODIFY_PROJECTION = False" in source
 
 
-def test_app_activates_router_v158():
+def test_app_uses_shared_runtime_lifecycle_while_v158_contract_remains_frozen():
     source = APP.read_text(encoding="utf-8")
-    assert "streamlit_memory_lazy_router_v158" in source
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in source
+    assert "run_shared_runtime_lifecycle(" in source
+    router = _read(ROUTER)
+    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v13"' in router
