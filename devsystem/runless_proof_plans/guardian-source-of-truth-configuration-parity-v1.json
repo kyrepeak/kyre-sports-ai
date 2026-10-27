@@ -1,26 +1,42 @@
 {
-  "mission": "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1",
-  "state": "OPEN",
-  "branch": "guardian-source-of-truth-configuration-parity-v1",
-  "base_main_sha": "454b01ecf706505cacc507e1231fea16264e0f61",
-  "proof": {
-    "isolated_sandbox": "guardian-source-parity-v1",
-    "targeted_contract": "6 passed",
-    "security_regression_plus_contract": "12 passed",
-    "supabase_migration_records_indexed": 38,
-    "supabase_live_edge_functions_source_controlled": 9,
-    "supabase_security_actionable_findings": 0,
-    "kyre_runtime_anon_authenticated_table_grants": 0,
-    "kyre_runtime_anon_authenticated_schema_grants": 0,
-    "stale_vercel_preview_env_count": 9,
-    "migration_payload_archive_state": "OPEN"
-  },
-  "freeze": {
-    "token": "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1_FROZEN",
-    "eligible": false,
-    "blockers": [
-      "Exact SQL payload archive for all 38 live migration rows is not yet source-controlled.",
-      "Nine retired Finalizer preview env records cannot be physically deleted by the connected Vercel interface."
-    ]
-  }
+  "mode": "runless",
+  "task_id": "guardian-source-of-truth-configuration-parity-v1",
+  "workstream": "guardian-source-of-truth-configuration-parity-v1",
+  "source_main_sha": "454b01ecf706505cacc507e1231fea16264e0f61",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_guardian_security_configuration_hardening_v1.py", "tests/test_guardian_source_of_truth_configuration_parity_v1.py"],
+    ["python", "-m", "py_compile", "runless_v2/guardian_source_of_truth_configuration_parity_v1.py", "tests/test_guardian_source_of_truth_configuration_parity_v1.py"]
+  ],
+  "artifacts": [
+    "docs/superpowers/specs/2026-10-27-guardian-source-of-truth-configuration-parity-v1.md",
+    "tests/test_guardian_source_of_truth_configuration_parity_v1.py",
+    "devsystem/runless_proof_plans/guardian-source-of-truth-configuration-parity-v1.json",
+    "devsystem/guardian_source_of_truth_configuration_parity_v1.json",
+    "devsystem/guardian_kyre_runtime_access_classification_v1.json",
+    "runless_v2/guardian_source_of_truth_configuration_parity_v1.py",
+    "supabase/functions/noop-do-not-deploy/index.ts",
+    "supabase/functions/api2-registry-payload-builder-temp/index.ts",
+    "supabase/functions/api2-github-credential-presence-temp/index.ts",
+    "supabase/functions/api2-runless-step4-repair-relay-temp/index.ts",
+    "supabase/functions/api2-registry-step4-rebind-payload-temp/index.ts",
+    "supabase/functions/api2-pickvault-step4-public-ws-proof-temp/index.ts",
+    "supabase/functions/api2-registry-step7-thaw-r1/index.ts",
+    "supabase/functions/api2-registry-payload-gzip-temp/index.ts"
+  ],
+  "dependencies": [
+    "devsystem/runless_proof_plan_v1.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/proof_service.py",
+    "vercel_finalizer/app.py",
+    "vercel_finalizer/publish_gate_build.py",
+    "supabase/functions/guardian-finalizer-authority-bridge-v1/index.ts"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1_FROZEN"
 }
