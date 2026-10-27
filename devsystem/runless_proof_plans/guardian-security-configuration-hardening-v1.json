@@ -12,7 +12,8 @@
     "docs/superpowers/plans/2026-10-27-guardian-security-configuration-hardening-v1.md",
     "tests/test_guardian_security_configuration_hardening_v1.py",
     "devsystem/runless_proof_plans/guardian-security-configuration-hardening-v1.json",
-    "devsystem/runless_proof_plans/guardian-finalizer-baseline-v1.json"
+    "devsystem/runless_proof_plans/guardian-finalizer-baseline-v1.json",
+    "supabase/migrations/20261027_guardian_security_configuration_hardening_v1.sql"
   ],
   "dependencies": [
     "devsystem/runless_proof_plan_v1.py",
