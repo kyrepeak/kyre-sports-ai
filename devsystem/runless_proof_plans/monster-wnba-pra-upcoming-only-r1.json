@@ -1,0 +1,50 @@
+{
+  "mode": "runless",
+  "task_id": "monster-wnba-pra-upcoming-only-r1",
+  "workstream": "monster-wnba-pra-upcoming-only-r1",
+  "source_main_sha": "e319e5c73980736ca3e5da71316e018e025eb52c",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_wnba_pra_upcoming_only_r1.py",
+      "tests/test_wnba_pra_api_market_bridge_v1.py",
+      "tests/test_wnba_pra_auto_slate_market_repair_v1.py",
+      "tests/test_wnba_pra_api_market_bridge_freshness_v2.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "wnba_pra_api_market_bridge_upcoming_only_r1.py",
+      "wnba_pra_hub_v3612.py",
+      "runless_v2/monster_wnba_pra_upcoming_only_proof_r1.py",
+      "runless_v2/__init__.py"
+    ]
+  ],
+  "artifacts": [
+    "wnba_pra_api_market_bridge_upcoming_only_r1.py",
+    "wnba_pra_hub_v3612.py",
+    "tests/test_monster_wnba_pra_upcoming_only_r1.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-upcoming-only-r1.json",
+    "devsystem/task_ledgers/monster-wnba-pra-upcoming-only-r1.json",
+    "docs/superpowers/plans/2026-10-26-monster-wnba-pra-upcoming-only-r1.md",
+    "runless_v2/monster_wnba_pra_upcoming_only_proof_r1.py",
+    "runless_v2/__init__.py"
+  ],
+  "dependencies": [
+    "wnba_pra_api_market_bridge_v1.py",
+    "wnba_pra_api_market_bridge_legacy_v1.py",
+    "wnba_pra_page1_stier_v1.py",
+    "wnba_pra_page1_ultra_stier_v2.py",
+    "wnba_pra_slate_v2_step2.py",
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R1_FROZEN"
+}
