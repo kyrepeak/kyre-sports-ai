@@ -1,0 +1,18 @@
+{
+  "classification": "BACKEND_ONLY_RLS_DISABLED",
+  "project_id": "jqajcdckalsfizbvngiu",
+  "observed_tables": [
+    "kyre_runtime.wnba_runtime_checkpoints",
+    "kyre_runtime.wnba_runtime_checkpoint_heads",
+    "kyre_runtime.wnba_runtime_leases",
+    "kyre_runtime.mlb_runtime_checkpoints",
+    "kyre_runtime.mlb_runtime_checkpoint_heads",
+    "kyre_runtime.mlb_runtime_leases"
+  ],
+  "rls_enabled": false,
+  "anon_authenticated_table_grants": 0,
+  "anon_authenticated_schema_grants": 0,
+  "action": "NO_AUTOMATIC_RLS_CHANGE",
+  "reason": "The generic RLS-disabled advisory is retained as a monitored signal, but direct privilege checks prove these runtime tables are not granted to anon/authenticated roles. Enabling RLS without a reviewed service-access policy could break Runless.",
+  "guardian_policy": "Alert if anon/authenticated table or schema grants become nonzero; otherwise preserve backend-only runtime authority."
+}
