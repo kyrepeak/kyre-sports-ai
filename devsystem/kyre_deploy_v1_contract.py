@@ -10,6 +10,9 @@ COMPOSE_FILE: Final = Path("deploy/kyre-deploy/compose.yaml")
 README_FILE: Final = Path("deploy/kyre-deploy/README.md")
 API_DOCKERFILE: Final = Path("sports_api/Dockerfile")
 WORKFLOW_FILE: Final = Path(".github/workflows/kyre-deploy-v1-zero-cost-ci.yml")
+CLOUD_RUN_DEPLOY: Final = Path("deploy/kyre-deploy/cloud-run/deploy-sports-api.sh")
+CLOUD_RUN_ENV: Final = Path("deploy/kyre-deploy/cloud-run/cloud-run.env.example")
+CLOUD_RUN_README: Final = Path("deploy/kyre-deploy/cloud-run/README.md")
 
 
 class KyreDeployContractError(RuntimeError):
@@ -34,10 +37,11 @@ def _forbid(text: str, marker: str, *, source: Path) -> None:
 
 
 def validate_kyre_deploy_v1(repo_root: Path) -> dict[str, object]:
-    """Validate the Phase-1 deployment topology without network access.
+    """Validate the provider-neutral packaging and Cloud Run safety foundation.
 
-    This is intentionally static: it proves packaging and CI ownership only.
-    Live host, DNS, alias, and Step 2F/2G convergence remain Phase-2 evidence.
+    This validator is intentionally static. It proves packaging, CI ownership,
+    and fail-closed Cloud Run activation defaults. Live host, DNS, secrets,
+    health, and Step 2F/2G convergence require later runtime evidence.
     """
 
     root = Path(repo_root).resolve()
@@ -47,6 +51,9 @@ def validate_kyre_deploy_v1(repo_root: Path) -> dict[str, object]:
     readme = _read(root, README_FILE)
     api = _read(root, API_DOCKERFILE)
     workflow = _read(root, WORKFLOW_FILE)
+    cloud_run_deploy = _read(root, CLOUD_RUN_DEPLOY)
+    cloud_run_env = _read(root, CLOUD_RUN_ENV)
+    cloud_run_readme = _read(root, CLOUD_RUN_README)
 
     required = {
         STREAMLIT_DOCKERFILE: (
@@ -78,6 +85,32 @@ def validate_kyre_deploy_v1(repo_root: Path) -> dict[str, object]:
             "cancel-in-progress: true",
         ),
         README_FILE: ("No credentials are committed",),
+        CLOUD_RUN_DEPLOY: (
+            "set -euo pipefail",
+            "--cpu-throttling",
+            "--min=0",
+            "--max=1",
+            "--cpu=1",
+            "--memory=1Gi",
+            "--port=8000",
+            "--no-cpu-boost",
+            "KYRE_CLOUD_RUN_SPEND_CAP_CONFIRMED",
+            "KYRE_CLOUD_RUN_ACTIVATE",
+            "ghcr.io/*@sha256:*",
+        ),
+        CLOUD_RUN_ENV: (
+            "KYRE_GCP_PROJECT_ID=",
+            "KYRE_CLOUD_RUN_REGION=us-west1",
+            "KYRE_CLOUD_RUN_SERVICE=kyre-sports-api",
+            "KYRE_CLOUD_RUN_IMAGE=",
+            "KYRE_CLOUD_RUN_SERVICE_ACCOUNT=",
+        ),
+        CLOUD_RUN_README: (
+            "GitHub Actions remains the build/test engine",
+            "Cloud Run is runtime only",
+            "Spend cap enforcement",
+            "Chunk 2 proves the repository-side Cloud Run foundation",
+        ),
     }
     texts = {
         STREAMLIT_DOCKERFILE: streamlit,
@@ -86,6 +119,9 @@ def validate_kyre_deploy_v1(repo_root: Path) -> dict[str, object]:
         README_FILE: readme,
         API_DOCKERFILE: api,
         WORKFLOW_FILE: workflow,
+        CLOUD_RUN_DEPLOY: cloud_run_deploy,
+        CLOUD_RUN_ENV: cloud_run_env,
+        CLOUD_RUN_README: cloud_run_readme,
     }
     for source, markers in required.items():
         for marker in markers:
@@ -102,11 +138,27 @@ def validate_kyre_deploy_v1(repo_root: Path) -> dict[str, object]:
     for marker in ("docker push", "build-push-action", "packages: write"):
         _forbid(workflow, marker, source=WORKFLOW_FILE)
 
+    for marker in (
+        "gcloud builds submit",
+        "gcloud run deploy --source",
+        "cloudbuild.googleapis.com",
+        "docker push",
+    ):
+        _forbid(cloud_run_deploy, marker, source=CLOUD_RUN_DEPLOY)
+
+    for marker in ("GOOGLE_APPLICATION_CREDENTIALS", "PRIVATE_KEY", "PASSWORD=", "TOKEN=", "API_KEY="):
+        _forbid(cloud_run_env, marker, source=CLOUD_RUN_ENV)
+
     return {
         "status": "GREEN",
         "frontend": "streamlit",
         "api": "sports_api",
         "build_runner": "github-hosted",
+        "runtime_target": "cloud-run",
+        "cloud_run_request_billing": True,
+        "cloud_run_min_instances": 0,
+        "cloud_run_max_instances": 1,
+        "cloud_run_live": False,
         "live_cutover": False,
         "vercel_runtime_required": False,
     }
