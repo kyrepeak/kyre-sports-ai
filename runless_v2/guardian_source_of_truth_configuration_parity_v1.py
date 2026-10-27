@@ -38,5 +38,15 @@ def evaluate_convergence(snapshot: dict) -> dict:
     return {"green": not failures, "failures": failures}
 
 
-def freeze_eligible(convergence_report: dict, *, stale_preview_env_count: int) -> bool:
-    return bool(convergence_report.get("green")) and not convergence_report.get("failures") and stale_preview_env_count == 0
+def freeze_eligible(
+    convergence_report: dict,
+    *,
+    stale_preview_env_count: int,
+    migration_payload_archive_complete: bool,
+) -> bool:
+    return (
+        bool(convergence_report.get("green"))
+        and not convergence_report.get("failures")
+        and stale_preview_env_count == 0
+        and migration_payload_archive_complete
+    )
