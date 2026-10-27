@@ -42,6 +42,7 @@ import sports_api.api.nba_pra_player_context_enrichment_v2 as nba_pra_player_con
 import sports_api.api.nba_pra_usage_fallback_v2 as nba_pra_usage_fallback_module  # noqa: F401,E402
 import sports_api.api.nba_pra_injury_v1 as nba_pra_injury_module
 import sports_api.api.nba_pra_matchup_v1 as nba_pra_matchup_module
+import sports_api.api.nfl_game_totals_page2_context_v2 as nfl_game_totals_page2_context_module
 import sports_api.api.nfl_passing_yards_page_v1 as nfl_passing_yards_page_module
 import sports_api.api.nfl_passing_yards_slate_v1 as nfl_passing_yards_slate_module
 import sports_api.api.nfl_rushing_yards_slate_v1 as nfl_rushing_yards_slate_module
@@ -66,6 +67,7 @@ nba_pra_schedule_router = nba_pra_schedule_module.router
 nba_pra_player_context_router = nba_pra_player_context_module.router
 nba_pra_injury_router = nba_pra_injury_module.router
 nba_pra_matchup_router = nba_pra_matchup_module.router
+nfl_game_totals_page2_context_router = nfl_game_totals_page2_context_module.router
 nfl_passing_yards_page_router = nfl_passing_yards_page_module.router
 nfl_passing_yards_slate_router = nfl_passing_yards_slate_module.router
 nfl_rushing_yards_slate_router = nfl_rushing_yards_slate_module.router
@@ -73,7 +75,7 @@ nfl_rushing_yards_detail_router = nfl_rushing_yards_detail_v4_module.router
 
 app = FastAPI(
     title="Kyre Sports API",
-    version="KYRE_GATEWAY_V11",
+    version="KYRE_GATEWAY_V12",
     description="Kyre Sports AI application-facing sports data gateway.",
 )
 app.include_router(cfb_moneyline_router)
@@ -90,6 +92,7 @@ app.include_router(nba_pra_schedule_router)
 app.include_router(nba_pra_player_context_router)
 app.include_router(nba_pra_injury_router)
 app.include_router(nba_pra_matchup_router)
+app.include_router(nfl_game_totals_page2_context_router)
 app.include_router(nfl_passing_yards_page_router)
 app.include_router(nfl_passing_yards_slate_router)
 app.include_router(nfl_rushing_yards_slate_router)
@@ -117,6 +120,7 @@ def health() -> dict[str, object]:
         "nba_pra_injury_v1": True,
         "nba_pra_matchup_v1": True,
         "nba_runless_product_transport": False,
+        "nfl_game_totals_page2_context_v2": True,
         "nfl_passing_yards_page": True,
         "nfl_passing_yards_slate": True,
         "nfl_rushing_yards_slate": True,
