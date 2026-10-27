@@ -1,0 +1,59 @@
+{
+  "schema_version": "MONSTER_STEP2G_PRERENDER_PROOF_V1",
+  "authority": "MONSTER_ONLY",
+  "task_id": "monster-nba-pra-page2-s-tier-v4",
+  "workstream": "monster-nba-pra-page2-s-tier-v4",
+  "candidate_sha": "91d17292bfec1b3c0ee9eedc9f1aa7182e3a4f11",
+  "candidate_tree_sha": "b123aa86cf0522d17b2ad594199b6079ccd59c18",
+  "source_main_sha": "75aef81d6141c3baf16cbf8a19ef760b4640d51d",
+  "pull_request": 1880,
+  "merged_main_sha": "8d47079900f34cbacac4976402ca3332908322b4",
+  "merged_main_tree_sha": "b123aa86cf0522d17b2ad594199b6079ccd59c18",
+  "merge_tree_exact": true,
+  "required_check": "runless-final-gate",
+  "gate_check_run_id": 121930514380,
+  "gate_app_id": 5204253,
+  "gate_state": "MERGE_AUTHORIZED",
+  "acceptance": {
+    "workflow_name": "MONSTER NBA PRA Page 2 S-Tier V4",
+    "workflow_run_id": 40425123718,
+    "conclusion": "success",
+    "regressions_included": true
+  },
+  "production_browser": {
+    "sandbox_name": "monster-step2g-page2-v4-proof",
+    "session_id": "sbx_dCkIjVWFJsfDuuOeuENrFDlAhWfx",
+    "terminal_command_id": "cmd_15a3b900c9d4461983ac7705dd9a",
+    "stable_alias": "https://pickvault.streamlit.app",
+    "frame_url": "https://pickvault.streamlit.app/~/+/?sport=nba&market=pra",
+    "terminal": "READY",
+    "runtime_owner": "MONSTER",
+    "deployment_id": "monster-streamlit-8d47079900f3",
+    "runtime_sha": "8d47079900f34cbacac4976402ca3332908322b4",
+    "runtime_tree_sha": "b123aa86cf0522d17b2ad594199b6079ccd59c18",
+    "v4_css": true,
+    "required_markers": [
+      "PLAYER COMMAND CENTER",
+      "L10 PRA TREND",
+      "PROJECTION DISTRIBUTION",
+      "MARKET INTELLIGENCE",
+      "MODEL DRIVERS",
+      "KYRE READ",
+      "DEEP VERIFIED EVIDENCE",
+      "FULL GAME LOG"
+    ],
+    "mobile_game_cards": 3
+  },
+  "scope": {
+    "presentation_only": true,
+    "model_math_changed": false,
+    "provider_routing_changed": false,
+    "product_runtime_mutation_by_freeze": false
+  },
+  "anti_loop": {
+    "duplicate_authority": false,
+    "repeated_polling": false,
+    "single_authoritative_pr": true
+  },
+  "proof_digest": "91f7ad542401ed409821236629404fa1b1f029141d1f3b6b3b8700981110e5cf"
+}
