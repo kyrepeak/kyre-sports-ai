@@ -36,6 +36,9 @@ sys.modules.pop("streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline
 sys.modules.pop("nfl_game_totals_hub_v12", None)
 sys.modules.pop("nfl_game_totals_page1_s_tier_v1", None)
 sys.modules.pop("nfl_moneyline_hub_v20", None)
+sys.modules.pop("nba_pra_runtime_v2", None)
+sys.modules.pop("nba_pra_page2_sync_v1", None)
+sys.modules.pop("nba_pra_page2_command_center_v4", None)
 importlib.invalidate_caches()
 
 # Frozen ancestry markers retained for regression/documentation only:
