@@ -18,6 +18,7 @@ def _configure_bridge(monkeypatch):
     monkeypatch.setenv("GITHUB_APP_PRIVATE_KEY", "key")
     monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.setenv("FINALIZER_CAPABILITY_TOKEN", "test-capability")
 
 
 def _authority():
@@ -49,45 +50,51 @@ def _exact_check():
     }
 
 
-def test_health_reports_bridge_configured_without_service_role(monkeypatch):
+def test_health_reports_capability_configured_without_service_role(monkeypatch):
     _configure_bridge(monkeypatch)
     response = TestClient(target.app).get("/health")
     assert response.status_code == 200
     body = response.json()
     assert body["configured"] is True
     assert body["status"] == "ok"
-    assert body["authority_transport"] == "supabase_edge_bridge"
+    assert body["authority_transport"] == "capability_edge"
 
 
-def test_deep_authority_health_uses_github_app_authenticated_bridge(monkeypatch):
+def test_health_stays_degraded_without_service_role_or_capability(monkeypatch):
     _configure_bridge(monkeypatch)
-    monkeypatch.setattr(target, "_app_jwt", lambda settings: "app-jwt")
+    monkeypatch.delenv("FINALIZER_CAPABILITY_TOKEN")
+    response = TestClient(target.app).get("/health")
+    assert response.status_code == 200
+    assert response.json()["configured"] is False
+    assert response.json()["status"] == "degraded"
+
+
+def test_deep_authority_health_uses_capability_edge(monkeypatch):
+    _configure_bridge(monkeypatch)
     monkeypatch.setattr(
         target,
         "authority_bridge_health",
-        lambda client, *, supabase_url, app_jwt: {
+        lambda client, *, supabase_url, capability_token: {
             "status": "ok",
-            "app_id": "5204253",
-            "supabase": "healthy",
+            "authority": "runless_v2",
+            "transport": "capability_edge",
         },
     )
     response = TestClient(target.app).get("/health/authority")
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
-        "transport": "supabase_edge_bridge",
-        "app_id": "5204253",
-        "supabase": "healthy",
+        "transport": "capability_edge",
+        "authority": "runless_v2",
     }
 
 
-def test_prove_uses_bridge_when_service_role_is_unavailable(monkeypatch):
+def test_prove_uses_capability_when_service_role_is_unavailable(monkeypatch):
     _configure_bridge(monkeypatch)
-    monkeypatch.setattr(target, "_app_jwt", lambda settings: "app-jwt")
     monkeypatch.setattr(
         target,
         "resolve_authority_via_bridge",
-        lambda client, *, supabase_url, app_jwt, workstream, task_id, candidate_sha, fencing_generation: _authority(),
+        lambda client, *, supabase_url, capability_token, workstream, task_id, candidate_sha, fencing_generation: _authority(),
     )
     monkeypatch.setattr(target, "_installation_token", lambda settings, client: "installation-token")
     monkeypatch.setattr(
@@ -100,7 +107,7 @@ def test_prove_uses_bridge_when_service_role_is_unavailable(monkeypatch):
     monkeypatch.setattr(
         target,
         "claim_publication_via_bridge",
-        lambda client, *, supabase_url, app_jwt, proof_id, candidate_sha, fencing_generation, proof_digest, claim_token: GateClaimDecision(
+        lambda client, *, supabase_url, capability_token, proof_id, candidate_sha, fencing_generation, proof_digest, claim_token: GateClaimDecision(
             publish=False,
             reused=True,
             gate_check_run_id=77,
