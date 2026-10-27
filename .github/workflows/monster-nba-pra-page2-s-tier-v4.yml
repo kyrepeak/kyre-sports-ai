@@ -1,0 +1,42 @@
+name: MONSTER NBA PRA Page 2 S-Tier V4
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "nba_pra_page2_command_center_v4.py"
+      - "nba_pra_page2_sync_v1.py"
+      - "tests/test_monster_nba_pra_page2_s_tier_v4.py"
+      - "docs/superpowers/specs/2026-10-26-monster-nba-pra-page2-s-tier-v4-design.md"
+      - "docs/superpowers/plans/2026-10-26-monster-nba-pra-page2-s-tier-v4.md"
+      - "devsystem/runless_proof_plans/monster-nba-pra-page2-s-tier-v4.json"
+      - ".github/workflows/monster-nba-pra-page2-s-tier-v4.yml"
+
+jobs:
+  monster-page2-v4-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused dependencies
+        run: python -m pip install --disable-pip-version-check pytest requests httpx fastapi pyjwt pandas numpy streamlit
+      - name: Run MONSTER V4 acceptance contract
+        run: python -m pytest --noconftest -q tests/test_monster_nba_pra_page2_s_tier_v4.py
+      - name: Run Page 2 regressions
+        run: >-
+          python -m pytest --noconftest -q
+          tests/test_api2_nba_pra_page2_command_center_v1.py
+          tests/test_api2_nba_pra_page2_command_center_activation_v1.py
+          tests/test_api2_nba_pra_page2_s_tier_polish_v1.py
+          tests/test_api2_nba_pra_page2_role_log_completeness_v1.py
+          tests/test_api2_nba_pra_page2_insights_v1.py
+          tests/test_api2_nba_pra_page2_s_tier_v2.py
+          tests/test_api2_nba_pra_page2_ui_v1.py
+          tests/test_api2_nba_pra_page2_source_guard_v2.py
+          tests/test_api2_nba_pra_page1_page2_sync_v1.py
+          tests/test_api2_nba_pra_page2_integration_v1.py
+      - name: Compile Page 2 command center
+        run: python -m py_compile nba_pra_page2_command_center_v1.py nba_pra_page2_command_center_v2.py nba_pra_page2_command_center_v3.py nba_pra_page2_command_center_v4.py nba_pra_page2_context_v2.py nba_pra_page2_data_completeness_v1.py nba_pra_page2_sync_v1.py
