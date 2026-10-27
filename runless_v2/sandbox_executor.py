@@ -181,10 +181,18 @@ class VercelSandboxBackend:
             if timeout_ms
             else await operation
         )
+        exit_code = int(getattr(result, "exit_code", 1))
+
+        async def _capture(reader: Any, label: str) -> str:
+            try:
+                return str(await reader() or "")
+            except Exception as exc:
+                return f"RUNLESS_V2_{label}_UNAVAILABLE:{type(exc).__name__}"
+
         return {
-            "exit_code": int(getattr(result, "exit_code", 1)),
-            "stdout": str(await result.stdout() or ""),
-            "stderr": str(await result.stderr() or ""),
+            "exit_code": exit_code,
+            "stdout": await _capture(result.stdout, "STDOUT"),
+            "stderr": await _capture(result.stderr, "STDERR"),
         }
 
     async def stop(self, session_id: str) -> None:
