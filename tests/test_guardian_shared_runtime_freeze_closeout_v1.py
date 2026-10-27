@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNLESS_INIT = ROOT / "runless_v2" / "__init__.py"
 RUNLESS_CONFIG = ROOT / "runless_v2" / "config.py"
 RUNLESS_APP = ROOT / "runless_v2" / "app.py"
+BOOTSTRAP = ROOT / "runless_v2" / "guardian_freeze_closeout_bootstrap_v1.py"
 PROOF = ROOT / "runless_v2" / "guardian_shared_runtime_freeze_closeout_proof_v1.py"
 PLAN = ROOT / "devsystem" / "runless_proof_plans" / "guardian-shared-runtime-lifecycle-freeze-closeout-v1.json"
 
@@ -20,16 +21,20 @@ def test_monster_frozen_runless_init_has_no_guardian_bootstrap():
     assert "GUARDIAN_SHARED_RUNTIME_AUTO_PROOF_GREEN" not in source
 
 
-def test_guardian_closeout_bootstrap_avoids_circular_config_import():
+def test_guardian_closeout_bootstrap_is_deferred_until_settings_load():
     config_source = RUNLESS_CONFIG.read_text(encoding="utf-8")
     app_source = RUNLESS_APP.read_text(encoding="utf-8")
+    bootstrap_source = BOOTSTRAP.read_text(encoding="utf-8")
     assert "_guardian_shared_runtime_freeze_closeout_maybe_auto_prove" not in config_source
-    assert "_guardian_shared_runtime_freeze_closeout_maybe_auto_prove" in app_source
-    assert BRANCH in app_source
-    assert "guardian_shared_runtime_freeze_closeout_proof_v1" in app_source
-    assert "GUARDIAN_SHARED_RUNTIME_FREEZE_CLOSEOUT_AUTO_PROOF_GREEN" in app_source
+    assert "guardian_freeze_closeout_bootstrap_v1 import maybe_auto_prove" in config_source
+    assert "maybe_auto_prove(settings)" in config_source
+    assert "Settings.from_env()" in app_source
+    assert BRANCH in bootstrap_source
+    assert "guardian_shared_runtime_freeze_closeout_proof_v1" in bootstrap_source
+    assert "GUARDIAN_SHARED_RUNTIME_FREEZE_CLOSEOUT_AUTO_PROOF_GREEN" in bootstrap_source
 
 
-def test_guardian_closeout_has_its_own_proof_module_and_plan():
+def test_guardian_closeout_has_its_own_proof_module_plan_and_bootstrap():
+    assert BOOTSTRAP.is_file(), "Guardian closeout deferred bootstrap is missing"
     assert PROOF.is_file(), "Guardian closeout Runless proof publisher is missing"
     assert PLAN.is_file(), "Guardian closeout Runless proof plan is missing"
