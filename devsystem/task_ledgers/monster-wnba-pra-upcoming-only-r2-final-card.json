@@ -1,0 +1,21 @@
+{
+  "version": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_LEDGER",
+  "authority": "MONSTER_ONLY",
+  "task_id": "monster-wnba-pra-upcoming-only-r2-final-card",
+  "active_problem": "The Page 1 Certified PRA Pick section can render a stale final_card entry even after the upstream upcoming-only schedule gate removed that player from eligible rows.",
+  "status": "AUTO_PROOF_ARMED",
+  "progress_percent": 99.8,
+  "authoritative_base": "main",
+  "authoritative_base_sha": "c8575399c7f0c1c7f3e9a68426fed81d68571153",
+  "authoritative_branch": "monster-wnba-pra-upcoming-only-r2-final-card",
+  "authoritative_pr": 1890,
+  "proof_authority": "MONSTER_ONLY_RUNLESS_APP_5204253",
+  "step2a": {"status": "GREEN", "one_active_problem": true, "one_branch": true, "one_pr": true, "one_authoritative_proof_path": true},
+  "anti_loop": {"status": "GREEN", "r1_schedule_gate_frozen": true, "blind_retry_allowed": false, "duplicate_lane_allowed": false},
+  "step2b": {"status": "GREEN", "acceptance_locked": "Certified PRA Pick renders only for exact player+line keys still present in current eligible Page 1 rows."},
+  "step2c": {"status": "GREEN_ROOT_CAUSE_PROVEN", "failure_class": "STALE_FINAL_CARD_NOT_BOUND_TO_ELIGIBLE_ROWS"},
+  "step2d": {"status": "GREEN_IMPLEMENTED", "repair": "V3 presentation successor filters final_card against exact current eligible player+line rows."},
+  "step2e": {"status": "ACTIVE_EXACT_HEAD_AUTO_PROOF"},
+  "step2f": {"status": "PENDING_EXPECTED_HEAD_MERGE"},
+  "step2g": {"status": "PENDING_PRODUCTION_CERT_AND_FINAL_FREEZE", "freeze_target": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_FROZEN"}
+}

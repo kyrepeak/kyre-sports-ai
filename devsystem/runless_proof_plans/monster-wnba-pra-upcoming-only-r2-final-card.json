@@ -1,0 +1,46 @@
+{
+  "mode": "runless",
+  "task_id": "monster-wnba-pra-upcoming-only-r2-final-card",
+  "workstream": "monster-wnba-pra-upcoming-only-r2-final-card",
+  "source_main_sha": "c8575399c7f0c1c7f3e9a68426fed81d68571153",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_wnba_pra_upcoming_only_r2_final_card.py",
+      "tests/test_monster_wnba_pra_upcoming_only_r1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "wnba_pra_page1_ultra_stier_v3.py",
+      "wnba_pra_hub_v3612.py",
+      "runless_v2/monster_wnba_pra_upcoming_only_r2_final_card_proof.py",
+      "runless_v2/__init__.py"
+    ]
+  ],
+  "artifacts": [
+    "wnba_pra_page1_ultra_stier_v3.py",
+    "wnba_pra_hub_v3612.py",
+    "tests/test_monster_wnba_pra_upcoming_only_r2_final_card.py",
+    "devsystem/task_ledgers/monster-wnba-pra-upcoming-only-r2-final-card.json",
+    "docs/superpowers/plans/2026-10-26-monster-wnba-pra-upcoming-only-r2-final-card.md",
+    "devsystem/runless_proof_plans/monster-wnba-pra-upcoming-only-r2-final-card.json",
+    "runless_v2/monster_wnba_pra_upcoming_only_r2_final_card_proof.py",
+    "runless_v2/__init__.py"
+  ],
+  "dependencies": [
+    "wnba_pra_api_market_bridge_upcoming_only_r1.py",
+    "wnba_pra_page1_ultra_stier_v2.py",
+    "tests/test_monster_wnba_pra_upcoming_only_r1.py",
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_FROZEN"
+}
