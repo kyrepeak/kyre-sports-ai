@@ -1,0 +1,60 @@
+{
+  "artifact_map": {
+    "devsystem/guardian_kyre_runtime_access_classification_v1.json": "caa069997fe083dc5b62c24e84fa588b746ad3e5",
+    "devsystem/guardian_source_of_truth_configuration_parity_v1.json": "9921752432e30a845c77e8ce594c8dc278616032",
+    "devsystem/runless_proof_plans/guardian-source-of-truth-configuration-parity-v1.json": "dbd9361406a4f5dd0f0c4b9e51bf35c1e4ba93f4",
+    "docs/superpowers/specs/2026-10-27-guardian-source-of-truth-configuration-parity-v1.md": "b78980392832d513c8ac61f30175ac644209d3ff",
+    "runless_v2/guardian_source_of_truth_configuration_parity_v1.py": "e1702c9f8fd6da8ace7e9b5f732baf17aa8b47ad",
+    "supabase/functions/api2-github-credential-presence-temp/index.ts": "e11e6c020422290ac19271a0c1b6b6863d3b4559",
+    "supabase/functions/api2-pickvault-step4-public-ws-proof-temp/index.ts": "e11e6c020422290ac19271a0c1b6b6863d3b4559",
+    "supabase/functions/api2-registry-payload-builder-temp/index.ts": "e11e6c020422290ac19271a0c1b6b6863d3b4559",
+    "supabase/functions/api2-registry-payload-gzip-temp/index.ts": "e11e6c020422290ac19271a0c1b6b6863d3b4559",
+    "supabase/functions/api2-registry-step4-rebind-payload-temp/index.ts": "e11e6c020422290ac19271a0c1b6b6863d3b4559",
+    "supabase/functions/api2-registry-step7-thaw-r1/index.ts": "534a31dd77a706401731013abb10d47c01cd0dc5",
+    "supabase/functions/api2-runless-step4-repair-relay-temp/index.ts": "e11e6c020422290ac19271a0c1b6b6863d3b4559",
+    "supabase/functions/noop-do-not-deploy/index.ts": "625c0891b2c307aed7884c19e900234d373dae08",
+    "tests/test_guardian_source_of_truth_configuration_parity_v1.py": "2180da5a0281fc292b49f2baaf6c432f37b7ceea"
+  },
+  "candidate_sha": "ad871c21e615020c50b562ec90bb03dd5fe21761",
+  "created_at": "2026-10-27T18:10:49.777397+00:00",
+  "dependency_map": {
+    "devsystem/runless_proof_plan_v1.py": "38154dcf83a2fe24767bc49091148f90bbf487b4",
+    "runless_v2/github_authority.py": "50272688dd62461638a342938bb3b2b398f540cc",
+    "runless_v2/proof_service.py": "0dd0660e4858d665222847693cc26441fd783ba3",
+    "supabase/functions/guardian-finalizer-authority-bridge-v1/index.ts": "a569ef1acb02ab2e07f8463c88b2cfdbbb269a2c",
+    "vercel_finalizer/app.py": "573811460ae9929d50bcb885dbffb88c05d90a43",
+    "vercel_finalizer/publish_gate_build.py": "aa3fc0b1bb3e46abdb8354e6ce7cadae78fc21cf"
+  },
+  "digest": "8ddbb80f7422d0e7073f4966a5420daa10e8f78696616d837b9a71ccc1b8c8cf",
+  "evidence_digests": [
+    "f6c3c9cf6d6aeeb1fbc54b289bdef8b097b4c93c1682e3079863b1ad64182a7a",
+    "4f67c5c47b17ec5b107d8abb57df68c32e2e14158b30b095a013b96ceeada5e9"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "0c6dd763e0892687f529def7e9cd27884c2f315424a85864d3ce5e10b8953e8f",
+  "proof_id": "guardian-source-of-truth-configuration-parity-v1-ad871c21e615020c-348613217181d0d6",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 515,
+    "state_hash": "1752e6cc4bdd4a66ff8f5aaefefe1752ffdae1c8cf004e430c66e71053549314"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 515,
+    "state_hash": "1752e6cc4bdd4a66ff8f5aaefefe1752ffdae1c8cf004e430c66e71053549314"
+  },
+  "request_fingerprint": "8d8db3310749359457b4485497bfa737c5a1718e4dca78ef1e47a4da9ea30fdf",
+  "step": "runless-v2-premerge",
+  "task_id": "guardian-source-of-truth-configuration-parity-v1",
+  "workstream": "guardian-source-of-truth-configuration-parity-v1"
+}
