@@ -102,12 +102,13 @@ def _root_adapter(route: RuntimeRoute, *, ttl_ms: int) -> DestinationAdapter:
 def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
     """Dedicated API2 Game Totals Page1 + selected-game Page2 adapter."""
     def frozen_page1_owner():
-        # Compatibility/proof anchor: Page 1 remains the frozen presentation owner.
+        # Compatibility/proof anchors: preserve the frozen Page 1 owner and V11 route ancestry.
+        _import("nfl_game_totals_hub_v11")
         return _import("nfl_game_totals_page1_s_tier_v1")
 
     def loader():
         frozen_page1_owner()
-        return _import("nfl_game_totals_hub_v11")
+        return _import("nfl_game_totals_hub_v12")
 
     def renderer(page):
         return page.render_nfl_game_totals_hub()
@@ -116,7 +117,7 @@ def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
         (route.sport_id, route.market_id),
         loader,
         renderer,
-        "nfl_game_totals_hub_v11",
+        "nfl_game_totals_hub_v12",
         20_000,
     )
 
