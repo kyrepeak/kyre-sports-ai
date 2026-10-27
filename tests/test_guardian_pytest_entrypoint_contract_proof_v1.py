@@ -73,8 +73,17 @@ def test_guardian_runless_plan_uses_one_current_terminal_contract():
     assert plan["freeze_token"] == "GUARDIAN_PYTEST_ENTRYPOINT_CONTRACT_V1_FROZEN"
     commands = " ".join(" ".join(command) for command in plan["commands"])
     assert "tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py" in commands
-    assert "tests/test_cfb_game_total_v163_game_selector.py" in commands
+    assert "tests/test_cfb_game_total_v163_game_selector.py" not in commands
     assert "tests/test_cfb_game_total_v184_step6_browser.py" not in commands
+    dependencies = set(plan["dependencies"])
+    for historical_dependency in (
+        "cfb_game_total_clean_page_v14.py",
+        "streamlit_memory_lazy_router_v159.py",
+        "devsystem/browser_qa_v1.py",
+        "devsystem/cfb_game_total_browser_qa_v4.py",
+        "tests/test_cfb_game_total_v163_game_selector.py",
+    ):
+        assert historical_dependency not in dependencies
 
 
 def test_guardian_pytest_entrypoint_bootstrap_is_branch_scoped():

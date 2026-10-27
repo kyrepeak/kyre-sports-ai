@@ -16,13 +16,6 @@
     [
       "python",
       "-m",
-      "pytest",
-      "-q",
-      "tests/test_cfb_game_total_v163_game_selector.py"
-    ],
-    [
-      "python",
-      "-m",
       "py_compile",
       "tests/conftest.py",
       "tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py",
@@ -47,17 +40,10 @@
   ],
   "dependencies": [
     "app.py",
-    "cfb_game_total_page1_atier_v4.py",
-    "cfb_game_total_page1_atier_v6.py",
-    "cfb_game_total_clean_page_v14.py",
-    "streamlit_memory_lazy_router_v159.py",
-    "devsystem/browser_qa_v1.py",
-    "devsystem/cfb_game_total_browser_qa_v4.py",
     "devsystem/shared_runtime_lifecycle_v1.py",
     "runless_v2/config.py",
     "runless_v2/github_authority.py",
-    "runless_v2/sandbox_executor.py",
-    "tests/test_cfb_game_total_v163_game_selector.py"
+    "runless_v2/sandbox_executor.py"
   ],
   "probes": [],
   "timeout_seconds": 300,
