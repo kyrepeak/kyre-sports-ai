@@ -1,0 +1,10 @@
+{
+  "version": "20261027183826",
+  "name": "guardian_source_parity_archive_temp_cleanup_v1",
+  "statements": [
+    "drop table if exists kyre_runtime.guardian_source_parity_archive_temp;"
+  ],
+  "content_md5": "91084b96cc600dae4245172812babb58",
+  "role": "final source-parity cleanup migration",
+  "source": "supabase_migrations.schema_migrations"
+}
