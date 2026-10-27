@@ -1,0 +1,54 @@
+name: GUARDIAN Shared Runtime Lifecycle V1
+
+on:
+  push:
+    branches:
+      - guardian-shared-runtime-lifecycle-v1
+    paths:
+      - "app.py"
+      - "devsystem/shared_runtime_lifecycle_v1.py"
+      - "tests/test_guardian_shared_runtime_lifecycle_v1.py"
+      - "tests/test_api2_sitewide_render_repair_r1.py"
+      - "tests/test_api2_sitewide_render_deployment_convergence_r2.py"
+      - "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py"
+      - "tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py"
+      - "tests/test_devsystem_monster_step2g_production_promotion_v1.py"
+      - "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"
+      - ".github/workflows/guardian-shared-runtime-lifecycle-v1.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "devsystem/shared_runtime_lifecycle_v1.py"
+      - "tests/test_guardian_shared_runtime_lifecycle_v1.py"
+      - "tests/test_api2_sitewide_render_repair_r1.py"
+      - "tests/test_api2_sitewide_render_deployment_convergence_r2.py"
+      - "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py"
+      - "tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py"
+      - "tests/test_devsystem_monster_step2g_production_promotion_v1.py"
+      - "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"
+      - ".github/workflows/guardian-shared-runtime-lifecycle-v1.yml"
+
+concurrency:
+  group: guardian-shared-runtime-lifecycle-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  guardian-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Prove Guardian shared lifecycle contract
+        run: python -m pytest --noconftest -q tests/test_guardian_shared_runtime_lifecycle_v1.py
