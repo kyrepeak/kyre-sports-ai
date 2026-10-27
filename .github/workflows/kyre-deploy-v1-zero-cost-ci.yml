@@ -7,7 +7,9 @@ on:
       - "devsystem/kyre_deploy_v1_contract.py"
       - "tests/test_kyre_deploy_v1_contract.py"
       - ".github/workflows/kyre-deploy-v1-zero-cost-ci.yml"
-      - "sports_api/**"
+      - "sports_api/Dockerfile"
+      - "sports_api/requirements.txt"
+      - "sports_api/requirements-mlb-step14b-persistence.txt"
       - "requirements.txt"
       - "app.py"
   workflow_dispatch:
