@@ -25,8 +25,9 @@ _base.PLAN_PATH = "devsystem/runless_proof_plans/guardian-finalizer-authority-br
 _base.ALLOWED_CHANGED_PATHS = frozenset(
     {
         "devsystem/runless_proof_plans/guardian-finalizer-authority-bridge-v1.json",
+        "runless_v2/config.py",
+        "runless_v2/guardian_finalizer_authority_bridge_bootstrap_v1.py",
         "runless_v2/guardian_finalizer_authority_bridge_proof_v1.py",
-        "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
         "supabase/functions/guardian-finalizer-authority-bridge-v1/index.ts",
         "tests/test_guardian_finalizer_authority_bridge_v1.py",
         "vercel_finalizer/authority_bridge.py",
