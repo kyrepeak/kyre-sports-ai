@@ -11,10 +11,10 @@ from urllib.parse import quote
 AUTHORITY = "KYRE_GUARDIAN_ONLY"
 TASK_ID = "guardian-shared-runtime-lifecycle-v1"
 WORKSTREAM = TASK_ID
-PR_NUMBER = 1896
+PR_NUMBER = 1897
 BRANCH = "guardian-shared-runtime-lifecycle-v1"
 BASE_BRANCH = "main"
-EXPECTED_MAIN_SHA = "313af5db9f1ce12cda76e0ed41c14f495add0007"
+EXPECTED_MAIN_SHA = "49ee15d2ba9d583373e8981352eac9809cd189d0"
 GATE_NAME = "runless-final-gate"
 GITHUB_APP_ID = "5204253"
 RECEIPT_REF = "runless-proof-receipts"
@@ -30,6 +30,7 @@ ALLOWED_CHANGED_PATHS = frozenset(
         "docs/superpowers/plans/2026-10-27-guardian-shared-runtime-lifecycle-v1.md",
         "runless_v2/__init__.py",
         "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py",
+        "runless_v2/sandbox_executor.py",
         "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py",
         "tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py",
         "tests/test_api2_sitewide_render_deployment_convergence_r2.py",
