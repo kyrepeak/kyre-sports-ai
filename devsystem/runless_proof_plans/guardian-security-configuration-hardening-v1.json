@@ -5,7 +5,7 @@
   "source_main_sha": "31f94eae6e007a61d01397e6d868df3a6a3bd1e2",
   "commands": [
     ["python", "-m", "pytest", "-q", "tests/test_guardian_security_configuration_hardening_v1.py", "vercel_finalizer/test_health_truthfulness.py", "vercel_finalizer/test_publish_gate_build.py"],
-    ["python", "-m", "py_compile", "tests/test_guardian_security_configuration_hardening_v1.py", "vercel_finalizer/app.py", "vercel_finalizer/publish_gate_build.py"]
+    ["python", "-m", "py_compile", "tests/test_guardian_security_configuration_hardening_v1.py", "runless_v2/guardian_security_configuration_hardening_proof_v1.py", "runless_v2/guardian_freeze_closeout_bootstrap_v1.py", "vercel_finalizer/app.py", "vercel_finalizer/publish_gate_build.py"]
   ],
   "artifacts": [
     "docs/superpowers/specs/2026-10-27-guardian-security-configuration-hardening-v1.md",
@@ -13,10 +13,13 @@
     "tests/test_guardian_security_configuration_hardening_v1.py",
     "devsystem/runless_proof_plans/guardian-security-configuration-hardening-v1.json",
     "devsystem/runless_proof_plans/guardian-finalizer-baseline-v1.json",
-    "supabase/migrations/20261027_guardian_security_configuration_hardening_v1.sql"
+    "supabase/migrations/20261027_guardian_security_configuration_hardening_v1.sql",
+    "runless_v2/guardian_security_configuration_hardening_proof_v1.py",
+    "runless_v2/guardian_freeze_closeout_bootstrap_v1.py"
   ],
   "dependencies": [
     "devsystem/runless_proof_plan_v1.py",
+    "runless_v2/guardian_pytest_entrypoint_contract_proof_v1_base.py",
     "vercel_finalizer/app.py",
     "vercel_finalizer/publish_gate_build.py"
   ],
