@@ -22,6 +22,7 @@ RECEIPT_DIR = "devsystem/runless_proof_receipts"
 PLAN_PATH = f"devsystem/runless_proof_plans/{TASK_ID}.json"
 ALLOWED_CHANGED_PATHS = frozenset(
     {
+        ".github/workflows/cfb-game-total-v150-browser.yml",
         "devsystem/runless_proof_plans/guardian-pytest-entrypoint-contract-v1.json",
         "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
         "runless_v2/guardian_pytest_entrypoint_contract_proof_v1.py",
