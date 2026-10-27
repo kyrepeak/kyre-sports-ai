@@ -7,6 +7,7 @@ from typing import Any
 
 FREEZE_CLOSEOUT_BRANCH = "guardian-shared-runtime-lifecycle-freeze-closeout-v1"
 FREEZE_IDEMPOTENCY_BRANCH = "guardian-monster-freeze-idempotency-v1"
+STREAM_HANDOFF_BRANCH = "guardian-runless-stream-handoff-v1"
 
 
 def _prove_freeze_closeout(settings: Any, preview_sha: str) -> None:
@@ -59,6 +60,31 @@ def _prove_freeze_idempotency(settings: Any, preview_sha: str) -> None:
     )
 
 
+def _prove_stream_handoff(settings: Any, preview_sha: str) -> None:
+    from .github_authority import GithubAuthority
+    from .guardian_runless_stream_handoff_proof_v1 import (
+        BRANCH,
+        prove_guardian_runless_stream_handoff,
+    )
+    from .sandbox_executor import SandboxExecutor
+
+    if BRANCH != STREAM_HANDOFF_BRANCH:
+        raise RuntimeError("GUARDIAN_RUNLESS_STREAM_HANDOFF_BRANCH_CONTRACT_DRIFT")
+    if not settings.authority_enabled:
+        raise RuntimeError("GUARDIAN_RUNLESS_STREAM_HANDOFF_AUTHORITY_DISABLED")
+    result = asyncio.run(
+        prove_guardian_runless_stream_handoff(
+            github=GithubAuthority(settings),
+            sandbox=SandboxExecutor(),
+            expected_preview_sha=preview_sha,
+        )
+    )
+    print(
+        "GUARDIAN_RUNLESS_STREAM_HANDOFF_AUTO_PROOF_GREEN:"
+        + str(result.get("receipt_digest") or "")
+    )
+
+
 def maybe_auto_prove(settings: Any) -> None:
     """Publish Guardian proof only from an explicitly authorized preview branch."""
     if os.environ.get("VERCEL_ENV", "").strip() != "preview":
@@ -73,6 +99,9 @@ def maybe_auto_prove(settings: Any) -> None:
     elif branch == FREEZE_IDEMPOTENCY_BRANCH:
         runner = _prove_freeze_idempotency
         blocked_prefix = "GUARDIAN_MONSTER_FREEZE_IDEMPOTENCY_AUTO_PROOF_BLOCKED:"
+    elif branch == STREAM_HANDOFF_BRANCH:
+        runner = _prove_stream_handoff
+        blocked_prefix = "GUARDIAN_RUNLESS_STREAM_HANDOFF_AUTO_PROOF_BLOCKED:"
     else:
         return
     try:
