@@ -270,7 +270,9 @@ class SandboxExecutor:
             except SandboxExecutionError:
                 raise
             except Exception as exc:
-                raise SandboxExecutionError("RUNLESS_V2_SANDBOX_CREATE_FAILED") from exc
+                raise SandboxExecutionError(
+                    f"RUNLESS_V2_SANDBOX_CREATE_FAILED:{type(exc).__name__}"
+                ) from exc
 
             head = await self.backend.run(
                 session_id, "git", ["rev-parse", "HEAD"], timeout_ms=30_000
