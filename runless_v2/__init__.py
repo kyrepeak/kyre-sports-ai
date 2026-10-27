@@ -22,6 +22,10 @@ from . import nba_pra_usage_fallback_v2 as _nba_pra_usage_fallback_v2  # noqa: E
 # while enriching display identity only from already-verified WNBA projection IDs.
 from . import wnba_pra_page1_final_polish_runtime_v1 as _wnba_pra_page1_final_polish_runtime_v1  # noqa: E402,F401
 
+# MONSTER active-path upcoming-only gate: Page 1 snapshots may consume sportsbook
+# PRA offers only when the official WNBA schedule proves a future scheduled game.
+from . import wnba_pra_runless_upcoming_gate_r1 as _wnba_pra_runless_upcoming_gate_r1  # noqa: E402,F401
+
 # Existing shared-service compatibility adapter. MONSTER proof publishers below
 # do not consume that adapter's control state, receipts, leases, or evidence.
 from . import api2_authority_isolation_v1 as _api2_authority_isolation_v1  # noqa: E402,F401
