@@ -7,7 +7,7 @@ def _text(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 
-def test_retired_render_era_mlb_workflows_cannot_schedule_on_main():
+def test_retired_render_era_mlb_workflows_are_absent_from_active_tree():
     paths = [
         ".github/workflows/mlb-step18b-production-observability-cert.yml",
         ".github/workflows/mlb-step6b-production-canary-monitor.yml",
@@ -15,9 +15,7 @@ def test_retired_render_era_mlb_workflows_cannot_schedule_on_main():
         ".github/workflows/mlb-step6e-25pct-stability-window.yml",
     ]
     for path in paths:
-        text = _text(path)
-        assert "kyre-sports-api.onrender.com" in text
-        assert "\n  schedule:" not in text
+        assert not (ROOT / path).exists(), path
 
 
 def test_current_cfb_scheduled_health_workflows_stay_scheduled():
