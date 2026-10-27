@@ -12,7 +12,7 @@ from typing import Any, Mapping
 
 import nba_pra_runtime_v2 as _runtime
 from nba_pra_injury_api_v1 import load_kyre_sports_api_nba_injuries
-from nba_pra_matchup_api_v1 import load_kyre_sports_api_nba_pra_matchup
+from nba_pra_page2_matchup_api_v1 import load_kyre_sports_api_nba_pra_matchup
 from nba_pra_page1_api_only_v1 import _select_next_upcoming_slate
 from nba_pra_page2_api_only_v1 import _game_for_team, _profile_for
 from nba_pra_page2_command_center_v4 import _css, build_page2_html
