@@ -12,6 +12,11 @@ on:
       - "docs/superpowers/plans/2026-10-26-monster-nba-pra-page2-s-tier-v4.md"
       - "devsystem/runless_proof_plans/monster-nba-pra-page2-s-tier-v4.json"
       - ".github/workflows/monster-nba-pra-page2-s-tier-v4.yml"
+  push:
+    branches:
+      - monster-nba-pra-page2-s-tier-v4
+    paths:
+      - ".github/workflows/monster-nba-pra-page2-s-tier-v4.yml"
 
 jobs:
   monster-page2-v4-contract:
@@ -40,3 +45,113 @@ jobs:
           tests/test_api2_nba_pra_page2_integration_v1.py
       - name: Compile Page 2 command center
         run: python -m py_compile nba_pra_page2_command_center_v1.py nba_pra_page2_command_center_v2.py nba_pra_page2_command_center_v3.py nba_pra_page2_command_center_v4.py nba_pra_page2_context_v2.py nba_pra_page2_data_completeness_v1.py nba_pra_page2_sync_v1.py
+
+  monster-page2-v4-public-step2g:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check playwright requests
+          python -m playwright install --with-deps chromium
+      - name: Prove public NBA PRA Page 2 V4
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _find_app_frame
+
+          URL = "https://pickvault.streamlit.app/?ks_jump_sport=NBA&ks_jump_market=PRA"
+          REQUIRED = (
+              "PLAYER COMMAND CENTER",
+              "L10 PRA TREND",
+              "PROJECTION DISTRIBUTION",
+              "MARKET INTELLIGENCE",
+              "ROLE & AVAILABILITY",
+              "MODEL DRIVERS",
+              "KYRE READ",
+              "FULL GAME LOG",
+          )
+          FORBIDDEN = (
+              "Traceback (most recent call last)",
+              "ModuleNotFoundError",
+              "ImportError:",
+              "SyntaxError:",
+              "NameError:",
+              "KeyError:",
+              "This app has encountered an error",
+          )
+
+          artifacts = Path("artifacts/monster-nba-pra-page2-v4-step2g")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          result = {"url": URL, "main_sha": "8d47079900f34cbacac4976402ca3332908322b4"}
+
+          with sync_playwright() as pw:
+              browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width": 430, "height": 932})
+              page.goto(URL, wait_until="domcontentloaded", timeout=120000)
+              frame, scans = _find_app_frame(page, timeout_seconds=120.0)
+              body = frame.locator("body").inner_text(timeout=10000)
+              if "NBA PRA Intelligence" not in body:
+                  raise AssertionError("NBA PRA Page 1 did not render on the exact public route. body=" + body[:4000])
+              for bad in FORBIDDEN:
+                  if bad in body:
+                      raise AssertionError(f"Page 1 runtime error marker: {bad}")
+
+              buttons = frame.get_by_role("button", name=r"(?i)^analyze .+ →$")
+              deadline = time.monotonic() + 90.0
+              while buttons.count() == 0 and time.monotonic() < deadline:
+                  page.wait_for_timeout(2000)
+              if buttons.count() == 0:
+                  body = frame.locator("body").inner_text(timeout=10000)
+                  raise AssertionError("No live NBA PRA Analyze action available. body=" + body[:5000])
+
+              chosen = buttons.first.inner_text()
+              buttons.first.click()
+              deadline = time.monotonic() + 120.0
+              body2 = ""
+              while time.monotonic() < deadline:
+                  try:
+                      body2 = frame.locator("body").inner_text(timeout=10000)
+                  except Exception:
+                      frame, _ = _find_app_frame(page, timeout_seconds=30.0)
+                      body2 = frame.locator("body").inner_text(timeout=10000)
+                  if all(token in body2 for token in REQUIRED):
+                      break
+                  page.wait_for_timeout(2500)
+
+              missing = [token for token in REQUIRED if token not in body2]
+              if missing:
+                  raise AssertionError(f"Public V4 markers missing: {missing}; body=" + body2[:10000])
+              for bad in FORBIDDEN:
+                  if bad in body2:
+                      raise AssertionError(f"Page 2 runtime error marker: {bad}")
+
+              screenshot = artifacts / "nba-pra-page2-v4-live.png"
+              page.screenshot(path=str(screenshot), full_page=True)
+              result.update({
+                  "status": "GREEN",
+                  "analyze_action": chosen,
+                  "required_markers": list(REQUIRED),
+                  "screenshot": str(screenshot),
+              })
+              (artifacts / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+              print("MONSTER_NBA_PRA_PAGE2_V4_PUBLIC_STEP2G_GREEN=" + json.dumps(result, sort_keys=True))
+              browser.close()
+          PY
+      - name: Upload Step 2G public proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-nba-pra-page2-v4-step2g
+          path: artifacts/monster-nba-pra-page2-v4-step2g/
+          if-no-files-found: error
