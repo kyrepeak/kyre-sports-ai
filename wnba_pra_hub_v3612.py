@@ -8,7 +8,13 @@ frozen and Universal Runtime V5 is unchanged.
 from __future__ import annotations
 
 import wnba_pra_hub_v3617 as active
+import wnba_pra_api_market_bridge_upcoming_only_r1 as _upcoming_only
 import wnba_pra_page1_final_polish_v1 as _page1_final_polish
+
+# Install the pregame-only schedule gate after the active hub imports its frozen
+# Kyre Sports API market bridge. The existing bridge module object is patched in
+# place, so all active consumers share the same upcoming-games-only contract.
+_upcoming_only.install()
 
 active.render_page_snapshot = _page1_final_polish.render_page_snapshot
 
