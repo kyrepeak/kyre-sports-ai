@@ -6,19 +6,29 @@
   "commands": [
     [
       "python", "-m", "pytest", "--noconftest", "-q",
-      "tests/test_guardian_runless_cleanup_v1.py"
+      "tests/test_guardian_runless_cleanup_v1.py",
+      "tests/test_guardian_runless_stream_handoff_proof_v1.py"
     ],
     [
       "python", "-m", "py_compile",
-      "runless_v2/sandbox_executor.py"
+      "runless_v2/sandbox_executor.py",
+      "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+      "runless_v2/guardian_runless_stream_handoff_proof_v1.py"
     ]
   ],
   "artifacts": [
+    "docs/superpowers/plans/2026-10-27-guardian-green-frozen-closeout.md",
     "devsystem/runless_proof_plans/guardian-runless-stream-handoff-v1.json",
+    "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+    "runless_v2/guardian_runless_stream_handoff_proof_v1.py",
     "runless_v2/sandbox_executor.py",
-    "tests/test_guardian_runless_cleanup_v1.py"
+    "tests/test_guardian_runless_cleanup_v1.py",
+    "tests/test_guardian_runless_stream_handoff_proof_v1.py"
   ],
-  "dependencies": [],
+  "dependencies": [
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py"
+  ],
   "probes": [],
   "timeout_seconds": 300,
   "live_ttl_seconds": 1200,
