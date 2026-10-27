@@ -56,6 +56,7 @@ from streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_
     render_app,
 )
 from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker  # noqa: E402
+from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle  # noqa: E402
 
 # Off-screen but browser-visible production identity markers for Step 2G proof.
 # The compatibility shim routes this pure HTML payload through st.html so the
@@ -70,5 +71,7 @@ st.markdown(
 )
 
 record_bootstrap_import_ms((perf_counter() - _BOOTSTRAP_STARTED) * 1000.0)
-render_app()
-emit_runtime_identity_marker()
+run_shared_runtime_lifecycle(
+    render=render_app,
+    pre_render_hooks=(emit_runtime_identity_marker,),
+)

@@ -25,14 +25,14 @@ def _load_proof():
     return module
 
 
-def test_monster_runtime_identity_mounts_before_any_page_renderer_can_interrupt():
+def test_monster_runtime_identity_is_registered_as_shared_prerender_hook():
     text = APP.read_text(encoding="utf-8")
     assert "from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker" in text
-    assert text.count("emit_runtime_identity_marker()") == 1
-    assert text.count("render_app()") == 1
-    marker_call = text.index("emit_runtime_identity_marker()")
-    render_call = text.index("render_app()")
-    assert marker_call < render_call, "MONSTER runtime identity must mount before page rendering"
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in text
+    assert "render=render_app" in text
+    assert "pre_render_hooks=(emit_runtime_identity_marker,)" in text
+    assert "\nrender_app()\n" not in text
+    assert "\nemit_runtime_identity_marker()\n" not in text
 
 
 def test_runtime_identity_surface_remains_monster_owned_and_certified():

@@ -1,0 +1,117 @@
+name: GUARDIAN Shared Runtime Lifecycle V1
+
+on:
+  push:
+    branches:
+      - guardian-shared-runtime-lifecycle-v1
+    paths:
+      - "app.py"
+      - "devsystem/shared_runtime_lifecycle_v1.py"
+      - "devsystem/guardian_step2a_anti_loop_v1.py"
+      - "devsystem/runless_proof_plans/guardian-shared-runtime-lifecycle-v1.json"
+      - "runless_v2/__init__.py"
+      - "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py"
+      - "tests/test_guardian_shared_runtime_lifecycle_v1.py"
+      - "tests/test_guardian_step2a_anti_loop_v1.py"
+      - "tests/test_guardian_runless_proof_v1.py"
+      - "tests/test_api2_sitewide_render_repair_r1.py"
+      - "tests/test_api2_sitewide_render_deployment_convergence_r2.py"
+      - "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py"
+      - "tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py"
+      - "tests/test_devsystem_monster_step2g_production_promotion_v1.py"
+      - "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"
+      - ".github/workflows/guardian-shared-runtime-lifecycle-v1.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "devsystem/shared_runtime_lifecycle_v1.py"
+      - "devsystem/guardian_step2a_anti_loop_v1.py"
+      - "devsystem/runless_proof_plans/guardian-shared-runtime-lifecycle-v1.json"
+      - "runless_v2/__init__.py"
+      - "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py"
+      - "tests/test_guardian_shared_runtime_lifecycle_v1.py"
+      - "tests/test_guardian_step2a_anti_loop_v1.py"
+      - "tests/test_guardian_runless_proof_v1.py"
+      - "tests/test_api2_sitewide_render_repair_r1.py"
+      - "tests/test_api2_sitewide_render_deployment_convergence_r2.py"
+      - "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py"
+      - "tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py"
+      - "tests/test_devsystem_monster_step2g_production_promotion_v1.py"
+      - "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"
+      - ".github/workflows/guardian-shared-runtime-lifecycle-v1.yml"
+
+concurrency:
+  group: guardian-shared-runtime-lifecycle-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  guardian-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Compile shared Guardian controls and entrypoint
+        run: >-
+          python -m py_compile
+          devsystem/shared_runtime_lifecycle_v1.py
+          devsystem/guardian_step2a_anti_loop_v1.py
+          app.py
+      - name: Prove Guardian lifecycle, Runless contract, Step 2A, Anti-Loop, and affected regressions
+        run: >-
+          python -m pytest --noconftest -q
+          tests/test_guardian_shared_runtime_lifecycle_v1.py
+          tests/test_guardian_step2a_anti_loop_v1.py
+          tests/test_guardian_runless_proof_v1.py
+          tests/test_api2_sitewide_render_repair_r1.py
+          tests/test_api2_sitewide_render_deployment_convergence_r2.py
+          tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py
+          tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py
+          tests/test_devsystem_monster_step2g_production_promotion_v1.py
+          tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py
+      - name: Guard Step 2A exact-head and Anti-Loop
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOCKED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          CURRENT_MAIN_SHA="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          ACTIVE_LANES="$(gh api "repos/${GITHUB_REPOSITORY}/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:${HEAD_REF}" --jq 'length')"
+          export CURRENT_MAIN_SHA ACTIVE_LANES
+          python - <<'PY'
+          import os
+          from devsystem.guardian_step2a_anti_loop_v1 import validate_anti_loop, validate_step2a
+
+          validate_step2a(
+              system="KYRE_GUARDIAN",
+              locked_base_sha=os.environ["LOCKED_BASE_SHA"],
+              current_main_sha=os.environ["CURRENT_MAIN_SHA"],
+              active_problem="shared-runtime-lifecycle-v1",
+              active_lane_count=int(os.environ["ACTIVE_LANES"]),
+              branch=os.environ["HEAD_REF"],
+              pr_number=int(os.environ["PR_NUMBER"]),
+              proof_complete=False,
+              freeze_requested=False,
+          )
+          validate_anti_loop(
+              run_attempt=int(os.environ["RUN_ATTEMPT"]),
+              previous_input_fingerprint=os.environ["HEAD_SHA"],
+              current_input_fingerprint=os.environ["HEAD_SHA"],
+          )
+          PY
