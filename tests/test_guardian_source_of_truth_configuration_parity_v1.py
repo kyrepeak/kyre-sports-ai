@@ -31,7 +31,7 @@ EXPECTED_RLS_DENY_BY_DEFAULT = {
     "public.wnba_step7g_scheduler_locks",
 }
 
-EXPECTED_STALE_PREVIEW_ENV_IDS = {
+EXPECTED_RETIRED_ENV_IDS = {
     "VLEtduzIHvXMjoLX", "r3bc0IxekmicERwc", "L7t5CRrjzfvCSGGL",
     "OHPkWOX397eJvAFh", "zFWGW9gf8AWVUfPP", "LdYdb6pTK3YqMEmZ",
     "TP2f7joGf5pidpfN", "BC16fRa5WnpIuBVG", "tnkMcmRm54v00wac",
@@ -51,16 +51,21 @@ def _guardian_module():
     return module
 
 
-def test_live_supabase_migration_inventory_is_source_indexed() -> None:
+def test_live_supabase_migration_inventory_is_fully_source_controlled() -> None:
     data = _manifest()
-    migrations = data["supabase"]["migration_ledger"]
-    assert len(migrations) == 38
-    assert data["supabase"]["migration_count"] == 38
-    assert len({m["version"] for m in migrations}) == 38
-    assert all(len(m["content_md5"]) == 32 for m in migrations)
-    assert data["supabase"]["migration_payload_archive_state"] in {"COMPLETE", "OPEN"}
-    if data["supabase"]["migration_payload_archive_state"] != "COMPLETE":
-        assert data["freeze"]["state"] == "OPEN"
+    supabase = data["supabase"]
+    archive = supabase["migration_payload_archive"]
+    assert supabase["migration_count"] == 39
+    assert supabase["migration_payload_archive_state"] == "COMPLETE"
+    assert archive["base_archive_migration_count"] == 38
+    assert archive["supplemental_migration_count"] == 1
+    assert archive["verified_migration_count"] == 39
+    assert archive["verified_md5_mismatches"] == 0
+    assert archive["verification_state"] == "GREEN"
+    latest = supabase["latest_migration"]
+    assert latest["version"] == "20261027183826"
+    assert latest["content_md5"] == "91084b96cc600dae4245172812babb58"
+    assert (ROOT / latest["source_file"]).exists()
 
 
 def test_every_live_edge_function_has_source_or_existing_authoritative_source() -> None:
@@ -80,20 +85,19 @@ def test_intentional_rls_no_policy_tables_are_explicitly_allowlisted() -> None:
     assert data["supabase"]["security_actionable_findings"] == 0
 
 
-def test_known_vercel_cleanup_debt_is_never_hidden() -> None:
+def test_retired_vercel_preview_debt_is_inert_and_not_hidden() -> None:
     data = _manifest()
     vercel = data["vercel"]
     assert vercel["retired_preview_prs"] == [1527, 1528, 1529]
-    stale = set(vercel["stale_preview_env_ids"])
-    assert stale in (set(), EXPECTED_STALE_PREVIEW_ENV_IDS)
-    assert vercel["stale_preview_env_count"] == len(stale)
+    assert vercel["stale_preview_env_ids"] == []
+    assert vercel["stale_preview_env_count"] == 0
+    assert set(vercel["retired_env_tombstone_ids"]) == EXPECTED_RETIRED_ENV_IDS
+    assert vercel["cleanup_state"] == "COMPLETE"
     assert set(vercel["production_projects"]) == {
         "kyre-sports-api",
         "kyre-runless-proof",
         "kyre-sports-finalizer",
     }
-    if stale:
-        assert data["freeze"]["state"] == "OPEN"
 
 
 def test_post_merge_convergence_contract_is_strict() -> None:
@@ -118,7 +122,10 @@ def test_post_merge_convergence_contract_is_strict() -> None:
 
 
 def test_freeze_requires_zero_stale_preview_configuration() -> None:
+    data = _manifest()
     freeze_eligible = _guardian_module().freeze_eligible
     assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0, migration_payload_archive_complete=True) is True
     assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=9, migration_payload_archive_complete=True) is False
     assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0, migration_payload_archive_complete=False) is False
+    assert data["freeze"]["state"] == "FROZEN"
+    assert data["freeze"]["token"] == "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1_FROZEN"
