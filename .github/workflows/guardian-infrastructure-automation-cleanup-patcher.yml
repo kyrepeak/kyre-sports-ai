@@ -112,6 +112,7 @@ jobs:
           rm .github/workflows/guardian-infrastructure-automation-cleanup-patcher.yml
           git config user.name 'kyrepeak'
           git config user.email 'kyrewhite15@gmail.com'
+          git config commit.gpgsign false
           git add \
             .github/workflows/mlb-step18b-production-observability-cert.yml \
             .github/workflows/mlb-step6b-production-canary-monitor.yml \
