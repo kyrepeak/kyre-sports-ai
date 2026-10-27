@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "devsystem" / "guardian_source_of_truth_configuration_parity_v1.json"
+MODULE_PATH = ROOT / "runless_v2" / "guardian_source_of_truth_configuration_parity_v1.py"
 
 EXPECTED_FUNCTIONS = {
     "noop-do-not-deploy",
@@ -39,6 +41,14 @@ EXPECTED_STALE_PREVIEW_ENV_IDS = {
 def _manifest() -> dict:
     assert MANIFEST.exists(), "source-of-truth parity manifest must exist"
     return json.loads(MANIFEST.read_text())
+
+
+def _guardian_module():
+    spec = importlib.util.spec_from_file_location("guardian_source_parity_v1", MODULE_PATH)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_live_supabase_migration_inventory_is_source_indexed() -> None:
@@ -87,8 +97,7 @@ def test_known_vercel_cleanup_debt_is_never_hidden() -> None:
 
 
 def test_post_merge_convergence_contract_is_strict() -> None:
-    from runless_v2.guardian_source_of_truth_configuration_parity_v1 import evaluate_convergence
-
+    evaluate_convergence = _guardian_module().evaluate_convergence
     main = "a" * 40
     snapshot = {
         "main_sha": main,
@@ -109,8 +118,7 @@ def test_post_merge_convergence_contract_is_strict() -> None:
 
 
 def test_freeze_requires_zero_stale_preview_configuration() -> None:
-    from runless_v2.guardian_source_of_truth_configuration_parity_v1 import freeze_eligible
-
+    freeze_eligible = _guardian_module().freeze_eligible
     assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0, migration_payload_archive_complete=True) is True
     assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=9, migration_payload_archive_complete=True) is False
     assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0, migration_payload_archive_complete=False) is False
