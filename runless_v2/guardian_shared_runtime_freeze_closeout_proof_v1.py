@@ -26,7 +26,10 @@ ALLOWED_CHANGED_PATHS = frozenset(
         "devsystem/runless_proof_plans/guardian-shared-runtime-lifecycle-freeze-closeout-v1.json",
         "runless_v2/__init__.py",
         "runless_v2/config.py",
+        "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
         "runless_v2/guardian_shared_runtime_freeze_closeout_proof_v1.py",
+        "runless_v2/sandbox_executor.py",
+        "tests/test_guardian_runless_cleanup_v1.py",
         "tests/test_guardian_runless_proof_v1.py",
         "tests/test_guardian_shared_runtime_freeze_closeout_v1.py",
     }
