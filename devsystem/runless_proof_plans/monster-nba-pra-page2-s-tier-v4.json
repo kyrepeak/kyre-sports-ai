@@ -1,7 +1,7 @@
 {
   "mode": "runless",
-  "task_id": "monster-nba-pra-page2-s-tier-v4-step2g",
-  "workstream": "monster-nba-pra-page2-s-tier-v4-step2g",
+  "task_id": "monster-nba-pra-page2-s-tier-v4",
+  "workstream": "monster-nba-pra-page2-s-tier-v4",
   "source_main_sha": "8d47079900f34cbacac4976402ca3332908322b4",
   "commands": [
     [
