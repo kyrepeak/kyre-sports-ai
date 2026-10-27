@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-import app as target
+import vercel_finalizer.app as target
 
 
 def test_health_reports_degraded_when_authority_configuration_is_missing(monkeypatch):
