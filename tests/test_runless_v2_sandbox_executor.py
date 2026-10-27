@@ -67,52 +67,54 @@ class FakeBackend:
         self.stopped.append(session_id)
 
 
-def test_vercel_sdk_is_pinned_to_runtime_capable_version():
+def test_vercel_sdk_is_pinned_to_promoted_v2_sandbox_client():
     requirements = (Path(__file__).resolve().parents[1] / "runless_v2" / "requirements.txt").read_text()
-    assert "vercel==0.7.2" in requirements.splitlines()
+    assert "vercel==0.12.1" in requirements.splitlines()
 
 
 @pytest.mark.asyncio
-async def test_vercel_backend_uses_supported_python313_runtime_without_removed_image(monkeypatch):
-    calls = {"create": None, "commands": [], "stopped": 0}
+async def test_vercel_backend_uses_promoted_create_sandbox_and_run_process(monkeypatch):
+    calls = {"create": None, "processes": [], "stopped": 0}
 
     class FakeGitSource:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
 
-    class FakeCommand:
-        def __init__(self, *, exit_code=0, stdout="", stderr=""):
-            self.exit_code = exit_code
-            self._stdout = stdout
-            self._stderr = stderr
-
-        async def stdout(self):
-            return self._stdout
-
-        async def stderr(self):
-            return self._stderr
+    class FakeCompletedProcess:
+        def __init__(self, *, returncode=0, stdout="", stderr=""):
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
 
     class FakeBox:
-        sandbox_id = "sandbox-1"
+        current_session_id = "sandbox-1"
 
-        async def run_command(self, command, args=None, *, cwd=None, env=None, sudo=False):
+        async def run_process(
+            self, command, args=None, *, cwd=None, env=None, sudo=False,
+            kill_after=None, check=False, capture_output=False, **kwargs
+        ):
             args = list(args or [])
-            calls["commands"].append((command, args, cwd, dict(env or {})))
+            calls["processes"].append({
+                "command": command,
+                "args": args,
+                "cwd": cwd,
+                "env": dict(env or {}),
+                "kill_after": kill_after,
+                "capture_output": capture_output,
+            })
             if command == "python" and args == ["--version"]:
-                return FakeCommand(stdout="Python 3.13.1\n")
-            return FakeCommand()
+                return FakeCompletedProcess(stdout="Python 3.13.1\n")
+            return FakeCompletedProcess()
 
         async def stop(self):
             calls["stopped"] += 1
 
-    class FakeAsyncSandbox:
-        @staticmethod
-        async def create(**kwargs):
-            calls["create"] = kwargs
-            return FakeBox()
+    async def fake_create_sandbox(**kwargs):
+        calls["create"] = kwargs
+        return FakeBox()
 
     fake_sandbox = types.ModuleType("vercel.sandbox")
-    fake_sandbox.AsyncSandbox = FakeAsyncSandbox
+    fake_sandbox.create_sandbox = fake_create_sandbox
     fake_sandbox.GitSource = FakeGitSource
     fake_vercel = types.ModuleType("vercel")
     fake_vercel.sandbox = fake_sandbox
@@ -121,21 +123,44 @@ async def test_vercel_backend_uses_supported_python313_runtime_without_removed_i
 
     backend = VercelSandboxBackend()
     session_id = await backend.create(
-        candidate_sha=SHA, github_token="gh-token", runtime="python3.13",
-        persistent=False, timeout_ms=300000,
+        candidate_sha=SHA,
+        github_token="gh-token",
+        runtime="python3.13",
+        persistent=False,
+        timeout_ms=300_000,
     )
 
     assert session_id == "sandbox-1"
-    assert calls["create"]["runtime"] == "python3.13"
-    assert "image" not in calls["create"]
+    assert calls["create"]["persistent"] is False
+    assert calls["create"]["execution_time_limit"] == 300
+    assert "runtime" not in calls["create"]
+    assert "timeout" not in calls["create"]
     source = calls["create"]["source"]
-    assert source.kwargs["revision"] == SHA
-    assert source.kwargs["username"] == "x-access-token"
-    assert source.kwargs["password"] == "gh-token"
-    assert calls["commands"][0][:2] == ("python", ["--version"])
-    assert calls["commands"][1][0] == "python"
-    assert calls["commands"][1][1][:4] == ["-m", "pip", "install", "--disable-pip-version-check"]
-    assert "pytest-asyncio" in calls["commands"][1][1]
+    assert source.kwargs == {
+        "url": "https://github.com/kyrepeak/kyre-sports-ai.git",
+        "revision": SHA,
+        "depth": 1,
+        "username": "x-access-token",
+        "password": "gh-token",
+    }
+    assert calls["processes"][0]["command"] == "python"
+    assert calls["processes"][0]["args"] == ["--version"]
+    assert calls["processes"][0]["capture_output"] is True
+    assert calls["processes"][1]["args"][:4] == ["-m", "pip", "install", "--disable-pip-version-check"]
+
+    result = await backend.run(
+        session_id,
+        "python",
+        ["-c", "print('ok')"],
+        cwd="/vercel/sandbox",
+        timeout_ms=5_000,
+    )
+    assert result == {"exit_code": 0, "stdout": "", "stderr": ""}
+    assert calls["processes"][-1]["kill_after"] == 5.0
+    assert calls["processes"][-1]["capture_output"] is True
+
+    await backend.stop(session_id)
+    assert calls["stopped"] == 1
 
 
 @pytest.mark.asyncio
@@ -233,7 +258,7 @@ async def test_timeout_is_infra_failure_and_no_retry_occurs():
 @pytest.mark.asyncio
 async def test_backend_create_failure_does_not_attempt_stop_without_session():
     backend = FakeBackend(fail_create=RuntimeError("unavailable"))
-    with pytest.raises(SandboxExecutionError, match="RUNLESS_V2_SANDBOX_CREATE_FAILED"):
+    with pytest.raises(SandboxExecutionError, match=r"^RUNLESS_V2_SANDBOX_CREATE_FAILED:RuntimeError$"):
         await SandboxExecutor(backend=backend).execute(
             candidate_sha=SHA, task_id="task-4", github_token="tok", timeout_seconds=100
         )

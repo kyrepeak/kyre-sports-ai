@@ -108,7 +108,8 @@ def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
 
     def loader():
         frozen_page1_owner()
-        return _import("nfl_game_totals_hub_v12")
+        _import("nfl_game_totals_hub_v12")  # frozen Page 2 ancestry / compatibility anchor
+        return _import("nfl_game_totals_hub_v13")
 
     def renderer(page):
         return page.render_nfl_game_totals_hub()
@@ -117,7 +118,7 @@ def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
         (route.sport_id, route.market_id),
         loader,
         renderer,
-        "nfl_game_totals_hub_v12",
+        "nfl_game_totals_hub_v12",  # frozen compatibility metadata; loader returns V13
         20_000,
     )
 
