@@ -1,0 +1,4 @@
+This proof-only branch intentionally stores immutable Runless receipts.
+The tracked file keeps the configured Vercel root directory present so the
+project-level ignored-build command can execute and skip receipt-only commits
+before framework detection or application build.
