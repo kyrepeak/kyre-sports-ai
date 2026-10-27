@@ -10,6 +10,7 @@ FREEZE_IDEMPOTENCY_BRANCH = "guardian-monster-freeze-idempotency-v1"
 STREAM_HANDOFF_BRANCH = "guardian-runless-stream-handoff-v1"
 PYTEST_ENTRYPOINT_BRANCH = "guardian-pytest-entrypoint-contract-v1"
 INFRASTRUCTURE_AUTOMATION_CLEANUP_BRANCH = "guardian-infrastructure-automation-cleanup-v1"
+SECURITY_CONFIGURATION_HARDENING_BRANCH = "guardian-security-configuration-hardening-v1"
 
 
 def _prove_freeze_closeout(settings: Any, preview_sha: str) -> None:
@@ -137,6 +138,31 @@ def _prove_infrastructure_automation_cleanup(settings: Any, preview_sha: str) ->
     )
 
 
+def _prove_security_configuration_hardening(settings: Any, preview_sha: str) -> None:
+    from .github_authority import GithubAuthority
+    from .guardian_security_configuration_hardening_proof_v1 import (
+        BRANCH,
+        prove_guardian_security_configuration_hardening,
+    )
+    from .sandbox_executor import SandboxExecutor
+
+    if BRANCH != SECURITY_CONFIGURATION_HARDENING_BRANCH:
+        raise RuntimeError("GUARDIAN_SECURITY_CONFIGURATION_HARDENING_BRANCH_CONTRACT_DRIFT")
+    if not settings.authority_enabled:
+        raise RuntimeError("GUARDIAN_SECURITY_CONFIGURATION_HARDENING_AUTHORITY_DISABLED")
+    result = asyncio.run(
+        prove_guardian_security_configuration_hardening(
+            github=GithubAuthority(settings),
+            sandbox=SandboxExecutor(),
+            expected_preview_sha=preview_sha,
+        )
+    )
+    print(
+        "GUARDIAN_SECURITY_CONFIGURATION_HARDENING_AUTO_PROOF_GREEN:"
+        + str(result.get("receipt_digest") or "")
+    )
+
+
 def maybe_auto_prove(settings: Any) -> None:
     """Publish Guardian proof only from an explicitly authorized preview branch."""
     if os.environ.get("VERCEL_ENV", "").strip() != "preview":
@@ -160,6 +186,9 @@ def maybe_auto_prove(settings: Any) -> None:
     elif branch == INFRASTRUCTURE_AUTOMATION_CLEANUP_BRANCH:
         runner = _prove_infrastructure_automation_cleanup
         blocked_prefix = "GUARDIAN_INFRASTRUCTURE_AUTOMATION_CLEANUP_AUTO_PROOF_BLOCKED:"
+    elif branch == SECURITY_CONFIGURATION_HARDENING_BRANCH:
+        runner = _prove_security_configuration_hardening
+        blocked_prefix = "GUARDIAN_SECURITY_CONFIGURATION_HARDENING_AUTO_PROOF_BLOCKED:"
     else:
         return
     try:
