@@ -151,8 +151,44 @@ def _monster_wnba_pra_runless_upcoming_gate_maybe_auto_prove() -> None:
         print("MONSTER_WNBA_RUNLESS_UPCOMING_GATE_AUTO_PROOF_BLOCKED:" + type(exc).__name__ + ":" + safe_detail[:200])
 
 
+def _kyre_deploy_cloud_run_foundation_maybe_auto_prove() -> None:
+    """Publish PR #1909 proof only from the exact KYRE DEPLOY preview head."""
+    import asyncio
+    import os
+    if os.environ.get("VERCEL_ENV", "").strip() != "preview":
+        return
+    branch = os.environ.get("VERCEL_GIT_COMMIT_REF", "").strip()
+    preview_sha = os.environ.get("VERCEL_GIT_COMMIT_SHA", "").strip().lower()
+    authorized_branch = "kyre-deploy-v1-zero-cost-migration"
+    if branch != authorized_branch or len(preview_sha) != 40:
+        return
+    try:
+        from .config import Settings
+        from .github_authority import GithubAuthority
+        from .kyre_deploy_cloud_run_foundation_proof_v1 import BRANCH, prove_cloud_run_foundation
+        from .sandbox_executor import SandboxExecutor
+        if BRANCH != authorized_branch:
+            raise RuntimeError("KYRE_DEPLOY_PREVIEW_BRANCH_CONTRACT_DRIFT")
+        settings = Settings.from_env()
+        if not settings.authority_enabled:
+            raise RuntimeError("KYRE_DEPLOY_PREVIEW_AUTHORITY_DISABLED")
+        result = asyncio.run(
+            prove_cloud_run_foundation(
+                github=GithubAuthority(settings),
+                sandbox=SandboxExecutor(),
+                expected_preview_sha=preview_sha,
+            )
+        )
+        print("KYRE_DEPLOY_AUTO_PROOF_GREEN:" + str(result.get("receipt_digest") or ""))
+    except Exception as exc:
+        detail = str(exc)
+        safe_detail = detail if detail.startswith("KYRE_DEPLOY_") else type(exc).__name__
+        print("KYRE_DEPLOY_AUTO_PROOF_BLOCKED:" + type(exc).__name__ + ":" + safe_detail[:200])
+
+
 _monster_step2g_maybe_auto_prove()
 _monster_step2g_prerender_maybe_auto_prove()
 _monster_wnba_pra_upcoming_only_maybe_auto_prove()
 _monster_wnba_pra_upcoming_r2_maybe_auto_prove()
 _monster_wnba_pra_runless_upcoming_gate_maybe_auto_prove()
+_kyre_deploy_cloud_run_foundation_maybe_auto_prove()

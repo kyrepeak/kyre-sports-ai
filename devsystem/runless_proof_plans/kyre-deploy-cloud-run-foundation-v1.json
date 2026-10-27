@@ -1,0 +1,49 @@
+{
+  "mode": "runless",
+  "task_id": "kyre-deploy-cloud-run-foundation-v1",
+  "workstream": "kyre-deploy-cloud-run-foundation-v1",
+  "source_main_sha": "c0e4fdd0735826c1cc06620dda8a99a891456b64",
+  "commands": [
+    [
+      "python", "-m", "pytest", "-q",
+      "tests/test_kyre_deploy_v1_contract.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "devsystem/kyre_deploy_v1_contract.py",
+      "runless_v2/kyre_deploy_cloud_run_foundation_proof_v1.py",
+      "runless_v2/__init__.py"
+    ]
+  ],
+  "artifacts": [
+    ".github/workflows/kyre-deploy-v1-zero-cost-ci.yml",
+    "deploy/kyre-deploy/README.md",
+    "deploy/kyre-deploy/cloud-run/README.md",
+    "deploy/kyre-deploy/cloud-run/cloud-run.env.example",
+    "deploy/kyre-deploy/cloud-run/deploy-sports-api.sh",
+    "deploy/kyre-deploy/compose.yaml",
+    "deploy/kyre-deploy/streamlit-healthcheck.py",
+    "deploy/kyre-deploy/streamlit.Dockerfile",
+    "devsystem/kyre_deploy_v1_contract.py",
+    "devsystem/runless_proof_plans/kyre-deploy-cloud-run-foundation-v1.json",
+    "docs/superpowers/plans/2026-10-27-kyre-deploy-v1-zero-cost.md",
+    "docs/superpowers/specs/2026-10-27-kyre-deploy-v1-zero-cost-design.md",
+    "runless_v2/__init__.py",
+    "runless_v2/kyre_deploy_cloud_run_foundation_proof_v1.py",
+    "tests/test_kyre_deploy_v1_contract.py"
+  ],
+  "dependencies": [
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py",
+    "sports_api/Dockerfile"
+  ],
+  "probes": [],
+  "timeout_seconds": 900,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "KYRE_DEPLOY_CLOUD_RUN_FOUNDATION_V1_FROZEN"
+}
