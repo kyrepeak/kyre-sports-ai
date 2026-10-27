@@ -1,0 +1,60 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-shared-runtime-lifecycle-v1",
+  "workstream": "guardian-shared-runtime-lifecycle-v1",
+  "source_main_sha": "313af5db9f1ce12cda76e0ed41c14f495add0007",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_guardian_shared_runtime_lifecycle_v1.py",
+      "tests/test_guardian_step2a_anti_loop_v1.py",
+      "tests/test_guardian_runless_proof_v1.py",
+      "tests/test_api2_sitewide_render_repair_r1.py",
+      "tests/test_api2_sitewide_render_deployment_convergence_r2.py",
+      "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py",
+      "tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py",
+      "tests/test_devsystem_monster_step2g_production_promotion_v1.py",
+      "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "app.py",
+      "devsystem/shared_runtime_lifecycle_v1.py",
+      "devsystem/guardian_step2a_anti_loop_v1.py",
+      "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py",
+      "runless_v2/__init__.py"
+    ]
+  ],
+  "artifacts": [
+    ".github/workflows/guardian-shared-runtime-lifecycle-v1.yml",
+    "app.py",
+    "devsystem/guardian_step2a_anti_loop_v1.py",
+    "devsystem/runless_proof_plans/guardian-shared-runtime-lifecycle-v1.json",
+    "devsystem/shared_runtime_lifecycle_v1.py",
+    "docs/superpowers/plans/2026-10-27-guardian-shared-runtime-lifecycle-v1.md",
+    "runless_v2/__init__.py",
+    "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py",
+    "tests/test_guardian_runless_proof_v1.py",
+    "tests/test_guardian_shared_runtime_lifecycle_v1.py",
+    "tests/test_guardian_step2a_anti_loop_v1.py"
+  ],
+  "dependencies": [
+    "tests/test_api2_sitewide_render_repair_r1.py",
+    "tests/test_api2_sitewide_render_deployment_convergence_r2.py",
+    "tests/test_api2_nfl_moneyline_page1_current_convergence_r1.py",
+    "tests/test_api2_nfl_moneyline_page1_live_route_restore_r1.py",
+    "tests/test_devsystem_monster_step2g_production_promotion_v1.py",
+    "tests/test_devsystem_monster_step2g_prerender_runtime_identity_r1.py",
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_SHARED_RUNTIME_LIFECYCLE_V1_FROZEN"
+}
