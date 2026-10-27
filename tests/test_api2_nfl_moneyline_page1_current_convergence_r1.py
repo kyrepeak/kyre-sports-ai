@@ -10,7 +10,7 @@ ROUTER = ROOT / "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline
 HEARTBEAT = "API2_NFL_MONEYLINE_PAGE1_CURRENT_CONVERGENCE_R1_20261026"
 
 
-def test_current_convergence_heartbeat_is_browser_visible_and_api2_renders_before_monster_sidecar():
+def test_current_convergence_heartbeat_uses_shared_runtime_lifecycle_contract():
     text = APP.read_text(encoding="utf-8")
     assert HEARTBEAT in text
     assert "API2_STEP2G_DUAL_MAIN_STREAMLIT_CONVERGENCE_V1" in text
@@ -18,7 +18,9 @@ def test_current_convergence_heartbeat_is_browser_visible_and_api2_renders_befor
     assert 'sys.modules.pop("nfl_moneyline_hub_v20", None)' in text
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_route_restore_r1" in text
     assert "API2_SITEWIDE_RENDER_REPAIR_R1_20261026" in text
-    assert text.index("render_app()") < text.index("emit_runtime_identity_marker()")
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in text
+    assert "render=render_app" in text
+    assert "pre_render_hooks=(emit_runtime_identity_marker,)" in text
 
 
 def test_page1_compact_decision_contract_remains_active():

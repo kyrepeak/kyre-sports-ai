@@ -40,7 +40,8 @@ def test_v20_still_owns_the_simple_page1_and_separate_page2():
     assert "war_room.render_context(context)" in source
 
 
-def test_main_runtime_identity_marker_is_preserved():
+def test_main_runtime_identity_marker_is_preserved_as_shared_prerender_hook():
     source = APP.read_text(encoding="utf-8")
     assert "from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker" in source
-    assert "emit_runtime_identity_marker()" in source
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in source
+    assert "pre_render_hooks=(emit_runtime_identity_marker,)" in source

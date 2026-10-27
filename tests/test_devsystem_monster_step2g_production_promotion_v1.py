@@ -38,13 +38,13 @@ def test_certification_descriptor_is_monster_only_and_exact():
     }
 
 
-def test_production_entrypoint_adds_marker_without_replacing_terminal_router():
+def test_production_entrypoint_uses_shared_lifecycle_without_replacing_terminal_router():
     text = APP.read_text(encoding="utf-8")
     assert "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route_restore_v1" in text
     assert "from devsystem.monster_runtime_identity_v1 import emit_runtime_identity_marker" in text
-    assert text.count("emit_runtime_identity_marker()") == 1
-    assert "render_app()" in text
-    assert text.index("render_app()") < text.index("emit_runtime_identity_marker()")
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in text
+    assert "render=render_app" in text
+    assert "pre_render_hooks=(emit_runtime_identity_marker,)" in text
 
 
 def test_runtime_helper_is_monster_owned_and_descriptor_driven():
