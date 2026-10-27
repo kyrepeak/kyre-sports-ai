@@ -74,3 +74,35 @@ def test_green_sandbox_evidence_survives_cleanup_stop_error():
     backend, result = asyncio.run(_exercise())
     assert result.ok is True
     assert backend.stopped == ["guardian-session"]
+
+
+def test_successful_vercel_command_survives_output_stream_read_error():
+    VercelSandboxBackend = _load_sandbox_executor().VercelSandboxBackend
+
+    class Result:
+        exit_code = 0
+
+        async def stdout(self):
+            raise RuntimeError("stdout stream unavailable after command completion")
+
+        async def stderr(self):
+            raise RuntimeError("stderr stream unavailable after command completion")
+
+    class Box:
+        async def run_command(self, command, args, cwd=None, env=None):
+            return Result()
+
+    async def _exercise():
+        backend = VercelSandboxBackend()
+        backend._boxes["guardian-session"] = Box()
+        return await backend.run(
+            "guardian-session",
+            "python",
+            ["-m", "py_compile", "example.py"],
+            timeout_ms=30_000,
+        )
+
+    result = asyncio.run(_exercise())
+    assert result["exit_code"] == 0
+    assert "RUNLESS_V2_STDOUT_UNAVAILABLE" in result["stdout"]
+    assert "RUNLESS_V2_STDERR_UNAVAILABLE" in result["stderr"]
