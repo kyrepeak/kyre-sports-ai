@@ -16,7 +16,8 @@ on:
     paths:
       - "cfb_game_total_clean_page_v1.py"
       - "streamlit_memory_lazy_router_v149.py"
-      - "streamsystem/cfb_game_total_browser_qa_v1.py"
+      - "streamlit_memory_lazy_router_v150.py"
+      - "devsystem/cfb_game_total_browser_qa_v1.py"
       - "devsystem/cfb_game_total_browser_qa_v4.py"
       - "tests/conftest.py"
       - ".github/workflows/cfb-game-total-v150-browser.yml"
