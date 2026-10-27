@@ -388,7 +388,8 @@ def test_v184_router_activates_only_page_v18_and_app_boots_router_v163():
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in router
     assert "MAY_MODIFY_PROJECTION = False" in router
     assert "return prior.render_app()" in router
-    assert "from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app" in app
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in app
+    assert "run_shared_runtime_lifecycle(" in app
 
 
 def test_v184_page_reexports_step6_deployment_marker():
