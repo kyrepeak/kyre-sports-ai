@@ -1,0 +1,1 @@
+Deno.serve(() => new Response(JSON.stringify({status:"GONE",authority:"KYRE_GUARDIAN",reason:"HISTORICAL_TEMP_ENDPOINT_RETIRED"}),{status:410,headers:{"content-type":"application/json","cache-control":"no-store"}}));
