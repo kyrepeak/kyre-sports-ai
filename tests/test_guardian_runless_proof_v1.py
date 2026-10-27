@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import json
 import sys
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 PROOF = ROOT / "runless_v2" / "guardian_shared_runtime_lifecycle_proof_v1.py"
@@ -77,8 +76,7 @@ def test_runless_preview_auto_proof_is_exact_guardian_branch_only():
     assert "GUARDIAN_SHARED_RUNTIME_AUTO_PROOF_GREEN" in source
 
 
-@pytest.mark.asyncio
-async def test_green_sandbox_evidence_survives_cleanup_stop_error():
+def test_green_sandbox_evidence_survives_cleanup_stop_error():
     from runless_v2.sandbox_executor import SandboxExecutor
 
     candidate = "a" * 40
@@ -113,13 +111,16 @@ async def test_green_sandbox_evidence_survives_cleanup_stop_error():
             self.stopped.append(session_id)
             raise RuntimeError("sandbox already stopped after successful proof")
 
-    backend = CleanupErrorBackend()
-    result = await SandboxExecutor(backend=backend).execute(
-        candidate_sha=candidate,
-        task_id=TASK_ID,
-        github_token="short-lived-token",
-        timeout_seconds=60,
-    )
+    async def _exercise():
+        backend = CleanupErrorBackend()
+        result = await SandboxExecutor(backend=backend).execute(
+            candidate_sha=candidate,
+            task_id=TASK_ID,
+            github_token="short-lived-token",
+            timeout_seconds=60,
+        )
+        return backend, result
 
+    backend, result = asyncio.run(_exercise())
     assert result.ok is True
     assert backend.stopped == ["guardian-session"]
