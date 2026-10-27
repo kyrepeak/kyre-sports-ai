@@ -5,6 +5,9 @@ on:
     paths:
       - "deploy/kyre-deploy/**"
       - "devsystem/kyre_deploy_v1_contract.py"
+      - "devsystem/runless_proof_plans/kyre-deploy-cloud-run-foundation-v1.json"
+      - "runless_v2/__init__.py"
+      - "runless_v2/kyre_deploy_cloud_run_foundation_proof_v1.py"
       - "tests/test_kyre_deploy_v1_contract.py"
       - ".github/workflows/kyre-deploy-v1-zero-cost-ci.yml"
       - "sports_api/Dockerfile"
