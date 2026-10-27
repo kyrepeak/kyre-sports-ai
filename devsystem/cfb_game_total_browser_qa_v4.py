@@ -20,6 +20,10 @@ from devsystem import browser_qa_v1 as base
 
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
+UNIVERSAL_ROUTE_SPORT = "sport"
+UNIVERSAL_ROUTE_MARKET = "market"
+UNIVERSAL_SPORT_ID = "cfb"
+UNIVERSAL_MARKET_ID = "game-total"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
 DATE_QUERY_KEY = "ks_cfb_game_total_date"
@@ -141,6 +145,8 @@ def run(
     health = base._wait_for_health(base_url)
     direct_query = urlencode(
         {
+            UNIVERSAL_ROUTE_SPORT: UNIVERSAL_SPORT_ID,
+            UNIVERSAL_ROUTE_MARKET: UNIVERSAL_MARKET_ID,
             ROUTE_QUERY_SPORT: CFB_SPORT,
             ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
             DATE_QUERY_KEY: CERT_DATE,
