@@ -1,0 +1,46 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-shared-runtime-lifecycle-freeze-closeout-v1",
+  "workstream": "guardian-shared-runtime-lifecycle-freeze-closeout-v1",
+  "source_main_sha": "49ee15d2ba9d583373e8981352eac9809cd189d0",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_guardian_shared_runtime_freeze_closeout_v1.py",
+      "tests/test_guardian_runless_proof_v1.py",
+      "tests/test_guardian_shared_runtime_lifecycle_v1.py",
+      "tests/test_guardian_step2a_anti_loop_v1.py",
+      "tests/test_monster_wnba_pra_runless_upcoming_gate_r1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "runless_v2/__init__.py",
+      "runless_v2/config.py",
+      "runless_v2/guardian_shared_runtime_freeze_closeout_proof_v1.py"
+    ]
+  ],
+  "artifacts": [
+    ".github/workflows/guardian-shared-runtime-lifecycle-v1.yml",
+    "devsystem/runless_proof_plans/guardian-shared-runtime-lifecycle-freeze-closeout-v1.json",
+    "runless_v2/__init__.py",
+    "runless_v2/config.py",
+    "runless_v2/guardian_shared_runtime_freeze_closeout_proof_v1.py",
+    "tests/test_guardian_runless_proof_v1.py",
+    "tests/test_guardian_shared_runtime_freeze_closeout_v1.py"
+  ],
+  "dependencies": [
+    "devsystem/guardian_step2a_anti_loop_v1.py",
+    "devsystem/shared_runtime_lifecycle_v1.py",
+    "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py",
+    "runless_v2/wnba_pra_runless_upcoming_gate_r1.py",
+    "tests/test_monster_wnba_pra_runless_upcoming_gate_r1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_SHARED_RUNTIME_LIFECYCLE_FREEZE_CLOSEOUT_V1_FROZEN"
+}
