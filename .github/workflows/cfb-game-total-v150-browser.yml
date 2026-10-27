@@ -63,7 +63,7 @@ jobs:
 
       - name: Drive canonical College Football Game Total route with Playwright
         run: |
-          python devsystem/cfb_game_total_browser_qa_v4.py \
+          python -m devsystem.cfb_game_total_browser_qa_v4 \
             --base-url http://127.0.0.1:8501 \
             --artifact-dir artifacts/cfb-game-total-browser-qa
 
