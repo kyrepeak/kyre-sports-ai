@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-role-opp-runtime-v3.json": "660c95510ae1c30e0c64bca8350fbae281095aa4",
+    "devsystem/task_ledgers/api2-nba-pra-page2-role-opp-runtime-v3.json": "d849bfe47372e5aaa6e1ad0b6fe629ea1f3ef0b7",
+    "nba_pra_page2_role_runtime_v4.py": "c1bdc35196b1c4c11c183d5f51ebd7eacf4f1c37",
+    "tests/test_api2_nba_pra_page2_role_opp_runtime_v3.py": "1f92675c85a839d69348e932f880e43210612ad4"
+  },
+  "candidate_sha": "cb0cc4655def13012b4360ed53ff801c64a8084d",
+  "created_at": "2026-10-27T03:22:11.873510+00:00",
+  "dependency_map": {
+    "app.py": "b198c271b2aa0ec825f35f4e5da6ef3012d60d1f",
+    "devsystem/runless_proof_plans/api2-nba-pra-page2-role-opp-completeness-v2-step2g-runtime-r1.json": "a34286ab8d36072512b4a640f33fa7f3da7fc9cf",
+    "nba_pra_page2_command_center_v3.py": "d1daf65961b2179eb2902edb5af381a509b72ef7",
+    "nba_pra_page2_data_completeness_v1.py": "550899cbef9081e55555bcf3b1c83c7a34e39a48",
+    "pyproject.toml": "d9942eebbc162a2c150c2e435e753475428e3e2f"
+  },
+  "digest": "6a11e8296ff1ff8292958b91ab4a693aae1f3b2990858a6d7311d1ce8a9e9dc5",
+  "evidence_digests": [
+    "89064ee6793f01d11470a4a3da7d1e9f5b917b777983ce7a227eefa12cba35a9",
+    "7ce1ea121764efa12ef820f7ce3eb061c00d9b8afff3bdf98624d019658f3e04"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "5289ffc03606ce03da2cd0d72567db4c137f648b6479d6cbb1822fdb7ee3862e",
+  "proof_id": "api2-nba-pra-page2-role-opp-runtime-v3-cb0cc4655def1301-dcbbe4e1cfb3e455",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "5bdd82139025d8ead619511ce85ca41384181166771160236f23c2aff0ac28ad",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nba-pra-page2-role-opp-runtime-v3",
+  "workstream": "api2-nba-pra-page2-role-opp-runtime-v3"
+}
