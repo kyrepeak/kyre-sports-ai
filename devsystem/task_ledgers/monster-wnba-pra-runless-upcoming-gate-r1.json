@@ -1,0 +1,23 @@
+{
+  "version": "MONSTER_WNBA_PRA_RUNLESS_UPCOMING_GATE_R1_LEDGER",
+  "authority": "MONSTER_ONLY",
+  "task_id": "monster-wnba-pra-runless-upcoming-gate-r1",
+  "active_problem": "The active Runless WNBA PRA Page 1 snapshot consumes sportsbook offers from wnba_pra_market_v1 without first requiring official WNBA schedule proof that the matchup is still future and scheduled.",
+  "status": "IMPLEMENTED_PENDING_EXACT_HEAD_PROOF",
+  "progress_percent": 99.986,
+  "authoritative_base": "main",
+  "authoritative_base_sha": "dd9ffcc4b44faea92f97d68545db6efb160c9f3f",
+  "authoritative_branch": "monster-wnba-pra-runless-upcoming-gate-r1",
+  "authoritative_pr_policy": "EXACTLY_ONE_OPEN_PR",
+  "proof_authority": "MONSTER_ONLY_RUNLESS_APP_5204253",
+  "failure_fingerprint": "ACTIVE_PAGE_SNAPSHOT_MARKET_BOARD_BYPASSED_CERTIFIED_SCHEDULE_GATE",
+  "step2a": {"status": "GREEN", "one_active_problem": true, "one_branch": true, "one_pr_policy": true, "one_authoritative_proof_path": true},
+  "anti_loop": {"status": "GREEN", "closed_invalid_pr_1891_reused": false, "blind_retry_allowed": false, "duplicate_lane_allowed": false, "live_final_game_target_allowed": false},
+  "step2b": {"status": "GREEN", "acceptance_locked": "The active Runless Page 1 market board must admit sportsbook PRA offers only for matchups the official WNBA schedule proves are scheduled and future at request time."},
+  "step2c": {"status": "GREEN_ROOT_CAUSE_PROVEN", "failure_class": "ACTIVE_FAST_PATH_BYPASS"},
+  "step2d": {"status": "GREEN_IMPLEMENTED", "repair": "Install an official-schedule successor around runless_v2.wnba_pra_market_v1 and patch the page-snapshot builder to use it."},
+  "step2e": {"status": "PENDING_EXACT_HEAD_TEST_AND_APP_5204253_GATE"},
+  "step2f": {"status": "PENDING_EXPECTED_HEAD_MERGE"},
+  "step2g": {"status": "PENDING_FUTURE_PREGAME_PRODUCTION_READBACK_AND_REGISTRY_FREEZE", "production_target": "2026-10-29 future scheduled WNBA Finals Game 6", "freeze_target": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_FROZEN"},
+  "api2_state_used": false
+}
