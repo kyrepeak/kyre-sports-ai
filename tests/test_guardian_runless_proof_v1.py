@@ -14,7 +14,7 @@ RUNLESS_INIT = ROOT / "runless_v2" / "__init__.py"
 
 TASK_ID = "guardian-shared-runtime-lifecycle-v1"
 BRANCH = "guardian-shared-runtime-lifecycle-v1"
-EXPECTED_MAIN_SHA = "313af5db9f1ce12cda76e0ed41c14f495add0007"
+EXPECTED_MAIN_SHA = "49ee15d2ba9d583373e8981352eac9809cd189d0"
 
 
 def _load_proof():
@@ -53,12 +53,13 @@ def test_guardian_proof_identity_is_exact_and_independent():
     proof = _load_proof()
     assert proof.AUTHORITY == "KYRE_GUARDIAN_ONLY"
     assert proof.TASK_ID == TASK_ID and proof.WORKSTREAM == TASK_ID
-    assert proof.PR_NUMBER == 1896
+    assert proof.PR_NUMBER == 1897
     assert proof.BRANCH == BRANCH
     assert proof.BASE_BRANCH == "main"
     assert proof.EXPECTED_MAIN_SHA == EXPECTED_MAIN_SHA
     assert proof.GATE_NAME == "runless-final-gate"
     assert proof.GITHUB_APP_ID == "5204253"
+    assert "runless_v2/sandbox_executor.py" in proof.ALLOWED_CHANGED_PATHS
 
 
 def test_guardian_plan_is_runless_exact_head_and_has_no_foreign_private_state():
@@ -70,6 +71,7 @@ def test_guardian_plan_is_runless_exact_head_and_has_no_foreign_private_state():
     assert plan["required_check_app_id"] == 5204253
     assert plan["github_actions_fallback"] == 0
     assert plan["freeze_token"] == "GUARDIAN_SHARED_RUNTIME_LIFECYCLE_V1_FROZEN"
+    assert "runless_v2/sandbox_executor.py" in plan["artifacts"]
     joined = " ".join([*plan.get("artifacts", []), *plan.get("dependencies", [])]).lower()
     assert "task_ledgers/api2" not in joined
     assert "task_ledgers/monster" not in joined
