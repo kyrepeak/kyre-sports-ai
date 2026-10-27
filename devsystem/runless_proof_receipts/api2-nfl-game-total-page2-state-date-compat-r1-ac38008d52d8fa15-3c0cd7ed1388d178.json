@@ -1,0 +1,39 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-game-total-page2-state-date-compat-r1.json": "de6845671c172200b3cb877bc6a890104c46ed95",
+    "nfl_game_totals_hub_v8_1.py": "f1e87468ba2b3decd55d8d27149e7c14a4466231",
+    "tests/test_api2_nfl_game_total_page2_state_date_compat_r1.py": "d5e8a6ae7f16fb6392c8a660c28dcfb296af52b2"
+  },
+  "candidate_sha": "ac38008d52d8fa154c8ae52652fb9ff257c3709a",
+  "created_at": "2026-10-27T01:53:08.624088+00:00",
+  "dependency_map": {
+    "devsystem/api2_step2g_streamlit_cert_v1.py": "af458cdbfc6dcf788c03b3d934c2570f609342da",
+    "nfl_game_totals_hub_v11.py": "4685f35f33fe1b901548a6618f01a0412bad653e",
+    "nfl_game_totals_hub_v12.py": "733e013848e857708831223e1a1262300e219592",
+    "universal_runtime_v5_loader.py": "a36674f066d2b39a8ed430f18b4132bd454e284c"
+  },
+  "digest": "e53c50bbe8167d7460be5939034441958d2d05559f4a94aca370f9d95170cf53",
+  "evidence_digests": [
+    "de6d009cb884deb2faa71b40b79238128df314fbecafc119e80a0fb0b8b86d90",
+    "79f217795e794f7b6810183995cfd6f676585888443e5d7088b4514b4a4bbf6a"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "0a39829442c71e055f4234efa2a1a27d30b2b97176ce36a69bebf941f70d8265",
+  "proof_id": "api2-nfl-game-total-page2-state-date-compat-r1-ac38008d52d8fa15-3c0cd7ed1388d178",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "c9a8384c0d37996d0c3afd430862b290563c44f7d31b0652bdf2eac88c08c844",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-game-total-page2-state-date-compat-r1",
+  "workstream": "api2-nfl-game-total-page2-state-date-compat-r1"
+}
