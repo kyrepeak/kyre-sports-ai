@@ -7,6 +7,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTROL = ROOT / "devsystem" / "guardian_step2a_anti_loop_v1.py"
+WORKFLOW = ROOT / ".github" / "workflows" / "guardian-shared-runtime-lifecycle-v1.yml"
 VALID_SHA = "a" * 40
 NEW_SHA = "b" * 40
 
@@ -100,3 +101,13 @@ def test_anti_loop_allows_retry_only_after_material_input_changes():
         previous_input_fingerprint="old-input",
         current_input_fingerprint="new-input",
     )
+
+
+def test_guardian_workflow_enforces_live_step2a_and_anti_loop_gate():
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert "pull-requests: read" in source
+    assert "Guard Step 2A exact-head and Anti-Loop" in source
+    assert "git ls-remote origin refs/heads/main" in source
+    assert "guardian_step2a_anti_loop_v1" in source
+    assert "github.run_attempt" in source
+    assert "guardian-shared-runtime-lifecycle-v1" in source
