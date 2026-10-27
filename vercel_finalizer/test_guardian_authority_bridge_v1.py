@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
+import bridge_entrypoint  # noqa: F401 - installs the Guardian bridge on the base app
 import app as target
 from vercel_finalizer.authority import AuthoritySnapshot
 from vercel_finalizer.gate_publication import GateClaimDecision
@@ -50,9 +51,7 @@ def _exact_check():
 
 def test_health_reports_bridge_configured_without_service_role(monkeypatch):
     _configure_bridge(monkeypatch)
-
     response = TestClient(target.app).get("/health")
-
     assert response.status_code == 200
     body = response.json()
     assert body["configured"] is True
@@ -72,9 +71,7 @@ def test_deep_authority_health_uses_github_app_authenticated_bridge(monkeypatch)
             "supabase": "healthy",
         },
     )
-
     response = TestClient(target.app).get("/health/authority")
-
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
@@ -110,7 +107,6 @@ def test_prove_uses_bridge_when_service_role_is_unavailable(monkeypatch):
         ),
     )
     monkeypatch.setattr(target, "_check_runs", lambda *args, **kwargs: [_exact_check()])
-
     response = TestClient(target.app).post(
         "/prove",
         json={
@@ -121,7 +117,6 @@ def test_prove_uses_bridge_when_service_role_is_unavailable(monkeypatch):
             "proof_digest": DIGEST,
         },
     )
-
     assert response.status_code == 200
     body = response.json()
     assert body["reused"] is True
