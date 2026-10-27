@@ -2,19 +2,14 @@ name: MONSTER NBA PRA Page 2 S-Tier V4
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "nba_pra_page2_command_center_v4.py"
       - "nba_pra_page2_sync_v1.py"
       - "tests/test_monster_nba_pra_page2_s_tier_v4.py"
-      - "docs/superpowers/specs/2026-10-26-monster-nba-pra-page2-s-tier-v4-design.md"
-      - "docs/superpowers/plans/2026-10-26-monster-nba-pra-page2-s-tier-v4.md"
-      - "devsystem/runless_proof_plans/monster-nba-pra-page2-s-tier-v4.json"
       - ".github/workflows/monster-nba-pra-page2-s-tier-v4.yml"
   push:
-    branches:
-      - monster-nba-pra-page2-s-tier-v4
+    branches: [monster-nba-pra-page2-s-tier-v4]
     paths:
       - ".github/workflows/monster-nba-pra-page2-s-tier-v4.yml"
 
@@ -72,7 +67,8 @@ jobs:
           from playwright.sync_api import sync_playwright
           from devsystem.browser_qa_v1 import _find_app_frame
 
-          URL = "https://pickvault.streamlit.app/?ks_sport=NBA&ks_nba_market=PRA"
+          URL = "https://pickvault.streamlit.app/"
+          MAIN_SHA = "8d47079900f34cbacac4976402ca3332908322b4"
           REQUIRED = (
               "PLAYER COMMAND CENTER",
               "L10 PRA TREND",
@@ -95,60 +91,90 @@ jobs:
 
           artifacts = Path("artifacts/monster-nba-pra-page2-v4-step2g")
           artifacts.mkdir(parents=True, exist_ok=True)
-          result = {"url": URL, "main_sha": "8d47079900f34cbacac4976402ca3332908322b4", "route_contract": ["ks_sport=NBA", "ks_nba_market=PRA"]}
+
+          def text(frame):
+              return frame.locator("body").inner_text(timeout=10000)
+
+          def refind(page, timeout=45.0):
+              frame, _ = _find_app_frame(page, timeout_seconds=timeout)
+              return frame
+
+          def wait_contains(page, frame, marker, timeout=90.0):
+              deadline = time.monotonic() + timeout
+              body = ""
+              while time.monotonic() < deadline:
+                  try:
+                      body = text(frame)
+                  except Exception:
+                      frame = refind(page)
+                      body = text(frame)
+                  if marker in body:
+                      return frame, body
+                  page.wait_for_timeout(1200)
+              raise AssertionError(f"Timed out waiting for {marker!r}. body=" + body[:8000])
 
           with sync_playwright() as pw:
               browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
               page = browser.new_page(viewport={"width": 430, "height": 932})
               page.goto(URL, wait_until="domcontentloaded", timeout=120000)
-              frame, _ = _find_app_frame(page, timeout_seconds=120.0)
+              frame = refind(page, 120.0)
+              body = text(frame)
+              for bad in FORBIDDEN:
+                  if bad in body:
+                      raise AssertionError(f"Initial runtime error marker: {bad}")
 
-              deadline = time.monotonic() + 120.0
-              body = ""
-              while time.monotonic() < deadline:
-                  body = frame.locator("body").inner_text(timeout=10000)
-                  if "NBA PRA Intelligence" in body:
-                      break
-                  page.wait_for_timeout(2000)
-              if "NBA PRA Intelligence" not in body:
-                  raise AssertionError("Authoritative NBA PRA route did not render Page 1. body=" + body[:7000])
+              # Source-backed universal navigation contract: Streamlit st.pills.
+              nba = frame.get_by_role("button", name="NBA", exact=True)
+              nba.wait_for(state="visible", timeout=60000)
+              nba.click()
+              page.wait_for_timeout(1200)
+              frame = refind(page)
+
+              pra = frame.get_by_role("button", name="PRA", exact=True)
+              pra.wait_for(state="visible", timeout=60000)
+              pra.click()
+              page.wait_for_timeout(1200)
+              frame = refind(page)
+              frame, body = wait_contains(page, frame, "NBA PRA Intelligence", timeout=120.0)
               for bad in FORBIDDEN:
                   if bad in body:
                       raise AssertionError(f"Page 1 runtime error marker: {bad}")
 
-              buttons = frame.get_by_role("button", name=re.compile(r"^Analyze .+ →$", re.I))
+              analyze = frame.get_by_role("button", name=re.compile(r"^Analyze .+ →$", re.I))
               deadline = time.monotonic() + 90.0
-              while buttons.count() == 0 and time.monotonic() < deadline:
-                  page.wait_for_timeout(2000)
-              if buttons.count() == 0:
-                  body = frame.locator("body").inner_text(timeout=10000)
-                  raise AssertionError("No live NBA PRA Analyze action available. body=" + body[:7000])
+              while analyze.count() == 0 and time.monotonic() < deadline:
+                  page.wait_for_timeout(1500)
+              if analyze.count() == 0:
+                  raise AssertionError("No live NBA PRA Analyze action available. body=" + text(frame)[:9000])
 
-              chosen = buttons.first.inner_text()
-              buttons.first.click()
+              chosen = analyze.first.inner_text()
+              analyze.first.click()
+              page.wait_for_timeout(1200)
+              frame = refind(page)
               deadline = time.monotonic() + 150.0
               body2 = ""
               while time.monotonic() < deadline:
-                  body2 = frame.locator("body").inner_text(timeout=10000)
+                  body2 = text(frame)
                   if all(token in body2 for token in REQUIRED):
                       break
-                  page.wait_for_timeout(2500)
-
+                  page.wait_for_timeout(1800)
               missing = [token for token in REQUIRED if token not in body2]
               if missing:
-                  raise AssertionError(f"Public V4 markers missing: {missing}; body=" + body2[:14000])
+                  raise AssertionError(f"Public V4 markers missing: {missing}; body=" + body2[:16000])
               for bad in FORBIDDEN:
                   if bad in body2:
                       raise AssertionError(f"Page 2 runtime error marker: {bad}")
 
               screenshot = artifacts / "nba-pra-page2-v4-live.png"
               page.screenshot(path=str(screenshot), full_page=True)
-              result.update({
+              result = {
                   "status": "GREEN",
-                  "analyze_action": chosen,
+                  "url": URL,
+                  "main_sha": MAIN_SHA,
+                  "navigation": ["NBA pill", "PRA pill", chosen],
                   "required_markers": list(REQUIRED),
                   "screenshot": str(screenshot),
-              })
+              }
               (artifacts / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
               print("MONSTER_NBA_PRA_PAGE2_V4_PUBLIC_STEP2G_GREEN=" + json.dumps(result, sort_keys=True))
               browser.close()
