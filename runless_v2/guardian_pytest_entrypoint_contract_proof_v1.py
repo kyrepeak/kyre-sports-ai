@@ -26,6 +26,7 @@ ALLOWED_CHANGED_PATHS = frozenset(
         "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
         "runless_v2/guardian_pytest_entrypoint_contract_proof_v1.py",
         "tests/conftest.py",
+        "tests/test_cfb_game_total_v152_activation.py",
         "tests/test_guardian_pytest_entrypoint_contract_proof_v1.py",
     }
 )
