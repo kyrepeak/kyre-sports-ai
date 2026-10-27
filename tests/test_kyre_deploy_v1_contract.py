@@ -140,6 +140,15 @@ def test_cloud_run_foundation_is_activation_safe_and_secret_free() -> None:
     assert 'gcloud services enable iamcredentials.googleapis.com' in deploy
 
 
+def test_cloud_run_runtime_identity_is_least_privilege_and_bootstrapped() -> None:
+    deploy = _text(CLOUD_RUN_DEPLOY)
+    assert 'gcloud iam service-accounts describe' in deploy
+    assert 'gcloud iam service-accounts create' in deploy
+    assert 'roles/owner' not in deploy
+    assert 'roles/editor' not in deploy
+    assert 'roles/run.admin' not in deploy
+
+
 def test_cloud_run_foundation_does_not_use_cloud_build_or_artifact_registry_builds() -> None:
     deploy = _text(CLOUD_RUN_DEPLOY)
     readme = _text(CLOUD_RUN_README)
