@@ -1,0 +1,28 @@
+name: KYRE DEPLOY V1 Zero-Cost CI
+
+on:
+  pull_request:
+    paths:
+      - "deploy/kyre-deploy/**"
+      - "devsystem/kyre_deploy_v1_contract.py"
+      - "tests/test_kyre_deploy_v1_contract.py"
+      - ".github/workflows/kyre-deploy-v1-zero-cost-ci.yml"
+      - "sports_api/Dockerfile"
+      - "requirements.txt"
+      - "app.py"
+  workflow_dispatch:
+
+concurrency:
+  group: kyre-deploy-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run KYRE DEPLOY V1 contract
+        run: python -m pytest -q tests/test_kyre_deploy_v1_contract.py
