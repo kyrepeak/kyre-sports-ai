@@ -1,0 +1,86 @@
+name: Guardian PR1901 Terminal Certification Runner V2
+
+on:
+  push:
+    branches:
+      - guardian-pr1901-write-anchor
+    paths:
+      - .github/workflows/guardian-pr1901-terminal-cert-runner-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-tested-terminal-certification-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authoritative PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: guardian-pytest-entrypoint-contract-v1
+          fetch-depth: 0
+
+      - name: Enforce authoritative-head lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "4d98e7dc05f845ef904ddbfa1b2ffe5594b4a6a0"
+
+      - name: Apply exact tested terminal-certification patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin guardian-pr1901-write-anchor:refs/remotes/origin/guardian-pr1901-write-anchor
+          git show refs/remotes/origin/guardian-pr1901-write-anchor:.guardian/guardian-terminal-cert.patch.gz | gzip -dc > /tmp/guardian.patch
+          git apply --check /tmp/guardian.patch
+          git apply /tmp/guardian.patch
+          git diff --check
+
+      - name: Verify exact migrated contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q -r requirements.txt pytest pyyaml
+          python - <<'PY'
+          import yaml
+          from pathlib import Path
+          yaml.safe_load(Path('.github/workflows/cfb-game-total-v185-step6-visual-parity.yml').read_text())
+          PY
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_guardian_cfb_browser_qa_route_contract_v1.py \
+            tests/test_cfb_game_total_v184_step6_browser.py \
+            tests/test_cfb_game_total_v162_cache_boundary.py \
+            tests/test_cfb_game_total_v163_game_selector.py \
+            tests/test_devsystem_production_verify_v4.py \
+            tests/test_cfb_game_total_v168_step5_pace.py \
+            tests/test_devsystem_production_verify_v164_logos.py \
+            tests/test_cfb_game_total_v165_step4_matchup.py \
+            tests/test_cfb_game_total_v159_compact_dashboard.py \
+            tests/test_cfb_game_total_v164_team_logos.py \
+            tests/test_cfb_game_total_v185_step6_visual_parity.py \
+            tests/test_cfb_game_total_v184_step6_scoring.py \
+            tests/test_cfb_game_total_v152_activation.py \
+            tests/test_cfb_game_total_dashboard_v151.py \
+            tests/test_devsystem_production_verify_v3.py \
+            tests/test_cfb_game_total_v152_identity.py \
+            tests/test_cfb_game_total_v152_team_stats.py \
+            tests/test_cfb_game_total_v152_evidence_center.py \
+            tests/test_cfb_game_total_v152_layout.py \
+            tests/test_cfb_game_total_browser_v152.py \
+            tests/test_cfb_game_total_v153_production_fallback.py
+
+      - name: Commit migration to existing authoritative PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/cfb-game-total-v185-step6-visual-parity.yml \
+            devsystem/cfb_game_total_browser_qa_v4.py \
+            devsystem/cfb_game_total_logo_browser_qa_v1.py \
+            devsystem/cfb_game_total_step6_browser_qa_v184.py \
+            tests/test_cfb_game_total_v184_step6_browser.py \
+            tests/test_guardian_cfb_browser_qa_route_contract_v1.py
+          git commit -m "guardian: migrate CFB browser certification to terminal page1"
+          git push origin HEAD:guardian-pytest-entrypoint-contract-v1
