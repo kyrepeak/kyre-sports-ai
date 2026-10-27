@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "devsystem" / "guardian_source_of_truth_configuration_parity_v1.json"
 LEDGER = ROOT / "supabase" / "source_parity_ledger"
-FUNCTIONS = ROOT / "supabase" / "functions"
 
 EXPECTED_FUNCTIONS = {
     "noop-do-not-deploy",
@@ -33,21 +32,30 @@ EXPECTED_RLS_DENY_BY_DEFAULT = {
     "public.wnba_step7g_scheduler_locks",
 }
 
+EXPECTED_STALE_PREVIEW_ENV_IDS = {
+    "VLEtduzIHvXMjoLX", "r3bc0IxekmicERwc", "L7t5CRrjzfvCSGGL",
+    "OHPkWOX397eJvAFh", "zFWGW9gf8AWVUfPP", "LdYdb6pTK3YqMEmZ",
+    "TP2f7joGf5pidpfN", "BC16fRa5WnpIuBVG", "tnkMcmRm54v00wac",
+}
+
 
 def _manifest() -> dict:
     assert MANIFEST.exists(), "source-of-truth parity manifest must exist"
     return json.loads(MANIFEST.read_text())
 
 
-def test_live_supabase_migration_ledger_is_fully_source_controlled() -> None:
+def test_live_supabase_migration_ledger_is_exactly_source_controlled() -> None:
     data = _manifest()
     migrations = data["supabase"]["migration_ledger"]
     assert len(migrations) == 38
     assert data["supabase"]["migration_count"] == 38
-    ledger_files = sorted(LEDGER.glob("*.sql"))
+    ledger_files = sorted(LEDGER.glob("*.sql.b64"))
     assert len(ledger_files) == 38
     expected_files = {entry["file"] for entry in migrations}
     assert {p.relative_to(ROOT).as_posix() for p in ledger_files} == expected_files
+    for entry in migrations:
+        raw = base64.b64decode((ROOT / entry["file"]).read_text())
+        assert hashlib.md5(raw).hexdigest() == entry["content_md5"]
 
 
 def test_every_live_edge_function_has_source_or_existing_authoritative_source() -> None:
@@ -67,16 +75,20 @@ def test_intentional_rls_no_policy_tables_are_explicitly_allowlisted() -> None:
     assert data["supabase"]["security_actionable_findings"] == 0
 
 
-def test_retired_vercel_preview_config_is_declared_clean() -> None:
+def test_known_vercel_cleanup_debt_is_never_hidden() -> None:
     data = _manifest()
     vercel = data["vercel"]
     assert vercel["retired_preview_prs"] == [1527, 1528, 1529]
-    assert vercel["stale_preview_env_ids"] == []
+    stale = set(vercel["stale_preview_env_ids"])
+    assert stale in (set(), EXPECTED_STALE_PREVIEW_ENV_IDS)
+    assert vercel["stale_preview_env_count"] == len(stale)
     assert set(vercel["production_projects"]) == {
         "kyre-sports-api",
         "kyre-runless-proof",
         "kyre-sports-finalizer",
     }
+    if stale:
+        assert data["freeze"]["state"] == "OPEN"
 
 
 def test_post_merge_convergence_contract_is_strict() -> None:
@@ -100,3 +112,11 @@ def test_post_merge_convergence_contract_is_strict() -> None:
     report = evaluate_convergence(snapshot)
     assert report["green"] is False
     assert any("kyre-sports-api" in item for item in report["failures"])
+
+
+def test_freeze_requires_zero_stale_preview_configuration() -> None:
+    from runless_v2.guardian_source_of_truth_configuration_parity_v1 import freeze_eligible
+
+    assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0) is True
+    assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=9) is False
+    assert freeze_eligible({"green": False, "failures": ["x"]}, stale_preview_env_count=0) is False
