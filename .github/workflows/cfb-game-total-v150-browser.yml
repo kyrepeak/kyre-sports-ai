@@ -4,22 +4,22 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "cfb_game_total_clean_page_v1.py"
-      - "streamlit_memory_lazy_router_v149.py"
-      - "streamlit_memory_lazy_router_v150.py"
-      - "devsystem/cfb_game_total_browser_qa_v1.py"
-      - "devsystem/cfb_game_total_browser_qa_v4.py"
+      - "app.py"
       - "tests/conftest.py"
+      - "cfb_game_total_page1_atier_v4.py"
+      - "cfb_game_total_page1_atier_v6.py"
+      - "devsystem/guardian_cfb_game_total_terminal_browser_qa_v1.py"
+      - "tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py"
       - ".github/workflows/cfb-game-total-v150-browser.yml"
   push:
     branches: [main]
     paths:
-      - "cfb_game_total_clean_page_v1.py"
-      - "streamlit_memory_lazy_router_v149.py"
-      - "streamlit_memory_lazy_router_v150.py"
-      - "devsystem/cfb_game_total_browser_qa_v1.py"
-      - "devsystem/cfb_game_total_browser_qa_v4.py"
+      - "app.py"
       - "tests/conftest.py"
+      - "cfb_game_total_page1_atier_v4.py"
+      - "cfb_game_total_page1_atier_v6.py"
+      - "devsystem/guardian_cfb_game_total_terminal_browser_qa_v1.py"
+      - "tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py"
       - ".github/workflows/cfb-game-total-v150-browser.yml"
   workflow_dispatch:
 
@@ -46,8 +46,18 @@ jobs:
       - name: Install browser certification dependencies
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt
-          python -m pip install --disable-pip-version-check -q playwright
+          python -m pip install --disable-pip-version-check -q pytest playwright
           python -m playwright install --with-deps chromium
+
+      - name: Compile current terminal Guardian proof
+        run: |
+          python -m py_compile app.py
+          python -m py_compile devsystem/guardian_cfb_game_total_terminal_browser_qa_v1.py
+
+      - name: Prove terminal certification contract
+        run: |
+          PYTHONPATH=. python -m pytest --noconftest -q \
+            tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py
 
       - name: Start branch-local Streamlit
         shell: bash
@@ -61,9 +71,9 @@ jobs:
             > artifacts/cfb-game-total-browser-qa/streamlit.log 2>&1 &
           echo $! > /tmp/cfb_game_total_v150_streamlit_pid
 
-      - name: Drive canonical College Football Game Total route with Playwright
+      - name: Certify current CFB Game Total terminal route
         run: |
-          python -m devsystem.cfb_game_total_browser_qa_v4 \
+          python -m devsystem.guardian_cfb_game_total_terminal_browser_qa_v1 \
             --base-url http://127.0.0.1:8501 \
             --artifact-dir artifacts/cfb-game-total-browser-qa
 

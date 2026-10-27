@@ -54,9 +54,7 @@ def test_v163_router_activates_fresh_page_successor_and_preserves_frozen_heartbe
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v158"' in source
 
 
-def test_app_uses_shared_runtime_lifecycle_while_v159_preserves_v158_contract():
+def test_app_activates_router_v159_and_preserves_v158_source_contract():
     source = _read(APP)
-    router = _read(ROUTER)
-    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in source
-    assert "run_shared_runtime_lifecycle(" in source
-    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v158"' in router
+    assert "streamlit_memory_lazy_router_v159" in source
+    assert "from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app" in source

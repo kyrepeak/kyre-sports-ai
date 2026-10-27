@@ -18,17 +18,12 @@ from playwright.sync_api import sync_playwright
 
 from devsystem import browser_qa_v1 as base
 
-CFB_SPORT = "cfb"
-GAME_TOTAL_MARKET = "game-total"
-UNIVERSAL_ROUTE_SPORT = "sport"
-UNIVERSAL_ROUTE_MARKET = "market"
-UNIVERSAL_SPORT_ID = CFB_SPORT
-UNIVERSAL_MARKET_ID = GAME_TOTAL_MARKET
-# Backward-compatible symbol names now point at the terminal canonical route.
-ROUTE_QUERY_SPORT = UNIVERSAL_ROUTE_SPORT
-ROUTE_QUERY_MARKET = UNIVERSAL_ROUTE_MARKET
-DATE_QUERY_KEY = "date"
-EVENT_QUERY_KEY = "game_id"
+CFB_SPORT = "College Football"
+GAME_TOTAL_MARKET = "Game Total"
+ROUTE_QUERY_SPORT = "ks_sport"
+ROUTE_QUERY_MARKET = "ks_cfb_market"
+DATE_QUERY_KEY = "ks_cfb_game_total_date"
+EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 CERT_DATE = "2026-09-19"
 PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"
 FULL_RENDER_MARKER = "VIEW TOP 5 →"
@@ -146,8 +141,8 @@ def run(
     health = base._wait_for_health(base_url)
     direct_query = urlencode(
         {
-            UNIVERSAL_ROUTE_SPORT: UNIVERSAL_SPORT_ID,
-            UNIVERSAL_ROUTE_MARKET: UNIVERSAL_MARKET_ID,
+            ROUTE_QUERY_SPORT: CFB_SPORT,
+            ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
             DATE_QUERY_KEY: CERT_DATE,
         }
     )

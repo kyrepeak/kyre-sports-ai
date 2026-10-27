@@ -98,10 +98,10 @@ def _cfb_over_under_url(base_url: str) -> str:
 def _cfb_game_total_url(base_url: str) -> str:
     query = urlencode(
         (
-            ("sport", "cfb"),
-            ("market", "game-total"),
-            ("date", CFB_GAME_TOTAL_DATE),
-            ("game_id", CFB_GAME_TOTAL_EVENT_ID),
+            ("ks_sport", CFB_SPORT),
+            ("ks_cfb_market", CFB_GAME_TOTAL_MARKET),
+            ("ks_cfb_game_total_date", CFB_GAME_TOTAL_DATE),
+            ("ks_cfb_game_total_event_id", CFB_GAME_TOTAL_EVENT_ID),
         )
     )
     return base_url.rstrip("/") + "/?" + query

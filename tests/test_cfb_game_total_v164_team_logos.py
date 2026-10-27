@@ -131,11 +131,7 @@ def test_v164_router_advances_only_game_total_page():
 
 def test_app_activates_router_v160():
     source = _read(APP)
-    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in source
-    assert "record_bootstrap_import_ms," in source
-    assert "render_app," in source
-    assert "run_shared_runtime_lifecycle(" in source
-    assert "render=render_app" in source
+    assert "from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app" in source
 
 
 def test_v164_display_reconcile_enriches_exact_team_ids_before_frozen_logo_resolution(monkeypatch):

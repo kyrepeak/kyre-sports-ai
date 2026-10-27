@@ -1,9 +1,8 @@
 """Real-browser QA for the active CFB Game Total V160 route.
 
-This cert enters the certified College Football -> Game Total route through its
-canonical query contract, verifies the exact Game Total query state, hard-refreshes,
-and proves the direct Monster surface remains active without falling back to the
-legacy O/U shell. It does not depend on historical root sport-selector ordering.
+This cert reproduces the real iPad path: choose College Football -> Game Total,
+verify the exact Game Total query state, hard-refresh, and prove the direct
+Monster surface remains active without falling back to the legacy O/U shell.
 """
 from __future__ import annotations
 
@@ -19,6 +18,7 @@ import browser_qa_v1 as base
 
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
+CFB_MARKET_LABEL = "🎯 CFB Market"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
 PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"
@@ -80,7 +80,7 @@ def _assert_visible_contract(body: str) -> None:
 
 
 def _find_direct_game_total_frame(page, timeout_seconds: float = 45.0):
-    """Find the direct Game Total surface without generic-router heuristics."""
+    """Find the post-refresh direct Game Total surface without router heuristics."""
     deadline = time.monotonic() + timeout_seconds
     last_scan: list[dict] = []
     while time.monotonic() < deadline:
@@ -107,7 +107,7 @@ def _find_direct_game_total_frame(page, timeout_seconds: float = 45.0):
         last_scan = scans
         page.wait_for_timeout(1000)
     raise GameTotalBrowserQAFailure(
-        "Could not find direct V160 Game Total surface. "
+        "Could not find direct V160 Game Total surface after refresh. "
         + json.dumps(last_scan, ensure_ascii=False)
     )
 
@@ -127,15 +127,27 @@ def run(
         )
         page = browser.new_page(viewport={"width": 1067, "height": 1536})
         try:
-            # The terminal runtime no longer guarantees that the root page's
-            # first combobox is the global sport selector. Use the already
-            # certified query-route contract instead of guessing widget order.
             page.goto(
-                base._cfb_game_total_url(base_url),
+                base_url.rstrip("/") + "/",
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
-            frame, scans = _find_direct_game_total_frame(page)
+            frame, scans = base._find_app_frame(page)
+            sports = base._read_sport_options(page, frame)
+            if CFB_SPORT not in sports:
+                raise GameTotalBrowserQAFailure(
+                    f"College Football selector option missing: {sports!r}"
+                )
+
+            base._choose(page, frame, 0, CFB_SPORT)
+            cfb_market_combo = frame.get_by_role(
+                "combobox",
+                name=CFB_MARKET_LABEL,
+                exact=True,
+            )
+            cfb_market_combo.wait_for(state="visible", timeout=45000)
+            base._choose(page, frame, 1, GAME_TOTAL_MARKET)
+
             body = base._wait_for_text(
                 frame,
                 FULL_RENDER_MARKER,
@@ -144,8 +156,9 @@ def run(
             _assert_visible_contract(body)
             query_after_selection = _assert_game_total_query(page)
 
-            # Reproduce the user's actual refresh path and prove the canonical
-            # route remains latched after a hard refresh.
+            # Reproduce the user's actual refresh path. The direct target page
+            # intentionally has no generic sport/market selectors after reload,
+            # so locate it by its V155 heartbeat + visible target CTA instead.
             page.reload(wait_until="domcontentloaded", timeout=120000)
             frame_after_reload, reload_scans = _find_direct_game_total_frame(page)
             body_after_reload = base._wait_for_text(

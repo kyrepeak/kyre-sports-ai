@@ -20,6 +20,8 @@ from devsystem import cfb_game_total_browser_qa_v4 as selector_qa
 
 CFB_SPORT = selector_qa.CFB_SPORT
 GAME_TOTAL_MARKET = selector_qa.GAME_TOTAL_MARKET
+ROUTE_QUERY_SPORT = selector_qa.ROUTE_QUERY_SPORT
+ROUTE_QUERY_MARKET = selector_qa.ROUTE_QUERY_MARKET
 DATE_QUERY_KEY = selector_qa.DATE_QUERY_KEY
 CERT_DATE = selector_qa.CERT_DATE
 STEP6_TESTID = "gt157-step-6"
@@ -294,8 +296,8 @@ def run(
     health = base._wait_for_health(base_url)
     direct_query = urlencode(
         {
-            selector_qa.UNIVERSAL_ROUTE_SPORT: selector_qa.UNIVERSAL_SPORT_ID,
-            selector_qa.UNIVERSAL_ROUTE_MARKET: selector_qa.UNIVERSAL_MARKET_ID,
+            ROUTE_QUERY_SPORT: CFB_SPORT,
+            ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
             DATE_QUERY_KEY: CERT_DATE,
         }
     )

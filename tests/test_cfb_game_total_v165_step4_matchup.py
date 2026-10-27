@@ -192,11 +192,7 @@ def test_v165_router_advances_only_exact_game_total_page():
 
 def test_app_advances_additively_to_v163_and_preserves_frozen_router_chain():
     source = APP.read_text()
-    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in source
-    assert "record_bootstrap_import_ms," in source
-    assert "render_app," in source
-    assert "run_shared_runtime_lifecycle(" in source
-    assert "render=render_app" in source
+    assert "from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app" in source
 
     router_v163 = (ROOT / "streamlit_memory_lazy_router_v163.py").read_text()
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v162"' in router_v163
