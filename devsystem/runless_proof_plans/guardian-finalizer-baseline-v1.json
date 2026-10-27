@@ -1,0 +1,28 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-finalizer-baseline-v1",
+  "workstream": "guardian-finalizer-baseline-v1",
+  "source_main_sha": "31f94eae6e007a61d01397e6d868df3a6a3bd1e2",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "vercel_finalizer/test_health_truthfulness.py", "vercel_finalizer/test_publish_gate_build.py"],
+    ["python", "-m", "py_compile", "vercel_finalizer/app.py", "vercel_finalizer/publish_gate_build.py", "vercel_finalizer/test_health_truthfulness.py", "vercel_finalizer/test_publish_gate_build.py"]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/guardian-finalizer-baseline-v1.json",
+    "vercel_finalizer/app.py",
+    "vercel_finalizer/publish_gate_build.py",
+    "vercel_finalizer/test_health_truthfulness.py",
+    "vercel_finalizer/test_publish_gate_build.py"
+  ],
+  "dependencies": [
+    "devsystem/runless_proof_plan_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_FINALIZER_BASELINE_V1"
+}
