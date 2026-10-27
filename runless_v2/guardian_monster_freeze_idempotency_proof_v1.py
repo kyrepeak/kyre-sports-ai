@@ -27,6 +27,7 @@ ALLOWED_CHANGED_PATHS = frozenset(
         "devsystem/runless_proof_plans/guardian-monster-freeze-idempotency-v1.json",
         "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
         "runless_v2/guardian_monster_freeze_idempotency_proof_v1.py",
+        "runless_v2/sandbox_executor.py",
         "tests/test_guardian_monster_freeze_idempotency_v1.py",
         "tests/test_guardian_monster_freeze_idempotency_runless_v1.py",
     }
