@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    "app.py": "e4e5ff6d79d35a51f8ab93dc2bf72e6b965229a2",
+    "devsystem/runless_proof_plans/api2-nfl-game-total-page2-cache-bust-r1.json": "88cd085841577dcd26799e45f6aff089a8ddead8",
+    "devsystem/task_ledgers/api2-nfl-game-total-page2-cache-bust-r1.json": "9493984bb1d3421c9ceaa0dd27b4a820c01d108e",
+    "tests/test_api2_nfl_game_total_page2_cache_bust_r1.py": "e7f0dc7f2fd4c7740c456b77e95ce2447e238c7b"
+  },
+  "candidate_sha": "1f284b17348e2a4123161f38cc028d280afea413",
+  "created_at": "2026-10-27T01:15:21.860695+00:00",
+  "dependency_map": {
+    "nfl_game_totals_hub_v11.py": "4685f35f33fe1b901548a6618f01a0412bad653e",
+    "nfl_game_totals_hub_v12.py": "733e013848e857708831223e1a1262300e219592",
+    "nfl_game_totals_page1_s_tier_v1.py": "348f17f3d0a21b47627bb3e3abde16447304021f",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_route_restore_r1.py": "1fe809f42017c531015912a9d6223f2c3d6efb04",
+    "universal_runtime_v5_loader.py": "a36674f066d2b39a8ed430f18b4132bd454e284c"
+  },
+  "digest": "d8aea3c4b8522b7c8b07e310ea91184b97f2d45913aa069f022824da07d1b119",
+  "evidence_digests": [
+    "784387a309d689ae8b69139bf90452d49e519a24432b473265e29e92d3658926",
+    "7f0303d9556c719640a92403143a92d0f33bef970825c2728a22eb5077c5ba0e"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "1bd3fec471b921ccbf1c587695e6cead7c8e284e474ab61978d6ccd62329d89e",
+  "proof_id": "api2-nfl-game-total-page2-cache-bust-r1-1f284b17348e2a41-9b205121d50751e8",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "0f34431c8cb5ecad5b3764143cb09c56309b88ad8a55263fd00aa8ede8b067f7",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-game-total-page2-cache-bust-r1",
+  "workstream": "api2-nfl-game-total-page2-cache-bust-r1"
+}
