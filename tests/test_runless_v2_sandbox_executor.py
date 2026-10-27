@@ -258,7 +258,7 @@ async def test_timeout_is_infra_failure_and_no_retry_occurs():
 @pytest.mark.asyncio
 async def test_backend_create_failure_does_not_attempt_stop_without_session():
     backend = FakeBackend(fail_create=RuntimeError("unavailable"))
-    with pytest.raises(SandboxExecutionError, match="RUNLESS_V2_SANDBOX_CREATE_FAILED"):
+    with pytest.raises(SandboxExecutionError, match=r"^RUNLESS_V2_SANDBOX_CREATE_FAILED:RuntimeError$"):
         await SandboxExecutor(backend=backend).execute(
             candidate_sha=SHA, task_id="task-4", github_token="tok", timeout_seconds=100
         )
