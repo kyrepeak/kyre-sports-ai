@@ -107,24 +107,18 @@ def _enter_pra(page, base_url: str):
     page.goto(_route_url(base_url), wait_until="domcontentloaded", timeout=120000)
     frame, _ = _find_app_frame(page, timeout_seconds=120.0)
 
-    sport = frame.get_by_role("combobox", name=SPORT_LABEL, exact=True)
-    if sport.count() > 0:
-        try:
-            if str(sport.first.input_value() or "").strip() != "WNBA":
-                _choose_labeled(page, frame, SPORT_LABEL, "WNBA")
-        except Exception:
-            _choose_labeled(page, frame, SPORT_LABEL, "WNBA")
+    # Match the already-proven WNBA Step-9 production route primer: always
+    # explicitly re-select WNBA, even when the immutable jump query already
+    # displays WNBA. That selection commits the Streamlit rerun that mounts the
+    # WNBA market selector; merely reading the query-backed input value does not.
+    _choose_labeled(page, frame, SPORT_LABEL, "WNBA")
 
     deadline = time.monotonic() + 45.0
     while time.monotonic() < deadline:
         frame, _ = _find_app_frame(page, timeout_seconds=12.0)
         market = frame.get_by_role("combobox", name=MARKET_LABEL, exact=True)
         if market.count() > 0:
-            try:
-                if str(market.first.input_value() or "").strip() != "PRA":
-                    _choose_labeled(page, frame, MARKET_LABEL, "PRA")
-            except Exception:
-                _choose_labeled(page, frame, MARKET_LABEL, "PRA")
+            _choose_labeled(page, frame, MARKET_LABEL, "PRA")
             return _find_app_frame(page, timeout_seconds=20.0)[0]
         page.wait_for_timeout(200)
     raise BrowserQAFailure("WNBA PRA market selector did not appear")
