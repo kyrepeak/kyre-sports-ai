@@ -6,7 +6,6 @@ from datetime import datetime
 import importlib
 from typing import Callable, Sequence
 
-from api2_universal_sports_router_registry_v1 import get_router_registration
 from universal_runtime_v5_state import RuntimeRoute
 from universal_sports_nav_registry_v1 import get_market
 
@@ -100,26 +99,32 @@ def _root_adapter(route: RuntimeRoute, *, ttl_ms: int) -> DestinationAdapter:
     )
 
 
-def _nfl_slate_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 NFL Slate adapter backed only by the Kyre Sports API gateway."""
+def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
+    """Dedicated API2 Game Totals Page1 + selected-game Page2 adapter."""
+    def frozen_page1_owner():
+        # Compatibility/proof anchor: Page 1 remains the frozen presentation owner.
+        return _import("nfl_game_totals_page1_s_tier_v1")
+
     def loader():
-        return _import("nfl_slate_runtime_v1")
+        frozen_page1_owner()
+        return _import("nfl_game_totals_hub_v11")
 
     def renderer(page):
-        return page.render_nfl_slate_runtime()
+        return page.render_nfl_game_totals_hub()
 
     return DestinationAdapter(
         (route.sport_id, route.market_id),
         loader,
         renderer,
-        "nfl_slate_runtime_v1",
-        60_000,
+        "nfl_game_totals_hub_v11",
+        20_000,
     )
 
 
 def _nfl_passing_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
     """Dedicated Kyre-gateway adapter; legacy NFL slate/data owners are not imported."""
     def loader():
+        # Preserve the frozen professional gateway import as a compatibility/proof anchor.
         _import("nfl_passing_yards_professional_v1")
         return _import("nfl_passing_yards_simple_qb_grid_v1")
 
@@ -129,142 +134,6 @@ def _nfl_passing_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
     return DestinationAdapter(
         (route.sport_id, route.market_id), loader, renderer,
         "nfl_passing_yards_simple_qb_grid_v1", 20_000,
-    )
-
-
-def _nfl_receptions_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Receptions adapter with no legacy NFL hub fallback."""
-    def loader():
-        return _import("nfl_receptions_runtime_v1")
-
-    def renderer(page):
-        return page.render_nfl_receptions_runtime()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_receptions_runtime_v1",
-        20_000,
-    )
-
-
-def _nfl_passing_tds_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Passing TDs adapter with no legacy NFL hub fallback."""
-    def loader():
-        return _import("nfl_passing_tds_runtime_v1")
-
-    def renderer(page):
-        return page.render_nfl_passing_tds_runtime()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_passing_tds_runtime_v1",
-        20_000,
-    )
-
-
-def _nfl_anytime_td_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Anytime TD adapter with no legacy NFL hub fallback."""
-    def loader():
-        return _import("nfl_anytime_td_runtime_v1")
-
-    def renderer(page):
-        return page.render_nfl_anytime_td_runtime()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_anytime_td_runtime_v1",
-        20_000,
-    )
-
-
-def _nfl_daily_picks_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Daily Picks V4 adapter with no generic NFL hub fallback."""
-    def loader():
-        return _import("nfl_daily_picks_command_center_v4")
-
-    def renderer(page):
-        return page.render_nfl_daily_picks_command_center()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_daily_picks_command_center_v4",
-        20_000,
-    )
-
-
-def _nfl_moneyline_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Moneyline V19 adapter with no generic NFL hub fallback."""
-    def loader():
-        return _import("nfl_moneyline_hub_v19")
-
-    def renderer(page):
-        return page.render_nfl_moneyline_hub()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_moneyline_hub_v19",
-        20_000,
-    )
-
-
-def _nfl_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Game Totals compact adapter with no generic NFL hub fallback."""
-    def loader():
-        return _import("nfl_game_totals_compact_layout_v1")
-
-    def renderer(page):
-        return page.render_nfl_game_totals_hub()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_game_totals_compact_layout_v1",
-        20_000,
-    )
-
-
-def _nfl_spread_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Spread V10 adapter with no generic NFL hub fallback."""
-    def loader():
-        return _import("nfl_spread_hub_v10")
-
-    def renderer(page):
-        return page.render_nfl_hub("Spread")
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_spread_hub_v10",
-        20_000,
-    )
-
-
-def _nfl_receiving_yards_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    """Dedicated API2 Receiving Yards V22 adapter with no legacy page fallback."""
-    def loader():
-        return _import("nfl_receiving_yards_hub_v22")
-
-    def renderer(page):
-        return page.render_nfl_receiving_yards_hub()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id),
-        loader,
-        renderer,
-        "nfl_receiving_yards_hub_v22",
-        20_000,
     )
 
 
@@ -337,19 +206,6 @@ def _cfb_game_total_adapter(route: RuntimeRoute) -> DestinationAdapter:
     )
 
 
-def _cfb_player_props_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    def loader():
-        return _import("cfb_player_props_runtime_v3")
-
-    def renderer(runtime):
-        return runtime.render_cfb_player_props_runtime()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id), loader, renderer,
-        "cfb_player_props_runtime_v3", 20_000,
-    )
-
-
 def _nba_spread_adapter(route: RuntimeRoute) -> DestinationAdapter:
     def loader():
         return (
@@ -365,19 +221,6 @@ def _nba_spread_adapter(route: RuntimeRoute) -> DestinationAdapter:
         return page.render_nba_spread_page()
 
     return DestinationAdapter((route.sport_id, route.market_id), loader, renderer, "nba_spread_page_v6", 15_000)
-
-
-def _nba_pra_adapter(route: RuntimeRoute) -> DestinationAdapter:
-    def loader():
-        return _import("nba_pra_runtime_v2")
-
-    def renderer(page):
-        return page.render_nba_pra_runtime_v2()
-
-    return DestinationAdapter(
-        (route.sport_id, route.market_id), loader, renderer,
-        "nba_pra_runtime_v2_api_only_canonical_step2e", 30_000,
-    )
 
 
 def _fail_closed_adapter(route: RuntimeRoute, reason: str) -> DestinationAdapter:
@@ -397,12 +240,6 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
     if market is None:
         return _fail_closed_adapter(route, "This destination is not currently certified.")
 
-    registration = None
-    if route.sport_id in {"nfl", "cfb", "nba", "wnba"}:
-        registration = get_router_registration(route.sport_id, route.market_id)
-        if registration is None:
-            return _fail_closed_adapter(route, "This destination is missing canonical API2 router registration.")
-
     if route.sport_id == "mlb":
         return _root_adapter(route, ttl_ms=5_000 if route.market_id in {"live-game", "live-odds"} else 30_000)
     if route.sport_id == "wnba" and route.market_id == "pra":
@@ -411,8 +248,6 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
         return _root_adapter(route, ttl_ms=15_000)
     if route.sport_id == "nba" and route.market_id == "spread":
         return _nba_spread_adapter(route)
-    if route.sport_id == "nba" and route.market_id == "pra":
-        return _nba_pra_adapter(route)
     if route.sport_id == "cfb":
         if route.market_id == "moneyline":
             return _cfb_page_adapter(route, "cfb_moneyline_clean_page_v1", ttl_ms=30_000)
@@ -422,33 +257,19 @@ def resolve_destination(route: RuntimeRoute) -> DestinationAdapter:
             return _cfb_game_total_adapter(route)
         if route.market_id == "top-picks":
             return _cfb_page_adapter(route, "cfb_top_picks_page_v10", ttl_ms=30_000)
-        if route.market_id == "player-props":
-            return _cfb_player_props_adapter(route)
     if route.sport_id == "nfl":
-        if route.market_id == "slate":
-            return _nfl_slate_adapter(route)
-        if route.market_id == "moneyline":
-            return _nfl_moneyline_adapter(route)
-        if route.market_id == "spread":
-            return _nfl_spread_adapter(route)
         if route.market_id == "game-total":
             return _nfl_game_total_adapter(route)
         if route.market_id == "passing-yards":
             return _nfl_passing_yards_adapter(route)
-        if route.market_id == "receiving-yards":
-            return _nfl_receiving_yards_adapter(route)
-        if route.market_id == "receptions":
-            return _nfl_receptions_adapter(route)
-        if route.market_id == "passing-tds":
-            return _nfl_passing_tds_adapter(route)
-        if route.market_id == "anytime-td":
-            return _nfl_anytime_td_adapter(route)
-        if route.market_id == "daily-picks":
-            return _nfl_daily_picks_adapter(route)
-        if registration is None:
-            return _fail_closed_adapter(route, "NFL route registration missing.")
+        targets = {
+            "spread": "nfl_spread_hub_v8",
+            "rushing-yards": "nfl_rushing_yards_hub_v17",
+            "receiving-yards": "nfl_receiving_yards_hub_v21",
+        }
+        target = targets.get(route.market_id, "nfl_hub_v18")
         ttl = 60_000 if route.market_id == "slate" else 20_000
-        return _nfl_adapter(route, registration.target, ttl_ms=ttl)
+        return _nfl_adapter(route, target, ttl_ms=ttl)
 
     return _fail_closed_adapter(route, "This route has no certified V5 adapter yet.")
 
