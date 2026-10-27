@@ -1,0 +1,37 @@
+{
+  "mode": "runless",
+  "task_id": "monster-nba-pra-page2-v4-css-wrapper-r1",
+  "workstream": "monster-nba-pra-page2-v4-css-wrapper-r1",
+  "source_main_sha": "749651540d9f96830f006e964d93700231ecdd4c",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_nba_pra_page2_v4_css_wrapper_r1.py",
+      "tests/test_monster_nba_pra_page2_s_tier_v4.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "nba_pra_page2_command_center_v4.py",
+      "nba_pra_page2_sync_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/monster-nba-pra-page2-v4-css-wrapper-r1.json",
+    "docs/superpowers/plans/2026-10-26-monster-nba-pra-page2-v4-css-wrapper-r1.md",
+    "nba_pra_page2_command_center_v4.py",
+    "tests/test_monster_nba_pra_page2_v4_css_wrapper_r1.py",
+    "tests/test_monster_nba_pra_page2_s_tier_v4.py"
+  ],
+  "dependencies": [
+    "nba_pra_page2_command_center_v1.py",
+    "nba_pra_page2_sync_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_NBA_PRA_PAGE2_V4_CSS_WRAPPER_R1_FROZEN"
+}
