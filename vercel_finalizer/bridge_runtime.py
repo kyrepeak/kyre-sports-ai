@@ -9,6 +9,10 @@ import httpx
 from fastapi import HTTPException
 
 
+def _capability() -> str:
+    return os.getenv("FINALIZER_CAPABILITY_TOKEN", "").strip()
+
+
 def install_bridge(ns: dict[str, Any]) -> None:
     Settings = ns["Settings"]
     app = ns["app"]
@@ -28,6 +32,8 @@ def install_bridge(ns: dict[str, Any]) -> None:
             raise RuntimeError("FINALIZER_PRIVATE_KEY_REQUIRED")
         if not supabase_url:
             raise RuntimeError("FINALIZER_RUNLESS_AUTHORITY_REQUIRED")
+        if not service_key and not _capability():
+            raise RuntimeError("FINALIZER_CAPABILITY_REQUIRED")
         return cls(app_id, installation_id, private_key, supabase_url, service_key)
 
     Settings.from_env = from_env
@@ -39,7 +45,7 @@ def install_bridge(ns: dict[str, Any]) -> None:
     ]
 
     def health() -> dict[str, Any]:
-        configured = all(
+        base = all(
             os.getenv(key)
             for key in (
                 "GITHUB_APP_ID",
@@ -48,11 +54,10 @@ def install_bridge(ns: dict[str, Any]) -> None:
                 "SUPABASE_URL",
             )
         )
-        transport = (
-            "direct_supabase"
-            if os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
-            else "supabase_edge_bridge"
-        )
+        direct = bool(os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip())
+        capability = bool(_capability())
+        configured = bool(base and (direct or capability))
+        transport = "direct_supabase" if direct else "capability_edge"
         return {
             "status": "ok" if configured else "degraded",
             "configured": configured,
@@ -71,20 +76,18 @@ def install_bridge(ns: dict[str, Any]) -> None:
                 return {
                     "status": "ok",
                     "transport": "direct_supabase",
-                    "app_id": ns["APP_ID_EXPECTED"],
-                    "supabase": "configured",
+                    "authority": "runless_v2",
                 }
             with httpx.Client(timeout=15) as client:
                 body = ns["authority_bridge_health"](
                     client,
                     supabase_url=settings.supabase_url,
-                    app_jwt=ns["_app_jwt"](settings),
+                    capability_token=_capability(),
                 )
             return {
                 "status": "ok",
-                "transport": "supabase_edge_bridge",
-                "app_id": str(body["app_id"]),
-                "supabase": str(body.get("supabase") or "healthy"),
+                "transport": "capability_edge",
+                "authority": str(body.get("authority") or "runless_v2"),
             }
         except Exception as exc:
             raise HTTPException(
@@ -105,8 +108,8 @@ def install_bridge(ns: dict[str, Any]) -> None:
 
         try:
             settings = Settings.from_env()
+            capability = _capability()
             with httpx.Client(timeout=15) as client:
-                app_jwt = ns["_app_jwt"](settings)
                 if settings.supabase_service_role_key:
                     authority = ns["resolve_authority"](
                         client,
@@ -121,7 +124,7 @@ def install_bridge(ns: dict[str, Any]) -> None:
                     authority = ns["resolve_authority_via_bridge"](
                         client,
                         supabase_url=settings.supabase_url,
-                        app_jwt=app_jwt,
+                        capability_token=capability,
                         workstream=request.workstream,
                         task_id=request.task_id,
                         candidate_sha=sha,
@@ -160,7 +163,7 @@ def install_bridge(ns: dict[str, Any]) -> None:
                     claim = ns["claim_publication_via_bridge"](
                         client,
                         supabase_url=settings.supabase_url,
-                        app_jwt=app_jwt,
+                        capability_token=capability,
                         proof_id=authority.proof_id,
                         candidate_sha=sha,
                         fencing_generation=authority.fencing_generation,
@@ -197,7 +200,7 @@ def install_bridge(ns: dict[str, Any]) -> None:
                         ns,
                         client,
                         settings,
-                        app_jwt,
+                        capability,
                         authority.proof_id,
                         str(claim.claim_token),
                         int(existing["id"]),
@@ -226,7 +229,7 @@ def install_bridge(ns: dict[str, Any]) -> None:
                     ns,
                     client,
                     settings,
-                    app_jwt,
+                    capability,
                     authority.proof_id,
                     str(claim.claim_token),
                     int(gate["id"]),
@@ -262,7 +265,7 @@ def _complete(
     ns: dict[str, Any],
     client: Any,
     settings: Any,
-    app_jwt: str,
+    capability: str,
     proof_id: str,
     claim_token: str,
     gate_check_run_id: int,
@@ -279,7 +282,7 @@ def _complete(
     return ns["complete_publication_via_bridge"](
         client,
         supabase_url=settings.supabase_url,
-        app_jwt=app_jwt,
+        capability_token=capability,
         proof_id=proof_id,
         claim_token=claim_token,
         gate_check_run_id=gate_check_run_id,
