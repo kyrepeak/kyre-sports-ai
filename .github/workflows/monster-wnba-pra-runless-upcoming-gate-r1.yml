@@ -10,11 +10,20 @@ on:
       - "devsystem/task_ledgers/monster-wnba-pra-runless-upcoming-gate-r1.json"
       - "devsystem/runless_proof_plans/monster-wnba-pra-runless-upcoming-gate-r1.json"
       - "runless_v2/monster_wnba_pra_runless_upcoming_gate_proof_r1.py"
+      - "devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py"
+      - ".github/workflows/monster-wnba-pra-runless-upcoming-gate-r1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "runless_v2/wnba_pra_runless_upcoming_gate_r1.py"
+      - "runless_v2/__init__.py"
+      - "tests/test_monster_wnba_pra_runless_upcoming_gate_r1.py"
+      - "devsystem/task_ledgers/monster-wnba-pra-runless-upcoming-gate-r1.json"
+      - "devsystem/runless_proof_plans/monster-wnba-pra-runless-upcoming-gate-r1.json"
+      - "runless_v2/monster_wnba_pra_runless_upcoming_gate_proof_r1.py"
+      - "devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py"
       - ".github/workflows/monster-wnba-pra-runless-upcoming-gate-r1.yml"
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 concurrency:
   group: monster-wnba-pra-runless-upcoming-gate-${{ github.event.pull_request.head.sha || github.sha }}
@@ -23,6 +32,8 @@ concurrency:
 jobs:
   exact-head-cert:
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -36,11 +47,12 @@ jobs:
           python-version: "3.12"
       - name: Install focused proof dependencies
         run: python -m pip install --disable-pip-version-check -q pytest pandas requests httpx fastapi streamlit
-      - name: Compile active-path repair
+      - name: Compile active-path repair and closeout
         run: |
           python -m py_compile \
             runless_v2/wnba_pra_runless_upcoming_gate_r1.py \
-            runless_v2/__init__.py
+            runless_v2/__init__.py \
+            devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py
       - name: Prove active Runless upcoming-only gate
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -50,3 +62,40 @@ jobs:
             tests/test_monster_wnba_pra_upcoming_only_r1.py \
             tests/test_monster_wnba_pra_upcoming_only_r2_final_card.py \
             tests/test_monster_wnba_pra_vercel_gateway_v1.py
+
+  postmerge-production-freeze:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install production closeout dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install chromium
+      - name: Compile post-merge closeout
+        run: python -m py_compile devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py
+      - name: Prove future-pregame production and freeze MONSTER registry
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py \
+            --artifact-dir artifacts/monster-wnba-pra-runless-upcoming-gate-r1
+      - name: Upload closeout evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-wnba-pra-runless-upcoming-gate-${{ github.run_id }}
+          path: artifacts/monster-wnba-pra-runless-upcoming-gate-r1
+          if-no-files-found: warn
+          retention-days: 14
