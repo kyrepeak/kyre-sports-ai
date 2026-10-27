@@ -1,0 +1,30 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-runless-stream-handoff-v1",
+  "workstream": "guardian-runless-stream-handoff-v1",
+  "source_main_sha": "44b26457c874124283c44cf02713ecc847b8dfcc",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_guardian_runless_cleanup_v1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "runless_v2/sandbox_executor.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/guardian-runless-stream-handoff-v1.json",
+    "runless_v2/sandbox_executor.py",
+    "tests/test_guardian_runless_cleanup_v1.py"
+  ],
+  "dependencies": [],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_RUNLESS_STREAM_HANDOFF_V1_FROZEN"
+}
