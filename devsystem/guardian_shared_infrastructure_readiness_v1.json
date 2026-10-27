@@ -1,0 +1,66 @@
+{
+  "contract": "GUARDIAN_SHARED_INFRASTRUCTURE_READINESS_CONTRACT_V1",
+  "schema_version": 1,
+  "status": "GREEN",
+  "publisher": "KYRE_GUARDIAN",
+  "consumer_systems": ["API2", "MONSTER"],
+  "shared_infrastructure": {
+    "github": {
+      "repository": "kyrepeak/kyre-sports-ai",
+      "protected_main": true,
+      "required_final_gate": "runless-final-gate",
+      "required_final_gate_app_id": 5204253
+    },
+    "vercel": {
+      "production_projects": [
+        "kyre-sports-api",
+        "kyre-runless-proof",
+        "kyre-sports-finalizer"
+      ],
+      "stale_preview_env_count": 0,
+      "retired_preview_configuration_policy": "TOMBSTONED_DEVELOPMENT_ONLY"
+    },
+    "supabase": {
+      "project_id": "jqajcdckalsfizbvngiu",
+      "migration_count": 39,
+      "actionable_security_findings": 0,
+      "intentional_rls_no_policy_count": 8,
+      "backend_only_schemas": ["kyre_runtime", "runless_v2"],
+      "anon_authenticated_schema_usage": false
+    },
+    "source_of_truth": {
+      "manifest": "devsystem/guardian_source_of_truth_configuration_parity_v1.json",
+      "state": "FROZEN",
+      "token": "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1_FROZEN"
+    }
+  },
+  "consumer_policy": {
+    "authority_policy": "CONTEXT_ONLY_NOT_EXECUTION_EVIDENCE",
+    "allowed_uses": [
+      "shared_infrastructure_preflight",
+      "dependency_context",
+      "configuration_context",
+      "production_surface_context",
+      "security_baseline_context"
+    ],
+    "forbidden_uses": [
+      "execution_authorization",
+      "branch_authority",
+      "pr_authority",
+      "lease_authority",
+      "proof_authority",
+      "green_frozen_authority",
+      "failure_state_authority",
+      "recovery_state_authority"
+    ],
+    "may_authorize_consumer_execution": false,
+    "consumer_execution_state_remains_independent": true
+  },
+  "freshness": {
+    "scope": "SHARED_INFRASTRUCTURE_REVISION",
+    "page_only_merge_invalidates_baseline": false,
+    "refresh_owner": "KYRE_GUARDIAN",
+    "refresh_trigger": "SHARED_INFRASTRUCTURE_CHANGE",
+    "source_manifest": "devsystem/guardian_source_of_truth_configuration_parity_v1.json"
+  }
+}

@@ -12,6 +12,7 @@ PYTEST_ENTRYPOINT_BRANCH = "guardian-pytest-entrypoint-contract-v1"
 INFRASTRUCTURE_AUTOMATION_CLEANUP_BRANCH = "guardian-infrastructure-automation-cleanup-v1"
 SECURITY_CONFIGURATION_HARDENING_BRANCH = "guardian-security-configuration-hardening-v1"
 SOURCE_PARITY_BRANCH = "guardian-source-parity-archive-v1"
+SHARED_READINESS_BRANCH = "guardian-shared-infrastructure-readiness-contract-v1"
 
 
 def _prove_freeze_closeout(settings: Any, preview_sha: str) -> None:
@@ -189,6 +190,31 @@ def _prove_source_parity(settings: Any, preview_sha: str) -> None:
     )
 
 
+def _prove_shared_readiness(settings: Any, preview_sha: str) -> None:
+    from .github_authority import GithubAuthority
+    from .guardian_shared_infrastructure_readiness_contract_proof_v1 import (
+        BRANCH,
+        prove_guardian_shared_infrastructure_readiness_contract,
+    )
+    from .sandbox_executor import SandboxExecutor
+
+    if BRANCH != SHARED_READINESS_BRANCH:
+        raise RuntimeError("GUARDIAN_SHARED_READINESS_BRANCH_CONTRACT_DRIFT")
+    if not settings.authority_enabled:
+        raise RuntimeError("GUARDIAN_SHARED_READINESS_AUTHORITY_DISABLED")
+    result = asyncio.run(
+        prove_guardian_shared_infrastructure_readiness_contract(
+            github=GithubAuthority(settings),
+            sandbox=SandboxExecutor(),
+            expected_preview_sha=preview_sha,
+        )
+    )
+    print(
+        "GUARDIAN_SHARED_READINESS_AUTO_PROOF_GREEN:"
+        + str(result.get("receipt_digest") or "")
+    )
+
+
 def maybe_auto_prove(settings: Any) -> None:
     """Publish Guardian proof only from an explicitly authorized preview branch."""
     if os.environ.get("VERCEL_ENV", "").strip() != "preview":
@@ -218,6 +244,9 @@ def maybe_auto_prove(settings: Any) -> None:
     elif branch == SOURCE_PARITY_BRANCH:
         runner = _prove_source_parity
         blocked_prefix = "GUARDIAN_SOURCE_PARITY_AUTO_PROOF_BLOCKED:"
+    elif branch == SHARED_READINESS_BRANCH:
+        runner = _prove_shared_readiness
+        blocked_prefix = "GUARDIAN_SHARED_READINESS_AUTO_PROOF_BLOCKED:"
     else:
         return
     try:
