@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 
@@ -16,6 +17,9 @@ CLOUD_RUN_DIR = ROOT / "deploy" / "kyre-deploy" / "cloud-run"
 CLOUD_RUN_DEPLOY = CLOUD_RUN_DIR / "deploy-sports-api.sh"
 CLOUD_RUN_ENV = CLOUD_RUN_DIR / "cloud-run.env.example"
 CLOUD_RUN_README = CLOUD_RUN_DIR / "README.md"
+RUNLESS_INIT = ROOT / "runless_v2" / "__init__.py"
+KYRE_DEPLOY_PROOF = ROOT / "runless_v2" / "kyre_deploy_cloud_run_foundation_proof_v1.py"
+KYRE_DEPLOY_PLAN = ROOT / "devsystem" / "runless_proof_plans" / "kyre-deploy-cloud-run-foundation-v1.json"
 
 
 def _text(path: Path) -> str:
@@ -162,3 +166,29 @@ def test_cloud_run_foundation_does_not_use_cloud_build_or_artifact_registry_buil
         assert item not in deploy
     assert 'GitHub Actions remains the build/test engine' in readme
     assert 'Cloud Run is runtime only' in readme
+
+
+def test_kyre_deploy_has_independent_exact_head_runless_proof_authority() -> None:
+    proof = _text(KYRE_DEPLOY_PROOF)
+    runless_init = _text(RUNLESS_INIT)
+    plan = json.loads(_text(KYRE_DEPLOY_PLAN))
+    assert 'AUTHORITY = "KYRE_DEPLOY_ONLY"' in proof
+    assert 'TASK_ID = "kyre-deploy-cloud-run-foundation-v1"' in proof
+    assert 'PR_NUMBER = 1909' in proof
+    assert 'BRANCH = "kyre-deploy-v1-zero-cost-migration"' in proof
+    assert 'EXPECTED_MAIN_SHA = "c0e4fdd0735826c1cc06620dda8a99a891456b64"' in proof
+    assert 'GITHUB_APP_ID = "5204253"' in proof
+    assert 'RECEIPT_REF = "kyre-deploy-proof-receipts-v1"' in proof
+    assert 'authority=KYRE_DEPLOY_ONLY' in proof
+    assert 'api2_state_used' in proof and 'False' in proof
+    assert 'monster_state_used' in proof
+    assert 'guardian_state_used' in proof
+    assert '_kyre_deploy_cloud_run_foundation_maybe_auto_prove' in runless_init
+    assert 'kyre-deploy-v1-zero-cost-migration' in runless_init
+    assert plan['task_id'] == 'kyre-deploy-cloud-run-foundation-v1'
+    assert plan['workstream'] == 'kyre-deploy-cloud-run-foundation-v1'
+    assert plan['source_main_sha'] == 'c0e4fdd0735826c1cc06620dda8a99a891456b64'
+    assert plan['required_check'] == 'runless-final-gate'
+    assert plan['required_check_app_id'] == 5204253
+    assert plan['github_actions_fallback'] == 0
+    assert plan['freeze_token'] == 'KYRE_DEPLOY_CLOUD_RUN_FOUNDATION_V1_FROZEN'
