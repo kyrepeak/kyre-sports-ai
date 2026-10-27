@@ -9,6 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PROOF = ROOT / "runless_v2" / "guardian_pytest_entrypoint_contract_proof_v1.py"
 BOOTSTRAP = ROOT / "runless_v2" / "guardian_freeze_closeout_bootstrap_v1.py"
 PLAN = ROOT / "devsystem" / "runless_proof_plans" / "guardian-pytest-entrypoint-contract-v1.json"
+BROWSER_WORKFLOW = ROOT / ".github" / "workflows" / "cfb-game-total-v150-browser.yml"
+BROWSER_V4 = ROOT / "devsystem" / "cfb_game_total_browser_qa_v4.py"
 
 TASK_ID = "guardian-pytest-entrypoint-contract-v1"
 BRANCH = TASK_ID
@@ -71,3 +73,14 @@ def test_guardian_pytest_entrypoint_proof_rejects_foreign_private_state():
     assert "task_ledgers/monster" not in source
     assert "task_ledgers/api2" not in source
     assert "frozen_artifact_registry" not in source
+
+
+def test_legacy_cfb_browser_workflow_uses_current_universal_nav_successor():
+    workflow = BROWSER_WORKFLOW.read_text(encoding="utf-8")
+    browser = BROWSER_V4.read_text(encoding="utf-8")
+    assert "python devsystem/cfb_game_total_browser_qa_v4.py" in workflow
+    assert '"devsystem/cfb_game_total_browser_qa_v4.py"' in workflow
+    assert "DIRECT_ROUTE_NAVIGATION" not in browser
+    assert "direct_query = urlencode(" in browser
+    assert "base._read_sport_options" not in browser
+    assert "base._choose(" not in browser
