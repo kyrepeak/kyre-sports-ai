@@ -6,8 +6,6 @@ on:
     paths:
       - "app.py"
       - "tests/conftest.py"
-      - "cfb_game_total_page1_atier_v4.py"
-      - "cfb_game_total_page1_atier_v6.py"
       - "devsystem/guardian_cfb_game_total_terminal_browser_qa_v1.py"
       - "tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py"
       - ".github/workflows/cfb-game-total-v152-activation.yml"
@@ -23,37 +21,15 @@ concurrency:
 jobs:
   certify-v152-activation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-      - name: Install browser proof dependencies
+      - name: Verify historical wrapper is retired from live-browser ownership
         run: |
-          python -m pip install --disable-pip-version-check -q -r requirements.txt
-          python -m pip install --disable-pip-version-check -q pytest playwright
-          python -m playwright install --with-deps chromium
-      - name: Compile and prove terminal contract
-        run: |
+          python -m pip install --disable-pip-version-check -q pytest
           python -m py_compile app.py devsystem/guardian_cfb_game_total_terminal_browser_qa_v1.py
           PYTHONPATH=. python -m pytest --noconftest -q tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py
-      - name: Start Streamlit
-        run: |
-          mkdir -p artifacts/cfb-game-total-v152-activation
-          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/cfb-game-total-v152-activation/streamlit.log 2>&1 &
-      - name: Certify current CFB Game Total terminal route
-        run: |
-          python -m devsystem.guardian_cfb_game_total_terminal_browser_qa_v1 --base-url http://127.0.0.1:8501 --artifact-dir artifacts/cfb-game-total-v152-activation
-      - name: Print Streamlit log on failure
-        if: failure()
-        run: tail -n 500 artifacts/cfb-game-total-v152-activation/streamlit.log || true
-      - name: Upload activation evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cfb-game-total-v152-activation-${{ github.run_id }}
-          path: artifacts/cfb-game-total-v152-activation
-          if-no-files-found: warn
-          retention-days: 7
+          echo "GUARDIAN_V152_HISTORICAL_BROWSER_OWNER_RETIRED_GREEN"

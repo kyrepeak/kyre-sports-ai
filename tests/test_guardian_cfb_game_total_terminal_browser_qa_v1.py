@@ -46,15 +46,21 @@ def test_guardian_terminal_browser_contract_is_current_and_date_agnostic() -> No
         assert stale not in source, stale
 
 
-def test_unavoidable_legacy_wrappers_delegate_to_one_guardian_terminal_proof() -> None:
+def test_v150_is_the_only_real_browser_owner_and_v152_is_static_retired_wrapper() -> None:
     command = "python -m devsystem.guardian_cfb_game_total_terminal_browser_qa_v1"
-    for path in (V150, V152):
-        workflow = _read(path)
-        assert command in workflow
+    v150 = _read(V150)
+    v152 = _read(V152)
+    assert command in v150
+    assert "Capture one current terminal render boundary" in v150
+    assert "GUARDIAN_TERMINAL_RENDER_BOUNDARY_BEGIN" in v150
+    assert "python -m playwright install --with-deps chromium" in v150
+    assert command not in v152
+    assert "playwright install" not in v152
+    assert "GUARDIAN_V152_HISTORICAL_BROWSER_OWNER_RETIRED_GREEN" in v152
+    assert "tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py" in v152
+    for workflow in (v150, v152):
         assert "python -m devsystem.cfb_game_total_browser_qa_v4" not in workflow
         assert "python devsystem/cfb_game_total_v152_activation_qa.py" not in workflow
-        assert "devsystem/guardian_cfb_game_total_terminal_browser_qa_v1.py" in workflow
-        assert "tests/test_guardian_cfb_game_total_terminal_browser_qa_v1.py" in workflow
 
 
 def test_global_pytest_collector_is_runtime_neutral_without_mutating_frozen_browser_contract() -> None:

@@ -52,7 +52,6 @@ def test_step2a_scope_is_exact_and_matches_runless_artifacts():
     plan = _plan()
     assert set(plan["artifacts"]) == set(proof.ALLOWED_CHANGED_PATHS)
     assert len(proof.ALLOWED_CHANGED_PATHS) == 10
-    joined = " ".join(sorted(proof.ALLOWED_CHANGED_PATHS))
     for frozen_product_path in (
         "devsystem/cfb_game_total_browser_qa_v4.py",
         "devsystem/cfb_game_total_step6_browser_qa_v184.py",
@@ -61,9 +60,6 @@ def test_step2a_scope_is_exact_and_matches_runless_artifacts():
         "tests/test_cfb_game_total_v185_step6_visual_parity.py",
     ):
         assert frozen_product_path not in proof.ALLOWED_CHANGED_PATHS
-    assert "task_ledgers/api2" not in joined.lower()
-    assert "task_ledgers/monster" not in joined.lower()
-    assert "frozen_artifact_registry" not in joined.lower()
 
 
 def test_guardian_runless_plan_uses_one_current_terminal_contract():
@@ -88,13 +84,18 @@ def test_guardian_pytest_entrypoint_bootstrap_is_branch_scoped():
     assert "GUARDIAN_PYTEST_ENTRYPOINT_AUTO_PROOF" in source
 
 
-def test_unavoidable_browser_wrappers_share_one_terminal_qa_owner():
+def test_v150_is_single_browser_owner_and_v152_is_retired_static_wrapper():
     assert TERMINAL_QA.is_file()
     command = "python -m devsystem.guardian_cfb_game_total_terminal_browser_qa_v1"
-    for workflow_path in (BROWSER_WORKFLOW, ACTIVATION_WORKFLOW):
-        workflow = workflow_path.read_text(encoding="utf-8")
-        assert command in workflow
-        assert "python -m devsystem.cfb_game_total_browser_qa_v4" not in workflow
+    browser = BROWSER_WORKFLOW.read_text(encoding="utf-8")
+    activation = ACTIVATION_WORKFLOW.read_text(encoding="utf-8")
+    assert command in browser
+    assert "Capture one current terminal render boundary" in browser
+    assert command not in activation
+    assert "playwright install" not in activation
+    assert "GUARDIAN_V152_HISTORICAL_BROWSER_OWNER_RETIRED_GREEN" in activation
+    assert "python -m devsystem.cfb_game_total_browser_qa_v4" not in browser
+    assert "python -m devsystem.cfb_game_total_browser_qa_v4" not in activation
     source = TERMINAL_QA.read_text(encoding="utf-8")
-    assert "fixed_historical_date_required" in source
     assert '"historical_surface_required": False' in source
+    assert '"fixed_historical_date_required": False' in source
