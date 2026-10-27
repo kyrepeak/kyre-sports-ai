@@ -32,7 +32,7 @@ EMPTY_SLATE_MARKER = (
     "Started and completed games are hidden automatically."
 )
 ACTIVE_BOARD_VISIBLE = (
-    "Selected matchup",
+    "SELECTED MATCHUP",
     "MARKET TOTAL",
     "KYRE PROJECTED TOTAL",
     "KYRE O/U PROBABILITY",

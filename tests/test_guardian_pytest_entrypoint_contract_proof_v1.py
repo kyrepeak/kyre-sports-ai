@@ -90,7 +90,7 @@ def test_v150_is_single_browser_owner_and_v152_is_retired_static_wrapper():
     browser = BROWSER_WORKFLOW.read_text(encoding="utf-8")
     activation = ACTIVATION_WORKFLOW.read_text(encoding="utf-8")
     assert command in browser
-    assert "Capture one current terminal render boundary" in browser
+    assert "Capture one current terminal render boundary" not in browser
     assert command not in activation
     assert "playwright install" not in activation
     assert "GUARDIAN_V152_HISTORICAL_BROWSER_OWNER_RETIRED_GREEN" in activation
@@ -99,3 +99,4 @@ def test_v150_is_single_browser_owner_and_v152_is_retired_static_wrapper():
     source = TERMINAL_QA.read_text(encoding="utf-8")
     assert '"historical_surface_required": False' in source
     assert '"fixed_historical_date_required": False' in source
+    assert '"SELECTED MATCHUP"' in source

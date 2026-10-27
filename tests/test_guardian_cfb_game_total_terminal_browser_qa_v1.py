@@ -25,6 +25,7 @@ def test_guardian_terminal_browser_contract_is_current_and_date_agnostic() -> No
         '"KYRE SPORTS AI • CFB GAME TOTALS"',
         '"Game Total Intelligence"',
         '"UPCOMING MATCHUPS"',
+        '"SELECTED MATCHUP"',
         '"No upcoming CFB games remain on this slate. "',
         '".cfbgt4-rail"',
         '"a.cfbgt4-chip"',
@@ -51,9 +52,8 @@ def test_v150_is_the_only_real_browser_owner_and_v152_is_static_retired_wrapper(
     v150 = _read(V150)
     v152 = _read(V152)
     assert command in v150
-    assert "Capture one current terminal render boundary" in v150
-    assert "GUARDIAN_TERMINAL_RENDER_BOUNDARY_BEGIN" in v150
     assert "python -m playwright install --with-deps chromium" in v150
+    assert "Capture one current terminal render boundary" not in v150
     assert command not in v152
     assert "playwright install" not in v152
     assert "GUARDIAN_V152_HISTORICAL_BROWSER_OWNER_RETIRED_GREEN" in v152

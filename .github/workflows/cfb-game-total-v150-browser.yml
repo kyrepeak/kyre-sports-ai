@@ -71,30 +71,6 @@ jobs:
             > artifacts/cfb-game-total-browser-qa/streamlit.log 2>&1 &
           echo $! > /tmp/cfb_game_total_v150_streamlit_pid
 
-      - name: Capture one current terminal render boundary
-        run: |
-          python - <<'PY'
-          import json
-          import time
-          from urllib.parse import urlencode
-          from playwright.sync_api import sync_playwright
-
-          url = "http://127.0.0.1:8501/?" + urlencode({"sport": "cfb", "market": "game-total"})
-          with sync_playwright() as p:
-              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
-              page = browser.new_page(viewport={"width": 1067, "height": 1536})
-              page.goto(url, wait_until="domcontentloaded", timeout=120000)
-              snapshots = []
-              for delay_ms in (2000, 5000, 10000):
-                  page.wait_for_timeout(delay_ms if not snapshots else delay_ms - snapshots[-1]["at_ms"])
-                  body = page.locator("body").inner_text(timeout=10000)
-                  snapshots.append({"at_ms": delay_ms, "url": page.url, "body": body[:12000]})
-              print("GUARDIAN_TERMINAL_RENDER_BOUNDARY_BEGIN")
-              print(json.dumps(snapshots, indent=2, ensure_ascii=False))
-              print("GUARDIAN_TERMINAL_RENDER_BOUNDARY_END")
-              browser.close()
-          PY
-
       - name: Certify current CFB Game Total terminal route
         run: |
           python -m devsystem.guardian_cfb_game_total_terminal_browser_qa_v1 \
