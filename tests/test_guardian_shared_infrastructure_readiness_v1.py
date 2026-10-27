@@ -17,6 +17,7 @@ from devsystem.guardian_shared_infrastructure_readiness_v1 import (
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE_PATH = ROOT / "devsystem" / "guardian_shared_infrastructure_readiness_v1.json"
 PARITY_PATH = ROOT / "devsystem" / "guardian_source_of_truth_configuration_parity_v1.json"
+AGENTS_PATH = ROOT / "AGENTS.md"
 
 
 def _load(path: Path) -> dict:
@@ -97,3 +98,13 @@ def test_baseline_declares_independence_and_refresh_semantics() -> None:
     assert "green_frozen_authority" in policy["forbidden_uses"]
     assert freshness["scope"] == "SHARED_INFRASTRUCTURE_REVISION"
     assert freshness["page_only_merge_invalidates_baseline"] is False
+
+
+def test_repository_entry_requires_readiness_preflight_without_borrowed_authority() -> None:
+    text = AGENTS_PATH.read_text(encoding="utf-8")
+    assert "GUARDIAN_SHARED_INFRASTRUCTURE_READINESS_CONTRACT_V1" in text
+    assert "load_readiness(\"API2\")" in text
+    assert "load_readiness(\"MONSTER\")" in text
+    assert "CONTEXT_ONLY_NOT_EXECUTION_EVIDENCE" in text
+    assert "must not" in text.lower()
+    assert "GREEN/FROZEN" in text
