@@ -1,0 +1,50 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-infrastructure-automation-cleanup-v1",
+  "workstream": "guardian-infrastructure-automation-cleanup-v1",
+  "source_main_sha": "c9efdc4179235e11e06162a0d7b684134d1c03ee",
+  "commands": [
+    [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_guardian_infrastructure_automation_cleanup_v1.py",
+      "vercel_finalizer/test_health_truthfulness.py"
+    ],
+    [
+      "python",
+      "-m",
+      "py_compile",
+      "tests/test_guardian_infrastructure_automation_cleanup_v1.py",
+      "vercel_finalizer/app.py",
+      "vercel_finalizer/test_health_truthfulness.py",
+      "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+      "runless_v2/guardian_infrastructure_automation_cleanup_proof_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "docs/superpowers/specs/2026-10-27-guardian-infrastructure-automation-cleanup-v1.md",
+    "docs/superpowers/plans/2026-10-27-guardian-infrastructure-automation-cleanup-v1.md",
+    "tests/test_guardian_infrastructure_automation_cleanup_v1.py",
+    "vercel_finalizer/app.py",
+    "vercel_finalizer/test_health_truthfulness.py",
+    "devsystem/runless_proof_plans/guardian-infrastructure-automation-cleanup-v1.json",
+    "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+    "runless_v2/guardian_infrastructure_automation_cleanup_proof_v1.py"
+  ],
+  "dependencies": [
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py",
+    "runless_v2/guardian_pytest_entrypoint_contract_proof_v1_base.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_INFRASTRUCTURE_AUTOMATION_CLEANUP_V1_FROZEN"
+}

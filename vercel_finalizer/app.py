@@ -150,7 +150,7 @@ def health() -> dict[str, Any]:
         )
     )
     return {
-        "status": "ok",
+        "status": "ok" if configured else "degraded",
         "configured": configured,
         "gate": GATE_NAME,
         "repository": REPOSITORY,
