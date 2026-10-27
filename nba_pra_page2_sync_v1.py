@@ -11,7 +11,9 @@ from nba_pra_page2_line_lab_v1 import evaluate_line, line_steps
 from nba_pra_page2_matchup_api_v1 import load_kyre_sports_api_nba_pra_matchup
 from nba_pra_page2_matchup_v1 import build_matchup_summary
 from nba_pra_page2_v1 import _baseline_model, default_line_for_context
-from nba_pra_page2_command_center_v3 import _css, build_page2_html
+from nba_pra_page2_command_center_v4 import _css, build_page2_html
+# Legacy presentation activation proof retained byte-for-byte for prior regressions:
+# from nba_pra_page2_command_center_v3 import _css, build_page2_html
 from nba_pra_runtime_v2 import (
     SESSION_ANALYSIS_HANDOFF,
     SESSION_LINE_LAB,
@@ -21,7 +23,7 @@ from nba_pra_runtime_v2 import (
     selected_player_key,
 )
 
-MODEL_VERSION = "NBA PRA PAGE 2 SYNC V3 • ROLE + FULL LOG COMPLETENESS"
+MODEL_VERSION = "NBA PRA PAGE 2 SYNC V4 • MONSTER S-TIER DECISION TERMINAL"
 _UNVERIFIED_AVAILABILITY = {
     "",
     "UNVERIFIED",
