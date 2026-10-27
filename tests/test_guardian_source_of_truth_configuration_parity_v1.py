@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "devsystem" / "guardian_source_of_truth_configuration_parity_v1.json"
 MODULE_PATH = ROOT / "runless_v2" / "guardian_source_of_truth_configuration_parity_v1.py"
+PROOF_ADAPTER = ROOT / "runless_v2" / "guardian_source_of_truth_configuration_parity_proof_v1.py"
+BOOTSTRAP = ROOT / "runless_v2" / "guardian_freeze_closeout_bootstrap_v1.py"
 
 EXPECTED_FUNCTIONS = {
     "noop-do-not-deploy",
@@ -45,6 +47,14 @@ def _manifest() -> dict:
 
 def _guardian_module():
     spec = importlib.util.spec_from_file_location("guardian_source_parity_v1", MODULE_PATH)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _proof_module():
+    spec = importlib.util.spec_from_file_location("guardian_source_parity_proof_v1", PROOF_ADAPTER)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -98,6 +108,20 @@ def test_retired_vercel_preview_debt_is_inert_and_not_hidden() -> None:
         "kyre-runless-proof",
         "kyre-sports-finalizer",
     }
+
+
+def test_exact_head_proof_adapter_is_locked_to_pr1906_and_current_main() -> None:
+    proof = _proof_module()
+    assert proof.TASK_ID == "guardian-source-of-truth-configuration-parity-v1"
+    assert proof.WORKSTREAM == proof.TASK_ID
+    assert proof.PR_NUMBER == 1906
+    assert proof.BRANCH == "guardian-source-parity-archive-v1"
+    assert proof.EXPECTED_MAIN_SHA == "2b6c6464d539515c73838929cbe265a3b9be9b11"
+    assert proof.PLAN_PATH == "devsystem/runless_proof_plans/guardian-source-of-truth-configuration-parity-v1.json"
+    text = BOOTSTRAP.read_text()
+    assert 'SOURCE_PARITY_BRANCH = "guardian-source-parity-archive-v1"' in text
+    assert "elif branch == SOURCE_PARITY_BRANCH:" in text
+    assert "runner = _prove_source_parity" in text
 
 
 def test_post_merge_convergence_contract_is_strict() -> None:
