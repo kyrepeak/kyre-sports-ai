@@ -10,6 +10,7 @@ PROOF = ROOT / "runless_v2" / "guardian_pytest_entrypoint_contract_proof_v1.py"
 BOOTSTRAP = ROOT / "runless_v2" / "guardian_freeze_closeout_bootstrap_v1.py"
 PLAN = ROOT / "devsystem" / "runless_proof_plans" / "guardian-pytest-entrypoint-contract-v1.json"
 BROWSER_WORKFLOW = ROOT / ".github" / "workflows" / "cfb-game-total-v150-browser.yml"
+ACTIVATION_WORKFLOW = ROOT / ".github" / "workflows" / "cfb-game-total-v152-activation.yml"
 BROWSER_V4 = ROOT / "devsystem" / "cfb_game_total_browser_qa_v4.py"
 
 TASK_ID = "guardian-pytest-entrypoint-contract-v1"
@@ -84,3 +85,9 @@ def test_legacy_cfb_browser_workflow_uses_current_universal_nav_successor():
     assert "direct_query = urlencode(" in browser
     assert "base._read_sport_options" not in browser
     assert "base._choose(" not in browser
+
+
+def test_v152_activation_workflow_uses_current_v163_browser_successor():
+    workflow = ACTIVATION_WORKFLOW.read_text(encoding="utf-8")
+    assert "python -m devsystem.cfb_game_total_browser_qa_v4" in workflow
+    assert "python devsystem/cfb_game_total_v152_activation_qa.py" not in workflow
