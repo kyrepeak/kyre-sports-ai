@@ -8,6 +8,7 @@ from typing import Any
 FREEZE_CLOSEOUT_BRANCH = "guardian-shared-runtime-lifecycle-freeze-closeout-v1"
 FREEZE_IDEMPOTENCY_BRANCH = "guardian-monster-freeze-idempotency-v1"
 STREAM_HANDOFF_BRANCH = "guardian-runless-stream-handoff-v1"
+PYTEST_ENTRYPOINT_BRANCH = "guardian-pytest-entrypoint-contract-v1"
 
 
 def _prove_freeze_closeout(settings: Any, preview_sha: str) -> None:
@@ -85,6 +86,31 @@ def _prove_stream_handoff(settings: Any, preview_sha: str) -> None:
     )
 
 
+def _prove_pytest_entrypoint(settings: Any, preview_sha: str) -> None:
+    from .github_authority import GithubAuthority
+    from .guardian_pytest_entrypoint_contract_proof_v1 import (
+        BRANCH,
+        prove_guardian_pytest_entrypoint_contract,
+    )
+    from .sandbox_executor import SandboxExecutor
+
+    if BRANCH != PYTEST_ENTRYPOINT_BRANCH:
+        raise RuntimeError("GUARDIAN_PYTEST_ENTRYPOINT_BRANCH_CONTRACT_DRIFT")
+    if not settings.authority_enabled:
+        raise RuntimeError("GUARDIAN_PYTEST_ENTRYPOINT_AUTHORITY_DISABLED")
+    result = asyncio.run(
+        prove_guardian_pytest_entrypoint_contract(
+            github=GithubAuthority(settings),
+            sandbox=SandboxExecutor(),
+            expected_preview_sha=preview_sha,
+        )
+    )
+    print(
+        "GUARDIAN_PYTEST_ENTRYPOINT_AUTO_PROOF_GREEN:"
+        + str(result.get("receipt_digest") or "")
+    )
+
+
 def maybe_auto_prove(settings: Any) -> None:
     """Publish Guardian proof only from an explicitly authorized preview branch."""
     if os.environ.get("VERCEL_ENV", "").strip() != "preview":
@@ -102,6 +128,9 @@ def maybe_auto_prove(settings: Any) -> None:
     elif branch == STREAM_HANDOFF_BRANCH:
         runner = _prove_stream_handoff
         blocked_prefix = "GUARDIAN_RUNLESS_STREAM_HANDOFF_AUTO_PROOF_BLOCKED:"
+    elif branch == PYTEST_ENTRYPOINT_BRANCH:
+        runner = _prove_pytest_entrypoint
+        blocked_prefix = "GUARDIAN_PYTEST_ENTRYPOINT_AUTO_PROOF_BLOCKED:"
     else:
         return
     try:
