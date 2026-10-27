@@ -1,12 +1,12 @@
-"""MONSTER WNBA PRA upcoming-games-only production certification R2.
+"""MONSTER WNBA PRA upcoming-games-only production certification R3.
 
 Read-only Step 2G browser proof. It never selects or analyzes a live, final,
 started, or historical game. The verifier reads only official schedule state to
 establish whether the current Eastern-date slate has any future pregame game,
-then opens PickVault WNBA -> PRA through the repository's already-proven public
-navigation helper. When no future pregame game exists, the production surface
-must contain zero active Page-1 analytical cards, zero Top-3 leaderboard, and
-zero Certified PRA Pick cards.
+then opens PickVault WNBA -> PRA using the current Universal Sports Navigation
+pill-button contract. When no future pregame game exists, production must expose
+zero active Page-1 analytical cards, zero Top-3 leaderboard, zero game buttons,
+and zero Certified PRA Pick cards.
 """
 from __future__ import annotations
 
@@ -22,18 +22,14 @@ import requests
 from playwright.sync_api import sync_playwright
 
 from devsystem.browser_qa_v1 import BrowserQAFailure, _find_app_frame
-from devsystem.wnba_pra_step3_public_freeze_v1 import (
-    OFF_DAY_MARKER,
-    _body,
-    _route_to_wnba_pra,
-    _wnba_surface,
-)
+from devsystem.wnba_pra_step3_public_freeze_v1 import OFF_DAY_MARKER, _body, _wnba_surface
 
 PRODUCTION_URL = "https://pickvault.streamlit.app"
 SCHEDULE_URL = "https://kyre-runless-proof.vercel.app/api/v1/wnba/games"
 EASTERN = ZoneInfo("America/New_York")
 REQUEST_TIMEOUT_SECONDS = 25.0
 EMPTY_MARKER = "No Page 1 players match the current filters."
+NAV_SHELL = ".st-key-ks_universal_nav_shell"
 FREEZE_TOKEN = "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_FROZEN"
 
 
@@ -62,7 +58,7 @@ def _current_schedule(now_utc: datetime) -> dict[str, Any]:
         params={"date": day, "season": 2026},
         headers={
             "accept": "application/json",
-            "user-agent": "monster-wnba-pra-current-slate-exclusion-cert/2",
+            "user-agent": "monster-wnba-pra-current-slate-exclusion-cert/3",
         },
         timeout=REQUEST_TIMEOUT_SECONDS,
     )
@@ -87,6 +83,38 @@ def _current_schedule(now_utc: datetime) -> dict[str, Any]:
         "rejected": rejected,
         "retrieved_at_utc": payload.get("retrieved_at_utc"),
     }
+
+
+def _nav_button(frame, label: str):
+    shell = frame.locator(NAV_SHELL)
+    if shell.count() < 1:
+        raise BrowserQAFailure(
+            f"Universal sports nav shell missing while routing to {label!r}; body={_body(frame)[:3500]!r}"
+        )
+    exact = shell.get_by_role("button", name=label, exact=True)
+    if exact.count() > 0:
+        return exact.first
+    fallback = shell.locator("button").filter(has_text=label)
+    if fallback.count() > 0:
+        return fallback.first
+    raise BrowserQAFailure(
+        f"Universal nav button {label!r} missing; shell={shell.inner_text(timeout=5000)[:2000]!r}"
+    )
+
+
+def _route_current_nav(page):
+    frame, scans = _find_app_frame(page, timeout_seconds=75.0)
+    _nav_button(frame, "WNBA").click()
+    page.wait_for_timeout(2500)
+
+    frame, more = _find_app_frame(page, timeout_seconds=45.0)
+    scans.extend(more)
+    _nav_button(frame, "PRA").click()
+    page.wait_for_timeout(4500)
+
+    frame, final = _find_app_frame(page, timeout_seconds=45.0)
+    scans.extend(final)
+    return frame, scans
 
 
 def _wait_settled(page, frame) -> tuple[Any, str, str]:
@@ -162,7 +190,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
         page = context.new_page()
         try:
             page.goto(production_url, wait_until="domcontentloaded", timeout=90000)
-            frame, _ = _route_to_wnba_pra(page)
+            frame, _ = _route_current_nav(page)
             frame, body, surface = _wait_settled(page, frame)
 
             active_cards = int(frame.locator(".p1v2-card").count())
@@ -195,6 +223,7 @@ def run(*, production_url: str, artifact_dir: str | Path) -> dict[str, Any]:
         "authority": "MONSTER_ONLY",
         "production_url": production_url,
         "route": "WNBA -> PRA",
+        "navigation_contract": "Universal Sports Navigation pill buttons",
         "date_eastern": schedule["date"],
         "schedule_source": "WNBA Official Schedule via Kyre Sports API/Vercel",
         "schedule_games": len(schedule["games"]),
