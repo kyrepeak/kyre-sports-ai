@@ -99,6 +99,7 @@ jobs:
           runless_v2/config.py
           runless_v2/guardian_freeze_closeout_bootstrap_v1.py
           runless_v2/guardian_shared_runtime_freeze_closeout_proof_v1.py
+          runless_v2/guardian_monster_freeze_idempotency_proof_v1.py
           runless_v2/sandbox_executor.py
           app.py
       - name: Prove Guardian lifecycle, Step 2A, Anti-Loop, freeze closeout, idempotency, cleanup, and affected regressions
