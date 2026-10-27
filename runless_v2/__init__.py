@@ -151,33 +151,8 @@ def _monster_wnba_pra_runless_upcoming_gate_maybe_auto_prove() -> None:
         print("MONSTER_WNBA_RUNLESS_UPCOMING_GATE_AUTO_PROOF_BLOCKED:" + type(exc).__name__ + ":" + safe_detail[:200])
 
 
-def _guardian_shared_runtime_lifecycle_maybe_auto_prove() -> None:
-    """Publish PR #1896 proof only from its exact Vercel preview head."""
-    import asyncio
-    import os
-    if os.environ.get("VERCEL_ENV", "").strip() != "preview": return
-    branch = os.environ.get("VERCEL_GIT_COMMIT_REF", "").strip()
-    preview_sha = os.environ.get("VERCEL_GIT_COMMIT_SHA", "").strip().lower()
-    authorized_branch = "guardian-shared-runtime-lifecycle-v1"
-    if branch != authorized_branch or len(preview_sha) != 40: return
-    try:
-        from .config import Settings
-        from .github_authority import GithubAuthority
-        from .guardian_shared_runtime_lifecycle_proof_v1 import BRANCH, prove_guardian_shared_runtime_lifecycle
-        from .sandbox_executor import SandboxExecutor
-        if BRANCH != authorized_branch: raise RuntimeError("GUARDIAN_SHARED_RUNTIME_PREVIEW_BRANCH_CONTRACT_DRIFT")
-        settings = Settings.from_env()
-        if not settings.authority_enabled: raise RuntimeError("GUARDIAN_SHARED_RUNTIME_PREVIEW_AUTHORITY_DISABLED")
-        result = asyncio.run(prove_guardian_shared_runtime_lifecycle(github=GithubAuthority(settings), sandbox=SandboxExecutor(), expected_preview_sha=preview_sha))
-        print("GUARDIAN_SHARED_RUNTIME_AUTO_PROOF_GREEN:" + str(result.get("receipt_digest") or ""))
-    except Exception as exc:
-        detail = str(exc); safe_detail = detail if detail.startswith("GUARDIAN_") else type(exc).__name__
-        print("GUARDIAN_SHARED_RUNTIME_AUTO_PROOF_BLOCKED:" + type(exc).__name__ + ":" + safe_detail[:200])
-
-
 _monster_step2g_maybe_auto_prove()
 _monster_step2g_prerender_maybe_auto_prove()
 _monster_wnba_pra_upcoming_only_maybe_auto_prove()
 _monster_wnba_pra_upcoming_r2_maybe_auto_prove()
 _monster_wnba_pra_runless_upcoming_gate_maybe_auto_prove()
-_guardian_shared_runtime_lifecycle_maybe_auto_prove()
