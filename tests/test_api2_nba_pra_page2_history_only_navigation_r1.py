@@ -111,13 +111,13 @@ def test_overlay_installs_additively_without_editing_frozen_sync() -> None:
     assert "Selected player or PRA market is no longer available" in frozen_sync
 
 
-def test_app_installs_history_only_overlay_before_render() -> None:
-    source = (ROOT / "app.py").read_text(encoding="utf-8")
-    import_text = "from nba_pra_page2_history_only_runtime_v1 import install as install_nba_pra_page2_history_only_runtime_v1"
-    call_text = "install_nba_pra_page2_history_only_runtime_v1()"
-    assert import_text in source
-    assert call_text in source
-    assert source.index(import_text) < source.index(call_text) < source.index("render_app()")
+def test_existing_api2_bootstrap_composes_history_only_overlay_before_render() -> None:
+    role_source = (ROOT / "nba_pra_page2_role_runtime_v4.py").read_text(encoding="utf-8")
+    app_source = (ROOT / "app.py").read_text(encoding="utf-8")
+    assert "from nba_pra_page2_history_only_runtime_v1 import install as install_history_only_navigation" in role_source
+    assert "install_history_only_navigation()" in role_source
+    assert "install_nba_pra_page2_role_runtime_v4()" in app_source
+    assert app_source.index("install_nba_pra_page2_role_runtime_v4()") < app_source.index("render_app()")
 
 
 def test_sportsbook_influence_remains_zero_and_no_disallowed_sources() -> None:
