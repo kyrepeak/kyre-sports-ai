@@ -27,6 +27,21 @@ def test_real_app_boots_v152_router_or_additive_successor() -> None:
         assert "import streamlit_memory_lazy_router_v155 as prior" in v156_source
         return
 
+    shared_lifecycle = "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle"
+    if shared_lifecycle in app_source:
+        # Modern terminal routers are allowed to advance independently of this
+        # frozen V152 contract. Prove the entrypoint still exposes the neutral
+        # renderer interface and that the inherited V157/V156 CFB chain remains
+        # intact underneath it.
+        assert "record_bootstrap_import_ms," in app_source
+        assert "render_app," in app_source
+        assert "run_shared_runtime_lifecycle(" in app_source
+        assert "render=render_app" in app_source
+        v157_source = (ROOT / "streamlit_memory_lazy_router_v157.py").read_text(encoding="utf-8")
+        assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v156"' in v157_source
+        assert "import streamlit_memory_lazy_router_v156 as prior" in v157_source
+        return
+
     assert additive_v155 in app_source
     v155_source = (ROOT / "streamlit_memory_lazy_router_v155.py").read_text(encoding="utf-8")
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v154"' in v155_source
