@@ -83,3 +83,12 @@ def test_zero_cost_ci_uses_hosted_runner_builds_both_images_and_never_pushes() -
     assert "docker push" not in workflow
     assert "build-push-action" not in workflow
     assert "packages: write" not in workflow
+
+
+def test_zero_cost_ci_does_not_rebuild_images_for_every_sports_api_edit() -> None:
+    workflow = _text(WORKFLOW_PATH)
+    assert '- "sports_api/**"' not in workflow
+    assert '- "sports_api/Dockerfile"' in workflow
+    assert '- "sports_api/requirements.txt"' in workflow
+    assert '- "sports_api/requirements-mlb-step14b-persistence.txt"' in workflow
+    assert "workflow_dispatch:" in workflow
