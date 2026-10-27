@@ -6,59 +6,36 @@
     "policy": "fail-closed; never freeze incomplete parity"
   },
   "supabase": {
-    "migration_count": 38,
-    "migration_payload_archive_state": "OPEN",
-    "migration_payload_archive_reason": "Live ledger is fully indexed by version/name/content MD5, but exact SQL payload archive is not yet source-controlled.",
-    "migration_ledger": [
-      {"version":"20260827065439","name":"wnba_step6r_supabase","content_md5":"72fe8d97cac8c35a301097d081b975b5"},
-      {"version":"20260827164740","name":"wnba_step7g_scheduler_persistence","content_md5":"26025382f6277788ec82ac345bfd5faf"},
-      {"version":"20260827165541","name":"wnba_step7g_atomic_publication_run_commit","content_md5":"d200425382a29a9d085f9a6f0c0ebc13"},
-      {"version":"20260828191445","name":"wnba_step15a_install_frozen_step14_persistence_schema","content_md5":"b660c59c1c60ee0ba9fce794d53f8303"},
-      {"version":"20260901202829","name":"mlb_step15a_install_frozen_step14_checkpoint_schema","content_md5":"d486431304aa09155d9ded7cb177801c"},
-      {"version":"20260901202835","name":"mlb_step15a_install_frozen_step14_lease_schema","content_md5":"42fa6a67f0fd40655ad7c9e0b1ae1dda"},
-      {"version":"20260901202842","name":"mlb_step15a_restore_frozen_step14_schema_comments","content_md5":"2513cc3151dc0439a8ddeee011bfb166"},
-      {"version":"20261012204553","name":"temp_enable_http_for_api2_closeout_helper","content_md5":"ffe79137e2b09357a0f4fe854d7643f1"},
-      {"version":"20261012205044","name":"temp_api2_python_json_canonicalizer","content_md5":"5a3130fce34cb51d9f91d3a040733c59"},
-      {"version":"20261012221746","name":"enable_pg_net_for_runless_transport","content_md5":"c61770d4c5b52f3d689a25fe15aaea67"},
-      {"version":"20261012232639","name":"api2_registry_step4_final_freeze_payload_temp","content_md5":"92ed8d01aeb3568130311264876aa3b4"},
-      {"version":"20261013201750","name":"runless_v2_durable_state","content_md5":"c7f14d852096f2f30fce31c4ebc8c8ba"},
-      {"version":"20261013201933","name":"runless_v2_search_path_hardening","content_md5":"83056ad8587d2ca0de12c24bf63df3ec"},
-      {"version":"20261013202036","name":"runless_v2_fk_index_hardening","content_md5":"e5843b9302081245785ceb37ab3a7389"},
-      {"version":"20261014002633","name":"runless_v2_closeout_receipt_digest_prefix","content_md5":"570ea6928687277e0b8fd7ebe3a0a7fb"},
-      {"version":"20261014193131","name":"noop_step6_closeout_preflight_guard","content_md5":"37766d7965c9c70b4426e175f6c1f2af"},
-      {"version":"20261015162334","name":"runless_execution_transport_v1","content_md5":"c29ffdc23203badc3f392430653e938c"},
-      {"version":"20261015162854","name":"runless_execution_transport_v1_preview_bypass","content_md5":"2f7db083231d1e992d5ca8b288c5afda"},
-      {"version":"20261015163506","name":"runless_closeout_transport_v1","content_md5":"30d7cbf6954c0d505218c69b3b4b0010"},
-      {"version":"20261015180712","name":"runless_final_gate_idempotency_v1","content_md5":"3dfe2035ad146b9490db3313ee6d1b98"},
-      {"version":"20261015182003","name":"runless_terminal_completion_latch_v1","content_md5":"d84c8968dc650138b6468791ad682892"},
-      {"version":"20261015182836","name":"runless_terminal_completion_latch_digest_normalization_v1","content_md5":"9643b103ef80af3ef8aa79bdbe4b98fd"},
-      {"version":"20261015220629","name":"runless_registry_thaw_transport_v1","content_md5":"959471e16c21ba0b713a6a14c46b3188"},
-      {"version":"20261015223433","name":"runless_execution_transport_v1_infra_resume","content_md5":"74804a78b5e7d6602f13561ca480a552"},
-      {"version":"20261015224326","name":"runless_registry_forward_port_transport_v1","content_md5":"dc509164fd18180ea7c7f4f9fd8dd696"},
-      {"version":"20261017024952","name":"runless_base_drift_authority_supersession_v1","content_md5":"4a0e2d03118afe1e40cb053b5afa8146"},
-      {"version":"20261017025017","name":"runless_base_drift_supersession_transport_v1","content_md5":"4a3deac45cb278cb5ca3c9e635f4341e"},
-      {"version":"20261021184005","name":"wnba_pra_page_snapshots_v1","content_md5":"4ac2ceb47e36af881ea1641752602e30"},
-      {"version":"20261021184458","name":"wnba_pra_page_snapshot_publish_fence_v1","content_md5":"017c8cbf0f9f62e9487ff5fced196310"},
-      {"version":"20261021204132","name":"runless_same_main_reconciliation_supersession_v1","content_md5":"8f02b21d8ba62cddb4244e16df82237d"},
-      {"version":"20261021205211","name":"rollback_runless_same_main_reconciliation_supersession_v1","content_md5":"8d4dafcc358b827a67d1cc555c9276c2"},
-      {"version":"20261026151300","name":"runless_v2_closeout_transport_v1","content_md5":"cbc77462926cca156df55c9fa462b318"},
-      {"version":"20261027154447","name":"guardian_security_configuration_hardening_v1","content_md5":"579c4b5bc734a2654b3865c38bac5268"},
-      {"version":"20261027155017","name":"guardian_relocate_pg_net_to_extensions_v1","content_md5":"5b35aa01d5fedd63b379983b700d1fd1"},
-      {"version":"20261027155130","name":"guardian_cover_foreign_keys_v1","content_md5":"4d2815a041c9816b3ed09f8fc86be92c"},
-      {"version":"20261027160755","name":"guardian_security_configuration_hardening_v1_source_parity","content_md5":"7a65ccd330a1f2607d5ffbfb6aa7de15"},
-      {"version":"20261027165233","name":"guardian_finalizer_capability_v1","content_md5":"8825b06a645b8722b71ed2296f173192"},
-      {"version":"20261027165441","name":"guardian_finalizer_capability_rpc_rollback_v1","content_md5":"56dbcb1165246cdbc0575cedaed718ae"}
-    ],
+    "migration_count": 39,
+    "migration_payload_archive_state": "COMPLETE",
+    "migration_payload_archive_reason": "The exact verified 38-migration base archive is source-controlled and the final cleanup migration #39 is source-controlled as an exact supplemental ledger row.",
+    "migration_payload_archive": {
+      "index_file": "supabase/source_parity_ledger/archive-v1/index.json",
+      "base64_sha256": "97d3da0a67a59568b561c5213684ee983bdac28d0d4d0f729b66017e2b53527b",
+      "base64_chars": 59788,
+      "decoded_bytes": 44840,
+      "base_archive_migration_count": 38,
+      "supplemental_migration_count": 1,
+      "verified_migration_count": 39,
+      "verified_md5_mismatches": 0,
+      "verification_state": "GREEN"
+    },
+    "latest_migration": {
+      "version": "20261027183826",
+      "name": "guardian_source_parity_archive_temp_cleanup_v1",
+      "content_md5": "91084b96cc600dae4245172812babb58",
+      "source_file": "supabase/source_parity_ledger/archive-v1/supplemental-39.json"
+    },
     "edge_functions": {
-      "noop-do-not-deploy":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/noop-do-not-deploy/index.ts"},
-      "api2-registry-payload-builder-temp":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/api2-registry-payload-builder-temp/index.ts"},
-      "api2-github-credential-presence-temp":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/api2-github-credential-presence-temp/index.ts"},
-      "api2-runless-step4-repair-relay-temp":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/api2-runless-step4-repair-relay-temp/index.ts"},
-      "api2-registry-step4-rebind-payload-temp":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/api2-registry-step4-rebind-payload-temp/index.ts"},
-      "api2-pickvault-step4-public-ws-proof-temp":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/api2-pickvault-step4-public-ws-proof-temp/index.ts"},
-      "api2-registry-step7-thaw-r1":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/api2-registry-step7-thaw-r1/index.ts"},
-      "api2-registry-payload-gzip-temp":{"status":"ACTIVE","verify_jwt":true,"source_file":"supabase/functions/api2-registry-payload-gzip-temp/index.ts"},
-      "guardian-finalizer-authority-bridge-v1":{"status":"ACTIVE","verify_jwt":false,"source_file":"supabase/functions/guardian-finalizer-authority-bridge-v1/index.ts"}
+      "noop-do-not-deploy": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/noop-do-not-deploy/index.ts"},
+      "api2-registry-payload-builder-temp": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/api2-registry-payload-builder-temp/index.ts"},
+      "api2-github-credential-presence-temp": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/api2-github-credential-presence-temp/index.ts"},
+      "api2-runless-step4-repair-relay-temp": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/api2-runless-step4-repair-relay-temp/index.ts"},
+      "api2-registry-step4-rebind-payload-temp": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/api2-registry-step4-rebind-payload-temp/index.ts"},
+      "api2-pickvault-step4-public-ws-proof-temp": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/api2-pickvault-step4-public-ws-proof-temp/index.ts"},
+      "api2-registry-step7-thaw-r1": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/api2-registry-step7-thaw-r1/index.ts"},
+      "api2-registry-payload-gzip-temp": {"status": "ACTIVE", "verify_jwt": true, "source_file": "supabase/functions/api2-registry-payload-gzip-temp/index.ts"},
+      "guardian-finalizer-authority-bridge-v1": {"status": "ACTIVE", "verify_jwt": false, "source_file": "supabase/functions/guardian-finalizer-authority-bridge-v1/index.ts"}
     },
     "intentional_rls_no_policy_tables": [
       "public.wnba_durable_locks",
@@ -73,20 +50,22 @@
     "security_actionable_findings": 0
   },
   "vercel": {
-    "production_projects": ["kyre-sports-api","kyre-runless-proof","kyre-sports-finalizer"],
-    "retired_preview_prs": [1527,1528,1529],
-    "stale_preview_env_ids": [
-      "VLEtduzIHvXMjoLX","r3bc0IxekmicERwc","L7t5CRrjzfvCSGGL",
-      "OHPkWOX397eJvAFh","zFWGW9gf8AWVUfPP","LdYdb6pTK3YqMEmZ",
-      "TP2f7joGf5pidpfN","BC16fRa5WnpIuBVG","tnkMcmRm54v00wac"
+    "production_projects": ["kyre-sports-api", "kyre-runless-proof", "kyre-sports-finalizer"],
+    "retired_preview_prs": [1527, 1528, 1529],
+    "stale_preview_env_ids": [],
+    "stale_preview_env_count": 0,
+    "retired_env_tombstone_ids": [
+      "VLEtduzIHvXMjoLX", "r3bc0IxekmicERwc", "L7t5CRrjzfvCSGGL",
+      "OHPkWOX397eJvAFh", "zFWGW9gf8AWVUfPP", "LdYdb6pTK3YqMEmZ",
+      "TP2f7joGf5pidpfN", "BC16fRa5WnpIuBVG", "tnkMcmRm54v00wac"
     ],
-    "stale_preview_env_count": 9,
-    "cleanup_state": "OPEN",
-    "cleanup_blocker": "Connected Vercel interface exposes project-env list/edit/create but no delete; empty-target detachment is rejected by Vercel API."
+    "cleanup_state": "COMPLETE",
+    "cleanup_note": "All nine merged-PR records are uniquely named RETIRED tombstones, value=retired, target=development only, gitBranch=null. They are absent from Preview and Production injection; physical deletion is unavailable in the connected Vercel API."
   },
   "freeze": {
     "token": "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1_FROZEN",
-    "state": "OPEN",
+    "state": "FROZEN",
+    "activation_condition": "Valid only after protected merge through runless-final-gate and post-merge production convergence on the exact merge SHA.",
     "requirements": [
       "migration_payload_archive_state=COMPLETE",
       "stale_preview_env_count=0",
