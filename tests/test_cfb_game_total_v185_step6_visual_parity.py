@@ -140,8 +140,11 @@ def test_v185_router_advances_only_exact_game_total_to_page_v19():
 
 def test_v185_app_boots_router_v164_while_retaining_v184_certification_string():
     source = APP.read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app" in source
-    assert "from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app" in source
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in source
+    assert "record_bootstrap_import_ms," in source
+    assert "render_app," in source
+    assert "run_shared_runtime_lifecycle(" in source
+    assert "render=render_app" in source
 
 
 def test_v186_router_owns_step6_cert_surface_for_stale_v163_compat():
