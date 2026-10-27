@@ -1,0 +1,26 @@
+{
+  "mission": "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1",
+  "state": "OPEN",
+  "branch": "guardian-source-of-truth-configuration-parity-v1",
+  "base_main_sha": "454b01ecf706505cacc507e1231fea16264e0f61",
+  "proof": {
+    "isolated_sandbox": "guardian-source-parity-v1",
+    "targeted_contract": "6 passed",
+    "security_regression_plus_contract": "12 passed",
+    "supabase_migration_records_indexed": 38,
+    "supabase_live_edge_functions_source_controlled": 9,
+    "supabase_security_actionable_findings": 0,
+    "kyre_runtime_anon_authenticated_table_grants": 0,
+    "kyre_runtime_anon_authenticated_schema_grants": 0,
+    "stale_vercel_preview_env_count": 9,
+    "migration_payload_archive_state": "OPEN"
+  },
+  "freeze": {
+    "token": "GUARDIAN_SOURCE_OF_TRUTH_CONFIGURATION_PARITY_V1_FROZEN",
+    "eligible": false,
+    "blockers": [
+      "Exact SQL payload archive for all 38 live migration rows is not yet source-controlled.",
+      "Nine retired Finalizer preview env records cannot be physically deleted by the connected Vercel interface."
+    ]
+  }
+}
