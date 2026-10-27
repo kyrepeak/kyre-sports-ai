@@ -66,12 +66,13 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import re
           import time
           from pathlib import Path
           from playwright.sync_api import sync_playwright
           from devsystem.browser_qa_v1 import _find_app_frame
 
-          URL = "https://pickvault.streamlit.app/"
+          URL = "https://pickvault.streamlit.app/?ks_sport=NBA&ks_nba_market=PRA"
           REQUIRED = (
               "PLAYER COMMAND CENTER",
               "L10 PRA TREND",
@@ -94,68 +95,48 @@ jobs:
 
           artifacts = Path("artifacts/monster-nba-pra-page2-v4-step2g")
           artifacts.mkdir(parents=True, exist_ok=True)
-          result = {"url": URL, "main_sha": "8d47079900f34cbacac4976402ca3332908322b4", "navigation": ["NBA", "PRA"]}
-
-          def body_text(frame):
-              return frame.locator("body").inner_text(timeout=10000)
-
-          def wait_body_contains(page, frame, text, timeout=90.0):
-              deadline = time.monotonic() + timeout
-              body = ""
-              while time.monotonic() < deadline:
-                  body = body_text(frame)
-                  if text in body:
-                      return body
-                  page.wait_for_timeout(1500)
-              raise AssertionError(f"Timed out waiting for {text!r}. body=" + body[:6000])
+          result = {"url": URL, "main_sha": "8d47079900f34cbacac4976402ca3332908322b4", "route_contract": ["ks_sport=NBA", "ks_nba_market=PRA"]}
 
           with sync_playwright() as pw:
               browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
               page = browser.new_page(viewport={"width": 430, "height": 932})
               page.goto(URL, wait_until="domcontentloaded", timeout=120000)
               frame, _ = _find_app_frame(page, timeout_seconds=120.0)
-              body = body_text(frame)
-              for bad in FORBIDDEN:
-                  if bad in body:
-                      raise AssertionError(f"Initial runtime error marker: {bad}")
 
-              nba = frame.get_by_role("button", name="NBA", exact=True)
-              if nba.count() == 0:
-                  nba = frame.get_by_text("NBA", exact=True).first
-              if nba.count() == 0:
-                  raise AssertionError("Visible NBA navigation control not found. body=" + body[:5000])
-              nba.first.click()
-
-              market = frame.get_by_role("combobox", name="🎯 NBA Market", exact=True)
-              market.wait_for(state="visible", timeout=60000)
-              market.click()
-              page.get_by_role("option", name="PRA", exact=True).click()
-              body = wait_body_contains(page, frame, "NBA PRA Intelligence", timeout=120.0)
+              deadline = time.monotonic() + 120.0
+              body = ""
+              while time.monotonic() < deadline:
+                  body = frame.locator("body").inner_text(timeout=10000)
+                  if "NBA PRA Intelligence" in body:
+                      break
+                  page.wait_for_timeout(2000)
+              if "NBA PRA Intelligence" not in body:
+                  raise AssertionError("Authoritative NBA PRA route did not render Page 1. body=" + body[:7000])
               for bad in FORBIDDEN:
                   if bad in body:
                       raise AssertionError(f"Page 1 runtime error marker: {bad}")
 
-              buttons = frame.get_by_role("button", name=r"(?i)^analyze .+ →$")
+              buttons = frame.get_by_role("button", name=re.compile(r"^Analyze .+ →$", re.I))
               deadline = time.monotonic() + 90.0
               while buttons.count() == 0 and time.monotonic() < deadline:
                   page.wait_for_timeout(2000)
               if buttons.count() == 0:
-                  body = body_text(frame)
-                  raise AssertionError("No live NBA PRA Analyze action available. body=" + body[:6000])
+                  body = frame.locator("body").inner_text(timeout=10000)
+                  raise AssertionError("No live NBA PRA Analyze action available. body=" + body[:7000])
 
               chosen = buttons.first.inner_text()
               buttons.first.click()
               deadline = time.monotonic() + 150.0
               body2 = ""
               while time.monotonic() < deadline:
-                  body2 = body_text(frame)
+                  body2 = frame.locator("body").inner_text(timeout=10000)
                   if all(token in body2 for token in REQUIRED):
                       break
                   page.wait_for_timeout(2500)
 
               missing = [token for token in REQUIRED if token not in body2]
               if missing:
-                  raise AssertionError(f"Public V4 markers missing: {missing}; body=" + body2[:12000])
+                  raise AssertionError(f"Public V4 markers missing: {missing}; body=" + body2[:14000])
               for bad in FORBIDDEN:
                   if bad in body2:
                       raise AssertionError(f"Page 2 runtime error marker: {bad}")
