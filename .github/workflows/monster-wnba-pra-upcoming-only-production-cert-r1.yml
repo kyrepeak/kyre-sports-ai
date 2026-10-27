@@ -1,24 +1,29 @@
-name: MONSTER WNBA PRA Upcoming-Only Production Cert R1
+name: MONSTER WNBA PRA Upcoming-Only Exact-Head Cert R1
 
 on:
   pull_request:
     branches: [main]
     paths:
+      - "runless_v2/wnba_pra_runless_upcoming_gate_r1.py"
+      - "runless_v2/__init__.py"
+      - "tests/test_monster_wnba_pra_runless_upcoming_gate_r1.py"
       - "devsystem/monster_wnba_pra_upcoming_only_production_cert_r1.py"
       - "devsystem/task_ledgers/monster-wnba-pra-upcoming-only-production-cert-r1.json"
+      - "devsystem/runless_proof_plans/monster-wnba-pra-upcoming-only-production-cert-r1.json"
+      - "runless_v2/monster_wnba_pra_upcoming_only_production_cert_proof_r1.py"
       - ".github/workflows/monster-wnba-pra-upcoming-only-production-cert-r1.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: monster-wnba-pra-upcoming-only-production-cert-${{ github.event.pull_request.head.sha }}
+  group: monster-wnba-pra-upcoming-only-exact-head-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: false
 
 jobs:
-  production-cert:
+  exact-head-cert:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,24 +33,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install read-only browser proof dependencies
+      - name: Install focused proof dependencies
         run: |
-          python -m pip install --disable-pip-version-check -q requests playwright
-          python -m playwright install chromium
-      - name: Compile production verifier
-        run: python -m py_compile devsystem/monster_wnba_pra_upcoming_only_production_cert_r1.py
-      - name: Certify PickVault WNBA PRA upcoming-only production
+          python -m pip install --disable-pip-version-check -q pytest pandas requests httpx fastapi streamlit
+      - name: Compile active-path repair and verifier
+        run: |
+          python -m py_compile \
+            runless_v2/wnba_pra_runless_upcoming_gate_r1.py \
+            runless_v2/__init__.py \
+            devsystem/monster_wnba_pra_upcoming_only_production_cert_r1.py
+      - name: Prove active Runless upcoming-only gate
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python devsystem/monster_wnba_pra_upcoming_only_production_cert_r1.py \
-            --production-url https://pickvault.streamlit.app \
-            --artifact-dir artifacts/monster-wnba-pra-upcoming-only-production-cert-r1
-      - name: Upload production evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: monster-wnba-pra-upcoming-only-production-cert-${{ github.run_id }}
-          path: artifacts/monster-wnba-pra-upcoming-only-production-cert-r1
-          if-no-files-found: warn
-          retention-days: 14
+          python -m pytest --noconftest -q \
+            tests/test_monster_wnba_pra_runless_upcoming_gate_r1.py \
+            tests/test_monster_wnba_pra_upcoming_only_r1.py \
+            tests/test_monster_wnba_pra_upcoming_only_r2_final_card.py \
+            tests/test_monster_wnba_pra_vercel_gateway_v1.py
