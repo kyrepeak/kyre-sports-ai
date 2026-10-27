@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 PROOF = ROOT / "runless_v2" / "guardian_shared_runtime_lifecycle_proof_v1.py"
 PLAN = ROOT / "devsystem" / "runless_proof_plans" / "guardian-shared-runtime-lifecycle-v1.json"
@@ -73,3 +75,51 @@ def test_runless_preview_auto_proof_is_exact_guardian_branch_only():
     assert BRANCH in source
     assert "prove_guardian_shared_runtime_lifecycle" in source
     assert "GUARDIAN_SHARED_RUNTIME_AUTO_PROOF_GREEN" in source
+
+
+@pytest.mark.asyncio
+async def test_green_sandbox_evidence_survives_cleanup_stop_error():
+    from runless_v2.sandbox_executor import SandboxExecutor
+
+    candidate = "a" * 40
+    plan = {
+        "task_id": TASK_ID,
+        "workstream": TASK_ID,
+        "commands": [["python", "-m", "pytest", "--noconftest", "-q", "tests/example.py"]],
+        "artifacts": [],
+        "dependencies": [],
+        "probes": [],
+        "timeout_seconds": 60,
+        "live_ttl_seconds": 120,
+        "freeze_token": "GUARDIAN_SHARED_RUNTIME_LIFECYCLE_V1_FROZEN",
+    }
+
+    class CleanupErrorBackend:
+        def __init__(self):
+            self.stopped: list[str] = []
+
+        async def create(self, **kwargs):
+            return "guardian-session"
+
+        async def run(self, session_id, command, args=(), *, cwd=None, env=None, timeout_ms=None):
+            argv = list(args)
+            if command == "git" and argv == ["rev-parse", "HEAD"]:
+                return {"exit_code": 0, "stdout": candidate + "\n", "stderr": ""}
+            if command == "python" and argv and argv[0] == "-c":
+                return {"exit_code": 0, "stdout": json.dumps(plan), "stderr": ""}
+            return {"exit_code": 0, "stdout": "46 passed\n", "stderr": ""}
+
+        async def stop(self, session_id):
+            self.stopped.append(session_id)
+            raise RuntimeError("sandbox already stopped after successful proof")
+
+    backend = CleanupErrorBackend()
+    result = await SandboxExecutor(backend=backend).execute(
+        candidate_sha=candidate,
+        task_id=TASK_ID,
+        github_token="short-lived-token",
+        timeout_seconds=60,
+    )
+
+    assert result.ok is True
+    assert backend.stopped == ["guardian-session"]
