@@ -1,0 +1,52 @@
+{
+  "mode": "runless",
+  "task_id": "monster-wnba-pra-runless-upcoming-gate-r1",
+  "workstream": "monster-wnba-pra-runless-upcoming-gate-r1",
+  "source_main_sha": "dd9ffcc4b44faea92f97d68545db6efb160c9f3f",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_monster_wnba_pra_runless_upcoming_gate_r1.py",
+      "tests/test_monster_wnba_pra_upcoming_only_r1.py",
+      "tests/test_monster_wnba_pra_upcoming_only_r2_final_card.py",
+      "tests/test_monster_wnba_pra_vercel_gateway_v1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "runless_v2/wnba_pra_runless_upcoming_gate_r1.py",
+      "runless_v2/monster_wnba_pra_runless_upcoming_gate_proof_r1.py",
+      "runless_v2/__init__.py",
+      "devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py"
+    ]
+  ],
+  "artifacts": [
+    ".github/workflows/monster-wnba-pra-runless-upcoming-gate-r1.yml",
+    "devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py",
+    "devsystem/runless_proof_plans/monster-wnba-pra-runless-upcoming-gate-r1.json",
+    "devsystem/task_ledgers/monster-wnba-pra-runless-upcoming-gate-r1.json",
+    "runless_v2/__init__.py",
+    "runless_v2/monster_wnba_pra_runless_upcoming_gate_proof_r1.py",
+    "runless_v2/wnba_pra_runless_upcoming_gate_r1.py",
+    "tests/test_monster_wnba_pra_runless_upcoming_gate_r1.py"
+  ],
+  "dependencies": [
+    "runless_v2/wnba_pra_market_v1.py",
+    "runless_v2/wnba_pra_page_snapshot_v1.py",
+    "runless_v2/wnba_schedule_v1.py",
+    "tests/test_monster_wnba_pra_upcoming_only_r1.py",
+    "tests/test_monster_wnba_pra_upcoming_only_r2_final_card.py",
+    "tests/test_monster_wnba_pra_vercel_gateway_v1.py",
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py",
+    "devsystem/frozen_artifact_registry_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_FROZEN"
+}
