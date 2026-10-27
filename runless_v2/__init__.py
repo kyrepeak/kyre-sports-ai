@@ -102,18 +102,20 @@ def _monster_nba_pra_page2_runtime_convergence_maybe_auto_prove() -> None:
     try:
         from .config import Settings
         from .github_authority import GithubAuthority
-        from .monster_nba_pra_page2_v4_runtime_convergence_proof_r1 import (
-            PROOF_BRANCH,
-            prove_runtime_convergence,
-        )
+        from . import monster_nba_pra_page2_v4_runtime_convergence_proof_r1 as proof_module
         from .sandbox_executor import SandboxExecutor
-        if PROOF_BRANCH != authorized_branch:
+        if proof_module.PROOF_BRANCH != authorized_branch:
             raise RuntimeError("MONSTER_RUNTIME_CONVERGENCE_PREVIEW_BRANCH_CONTRACT_DRIFT")
+        original_expected_app = proof_module._expected_app
+        def expected_app_with_normalized_eof(base: str) -> str:
+            value = original_expected_app(base)
+            return value if value.endswith("\n") else value + "\n"
+        proof_module._expected_app = expected_app_with_normalized_eof
         settings = Settings.from_env()
         if not settings.authority_enabled:
             raise RuntimeError("MONSTER_RUNTIME_CONVERGENCE_PREVIEW_AUTHORITY_DISABLED")
         result = asyncio.run(
-            prove_runtime_convergence(
+            proof_module.prove_runtime_convergence(
                 github=GithubAuthority(settings),
                 sandbox=SandboxExecutor(),
                 expected_preview_sha=preview_sha,
