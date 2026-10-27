@@ -125,7 +125,11 @@ def _forbidden_error(body: str) -> str | None:
 
 
 def _current_surface(body: str) -> bool:
-    return all(token in body for token in REQUIRED_VISIBLE)
+    required = all(token in body for token in REQUIRED_VISIBLE)
+    terminal_state = EMPTY_SLATE_MARKER in body or all(
+        token in body for token in ACTIVE_BOARD_VISIBLE
+    )
+    return required and terminal_state
 
 
 def _find_current_frame(page, timeout_seconds: float = 90.0):

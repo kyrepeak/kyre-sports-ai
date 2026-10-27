@@ -31,6 +31,7 @@ def test_guardian_terminal_browser_contract_is_current_and_date_agnostic() -> No
         '".cfbgt6-card"',
         "page.reload",
         "GUARDIAN_CFB_GAME_TOTAL_TERMINAL_BROWSER_GREEN",
+        "terminal_state = EMPTY_SLATE_MARKER in body or all(",
     ):
         assert token in source, token
     for stale in (
