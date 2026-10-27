@@ -1,0 +1,21 @@
+{
+  "format": "guardian-source-parity-pgp-v1",
+  "source": "supabase_migrations.schema_migrations",
+  "project_id": "jqajcdckalsfizbvngiu",
+  "migration_count": 38,
+  "base64_chars": 59788,
+  "base64_sha256": "97d3da0a67a59568b561c5213684ee983bdac28d0d4d0f729b66017e2b53527b",
+  "decoded_bytes": 44840,
+  "packaging": "OpenPGP symmetric envelope used for compression and integrity-preserving source transport; not for confidentiality",
+  "recovery_passphrase": "guardian-source-parity-v1-archive",
+  "chunks": [
+    "chunk-01.b64",
+    "chunk-02.b64",
+    "chunk-03.b64",
+    "chunk-04.b64",
+    "chunk-05.b64",
+    "chunk-06.b64",
+    "chunk-07.b64",
+    "chunk-08.b64"
+  ]
+}
