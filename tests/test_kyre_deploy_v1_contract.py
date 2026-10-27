@@ -12,6 +12,10 @@ COMPOSE_PATH = ROOT / "deploy" / "kyre-deploy" / "compose.yaml"
 README_PATH = ROOT / "deploy" / "kyre-deploy" / "README.md"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "kyre-deploy-v1-zero-cost-ci.yml"
 API_DOCKERFILE = ROOT / "sports_api" / "Dockerfile"
+CLOUD_RUN_DIR = ROOT / "deploy" / "kyre-deploy" / "cloud-run"
+CLOUD_RUN_DEPLOY = CLOUD_RUN_DIR / "deploy-sports-api.sh"
+CLOUD_RUN_ENV = CLOUD_RUN_DIR / "cloud-run.env.example"
+CLOUD_RUN_README = CLOUD_RUN_DIR / "README.md"
 
 
 def _text(path: Path) -> str:
@@ -92,3 +96,60 @@ def test_zero_cost_ci_does_not_rebuild_images_for_every_sports_api_edit() -> Non
     assert '- "sports_api/requirements.txt"' in workflow
     assert '- "sports_api/requirements-mlb-step14b-persistence.txt"' in workflow
     assert "workflow_dispatch:" in workflow
+
+
+def test_cloud_run_foundation_hard_locks_cost_safety_defaults() -> None:
+    deploy = _text(CLOUD_RUN_DEPLOY)
+    assert '--cpu-throttling' in deploy
+    assert '--min=0' in deploy
+    assert '--max=1' in deploy
+    assert '--cpu=1' in deploy
+    assert '--memory=1Gi' in deploy
+    assert '--port=8000' in deploy
+    assert '--allow-unauthenticated' in deploy
+    assert '--no-cpu-boost' in deploy
+    assert '--timeout=60s' in deploy
+    assert '--concurrency=20' in deploy
+    assert 'gcloud run services describe' in deploy
+    assert 'run.googleapis.com/cpu-throttling' in deploy
+    assert 'autoscaling.knative.dev/maxScale' in deploy
+
+
+def test_cloud_run_foundation_is_activation_safe_and_secret_free() -> None:
+    env_example = _text(CLOUD_RUN_ENV)
+    readme = _text(CLOUD_RUN_README)
+    deploy = _text(CLOUD_RUN_DEPLOY)
+    assert 'KYRE_GCP_PROJECT_ID=' in env_example
+    assert 'KYRE_CLOUD_RUN_REGION=us-west1' in env_example
+    assert 'KYRE_CLOUD_RUN_SERVICE=kyre-sports-api' in env_example
+    assert 'KYRE_CLOUD_RUN_IMAGE=' in env_example
+    assert 'KYRE_CLOUD_RUN_SERVICE_ACCOUNT=' in env_example
+    assert 'GOOGLE_APPLICATION_CREDENTIALS' not in env_example
+    assert 'PRIVATE_KEY' not in env_example
+    assert 'PASSWORD=' not in env_example
+    assert 'TOKEN=' not in env_example
+    assert 'API_KEY=' not in env_example
+    assert 'This script does not create billing accounts' in readme
+    assert 'This script does not create or store provider secrets' in readme
+    assert 'set -euo pipefail' in deploy
+    assert 'KYRE_GCP_PROJECT_ID' in deploy
+    assert 'KYRE_CLOUD_RUN_IMAGE' in deploy
+    assert 'KYRE_CLOUD_RUN_SERVICE_ACCOUNT' in deploy
+    assert 'gcloud services enable run.googleapis.com' in deploy
+    assert 'gcloud services enable secretmanager.googleapis.com' in deploy
+    assert 'gcloud services enable iamcredentials.googleapis.com' in deploy
+
+
+def test_cloud_run_foundation_does_not_use_cloud_build_or_artifact_registry_builds() -> None:
+    deploy = _text(CLOUD_RUN_DEPLOY)
+    readme = _text(CLOUD_RUN_README)
+    forbidden = (
+        'gcloud builds submit',
+        'gcloud run deploy --source',
+        'cloudbuild.googleapis.com',
+        'docker push',
+    )
+    for item in forbidden:
+        assert item not in deploy
+    assert 'GitHub Actions remains the build/test engine' in readme
+    assert 'Cloud Run is runtime only' in readme
