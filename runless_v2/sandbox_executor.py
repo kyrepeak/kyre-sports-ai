@@ -238,6 +238,8 @@ class SandboxExecutor:
         timeout_seconds: int,
     ) -> SandboxProofResult:
         session_id: str | None = None
+        proof_result: SandboxProofResult | None = None
+        primary_error: BaseException | None = None
         create_timeout = self._effective_timeout(timeout_seconds)
         try:
             try:
@@ -311,13 +313,21 @@ class SandboxExecutor:
                     )
                     break
 
-            return SandboxProofResult(
+            proof_result = SandboxProofResult(
                 ok=bool(evidence) and all(item.ok for item in evidence),
                 candidate_sha=candidate_sha,
                 task_id=task_id,
                 plan=plan,
                 evidence=evidence,
             )
+            return proof_result
+        except BaseException as exc:
+            primary_error = exc
+            raise
         finally:
             if session_id is not None:
-                await self.backend.stop(session_id)
+                try:
+                    await self.backend.stop(session_id)
+                except Exception:
+                    if primary_error is None and proof_result is None:
+                        raise

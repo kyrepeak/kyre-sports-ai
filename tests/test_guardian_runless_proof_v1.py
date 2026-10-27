@@ -67,9 +67,9 @@ def test_guardian_proof_source_rejects_foreign_authority_imports():
     assert "frozen_artifact_registry" not in source
 
 
-def test_runless_preview_auto_proof_is_exact_guardian_branch_only():
+def test_original_guardian_proof_remains_archived_without_frozen_init_bootstrap():
     source = RUNLESS_INIT.read_text(encoding="utf-8")
-    assert "_guardian_shared_runtime_lifecycle_maybe_auto_prove" in source
-    assert BRANCH in source
-    assert "prove_guardian_shared_runtime_lifecycle" in source
-    assert "GUARDIAN_SHARED_RUNTIME_AUTO_PROOF_GREEN" in source
+    assert PROOF.is_file()
+    assert PLAN.is_file()
+    assert "_guardian_shared_runtime_lifecycle_maybe_auto_prove" not in source
+    assert "guardian_shared_runtime_lifecycle_proof_v1" not in source

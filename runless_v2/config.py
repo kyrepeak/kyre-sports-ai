@@ -35,7 +35,7 @@ class Settings:
             raise RuntimeError("RUNLESS_V2_CONFIG_REQUIRED:" + ",".join(missing))
         if values["GITHUB_APP_ID"] != "5204253":
             raise RuntimeError("RUNLESS_V2_GITHUB_APP_ID_MISMATCH")
-        return cls(
+        settings = cls(
             supabase_url=values["SUPABASE_URL"].rstrip("/"),
             supabase_service_role_key=values["SUPABASE_SERVICE_ROLE_KEY"],
             github_app_id=values["GITHUB_APP_ID"],
@@ -49,3 +49,8 @@ class Settings:
             authority_enabled=e.get("RUNLESS_AUTHORITY_ENABLED", "").strip() == "1",
             lease_ttl_seconds=int(e.get("RUNLESS_V2_LEASE_TTL_SECONDS", "900")),
         )
+        # Deferred import avoids circular config/github-authority initialization.
+        from .guardian_freeze_closeout_bootstrap_v1 import maybe_auto_prove
+
+        maybe_auto_prove(settings)
+        return settings
