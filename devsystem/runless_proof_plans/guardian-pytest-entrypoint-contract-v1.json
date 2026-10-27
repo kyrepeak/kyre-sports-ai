@@ -1,0 +1,44 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-pytest-entrypoint-contract-v1",
+  "workstream": "guardian-pytest-entrypoint-contract-v1",
+  "source_main_sha": "f0305b6d62b979c32412c1d54ec16ec9e4652e4f",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_guardian_pytest_entrypoint_contract_proof_v1.py"
+    ],
+    [
+      "python", "-m", "pytest", "-q", "--collect-only",
+      "tests/test_cfb_game_total_v152_activation.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "tests/conftest.py",
+      "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+      "runless_v2/guardian_pytest_entrypoint_contract_proof_v1.py"
+    ]
+  ],
+  "artifacts": [
+    "devsystem/runless_proof_plans/guardian-pytest-entrypoint-contract-v1.json",
+    "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+    "runless_v2/guardian_pytest_entrypoint_contract_proof_v1.py",
+    "tests/conftest.py",
+    "tests/test_guardian_pytest_entrypoint_contract_proof_v1.py"
+  ],
+  "dependencies": [
+    "app.py",
+    "devsystem/shared_runtime_lifecycle_v1.py",
+    "runless_v2/config.py",
+    "runless_v2/github_authority.py",
+    "runless_v2/sandbox_executor.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_PYTEST_ENTRYPOINT_CONTRACT_V1_FROZEN"
+}
