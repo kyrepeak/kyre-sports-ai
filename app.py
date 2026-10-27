@@ -70,5 +70,5 @@ st.markdown(
 )
 
 record_bootstrap_import_ms((perf_counter() - _BOOTSTRAP_STARTED) * 1000.0)
-render_app()
 emit_runtime_identity_marker()
+render_app()
