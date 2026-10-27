@@ -29,3 +29,19 @@ def test_bridge_install_is_idempotent():
     assert first is app
     assert second is app
     assert app.state._vercel_oidc_header_bridge_installed is True
+
+
+def test_custom_entrypoint_pyproject_carries_all_runless_runtime_dependencies():
+    import tomllib
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    requirements = [
+        line.strip()
+        for line in (root / "runless_v2" / "requirements.txt").read_text().splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    config = tomllib.loads((root / "runless_v2" / "pyproject.toml").read_text())
+    dependencies = config["project"]["dependencies"]
+    assert dependencies == requirements
+    assert config["tool"]["vercel"]["entrypoint"] == "entrypoint:app"
