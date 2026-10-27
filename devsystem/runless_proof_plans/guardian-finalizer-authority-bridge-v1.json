@@ -1,0 +1,31 @@
+{
+  "task_id": "guardian-finalizer-authority-bridge-v1",
+  "workstream": "guardian-finalizer-authority-bridge-v1",
+  "source_main_sha": "e4e42fb0338c55c16fc4aa5fd08aeb181e142e03",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "vercel_finalizer", "tests/test_guardian_finalizer_authority_bridge_v1.py"],
+    ["python", "-m", "py_compile", "vercel_finalizer/authority_bridge.py", "vercel_finalizer/bridge_runtime.py", "vercel_finalizer/bridge_entrypoint.py", "runless_v2/guardian_finalizer_authority_bridge_proof_v1.py"]
+  ],
+  "artifacts": [
+    "vercel_finalizer/authority_bridge.py",
+    "vercel_finalizer/bridge_runtime.py",
+    "vercel_finalizer/bridge_entrypoint.py",
+    "vercel_finalizer/pyproject.toml",
+    "supabase/functions/guardian-finalizer-authority-bridge-v1/index.ts",
+    "runless_v2/guardian_finalizer_authority_bridge_proof_v1.py",
+    "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+    "tests/test_guardian_finalizer_authority_bridge_v1.py"
+  ],
+  "dependencies": [
+    "vercel_finalizer/app.py",
+    "vercel_finalizer/authority.py",
+    "vercel_finalizer/gate_publication.py",
+    "vercel_finalizer/receipt_binding.py",
+    "runless_v2/guardian_pytest_entrypoint_contract_proof_v1_base.py"
+  ],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": "5204253",
+  "github_actions_fallback": 0,
+  "timeout_seconds": 600,
+  "freeze_token": "GUARDIAN_SECURITY_CONFIGURATION_HARDENING_V1_FROZEN"
+}
