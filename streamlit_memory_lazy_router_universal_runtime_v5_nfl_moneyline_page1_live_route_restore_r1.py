@@ -20,7 +20,9 @@ frozen_runtime = prior.frozen_runtime
 
 
 def resolve_destination(route):
-    """Shadow only NFL Moneyline to the already-certified V20; preserve every other route."""
+    """Shadow terminal NFL routes that require fresh canonical-loader ownership."""
+    if route.sport_id == "nfl" and route.market_id == "game-total":
+        return canonical_loader.resolve_destination(route)
     if route.sport_id == "nfl" and route.market_id == "moneyline":
         return canonical_loader._nfl_adapter(route, "nfl_moneyline_hub_v20", ttl_ms=20_000)
     return prior.resolve_destination(route)
