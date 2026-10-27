@@ -25,6 +25,7 @@ ALLOWED_CHANGED_PATHS = frozenset(
         ".github/workflows/cfb-game-total-v150-browser.yml",
         ".github/workflows/cfb-game-total-v152-activation.yml",
         "devsystem/cfb_game_total_browser_qa_v1.py",
+        "devsystem/cfb_game_total_browser_qa_v4.py",
         "devsystem/cfb_game_total_v152_activation_qa.py",
         "devsystem/runless_proof_plans/guardian-pytest-entrypoint-contract-v1.json",
         "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
