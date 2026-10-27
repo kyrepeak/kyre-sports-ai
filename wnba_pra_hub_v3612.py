@@ -18,8 +18,10 @@ _upcoming_only.install()
 
 active.render_page_snapshot = _page1_final_polish.render_page_snapshot
 
-import wnba_pra_page1_ultra_stier_v2 as _page1_ultra_stier_v2
-active.render_page_snapshot = _page1_ultra_stier_v2.render_page_snapshot
+# V3 preserves the V2 S-tier layout while making the upstream upcoming-game gate
+# authoritative for the bottom Certified PRA Pick section as well.
+import wnba_pra_page1_ultra_stier_v3 as _page1_ultra_stier_v3
+active.render_page_snapshot = _page1_ultra_stier_v3.render_page_snapshot
 
 import wnba_pra_hub_v3618 as refresh_handoff
 
