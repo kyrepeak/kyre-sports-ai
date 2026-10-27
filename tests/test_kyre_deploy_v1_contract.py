@@ -102,6 +102,13 @@ def test_zero_cost_ci_does_not_rebuild_images_for_every_sports_api_edit() -> Non
     assert "workflow_dispatch:" in workflow
 
 
+def test_zero_cost_ci_cannot_skip_kyre_deploy_proof_changes() -> None:
+    workflow = _text(WORKFLOW_PATH)
+    assert '- "runless_v2/kyre_deploy_cloud_run_foundation_proof_v1.py"' in workflow
+    assert '- "runless_v2/__init__.py"' in workflow
+    assert '- "devsystem/runless_proof_plans/kyre-deploy-cloud-run-foundation-v1.json"' in workflow
+
+
 def test_cloud_run_foundation_hard_locks_cost_safety_defaults() -> None:
     deploy = _text(CLOUD_RUN_DEPLOY)
     assert '--cpu-throttling' in deploy
