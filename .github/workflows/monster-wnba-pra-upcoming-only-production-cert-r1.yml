@@ -1,0 +1,51 @@
+name: MONSTER WNBA PRA Upcoming-Only Production Cert R1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/monster_wnba_pra_upcoming_only_production_cert_r1.py"
+      - "devsystem/task_ledgers/monster-wnba-pra-upcoming-only-production-cert-r1.json"
+      - ".github/workflows/monster-wnba-pra-upcoming-only-production-cert-r1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-wnba-pra-upcoming-only-production-cert-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
+jobs:
+  production-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install read-only browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install chromium
+      - name: Compile production verifier
+        run: python -m py_compile devsystem/monster_wnba_pra_upcoming_only_production_cert_r1.py
+      - name: Certify PickVault WNBA PRA upcoming-only production
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/monster_wnba_pra_upcoming_only_production_cert_r1.py \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/monster-wnba-pra-upcoming-only-production-cert-r1
+      - name: Upload production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-wnba-pra-upcoming-only-production-cert-${{ github.run_id }}
+          path: artifacts/monster-wnba-pra-upcoming-only-production-cert-r1
+          if-no-files-found: warn
+          retention-days: 14

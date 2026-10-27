@@ -1,0 +1,21 @@
+{
+  "version": "MONSTER_WNBA_PRA_UPCOMING_ONLY_PRODUCTION_CERT_R1_LEDGER",
+  "authority": "MONSTER_ONLY",
+  "task_id": "monster-wnba-pra-upcoming-only-production-cert-r1",
+  "active_problem": "Read-only Step 2G production certification that merged WNBA PRA Page 1 excludes all live/final/past-tip games from active cards, Top 3, and Certified PRA Picks.",
+  "status": "PRODUCTION_CERT_ARMED",
+  "progress_percent": 99.94,
+  "source_main_sha": "dd9ffcc4b44faea92f97d68545db6efb160c9f3f",
+  "product_frozen_token_target": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_FROZEN",
+  "production_url": "https://pickvault.streamlit.app",
+  "schedule_authority": "WNBA Official Schedule via Kyre Sports API/Vercel",
+  "product_changes_allowed": false,
+  "api2_state_allowed_as_evidence": false,
+  "acceptance": {
+    "final_only_slate_page1_cards": 0,
+    "final_only_slate_top3": 0,
+    "final_only_slate_certified_picks": 0,
+    "players_summary": 0,
+    "empty_state_required": true
+  }
+}
