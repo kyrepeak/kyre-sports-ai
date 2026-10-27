@@ -1,0 +1,41 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/api2-nfl-game-total-page2-terminal-route-r1.json": "d583e4e3619953710b3ad4eb1bb53590a74ba1e2",
+    "devsystem/task_ledgers/api2-nfl-game-total-page2-terminal-route-r1.json": "1b68f954323833f135369cc2e0aec862b7929f19",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page1_live_route_restore_r1.py": "af02d8fcd8eb056ac9688a4a1d2f9344deb7df98",
+    "tests/test_api2_nfl_game_total_page2_terminal_route_r1.py": "10d966e0b1c28efcc7661fcda16a85bc7a408d6b"
+  },
+  "candidate_sha": "ea2ba98ba703273346bda1029e711d8ee7de52c3",
+  "created_at": "2026-10-27T01:27:48.299225+00:00",
+  "dependency_map": {
+    "app.py": "e4e5ff6d79d35a51f8ab93dc2bf72e6b965229a2",
+    "nfl_game_totals_hub_v12.py": "733e013848e857708831223e1a1262300e219592",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_moneyline_page2_route_restore_v1.py": "77734c487c3faa1f18c023f1094e2919956006bc",
+    "streamlit_memory_lazy_router_universal_runtime_v5_nfl_rushing_route_restore_v1.py": "821ffb8daeb3934694e41d216e62c8b4ecd4c27c",
+    "universal_runtime_v5_loader.py": "a36674f066d2b39a8ed430f18b4132bd454e284c"
+  },
+  "digest": "aa047ab5bf3b75692d8a95b72278dc7f3a8df668d9979b5a6ea3abc6febdebd4",
+  "evidence_digests": [
+    "d323225e831270dea63e1ec4d4082f2fb2a8e0e7c56f3b0a3e30dd68a6bdc5ad",
+    "d98bad3abd019dfc62b1607f4fb8e360aaff271794b1c5ebba93895374045321"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "fe8f9a497a887cc50dd8207bbe5eb46f3f574fd4d9601b1d65487c6b86681f38",
+  "proof_id": "api2-nfl-game-total-page2-terminal-route-r1-ea2ba98ba7032733-c3a3525afcdbd3df",
+  "registry_after": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "registry_before": {
+    "active_thaws": [],
+    "revision": 11,
+    "state_hash": "80661e2e578e38375dc1e1630fba74fa675a9a77d674872956e50137c8f973a7"
+  },
+  "request_fingerprint": "9e350edf0da9861b9a959d066ac164fc99c52ea3b5c5d1a5d0598d7780c644fa",
+  "step": "runless-v2-premerge",
+  "task_id": "api2-nfl-game-total-page2-terminal-route-r1",
+  "workstream": "api2-nfl-game-total-page2-terminal-route-r1"
+}
