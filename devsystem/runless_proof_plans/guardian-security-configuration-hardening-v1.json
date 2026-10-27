@@ -1,0 +1,30 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-security-configuration-hardening-v1",
+  "workstream": "guardian-security-configuration-hardening-v1",
+  "source_main_sha": "31f94eae6e007a61d01397e6d868df3a6a3bd1e2",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_guardian_security_configuration_hardening_v1.py", "vercel_finalizer/test_health_truthfulness.py", "vercel_finalizer/test_publish_gate_build.py"],
+    ["python", "-m", "py_compile", "tests/test_guardian_security_configuration_hardening_v1.py", "vercel_finalizer/app.py", "vercel_finalizer/publish_gate_build.py"]
+  ],
+  "artifacts": [
+    "docs/superpowers/specs/2026-10-27-guardian-security-configuration-hardening-v1.md",
+    "docs/superpowers/plans/2026-10-27-guardian-security-configuration-hardening-v1.md",
+    "tests/test_guardian_security_configuration_hardening_v1.py",
+    "devsystem/runless_proof_plans/guardian-security-configuration-hardening-v1.json",
+    "devsystem/runless_proof_plans/guardian-finalizer-baseline-v1.json"
+  ],
+  "dependencies": [
+    "devsystem/runless_proof_plan_v1.py",
+    "vercel_finalizer/app.py",
+    "vercel_finalizer/publish_gate_build.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 300,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_SECURITY_CONFIGURATION_HARDENING_V1_FROZEN"
+}
