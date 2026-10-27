@@ -27,8 +27,9 @@ def test_guardian_terminal_browser_contract_is_current_and_date_agnostic() -> No
         '"UPCOMING MATCHUPS"',
         '"SELECTED MATCHUP"',
         '"No upcoming CFB games remain on this slate. "',
-        '".cfbgt4-rail"',
-        '"a.cfbgt4-chip"',
+        '".cfbgt5-rail"',
+        '"a.cfbgt5-chip"',
+        '"a.cfbgt5-chip.selected"',
         '".cfbgt6-card"',
         "page.reload",
         "GUARDIAN_CFB_GAME_TOTAL_TERMINAL_BROWSER_GREEN",
@@ -43,6 +44,8 @@ def test_guardian_terminal_browser_contract_is_current_and_date_agnostic() -> No
         "GAMES ON THIS DAY",
         "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE",
         "CFB_GAME_TOTAL_STEP6_V184_DEPLOYMENT_ACTIVE",
+        '".cfbgt4-rail"',
+        '"a.cfbgt4-chip"',
     ):
         assert stale not in source, stale
 

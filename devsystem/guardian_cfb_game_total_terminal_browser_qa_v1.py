@@ -166,8 +166,8 @@ def _assert_current_contract(frame, body: str) -> dict[str, Any]:
         )
 
     empty = EMPTY_SLATE_MARKER in body
-    rail = frame.locator(".cfbgt4-rail")
-    chips = frame.locator("a.cfbgt4-chip")
+    rail = frame.locator(".cfbgt5-rail")
+    chips = frame.locator("a.cfbgt5-chip")
     cards = frame.locator(".cfbgt6-card")
     if empty:
         if chips.count() or cards.count():
@@ -196,7 +196,7 @@ def _assert_current_contract(frame, body: str) -> dict[str, Any]:
         raise GuardianTerminalBrowserQAFailure(
             f"Expected one selected current decision card, found {cards.count()}"
         )
-    selected = frame.locator("a.cfbgt4-chip.selected")
+    selected = frame.locator("a.cfbgt5-chip.selected")
     if selected.count() != 1:
         raise GuardianTerminalBrowserQAFailure(
             f"Expected exactly one selected current matchup chip, found {selected.count()}"
@@ -246,7 +246,7 @@ def _wait_for_selection_query(page, expected: str, timeout_seconds: float = 45.0
 
 
 def _selection_target(frame) -> tuple[Any | None, str]:
-    chips = frame.locator("a.cfbgt4-chip")
+    chips = frame.locator("a.cfbgt5-chip")
     for index in range(chips.count()):
         chip = chips.nth(index)
         classes = str(chip.get_attribute("class") or "")
