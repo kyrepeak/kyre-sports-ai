@@ -8,6 +8,7 @@ on:
       - "streamlit_memory_lazy_router_v149.py"
       - "streamlit_memory_lazy_router_v150.py"
       - "devsystem/cfb_game_total_browser_qa_v1.py"
+      - "devsystem/cfb_game_total_browser_qa_v4.py"
       - "tests/conftest.py"
       - ".github/workflows/cfb-game-total-v150-browser.yml"
   push:
@@ -15,8 +16,8 @@ on:
     paths:
       - "cfb_game_total_clean_page_v1.py"
       - "streamlit_memory_lazy_router_v149.py"
-      - "streamlit_memory_lazy_router_v150.py"
-      - "devsystem/cfb_game_total_browser_qa_v1.py"
+      - "streamsystem/cfb_game_total_browser_qa_v1.py"
+      - "devsystem/cfb_game_total_browser_qa_v4.py"
       - "tests/conftest.py"
       - ".github/workflows/cfb-game-total-v150-browser.yml"
   workflow_dispatch:
@@ -59,9 +60,9 @@ jobs:
             > artifacts/cfb-game-total-browser-qa/streamlit.log 2>&1 &
           echo $! > /tmp/cfb_game_total_v150_streamlit_pid
 
-      - name: Drive College Football to Game Total with Playwright
+      - name: Drive canonical College Football Game Total route with Playwright
         run: |
-          python devsystem/cfb_game_total_browser_qa_v1.py \
+          python devsystem/cfb_game_total_browser_qa_v4.py \
             --base-url http://127.0.0.1:8501 \
             --artifact-dir artifacts/cfb-game-total-browser-qa
 
