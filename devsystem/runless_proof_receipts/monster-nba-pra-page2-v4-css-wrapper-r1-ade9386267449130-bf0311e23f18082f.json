@@ -1,0 +1,47 @@
+{
+  "artifact_map": {
+    "devsystem/runless_proof_plans/monster-nba-pra-page2-v4-css-wrapper-r1.json": "a4b7888aef6d20f5bb8b6a79df11e97f49a2d7ba",
+    "docs/superpowers/plans/2026-10-26-monster-nba-pra-page2-v4-css-wrapper-r1.md": "57412185b4b47fe7f9dd7fdeb33bd8337a0235e9",
+    "nba_pra_page2_command_center_v4.py": "8e86205da1241e8d1a2682b4efeb87e33400dc81",
+    "tests/test_monster_nba_pra_page2_s_tier_v4.py": "b9e9b7edd6d1dc6fe079730c4f887095222239d8",
+    "tests/test_monster_nba_pra_page2_v4_css_wrapper_r1.py": "0eb220447b4de8f4fc695275f62e75fe4424de1a"
+  },
+  "candidate_sha": "ade93862674491307ef29a988c004cb634a2b2e0",
+  "created_at": "2026-10-27T01:11:04.564927+00:00",
+  "dependency_map": {
+    "nba_pra_page2_command_center_v1.py": "2649d8eecac6ee3579ee4c12c40c021aa74e176d",
+    "nba_pra_page2_sync_v1.py": "6b88cd3a9ac9c6cb78f7925222469193e1093eec"
+  },
+  "digest": "9a2b89c67d35008e8727faa9bf74c65d742a2af1dd85d28a9db65ffe1002a4c5",
+  "evidence_digests": [
+    "300d30e8cc9abd39b7c3520ca3b035f0104d6d16abbca243c547e92749dc9ac7",
+    "8108b20f851ace73e96dad55d8f2712c0088587683ca8ff65c7800083819d049"
+  ],
+  "failure_class": "NONE",
+  "prior_digest": null,
+  "project": "API2",
+  "proof_fingerprint": "3bfc267562df7d700edc563f0f2e64d0c57abd3267fa4b1768059798cfabe0a5",
+  "proof_id": "monster-nba-pra-page2-v4-css-wrapper-r1-ade9386267449130-bf0311e23f18082f",
+  "registry_after": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "registry_before": {
+    "active_thaws": [
+      "THAW-CFB-GT-PAGE2-STEP7-REVIEW-RED-R1",
+      "THAW-NBA-OU-STEP2-BOOTSTRAP-R3",
+      "THAW-NBA-SPREAD-STEP1-TERMINAL-LEDGER-R1"
+    ],
+    "revision": 514,
+    "state_hash": "6efdb8a78eb1122ac3cf4bfd4cd505da72a80e298181799ef4b323119c411489"
+  },
+  "request_fingerprint": "f5065e86bc050a8c976e6544f4a68db6579ba49dc4c42187d79fa8a0c3750da6",
+  "step": "runless-v2-premerge",
+  "task_id": "monster-nba-pra-page2-v4-css-wrapper-r1",
+  "workstream": "monster-nba-pra-page2-v4-css-wrapper-r1"
+}
