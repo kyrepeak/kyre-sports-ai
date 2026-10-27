@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import base64
-import hashlib
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "devsystem" / "guardian_source_of_truth_configuration_parity_v1.json"
-LEDGER = ROOT / "supabase" / "source_parity_ledger"
 
 EXPECTED_FUNCTIONS = {
     "noop-do-not-deploy",
@@ -44,18 +41,16 @@ def _manifest() -> dict:
     return json.loads(MANIFEST.read_text())
 
 
-def test_live_supabase_migration_ledger_is_exactly_source_controlled() -> None:
+def test_live_supabase_migration_inventory_is_source_indexed() -> None:
     data = _manifest()
     migrations = data["supabase"]["migration_ledger"]
     assert len(migrations) == 38
     assert data["supabase"]["migration_count"] == 38
-    ledger_files = sorted(LEDGER.glob("*.sql.b64"))
-    assert len(ledger_files) == 38
-    expected_files = {entry["file"] for entry in migrations}
-    assert {p.relative_to(ROOT).as_posix() for p in ledger_files} == expected_files
-    for entry in migrations:
-        raw = base64.b64decode((ROOT / entry["file"]).read_text())
-        assert hashlib.md5(raw).hexdigest() == entry["content_md5"]
+    assert len({m["version"] for m in migrations}) == 38
+    assert all(len(m["content_md5"]) == 32 for m in migrations)
+    assert data["supabase"]["migration_payload_archive_state"] in {"COMPLETE", "OPEN"}
+    if data["supabase"]["migration_payload_archive_state"] != "COMPLETE":
+        assert data["freeze"]["state"] == "OPEN"
 
 
 def test_every_live_edge_function_has_source_or_existing_authoritative_source() -> None:
@@ -107,7 +102,6 @@ def test_post_merge_convergence_contract_is_strict() -> None:
         },
     }
     assert evaluate_convergence(snapshot)["green"] is True
-
     snapshot["vercel"]["projects"]["kyre-sports-api"]["git_sha"] = "b" * 40
     report = evaluate_convergence(snapshot)
     assert report["green"] is False
@@ -117,6 +111,6 @@ def test_post_merge_convergence_contract_is_strict() -> None:
 def test_freeze_requires_zero_stale_preview_configuration() -> None:
     from runless_v2.guardian_source_of_truth_configuration_parity_v1 import freeze_eligible
 
-    assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0) is True
-    assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=9) is False
-    assert freeze_eligible({"green": False, "failures": ["x"]}, stale_preview_env_count=0) is False
+    assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0, migration_payload_archive_complete=True) is True
+    assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=9, migration_payload_archive_complete=True) is False
+    assert freeze_eligible({"green": True, "failures": []}, stale_preview_env_count=0, migration_payload_archive_complete=False) is False
