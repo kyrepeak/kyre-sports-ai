@@ -9,12 +9,21 @@
       "tests/test_guardian_pytest_entrypoint_contract_proof_v1.py"
     ],
     [
-      "python", "-m", "pytest", "-q", "--collect-only",
-      "tests/test_cfb_game_total_v152_activation.py"
+      "python", "-m", "pytest", "-q",
+      "tests/test_cfb_game_total_v152_activation.py",
+      "tests/test_cfb_game_total_dashboard_v151.py",
+      "tests/test_devsystem_production_verify_v3.py",
+      "tests/test_cfb_game_total_v152_identity.py",
+      "tests/test_cfb_game_total_v152_team_stats.py",
+      "tests/test_cfb_game_total_v152_evidence_center.py",
+      "tests/test_cfb_game_total_v152_layout.py",
+      "tests/test_cfb_game_total_browser_v152.py",
+      "tests/test_cfb_game_total_v153_production_fallback.py"
     ],
     [
       "python", "-m", "py_compile",
       "tests/conftest.py",
+      "tests/test_cfb_game_total_v152_activation.py",
       "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
       "runless_v2/guardian_pytest_entrypoint_contract_proof_v1.py"
     ]
@@ -24,6 +33,7 @@
     "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
     "runless_v2/guardian_pytest_entrypoint_contract_proof_v1.py",
     "tests/conftest.py",
+    "tests/test_cfb_game_total_v152_activation.py",
     "tests/test_guardian_pytest_entrypoint_contract_proof_v1.py"
   ],
   "dependencies": [
@@ -31,7 +41,15 @@
     "devsystem/shared_runtime_lifecycle_v1.py",
     "runless_v2/config.py",
     "runless_v2/github_authority.py",
-    "runless_v2/sandbox_executor.py"
+    "runless_v2/sandbox_executor.py",
+    "tests/test_cfb_game_total_dashboard_v151.py",
+    "tests/test_devsystem_production_verify_v3.py",
+    "tests/test_cfb_game_total_v152_identity.py",
+    "tests/test_cfb_game_total_v152_team_stats.py",
+    "tests/test_cfb_game_total_v152_evidence_center.py",
+    "tests/test_cfb_game_total_v152_layout.py",
+    "tests/test_cfb_game_total_browser_v152.py",
+    "tests/test_cfb_game_total_v153_production_fallback.py"
   ],
   "probes": [],
   "timeout_seconds": 300,
