@@ -1,0 +1,43 @@
+{
+  "mode": "runless",
+  "task_id": "guardian-monster-freeze-idempotency-v1",
+  "workstream": "guardian-monster-freeze-idempotency-v1",
+  "source_main_sha": "afc8387dea50ae1e683fdc9e97307f83e6e4f846",
+  "commands": [
+    [
+      "python", "-m", "pytest", "--noconftest", "-q",
+      "tests/test_guardian_monster_freeze_idempotency_v1.py",
+      "tests/test_guardian_monster_freeze_idempotency_runless_v1.py",
+      "tests/test_guardian_shared_runtime_freeze_closeout_v1.py",
+      "tests/test_guardian_runless_cleanup_v1.py"
+    ],
+    [
+      "python", "-m", "py_compile",
+      "devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py",
+      "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+      "runless_v2/guardian_monster_freeze_idempotency_proof_v1.py"
+    ]
+  ],
+  "artifacts": [
+    ".github/workflows/guardian-shared-runtime-lifecycle-v1.yml",
+    "devsystem/monster_wnba_pra_runless_upcoming_gate_closeout_r1.py",
+    "devsystem/runless_proof_plans/guardian-monster-freeze-idempotency-v1.json",
+    "runless_v2/guardian_freeze_closeout_bootstrap_v1.py",
+    "runless_v2/guardian_monster_freeze_idempotency_proof_v1.py",
+    "tests/test_guardian_monster_freeze_idempotency_v1.py",
+    "tests/test_guardian_monster_freeze_idempotency_runless_v1.py"
+  ],
+  "dependencies": [
+    "devsystem/guardian_step2a_anti_loop_v1.py",
+    "runless_v2/config.py",
+    "runless_v2/sandbox_executor.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 1200,
+  "github_actions_fallback": 0,
+  "reuse_frozen_proof": [],
+  "required_check": "runless-final-gate",
+  "required_check_app_id": 5204253,
+  "freeze_token": "GUARDIAN_MONSTER_FREEZE_IDEMPOTENCY_V1_FROZEN"
+}
