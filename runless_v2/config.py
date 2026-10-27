@@ -49,8 +49,13 @@ class Settings:
             authority_enabled=e.get("RUNLESS_AUTHORITY_ENABLED", "").strip() == "1",
             lease_ttl_seconds=int(e.get("RUNLESS_V2_LEASE_TTL_SECONDS", "900")),
         )
-        # Deferred import avoids circular config/github-authority initialization.
-        from .guardian_freeze_closeout_bootstrap_v1 import maybe_auto_prove
+        # Deferred imports avoid circular config/github-authority initialization.
+        from .guardian_freeze_closeout_bootstrap_v1 import maybe_auto_prove as legacy_maybe_auto_prove
+        from .guardian_finalizer_authority_bridge_bootstrap_v1 import maybe_auto_prove as finalizer_maybe_auto_prove
+
+        def maybe_auto_prove(cfg: "Settings") -> None:
+            legacy_maybe_auto_prove(cfg)
+            finalizer_maybe_auto_prove(cfg)
 
         maybe_auto_prove(settings)
         return settings
