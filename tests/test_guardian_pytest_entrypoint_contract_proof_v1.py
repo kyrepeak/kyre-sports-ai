@@ -78,7 +78,7 @@ def test_guardian_pytest_entrypoint_proof_rejects_foreign_private_state():
 def test_legacy_cfb_browser_workflow_uses_current_universal_nav_successor():
     workflow = BROWSER_WORKFLOW.read_text(encoding="utf-8")
     browser = BROWSER_V4.read_text(encoding="utf-8")
-    assert "python devsystem/cfb_game_total_browser_qa_v4.py" in workflow
+    assert "python -m devsystem.cfb_game_total_browser_qa_v4" in workflow
     assert '"devsystem/cfb_game_total_browser_qa_v4.py"' in workflow
     assert "DIRECT_ROUTE_NAVIGATION" not in browser
     assert "direct_query = urlencode(" in browser
