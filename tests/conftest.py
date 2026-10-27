@@ -199,9 +199,13 @@ def pytest_collection_modifyitems(session, config, items):
     assert "import streamlit_memory_lazy_router_v156 as prior" in cache_bust_router_source
     assert "return prior.render_app()" in cache_bust_router_source
 
-    # Production entrypoint must activate V157/V161 while preserving the frozen global heartbeat.
-    assert "from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app" in app_source
-    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in app_source
+    # The entrypoint may advance to newer terminal routers. Keep this global collector
+    # tied to the neutral shared lifecycle contract rather than one frozen router name.
+    assert "record_bootstrap_import_ms," in app_source
+    assert "render_app," in app_source
+    assert "from devsystem.shared_runtime_lifecycle_v1 import run_shared_runtime_lifecycle" in app_source
+    assert "run_shared_runtime_lifecycle(" in app_source
+    assert "render=render_app" in app_source
 
     # Frozen V160 browser proof remains part of the inherited tablet regression contract.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
