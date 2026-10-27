@@ -242,10 +242,22 @@ def freeze_and_read_back(*, token: str, merged_sha: str) -> dict[str, Any]:
 
     existing = (registry.get("entries") or {}).get(FREEZE_TOKEN)
     if existing:
-        if existing.get("source_main_sha") != merged_sha or dict(existing.get("artifacts") or {}) != artifacts:
-            raise CloseoutFailure("freeze token already exists with different identity")
+        if dict(existing.get("artifacts") or {}) != artifacts:
+            raise CloseoutFailure("freeze token already exists with different artifacts")
+        registry_source_main_sha = str(existing.get("source_main_sha") or "")
         readback, _ = _read_registry(token)
-        return {"revision": readback["revision"], "state_hash": readback["state_hash"], "frozen_token": FREEZE_TOKEN, "merged_sha": merged_sha, "artifact_count": len(artifacts), "idempotent": True}
+        readback_entry = (readback.get("entries") or {}).get(FREEZE_TOKEN)
+        if not isinstance(readback_entry, Mapping) or dict(readback_entry.get("artifacts") or {}) != artifacts or str(readback_entry.get("source_main_sha") or "") != registry_source_main_sha:
+            raise CloseoutFailure("registry independent read-back mismatch")
+        return {
+            "revision": readback["revision"],
+            "state_hash": readback["state_hash"],
+            "frozen_token": FREEZE_TOKEN,
+            "merged_sha": merged_sha,
+            "registry_source_main_sha": registry_source_main_sha,
+            "artifact_count": len(artifacts),
+            "idempotent": True,
+        }
 
     updated = deepcopy(registry)
     updated["revision"] = int(registry["revision"]) + 1
