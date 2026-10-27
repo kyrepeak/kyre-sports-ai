@@ -19,8 +19,9 @@ if [[ "${KYRE_CLOUD_RUN_IMAGE}" != ghcr.io/*@sha256:* ]]; then
   exit 20
 fi
 
-if [[ "${KYRE_CLOUD_RUN_SERVICE_ACCOUNT}" != *@*.gserviceaccount.com ]]; then
-  echo "ERROR: KYRE_CLOUD_RUN_SERVICE_ACCOUNT must be a Google service-account email." >&2
+EXPECTED_SA_SUFFIX="@${KYRE_GCP_PROJECT_ID}.iam.gserviceaccount.com"
+if [[ "${KYRE_CLOUD_RUN_SERVICE_ACCOUNT}" != *"${EXPECTED_SA_SUFFIX}" ]]; then
+  echo "ERROR: runtime service account must belong to KYRE_GCP_PROJECT_ID." >&2
   exit 21
 fi
 
@@ -44,6 +45,17 @@ gcloud config set project "${KYRE_GCP_PROJECT_ID}" >/dev/null
 gcloud services enable run.googleapis.com --project="${KYRE_GCP_PROJECT_ID}"
 gcloud services enable secretmanager.googleapis.com --project="${KYRE_GCP_PROJECT_ID}"
 gcloud services enable iamcredentials.googleapis.com --project="${KYRE_GCP_PROJECT_ID}"
+
+# Bootstrap the dedicated runtime identity if it does not exist. It receives no
+# broad project role here. Exact Secret Manager grants are attached later only
+# to the individual secrets that the API actually consumes.
+if ! gcloud iam service-accounts describe "${KYRE_CLOUD_RUN_SERVICE_ACCOUNT}" \
+  --project="${KYRE_GCP_PROJECT_ID}" >/dev/null 2>&1; then
+  RUNTIME_SA_ID="${KYRE_CLOUD_RUN_SERVICE_ACCOUNT%%@*}"
+  gcloud iam service-accounts create "${RUNTIME_SA_ID}" \
+    --project="${KYRE_GCP_PROJECT_ID}" \
+    --display-name="Kyre Sports API runtime"
+fi
 
 # Hard safety defaults for the $0 bridge:
 # - request-based billing (--cpu-throttling)
