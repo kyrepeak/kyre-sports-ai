@@ -11,6 +11,7 @@ on:
       - "devsystem/runless_proof_plans/guardian-shared-runtime-lifecycle-v1.json"
       - "runless_v2/__init__.py"
       - "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py"
+      - "runless_v2/sandbox_executor.py"
       - "tests/test_guardian_shared_runtime_lifecycle_v1.py"
       - "tests/test_guardian_step2a_anti_loop_v1.py"
       - "tests/test_guardian_runless_proof_v1.py"
@@ -30,6 +31,7 @@ on:
       - "devsystem/runless_proof_plans/guardian-shared-runtime-lifecycle-v1.json"
       - "runless_v2/__init__.py"
       - "runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py"
+      - "runless_v2/sandbox_executor.py"
       - "tests/test_guardian_shared_runtime_lifecycle_v1.py"
       - "tests/test_guardian_step2a_anti_loop_v1.py"
       - "tests/test_guardian_runless_proof_v1.py"
@@ -63,11 +65,13 @@ jobs:
           python-version: "3.12"
       - name: Install focused test dependencies
         run: python -m pip install --disable-pip-version-check -q pytest pydantic
-      - name: Compile shared Guardian controls and entrypoint
+      - name: Compile shared Guardian controls and Runless repair
         run: >-
           python -m py_compile
           devsystem/shared_runtime_lifecycle_v1.py
           devsystem/guardian_step2a_anti_loop_v1.py
+          runless_v2/guardian_shared_runtime_lifecycle_proof_v1.py
+          runless_v2/sandbox_executor.py
           app.py
       - name: Prove Guardian lifecycle, Runless contract, Step 2A, Anti-Loop, and affected regressions
         run: >-
