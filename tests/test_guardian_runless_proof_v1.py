@@ -4,6 +4,7 @@ import asyncio
 import importlib.util
 import json
 import sys
+import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +25,23 @@ def _load_proof():
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def _load_sandbox_executor():
+    package_name = "_guardian_runless_v2"
+    root = ROOT / "runless_v2"
+    package = types.ModuleType(package_name)
+    package.__path__ = [str(root)]
+    sys.modules[package_name] = package
+
+    for module_name in ("models", "sandbox_executor"):
+        fq_name = f"{package_name}.{module_name}"
+        spec = importlib.util.spec_from_file_location(fq_name, root / f"{module_name}.py")
+        assert spec and spec.loader
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[fq_name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[f"{package_name}.sandbox_executor"]
 
 
 def test_guardian_runless_proof_publisher_and_plan_exist():
@@ -77,7 +95,7 @@ def test_runless_preview_auto_proof_is_exact_guardian_branch_only():
 
 
 def test_green_sandbox_evidence_survives_cleanup_stop_error():
-    from runless_v2.sandbox_executor import SandboxExecutor
+    SandboxExecutor = _load_sandbox_executor().SandboxExecutor
 
     candidate = "a" * 40
     plan = {
