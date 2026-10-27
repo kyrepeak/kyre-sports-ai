@@ -50,6 +50,7 @@ _DATE_STATE_KEYS = (
     "nfl_game_totals_v1_date",
     "nfl_v1_date",
 )
+_STATE_DATE_KEY = _DATE_STATE_KEYS[0]
 
 
 def _as_date(value: Any, fallback: date) -> date:
