@@ -1,0 +1,65 @@
+{
+  "version": "MONSTER_CODING_INTELLIGENCE_V1_EXECUTION_PLAN_V1",
+  "repository": "kyrepeak/kyre-sports-ai",
+  "project": "MONSTER_CODING_INTELLIGENCE_V1",
+  "task": "intelligence-case-contract",
+  "step": "1/10",
+  "mission": "Intelligence Case Contract V1",
+  "base_main_sha": "38954c48c35534428cdd09442ba28a58cd8536bd",
+  "branch": "monster/coding-intelligence-v1-design",
+  "status": "IMPLEMENTED_AWAITING_RUNLESS_PROOF",
+  "decision": "EXECUTE_COMPILED_PLAN",
+  "scope": {
+    "product_runtime": false,
+    "sports_model": false,
+    "control_plane_integration": false,
+    "github_actions_fallback_authorized": false,
+    "write_paths": [
+      "devsystem/monster_coding_intelligence_case_contract_v1.py",
+      "tests/test_devsystem_monster_coding_intelligence_case_contract_v1.py",
+      "devsystem/execution_plans/monster-coding-intelligence-v1-step1-case-contract.json",
+      "devsystem/runless_proof_plans/monster-coding-intelligence-v1-step1-case-contract.json",
+      "devsystem/task_ledgers/monster-coding-intelligence-v1-step1-case-contract.json",
+      "docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md",
+      "docs/superpowers/plans/2026-10-12-monster-coding-intelligence-v1-step1-intelligence-case-contract.md"
+    ],
+    "read_only_dependencies": []
+  },
+  "step2a": {
+    "single_authoritative_problem": true,
+    "single_authoritative_branch": true,
+    "one_active_pr_max": 1,
+    "duplicate_async_runs_forbidden": true,
+    "blind_polling_forbidden": true,
+    "exact_head_merge_required": true,
+    "scope_lease_id": "SCOPE-LEASE-3F78E702EB46D85D4A2954A1",
+    "parallel_workstream_state_import_forbidden": true
+  },
+  "contract": {
+    "version": "MONSTER_CODING_INTELLIGENCE_V1_STEP1_CASE_CONTRACT_V1",
+    "network_calls": false,
+    "auto_mutate": false,
+    "may_modify_product_runtime": false,
+    "mutation_authority_granted": false,
+    "github_actions_fallback": 0
+  },
+  "tdd": {
+    "test_first_commit": "2dcd2b87869fc89d1c3cd5f4815528f7057ba5a6",
+    "red_observed": true,
+    "red_result": "ModuleNotFoundError: No module named devsystem.monster_coding_intelligence_case_contract_v1",
+    "implementation_commit": "ea0e41e7e45e2ccc56705aa056c42040bc96cdc9",
+    "green_observed": true,
+    "green_result": "29 passed in 0.06s",
+    "compile_result": "PY_COMPILE_OK"
+  },
+  "rulings": [
+    "Repository-wide bare pytest cannot be executed in the local sandbox because the repository cannot be cloned from the network; authoritative repository-level regression proof is delegated to the existing protected Runless/final-gate path instead of creating GitHub Actions fallback work.",
+    "The authoritative scope was legally widened through release/reclaim after the first preflight proved the original lease did not carry branch-aware coverage for all seven changed paths."
+  ],
+  "completion_contract": {
+    "freeze_token": "MONSTER_CODING_INTELLIGENCE_V1_STEP1_INTELLIGENCE_CASE_CONTRACT_FROZEN",
+    "after_freeze": "STEP1_100_PERCENT_GREEN_FROZEN",
+    "total_steps": 10,
+    "overall_progress_percent_after_step": 10.0
+  }
+}

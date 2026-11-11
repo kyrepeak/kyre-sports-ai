@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "task_id": "monster-coding-intelligence-v1-step1-case-contract",
+  "title": "MONSTER Coding Intelligence V1 Step 1 — Intelligence Case Contract",
+  "project": "MONSTER_CODING_INTELLIGENCE_V1",
+  "workstream": "monster-coding-intelligence-v1",
+  "step": "1/10",
+  "status": "DONE",
+  "base_main_sha": "38954c48c35534428cdd09442ba28a58cd8536bd",
+  "branch": "monster/coding-intelligence-v1-design",
+  "problem": "Engineering failures are not yet normalized into one deterministic pre-diagnosis case contract containing goal, symptom, success, constraints, unknowns, and affected systems.",
+  "root_cause": "MONSTER has strong execution control but no standalone machine-checkable problem-understanding input boundary before evidence and root-cause reasoning begin.",
+  "patch": "Add a pure Intelligence Case Contract that validates and normalizes case input, preserves explicit unknowns, rejects premature causal fields and structural contradictions, generates a deterministic case ID, and provides deterministic JSON/rendering without mutation authority.",
+  "mutation_scope": [
+    "devsystem/monster_coding_intelligence_case_contract_v1.py",
+    "tests/test_devsystem_monster_coding_intelligence_case_contract_v1.py",
+    "devsystem/execution_plans/monster-coding-intelligence-v1-step1-case-contract.json",
+    "devsystem/runless_proof_plans/monster-coding-intelligence-v1-step1-case-contract.json",
+    "devsystem/task_ledgers/monster-coding-intelligence-v1-step1-case-contract.json",
+    "docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md",
+    "docs/superpowers/plans/2026-10-12-monster-coding-intelligence-v1-step1-intelligence-case-contract.md"
+  ],
+  "forbidden_scope": [
+    "evidence ranking",
+    "failure classification",
+    "hypothesis generation",
+    "root-cause inference",
+    "contradiction resolution",
+    "blast-radius strategy",
+    "outcome learning",
+    "production control-plane integration",
+    "sports product runtime",
+    "provider calls",
+    "deployments"
+  ],
+  "step2a": {
+    "single_authoritative_problem": true,
+    "single_authoritative_branch": true,
+    "one_active_pr_max": 1,
+    "no_duplicate_async_runs": true,
+    "no_blind_polling": true,
+    "exact_head_merge_required": true,
+    "scope_lease_id": "SCOPE-LEASE-3F78E702EB46D85D4A2954A1",
+    "parallel_workstream_state_import_forbidden": true
+  },
+  "tdd": {
+    "test_first_commit": "2dcd2b87869fc89d1c3cd5f4815528f7057ba5a6",
+    "red_observed": true,
+    "red_result": "ModuleNotFoundError: No module named devsystem.monster_coding_intelligence_case_contract_v1",
+    "implementation_commit": "ea0e41e7e45e2ccc56705aa056c42040bc96cdc9",
+    "green_observed": true,
+    "green_result": "29 passed in 0.06s",
+    "compile_result": "PY_COMPILE_OK"
+  },
+  "acceptance": {
+    "equivalent_case_normalization": true,
+    "unknowns_explicit": true,
+    "known_empty_distinct_from_unknown": true,
+    "constraints_preserved": true,
+    "do_not_change_preserved": true,
+    "observable_success_required": true,
+    "symptom_separate_from_root_cause": true,
+    "later_step_reasoning_fields_rejected": true,
+    "structural_contradictions_rejected": true,
+    "deterministic_case_id": true,
+    "deterministic_serialization": true,
+    "deterministic_rendering": true,
+    "network_calls": false,
+    "auto_mutate": false,
+    "may_modify_product_runtime": false,
+    "mutation_authority_granted": false,
+    "github_actions_fallback": 0
+  },
+  "rulings": [
+    "The local execution sandbox cannot clone the repository because outbound DNS/network access is unavailable. Focused TDD was executed against the exact committed test/module contents; repository-level regression authority remains the existing protected Runless/final-gate path rather than a new GitHub Actions fallback.",
+    "The first exact-head preflight failed deterministically because this ledger was version 1 and the original scope lease lacked branch-aware coverage. Root-cause inspection established the repository-required repair before this metadata-only patch."
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "freeze_token": "MONSTER_CODING_INTELLIGENCE_V1_STEP1_INTELLIGENCE_CASE_CONTRACT_FROZEN",
+  "green_plus_frozen_claimed": false,
+  "next_legal_action": "RUNLESS_EXACT_HEAD_PROOF_THEN_ONE_PR_EXACT_MERGE_THEN_POSTMERGE_REUSE_THEN_FREEZE_READBACK"
+}

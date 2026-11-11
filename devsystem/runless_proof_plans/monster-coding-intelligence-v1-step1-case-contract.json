@@ -1,0 +1,27 @@
+{
+  "task_id": "monster-coding-intelligence-v1-step1-case-contract",
+  "workstream": "monster-coding-intelligence-v1",
+  "commands": [
+    ["python", "-m", "pytest", "-q", "tests/test_devsystem_monster_coding_intelligence_case_contract_v1.py"],
+    ["python", "-m", "py_compile", "devsystem/monster_coding_intelligence_case_contract_v1.py"]
+  ],
+  "artifacts": [
+    "devsystem/monster_coding_intelligence_case_contract_v1.py",
+    "tests/test_devsystem_monster_coding_intelligence_case_contract_v1.py",
+    "devsystem/execution_plans/monster-coding-intelligence-v1-step1-case-contract.json",
+    "devsystem/runless_proof_plans/monster-coding-intelligence-v1-step1-case-contract.json",
+    "devsystem/task_ledgers/monster-coding-intelligence-v1-step1-case-contract.json",
+    "docs/superpowers/specs/2026-10-12-monster-coding-intelligence-v1-design.md",
+    "docs/superpowers/plans/2026-10-12-monster-coding-intelligence-v1-step1-intelligence-case-contract.md"
+  ],
+  "dependencies": [
+    "devsystem/runless_proof_plan_v1.py",
+    "devsystem/runless_terminal_proof_receipt_v1.py",
+    "devsystem/scope_aware_execution_lease_v1.py",
+    "devsystem/frozen_artifact_registry_v1.py"
+  ],
+  "probes": [],
+  "timeout_seconds": 600,
+  "live_ttl_seconds": 900,
+  "freeze_token": "MONSTER_CODING_INTELLIGENCE_V1_STEP1_INTELLIGENCE_CASE_CONTRACT_FROZEN"
+}
