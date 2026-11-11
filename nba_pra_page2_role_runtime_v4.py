@@ -14,6 +14,7 @@ from typing import Any, Mapping
 
 import nba_pra_page2_command_center_v1 as _v1
 import nba_pra_page2_command_center_v3 as _v3
+from nba_pra_page2_history_only_runtime_v1 import install as install_history_only_navigation
 
 
 VERSION = "API2_NBA_PRA_PAGE2_ROLE_RUNTIME_V4"
@@ -61,5 +62,6 @@ def _role_availability_html(context: Mapping[str, Any], games: list[dict[str, An
 
 
 def install() -> None:
-    """Install the additive presentation successor idempotently."""
+    """Install the additive presentation and navigation successors idempotently."""
     _v1._role_availability_html = _role_availability_html
+    install_history_only_navigation()
