@@ -1,0 +1,17 @@
+SITEWIDE_STEP45_V236_STREAMLIT_REDEPLOY_TRIGGER_V1
+
+Purpose: force Streamlit Cloud to consume the already-merged certified sitewide Steps 4-5 runtime from current main.
+
+Current source main SHA: 31bb40ee5564f94794699aaaa3b611e42aa491b3.
+Active router: streamlit_memory_lazy_router_v237.
+Certified preserved Receptions owner: streamlit_memory_lazy_router_v236.
+
+Production evidence before trigger:
+- Sitewide production run 36091539864 attempt 1 failed V236_PUBLIC_DEPLOYMENT_NOT_ACTIVE_REAL_UI.
+- The same run attempt 2 failed the same deployment token after an app.py entrypoint-only refresh.
+- Independent Passing Yards public-freeze run 36090870302 also failed PUBLIC_DEPLOYMENT_NOT_ACTIVE for V85.
+- Branch-local real UI proof for NFL -> Receptions passed with V236.
+- Static descendant proof confirms V237 -> V236.
+
+This marker changes no runtime behavior, routing, presentation, projection math, probability logic, market logic, API/model behavior, or sportsbook influence.
+It exists only to trigger Streamlit Cloud to refresh the already-merged production revision.
