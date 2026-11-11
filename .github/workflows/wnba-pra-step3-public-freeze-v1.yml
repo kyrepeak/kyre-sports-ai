@@ -6,6 +6,8 @@ on:
     paths:
       - 'devsystem/wnba_pra_step3_public_freeze_v1.py'
       - 'devsystem/task_ledgers/wnba-pra-step3-public-freeze-v1.json'
+      - 'devsystem/monster_wnba_pra_current_slate_exclusion_cert_r1.py'
+      - 'devsystem/task_ledgers/monster-wnba-pra-current-slate-exclusion-cert-r1.json'
       - '.github/workflows/wnba-pra-step3-public-freeze-v1.yml'
   workflow_dispatch:
 
@@ -70,5 +72,44 @@ jobs:
         with:
           name: wnba-pra-step3-public-freeze-${{ github.run_id }}
           path: artifacts/wnba-pra-step3-public-freeze
+          if-no-files-found: warn
+          retention-days: 14
+
+  monster-current-slate-exclusion-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install isolated browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install chromium
+
+      - name: Compile isolated current-slate verifier
+        run: python -m py_compile devsystem/monster_wnba_pra_current_slate_exclusion_cert_r1.py
+
+      - name: Certify no active WNBA PRA analytics when no future pregame game exists
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/monster_wnba_pra_current_slate_exclusion_cert_r1.py \
+            --production-url https://pickvault.streamlit.app \
+            --artifact-dir artifacts/monster-wnba-pra-current-slate-exclusion-cert-r1
+
+      - name: Upload isolated MONSTER evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-wnba-pra-current-slate-exclusion-cert-${{ github.run_id }}
+          path: artifacts/monster-wnba-pra-current-slate-exclusion-cert-r1
           if-no-files-found: warn
           retention-days: 14

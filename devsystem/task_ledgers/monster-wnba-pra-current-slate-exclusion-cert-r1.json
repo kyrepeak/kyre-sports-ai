@@ -1,0 +1,24 @@
+{
+  "version": "MONSTER_WNBA_PRA_CURRENT_SLATE_EXCLUSION_CERT_R1_LEDGER",
+  "authority": "MONSTER_ONLY",
+  "task_id": "monster-wnba-pra-current-slate-exclusion-cert-r1",
+  "active_problem": "Read-only production proof that the merged WNBA PRA upcoming-only repairs expose no live/final/past-tip game in active Page 1 analytics when the current official slate has no future pregame game.",
+  "status": "PRODUCTION_CERT_ARMED",
+  "progress_percent": 99.99,
+  "source_main_sha": "dd9ffcc4b44faea92f97d68545db6efb160c9f3f",
+  "authoritative_branch": "monster-wnba-pra-current-slate-exclusion-cert-r1",
+  "previous_drifted_pr": 1891,
+  "product_changes_allowed": false,
+  "game_selection_allowed": false,
+  "future_game_search_allowed": false,
+  "api2_state_allowed_as_evidence": false,
+  "acceptance": {
+    "eligible_future_pregame_games": 0,
+    "active_page1_cards": 0,
+    "top3_leaderboard": 0,
+    "certified_pra_picks": 0,
+    "active_game_buttons": 0,
+    "accepted_empty_state_required": true
+  },
+  "freeze_target": "MONSTER_WNBA_PRA_UPCOMING_ONLY_R2_FINAL_CARD_FROZEN"
+}
