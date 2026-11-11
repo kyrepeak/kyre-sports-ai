@@ -8,11 +8,12 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import urlencode
 
 from playwright.sync_api import sync_playwright
 
 from devsystem import production_verify_v164_logos as full
+import cfb_game_total_step5_pace_v1 as step5_owner
 
 
 GREEN_MARKER = "CFB_GAME_TOTAL_V181_STEP5_PRODUCTION_GREEN"
@@ -26,12 +27,25 @@ def verify_live_step5(
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
 
-    # Certify the matchup production is serving now. Do not pin this verifier
-    # to a stale historical date/event after the live selector has advanced.
+    # Certify a current scheduled matchup whose verified SportsDataverse
+    # evidence is stored in the same Step 5 cache. This keeps the production
+    # target and the nonblocking evidence source locked together.
+    snapshot = json.loads(
+        step5_owner.STEP5_PBP_SNAPSHOT_PATH.read_text(encoding="utf-8")
+    )
+    cert_date = str(snapshot.get("certification_game_date") or "").strip()
+    cert_event_id = str(snapshot.get("certification_event_id") or "").strip()
+    if not cert_date or not cert_event_id.isdigit():
+        raise full.ProductionVerificationV164Failure(
+            "V186 Step 5 certification target is missing from the PBP cache"
+        )
+
     query = urlencode(
         {
             full.v163.ROUTE_QUERY_SPORT: full.v163.CFB_SPORT,
             full.v163.ROUTE_QUERY_MARKET: full.v163.GAME_TOTAL_MARKET,
+            full.v163.DATE_QUERY_KEY: cert_date,
+            full.v163.EVENT_QUERY_KEY: cert_event_id,
         }
     )
 
@@ -58,15 +72,13 @@ def verify_live_step5(
                 full.v163._event_from_url(page.url)
                 or full.v163._event_from_url(frame.url)
             )
-            if not event_id or not str(event_id).isdigit():
+            if event_id != cert_event_id:
                 raise full.ProductionVerificationV164Failure(
-                    "V184 current live Game Total event did not persist: "
+                    "V186 scheduled certification event did not persist: "
+                    f"expected={cert_event_id!r} actual={event_id!r} "
                     f"page_url={page.url!r} frame_url={frame.url!r}"
                 )
-            routed_url = frame.url or page.url
-            routed_query = parse_qs(urlparse(routed_url).query)
-            date_values = routed_query.get(full.v163.DATE_QUERY_KEY) or []
-            selected_date = str(date_values[-1] if date_values else "").strip()
+            selected_date = cert_date
 
             step5 = full._assert_step5_pace(frame)
             if (

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-19T19:58:00Z",
+  "generated_at": "2026-09-19T20:10:00Z",
   "source": "SportsDataverse cfbfastR-cfb-raw final game JSON",
   "purpose": "Nonblocking Step 5 presentation cache; live PBP remains fallback for uncached teams/events.",
   "current_event_id": "401869940",
@@ -27,6 +27,27 @@
         "source": "SportsDataverse current-season completed-game PBP"
       }
     },
+    "52": {
+      "team": "Florida State",
+      "team_id": "52",
+      "event_ids": [
+        "401864570",
+        "401858212"
+      ],
+      "metrics": {
+        "games": 2,
+        "drive_count": 22,
+        "drives_per_game": 11,
+        "plays_per_game": 71,
+        "seconds_per_play": 27.72,
+        "avg_drive_time_seconds": 171.86363636363637,
+        "situation_neutral_seconds_per_play": 27.72,
+        "no_huddle_rate": 0.4507042253521127,
+        "text_plays": 142,
+        "no_huddle_plays": 64,
+        "source": "SportsDataverse current-season completed-game PBP"
+      }
+    },
     "324": {
       "team": "Coastal Carolina",
       "team_id": "324",
@@ -47,6 +68,30 @@
         "no_huddle_plays": 124,
         "source": "SportsDataverse current-season completed-game PBP"
       }
+    },
+    "333": {
+      "team": "Alabama",
+      "team_id": "333",
+      "event_ids": [
+        "401856634",
+        "401856674"
+      ],
+      "metrics": {
+        "games": 2,
+        "drive_count": 23,
+        "drives_per_game": 11.5,
+        "plays_per_game": 79,
+        "seconds_per_play": 28.62121212121212,
+        "avg_drive_time_seconds": 185.52173913043478,
+        "situation_neutral_seconds_per_play": 28.62121212121212,
+        "no_huddle_rate": 0.08860759493670886,
+        "text_plays": 158,
+        "no_huddle_plays": 14,
+        "source": "SportsDataverse current-season completed-game PBP"
+      }
     }
-  }
+  },
+  "certification_event_id": "401856685",
+  "certification_game_date": "2026-09-19",
+  "certification_matchup": "Florida State @ Alabama"
 }

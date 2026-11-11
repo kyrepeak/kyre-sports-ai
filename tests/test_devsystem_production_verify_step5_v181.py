@@ -38,3 +38,12 @@ def test_v184_cert_follows_current_live_event_instead_of_stale_fixed_event():
     assert "_event_from_url(page.url)" in source
     assert "_event_from_url(frame.url)" in source
     assert "current live Game Total event did not persist" in source
+
+
+
+def test_v186_cert_target_comes_from_step5_pbp_cache():
+    source = inspect.getsource(verifier.verify_live_step5)
+    assert "STEP5_PBP_SNAPSHOT_PATH" in source
+    assert "certification_game_date" in source
+    assert "certification_event_id" in source
+    assert "V186 scheduled certification event did not persist" in source
