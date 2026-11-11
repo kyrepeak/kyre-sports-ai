@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v184-step6-permanent-freeze-canonical",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "Canonicalize the already-proven V184 Step 6 permanent freeze back to main. Record the FROZEN manifest and the one-line freeze-workflow boundary assertion correction that passed the permanent-freeze workflow. Do not change Step 6 feature code, snapshot values, Page V18 behavior, Router V163 behavior, Steps 1-5, model/projection/probability/distribution math, APIs, qualification/ranking, or sportsbook influence.",
+  "proof_target": "Canonical main must record live production run #26 GREEN on e6fc998c99d3cb6ca56b26e9f1fed3d2743ef78e and permanent-freeze workflow run #2 GREEN with CFB_GAME_TOTAL_V184_STEP6_PERMANENT_FREEZE_GREEN. The manifest remains FROZEN with permanently_frozen=true and exact blob locks.",
+  "internal_steps": {
+    "1": "Use live production run #26 evidence: READY / 100% / 12-of-12 and CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN.",
+    "2": "Use permanent-freeze run #2 evidence: metadata, exact blobs, boundaries, compile, mandatory live proof, and final freeze marker all GREEN.",
+    "3": "Carry only the proven FROZEN manifest plus the corrected int(number) == 6 freeze assertion into canonical main.",
+    "4": "Merge after DevSystem final gate; all future Step 6 changes must be additive."
+  },
+  "production_proof": {
+    "run_number": 26,
+    "run_id": 35471823826,
+    "baseline_sha": "e6fc998c99d3cb6ca56b26e9f1fed3d2743ef78e",
+    "marker": "CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN"
+  },
+  "permanent_freeze_proof": {
+    "run_number": 2,
+    "run_id": 35471981558,
+    "freeze_branch_sha": "36958658706af3ba8d11105a91def8f8feeff794",
+    "marker": "CFB_GAME_TOTAL_V184_STEP6_PERMANENT_FREEZE_GREEN"
+  }
+}
